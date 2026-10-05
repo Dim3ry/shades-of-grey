@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- The "head" holds settings for the page. You don't see this part on screen. -->
+  <meta charset="UTF-8">
+  <!-- Makes the page fit phone screens properly. Without it, phones zoom out. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1220">
+  <title>Shades of Grey</title>
+
+  <!-- PHASE 6: these three lines make the app installable.
+       manifest.json tells the phone the app's name, colours and icon.
+       The icon lines give browsers a picture for tabs and home screens. -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+
+  <style>
+    /* ===== CSS: this section controls how everything LOOKS. ===== */
+
+    /* Colours are stored once here, so you can change the whole theme in one place.
+       The stage colours (--stage-0, --stage-1 ...) are set by JavaScript, because
+       you can have any number of stages and pick different colour sets. */
+    :root {
+      --background: #0b1220;  /* deep navy, the page colour */
+      --card: #141d2f;        /* slightly lighter, for each box */
+      --border: #22304a;      /* thin outlines */
+      --text: #dbe4f0;        /* light grey text */
+      --muted: #8193ad;       /* dimmer text */
+      --accent: #7dd3fc;      /* ice blue, for highlights */
+      --danger: #f87171;      /* soft red, for delete buttons */
+      --done-colour: #a7f3d0; /* the "finished" colour, also set by JavaScript */
+    }
+
+    * { box-sizing: border-box; }  /* makes widths include padding: far easier to reason about */
+
+    body {
+      margin: 0;
+      /* Extra space at the bottom so the tab bar never covers the last item. */
+      padding: 20px 16px calc(96px + env(safe-area-inset-bottom));
+      background: var(--background);
+      color: var(--text);
+      font-family: system-ui, sans-serif;
+    }
+
+    main { max-width: 640px; margin: 0 auto; }
+
+    h1 { margin: 0 0 16px; font-size: 24px; color: var(--accent); }
+    h2 { margin: 0 0 12px; font-size: 16px; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+
+    .hint { color: var(--muted); font-size: 13px; margin: 0 0 10px; line-height: 1.4; }
+    .empty { color: var(--muted); text-align: center; padding: 24px 0; }
+
+    button { font: inherit; border-radius: 8px; border: none; cursor: pointer; }
+    button:disabled { opacity: 0.35; cursor: default; }
+
+    input, select, textarea {
+      font: inherit;
+      font-size: 16px;        /* 16px or bigger stops phones zooming in when you type */
+      background: var(--background);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      min-width: 0;           /* lets boxes shrink inside rows instead of overflowing */
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+    textarea { min-height: 80px; resize: vertical; }
+
+    /* A visible outline when moving around with a keyboard. */
+    button:focus-visible, .info:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .plain-button {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 11px 14px;
+      font-size: 14px;
+    }
+    .plain-button:hover { border-color: var(--accent); }
+    .primary-button { background: var(--accent); color: var(--background); font-weight: 600; padding: 12px; }
+    .danger-button { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 11px 14px; font-size: 14px; }
+    .link-button { background: transparent; color: var(--accent); padding: 10px 0; font-size: 14px; }
+    .button-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* ----- The tab bar at the bottom ----- */
+    .tabs {
+      position: fixed;        /* stays put while the page scrolls */
+      left: 0; right: 0; bottom: 0;
+      display: flex;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      padding-bottom: env(safe-area-inset-bottom);  /* room for the phone's own gesture bar */
+      z-index: 10;
+    }
+    .tabs button {
+      flex: 1;
+      background: none;
+      color: var(--muted);
+      padding: 10px 0 12px;
+      font-size: 12px;
+      display: grid;
+      gap: 2px;
+      border-radius: 0;
+    }
+    .tabs .icon { font-size: 20px; line-height: 1; }
+    .tabs button[aria-current="page"] { color: var(--accent); }
+
+    /* ----- Dashboard ----- */
+    .headline { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .big { font-size: 40px; font-weight: 700; color: var(--done-colour); }
+    .of { color: var(--muted); font-size: 14px; }
+
+    .groups { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+    .group-button {
+      background: var(--background);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 12px;
+      text-align: left;
+      font-size: 13px;
+    }
+    .group-button strong { display: block; font-size: 22px; color: var(--text); }
+
+    .chart-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+    .chart-row svg { flex-shrink: 0; margin: 0 auto; }
+    .legend { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 180px; }
+    .legend button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: none;
+      color: var(--text);
+      padding: 7px 4px;
+      font-size: 14px;
+      text-align: left;
+    }
+    .dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; background: var(--dot); }
+    .legend .num { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+    .faction-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+    .faction-button {
+      background: var(--background);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px 8px;
+      display: grid;
+      justify-items: center;
+      gap: 6px;
+      font-size: 14px;
+    }
+    .faction-button small { color: var(--muted); font-size: 12px; }
+
+    /* ----- Units: filters ----- */
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .chip {
+      background: var(--background);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--chip-colour, var(--border));
+      padding: 8px 12px;
+      font-size: 13px;
+      border-radius: 999px;   /* pill shape */
+    }
+    .chip[aria-pressed="true"] { color: var(--background); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+
+    /* ----- Units: the list ----- */
+    ul.units { list-style: none; margin: 0; padding: 0; }
+
+    li.unit {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--stage-colour);   /* coloured stripe showing the stage */
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px;
+      display: flex;
+      flex-wrap: wrap;        /* lets the details panel drop onto its own line */
+      align-items: center;
+      gap: 10px;
+    }
+
+    .thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+
+    .info {
+      flex: 1;
+      min-width: 0;           /* so long names wrap instead of pushing the ▲ button off-screen */
+      overflow-wrap: anywhere;
+      cursor: pointer;
+      user-select: none;
+    }
+    .name { font-size: 16px; font-weight: 600; }
+    .details { margin-top: 2px; font-size: 13px; color: var(--muted); }
+    .stage { margin-top: 6px; font-size: 13px; font-weight: 600; color: var(--stage-colour); }
+    .pips { display: flex; gap: 3px; margin-top: 6px; }
+    .pip { height: 4px; flex: 1; border-radius: 2px; background: var(--border); }
+    .pip.filled { background: var(--stage-colour); }
+
+    /* The big "move up a stage" button: deliberate, hard to hit by accident. */
+    .up-button {
+      width: 52px;
+      height: 52px;
+      flex-shrink: 0;
+      background: var(--background);
+      color: var(--stage-colour);
+      border: 2px solid var(--stage-colour);
+      font-size: 22px;
+      border-radius: 12px;
+    }
+
+    /* The details panel under a unit. */
+    .panel {
+      flex-basis: 100%;
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+      margin-top: 2px;
+      display: grid;
+      gap: 12px;
+    }
+    .panel label { font-size: 13px; color: var(--muted); display: grid; gap: 6px; }
+    .panel .check-label {
+      display: flex; align-items: center; gap: 10px;
+      align-self: end; min-height: 46px; color: var(--text); font-size: 15px;
+    }
+    .check-label input { width: 22px; height: 22px; accent-color: var(--accent); }
+    .photo { width: 100%; max-height: 320px; object-fit: cover; border-radius: 8px; }
+    .panel-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+    .panel-buttons .danger-button { margin-left: auto; }
+
+    /* ----- Settings ----- */
+    details summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
+    details ul { padding-left: 20px; margin: 10px 0 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
+    details li { margin-bottom: 6px; }
+
+    ol.stage-list { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 8px; }
+    .stage-row { display: flex; align-items: center; gap: 6px; }
+    .stage-row input { flex: 1; padding: 9px; }
+    .icon-button {
+      width: 40px; height: 40px; flex-shrink: 0;
+      background: transparent; color: var(--muted); border: 1px solid var(--border);
+      font-size: 15px;
+    }
+    .icon-button.remove:hover { color: var(--danger); border-color: var(--danger); }
+    .done-divider {
+      font-size: 12px; color: var(--done-colour); text-align: center;
+      border-top: 1px dashed var(--done-colour); padding-top: 4px; margin-top: 2px;
+    }
+    .settings-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+
+    /* ----- The little pop-up message ("toast") ----- */
+    .toast {
+      position: fixed;
+      left: 16px; right: 16px;
+      bottom: calc(80px + env(safe-area-inset-bottom));
+      max-width: 480px;
+      margin: 0 auto;
+      background: var(--text);
+      color: var(--background);
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      z-index: 20;
+    }
+    .toast button { margin-left: auto; background: none; color: #0369a1; font-weight: 700; padding: 4px 6px; }
+
+    .hidden { display: none; }
+  </style>
+</head>
+
+<body>
+  <!-- ===== HTML: this section is WHAT is on the page. ===== -->
+  <main>
+    <h1>Shades of Grey</h1>
+
+    <!-- ===== TAB 1: Dashboard ===== -->
+    <section id="view-dashboard">
+      <div class="card">
+        <div class="headline">
+          <span class="big" id="done-percent">–</span>
+          <span class="of" id="done-summary"></span>
+        </div>
+        <div class="groups">
+          <button class="group-button" id="todo-button"></button>
+          <button class="group-button" id="done-button"></button>
+        </div>
+        <button class="link-button hidden" id="repaint-link"></button>
+      </div>
+
+      <div class="card">
+        <h2>By stage</h2>
+        <div class="chart-row">
+          <div id="overall-chart"></div>
+          <ul class="legend" id="stage-legend"></ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>By faction</h2>
+        <div class="faction-grid" id="faction-grid"></div>
+      </div>
+    </section>
+
+    <!-- ===== TAB 2: Units ===== -->
+    <section id="view-units" class="hidden">
+      <button class="primary-button" id="toggle-add" style="width: 100%; margin-bottom: 14px;">+ Add unit</button>
+
+      <!-- The add form starts hidden; the button above shows it. -->
+      <form id="add-form" class="card hidden" style="display: grid; gap: 10px;">
+        <div class="row" style="grid-template-columns: 1fr 76px;">
+          <input id="name-input" placeholder="Unit name, e.g. Intercessors" aria-label="Unit name" required>
+          <input id="count-input" type="number" min="1" value="1" aria-label="Number of models" title="Number of models">
+        </div>
+        <div class="row">
+          <input id="hobby-input" placeholder="Game, e.g. 40K" aria-label="Game">
+          <input id="faction-input" placeholder="Faction" aria-label="Faction">
+        </div>
+        <button class="primary-button" type="submit">Add</button>
+      </form>
+
+      <div class="card">
+        <div class="row">
+          <select id="hobby-filter" aria-label="Filter by game"></select>
+          <select id="faction-filter" aria-label="Filter by faction"></select>
+        </div>
+        <div class="chips" id="group-chips"></div>
+        <div class="chips" id="stage-chips"></div>
+        <p class="hint" id="filter-note" style="margin: 12px 0 0;"></p>
+        <button class="link-button hidden" id="clear-filters">Clear filters</button>
+      </div>
+
+      <ul class="units" id="unit-list"></ul>
+    </section>
+
+    <!-- ===== TAB 3: Settings ===== -->
+    <section id="view-settings" class="hidden">
+      <div class="card">
+        <details>
+          <summary>How to use Shades of Grey</summary>
+          <ul>
+            <li><strong>Units</strong> holds everything you own. Add a unit with <strong>+ Add unit</strong>; the number box is how many models are in it.</li>
+            <li>Press <strong>▲</strong> to move a unit up a stage. Made a mistake? Press <strong>Undo</strong> on the message that pops up.</li>
+            <li>Tap a unit's name to open its details: nickname, model count, repaint flag, paint notes, a photo, <strong>back a stage</strong>, and delete.</li>
+            <li>Add the same unit twice (same name, game and faction) and they're numbered for you: Intercessors 1, Intercessors 2.</li>
+            <li><strong>Dashboard</strong> counts models, not units. Tap any number, chart row or faction to jump to those units.</li>
+            <li>Your stages are yours to change below. <strong>Done starts at</strong> decides what counts as finished.</li>
+            <li>Everything is saved on this device only. <strong>Save a backup</strong> regularly, especially before clearing your browser.</li>
+          </ul>
+        </details>
+      </div>
+
+      <div class="card">
+        <h2>Stages</h2>
+        <p class="hint">Rename, reorder (↑ ↓), add or remove stages. Units move with their stage when you reorder. Changes apply when you press Save.</p>
+        <ol class="stage-list" id="stage-list"></ol>
+        <button class="link-button" id="add-stage">+ Add stage</button>
+        <label class="hint" style="display: grid; gap: 6px; margin: 8px 0 0;">
+          Done starts at
+          <select id="done-from"></select>
+        </label>
+        <div class="settings-actions">
+          <button class="primary-button" id="save-stages" style="flex: 1;">Save stages</button>
+          <button class="plain-button" id="reset-stages">Undo changes</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Colours</h2>
+        <select id="palette-select" aria-label="Stage colours" style="width: 100%;"></select>
+      </div>
+
+      <div class="card">
+        <h2>Import and backup</h2>
+        <div class="button-grid">
+          <button class="plain-button" id="export-button">Save backup</button>
+          <button class="plain-button" id="restore-button">Restore backup</button>
+          <button class="plain-button" id="csv-button">Import CSV</button>
+          <button class="plain-button" id="template-button">CSV template</button>
+        </div>
+        <p class="hint" style="margin: 12px 0 0;">
+          CSV columns: name, game, faction, stage, nickname, count, repaint, notes.
+          Only name is needed. Stage should match one of your stages. Repeat a row for
+          several of the same unit; they'll be numbered for you.
+        </p>
+        <input type="file" id="restore-file" class="hidden" accept=".json">
+        <input type="file" id="csv-file" class="hidden" accept=".csv,text/csv">
+      </div>
+
+      <div class="card">
+        <h2>Your data</h2>
+        <p class="hint" id="data-summary"></p>
+        <button class="danger-button" id="delete-all">Delete all units</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- The tab bar. aria-current marks the tab you're on, for screen readers and for the CSS. -->
+  <nav class="tabs" aria-label="Sections">
+    <button data-tab="dashboard"><span class="icon">◔</span>Dashboard</button>
+    <button data-tab="units"><span class="icon">☰</span>Units</button>
+    <button data-tab="settings"><span class="icon">⚙</span>Settings</button>
+  </nav>
+
+  <!-- The pop-up message, hidden until needed. -->
+  <div class="toast hidden" id="toast" role="status">
+    <span id="toast-text"></span>
+    <button id="toast-undo">Undo</button>
+  </div>
+
+  <script>
+    // ===== JavaScript: this section is how things BEHAVE. =====
+    // Lines starting with // are comments.
+
+    // The names we save under in the browser's storage, like file names.
+    const STORAGE_KEY = "mini-tracker-models";
+    const SETTINGS_KEY = "shades-of-grey-settings";
+
+    // ================= SETTINGS AND STAGES =================
+
+    // Each unit stores a NUMBER pointing at a position in the stage list (0 = first).
+    // Stages from settings.doneFrom onwards count as "Done"; earlier ones are "To do".
+    const DEFAULT_STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed",
+                            "Part painted", "Painted with issues", "Battle ready"];
+    // The original five, kept for anyone who saved units before stages were editable.
+    const ORIGINAL_STAGES = ["Unbuilt", "Built", "Primed", "In progress", "Painted"];
+
+    let settings = { palette: "ice", tab: "dashboard" };
+    try {
+      settings = { ...settings, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}") };
+    } catch (ignored) {}
+
+    if (!Array.isArray(settings.stages) || settings.stages.length < 2) {
+      let hasOldData = false;
+      try { hasOldData = !!localStorage.getItem(STORAGE_KEY); } catch (ignored) {}
+      settings.stages = hasOldData ? ORIGINAL_STAGES : DEFAULT_STAGES;
+      settings.doneFrom = hasOldData ? 4 : 5;
+    }
+
+    let STAGES = settings.stages.map(String);
+    // Settings saved before the Done marker existed: use the matching default if the
+    // stages are one of the built-in sets, otherwise just the last stage.
+    if (settings.doneFrom === undefined) {
+      const same = (a, b) => a.length === b.length && a.every((s, i) => s === b[i]);
+      settings.doneFrom = same(STAGES, DEFAULT_STAGES) ? 5 : same(STAGES, ORIGINAL_STAGES) ? 4 : STAGES.length - 1;
+    }
+    fixDoneFrom();
+
+    // "Done" must start somewhere from the 2nd stage to the last, so there's always
+    // at least one To do stage and one Done stage.
+    function fixDoneFrom() {
+      const n = Number(settings.doneFrom);
+      settings.doneFrom = Number.isInteger(n) ? Math.min(Math.max(n, 1), STAGES.length - 1) : STAGES.length - 1;
+    }
+
+    function isDone(stageIndex) {
+      return stageIndex >= settings.doneFrom;
+    }
+
+    // The stage numbers in each group, e.g. To do = [0,1,2,3,4], Done = [5,6].
+    function todoStages() { return STAGES.map((s, i) => i).filter(i => !isDone(i)); }
+    function doneStages() { return STAGES.map((s, i) => i).filter(i => isDone(i)); }
+
+    function saveSettings() {
+      try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (ignored) {}
+    }
+    saveSettings();
+
+    // ================= LOADING AND SAVING UNITS =================
+
+    // Example units, only used the very first time (when nothing is saved yet).
+    const EXAMPLES = [
+      { id: 1, name: "Captain", hobby: "40K", faction: "Ultramarines", stage: 3, count: 1 },
+      { id: 2, name: "Boyz", hobby: "40K", faction: "Orks", stage: 0, count: 10 },
+      { id: 3, name: "Liberators", hobby: "Age of Sigmar", faction: "Stormcast Eternals", stage: 6, count: 5 },
+    ];
+
+    // All units live in this list. Each is a small bundle of facts (an "object").
+    let models = load();
+
+    // localStorage only holds text, so we turn the list into text (JSON) to save it,
+    // and back into a list to load it. "try / catch" means: try this, and if it goes
+    // wrong, do the catch part instead of crashing.
+    function load() {
+      let saved = null;
+      try {
+        saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) return cleanModels(EXAMPLES);   // first ever visit
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return cleanModels(parsed);
+        throw new Error("Saved data isn't a list");
+      } catch (error) {
+        // Damaged data: tuck the original away under another name so it's never lost.
+        try { if (saved) localStorage.setItem(STORAGE_KEY + "-unreadable", saved); } catch (ignored) {}
+        return cleanModels(EXAMPLES);
+      }
+    }
+
+    // Checks every unit and repairs anything odd before the app uses it. Used for saved
+    // data and backups, since both come from outside and could be damaged or out of date.
+    function cleanModels(list) {
+      const cleaned = [];
+      const usedIds = new Set();
+      for (const m of list) {
+        if (!m || typeof m.name !== "string" || !m.name.trim()) continue;
+        const stage = Number(m.stage);
+        const model = {
+          ...m,
+          name: m.name.trim(),
+          hobby: String(m.hobby || ""),
+          faction: String(m.faction || ""),
+          stage: Number.isInteger(stage) && stage >= 0 && stage < STAGES.length ? stage : 0,
+          count: cleanCount(m.count),
+          repaint: m.repaint === true,
+        };
+        if (Number.isInteger(model.id) && !usedIds.has(model.id)) usedIds.add(model.id);
+        else model.id = null; // given a fresh one below
+        cleaned.push(model);
+      }
+      let next = Math.max(0, ...usedIds) + 1;
+      for (const model of cleaned) if (model.id === null) model.id = next++;
+      return cleaned;
+    }
+
+    // save() reports back: true if it worked (or storage is switched off),
+    // false if storage is FULL. We warn about a full store only once.
+    let warnedFull = false;
+    function save() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(models));
+        warnedFull = false;
+        return true;
+      } catch (error) {
+        if (error.name === "QuotaExceededError") {
+          if (!warnedFull) {
+            alert("Storage is full, so recent changes aren't being saved. Save a backup, then remove some photos.");
+            warnedFull = true;
+          }
+          return false;
+        }
+        return true;
+      }
+    }
+
+    // ================= SMALL HELPERS =================
+
+    // A unit's proper name with its copy number: "Intercessors 2".
+    function fullName(model) { return model.copy ? `${model.name} ${model.copy}` : model.name; }
+    // The big name on a card: the nickname if there is one.
+    function displayName(model) { return model.nickname || fullName(model); }
+
+    // Models in a unit: a whole number, at least 1.
+    function cleanCount(value) {
+      const n = parseInt(value, 10);
+      return Number.isInteger(n) && n >= 1 ? n : 1;
+    }
+    // Adds up MODELS (not units): a 10-model squad counts as 10.
+    function modelCount(list) { return list.reduce((total, m) => total + (m.count || 1), 0); }
+
+    // A fresh ID, one higher than the highest in use.
+    function nextId() { return models.reduce((highest, m) => Math.max(highest, m.id), 0) + 1; }
+
+    // Blank removed, duplicates removed (that's what a Set does), sorted A-Z.
+    function uniqueSorted(values) {
+      return [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    }
+
+    // The ONE place units get added (used by the form and CSV import).
+    // Same name + game + faction as an existing unit? Then they're numbered.
+    function addModel(fields) {
+      const same = (a, b) => (a || "").toLowerCase() === (b || "").toLowerCase();
+      const matches = models.filter(m =>
+        same(m.name, fields.name) && same(m.hobby, fields.hobby) && same(m.faction, fields.faction));
+
+      const model = { id: nextId(), stage: 0, count: 1, repaint: false, ...fields };
+
+      if (matches.length > 0) {
+        let highest = Math.max(0, ...matches.map(m => m.copy || 0));
+        for (const m of matches) if (!m.copy) m.copy = ++highest;
+        model.copy = highest + 1;
+        // Match existing spelling, so "40k" and "40K" don't become two games.
+        model.name = matches[0].name;
+        model.hobby = matches[0].hobby;
+        model.faction = matches[0].faction;
+      }
+      models.push(model);
+      return model;
+    }
+
+    // ================= TABS =================
+
+    const views = {
+      dashboard: document.getElementById("view-dashboard"),
+      units: document.getElementById("view-units"),
+      settings: document.getElementById("view-settings"),
+    };
+    const tabButtons = document.querySelectorAll(".tabs button");
+
+    function showTab(name) {
+      if (!views[name]) name = "dashboard";
+      for (const [key, view] of Object.entries(views)) view.classList.toggle("hidden", key !== name);
+      tabButtons.forEach(b => {
+        if (b.dataset.tab === name) b.setAttribute("aria-current", "page");
+        else b.removeAttribute("aria-current");
+      });
+      settings.tab = name;
+      saveSettings();
+      if (name === "settings") renderSettings();
+      window.scrollTo(0, 0);
+    }
+    tabButtons.forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
+
+    // ================= FILTERS =================
+
+    // What the Units list is showing. An empty stages Set means "every stage".
+    const filters = { hobby: "", faction: "", stages: new Set(), repaint: false };
+
+    function clearFilters() {
+      filters.hobby = "";
+      filters.faction = "";
+      filters.stages = new Set();
+      filters.repaint = false;
+    }
+
+    // Jump from the dashboard to the Units tab with some filters already set.
+    function goToUnits(newFilters) {
+      clearFilters();
+      Object.assign(filters, newFilters);
+      openIds.clear();
+      render();
+      showTab("units");
+    }
+
+    function inScope(m) {
+      return (!filters.hobby || m.hobby === filters.hobby) && (!filters.faction || m.faction === filters.faction);
+    }
+    function isVisible(m) {
+      return inScope(m) &&
+             (filters.stages.size === 0 || filters.stages.has(m.stage)) &&
+             (!filters.repaint || m.repaint);
+    }
+
+    // Do two lists of stage numbers contain exactly the same stages?
+    function sameStages(set, list) {
+      return set.size === list.length && list.every(i => set.has(i));
+    }
+
+    // ================= DRAWING EVERYTHING =================
+
+    // render() redraws the screen from the data. Change the data first, then render().
+    // It saves first, so every change is saved from this one place.
+    function render() {
+      save();
+      renderDashboard();
+      renderUnits();
+    }
+
+    // ----- Charts -----
+
+    // Draws a doughnut chart as SVG (a picture made of shapes, written as code).
+    // Each stage is a slice of a circle's outline. The trick: a dashed line around the
+    // circle, where each "dash" is exactly as long as that stage's share.
+    const SVG_NS = "http://www.w3.org/2000/svg";
+    function donutChart(counts, size, thickness, mainText, subText, label) {
+      const svg = document.createElementNS(SVG_NS, "svg");
+      svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
+      svg.setAttribute("width", size);
+      svg.setAttribute("height", size);
+      svg.setAttribute("role", "img");
+      svg.setAttribute("aria-label", label);
+
+      const centre = size / 2;
+      const radius = (size - thickness) / 2;
+      const circumference = 2 * Math.PI * radius;
+      const total = counts.reduce((a, b) => a + b, 0);
+
+      const ring = (colour, dash, offset) => {
+        const c = document.createElementNS(SVG_NS, "circle");
+        c.setAttribute("cx", centre);
+        c.setAttribute("cy", centre);
+        c.setAttribute("r", radius);
+        c.setAttribute("fill", "none");
+        c.setAttribute("stroke", colour);
+        c.setAttribute("stroke-width", thickness);
+        if (dash) {
+          c.setAttribute("stroke-dasharray", dash);
+          c.setAttribute("stroke-dashoffset", offset);
+          // Start at 12 o'clock instead of 3 o'clock.
+          c.setAttribute("transform", `rotate(-90 ${centre} ${centre})`);
+        }
+        svg.appendChild(c);
+      };
+
+      ring("var(--border)"); // the empty background ring
+      const slices = counts.filter(c => c > 0).length;
+      const gap = slices > 1 ? 2 : 0; // a thin gap between slices
+      let travelled = 0;
+      counts.forEach((count, index) => {
+        if (!count) return;
+        const length = count / total * circumference;
+        ring(`var(--stage-${index})`, `${Math.max(length - gap, 0.5)} ${circumference}`, -travelled);
+        travelled += length;
+      });
+
+      const text = (content, y, sizePx, colour, weight) => {
+        const t = document.createElementNS(SVG_NS, "text");
+        t.setAttribute("x", centre);
+        t.setAttribute("y", y);
+        t.setAttribute("text-anchor", "middle");
+        t.setAttribute("fill", colour);
+        t.setAttribute("font-size", sizePx);
+        t.setAttribute("font-weight", weight);
+        t.textContent = content;
+        svg.appendChild(t);
+      };
+      text(mainText, centre + (subText ? 2 : 6), size * 0.17, "var(--text)", 700);
+      if (subText) text(subText, centre + size * 0.15, size * 0.09, "var(--muted)", 400);
+      return svg;
+    }
+
+    // ----- Dashboard -----
+
+    const donePercent = document.getElementById("done-percent");
+    const doneSummary = document.getElementById("done-summary");
+    const todoButton = document.getElementById("todo-button");
+    const doneButton = document.getElementById("done-button");
+    const repaintLink = document.getElementById("repaint-link");
+    const overallChart = document.getElementById("overall-chart");
+    const stageLegend = document.getElementById("stage-legend");
+    const factionGrid = document.getElementById("faction-grid");
+
+    function stageCounts(list) {
+      return STAGES.map((s, i) => modelCount(list.filter(m => m.stage === i)));
+    }
+    function doneCount(list) { return modelCount(list.filter(m => isDone(m.stage))); }
+
+    function renderDashboard() {
+      const total = modelCount(models);
+      const done = doneCount(models);
+      const todo = total - done;
+      const percent = total ? Math.round(done / total * 100) : 0;
+
+      donePercent.textContent = total ? `${percent}%` : "–";
+      doneSummary.textContent = total
+        ? `${done} of ${total} models done · ${models.length} units`
+        : "No units yet. Add some in Units, or import a CSV in Settings.";
+
+      todoButton.innerHTML = "";
+      todoButton.append(Object.assign(document.createElement("strong"), { textContent: todo }), "models to do");
+      doneButton.innerHTML = "";
+      doneButton.append(Object.assign(document.createElement("strong"), { textContent: done }), "models done");
+
+      const repaints = models.filter(m => m.repaint).length;
+      repaintLink.classList.toggle("hidden", repaints === 0);
+      repaintLink.textContent = `↻ ${repaints} repaint project${repaints === 1 ? "" : "s"}`;
+
+      // The big doughnut, plus a legend you can tap.
+      const counts = stageCounts(models);
+      overallChart.innerHTML = "";
+      overallChart.appendChild(donutChart(counts, 170, 26, `${percent}%`, "done",
+        counts.map((c, i) => `${STAGES[i]}: ${c}`).join(", ")));
+
+      stageLegend.innerHTML = "";
+      counts.forEach((count, index) => {
+        const item = document.createElement("li");
+        const button = document.createElement("button");
+        const dot = document.createElement("span");
+        dot.className = "dot";
+        dot.style.setProperty("--dot", `var(--stage-${index})`);
+        const num = document.createElement("span");
+        num.className = "num";
+        num.textContent = count;
+        button.append(dot, STAGES[index], num);
+        button.addEventListener("click", () => goToUnits({ stages: new Set([index]) }));
+        item.appendChild(button);
+        stageLegend.appendChild(item);
+      });
+
+      // One small doughnut per faction, like pie charts in a spreadsheet.
+      factionGrid.innerHTML = "";
+      const factions = uniqueSorted(models.map(m => m.faction));
+      if (models.some(m => !m.faction)) factions.push(""); // units with no faction
+      if (factions.length === 0) {
+        factionGrid.innerHTML = '<p class="hint">Factions appear here once you add units.</p>';
+      }
+      for (const faction of factions) {
+        const group = models.filter(m => m.faction === faction);
+        const groupTotal = modelCount(group);
+        const groupDone = doneCount(group);
+        const pct = groupTotal ? Math.round(groupDone / groupTotal * 100) : 0;
+        const button = document.createElement("button");
+        button.className = "faction-button";
+        const name = document.createElement("span");
+        name.textContent = faction || "No faction";
+        const small = document.createElement("small");
+        small.textContent = `${groupDone} of ${groupTotal} done`;
+        button.append(
+          donutChart(stageCounts(group), 92, 14, `${pct}%`, "", `${faction || "No faction"}: ${pct}% done`),
+          name, small);
+        button.addEventListener("click", () => goToUnits({ faction }));
+        factionGrid.appendChild(button);
+      }
+    }
+
+    todoButton.addEventListener("click", () => goToUnits({ stages: new Set(todoStages()) }));
+    doneButton.addEventListener("click", () => goToUnits({ stages: new Set(doneStages()) }));
+    repaintLink.addEventListener("click", () => goToUnits({ repaint: true }));
+
+    // ----- Units -----
+
+    const list = document.getElementById("unit-list");
+    const hobbyFilter = document.getElementById("hobby-filter");
+    const factionFilter = document.getElementById("faction-filter");
+    const groupChips = document.getElementById("group-chips");
+    const stageChips = document.getElementById("stage-chips");
+    const filterNote = document.getElementById("filter-note");
+    const clearFiltersButton = document.getElementById("clear-filters");
+
+    // Which units have their details panel open. Not saved.
+    const openIds = new Set();
+
+    function fillSelect(select, label, values, current) {
+      select.innerHTML = "";
+      select.add(new Option(`All ${label}`, ""));
+      for (const value of values) select.add(new Option(value, value));
+      select.value = current;
+    }
+
+    function makeChip(text, pressed, onClick, colourVar) {
+      const chip = document.createElement("button");
+      chip.className = "chip";
+      chip.textContent = text;
+      chip.setAttribute("aria-pressed", pressed);
+      if (colourVar) chip.style.setProperty("--chip-colour", colourVar);
+      chip.addEventListener("click", onClick);
+      return chip;
+    }
+
+    function renderUnits() {
+      // Dropdowns: the faction list only shows factions from the chosen game.
+      const games = uniqueSorted(models.map(m => m.hobby));
+      if (!games.includes(filters.hobby)) filters.hobby = "";
+      const factions = uniqueSorted(models.filter(m => !filters.hobby || m.hobby === filters.hobby).map(m => m.faction));
+      if (!factions.includes(filters.faction)) filters.faction = "";
+      fillSelect(hobbyFilter, "games", games, filters.hobby);
+      fillSelect(factionFilter, "factions", factions, filters.faction);
+
+      // Group chips: one tap for every To do (or Done) stage at once.
+      const todo = todoStages();
+      const done = doneStages();
+      groupChips.innerHTML = "";
+      groupChips.append(
+        makeChip("To do", sameStages(filters.stages, todo), () => {
+          filters.stages = sameStages(filters.stages, todo) ? new Set() : new Set(todo);
+          render();
+        }),
+        makeChip("Done", sameStages(filters.stages, done), () => {
+          filters.stages = sameStages(filters.stages, done) ? new Set() : new Set(done);
+          render();
+        }),
+        makeChip("↻ Repaint", filters.repaint, () => {
+          filters.repaint = !filters.repaint;
+          render();
+        }),
+      );
+
+      // Stage chips: tap several to combine them.
+      stageChips.innerHTML = "";
+      STAGES.forEach((stageName, index) => {
+        stageChips.appendChild(makeChip(stageName, filters.stages.has(index), () => {
+          if (filters.stages.has(index)) filters.stages.delete(index);
+          else filters.stages.add(index);
+          render();
+        }, `var(--stage-${index})`));
+      });
+
+      const visible = models.filter(isVisible);
+      const anyFilter = filters.hobby || filters.faction || filters.stages.size > 0 || filters.repaint;
+      clearFiltersButton.classList.toggle("hidden", !anyFilter);
+      filterNote.textContent = anyFilter
+        ? `Showing ${visible.length} of ${models.length} units (${modelCount(visible)} models).`
+        : `${models.length} units, ${modelCount(models)} models. Tap stages to filter; tap several to combine.`;
+
+      list.innerHTML = "";
+      if (models.length === 0) {
+        list.innerHTML = '<li class="empty">No units yet. Press + Add unit, or import a CSV in Settings.</li>';
+        return;
+      }
+      if (visible.length === 0) {
+        list.innerHTML = '<li class="empty">No units match these filters.</li>';
+        return;
+      }
+      for (const model of visible) list.appendChild(buildCard(model));
+    }
+
+    function buildCard(model) {
+      const item = document.createElement("li");
+      item.className = "unit";
+      item.style.setProperty("--stage-colour", `var(--stage-${model.stage})`);
+      const isOpen = openIds.has(model.id);
+
+      if (model.photo) {
+        const thumb = document.createElement("img");
+        thumb.className = "thumb";
+        thumb.src = model.photo;
+        thumb.alt = "";
+        item.appendChild(thumb);
+      }
+
+      // The text area. Tapping it now OPENS THE DETAILS (it no longer changes the stage).
+      const info = document.createElement("div");
+      info.className = "info";
+      info.setAttribute("role", "button");
+      info.tabIndex = 0;
+      info.setAttribute("aria-expanded", isOpen);
+      info.setAttribute("aria-label", `${displayName(model)}, ${STAGES[model.stage]}. Show details.`);
+
+      const name = document.createElement("div");
+      name.className = "name";
+      name.textContent = displayName(model); // textContent shows typed text safely, exactly as typed
+
+      const details = document.createElement("div");
+      details.className = "details";
+      const realName = model.nickname ? fullName(model) : "";
+      const size = model.count > 1 ? `${model.count} models` : "";
+      details.textContent = [realName, size, model.hobby, model.faction].filter(Boolean).join(" · ");
+
+      const stage = document.createElement("div");
+      stage.className = "stage";
+      stage.textContent = STAGES[model.stage] + (model.repaint ? "  ·  ↻ repaint" : "");
+
+      const pips = document.createElement("div");
+      pips.className = "pips";
+      for (let i = 0; i < STAGES.length; i++) {
+        const pip = document.createElement("div");
+        pip.className = i <= model.stage ? "pip filled" : "pip";
+        pips.appendChild(pip);
+      }
+
+      info.append(name, details, stage, pips);
+      const toggle = () => {
+        if (openIds.has(model.id)) openIds.delete(model.id); else openIds.add(model.id);
+        render();
+      };
+      info.addEventListener("click", toggle);
+      info.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") { event.preventDefault(); toggle(); }
+      });
+
+      // The big ▲ button: the ONLY way to move up a stage from the list.
+      const up = document.createElement("button");
+      up.className = "up-button";
+      const atTop = model.stage >= STAGES.length - 1;
+      up.textContent = atTop ? "✓" : "▲";
+      up.disabled = atTop;
+      up.setAttribute("aria-label", atTop
+        ? `${displayName(model)} is ${STAGES[model.stage]}`
+        : `Move ${displayName(model)} up to ${STAGES[model.stage + 1]}`);
+      up.addEventListener("click", () => changeStage(model.id, +1));
+
+      item.append(info, up);
+      if (isOpen) item.appendChild(buildPanel(model));
+      return item;
+    }
+
+    // ----- The details panel -----
+
+    function buildPanel(model) {
+      const panel = document.createElement("div");
+      panel.className = "panel";
+
+      // Nickname: saves as you type ("input"), redraws when you leave the box ("change").
+      const nicknameLabel = document.createElement("label");
+      nicknameLabel.textContent = "Nickname (optional)";
+      const nickname = document.createElement("input");
+      nickname.placeholder = "e.g. The Gold Squad";
+      nickname.value = model.nickname || "";
+      nickname.addEventListener("input", () => { model.nickname = nickname.value.trim(); save(); });
+      nickname.addEventListener("change", () => render());
+      nicknameLabel.appendChild(nickname);
+
+      // Model count and repaint flag, side by side.
+      const extras = document.createElement("div");
+      extras.className = "row";
+      const countLabel = document.createElement("label");
+      countLabel.textContent = "Models in unit";
+      const countBox = document.createElement("input");
+      countBox.type = "number";
+      countBox.min = 1;
+      countBox.value = model.count || 1;
+      countBox.addEventListener("change", () => { model.count = cleanCount(countBox.value); render(); });
+      countLabel.appendChild(countBox);
+
+      const repaintLabel = document.createElement("label");
+      repaintLabel.className = "check-label";
+      const repaintBox = document.createElement("input");
+      repaintBox.type = "checkbox";
+      repaintBox.checked = !!model.repaint;
+      repaintBox.addEventListener("change", () => { model.repaint = repaintBox.checked; render(); });
+      repaintLabel.append(repaintBox, "Repaint project");
+      extras.append(countLabel, repaintLabel);
+
+      // Notes: saves half a second after you stop typing, and when you leave the box.
+      const noteLabel = document.createElement("label");
+      noteLabel.textContent = "Paint scheme notes";
+      const note = document.createElement("textarea");
+      note.placeholder = "e.g. blue armour, black wash, gold trim";
+      note.value = model.note || "";
+      let noteTimer;
+      note.addEventListener("input", () => {
+        model.note = note.value;
+        clearTimeout(noteTimer);
+        noteTimer = setTimeout(save, 500);
+      });
+      note.addEventListener("blur", save);
+      noteLabel.appendChild(note);
+
+      panel.append(nicknameLabel, extras, noteLabel);
+
+      if (model.photo) {
+        const photo = document.createElement("img");
+        photo.className = "photo";
+        photo.src = model.photo;
+        photo.alt = `Photo of ${displayName(model)}`;
+        panel.appendChild(photo);
+      }
+
+      // A hidden file picker. accept="image/*" means Android offers camera or gallery.
+      const picker = document.createElement("input");
+      picker.type = "file";
+      picker.accept = "image/*";
+      picker.className = "hidden";
+      picker.addEventListener("change", () => {
+        const file = picker.files[0];
+        if (file) shrinkPhoto(file, (small) => setPhoto(model, small));
+      });
+
+      const buttons = document.createElement("div");
+      buttons.className = "panel-buttons";
+
+      const back = document.createElement("button");
+      back.className = "plain-button";
+      back.textContent = "◀ Back a stage";
+      back.disabled = model.stage === 0;
+      back.addEventListener("click", () => changeStage(model.id, -1));
+
+      const addPhoto = document.createElement("button");
+      addPhoto.className = "plain-button";
+      addPhoto.textContent = model.photo ? "Replace photo" : "Add photo";
+      addPhoto.addEventListener("click", () => picker.click());
+      buttons.append(back, addPhoto);
+
+      if (model.photo) {
+        const removePhoto = document.createElement("button");
+        removePhoto.className = "plain-button";
+        removePhoto.textContent = "Remove photo";
+        removePhoto.addEventListener("click", () => { if (confirm("Remove this photo?")) setPhoto(model, null); });
+        buttons.appendChild(removePhoto);
+      }
+
+      const del = document.createElement("button");
+      del.className = "danger-button";
+      del.textContent = "Delete";
+      del.addEventListener("click", () => deleteModel(model.id));
+      buttons.appendChild(del);
+
+      panel.append(buttons, picker);
+      return panel;
+    }
+
+    // ----- Changing things -----
+
+    // Move a unit up (+1) or back (-1) a stage, then show a message with Undo.
+    function changeStage(id, direction) {
+      const model = models.find(m => m.id === id);
+      if (!model) return;
+      const before = model.stage;
+      const after = before + direction;
+      if (after < 0 || after >= STAGES.length) return;
+      model.stage = after;
+      render();
+      showToast(`${displayName(model)} → ${STAGES[after]}`, () => {
+        model.stage = before;
+        render();
+      });
+    }
+
+    function deleteModel(id) {
+      const model = models.find(m => m.id === id);
+      if (model && confirm(`Delete "${displayName(model)}"?`)) {
+        models = models.filter(m => m.id !== id);
+        openIds.delete(id);
+        render();
+      }
+    }
+
+    // Photos: shrink to at most 600 pixels across as a compressed JPEG (usually 40-80 KB),
+    // because browser storage only holds about 5 MB in total.
+    function shrinkPhoto(file, whenDone) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, 600 / Math.max(img.width, img.height));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+          whenDone(canvas.toDataURL("image/jpeg", 0.7));
+        };
+        img.onerror = () => alert("Sorry, that image couldn't be read.");
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Adds, replaces or removes (null) a photo, undoing it if storage is full.
+    function setPhoto(model, newPhoto) {
+      const previous = model.photo;
+      if (newPhoto) model.photo = newPhoto; else delete model.photo;
+      if (!save()) { if (previous) model.photo = previous; else delete model.photo; }
+      render();
+    }
+
+    // ----- The pop-up message with Undo -----
+
+    const toast = document.getElementById("toast");
+    const toastText = document.getElementById("toast-text");
+    const toastUndo = document.getElementById("toast-undo");
+    let toastTimer;
+    let undoAction = null;
+
+    function showToast(message, undo) {
+      toastText.textContent = message;
+      undoAction = undo || null;
+      toastUndo.classList.toggle("hidden", !undo);
+      toast.classList.remove("hidden");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.add("hidden"), 4000); // vanishes after 4 seconds
+    }
+    toastUndo.addEventListener("click", () => {
+      if (undoAction) undoAction();
+      undoAction = null;
+      toast.classList.add("hidden");
+    });
+
+    // ----- Filters and the add form -----
+
+    hobbyFilter.addEventListener("change", () => {
+      filters.hobby = hobbyFilter.value;
+      filters.faction = "";
+      render();
+    });
+    factionFilter.addEventListener("change", () => { filters.faction = factionFilter.value; render(); });
+    clearFiltersButton.addEventListener("click", () => { clearFilters(); render(); });
+
+    const form = document.getElementById("add-form");
+    const toggleAdd = document.getElementById("toggle-add");
+    const nameInput = document.getElementById("name-input");
+    const countInput = document.getElementById("count-input");
+    const hobbyInput = document.getElementById("hobby-input");
+    const factionInput = document.getElementById("faction-input");
+
+    toggleAdd.addEventListener("click", () => {
+      const opening = form.classList.contains("hidden");
+      form.classList.toggle("hidden", !opening);
+      toggleAdd.textContent = opening ? "Close" : "+ Add unit";
+      if (opening) nameInput.focus();
+    });
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();                   // stop the browser reloading the page
+      if (!nameInput.value.trim()) return;      // ignore names that are only spaces
+      const newModel = addModel({
+        name: nameInput.value.trim(),
+        count: cleanCount(countInput.value),
+        hobby: hobbyInput.value.trim(),
+        faction: factionInput.value.trim(),
+      });
+      if (!isVisible(newModel)) clearFilters();  // so a new unit never seems to vanish
+      nameInput.value = "";
+      countInput.value = 1;
+      nameInput.focus();
+      // Game and faction stay filled in, since you'll often add several from one army.
+      render();
+      showToast(`Added ${displayName(newModel)}`);
+    });
+
+    // ================= SETTINGS TAB =================
+
+    // ----- Stage editor -----
+    // You edit a DRAFT copy; nothing changes until you press Save.
+    // Each draft row remembers which stage it started as ("from"), so when you reorder,
+    // units move along with their stage instead of staying at the same position.
+
+    const stageList = document.getElementById("stage-list");
+    const doneFromSelect = document.getElementById("done-from");
+    let draft = [];          // e.g. [{ name: "Primed", from: 3 }, { name: "New stage", from: null }]
+    let draftDoneItem = null; // the draft row where Done starts
+
+    function startDraft() {
+      draft = STAGES.map((name, i) => ({ name, from: i }));
+      draftDoneItem = draft[settings.doneFrom];
+    }
+
+    function renderStageEditor() {
+      const colours = stageColours(settings.palette, draft.length);
+      stageList.innerHTML = "";
+      draft.forEach((item, index) => {
+        if (item === draftDoneItem) {
+          const divider = document.createElement("li");
+          divider.className = "done-divider";
+          divider.textContent = "Done from here";
+          stageList.appendChild(divider);
+        }
+        const row = document.createElement("li");
+        row.className = "stage-row";
+
+        const dot = document.createElement("span");
+        dot.className = "dot";
+        dot.style.setProperty("--dot", colours[index]);
+
+        const input = document.createElement("input");
+        input.value = item.name;
+        input.setAttribute("aria-label", `Stage ${index + 1} name`);
+        input.addEventListener("input", () => { item.name = input.value; refreshDoneOptions(); });
+
+        const iconButton = (text, label, disabled, onClick, extraClass) => {
+          const b = document.createElement("button");
+          b.className = "icon-button" + (extraClass ? " " + extraClass : "");
+          b.textContent = text;
+          b.setAttribute("aria-label", label);
+          b.disabled = disabled;
+          b.addEventListener("click", onClick);
+          return b;
+        };
+
+        // Swapping two neighbours in the list moves a stage up or down.
+        const move = (offset) => {
+          const target = index + offset;
+          [draft[index], draft[target]] = [draft[target], draft[index]];
+          renderStageEditor();
+        };
+
+        row.append(
+          dot, input,
+          iconButton("↑", `Move ${item.name} up`, index === 0, () => move(-1)),
+          iconButton("↓", `Move ${item.name} down`, index === draft.length - 1, () => move(+1)),
+          iconButton("✕", `Remove ${item.name}`, draft.length <= 2, () => {
+            draft.splice(index, 1);
+            if (!draft.includes(draftDoneItem)) draftDoneItem = draft[draft.length - 1];
+            renderStageEditor();
+          }, "remove"),
+        );
+        stageList.appendChild(row);
+      });
+      refreshDoneOptions();
+    }
+
+    // The "Done starts at" dropdown: any stage except the first.
+    function refreshDoneOptions() {
+      doneFromSelect.innerHTML = "";
+      draft.forEach((item, index) => {
+        if (index === 0) return;
+        doneFromSelect.add(new Option(item.name.trim() || `Stage ${index + 1}`, index));
+      });
+      let doneIndex = draft.indexOf(draftDoneItem);
+      if (doneIndex < 1) { doneIndex = Math.max(1, draft.length - 1); draftDoneItem = draft[doneIndex]; }
+      doneFromSelect.value = doneIndex;
+    }
+
+    doneFromSelect.addEventListener("change", () => {
+      draftDoneItem = draft[Number(doneFromSelect.value)];
+      renderStageEditor();
+    });
+
+    document.getElementById("add-stage").addEventListener("click", () => {
+      if (draft.length >= 10) { alert("You can have up to 10 stages."); return; }
+      draft.push({ name: "New stage", from: null });
+      renderStageEditor();
+      const inputs = stageList.querySelectorAll("input");
+      const last = inputs[inputs.length - 1];
+      last.focus();
+      last.select();
+    });
+
+    document.getElementById("reset-stages").addEventListener("click", () => {
+      startDraft();
+      renderStageEditor();
+    });
+
+    document.getElementById("save-stages").addEventListener("click", () => {
+      const names = draft.map(item => item.name.trim());
+      if (names.some(n => !n)) { alert("Every stage needs a name."); return; }
+      const lower = names.map(n => n.toLowerCase());
+      if (new Set(lower).size !== lower.length) { alert("Each stage needs a different name."); return; }
+
+      // Work out where each OLD stage now sits. "map[old] = new".
+      const map = new Array(STAGES.length);
+      draft.forEach((item, newIndex) => { if (item.from !== null) map[item.from] = newIndex; });
+      // A removed stage: its units drop to the nearest earlier stage that still exists.
+      const removed = [];
+      for (let old = 0; old < STAGES.length; old++) {
+        if (map[old] !== undefined) continue;
+        removed.push(old);
+        let k = old - 1;
+        while (k >= 0 && map[k] === undefined) k--;
+        map[old] = k >= 0 ? map[k] : 0;
+      }
+      const affected = models.filter(m => removed.includes(m.stage));
+      if (affected.length && !confirm(
+        `${affected.length} unit(s) are in a stage you've removed. They'll move to the nearest earlier stage. Continue?`)) {
+        return;
+      }
+
+      models.forEach(m => { m.stage = map[m.stage]; });
+      settings.doneFrom = draft.indexOf(draftDoneItem);
+      settings.stages = STAGES = names;
+      fixDoneFrom();
+      saveSettings();
+      applyPalette(settings.palette);
+      filters.stages = new Set();
+      render();
+      renderSettings();
+      showToast("Stages saved");
+    });
+
+    // ----- Colours -----
+
+    // Each palette runs from "not started" to "finished". You can have any number of
+    // stages, so the app BLENDS between these colours to give each stage its own shade.
+    const PALETTES = {
+      ice:        { label: "Ice (original)",          colours: ["#64748b", "#6366f1", "#38bdf8", "#22d3ee", "#a7f3d0"] },
+      frost:      { label: "Frost (higher contrast)", colours: ["#64748b", "#6366f1", "#38bdf8", "#2dd4bf", "#a7f3d0"] },
+      greyscale:  { label: "Shades of Grey",          colours: ["#6b7280", "#8f96a3", "#b4bac4", "#d9dde3", "#ffffff"] },
+      // Based on the Okabe-Ito colours, designed to stay distinct for common colour blindness.
+      colourblind:{ label: "Colour-blind friendly",   colours: ["#8b95a5", "#56b4e9", "#cc79a7", "#e69f00", "#f0e442"] },
+    };
+
+    // Mixes two colours: amount 0 = colour a, 1 = colour b, 0.5 = halfway.
+    // "#38bdf8" is three pairs of hex digits (red 38, green bd, blue f8); we blend each pair.
+    function mixColours(a, b, amount) {
+      const partsA = [1, 3, 5].map(i => parseInt(a.slice(i, i + 2), 16));
+      const partsB = [1, 3, 5].map(i => parseInt(b.slice(i, i + 2), 16));
+      return "#" + partsA.map((value, k) =>
+        Math.round(value + (partsB[k] - value) * amount).toString(16).padStart(2, "0")).join("");
+    }
+
+    // A list of n colours spread evenly along a palette.
+    function stageColours(paletteName, n) {
+      const colours = (PALETTES[paletteName] || PALETTES.ice).colours;
+      const steps = colours.length - 1;
+      return Array.from({ length: n }, (unused, index) => {
+        const position = n === 1 ? 0 : index / (n - 1) * steps;
+        const low = Math.floor(position);
+        const high = Math.min(low + 1, steps);
+        return mixColours(colours[low], colours[high], position - low);
+      });
+    }
+
+    // Sets --stage-0, --stage-1 ... so everything using them updates instantly.
+    function applyPalette(name) {
+      const colours = stageColours(name, STAGES.length);
+      colours.forEach((colour, index) => document.documentElement.style.setProperty(`--stage-${index}`, colour));
+      document.documentElement.style.setProperty("--done-colour", colours[colours.length - 1]);
+    }
+
+    const paletteSelect = document.getElementById("palette-select");
+    for (const [key, palette] of Object.entries(PALETTES)) paletteSelect.add(new Option(palette.label, key));
+    if (!PALETTES[settings.palette]) settings.palette = "ice";
+    paletteSelect.value = settings.palette;
+    paletteSelect.addEventListener("change", () => {
+      settings.palette = paletteSelect.value;
+      saveSettings();
+      applyPalette(settings.palette);
+      renderStageEditor();
+    });
+
+    // ----- Data summary and delete all -----
+
+    const dataSummary = document.getElementById("data-summary");
+
+    function renderSettings() {
+      startDraft();
+      renderStageEditor();
+      let used = 0;
+      try { used = (localStorage.getItem(STORAGE_KEY) || "").length; } catch (ignored) {}
+      const photos = models.filter(m => m.photo).length;
+      dataSummary.textContent =
+        `${models.length} units, ${modelCount(models)} models, ${photos} photo${photos === 1 ? "" : "s"}. ` +
+        `Using about ${Math.max(1, Math.round(used / 1024))} KB of roughly 5,000 KB browser storage.`;
+    }
+
+    document.getElementById("delete-all").addEventListener("click", () => {
+      if (!models.length) return;
+      if (!confirm(`Delete all ${models.length} units? A copy is kept on this device, but please save a backup first.`)) return;
+      try { localStorage.setItem(STORAGE_KEY + "-before-delete-all", JSON.stringify(models)); } catch (ignored) {}
+      models = [];
+      openIds.clear();
+      clearFilters();
+      render();
+      renderSettings();
+    });
+
+    // ================= BACKUPS AND CSV =================
+
+    // Hands the browser some text and asks it to download it as a file.
+    function downloadFile(filename, text, type) {
+      const blob = new Blob([text], { type });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000); // instantly can cancel it on some phones
+    }
+
+    function readFile(file, whenRead) {
+      const reader = new FileReader();
+      reader.onload = () => whenRead(reader.result);
+      reader.readAsText(file);
+    }
+
+    // Backups include your stages, since a unit's stage is a position in that list.
+    document.getElementById("export-button").addEventListener("click", () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const backup = { app: "Shades of Grey", version: 3, stages: STAGES, doneFrom: settings.doneFrom, models };
+      downloadFile(`shades-of-grey-backup-${today}.json`, JSON.stringify(backup, null, 2), "application/json");
+    });
+
+    const restoreFile = document.getElementById("restore-file");
+    document.getElementById("restore-button").addEventListener("click", () => restoreFile.click());
+    restoreFile.addEventListener("change", () => {
+      const file = restoreFile.files[0];
+      if (!file) return;
+      readFile(file, (text) => {
+        try {
+          const parsed = JSON.parse(text);
+          // Old backups are just a list; newer ones also hold the stages.
+          const backupModels = Array.isArray(parsed) ? parsed : parsed && parsed.models;
+          if (!Array.isArray(backupModels)) throw new Error("Not a backup");
+          const backupStages = !Array.isArray(parsed) && Array.isArray(parsed.stages) && parsed.stages.length >= 2
+            ? parsed.stages.map(String) : null;
+
+          // Clean the units against the backup's own stages, BEFORE touching your data.
+          const currentStages = STAGES;
+          if (backupStages) STAGES = backupStages;
+          const restored = cleanModels(backupModels);
+          STAGES = currentStages;
+          if (restored.length === 0) throw new Error("No usable units");
+
+          if (confirm(`Replace your current ${models.length} units with ${restored.length} from the backup?`)) {
+            try { localStorage.setItem(STORAGE_KEY + "-before-restore", JSON.stringify(models)); } catch (ignored) {}
+            models = restored;
+            if (backupStages) {
+              settings.stages = STAGES = backupStages;
+              settings.doneFrom = parsed.doneFrom;
+              fixDoneFrom();
+              saveSettings();
+              applyPalette(settings.palette);
+            }
+            openIds.clear();
+            clearFilters();
+            render();
+            renderSettings();
+            showToast("Backup restored");
+          }
+        } catch (error) {
+          alert("That file doesn't look like a Shades of Grey backup.");
+        }
+        restoreFile.value = "";
+      });
+    });
+
+    // Turns CSV text into rows of cells. A value can contain a comma if it's wrapped in
+    // quotes, e.g. "Boyz, mob 2", so we read one character at a time.
+    function parseCSV(text) {
+      const rows = [];
+      let row = [];
+      let cell = "";
+      let insideQuotes = false;
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        if (insideQuotes) {
+          if (char === '"' && text[i + 1] === '"') { cell += '"'; i++; } // "" means a real quote mark
+          else if (char === '"') insideQuotes = false;
+          else cell += char;
+        } else if (char === '"' && cell === "") {
+          insideQuotes = true;       // a quote only opens a quoted value at the start of a cell
+        } else if (char === ",") {
+          row.push(cell); cell = "";
+        } else if (char === "\n") {
+          row.push(cell); rows.push(row); row = []; cell = "";
+        } else if (char !== "\r") {
+          cell += char;
+        }
+      }
+      row.push(cell);
+      rows.push(row);
+      return rows.filter(r => r.some(c => c.trim() !== ""));
+    }
+
+    // A stage number from a stage name (any capitals) or a number. Unknown = first stage.
+    function stageFromText(text) {
+      const cleaned = (text || "").trim().toLowerCase();
+      const byName = STAGES.findIndex(s => s.toLowerCase() === cleaned);
+      if (byName !== -1) return byName;
+      const asNumber = Number(cleaned);
+      if (cleaned !== "" && Number.isInteger(asNumber) && asNumber >= 0 && asNumber < STAGES.length) return asNumber;
+      return 0;
+    }
+
+    // Import CSV ADDS units to the ones you already have.
+    const csvFile = document.getElementById("csv-file");
+    document.getElementById("csv-button").addEventListener("click", () => csvFile.click());
+    csvFile.addEventListener("change", () => {
+      const file = csvFile.files[0];
+      if (!file) return;
+      readFile(file, (text) => {
+        let rows = parseCSV(text);
+        if (rows.length && rows[0][0].trim().toLowerCase() === "name") rows = rows.slice(1); // skip titles
+
+        let added = 0;
+        const unknownStages = new Set();
+        rows.forEach((cells) => {
+          const name = (cells[0] || "").trim();
+          if (!name) return;
+          const stageText = (cells[3] || "").trim();
+          if (stageText && !STAGES.some(s => s.toLowerCase() === stageText.toLowerCase()) && isNaN(Number(stageText))) {
+            unknownStages.add(stageText);
+          }
+          addModel({
+            name,
+            hobby: (cells[1] || "").trim(),
+            faction: (cells[2] || "").trim(),
+            stage: stageFromText(cells[3]),
+            nickname: (cells[4] || "").trim(),
+            count: cleanCount(cells[5]),
+            repaint: ["yes", "y", "true", "1"].includes((cells[6] || "").trim().toLowerCase()),
+            note: (cells[7] || "").trim(),
+          });
+          added++;
+        });
+
+        render();
+        renderSettings();
+        let message = added ? `Added ${added} unit${added === 1 ? "" : "s"}.` : "No units found in that file.";
+        if (unknownStages.size) {
+          message += `\n\nThese stages didn't match yours, so those units were put at "${STAGES[0]}": ` +
+                     [...unknownStages].join(", ") + ". You can rename your stages in Settings.";
+        }
+        alert(message);
+        csvFile.value = "";
+      });
+    });
+
+    document.getElementById("template-button").addEventListener("click", () => {
+      const last = STAGES[STAGES.length - 1];
+      const template =
+        "name,game,faction,stage,nickname,count,repaint,notes\n" +
+        `Intercessors,40K,Ultramarines,${STAGES[0]},,5,no,\n` +
+        `Intercessors,40K,Ultramarines,${STAGES[Math.min(3, STAGES.length - 1)]},The Gold Squad,5,no,\n` +
+        `Redemptor Dreadnought,40K,Ultramarines,${last},,1,yes,"Magnetised, so can swap guns"\n`;
+      downloadFile("shades-of-grey-template.csv", template, "text/csv");
+    });
+
+    // ================= START UP =================
+    applyPalette(settings.palette);
+    render();
+    showTab(settings.tab);
+
+    // ================= PHASE 6: WORK OFFLINE =================
+    // A "service worker" is a small helper script (sw.js) that the browser runs in the
+    // background. It keeps a copy of the app on your phone so it opens without internet.
+    // "if" checks the browser supports it first, so older browsers just skip this.
+    // It only works from a web address (https://...), not from a file opened on your PC.
+    if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    }
+  </script>
+</body>
+</html>
