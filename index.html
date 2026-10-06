@@ -2296,7 +2296,7 @@
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
     const APP_VERSION = "v2";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
-    const FEEDBACK_URL = "";
+    const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
       { version: "v2", date: "6 Oct 2026", changes: [
         "Import a list from the Warhammer app: paste it in Settings and its units are added. Units you already own are skipped and renamed to the app's names.",
@@ -2319,7 +2319,8 @@
       const link = document.getElementById("feedback-link");
       link.classList.toggle("hidden", !FEEDBACK_URL);
       document.getElementById("feedback-soon").classList.toggle("hidden", !!FEEDBACK_URL);
-      if (FEEDBACK_URL) link.href = FEEDBACK_URL;
+      // "?version=v2" tells the form which version the tester is on, so they don't have to.
+      if (FEEDBACK_URL) link.href = `${FEEDBACK_URL}?version=${encodeURIComponent(APP_VERSION)}`;
       document.getElementById("version-note").textContent = `You're on version ${APP_VERSION}.`;
       document.getElementById("version-tag").textContent = APP_VERSION;
       const box = document.getElementById("changelog");
