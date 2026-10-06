@@ -169,8 +169,9 @@
       color: var(--muted);
       border: 1px solid var(--border);
       border-left: 4px solid var(--chip-colour, var(--border));
-      padding: 8px 12px;
+      padding: 11px 14px;
       font-size: 13px;
+      min-height: 40px;
       border-radius: 999px;   /* pill shape */
     }
     .chip[aria-pressed="true"] { color: var(--background); background: var(--accent); border-color: var(--accent); font-weight: 600; }
@@ -245,12 +246,13 @@
 
     ol.stage-list { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 8px; }
     .stage-row { display: flex; align-items: center; gap: 6px; }
-    .stage-row input { flex: 1; padding: 9px; }
+    .stage-row input { flex: 1; padding: 9px; min-width: 0; width: 100%; }   /* min-width 0 lets it shrink on small phones */
     .icon-button {
       width: 40px; height: 40px; flex-shrink: 0;
       background: transparent; color: var(--muted); border: 1px solid var(--border);
       font-size: 15px;
     }
+    @media (max-width: 400px) { .icon-button { width: 36px; height: 40px; } .stage-row { gap: 4px; } }
     .icon-button.remove:hover { color: var(--danger); border-color: var(--danger); }
     .done-divider {
       font-size: 12px; color: var(--done-colour); text-align: center;
@@ -275,16 +277,135 @@
       font-size: 14px;
       z-index: 20;
     }
-    .toast button { margin-left: auto; background: none; color: #0369a1; font-weight: 700; padding: 4px 6px; }
+    .toast button { margin-left: auto; background: none; color: #0369a1; font-weight: 700; padding: 10px 12px; margin: -8px -8px -8px auto; min-height: 44px; }
 
-    .hidden { display: none; }
+    /* The small version number beside the title, shown on every tab. */
+    .version-tag { font-size: 12px; font-weight: 500; color: var(--muted); vertical-align: middle; margin-left: 6px; }
+
+    /* ----- Import review ----- */
+    .review { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); display: grid; gap: 12px; }
+    .mode-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .mode-button {
+      background: var(--background); color: var(--text); border: 1px solid var(--border);
+      padding: 12px; text-align: left; display: grid; gap: 4px; font-size: 14px;
+    }
+    .mode-button small { color: var(--muted); font-size: 12px; }
+    .mode-button[aria-checked="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+    .mode-button[data-mode="replace"][aria-checked="true"] { border-color: var(--danger); box-shadow: inset 0 0 0 1px var(--danger); }
+    .review-tools { display: flex; gap: 16px; }
+    .review-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+    .review-row {
+      display: grid; gap: 6px; padding: 8px 10px; border-radius: 8px;
+      background: var(--background); border: 1px solid var(--border); font-size: 14px;
+    }
+    .review-row.clash { border-color: #fbbf24; }
+    .review-row label { display: flex; gap: 10px; align-items: center; cursor: pointer; }
+    .review-row input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--accent); flex-shrink: 0; }
+    .review-row .meta { color: var(--muted); font-size: 12px; }
+    .review-row .tag { font-size: 11px; padding: 2px 6px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); margin-left: auto; white-space: nowrap; }
+    .review-row.clash .tag { color: #fbbf24; border-color: #fbbf24; }
+    .review-row select { font-size: 14px; padding: 7px; }
+    .review-row.off { opacity: 0.5; }
+
+    /* ----- Help tab ----- */
+    .help details { border-top: 1px solid var(--border); padding: 12px 0; }
+    .help details:first-child { border-top: none; padding-top: 0; }
+    .help details:last-child { padding-bottom: 0; }
+    .help summary { font-size: 16px; color: var(--accent); }
+    .help ol, .help ul { padding-left: 20px; margin: 10px 0 0; color: var(--text); font-size: 15px; line-height: 1.55; }
+    .help li { margin-bottom: 6px; }
+
+    /* ----- Updates tab ----- */
+    .release { border-top: 1px solid var(--border); padding-top: 12px; margin-top: 12px; }
+    .release:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+    .release h3 { margin: 0; font-size: 15px; color: var(--accent); }
+    .release .date { color: var(--muted); font-size: 13px; margin-left: 8px; font-weight: 400; }
+    .release ul { margin: 8px 0 0; padding-left: 20px; color: var(--text); font-size: 14px; line-height: 1.5; }
+
+    /* ----- Bigger tab buttons (all screen sizes) ----- */
+    .tabs button { padding: 12px 0 14px; font-size: 13px; gap: 4px; min-height: 64px; }
+    .tabs .icon { font-size: 24px; display: inline-flex; justify-content: center; }
+    .tabs button[aria-current="page"] { background: rgba(125, 211, 252, 0.08); box-shadow: inset 0 3px 0 var(--accent); }
+
+    /* ----- Wide screens (laptops and desktops) -----
+       "@media (min-width: 900px)" means: only use these rules when the window is at
+       least 900 pixels wide. Phones never see them, so the phone layout is unchanged. */
+    @media (min-width: 900px) {
+      body { padding: 0 32px 40px; }
+      main { max-width: 1280px; }
+
+      /* The tabs move to the top as a bar of large buttons. "sticky" keeps them in
+         view as you scroll down. */
+      .tabs {
+        position: sticky; top: 0;
+        max-width: 1280px; margin: 0 auto 24px;
+        border-top: none; border-bottom: 1px solid var(--border);
+        border-radius: 0 0 14px 14px;
+        padding: 6px; gap: 6px;
+      }
+      .tabs button {
+        display: flex; justify-content: center; align-items: center; gap: 10px;
+        font-size: 17px; min-height: 56px; border-radius: 10px;
+      }
+      .tabs button:hover { color: var(--text); background: rgba(125, 211, 252, 0.05); }
+      .tabs button[aria-current="page"] { box-shadow: inset 0 -3px 0 var(--accent); }
+      h1 { font-size: 30px; margin: 24px 0 20px; }
+      .card { padding: 22px; }
+      h2 { font-size: 18px; }
+
+      /* Dashboard: the headline across the top, then stages and factions side by side. */
+      #view-dashboard:not(.hidden) {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start;
+      }
+      #view-dashboard .card { margin-bottom: 0; }
+      #view-dashboard .card:first-child { grid-column: 1 / -1; }
+      .big { font-size: 56px; }
+      .of { font-size: 16px; }
+      .group-button { padding: 16px 18px; font-size: 15px; }
+      .group-button strong { font-size: 28px; }
+      #overall-chart svg { width: 240px; height: 240px; }
+      .legend button { font-size: 16px; padding: 9px 4px; }
+      .faction-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; }
+      .faction-grid svg { width: 120px; height: 120px; }
+      .faction-button { font-size: 16px; padding: 16px 10px; }
+
+      /* Units: cards in columns instead of one long list. */
+      ul.units {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+        gap: 14px; align-items: start;
+      }
+      li.unit { margin-bottom: 0; padding: 16px; }
+      .name { font-size: 18px; }
+      .details, .stage { font-size: 14px; }
+
+      /* Settings: two columns of cards. */
+      #view-settings:not(.hidden) { columns: 2; column-gap: 18px; }
+      #view-settings .card { break-inside: avoid; }
+      #view-updates:not(.hidden) { display: grid; grid-template-columns: 1fr 2fr; gap: 18px; align-items: start; }
+      #view-updates .card { margin-bottom: 0; }
+      #view-help .help:not(.hidden) { columns: 2; column-gap: 40px; }
+      .help details { break-inside: avoid; }
+
+      /* The pop-up message sits at the bottom now the tabs are at the top. */
+      .toast { bottom: 24px; }
+    }
+
+    .hidden { display: none !important; }
   </style>
 </head>
 
 <body>
+  <!-- The tab bar. aria-current marks the tab you're on, for screen readers and for the CSS. -->
+  <nav class="tabs" aria-label="Sections">
+    <button data-tab="dashboard"><span class="icon"><svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="3" opacity="0.35"/><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="34 51" transform="rotate(-90 12 12)"/></svg></span>Dashboard</button>
+    <button data-tab="units"><span class="icon">☰</span>Units</button>
+    <button data-tab="help"><span class="icon"><svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.6v.6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="17.3" r="1.3" fill="currentColor"/></svg></span>Help</button>
+    <button data-tab="updates"><span class="icon"><svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg></span>Updates</button>
+    <button data-tab="settings"><span class="icon">⚙</span>Settings</button>
+  </nav>
   <!-- ===== HTML: this section is WHAT is on the page. ===== -->
   <main>
-    <h1>Shades of Grey</h1>
+    <h1>Shades of Grey <span class="version-tag" id="version-tag"></span></h1>
 
     <!-- ===== TAB 1: Dashboard ===== -->
     <section id="view-dashboard">
@@ -345,22 +466,104 @@
       <ul class="units" id="unit-list"></ul>
     </section>
 
-    <!-- ===== TAB 3: Settings ===== -->
-    <section id="view-settings" class="hidden">
-      <div class="card">
+    <!-- ===== TAB: Help (how to use the app) ===== -->
+    <section id="view-help" class="hidden">
+      <div class="card help-intro">
+        <h2>How to use Shades of Grey</h2>
+        <p class="hint" style="margin: 0;">Tap a topic to open it. New here? Start with <strong>Getting started</strong>.</p>
+      </div>
+      <div class="card help">
+        <details open>
+          <summary>Getting started</summary>
+          <ol>
+            <li>The app starts with three example units. Clear them in <strong>Settings → Delete all units</strong>.</li>
+            <li>Add your units: one at a time with <strong>Units → + Add unit</strong>, or many at once from a CSV file or a Warhammer app list (see <strong>Importing</strong>).</li>
+            <li>As you build and paint, press <strong>▲</strong> on a unit to move it up a stage.</li>
+            <li>Check the <strong>Dashboard</strong> to see how far you've got.</li>
+            <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
+          </ol>
+        </details>
         <details>
-          <summary>How to use Shades of Grey</summary>
+          <summary>Adding and updating units</summary>
           <ul>
-            <li><strong>Units</strong> holds everything you own. Add a unit with <strong>+ Add unit</strong>; the number box is how many models are in it.</li>
+            <li><strong>+ Add unit</strong> on the Units tab. The number box is how many models are in the unit.</li>
+            <li>Add the same unit twice (same name, game and faction) and they're numbered for you: Intercessors 1, Intercessors 2.</li>
             <li>Press <strong>▲</strong> to move a unit up a stage. Made a mistake? Press <strong>Undo</strong> on the message that pops up.</li>
             <li>Tap a unit's name to open its details: nickname, model count, repaint flag, paint notes, a photo, <strong>back a stage</strong>, and delete.</li>
-            <li>Add the same unit twice (same name, game and faction) and they're numbered for you: Intercessors 1, Intercessors 2.</li>
-            <li><strong>Dashboard</strong> counts models, not units. Tap any number, chart row or faction to jump to those units.</li>
-            <li>Your stages are yours to change below. <strong>Done starts at</strong> decides what counts as finished.</li>
-            <li>Everything is saved on this device only. <strong>Save a backup</strong> regularly, especially before clearing your browser.</li>
+            <li>Use the game and faction menus and the stage chips to filter the list. Tap several stage chips to combine them.</li>
+          </ul>
+        </details>
+        <details>
+          <summary>Stages and "Done"</summary>
+          <ul>
+            <li>Stages are yours to change in <strong>Settings → Stages</strong>: rename, reorder (↑ ↓), add or remove. Changes apply when you press Save.</li>
+            <li><strong>Done starts at</strong> decides what counts as finished. By default, "Painted with issues" and "Battle ready" are Done.</li>
+            <li>Units move with their stage when you reorder. If you remove a stage, its units drop to the stage before it.</li>
+          </ul>
+        </details>
+        <details>
+          <summary>The dashboard</summary>
+          <ul>
+            <li>It counts <strong>models</strong>, not units: a 10-model squad counts as 10.</li>
+            <li>Tap any number, chart row or faction to jump to those units.</li>
+            <li><strong>Repaint projects</strong> shows units you've flagged for a repaint.</li>
+          </ul>
+        </details>
+        <details>
+          <summary>Importing (CSV and Warhammer app)</summary>
+          <ul>
+            <li><strong>From the Warhammer app:</strong> open a list, tap Export, copy it as text, then in <strong>Settings → Warhammer app list</strong> paste it and press Read list.</li>
+            <li><strong>From a spreadsheet:</strong> save it as CSV with the columns name, game, faction, stage, nickname, count, repaint, notes, then use <strong>Import CSV</strong>. <strong>CSV template</strong> gives you an example file.</li>
+            <li>Before anything changes, you choose <strong>Add to my collection</strong> or <strong>Replace my collection</strong>, and can untick any units you don't want.</li>
+            <li>Units you already have start unticked. If one has a different name in the import, it's highlighted so you can pick which name to keep. The Warhammer app's name is the default.</li>
+            <li>Changed your mind? Press <strong>Undo</strong> straight after.</li>
+          </ul>
+        </details>
+        <details>
+          <summary>Your data and backups</summary>
+          <ul>
+            <li>Everything is saved <strong>on this device only</strong>, in your browser. Nobody else can see it, and it isn't sent anywhere.</li>
+            <li>Clearing your browser's data or uninstalling the app deletes it, so <strong>Save backup</strong> regularly. The app reminds you after two weeks.</li>
+            <li><strong>Restore backup</strong> brings a backup file back, including your stages.</li>
+            <li><strong>Export CSV</strong> saves your collection as a spreadsheet (without photos).</li>
+            <li>New phone? Save a backup on the old one, open the app on the new one, and restore it.</li>
+          </ul>
+        </details>
+        <details>
+          <summary>Installing on your phone</summary>
+          <ul>
+            <li>Open the app's web address in Chrome, then use the menu (⋮) and choose <strong>Add to Home screen</strong> or <strong>Install app</strong>.</li>
+            <li>It works with no internet. Updates arrive next time you open it online; you may need to close and reopen it once.</li>
+          </ul>
+        </details>
+        <details>
+          <summary>Updates and feedback</summary>
+          <ul>
+            <li>The version number is next to the title. The <strong>Updates</strong> tab lists what changed in each version.</li>
+            <li>Found a bug or have an idea? Use <strong>Give feedback</strong> on the Updates tab.</li>
           </ul>
         </details>
       </div>
+    </section>
+
+    <!-- ===== TAB: Updates (feedback and change history) ===== -->
+    <section id="view-updates" class="hidden">
+      <div class="card">
+        <h2>Tell me what you think</h2>
+        <p class="hint">Found a bug, or wish the app did something? A short form, about 2 minutes. Every reply is read.</p>
+        <a class="primary-button" id="feedback-link" target="_blank" rel="noopener"
+           style="display: block; text-align: center; text-decoration: none;">Give feedback</a>
+        <p class="hint hidden" id="feedback-soon" style="margin: 0;">The feedback form is coming very soon. Until then, please send your thoughts to the person who shared the app with you.</p>
+      </div>
+      <div class="card">
+        <h2>What's new</h2>
+        <p class="hint" id="version-note"></p>
+        <div id="changelog"></div>
+      </div>
+    </section>
+
+    <!-- ===== TAB 3: Settings ===== -->
+    <section id="view-settings" class="hidden">
 
       <div class="card">
         <h2>Stages</h2>
@@ -389,8 +592,65 @@
           <button class="plain-button" id="restore-button">Restore backup</button>
           <button class="plain-button" id="csv-button">Import CSV</button>
           <button class="plain-button" id="template-button">CSV template</button>
+          <button class="plain-button" id="csv-export-button">Export CSV</button>
+          <button class="plain-button" id="wh-button">Warhammer app list</button>
         </div>
+
+        <!-- Import from the Warhammer app: hidden until the button above is pressed. -->
+        <div id="wh-panel" class="hidden" style="margin-top: 14px; display: grid; gap: 10px;">
+          <p class="hint" style="margin: 0;">
+            In the Warhammer app, open a list, tap Export, then Copy as text. Paste it below.
+          </p>
+          <textarea id="wh-text" placeholder="Paste your exported list here" aria-label="Warhammer app list"></textarea>
+          <button class="primary-button" id="wh-read">Read list</button>
+        </div>
+
+        <!-- The review step, used by BOTH Import CSV and Warhammer app list.
+             Nothing changes until you press the button at the bottom. -->
+        <div id="review" class="hidden review">
+          <h2 id="review-title" style="margin: 0;">Check your import</h2>
+          <p class="hint" id="review-summary" style="margin: 0;"></p>
+
+          <div id="review-mode">
+            <p class="hint" style="margin: 0 0 6px;">What should this import do?</p>
+            <div class="mode-choice" role="radiogroup" aria-label="Import mode">
+              <button class="mode-button" data-mode="add" role="radio">
+                <strong>Add to my collection</strong><small>Keep everything you have and add these</small>
+              </button>
+              <button class="mode-button" data-mode="replace" role="radio">
+                <strong>Replace my collection</strong><small>Delete your current units, then load these</small>
+              </button>
+            </div>
+          </div>
+
+          <!-- Only for Warhammer lists, which don't say which game or stage. -->
+          <div id="review-wh-fields" style="display: grid; gap: 6px;">
+            <p class="hint" style="margin: 0;">Game and faction for these units (check they match the spelling you use):</p>
+            <div class="row">
+              <label class="hint" style="margin: 0; display: grid; gap: 4px;">Game<input id="wh-game" placeholder="e.g. 40K"></label>
+              <label class="hint" style="margin: 0; display: grid; gap: 4px;">Faction<input id="wh-faction" placeholder="e.g. Tyranids"></label>
+            </div>
+          </div>
+          <label id="review-stage-label" class="hint" style="margin: 0; display: grid; gap: 6px;">
+            Put new units at stage:
+            <select id="wh-stage"></select>
+          </label>
+
+          <p class="hint" id="review-clash-note" style="margin: 0;"></p>
+          <div class="review-tools">
+            <button class="link-button" id="review-all">Tick all</button>
+            <button class="link-button" id="review-none">Untick all</button>
+          </div>
+          <ul class="review-list" id="review-list"></ul>
+
+          <div class="settings-actions">
+            <button class="primary-button" id="review-go" style="flex: 1;">Import</button>
+            <button class="plain-button" id="review-cancel">Cancel</button>
+          </div>
+        </div>
+
         <p class="hint" style="margin: 12px 0 0;">
+          Export CSV gives you a spreadsheet of your collection (no photos), which Import CSV can read back.
           CSV columns: name, game, faction, stage, nickname, count, repaint, notes.
           Only name is needed. Stage should match one of your stages. Repeat a row for
           several of the same unit; they'll be numbered for you.
@@ -407,12 +667,6 @@
     </section>
   </main>
 
-  <!-- The tab bar. aria-current marks the tab you're on, for screen readers and for the CSS. -->
-  <nav class="tabs" aria-label="Sections">
-    <button data-tab="dashboard"><span class="icon">◔</span>Dashboard</button>
-    <button data-tab="units"><span class="icon">☰</span>Units</button>
-    <button data-tab="settings"><span class="icon">⚙</span>Settings</button>
-  </nav>
 
   <!-- The pop-up message, hidden until needed. -->
   <div class="toast hidden" id="toast" role="status">
@@ -580,7 +834,8 @@
     // The ONE place units get added (used by the form and CSV import).
     // Same name + game + faction as an existing unit? Then they're numbered.
     function addModel(fields) {
-      const same = (a, b) => (a || "").toLowerCase() === (b || "").toLowerCase();
+      // Capitals and curly/straight apostrophes don't matter ("T’au" = "T'au").
+      const same = (a, b) => plainQuotes(a || "").toLowerCase() === plainQuotes(b || "").toLowerCase();
       const matches = models.filter(m =>
         same(m.name, fields.name) && same(m.hobby, fields.hobby) && same(m.faction, fields.faction));
 
@@ -605,6 +860,8 @@
       dashboard: document.getElementById("view-dashboard"),
       units: document.getElementById("view-units"),
       settings: document.getElementById("view-settings"),
+      updates: document.getElementById("view-updates"),
+      help: document.getElementById("view-help"),
     };
     const tabButtons = document.querySelectorAll(".tabs button");
 
@@ -1142,13 +1399,15 @@
     let toastTimer;
     let undoAction = null;
 
-    function showToast(message, undo) {
+    // The button usually says "Undo", but can say something else (e.g. "Back up").
+    function showToast(message, undo, buttonLabel, seconds) {
       toastText.textContent = message;
       undoAction = undo || null;
+      toastUndo.textContent = buttonLabel || "Undo";
       toastUndo.classList.toggle("hidden", !undo);
       toast.classList.remove("hidden");
       clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => toast.classList.add("hidden"), 4000); // vanishes after 4 seconds
+      toastTimer = setTimeout(() => toast.classList.add("hidden"), (seconds || 4) * 1000);
     }
     toastUndo.addEventListener("click", () => {
       if (undoAction) undoAction();
@@ -1400,7 +1659,8 @@
       const photos = models.filter(m => m.photo).length;
       dataSummary.textContent =
         `${models.length} units, ${modelCount(models)} models, ${photos} photo${photos === 1 ? "" : "s"}. ` +
-        `Using about ${Math.max(1, Math.round(used / 1024))} KB of roughly 5,000 KB browser storage.`;
+        `Using about ${Math.max(1, Math.round(used / 1024))} KB of roughly 5,000 KB browser storage. ` +
+        (settings.lastBackup ? `Last backup: ${settings.lastBackup}.` : "No backup saved yet.");
     }
 
     document.getElementById("delete-all").addEventListener("click", () => {
@@ -1437,6 +1697,9 @@
       const today = new Date().toISOString().slice(0, 10);
       const backup = { app: "Shades of Grey", version: 3, stages: STAGES, doneFrom: settings.doneFrom, models };
       downloadFile(`shades-of-grey-backup-${today}.json`, JSON.stringify(backup, null, 2), "application/json");
+      settings.lastBackup = today;   // remembered so the app knows when to remind you
+      saveSettings();
+      renderSettings();
     });
 
     const restoreFile = document.getElementById("restore-file");
@@ -1521,47 +1784,41 @@
       return 0;
     }
 
-    // Import CSV ADDS units to the ones you already have.
+    // Import CSV reads the file, then shows the review so you can choose Add or Replace.
     const csvFile = document.getElementById("csv-file");
     document.getElementById("csv-button").addEventListener("click", () => csvFile.click());
     csvFile.addEventListener("change", () => {
       const file = csvFile.files[0];
       if (!file) return;
       readFile(file, (text) => {
-        let rows = parseCSV(text);
+        let rows = parseCSV(text.replace(/^﻿/, ""));   // ﻿: an invisible mark Excel adds
         if (rows.length && rows[0][0].trim().toLowerCase() === "name") rows = rows.slice(1); // skip titles
-
-        let added = 0;
         const unknownStages = new Set();
+        const units = [];
         rows.forEach((cells) => {
-          const name = (cells[0] || "").trim();
+          const name = plainQuotes((cells[0] || "").trim());
           if (!name) return;
           const stageText = (cells[3] || "").trim();
-          if (stageText && !STAGES.some(s => s.toLowerCase() === stageText.toLowerCase()) && isNaN(Number(stageText))) {
+          const n = Number(stageText);
+          const validNumber = stageText !== "" && Number.isInteger(n) && n >= 0 && n < STAGES.length;
+          if (stageText && !STAGES.some(s => s.toLowerCase() === stageText.toLowerCase()) && !validNumber) {
             unknownStages.add(stageText);
           }
-          addModel({
+          units.push({
             name,
             hobby: (cells[1] || "").trim(),
-            faction: (cells[2] || "").trim(),
+            faction: plainQuotes((cells[2] || "").trim()),
             stage: stageFromText(cells[3]),
             nickname: (cells[4] || "").trim(),
             count: cleanCount(cells[5]),
             repaint: ["yes", "y", "true", "1"].includes((cells[6] || "").trim().toLowerCase()),
             note: (cells[7] || "").trim(),
           });
-          added++;
         });
-
-        render();
-        renderSettings();
-        let message = added ? `Added ${added} unit${added === 1 ? "" : "s"}.` : "No units found in that file.";
-        if (unknownStages.size) {
-          message += `\n\nThese stages didn't match yours, so those units were put at "${STAGES[0]}": ` +
-                     [...unknownStages].join(", ") + ". You can rename your stages in Settings.";
-        }
-        alert(message);
         csvFile.value = "";
+        if (!units.length) { alert("No units found in that file."); return; }
+        whPanel.classList.add("hidden");
+        openReview({ source: "csv", title: `"${file.name}"`, rows: units, unknownStages: [...unknownStages] });
       });
     });
 
@@ -1575,10 +1832,530 @@
       downloadFile("shades-of-grey-template.csv", template, "text/csv");
     });
 
+
+    // ================= EXPORT CSV =================
+    // The same columns Import CSV reads, so a file can go out to Excel and back in again.
+    // A value with a comma, quote or new line is wrapped in quotes ("" means a real quote).
+    function csvCell(value) {
+      const text = String(value === undefined || value === null ? "" : value);
+      return /[",\n\r]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
+    }
+    document.getElementById("csv-export-button").addEventListener("click", () => {
+      if (!models.length) { alert("There are no units to export yet."); return; }
+      const header = "name,game,faction,stage,nickname,count,repaint,notes";
+      const rows = models.map(m => [m.name, m.hobby, m.faction, STAGES[m.stage], m.nickname || "",
+        m.count || 1, m.repaint ? "yes" : "no", m.note || ""].map(csvCell).join(","));
+      const today = new Date().toISOString().slice(0, 10);
+      // "﻿" at the start helps Excel read accents and curly quotes properly.
+      downloadFile(`shades-of-grey-${today}.csv`, "﻿" + [header, ...rows].join("\r\n") + "\r\n", "text/csv");
+    });
+
+    // ================= IMPORT FROM THE WARHAMMER APP =================
+    // The Warhammer app's "export as text" looks like this:
+    //   Monty murder (1995 points)        <- the list's own name
+    //                                     <- blank line
+    //   T’au Empire                       <- the faction
+    //   ...detachment and size lines...
+    //   Riptide Battlesuit (215 points)   <- a UNIT: a name followed by its points
+    //     • 1x Ion accelerator            <- wargear
+    //   Pathfinder Team (100 points)
+    //     • 1x Pathfinder Shas’ui         <- a MODEL line: it has deeper bullets under it
+    //       • 1x Close combat weapon
+    //     • 9x Pathfinder                 <- another model line, so this unit has 10 models
+    // A bullet with more-indented bullets under it is a model; one without is wargear.
+    // A unit with no model lines is a single model (characters, vehicles).
+
+    // Curly quotes (’ “ ”) become plain ones, so "T’au" matches "T'au".
+    function plainQuotes(text) {
+      return text.replace(/[‘’ʼ]/g, "'").replace(/[“”]/g, '"');
+    }
+
+    function parseWarhammerList(text) {
+      const lines = plainQuotes(text).replace(/\r/g, "").split("\n");
+      const unitPattern = /^\s*(.+?)\s*\((\d+)\s*(?:points?|pts)\)\s*$/i;
+      const bulletPattern = /^(\s*)•\s*(.*)$/;
+      const nonEmpty = lines.map((l, i) => i).filter(i => lines[i].trim() !== "");
+      if (!nonEmpty.length) return null;
+
+      // The first line is the list's name; the next non-empty line is the faction.
+      const first = nonEmpty[0];
+      const listName = (lines[first].match(unitPattern) || [])[1] || lines[first].trim();
+      const factionLine = nonEmpty[1] !== undefined ? lines[nonEmpty[1]].trim() : "";
+      const faction = unitPattern.test(factionLine) ? "" : factionLine;
+      const startAt = faction ? 2 : 1;   // no faction line? then line 2 may already be a unit
+
+      const units = [];
+      let current = null;
+      for (let n = startAt; n < nonEmpty.length; n++) {
+        const line = lines[nonEmpty[n]];
+        if (/^exported with/i.test(line.trim())) break;
+        const unitMatch = line.match(unitPattern);
+        // A real unit always has bullet lines under it. This skips lines like
+        // "Strike Force (2000 points)", which also end in points.
+        const followedByBullet = n + 1 < nonEmpty.length && bulletPattern.test(lines[nonEmpty[n + 1]]);
+        if (unitMatch && !bulletPattern.test(line) && followedByBullet) {
+          current = { name: unitMatch[1].trim(), points: Number(unitMatch[2]), models: 0 };
+          units.push(current);
+          continue;
+        }
+        const bullet = line.match(bulletPattern);
+        if (!current || !bullet) continue;
+        const countMatch = bullet[2].match(/^(\d+)x\s+/);
+        if (!countMatch) continue;
+        // Look at the next line: is it a bullet indented further than this one?
+        const nextLine = n + 1 < nonEmpty.length ? lines[nonEmpty[n + 1]] : "";
+        const nextBullet = nextLine.match(bulletPattern);
+        if (nextBullet && nextBullet[1].length > bullet[1].length) current.models += Number(countMatch[1]);
+      }
+      for (const u of units) u.count = u.models || 1;
+      return units.length ? { listName, faction, units } : null;
+    }
+
+    // Names compared loosely: capitals, hyphens, quotes and spaces don't matter,
+    // so "Screamer-Killer" matches "Screamer Killer" and "Breacher Team" matches "Breacher team".
+    function looseName(text) {
+      return plainQuotes(text || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    }
+
+    // ================= THE IMPORT REVIEW =================
+    // Import CSV and Warhammer app list both end up here. You choose:
+    //   1. Add to your collection, or Replace it.
+    //   2. Which units to bring in (tick boxes).
+    //   3. For name clashes (a unit you have under a different name), which name to keep.
+    //      Warhammer app names are the default; for a CSV file, your current name is.
+    // Nothing changes until you press the button at the bottom, and Undo puts it all back.
+
+    // Matching names, used to spot units you already have.
+    //   - the same name, ignoring capitals, spaces and hyphens ("Screamer Killer"), or
+    //   - every key word of your name appears in the incoming name. Filler words like
+    //     "team", "squad" and "battlesuit" don't count, and plurals are ignored. So your
+    //     "Pathfinder squad" matches "Pathfinder Team", and "Enforcer commander" matches
+    //     "Commander in Enforcer Battlesuit". But "Hyperadapted Raveners" does NOT match
+    //     plain "Raveners", because "hyperadapted" isn't in that name.
+    const FILLER_WORDS = new Set(["team", "squad", "unit", "battlesuit", "in", "the", "of", "and", "with", "mob", "pack", "brood"]);
+    function keyWords(name) {
+      return plainQuotes(name).toLowerCase().split(/[^a-z0-9]+/)
+        .map(w => w.length > 3 ? w.replace(/s$/, "") : w)   // "raveners" -> "ravener"
+        .filter(w => w && !FILLER_WORDS.has(w) && !/^\d+$/.test(w));   // "Squad 1": the 1 doesn't count
+    }
+    function namesMatch(yourName, theirName) {
+      if (looseName(yourName) === looseName(theirName)) return "exact";
+      const mine = keyWords(yourName);
+      const theirs = new Set(keyWords(theirName));
+      return mine.length && mine.every(w => theirs.has(w)) ? "close" : "";
+    }
+
+    const reviewBox = document.getElementById("review");
+    const reviewTitle = document.getElementById("review-title");
+    const reviewSummary = document.getElementById("review-summary");
+    const reviewModeBox = document.getElementById("review-mode");
+    const modeButtons = reviewBox.querySelectorAll(".mode-button");
+    const reviewWhFields = document.getElementById("review-wh-fields");
+    const reviewStageLabel = document.getElementById("review-stage-label");
+    const reviewClashNote = document.getElementById("review-clash-note");
+    const reviewList = document.getElementById("review-list");
+    const reviewGo = document.getElementById("review-go");
+    const whPanel = document.getElementById("wh-panel");
+    const whText = document.getElementById("wh-text");
+    const whGame = document.getElementById("wh-game");
+    const whFaction = document.getElementById("wh-faction");
+    const whStage = document.getElementById("wh-stage");
+
+    let incoming = null;     // { source: "csv" or "wh", title, rows: [...], unknownStages: [...] }
+    let reviewMode = "add";  // "add" or "replace"
+    let choices = [];        // one per row: { tick: true/false, keep: "theirs" or "yours" }
+
+    // The incoming rows with game/faction filled in (Warhammer lists take them from the boxes).
+    function incomingRows() {
+      if (incoming.source !== "wh") return incoming.rows;
+      return incoming.rows.map(r => ({ ...r, hobby: whGame.value.trim(), faction: whFaction.value.trim() }));
+    }
+
+    // Pairs each incoming unit with one you already have, if any. Each of your units is
+    // only used once, so owning 2 Lictors covers 2 Lictors in the list, not 3.
+    // Two passes: exact names first for EVERY row, then close matches for what's left.
+    // (Otherwise "Winged Hive Tyrant" could grab your "Hive Tyrant" before the list's
+    // own "Hive Tyrant" row gets to it.)
+    // kind: "exact" (same name), "spelling" (only capitals/hyphens/spaces differ),
+    //       "close" (a possible match, e.g. "Pathfinder squad" vs "Pathfinder Team").
+    function matchRows() {
+      const unused = models.slice();
+      const rows = incomingRows();
+      const result = rows.map(row => ({ row, match: null, kind: null }));
+      const sameFaction = (m, row) => looseName(m.faction) === looseName(row.faction);
+      for (const r of result) {
+        const i = unused.findIndex(m => sameFaction(m, r.row) && namesMatch(m.name, r.row.name) === "exact");
+        if (i !== -1) {
+          r.match = unused.splice(i, 1)[0];
+          r.kind = r.match.name === r.row.name ? "exact" : "spelling";
+        }
+      }
+      for (const r of result) {
+        if (r.match) continue;
+        const i = unused.findIndex(m => sameFaction(m, r.row) && namesMatch(m.name, r.row.name) === "close");
+        if (i !== -1) { r.match = unused.splice(i, 1)[0]; r.kind = "close"; }
+      }
+      return result;
+    }
+
+    // What each row will do by default.
+    //   keep: "theirs" = use the incoming name, "yours" = keep your name,
+    //         "different" = not the same unit after all, so add it as new.
+    function defaultChoice(m) {
+      const fromApp = incoming.source === "wh";
+      if (reviewMode === "replace") return { tick: true, keep: "theirs" };
+      if (!m.match) return { tick: true, keep: "theirs" };
+      return { tick: false, keep: m.kind === "exact" ? "yours" : (fromApp ? "theirs" : "yours") };
+    }
+
+    function setDefaultChoices() {
+      choices = matchRows().map(defaultChoice);
+    }
+
+    // After the faction box changes, only reset rows whose match actually changed,
+    // so your ticks and name choices aren't thrown away.
+    function refreshChoices() {
+      const before = lastMatches;
+      choices = matchRows().map((m, i) => {
+        const old = before && before[i];
+        const same = old && old.kind === m.kind && (old.match && old.match.id) === (m.match && m.match.id);
+        return same && choices[i] ? choices[i] : defaultChoice(m);
+      });
+    }
+    let lastMatches = null;
+
+    function openReview(data) {
+      incoming = data;
+      reviewMode = "add";
+      const isWh = data.source === "wh";
+      reviewTitle.textContent = isWh ? "Check your Warhammer list" : "Check your CSV import";
+      reviewWhFields.classList.toggle("hidden", !isWh);
+      reviewStageLabel.classList.toggle("hidden", !isWh);
+      whStage.innerHTML = "";
+      STAGES.forEach((s, i) => whStage.add(new Option(s, i)));
+      setDefaultChoices();
+      renderReview();
+      reviewBox.classList.remove("hidden");
+      reviewBox.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function closeReview() {
+      incoming = null;
+      reviewBox.classList.add("hidden");
+    }
+
+    function plural(n, word) { return `${n} ${word}${n === 1 ? "" : "s"}`; }
+
+    // Renames to make: one per matched unit (by id), only where you chose the incoming name.
+    function renamesToMake(matched) {
+      if (reviewMode !== "add") return [];
+      return matched
+        .filter((m, i) => m.match && m.kind !== "exact" && choices[i].keep === "theirs")
+        .map(m => ({ id: m.match.id, from: m.match.name, to: m.row.name, faction: m.match.faction }));
+    }
+
+    function renderReview() {
+      const matched = matchRows();
+      lastMatches = matched;
+      const rows = matched.map(m => m.row);
+      const fromApp = incoming.source === "wh";
+      const adding = reviewMode === "add";
+      // With nothing in your collection, Add and Replace are the same, so hide the choice.
+      reviewModeBox.classList.toggle("hidden", models.length === 0);
+      modeButtons.forEach(b => b.setAttribute("aria-checked", String(b.dataset.mode === reviewMode)));
+
+      let summary = `${incoming.title}: ${plural(rows.length, "unit")}, ${plural(modelCount(rows), "model")}.`;
+      if (incoming.unknownStages && incoming.unknownStages.length) {
+        summary += ` These stages don't match yours, so those units will start at "${STAGES[0]}": ` +
+          incoming.unknownStages.join(", ") + ".";
+      }
+      if (!adding && models.length) {
+        summary += ` Your current ${plural(models.length, "unit")} will be removed first. You can Undo straight after.`;
+      }
+      reviewSummary.textContent = summary;
+
+      const have = matched.filter(m => m.match && m.kind !== "close").length;
+      const possible = matched.filter(m => m.kind === "close").length;
+      const spelling = matched.filter(m => m.kind === "spelling").length;
+      const notes = [];
+      if (adding && have) notes.push(`${plural(have, "unit")} already in your collection, so ${have === 1 ? "it starts" : "they start"} unticked.`);
+      if (adding && spelling) notes.push(fromApp
+        ? `${spelling} will have ${spelling === 1 ? "its" : "their"} spelling updated to match the Warhammer app (e.g. capitals).`
+        : `${spelling} differ only in capitals or hyphens; your spelling is kept.`);
+      if (adding && possible) notes.push(`${possible} possible match${possible === 1 ? "" : "es"} highlighted in amber: check each one is really the same unit.`);
+      reviewClashNote.textContent = notes.join(" ");
+
+      reviewList.innerHTML = "";
+      matched.forEach((m, i) => {
+        const c = choices[i];
+        const li = document.createElement("li");
+        const isClose = adding && m.kind === "close";
+        const willRename = adding && m.match && m.kind !== "exact" && c.keep === "theirs";
+        const doesNothing = !c.tick && !willRename;
+        li.className = "review-row" + (isClose ? " clash" : "") + (doesNothing ? " off" : "");
+
+        const label = document.createElement("label");
+        const box = document.createElement("input");
+        box.type = "checkbox";
+        box.checked = c.tick;
+        box.setAttribute("aria-label", c.tick ? `Import ${m.row.name}` : `Don't import ${m.row.name}`);
+        box.addEventListener("change", () => { c.tick = box.checked; renderReview(); });
+        const text = document.createElement("span");
+        text.append(m.row.name);
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        const stageText = fromApp ? "" : ` · ${STAGES[m.row.stage]}`;
+        meta.textContent = plural(m.row.count || 1, "model") + stageText + (m.row.faction ? ` · ${m.row.faction}` : "");
+        text.appendChild(meta);
+        if (adding && m.match && m.kind !== "exact") {
+          const yours = document.createElement("div");
+          yours.className = "meta";
+          yours.textContent = `You have: "${m.match.name}"` + (willRename ? " (will be renamed)" : "");
+          text.appendChild(yours);
+        }
+        const tag = document.createElement("span");
+        tag.className = "tag";
+        tag.textContent = !adding ? "" : isClose ? "possible match" : m.match ? "already have" : "new";
+        label.append(box, text);
+        if (tag.textContent) label.appendChild(tag);
+        li.appendChild(label);
+
+        if (isClose) {
+          const pick = document.createElement("select");
+          pick.setAttribute("aria-label", `Is ${m.row.name} the same as your ${m.match.name}?`);
+          pick.add(new Option(fromApp ? "Same unit: use app name" : "Same unit: use file's name", "theirs"));
+          pick.add(new Option("Same unit: keep my name", "yours"));
+          pick.add(new Option("Different unit: add as new", "different"));
+          pick.value = c.keep;
+          pick.addEventListener("change", () => {
+            c.keep = pick.value;
+            if (pick.value === "different") c.tick = true;
+            renderReview();
+          });
+          li.appendChild(pick);
+        }
+        reviewList.appendChild(li);
+      });
+
+      const ticked = choices.filter(c => c.tick).length;
+      const renames = renamesToMake(matched).length;
+      if (!adding) {
+        reviewGo.textContent = ticked ? `Replace with ${plural(ticked, "unit")}` : "Nothing ticked";
+        reviewGo.className = "danger-button";
+        reviewGo.disabled = !ticked;
+      } else {
+        reviewGo.className = "primary-button";
+        reviewGo.textContent = ticked ? `Add ${plural(ticked, "unit")}` + (renames ? `, rename ${renames}` : "")
+          : renames ? `Rename ${plural(renames, "unit")}` : "Nothing to do";
+        reviewGo.disabled = !ticked && !renames;
+      }
+    }
+
+    // Copy numbers ("Lictor 1", "Lictor 2") for one name in one faction: keeps numbers
+    // that are already fine, and only gives new numbers where needed.
+    function fixCopies(name, faction) {
+      const same = (a, b) => plainQuotes(a || "").toLowerCase() === plainQuotes(b || "").toLowerCase();
+      const group = models.filter(m => same(m.name, name) && same(m.faction, faction));
+      if (group.length <= 1) { group.forEach(m => { delete m.copy; }); return; }
+      const used = new Set();
+      const needNumber = [];
+      for (const m of group) {
+        if (Number.isInteger(m.copy) && m.copy > 0 && !used.has(m.copy)) used.add(m.copy);
+        else needNumber.push(m);
+      }
+      let next = 1;
+      for (const m of needNumber) {
+        while (used.has(next)) next++;
+        m.copy = next;
+        used.add(next);
+      }
+    }
+
+    modeButtons.forEach(b => b.addEventListener("click", () => {
+      reviewMode = b.dataset.mode;
+      setDefaultChoices();
+      renderReview();
+    }));
+    document.getElementById("review-all").addEventListener("click", () => { choices.forEach(c => { c.tick = true; }); renderReview(); });
+    document.getElementById("review-none").addEventListener("click", () => { choices.forEach(c => { c.tick = false; }); renderReview(); });
+    document.getElementById("review-cancel").addEventListener("click", closeReview);
+    whFaction.addEventListener("input", () => { if (incoming) { refreshChoices(); renderReview(); } });
+    whGame.addEventListener("input", () => { if (incoming) renderReview(); });
+
+    reviewGo.addEventListener("click", () => {
+      const matched = matchRows();
+      const toAdd = matched.filter((m, i) => choices[i].tick);
+      const renames = renamesToMake(matched);
+      if (reviewMode === "replace" && models.length) {
+        if (!confirm(`Remove your ${plural(models.length, "unit")} and replace them with ${plural(toAdd.length, "unit")}?`)) return;
+        // Keep a safety copy on the device. If there isn't room (photos take a lot of
+        // space), stop rather than carry on with no safety net.
+        try {
+          localStorage.removeItem(STORAGE_KEY + "-before-replace");
+          localStorage.setItem(STORAGE_KEY + "-before-replace", JSON.stringify(models));
+          settings.replaceCopyDate = new Date().toISOString().slice(0, 10);
+          saveSettings();
+        } catch (error) {
+          alert("There isn't room on this device to keep a safety copy of your current units, so nothing has been changed. Please press Save backup first, then try again.");
+          return;
+        }
+      }
+
+      const before = models.map(m => ({ ...m }));   // a copy, so Undo can put everything back
+      if (reviewMode === "replace") {
+        models = [];
+        openIds.clear();
+      } else {
+        // Rename first, so new copies are numbered alongside them.
+        for (const r of renames) {
+          const unit = models.find(m => m.id === r.id);
+          if (unit) unit.name = r.to;
+        }
+        for (const r of renames) { fixCopies(r.from, r.faction); fixCopies(r.to, r.faction); }
+      }
+      const whStageNumber = Number(whStage.value) || 0;
+      matched.forEach((m, i) => {
+        const c = choices[i];
+        if (!c.tick) return;
+        // Extra copies of a unit you have, where you chose to keep your name, use your name.
+        const useYours = reviewMode === "add" && m.match && c.keep === "yours";
+        addModel({
+          ...m.row,
+          name: useYours ? m.match.name : m.row.name,
+          stage: incoming.source === "wh" ? whStageNumber : m.row.stage,
+        });
+      });
+
+      const parts = [];
+      if (reviewMode === "replace") parts.push(`Replaced with ${plural(toAdd.length, "unit")}`);
+      else {
+        if (toAdd.length) parts.push(`Added ${plural(toAdd.length, "unit")}`);
+        if (renames.length) parts.push(`${toAdd.length ? "renamed" : "Renamed"} ${plural(renames.length, "unit")}`);
+      }
+      closeReview();
+      whText.value = "";
+      whPanel.classList.add("hidden");
+      clearFilters();
+      render();
+      renderSettings();
+      showToast(parts.join(", "), () => {
+        models = before;
+        render();
+        renderSettings();
+      }, "Undo", 10);
+    });
+
+    // ----- Starting an import from the Warhammer app -----
+    document.getElementById("wh-button").addEventListener("click", () => {
+      const opening = whPanel.classList.contains("hidden");
+      whPanel.classList.toggle("hidden", !opening);
+      if (opening) { closeReview(); whText.focus(); }
+    });
+
+    document.getElementById("wh-read").addEventListener("click", () => {
+      const list = parseWarhammerList(whText.value);
+      if (!list) {
+        alert("That doesn't look like a list exported from the Warhammer app. Each unit should be a name followed by its points, e.g. \"Lictor (60 points)\".");
+        return;
+      }
+      // Use the spelling of a faction you already have, and its game.
+      const knownFaction = models.find(m => looseName(m.faction) === looseName(list.faction));
+      whFaction.value = knownFaction ? knownFaction.faction : list.faction;
+      whGame.value = knownFaction ? knownFaction.hobby
+        : (models.find(m => looseName(m.hobby) === "40k") || { hobby: "40K" }).hobby;
+      openReview({
+        source: "wh",
+        title: `"${list.listName}"`,
+        rows: list.units.map(u => ({ name: u.name, count: u.count })),
+      });
+    });
+
+    // ================= "TIME TO BACK UP" REMINDER =================
+    // Your data only lives on this device, so a backup is the safety net.
+    // If you have real units and no backup in 14 days, the app nudges you, at most every 3 days.
+    function daysSince(isoDate) {
+      return isoDate ? (Date.now() - new Date(isoDate).getTime()) / 86400000 : Infinity;
+    }
+    function maybeRemindToBackUp() {
+      const onlyExamples = models.length <= EXAMPLES.length &&
+        models.every(m => EXAMPLES.some(e => e.name === m.name && e.faction === m.faction));
+      if (!models.length || onlyExamples) return;
+      // Don't nag brand-new users: wait for 10+ units and a day since first real use.
+      if (!settings.firstRealUse) { settings.firstRealUse = new Date().toISOString().slice(0, 10); saveSettings(); }
+      if (models.length < 10 || daysSince(settings.firstRealUse) < 1) return;
+      if (daysSince(settings.lastBackup) < 14 || daysSince(settings.lastReminder) < 3) return;
+      settings.lastReminder = new Date().toISOString().slice(0, 10);
+      saveSettings();
+      const message = settings.lastBackup ? "It's been over 2 weeks since your last backup" : "You haven't saved a backup yet";
+      showToast(message, () => document.getElementById("export-button").click(), "Back up", 10);
+    }
+
+
+    // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
+    // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
+    // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
+    const APP_VERSION = "v2";
+    // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
+    const FEEDBACK_URL = "";
+    const CHANGELOG = [
+      { version: "v2", date: "6 Oct 2026", changes: [
+        "Import a list from the Warhammer app: paste it in Settings and its units are added. Units you already own are skipped and renamed to the app's names.",
+        "Export CSV: save your collection as a spreadsheet.",
+        "A reminder if you haven't saved a backup in two weeks.",
+        "Bigger layout on laptops and desktops, with the tabs along the top.",
+        "Bigger tab buttons.",
+        "Every import now asks: add to your collection, or replace it? Untick units you don't want, and choose which name to keep when names clash.",
+        "This Updates tab, with a link to send feedback, and the version number beside the title.",
+        "A Help tab explaining how everything works.",
+      ]},
+      { version: "v1", date: "5 Oct 2026", changes: [
+        "First version: dashboard, units, editable stages, photos and notes.",
+        "Backups and CSV import.",
+        "Installs on your phone and works offline.",
+      ]},
+    ];
+
+    function renderUpdates() {
+      const link = document.getElementById("feedback-link");
+      link.classList.toggle("hidden", !FEEDBACK_URL);
+      document.getElementById("feedback-soon").classList.toggle("hidden", !!FEEDBACK_URL);
+      if (FEEDBACK_URL) link.href = FEEDBACK_URL;
+      document.getElementById("version-note").textContent = `You're on version ${APP_VERSION}.`;
+      document.getElementById("version-tag").textContent = APP_VERSION;
+      const box = document.getElementById("changelog");
+      box.innerHTML = "";
+      for (const release of CHANGELOG) {
+        const div = document.createElement("div");
+        div.className = "release";
+        const h3 = document.createElement("h3");
+        h3.textContent = release.version;
+        const date = document.createElement("span");
+        date.className = "date";
+        date.textContent = release.date;
+        h3.appendChild(date);
+        const ul = document.createElement("ul");
+        for (const change of release.changes) {
+          const li = document.createElement("li");
+          li.textContent = change;
+          ul.appendChild(li);
+        }
+        div.append(h3, ul);
+        box.appendChild(div);
+      }
+    }
+
     // ================= START UP =================
     applyPalette(settings.palette);
     render();
+    // The safety copy kept by "Replace my collection" is only needed for a while.
+    if (settings.replaceCopyDate && daysSince(settings.replaceCopyDate) > 7) {
+      try { localStorage.removeItem(STORAGE_KEY + "-before-replace"); } catch (ignored) {}
+      delete settings.replaceCopyDate;
+      saveSettings();
+    }
+    renderUpdates();
     showTab(settings.tab);
+    maybeRemindToBackUp();
 
     // ================= PHASE 6: WORK OFFLINE =================
     // A "service worker" is a small helper script (sw.js) that the browser runs in the
