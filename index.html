@@ -261,7 +261,7 @@
       gap: 10px;
     }
 
-    .thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+    .thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; flex-shrink: 0; background: var(--border); }
 
     .info {
       flex: 1;
@@ -840,7 +840,9 @@
           <ul>
             <li>Everything is saved <strong>on this device only</strong>, in your browser. Nobody else can see it, and it isn't sent anywhere.</li>
             <li>Clearing your browser's data or uninstalling the app deletes it, so <strong>Save backup</strong> regularly. The app reminds you after two weeks.</li>
-            <li><strong>Restore backup</strong> brings a backup file back, including your stages, recipes, schemes and faction colours.</li>
+            <li><strong>Save backup</strong> is small and quick, but leaves out photos. <strong>Save full backup with photos</strong> makes one bigger file with everything, photos included.</li>
+            <li><strong>Restore backup</strong> brings either kind back, including your stages, recipes, schemes and faction colours. A backup without photos keeps any photos already on this device that match.</li>
+            <li>Photos are kept in a separate, much bigger store in your browser, so there's room for lots of them.</li>
             <li><strong>Export CSV</strong> saves your collection as a spreadsheet (without photos).</li>
             <li>New phone? Save a backup on the old one, open the app on the new one, and restore it.</li>
           </ul>
@@ -850,6 +852,7 @@
           <ul>
             <li>Open the app's web address in Chrome, then use the menu (⋮) and choose <strong>Add to Home screen</strong> or <strong>Install app</strong>.</li>
             <li>It works with no internet. Updates arrive next time you open it online; you may need to close and reopen it once.</li>
+            <li><strong>On an iPhone</strong>, use Safari's Share button → <strong>Add to Home Screen</strong>. This matters: iPhones can clear a website's saved data (photos included) if it isn't opened for a week, but not for apps added to the home screen.</li>
           </ul>
         </details>
         <details>
@@ -913,6 +916,7 @@
         <div class="button-grid">
           <button class="plain-button" id="export-button">Save backup</button>
           <button class="plain-button" id="restore-button">Restore backup</button>
+          <button class="plain-button" id="full-export-button" style="grid-column: 1 / -1;">Save full backup with photos</button>
           <button class="plain-button" id="csv-button">Import CSV</button>
           <button class="plain-button" id="template-button">CSV template</button>
           <button class="plain-button" id="csv-export-button">Export CSV</button>
@@ -973,6 +977,10 @@
         </div>
 
         <p class="hint" style="margin: 12px 0 0;">
+          Save backup is small and quick but leaves out photos. Save full backup with photos
+          makes one bigger file with everything. Restore backup reads either kind.
+        </p>
+        <p class="hint" style="margin: 8px 0 0;">
           Export CSV gives you a spreadsheet of your collection (no photos), which Import CSV can read back.
           CSV columns: name, game, faction, stage, nickname, count, repaint, notes.
           Only name is needed. Stage should match one of your stages. Repeat a row for
@@ -1271,6 +1279,17 @@
         // Linked recipes: a list of whole numbers (recipe ids), no repeats.
         const recipeIds = Array.isArray(m.recipes) ? [...new Set(m.recipes.filter(Number.isInteger))] : [];
         if (recipeIds.length) model.recipes = recipeIds; else delete model.recipes;
+        // Photos (v10): notes pointing at pictures in the photo store. Old-style photos
+        // (model.photo, a picture written as text) are kept until they've been moved.
+        const photos = Array.isArray(m.photos) ? m.photos.filter(p => p && typeof p.id === "string" && p.id)
+          .map(p => {
+            const note = { ...p };
+            if (!isDate(note.date)) delete note.date;
+            if (!validStage(note.stage)) delete note.stage;
+            return note;
+          }) : [];
+        if (photos.length) model.photos = photos; else delete model.photos;
+        if (typeof m.photo !== "string" || !m.photo.startsWith("data:image")) delete model.photo;
         if (Number.isInteger(model.id) && !usedIds.has(model.id)) usedIds.add(model.id);
         else model.id = null; // given a fresh one below
         cleaned.push(model);
@@ -1292,7 +1311,7 @@
       } catch (error) {
         if (error.name === "QuotaExceededError") {
           if (!warnedFull) {
-            alert("Storage is full, so recent changes aren't being saved. Save a backup, then remove some photos.");
+            alert("Storage is full, so recent changes aren't being saved. Save a backup, then delete some units or recipes you no longer need.");
             warnedFull = true;
           }
           return false;
@@ -2176,10 +2195,13 @@
       item.style.setProperty("--stage-colour", `var(--stage-${model.stage})`);
       const isOpen = openIds.has(model.id);
 
-      if (model.photo) {
+      if (hasPhoto(model)) {
+        // The small picture: an old-style photo, or the thumbnail from the photo store
+        // (a blank box for a moment while it loads).
         const thumb = document.createElement("img");
         thumb.className = "thumb";
-        thumb.src = model.photo;
+        const src = model.photo || thumbUrls.get(mainPhoto(model).id);
+        if (src) thumb.src = src;
         thumb.alt = "";
         item.appendChild(thumb);
       }
@@ -2431,11 +2453,17 @@
       recipeField.appendChild(recipePicker);
       panel.appendChild(recipeField);
 
-      if (model.photo) {
+      if (hasPhoto(model)) {
         const photo = document.createElement("img");
         photo.className = "photo";
-        photo.src = model.photo;
         photo.alt = `Photo of ${displayName(model)}`;
+        if (model.photo) photo.src = model.photo;
+        else {
+          // The full-size picture is read from the photo store when the details open.
+          const id = mainPhoto(model).id;
+          if (fullUrls.has(id)) photo.src = fullUrls.get(id);
+          else fullPhotoUrl(id).then(url => { if (url) photo.src = url; }).catch(() => {});
+        }
         panel.appendChild(photo);
       }
 
@@ -2446,7 +2474,8 @@
       picker.className = "hidden";
       picker.addEventListener("change", () => {
         const file = picker.files[0];
-        if (file) shrinkPhoto(file, (small) => setPhoto(model, small));
+        if (file) addUnitPhoto(model, file);
+        picker.value = "";
       });
 
       const buttons = document.createElement("div");
@@ -2460,16 +2489,16 @@
 
       const addPhoto = document.createElement("button");
       addPhoto.className = "plain-button";
-      addPhoto.textContent = model.photo ? "Replace photo" : "Add photo";
+      addPhoto.textContent = hasPhoto(model) ? "Replace photo" : "Add photo";
       addPhoto.addEventListener("click", () => picker.click());
       if (model.each) buttons.append(addPhoto);   // each model has its own ◀ above
       else buttons.append(back, addPhoto);
 
-      if (model.photo) {
+      if (hasPhoto(model)) {
         const removePhoto = document.createElement("button");
         removePhoto.className = "plain-button";
         removePhoto.textContent = "Remove photo";
-        removePhoto.addEventListener("click", () => { if (confirm("Remove this photo?")) setPhoto(model, null); });
+        removePhoto.addEventListener("click", () => { if (confirm("Remove this photo?")) removeUnitPhotos(model); });
         buttons.appendChild(removePhoto);
       }
 
@@ -2551,35 +2580,210 @@
         models = models.filter(m => m.id !== id);
         openIds.delete(id);
         render();
+        // Its photo files go too.
+        for (const photoId of photoIds(model)) { forgetUrls(photoId); deletePhotoFile(photoId); }
       }
     }
 
-    // Photos: shrink to at most 600 pixels across as a compressed JPEG (usually 40-80 KB),
-    // because browser storage only holds about 5 MB in total.
-    function shrinkPhoto(file, whenDone) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const img = new Image();
-        img.onload = () => {
-          const scale = Math.min(1, 600 / Math.max(img.width, img.height));
-          const canvas = document.createElement("canvas");
-          canvas.width = Math.round(img.width * scale);
-          canvas.height = Math.round(img.height * scale);
-          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-          whenDone(canvas.toDataURL("image/jpeg", 0.7));
-        };
-        img.onerror = () => alert("Sorry, that image couldn't be read.");
-        img.src = reader.result;
-      };
-      reader.readAsDataURL(file);
+    // ================= THE PHOTO STORE (v10) =================
+    // Photos used to live inside the units list in localStorage, which only holds about
+    // 5 MB in total. Now each photo is saved as a file ("blob") in IndexedDB, the browser's
+    // bigger built-in database (usually hundreds of MB or more).
+    //   In IndexedDB, keyed by id:  { id, full: ~1200px JPEG, thumb: ~240px JPEG }
+    //   On the unit, just a note:    unit.photos = [{ id, date: "YYYY-MM-DD", stage }]
+    // For now a unit has one photo (photos[0]). A gallery of several is planned next.
+    // Old photos (unit.photo, a picture written out as text) are moved across on start up.
+
+    const PHOTO_DB = "shades-of-grey-photos";
+    let photoDbPromise = null;
+    // Open the database once, creating its "photos" table the first time.
+    function photoDb() {
+      if (!photoDbPromise) photoDbPromise = new Promise((resolve, reject) => {
+        if (!window.indexedDB) { reject(new Error("This browser has no IndexedDB")); return; }
+        const request = indexedDB.open(PHOTO_DB, 1);
+        request.onupgradeneeded = () => request.result.createObjectStore("photos", { keyPath: "id" });
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      return photoDbPromise;
+    }
+    // Do one thing with the photos table and wait until it's really finished ("complete").
+    // async/await: "await" pauses this function until the slow job is done, without
+    // freezing the screen.
+    async function photoStore(mode, action) {
+      const db = await photoDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction("photos", mode);
+        const request = action(tx.objectStore("photos"));
+        tx.oncomplete = () => resolve(request ? request.result : undefined);
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error || new Error("Photo save cancelled"));
+      });
+    }
+    const putPhoto = (record) => photoStore("readwrite", store => store.put(record));
+    const getPhoto = (id) => photoStore("readonly", store => store.get(id));
+    const deletePhotoFile = (id) => photoStore("readwrite", store => store.delete(id)).catch(() => {});
+
+    // Pictures on screen need a web address. URL.createObjectURL gives one for a blob.
+    // We keep them here so each photo is only read from the database once.
+    const thumbUrls = new Map();   // photo id -> address of its thumbnail
+    const fullUrls = new Map();    // photo id -> address of its full-size picture
+
+    function newPhotoId() { return "p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+    function mainPhoto(model) { return model.photos && model.photos.length ? model.photos[0] : null; }
+    function hasPhoto(model) { return !!model.photo || !!mainPhoto(model); }
+    function photoIds(model) { return (model.photos || []).map(p => p.id); }
+
+    // Ask the browser to keep our data even when the device is short of space.
+    // (It may say no; that's fine. iPhones also need the app added to the home screen.)
+    function askToKeepStorage() {
+      try {
+        if (navigator.storage && navigator.storage.persist) {
+          navigator.storage.persisted().then(kept => kept || navigator.storage.persist()).catch(() => {});
+        }
+      } catch (ignored) {}
     }
 
-    // Adds, replaces or removes (null) a photo, undoing it if storage is full.
-    function setPhoto(model, newPhoto) {
-      const previous = model.photo;
-      if (newPhoto) model.photo = newPhoto; else delete model.photo;
-      if (!save()) { if (previous) model.photo = previous; else delete model.photo; }
+    // Open an image file (or blob) as a picture we can draw.
+    function loadImage(file) {
+      return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Unreadable image")); };
+        img.src = url;
+      });
+    }
+    // Shrink a picture to at most maxSize pixels across, as a compressed JPEG blob.
+    function resizeToBlob(img, maxSize, quality) {
+      return new Promise((resolve, reject) => {
+        const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Couldn't shrink image")), "image/jpeg", quality);
+      });
+    }
+    // Text pictures ("data:image/jpeg;base64,...") <-> blobs, for old photos and full backups.
+    function dataUrlToBlob(dataUrl) {
+      const [head, data] = dataUrl.split(",");
+      const type = (head.match(/^data:([^;,]+)/) || [])[1] || "image/jpeg";
+      const binary = atob(data);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return new Blob([bytes], { type });
+    }
+    function blobToDataUrl(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    // Load the thumbnails of every unit's photo that isn't on screen yet, then redraw once.
+    // A photo note whose picture isn't in the database (e.g. after restoring a backup
+    // saved WITHOUT photos on another device) is removed, so no empty boxes are left.
+    async function loadThumbs() {
+      let changed = false;
+      for (const m of models) {
+        for (const p of (m.photos || []).slice()) {
+          if (thumbUrls.has(p.id)) continue;
+          const record = await getPhoto(p.id);
+          if (record && record.thumb) {
+            thumbUrls.set(p.id, URL.createObjectURL(record.thumb));
+          } else {
+            m.photos = m.photos.filter(x => x.id !== p.id);
+            if (!m.photos.length) delete m.photos;
+          }
+          changed = true;
+        }
+      }
+      if (changed) render();
+    }
+    // The full-size picture, loaded when a unit's details are opened.
+    async function fullPhotoUrl(id) {
+      if (fullUrls.has(id)) return fullUrls.get(id);
+      const record = await getPhoto(id);
+      if (!record || !record.full) return "";
+      fullUrls.set(id, URL.createObjectURL(record.full));
+      return fullUrls.get(id);
+    }
+    function forgetUrls(id) {
+      for (const map of [thumbUrls, fullUrls]) {
+        if (map.has(id)) { URL.revokeObjectURL(map.get(id)); map.delete(id); }
+      }
+    }
+
+    // Add (or, for now, replace) a unit's photo from a picked file.
+    async function addUnitPhoto(model, file) {
+      let record;
+      try {
+        const img = await loadImage(file);
+        record = { id: newPhotoId(), full: await resizeToBlob(img, 1200, 0.82), thumb: await resizeToBlob(img, 240, 0.75) };
+      } catch (error) {
+        alert("Sorry, that image couldn't be read.");
+        return;
+      }
+      try {
+        await putPhoto(record);
+      } catch (error) {
+        alert("The photo couldn't be saved. The device may be out of space, or this browser may block storage (e.g. a private window).");
+        return;
+      }
+      const old = photoIds(model);
+      model.photos = [{ id: record.id, date: todayISO(), stage: model.stage }];
+      delete model.photo;   // an old-style photo, if one was still waiting to move
+      thumbUrls.set(record.id, URL.createObjectURL(record.thumb));
+      fullUrls.set(record.id, URL.createObjectURL(record.full));
       render();
+      for (const id of old) { forgetUrls(id); deletePhotoFile(id); }
+      askToKeepStorage();
+    }
+
+    // Remove a unit's photo(s): the note on the unit, then the files themselves.
+    function removeUnitPhotos(model) {
+      const ids = photoIds(model);
+      delete model.photos;
+      delete model.photo;
+      render();
+      for (const id of ids) { forgetUrls(id); deletePhotoFile(id); }
+    }
+
+    // Move old-style photos (saved as text on the unit) into the photo store. Each one is
+    // only removed from the unit AFTER reading it back from the store and checking it's
+    // all there. Anything that fails stays where it was, to be tried again next time.
+    async function migrateOldPhotos() {
+      let moved = 0;
+      for (const m of models.filter(m => typeof m.photo === "string")) {
+        try {
+          const full = dataUrlToBlob(m.photo);
+          const thumb = await resizeToBlob(await loadImage(full), 240, 0.75);
+          const record = { id: newPhotoId(), full, thumb };
+          await putPhoto(record);
+          const check = await getPhoto(record.id);
+          if (!check || !check.full || check.full.size !== full.size) continue;
+          m.photos = [{ id: record.id, date: m.added || todayISO(), stage: m.stage }, ...(m.photos || [])];
+          delete m.photo;
+          moved++;
+        } catch (error) { /* left as it was */ }
+      }
+      if (moved) save();
+      return moved;
+    }
+
+    // Started once the screen has been drawn: move old photos, then show thumbnails.
+    async function startPhotos() {
+      try {
+        const moved = await migrateOldPhotos();
+        await loadThumbs();
+        if (models.some(hasPhoto)) askToKeepStorage();
+        if (moved) showToast(`Moved ${plural(moved, "photo")} to the app's bigger photo storage`, null, null, 6);
+      } catch (error) {
+        // No IndexedDB (some private windows): old photos still show; new ones can't be added.
+      }
     }
 
     // ----- The pop-up message with Undo -----
@@ -4057,12 +4261,21 @@
       renderFactionColours();
       let used = 0;
       try { used = (localStorage.getItem(STORAGE_KEY) || "").length + (localStorage.getItem(RECIPES_KEY) || "").length; } catch (ignored) {}
-      const photos = models.filter(m => m.photo).length;
-      dataSummary.textContent =
+      const photos = models.filter(hasPhoto).length;
+      const summary =
         `${models.length} units, ${modelCount(models)} models, ${photos} photo${photos === 1 ? "" : "s"}, ` +
         `${plural(book.recipes.length, "recipe")}. ` +
-        `Using about ${Math.max(1, Math.round(used / 1024))} KB of roughly 5,000 KB browser storage. ` +
+        `Units and recipes use about ${Math.max(1, Math.round(used / 1024))} KB of roughly 5,000 KB. ` +
         (settings.lastBackup ? `Last backup: ${settings.lastBackup}.` : "No backup saved yet.");
+      dataSummary.textContent = summary;
+      // Photos are kept separately, with much more room. Ask the browser how much is used.
+      if (navigator.storage && navigator.storage.estimate) {
+        navigator.storage.estimate().then(({ usage, quota }) => {
+          if (!usage || !quota) return;
+          const mb = (bytes) => bytes >= 1e9 ? `${(bytes / 1e9).toFixed(1)} GB` : `${Math.max(1, Math.round(bytes / 1e6))} MB`;
+          dataSummary.textContent = summary + ` Altogether (photos included) the app uses about ${mb(usage)} of ${mb(quota)} available.`;
+        }).catch(() => {});
+      }
     }
 
     document.getElementById("delete-all").addEventListener("click", () => {
@@ -4095,11 +4308,61 @@
     }
 
     // Backups include your stages, since a unit's stage is a position in that list.
+    // Units carry notes about their photos (ids), but the pictures themselves are only in
+    // the FULL backup, as text pictures in "photoFiles": { id: { full, thumb } }.
+    function backupData() {
+      return { app: "Shades of Grey", version: 6, stages: STAGES, doneFrom: settings.doneFrom, models, recipes: book,
+               factionColours: settings.factionColours };
+    }
+
+    document.getElementById("full-export-button").addEventListener("click", async (event) => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      button.textContent = "Preparing backup…";
+      try {
+        const backup = backupData();
+        backup.photoFiles = {};
+        let missing = 0;
+        for (const m of models) for (const id of photoIds(m)) {
+          const record = await getPhoto(id);
+          if (!record) { missing++; continue; }
+          backup.photoFiles[id] = { full: await blobToDataUrl(record.full), thumb: await blobToDataUrl(record.thumb) };
+        }
+        const today = new Date().toISOString().slice(0, 10);
+        // No neat line breaks here: the file is big enough already.
+        downloadFile(`shades-of-grey-full-backup-${today}.json`, JSON.stringify(backup), "application/json");
+        settings.lastBackup = today;
+        saveSettings();
+        renderSettings();
+        const count = Object.keys(backup.photoFiles).length;
+        showToast(`Full backup saved with ${plural(count, "photo")}` + (missing ? ` (${missing} couldn't be read)` : ""));
+      } catch (error) {
+        alert("Sorry, the full backup couldn't be made. Try Save backup (without photos) instead.");
+      }
+      button.disabled = false;
+      button.textContent = "Save full backup with photos";
+    });
+
+    // Put the pictures from a full backup into the photo store. Returns how many worked.
+    async function importPhotoFiles(files) {
+      let done = 0;
+      for (const [id, pair] of Object.entries(files || {})) {
+        try {
+          if (!pair || typeof pair.full !== "string" || !pair.full.startsWith("data:image")) continue;
+          const full = dataUrlToBlob(pair.full);
+          const thumb = typeof pair.thumb === "string" && pair.thumb.startsWith("data:image")
+            ? dataUrlToBlob(pair.thumb) : await resizeToBlob(await loadImage(full), 240, 0.75);
+          await putPhoto({ id, full, thumb });
+          forgetUrls(id);   // in case an older copy of this photo was on screen
+          done++;
+        } catch (error) { /* skip that one */ }
+      }
+      return done;
+    }
+
     document.getElementById("export-button").addEventListener("click", () => {
       const today = new Date().toISOString().slice(0, 10);
-      const backup = { app: "Shades of Grey", version: 5, stages: STAGES, doneFrom: settings.doneFrom, models, recipes: book,
-                       factionColours: settings.factionColours };
-      downloadFile(`shades-of-grey-backup-${today}.json`, JSON.stringify(backup, null, 2), "application/json");
+      downloadFile(`shades-of-grey-backup-${today}.json`, JSON.stringify(backupData(), null, 2), "application/json");
       settings.lastBackup = today;   // remembered so the app knows when to remind you
       saveSettings();
       renderSettings();
@@ -4127,12 +4390,15 @@
           if (restored.length === 0) throw new Error("No usable units");
           // Backups from v5 onwards also hold recipes. Older ones don't, so your recipes stay.
           const backupBook = !Array.isArray(parsed) && parsed.recipes ? cleanRecipeBook(parsed.recipes) : null;
-          const question = backupBook
+          const photoFiles = !Array.isArray(parsed) && parsed.photoFiles && typeof parsed.photoFiles === "object" ? parsed.photoFiles : null;
+          const photoCount = photoFiles ? Object.keys(photoFiles).length : 0;
+          const question = (backupBook
             ? `Replace your current ${plural(models.length, "unit")} and ${plural(book.recipes.length, "recipe")} with ` +
               `${plural(restored.length, "unit")} and ${plural(backupBook.recipes.length, "recipe")} from the backup?`
-            : `Replace your current ${models.length} units with ${restored.length} from the backup? (Your recipes stay as they are.)`;
+            : `Replace your current ${models.length} units with ${restored.length} from the backup? (Your recipes stay as they are.)`)
+            + (photoCount ? ` It includes ${plural(photoCount, "photo")}.` : "");
 
-          if (confirm(question)) {
+          if (confirm(question)) (photoFiles ? importPhotoFiles(photoFiles) : Promise.resolve(0)).then(() => {
             try { localStorage.setItem(STORAGE_KEY + "-before-restore", JSON.stringify(models)); } catch (ignored) {}
             models = restored;
             if (backupBook) {
@@ -4158,7 +4424,10 @@
             render();
             renderSettings();
             showToast("Backup restored");
-          }
+            // Old backups may hold old-style photos: move them. Then load the thumbnails
+            // (photos this device doesn't have are quietly dropped from the units).
+            startPhotos();
+          });
         } catch (error) {
           alert("That file doesn't look like a Shades of Grey backup.");
         }
@@ -4714,10 +4983,17 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v9";
+    const APP_VERSION = "v10";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v10", date: "7 Oct 2026", changes: [
+        "Photos now have far more room. They're kept in the browser's bigger photo storage instead of sharing the small 5 MB space with your units, so you can add many more.",
+        "New photos are saved sharper (twice the size as before), with a small copy for the unit list so it stays quick.",
+        "Photos you already had are moved across automatically the first time you open this version. Each one is checked before the old copy is removed.",
+        "New Save full backup with photos button in Settings. Save backup is still there for a small, quick backup without photos. Restore backup reads both.",
+        "Settings now shows roughly how much space the app is using altogether.",
+      ]},
       { version: "v9", date: "7 Oct 2026", changes: [
         "Painting schemes: a new Schemes view at the top of the Recipes tab. A scheme is a named group of recipes for one faction, e.g. \"My Ultramarines\" = armour, trim, lenses and base.",
         "Apply a scheme to every unit in its faction with one tap (with Undo). It shows how many of the faction's units already have it.",
@@ -4809,6 +5085,7 @@
     // ================= START UP =================
     applyPalette(settings.palette);
     render();
+    startPhotos();   // moves any old photos across, then loads thumbnails (in the background)
     // The safety copy kept by "Replace my collection" is only needed for a while.
     if (settings.replaceCopyDate && daysSince(settings.replaceCopyDate) > 7) {
       try { localStorage.removeItem(STORAGE_KEY + "-before-replace"); } catch (ignored) {}
