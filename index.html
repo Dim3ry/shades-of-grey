@@ -197,11 +197,11 @@
     .faction-name .swatch { width: 10px; height: 10px; }
     .faction-button.has-faction {
       box-shadow: inset 0 4px 0 var(--faction-colour);   /* a bar across the top */
-      background: linear-gradient(to bottom, color-mix(in srgb, var(--faction-colour) 22%, transparent), transparent 60%), var(--background);
+      background: linear-gradient(to bottom, var(--faction-tint), transparent 60%), var(--background);
     }
     li.unit.has-faction {
       /* fades in from the right, so it doesn't fight the stage stripe on the left */
-      background: linear-gradient(to left, color-mix(in srgb, var(--faction-colour) 26%, transparent), transparent 65%), var(--card);
+      background: linear-gradient(to left, var(--faction-tint), transparent 75%), var(--card);
     }
     .details .faction-dot { width: 10px; height: 10px; vertical-align: -1px; margin-right: 4px; }
     #faction-filter { border-left: 4px solid var(--chip-colour, var(--border)); }
@@ -413,7 +413,7 @@
     .scheme-item:hover { border-color: var(--border); }
     .scheme-item.has-faction {
       box-shadow: inset 0 4px 0 var(--faction-colour);
-      background: linear-gradient(to bottom, color-mix(in srgb, var(--faction-colour) 20%, transparent), transparent 50%), var(--card);
+      background: linear-gradient(to bottom, var(--faction-tint), transparent 50%), var(--card);
     }
     .scheme-item .meta .faction-dot { width: 10px; height: 10px; vertical-align: -1px; margin-right: 6px; }
     .scheme-item .recipe-links { margin-top: 2px; }
@@ -1530,6 +1530,35 @@
     // the dashboard's faction cards and a mark on the faction filter. The STAGE colour
     // stripe on unit cards stays as it is: stage = left stripe, faction = tint and dot.
 
+    // Give an element its faction colour, plus a see-through "tint" version for the
+    // faded background. Dark colours are lightened for the tint only (keeping their hue),
+    // otherwise a navy or black faction would vanish against the dark cards.
+    // (Worked out here rather than with the newer CSS color-mix(), so older phones show it.)
+    function setFactionStyle(element, colour) {
+      element.style.setProperty("--faction-colour", colour);
+      element.style.setProperty("--faction-tint", factionTint(colour));
+    }
+    function factionTint(hex) {
+      let [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
+      // Convert to hue / saturation / lightness, raise the lightness, convert back.
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let h = 0, sat = 0, light = (max + min) / 2;
+      if (max !== min) {
+        const d = max - min;
+        sat = light > 0.5 ? d / (2 - max - min) : d / (max + min);
+        h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+        h /= 6;
+      }
+      light = Math.max(light, 0.5);
+      const hue = (t) => {
+        t = (t + 1) % 1;
+        const q = light < 0.5 ? light * (1 + sat) : light + sat - light * sat, p = 2 * light - q;
+        return t < 1 / 6 ? p + (q - p) * 6 * t : t < 1 / 2 ? q : t < 2 / 3 ? p + (q - p) * (2 / 3 - t) * 6 : p;
+      };
+      [r, g, b] = sat ? [hue(h + 1 / 3), hue(h), hue(h - 1 / 3)] : [light, light, light];
+      return `rgba(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)}, 0.28)`;
+    }
+
     // The faction's colour, or "" if it hasn't got one.
     function factionColour(faction) {
       return (faction && settings.factionColours[faction]) || "";
@@ -1854,7 +1883,7 @@
         const colour = factionColour(faction);
         if (colour) {
           button.classList.add("has-faction");
-          button.style.setProperty("--faction-colour", colour);
+          setFactionStyle(button, colour);
           name.prepend(makeSwatch(colour));
         }
         const small = document.createElement("small");
@@ -2233,7 +2262,7 @@
           dot.classList.add("faction-dot");
           details.append(dot);
           item.classList.add("has-faction");
-          item.style.setProperty("--faction-colour", colour);
+          setFactionStyle(item, colour);
         }
         details.append(model.faction);
       }
@@ -3319,7 +3348,7 @@
         const card = document.createElement("div");
         card.className = "recipe-item scheme-item";
         const colour = factionColour(scheme.faction);
-        if (colour) { card.classList.add("has-faction"); card.style.setProperty("--faction-colour", colour); }
+        if (colour) { card.classList.add("has-faction"); setFactionStyle(card, colour); }
 
         const name = document.createElement("div");
         name.className = "name";
@@ -4983,10 +5012,13 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v10";
+    const APP_VERSION = "v11";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v11", date: "7 Oct 2026", changes: [
+        "Faction colours show more clearly on cards: the faded tint is stronger, dark colours (like deep blue or black) are lightened for the tint so they don't disappear, and it now works on older phones too.",
+      ]},
       { version: "v10", date: "7 Oct 2026", changes: [
         "Photos now have far more room. They're kept in the browser's bigger photo storage instead of sharing the small 5 MB space with your units, so you can add many more.",
         "New photos are saved sharper (twice the size as before), with a small copy for the unit list so it stays quick.",
