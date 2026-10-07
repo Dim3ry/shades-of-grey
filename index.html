@@ -187,6 +187,44 @@
     }
     .faction-button small { color: var(--muted); font-size: 12px; }
 
+    /* ----- Faction colours (v8) -----
+       --faction-colour is set by JavaScript on anything belonging to a coloured faction.
+       Stage keeps the LEFT stripe on unit cards; faction gets a soft tint and a dot. */
+    .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+    .card-head h2 { margin: 0; }
+    .card-head .link-button { padding: 4px 0; }
+    .faction-name { display: inline-flex; align-items: center; gap: 6px; }
+    .faction-name .swatch { width: 10px; height: 10px; }
+    .faction-button.has-faction {
+      box-shadow: inset 0 4px 0 var(--faction-colour);   /* a bar across the top */
+      background: linear-gradient(to bottom, color-mix(in srgb, var(--faction-colour) 22%, transparent), transparent 60%), var(--background);
+    }
+    li.unit.has-faction {
+      /* fades in from the right, so it doesn't fight the stage stripe on the left */
+      background: linear-gradient(to left, color-mix(in srgb, var(--faction-colour) 26%, transparent), transparent 65%), var(--card);
+    }
+    .details .faction-dot { width: 10px; height: 10px; vertical-align: -1px; margin-right: 4px; }
+    #faction-filter { border-left: 4px solid var(--chip-colour, var(--border)); }
+
+    .faction-colour-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+    .faction-colour-row {
+      display: grid; grid-template-columns: 44px 1fr; gap: 6px 10px; align-items: center;
+      padding: 10px; background: var(--background); border: 1px solid var(--border); border-radius: 10px;
+    }
+    .faction-colour-row input[type=color] { width: 44px; height: 44px; padding: 3px; cursor: pointer; }
+    /* No colour chosen yet: a dashed ring, so grey doesn't look like a real choice. */
+    .faction-colour-row input[type=color].unset { opacity: 0.45; outline: 2px dashed var(--muted); outline-offset: -4px; }
+    .faction-colour-text { display: grid; min-width: 0; }
+    .faction-colour-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .faction-colour-text small { color: var(--muted); font-size: 12px; }
+    .faction-colour-buttons { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; }
+    .faction-colour-buttons .plain-button { padding: 8px 12px; min-height: 36px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+    .faction-colour-buttons .swatch { width: 12px; height: 12px; }
+    @media (min-width: 700px) {
+      .faction-colour-row { grid-template-columns: 44px 1fr auto; }
+      .faction-colour-buttons { grid-column: auto; }
+    }
+
     /* ----- Units: toolbar and filters ----- */
     .units-toolbar { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-bottom: 12px; }
     .units-toolbar .plain-button { padding: 12px 16px; }
@@ -590,7 +628,10 @@
       </div>
 
       <div class="card">
-        <h2>By faction</h2>
+        <div class="card-head">
+          <h2>By faction</h2>
+          <button class="link-button" id="faction-colours-link">Faction colours</button>
+        </div>
         <div class="faction-grid" id="faction-grid"></div>
       </div>
     </section>
@@ -713,6 +754,16 @@
           </ul>
         </details>
         <details>
+          <summary>Faction colours</summary>
+          <ul>
+            <li>Give each faction its own colour in <strong>Settings → Faction colours</strong> (or tap <strong>Faction colours</strong> on the dashboard). Tap the colour circle to pick one.</li>
+            <li><strong>Suggest</strong> picks a colour for you from the recipes linked to that faction's units. Armour recipes count first, and it uses each recipe's first paint (usually the base coat).</li>
+            <li>The colour shows as a bar on the dashboard's faction cards, a soft tint and a dot on unit cards, and a stripe on the faction filter.</li>
+            <li>The coloured stripe down the <strong>left</strong> of a unit card is still its <strong>stage</strong>.</li>
+            <li><strong>Rename</strong> changes a faction's name on every unit in it, and keeps its colour. <strong>Clear</strong> removes the colour.</li>
+          </ul>
+        </details>
+        <details>
           <summary>The dashboard</summary>
           <ul>
             <li>It counts <strong>models</strong>, not units: a 10-model squad counts as 10.</li>
@@ -751,7 +802,7 @@
           <ul>
             <li>Everything is saved <strong>on this device only</strong>, in your browser. Nobody else can see it, and it isn't sent anywhere.</li>
             <li>Clearing your browser's data or uninstalling the app deletes it, so <strong>Save backup</strong> regularly. The app reminds you after two weeks.</li>
-            <li><strong>Restore backup</strong> brings a backup file back, including your stages and recipes.</li>
+            <li><strong>Restore backup</strong> brings a backup file back, including your stages, recipes and faction colours.</li>
             <li><strong>Export CSV</strong> saves your collection as a spreadsheet (without photos).</li>
             <li>New phone? Save a backup on the old one, open the app on the new one, and restore it.</li>
           </ul>
@@ -810,6 +861,13 @@
       <div class="card">
         <h2>Colours</h2>
         <select id="palette-select" aria-label="Stage colours" style="width: 100%;"></select>
+      </div>
+
+      <!-- Faction colours (v8). Filled in by renderFactionColours(). -->
+      <div class="card" id="faction-colours-card">
+        <h2>Faction colours</h2>
+        <p class="hint" id="faction-colour-hint"></p>
+        <ul class="faction-colour-list" id="faction-colour-list"></ul>
       </div>
 
       <div class="card">
@@ -981,6 +1039,20 @@
     function saveSettings() {
       try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (ignored) {}
     }
+
+    // Faction colours (v8): settings.factionColours = { "Ultramarines": "#1e3a8a", ... }.
+    // They're looked up by the faction's name. Only proper "#rrggbb" colours are kept,
+    // so a broken saved value can never break the screen.
+    function cleanFactionColours(raw) {
+      const clean = {};
+      if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+        for (const [name, colour] of Object.entries(raw)) {
+          if (name && typeof colour === "string" && /^#[0-9a-f]{6}$/i.test(colour)) clean[name] = colour.toLowerCase();
+        }
+      }
+      return clean;
+    }
+    settings.factionColours = cleanFactionColours(settings.factionColours);
     saveSettings();
 
     // ================= LOADING AND SAVING UNITS =================
@@ -1374,6 +1446,181 @@
       renderRecipes();
     }
 
+    // ================= FACTION COLOURS =================
+    // Each faction can have a colour you pick. It's shown as a tint on unit cards, a bar on
+    // the dashboard's faction cards and a mark on the faction filter. The STAGE colour
+    // stripe on unit cards stays as it is: stage = left stripe, faction = tint and dot.
+
+    // The faction's colour, or "" if it hasn't got one.
+    function factionColour(faction) {
+      return (faction && settings.factionColours[faction]) || "";
+    }
+
+    // Set (or, with no colour, remove) a faction's colour, then redraw.
+    function setFactionColour(faction, colour) {
+      if (!faction) return;
+      if (colour) settings.factionColours[faction] = colour.toLowerCase();
+      else delete settings.factionColours[faction];
+      saveSettings();
+      render();
+    }
+
+    // Suggest a colour from the recipes linked to that faction's units. A faction's
+    // "main" colour is usually its armour, so recipes whose part is Armour are preferred.
+    // From each recipe we take its FIRST colour (normally the base coat), and count it
+    // once per unit using the recipe. The most-used colour wins. Unset paints (#808080)
+    // are skipped. Returns "" if there's nothing to go on.
+    function suggestFactionColour(faction) {
+      const units = models.filter(m => m.faction === faction);
+      const uses = new Map();   // recipe -> how many of this faction's units use it
+      for (const unit of units) for (const recipe of recipesOf(unit)) uses.set(recipe, (uses.get(recipe) || 0) + 1);
+      let recipes = [...uses.keys()];
+      const armour = recipes.filter(r => /armou?r/i.test(r.part || ""));
+      if (armour.length) recipes = armour;
+      const votes = new Map();  // colour -> votes
+      for (const recipe of recipes) {
+        const first = recipeColours(recipe).find(c => c !== "#808080");
+        if (first) votes.set(first, (votes.get(first) || 0) + uses.get(recipe));
+      }
+      let best = "", bestVotes = 0;
+      for (const [colour, count] of votes) if (count > bestVotes) { best = colour; bestVotes = count; }
+      return best;
+    }
+
+    // After names change, keep "Intercessors 1 / 2" numbering tidy: a unit alone in its
+    // group loses its number; a group of several gets unique numbers (existing ones kept).
+    function renumberCopies() {
+      const key = (m) => [m.name, m.hobby, m.faction].map(v => plainQuotes(v || "").toLowerCase()).join("\u0000");
+      const groups = new Map();
+      for (const m of models) {
+        if (!groups.has(key(m))) groups.set(key(m), []);
+        groups.get(key(m)).push(m);
+      }
+      for (const group of groups.values()) {
+        if (group.length === 1) { delete group[0].copy; continue; }
+        const taken = new Set();
+        const needNumber = [];
+        for (const m of group) {
+          if (m.copy && !taken.has(m.copy)) taken.add(m.copy); else needNumber.push(m);
+        }
+        let next = 1;
+        for (const m of needNumber) {
+          while (taken.has(next)) next++;
+          m.copy = next;
+          taken.add(next);
+        }
+      }
+    }
+
+    // Rename a faction on EVERY unit in it, carrying its colour across. If you rename it
+    // to a faction that already has a colour, that colour is kept (the two are merged).
+    function renameFaction(oldName, newName) {
+      newName = (newName || "").trim();
+      if (!oldName || !newName || newName === oldName) return;
+      // Remember how things were, for Undo.
+      const before = models.map(m => [m, m.faction, m.copy]);
+      const coloursBefore = { ...settings.factionColours };
+
+      for (const m of models) if (m.faction === oldName) m.faction = newName;
+      if (settings.factionColours[oldName] && !settings.factionColours[newName]) {
+        settings.factionColours[newName] = settings.factionColours[oldName];
+      }
+      delete settings.factionColours[oldName];
+      renumberCopies();
+      if (filters.faction === oldName) filters.faction = newName;
+      saveSettings();
+      render();
+      renderFactionColours();
+      showToast(`Renamed to ${newName}`, () => {
+        for (const [m, faction, copy] of before) {
+          m.faction = faction;
+          if (copy) m.copy = copy; else delete m.copy;
+        }
+        settings.factionColours = coloursBefore;
+        if (filters.faction === newName) filters.faction = oldName;
+        saveSettings();
+        render();
+        renderFactionColours();
+      });
+    }
+
+    // The Settings card listing every faction with its colour.
+    const factionColourList = document.getElementById("faction-colour-list");
+    function renderFactionColours() {
+      factionColourList.innerHTML = "";
+      const factions = uniqueSorted(models.map(m => m.faction));
+      document.getElementById("faction-colour-hint").textContent = factions.length
+        ? "Tap a colour circle to pick a faction's colour. Suggest picks one from the recipes linked to that faction's units."
+        : "Add some units with a faction first, then give each faction a colour here.";
+      for (const faction of factions) {
+        const colour = factionColour(faction);
+        const row = document.createElement("li");
+        row.className = "faction-colour-row";
+
+        const picker = document.createElement("input");
+        picker.type = "color";
+        picker.value = colour || "#808080";
+        picker.classList.toggle("unset", !colour);
+        picker.setAttribute("aria-label", `Colour for ${faction}`);
+        // "input" fires while you drag round the colour picker, so the app changes live.
+        picker.addEventListener("input", () => {
+          picker.classList.remove("unset");
+          setFactionColour(faction, picker.value);
+          status.textContent = `${plural(units, "unit")} · ${picker.value.toUpperCase()}`;
+        });
+        picker.addEventListener("change", renderFactionColours);   // updates the buttons once you've chosen
+
+        const text = document.createElement("div");
+        text.className = "faction-colour-text";
+        const name = document.createElement("strong");
+        name.textContent = faction;
+        const status = document.createElement("small");
+        const units = models.filter(m => m.faction === faction).length;
+        status.textContent = `${plural(units, "unit")} · ${colour ? colour.toUpperCase() : "no colour yet"}`;
+        text.append(name, status);
+
+        const buttons = document.createElement("div");
+        buttons.className = "faction-colour-buttons";
+        const suggestion = suggestFactionColour(faction);
+        if (suggestion && suggestion !== colour) {
+          const suggest = document.createElement("button");
+          suggest.className = "plain-button";
+          suggest.append(makeSwatch(suggestion), "Suggest");
+          suggest.setAttribute("aria-label", `Use suggested colour ${suggestion} for ${faction}`);
+          suggest.addEventListener("click", () => {
+            const old = colour;
+            setFactionColour(faction, suggestion);
+            renderFactionColours();
+            showToast(`${faction} colour set from its recipes`, () => { setFactionColour(faction, old); renderFactionColours(); });
+          });
+          buttons.appendChild(suggest);
+        }
+        const rename = document.createElement("button");
+        rename.className = "plain-button";
+        rename.textContent = "Rename";
+        rename.setAttribute("aria-label", `Rename ${faction}`);
+        rename.addEventListener("click", () => {
+          const answer = prompt(`Rename "${faction}" on all ${plural(units, "unit")} to:`, faction);
+          if (answer !== null) renameFaction(faction, answer);
+        });
+        buttons.appendChild(rename);
+        if (colour) {
+          const clear = document.createElement("button");
+          clear.className = "plain-button";
+          clear.textContent = "Clear";
+          clear.setAttribute("aria-label", `Remove the colour from ${faction}`);
+          clear.addEventListener("click", () => {
+            setFactionColour(faction, "");
+            renderFactionColours();
+            showToast(`${faction} colour removed`, () => { setFactionColour(faction, colour); renderFactionColours(); });
+          });
+          buttons.appendChild(clear);
+        }
+        row.append(picker, text, buttons);
+        factionColourList.appendChild(row);
+      }
+    }
+
     // ----- Charts -----
 
     // Draws a doughnut chart as SVG (a picture made of shapes, written as code).
@@ -1519,7 +1766,15 @@
         const button = document.createElement("button");
         button.className = "faction-button";
         const name = document.createElement("span");
+        name.className = "faction-name";
         name.textContent = faction || "No faction";
+        // Its colour, if it has one: a bar across the top and a dot by the name.
+        const colour = factionColour(faction);
+        if (colour) {
+          button.classList.add("has-faction");
+          button.style.setProperty("--faction-colour", colour);
+          name.prepend(makeSwatch(colour));
+        }
         const small = document.createElement("small");
         small.textContent = `${groupDone} of ${groupTotal} done`;
         button.append(
@@ -1742,6 +1997,11 @@
     todoButton.addEventListener("click", () => goToUnits({ stages: new Set(todoStages()) }));
     doneButton.addEventListener("click", () => goToUnits({ stages: new Set(doneStages()) }));
     repaintLink.addEventListener("click", () => goToUnits({ repaint: true }));
+    // "Faction colours" on the dashboard: open Settings at the faction colours card.
+    document.getElementById("faction-colours-link").addEventListener("click", () => {
+      showTab("settings");
+      document.getElementById("faction-colours-card").scrollIntoView({ block: "start" });
+    });
 
     // ----- Units -----
 
@@ -1781,6 +2041,8 @@
       if (!factions.includes(filters.faction)) filters.faction = "";
       fillSelect(hobbyFilter, "games", games, filters.hobby);
       fillSelect(factionFilter, "factions", factions, filters.faction);
+      // The chosen faction's colour shows as a stripe on the menu, like the stage chips.
+      factionFilter.style.setProperty("--chip-colour", factionColour(filters.faction) || "var(--border)");
 
       // Group chips: one tap for every To do (or Done) stage at once.
       const todo = todoStages();
@@ -1875,7 +2137,21 @@
       details.className = "details";
       const realName = model.nickname ? fullName(model) : "";
       const size = model.count > 1 ? `${model.count} models` : "";
-      details.textContent = [realName, size, model.hobby, model.faction].filter(Boolean).join(" · ");
+      details.textContent = [realName, size, model.hobby].filter(Boolean).join(" · ");
+      if (model.faction) {
+        if (details.textContent) details.append(" · ");
+        // The faction's colour: a dot before its name, and a soft tint across the card.
+        // (The left stripe stays the STAGE colour.)
+        const colour = factionColour(model.faction);
+        if (colour) {
+          const dot = makeSwatch(colour);
+          dot.classList.add("faction-dot");
+          details.append(dot);
+          item.classList.add("has-faction");
+          item.style.setProperty("--faction-colour", colour);
+        }
+        details.append(model.faction);
+      }
 
       const stage = document.createElement("div");
       stage.className = "stage";
@@ -2143,6 +2419,17 @@
       const sameGroup = (a, b) => same(a.name, b.name) && same(a.hobby, b.hobby) && same(a.faction, b.faction);
 
       const oldGroup = models.filter(m => m !== model && sameGroup(m, model));
+      // Changing the faction of the LAST unit in a faction is really a rename, so its
+      // colour goes with it (unless the new faction already has one).
+      if (field === "faction") {
+        const oldFaction = model.faction || "";
+        const lastOne = !models.some(m => m !== model && m.faction === oldFaction);
+        if (lastOne && settings.factionColours[oldFaction] && value && !settings.factionColours[value]) {
+          settings.factionColours[value] = settings.factionColours[oldFaction];
+        }
+        if (lastOne) delete settings.factionColours[oldFaction];
+        saveSettings();
+      }
       model[field] = value;
       delete model.copy;
       // The group it left: if only one is left, it no longer needs a number.
@@ -3394,6 +3681,7 @@
     function renderSettings() {
       startDraft();
       renderStageEditor();
+      renderFactionColours();
       let used = 0;
       try { used = (localStorage.getItem(STORAGE_KEY) || "").length + (localStorage.getItem(RECIPES_KEY) || "").length; } catch (ignored) {}
       const photos = models.filter(m => m.photo).length;
@@ -3436,7 +3724,8 @@
     // Backups include your stages, since a unit's stage is a position in that list.
     document.getElementById("export-button").addEventListener("click", () => {
       const today = new Date().toISOString().slice(0, 10);
-      const backup = { app: "Shades of Grey", version: 4, stages: STAGES, doneFrom: settings.doneFrom, models, recipes: book };
+      const backup = { app: "Shades of Grey", version: 5, stages: STAGES, doneFrom: settings.doneFrom, models, recipes: book,
+                       factionColours: settings.factionColours };
       downloadFile(`shades-of-grey-backup-${today}.json`, JSON.stringify(backup, null, 2), "application/json");
       settings.lastBackup = today;   // remembered so the app knows when to remind you
       saveSettings();
@@ -3485,6 +3774,11 @@
               fixDoneFrom();
               saveSettings();
               applyPalette(settings.palette);
+            }
+            // Backups from v8 onwards hold faction colours. Older ones don't, so yours stay.
+            if (!Array.isArray(parsed) && parsed.factionColours) {
+              settings.factionColours = cleanFactionColours(parsed.factionColours);
+              saveSettings();
             }
             openIds.clear();
             clearFilters();
@@ -4047,10 +4341,17 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v7";
+    const APP_VERSION = "v8";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v8", date: "7 Oct 2026", changes: [
+        "Faction colours: give each faction its own colour in Settings → Faction colours, or tap Faction colours on the dashboard.",
+        "Not sure which colour? Press Suggest to pick one from the recipes linked to that faction's units (armour recipes first).",
+        "The colour shows as a bar on the dashboard's faction cards, a soft tint and a dot on unit cards, and a stripe on the faction filter. The stage stripe on unit cards stays as it was.",
+        "Rename a faction on all its units at once (Settings → Faction colours → Rename). Its colour goes with it.",
+        "Backups now include your faction colours.",
+      ]},
       { version: "v7", date: "7 Oct 2026", changes: [
         "Progress over time: a new graph on the dashboard showing the models you've added and how many are painted, day by day.",
         "Choose 1 month, 3 months, 1 year or all time. Touch or hover over the graph to read any day's numbers, or open it as a table.",
