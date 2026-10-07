@@ -149,6 +149,31 @@
     .dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; background: var(--dot); }
     .legend .num { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
 
+    /* Progress over time. The two line colours are checked for colour-blind safety
+       against the card colour; each line also has a legend and an end label. */
+    :root { --series-added: #6366f1; --series-painted: #10a99a; }
+    .legend-row { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+    .legend-key { display: inline-flex; align-items: center; gap: 6px; }
+    .legend-key i { display: inline-block; width: 16px; height: 3px; border-radius: 2px; background: var(--key); }
+    .history-wrap { position: relative; }
+    .range-chips { gap: 6px; }
+    .range-chips .chip { padding: 8px 12px; min-height: 36px; }
+    .history-wrap svg { display: block; touch-action: pan-y; }   /* lets a finger drag sideways to read values */
+    .chart-tip {
+      position: absolute; top: 4px; pointer-events: none; z-index: 2;
+      background: var(--background); border: 1px solid var(--border); border-radius: 8px;
+      padding: 8px 10px; font-size: 13px; line-height: 1.5; white-space: nowrap;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+    }
+    .chart-tip strong { display: block; margin-bottom: 2px; }
+    .chart-tip .legend-key { display: flex; color: var(--text); }
+    .chart-tip b { font-variant-numeric: tabular-nums; margin-left: auto; padding-left: 12px; }
+    .history-table { max-height: 240px; overflow-y: auto; margin-top: 8px; }
+    .history-table table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+    .history-table th, .history-table td { padding: 6px 4px; border-bottom: 1px solid var(--border); text-align: right; }
+    .history-table th:first-child, .history-table td:first-child { text-align: left; }
+    .history-table th { color: var(--muted); font-weight: 500; position: sticky; top: 0; background: var(--card); }
+
     .faction-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
     .faction-button {
       background: var(--background);
@@ -472,7 +497,7 @@
         display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start;
       }
       #view-dashboard .card { margin-bottom: 0; }
-      #view-dashboard .card:first-child { grid-column: 1 / -1; }
+      #view-dashboard .card:first-child, #history-card { grid-column: 1 / -1; }
       .big { font-size: 56px; }
       .of { font-size: 16px; }
       .group-button { padding: 16px 18px; font-size: 15px; }
@@ -538,6 +563,22 @@
           <button class="group-button" id="done-button"></button>
         </div>
         <button class="link-button hidden" id="repaint-link"></button>
+      </div>
+
+      <!-- Progress over time: drawn by renderHistory() in the JavaScript. -->
+      <div class="card" id="history-card">
+        <h2>Progress over time</h2>
+        <div class="chips range-chips" id="history-range" style="margin: 0 0 12px;"></div>
+        <div class="legend-row" id="history-legend">
+          <span class="legend-key"><i style="--key: var(--series-added);"></i>Models added</span>
+          <span class="legend-key"><i style="--key: var(--series-painted);"></i>Models painted (Done)</span>
+        </div>
+        <div class="history-wrap" id="history-chart"></div>
+        <p class="hint" id="history-note" style="margin: 10px 0 0;"></p>
+        <details id="history-table-box" style="margin-top: 8px;">
+          <summary class="hint" style="margin: 0;">Show as a table</summary>
+          <div id="history-table" class="history-table"></div>
+        </details>
       </div>
 
       <div class="card">
@@ -677,6 +718,8 @@
             <li>It counts <strong>models</strong>, not units: a 10-model squad counts as 10.</li>
             <li>Tap any number, chart row or faction to jump to those units.</li>
             <li><strong>Repaint projects</strong> shows units you've flagged for a repaint.</li>
+            <li><strong>Progress over time</strong> shows how many models you've added and how many are painted (Done), day by day. Touch or hover over the graph to see the numbers for any day, or open <strong>Show as a table</strong>.</li>
+            <li>The graph uses the dates the app has recorded since v4. Units added before that count from the start of the graph, and deleted units drop out of its history.</li>
           </ul>
         </details>
         <details>
@@ -1273,6 +1316,7 @@
       settings.tab = name;
       saveSettings();
       if (name === "settings") renderSettings();
+      if (name === "dashboard") renderHistory();   // the graph needs to be on screen to measure its width
       window.scrollTo(0, 0);
     }
     tabButtons.forEach(b => b.addEventListener("click", () => {
@@ -1484,7 +1528,216 @@
         button.addEventListener("click", () => goToUnits({ faction }));
         factionGrid.appendChild(button);
       }
+      renderHistory();
     }
+
+    // ----- Progress over time (the line graph) -----
+    // Every unit keeps a diary of stage changes (see logStage). To find how many models
+    // were painted on any past day, we replay each unit's diary up to that day.
+
+    const HISTORY_RANGES = { "30": "1 month", "90": "3 months", "365": "1 year", "all": "All" };
+    if (!HISTORY_RANGES[settings.historyRange]) settings.historyRange = "all";
+    const DAY_MS = 86400000;
+    // Dates as day numbers (days since 1970), so they're easy to compare and space out.
+    function dayNumber(iso) {
+      const [y, m, d] = iso.split("-").map(Number);
+      return Date.UTC(y, m - 1, d) / DAY_MS;
+    }
+    function dayLabel(day, withYear) {
+      return new Date(day * DAY_MS).toLocaleDateString("en-GB",
+        withYear ? { month: "short", year: "2-digit", timeZone: "UTC" } : { day: "numeric", month: "short", timeZone: "UTC" });
+    }
+
+    // How many of a unit's models were Done at the end of a given day.
+    function doneOnDay(unit, day) {
+      const st = unit.start.slice();
+      for (const e of unit.m.log) {
+        if (dayNumber(e[0]) > day) continue;
+        if (e[2] === undefined) st.fill(e[1]);
+        else if (e[2] < st.length) st[e[2]] = e[1];
+      }
+      return st.filter(isDone).length;
+    }
+
+    function historyData() {
+      const today = dayNumber(todayISO());
+      let first = today;
+      for (const m of models) {
+        if (m.added) first = Math.min(first, dayNumber(m.added));
+        for (const e of m.log) first = Math.min(first, dayNumber(e[0]));
+      }
+      const days = new Set([today]);
+      const units = models.map(m => {
+        // Units from before v4 have no "added" date: they count from the start of the graph.
+        const from = m.added ? dayNumber(m.added) : first;
+        // Where the diary starts: its first entry, or (with no diary) where the unit is now.
+        const start = m.log.length ? new Array(m.count || 1).fill(m.log[0][1]) : stagesOf(m).slice();
+        days.add(from);
+        for (const e of m.log) days.add(dayNumber(e[0]));
+        return { m, from, start, count: m.count || 1 };
+      });
+      const valuesOn = (day) => {
+        let added = 0, done = 0;
+        for (const u of units) {
+          if (u.from > day) continue;
+          added += u.count;
+          done += doneOnDay(u, day);
+        }
+        return { day, added, done };
+      };
+      return { today, first, valuesOn, undated: models.filter(m => !m.added).length,
+               changeDays: [...days].sort((a, b) => a - b) };
+    }
+
+    // A tidy gap between grid lines: 1, 2, 5, 10, 20, 50...
+    function niceStep(max) {
+      const raw = Math.max(max / 4, 1);
+      const power = Math.pow(10, Math.floor(Math.log10(raw)));
+      return [1, 2, 5, 10].map(s => s * power).find(s => s >= raw);
+    }
+
+    function svgEl(tag, attributes, parent) {
+      const el = document.createElementNS(SVG_NS, tag);
+      for (const [k, v] of Object.entries(attributes)) el.setAttribute(k, v);
+      if (parent) parent.appendChild(el);
+      return el;
+    }
+
+    function renderHistory() {
+      const box = document.getElementById("history-chart");
+      const note = document.getElementById("history-note");
+      const tableBox = document.getElementById("history-table-box");
+      const legend = document.getElementById("history-legend");
+      const rangeChips = document.getElementById("history-range");
+      if (views.dashboard.classList.contains("hidden")) return;   // drawn when the tab opens
+
+      const data = historyData();
+      const ready = models.length > 0 && data.first < data.today;
+      rangeChips.innerHTML = "";
+      for (const [key, label] of Object.entries(HISTORY_RANGES)) {
+        rangeChips.appendChild(makeChip(label, settings.historyRange === key, () => {
+          settings.historyRange = key;
+          saveSettings();
+          renderHistory();
+        }));
+      }
+      for (const el of [rangeChips, legend, tableBox]) el.classList.toggle("hidden", !ready);
+      box.innerHTML = "";
+      if (!ready) {
+        note.textContent = models.length
+          ? "Your graph starts today. Come back after a few days of adding and painting to watch it grow."
+          : "Add some units and your progress will show here over time.";
+        return;
+      }
+      note.textContent = data.undated
+        ? `${plural(data.undated, "unit")} added before dates were recorded (v4) ${data.undated === 1 ? "counts" : "count"} from the start of the graph.`
+        : "";
+
+      // The points: the start of the chosen range, then every day something changed.
+      const span = settings.historyRange === "all" ? Infinity : Number(settings.historyRange);
+      const startDay = Math.max(data.first, data.today - span);
+      const points = [startDay, ...data.changeDays.filter(d => d > startDay)].map(data.valuesOn);
+      const valueAt = (day) => { let p = points[0]; for (const q of points) if (q.day <= day) p = q; return p; };
+
+      // Size: as wide as the card, a little shorter on phones.
+      const width = Math.max(260, box.clientWidth);
+      const height = width < 500 ? 210 : 270;
+      const pad = { left: 38, right: 44, top: 12, bottom: 28 };
+      const x0 = startDay, x1 = data.today;
+      const step = niceStep(Math.max(...points.map(p => p.added), 1));
+      const top = Math.max(step, Math.ceil(Math.max(...points.map(p => p.added)) / step) * step);
+      const X = (day) => pad.left + (day - x0) / (x1 - x0) * (width - pad.left - pad.right);
+      const Y = (v) => height - pad.bottom - v / top * (height - pad.top - pad.bottom);
+
+      const svg = svgEl("svg", { width, height, viewBox: `0 0 ${width} ${height}`, role: "img",
+        "aria-label": `Models added and painted over time. Now ${points[points.length - 1].added} added, ${points[points.length - 1].done} painted.` });
+
+      // Grid lines and numbers up the left (quiet, so the lines stand out).
+      for (let v = 0; v <= top; v += step) {
+        svgEl("line", { x1: pad.left, x2: width - pad.right, y1: Y(v), y2: Y(v), stroke: "var(--border)", "stroke-width": 1 }, svg);
+        const t = svgEl("text", { x: pad.left - 8, y: Y(v) + 4, "text-anchor": "end", fill: "var(--muted)", "font-size": 11 }, svg);
+        t.textContent = v;
+      }
+      // Dates along the bottom.
+      const ticks = width < 500 ? 3 : 5;
+      const withYear = x1 - x0 > 300;
+      for (let i = 0; i < ticks; i++) {
+        const day = Math.round(x0 + (x1 - x0) * i / (ticks - 1));
+        const t = svgEl("text", { x: X(day), y: height - 8, fill: "var(--muted)", "font-size": 11,
+          "text-anchor": i === 0 ? "start" : i === ticks - 1 ? "end" : "middle" }, svg);
+        t.textContent = i === ticks - 1 ? "Today" : dayLabel(day, withYear);
+      }
+
+      // The two lines, drawn as steps: a total stays flat until the day it changes.
+      const stepPath = (key) => {
+        let d = `M ${X(points[0].day)} ${Y(points[0][key])}`;
+        for (const p of points.slice(1)) d += ` H ${X(p.day)} V ${Y(p[key])}`;
+        return d + ` H ${X(x1)}`;
+      };
+      const series = [["added", "var(--series-added)"], ["done", "var(--series-painted)"]];
+      for (const [key, colour] of series) {
+        svgEl("path", { d: stepPath(key), fill: "none", stroke: colour, "stroke-width": 2,
+                        "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+      }
+      // Today's numbers at the end of each line, nudged apart if they'd overlap.
+      const last = points[points.length - 1];
+      let yAdded = Y(last.added) + 4, yDone = Y(last.done) + 4;
+      if (yDone - yAdded < 14) { const mid = (yAdded + yDone) / 2; yAdded = mid - 7; yDone = mid + 7; }
+      for (const [value, y] of [[last.added, yAdded], [last.done, yDone]]) {
+        const t = svgEl("text", { x: X(x1) + 6, y, fill: "var(--text)", "font-size": 12, "font-weight": 600 }, svg);
+        t.textContent = value;
+      }
+
+      // Touch or hover: a line follows your finger, with that day's numbers.
+      const cross = svgEl("line", { y1: pad.top, y2: height - pad.bottom, stroke: "var(--muted)",
+                                    "stroke-width": 1, "stroke-dasharray": "3 3", visibility: "hidden" }, svg);
+      const dots = series.map(([, colour]) => svgEl("circle", { r: 4.5, fill: colour, stroke: "var(--card)",
+                                                                "stroke-width": 2, visibility: "hidden" }, svg));
+      const hit = svgEl("rect", { x: pad.left, y: 0, width: width - pad.left - pad.right, height, fill: "transparent" }, svg);
+      const tip = document.createElement("div");
+      tip.className = "chart-tip hidden";
+      const show = (event) => {
+        const rect = svg.getBoundingClientRect();
+        const px = Math.min(Math.max(event.clientX - rect.left, pad.left), width - pad.right);
+        const day = Math.round(x0 + (px - pad.left) / (width - pad.left - pad.right) * (x1 - x0));
+        const p = valueAt(day);
+        const x = X(day);
+        cross.setAttribute("x1", x);
+        cross.setAttribute("x2", x);
+        dots[0].setAttribute("cx", x); dots[0].setAttribute("cy", Y(p.added));
+        dots[1].setAttribute("cx", x); dots[1].setAttribute("cy", Y(p.done));
+        for (const el of [cross, ...dots]) el.setAttribute("visibility", "visible");
+        const pct = p.added ? Math.round(p.done / p.added * 100) : 0;
+        tip.innerHTML = `<strong></strong>` +
+          `<div class="legend-key"><i style="--key: var(--series-added);"></i>Added<b>${p.added}</b></div>` +
+          `<div class="legend-key"><i style="--key: var(--series-painted);"></i>Painted<b>${p.done} (${pct}%)</b></div>`;
+        tip.querySelector("strong").textContent = day === x1 ? "Today" : dayLabel(day, false) + (withYear ? " " + new Date(day * DAY_MS).getUTCFullYear() : "");
+        tip.classList.remove("hidden");
+        // Keep the box beside the line, flipping to the left near the right-hand edge.
+        const tipWidth = tip.offsetWidth;
+        const left = x + 12 + tipWidth > width ? x - 12 - tipWidth : x + 12;
+        tip.style.left = `${Math.max(0, Math.min(left, width - tipWidth))}px`;   // never off the edge
+      };
+      const hide = () => {
+        for (const el of [cross, ...dots]) el.setAttribute("visibility", "hidden");
+        tip.classList.add("hidden");
+      };
+      hit.addEventListener("pointermove", show);
+      hit.addEventListener("pointerdown", show);
+      hit.addEventListener("pointerleave", hide);
+      box.append(svg, tip);
+
+      // The same numbers as a table, newest first.
+      const rows = points.slice().reverse().map(p =>
+        `<tr><td>${p.day === x1 ? "Today" : dayLabel(p.day, false) + " " + new Date(p.day * DAY_MS).getUTCFullYear()}</td>` +
+        `<td>${p.added}</td><td>${p.done}</td><td>${p.added ? Math.round(p.done / p.added * 100) : 0}%</td></tr>`).join("");
+      document.getElementById("history-table").innerHTML =
+        `<table><thead><tr><th>Date</th><th>Added</th><th>Painted</th><th>Done</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
+    // Redraw the graph when the window changes size (e.g. turning a phone sideways).
+    let resizeTimer;
+    window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(renderHistory, 150); });
 
     todoButton.addEventListener("click", () => goToUnits({ stages: new Set(todoStages()) }));
     doneButton.addEventListener("click", () => goToUnits({ stages: new Set(doneStages()) }));
@@ -3794,10 +4047,14 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v6";
+    const APP_VERSION = "v7";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v7", date: "7 Oct 2026", changes: [
+        "Progress over time: a new graph on the dashboard showing the models you've added and how many are painted, day by day.",
+        "Choose 1 month, 3 months, 1 year or all time. Touch or hover over the graph to read any day's numbers, or open it as a table.",
+      ]},
       { version: "v6", date: "7 Oct 2026", changes: [
         "Your Palette: switch to it at the top of the Recipes tab. It lists every paint in your recipes, once each, and fills itself in as you write recipes.",
         "Sort your palette by colour (round the colour wheel, then greys), by name or by brand, and tap a brand to show only its paints.",
