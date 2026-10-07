@@ -213,6 +213,15 @@
     .pips { display: flex; gap: 3px; margin-top: 6px; }
     .pip { height: 4px; flex: 1; border-radius: 2px; background: var(--border); }
     .pip.filled { background: var(--stage-colour); }
+    .pip.part { background: var(--stage-colour); opacity: 0.35; }   /* some models are this far */
+
+    /* Per-model list inside a unit's details */
+    .each-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+    .each-list li { display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+                    border: 1px solid var(--border); border-left: 4px solid var(--stage-colour); border-radius: 8px; }
+    .each-list .each-name { font-size: 13px; color: var(--muted); width: 64px; flex-shrink: 0; }
+    .each-list .each-stage { flex: 1; font-size: 13px; font-weight: 600; color: var(--stage-colour); }
+    .each-list button { min-width: 40px; min-height: 36px; padding: 4px 10px; }
 
     /* The big "move up a stage" button: deliberate, hard to hit by accident. */
     .up-button {
@@ -820,6 +829,24 @@
           count: cleanCount(m.count),
           repaint: m.repaint === true,
         };
+        // Track-each-model: one valid stage per model, otherwise switch it off.
+        const validStage = (x) => Number.isInteger(x) && x >= 0 && x < STAGES.length;
+        if (m.each === true && Array.isArray(m.stages)) {
+          const list = m.stages.map(Number).slice(0, model.count);
+          while (list.length < model.count) list.push(model.stage);
+          model.stages = list.map(x => validStage(x) ? x : 0);
+          model.stage = lowest(model.stages);
+        } else {
+          delete model.each;
+          delete model.stages;
+        }
+        // Dates: keep only ones that look like "2026-10-07".
+        const isDate = (d) => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d);
+        if (!isDate(model.added)) delete model.added;
+        model.log = Array.isArray(m.log)
+          ? m.log.filter(e => Array.isArray(e) && isDate(e[0]) && validStage(e[1]) &&
+                              (e[2] === undefined || (Number.isInteger(e[2]) && e[2] >= 0)))
+          : [];
         if (Number.isInteger(model.id) && !usedIds.has(model.id)) usedIds.add(model.id);
         else model.id = null; // given a fresh one below
         cleaned.push(model);
@@ -874,6 +901,78 @@
 
     // The ONE place units get added (used by the form and CSV import).
     // Same name + game + faction as an existing unit? Then they're numbered.
+    // ================= DATES AND HISTORY =================
+    // Today's date in YOUR time zone, written like "2026-10-07".
+    function todayISO() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    }
+
+    // Every unit keeps a small diary of stage changes, used later for the progress graph.
+    //   [date, stage]         = the whole unit moved to that stage
+    //   [date, stage, n]      = just model number n (0 = first) moved
+    // Several changes on the same day for the same model keep only the last one.
+    function logStage(model, stage, index) {
+      if (!Array.isArray(model.log)) model.log = [];
+      const date = todayISO();
+      const entry = index === undefined ? [date, stage] : [date, stage, index];
+      const last = model.log[model.log.length - 1];
+      if (last && last[0] === date && last[2] === entry[2]) model.log[model.log.length - 1] = entry;
+      else model.log.push(entry);
+    }
+
+    // ================= TRACKING EACH MODEL =================
+    // A unit is either painted as a BATCH (one stage for the whole unit, the default) or
+    // has "each" switched on, where model.stages holds one stage per model.
+    // model.stage is then the LOWEST of them, so sorting and the CSV still make sense.
+
+    // The stage of every model in a unit, as a list.
+    function stagesOf(m) {
+      return m.each ? m.stages : new Array(m.count || 1).fill(m.stage);
+    }
+    function lowest(list) { return Math.min(...list); }
+
+    // Put a unit (or one model, if index is given) at a stage, and note it in the diary.
+    function setStage(model, stage, index) {
+      if (model.each && index !== undefined) {
+        model.stages[index] = stage;
+        model.stage = lowest(model.stages);
+        logStage(model, stage, index);
+      } else {
+        model.stage = stage;
+        if (model.each) model.stages = model.stages.map(() => stage);
+        logStage(model, stage);
+      }
+    }
+
+    // Switch "track each model" on or off.
+    function setEach(model, on) {
+      if (on) {
+        model.each = true;
+        model.stages = new Array(model.count || 1).fill(model.stage);
+      } else {
+        const spread = new Set(model.stages).size > 1;
+        if (spread && !confirm(`Go back to painting ${displayName(model)} as a batch? ` +
+            `All its models will be set to ${STAGES[model.stage]}, the stage of the furthest-behind model.`)) {
+          render();
+          return;
+        }
+        delete model.each;
+        delete model.stages;
+        if (spread) logStage(model, model.stage);
+      }
+      render();
+    }
+
+    // When the number of models changes, add new models at the first stage, or drop the last ones.
+    function resizeEach(model) {
+      if (!model.each) return;
+      const n = model.count || 1;
+      while (model.stages.length < n) model.stages.push(0);
+      model.stages.length = n;
+      model.stage = lowest(model.stages);
+    }
+
     function addModel(fields) {
       // Capitals and curly/straight apostrophes don't matter ("T’au" = "T'au").
       const same = (a, b) => plainQuotes(a || "").toLowerCase() === plainQuotes(b || "").toLowerCase();
@@ -881,6 +980,8 @@
         same(m.name, fields.name) && same(m.hobby, fields.hobby) && same(m.faction, fields.faction));
 
       const model = { id: nextId(), stage: 0, count: 1, repaint: false, ...fields };
+      model.added = todayISO();
+      model.log = [[model.added, model.stage]];
 
       if (matches.length > 0) {
         let highest = Math.max(0, ...matches.map(m => m.copy || 0));
@@ -946,7 +1047,7 @@
     }
     function isVisible(m) {
       return inScope(m) &&
-             (filters.stages.size === 0 || filters.stages.has(m.stage)) &&
+             (filters.stages.size === 0 || stagesOf(m).some(st => filters.stages.has(st))) &&
              (!filters.repaint || m.repaint);
     }
 
@@ -1039,10 +1140,19 @@
     const stageLegend = document.getElementById("stage-legend");
     const factionGrid = document.getElementById("faction-grid");
 
+    // Counts MODELS (not units) at each stage. Units tracked model-by-model count each model
+    // at its own stage.
     function stageCounts(list) {
-      return STAGES.map((s, i) => modelCount(list.filter(m => m.stage === i)));
+      const counts = STAGES.map(() => 0);
+      for (const m of list) {
+        if (m.each) for (const st of m.stages) counts[st]++;
+        else counts[m.stage] += m.count || 1;
+      }
+      return counts;
     }
-    function doneCount(list) { return modelCount(list.filter(m => isDone(m.stage))); }
+    function doneCount(list) {
+      return stageCounts(list).reduce((total, c, i) => total + (isDone(i) ? c : 0), 0);
+    }
 
     function renderDashboard() {
       const total = modelCount(models);
@@ -1251,13 +1361,22 @@
 
       const stage = document.createElement("div");
       stage.className = "stage";
-      stage.textContent = STAGES[model.stage] + (model.repaint ? "  ·  ↻ repaint" : "");
+      // Batch: just the stage. Each model: how many are at each stage, furthest first.
+      let stageText = STAGES[model.stage];
+      if (model.each && new Set(model.stages).size > 1) {
+        const counts = stageCounts([model]);
+        stageText = counts.map((c, i) => [c, i]).filter(([c]) => c > 0).reverse()
+          .map(([c, i]) => `${c} ${STAGES[i]}`).join(" · ");
+      }
+      stage.textContent = stageText + (model.repaint ? "  ·  ↻ repaint" : "");
 
+      // Pips: solid up to the furthest-behind model, faint up to the furthest-ahead one.
+      const furthest = Math.max(...stagesOf(model));
       const pips = document.createElement("div");
       pips.className = "pips";
       for (let i = 0; i < STAGES.length; i++) {
         const pip = document.createElement("div");
-        pip.className = i <= model.stage ? "pip filled" : "pip";
+        pip.className = i <= model.stage ? "pip filled" : i <= furthest ? "pip part" : "pip";
         pips.appendChild(pip);
       }
 
@@ -1279,7 +1398,9 @@
       up.disabled = atTop;
       up.setAttribute("aria-label", atTop
         ? `${displayName(model)} is ${STAGES[model.stage]}`
-        : `Move ${displayName(model)} up to ${STAGES[model.stage + 1]}`);
+        : model.each
+          ? `Move one model of ${displayName(model)} up to ${STAGES[model.stage + 1]}`
+          : `Move ${displayName(model)} up to ${STAGES[model.stage + 1]}`);
       up.addEventListener("click", () => changeStage(model.id, +1));
 
       item.append(info, up);
@@ -1329,7 +1450,7 @@
       countBox.type = "number";
       countBox.min = 1;
       countBox.value = model.count || 1;
-      countBox.addEventListener("change", () => { model.count = cleanCount(countBox.value); render(); });
+      countBox.addEventListener("change", () => { model.count = cleanCount(countBox.value); resizeEach(model); render(); });
       countLabel.appendChild(countBox);
 
       const repaintLabel = document.createElement("label");
@@ -1356,7 +1477,52 @@
       note.addEventListener("blur", save);
       noteLabel.appendChild(note);
 
-      panel.append(nicknameLabel, extras, noteLabel);
+      panel.append(nicknameLabel, extras);
+
+      // Track each model separately (only makes sense with 2 or more models).
+      if ((model.count || 1) > 1) {
+        const eachLabel = document.createElement("label");
+        eachLabel.className = "check-label";
+        const eachBox = document.createElement("input");
+        eachBox.type = "checkbox";
+        eachBox.checked = !!model.each;
+        eachBox.addEventListener("change", () => setEach(model, eachBox.checked));
+        eachLabel.append(eachBox, "Track each model separately (for painting one at a time)");
+        panel.appendChild(eachLabel);
+      }
+
+      if (model.each) {
+        const list = document.createElement("ol");
+        list.className = "each-list";
+        list.setAttribute("aria-label", "Each model's stage");
+        model.stages.forEach((st, i) => {
+          const row = document.createElement("li");
+          row.style.setProperty("--stage-colour", `var(--stage-${st})`);
+          const label = document.createElement("span");
+          label.className = "each-name";
+          label.textContent = `Model ${i + 1}`;
+          const stageName = document.createElement("span");
+          stageName.className = "each-stage";
+          stageName.textContent = STAGES[st];
+          const down = document.createElement("button");
+          down.className = "plain-button";
+          down.textContent = "◀";
+          down.disabled = st === 0;
+          down.setAttribute("aria-label", `Move model ${i + 1} back a stage`);
+          down.addEventListener("click", () => changeStage(model.id, -1, i));
+          const upOne = document.createElement("button");
+          upOne.className = "plain-button";
+          upOne.textContent = "▲";
+          upOne.disabled = st >= STAGES.length - 1;
+          upOne.setAttribute("aria-label", `Move model ${i + 1} up a stage`);
+          upOne.addEventListener("click", () => changeStage(model.id, +1, i));
+          row.append(label, stageName, down, upOne);
+          list.appendChild(row);
+        });
+        panel.appendChild(list);
+      }
+
+      panel.appendChild(noteLabel);
 
       if (model.photo) {
         const photo = document.createElement("img");
@@ -1389,7 +1555,8 @@
       addPhoto.className = "plain-button";
       addPhoto.textContent = model.photo ? "Replace photo" : "Add photo";
       addPhoto.addEventListener("click", () => picker.click());
-      buttons.append(back, addPhoto);
+      if (model.each) buttons.append(addPhoto);   // each model has its own ◀ above
+      else buttons.append(back, addPhoto);
 
       if (model.photo) {
         const removePhoto = document.createElement("button");
@@ -1437,16 +1604,23 @@
     }
 
     // Move a unit up (+1) or back (-1) a stage, then show a message with Undo.
-    function changeStage(id, direction) {
+    // index: which model, for units tracked model-by-model. The big ▲ on a card doesn't
+    // say, so it moves up the first model that's furthest behind.
+    function changeStage(id, direction, index) {
       const model = models.find(m => m.id === id);
       if (!model) return;
-      const before = model.stage;
+      if (model.each && index === undefined) {
+        if (direction < 0) return;
+        index = model.stages.indexOf(model.stage);
+      }
+      const before = model.each ? model.stages[index] : model.stage;
       const after = before + direction;
       if (after < 0 || after >= STAGES.length) return;
-      model.stage = after;
+      setStage(model, after, model.each ? index : undefined);
       render();
-      showToast(`${displayName(model)} → ${STAGES[after]}`, () => {
-        model.stage = before;
+      const who = model.each ? `${displayName(model)}, model ${index + 1}` : displayName(model);
+      showToast(`${who} → ${STAGES[after]}`, () => {
+        setStage(model, before, model.each ? index : undefined);
         render();
       });
     }
@@ -1688,13 +1862,17 @@
         while (k >= 0 && map[k] === undefined) k--;
         map[old] = k >= 0 ? map[k] : 0;
       }
-      const affected = models.filter(m => removed.includes(m.stage));
+      const affected = models.filter(m => stagesOf(m).some(st => removed.includes(st)));
       if (affected.length && !confirm(
         `${affected.length} unit(s) are in a stage you've removed. They'll move to the nearest earlier stage. Continue?`)) {
         return;
       }
 
-      models.forEach(m => { m.stage = map[m.stage]; });
+      models.forEach(m => {
+        m.stage = map[m.stage];
+        if (m.each) m.stages = m.stages.map(st => map[st]);
+        if (Array.isArray(m.log)) m.log.forEach(e => { e[1] = map[e[1]]; });
+      });
       settings.doneFrom = draft.indexOf(draftDoneItem);
       settings.stages = STAGES = names;
       fixDoneFrom();
@@ -2404,10 +2582,15 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v3";
+    const APP_VERSION = "v4";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v4", date: "7 Oct 2026", changes: [
+        "Paint one model at a time: open a unit with 2 or more models and tick \"Track each model separately\". Each model gets its own stage and ◀ ▲ buttons. The big ▲ on the card moves up whichever model is furthest behind.",
+        "The dashboard counts each of those models at its own stage.",
+        "The app now quietly notes the date you add a unit and when it changes stage. This is getting ready for a progress-over-time graph.",
+      ]},
       { version: "v3", date: "7 Oct 2026", changes: [
         "New final stage: Parade ready. The default order now ends Battle ready → Painted with issues → Parade ready, and all three count as Done. If you were on the old default stages, your units have been moved over automatically.",
         "Edit a unit: open its details to change its name, game or faction.",
