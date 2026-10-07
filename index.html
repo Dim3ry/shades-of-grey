@@ -407,6 +407,28 @@
       border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: grid; gap: 6px;
     }
     .recipe-item:hover { border-color: var(--accent); }
+
+    /* Painting schemes (v9). A scheme card isn't one big button (it has buttons inside),
+       so it doesn't light up on hover. Its faction colour shows as a top bar and tint. */
+    .scheme-item:hover { border-color: var(--border); }
+    .scheme-item.has-faction {
+      box-shadow: inset 0 4px 0 var(--faction-colour);
+      background: linear-gradient(to bottom, color-mix(in srgb, var(--faction-colour) 20%, transparent), transparent 50%), var(--card);
+    }
+    .scheme-item .meta .faction-dot { width: 10px; height: 10px; vertical-align: -1px; margin-right: 6px; }
+    .scheme-item .recipe-links { margin-top: 2px; }
+    .scheme-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+    .scheme-buttons button { padding: 10px 14px; min-height: 40px; }
+    .scheme-buttons .primary-button { flex: 1; }
+    .scheme-form { display: grid; gap: 10px; }
+    .scheme-form h2 { margin: 0; }
+    .scheme-form label:not(.check-label) { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
+    .scheme-form .hint { margin: -4px 0 0; }
+    .scheme-recipe-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+    .scheme-recipe-list label { display: flex; align-items: center; gap: 10px; padding: 8px 4px; min-height: 40px; cursor: pointer; }
+    .scheme-recipe-list .scheme-recipe-name { flex: 1; }
+    .scheme-recipe-list small { color: var(--muted); font-size: 12px; }
+    .scheme-recipe-list .swatch { width: 14px; height: 14px; }
     .recipe-item .meta { font-size: 13px; color: var(--muted); }
     .swatches { display: flex; gap: 4px; flex-wrap: wrap; }
     /* A small circle of paint colour. --swatch is set by JavaScript. */
@@ -449,7 +471,7 @@
 
     /* The Recipes | Your Palette switch at the top of the Recipes tab */
     .seg {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin-bottom: 12px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; margin-bottom: 12px;
       background: var(--card); border: 1px solid var(--border); border-radius: 12px;
     }
     .seg button { background: none; color: var(--muted); padding: 10px; font-size: 15px; min-height: 44px; }
@@ -562,7 +584,7 @@
       #view-updates .card { margin-bottom: 0; }
       #view-help .help:not(.hidden) { columns: 2; column-gap: 40px; }
       ul.recipe-list { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
-      #recipe-page { max-width: 780px; }
+      #recipe-page, #scheme-page { max-width: 780px; }
       .seg { max-width: 480px; }
       ul.paint-list { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; align-items: start; }
       .help details { break-inside: avoid; }
@@ -682,9 +704,21 @@
     <section id="view-recipes" class="hidden">
       <!-- The list of recipes. Hidden while one recipe is open. -->
       <!-- Switch between your recipes and your palette (the paints those recipes use). -->
-      <div class="seg" id="recipe-seg" role="tablist" aria-label="Recipes or palette">
+      <div class="seg" id="recipe-seg" role="tablist" aria-label="Recipes, schemes or palette">
         <button role="tab" data-view="recipes">Recipes</button>
+        <button role="tab" data-view="schemes">Schemes</button>
         <button role="tab" data-view="palette">Your Palette</button>
+      </div>
+
+      <!-- Painting schemes (v9): named groups of recipes for a faction. Filled by renderSchemes(). -->
+      <div id="scheme-view" class="hidden">
+        <div id="scheme-home">
+          <div class="units-toolbar" style="grid-template-columns: 1fr;">
+            <button class="primary-button" id="new-scheme">+ New scheme</button>
+          </div>
+          <ul class="recipe-list" id="scheme-list"></ul>
+        </div>
+        <div id="scheme-page" class="hidden"></div>
       </div>
 
       <!-- Your Palette: built automatically from the paints in your recipes. -->
@@ -784,6 +818,10 @@
             <li>Link a recipe to units from the recipe (<strong>Used on</strong>) or from a unit's details. Linked recipes show as buttons on the unit's card: tap one to open it.</li>
             <li><strong>Your Palette</strong> (top of the Recipes tab) lists every paint in your recipes, once each. It fills itself in: add a paint to a recipe and it appears.</li>
             <li>In Your Palette, sort by colour, name or brand, and tap a brand to show only its paints. Tap a paint to change its colour, name or brand: the change applies in every recipe that uses it.</li>
+            <li><strong>Schemes</strong> (top of the Recipes tab) group the recipes you use for one faction, e.g. "My Ultramarines" = armour, trim, lenses and base. Press <strong>+ New scheme</strong>, name it, type the faction and tick its recipes.</li>
+            <li><strong>Apply to … units</strong> links a scheme's recipes to every unit in its faction that doesn't have them all yet. Recipes a unit already has stay linked.</li>
+            <li>With <strong>New units … get these recipes automatically</strong> ticked, any unit you add to that faction later (by hand or by import) gets the scheme straight away.</li>
+            <li>In a unit's details, the <strong>Link a recipe…</strong> menu also lists its faction's schemes. Deleting a scheme leaves its recipes and links alone.</li>
             <li>Need a part or technique that isn't listed? Choose <strong>＋ Add a new…</strong> in the menu. Remove ones you don't use under <strong>Parts and techniques</strong>.</li>
           </ul>
         </details>
@@ -802,7 +840,7 @@
           <ul>
             <li>Everything is saved <strong>on this device only</strong>, in your browser. Nobody else can see it, and it isn't sent anywhere.</li>
             <li>Clearing your browser's data or uninstalling the app deletes it, so <strong>Save backup</strong> regularly. The app reminds you after two weeks.</li>
-            <li><strong>Restore backup</strong> brings a backup file back, including your stages, recipes and faction colours.</li>
+            <li><strong>Restore backup</strong> brings a backup file back, including your stages, recipes, schemes and faction colours.</li>
             <li><strong>Export CSV</strong> saves your collection as a spreadsheet (without photos).</li>
             <li>New phone? Save a backup on the old one, open the app on the new one, and restore it.</li>
           </ul>
@@ -1156,8 +1194,25 @@
       let next = Math.max(0, ...recipeIds) + 1;
       for (const r of recipes) if (r.id === null) r.id = next++;
 
+      // Painting schemes (v9): { id, name, faction, auto, recipes: [recipe ids] }.
+      // A scheme is a named group of recipes for one faction. "auto" = link its recipes to
+      // new units added in that faction. Recipe ids that no longer exist are dropped.
+      const allRecipeIds = new Set(recipes.map(r => r.id));
+      const schemes = [];
+      const schemeIds = new Set();
+      for (const s of Array.isArray(src.schemes) ? src.schemes : []) {
+        if (!s || typeof s.name !== "string" || !s.name.trim()) continue;
+        const id = Number.isInteger(s.id) && !schemeIds.has(s.id) ? s.id : null;
+        if (id !== null) schemeIds.add(id);
+        const ids = Array.isArray(s.recipes) ? [...new Set(s.recipes.filter(r => allRecipeIds.has(r)))] : [];
+        schemes.push({ ...s, id, name: s.name.trim(), faction: String(s.faction || "").trim(),
+                       auto: s.auto !== false, recipes: ids });
+      }
+      let nextScheme = Math.max(0, ...schemeIds) + 1;
+      for (const s of schemes) if (s.id === null) s.id = nextScheme++;
+
       return { parts: textList(src.parts, DEFAULT_PARTS), techniques: textList(src.techniques, DEFAULT_TECHNIQUES),
-               paints, recipes };
+               paints, recipes, schemes };
     }
 
     // localStorage only holds text, so we turn the list into text (JSON) to save it,
@@ -1362,6 +1417,11 @@
         model.hobby = matches[0].hobby;
         model.faction = matches[0].faction;
       }
+      // Painting schemes: a new unit in a faction with an automatic scheme gets that
+      // scheme's recipes linked straight away.
+      for (const scheme of schemesFor(model.faction)) {
+        if (scheme.auto) for (const id of scheme.recipes) linkRecipe(model, id);
+      }
       models.push(model);
       return model;
     }
@@ -1520,8 +1580,10 @@
       // Remember how things were, for Undo.
       const before = models.map(m => [m, m.faction, m.copy]);
       const coloursBefore = { ...settings.factionColours };
+      const movedSchemes = book.schemes.filter(s => s.faction === oldName);
 
       for (const m of models) if (m.faction === oldName) m.faction = newName;
+      for (const s of movedSchemes) s.faction = newName;   // its painting schemes follow
       if (settings.factionColours[oldName] && !settings.factionColours[newName]) {
         settings.factionColours[newName] = settings.factionColours[oldName];
       }
@@ -1537,6 +1599,7 @@
           if (copy) m.copy = copy; else delete m.copy;
         }
         settings.factionColours = coloursBefore;
+        for (const s of movedSchemes) s.faction = oldName;
         if (filters.faction === newName) filters.faction = oldName;
         saveSettings();
         render();
@@ -2348,9 +2411,21 @@
       book.recipes.filter(r => !linkedRecipes.includes(r))
         .sort((a, b) => a.name.localeCompare(b.name))
         .forEach(r => recipePicker.add(new Option(r.part ? `${r.name} (${r.part})` : r.name, r.id)));
+      // This faction's painting schemes that the unit doesn't fully have yet.
+      for (const scheme of schemesFor(model.faction)) {
+        if (scheme.recipes.some(id => recipeById(id) && !(model.recipes || []).includes(id))) {
+          recipePicker.add(new Option(`Apply scheme: ${scheme.name}`, `scheme:${scheme.id}`));
+        }
+      }
       recipePicker.add(new Option("＋ New recipe for this unit", "new"));
       recipePicker.addEventListener("change", () => {
         if (recipePicker.value === "new") { recipePicker.value = ""; startNewRecipe(model.id); return; }
+        if (recipePicker.value.startsWith("scheme:")) {
+          const scheme = book.schemes.find(s => s.id === Number(recipePicker.value.slice(7)));
+          recipePicker.value = "";
+          if (scheme) applyScheme(scheme, [model]);
+          return;
+        }
         if (recipePicker.value) { linkRecipe(model, Number(recipePicker.value)); render(); }
       });
       recipeField.appendChild(recipePicker);
@@ -2428,6 +2503,8 @@
           settings.factionColours[value] = settings.factionColours[oldFaction];
         }
         if (lastOne) delete settings.factionColours[oldFaction];
+        // Its painting schemes follow too (they'd otherwise point at a faction with no units).
+        if (lastOne && oldFaction && value) for (const s of book.schemes) if (s.faction === oldFaction) s.faction = value;
         saveSettings();
       }
       model[field] = value;
@@ -2524,9 +2601,12 @@
       toastTimer = setTimeout(() => toast.classList.add("hidden"), (seconds || 4) * 1000);
     }
     toastUndo.addEventListener("click", () => {
-      if (undoAction) undoAction();
+      // Hide first, THEN run the action, so the action can show a new message of its own
+      // (e.g. "Apply to 3 units" shows "Applied…" with its own Undo).
+      const action = undoAction;
       undoAction = null;
       toast.classList.add("hidden");
+      if (action) action();
     });
 
     // ----- Filters and the add form -----
@@ -2697,20 +2777,26 @@
     let recipePartFilter = "";
     let openRecipeId = null;   // the recipe being read, or null for the list
     let recipeDraft = null;    // the recipe being edited (a copy), or null
+    const schemeView = document.getElementById("scheme-view");
+    let schemeDraft = null;    // the painting scheme being edited (a copy), or null
 
     function renderRecipes() {
       if (openRecipeId !== null && !recipeById(openRecipeId)) openRecipeId = null;
       const onPage = !!recipeDraft || openRecipeId !== null;
       const onPalette = !onPage && settings.recipeView === "palette";
-      recipeSeg.classList.toggle("hidden", onPage);
-      recipeSeg.querySelectorAll("button").forEach(b =>
-        b.setAttribute("aria-selected", b.dataset.view === (onPalette ? "palette" : "recipes")));
-      recipeHome.classList.toggle("hidden", onPage || onPalette);
+      const onSchemes = !onPage && settings.recipeView === "schemes";
+      const current = onPalette ? "palette" : onSchemes ? "schemes" : "recipes";
+      // The switch hides while a recipe or a scheme being edited fills the screen.
+      recipeSeg.classList.toggle("hidden", onPage || (onSchemes && !!schemeDraft));
+      recipeSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", b.dataset.view === current));
+      recipeHome.classList.toggle("hidden", onPage || onPalette || onSchemes);
       paletteView.classList.toggle("hidden", !onPalette);
+      schemeView.classList.toggle("hidden", !onSchemes);
       recipePage.classList.toggle("hidden", !onPage);
       if (recipeDraft) renderRecipeEditor();
       else if (openRecipeId !== null) renderRecipeView(recipeById(openRecipeId));
       else if (onPalette) renderPalette();
+      else if (onSchemes) renderSchemes();
       else renderRecipeList();
     }
 
@@ -2817,7 +2903,8 @@
       recipePage.innerHTML = "";
       const back = document.createElement("button");
       back.className = "link-button";
-      back.textContent = settings.recipeView === "palette" ? "← Your Palette" : "← All recipes";
+      back.textContent = settings.recipeView === "palette" ? "← Your Palette"
+                       : settings.recipeView === "schemes" ? "← Schemes" : "← All recipes";
       back.addEventListener("click", () => { openRecipeId = null; renderRecipes(); });
       recipePage.appendChild(back);
 
@@ -2954,10 +3041,14 @@
       const recipe = recipeById(id);
       if (!recipe) return;
       const users = unitsUsing(id);
+      const inSchemes = book.schemes.filter(s => s.recipes.includes(id));
+      const unlinkFrom = [users.length ? plural(users.length, "unit") : "",
+                          inSchemes.length ? plural(inSchemes.length, "scheme") : ""].filter(Boolean).join(" and ");
       if (!confirm(`Delete the recipe "${recipe.name}"?` +
-                   (users.length ? ` It will be unlinked from ${plural(users.length, "unit")}.` : ""))) return;
-      const before = JSON.parse(JSON.stringify(book));   // a copy, for Undo
+                   (unlinkFrom ? ` It will be removed from ${unlinkFrom}.` : ""))) return;
+      const before = JSON.parse(JSON.stringify(book));   // a copy, for Undo (schemes included)
       book.recipes = book.recipes.filter(r => r.id !== id);
+      for (const s of inSchemes) s.recipes = s.recipes.filter(r => r !== id);
       users.forEach(m => unlinkRecipe(m, id));
       pruneUnusedPaints();
       openRecipeId = null;
@@ -2967,6 +3058,288 @@
         users.forEach(m => linkRecipe(m, id));
         render();
       });
+    }
+
+    // ----- Painting schemes -----
+    // A scheme is a named group of recipes for one faction, e.g. "My Ultramarines" =
+    // armour + trim + lenses + base. You can apply it to every unit in the faction at once,
+    // and (if "auto" is on) new units added in that faction get its recipes automatically.
+    // Schemes live in the recipe book (book.schemes), so they're saved and backed up with it.
+
+    // The schemes for a faction (ignoring capitals and curly quotes).
+    function schemesFor(faction) {
+      return faction ? book.schemes.filter(s => sameText(s.faction, faction)) : [];
+    }
+    function schemeRecipes(scheme) { return scheme.recipes.map(recipeById).filter(Boolean); }
+    function schemeUnits(scheme) {
+      return scheme.faction ? models.filter(m => sameText(m.faction, scheme.faction)) : [];
+    }
+    // Units in the faction that are missing at least one of the scheme's recipes.
+    function unitsMissing(scheme) {
+      return schemeUnits(scheme).filter(m => scheme.recipes.some(id => !(m.recipes || []).includes(id)));
+    }
+
+    // Link a scheme's recipes to some units, with Undo. Recipes they already have stay.
+    function applyScheme(scheme, units) {
+      if (!units.length || !scheme.recipes.length) return;
+      const before = units.map(m => [m, m.recipes ? m.recipes.slice() : null]);
+      for (const m of units) for (const id of scheme.recipes) linkRecipe(m, id);
+      render();
+      showToast(`${scheme.name} applied to ${plural(units.length, "unit")}`, () => {
+        for (const [m, recipes] of before) { if (recipes) m.recipes = recipes; else delete m.recipes; }
+        render();
+      });
+    }
+
+    const schemeHome = document.getElementById("scheme-home");
+    const schemePage = document.getElementById("scheme-page");
+    const schemeListEl = document.getElementById("scheme-list");
+
+    function renderSchemes() {
+      schemeHome.classList.toggle("hidden", !!schemeDraft);
+      schemePage.classList.toggle("hidden", !schemeDraft);
+      if (schemeDraft) { renderSchemeEditor(); return; }
+
+      schemeListEl.innerHTML = "";
+      if (!book.schemes.length) {
+        const empty = document.createElement("li");
+        empty.className = "empty";
+        empty.textContent = "No schemes yet. A scheme groups the recipes you use for one faction " +
+          "(armour, trim, lenses, base…). Apply it to the whole faction at once, and new units in that faction get it automatically.";
+        schemeListEl.appendChild(empty);
+        return;
+      }
+      const sorted = book.schemes.slice().sort((a, b) => a.faction.localeCompare(b.faction) || a.name.localeCompare(b.name));
+      for (const scheme of sorted) {
+        const item = document.createElement("li");
+        const card = document.createElement("div");
+        card.className = "recipe-item scheme-item";
+        const colour = factionColour(scheme.faction);
+        if (colour) { card.classList.add("has-faction"); card.style.setProperty("--faction-colour", colour); }
+
+        const name = document.createElement("div");
+        name.className = "name";
+        name.textContent = scheme.name;
+
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        if (colour) { const dot = makeSwatch(colour); dot.classList.add("faction-dot"); meta.appendChild(dot); }
+        const recipes = schemeRecipes(scheme);
+        meta.append([scheme.faction, plural(recipes.length, "recipe"), scheme.auto ? "new units get it" : ""]
+          .filter(Boolean).join(" · "));
+
+        const chips = document.createElement("div");
+        chips.className = "recipe-links";
+        for (const recipe of recipes) chips.appendChild(recipeChip(recipe, () => openRecipe(recipe.id)));
+
+        // How many of the faction's units have the whole scheme.
+        const units = schemeUnits(scheme);
+        const missing = unitsMissing(scheme);
+        const status = document.createElement("div");
+        status.className = "meta";
+        status.textContent = !units.length ? `No ${scheme.faction} units yet.`
+          : !recipes.length ? "Add some recipes to this scheme."
+          : !missing.length ? (units.length === 1 ? `The 1 unit in ${scheme.faction} has it.` : `All ${units.length} units in ${scheme.faction} have it.`)
+          : `${units.length - missing.length} of ${plural(units.length, "unit")} in ${scheme.faction} have it.`;
+
+        const buttons = document.createElement("div");
+        buttons.className = "scheme-buttons";
+        if (missing.length && recipes.length) {
+          const apply = document.createElement("button");
+          apply.className = "primary-button";
+          apply.textContent = `Apply to ${plural(missing.length, "unit")}`;
+          apply.setAttribute("aria-label", `Apply ${scheme.name} to ${plural(missing.length, "unit")} in ${scheme.faction}`);
+          apply.addEventListener("click", () => applyScheme(scheme, missing));
+          buttons.appendChild(apply);
+        }
+        const edit = document.createElement("button");
+        edit.className = "plain-button";
+        edit.textContent = "Edit";
+        edit.setAttribute("aria-label", `Edit ${scheme.name}`);
+        edit.addEventListener("click", () => startScheme(scheme));
+        buttons.appendChild(edit);
+
+        card.append(name, meta, chips, status, buttons);
+        item.appendChild(card);
+        schemeListEl.appendChild(item);
+      }
+    }
+
+    // Open the scheme editor: a COPY is edited, and nothing changes until Save.
+    function startScheme(scheme, faction) {
+      schemeDraft = scheme
+        ? { id: scheme.id, name: scheme.name, faction: scheme.faction, auto: scheme.auto, recipes: scheme.recipes.slice() }
+        : { id: null, name: "", faction: faction || "", auto: true, recipes: [] };
+      schemeDraft.original = schemeSnapshot(schemeDraft);
+      settings.recipeView = "schemes";
+      saveSettings();
+      openRecipeId = null;
+      renderRecipes();
+      showTab("recipes");
+    }
+    function schemeSnapshot(d) { return JSON.stringify([d.name, d.faction, d.auto, d.recipes]); }
+    function closeScheme(askFirst) {
+      if (askFirst && schemeDraft && schemeSnapshot(schemeDraft) !== schemeDraft.original &&
+          !confirm("Discard the changes to this scheme?")) return;
+      schemeDraft = null;
+      renderRecipes();
+      window.scrollTo(0, 0);
+    }
+    document.getElementById("new-scheme").addEventListener("click", () => startScheme(null));
+
+    function renderSchemeEditor() {
+      const d = schemeDraft;
+      schemePage.innerHTML = "";
+      const back = document.createElement("button");
+      back.className = "link-button";
+      back.textContent = "← Schemes";
+      back.addEventListener("click", () => closeScheme(true));
+      schemePage.appendChild(back);
+
+      // Name, faction and the "new units get it" switch.
+      const top = document.createElement("div");
+      top.className = "card scheme-form";
+      const title = document.createElement("h2");
+      title.textContent = d.id === null ? "New scheme" : "Edit scheme";
+      const nameLabel = document.createElement("label");
+      nameLabel.textContent = "Scheme name";
+      const nameBox = document.createElement("input");
+      nameBox.placeholder = "e.g. My Ultramarines";
+      nameBox.value = d.name;
+      nameBox.addEventListener("input", () => { d.name = nameBox.value; });
+      nameLabel.appendChild(nameBox);
+
+      const factionLabel = document.createElement("label");
+      factionLabel.textContent = "Faction";
+      const factionBox = document.createElement("input");
+      factionBox.placeholder = "e.g. Ultramarines";
+      factionBox.setAttribute("list", "faction-options");   // suggests your existing factions
+      factionBox.value = d.faction;
+      const factionNote = document.createElement("p");
+      factionNote.className = "hint";
+      const updateNote = () => {
+        const n = d.faction.trim() ? models.filter(m => sameText(m.faction, d.faction)).length : 0;
+        factionNote.textContent = !d.faction.trim() ? "Which faction is this scheme for?"
+          : n ? `${plural(n, "unit")} in this faction.` : "No units in this faction yet. New ones can get this scheme.";
+      };
+      factionBox.addEventListener("input", () => { d.faction = factionBox.value; updateNote(); });
+      updateNote();
+      factionLabel.appendChild(factionBox);
+
+      const autoLabel = document.createElement("label");
+      autoLabel.className = "check-label";
+      const autoBox = document.createElement("input");
+      autoBox.type = "checkbox";
+      autoBox.checked = d.auto;
+      autoBox.addEventListener("change", () => { d.auto = autoBox.checked; });
+      autoLabel.append(autoBox, "New units added in this faction get these recipes automatically");
+
+      top.append(title, nameLabel, factionLabel, factionNote, autoLabel);
+      schemePage.appendChild(top);
+
+      // The recipes: tick the ones in this scheme.
+      const pick = document.createElement("div");
+      pick.className = "card";
+      const pickTitle = document.createElement("h2");
+      pickTitle.textContent = "Recipes in this scheme";
+      pick.appendChild(pickTitle);
+      if (!book.recipes.length) {
+        const none = document.createElement("p");
+        none.className = "hint";
+        none.textContent = "You haven't written any recipes yet. Save this scheme, write some recipes, then come back and tick them.";
+        pick.appendChild(none);
+      } else {
+        const listEl = document.createElement("ul");
+        listEl.className = "scheme-recipe-list";
+        const byPart = book.recipes.slice().sort((a, b) =>
+          (a.part || "~").localeCompare(b.part || "~") || a.name.localeCompare(b.name));
+        for (const recipe of byPart) {
+          const row = document.createElement("li");
+          const label = document.createElement("label");
+          label.className = "check-label";
+          const box = document.createElement("input");
+          box.type = "checkbox";
+          box.checked = d.recipes.includes(recipe.id);
+          box.addEventListener("change", () => {
+            d.recipes = box.checked ? [...d.recipes, recipe.id] : d.recipes.filter(id => id !== recipe.id);
+          });
+          const colours = recipeColours(recipe);
+          label.append(box);
+          if (colours.length) label.append(makeSwatch(colours[0]));
+          const text = document.createElement("span");
+          text.className = "scheme-recipe-name";
+          text.textContent = recipe.name;
+          label.append(text);
+          if (recipe.part) {
+            const part = document.createElement("small");
+            part.textContent = recipe.part;
+            label.append(part);
+          }
+          row.appendChild(label);
+          listEl.appendChild(row);
+        }
+        pick.appendChild(listEl);
+      }
+      schemePage.appendChild(pick);
+
+      const buttons = document.createElement("div");
+      buttons.className = "settings-actions";
+      const saveButton = document.createElement("button");
+      saveButton.className = "primary-button";
+      saveButton.style.flex = "1";
+      saveButton.textContent = "Save scheme";
+      saveButton.addEventListener("click", saveScheme);
+      const cancel = document.createElement("button");
+      cancel.className = "plain-button";
+      cancel.textContent = "Cancel";
+      cancel.addEventListener("click", () => closeScheme(true));
+      buttons.append(saveButton, cancel);
+      if (d.id !== null) {
+        const del = document.createElement("button");
+        del.className = "danger-button";
+        del.textContent = "Delete";
+        del.addEventListener("click", () => deleteScheme(d.id));
+        buttons.appendChild(del);
+      }
+      schemePage.appendChild(buttons);
+    }
+
+    function saveScheme() {
+      const d = schemeDraft;
+      const name = d.name.trim();
+      let faction = d.faction.trim();
+      if (!name) { alert("Give the scheme a name."); return; }
+      if (!faction) { alert("Pick the faction this scheme is for."); return; }
+      // Match the spelling your units already use, so "ultramarines" finds "Ultramarines".
+      const existing = models.find(m => sameText(m.faction, faction));
+      if (existing) faction = existing.faction;
+      let scheme = d.id === null ? null : book.schemes.find(s => s.id === d.id);
+      if (!scheme) {
+        scheme = { id: Math.max(0, ...book.schemes.map(s => s.id)) + 1 };
+        book.schemes.push(scheme);
+      }
+      Object.assign(scheme, { name, faction, auto: d.auto, recipes: d.recipes.filter(id => recipeById(id)) });
+      schemeDraft = null;
+      render();
+      window.scrollTo(0, 0);
+      // Offer to apply it straight away to units that don't have it all yet.
+      const missing = unitsMissing(scheme);
+      if (missing.length && scheme.recipes.length) {
+        showToast(`Saved ${name}`, () => applyScheme(scheme, missing), `Apply to ${plural(missing.length, "unit")}`, 8);
+      } else {
+        showToast(`Saved ${name}`);
+      }
+    }
+
+    // Deleting a scheme doesn't touch the recipes or the units' links: those stay.
+    function deleteScheme(id) {
+      const scheme = book.schemes.find(s => s.id === id);
+      if (!scheme || !confirm(`Delete the scheme "${scheme.name}"? Its recipes, and the units they're linked to, stay as they are.`)) return;
+      const index = book.schemes.indexOf(scheme);
+      book.schemes.splice(index, 1);
+      schemeDraft = null;
+      render();
+      showToast(`Deleted ${scheme.name}`, () => { book.schemes.splice(index, 0, scheme); render(); });
     }
 
     // ----- Your Palette -----
@@ -4341,10 +4714,17 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v8";
+    const APP_VERSION = "v9";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v9", date: "7 Oct 2026", changes: [
+        "Painting schemes: a new Schemes view at the top of the Recipes tab. A scheme is a named group of recipes for one faction, e.g. \"My Ultramarines\" = armour, trim, lenses and base.",
+        "Apply a scheme to every unit in its faction with one tap (with Undo). It shows how many of the faction's units already have it.",
+        "New units added in that faction (by hand, CSV or Warhammer app import) get the scheme's recipes linked automatically. You can switch this off per scheme.",
+        "In a unit's details, the \"Link a recipe\" menu now offers its faction's schemes too.",
+        "Renaming a faction moves its schemes with it. Deleting a recipe removes it from schemes (with Undo). Backups include your schemes.",
+      ]},
       { version: "v8", date: "7 Oct 2026", changes: [
         "Faction colours: give each faction its own colour in Settings → Faction colours, or tap Faction colours on the dashboard.",
         "Not sure which colour? Press Suggest to pick one from the recipes linked to that faction's units (armour recipes first).",
