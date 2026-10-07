@@ -9,7 +9,7 @@
 //
 // WHEN YOU UPLOAD A NEW VERSION: change the number below (v1 -> v2 -> v3...).
 // That tells the phone to throw away the old saved copy and start a new one.
-const VERSION = "v5";
+const VERSION = "v6";
 const CACHE_NAME = "shades-of-grey-" + VERSION;
 
 // The files that make up the app. Saved as soon as the app is installed.

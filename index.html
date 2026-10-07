@@ -384,6 +384,31 @@
     .linked .unlink:hover { color: var(--danger); }
     .panel-field { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
 
+    /* The Recipes | Your Palette switch at the top of the Recipes tab */
+    .seg {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin-bottom: 12px;
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    }
+    .seg button { background: none; color: var(--muted); padding: 10px; font-size: 15px; min-height: 44px; }
+    .seg button[aria-selected="true"] { background: var(--accent); color: var(--background); font-weight: 600; }
+
+    /* Your Palette */
+    ul.paint-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+    .paint-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; }
+    .paint-head {
+      width: 100%; background: none; color: var(--text); padding: 2px 0; text-align: left;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .paint-text { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+    .swatch.big { width: 36px; height: 36px; }
+    .paint-item .panel { margin-top: 10px; }
+    .paint-edit-row { display: grid; grid-template-columns: 44px 1fr 1fr; gap: 8px; }
+    .paint-edit-row input[type=color] { width: 44px; height: 44px; padding: 3px; cursor: pointer; }
+    @media (max-width: 420px) {
+      .paint-edit-row { grid-template-columns: 44px 1fr; }
+      .paint-edit-row input:last-of-type { grid-column: 2; }
+    }
+
     /* The recipe editor */
     .form-grid { display: grid; gap: 12px; }
     .form-grid label, .step-edit label { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
@@ -475,6 +500,8 @@
       #view-help .help:not(.hidden) { columns: 2; column-gap: 40px; }
       ul.recipe-list { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
       #recipe-page { max-width: 780px; }
+      .seg { max-width: 480px; }
+      ul.paint-list { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; align-items: start; }
       .help details { break-inside: avoid; }
 
       /* The pop-up message sits at the bottom now the tabs are at the top. */
@@ -572,6 +599,26 @@
     <!-- ===== TAB: Recipes (how you paint things, step by step) ===== -->
     <section id="view-recipes" class="hidden">
       <!-- The list of recipes. Hidden while one recipe is open. -->
+      <!-- Switch between your recipes and your palette (the paints those recipes use). -->
+      <div class="seg" id="recipe-seg" role="tablist" aria-label="Recipes or palette">
+        <button role="tab" data-view="recipes">Recipes</button>
+        <button role="tab" data-view="palette">Your Palette</button>
+      </div>
+
+      <!-- Your Palette: built automatically from the paints in your recipes. -->
+      <div id="palette-view" class="hidden">
+        <div class="card">
+          <select id="paint-sort" aria-label="Sort paints" style="width: 100%;">
+            <option value="colour">Sort by colour</option>
+            <option value="name">Sort by name</option>
+            <option value="brand">Sort by brand</option>
+          </select>
+          <div class="chips" id="brand-chips"></div>
+          <p class="hint" id="palette-summary" style="margin: 12px 0 0;"></p>
+        </div>
+        <ul class="paint-list" id="paint-list"></ul>
+      </div>
+
       <div id="recipe-home">
         <div class="units-toolbar">
           <button class="primary-button" id="new-recipe">+ New recipe</button>
@@ -641,6 +688,8 @@
             <li>Mixing paints? Add more than one paint to a step and set each one's <strong>mix %</strong>, e.g. 70% and 30%.</li>
             <li>Reorder steps with <strong>↑ ↓</strong>. Nothing is saved until you press <strong>Save recipe</strong>.</li>
             <li>Link a recipe to units from the recipe (<strong>Used on</strong>) or from a unit's details. Linked recipes show as buttons on the unit's card: tap one to open it.</li>
+            <li><strong>Your Palette</strong> (top of the Recipes tab) lists every paint in your recipes, once each. It fills itself in: add a paint to a recipe and it appears.</li>
+            <li>In Your Palette, sort by colour, name or brand, and tap a brand to show only its paints. Tap a paint to change its colour, name or brand: the change applies in every recipe that uses it.</li>
             <li>Need a part or technique that isn't listed? Choose <strong>＋ Add a new…</strong> in the menu. Remove ones you don't use under <strong>Parts and techniques</strong>.</li>
           </ul>
         </details>
@@ -2112,12 +2161,25 @@
     function renderRecipes() {
       if (openRecipeId !== null && !recipeById(openRecipeId)) openRecipeId = null;
       const onPage = !!recipeDraft || openRecipeId !== null;
-      recipeHome.classList.toggle("hidden", onPage);
+      const onPalette = !onPage && settings.recipeView === "palette";
+      recipeSeg.classList.toggle("hidden", onPage);
+      recipeSeg.querySelectorAll("button").forEach(b =>
+        b.setAttribute("aria-selected", b.dataset.view === (onPalette ? "palette" : "recipes")));
+      recipeHome.classList.toggle("hidden", onPage || onPalette);
+      paletteView.classList.toggle("hidden", !onPalette);
       recipePage.classList.toggle("hidden", !onPage);
       if (recipeDraft) renderRecipeEditor();
       else if (openRecipeId !== null) renderRecipeView(recipeById(openRecipeId));
+      else if (onPalette) renderPalette();
       else renderRecipeList();
     }
+
+    const recipeSeg = document.getElementById("recipe-seg");
+    recipeSeg.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+      settings.recipeView = b.dataset.view;
+      saveSettings();
+      renderRecipes();
+    }));
 
     // Leaving the editor with unsaved changes? Check first. True = OK to carry on.
     function okToLeaveDraft() {
@@ -2215,7 +2277,7 @@
       recipePage.innerHTML = "";
       const back = document.createElement("button");
       back.className = "link-button";
-      back.textContent = "← All recipes";
+      back.textContent = settings.recipeView === "palette" ? "← Your Palette" : "← All recipes";
       back.addEventListener("click", () => { openRecipeId = null; renderRecipes(); });
       recipePage.appendChild(back);
 
@@ -2366,6 +2428,189 @@
         render();
       });
     }
+
+    // ----- Your Palette -----
+    // Every paint used in your recipes, once each. Built automatically: there's nothing to
+    // add by hand. Editing a paint here changes it in every recipe, because recipes point
+    // at the paint rather than keeping their own copy.
+
+    const paletteView = document.getElementById("palette-view");
+    const paintListEl = document.getElementById("paint-list");
+    const paintSort = document.getElementById("paint-sort");
+    const brandChips = document.getElementById("brand-chips");
+    const paletteSummary = document.getElementById("palette-summary");
+    let paletteBrand = null;           // null = all brands, "" = paints with no brand
+    const openPaintIds = new Set();    // paints with their details open
+    if (!["colour", "name", "brand"].includes(settings.paintSort)) settings.paintSort = "colour";
+
+    // Turns "#1e3a8a" into hue (0-360, round the colour wheel), saturation and lightness (0-1).
+    function hexToHsl(hex) {
+      const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      const l = (max + min) / 2;
+      if (max === min) return { h: 0, s: 0, l };
+      const d = max - min;
+      const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      let h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+      return { h: h * 60, s, l };
+    }
+
+    // Sorting by colour: round the colour wheel (reds, oranges, yellows, greens, blues,
+    // purples), light to dark within each band. Then greys, blacks and whites, light to dark.
+    // Paints still on the untouched grey go last, since their colour isn't known yet.
+    function colourOrder(a, b) {
+      const key = (paint) => {
+        if (paint.colour === DEFAULT_PAINT_COLOUR) return [2, 0, 0];
+        const { h, s, l } = hexToHsl(paint.colour);
+        if (s < 0.15 || l < 0.08 || l > 0.95) return [1, -l, 0];   // greys and metallics-ish
+        return [0, Math.floor(((h + 10) % 360) / 25), -l];            // 25° bands, reds first
+      };
+      const ka = key(a), kb = key(b);
+      for (let i = 0; i < 3; i++) if (ka[i] !== kb[i]) return ka[i] - kb[i];
+      return a.name.localeCompare(b.name);
+    }
+
+    function recipesUsingPaint(paintId) {
+      return book.recipes.filter(r => r.steps.some(s => s.paints.some(sp => sp.paint === paintId)));
+    }
+
+    function renderPalette() {
+      const paints = book.paints;
+      paintSort.value = settings.paintSort;
+
+      // Brand chips: one for each brand, tap again to show all.
+      const brands = uniqueSorted(paints.map(p => p.brand));
+      const noBrand = paints.some(p => !p.brand);
+      if (paletteBrand !== null && !(brands.includes(paletteBrand) || (paletteBrand === "" && noBrand))) paletteBrand = null;
+      brandChips.innerHTML = "";
+      brandChips.classList.toggle("hidden", brands.length + (noBrand ? 1 : 0) < 2);
+      brandChips.appendChild(makeChip("All brands", paletteBrand === null, () => { paletteBrand = null; renderPalette(); }));
+      for (const brand of [...brands, ...(noBrand ? [""] : [])]) {
+        brandChips.appendChild(makeChip(brand || "No brand", paletteBrand === brand,
+          () => { paletteBrand = paletteBrand === brand ? null : brand; renderPalette(); }));
+      }
+
+      const shown = paints.filter(p => paletteBrand === null || p.brand === paletteBrand);
+      const sorters = {
+        colour: colourOrder,
+        name: (a, b) => a.name.localeCompare(b.name),
+        brand: (a, b) => (a.brand || "￿").localeCompare(b.brand || "￿") || a.name.localeCompare(b.name),
+      };
+      shown.sort(sorters[settings.paintSort]);
+
+      const unset = paints.filter(p => p.colour === DEFAULT_PAINT_COLOUR).length;
+      paletteSummary.textContent = paints.length
+        ? `${plural(paints.length, "paint")} from ${plural(brands.length, "brand")}` +
+          (paletteBrand !== null ? ` · showing ${shown.length}` : "") +
+          (unset ? ` · ${unset} still need${unset === 1 ? "s" : ""} a colour (tap to set it)` : "")
+        : "";
+
+      paintListEl.innerHTML = "";
+      if (!paints.length) {
+        paintListEl.innerHTML = '<li class="empty">Your palette fills itself in from your recipes. Add paints to a recipe and they appear here.</li>';
+        return;
+      }
+      for (const paint of shown) paintListEl.appendChild(buildPaintItem(paint));
+    }
+
+    function buildPaintItem(paint) {
+      const item = document.createElement("li");
+      item.className = "paint-item";
+      const isOpen = openPaintIds.has(paint.id);
+      const usedIn = recipesUsingPaint(paint.id);
+
+      const head = document.createElement("button");
+      head.className = "paint-head";
+      head.setAttribute("aria-expanded", isOpen);
+      const swatch = makeSwatch(paint.colour);
+      swatch.classList.add("big");
+      const text = document.createElement("span");
+      text.className = "paint-text";
+      const name = document.createElement("span");
+      name.className = "name";
+      name.textContent = paint.name;
+      const meta = document.createElement("span");
+      meta.className = "details";
+      meta.textContent = [paint.brand || "No brand", `in ${plural(usedIn.length, "recipe")}`,
+                          paint.colour === DEFAULT_PAINT_COLOUR ? "colour not set" : ""].filter(Boolean).join(" · ");
+      text.append(name, meta);
+      head.append(swatch, text);
+      head.addEventListener("click", () => {
+        if (openPaintIds.has(paint.id)) openPaintIds.delete(paint.id); else openPaintIds.add(paint.id);
+        renderPalette();
+      });
+      item.appendChild(head);
+      if (!isOpen) return item;
+
+      // Details: change the colour, name or brand (everywhere), and the recipes it's in.
+      const panel = document.createElement("div");
+      panel.className = "panel";
+      const row = document.createElement("div");
+      row.className = "paint-edit-row";
+      const colour = document.createElement("input");
+      colour.type = "color";
+      colour.value = paint.colour;
+      colour.setAttribute("aria-label", `Colour of ${paint.name}`);
+      colour.addEventListener("input", () => swatch.style.setProperty("--swatch", colour.value));
+      colour.addEventListener("change", () => { paint.colour = colour.value.toLowerCase(); render(); });
+      const nameBox = document.createElement("input");
+      nameBox.value = paint.name;
+      nameBox.setAttribute("aria-label", "Paint name");
+      nameBox.addEventListener("change", () => editPaint(paint, "name", nameBox.value));
+      const brandBox = document.createElement("input");
+      brandBox.value = paint.brand;
+      brandBox.placeholder = "Brand";
+      brandBox.setAttribute("aria-label", "Brand");
+      brandBox.setAttribute("list", "palette-brand-options");
+      brandBox.addEventListener("change", () => editPaint(paint, "brand", brandBox.value));
+      const brandList = document.createElement("datalist");
+      brandList.id = "palette-brand-options";
+      for (const b of uniqueSorted([...COMMON_BRANDS, ...book.paints.map(p => p.brand)])) brandList.appendChild(new Option(b));
+      row.append(colour, nameBox, brandBox, brandList);
+      panel.appendChild(row);
+      panel.insertAdjacentHTML("beforeend", '<p class="hint" style="margin: 0;">Changes here apply in every recipe that uses this paint.</p>');
+
+      const field = document.createElement("div");
+      field.className = "panel-field";
+      field.append("Used in");
+      const chips = document.createElement("div");
+      chips.className = "linked-list";
+      for (const r of usedIn) chips.appendChild(recipeChip(r, () => openRecipe(r.id)));
+      field.appendChild(chips);
+      panel.appendChild(field);
+      item.appendChild(panel);
+      return item;
+    }
+
+    // Rename a paint or change its brand. If that makes it the same as another paint
+    // you have, offer to merge the two, so it's only in your palette once.
+    function editPaint(paint, field, value) {
+      value = value.trim();
+      if (field === "name" && !value) { renderPalette(); return; }
+      if (paint[field] === value) return;
+      const old = paint[field];
+      paint[field] = value;
+      const twin = book.paints.find(p => p !== paint && sameText(p.name, paint.name) && sameText(p.brand, paint.brand));
+      if (twin) {
+        if (!confirm(`You already have ${twin.brand ? twin.brand + " " : ""}${twin.name}. Merge the two into one paint?`)) {
+          paint[field] = old;
+          renderPalette();
+          return;
+        }
+        for (const r of book.recipes) for (const s of r.steps) for (const sp of s.paints) if (sp.paint === paint.id) sp.paint = twin.id;
+        if (twin.colour === DEFAULT_PAINT_COLOUR) twin.colour = paint.colour;
+        openPaintIds.delete(paint.id);
+        openPaintIds.add(twin.id);
+        pruneUnusedPaints();
+        render();
+        showToast(`Merged into ${twin.name}`);
+        return;
+      }
+      render();
+      showToast(`Saved ${paint.name}`);
+    }
+
+    paintSort.addEventListener("change", () => { settings.paintSort = paintSort.value; saveSettings(); renderPalette(); });
 
     // ----- Writing or editing a recipe -----
     // You edit a DRAFT copy, where each paint is written out in full (brand, name, colour).
@@ -3549,10 +3794,15 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v5";
+    const APP_VERSION = "v6";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v6", date: "7 Oct 2026", changes: [
+        "Your Palette: switch to it at the top of the Recipes tab. It lists every paint in your recipes, once each, and fills itself in as you write recipes.",
+        "Sort your palette by colour (round the colour wheel, then greys), by name or by brand, and tap a brand to show only its paints.",
+        "Tap a paint to change its colour, name or brand everywhere at once, and see which recipes use it. Paints whose colour you haven't set yet are flagged.",
+      ]},
       { version: "v5", date: "7 Oct 2026", changes: [
         "New Recipes tab: write down how you paint each part (armour, eyes, trim…) as ordered steps. Each step has a technique, the number of coats, and one or more paints with brand, colour and mix %.",
         "Reorder steps with ↑ ↓, and duplicate a recipe to make a variation.",
