@@ -317,6 +317,81 @@
     .panel-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
     .panel-buttons .danger-button { margin-left: auto; }
 
+    /* ----- Photo gallery / progress timeline (v11) ----- */
+    .gallery { display: grid; gap: 8px; font-size: 13px; color: var(--muted); }
+    .gallery .hint { margin: 0; }
+    .gallery select { flex: 1 1 180px; }
+    /* The strip scrolls sideways; each photo "snaps" into place as you swipe. */
+    .photo-strip {
+      list-style: none; margin: 0; padding: 2px 0 6px; display: flex; gap: 10px;
+      overflow-x: auto; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch;
+    }
+    .photo-strip li { flex: 0 0 116px; scroll-snap-align: start; display: grid; gap: 6px; }
+    .photo-tile {
+      position: relative; padding: 0; width: 116px; height: 116px; overflow: hidden;
+      background: var(--border); border: 2px solid var(--stage-colour); border-radius: 10px;
+    }
+    .photo-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .cover-badge {
+      position: absolute; left: 4px; top: 4px; font-size: 11px; font-weight: 600;
+      background: rgba(11, 18, 32, 0.85); color: var(--accent); border-radius: 6px; padding: 2px 6px;
+    }
+    .photo-caption { display: grid; grid-template-columns: auto 1fr; column-gap: 6px; align-items: center; line-height: 1.3; }
+    .photo-caption .dot, .viewer-caption .dot {
+      width: 10px; height: 10px; border-radius: 50%; background: var(--stage-colour); display: inline-block;
+    }
+    .photo-stage { color: var(--text); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .photo-caption small { grid-column: 2; font-size: 11px; }
+
+    /* ----- The full-screen photo viewer ----- */
+    .viewer {
+      position: fixed; inset: 0; z-index: 15;          /* above the tab bar, below the toast */
+      background: #050911;   /* solid, a shade darker than the page */
+      display: flex; flex-direction: column;
+      padding: calc(10px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));
+      overflow-y: auto;
+    }
+    .viewer.hidden { display: none; }
+    .viewer-top { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 14px; margin-bottom: 8px; }
+    .viewer-close {
+      margin-left: auto; width: 44px; height: 44px; font-size: 20px;
+      background: var(--card); color: var(--text); border: 1px solid var(--border);
+    }
+    .viewer-body { width: 100%; max-width: 960px; margin: 0 auto; display: grid; gap: 12px; }
+    /* The picture area: big, with ‹ › buttons on top at each side. */
+    .viewer-stage { position: relative; display: flex; align-items: center; justify-content: center;
+                    height: min(50vh, 640px); touch-action: pan-y; }
+    @media (min-width: 700px) { .viewer-stage { height: min(62vh, 640px); } }
+    .viewer-stage img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; user-select: none; }
+    .viewer-arrow {
+      position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 64px; font-size: 26px;
+      background: rgba(20, 29, 47, 0.8); color: var(--text); border: 1px solid var(--border);
+    }
+    .viewer-arrow.prev { left: 0; }
+    .viewer-arrow.next { right: 0; }
+    .viewer-caption { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: 15px; flex-wrap: wrap; }
+    .viewer-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .viewer-form label { font-size: 13px; color: var(--muted); display: grid; gap: 6px; }
+    .viewer-form .wide { grid-column: 1 / -1; }
+    /* Before / after: side by side on wide screens, one above the other on phones. */
+    .compare-pair { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    @media (min-width: 640px) { .compare-pair { grid-template-columns: 1fr 1fr; } }
+    .compare-side { display: grid; gap: 6px; }
+    .compare-side .frame { height: min(38vh, 520px); display: flex; align-items: center; justify-content: center;
+                           background: var(--card); border-radius: 8px; overflow: hidden; }
+    @media (min-width: 640px) { .compare-side .frame { height: min(60vh, 560px); } }
+    .compare-side img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .compare-label { font-size: 13px; color: var(--muted); }
+    /* Slider view: the "after" picture sits on top of "before", cut off at the slider. */
+    .slider-frame { position: relative; height: min(62vh, 640px); background: var(--card); border-radius: 8px; overflow: hidden; }
+    .slider-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; user-select: none; }
+    .slider-line { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); pointer-events: none; }
+    .slider-tag { position: absolute; top: 8px; font-size: 12px; padding: 2px 8px; border-radius: 6px;
+                  background: rgba(11, 18, 32, 0.85); color: var(--accent); }
+    .viewer input[type=range] { width: 100%; accent-color: var(--accent); }
+    .switch-row { display: flex; gap: 8px; }
+    .switch-row button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+
     /* ----- Settings ----- */
     details summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
     details ul { padding-left: 20px; margin: 10px 0 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
@@ -775,8 +850,20 @@
             <li><strong>+ Add unit</strong> on the Units tab. The number box is how many models are in the unit.</li>
             <li>Add the same unit twice (same name, game and faction) and they're numbered for you: Intercessors 1, Intercessors 2.</li>
             <li>Press <strong>▲</strong> to move a unit up a stage. Made a mistake? Press <strong>Undo</strong> on the message that pops up.</li>
-            <li>Tap a unit's name to open its details: nickname, model count, repaint flag, paint notes, a photo, <strong>back a stage</strong>, and delete.</li>
+            <li>Tap a unit's name to open its details: nickname, model count, repaint flag, paint notes, photos, <strong>back a stage</strong>, and delete.</li>
             <li>Use the game and faction menus and the stage chips to filter the list. Tap several stage chips to combine them.</li>
+          </ul>
+        </details>
+        <details>
+          <summary>Photos and progress timeline</summary>
+          <ul>
+            <li>Open a unit's details and press <strong>＋ Add photo</strong>. You can add as many as you like, and pick several at once. Each one remembers the unit's stage and today's date.</li>
+            <li>The photos sit in a strip, <strong>oldest on the left, newest on the right</strong>, each with a coloured dot and the stage it was at. Add one at each stage and you get a timeline of the unit going from grey plastic to painted.</li>
+            <li>Tap a photo to see it <strong>full size</strong>. Use ‹ › (or swipe, or the arrow keys) to move between photos, and ✕ to close.</li>
+            <li>In the full-size view you can fix a photo's <strong>stage</strong> or <strong>date</strong>, make it the <strong>cover</strong> (the picture on the unit's card, marked ★), or <strong>delete</strong> it. Deleted by mistake? Press Undo.</li>
+            <li>No cover chosen? The newest photo is used.</li>
+            <li><strong>Before / after</strong> shows two photos together: the first and the latest to start with, but you can pick any two. Choose <strong>Side by side</strong> or <strong>Slider</strong> (drag to wipe from one to the other).</li>
+            <li>Tracking each model separately? Pick <strong>Which model?</strong> before adding a photo, so it's labelled with that model.</li>
           </ul>
         </details>
         <details>
@@ -843,7 +930,8 @@
             <li>Clearing your browser's data or uninstalling the app deletes it, so <strong>Save backup</strong> regularly. The app reminds you after two weeks.</li>
             <li><strong>Save backup</strong> is small and quick, but leaves out photos. <strong>Save full backup with photos</strong> makes one bigger file with everything, photos included.</li>
             <li><strong>Restore backup</strong> brings either kind back, including your stages, recipes, schemes and faction colours. A backup without photos keeps any photos already on this device that match.</li>
-            <li>Photos are kept in a separate, much bigger store in your browser, so there's room for lots of them.</li>
+            <li>Photos are kept in a separate, much bigger store in your browser, so there's room for lots of them. Settings → Your data shows how many photos you have and how much space they use.</li>
+            <li><strong>Clean up photo storage</strong> removes photo files no unit uses any more (for example after Delete all units) and tells you how much space it freed. Photos in the device's safety copy are left alone.</li>
             <li><strong>Export CSV</strong> saves your collection as a spreadsheet (without photos).</li>
             <li>New phone? Save a backup on the old one, open the app on the new one, and restore it.</li>
           </ul>
@@ -995,11 +1083,25 @@
       <div class="card">
         <h2>Your data</h2>
         <p class="hint" id="data-summary"></p>
+        <p class="hint" id="photo-summary"></p>
+        <div class="settings-actions" style="margin: 0 0 12px;">
+          <button class="plain-button" id="clean-photos" disabled>Clean up photo storage</button>
+        </div>
         <button class="danger-button" id="delete-all">Delete all units</button>
       </div>
     </section>
   </main>
 
+
+  <!-- The photo viewer (v11): covers the whole screen. Shows one photo full size, or two
+       side by side for "Before / after". Its contents are built by JavaScript. -->
+  <div class="viewer hidden" id="viewer" role="dialog" aria-modal="true" aria-label="Photo viewer">
+    <div class="viewer-top">
+      <span id="viewer-title"></span>
+      <button class="viewer-close" id="viewer-close" aria-label="Close the photo viewer">✕</button>
+    </div>
+    <div class="viewer-body" id="viewer-body"></div>
+  </div>
 
   <!-- The pop-up message, hidden until needed. -->
   <div class="toast hidden" id="toast" role="status">
@@ -1281,16 +1383,23 @@
         // Linked recipes: a list of whole numbers (recipe ids), no repeats.
         const recipeIds = Array.isArray(m.recipes) ? [...new Set(m.recipes.filter(Number.isInteger))] : [];
         if (recipeIds.length) model.recipes = recipeIds; else delete model.recipes;
-        // Photos (v10): notes pointing at pictures in the photo store. Old-style photos
-        // (model.photo, a picture written as text) are kept until they've been moved.
-        const photos = Array.isArray(m.photos) ? m.photos.filter(p => p && typeof p.id === "string" && p.id)
+        // Photos (v10, several per unit since v11): notes pointing at pictures in the photo
+        // store. Old-style photos (model.photo, a picture written as text) are kept until
+        // they've been moved. Repeats of the same id are dropped.
+        const seenPhotos = new Set();
+        const photos = Array.isArray(m.photos) ? m.photos
+          .filter(p => p && typeof p.id === "string" && p.id && !seenPhotos.has(p.id) && seenPhotos.add(p.id))
           .map(p => {
             const note = { ...p };
             if (!isDate(note.date)) delete note.date;
             if (!validStage(note.stage)) delete note.stage;
+            // "model": which model of a tracked-each-model unit the photo shows (0 = Model 1).
+            if (!(Number.isInteger(note.model) && note.model >= 0 && note.model < model.count)) delete note.model;
             return note;
           }) : [];
         if (photos.length) model.photos = photos; else delete model.photos;
+        // The cover photo (shown on the unit's card) must be one of its photos.
+        if (!photos.some(p => p.id === m.coverPhoto)) delete model.coverPhoto;
         if (typeof m.photo !== "string" || !m.photo.startsWith("data:image")) delete model.photo;
         if (Number.isInteger(model.id) && !usedIds.has(model.id)) usedIds.add(model.id);
         else model.id = null; // given a fresh one below
@@ -2624,30 +2733,7 @@
       recipeField.appendChild(recipePicker);
       panel.appendChild(recipeField);
 
-      if (hasPhoto(model)) {
-        const photo = document.createElement("img");
-        photo.className = "photo";
-        photo.alt = `Photo of ${displayName(model)}`;
-        if (model.photo) photo.src = model.photo;
-        else {
-          // The full-size picture is read from the photo store when the details open.
-          const id = mainPhoto(model).id;
-          if (fullUrls.has(id)) photo.src = fullUrls.get(id);
-          else fullPhotoUrl(id).then(url => { if (url) photo.src = url; }).catch(() => {});
-        }
-        panel.appendChild(photo);
-      }
-
-      // A hidden file picker. accept="image/*" means Android offers camera or gallery.
-      const picker = document.createElement("input");
-      picker.type = "file";
-      picker.accept = "image/*";
-      picker.className = "hidden";
-      picker.addEventListener("change", () => {
-        const file = picker.files[0];
-        if (file) addUnitPhoto(model, file);
-        picker.value = "";
-      });
+      panel.appendChild(buildGallery(model));
 
       const buttons = document.createElement("div");
       buttons.className = "panel-buttons";
@@ -2657,21 +2743,7 @@
       back.textContent = "◀ Back a stage";
       back.disabled = model.stage === 0;
       back.addEventListener("click", () => changeStage(model.id, -1));
-
-      const addPhoto = document.createElement("button");
-      addPhoto.className = "plain-button";
-      addPhoto.textContent = hasPhoto(model) ? "Replace photo" : "Add photo";
-      addPhoto.addEventListener("click", () => picker.click());
-      if (model.each) buttons.append(addPhoto);   // each model has its own ◀ above
-      else buttons.append(back, addPhoto);
-
-      if (hasPhoto(model)) {
-        const removePhoto = document.createElement("button");
-        removePhoto.className = "plain-button";
-        removePhoto.textContent = "Remove photo";
-        removePhoto.addEventListener("click", () => { if (confirm("Remove this photo?")) removeUnitPhotos(model); });
-        buttons.appendChild(removePhoto);
-      }
+      if (!model.each) buttons.append(back);   // each model has its own ◀ above
 
       const del = document.createElement("button");
       del.className = "danger-button";
@@ -2679,8 +2751,135 @@
       del.addEventListener("click", () => deleteModel(model.id));
       buttons.appendChild(del);
 
-      panel.append(buttons, picker);
+      panel.append(buttons);
       return panel;
+    }
+
+    // ----- The photo gallery and progress timeline (v11) -----
+    // Inside a unit's details: every photo as a small picture in a strip you can scroll
+    // sideways, oldest on the left, newest on the right. Under each one: a dot in the
+    // stage's colour, the stage name and the date, so you can watch the unit go from
+    // grey plastic to painted. Tap a picture to see it full size.
+    function buildGallery(model) {
+      const box = document.createElement("div");
+      box.className = "panel-field gallery";
+      const list = timeline(model);
+
+      const head = document.createElement("div");
+      head.className = "gallery-head";
+      const title = document.createElement("span");
+      title.textContent = list.length ? `Photos (${list.length}) · oldest → newest` : "Photos";
+      head.appendChild(title);
+      box.appendChild(head);
+
+      // An old-style photo still waiting to move to the photo store (e.g. a browser with
+      // no IndexedDB): shown as before, so it never goes missing.
+      if (model.photo) {
+        const old = document.createElement("img");
+        old.className = "photo";
+        old.alt = `Photo of ${displayName(model)}`;
+        old.src = model.photo;
+        box.appendChild(old);
+      }
+
+      if (list.length) {
+        const cover = mainPhoto(model);
+        const strip = document.createElement("ol");
+        strip.className = "photo-strip";
+        strip.setAttribute("aria-label", `Photos of ${displayName(model)}, oldest first`);
+        list.forEach((p, i) => {
+          const item = document.createElement("li");
+          const stage = validStageIndex(p.stage) ? p.stage : null;
+          item.style.setProperty("--stage-colour", stage === null ? "var(--border)" : `var(--stage-${stage})`);
+          const open = document.createElement("button");
+          open.className = "photo-tile";
+          open.setAttribute("aria-label", `Open photo ${i + 1} of ${list.length}: ${photoCaption(model, p)}`);
+          const img = document.createElement("img");
+          img.alt = "";
+          const src = thumbUrls.get(p.id);
+          if (src) img.src = src;
+          open.appendChild(img);
+          if (cover && cover.id === p.id) {
+            const star = document.createElement("span");
+            star.className = "cover-badge";
+            star.textContent = "★ Cover";
+            open.appendChild(star);
+          }
+          open.addEventListener("click", () => openLightbox(model.id, p.id));
+          const caption = document.createElement("div");
+          caption.className = "photo-caption";
+          const dot = document.createElement("span");
+          dot.className = "dot";
+          const stageName = document.createElement("span");
+          stageName.className = "photo-stage";
+          stageName.textContent = stage === null ? "Stage not set" : STAGES[stage];
+          const when = document.createElement("small");
+          when.textContent = shortDate(p.date) + (photoModel(model, p) !== null ? ` · Model ${p.model + 1}` : "");
+          caption.append(dot, stageName, when);
+          item.append(open, caption);
+          strip.appendChild(item);
+        });
+        box.appendChild(strip);
+        // Start scrolled to the newest photo, on the right.
+        requestAnimationFrame(() => { strip.scrollLeft = strip.scrollWidth; });
+      } else if (!model.photo) {
+        const none = document.createElement("p");
+        none.className = "hint";
+        none.textContent = "No photos yet. Add one at each stage to build up a progress timeline.";
+        box.appendChild(none);
+      }
+
+      // A hidden file picker. accept="image/*" means phones offer the camera or gallery.
+      // "multiple" lets you pick several photos at once.
+      const picker = document.createElement("input");
+      picker.type = "file";
+      picker.accept = "image/*";
+      picker.multiple = true;
+      picker.className = "hidden";
+
+      const actions = document.createElement("div");
+      actions.className = "panel-buttons";
+      // For units tracked model-by-model: which model is in the photo?
+      let which = null;
+      if (model.each) {
+        which = document.createElement("select");
+        which.setAttribute("aria-label", "Which model is in the photo?");
+        which.add(new Option("Which model? Whole unit", ""));
+        model.stages.forEach((st, i) => which.add(new Option(`Model ${i + 1} (${STAGES[st]})`, String(i))));
+        actions.appendChild(which);
+      }
+      picker.addEventListener("change", async () => {
+        const files = [...picker.files];
+        picker.value = "";
+        const modelIndex = which && which.value !== "" ? Number(which.value) : undefined;
+        for (const file of files) await addUnitPhoto(model, file, modelIndex);
+      });
+      const add = document.createElement("button");
+      add.className = "plain-button";
+      add.textContent = "＋ Add photo";
+      add.addEventListener("click", () => picker.click());
+      actions.appendChild(add);
+      if (list.length >= 2) {
+        const compare = document.createElement("button");
+        compare.className = "plain-button";
+        compare.textContent = "Before / after";
+        compare.addEventListener("click", () => openCompare(model.id));
+        actions.appendChild(compare);
+      }
+      box.append(actions, picker);
+      return box;
+    }
+    function validStageIndex(x) { return Number.isInteger(x) && x >= 0 && x < STAGES.length; }
+    // "Basecoated · 7 Oct 2026 · Model 2", for screen readers and the photo viewer.
+    function photoCaption(model, p) {
+      const parts = [validStageIndex(p.stage) ? STAGES[p.stage] : "Stage not set", shortDate(p.date)];
+      if (photoModel(model, p) !== null) parts.push(`Model ${p.model + 1}`);
+      return parts.join(" · ");
+    }
+    // Which model a photo shows: only meaningful while the unit is tracked model-by-model
+    // and still has that many models. Otherwise null (a photo of the whole unit).
+    function photoModel(model, p) {
+      return model.each && Number.isInteger(p.model) && p.model < (model.count || 1) ? p.model : null;
     }
 
     // ----- Changing things -----
@@ -2801,9 +3000,29 @@
     const fullUrls = new Map();    // photo id -> address of its full-size picture
 
     function newPhotoId() { return "p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
-    function mainPhoto(model) { return model.photos && model.photos.length ? model.photos[0] : null; }
-    function hasPhoto(model) { return !!model.photo || !!mainPhoto(model); }
     function photoIds(model) { return (model.photos || []).map(p => p.id); }
+    function hasPhoto(model) { return !!model.photo || !!(model.photos && model.photos.length); }
+
+    // A unit's photos in time order, oldest first: by date, and photos taken on the same
+    // day stay in the order they were added. This is the progress timeline order.
+    function timeline(model) {
+      return (model.photos || [])
+        .map((p, i) => ({ p, i }))
+        .sort((a, b) => (a.p.date || "").localeCompare(b.p.date || "") || a.i - b.i)
+        .map(x => x.p);
+    }
+    // The cover photo (the one on the unit's card): the one you chose, or else the newest.
+    function mainPhoto(model) {
+      const list = timeline(model);
+      if (!list.length) return null;
+      return list.find(p => p.id === model.coverPhoto) || list[list.length - 1];
+    }
+    // A short, friendly date: "2026-10-07" -> "7 Oct 2026".
+    function shortDate(iso) {
+      if (!iso) return "No date";
+      const [y, mo, d] = iso.split("-").map(Number);
+      return `${d} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][mo - 1]} ${y}`;
+    }
 
     // Ask the browser to keep our data even when the device is short of space.
     // (It may say no; that's fine. iPhones also need the app added to the home screen.)
@@ -2888,8 +3107,11 @@
       }
     }
 
-    // Add (or, for now, replace) a unit's photo from a picked file.
-    async function addUnitPhoto(model, file) {
+    // Add a photo to a unit from a picked file. Since v11 this ADDS to the unit's photos
+    // (it used to replace the only one). The photo remembers the unit's stage and today's
+    // date, so it lands in the right place on the progress timeline.
+    // modelIndex: for units tracked model-by-model, which model it shows (or undefined).
+    async function addUnitPhoto(model, file, modelIndex) {
       let record;
       try {
         const img = await loadImage(file);
@@ -2904,23 +3126,64 @@
         alert("The photo couldn't be saved. The device may be out of space, or this browser may block storage (e.g. a private window).");
         return;
       }
-      const old = photoIds(model);
-      model.photos = [{ id: record.id, date: todayISO(), stage: model.stage }];
-      delete model.photo;   // an old-style photo, if one was still waiting to move
+      // A photo of one model records that model's own stage; otherwise the unit's.
+      const one = model.each && Number.isInteger(modelIndex) && modelIndex >= 0 && modelIndex < model.stages.length;
+      const note = { id: record.id, date: todayISO(), stage: one ? model.stages[modelIndex] : model.stage };
+      if (one) note.model = modelIndex;
+      model.photos = [...(model.photos || []), note];
       thumbUrls.set(record.id, URL.createObjectURL(record.thumb));
       fullUrls.set(record.id, URL.createObjectURL(record.full));
       render();
-      for (const id of old) { forgetUrls(id); deletePhotoFile(id); }
+      showToast(`Photo added to ${displayName(model)} (${plural(model.photos.length, "photo")})`);
       askToKeepStorage();
     }
 
-    // Remove a unit's photo(s): the note on the unit, then the files themselves.
-    function removeUnitPhotos(model) {
-      const ids = photoIds(model);
-      delete model.photos;
-      delete model.photo;
+    // Delete one photo, with Undo. The note comes off the unit straight away, but the
+    // picture file itself is only deleted once the Undo message has gone. If Undo is
+    // pressed, the note goes back in exactly the same place (and as cover, if it was).
+    const pendingPhotoDeletes = new Set();   // ids waiting for their Undo to time out
+    function deleteUnitPhoto(model, id) {
+      const index = (model.photos || []).findIndex(p => p.id === id);
+      if (index < 0) return;
+      const note = model.photos[index];
+      const wasCover = model.coverPhoto === id;
+      model.photos.splice(index, 1);
+      if (!model.photos.length) delete model.photos;
+      if (wasCover) delete model.coverPhoto;
+      pendingPhotoDeletes.add(id);
       render();
-      for (const id of ids) { forgetUrls(id); deletePhotoFile(id); }
+      const seconds = 6;
+      showToast("Photo deleted", () => {
+        model.photos = model.photos || [];
+        model.photos.splice(Math.min(index, model.photos.length), 0, note);
+        if (wasCover) model.coverPhoto = id;
+        pendingPhotoDeletes.delete(id);
+        render();
+      }, null, seconds);
+      // A little after the message goes, delete the file, unless Undo put it back on a unit.
+      setTimeout(() => {
+        if (!pendingPhotoDeletes.has(id)) return;
+        pendingPhotoDeletes.delete(id);
+        if (models.some(m => photoIds(m).includes(id))) return;
+        forgetUrls(id);
+        deletePhotoFile(id);
+      }, seconds * 1000 + 500);
+    }
+
+    // Make a photo the unit's cover (the picture on its card).
+    function setCoverPhoto(model, id) {
+      model.coverPhoto = id;
+      render();
+      showToast("Cover photo set");
+    }
+
+    // Change a photo's stage, date or model afterwards (from the photo viewer).
+    function editPhotoNote(model, id, field, value) {
+      const note = (model.photos || []).find(p => p.id === id);
+      if (!note) return;
+      if (value === "" || value === null || value === undefined) delete note[field];
+      else note[field] = value;
+      render();
     }
 
     // Move old-style photos (saved as text on the unit) into the photo store. Each one is
@@ -2955,6 +3218,303 @@
       } catch (error) {
         // No IndexedDB (some private windows): old photos still show; new ones can't be added.
       }
+    }
+
+    // ================= THE PHOTO VIEWER (v11) =================
+    // A full-screen layer on top of the app, with two modes:
+    //   "photo":   one photo at full size. ‹ › buttons, swiping, or the ← → keys move
+    //              along the timeline. Below it you can change the photo's stage, date
+    //              and model, make it the cover, or delete it.
+    //   "compare": "Before / after". Two photos side by side (one above the other on a
+    //              phone), or on top of each other with a slider to wipe between them.
+    const viewerBox = document.getElementById("viewer");
+    const viewerBody = document.getElementById("viewer-body");
+    const viewerTitle = document.getElementById("viewer-title");
+    let viewer = null;          // what the viewer is showing, or null when it's closed
+    let focusBeforeViewer = null;
+
+    function openLightbox(modelId, photoId) {
+      viewer = { mode: "photo", modelId, photoId };
+      showViewer();
+    }
+    function openCompare(modelId) {
+      const model = models.find(m => m.id === modelId);
+      const list = model ? timeline(model) : [];
+      if (list.length < 2) return;
+      // Start with the first and last photos: grey plastic vs. how it looks now.
+      viewer = { mode: "compare", modelId, beforeId: list[0].id, afterId: list[list.length - 1].id, style: "side", slider: 50 };
+      showViewer();
+    }
+    function showViewer() {
+      focusBeforeViewer = document.activeElement;
+      viewerBox.classList.remove("hidden");
+      document.body.style.overflow = "hidden";   // stop the page behind from scrolling
+      drawViewer();
+      document.getElementById("viewer-close").focus();
+    }
+    function closeViewer() {
+      viewer = null;
+      viewerBox.classList.add("hidden");
+      viewerBody.replaceChildren();
+      document.body.style.overflow = "";
+      if (focusBeforeViewer && focusBeforeViewer.isConnected) focusBeforeViewer.focus();
+    }
+    document.getElementById("viewer-close").addEventListener("click", closeViewer);
+    document.addEventListener("keydown", (event) => {
+      if (!viewer) return;
+      if (event.key === "Escape") { closeViewer(); return; }
+      // Arrow keys move between photos, unless you're typing in a box.
+      const typing = /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName);
+      if (viewer.mode === "photo" && !typing) {
+        if (event.key === "ArrowLeft") moveViewer(-1);
+        if (event.key === "ArrowRight") moveViewer(+1);
+      }
+    });
+
+    // Show the full-size picture in an <img>. Shows the small one first if the big one
+    // still has to be read from the photo store, so there's never a blank gap.
+    function setFullSrc(img, id) {
+      if (fullUrls.has(id)) { img.src = fullUrls.get(id); return; }
+      if (thumbUrls.has(id)) img.src = thumbUrls.get(id);
+      fullPhotoUrl(id).then(url => { if (url && img.isConnected) img.src = url; }).catch(() => {});
+    }
+
+    function drawViewer() {
+      if (!viewer) return;
+      const model = models.find(m => m.id === viewer.modelId);
+      const list = model ? timeline(model) : [];
+      if (!list.length) { closeViewer(); return; }
+      viewerBody.replaceChildren();
+      if (viewer.mode === "photo") drawPhotoView(model, list);
+      else drawCompareView(model, list);
+    }
+
+    function moveViewer(step) {
+      const model = models.find(m => m.id === viewer.modelId);
+      const list = model ? timeline(model) : [];
+      const index = list.findIndex(p => p.id === viewer.photoId);
+      const next = list[index + step];
+      if (!next) return;
+      viewer.photoId = next.id;
+      drawViewer();
+    }
+
+    function drawPhotoView(model, list) {
+      let index = list.findIndex(p => p.id === viewer.photoId);
+      if (index < 0) { index = 0; viewer.photoId = list[0].id; }
+      const p = list[index];
+      viewerTitle.textContent = `${displayName(model)} · photo ${index + 1} of ${list.length}`;
+
+      // The picture, with ‹ › on top.
+      const stageBox = document.createElement("div");
+      stageBox.className = "viewer-stage";
+      const img = document.createElement("img");
+      img.alt = `${displayName(model)}: ${photoCaption(model, p)}`;
+      img.draggable = false;
+      setFullSrc(img, p.id);
+      stageBox.appendChild(img);
+      const arrow = (label, cls, step, disabled) => {
+        const b = document.createElement("button");
+        b.className = `viewer-arrow ${cls}`;
+        b.textContent = label;
+        b.disabled = disabled;
+        b.setAttribute("aria-label", step < 0 ? "Older photo" : "Newer photo");
+        b.addEventListener("click", () => moveViewer(step));
+        stageBox.appendChild(b);
+      };
+      arrow("‹", "prev", -1, index === 0);
+      arrow("›", "next", +1, index === list.length - 1);
+      // Swiping: remember where the finger went down; a sideways move of 50px or more
+      // when it lifts counts as a swipe (left = newer, right = older).
+      let startX = null;
+      stageBox.addEventListener("pointerdown", e => { startX = e.clientX; });
+      stageBox.addEventListener("pointerup", e => {
+        if (startX === null) return;
+        const moved = e.clientX - startX;
+        startX = null;
+        if (Math.abs(moved) >= 50) moveViewer(moved < 0 ? +1 : -1);
+      });
+
+      // The caption: stage colour dot, stage, date, model, and whether it's the cover.
+      const caption = document.createElement("div");
+      caption.className = "viewer-caption";
+      caption.style.setProperty("--stage-colour", validStageIndex(p.stage) ? `var(--stage-${p.stage})` : "var(--border)");
+      const dot = document.createElement("span");
+      dot.className = "dot";
+      const text = document.createElement("span");
+      text.textContent = photoCaption(model, p);
+      caption.append(dot, text);
+      const isCover = mainPhoto(model).id === p.id;
+      if (isCover) {
+        const star = document.createElement("span");
+        star.className = "cover-badge";
+        star.style.position = "static";
+        star.textContent = "★ Cover photo";
+        caption.appendChild(star);
+      }
+
+      // Change this photo's details. Each change is saved straight away.
+      const form = document.createElement("div");
+      form.className = "viewer-form";
+      const stageLabel = document.createElement("label");
+      stageLabel.textContent = "Stage in this photo";
+      const stageSelect = document.createElement("select");
+      stageSelect.add(new Option("Not set", ""));
+      STAGES.forEach((s, i) => stageSelect.add(new Option(s, String(i))));
+      stageSelect.value = validStageIndex(p.stage) ? String(p.stage) : "";
+      stageSelect.addEventListener("change", () => {
+        editPhotoNote(model, p.id, "stage", stageSelect.value === "" ? null : Number(stageSelect.value));
+        drawViewer();
+      });
+      stageLabel.appendChild(stageSelect);
+      const dateLabel = document.createElement("label");
+      dateLabel.textContent = "Date taken";
+      const dateBox = document.createElement("input");
+      dateBox.type = "date";
+      dateBox.value = p.date || "";
+      dateBox.addEventListener("change", () => {
+        // Changing the date can move the photo along the timeline; it stays on screen.
+        editPhotoNote(model, p.id, "date", /^\d{4}-\d{2}-\d{2}$/.test(dateBox.value) ? dateBox.value : null);
+        drawViewer();
+      });
+      dateLabel.appendChild(dateBox);
+      form.append(stageLabel, dateLabel);
+      if (model.each) {
+        const modelLabel = document.createElement("label");
+        modelLabel.className = "wide";
+        modelLabel.textContent = "Which model?";
+        const modelSelect = document.createElement("select");
+        modelSelect.add(new Option("Whole unit", ""));
+        model.stages.forEach((st, i) => modelSelect.add(new Option(`Model ${i + 1}`, String(i))));
+        modelSelect.value = photoModel(model, p) !== null ? String(p.model) : "";
+        modelSelect.addEventListener("change", () => {
+          editPhotoNote(model, p.id, "model", modelSelect.value === "" ? null : Number(modelSelect.value));
+          drawViewer();
+        });
+        modelLabel.appendChild(modelSelect);
+        form.appendChild(modelLabel);
+      }
+
+      const buttons = document.createElement("div");
+      buttons.className = "panel-buttons";
+      const cover = document.createElement("button");
+      cover.className = "plain-button";
+      cover.textContent = isCover ? "★ This is the cover" : "☆ Use as cover";
+      cover.disabled = isCover;
+      cover.addEventListener("click", () => { setCoverPhoto(model, p.id); drawViewer(); });
+      const compare = document.createElement("button");
+      compare.className = "plain-button";
+      compare.textContent = "Before / after";
+      compare.disabled = list.length < 2;
+      compare.addEventListener("click", () => openCompare(model.id));
+      const del = document.createElement("button");
+      del.className = "danger-button";
+      del.textContent = "Delete photo";
+      del.addEventListener("click", () => {
+        // Stay in the viewer on the next photo along (or the one before), if there is one.
+        const next = list[index + 1] || list[index - 1];
+        deleteUnitPhoto(model, p.id);
+        if (next) { viewer.photoId = next.id; drawViewer(); } else closeViewer();
+      });
+      buttons.append(cover, compare, del);
+
+      viewerBody.append(stageBox, caption, form, buttons);
+    }
+
+    function drawCompareView(model, list) {
+      viewerTitle.textContent = `${displayName(model)} · before / after`;
+      // If a chosen photo was deleted meanwhile, fall back to the first / last.
+      if (!list.some(p => p.id === viewer.beforeId)) viewer.beforeId = list[0].id;
+      if (!list.some(p => p.id === viewer.afterId)) viewer.afterId = list[list.length - 1].id;
+
+      // Side by side, or slider?
+      const switchRow = document.createElement("div");
+      switchRow.className = "switch-row";
+      for (const [style, label] of [["side", "Side by side"], ["slider", "Slider"]]) {
+        const b = document.createElement("button");
+        b.className = "plain-button";
+        b.textContent = label;
+        b.setAttribute("aria-pressed", viewer.style === style);
+        b.addEventListener("click", () => { viewer.style = style; drawViewer(); });
+        switchRow.appendChild(b);
+      }
+
+      // Pick which two photos to compare.
+      const picker = (labelText, key) => {
+        const label = document.createElement("label");
+        label.textContent = labelText;
+        const select = document.createElement("select");
+        list.forEach((p, i) => select.add(new Option(`${i + 1}. ${photoCaption(model, p)}`, p.id)));
+        select.value = viewer[key];
+        select.addEventListener("change", () => { viewer[key] = select.value; drawViewer(); });
+        label.appendChild(select);
+        return label;
+      };
+      const pickers = document.createElement("div");
+      pickers.className = "viewer-form";
+      pickers.append(picker("Before", "beforeId"), picker("After", "afterId"));
+
+      const before = list.find(p => p.id === viewer.beforeId);
+      const after = list.find(p => p.id === viewer.afterId);
+      let pictures;
+      if (viewer.style === "side") {
+        pictures = document.createElement("div");
+        pictures.className = "compare-pair";
+        for (const [word, p] of [["Before", before], ["After", after]]) {
+          const side = document.createElement("div");
+          side.className = "compare-side";
+          const label = document.createElement("div");
+          label.className = "compare-label";
+          label.textContent = `${word}: ${photoCaption(model, p)}`;
+          const frame = document.createElement("div");
+          frame.className = "frame";
+          const img = document.createElement("img");
+          img.alt = `${word}: ${photoCaption(model, p)}`;
+          setFullSrc(img, p.id);
+          frame.appendChild(img);
+          side.append(label, frame);
+          pictures.appendChild(side);
+        }
+      } else {
+        // The "after" picture is laid exactly over "before", and only the part to the
+        // right of the line is shown (clip-path cuts the rest off). Drag the slider to move it.
+        pictures = document.createElement("div");
+        pictures.className = "compare-side";
+        const frame = document.createElement("div");
+        frame.className = "slider-frame";
+        const beforeImg = document.createElement("img");
+        beforeImg.alt = `Before: ${photoCaption(model, before)}`;
+        setFullSrc(beforeImg, before.id);
+        const afterImg = document.createElement("img");
+        afterImg.alt = `After: ${photoCaption(model, after)}`;
+        setFullSrc(afterImg, after.id);
+        const line = document.createElement("div");
+        line.className = "slider-line";
+        const tagBefore = document.createElement("span");
+        tagBefore.className = "slider-tag";
+        tagBefore.style.left = "8px";
+        tagBefore.textContent = "Before";
+        const tagAfter = document.createElement("span");
+        tagAfter.className = "slider-tag";
+        tagAfter.style.right = "8px";
+        tagAfter.textContent = "After";
+        frame.append(beforeImg, afterImg, line, tagBefore, tagAfter);
+        const slider = document.createElement("input");
+        slider.type = "range";
+        slider.min = 0;
+        slider.max = 100;
+        slider.value = viewer.slider;
+        slider.setAttribute("aria-label", "Slide between before and after");
+        const place = () => {
+          viewer.slider = Number(slider.value);
+          afterImg.style.clipPath = `inset(0 0 0 ${viewer.slider}%)`;
+          line.style.left = `calc(${viewer.slider}% - 1px)`;
+        };
+        slider.addEventListener("input", place);
+        place();
+        pictures.append(frame, slider);
+      }
+      viewerBody.append(switchRow, pickers, pictures);
     }
 
     // ----- The pop-up message with Undo -----
@@ -4432,9 +4992,9 @@
       renderFactionColours();
       let used = 0;
       try { used = (localStorage.getItem(STORAGE_KEY) || "").length + (localStorage.getItem(RECIPES_KEY) || "").length; } catch (ignored) {}
-      const photos = models.filter(hasPhoto).length;
+      const photos = models.reduce((sum, m) => sum + (m.photos || []).length + (m.photo ? 1 : 0), 0);
       const summary =
-        `${models.length} units, ${modelCount(models)} models, ${photos} photo${photos === 1 ? "" : "s"}, ` +
+        `${models.length} units, ${modelCount(models)} models, ${plural(photos, "photo")}, ` +
         `${plural(book.recipes.length, "recipe")}. ` +
         `Units and recipes use about ${Math.max(1, Math.round(used / 1024))} KB of roughly 5,000 KB. ` +
         (settings.lastBackup ? `Last backup: ${settings.lastBackup}.` : "No backup saved yet.");
@@ -4447,7 +5007,65 @@
           dataSummary.textContent = summary + ` Altogether (photos included) the app uses about ${mb(usage)} of ${mb(quota)} available.`;
         }).catch(() => {});
       }
+      renderPhotoSummary();
     }
+
+    // ----- Photo storage summary and clean-up (v11) -----
+    // "Orphan" photos are files in the photo store that no unit points at any more, e.g.
+    // after "Delete all units" or "Replace my collection". They just take up space.
+    // Files still listed in one of the device's safety copies (kept by Delete all, Replace
+    // and Restore) are NOT counted as orphans, so those copies keep their photos.
+    const photoSummary = document.getElementById("photo-summary");
+    const cleanPhotosButton = document.getElementById("clean-photos");
+    const SAFETY_COPIES = ["-before-delete-all", "-before-replace", "-before-restore"];
+
+    function sizeText(bytes) {
+      if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(1)} GB`;
+      if (bytes >= 1e6) return `${(bytes / 1e6).toFixed(1)} MB`;
+      return `${Math.max(1, Math.round(bytes / 1e3))} KB`;
+    }
+    // Look through every file in the photo store and sort them into in-use / spare.
+    async function photoStoreReport() {
+      const records = await photoStore("readonly", store => store.getAll());
+      const inUse = new Set(pendingPhotoDeletes);   // waiting for Undo: not spare yet
+      for (const m of models) for (const id of photoIds(m)) inUse.add(id);
+      const safety = new Set();
+      for (const suffix of SAFETY_COPIES) {
+        try {
+          const copy = JSON.parse(localStorage.getItem(STORAGE_KEY + suffix) || "[]");
+          if (Array.isArray(copy)) for (const m of copy) for (const p of (m && m.photos) || []) if (p && p.id) safety.add(p.id);
+        } catch (ignored) {}
+      }
+      const report = { count: 0, bytes: 0, orphans: [], orphanBytes: 0, safetyCount: 0 };
+      for (const r of records || []) {
+        const size = (r.full ? r.full.size : 0) + (r.thumb ? r.thumb.size : 0);
+        if (inUse.has(r.id)) { report.count++; report.bytes += size; }
+        else if (safety.has(r.id)) report.safetyCount++;
+        else { report.orphans.push(r.id); report.orphanBytes += size; }
+      }
+      return report;
+    }
+    async function renderPhotoSummary() {
+      try {
+        const r = await photoStoreReport();
+        let text = `Photo storage: ${plural(r.count, "photo")} using ${r.count ? sizeText(r.bytes) : "nothing"}.`;
+        if (r.orphans.length) text += ` ${plural(r.orphans.length, "spare photo file")} (${sizeText(r.orphanBytes)}) no unit uses any more; Clean up photo storage removes ${r.orphans.length === 1 ? "it" : "them"}.`;
+        if (r.safetyCount) text += ` ${plural(r.safetyCount, "more file")} belong to the safety copy kept by Delete all / Replace / Restore, and are kept.`;
+        photoSummary.textContent = text;
+        cleanPhotosButton.disabled = !r.orphans.length;
+      } catch (error) {
+        photoSummary.textContent = "Photo storage isn't available in this browser (for example in a private window).";
+        cleanPhotosButton.disabled = true;
+      }
+    }
+    cleanPhotosButton.addEventListener("click", async () => {
+      const r = await photoStoreReport();
+      if (!r.orphans.length) { renderPhotoSummary(); return; }
+      if (!confirm(`Delete ${plural(r.orphans.length, "photo file")} that no unit uses? This frees about ${sizeText(r.orphanBytes)}.`)) return;
+      for (const id of r.orphans) { forgetUrls(id); await deletePhotoFile(id); }
+      showToast(`Cleaned up: ${plural(r.orphans.length, "photo file")} removed, about ${sizeText(r.orphanBytes)} freed`, null, null, 6);
+      renderPhotoSummary();
+    });
 
     document.getElementById("delete-all").addEventListener("click", () => {
       if (!models.length) return;
@@ -5154,10 +5772,19 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v12";
+    const APP_VERSION = "v13";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v13", date: "7 Oct 2026", changes: [
+        "Several photos per unit. Add photo now adds another photo instead of replacing the old one, and you can pick several at once.",
+        "Progress timeline: a unit's photos sit in a strip from oldest to newest, each labelled with its stage (and coloured dot) and date.",
+        "Tap a photo to see it full size. Swipe or use ‹ › to move between photos.",
+        "In the full-size view, change a photo's stage or date, choose it as the unit's cover photo (shown on its card), or delete it, with Undo.",
+        "New Before / after view: two photos side by side, or a slider to wipe between them.",
+        "Units tracked model-by-model can label a photo with which model it shows.",
+        "Settings → Your data shows how many photos you have and the space they use, and a new Clean up photo storage button removes leftover photo files no unit uses.",
+      ] },
       { version: "v12", date: "7 Oct 2026", changes: [
         "Suggested faction colours now work straight away: the app knows the colours well-known factions are usually painted (Ultramarines blue, Orks green, Blood Angels red, Stormcast gold and many more).",
         "If a faction's units have recipes linked, Suggest still prefers a colour from those recipes, and says so.",
