@@ -791,7 +791,8 @@
           <summary>Faction colours</summary>
           <ul>
             <li>Give each faction its own colour in <strong>Settings → Faction colours</strong> (or tap <strong>Faction colours</strong> on the dashboard). Tap the colour circle to pick one.</li>
-            <li><strong>Suggest</strong> picks a colour for you from the recipes linked to that faction's units. Armour recipes count first, and it uses each recipe's first paint (usually the base coat).</li>
+            <li><strong>Suggest</strong> offers a colour. If the faction's units have recipes linked, it uses those (armour recipes first, each recipe's first paint, usually the base coat). Otherwise it uses the colour the faction is usually painted, for well-known factions.</li>
+            <li><strong>Use suggested colours</strong> colours every faction that hasn't got one yet, in one tap. Press Undo on the message if you change your mind.</li>
             <li>The colour shows as a bar on the dashboard's faction cards, a soft tint and a dot on unit cards, and a stripe on the faction filter.</li>
             <li>The coloured stripe down the <strong>left</strong> of a unit card is still its <strong>stage</strong>.</li>
             <li><strong>Rename</strong> changes a faction's name on every unit in it, and keeps its colour. <strong>Clear</strong> removes the colour.</li>
@@ -908,6 +909,7 @@
       <div class="card" id="faction-colours-card">
         <h2>Faction colours</h2>
         <p class="hint" id="faction-colour-hint"></p>
+        <button class="primary-button hidden" id="use-suggested-colours" style="width: 100%; margin-bottom: 12px;"></button>
         <ul class="faction-colour-list" id="faction-colour-list"></ul>
       </div>
 
@@ -1573,12 +1575,132 @@
       render();
     }
 
+    // ----- Usual faction colours (v12) -----
+    // The colour most people know each faction by, used when there are no recipes to go
+    // on. These are rough, hand-picked shades, not official paint colours. Names are
+    // matched loosely: capitals, accents and apostrophes don't matter, and a longer name
+    // that CONTAINS one of these (e.g. "Space Marines - Ultramarines") still matches.
+    // Several spellings can share one colour: "eldar|aeldari|craftworlds".
+    const USUAL_FACTION_COLOURS = {
+      // Warhammer 40,000: Imperium
+      "ultramarines|space marines|adeptus astartes": "#1f4fa3",
+      "dark angels": "#1f4d2b",
+      "blood angels": "#9b1c1c",
+      "space wolves": "#6b7f99",
+      "imperial fists": "#e0b12a",
+      "salamanders": "#2e7d32",
+      "raven guard": "#262626",
+      "iron hands": "#3a3a3a",
+      "white scars": "#e8e6dc",
+      "black templars": "#1a1a1a",
+      "deathwatch": "#202020",
+      "grey knights": "#9ca3af",
+      "adeptus custodes|custodes": "#c9a227",
+      "adepta sororitas|sisters of battle": "#8b1e2d",
+      "astra militarum|imperial guard|cadians": "#6b7a3a",
+      "adeptus mechanicus|admech|mechanicus": "#9b2a1f",
+      "imperial knights": "#1f3f7a",
+      "agents of the imperium|inquisition": "#4b3b2a",
+      // Warhammer 40,000: Chaos
+      "chaos space marines|black legion|heretic astartes": "#1f1f1f",
+      "world eaters": "#8b1a1a",
+      "death guard": "#8a9a5b",
+      "thousand sons": "#2563a8",
+      "emperor's children": "#b04a9c",
+      "night lords": "#1f2a5a",
+      "word bearers": "#7a1f1f",
+      "alpha legion": "#2a6f73",
+      "iron warriors": "#8a8d8f",
+      "chaos daemons|daemons": "#8b1a1a",
+      "chaos knights": "#3d2b2b",
+      // Warhammer 40,000: Xenos
+      "orks|orkz": "#3a7d2c",
+      "necrons": "#5aa469",
+      "tyranids|nids": "#6d28d9",
+      "genestealer cults|genestealer cult": "#6a3d9a",
+      "t'au|tau|t'au empire|tau empire": "#c9a46b",
+      "aeldari|eldar|craftworlds|asuryani": "#1e8a7a",
+      "ulthwe": "#1a1a1a",
+      "biel-tan|biel tan": "#2e7d32",
+      "iyanden": "#e0b12a",
+      "saim-hann|saim hann": "#a11d1d",
+      "alaitoc": "#1f4fa3",
+      "drukhari|dark eldar": "#2d5f5a",
+      "harlequins": "#b02a6a",
+      "leagues of votann|votann|squats": "#b5651d",
+      // Age of Sigmar: Order
+      "stormcast eternals|stormcast": "#c9a227",
+      "cities of sigmar": "#2b4c7e",
+      "daughters of khaine": "#8b1a2b",
+      "fyreslayers": "#d97706",
+      "idoneth deepkin|idoneth": "#2a6f9e",
+      "kharadron overlords|kharadron": "#8a6d3b",
+      "lumineth realm-lords|lumineth": "#e8e6dc",
+      "seraphon": "#2a9d8f",
+      "sylvaneth": "#6b8e23",
+      // Age of Sigmar: Death
+      "nighthaunt": "#4fd1c5",
+      "ossiarch bonereapers|ossiarch": "#e5dcc5",
+      "flesh-eater courts|flesh eater courts": "#8b1a1a",
+      "soulblight gravelords|soulblight": "#3b2d4f",
+      // Age of Sigmar: Destruction
+      "orruk warclans|ironjawz|kruleboyz|bonesplitterz": "#3a7d2c",
+      "gloomspite gitz|gloomspite": "#4b5d2a",
+      "ogor mawtribes|ogors": "#a0522d",
+      "sons of behemat": "#b07a4a",
+      // Age of Sigmar: Chaos
+      "skaven": "#7a5c3a",
+      "slaves to darkness": "#3a3a3a",
+      "blades of khorne|khorne": "#8b1a1a",
+      "disciples of tzeentch|tzeentch": "#2563a8",
+      "maggotkin of nurgle|nurgle": "#8a9a5b",
+      "hedonites of slaanesh|slaanesh": "#b04a9c",
+      "beasts of chaos": "#5c4033",
+    };
+    // Make a name easy to compare: lower case, no accents, straight apostrophes,
+    // other punctuation turned into spaces.
+    function plainName(text) {
+      return plainQuotes(String(text || "")).normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase().replace(/[^a-z0-9']+/g, " ").trim();
+    }
+    // Umbrella names, only used when no more specific name matches, so
+    // "Space Marines - Blood Angels" is red (Blood Angels), not Space Marines blue.
+    const UMBRELLA_FACTIONS = new Set(["space marines", "adeptus astartes", "chaos space marines", "heretic astartes",
+      "aeldari", "eldar", "craftworlds", "asuryani", "daemons", "chaos daemons"]);
+    // Every known spelling: specific names first, then umbrella names, longest first in each.
+    const USUAL_COLOUR_LIST = Object.entries(USUAL_FACTION_COLOURS)
+      .flatMap(([names, colour]) => names.split("|").map(name => [plainName(name), colour]))
+      .sort((a, b) => (UMBRELLA_FACTIONS.has(a[0]) - UMBRELLA_FACTIONS.has(b[0])) || b[0].length - a[0].length);
+    // The usual colour for a faction name, or "" if it isn't one we know.
+    function usualFactionColour(faction) {
+      const name = plainName(faction);
+      if (!name) return "";
+      const padded = ` ${name} `;
+      for (const [known, colour] of USUAL_COLOUR_LIST) {
+        if (name === known || padded.includes(` ${known} `)) return colour;   // whole words only
+      }
+      return "";
+    }
+
+    // The best suggestion for a faction: from its recipes if possible, otherwise its
+    // usual colour. Returns { colour, from: "recipes" | "usual" } or null.
+    function suggestionFor(faction) {
+      const fromRecipes = recipeColourFor(faction);
+      if (fromRecipes) return { colour: fromRecipes, from: "recipes" };
+      const usual = usualFactionColour(faction);
+      return usual ? { colour: usual, from: "usual" } : null;
+    }
+    function suggestFactionColour(faction) {
+      const s = suggestionFor(faction);
+      return s ? s.colour : "";
+    }
+
     // Suggest a colour from the recipes linked to that faction's units. A faction's
     // "main" colour is usually its armour, so recipes whose part is Armour are preferred.
     // From each recipe we take its FIRST colour (normally the base coat), and count it
     // once per unit using the recipe. The most-used colour wins. Unset paints (#808080)
     // are skipped. Returns "" if there's nothing to go on.
-    function suggestFactionColour(faction) {
+    function recipeColourFor(faction) {
       const units = models.filter(m => m.faction === faction);
       const uses = new Map();   // recipe -> how many of this faction's units use it
       for (const unit of units) for (const recipe of recipesOf(unit)) uses.set(recipe, (uses.get(recipe) || 0) + 1);
@@ -1661,8 +1783,26 @@
       factionColourList.innerHTML = "";
       const factions = uniqueSorted(models.map(m => m.faction));
       document.getElementById("faction-colour-hint").textContent = factions.length
-        ? "Tap a colour circle to pick a faction's colour. Suggest picks one from the recipes linked to that faction's units."
+        ? "Tap a colour circle to pick a faction's colour. Suggest offers one: from the recipes linked to that faction's units if it can, otherwise the colour the faction is usually painted."
         : "Add some units with a faction first, then give each faction a colour here.";
+      // One tap for every faction that hasn't got a colour yet.
+      const waiting = factions.filter(f => !factionColour(f) && suggestFactionColour(f));
+      const useAll = document.getElementById("use-suggested-colours");
+      useAll.classList.toggle("hidden", waiting.length === 0);
+      useAll.textContent = `Use suggested colours (${waiting.length})`;
+      useAll.onclick = () => {
+        const before = { ...settings.factionColours };
+        for (const f of waiting) settings.factionColours[f] = suggestFactionColour(f);
+        saveSettings();
+        render();
+        renderFactionColours();
+        showToast(`${plural(waiting.length, "faction")} coloured`, () => {
+          settings.factionColours = before;
+          saveSettings();
+          render();
+          renderFactionColours();
+        });
+      };
       for (const faction of factions) {
         const colour = factionColour(faction);
         const row = document.createElement("li");
@@ -1692,17 +1832,19 @@
 
         const buttons = document.createElement("div");
         buttons.className = "faction-colour-buttons";
-        const suggestion = suggestFactionColour(faction);
+        const suggested = suggestionFor(faction);
+        const suggestion = suggested ? suggested.colour : "";
         if (suggestion && suggestion !== colour) {
           const suggest = document.createElement("button");
           suggest.className = "plain-button";
-          suggest.append(makeSwatch(suggestion), "Suggest");
+          suggest.append(makeSwatch(suggestion), suggested.from === "recipes" ? "Suggest (from recipes)" : "Suggest");
           suggest.setAttribute("aria-label", `Use suggested colour ${suggestion} for ${faction}`);
           suggest.addEventListener("click", () => {
             const old = colour;
             setFactionColour(faction, suggestion);
             renderFactionColours();
-            showToast(`${faction} colour set from its recipes`, () => { setFactionColour(faction, old); renderFactionColours(); });
+            showToast(suggested.from === "recipes" ? `${faction} colour set from its recipes` : `${faction} set to its usual colour`,
+              () => { setFactionColour(faction, old); renderFactionColours(); });
           });
           buttons.appendChild(suggest);
         }
@@ -5012,10 +5154,15 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v11";
+    const APP_VERSION = "v12";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v12", date: "7 Oct 2026", changes: [
+        "Suggested faction colours now work straight away: the app knows the colours well-known factions are usually painted (Ultramarines blue, Orks green, Blood Angels red, Stormcast gold and many more).",
+        "If a faction's units have recipes linked, Suggest still prefers a colour from those recipes, and says so.",
+        "New Use suggested colours button in Settings → Faction colours: colours every faction that hasn't got one yet, in one tap, with Undo.",
+      ]},
       { version: "v11", date: "7 Oct 2026", changes: [
         "Faction colours show more clearly on cards: the faded tint is stronger, dark colours (like deep blue or black) are lightened for the tint so they don't disappear, and it now works on older phones too.",
       ]},
