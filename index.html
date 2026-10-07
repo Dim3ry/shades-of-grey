@@ -162,7 +162,13 @@
     }
     .faction-button small { color: var(--muted); font-size: 12px; }
 
-    /* ----- Units: filters ----- */
+    /* ----- Units: toolbar and filters ----- */
+    .units-toolbar { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-bottom: 12px; }
+    .units-toolbar .plain-button { padding: 12px 16px; }
+    .filter-summary { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 0 2px 10px; }
+    .filter-summary .hint { margin: 0; }
+    .filter-summary .link-button { flex-shrink: 0; }
+    .panel .edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
     .chip {
       background: var(--background);
@@ -437,7 +443,10 @@
 
     <!-- ===== TAB 2: Units ===== -->
     <section id="view-units" class="hidden">
-      <button class="primary-button" id="toggle-add" style="width: 100%; margin-bottom: 14px;">+ Add unit</button>
+      <div class="units-toolbar">
+        <button class="primary-button" id="toggle-add">+ Add unit</button>
+        <button class="plain-button" id="toggle-filters" aria-expanded="false" aria-controls="filter-card">Filters ▾</button>
+      </div>
 
       <!-- The add form starts hidden; the button above shows it. -->
       <form id="add-form" class="card hidden" style="display: grid; gap: 10px;">
@@ -446,22 +455,30 @@
           <input id="count-input" type="number" min="1" value="1" aria-label="Number of models" title="Number of models">
         </div>
         <div class="row">
-          <input id="hobby-input" placeholder="Game, e.g. 40K" aria-label="Game">
-          <input id="faction-input" placeholder="Faction" aria-label="Faction">
+          <input id="hobby-input" placeholder="Game, e.g. 40K" aria-label="Game" list="game-options">
+          <input id="faction-input" placeholder="Faction" aria-label="Faction" list="faction-options">
         </div>
         <button class="primary-button" type="submit">Add</button>
       </form>
 
-      <div class="card">
+      <!-- Filters start folded away so the units get the screen; "Filters" opens them. -->
+      <div class="card hidden" id="filter-card">
         <div class="row">
           <select id="hobby-filter" aria-label="Filter by game"></select>
           <select id="faction-filter" aria-label="Filter by faction"></select>
         </div>
         <div class="chips" id="group-chips"></div>
         <div class="chips" id="stage-chips"></div>
-        <p class="hint" id="filter-note" style="margin: 12px 0 0;"></p>
-        <button class="link-button hidden" id="clear-filters">Clear filters</button>
       </div>
+
+      <div class="filter-summary">
+        <span class="hint" id="filter-note"></span>
+        <button class="link-button hidden" id="clear-filters">Clear</button>
+      </div>
+
+      <!-- Suggestions for the game and faction boxes, filled from your existing units. -->
+      <datalist id="game-options"></datalist>
+      <datalist id="faction-options"></datalist>
 
       <ul class="units" id="unit-list"></ul>
     </section>
@@ -497,7 +514,7 @@
           <summary>Stages and "Done"</summary>
           <ul>
             <li>Stages are yours to change in <strong>Settings → Stages</strong>: rename, reorder (↑ ↓), add or remove. Changes apply when you press Save.</li>
-            <li><strong>Done starts at</strong> decides what counts as finished. By default, "Painted with issues" and "Battle ready" are Done.</li>
+            <li><strong>Done starts at</strong> decides what counts as finished. By default, "Battle ready", "Painted with issues" and "Parade ready" are Done.</li>
             <li>Units move with their stage when you reorder. If you remove a stage, its units drop to the stage before it.</li>
           </ul>
         </details>
@@ -687,7 +704,10 @@
     // Each unit stores a NUMBER pointing at a position in the stage list (0 = first).
     // Stages from settings.doneFrom onwards count as "Done"; earlier ones are "To do".
     const DEFAULT_STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed",
-                            "Part painted", "Painted with issues", "Battle ready"];
+                            "Part painted", "Battle ready", "Painted with issues", "Parade ready"];
+    // The defaults before v3, so testers on them can be moved to the new set (see below).
+    const OLD_DEFAULT_STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed",
+                                "Part painted", "Painted with issues", "Battle ready"];
     // The original five, kept for anyone who saved units before stages were editable.
     const ORIGINAL_STAGES = ["Unbuilt", "Built", "Primed", "In progress", "Painted"];
 
@@ -704,6 +724,27 @@
     }
 
     let STAGES = settings.stages.map(String);
+    // v3 upgrade: anyone still on the old default stages gets the new set.
+    // Units keep their stage BY NAME: "Battle ready" and "Painted with issues" swap
+    // positions, and "Parade ready" is added at the end. Custom stage lists are left alone.
+    let upgradedStages = false;
+    {
+      const same = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
+      if (same(STAGES, OLD_DEFAULT_STAGES)) {
+        let savedUnits = null;
+        try { savedUnits = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); } catch (ignored) {}
+        if (Array.isArray(savedUnits)) {
+          // old position -> new position
+          const move = [0, 1, 2, 3, 4, 6, 5];
+          for (const u of savedUnits) if (Number.isInteger(u.stage) && move[u.stage] !== undefined) u.stage = move[u.stage];
+          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(savedUnits)); } catch (ignored) {}
+        }
+        settings.stages = STAGES = DEFAULT_STAGES.slice();
+        settings.doneFrom = 5;
+        upgradedStages = true;
+        try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (ignored) {}
+      }
+    }
     // Settings saved before the Done marker existed: use the matching default if the
     // stages are one of the built-in sets, otherwise just the last stage.
     if (settings.doneFrom === undefined) {
@@ -1144,11 +1185,25 @@
       });
 
       const visible = models.filter(isVisible);
-      const anyFilter = filters.hobby || filters.faction || filters.stages.size > 0 || filters.repaint;
+      const activeCount = (filters.hobby ? 1 : 0) + (filters.faction ? 1 : 0) +
+                          (filters.stages.size > 0 ? 1 : 0) + (filters.repaint ? 1 : 0);
+      const anyFilter = activeCount > 0;
       clearFiltersButton.classList.toggle("hidden", !anyFilter);
+      // The summary line always shows what you're looking at, even with Filters folded away.
+      const scope = [filters.faction || filters.hobby].filter(Boolean).join("");
       filterNote.textContent = anyFilter
-        ? `Showing ${visible.length} of ${models.length} units (${modelCount(visible)} models).`
-        : `${models.length} units, ${modelCount(models)} models. Tap stages to filter; tap several to combine.`;
+        ? `${scope ? scope + ": " : ""}${visible.length} of ${models.length} units (${modelCount(visible)} models)`
+        : `${models.length} units, ${modelCount(models)} models`;
+      toggleFilters.textContent = `Filters${anyFilter ? " (" + activeCount + ")" : ""} ${filtersOpen ? "▴" : "▾"}`;
+
+      // Suggestions for the game/faction boxes in the add form and the edit panel.
+      const fillList = (id, values) => {
+        const dl = document.getElementById(id);
+        dl.innerHTML = "";
+        for (const v of values) { const o = document.createElement("option"); o.value = v; dl.appendChild(o); }
+      };
+      fillList("game-options", games);
+      fillList("faction-options", uniqueSorted(models.map(m => m.faction)));
 
       list.innerHTML = "";
       if (models.length === 0) {
@@ -1237,6 +1292,23 @@
     function buildPanel(model) {
       const panel = document.createElement("div");
       panel.className = "panel";
+
+      // Name, game and faction can be changed here. Saved when you leave each box.
+      const makeEdit = (labelText, field, listId) => {
+        const label = document.createElement("label");
+        label.textContent = labelText;
+        const box = document.createElement("input");
+        box.value = model[field] || "";
+        if (listId) box.setAttribute("list", listId);
+        box.addEventListener("change", () => editUnit(model, field, box.value));
+        label.appendChild(box);
+        return label;
+      };
+      const nameEdit = makeEdit("Unit name", "name");
+      const editRow = document.createElement("div");
+      editRow.className = "edit-row";
+      editRow.append(makeEdit("Game", "hobby", "game-options"), makeEdit("Faction", "faction", "faction-options"));
+      panel.append(nameEdit, editRow);
 
       // Nickname: saves as you type ("input"), redraws when you leave the box ("change").
       const nicknameLabel = document.createElement("label");
@@ -1339,6 +1411,31 @@
 
     // ----- Changing things -----
 
+    // Change a unit's name, game or faction, keeping the "Intercessors 1 / 2" numbering tidy.
+    function editUnit(model, field, value) {
+      value = value.trim();
+      if (field === "name" && !value) { render(); return; }  // a unit must keep a name
+      if ((model[field] || "") === value) return;
+      const same = (a, b) => plainQuotes(a || "").toLowerCase() === plainQuotes(b || "").toLowerCase();
+      const sameGroup = (a, b) => same(a.name, b.name) && same(a.hobby, b.hobby) && same(a.faction, b.faction);
+
+      const oldGroup = models.filter(m => m !== model && sameGroup(m, model));
+      model[field] = value;
+      delete model.copy;
+      // The group it left: if only one is left, it no longer needs a number.
+      if (oldGroup.length === 1) delete oldGroup[0].copy;
+      // The group it joined: number everyone, this unit last.
+      const newGroup = models.filter(m => m !== model && sameGroup(m, model));
+      if (newGroup.length > 0) {
+        let highest = Math.max(0, ...newGroup.map(m => m.copy || 0));
+        for (const m of newGroup) if (!m.copy) m.copy = ++highest;
+        model.copy = highest + 1;
+      }
+      if (!isVisible(model)) clearFilters();  // so an edited unit never seems to vanish
+      render();
+      showToast(`Saved ${displayName(model)}`);
+    }
+
     // Move a unit up (+1) or back (-1) a stage, then show a message with Undo.
     function changeStage(id, direction) {
       const model = models.find(m => m.id === id);
@@ -1424,6 +1521,19 @@
     });
     factionFilter.addEventListener("change", () => { filters.faction = factionFilter.value; render(); });
     clearFiltersButton.addEventListener("click", () => { clearFilters(); render(); });
+
+    // Fold the filter card open or shut. Starts open only on wide screens.
+    const toggleFilters = document.getElementById("toggle-filters");
+    const filterCard = document.getElementById("filter-card");
+    let filtersOpen = window.matchMedia("(min-width: 900px)").matches;
+    function setFiltersOpen(open) {
+      filtersOpen = open;
+      filterCard.classList.toggle("hidden", !open);
+      toggleFilters.setAttribute("aria-expanded", open);
+      render();
+    }
+    toggleFilters.addEventListener("click", () => setFiltersOpen(!filtersOpen));
+    filterCard.classList.toggle("hidden", !filtersOpen);
 
     const form = document.getElementById("add-form");
     const toggleAdd = document.getElementById("toggle-add");
@@ -2294,10 +2404,16 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v2";
+    const APP_VERSION = "v3";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v3", date: "7 Oct 2026", changes: [
+        "New final stage: Parade ready. The default order now ends Battle ready → Painted with issues → Parade ready, and all three count as Done. If you were on the old default stages, your units have been moved over automatically.",
+        "Edit a unit: open its details to change its name, game or faction.",
+        "Units page is tidier on phones: the filters fold away behind a Filters button, so you see more units at once.",
+        "Game and faction boxes now suggest names you've already used.",
+      ]},
       { version: "v2", date: "6 Oct 2026", changes: [
         "Import a list from the Warhammer app: paste it in Settings and its units are added. Units you already own are skipped and renamed to the app's names.",
         "Export CSV: save your collection as a spreadsheet.",
@@ -2356,7 +2472,8 @@
     }
     renderUpdates();
     showTab(settings.tab);
-    maybeRemindToBackUp();
+    if (upgradedStages) showToast("Stages updated: Parade ready added as the final stage", null, null, 8);
+    else maybeRemindToBackUp();
 
     // ================= PHASE 6: WORK OFFLINE =================
     // A "service worker" is a small helper script (sw.js) that the browser runs in the
