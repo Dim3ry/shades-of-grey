@@ -337,10 +337,84 @@
     .release .date { color: var(--muted); font-size: 13px; margin-left: 8px; font-weight: 400; }
     .release ul { margin: 8px 0 0; padding-left: 20px; color: var(--text); font-size: 14px; line-height: 1.5; }
 
+    /* ----- Recipes tab ----- */
+    ul.recipe-list { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 10px; }
+    .recipe-item {
+      width: 100%; text-align: left; background: var(--card); color: var(--text);
+      border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: grid; gap: 6px;
+    }
+    .recipe-item:hover { border-color: var(--accent); }
+    .recipe-item .meta { font-size: 13px; color: var(--muted); }
+    .swatches { display: flex; gap: 4px; flex-wrap: wrap; }
+    /* A small circle of paint colour. --swatch is set by JavaScript. */
+    .swatch {
+      display: inline-block; width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
+      background: var(--swatch); border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+    .part-tag {
+      display: inline-block; font-size: 12px; padding: 3px 10px; border-radius: 999px;
+      border: 1px solid var(--accent); color: var(--accent);
+    }
+    .recipe-notes { white-space: pre-wrap; margin: 12px 0 0; line-height: 1.5; font-size: 15px; }
+    ol.recipe-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+    ol.recipe-steps > li { border-left: 3px solid var(--accent); padding: 2px 0 2px 12px; }
+    .step-title { font-weight: 600; }
+    .step-title small { color: var(--muted); font-weight: 400; font-size: 13px; }
+    .paint-line { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-top: 6px; }
+    .paint-line .mix { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .paint-line .brand { color: var(--muted); }
+
+    /* Recipe buttons on a unit card, and linked units/recipes with an ✕ to unlink. */
+    .recipe-links { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
+    .recipe-chip {
+      background: var(--background); color: var(--text); border: 1px solid var(--border);
+      border-radius: 999px; padding: 7px 12px; font-size: 13px; min-height: 36px;
+      display: inline-flex; align-items: center; gap: 6px; text-align: left;
+    }
+    .recipe-chip:hover { border-color: var(--accent); }
+    .recipe-chip small { color: var(--muted); }
+    .recipe-chip .swatch { width: 12px; height: 12px; }
+    .linked-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .linked { display: inline-flex; }
+    .linked .recipe-chip { border-radius: 999px 0 0 999px; }
+    .linked .unlink {
+      background: var(--background); color: var(--muted); border: 1px solid var(--border); border-left: none;
+      border-radius: 0 999px 999px 0; padding: 0 12px; min-height: 36px;
+    }
+    .linked .unlink:hover { color: var(--danger); }
+    .panel-field { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
+
+    /* The recipe editor */
+    .form-grid { display: grid; gap: 12px; }
+    .form-grid label, .step-edit label { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
+    ol.step-edits { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    .step-edit {
+      background: var(--background); border: 1px solid var(--border); border-radius: 10px;
+      padding: 10px; display: grid; gap: 10px;
+    }
+    .step-edit input, .step-edit select { background: var(--card); width: 100%; }
+    .step-head { display: flex; align-items: center; gap: 6px; }
+    .step-head strong { flex: 1; }
+    .step-edit .row { grid-template-columns: 1fr 88px; }
+    /* One paint: colour, name and ✕ on top; brand and mix % underneath. */
+    .paint-edit {
+      display: grid; gap: 6px; padding: 8px; border: 1px solid var(--border); border-radius: 8px;
+      grid-template-columns: 44px 1fr 92px 40px;
+      grid-template-areas: "swatch name name remove" "brand brand mix mix";
+    }
+    .paint-edit input[type=color] { grid-area: swatch; width: 44px; height: 44px; padding: 3px; cursor: pointer; }
+    .paint-edit .paint-name { grid-area: name; }
+    .paint-edit .paint-brand { grid-area: brand; }
+    .paint-edit .mix-box { grid-area: mix; display: flex; align-items: center; gap: 4px; color: var(--muted); }
+    .paint-edit .remove { grid-area: remove; height: 44px; }
+    .mix-warning { color: #fbbf24; font-size: 13px; margin: 0; }
+
     /* ----- Bigger tab buttons (all screen sizes) ----- */
     .tabs button { padding: 12px 0 14px; font-size: 13px; gap: 4px; min-height: 64px; }
     .tabs .icon { font-size: 24px; display: inline-flex; justify-content: center; }
     .tabs button[aria-current="page"] { background: rgba(125, 211, 252, 0.08); box-shadow: inset 0 3px 0 var(--accent); }
+    /* Six tabs on a narrow phone: slightly smaller labels so "Dashboard" still fits. */
+    @media (max-width: 420px) { .tabs button { font-size: 11px; } }
 
     /* ----- Wide screens (laptops and desktops) -----
        "@media (min-width: 900px)" means: only use these rules when the window is at
@@ -399,6 +473,8 @@
       #view-updates:not(.hidden) { display: grid; grid-template-columns: 1fr 2fr; gap: 18px; align-items: start; }
       #view-updates .card { margin-bottom: 0; }
       #view-help .help:not(.hidden) { columns: 2; column-gap: 40px; }
+      ul.recipe-list { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+      #recipe-page { max-width: 780px; }
       .help details { break-inside: avoid; }
 
       /* The pop-up message sits at the bottom now the tabs are at the top. */
@@ -414,6 +490,7 @@
   <nav class="tabs" aria-label="Sections">
     <button data-tab="dashboard"><span class="icon"><svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="3" opacity="0.35"/><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="34 51" transform="rotate(-90 12 12)"/></svg></span>Dashboard</button>
     <button data-tab="units"><span class="icon">☰</span>Units</button>
+    <button data-tab="recipes"><span class="icon"><svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><path d="M12 3c3.5 4.2 6 7.6 6 10.5a6 6 0 0 1-12 0C6 10.6 8.5 7.2 12 3z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg></span>Recipes</button>
     <button data-tab="help"><span class="icon"><svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.6v.6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="17.3" r="1.3" fill="currentColor"/></svg></span>Help</button>
     <button data-tab="updates"><span class="icon"><svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg></span>Updates</button>
     <button data-tab="settings"><span class="icon">⚙</span>Settings</button>
@@ -492,6 +569,26 @@
       <ul class="units" id="unit-list"></ul>
     </section>
 
+    <!-- ===== TAB: Recipes (how you paint things, step by step) ===== -->
+    <section id="view-recipes" class="hidden">
+      <!-- The list of recipes. Hidden while one recipe is open. -->
+      <div id="recipe-home">
+        <div class="units-toolbar">
+          <button class="primary-button" id="new-recipe">+ New recipe</button>
+          <select id="part-filter" aria-label="Filter by part"></select>
+        </div>
+        <ul class="recipe-list" id="recipe-list"></ul>
+        <details class="card" id="recipe-lists">
+          <summary>Parts and techniques</summary>
+          <p class="hint" style="margin-top: 10px;">The choices offered when you write a recipe. You can also add new ones while writing.</p>
+          <div class="panel-field">Parts<div class="chips" id="part-chips" style="margin-top: 0;"></div></div>
+          <div class="panel-field" style="margin-top: 12px;">Techniques<div class="chips" id="technique-chips" style="margin-top: 0;"></div></div>
+        </details>
+      </div>
+      <!-- One recipe, either to read or to edit. Filled in by JavaScript. -->
+      <div id="recipe-page" class="hidden"></div>
+    </section>
+
     <!-- ===== TAB: Help (how to use the app) ===== -->
     <section id="view-help" class="hidden">
       <div class="card help-intro">
@@ -536,6 +633,18 @@
           </ul>
         </details>
         <details>
+          <summary>Paint recipes</summary>
+          <ul>
+            <li>A recipe is how you paint one part, like armour, eyes or trim. Press <strong>Recipes → + New recipe</strong>.</li>
+            <li>Add steps in the order you paint them. Each step has a technique (base coat, wash, dry brush…), the number of coats, and one or more paints.</li>
+            <li>For each paint, type its name and brand and tap the colour circle to pick roughly what it looks like. Paints you've used before are suggested as you type.</li>
+            <li>Mixing paints? Add more than one paint to a step and set each one's <strong>mix %</strong>, e.g. 70% and 30%.</li>
+            <li>Reorder steps with <strong>↑ ↓</strong>. Nothing is saved until you press <strong>Save recipe</strong>.</li>
+            <li>Link a recipe to units from the recipe (<strong>Used on</strong>) or from a unit's details. Linked recipes show as buttons on the unit's card: tap one to open it.</li>
+            <li>Need a part or technique that isn't listed? Choose <strong>＋ Add a new…</strong> in the menu. Remove ones you don't use under <strong>Parts and techniques</strong>.</li>
+          </ul>
+        </details>
+        <details>
           <summary>Importing (CSV and Warhammer app)</summary>
           <ul>
             <li><strong>From the Warhammer app:</strong> open a list, tap Export, copy it as text, then in <strong>Settings → Warhammer app list</strong> paste it and press Read list.</li>
@@ -550,7 +659,7 @@
           <ul>
             <li>Everything is saved <strong>on this device only</strong>, in your browser. Nobody else can see it, and it isn't sent anywhere.</li>
             <li>Clearing your browser's data or uninstalling the app deletes it, so <strong>Save backup</strong> regularly. The app reminds you after two weeks.</li>
-            <li><strong>Restore backup</strong> brings a backup file back, including your stages.</li>
+            <li><strong>Restore backup</strong> brings a backup file back, including your stages and recipes.</li>
             <li><strong>Export CSV</strong> saves your collection as a spreadsheet (without photos).</li>
             <li>New phone? Save a backup on the old one, open the app on the new one, and restore it.</li>
           </ul>
@@ -794,6 +903,99 @@
     // All units live in this list. Each is a small bundle of facts (an "object").
     let models = load();
 
+    // ================= PAINT RECIPES: THE DATA =================
+    // Recipes are saved separately from units, under their own name in browser storage.
+    // The "recipe book" holds four lists:
+    //   parts:      what a recipe is for (Armour, Eyes...). You can add your own.
+    //   techniques: how a step is done (Base coat, Wash...). You can add your own.
+    //   paints:     every paint used in any recipe, ONCE each: { id, brand, name, colour }.
+    //               Steps point at a paint by its id, so each paint's details live in one
+    //               place. The "Your Palette" tab (next update) is built from this list.
+    //   recipes:    { id, name, part, notes, steps: [{ technique, coats, paints: [{ paint, mix }] }] }
+    //               "paint" is a paint's id; "mix" is its share in % (null if not given).
+    // A unit lists the recipes it uses in unit.recipes, a list of recipe ids.
+    const RECIPES_KEY = "shades-of-grey-recipes";
+    const DEFAULT_PARTS = ["Armour", "Cloth", "Skin", "Metal", "Trim", "Eyes", "Lenses",
+                           "Weapons", "Leather", "Gems", "Base"];
+    const DEFAULT_TECHNIQUES = ["Prime", "Base coat", "Contrast", "Layer", "Wash", "Shade", "Glaze",
+                                "Dry brush", "Edge highlight", "Wet blend", "Stipple", "Sponge", "Airbrush"];
+    const COMMON_BRANDS = ["Citadel", "Vallejo", "The Army Painter", "Pro Acryl", "AK Interactive",
+                           "Scale75", "Two Thin Coats", "Green Stuff World", "Monument Hobbies"];
+    const DEFAULT_PAINT_COLOUR = "#808080";
+
+    let book = loadRecipes();
+
+    function loadRecipes() {
+      let saved = null;
+      try {
+        saved = localStorage.getItem(RECIPES_KEY);
+        return cleanRecipeBook(saved ? JSON.parse(saved) : null);
+      } catch (error) {
+        // Damaged data: tuck it away under another name so it's never lost.
+        try { if (saved) localStorage.setItem(RECIPES_KEY + "-unreadable", saved); } catch (ignored) {}
+        return cleanRecipeBook(null);
+      }
+    }
+
+    // Two bits of text the same, ignoring capitals, spaces at the ends and curly quotes?
+    function sameText(a, b) {
+      return plainQuotes(String(a || "")).trim().toLowerCase() === plainQuotes(String(b || "")).trim().toLowerCase();
+    }
+
+    // A mix %: a whole number from 0 to 100, or null for "not given".
+    function cleanMix(value) {
+      if (value === null || value === undefined || value === "") return null;
+      const n = Math.round(Number(value));
+      return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : null;
+    }
+
+    // Checks and repairs a recipe book, like cleanModels does for units.
+    // "...p" and "...r" keep any extra facts a later version adds, so nothing is lost.
+    function cleanRecipeBook(raw) {
+      const src = raw && typeof raw === "object" ? raw : {};
+      const textList = (values, fallback) => {
+        const out = [];
+        if (Array.isArray(values)) for (const v of values) {
+          const t = String(v ?? "").trim();
+          if (t && !out.some(o => sameText(o, t))) out.push(t);
+        }
+        return out.length ? out : fallback.slice();
+      };
+      const isColour = (c) => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c);
+
+      const paints = [];
+      const paintIds = new Set();
+      for (const p of Array.isArray(src.paints) ? src.paints : []) {
+        const name = p && String(p.name || "").trim();
+        if (!name || !Number.isInteger(p.id) || paintIds.has(p.id)) continue;
+        paintIds.add(p.id);
+        paints.push({ ...p, brand: String(p.brand || "").trim(), name,
+                      colour: isColour(p.colour) ? p.colour.toLowerCase() : DEFAULT_PAINT_COLOUR });
+      }
+
+      const recipes = [];
+      const recipeIds = new Set();
+      for (const r of Array.isArray(src.recipes) ? src.recipes : []) {
+        if (!r || typeof r.name !== "string" || !r.name.trim()) continue;
+        const id = Number.isInteger(r.id) && !recipeIds.has(r.id) ? r.id : null;
+        if (id !== null) recipeIds.add(id);
+        const steps = (Array.isArray(r.steps) ? r.steps : []).filter(s => s && typeof s === "object").map(s => ({
+          technique: String(s.technique || "").trim(),
+          coats: cleanCount(s.coats),
+          paints: (Array.isArray(s.paints) ? s.paints : [])
+            .filter(sp => sp && paintIds.has(sp.paint))
+            .map(sp => ({ paint: sp.paint, mix: cleanMix(sp.mix) })),
+        }));
+        recipes.push({ ...r, id, name: r.name.trim(), part: String(r.part || "").trim(),
+                       notes: String(r.notes || ""), steps });
+      }
+      let next = Math.max(0, ...recipeIds) + 1;
+      for (const r of recipes) if (r.id === null) r.id = next++;
+
+      return { parts: textList(src.parts, DEFAULT_PARTS), techniques: textList(src.techniques, DEFAULT_TECHNIQUES),
+               paints, recipes };
+    }
+
     // localStorage only holds text, so we turn the list into text (JSON) to save it,
     // and back into a list to load it. "try / catch" means: try this, and if it goes
     // wrong, do the catch part instead of crashing.
@@ -847,6 +1049,9 @@
           ? m.log.filter(e => Array.isArray(e) && isDate(e[0]) && validStage(e[1]) &&
                               (e[2] === undefined || (Number.isInteger(e[2]) && e[2] >= 0)))
           : [];
+        // Linked recipes: a list of whole numbers (recipe ids), no repeats.
+        const recipeIds = Array.isArray(m.recipes) ? [...new Set(m.recipes.filter(Number.isInteger))] : [];
+        if (recipeIds.length) model.recipes = recipeIds; else delete model.recipes;
         if (Number.isInteger(model.id) && !usedIds.has(model.id)) usedIds.add(model.id);
         else model.id = null; // given a fresh one below
         cleaned.push(model);
@@ -862,6 +1067,7 @@
     function save() {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(models));
+        localStorage.setItem(RECIPES_KEY, JSON.stringify(book));
         warnedFull = false;
         return true;
       } catch (error) {
@@ -1001,6 +1207,7 @@
     const views = {
       dashboard: document.getElementById("view-dashboard"),
       units: document.getElementById("view-units"),
+      recipes: document.getElementById("view-recipes"),
       settings: document.getElementById("view-settings"),
       updates: document.getElementById("view-updates"),
       help: document.getElementById("view-help"),
@@ -1019,7 +1226,14 @@
       if (name === "settings") renderSettings();
       window.scrollTo(0, 0);
     }
-    tabButtons.forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
+    tabButtons.forEach(b => b.addEventListener("click", () => {
+      // Tapping Recipes while already on it goes back to the list (unless you're mid-edit).
+      if (b.dataset.tab === "recipes" && settings.tab === "recipes" && !recipeDraft) {
+        openRecipeId = null;
+        renderRecipes();
+      }
+      showTab(b.dataset.tab);
+    }));
 
     // ================= FILTERS =================
 
@@ -1064,6 +1278,7 @@
       save();
       renderDashboard();
       renderUnits();
+      renderRecipes();
     }
 
     // ----- Charts -----
@@ -1330,6 +1545,7 @@
     function buildCard(model) {
       const item = document.createElement("li");
       item.className = "unit";
+      item.dataset.id = model.id;   // so we can scroll to it from a recipe
       item.style.setProperty("--stage-colour", `var(--stage-${model.stage})`);
       const isOpen = openIds.has(model.id);
 
@@ -1404,6 +1620,16 @@
       up.addEventListener("click", () => changeStage(model.id, +1));
 
       item.append(info, up);
+
+      // Its recipes, as buttons that open them.
+      const linked = recipesOf(model);
+      if (linked.length) {
+        const row = document.createElement("div");
+        row.className = "recipe-links";
+        for (const recipe of linked) row.appendChild(recipeChip(recipe, () => openRecipe(recipe.id)));
+        item.appendChild(row);
+      }
+
       if (isOpen) item.appendChild(buildPanel(model));
       return item;
     }
@@ -1523,6 +1749,34 @@
       }
 
       panel.appendChild(noteLabel);
+
+      // Paint recipes: linked ones (tap to open, ✕ to unlink), and a menu to link more.
+      const recipeField = document.createElement("div");
+      recipeField.className = "panel-field";
+      recipeField.append("Paint recipes");
+      const linkedRecipes = recipesOf(model);
+      if (linkedRecipes.length) {
+        const linkedList = document.createElement("div");
+        linkedList.className = "linked-list";
+        for (const recipe of linkedRecipes) {
+          linkedList.appendChild(linkedChip(recipeChip(recipe, () => openRecipe(recipe.id)),
+            `Unlink ${recipe.name}`, () => { unlinkRecipe(model, recipe.id); render(); }));
+        }
+        recipeField.appendChild(linkedList);
+      }
+      const recipePicker = document.createElement("select");
+      recipePicker.setAttribute("aria-label", `Link a recipe to ${displayName(model)}`);
+      recipePicker.add(new Option(linkedRecipes.length ? "Link another recipe…" : "Link a recipe…", ""));
+      book.recipes.filter(r => !linkedRecipes.includes(r))
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .forEach(r => recipePicker.add(new Option(r.part ? `${r.name} (${r.part})` : r.name, r.id)));
+      recipePicker.add(new Option("＋ New recipe for this unit", "new"));
+      recipePicker.addEventListener("change", () => {
+        if (recipePicker.value === "new") { recipePicker.value = ""; startNewRecipe(model.id); return; }
+        if (recipePicker.value) { linkRecipe(model, Number(recipePicker.value)); render(); }
+      });
+      recipeField.appendChild(recipePicker);
+      panel.appendChild(recipeField);
 
       if (model.photo) {
         const photo = document.createElement("img");
@@ -1741,6 +1995,706 @@
       showToast(`Added ${displayName(newModel)}`);
     });
 
+    // ================= RECIPES TAB =================
+
+    // ----- Small helpers -----
+    function recipeById(id) { return book.recipes.find(r => r.id === id); }
+    function paintById(id) { return book.paints.find(p => p.id === id); }
+    // A unit's recipes (skipping any that have since been deleted).
+    function recipesOf(model) { return (model.recipes || []).map(recipeById).filter(Boolean); }
+    function unitsUsing(recipeId) { return models.filter(m => (m.recipes || []).includes(recipeId)); }
+    function linkRecipe(model, recipeId) {
+      if (!(model.recipes || []).includes(recipeId)) model.recipes = [...(model.recipes || []), recipeId];
+    }
+    function unlinkRecipe(model, recipeId) {
+      model.recipes = (model.recipes || []).filter(id => id !== recipeId);
+      if (!model.recipes.length) delete model.recipes;
+    }
+    function coatsText(n) { return `${n} coat${n === 1 ? "" : "s"}`; }
+
+    // Every colour used in a recipe, in order, each once.
+    function recipeColours(recipe) {
+      const colours = [];
+      for (const step of recipe.steps) for (const sp of step.paints) {
+        const paint = paintById(sp.paint);
+        if (paint && !colours.includes(paint.colour)) colours.push(paint.colour);
+      }
+      return colours;
+    }
+
+    function makeSwatch(colour) {
+      const s = document.createElement("span");
+      s.className = "swatch";
+      s.style.setProperty("--swatch", colour);
+      return s;
+    }
+
+    // A rounded button showing a recipe's name, with a dot of its first colour.
+    function recipeChip(recipe, onClick) {
+      const chip = document.createElement("button");
+      chip.className = "recipe-chip";
+      const colours = recipeColours(recipe);
+      if (colours.length) chip.appendChild(makeSwatch(colours[0]));
+      chip.append(recipe.name);
+      chip.setAttribute("aria-label", `Open recipe: ${recipe.name}`);
+      chip.addEventListener("click", onClick);
+      return chip;
+    }
+
+    // Wraps a chip with an ✕ button beside it, for unlinking.
+    function linkedChip(chip, removeLabel, onRemove) {
+      const wrap = document.createElement("span");
+      wrap.className = "linked";
+      const x = document.createElement("button");
+      x.className = "unlink";
+      x.textContent = "✕";
+      x.setAttribute("aria-label", removeLabel);
+      x.addEventListener("click", onRemove);
+      wrap.append(chip, x);
+      return wrap;
+    }
+
+    // Paints no recipe uses any more are tidied away, so the palette only shows real ones.
+    function pruneUnusedPaints() {
+      const used = new Set();
+      for (const r of book.recipes) for (const s of r.steps) for (const sp of s.paints) used.add(sp.paint);
+      book.paints = book.paints.filter(p => used.has(p.id));
+    }
+
+    // Finds a paint by brand and name (ignoring capitals), or adds it. Its colour is updated.
+    function findOrAddPaint(brand, name, colour) {
+      brand = brand.trim();
+      name = name.trim();
+      // No brand typed? Then any paint with that name counts as the same paint.
+      let paint = book.paints.find(p => sameText(p.name, name) && (!brand || sameText(p.brand, brand)));
+      if (!paint) {
+        paint = { id: Math.max(0, ...book.paints.map(p => p.id)) + 1, brand, name, colour: DEFAULT_PAINT_COLOUR };
+        book.paints.push(paint);
+      }
+      // The untouched grey never overwrites a colour you've already picked.
+      if (/^#[0-9a-f]{6}$/i.test(colour) && colour.toLowerCase() !== DEFAULT_PAINT_COLOUR) paint.colour = colour.toLowerCase();
+      return paint;
+    }
+
+    // Mix %: an even split for n paints, e.g. 3 paints = 34, 33, 33.
+    function evenSplit(n) {
+      const base = Math.floor(100 / n);
+      const parts = new Array(n).fill(base);
+      parts[0] += 100 - base * n;
+      return parts;
+    }
+    // True if a step's mixes are still the automatic even split (or all blank), so it's
+    // safe to re-split them when a paint is added or removed.
+    function isEvenSplit(paints) {
+      if (!paints.length || paints.every(p => p.mix === null)) return true;
+      const even = evenSplit(paints.length);
+      return paints.every((p, i) => p.mix === even[i]);
+    }
+    function resplit(paints) { evenSplit(paints.length).forEach((mix, i) => { paints[i].mix = mix; }); }
+
+    // A warning if a step's mix doesn't add up to 100%.
+    function mixWarning(paints) {
+      const named = paints.filter(p => p.name.trim());
+      if (named.length < 2 || named.some(p => p.mix === null)) return "";
+      const total = named.reduce((sum, p) => sum + p.mix, 0);
+      return total === 100 ? "" : `The mix adds up to ${total}%, not 100%.`;
+    }
+
+    // ----- Which page is showing -----
+    const recipeHome = document.getElementById("recipe-home");
+    const recipePage = document.getElementById("recipe-page");
+    const recipeList = document.getElementById("recipe-list");
+    const partFilter = document.getElementById("part-filter");
+    let recipePartFilter = "";
+    let openRecipeId = null;   // the recipe being read, or null for the list
+    let recipeDraft = null;    // the recipe being edited (a copy), or null
+
+    function renderRecipes() {
+      if (openRecipeId !== null && !recipeById(openRecipeId)) openRecipeId = null;
+      const onPage = !!recipeDraft || openRecipeId !== null;
+      recipeHome.classList.toggle("hidden", onPage);
+      recipePage.classList.toggle("hidden", !onPage);
+      if (recipeDraft) renderRecipeEditor();
+      else if (openRecipeId !== null) renderRecipeView(recipeById(openRecipeId));
+      else renderRecipeList();
+    }
+
+    // Leaving the editor with unsaved changes? Check first. True = OK to carry on.
+    function okToLeaveDraft() {
+      if (!recipeDraft) return true;
+      if (draftSnapshot(recipeDraft) === recipeDraft.original) return true;
+      return confirm("Discard the changes to the recipe you're writing?");
+    }
+    function draftSnapshot(d) { return JSON.stringify({ n: d.name, p: d.part, o: d.notes, s: d.steps }); }
+
+    function openRecipe(id) {
+      if (!okToLeaveDraft()) return;
+      recipeDraft = null;
+      openRecipeId = id;
+      renderRecipes();
+      showTab("recipes");
+    }
+
+    // Jump to one unit on the Units tab, with its details open.
+    function goToUnit(id) {
+      clearFilters();
+      openIds.clear();
+      openIds.add(id);
+      render();
+      showTab("units");
+      const card = list.querySelector(`li.unit[data-id="${id}"]`);
+      if (card) card.scrollIntoView({ block: "center" });
+    }
+
+    // ----- The list of recipes -----
+    function renderRecipeList() {
+      const partsUsed = uniqueSorted(book.recipes.map(r => r.part));
+      if (!partsUsed.includes(recipePartFilter)) recipePartFilter = "";
+      fillSelect(partFilter, "parts", partsUsed, recipePartFilter);
+      partFilter.classList.toggle("hidden", partsUsed.length < 2);
+
+      recipeList.innerHTML = "";
+      if (!book.recipes.length) {
+        recipeList.innerHTML = '<li class="empty">No recipes yet. Press + New recipe to write down how you paint something, step by step.</li>';
+      }
+      const shown = book.recipes
+        .filter(r => !recipePartFilter || r.part === recipePartFilter)
+        .sort((a, b) => a.name.localeCompare(b.name));
+      for (const recipe of shown) {
+        const item = document.createElement("li");
+        const button = document.createElement("button");
+        button.className = "recipe-item";
+        const name = document.createElement("div");
+        name.className = "name";
+        name.textContent = recipe.name;
+        const users = unitsUsing(recipe.id).length;
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        meta.textContent = [recipe.part, plural(recipe.steps.length, "step"),
+                            users ? `used on ${plural(users, "unit")}` : ""].filter(Boolean).join(" · ");
+        const swatches = document.createElement("div");
+        swatches.className = "swatches";
+        recipeColours(recipe).slice(0, 12).forEach(c => swatches.appendChild(makeSwatch(c)));
+        button.append(name, meta, swatches);
+        button.addEventListener("click", () => { openRecipeId = recipe.id; renderRecipes(); window.scrollTo(0, 0); });
+        item.appendChild(button);
+        recipeList.appendChild(item);
+      }
+
+      renderListChips("part-chips", "parts", "part");
+      renderListChips("technique-chips", "techniques", "technique");
+    }
+
+    partFilter.addEventListener("change", () => { recipePartFilter = partFilter.value; renderRecipeList(); });
+    document.getElementById("new-recipe").addEventListener("click", () => startNewRecipe(null));
+
+    // The parts and techniques lists: ✕ to remove one, + to add one.
+    function renderListChips(boxId, key, word) {
+      const box = document.getElementById(boxId);
+      box.innerHTML = "";
+      for (const value of book[key]) {
+        box.appendChild(makeChip(`${value}  ✕`, false, () => {
+          if (book[key].length <= 1) { alert(`Keep at least one ${word}.`); return; }
+          book[key] = book[key].filter(v => v !== value);
+          render();
+        }));
+        box.lastChild.setAttribute("aria-label", `Remove ${value}`);
+      }
+      const add = document.createElement("button");
+      add.className = "link-button";
+      add.textContent = `+ Add ${word}`;
+      add.addEventListener("click", () => {
+        const typed = (prompt(`Name of the new ${word}:`) || "").trim();
+        if (typed && !book[key].some(v => sameText(v, typed))) { book[key].push(typed); render(); }
+      });
+      box.appendChild(add);
+    }
+
+    // ----- Reading one recipe -----
+    function renderRecipeView(recipe) {
+      recipePage.innerHTML = "";
+      const back = document.createElement("button");
+      back.className = "link-button";
+      back.textContent = "← All recipes";
+      back.addEventListener("click", () => { openRecipeId = null; renderRecipes(); });
+      recipePage.appendChild(back);
+
+      // Name, part and notes.
+      const top = document.createElement("div");
+      top.className = "card";
+      const title = document.createElement("h2");
+      title.textContent = recipe.name;
+      title.style.fontSize = "20px";
+      top.appendChild(title);
+      if (recipe.part) {
+        const tag = document.createElement("span");
+        tag.className = "part-tag";
+        tag.textContent = recipe.part;
+        top.appendChild(tag);
+      }
+      if (recipe.notes.trim()) {
+        const notes = document.createElement("p");
+        notes.className = "recipe-notes";
+        notes.textContent = recipe.notes;
+        top.appendChild(notes);
+      }
+      recipePage.appendChild(top);
+
+      // The steps, in order.
+      const stepsCard = document.createElement("div");
+      stepsCard.className = "card";
+      stepsCard.innerHTML = "<h2>Steps</h2>";
+      if (!recipe.steps.length) stepsCard.insertAdjacentHTML("beforeend", '<p class="hint" style="margin: 0;">No steps yet. Press Edit to add some.</p>');
+      const steps = document.createElement("ol");
+      steps.className = "recipe-steps";
+      recipe.steps.forEach((step, i) => {
+        const li = document.createElement("li");
+        const head = document.createElement("div");
+        head.className = "step-title";
+        head.textContent = `${i + 1}. ${step.technique || "Step"} `;
+        const coats = document.createElement("small");
+        coats.textContent = `· ${coatsText(step.coats)}`;
+        head.appendChild(coats);
+        li.appendChild(head);
+        const mixed = step.paints.length > 1;
+        for (const sp of step.paints) {
+          const paint = paintById(sp.paint);
+          if (!paint) continue;
+          const line = document.createElement("div");
+          line.className = "paint-line";
+          const brand = document.createElement("span");
+          brand.className = "brand";
+          brand.textContent = paint.brand;
+          line.append(makeSwatch(paint.colour), paint.name, brand);
+          // Show the mix % when paints are mixed, or a single paint isn't 100% (e.g. thinned).
+          if (sp.mix !== null && (mixed || sp.mix !== 100)) {
+            const mix = document.createElement("span");
+            mix.className = "mix";
+            mix.textContent = `${sp.mix}%`;
+            line.appendChild(mix);
+          }
+          li.appendChild(line);
+        }
+        steps.appendChild(li);
+      });
+      stepsCard.appendChild(steps);
+      recipePage.appendChild(stepsCard);
+
+      // Used on: linked units, plus a menu to link more.
+      const usedCard = document.createElement("div");
+      usedCard.className = "card";
+      usedCard.innerHTML = "<h2>Used on</h2>";
+      const users = unitsUsing(recipe.id);
+      if (users.length) {
+        const linkedList = document.createElement("div");
+        linkedList.className = "linked-list";
+        linkedList.style.marginBottom = "10px";
+        for (const unit of users) {
+          const chip = document.createElement("button");
+          chip.className = "recipe-chip";
+          chip.append(displayName(unit));
+          if (unit.faction) {
+            const small = document.createElement("small");
+            small.textContent = unit.faction;
+            chip.appendChild(small);
+          }
+          chip.setAttribute("aria-label", `Go to ${displayName(unit)}`);
+          chip.addEventListener("click", () => goToUnit(unit.id));
+          linkedList.appendChild(linkedChip(chip, `Unlink ${displayName(unit)}`,
+            () => { unlinkRecipe(unit, recipe.id); render(); }));
+        }
+        usedCard.appendChild(linkedList);
+      } else {
+        usedCard.insertAdjacentHTML("beforeend", '<p class="hint">Not linked to any units yet.</p>');
+      }
+      const others = models.filter(m => !users.includes(m)).sort((a, b) =>
+        (a.faction || "").localeCompare(b.faction || "") || displayName(a).localeCompare(displayName(b)));
+      if (others.length) {
+        const picker = document.createElement("select");
+        picker.style.width = "100%";
+        picker.setAttribute("aria-label", "Link this recipe to a unit");
+        picker.add(new Option("Add to a unit…", ""));
+        for (const m of others) picker.add(new Option(m.faction ? `${displayName(m)} (${m.faction})` : displayName(m), m.id));
+        picker.addEventListener("change", () => {
+          const unit = models.find(m => m.id === Number(picker.value));
+          if (unit) { linkRecipe(unit, recipe.id); render(); }
+        });
+        usedCard.appendChild(picker);
+      }
+      recipePage.appendChild(usedCard);
+
+      // Edit, duplicate, delete.
+      const buttons = document.createElement("div");
+      buttons.className = "panel-buttons";
+      const edit = document.createElement("button");
+      edit.className = "primary-button";
+      edit.style.padding = "11px 20px";
+      edit.textContent = "Edit";
+      edit.addEventListener("click", () => { startRecipeDraft(draftFrom(recipe)); });
+      const copy = document.createElement("button");
+      copy.className = "plain-button";
+      copy.textContent = "Duplicate";
+      copy.addEventListener("click", () => {
+        const d = draftFrom(recipe);
+        d.id = null;
+        d.name = `${recipe.name} (copy)`;
+        startRecipeDraft(d);
+      });
+      const del = document.createElement("button");
+      del.className = "danger-button";
+      del.textContent = "Delete";
+      del.addEventListener("click", () => deleteRecipe(recipe.id));
+      buttons.append(edit, copy, del);
+      recipePage.appendChild(buttons);
+    }
+
+    function deleteRecipe(id) {
+      const recipe = recipeById(id);
+      if (!recipe) return;
+      const users = unitsUsing(id);
+      if (!confirm(`Delete the recipe "${recipe.name}"?` +
+                   (users.length ? ` It will be unlinked from ${plural(users.length, "unit")}.` : ""))) return;
+      const before = JSON.parse(JSON.stringify(book));   // a copy, for Undo
+      book.recipes = book.recipes.filter(r => r.id !== id);
+      users.forEach(m => unlinkRecipe(m, id));
+      pruneUnusedPaints();
+      openRecipeId = null;
+      render();
+      showToast(`Deleted ${recipe.name}`, () => {
+        book = before;
+        users.forEach(m => linkRecipe(m, id));
+        render();
+      });
+    }
+
+    // ----- Writing or editing a recipe -----
+    // You edit a DRAFT copy, where each paint is written out in full (brand, name, colour).
+    // Nothing changes until Save, which turns the paints back into ids in the paint list.
+    function blankPaint(mix) { return { brand: "", name: "", colour: DEFAULT_PAINT_COLOUR, mix }; }
+    function blankStep() { return { technique: book.techniques[0] || "", coats: 1, paints: [blankPaint(100)] }; }
+
+    function draftFrom(recipe) {
+      return {
+        id: recipe.id, name: recipe.name, part: recipe.part, notes: recipe.notes, linkUnit: null,
+        steps: recipe.steps.map(s => ({
+          technique: s.technique, coats: s.coats,
+          paints: s.paints.map(sp => {
+            const p = paintById(sp.paint) || { brand: "", name: "", colour: DEFAULT_PAINT_COLOUR };
+            return { brand: p.brand, name: p.name, colour: p.colour, mix: sp.mix };
+          }),
+        })),
+      };
+    }
+
+    function startRecipeDraft(draft) {
+      draft.original = draftSnapshot(draft);
+      recipeDraft = draft;
+      renderRecipes();
+      window.scrollTo(0, 0);
+    }
+
+    // linkUnit: the unit to link it to when saved (when started from a unit), or null.
+    function startNewRecipe(linkUnit) {
+      if (!okToLeaveDraft()) return;
+      openRecipeId = null;
+      startRecipeDraft({ id: null, name: "", part: recipePartFilter, notes: "", linkUnit, steps: [blankStep()] });
+      showTab("recipes");
+      const nameBox = recipePage.querySelector("input");
+      if (nameBox) nameBox.focus();
+    }
+
+    // A dropdown of a list (parts or techniques) with "＋ Add a new…" at the bottom.
+    function pickOrAdd(key, word, current, placeholder, onPick) {
+      const select = document.createElement("select");
+      if (placeholder) select.add(new Option(placeholder, ""));
+      const values = book[key].slice();
+      if (current && !values.includes(current)) values.push(current);   // e.g. one you've since removed
+      for (const v of values) select.add(new Option(v, v));
+      select.add(new Option(`＋ Add a new ${word}…`, "\u0000new"));
+      select.value = current || "";
+      select.addEventListener("change", () => {
+        if (select.value !== "\u0000new") { onPick(select.value); return; }
+        const typed = (prompt(`Name of the new ${word}:`) || "").trim();
+        if (typed) {
+          const existing = book[key].find(v => sameText(v, typed));
+          if (!existing) { book[key].push(typed); save(); }
+          onPick(existing || typed);
+        }
+        renderRecipeEditor();
+      });
+      return select;
+    }
+
+    // Puts the cursor in a box after the editor is redrawn (e.g. a newly added paint).
+    let focusAfterRender = null;
+
+    function renderRecipeEditor() {
+      const d = recipeDraft;
+      recipePage.innerHTML = "";
+
+      // Suggestions for the brand and paint boxes.
+      const brands = document.createElement("datalist");
+      brands.id = "brand-options";
+      for (const b of uniqueSorted([...COMMON_BRANDS, ...book.paints.map(p => p.brand)])) brands.appendChild(new Option(b));
+      const paintNames = document.createElement("datalist");
+      paintNames.id = "paint-options";
+      for (const p of [...book.paints].sort((a, b) => a.name.localeCompare(b.name))) {
+        const o = document.createElement("option");
+        o.value = p.name;
+        o.label = p.brand;
+        paintNames.appendChild(o);
+      }
+      recipePage.append(brands, paintNames);
+
+      const card = document.createElement("div");
+      card.className = "card form-grid";
+      const heading = document.createElement("h2");
+      heading.style.margin = "0";
+      heading.textContent = d.id === null ? "New recipe" : "Edit recipe";
+      card.appendChild(heading);
+
+      const field = (text, control) => {
+        const label = document.createElement("label");
+        label.append(text, control);
+        return label;
+      };
+      const nameBox = document.createElement("input");
+      nameBox.placeholder = "e.g. Ultramarine blue armour";
+      nameBox.value = d.name;
+      nameBox.addEventListener("input", () => { d.name = nameBox.value; });
+      card.appendChild(field("Recipe name", nameBox));
+      card.appendChild(field("Part it's for", pickOrAdd("parts", "part", d.part, "Choose a part…", v => { d.part = v; })));
+      const notes = document.createElement("textarea");
+      notes.placeholder = "Optional: tips, brushes, what to watch out for";
+      notes.value = d.notes;
+      notes.addEventListener("input", () => { d.notes = notes.value; });
+      card.appendChild(field("Notes", notes));
+      if (d.linkUnit) {
+        const unit = models.find(m => m.id === d.linkUnit);
+        if (unit) {
+          const note = document.createElement("p");
+          note.className = "hint";
+          note.style.margin = "0";
+          note.textContent = `Will be linked to ${displayName(unit)} when saved.`;
+          card.appendChild(note);
+        }
+      }
+      recipePage.appendChild(card);
+
+      // The steps.
+      const stepsCard = document.createElement("div");
+      stepsCard.className = "card form-grid";
+      stepsCard.innerHTML = '<h2 style="margin: 0;">Steps</h2>';
+      const stepList = document.createElement("ol");
+      stepList.className = "step-edits";
+      d.steps.forEach((step, si) => stepList.appendChild(buildStepEditor(d, step, si)));
+      stepsCard.appendChild(stepList);
+      const addStep = document.createElement("button");
+      addStep.className = "plain-button";
+      addStep.textContent = "+ Add step";
+      addStep.addEventListener("click", () => {
+        d.steps.push(blankStep());
+        focusAfterRender = `step-${d.steps.length - 1}-paint-0`;
+        renderRecipeEditor();
+      });
+      stepsCard.appendChild(addStep);
+      recipePage.appendChild(stepsCard);
+
+      const actions = document.createElement("div");
+      actions.className = "settings-actions";
+      actions.style.marginTop = "0";
+      const saveButton = document.createElement("button");
+      saveButton.className = "primary-button";
+      saveButton.style.flex = "1";
+      saveButton.textContent = "Save recipe";
+      saveButton.addEventListener("click", saveRecipeDraft);
+      const cancel = document.createElement("button");
+      cancel.className = "plain-button";
+      cancel.textContent = "Cancel";
+      cancel.addEventListener("click", () => {
+        if (!okToLeaveDraft()) return;
+        if (d.id !== null) openRecipeId = d.id;
+        recipeDraft = null;
+        renderRecipes();
+        window.scrollTo(0, 0);
+      });
+      actions.append(saveButton, cancel);
+      recipePage.appendChild(actions);
+
+      if (focusAfterRender) {
+        const box = recipePage.querySelector(`[data-key="${focusAfterRender}"]`);
+        if (box) box.focus();
+        focusAfterRender = null;
+      }
+    }
+
+    function buildStepEditor(d, step, si) {
+      const li = document.createElement("li");
+      li.className = "step-edit";
+
+      const iconButton = (text, label, disabled, onClick, extraClass) => {
+        const b = document.createElement("button");
+        b.className = "icon-button" + (extraClass ? " " + extraClass : "");
+        b.textContent = text;
+        b.setAttribute("aria-label", label);
+        b.disabled = disabled;
+        b.addEventListener("click", onClick);
+        return b;
+      };
+      const move = (offset) => {
+        [d.steps[si], d.steps[si + offset]] = [d.steps[si + offset], d.steps[si]];
+        renderRecipeEditor();
+      };
+      const head = document.createElement("div");
+      head.className = "step-head";
+      const label = document.createElement("strong");
+      label.textContent = `Step ${si + 1}`;
+      head.append(label,
+        iconButton("↑", `Move step ${si + 1} up`, si === 0, () => move(-1)),
+        iconButton("↓", `Move step ${si + 1} down`, si === d.steps.length - 1, () => move(+1)),
+        iconButton("✕", `Remove step ${si + 1}`, false, () => {
+          const hasPaints = step.paints.some(p => p.name.trim());
+          if (hasPaints && !confirm(`Remove step ${si + 1}?`)) return;
+          d.steps.splice(si, 1);
+          renderRecipeEditor();
+        }, "remove"));
+      li.appendChild(head);
+
+      // Technique and number of coats.
+      const row = document.createElement("div");
+      row.className = "row";
+      const techLabel = document.createElement("label");
+      techLabel.append("Technique", pickOrAdd("techniques", "technique", step.technique, "", v => { step.technique = v; }));
+      const coatsLabel = document.createElement("label");
+      const coats = document.createElement("input");
+      coats.type = "number";
+      coats.min = 1;
+      coats.value = step.coats;
+      coats.addEventListener("input", () => { step.coats = cleanCount(coats.value); });
+      coatsLabel.append("Coats", coats);
+      row.append(techLabel, coatsLabel);
+      li.appendChild(row);
+
+      // The paints in this step.
+      const warning = document.createElement("p");
+      warning.className = "mix-warning";
+      const updateWarning = () => {
+        warning.textContent = mixWarning(step.paints);
+        warning.classList.toggle("hidden", !warning.textContent);
+      };
+      step.paints.forEach((paint, pi) => li.appendChild(buildPaintEditor(step, paint, si, pi, updateWarning)));
+      updateWarning();
+      li.appendChild(warning);
+
+      const addPaint = document.createElement("button");
+      addPaint.className = "link-button";
+      addPaint.style.justifySelf = "start";
+      addPaint.style.padding = "4px 0";
+      addPaint.textContent = step.paints.length ? "+ Mix in another paint" : "+ Add paint";
+      addPaint.addEventListener("click", () => {
+        const even = isEvenSplit(step.paints);
+        step.paints.push(blankPaint(null));
+        if (even) resplit(step.paints);
+        focusAfterRender = `step-${si}-paint-${step.paints.length - 1}`;
+        renderRecipeEditor();
+      });
+      li.appendChild(addPaint);
+      return li;
+    }
+
+    function buildPaintEditor(step, paint, si, pi, updateWarning) {
+      const box = document.createElement("div");
+      box.className = "paint-edit";
+
+      const colour = document.createElement("input");
+      colour.type = "color";
+      colour.value = paint.colour;
+      colour.setAttribute("aria-label", "Paint colour");
+      colour.title = "Tap to pick roughly what this paint looks like";
+      colour.addEventListener("input", () => { paint.colour = colour.value; });
+
+      const name = document.createElement("input");
+      name.className = "paint-name";
+      name.placeholder = "Paint, e.g. Macragge Blue";
+      name.setAttribute("aria-label", "Paint name");
+      name.setAttribute("list", "paint-options");
+      name.dataset.key = `step-${si}-paint-${pi}`;
+      name.value = paint.name;
+
+      const brand = document.createElement("input");
+      brand.className = "paint-brand";
+      brand.placeholder = "Brand";
+      brand.setAttribute("aria-label", "Brand");
+      brand.setAttribute("list", "brand-options");
+      brand.value = paint.brand;
+      brand.addEventListener("input", () => { paint.brand = brand.value; });
+
+      name.addEventListener("input", () => { paint.name = name.value; updateWarning(); });
+      // A paint you've used before: fill in its brand and colour for you.
+      name.addEventListener("change", () => {
+        const known = book.paints.find(p => sameText(p.name, paint.name) && (!paint.brand.trim() || sameText(p.brand, paint.brand)));
+        if (!known) return;
+        if (!paint.brand.trim()) { paint.brand = known.brand; brand.value = known.brand; }
+        if (paint.colour === DEFAULT_PAINT_COLOUR) { paint.colour = known.colour; colour.value = known.colour; }
+      });
+
+      const mixBox = document.createElement("span");
+      mixBox.className = "mix-box";
+      const mix = document.createElement("input");
+      mix.type = "number";
+      mix.min = 0;
+      mix.max = 100;
+      mix.placeholder = "Mix";
+      mix.setAttribute("aria-label", "Mix %");
+      mix.value = paint.mix === null ? "" : paint.mix;
+      mix.addEventListener("input", () => { paint.mix = cleanMix(mix.value); updateWarning(); });
+      mixBox.append(mix, "%");
+
+      const remove = document.createElement("button");
+      remove.className = "icon-button remove";
+      remove.textContent = "✕";
+      remove.setAttribute("aria-label", `Remove ${paint.name || "this paint"}`);
+      remove.addEventListener("click", () => {
+        const even = isEvenSplit(step.paints);
+        step.paints.splice(pi, 1);
+        if (even && step.paints.length) resplit(step.paints);
+        renderRecipeEditor();
+      });
+
+      box.append(colour, name, brand, mixBox, remove);
+      return box;
+    }
+
+    function saveRecipeDraft() {
+      const d = recipeDraft;
+      const name = d.name.trim();
+      if (!name) { alert("Give the recipe a name first."); return; }
+      // Paints with no name are skipped. Each named paint is found (or added) in the paint list.
+      const steps = d.steps.map(s => ({
+        technique: s.technique.trim(),
+        coats: cleanCount(s.coats),
+        paints: s.paints.filter(p => p.name.trim())
+          .map(p => ({ paint: findOrAddPaint(p.brand, p.name, p.colour).id, mix: cleanMix(p.mix) })),
+      }));
+      let recipe = d.id !== null ? recipeById(d.id) : null;
+      if (recipe) {
+        Object.assign(recipe, { name, part: d.part.trim(), notes: d.notes, steps });
+      } else {
+        recipe = { id: Math.max(0, ...book.recipes.map(r => r.id)) + 1, name, part: d.part.trim(), notes: d.notes, steps };
+        book.recipes.push(recipe);
+      }
+      if (d.linkUnit) {
+        const unit = models.find(m => m.id === d.linkUnit);
+        if (unit) linkRecipe(unit, recipe.id);
+      }
+      pruneUnusedPaints();
+      recipeDraft = null;
+      openRecipeId = recipe.id;
+      render();
+      window.scrollTo(0, 0);
+      showToast(`Saved ${name}`);
+    }
+
     // ================= SETTINGS TAB =================
 
     // ----- Stage editor -----
@@ -1943,10 +2897,11 @@
       startDraft();
       renderStageEditor();
       let used = 0;
-      try { used = (localStorage.getItem(STORAGE_KEY) || "").length; } catch (ignored) {}
+      try { used = (localStorage.getItem(STORAGE_KEY) || "").length + (localStorage.getItem(RECIPES_KEY) || "").length; } catch (ignored) {}
       const photos = models.filter(m => m.photo).length;
       dataSummary.textContent =
-        `${models.length} units, ${modelCount(models)} models, ${photos} photo${photos === 1 ? "" : "s"}. ` +
+        `${models.length} units, ${modelCount(models)} models, ${photos} photo${photos === 1 ? "" : "s"}, ` +
+        `${plural(book.recipes.length, "recipe")}. ` +
         `Using about ${Math.max(1, Math.round(used / 1024))} KB of roughly 5,000 KB browser storage. ` +
         (settings.lastBackup ? `Last backup: ${settings.lastBackup}.` : "No backup saved yet.");
     }
@@ -1983,7 +2938,7 @@
     // Backups include your stages, since a unit's stage is a position in that list.
     document.getElementById("export-button").addEventListener("click", () => {
       const today = new Date().toISOString().slice(0, 10);
-      const backup = { app: "Shades of Grey", version: 3, stages: STAGES, doneFrom: settings.doneFrom, models };
+      const backup = { app: "Shades of Grey", version: 4, stages: STAGES, doneFrom: settings.doneFrom, models, recipes: book };
       downloadFile(`shades-of-grey-backup-${today}.json`, JSON.stringify(backup, null, 2), "application/json");
       settings.lastBackup = today;   // remembered so the app knows when to remind you
       saveSettings();
@@ -2010,10 +2965,22 @@
           const restored = cleanModels(backupModels);
           STAGES = currentStages;
           if (restored.length === 0) throw new Error("No usable units");
+          // Backups from v5 onwards also hold recipes. Older ones don't, so your recipes stay.
+          const backupBook = !Array.isArray(parsed) && parsed.recipes ? cleanRecipeBook(parsed.recipes) : null;
+          const question = backupBook
+            ? `Replace your current ${plural(models.length, "unit")} and ${plural(book.recipes.length, "recipe")} with ` +
+              `${plural(restored.length, "unit")} and ${plural(backupBook.recipes.length, "recipe")} from the backup?`
+            : `Replace your current ${models.length} units with ${restored.length} from the backup? (Your recipes stay as they are.)`;
 
-          if (confirm(`Replace your current ${models.length} units with ${restored.length} from the backup?`)) {
+          if (confirm(question)) {
             try { localStorage.setItem(STORAGE_KEY + "-before-restore", JSON.stringify(models)); } catch (ignored) {}
             models = restored;
+            if (backupBook) {
+              try { localStorage.setItem(RECIPES_KEY + "-before-restore", JSON.stringify(book)); } catch (ignored) {}
+              book = backupBook;
+              recipeDraft = null;
+              openRecipeId = null;
+            }
             if (backupStages) {
               settings.stages = STAGES = backupStages;
               settings.doneFrom = parsed.doneFrom;
@@ -2582,10 +3549,17 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v4";
+    const APP_VERSION = "v5";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v5", date: "7 Oct 2026", changes: [
+        "New Recipes tab: write down how you paint each part (armour, eyes, trim…) as ordered steps. Each step has a technique, the number of coats, and one or more paints with brand, colour and mix %.",
+        "Reorder steps with ↑ ↓, and duplicate a recipe to make a variation.",
+        "Link recipes to units. A unit's card shows its recipes as buttons that open them, and each recipe lists the units it's used on.",
+        "Add your own parts and techniques to the lists.",
+        "Backups now include your recipes.",
+      ]},
       { version: "v4", date: "7 Oct 2026", changes: [
         "Paint one model at a time: open a unit with 2 or more models and tick \"Track each model separately\". Each model gets its own stage and ◀ ▲ buttons. The big ▲ on the card moves up whichever model is furthest behind.",
         "The dashboard counts each of those models at its own stage.",
