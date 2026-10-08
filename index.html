@@ -432,6 +432,24 @@
     }
     .toast button { margin-left: auto; background: none; color: #0369a1; font-weight: 700; padding: 10px 12px; margin: -8px -8px -8px auto; min-height: 44px; }
 
+    /* ----- v14: banners at the top of the screen ----- */
+    /* Red "not saving" banner: fixed to the top so you see it on every tab and while
+       scrolling. It stays until a save works again. */
+    .save-banner {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 30;
+      background: #3b1220; color: #fecdd3; border-bottom: 2px solid var(--danger);
+      padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 14px;
+    }
+    .save-banner p { margin: 0; flex: 1 1 260px; }
+    .save-banner button { background: transparent; color: #fecdd3; border: 1px solid #fda4af; padding: 8px 12px; min-height: 44px; font-size: 14px; }
+    /* Blue notice card (window updated / iPhone warning). */
+    .notice-card { border-color: var(--accent); }
+    .notice-card p { margin: 0 0 10px; }
+    .recover-list { list-style: none; padding: 0; margin: 8px 0 12px; display: grid; gap: 8px; }
+    .recover-list li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .recover-list span { flex: 1 1 200px; color: var(--muted); font-size: 14px; }
+
     /* The small version number beside the title, shown on every tab. */
     .version-tag { font-size: 12px; font-weight: 500; color: var(--muted); vertical-align: middle; margin-left: 6px; }
 
@@ -673,6 +691,12 @@
 </head>
 
 <body>
+  <!-- v14: shown while saving isn't working (storage full). Stays until a save works. -->
+  <div class="save-banner hidden" id="save-banner" role="alert">
+    <p><strong>Changes aren't being saved.</strong> Storage on this device is full. Save a backup now, then free some space (delete photos or units you no longer need).</p>
+    <button id="banner-backup">Save backup</button>
+    <button id="banner-retry">Try again</button>
+  </div>
   <!-- The tab bar. aria-current marks the tab you're on, for screen readers and for the CSS. -->
   <nav class="tabs" aria-label="Sections">
     <button data-tab="dashboard"><span class="icon"><svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="3" opacity="0.35"/><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="34 51" transform="rotate(-90 12 12)"/></svg></span>Dashboard</button>
@@ -688,6 +712,11 @@
 
     <!-- ===== TAB 1: Dashboard ===== -->
     <section id="view-dashboard">
+      <!-- v14: only shown on an iPhone or iPad when the app is open in Safari itself. -->
+      <div class="card notice-card hidden" id="iphone-warning" role="note">
+        <p><strong>Keep your data safe on iPhone.</strong> Safari can delete this app's saved units and photos if you don't open it for 7 days. Add it to your Home Screen to stop that: tap Safari's Share button, then <strong>Add to Home Screen</strong>, and open it from there.</p>
+        <button class="plain-button" id="iphone-warning-ok">Got it</button>
+      </div>
       <div class="card">
         <div class="headline">
           <span class="big" id="done-percent">–</span>
@@ -744,7 +773,7 @@
       <form id="add-form" class="card hidden" style="display: grid; gap: 10px;">
         <div class="row" style="grid-template-columns: 1fr 76px;">
           <input id="name-input" placeholder="Unit name, e.g. Intercessors" aria-label="Unit name" required>
-          <input id="count-input" type="number" min="1" value="1" aria-label="Number of models" title="Number of models">
+          <input id="count-input" type="number" min="1" max="999" value="1" aria-label="Number of models" title="Number of models">
         </div>
         <div class="row">
           <input id="hobby-input" placeholder="Game, e.g. 40K" aria-label="Game" list="game-options">
@@ -838,7 +867,7 @@
           <summary>Getting started</summary>
           <ol>
             <li>The app starts with three example units. Clear them in <strong>Settings → Delete all units</strong>.</li>
-            <li>Add your units: one at a time with <strong>Units → + Add unit</strong>, or many at once from a CSV file or a Warhammer app list (see <strong>Importing</strong>).</li>
+            <li>Add your units: one at a time with <strong>Units → + Add unit</strong>, or many at once from a CSV file or a pasted army list (see <strong>Importing</strong>).</li>
             <li>As you build and paint, press <strong>▲</strong> on a unit to move it up a stage.</li>
             <li>Check the <strong>Dashboard</strong> to see how far you've got.</li>
             <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
@@ -847,7 +876,7 @@
         <details>
           <summary>Adding and updating units</summary>
           <ul>
-            <li><strong>+ Add unit</strong> on the Units tab. The number box is how many models are in the unit.</li>
+            <li><strong>+ Add unit</strong> on the Units tab. The number box is how many models are in the unit (up to 999; tracking each model separately works for up to 100).</li>
             <li>Add the same unit twice (same name, game and faction) and they're numbered for you: Intercessors 1, Intercessors 2.</li>
             <li>Press <strong>▲</strong> to move a unit up a stage. Made a mistake? Press <strong>Undo</strong> on the message that pops up.</li>
             <li>Tap a unit's name to open its details: nickname, model count, repaint flag, paint notes, photos, <strong>back a stage</strong>, and delete.</li>
@@ -914,9 +943,9 @@
           </ul>
         </details>
         <details>
-          <summary>Importing (CSV and Warhammer app)</summary>
+          <summary>Importing (CSV and army lists)</summary>
           <ul>
-            <li><strong>From the Warhammer app:</strong> open a list, tap Export, copy it as text, then in <strong>Settings → Warhammer app list</strong> paste it and press Read list.</li>
+            <li><strong>From the Warhammer app:</strong> open a list, tap Export, copy it as text, then in <strong>Settings → Paste an army list</strong> paste it and press Read list. Only unit names and model counts are kept: points, wargear and rules text are thrown away.</li>
             <li><strong>From a spreadsheet:</strong> save it as CSV with the columns name, game, faction, stage, nickname, count, repaint, notes, then use <strong>Import CSV</strong>. <strong>CSV template</strong> gives you an example file.</li>
             <li>Before anything changes, you choose <strong>Add to my collection</strong> or <strong>Replace my collection</strong>, and can untick any units you don't want.</li>
             <li>Units you already have start unticked. If one has a different name in the import, it's highlighted so you can pick which name to keep. The Warhammer app's name is the default.</li>
@@ -927,12 +956,17 @@
           <summary>Your data and backups</summary>
           <ul>
             <li>Everything is saved <strong>on this device only</strong>, in your browser. Nobody else can see it, and it isn't sent anywhere.</li>
-            <li>Clearing your browser's data or uninstalling the app deletes it, so <strong>Save backup</strong> regularly. The app reminds you after two weeks.</li>
+            <li>Clearing your browser's data or uninstalling the app deletes it, so <strong>Save backup</strong> regularly. The app reminds you after a week (and if you have photos, it reminds you about a backup <em>with</em> photos). Every backup shows a message when it's saved.</li>
             <li><strong>Save backup</strong> is small and quick, but leaves out photos. <strong>Save full backup with photos</strong> makes one bigger file with everything, photos included.</li>
             <li><strong>Restore backup</strong> brings either kind back, including your stages, recipes, schemes and faction colours. A backup without photos keeps any photos already on this device that match.</li>
             <li>Photos are kept in a separate, much bigger store in your browser, so there's room for lots of them. Settings → Your data shows how many photos you have and how much space they use.</li>
             <li><strong>Clean up photo storage</strong> removes photo files no unit uses any more (for example after Delete all units) and tells you how much space it freed. Photos in the device's safety copy are left alone.</li>
             <li><strong>Export CSV</strong> saves your collection as a spreadsheet (without photos).</li>
+            <li>If the device's storage is full, a <strong>red banner</strong> appears at the top saying changes aren't being saved. It stays until saving works again. Save a backup, then free some space. Big changes (new stages, a restore) are only made if they can be saved, so nothing gets half-saved.</li>
+            <li><strong>Delete all units</strong>, <strong>Replace my collection</strong> and <strong>Restore backup</strong> keep a copy of what you had on this device for 30 days. Find them under <strong>Settings → Your data → Recover earlier data</strong>. Delete all also has an Undo button. If there isn't room for the copy, Delete all and Replace stop and change nothing.</li>
+            <li>If some photos in a backup can't be loaded, the app tells you how many. Keep the backup file safe and try again later.</li>
+            <li>A backup with recipes but no units can be restored too: it replaces only your recipes.</li>
+            <li>Got the app open in two places at once (say the installed app and a browser tab)? Changes made in one now show up in the other, instead of being saved over.</li>
             <li>New phone? Save a backup on the old one, open the app on the new one, and restore it.</li>
           </ul>
         </details>
@@ -949,6 +983,15 @@
           <ul>
             <li>The version number is next to the title. The <strong>Updates</strong> tab lists what changed in each version.</li>
             <li>Found a bug or have an idea? Use <strong>Give feedback</strong> on the Updates tab.</li>
+          </ul>
+        </details>
+        <details id="about">
+          <summary>About</summary>
+          <ul>
+            <li><strong>Unofficial fan-made tool, not affiliated with or endorsed by Games Workshop.</strong> Warhammer, Warhammer 40,000 and Age of Sigmar are trademarks of Games Workshop Ltd, used here only to describe what the app works with.</li>
+            <li>The app holds no Games Workshop artwork, rules, points or unit lists. Everything in it is what you type, import or photograph yourself.</li>
+            <li>Your data stays on this device. There's no account and nothing is sent anywhere, except what you choose to write in the feedback form.</li>
+            <li><strong>Contact:</strong> use <strong>Give feedback</strong> on the Updates tab. Every message is read.</li>
           </ul>
         </details>
       </div>
@@ -1010,15 +1053,16 @@
           <button class="plain-button" id="csv-button">Import CSV</button>
           <button class="plain-button" id="template-button">CSV template</button>
           <button class="plain-button" id="csv-export-button">Export CSV</button>
-          <button class="plain-button" id="wh-button">Warhammer app list</button>
+          <button class="plain-button" id="wh-button">Paste an army list</button>
         </div>
 
         <!-- Import from the Warhammer app: hidden until the button above is pressed. -->
         <div id="wh-panel" class="hidden" style="margin-top: 14px; display: grid; gap: 10px;">
           <p class="hint" style="margin: 0;">
             In the Warhammer app, open a list, tap Export, then Copy as text. Paste it below.
+            Only unit names and model counts are kept; points and wargear are ignored.
           </p>
-          <textarea id="wh-text" placeholder="Paste your exported list here" aria-label="Warhammer app list"></textarea>
+          <textarea id="wh-text" placeholder="Paste your exported list here" aria-label="Army list"></textarea>
           <button class="primary-button" id="wh-read">Read list</button>
         </div>
 
@@ -1084,8 +1128,15 @@
         <h2>Your data</h2>
         <p class="hint" id="data-summary"></p>
         <p class="hint" id="photo-summary"></p>
+        <p class="hint" id="storage-note"></p>
         <div class="settings-actions" style="margin: 0 0 12px;">
           <button class="plain-button" id="clean-photos" disabled>Clean up photo storage</button>
+        </div>
+        <!-- v14: safety copies kept by Delete all, Replace and Restore, for 30 days. -->
+        <div id="recover-card" class="hidden">
+          <h3 style="margin: 4px 0 0;">Recover earlier data</h3>
+          <p class="hint" style="margin: 4px 0 0;">Copies this device kept before a big change. Each is kept for 30 days.</p>
+          <ul class="recover-list" id="recover-list"></ul>
         </div>
         <button class="danger-button" id="delete-all">Delete all units</button>
       </div>
@@ -1116,6 +1167,58 @@
     // The names we save under in the browser's storage, like file names.
     const STORAGE_KEY = "mini-tracker-models";
     const SETTINGS_KEY = "shades-of-grey-settings";
+    // v14: the most models a unit can have. A huge number like 150,000 used to freeze the
+    // app. Tracking each model separately draws a row per model, so that's limited to 100.
+    // (Up here because units are loaded and checked before the rest of the script runs.)
+    const MAX_MODELS = 999;
+    const MAX_EACH = 100;
+
+    // ================= SAVING SAFELY (v14) =================
+    // Browser storage has no "all or nothing" save, so writeTogether() does it by hand:
+    // it notes what each name held before, writes the new values one by one, and if one
+    // fails (usually because storage is full) it puts back the ones already written.
+    // So units, recipes and settings never get out of step with each other. (Before v14
+    // the stage list could be saved without the units, which moved every unit to the
+    // first stage the next time the app opened.)
+    // entries is a list of [name, text] pairs. Returns false only if storage is FULL.
+    let holdSaves = false;   // true while showing changes made in another window (see below)
+    let saveFailing = false; // true while saving isn't working, so the red banner stays up
+    function isStorageFull(error) {
+      return !!error && (error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED" ||
+                         error.code === 22 || error.code === 1014);
+    }
+    function writeTogether(entries) {
+      if (holdSaves) return true;
+      const before = [];
+      try {
+        for (const [key, text] of entries) {
+          before.push([key, localStorage.getItem(key)]);
+          localStorage.setItem(key, text);
+        }
+        return true;
+      } catch (error) {
+        // Put back everything we'd already changed, newest first.
+        for (const [key, old] of before.reverse()) {
+          try { if (old === null) localStorage.removeItem(key); else localStorage.setItem(key, old); } catch (ignored) {}
+        }
+        // Storage switched off altogether (some private windows): nothing we can do, and
+        // the app still works until it's closed, as before.
+        return !isStorageFull(error);
+      }
+    }
+
+    // The red banner at the top. It stays up while saving keeps failing, and goes away
+    // by itself as soon as a save works again (before v14 you were warned only once).
+    function showSaveProblem() {
+      saveFailing = true;
+      const banner = document.getElementById("save-banner");
+      if (banner) banner.classList.remove("hidden");
+    }
+    function hideSaveProblem() {
+      saveFailing = false;
+      const banner = document.getElementById("save-banner");
+      if (banner) banner.classList.add("hidden");
+    }
 
     // ================= SETTINGS AND STAGES =================
 
@@ -1130,15 +1233,69 @@
     const ORIGINAL_STAGES = ["Unbuilt", "Built", "Primed", "In progress", "Painted"];
 
     let settings = { palette: "ice", tab: "dashboard" };
-    try {
-      settings = { ...settings, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}") };
-    } catch (ignored) {}
+    // v14: if the saved settings can't be read, keep a copy of them under another name
+    // (like units and recipes), so nothing is thrown away.
+    let settingsUnreadable = false;
+    {
+      let raw = null;
+      try { raw = localStorage.getItem(SETTINGS_KEY); } catch (ignored) {}
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Not settings");
+          settings = { ...settings, ...parsed };
+        } catch (error) {
+          settingsUnreadable = true;
+          try { localStorage.setItem(SETTINGS_KEY + "-unreadable", raw); } catch (ignored) {}
+        }
+      }
+    }
 
-    if (!Array.isArray(settings.stages) || settings.stages.length < 2) {
-      let hasOldData = false;
-      try { hasOldData = !!localStorage.getItem(STORAGE_KEY); } catch (ignored) {}
-      settings.stages = hasOldData ? ORIGINAL_STAGES : DEFAULT_STAGES;
-      settings.doneFrom = hasOldData ? 4 : 5;
+    // A stage list is usable if it's at least 2 names, all text. (Backups are checked
+    // more strictly by goodStageList, further down.)
+    const usableStages = (list) => Array.isArray(list) && list.length >= 2 &&
+      list.every(s => typeof s === "string" && s.trim());
+
+    // The strict check, for stage lists that come from a FILE (a backup or a safety copy):
+    // 2 to 10 names, each real text, no two the same (ignoring capitals). The stage
+    // editor has the same rules, so every list the app made itself passes.
+    function goodStageList(list) {
+      if (!Array.isArray(list) || list.length < 2 || list.length > 10) return false;
+      if (!list.every(s => typeof s === "string" && s.trim())) return false;
+      const lower = list.map(s => s.trim().toLowerCase());
+      return new Set(lower).size === lower.length;
+    }
+
+    if (!usableStages(settings.stages)) {
+      // No usable stage list. Pick one that FITS the saved units, so no unit is pushed
+      // back to the first stage and no diary entry is lost (v14: before, a unit on stage 7
+      // was reset when only 5 stages were chosen).
+      let savedUnits = null;
+      try { savedUnits = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); } catch (ignored) {}
+      const hasOldData = Array.isArray(savedUnits);
+      const highest = hasOldData ? highestStageUsed(savedUnits) : -1;
+      // Brand-new users and anyone whose settings were damaged get today's default
+      // stages; very old data (from before stages could be edited) gets the original five.
+      let list = !settingsUnreadable && hasOldData && highest < ORIGINAL_STAGES.length
+        ? ORIGINAL_STAGES.slice() : DEFAULT_STAGES.slice();
+      while (list.length <= highest && list.length < 10) list.push(`Stage ${list.length + 1}`);
+      settings.stages = list;
+      settings.doneFrom = list.join() === ORIGINAL_STAGES.join() ? 4 : 5;
+    }
+
+    // The highest stage number any saved unit uses (its stage, each model's stage,
+    // its diary and its photos). -1 if there are none.
+    function highestStageUsed(units) {
+      let top = -1;
+      const see = (x) => { if (Number.isInteger(x) && x > top) top = x; };
+      for (const u of units) {
+        if (!u || typeof u !== "object") continue;
+        see(Number(u.stage));
+        if (Array.isArray(u.stages)) u.stages.forEach(x => see(Number(x)));
+        if (Array.isArray(u.log)) u.log.forEach(e => Array.isArray(e) && see(e[1]));
+        if (Array.isArray(u.photos)) u.photos.forEach(p => p && see(p.stage));
+      }
+      return top;
     }
 
     let STAGES = settings.stages.map(String);
@@ -1186,15 +1343,24 @@
     function todoStages() { return STAGES.map((s, i) => i).filter(i => !isDone(i)); }
     function doneStages() { return STAGES.map((s, i) => i).filter(i => isDone(i)); }
 
+    // Saves just the settings. (Units, recipes AND settings are saved together by
+    // saveAll(), further down.) If it fails because storage is full, the red banner shows.
     function saveSettings() {
-      try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (ignored) {}
+      if (!writeTogether([[SETTINGS_KEY, JSON.stringify(settings)]])) showSaveProblem();
     }
 
     // Faction colours (v8): settings.factionColours = { "Ultramarines": "#1e3a8a", ... }.
     // They're looked up by the faction's name. Only proper "#rrggbb" colours are kept,
     // so a broken saved value can never break the screen.
+    // v14: the list is made with Object.create(null), an object with NOTHING built in.
+    // An ordinary {} already "has" things like constructor and toString, so a faction
+    // called "constructor" used to find one of those instead of a colour, and the Units
+    // list broke. copyColours() makes a copy of the same safe kind (used for Undo).
+    function copyColours(colours) {
+      return Object.assign(Object.create(null), colours || {});
+    }
     function cleanFactionColours(raw) {
-      const clean = {};
+      const clean = Object.create(null);
       if (raw && typeof raw === "object" && !Array.isArray(raw)) {
         for (const [name, colour] of Object.entries(raw)) {
           if (name && typeof colour === "string" && /^#[0-9a-f]{6}$/i.test(colour)) clean[name] = colour.toLowerCase();
@@ -1364,7 +1530,7 @@
         };
         // Track-each-model: one valid stage per model, otherwise switch it off.
         const validStage = (x) => Number.isInteger(x) && x >= 0 && x < STAGES.length;
-        if (m.each === true && Array.isArray(m.stages)) {
+        if (m.each === true && Array.isArray(m.stages) && model.count <= MAX_EACH) {
           const list = m.stages.map(Number).slice(0, model.count);
           while (list.length < model.count) list.push(model.stage);
           model.stages = list.map(x => validStage(x) ? x : 0);
@@ -1410,26 +1576,43 @@
       return cleaned;
     }
 
-    // save() reports back: true if it worked (or storage is switched off),
-    // false if storage is FULL. We warn about a full store only once.
-    let warnedFull = false;
-    function save() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(models));
-        localStorage.setItem(RECIPES_KEY, JSON.stringify(book));
-        warnedFull = false;
-        return true;
-      } catch (error) {
-        if (error.name === "QuotaExceededError") {
-          if (!warnedFull) {
-            alert("Storage is full, so recent changes aren't being saved. Save a backup, then delete some units or recipes you no longer need.");
-            warnedFull = true;
-          }
-          return false;
-        }
-        return true;
-      }
+    // saveAll() saves units, recipes and settings TOGETHER (all or nothing, see
+    // writeTogether at the top). It reports back: true if it worked (or storage is
+    // switched off), false if storage is FULL, in which case the red banner shows.
+    function saveAll() {
+      const ok = writeTogether([
+        [STORAGE_KEY, JSON.stringify(models)],
+        [RECIPES_KEY, JSON.stringify(book)],
+        [SETTINGS_KEY, JSON.stringify(settings)],
+      ]);
+      if (ok) { if (saveFailing && !holdSaves) hideSaveProblem(); }
+      else showSaveProblem();
+      return ok;
     }
+    // The older name, still used all over the app.
+    function save() { return saveAll(); }
+
+    // For BIG changes (new stages, restoring a backup, recovering earlier data): make the
+    // change, then save. If the save fails, put everything back exactly as it was, so
+    // what's on screen always matches what's saved. Returns true if the change was kept.
+    function changeAndSave(change) {
+      const before = { models: JSON.stringify(models), book: JSON.stringify(book), settings: JSON.stringify(settings) };
+      const wasFailing = saveFailing;
+      change();
+      if (saveAll()) return true;
+      // Put back how things were. Nothing unsaved is left, so the banner can go again
+      // (unless saving was already failing before this change).
+      if (!wasFailing) hideSaveProblem();
+      models = JSON.parse(before.models);
+      book = JSON.parse(before.book);
+      settings = JSON.parse(before.settings);
+      settings.factionColours = cleanFactionColours(settings.factionColours);
+      STAGES = settings.stages.map(String);
+      applyPalette(settings.palette);
+      return false;
+    }
+    const FULL_MESSAGE = "Storage on this device is full, so that change couldn't be saved and nothing has changed. " +
+      "Please save a backup, then free some space (for example delete photos or units you no longer need).";
 
     // ================= SMALL HELPERS =================
 
@@ -1439,9 +1622,11 @@
     function displayName(model) { return model.nickname || fullName(model); }
 
     // Models in a unit: a whole number, at least 1.
+    // v14: at most MAX_MODELS (999, set at the top). A huge number like 150,000 used to
+    // freeze the app and blank the Units list on every open.
     function cleanCount(value) {
       const n = parseInt(value, 10);
-      return Number.isInteger(n) && n >= 1 ? n : 1;
+      return Number.isInteger(n) && n >= 1 ? Math.min(n, MAX_MODELS) : 1;
     }
     // Adds up MODELS (not units): a 10-model squad counts as 10.
     function modelCount(list) { return list.reduce((total, m) => total + (m.count || 1), 0); }
@@ -1502,6 +1687,11 @@
 
     // Switch "track each model" on or off.
     function setEach(model, on) {
+      if (on && model.count > MAX_EACH) {
+        alert(`Tracking each model works for units of up to ${MAX_EACH} models.`);
+        render();
+        return;
+      }
       if (on) {
         model.each = true;
         model.stages = new Array(model.count || 1).fill(model.stage);
@@ -1522,6 +1712,8 @@
     // When the number of models changes, add new models at the first stage, or drop the last ones.
     function resizeEach(model) {
       if (!model.each) return;
+      // Too many models to track one by one (v14): go back to painting it as a batch.
+      if (model.count > MAX_EACH) { delete model.each; delete model.stages; return; }
       const n = model.count || 1;
       while (model.stages.length < n) model.stages.push(0);
       model.stages.length = n;
@@ -1672,7 +1864,8 @@
 
     // The faction's colour, or "" if it hasn't got one.
     function factionColour(faction) {
-      return (faction && settings.factionColours[faction]) || "";
+      // hasOwnProperty: only a colour someone actually set counts (v14, see copyColours).
+      return (faction && Object.prototype.hasOwnProperty.call(settings.factionColours, faction) && settings.factionColours[faction]) || "";
     }
 
     // Set (or, with no colour, remove) a faction's colour, then redraw.
@@ -1858,7 +2051,7 @@
       if (!oldName || !newName || newName === oldName) return;
       // Remember how things were, for Undo.
       const before = models.map(m => [m, m.faction, m.copy]);
-      const coloursBefore = { ...settings.factionColours };
+      const coloursBefore = copyColours(settings.factionColours);
       const movedSchemes = book.schemes.filter(s => s.faction === oldName);
 
       for (const m of models) if (m.faction === oldName) m.faction = newName;
@@ -1900,7 +2093,7 @@
       useAll.classList.toggle("hidden", waiting.length === 0);
       useAll.textContent = `Use suggested colours (${waiting.length})`;
       useAll.onclick = () => {
-        const before = { ...settings.factionColours };
+        const before = copyColours(settings.factionColours);
         for (const f of waiting) settings.factionColours[f] = suggestFactionColour(f);
         saveSettings();
         render();
@@ -2618,6 +2811,7 @@
       const countBox = document.createElement("input");
       countBox.type = "number";
       countBox.min = 1;
+      countBox.max = MAX_MODELS;
       countBox.value = model.count || 1;
       countBox.addEventListener("change", () => { model.count = cleanCount(countBox.value); resizeEach(model); render(); });
       countLabel.appendChild(countBox);
@@ -4915,15 +5109,23 @@
         return;
       }
 
-      models.forEach(m => {
-        m.stage = map[m.stage];
-        if (m.each) m.stages = m.stages.map(st => map[st]);
-        if (Array.isArray(m.log)) m.log.forEach(e => { e[1] = map[e[1]]; });
+      // v14: the units and the new stage list are saved TOGETHER. If there's no room,
+      // everything goes back to how it was (before, the stages could be saved without
+      // the units, which reset every unit to the first stage on the next open).
+      const doneIndex = draft.indexOf(draftDoneItem);
+      const kept = changeAndSave(() => {
+        models.forEach(m => {
+          m.stage = map[m.stage];
+          if (m.each) m.stages = m.stages.map(st => map[st]);
+          if (Array.isArray(m.log)) m.log.forEach(e => { e[1] = map[e[1]]; });
+          // v14: each photo's stage label moves with its stage too.
+          if (Array.isArray(m.photos)) m.photos.forEach(p => { if (Number.isInteger(p.stage)) p.stage = map[p.stage]; });
+        });
+        settings.doneFrom = doneIndex;
+        settings.stages = STAGES = names;
+        fixDoneFrom();
       });
-      settings.doneFrom = draft.indexOf(draftDoneItem);
-      settings.stages = STAGES = names;
-      fixDoneFrom();
-      saveSettings();
+      if (!kept) { alert(FULL_MESSAGE); renderSettings(); return; }
       applyPalette(settings.palette);
       filters.stages = new Set();
       render();
@@ -4985,6 +5187,7 @@
     // ----- Data summary and delete all -----
 
     const dataSummary = document.getElementById("data-summary");
+    const storageNote = document.getElementById("storage-note");
 
     function renderSettings() {
       startDraft();
@@ -4997,8 +5200,17 @@
         `${models.length} units, ${modelCount(models)} models, ${plural(photos, "photo")}, ` +
         `${plural(book.recipes.length, "recipe")}. ` +
         `Units and recipes use about ${Math.max(1, Math.round(used / 1024))} KB of roughly 5,000 KB. ` +
-        (settings.lastBackup ? `Last backup: ${settings.lastBackup}.` : "No backup saved yet.");
+        (settings.lastBackup ? `Last backup: ${shortDate(settings.lastBackup)}.` : "No backup saved yet.") +
+        (photos ? (settings.lastFullBackup ? ` Last backup with photos: ${shortDate(settings.lastFullBackup)}.` : " Your photos haven't been backed up yet.") : "");
       dataSummary.textContent = summary;
+      // v14: say whether the browser has promised to keep the data.
+      if (navigator.storage && navigator.storage.persisted) {
+        navigator.storage.persisted().then(kept => {
+          storageNote.textContent = kept
+            ? "This browser has agreed to keep the app's data, even if the device runs low on space."
+            : "This browser hasn't promised to keep the app's data, so it could be cleared if the device runs low on space. Regular backups are your safety net.";
+        }).catch(() => {});
+      }
       // Photos are kept separately, with much more room. Ask the browser how much is used.
       if (navigator.storage && navigator.storage.estimate) {
         navigator.storage.estimate().then(({ usage, quota }) => {
@@ -5008,6 +5220,7 @@
         }).catch(() => {});
       }
       renderPhotoSummary();
+      renderRecover();
     }
 
     // ----- Photo storage summary and clean-up (v11) -----
@@ -5017,7 +5230,134 @@
     // and Restore) are NOT counted as orphans, so those copies keep their photos.
     const photoSummary = document.getElementById("photo-summary");
     const cleanPhotosButton = document.getElementById("clean-photos");
-    const SAFETY_COPIES = ["-before-delete-all", "-before-replace", "-before-restore"];
+    const SAFETY_COPIES = ["-before-delete-all", "-before-replace", "-before-restore", "-before-recover"];
+    const SAFETY_LABELS = {
+      "-before-delete-all": "Before Delete all units",
+      "-before-replace": "Before Replace my collection",
+      "-before-restore": "Before Restore backup",
+      "-before-recover": "Before your last Recover",
+    };
+    const SAFETY_DAYS = 30;
+
+    // ----- Safety copies (v14) -----
+    // Saved under the units' storage name + a suffix, e.g. "mini-tracker-models-before-delete-all".
+    // Since v14 each one also holds the date and the stage list it was made with:
+    //   { date: "2026-10-08", stages: [...], doneFrom, models: [...] }
+    // Copies made before v14 are just the list of units; readSafetyCopy() reads both kinds.
+    // keepSafetyCopy() returns false if there wasn't room, so the caller can STOP.
+    function keepSafetyCopy(suffix) {
+      const copy = { date: todayISO(), stages: STAGES, doneFrom: settings.doneFrom, models };
+      try {
+        localStorage.setItem(STORAGE_KEY + suffix, JSON.stringify(copy));
+        return true;
+      } catch (error) {
+        return false;   // no room (or storage switched off): the old copy, if any, is left as it was
+      }
+    }
+    function readSafetyCopy(suffix) {
+      try {
+        const raw = JSON.parse(localStorage.getItem(STORAGE_KEY + suffix) || "null");
+        if (Array.isArray(raw)) return { date: null, stages: null, doneFrom: undefined, models: raw };
+        if (raw && typeof raw === "object" && Array.isArray(raw.models)) return raw;
+      } catch (ignored) {}
+      return null;
+    }
+    function forgetSafetyCopy(suffix) {
+      try { localStorage.removeItem(STORAGE_KEY + suffix); localStorage.removeItem(RECIPES_KEY + suffix); } catch (ignored) {}
+    }
+    // Run at start-up: copies older than 30 days are removed. Pre-v14 copies have no date,
+    // so they're given today's date now (and are removed 30 days from now).
+    function expireSafetyCopies() {
+      for (const suffix of SAFETY_COPIES) {
+        const copy = readSafetyCopy(suffix);
+        if (!copy) continue;
+        if (!copy.date) {
+          copy.date = todayISO();
+          try { localStorage.setItem(STORAGE_KEY + suffix, JSON.stringify(copy)); } catch (ignored) {}
+        } else if (daysSince(copy.date) > SAFETY_DAYS) {
+          forgetSafetyCopy(suffix);
+        }
+      }
+    }
+
+    // The "Recover earlier data" list in Settings → Your data.
+    function renderRecover() {
+      const list = document.getElementById("recover-list");
+      list.innerHTML = "";
+      let any = false;
+      for (const suffix of SAFETY_COPIES) {
+        const copy = readSafetyCopy(suffix);
+        if (!copy || !copy.models.length) continue;
+        any = true;
+        const li = document.createElement("li");
+        const text = document.createElement("span");
+        text.textContent = `${SAFETY_LABELS[suffix]}: ${plural(copy.models.length, "unit")}` +
+          (copy.date ? `, saved ${shortDate(copy.date)}` : "");
+        const button = document.createElement("button");
+        button.className = "plain-button";
+        button.textContent = "Recover";
+        button.setAttribute("aria-label", `Recover: ${SAFETY_LABELS[suffix]}`);
+        button.addEventListener("click", () => recoverSafetyCopy(suffix));
+        li.append(text, button);
+        list.appendChild(li);
+      }
+      document.getElementById("recover-card").classList.toggle("hidden", !any);
+    }
+
+    // Swap your current units for a safety copy. Your current units are kept as a copy
+    // themselves first ("Before your last Recover"), and Undo puts them straight back.
+    function recoverSafetyCopy(suffix) {
+      const copy = readSafetyCopy(suffix);
+      if (!copy) { renderRecover(); return; }
+      const copyStages = goodStageList(copy.stages) ? copy.stages.map(String) : null;
+      // Clean the copy's units against its own stages, like a backup.
+      const currentStages = STAGES;
+      if (copyStages) STAGES = copyStages;
+      const units = cleanModels(copy.models);
+      STAGES = currentStages;
+      const recipesCopy = (() => { try { return JSON.parse(localStorage.getItem(RECIPES_KEY + suffix) || "null"); } catch (e) { return null; } })();
+      if (!confirm(`Replace your current ${plural(models.length, "unit")} with the ${plural(units.length, "unit")} in this copy` +
+          (recipesCopy ? " (and its recipes)" : "") + "?")) return;
+      if (models.length && suffix !== "-before-recover" && !keepSafetyCopy("-before-recover")) {
+        alert("There isn't room on this device to keep a copy of your current units first, so nothing has changed. Please save a backup first.");
+        return;
+      }
+      const undoState = { models: JSON.stringify(models), book: JSON.stringify(book), stages: STAGES.slice(), doneFrom: settings.doneFrom };
+      const kept = changeAndSave(() => {
+        models = units;
+        if (recipesCopy) book = cleanRecipeBook(recipesCopy);
+        if (copyStages) {
+          settings.stages = STAGES = copyStages;
+          if (copy.doneFrom !== undefined) settings.doneFrom = copy.doneFrom;
+          fixDoneFrom();
+        }
+      });
+      if (!kept) { alert(FULL_MESSAGE); return; }
+      afterBigChange();
+      showToast(`Recovered ${plural(units.length, "unit")}`, () => {
+        const back = changeAndSave(() => {
+          models = JSON.parse(undoState.models);
+          book = JSON.parse(undoState.book);
+          settings.stages = STAGES = undoState.stages;
+          settings.doneFrom = undoState.doneFrom;
+          fixDoneFrom();
+        });
+        if (!back) { alert(FULL_MESSAGE); return; }
+        afterBigChange();
+      }, "Undo", 10);
+    }
+
+    // Redraw everything after units, recipes or stages were swapped wholesale.
+    function afterBigChange() {
+      recipeDraft = null;
+      openRecipeId = null;
+      openIds.clear();
+      clearFilters();
+      applyPalette(settings.palette);
+      render();
+      renderSettings();
+      loadThumbs().catch(() => {});
+    }
 
     function sizeText(bytes) {
       if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(1)} GB`;
@@ -5031,11 +5371,15 @@
       for (const m of models) for (const id of photoIds(m)) inUse.add(id);
       const safety = new Set();
       for (const suffix of SAFETY_COPIES) {
-        try {
-          const copy = JSON.parse(localStorage.getItem(STORAGE_KEY + suffix) || "[]");
-          if (Array.isArray(copy)) for (const m of copy) for (const p of (m && m.photos) || []) if (p && p.id) safety.add(p.id);
-        } catch (ignored) {}
+        const copy = readSafetyCopy(suffix);
+        if (copy) for (const m of copy.models) for (const p of (m && m.photos) || []) if (p && p.id) safety.add(p.id);
       }
+      // v14: also read the units list as SAVED right now, in case the app is open in
+      // another window that has just added a photo this window hasn't heard about yet.
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+        if (Array.isArray(saved)) for (const m of saved) for (const p of (m && m.photos) || []) if (p && p.id) inUse.add(p.id);
+      } catch (ignored) {}
       const report = { count: 0, bytes: 0, orphans: [], orphanBytes: 0, safetyCount: 0 };
       for (const r of records || []) {
         const size = (r.full ? r.full.size : 0) + (r.thumb ? r.thumb.size : 0);
@@ -5069,13 +5413,25 @@
 
     document.getElementById("delete-all").addEventListener("click", () => {
       if (!models.length) return;
-      if (!confirm(`Delete all ${models.length} units? A copy is kept on this device, but please save a backup first.`)) return;
-      try { localStorage.setItem(STORAGE_KEY + "-before-delete-all", JSON.stringify(models)); } catch (ignored) {}
+      if (!confirm(`Delete all ${models.length} units? A copy is kept on this device for ${SAFETY_DAYS} days ` +
+          `(Settings → Recover earlier data), but please save a backup first.`)) return;
+      // v14: STOP if the safety copy can't be kept, rather than delete with no safety net.
+      if (!keepSafetyCopy("-before-delete-all")) {
+        alert("There isn't room on this device to keep a safety copy of your units, so nothing has been deleted. " +
+              "Please press Save backup first, then delete some photos or units you no longer need.");
+        return;
+      }
+      const before = models;
       models = [];
       openIds.clear();
       clearFilters();
       render();
       renderSettings();
+      showToast(`Deleted ${plural(before.length, "unit")}`, () => {
+        models = before;
+        render();
+        renderSettings();
+      }, "Undo", 10);
     });
 
     // ================= BACKUPS AND CSV =================
@@ -5121,6 +5477,7 @@
         // No neat line breaks here: the file is big enough already.
         downloadFile(`shades-of-grey-full-backup-${today}.json`, JSON.stringify(backup), "application/json");
         settings.lastBackup = today;
+        settings.lastFullBackup = today;   // v14: photo backups are tracked separately
         saveSettings();
         renderSettings();
         const count = Object.keys(backup.photoFiles).length;
@@ -5155,6 +5512,18 @@
       settings.lastBackup = today;   // remembered so the app knows when to remind you
       saveSettings();
       renderSettings();
+      // v14: always say it worked, and that photos aren't in this one.
+      const photos = models.reduce((sum, m) => sum + photoIds(m).length, 0);
+      showToast(photos
+        ? `Backup saved, without your ${plural(photos, "photo")}. Use Save full backup with photos for those.`
+        : "Backup saved. Keep the file somewhere safe, like OneDrive or email.", null, null, 6);
+    });
+
+    // The red banner's buttons (v14).
+    document.getElementById("banner-backup").addEventListener("click", () => document.getElementById("export-button").click());
+    document.getElementById("banner-retry").addEventListener("click", () => {
+      if (saveAll()) showToast("Saved. Everything is up to date.");
+      else alert("Still full. Please save a backup, then free some space (delete photos or units you no longer need).");
     });
 
     const restoreFile = document.getElementById("restore-file");
@@ -5163,64 +5532,93 @@
       const file = restoreFile.files[0];
       if (!file) return;
       readFile(file, (text) => {
-        try {
-          const parsed = JSON.parse(text);
-          // Old backups are just a list; newer ones also hold the stages.
-          const backupModels = Array.isArray(parsed) ? parsed : parsed && parsed.models;
-          if (!Array.isArray(backupModels)) throw new Error("Not a backup");
-          const backupStages = !Array.isArray(parsed) && Array.isArray(parsed.stages) && parsed.stages.length >= 2
-            ? parsed.stages.map(String) : null;
+        restoreFile.value = "";
+        let parsed;
+        try { parsed = JSON.parse(text); } catch (error) { parsed = null; }
+        const isList = Array.isArray(parsed);   // the oldest backups are just a list of units
+        if (!parsed || (!isList && typeof parsed !== "object")) {
+          alert("That file doesn't look like a Shades of Grey backup.");
+          return;
+        }
+        // v14: a damaged stage list (blank or repeated names, or more than 10) is refused,
+        // because every unit's stage is a position in that list.
+        if (!isList && parsed.stages !== undefined && !goodStageList(parsed.stages)) {
+          alert("This backup's list of stages is damaged (blank or repeated names, or more than 10), so it can't be restored safely. Nothing has changed.");
+          return;
+        }
+        const backupStages = !isList && parsed.stages ? parsed.stages.map(String) : null;
+        const backupModels = isList ? parsed : (Array.isArray(parsed.models) ? parsed.models : []);
 
-          // Clean the units against the backup's own stages, BEFORE touching your data.
-          const currentStages = STAGES;
-          if (backupStages) STAGES = backupStages;
-          const restored = cleanModels(backupModels);
-          STAGES = currentStages;
-          if (restored.length === 0) throw new Error("No usable units");
-          // Backups from v5 onwards also hold recipes. Older ones don't, so your recipes stay.
-          const backupBook = !Array.isArray(parsed) && parsed.recipes ? cleanRecipeBook(parsed.recipes) : null;
-          const photoFiles = !Array.isArray(parsed) && parsed.photoFiles && typeof parsed.photoFiles === "object" ? parsed.photoFiles : null;
-          const photoCount = photoFiles ? Object.keys(photoFiles).length : 0;
-          const question = (backupBook
+        // Clean the units against the backup's own stages, BEFORE touching your data.
+        const currentStages = STAGES;
+        if (backupStages) STAGES = backupStages;
+        const restored = cleanModels(backupModels);
+        STAGES = currentStages;
+        // Backups from v5 onwards also hold recipes. Older ones don't, so your recipes stay.
+        const backupBook = !isList && parsed.recipes && typeof parsed.recipes === "object" ? cleanRecipeBook(parsed.recipes) : null;
+        const hasRecipes = !!backupBook && (backupBook.recipes.length > 0 || backupBook.paints.length > 0 || backupBook.schemes.length > 0);
+        // v14: a backup with recipes but no units is fine too: it replaces only your recipes.
+        const unitsToo = restored.length > 0;
+        if (!unitsToo && !hasRecipes) {
+          alert("That file doesn't look like a Shades of Grey backup: it has no units or recipes in it.");
+          return;
+        }
+        const photoFiles = !isList && parsed.photoFiles && typeof parsed.photoFiles === "object" ? parsed.photoFiles : null;
+        const photoCount = photoFiles ? Object.keys(photoFiles).length : 0;
+        const question = (!unitsToo
+            ? `Replace your ${plural(book.recipes.length, "recipe")} with ${plural(backupBook.recipes.length, "recipe")} from the backup? (Your units stay as they are.)`
+            : backupBook
             ? `Replace your current ${plural(models.length, "unit")} and ${plural(book.recipes.length, "recipe")} with ` +
               `${plural(restored.length, "unit")} and ${plural(backupBook.recipes.length, "recipe")} from the backup?`
             : `Replace your current ${models.length} units with ${restored.length} from the backup? (Your recipes stay as they are.)`)
-            + (photoCount ? ` It includes ${plural(photoCount, "photo")}.` : "");
+          + (photoCount ? ` It includes ${plural(photoCount, "photo")}.` : "");
+        if (!confirm(question)) return;
 
-          if (confirm(question)) (photoFiles ? importPhotoFiles(photoFiles) : Promise.resolve(0)).then(() => {
-            try { localStorage.setItem(STORAGE_KEY + "-before-restore", JSON.stringify(models)); } catch (ignored) {}
-            models = restored;
-            if (backupBook) {
-              try { localStorage.setItem(RECIPES_KEY + "-before-restore", JSON.stringify(book)); } catch (ignored) {}
-              book = backupBook;
-              recipeDraft = null;
-              openRecipeId = null;
-            }
-            if (backupStages) {
+        (photoFiles ? importPhotoFiles(photoFiles) : Promise.resolve(0)).then(async (imported) => {
+          // Safety copies of what you had (best effort), listed under Recover earlier data.
+          if (unitsToo) keepSafetyCopy("-before-restore");
+          if (backupBook) { try { localStorage.setItem(RECIPES_KEY + "-before-restore", JSON.stringify(book)); } catch (ignored) {} }
+
+          // v14: units, recipes, stages and colours are saved TOGETHER, or not at all.
+          const kept = changeAndSave(() => {
+            if (unitsToo) models = restored;
+            if (backupBook) book = backupBook;
+            if (unitsToo && backupStages) {
               settings.stages = STAGES = backupStages;
               settings.doneFrom = parsed.doneFrom;
               fixDoneFrom();
-              saveSettings();
-              applyPalette(settings.palette);
             }
             // Backups from v8 onwards hold faction colours. Older ones don't, so yours stay.
-            if (!Array.isArray(parsed) && parsed.factionColours) {
-              settings.factionColours = cleanFactionColours(parsed.factionColours);
-              saveSettings();
-            }
-            openIds.clear();
-            clearFilters();
-            render();
-            renderSettings();
-            showToast("Backup restored");
-            // Old backups may hold old-style photos: move them. Then load the thumbnails
-            // (photos this device doesn't have are quietly dropped from the units).
-            startPhotos();
+            if (unitsToo && !isList && parsed.factionColours) settings.factionColours = cleanFactionColours(parsed.factionColours);
           });
-        } catch (error) {
-          alert("That file doesn't look like a Shades of Grey backup.");
-        }
-        restoreFile.value = "";
+          if (!kept) { alert(FULL_MESSAGE); return; }
+          recipeDraft = null;
+          openRecipeId = null;
+          openIds.clear();
+          clearFilters();
+          applyPalette(settings.palette);
+          render();
+          renderSettings();
+
+          // v14: check every photo the restored units need is really on this device. If
+          // some couldn't be loaded, say so clearly (they're removed from the units next).
+          let missing = 0, needed = 0;
+          if (unitsToo) {
+            for (const m of models) for (const id of photoIds(m)) {
+              needed++;
+              try { if (!(await getPhoto(id))) missing++; } catch (error) { missing++; }
+            }
+          }
+          if (missing) {
+            alert(photoFiles
+              ? `Backup restored, but ${missing} of ${plural(needed, "photo")} couldn't be loaded on this device (${imported} of ${photoCount} in the file worked), so they won't show. Keep the backup file safe: you can restore it again later, for example after freeing some space.`
+              : `Backup restored, but this backup was saved without photos, so ${plural(missing, "photo")} won't show on this device. Keep the backup file safe. To bring photos across, use Save full backup with photos on the other device.`);
+          } else {
+            showToast(unitsToo ? "Backup restored" : `Recipes restored (${plural(book.recipes.length, "recipe")})`);
+          }
+          // Old backups may hold old-style photos: move them. Then load the thumbnails.
+          startPhotos();
+        });
       });
     });
 
@@ -5372,7 +5770,9 @@
         // "Strike Force (2000 points)", which also end in points.
         const followedByBullet = n + 1 < nonEmpty.length && bulletPattern.test(lines[nonEmpty[n + 1]]);
         if (unitMatch && !bulletPattern.test(line) && followedByBullet) {
-          current = { name: unitMatch[1].trim(), points: Number(unitMatch[2]), models: 0 };
+          // Only the NAME is kept. The points are deliberately thrown away (v14): the app
+          // never stores points, as they're Games Workshop's data.
+          current = { name: unitMatch[1].trim(), models: 0 };
           units.push(current);
           continue;
         }
@@ -5506,7 +5906,7 @@
       incoming = data;
       reviewMode = "add";
       const isWh = data.source === "wh";
-      reviewTitle.textContent = isWh ? "Check your Warhammer list" : "Check your CSV import";
+      reviewTitle.textContent = isWh ? "Check your army list" : "Check your CSV import";
       reviewWhFields.classList.toggle("hidden", !isWh);
       reviewStageLabel.classList.toggle("hidden", !isWh);
       whStage.innerHTML = "";
@@ -5668,12 +6068,8 @@
         if (!confirm(`Remove your ${plural(models.length, "unit")} and replace them with ${plural(toAdd.length, "unit")}?`)) return;
         // Keep a safety copy on the device. If there isn't room (photos take a lot of
         // space), stop rather than carry on with no safety net.
-        try {
-          localStorage.removeItem(STORAGE_KEY + "-before-replace");
-          localStorage.setItem(STORAGE_KEY + "-before-replace", JSON.stringify(models));
-          settings.replaceCopyDate = new Date().toISOString().slice(0, 10);
-          saveSettings();
-        } catch (error) {
+        // (v14: kept for 30 days, with the stage list, and listed under Recover earlier data.)
+        if (!keepSafetyCopy("-before-replace")) {
           alert("There isn't room on this device to keep a safety copy of your current units, so nothing has been changed. Please press Save backup first, then try again.");
           return;
         }
@@ -5761,21 +6157,65 @@
       // Don't nag brand-new users: wait for 10+ units and a day since first real use.
       if (!settings.firstRealUse) { settings.firstRealUse = new Date().toISOString().slice(0, 10); saveSettings(); }
       if (models.length < 10 || daysSince(settings.firstRealUse) < 1) return;
-      if (daysSince(settings.lastBackup) < 14 || daysSince(settings.lastReminder) < 3) return;
+      // v14: after a WEEK, not two (an iPhone can clear a website's data after 7 days
+      // unused). If you have photos, the reminder is about a backup WITH photos, and its
+      // button makes one, because a plain backup leaves them out.
+      const withPhotos = models.some(hasPhoto);
+      const last = withPhotos ? settings.lastFullBackup : settings.lastBackup;
+      if (daysSince(last) < 7 || daysSince(settings.lastReminder) < 3) return;
       settings.lastReminder = new Date().toISOString().slice(0, 10);
       saveSettings();
-      const message = settings.lastBackup ? "It's been over 2 weeks since your last backup" : "You haven't saved a backup yet";
-      showToast(message, () => document.getElementById("export-button").click(), "Back up", 10);
+      const message = !last
+        ? (withPhotos ? "Your photos haven't been backed up yet" : "You haven't saved a backup yet")
+        : `It's been over a week since your last backup${withPhotos ? " with photos" : ""}`;
+      showToast(message, () => document.getElementById(withPhotos ? "full-export-button" : "export-button").click(), "Back up", 10);
     }
+
+    // ----- iPhone warning (v14) -----
+    // Safari on an iPhone or iPad can delete a website's saved data (units AND photos) if
+    // it isn't opened for 7 days. Apps added to the Home Screen are safe. So if the app is
+    // open in Safari itself, show a card on the dashboard saying so. "Got it" hides it
+    // for 30 days.
+    function isAppleMobile() {
+      return /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+             (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);   // newer iPads say "Mac"
+    }
+    function openedFromHomeScreen() {
+      return navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
+    }
+    function showIphoneWarning() {
+      const card = document.getElementById("iphone-warning");
+      const show = isAppleMobile() && !openedFromHomeScreen() && daysSince(settings.iphoneWarningHidden) > 30;
+      card.classList.toggle("hidden", !show);
+    }
+    document.getElementById("iphone-warning-ok").addEventListener("click", () => {
+      settings.iphoneWarningHidden = new Date().toISOString().slice(0, 10);
+      saveSettings();
+      showIphoneWarning();
+    });
 
 
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v13";
+    const APP_VERSION = "v14";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v14", date: "8 Oct 2026", changes: [
+        "Safer saving: units, recipes and settings are now saved together. If storage is full, a big change (like editing your stages or restoring a backup) isn't made at all, instead of being half-saved.",
+        "If storage is full, a red banner now stays at the top until saving works again, with a Save backup button. (Before, you were warned once and later changes were quietly lost.)",
+        "Open in two places at once? Changes made in one window now appear in the other, instead of one saving over the other.",
+        "Delete all units now stops if it can't keep a safety copy, and has an Undo button.",
+        "New: Settings → Your data → Recover earlier data. Copies kept by Delete all, Replace and Restore are listed for 30 days, and you can bring one back.",
+        "Restoring a backup now tells you if some photos couldn't be loaded, accepts backups that only hold recipes, and refuses backups with a damaged stage list.",
+        "Fixed: a faction called \"constructor\" (and a few other special words) could stop the Units list showing. Units are now limited to 999 models.",
+        "If your settings ever can't be read, a copy is kept and your units keep their stages.",
+        "Editing your stages now keeps each photo's stage label right.",
+        "Save backup now shows a message. The backup reminder comes after a week, and reminds you about photos separately. iPhone users opening the app in Safari see a tip to add it to the Home Screen, so their data isn't wiped.",
+        "The Warhammer app import button is now called Paste an army list. Only unit names and model counts are kept; points are thrown away.",
+        "Help has a new About section: this is an unofficial fan-made tool, not affiliated with Games Workshop.",
+      ] },
       { version: "v13", date: "7 Oct 2026", changes: [
         "Several photos per unit. Add photo now adds another photo instead of replacing the old one, and you can pick several at once.",
         "Progress timeline: a unit's photos sit in a strip from oldest to newest, each labelled with its stage (and coloured dot) and date.",
@@ -5892,16 +6332,72 @@
     applyPalette(settings.palette);
     render();
     startPhotos();   // moves any old photos across, then loads thumbnails (in the background)
-    // The safety copy kept by "Replace my collection" is only needed for a while.
-    if (settings.replaceCopyDate && daysSince(settings.replaceCopyDate) > 7) {
-      try { localStorage.removeItem(STORAGE_KEY + "-before-replace"); } catch (ignored) {}
-      delete settings.replaceCopyDate;
-      saveSettings();
-    }
+    // Safety copies (Delete all, Replace, Restore, Recover) are kept for 30 days.
+    // (Before v14 only Replace's copy expired, after 7 days, using settings.replaceCopyDate.)
+    if (settings.replaceCopyDate) { delete settings.replaceCopyDate; saveSettings(); }
+    expireSafetyCopies();
+    showIphoneWarning();
     renderUpdates();
     showTab(settings.tab);
     if (upgradedStages) showToast("Stages updated: Parade ready added as the final stage", null, null, 8);
+    else if (settingsUnreadable) showToast("Your settings couldn't be read, so they were reset. Your units kept their stages, and a copy of the old settings was kept.", null, null, 10);
     else maybeRemindToBackUp();
+
+    // ================= TWO WINDOWS AT ONCE (v14) =================
+    // The installed app and a browser tab share the same storage. Before v14 each kept its
+    // own copy in memory and saved over the other's changes. Now, when the OTHER window
+    // saves, the browser tells this one (the "storage" event) and we load its changes.
+    // Screen choices (which tab is open, sort order...) stay this window's own.
+    const VIEW_ONLY_SETTINGS = ["tab", "recipeView", "historyRange", "paintSort"];
+    const withoutViewSettings = (s) => {
+      const copy = { ...s };
+      for (const key of VIEW_ONLY_SETTINGS) delete copy[key];
+      return JSON.stringify(copy);
+    };
+    let otherWindowTimer = null;
+    window.addEventListener("storage", (event) => {
+      if (event.storageArea !== localStorage) return;
+      if (event.key !== null && ![STORAGE_KEY, RECIPES_KEY, SETTINGS_KEY].includes(event.key)) return;
+      // The other window writes units, recipes and settings one after another: wait a
+      // moment so they're all read together.
+      clearTimeout(otherWindowTimer);
+      otherWindowTimer = setTimeout(loadFromOtherWindow, 150);
+    });
+    function loadFromOtherWindow() {
+      let fresh = null;
+      try { fresh = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "null"); } catch (ignored) {}
+      const unitsText = (() => { try { return localStorage.getItem(STORAGE_KEY); } catch (e) { return null; } })();
+      const recipesText = (() => { try { return localStorage.getItem(RECIPES_KEY); } catch (e) { return null; } })();
+      // Nothing that matters changed (e.g. the other window only switched tabs)? Do nothing.
+      const sameSettings = !fresh || withoutViewSettings(fresh) === withoutViewSettings(settings);
+      if (sameSettings && unitsText === JSON.stringify(models) && recipesText === JSON.stringify(book)) return;
+
+      if (fresh && typeof fresh === "object" && !Array.isArray(fresh) && usableStages(fresh.stages)) {
+        const mine = {};
+        for (const key of VIEW_ONLY_SETTINGS) if (key in settings) mine[key] = settings[key];
+        settings = { ...settings, ...fresh, ...mine };
+        settings.factionColours = cleanFactionColours(settings.factionColours);
+        STAGES = settings.stages.map(String);
+        fixDoneFrom();
+        applyPalette(settings.palette);
+      }
+      if (unitsText) models = load();
+      book = loadRecipes();
+      // Drop anything open that no longer exists.
+      for (const id of [...openIds]) if (!models.some(m => m.id === id)) openIds.delete(id);
+      if (openRecipeId !== null && !book.recipes.some(r => r.id === openRecipeId)) openRecipeId = null;
+      // Redraw WITHOUT saving: saving here would just write the same data back and make
+      // the other window reload too.
+      holdSaves = true;
+      try {
+        render();
+        renderSettings();
+      } finally {
+        holdSaves = false;
+      }
+      loadThumbs().catch(() => {});   // new photos added in the other window
+      showToast("Updated with changes from another window", null, null, 4);
+    }
 
     // ================= PHASE 6: WORK OFFLINE =================
     // A "service worker" is a small helper script (sw.js) that the browser runs in the
