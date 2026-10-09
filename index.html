@@ -1545,6 +1545,8 @@
         "Volupus Pink|#8f2c62", "Warp Lightning|#3b8b3b", "Wyldwood|#4a332a", "Aeldari Emerald|#0d6b4b",
         "Celestium Blue|#336a95", "Gutrippa Flesh|#a1765a", "Karandras Green|#38593b", "Bad Moon Yellow|#e5b42a",
         "Hexwraith Flame|#3fbf6f", 
+        // Glaze (v18; colours approximate, picked by eye, not copied from any shop site)
+        "Bloodletter|#b0353a", "Lamenters Yellow|#e6cf3a", "Waywatcher Green|#4f8a3c",
         // Technical, Dry and others
         "'Ardcoat|#e8e8e8", "Stormshield|#e8e8e8", "Nurgle's Rot|#9a9b26", "Typhus Corrosion|#3b3626",
         "Ryza Rust|#c4561f", "Blood for the Blood God|#7a0000", "Nihilakh Oxide|#66b39e", "Tesseract Glow|#4fbf3a",
@@ -1657,8 +1659,9 @@
       "skin", "metal", "steel", "bronze", "brass", "copper", "dirt", "mud", "water", "fire", "night", "death", "the"]);
 
     // Text cut down for comparing: lower case, no apostrophes or "'s", only letters, numbers, spaces.
+    // v18: accents are taken off first ("Marrón" = "marron"), so accented names still match.
     function matchKey(text) {
-      return plainQuotes(String(text || "")).toLowerCase()
+      return plainQuotes(String(text || "")).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
         .replace(/'s\b/g, "").replace(/[^a-z0-9]+/g, " ").trim();
     }
     // How many single-letter changes turn a into b (typo distance). Stops early past "max".
@@ -1701,8 +1704,12 @@
     }
 
     // Every paint the matcher can pick from: yours first, then the ones the app knows.
+    // v18: while a paste is read, the list is built once and kept (it was rebuilt on every
+    // lookup, 100+ times per note). parseRecipeText fills and clears candidateCache.
+    let candidateCache = null;
     function matchCandidates() {
-      const out = book.paints.map(p => ({ brand: p.brand, name: p.name, colour: p.colour, type: p.type, mine: true }));
+      if (candidateCache) return candidateCache;
+      const out =book.paints.map(p => ({ brand: p.brand, name: p.name, colour: p.colour, type: p.type, mine: true }));
       for (const k of KNOWN_PAINTS) if (!out.some(o => sameText(o.name, k.name))) out.push({ ...k });
       for (const c of out) { c.key = matchKey(c.name); c.words = c.key.split(" "); }
       return out;
@@ -1724,7 +1731,9 @@
       const brand = split.brand || hints.brand || "";
       const key = matchKey(split.rest || typed);
       if (!key) return result("none");
-      const all = matchCandidates();
+      // v18: if the text names a brand ("Vallejo Ivory"), only that brand's paints (or paints with
+      // no brand) can match, so it never picks your AK Ivory instead.
+      const all = split.brand ? matchCandidates().filter(c => !c.brand || sameText(c.brand, split.brand)) : matchCandidates();
       const pick = (c) => {
         const full = all.find(x => sameText(x.name, c.name) && (!c.brand || sameText(x.brand, c.brand))) || c;
         return { brand: full.brand || brand, name: full.name, colour: full.colour || DEFAULT_PAINT_COLOUR, type: full.type };
@@ -2252,6 +2261,8 @@
       if (!name) { out.note = out.note.join("; "); return out; }
       // The whole thing first; if that isn't sure, the longest start that is ("Sigvald Burgundy in gaps").
       let match = matchPaint(name, hints);
+      // v18: nothing to match on (no a–z letters, e.g. "下地は黒"): keep it as a note, not a paint.
+      if (match.status === "none") { out.note.unshift(name); out.note = out.note.join("; "); return out; }
       if (match.status !== "sure" && match.status !== "material") {
         const words = name.split(" ");
         for (let n = words.length - 1; n >= 1; n--) {
@@ -2369,7 +2380,13 @@
     }
 
     // The main reader. Returns { schemes: [{ name, parts: [{ name, notes, steps }] }] }.
+    // v18: builds the paint list once for the whole paste (much faster), then lets it go.
     function parseRecipeText(text) {
+      candidateCache = null;
+      candidateCache = matchCandidates();
+      try { return readRecipeText(text); } finally { candidateCache = null; }
+    }
+    function readRecipeText(text) {
       const lines = plainQuotes(String(text || "")).replace(/\r/g, "").replace(/\t/g, " ").split("\n");
       const factions = knownFactionNames();
       const schemes = [];
@@ -2413,7 +2430,9 @@
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
-        if (!line) { blanks++; continue; }
+        // v18: a line with no letters or numbers (a divider like "-----" or "***", or just an
+        // emoji) is treated like a blank line.
+        if (!line || !/[\p{L}\p{N}]/u.test(line)) { blanks++; continue; }
         const afterBlanks = blanks;
         blanks = 0;
         if (/^notes?\s*:/i.test(line) && part) { part.notes.push(line.replace(/^notes?\s*:\s*/i, "")); continue; }
@@ -6244,9 +6263,12 @@
     document.getElementById("paste-recipes").addEventListener("click", startImport);
     document.getElementById("paste-recipes-schemes").addEventListener("click", startImport);
 
+    // v18: very long pastes are cut to this many characters, so the page never freezes.
+    const PASTE_LIMIT = 20000;
     function readImportText() {
       const d = importDraft;
-      d.parsed = parseRecipeText(d.text);
+      d.cut = d.text.length > PASTE_LIMIT;
+      d.parsed = parseRecipeText(d.text.slice(0, PASTE_LIMIT));
       d.groups = unsureMentions(d.parsed);
       d.names = d.parsed.schemes.map(s => s.name || "Imported recipes");
       renderImport();
@@ -6292,6 +6314,10 @@
       card.append(box, read);
       importPage.appendChild(card);
       if (!d.parsed) return;
+      if (d.cut) {
+        card.insertAdjacentHTML("beforeend", `<p class="hint" style="margin: 12px 0 0;">That's a very long note, so only the first
+          ${PASTE_LIMIT.toLocaleString("en-GB")} characters were read. Paste the rest separately.</p>`);
+      }
       if (!d.parsed.schemes.length) {
         card.insertAdjacentHTML("beforeend", '<p class="hint" style="margin: 12px 0 0;">No recipes found in that text.</p>');
         return;
@@ -6380,7 +6406,8 @@
                 span.textContent = paint ? `${m.typed} → ${paint.name}` : `${m.typed}?`;
               } else {
                 span.className = "import-paint" + (m.status === "new" ? " is-new" : "");
-                span.textContent = paint.name + (m.status === "new" ? " (new)" : "");
+                // v18: never read .name of nothing (that stopped the whole preview).
+                span.textContent = (paint ? paint.name : m.typed) + (m.status === "new" ? " (new)" : "");
               }
               li.appendChild(span);
             });

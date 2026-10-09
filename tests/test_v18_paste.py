@@ -205,6 +205,30 @@ def main():
             check(f"preview: {case['name']}", has_save and not errors,
                   f"Save button shown: {has_save}; page errors: {errors}")
 
+        print("\n--- Brand named in the note, and very long pastes ---")
+        # Your palette has AK Interactive "Ivory". A note saying "Vallejo Ivory" must not pick it.
+        brand = page.evaluate("""() => {
+            book.paints.push({ id: 9999, brand: "AK Interactive", name: "Ivory", colour: "#eeeedd" });
+            const m = matchPaint("Vallejo Ivory");
+            const plain = matchPaint("Ivory");
+            book.paints.pop();
+            return { brand: m.paint && m.paint.brand, status: m.status, plainBrand: plain.paint && plain.paint.brand };
+        }""")
+        check("'Vallejo Ivory' is a Vallejo paint, not your AK Ivory",
+              brand["brand"] == "Vallejo" and brand["status"] == "new", brand)
+        check("plain 'Ivory' still finds your AK Ivory", brand["plainBrand"] == "AK Interactive", brand)
+        accent = page.evaluate("matchKey('Marrón Écaille')")
+        check("accented letters still match (Marrón = marron)", accent == "marron ecaille", accent)
+
+        long_text = "Eyes:\nYriel Yellow\n" + ("Notes: lots of words here\n" * 1500)
+        page.evaluate("startImport()")
+        page.fill("#import-text", long_text)
+        page.click("#import-page button.primary-button")
+        page.wait_for_timeout(200)
+        body = page.inner_text("#import-page")
+        check("a paste over 20,000 characters is cut, and it says so",
+              "only the first" in body and page.locator("#import-save").count() == 1, body[:200])
+
         print("\n--- tests/keep_note.txt (a real Google Keep note) ---")
         schemes = page.evaluate(SUMMARY_JS, keep)
         check("keep note: two schemes, Tyranids and T'au",
