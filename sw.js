@@ -9,8 +9,12 @@
 //
 // WHEN YOU UPLOAD A NEW VERSION: change the number below (v1 -> v2 -> v3...).
 // That tells the phone to throw away the old saved copy and start a new one.
-const VERSION = "v15";
+const VERSION = "v16";
 const CACHE_NAME = "shades-of-grey-" + VERSION;
+// v16: the pot-label reader (Tesseract.js) is downloaded the first time you scan. It's kept
+// in its own store that ISN'T cleared on updates, so scanning keeps working offline.
+const OCR_CACHE = "shades-of-grey-label-reader";
+const OCR_HOSTS = ["cdn.jsdelivr.net", "tessdata.projectnaptha.com"];
 
 // The files that make up the app. Saved as soon as the app is installed.
 const APP_FILES = [
@@ -32,7 +36,7 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys()
       .then((names) => Promise.all(
-        names.filter((name) => name !== CACHE_NAME).map((name) => caches.delete(name))))
+        names.filter((name) => name !== CACHE_NAME && name !== OCR_CACHE).map((name) => caches.delete(name))))
       .then(() => self.clients.claim())
   );
 });
@@ -41,6 +45,17 @@ self.addEventListener("activate", (event) => {
 // Your units are NOT involved here: they live in the browser's storage, not in files.
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return; // only plain "get a file" requests
+
+  // v16: label-reader files never change, so use the saved copy first, else download and keep it.
+  if (OCR_HOSTS.includes(new URL(event.request.url).hostname)) {
+    event.respondWith(
+      caches.open(OCR_CACHE).then((cache) => cache.match(event.request).then((saved) => saved ||
+        fetch(event.request).then((response) => {
+          if (response.ok) cache.put(event.request, response.clone());
+          return response;
+        }))));
+    return;
+  }
 
   event.respondWith(
     fetch(event.request)

@@ -605,6 +605,21 @@
     .step-edit .check-label input { width: 22px; height: 22px; }
     .recipe-steps li.optional-step { opacity: 0.6; }
     .step-note { margin: 4px 0 0; color: var(--muted); font-size: 14px; font-style: italic; }
+    /* v16: Paste recipes preview and pot scan */
+    .import-ask { padding: 10px 0; border-top: 1px solid var(--border); }
+    .import-ask.answered .import-typed { color: var(--muted); }
+    .import-typed { font-weight: 600; color: #c4b5fd; }
+    .import-part { font-weight: 600; color: var(--accent); margin: 14px 0 4px; }
+    .import-steps { margin: 0; padding-left: 22px; font-size: 14px; line-height: 1.5; }
+    .import-steps li { margin-bottom: 4px; }
+    .import-tech { color: var(--muted); margin-right: 6px; }
+    .import-paint.unsure { background: rgba(196, 181, 253, 0.18); color: #c4b5fd; border: 1px dashed #c4b5fd; border-radius: 6px; padding: 0 5px; }
+    .import-paint.resolved { color: #c4b5fd; }
+    .import-paint.is-new { color: #5eead4; }
+    .import-steps small { color: var(--muted); }
+    #import-save:disabled { opacity: 0.5; }
+    .scan-result { margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; }
+    .backup-old { color: #c4b5fd; }
     /* One paint: colour, name and ✕ on top; brand and mix % underneath. */
     .paint-edit {
       display: grid; gap: 6px; padding: 8px; border: 1px solid var(--border); border-radius: 8px;
@@ -826,6 +841,7 @@
           <div class="units-toolbar" style="grid-template-columns: 1fr;">
             <button class="primary-button" id="new-scheme">+ New scheme</button>
           </div>
+          <button class="plain-button" id="paste-recipes-schemes" style="width: 100%; margin-bottom: 12px;">Paste recipes from your notes</button>
           <ul class="recipe-list" id="scheme-list"></ul>
         </div>
         <div id="scheme-page" class="hidden"></div>
@@ -841,6 +857,8 @@
           </select>
           <div class="chips" id="brand-chips"></div>
           <p class="hint" id="palette-summary" style="margin: 12px 0 0;"></p>
+          <button class="plain-button" id="scan-button" style="width: 100%; margin-top: 12px;">📷 Scan a paint pot (or check if you own it)</button>
+          <div id="scan-panel" class="hidden" style="margin-top: 12px;"></div>
         </div>
         <ul class="paint-list" id="paint-list"></ul>
       </div>
@@ -850,6 +868,7 @@
           <button class="primary-button" id="new-recipe">+ New recipe</button>
           <select id="part-filter" aria-label="Filter by part"></select>
         </div>
+        <button class="plain-button" id="paste-recipes" style="width: 100%; margin-bottom: 12px;">Paste recipes from your notes</button>
         <ul class="recipe-list" id="recipe-list"></ul>
         <details class="card" id="recipe-lists">
           <summary>Parts and techniques</summary>
@@ -858,6 +877,8 @@
           <div class="panel-field" style="margin-top: 12px;">Techniques<div class="chips" id="technique-chips" style="margin-top: 0;"></div></div>
         </details>
       </div>
+      <!-- v16: Paste recipes (text box, preview, confirm). Filled by renderImport(). -->
+      <div id="import-page" class="hidden"></div>
       <!-- One recipe, either to read or to edit. Filled in by JavaScript. -->
       <div id="recipe-page" class="hidden"></div>
     </section>
@@ -1065,6 +1086,7 @@
           <button class="plain-button" id="csv-export-button">Export CSV</button>
           <button class="plain-button" id="wh-button">Paste an army list</button>
         </div>
+        <p class="hint" id="backup-age" style="margin: 12px 0 0;"></p>
 
         <!-- Import from the Warhammer app: hidden until the button above is pressed. -->
         <div id="wh-panel" class="hidden" style="margin-top: 14px; display: grid; gap: 10px;">
@@ -1419,10 +1441,86 @@
     const DEFAULT_PAINT_COLOUR = "#808080";
 
     // v15: paints the app knows before you've used them, suggested as you type.
-    const KNOWN_PAINTS = [
-      { brand: "Citadel", name: "Contrast Medium", colour: "#e6e6e6" },
-      { brand: "Citadel", name: "Lahmian Medium", colour: "#eeeeee" },
-    ];
+    // v16: a much longer list (Citadel's current range, colours approximate), so pasted
+    // notes and pot-label scans can be matched to real paint names. Format: "Name|colour".
+    const KNOWN_PAINT_TABLE = {
+      Citadel: [
+        // Base
+        "Abaddon Black|#231f20", "Averland Sunset|#fbb81c", "Balor Brown|#8b5910", "Bugman's Glow|#834f44",
+        "Caledor Sky|#366699", "Caliban Green|#003d15", "Castellan Green|#314821", "Celestra Grey|#90a8a8",
+        "Corax White|#f2f2f2", "Corvus Black|#171314", "Daemonette Hide|#696684", "Death Guard Green|#848a66",
+        "Deathworld Forest|#556229", "Dryad Bark|#33312d", "Gal Vorbak Red|#4b213c", "Grey Seer|#a2a5a7",
+        "Incubi Darkness|#082e32", "Ionrach Skin|#c2b49a", "Jokaero Orange|#ee3823", "Kantor Blue|#02134e",
+        "Khorne Red|#6a0001", "Leadbelcher|#888d8f", "Macragge Blue|#0d407f", "Mechanicus Standard Grey|#3d4b4d",
+        "Mephiston Red|#9a1115", "Morghast Bone|#c4b085", "Mournfang Brown|#640909", "Naggaroth Night|#3d3354",
+        "Night Lords Blue|#002c53", "Phoenician Purple|#440052", "Rakarth Flesh|#a29e91", "Ratskin Flesh|#ad6b4c",
+        "Retributor Armour|#c39e5d", "Rhinox Hide|#462f30", "Screamer Pink|#7c1645", "Screaming Bell|#c16f45",
+        "Steel Legion Drab|#5e5134", "Stormvermin Fur|#6d655f", "Thousand Sons Blue|#18abcc", "Waaagh! Flesh|#1f5429",
+        "Warplock Bronze|#927d7b", "Wraithbone|#dbd1b2", "Zandri Dust|#9e915c", "Iron Hands Steel|#a1a6a9",
+        "Runelord Brass|#b6a37a", "Grey Knights Steel|#8a8d8e", "Gorthor Brown|#5f463f",
+        "Lupercal Green|#002c2b", "Orruk Flesh|#879f7e", "Wraithbone Spray|#dbd1b2",
+        // Layer
+        "Administratum Grey|#949b95", "Ahriman Blue|#1f8c9c", "Alaitoc Blue|#295788", "Altdorf Guard Blue|#1f56a7",
+        "Baharroth Blue|#58c1cd", "Baneblade Brown|#937f6d", "Bestigor Flesh|#d38a57", "Blue Horror|#a2bad2",
+        "Brass Scorpion|#b7885f", "Cadian Fleshtone|#c47652", "Calgar Blue|#4272b8", "Dawnstone|#70756e",
+        "Deathclaw Brown|#af634f", "Dechala Lilac|#b69fcc", "Doombull Brown|#5d0009", "Eldar Flesh|#ecc083",
+        "Elysian Green|#6b8c37", "Emperor's Children|#b74073", "Evil Sunz Scarlet|#c01411", "Fenrisian Grey|#6d94b3",
+        "Fire Dragon Bright|#f4874e", "Flash Gitz Yellow|#fff300", "Flayed One Flesh|#eec483", "Fulgrim Pink|#f4afcd",
+        "Gauss Blaster Green|#84c3aa", "Gehenna's Gold|#dba663", "Genestealer Purple|#7658a5", "Gorthor Brown|#5f463f",
+        "Hashut Copper|#b7705a", "Hoeth Blue|#4c78af", "Ironbreaker|#a1a6a9", "Kabalite Green|#038c67",
+        "Karak Stone|#bb9662", "Kislev Flesh|#d1a570", "Krieg Khaki|#c0bd81", "Liberator Gold|#d3b587",
+        "Lothern Blue|#34a2cf", "Loren Forest|#486c25", "Lugganath Orange|#f69b82", "Moot Green|#52b244",
+        "Nurgling Green|#7e975e", "Ogryn Camo|#96a648", "Pallid Wych Flesh|#cdcebe", "Pink Horror|#90305d",
+        "Russ Grey|#507085", "Screaming Skull|#d2d29b", "Skarsnik Green|#5f9370", "Skavenblight Dinge|#47413b",
+        "Skrag Brown|#8b4806", "Slaanesh Grey|#8b8893", "Sotek Green|#0b6371", "Squig Orange|#aa4f44",
+        "Stormhost Silver|#bbc6c9", "Sybarite Green|#17a166", "Tallarn Sand|#a07409", "Taubach Beige|#c6a174",
+        "Teclis Blue|#317ec1", "Temple Guard Blue|#239489", "Thunderhawk Blue|#417074", "Troll Slayer Orange|#f36d2d",
+        "Tuskgor Fur|#883636", "Ulthuan Grey|#c7e0d9", "Ungor Flesh|#d6a766", "Ushabti Bone|#bbbb7f",
+        "Vulkan Green|#284631", "Warboss Green|#3e805d", "Warpfiend Grey|#6b6a74", "Warpstone Glow|#1e7331",
+        "White Scar|#ffffff", "Wild Rider Red|#ea2f28", "Word Bearers Red|#640d0a", "Xereus Purple|#47125a",
+        "Yriel Yellow|#ffda00", "Zamesi Desert|#ddb21d", "Wazdakka Red|#880804", "Kakophoni Purple|#8869ae",
+        "Sigvald Burgundy|#5e1b2a", "Eshin Grey|#484b4e", "Grey Knights Steel|#8a8d8e", "Sycorax Bronze|#cbb394",
+        "Auric Armour Gold|#c9a24b", "Canoptek Alloy|#b49d76", "Runefang Steel|#c3cacb", "Fulgurite Copper|#b16e4c",
+        "Thondia Brown|#5f4934", "Rhinox Hide|#462f30", "Dorn Yellow|#fff55a",
+        "Lahmian Medium|#eeeeee", "Contrast Medium|#e6e6e6", "Mordian Blue|#1b345c", "Necron Compound|#9a9b9c",
+        "Dark Reaper|#354d4c", "The Fang|#405a74", "Kislev Flesh|#d1a570", "Stormfang|#80a7c1", "Kislev Flesh|#d1a570", "Knight-Questor Flesh|#a56c5a",
+        // Shade
+        "Agrax Earthshade|#3b2f22", "Athonian Camoshade|#5c5b2e", "Biel-Tan Green|#1c6b42", "Carroburg Crimson|#6b1a2e",
+        "Casandora Yellow|#e7a12c", "Coelia Greenshade|#0e4a4c", "Drakenhof Nightshade|#152a52", "Druchii Violet|#4c2e4f",
+        "Fuegan Orange|#c2541d", "Nuln Oil|#151515", "Reikland Fleshshade|#9c5c32", "Seraphim Sepia|#a96d22",
+        "Kroak Green|#4e6b37", "Mortarion Grime|#7d7b3b", "Poxwalker|#5d5f45", "Targor Rageshade|#4a3a4f",
+        "Berserker Bloodshade|#64131c", "Cryptek Armourshade|#3b3a44", "Soulblight Grey|#69707a",
+        // Contrast
+        "Aethermatic Blue|#5fa5c2", "Aggaros Dunes|#b7914c", "Akhelian Green|#00757a", "Apothecary White|#c7d0d4",
+        "Baal Red|#9e0f17", "Basilicanum Grey|#3b3d40", "Black Legion|#1d1d1f", "Black Templar|#1f2328",
+        "Blood Angels Red|#a31a1c", "Creed Camo|#5b6a2e", "Cygor Brown|#4d3324", "Darkoath Flesh|#83553c",
+        "Dark Angels Green|#1f4029", "Doomfire Magenta|#a7316a", "Flesh Tearers Red|#7a1416", "Frostheart|#3b9ad4",
+        "Fyreslayer Flesh|#a8613f", "Gore-Grunta Fur|#7c3d17", "Guilliman Flesh|#c38672", "Gryph-Charger Grey|#6c8ca1",
+        "Gryph-Hound Orange|#d9561f", "Iyanden Yellow|#e8a51b", "Imperial Fist|#f2b80e", "Kroxigor Scales|#2c6e8a",
+        "Leviadon Blue|#253c74", "Luxion Purple|#5e2f73", "Magos Purple|#7c4a8c", "Mantis Warriors Green|#4a8d36",
+        "Militarum Green|#5b6b3a", "Nazdreg Yellow|#c79a2a", "Ork Flesh|#476b2b", "Plaguebearer Flesh|#a7a76b",
+        "Pylar Glacier|#a9c9dc", "Shyish Purple|#4e2a5a", "Skeleton Horde|#b39d6c", "Snakebite Leather|#8c5a2b",
+        "Space Wolves Grey|#7a95a6", "Talassar Blue|#1d5bae", "Terradon Turquoise|#0f6f72", "Ultramarines Blue|#20419c",
+        "Volupus Pink|#8f2c62", "Warp Lightning|#3b8b3b", "Wyldwood|#4a332a", "Aeldari Emerald|#0d6b4b",
+        "Celestium Blue|#336a95", "Gutrippa Flesh|#a1765a", "Karandras Green|#38593b", "Bad Moon Yellow|#e5b42a",
+        "Hexwraith Flame|#3fbf6f", 
+        // Technical, Dry and others
+        "'Ardcoat|#e8e8e8", "Stormshield|#e8e8e8", "Nurgle's Rot|#9a9b26", "Typhus Corrosion|#3b3626",
+        "Ryza Rust|#c4561f", "Blood for the Blood God|#7a0000", "Nihilakh Oxide|#66b39e", "Tesseract Glow|#4fbf3a",
+        "Spiritstone Red|#a01116", "Soulstone Blue|#1f6db5", "Waystone Green|#1c8a3a", "Agrellan Earth|#a17f5b",
+        "Armageddon Dust|#d2a359", "Astrogranite|#757679", "Martian Ironearth|#c25e3a", "Mordant Earth|#2b2a26",
+        "Stirland Mud|#492b00", "Valhallan Blizzard|#f4f6f7", "Lustrian Undergrowth|#3a4f22", "Mourn Mountain Snow|#e8eef2",
+        "Necron Compound|#9a9b9c", "Sigmarite|#caad76", "Terminatus Stone|#bdb192", "Chaos Black Spray|#231f20",
+        "Corax White Spray|#f2f2f2", "Grey Seer Spray|#a2a5a7", "Leadbelcher Spray|#888d8f",
+      ],
+      "The Army Painter": ["Matt Black|#1a1a1a", "Matt White|#f5f5f5", "Strong Tone|#4a3520", "Dark Tone|#1d1d1d"],
+      "Vallejo": ["Black Primer|#1a1a1a", "White Primer|#f5f5f5"],
+    };
+    const KNOWN_PAINTS = [];
+    for (const [brand, rows] of Object.entries(KNOWN_PAINT_TABLE)) for (const row of rows) {
+      const [name, colour] = row.split("|");
+      if (!KNOWN_PAINTS.some(k => k.brand === brand && k.name === name)) KNOWN_PAINTS.push({ brand, name, colour });
+    }
 
     // v15: basing materials (rocks, sand, static grass, snow...) aren't paints, but a step can
     // use one. They're kept in the paint list with type "material", so they can sit in a step,
@@ -1488,6 +1586,502 @@
       exact.map((x, i) => [x - Math.floor(x), i]).sort((a, b) => b[0] - a[0])
         .forEach(([, i]) => { if (left > 0) { out[i]++; left--; } });
       return out;
+    }
+
+    // ================= v16: THE SHARED PAINT-NAME MATCHER =================
+    // Used by Paste recipes AND Scan a pot label. Given some typed (or scanned) text it
+    // answers one of:
+    //   sure     - one clear paint (exact name, a shorthand you've confirmed, or a name
+    //              start only one paint has, like "Nuln" = Nuln Oil)
+    //   material - a basing material (rocks, snow...), kept as typed
+    //   unsure   - it has ideas but won't pick: you choose (a typo, initials like "CM")
+    //   new      - nothing like it is known, so it's kept exactly as typed
+    // It never quietly swaps a name for a guess: anything unsure is shown to you first.
+
+    // Brand names as people write them, to their proper name.
+    const BRAND_WORDS = [
+      ["games workshop", "Citadel"], ["warhammer colour", "Citadel"], ["citadel colour", "Citadel"], ["citadel", "Citadel"],
+      ["gw", "Citadel"], ["vallejo xpress color", "Vallejo"], ["vallejo xpress", "Vallejo"], ["vallejo express", "Vallejo"],
+      ["vallejo game color", "Vallejo"], ["vallejo model color", "Vallejo"], ["vallejo", "Vallejo"],
+      ["the army painter", "The Army Painter"], ["army painter", "The Army Painter"], ["pro acryl", "Pro Acryl"],
+      ["ak interactive", "AK Interactive"], ["scale75", "Scale75"], ["scale 75", "Scale75"], ["two thin coats", "Two Thin Coats"],
+      ["green stuff world", "Green Stuff World"], ["monument hobbies", "Monument Hobbies"],
+    ];
+    // Names that always mean one paint.
+    const BUILT_IN_SHORTHAND = { "gloss": "'Ardcoat", "ardcoat gloss": "'Ardcoat", "ardcoat": "'Ardcoat", "gloss varnish": "'Ardcoat" };
+    // Everyday words that start some paint names ("Ice Yellow", "White Scar"). On their own
+    // they're too vague to be sure of.
+    const VAGUE_WORDS = new Set(["ice", "snow", "white", "black", "grey", "gray", "red", "blue", "green", "yellow", "purple",
+      "orange", "pink", "brown", "dark", "light", "pale", "deep", "rust", "blood", "gold", "silver", "iron", "bone", "flesh",
+      "skin", "metal", "steel", "bronze", "brass", "copper", "dirt", "mud", "water", "fire", "night", "death", "the"]);
+
+    // Text cut down for comparing: lower case, no apostrophes or "'s", only letters, numbers, spaces.
+    function matchKey(text) {
+      return plainQuotes(String(text || "")).toLowerCase()
+        .replace(/'s\b/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+    }
+    // How many single-letter changes turn a into b (typo distance). Stops early past "max".
+    function typoDistance(a, b, max) {
+      if (Math.abs(a.length - b.length) > max) return max + 1;
+      let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+      for (let i = 1; i <= a.length; i++) {
+        const cur = [i];
+        let best = i;
+        for (let j = 1; j <= b.length; j++) {
+          cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+          best = Math.min(best, cur[j]);
+        }
+        if (best > max) return max + 1;
+        prev = cur;
+      }
+      return prev[b.length];
+    }
+    // The brand a bit of text names ("vallejo express" = Vallejo), or "".
+    function brandFromText(text) {
+      const key = matchKey(text);
+      const hit = BRAND_WORDS.find(([words]) => key === words);
+      return hit ? hit[1] : "";
+    }
+    // Splits a brand off the front: "Vallejo Mystic Blue" = { brand: "Vallejo", rest: "Mystic Blue" }.
+    function splitBrand(text) {
+      const key = matchKey(text);
+      for (const [words, brand] of BRAND_WORDS) {
+        if (key.startsWith(words + " ")) {
+          const n = words.split(" ").length;
+          return { brand, rest: String(text).trim().split(/\s+/).slice(n).join(" ") };
+        }
+      }
+      return { brand: "", rest: String(text).trim() };
+    }
+    // "mystic blue" = "Mystic Blue" (small joining words stay small, ALL CAPS stays).
+    function tidyName(text) {
+      return String(text).trim().replace(/\s+/g, " ").split(" ").map((w, i) =>
+        (i > 0 && /^(and|of|the|in|for|a)$/.test(w)) || /[A-Z]/.test(w) ? w : w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+    }
+
+    // Every paint the matcher can pick from: yours first, then the ones the app knows.
+    function matchCandidates() {
+      const out = book.paints.map(p => ({ brand: p.brand, name: p.name, colour: p.colour, type: p.type, mine: true }));
+      for (const k of KNOWN_PAINTS) if (!out.some(o => sameText(o.name, k.name))) out.push({ ...k });
+      for (const c of out) { c.key = matchKey(c.name); c.words = c.key.split(" "); }
+      return out;
+    }
+    function shorthandFor(key) {
+      const saved = book.shorthand && book.shorthand[key];
+      if (saved) return saved;
+      const builtIn = BUILT_IN_SHORTHAND[key];
+      return builtIn ? { brand: "Citadel", name: builtIn } : null;
+    }
+
+    // The matcher itself. hints: { brand, earlier: [paints already seen in the same text] }.
+    function matchPaint(text, hints) {
+      hints = hints || {};
+      const typed = String(text || "").trim().replace(/\s+/g, " ");
+      const result = (status, paint, suggestions) => ({ status, typed, paint: paint || null, suggestions: suggestions || [] });
+      if (!typed) return result("none");
+      const split = splitBrand(typed);
+      const brand = split.brand || hints.brand || "";
+      const key = matchKey(split.rest || typed);
+      if (!key) return result("none");
+      const all = matchCandidates();
+      const pick = (c) => {
+        const full = all.find(x => sameText(x.name, c.name) && (!c.brand || sameText(x.brand, c.brand))) || c;
+        return { brand: full.brand || brand, name: full.name, colour: full.colour || DEFAULT_PAINT_COLOUR, type: full.type };
+      };
+      const preferBrand = (list) => brand ? list.slice().sort((a, b) => sameText(b.brand, brand) - sameText(a.brand, brand)) : list;
+      const ranked = (list) => preferBrand(list).sort((a, b) => (b.mine === true) - (a.mine === true));
+
+      // 1. A shorthand you've confirmed before (or 'Ardcoat's nicknames).
+      const remembered = shorthandFor(key);
+      if (remembered) return result("sure", pick(remembered));
+      // 2. The exact name.
+      const exact = ranked(all.filter(c => c.key === key));
+      if (exact.length) return result("sure", pick(exact[0]));
+      // 3. A basing material: kept as you wrote it.
+      if (MATERIAL_WORDS.test(typed)) return result("material", { brand: "", name: tidyName(split.rest || typed), colour: DEFAULT_PAINT_COLOUR, type: "material" });
+
+      const words = key.split(" ");
+      const suggestions = [];
+      const suggest = (c) => { if (!suggestions.some(s => sameText(s.name, c.name))) suggestions.push(pick(c)); };
+      // 4. The start of a name, whole words: "nuln" = Nuln Oil, "baal" = Baal Red.
+      const starts = ranked(all.filter(c => c.words.length > words.length && words.every((w, i) => c.words[i] === w)));
+      const vague = words.length === 1 && (VAGUE_WORDS.has(words[0]) || words[0].length < 3);
+      const mineStart = starts.filter(c => c.mine);
+      if (!vague && (starts.length === 1 || mineStart.length === 1)) return result("sure", pick(mineStart[0] || starts[0]));
+      starts.slice(0, 4).forEach(suggest);
+      // 5. Initials like "CM" or "SS": never sure, but paints already in the same notes come first.
+      if (/^[a-z]{2,4}$/.test(key) && words.length === 1) {
+        const initials = (c) => c.words.map(w => w[0]).join("");
+        const earlier = (hints.earlier || []).slice().reverse().filter(p => matchKey(p.name).split(" ").map(w => w[0]).join("") === key);
+        earlier.forEach(suggest);
+        ranked(all.filter(c => initials(c) === key)).slice(0, 4).forEach(suggest);
+      }
+      // 6. Small typos ("Khorn Red", "Bleck Templar"), or letters dropped ("blangels red").
+      const allowed = Math.max(1, Math.floor(key.length / 6));
+      const close = all.map(c => ({ c, d: typoDistance(key, c.key, allowed) })).filter(x => x.d <= allowed)
+        .sort((a, b) => a.d - b.d).map(x => x.c);
+      close.slice(0, 4).forEach(suggest);
+      if (key.length >= 6) {
+        const squash = key.replace(/ /g, "");
+        const inOrder = (small, big) => { let i = 0; for (const ch of big) if (ch === small[i]) i++; return i === small.length; };
+        all.filter(c => c.key[0] === key[0] && squash.length >= c.key.replace(/ /g, "").length * 0.6 &&
+                        inOrder(squash, c.key.replace(/ /g, ""))).slice(0, 3).forEach(suggest);
+      }
+      if (suggestions.length || vague || /^[a-z]{1,4}$/.test(key)) return result("unsure", null, suggestions.slice(0, 4));
+      // 7. Nothing like it: a new paint, exactly as typed.
+      return result("new", { brand, name: tidyName(split.rest || typed), colour: DEFAULT_PAINT_COLOUR });
+    }
+
+    // Remembers that "typed" means this paint, for next time (both import and scan).
+    function rememberShorthand(typed, paint) {
+      const key = matchKey(typed);
+      if (!key || !paint || sameText(key, matchKey(paint.name))) return;
+      book.shorthand = { ...(book.shorthand || {}), [key]: { brand: paint.brand || "", name: paint.name } };
+    }
+
+    // ================= v16: READING PASTED RECIPE NOTES =================
+    // Turns notes like the ones people keep in Google Keep into schemes, parts and steps.
+    // The result is a preview: nothing is saved until you confirm it.
+
+    // Technique words people write, to the technique they mean.
+    const TECHNIQUE_WORDS = [
+      ["edge highlight", "Edge highlight"], ["edge highlights", "Edge highlight"], ["wet blend", "Wet blend"],
+      ["dry brush", "Dry brush"], ["dry brushed", "Dry brush"], ["drybrush", "Dry brush"], ["drybrushed", "Dry brush"],
+      ["drybrushing", "Dry brush"], ["base coat", "Base coat"], ["basecoat", "Base coat"], ["basecoated", "Base coat"],
+      ["base", "Base coat"], ["prime", "Prime"], ["primer", "Prime"], ["primed", "Prime"], ["undercoat", "Prime"],
+      ["zenithal", "Airbrush"], ["airbrush", "Airbrush"], ["wash", "Wash"], ["washed", "Wash"], ["shade", "Wash"],
+      ["layer", "Layer"], ["highlight", "Edge highlight"], ["highlights", "Edge highlight"], ["glaze", "Glaze"],
+      ["stipple", "Stipple"], ["sponge", "Sponge"], ["contrast", "Contrast"], ["varnish", "Varnish"], ["technical", "Technical"],
+    ];
+    // The technique a few words name (your own techniques count too), or "".
+    function techniqueFromWords(text) {
+      const key = matchKey(text);
+      if (!key) return "";
+      const own = book.techniques.find(t => matchKey(t) === key);
+      if (own) return own;
+      const hit = TECHNIQUE_WORDS.find(([w]) => w === key);
+      if (!hit) return "";
+      return book.techniques.find(t => sameText(t, hit[1])) || hit[1];
+    }
+    // Pulls technique words off the start ("drybrush in grey seer") or end ("agrax wash").
+    function splitTechnique(text) {
+      let words = String(text).trim().split(/\s+/);
+      let technique = "";
+      for (let n = Math.min(2, words.length - 1); n >= 1 && !technique; n--) {
+        const t = techniqueFromWords(words.slice(0, n).join(" "));
+        if (t) { technique = t; words = words.slice(n); }
+      }
+      if (!technique) for (let n = Math.min(2, words.length - 1); n >= 1 && !technique; n--) {
+        const t = techniqueFromWords(words.slice(-n).join(" "));
+        if (t) { technique = t; words = words.slice(0, -n); }
+      }
+      while (words.length > 1 && /^(in|with|of|then|and|on|using)$/i.test(words[0])) words.shift();
+      return { technique, rest: words.join(" ") };
+    }
+    const OPTIONAL_WORDS = /\b(optional|if required|if needed|if you want|take it or leave it)\b/i;
+    const RATIO_TEXT = /^\d+(?:\.\d+)?(?:\s*[:\/]\s*\d+(?:\.\d+)?)+$/;
+
+    // Splits on commas and semicolons that aren't inside (brackets).
+    function splitOutside(text, separators) {
+      const out = [];
+      let depth = 0, cur = "";
+      for (const ch of text) {
+        if (ch === "(") depth++;
+        if (ch === ")") depth = Math.max(0, depth - 1);
+        if (!depth && separators.includes(ch)) { out.push(cur); cur = ""; continue; }
+        cur += ch;
+      }
+      out.push(cur);
+      return out;
+    }
+
+    // Reads one paint mention with its extras: "Seraphim Sepia (take it or leave it)",
+    // "Magical crack brown (Agrellan Earth)", "Sigvald Burgundy in gaps".
+    // Returns { technique, paint: matcher result or null, note, optional, ratio, coats }.
+    function readMention(raw, hints) {
+      let text = String(raw).trim();
+      const out = { technique: "", paint: null, note: [], optional: false, ratio: "", coats: 1 };
+      // Brackets first: a ratio, a coat count, a real paint name, or a note.
+      let bracketPaint = null;
+      text = text.replace(/\(([^)]*)\)/g, (_, inner) => {
+        const t = inner.trim();
+        if (!t) return " ";
+        if (RATIO_TEXT.test(t)) { out.ratio = t.replace(/\s+/g, ""); return " "; }
+        const coats = t.match(/^(\d+)\s*(?:x|coats?)$/i);
+        if (coats) { out.coats = Number(coats[1]); return " "; }
+        const asPaint = matchPaint(t, hints);
+        if (asPaint.status === "sure") { bracketPaint = asPaint; return " "; }
+        if (/^optional$/i.test(t)) { out.optional = true; return " "; }
+        out.note.push(t);
+        if (OPTIONAL_WORDS.test(t)) out.optional = true;
+        // A technique only counts at the start: "(drybrush if required)", not "(…around the base)".
+        const first = t.split(/\s+/);
+        const tech = techniqueFromWords(first.slice(0, 2).join(" ")) || techniqueFromWords(first[0]);
+        if (tech) out.technique = tech;
+        return " ";
+      }).replace(/\s+/g, " ").trim();
+      if (/\boptional\b/i.test(text)) { out.optional = true; text = text.replace(/\boptional\b/i, "").trim(); }
+
+      // Just a technique ("Prime")? Then it's a step with no paint.
+      const onlyTechnique = techniqueFromWords(text);
+      if (onlyTechnique) { out.technique = onlyTechnique; out.note = out.note.join("; "); return out; }
+      // The whole name first, before any words are taken off it ("Contrast Medium" is a paint).
+      const whole = text && !bracketPaint ? matchPaint(text, hints) : null;
+      if (whole && (whole.status === "sure" || whole.status === "material")) { out.paint = whole; out.note = out.note.join("; "); return out; }
+      const split = splitTechnique(text);
+      if (split.technique) out.technique = split.technique;
+      // "dilute corvus", "thinned nuln": how it's applied goes in the note.
+      const how = split.rest.match(/^(dilute|diluted|thinned|thin|watered down|watered|heavily|lightly|sparingly|sparing)\s+(.+)$/i);
+      if (how) { out.note.unshift(how[1].toLowerCase()); split.rest = splitTechnique(how[2]).rest; }
+      // "Magical crack brown (Agrellan Earth)": the real name wins, the nickname becomes a note.
+      if (bracketPaint) {
+        const full = matchPaint(text, hints);
+        if (full.status !== "sure") {
+          if (split.rest) out.note.unshift(`aka ${split.rest}`);
+          out.paint = bracketPaint;
+          out.note = out.note.join("; ");
+          return out;
+        }
+      }
+      let name = split.rest;
+      if (!name) { out.note = out.note.join("; "); return out; }
+      // The whole thing first; if that isn't sure, the longest start that is ("Sigvald Burgundy in gaps").
+      let match = matchPaint(name, hints);
+      if (match.status !== "sure" && match.status !== "material") {
+        const words = name.split(" ");
+        for (let n = words.length - 1; n >= 1; n--) {
+          const head = matchPaint(words.slice(0, n).join(" "), hints);
+          if (head.status === "sure") {
+            match = head;
+            out.note.unshift(words.slice(n).join(" "));
+            break;
+          }
+        }
+      }
+      out.paint = match;
+      out.note = out.note.join("; ");
+      return out;
+    }
+
+    // Reads one "segment" of a line (between commas) into one or more steps.
+    function readSegment(segment, ctx) {
+      let text = segment.trim().replace(/^(?:\d+[.)]|[-•*])\s+/, "").trim();
+      if (!text) return [];
+      // "No basecoat", "No varnish": a remark, not a step.
+      if (/^(no|skip|don'?t)\b/i.test(text)) return [{ remark: text }];
+      // An arrow chain is one step per paint, in order.
+      const chain = text.split(/\s*(?:->|→|=>|>)\s*/).filter(Boolean);
+      if (chain.length > 1) return chain.flatMap(part => readSegment(part, ctx));
+
+      // A technique before a mix: "Contrast 1:1 Baal Red:Contrast Medium".
+      let segTechnique = "";
+      const techLead = text.match(/^([a-z' ]+?)\s+(\d.*)$/i);
+      if (techLead && techniqueFromWords(techLead[1])) { segTechnique = techniqueFromWords(techLead[1]); text = techLead[2]; }
+      // A ratio up front, with names joined by ":" or "/": "2:1 frostheart:CM".
+      let ratio = "";
+      const lead = text.match(/^(\d+(?:\.\d+)?(?:\s*[:\/]\s*\d+(?:\.\d+)?)+)\s+(.*)$/);
+      let names;
+      if (lead) {
+        ratio = lead[1].replace(/\s+/g, "");
+        const n = ratio.split(/[:\/]/).length;
+        const byColon = lead[2].split(/\s*[:\/]\s*/);
+        names = byColon.length === n ? byColon : lead[2].split(/\s*(?:\+|&|\band\b)\s*/i);
+        if (names.length === 1 && n > 1) {
+          // "Vallejo express 50/50": a brand and a mix for the next few lines.
+          const brand = brandFromText(lead[2]);
+          if (brand) { ctx.brand = brand; ctx.pendingMix = { ratio, n, paints: [] }; return []; }
+        }
+      } else {
+        // "50/50" or "2:1" at the end, and "A + B" / "A & B" for a mix.
+        const tail = text.match(/^(.*?)\s+(\d+(?:\.\d+)?(?:\s*[:\/]\s*\d+(?:\.\d+)?)+)$/);
+        if (tail) { ratio = tail[2].replace(/\s+/g, ""); text = tail[1]; }
+        const brandOnly = brandFromText(text);
+        if (brandOnly) {
+          ctx.brand = brandOnly;
+          if (ratio) ctx.pendingMix = { ratio, n: ratio.split(/[:\/]/).length, paints: [] };
+          return [];
+        }
+        names = splitOutside(text, ["+", "&"]);
+      }
+      const mentions = names.map(n => readMention(n, { brand: ctx.brand, earlier: ctx.seen }));
+      for (const m of mentions) if (m.paint && m.paint.paint) ctx.seen.push(m.paint.paint);
+      if (!ratio) ratio = mentions.map(m => m.ratio).find(Boolean) || "";
+
+      const step = (ms, r) => ({
+        technique: ms.map(m => m.technique).find(Boolean) || segTechnique,
+        coats: Math.max(...ms.map(m => m.coats)),
+        paints: ms.filter(m => m.paint).map(m => m.paint),
+        ratio: r || "",
+        note: ms.map(m => m.note).filter(Boolean).join("; "),
+        optional: ms.some(m => m.optional),
+        source: segment.trim(),
+      });
+      // "Eshin grey base + nuln" is two steps (a base coat, then a wash), not a mix.
+      if (mentions.length > 1 && !ratio) {
+        const kinds = mentions.map(m => m.technique || guessTechnique(m.paint && m.paint.paint ? [m.paint.paint] : []));
+        if (new Set(kinds).size > 1 || mentions.some(m => m.technique)) return mentions.map(m => step([m], ""));
+      }
+      return [step(mentions, mentions.length > 1 ? ratio : "")];
+    }
+
+    // Is this line a heading? Returns { name, rest, kind } or null.
+    //   "Eyes:" / "Chitin;" / "Recipe: Eyes"      -> a part
+    //   "Viorla; white prime, dilute corvus"      -> a part with steps on the same line
+    //   "Rocks = Eshin grey base + nuln"          -> a sub-part of the part above
+    //   "Scheme: Tyranids"                        -> a scheme
+    function readHeading(line) {
+      const scheme = line.match(/^(?:scheme|army|faction)\s*[:;-]\s*(.+)$/i);
+      if (scheme) return { kind: "scheme", name: scheme[1].trim(), rest: "" };
+      const recipe = line.match(/^recipe\s*[:;-]\s*(.+)$/i);
+      if (recipe) return { kind: "part", name: recipe[1].trim(), rest: "" };
+      const eq = line.match(/^([^=,()]+?)\s*=\s*(.*)$/);
+      if (eq && !techniqueFromWords(eq[1])) return { kind: "sub", name: eq[1].trim(), rest: eq[2].trim() };
+      const colon = line.match(/^([^:;,()]+?)\s*[:;]\s*(.*)$/);
+      if (colon && !RATIO_TEXT.test(colon[1]) && !/^\d/.test(colon[1]) && !techniqueFromWords(colon[1])) {
+        return { kind: "part", name: colon[1].trim(), rest: colon[2].trim() };
+      }
+      return null;
+    }
+
+    // Faction names the app knows (yours, plus the well-known ones it has colours for).
+    function knownFactionNames() {
+      const names = new Set(models.map(m => matchKey(m.faction)).filter(Boolean));
+      for (const k of Object.keys(USUAL_FACTION_COLOURS)) for (const n of k.split("|")) names.add(matchKey(n));
+      return names;
+    }
+
+    // The main reader. Returns { schemes: [{ name, parts: [{ name, notes, steps }] }] }.
+    function parseRecipeText(text) {
+      const lines = plainQuotes(String(text || "")).replace(/\r/g, "").replace(/\t/g, " ").split("\n");
+      const factions = knownFactionNames();
+      const schemes = [];
+      let scheme = null, part = null, parent = null, blanks = 2;
+      const ctx = { brand: "", pendingMix: null, seen: [] };
+      const startScheme = (name) => { scheme = { name, parts: [] }; schemes.push(scheme); part = null; parent = null; };
+      const startPart = (name, sub) => {
+        if (!scheme) startScheme("");
+        const full = sub && parent ? `${parent.name} – ${name}` : name;
+        part = scheme.parts.find(p => sameText(p.name, full));
+        if (!part) { part = { name: full, notes: [], steps: [] }; scheme.parts.push(part); }
+        if (!sub) parent = part;
+        ctx.brand = ""; ctx.pendingMix = null;
+      };
+      const addSteps = (stepText, sticky) => {
+        if (!part) startPart(WHOLE_MODEL, false);
+        // Commas and mid-line semicolons split steps. "drybrushed;" makes the rest dry brushed.
+        let technique = sticky || "";
+        const segments = splitOutside(stepText, [",", ";"]).map(s => s.trim()).filter(Boolean);
+        segments.forEach((seg, i) => {
+          const alone = techniqueFromWords(seg);
+          if (alone && i < segments.length - 1) { technique = alone; return; }
+          for (const step of readSegment(seg, ctx)) {
+            if (step.remark) { part.notes.push(step.remark); continue; }
+            if (!step.technique && technique) step.technique = technique;
+            if (!step.paints.length && !step.technique && step.note) { part.notes.push(step.note); continue; }
+            if (!step.paints.length && !step.technique) continue;
+            // "Vallejo express 50/50" then two paints: they're one mixed step.
+            const mix = ctx.pendingMix;
+            if (mix && step.paints.length === 1) {
+              if (!mix.step) { mix.step = { ...step, ratio: mix.ratio, paints: [] }; part.steps.push(mix.step); }
+              else mix.step.source += `\n${step.source}`;
+              mix.step.paints.push(step.paints[0]);
+              if (mix.step.paints.length >= mix.n) ctx.pendingMix = null;
+              continue;
+            }
+            part.steps.push(step);
+          }
+        });
+      };
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) { blanks++; continue; }
+        const afterBlanks = blanks;
+        blanks = 0;
+        if (/^notes?\s*:/i.test(line) && part) { part.notes.push(line.replace(/^notes?\s*:\s*/i, "")); continue; }
+
+        // An army or scheme name on its own line: the very first line, a known faction, or after
+        // a gap of 2+ blank lines. It mustn't read as a step ("Prime", "Leadbelcher").
+        const bare = !/[:;=,()]/.test(line) && !/\s[-–]\s/.test(line);
+        if (bare && line.split(/\s+/).length <= 5 && (factions.has(matchKey(line)) || (afterBlanks >= 2 && (!scheme || scheme.parts.length)) || !schemes.length)) {
+          const asStep = readMention(line, {});
+          const stepLike = asStep.technique || (asStep.paint && (asStep.paint.status === "sure" || asStep.paint.status === "material"));
+          if (!stepLike) { startScheme(line); continue; }
+        }
+
+        const heading = readHeading(line);
+        if (heading && heading.kind === "scheme") { startScheme(heading.name); continue; }
+        if (heading) {
+          startPart(heading.name, heading.kind === "sub");
+          if (heading.rest) addSteps(heading.rest);
+          continue;
+        }
+        // "Part - steps" or "Paint - a note".
+        const dash = line.match(/^(.+?)\s+[-–—]\s+(.+)$/);
+        if (dash) {
+          const left = readMention(dash[1], { brand: ctx.brand });
+          const leftIsPaint = left.technique || (left.paint && ["sure", "material"].includes(left.paint.status));
+          const right = readMention(splitOutside(dash[2], [","])[0], { brand: ctx.brand });
+          const rightIsPaint = right.paint && right.paint.status !== "new";
+          if (!leftIsPaint && rightIsPaint) { startPart(dash[1].trim(), false); addSteps(dash[2]); continue; }
+          if (leftIsPaint) {
+            const before = part ? part.steps.length : 0;
+            addSteps(dash[1]);
+            const added = part.steps[part.steps.length - 1];
+            if (added && part.steps.length > before) added.note = [added.note, dash[2].trim()].filter(Boolean).join("; ");
+            continue;
+          }
+        }
+        addSteps(line);
+      }
+      // Group labels with nothing under them ("Misc:", "Slapchops:") are dropped.
+      for (const s of schemes) s.parts = s.parts.filter(p => p.steps.length || p.notes.length);
+      return { schemes: schemes.filter(s => s.parts.length) };
+    }
+
+    // Every paint mention that needs your answer, grouped by what was typed ("CM" once, not 3 times).
+    function unsureMentions(parsed) {
+      const groups = new Map();
+      for (const s of parsed.schemes) for (const p of s.parts) for (const step of p.steps) for (const m of step.paints) {
+        if (m.status !== "unsure") continue;
+        const key = matchKey(m.typed);
+        if (!groups.has(key)) groups.set(key, { key, typed: m.typed, suggestions: m.suggestions.slice(), count: 0, choice: null });
+        const g = groups.get(key);
+        g.count++;
+        for (const sug of m.suggestions) if (!g.suggestions.some(x => sameText(x.name, sug.name))) g.suggestions.push(sug);
+      }
+      return [...groups.values()];
+    }
+
+    // ================= v16: COPY AS TEXT =================
+    // Writes a recipe (or a whole scheme) in the same format Paste recipes reads, so it can be
+    // shared (e.g. on Reddit) and pasted straight back in.
+    function stepToText(step) {
+      const paints = step.paints.map(sp => ({ sp, p: paintById(sp.paint) })).filter(x => x.p);
+      const nameOf = (p) => {
+        const known = KNOWN_PAINTS.find(k => sameText(k.name, p.name));
+        return p.brand && !(known && sameText(known.brand, p.brand)) && !isMaterial(p) ? `${p.brand} ${p.name}` : p.name;
+      };
+      let body;
+      if (paints.length > 1) {
+        let ratio = step.ratio;
+        if (!ratio && paints.every(x => x.sp.mix !== null) && !isEvenSplit(paints.map(x => ({ mix: x.sp.mix })))) ratio = paints.map(x => x.sp.mix).join(":");
+        body = ratio ? `${ratio} ${paints.map(x => nameOf(x.p)).join(":")}` : paints.map(x => nameOf(x.p)).join(" + ");
+      } else body = paints.length ? nameOf(paints[0].p) : "";
+      const extras = [];
+      if (step.coats > 1) extras.push(`${step.coats} coats`);
+      if (step.note) extras.push(step.note.replace(/[()]/g, ""));
+      if (step.optional) extras.push("optional");
+      return [step.technique, body].filter(Boolean).join(" ") + extras.map(e => ` (${e})`).join("");
+    }
+    function recipeToText(recipe, heading) {
+      const lines = [`${heading || recipe.name}:`];
+      for (const step of recipe.steps) lines.push(stepToText(step));
+      if (recipe.notes && recipe.notes.trim()) lines.push(`Notes: ${recipe.notes.trim().replace(/\n+/g, " ")}`);
+      return lines.join("\n");
+    }
+    function schemeToText(scheme) {
+      return [`Scheme: ${scheme.name}`, ...schemeRecipes(scheme).map(r => recipeToText(r))].join("\n\n");
     }
 
     let book = loadRecipes();
@@ -1591,7 +2185,14 @@
       // "Whole model" always comes first.
       const whole = parts.findIndex(p => sameText(p, WHOLE_MODEL));
       if (whole > 0) parts.unshift(...parts.splice(whole, 1));
-      return { parts, techniques, paints, recipes, schemes, v15: true };
+      // v16: shorthand you've confirmed ("cm" = Contrast Medium). Empty for older books.
+      const shorthand = {};
+      if (src.shorthand && typeof src.shorthand === "object" && !Array.isArray(src.shorthand)) {
+        for (const [k, v] of Object.entries(src.shorthand)) {
+          if (k && v && typeof v.name === "string" && v.name.trim()) shorthand[k] = { brand: String(v.brand || ""), name: v.name.trim() };
+        }
+      }
+      return { parts, techniques, paints, recipes, schemes, shorthand, v15: true };
     }
 
     // localStorage only holds text, so we turn the list into text (JSON) to save it,
@@ -3957,7 +4558,7 @@
     function pruneUnusedPaints() {
       const used = new Set();
       for (const r of book.recipes) for (const s of r.steps) for (const sp of s.paints) used.add(sp.paint);
-      book.paints = book.paints.filter(p => used.has(p.id));
+      book.paints = book.paints.filter(p => used.has(p.id) || p.owned === true);   // v16: paints added by scan stay
     }
 
     // Finds a paint by brand and name (ignoring capitals), or adds it. Its colour is updated.
@@ -4015,6 +4616,13 @@
 
     function renderRecipes() {
       if (openRecipeId !== null && !recipeById(openRecipeId)) openRecipeId = null;
+      // v16: Paste recipes fills the screen while it's open.
+      importPage.classList.toggle("hidden", !importDraft);
+      if (importDraft) {
+        for (const el of [recipeSeg, recipeHome, paletteView, schemeView, recipePage]) el.classList.add("hidden");
+        renderImport();
+        return;
+      }
       const onPage = !!recipeDraft || openRecipeId !== null;
       const onPalette = !onPage && settings.recipeView === "palette";
       const onSchemes = !onPage && settings.recipeView === "schemes";
@@ -4276,7 +4884,12 @@
       del.className = "danger-button";
       del.textContent = "Delete";
       del.addEventListener("click", () => deleteRecipe(recipe.id));
-      buttons.append(edit, copy, del);
+      // v16: the recipe as text, in the format Paste recipes reads back.
+      const asText = document.createElement("button");
+      asText.className = "plain-button";
+      asText.textContent = "Copy as text";
+      asText.addEventListener("click", () => copyText(recipeToText(recipe), "Recipe"));
+      buttons.append(edit, copy, asText, del);
       recipePage.appendChild(buttons);
     }
 
@@ -4401,6 +5014,14 @@
         edit.setAttribute("aria-label", `Edit ${scheme.name}`);
         edit.addEventListener("click", () => startScheme(scheme));
         buttons.appendChild(edit);
+        if (recipes.length) {   // v16
+          const asText = document.createElement("button");
+          asText.className = "plain-button";
+          asText.textContent = "Copy as text";
+          asText.setAttribute("aria-label", `Copy ${scheme.name} as text`);
+          asText.addEventListener("click", () => copyText(schemeToText(scheme), "Scheme"));
+          buttons.appendChild(asText);
+        }
 
         card.append(name, meta, chips, status, buttons);
         item.appendChild(card);
@@ -5155,6 +5776,439 @@
       showToast(`Saved ${name}`);
     }
 
+
+    // ================= v16: PASTE RECIPES (the preview and saving) =================
+    // importDraft: null, or { text, parsed, groups, names } while Paste recipes is open.
+    const importPage = document.getElementById("import-page");
+    let importDraft = null;
+
+    function startImport() {
+      if (!okToLeaveDraft()) return;
+      recipeDraft = null;
+      openRecipeId = null;
+      importDraft = { text: "", parsed: null, groups: [], names: [] };
+      renderRecipes();
+      showTab("recipes");
+      window.scrollTo(0, 0);
+    }
+    function closeImport(askFirst) {
+      if (askFirst && importDraft && importDraft.text.trim() && !confirm("Leave without saving these recipes?")) return;
+      importDraft = null;
+      renderRecipes();
+      window.scrollTo(0, 0);
+    }
+    document.getElementById("paste-recipes").addEventListener("click", startImport);
+    document.getElementById("paste-recipes-schemes").addEventListener("click", startImport);
+
+    function readImportText() {
+      const d = importDraft;
+      d.parsed = parseRecipeText(d.text);
+      d.groups = unsureMentions(d.parsed);
+      d.names = d.parsed.schemes.map(s => s.name || "Imported recipes");
+      renderImport();
+    }
+
+    // What a mention ends up as: the matched paint, or your answer for an unsure one.
+    function importPaintFor(mention) {
+      if (mention.status !== "unsure") return mention.paint;
+      const g = importDraft.groups.find(x => x.key === matchKey(mention.typed));
+      return g && g.choice ? g.choice.paint : null;
+    }
+    const importCount = (d) => d.parsed ? d.parsed.schemes.reduce((n, s) => n + s.parts.length, 0) : 0;
+
+    function renderImport() {
+      const d = importDraft;
+      importPage.innerHTML = "";
+      const back = document.createElement("button");
+      back.className = "link-button";
+      back.textContent = "← Back";
+      back.addEventListener("click", () => closeImport(true));
+      importPage.appendChild(back);
+
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `<h2>Paste recipes</h2>
+        <p class="hint">Paste your notes (from Google Keep, Reddit, anywhere). Put each part on its own line ending in a colon,
+        like <b>Eyes:</b>, then one step per line, or several split by commas. Mixes like <b>2:1 Baal:CM</b> or <b>50/50</b> work too.
+        You'll see a preview before anything is saved.</p>`;
+      const box = document.createElement("textarea");
+      box.id = "import-text";
+      box.rows = 8;
+      box.style.width = "100%";
+      box.placeholder = "Tyranids\n\nChitin:\nLuxion purple\nGenestealer purple (drybrush)\n\nTeeth:\nWraithbone, Agrax";
+      box.setAttribute("aria-label", "Recipe notes to paste");
+      box.value = d.text;
+      box.addEventListener("input", () => { d.text = box.value; });
+      const read = document.createElement("button");
+      read.className = "primary-button";
+      read.style.width = "100%";
+      read.style.marginTop = "10px";
+      read.textContent = d.parsed ? "Read again" : "Read notes";
+      read.addEventListener("click", readImportText);
+      card.append(box, read);
+      importPage.appendChild(card);
+      if (!d.parsed) return;
+      if (!d.parsed.schemes.length) {
+        card.insertAdjacentHTML("beforeend", '<p class="hint" style="margin: 12px 0 0;">No recipes found in that text.</p>');
+        return;
+      }
+
+      // 1. The paints it wasn't sure about. Nothing is picked for you.
+      const left = d.groups.filter(g => !g.choice).length;
+      if (d.groups.length) {
+        const check = document.createElement("div");
+        check.className = "card import-check";
+        check.innerHTML = `<h2>Check ${plural(d.groups.length, "paint")}</h2>
+          <p class="hint">Not sure what these are, so it's asking rather than guessing. Pick one each.
+          Your answers are remembered, so next time they're matched straight away.</p>`;
+        for (const g of d.groups) {
+          const row = document.createElement("div");
+          row.className = "import-ask" + (g.choice ? " answered" : "");
+          const label = document.createElement("div");
+          label.className = "import-typed";
+          label.textContent = `“${g.typed}”` + (g.count > 1 ? ` (${g.count} times)` : "");
+          const chips = document.createElement("div");
+          chips.className = "chips";
+          chips.style.marginTop = "6px";
+          const choose = (kind, paint) => { g.choice = { kind, paint }; renderImport(); };
+          const pressed = (kind, name) => !!g.choice && g.choice.kind === kind && (!name || sameText(g.choice.paint.name, name));
+          for (const s of g.suggestions) chips.appendChild(makeChip(s.name, pressed("pick", s.name), () => choose("pick", s)));
+          chips.appendChild(makeChip(`Keep “${tidyName(g.typed)}”`, pressed("keep"), () => choose("keep", { brand: "", name: tidyName(g.typed), colour: DEFAULT_PAINT_COLOUR })));
+          chips.appendChild(makeChip("Basing material", pressed("material"), () => choose("material", { brand: "", name: tidyName(g.typed), colour: DEFAULT_PAINT_COLOUR, type: "material" })));
+          const other = makeChip(g.choice && g.choice.kind === "other" ? `Other: ${g.choice.paint.name}` : "Other…", pressed("other"), () => {
+            const typed = (prompt(`What is “${g.typed}”? Type the paint's name:`) || "").trim();
+            if (!typed) return;
+            const m = matchPaint(typed);
+            const paint = m.paint || (m.suggestions[0] && sameText(matchKey(m.suggestions[0].name), matchKey(typed)) ? m.suggestions[0] : null)
+                          || { brand: "", name: tidyName(typed), colour: DEFAULT_PAINT_COLOUR };
+            choose("other", paint);
+          });
+          chips.appendChild(other);
+          row.append(label, chips);
+          check.appendChild(row);
+        }
+        importPage.appendChild(check);
+      }
+
+      // 2. The preview: each scheme, its parts and their steps.
+      d.parsed.schemes.forEach((scheme, si) => {
+        const sc = document.createElement("div");
+        sc.className = "card";
+        const nameLabel = document.createElement("label");
+        nameLabel.className = "hint";
+        nameLabel.style.display = "grid";
+        nameLabel.style.gap = "4px";
+        nameLabel.textContent = "Scheme name";
+        const nameBox = document.createElement("input");
+        nameBox.value = d.names[si];
+        nameBox.style.width = "100%";
+        nameBox.setAttribute("aria-label", `Scheme ${si + 1} name`);
+        nameBox.addEventListener("input", () => { d.names[si] = nameBox.value; });
+        nameLabel.appendChild(nameBox);
+        sc.appendChild(nameLabel);
+        for (const part of scheme.parts) {
+          const head = document.createElement("div");
+          head.className = "import-part";
+          head.textContent = part.name;
+          sc.appendChild(head);
+          if (part.notes.length) {
+            const n = document.createElement("p");
+            n.className = "step-note";
+            n.textContent = part.notes.join(" · ");
+            sc.appendChild(n);
+          }
+          const ol = document.createElement("ol");
+          ol.className = "import-steps";
+          for (const step of part.steps) {
+            const li = document.createElement("li");
+            if (step.optional) li.classList.add("optional-step");
+            const paints = step.paints.map(importPaintFor);
+            const tech = document.createElement("span");
+            tech.className = "import-tech";
+            tech.textContent = step.technique || `${guessTechnique(paints.filter(Boolean)) || "Step"} (auto)`;
+            li.appendChild(tech);
+            step.paints.forEach((m, i) => {
+              if (i) li.append(" + ");
+              const span = document.createElement("span");
+              const paint = paints[i];
+              if (m.status === "unsure") {
+                span.className = paint ? "import-paint resolved" : "import-paint unsure";
+                span.textContent = paint ? `${m.typed} → ${paint.name}` : `${m.typed}?`;
+              } else {
+                span.className = "import-paint" + (m.status === "new" ? " is-new" : "");
+                span.textContent = paint.name + (m.status === "new" ? " (new)" : "");
+              }
+              li.appendChild(span);
+            });
+            const extra = [step.ratio ? `mix ${step.ratio}` : "", step.coats > 1 ? coatsText(step.coats) : "",
+                           step.optional ? "(optional)" : ""].filter(Boolean).join(" · ");
+            if (extra) { const s = document.createElement("small"); s.textContent = ` · ${extra}`; li.appendChild(s); }
+            if (step.note) { const n = document.createElement("div"); n.className = "step-note"; n.textContent = step.note; li.appendChild(n); }
+            ol.appendChild(li);
+          }
+          sc.appendChild(ol);
+        }
+        importPage.appendChild(sc);
+      });
+
+      const save = document.createElement("button");
+      save.className = "primary-button";
+      save.id = "import-save";
+      save.style.width = "100%";
+      save.disabled = left > 0;
+      save.textContent = left ? `Pick ${plural(left, "more paint")} first` : `Save ${plural(importCount(d), "recipe")}`;
+      save.addEventListener("click", saveImport);
+      importPage.appendChild(save);
+    }
+
+    function saveImport() {
+      const d = importDraft;
+      if (!d || !d.parsed || d.groups.some(g => !g.choice)) return;
+      const before = JSON.stringify(book);
+      for (const g of d.groups) if (g.choice.kind === "pick" || g.choice.kind === "other") rememberShorthand(g.typed, g.choice.paint);
+      let recipeCount = 0;
+      const made = [];
+      d.parsed.schemes.forEach((s, si) => {
+        const schemeName = (d.names[si] || "").trim() || "Imported recipes";
+        const ids = [];
+        for (const part of s.parts) {
+          const steps = part.steps.map(step => {
+            const paints = step.paints.map(importPaintFor).filter(Boolean).map(p => {
+              const paint = findOrAddPaint(p.brand || "", p.name, p.colour || DEFAULT_PAINT_COLOUR);
+              if (p.type === "material") paint.type = "material";
+              return paint;
+            });
+            const ratio = paints.length > 1 && ratioPercents(step.ratio, paints.length) ? cleanRatio(step.ratio) : "";
+            const mixes = paints.length > 1 ? (ratioPercents(ratio, paints.length) || evenSplit(paints.length)) : [100];
+            return { technique: step.technique, coats: cleanCount(step.coats), ratio, note: step.note || "", optional: !!step.optional,
+                     paints: paints.map((p, i) => ({ paint: p.id, mix: mixes[i] })) };
+          });
+          const existingPart = book.parts.find(p => sameText(p, part.name) || sameText(p + "s", part.name) || sameText(p, part.name + "s"));
+          let name = part.name;
+          if (book.recipes.some(r => sameText(r.name, name))) name = `${part.name} (${schemeName})`;
+          const recipe = { id: Math.max(0, ...book.recipes.map(r => r.id)) + 1, name, part: existingPart || part.name,
+                           notes: part.notes.join("\n"), steps };
+          book.recipes.push(recipe);
+          ids.push(recipe.id);
+          recipeCount++;
+        }
+        const faction = (models.find(m => sameText(m.faction, schemeName)) || {}).faction || schemeName;
+        book.schemes.push({ id: Math.max(0, ...book.schemes.map(x => x.id)) + 1, name: schemeName, faction, auto: true, recipes: ids });
+        made.push(schemeName);
+      });
+      importDraft = null;
+      settings.recipeView = "schemes";
+      saveSettings();
+      render();
+      window.scrollTo(0, 0);
+      showToast(`Saved ${plural(made.length, "scheme")} with ${plural(recipeCount, "recipe")}`, () => {
+        book = cleanRecipeBook(JSON.parse(before));
+        render();
+      });
+    }
+
+    // ================= v16: COPY AS TEXT (the button) =================
+    function copyText(text, what) {
+      const done = () => showToast(`${what} copied. Paste it anywhere, or back into Paste recipes.`);
+      const fallback = () => {
+        const area = document.createElement("textarea");
+        area.value = text;
+        area.style.position = "fixed";
+        area.style.opacity = "0";
+        document.body.appendChild(area);
+        area.select();
+        let ok = false;
+        try { ok = document.execCommand("copy"); } catch (ignored) {}
+        area.remove();
+        if (ok) done(); else prompt("Copy this text:", text);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
+      else fallback();
+    }
+
+    // ================= v16: "LAST BACKED UP" =================
+    function renderBackupAge() {
+      const el = document.getElementById("backup-age");
+      if (!el) return;
+      const last = settings.lastBackup;
+      const days = last ? daysSince(last) : Infinity;
+      el.textContent = !last ? "Last backed up: never. Save a backup now and then, in case your phone clears the app's data."
+        : `Last backed up: ${days < 1 ? "today" : days < 2 ? "yesterday" : `${Math.floor(days)} days ago`} (${shortDate(last)}).`;
+      el.classList.toggle("backup-old", days >= 7);
+    }
+
+    // ================= v16: SCAN A PAINT POT =================
+    // Reads the label on the phone itself with Tesseract.js (free, no AI service). The first
+    // scan downloads the reader (a few MB); after that it works offline. The matcher then
+    // SUGGESTS paints and you pick one. Nothing is added until you say so.
+    const TESSERACT_URL = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+    let ocrWorker = null;
+    function loadTesseract() {
+      if (window.Tesseract) return Promise.resolve();
+      return new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = TESSERACT_URL;
+        s.onload = resolve;
+        s.onerror = () => reject(new Error("Couldn't download the label reader. Check your internet for the first scan."));
+        document.head.appendChild(s);
+      });
+    }
+    async function readLabel(file, onStatus) {
+      onStatus("Getting the label reader ready (the first time downloads a few MB)…");
+      await loadTesseract();
+      if (!ocrWorker) ocrWorker = await Tesseract.createWorker("eng");
+      onStatus("Reading the label…");
+      // Shrink and boost the contrast: labels are small and shiny.
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(bitmap.width * scale);
+      canvas.height = Math.round(bitmap.height * scale);
+      const g = canvas.getContext("2d");
+      g.filter = "grayscale(1) contrast(1.6)";
+      g.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      const { data } = await ocrWorker.recognize(canvas);
+      return data.text || "";
+    }
+
+    // Label text to paint suggestions. Words printed on every pot (brand, BASE, 12ml...) are ignored.
+    const LABEL_NOISE = /\b(citadel|colour|color|games|workshop|warhammer|base|layer|shade|contrast|technical|dry|air|spray|acrylic|paint|ml|\d+\s*ml|non[- ]?toxic|made in|vallejo|xpress|game|model|army|painter|speedpaint|warpaints?|fanatic)\b/gi;
+    function suggestFromLabel(text) {
+      const lines = plainQuotes(text).split("\n").map(l => l.replace(LABEL_NOISE, " ").replace(/[^A-Za-z' -]+/g, " ").replace(/\s+/g, " ").trim())
+        .filter(l => l.replace(/[^a-z]/gi, "").length >= 3);
+      const tries = [];
+      lines.forEach((l, i) => { tries.push(l); if (lines[i + 1]) tries.push(`${l} ${lines[i + 1]}`); });
+      const sure = [], maybe = [];
+      for (const t of tries) {
+        const m = matchPaint(t);
+        if (m.status === "sure") sure.push(m.paint);
+        else if (m.status === "unsure") maybe.push(...m.suggestions);
+      }
+      const out = [];
+      for (const p of [...sure, ...maybe]) if (p && !out.some(o => sameText(o.name, p.name))) out.push(p);
+      return { lines, suggestions: out.slice(0, 4) };
+    }
+
+    // scanState: { status, read, suggestions, chosen } while the scan panel is open.
+    let scanState = null;
+    const scanPanel = document.getElementById("scan-panel");
+    document.getElementById("scan-button").addEventListener("click", () => {
+      scanState = scanState ? null : { status: "", read: "", suggestions: [], chosen: null, typed: "" };
+      renderScan();
+    });
+
+    function renderScan() {
+      scanPanel.classList.toggle("hidden", !scanState);
+      scanPanel.innerHTML = "";
+      if (!scanState) return;
+      const st = scanState;
+      const intro = document.createElement("p");
+      intro.className = "hint";
+      intro.textContent = "Take a photo of the pot's label, straight on and close up. The app suggests a paint and you pick it. You can also just type the name.";
+      const photo = document.createElement("input");
+      photo.type = "file";
+      photo.accept = "image/*";
+      photo.setAttribute("capture", "environment");
+      photo.id = "scan-photo";
+      photo.className = "hidden";
+      const take = document.createElement("button");
+      take.className = "primary-button";
+      take.style.width = "100%";
+      take.textContent = "📷 Take or choose a photo";
+      take.addEventListener("click", () => photo.click());
+      photo.addEventListener("change", async () => {
+        const file = photo.files && photo.files[0];
+        if (!file) return;
+        st.chosen = null;
+        try {
+          const text = await readLabel(file, (msg) => { st.status = msg; renderScan(); });
+          const found = suggestFromLabel(text);
+          st.read = found.lines.join(" / ");
+          st.suggestions = found.suggestions;
+          st.status = found.suggestions.length ? "Is it one of these?" : "Couldn't match the label. Try a closer, straighter photo, or type the name below.";
+        } catch (error) {
+          st.status = error.message || "Couldn't read the photo.";
+        }
+        renderScan();
+      });
+
+      const typed = document.createElement("input");
+      typed.placeholder = "Or type a paint name, e.g. Macragge Blue";
+      typed.setAttribute("aria-label", "Paint name");
+      typed.id = "scan-typed";
+      typed.value = st.typed;
+      typed.style.marginTop = "10px";
+      typed.style.width = "100%";
+      typed.addEventListener("change", () => {
+        st.typed = typed.value;
+        const m = matchPaint(typed.value);
+        st.chosen = null;
+        st.read = "";
+        st.suggestions = m.status === "sure" || m.status === "material" ? [m.paint] : m.suggestions.slice();
+        if (m.status === "new") st.suggestions = [m.paint];
+        st.status = !typed.value.trim() ? "" : st.suggestions.length ? "Is it one of these?" : "No match. Check the spelling.";
+        renderScan();
+      });
+      scanPanel.append(intro, take, photo, typed);
+
+      if (st.status) {
+        const s = document.createElement("p");
+        s.className = "hint";
+        s.id = "scan-status";
+        s.style.margin = "10px 0 0";
+        s.textContent = st.status + (st.read ? ` (read: “${st.read}”)` : "");
+        scanPanel.appendChild(s);
+      }
+      if (st.suggestions.length) {
+        const chips = document.createElement("div");
+        chips.className = "chips";
+        for (const p of st.suggestions) {
+          chips.appendChild(makeChip(p.name + (p.brand ? ` · ${p.brand}` : ""), !!st.chosen && sameText(st.chosen.name, p.name), () => {
+            st.chosen = p;
+            if (st.typed && st.typed.trim() && !sameText(st.typed, p.name)) rememberShorthand(st.typed, p);
+            renderScan();
+          }));
+        }
+        scanPanel.appendChild(chips);
+      }
+      if (st.chosen) {
+        const p = st.chosen;
+        const mine = book.paints.find(x => sameText(x.name, p.name) && (!p.brand || !x.brand || sameText(x.brand, p.brand)));
+        const box = document.createElement("div");
+        box.className = "scan-result";
+        box.id = "scan-result";
+        const head = document.createElement("div");
+        head.className = "paint-line";
+        head.append(makeSwatch(mine ? mine.colour : p.colour || DEFAULT_PAINT_COLOUR), p.name);
+        const verdict = document.createElement("p");
+        verdict.className = "hint";
+        verdict.style.margin = "6px 0 10px";
+        const used = mine ? recipesUsingPaint(mine.id).length : 0;
+        verdict.textContent = mine
+          ? `✓ Already in your palette${used ? `, used in ${plural(used, "recipe")}` : ""}.`
+          : "Not in your palette yet.";
+        box.append(head, verdict);
+        if (!mine) {
+          const add = document.createElement("button");
+          add.className = "primary-button";
+          add.style.width = "100%";
+          add.textContent = "Add to my palette";
+          add.addEventListener("click", () => {
+            const paint = findOrAddPaint(p.brand || "", p.name, p.colour || DEFAULT_PAINT_COLOUR);
+            paint.owned = true;
+            if (p.type === "material") paint.type = "material";
+            save();
+            st.chosen = { ...p };
+            renderPalette();
+            renderScan();
+            showToast(`Added ${p.name} to your palette`);
+          });
+          box.appendChild(add);
+        }
+        scanPanel.appendChild(box);
+      }
+    }
+
     // ================= SETTINGS TAB =================
 
     // ----- Stage editor -----
@@ -5376,6 +6430,7 @@
         (settings.lastBackup ? `Last backup: ${shortDate(settings.lastBackup)}.` : "No backup saved yet.") +
         (photos ? (settings.lastFullBackup ? ` Last backup with photos: ${shortDate(settings.lastFullBackup)}.` : " Your photos haven't been backed up yet.") : "");
       dataSummary.textContent = summary;
+      renderBackupAge();   // v16
       // v14: say whether the browser has promised to keep the data.
       if (navigator.storage && navigator.storage.persisted) {
         navigator.storage.persisted().then(kept => {
@@ -6371,10 +7426,18 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v15";
+    const APP_VERSION = "v16";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v16", date: "9 Oct 2026", changes: [
+        "Paste recipes: paste your painting notes (e.g. from Google Keep) and the app turns them into a scheme, with one recipe per part. You see a preview first, and nothing is saved until you press Save.",
+        "It reads parts ending in : or ; , steps one per line or split by commas, arrows (A -> B), numbered lists, mixes like 2:1 Baal:CM or 50/50, and notes in (brackets).",
+        "Paint names are matched for you, ignoring capitals and small typos. If it isn't sure (like \"CM\"), it asks you instead of guessing, and remembers your answer for next time.",
+        "Copy as text: on a recipe or a scheme. It copies in the same format, so you can share it (e.g. on Reddit) and paste it straight back in.",
+        "Scan a paint pot (Your Palette): take a photo of the label and the app suggests the paint, then tells you if you already have it, or adds it. It reads the label on your phone, free. The first scan downloads the reader; after that it works offline.",
+        "Settings shows when you last saved a backup. The app now knows the names and colours of the Citadel range, so they're suggested as you type.",
+      ]},
       { version: "v15", date: "9 Oct 2026", changes: [
         "Technique can be left on Auto: the app guesses it from the step's paints (shade = Wash, Contrast = Contrast, 'Ardcoat = Varnish, otherwise Layer). Pick one yourself any time.",
         "New \"Whole model\" part, always listed first, for priming, base coats and all-over dry brushes. New techniques: Technical, Texture and Varnish.",
