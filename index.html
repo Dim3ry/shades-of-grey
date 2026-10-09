@@ -599,6 +599,12 @@
     .step-head { display: flex; align-items: center; gap: 6px; }
     .step-head strong { flex: 1; }
     .step-edit .row { grid-template-columns: 1fr 88px; }
+    /* v15: a step's note and "optional" tick, and the mix ratio box. */
+    .step-edit .row.step-extra { grid-template-columns: 1fr auto; }
+    .step-edit .check-label { display: flex; align-items: center; gap: 8px; align-self: end; min-height: 46px; color: var(--text); font-size: 15px; }
+    .step-edit .check-label input { width: 22px; height: 22px; }
+    .recipe-steps li.optional-step { opacity: 0.6; }
+    .step-note { margin: 4px 0 0; color: var(--muted); font-size: 14px; font-style: italic; }
     /* One paint: colour, name and ✕ on top; brand and mix % underneath. */
     .paint-edit {
       display: grid; gap: 6px; padding: 8px; border: 1px solid var(--border); border-radius: 8px;
@@ -929,8 +935,12 @@
           <ul>
             <li>A recipe is how you paint one part, like armour, eyes or trim. Press <strong>Recipes → + New recipe</strong>.</li>
             <li>Add steps in the order you paint them. Each step has a technique (base coat, wash, dry brush…), the number of coats, and one or more paints.</li>
+            <li>Not sure what to call a technique? Leave it on <strong>Auto</strong> and the app guesses from the paints: a shade becomes Wash, a Contrast paint becomes Contrast, 'Ardcoat becomes Varnish, and so on. You can always pick one yourself.</li>
+            <li>Use the <strong>Whole model</strong> part for steps done all over the model, like priming, base coats and an all-over dry brush.</li>
+            <li>Each step can have a short <strong>note</strong> (e.g. "heavier on the top") and an <strong>Optional</strong> tick for steps you sometimes skip. Optional steps show faded.</li>
+            <li>Basing materials like rocks, sand, snow and static grass can go in a step too. They're listed in Your Palette as basing materials and kept out of the colour sort.</li>
             <li>For each paint, type its name and brand and tap the colour circle to pick roughly what it looks like. Paints you've used before are suggested as you type.</li>
-            <li>Mixing paints? Add more than one paint to a step and set each one's <strong>mix %</strong>, e.g. 70% and 30%.</li>
+            <li>Mixing paints? Add more than one paint to a step and type a <strong>mix ratio</strong> like 2:1, 1:1:2 or 50/50 (in the same order as the paints). The %s are worked out for you, or you can set each one's <strong>mix %</strong> yourself. Contrast Medium and Lahmian Medium are suggested as you type.</li>
             <li>Reorder steps with <strong>↑ ↓</strong>. Nothing is saved until you press <strong>Save recipe</strong>.</li>
             <li>Link a recipe to units from the recipe (<strong>Used on</strong>) or from a unit's details. Linked recipes show as buttons on the unit's card: tap one to open it.</li>
             <li><strong>Your Palette</strong> (top of the Recipes tab) lists every paint in your recipes, once each. It fills itself in: add a paint to a recipe and it appears.</li>
@@ -1395,13 +1405,90 @@
     //               "paint" is a paint's id; "mix" is its share in % (null if not given).
     // A unit lists the recipes it uses in unit.recipes, a list of recipe ids.
     const RECIPES_KEY = "shades-of-grey-recipes";
-    const DEFAULT_PARTS = ["Armour", "Cloth", "Skin", "Metal", "Trim", "Eyes", "Lenses",
+    // v15: "Whole model" is for steps done all over (prime, base coat, zenithal, all-over dry
+    // brush). It is always listed first.
+    const WHOLE_MODEL = "Whole model";
+    const DEFAULT_PARTS = [WHOLE_MODEL, "Armour", "Cloth", "Skin", "Metal", "Trim", "Eyes", "Lenses",
                            "Weapons", "Leather", "Gems", "Base"];
+    const V15_TECHNIQUES = ["Technical", "Texture", "Varnish"];
     const DEFAULT_TECHNIQUES = ["Prime", "Base coat", "Contrast", "Layer", "Wash", "Shade", "Glaze",
-                                "Dry brush", "Edge highlight", "Wet blend", "Stipple", "Sponge", "Airbrush"];
+                                "Dry brush", "Edge highlight", "Wet blend", "Stipple", "Sponge", "Airbrush",
+                                ...V15_TECHNIQUES];
     const COMMON_BRANDS = ["Citadel", "Vallejo", "The Army Painter", "Pro Acryl", "AK Interactive",
                            "Scale75", "Two Thin Coats", "Green Stuff World", "Monument Hobbies"];
     const DEFAULT_PAINT_COLOUR = "#808080";
+
+    // v15: paints the app knows before you've used them, suggested as you type.
+    const KNOWN_PAINTS = [
+      { brand: "Citadel", name: "Contrast Medium", colour: "#e6e6e6" },
+      { brand: "Citadel", name: "Lahmian Medium", colour: "#eeeeee" },
+    ];
+
+    // v15: basing materials (rocks, sand, static grass, snow...) aren't paints, but a step can
+    // use one. They're kept in the paint list with type "material", so they can sit in a step,
+    // but they stay out of colour sorting. Spotted from the name when first added.
+    const MATERIAL_WORDS = /(^|[\s-])(rocks?|stones?|pebbles?|gravel|sand|grit|slate|cork|ballast|flock|static grass|grass tufts?|tufts?|leaf litter|texture paste|paste|snow|basing)($|[\s-])/i;
+    function isMaterial(paint) {
+      if (!paint) return false;
+      if (paint.type) return paint.type === "material";
+      return MATERIAL_WORDS.test(String(paint.name || ""));
+    }
+
+    // v15: leave a step's technique blank and the app guesses it from the step's paints.
+    // Checked top to bottom, first match wins. Each word must start a word in the paint's
+    // brand or name ("ink" matches "Sepia Ink" but not "Pink Horror"). Otherwise: Layer.
+    const GUESS_RULES = [
+      ["Varnish", ["ardcoat", "stormshield", "varnish", "gloss", "anti-shine", "matt spray", "satin"]],
+      ["Prime", ["primer", "prime", "spray"]],
+      ["Texture", ["agrellan", "astrogranite", "armageddon dust", "stirland", "martian iron", "mordant earth",
+                   "valhallan blizzard", "lustrian undergrowth", "texture"]],
+      ["Contrast", ["contrast", "speedpaint", "xpress", "express", "templar", "blood angels", "snakebite",
+                    "gore-grunta", "leviadon", "iyanden", "skeleton horde", "wyldwood", "apothecary white",
+                    "aethermatic", "ultramarines blue", "flesh tearers", "basilicanum", "gryph-", "magos",
+                    "space wolves grey", "talassar", "terradon", "volupus", "warp lightning", "militarum green",
+                    "guilliman flesh", "darkoath", "cygor", "aggaros", "plaguebearer flesh", "nazdreg",
+                    "ork flesh", "dark angels green", "akhelian", "shyish", "creed camo", "frostheart",
+                    "baal red", "luxion", "pylar", "mantis warriors", "doomfire", "fyreslayer", "imperial fist",
+                    "kroxigor", "black legion", "wraithbone contrast"]],
+      ["Wash", ["shade", "wash", "ink", "quickshade", "dip", "nuln", "agrax", "earthshade", "carroburg",
+                "drakenhof", "nightshade", "seraphim", "sepia", "druchii", "coelia", "greenshade", "athonian",
+                "camoshade", "reikland", "fleshshade", "casandora", "fuegan", "berserker", "bloodshade",
+                "cryptek", "armourshade", "targor", "rageshade", "poxwalker"]],
+      ["Technical", ["technical", "nurgle", "typhus", "ryza rust", "nihilakh", "blood for the blood god",
+                     "tesseract", "spiritstone", "soulstone", "waystone", "hexwraith", "mortarion"]],
+    ];
+    function guessTechnique(paints) {
+      const named = (paints || []).filter(p => p && String(p.name || "").trim());
+      if (!named.length) return "";
+      if (named.every(isMaterial)) return "Texture";
+      const texts = named.map(p => plainQuotes(`${p.brand || ""} ${p.name}`).toLowerCase());
+      const starts = (text, word) => new RegExp("(^|[^a-z])" + word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).test(text);
+      for (const [technique, words] of GUESS_RULES) {
+        if (texts.some(t => words.some(w => starts(t, w)))) return technique;
+      }
+      return "Layer";
+    }
+
+    // v15: a mix ratio like "2:1", "1:1:2" or "50/50", kept as typed. "" if it isn't one.
+    function cleanRatio(value) {
+      const t = String(value ?? "").trim().replace(/\s+/g, "");
+      return /^\d+(\.\d+)?([:\/]\d+(\.\d+)?)+$/.test(t) ? t : "";
+    }
+    // The %s a ratio works out as, for n paints (e.g. "2:1" = 67, 33). Null if it doesn't fit.
+    function ratioPercents(ratio, n) {
+      const t = cleanRatio(ratio);
+      if (!t) return null;
+      const nums = t.split(/[:\/]/).map(Number);
+      const total = nums.reduce((a, b) => a + b, 0);
+      if (nums.length !== n || total <= 0) return null;
+      // Round down, then hand the leftover % to the biggest remainders, so they add up to 100.
+      const exact = nums.map(x => (x * 100) / total);
+      const out = exact.map(Math.floor);
+      let left = 100 - out.reduce((a, b) => a + b, 0);
+      exact.map((x, i) => [x - Math.floor(x), i]).sort((a, b) => b[0] - a[0])
+        .forEach(([, i]) => { if (left > 0) { out[i]++; left--; } });
+      return out;
+    }
 
     let book = loadRecipes();
 
@@ -1460,11 +1547,15 @@
         const id = Number.isInteger(r.id) && !recipeIds.has(r.id) ? r.id : null;
         if (id !== null) recipeIds.add(id);
         const steps = (Array.isArray(r.steps) ? r.steps : []).filter(s => s && typeof s === "object").map(s => ({
+          ...s,
           technique: String(s.technique || "").trim(),
           coats: cleanCount(s.coats),
           paints: (Array.isArray(s.paints) ? s.paints : [])
             .filter(sp => sp && paintIds.has(sp.paint))
             .map(sp => ({ paint: sp.paint, mix: cleanMix(sp.mix) })),
+          ratio: cleanRatio(s.ratio),               // v15
+          note: String(s.note || "").trim(),        // v15
+          optional: s.optional === true,            // v15
         }));
         recipes.push({ ...r, id, name: r.name.trim(), part: String(r.part || "").trim(),
                        notes: String(r.notes || ""), steps });
@@ -1489,8 +1580,18 @@
       let nextScheme = Math.max(0, ...schemeIds) + 1;
       for (const s of schemes) if (s.id === null) s.id = nextScheme++;
 
-      return { parts: textList(src.parts, DEFAULT_PARTS), techniques: textList(src.techniques, DEFAULT_TECHNIQUES),
-               paints, recipes, schemes };
+      const parts = textList(src.parts, DEFAULT_PARTS);
+      const techniques = textList(src.techniques, DEFAULT_TECHNIQUES);
+      // v15: a recipe book saved before v15 gets "Whole model" and the new techniques, once.
+      // Remove them afterwards and they stay removed ("v15" marks the book as done).
+      if (!src.v15) {
+        if (!parts.some(p => sameText(p, WHOLE_MODEL))) parts.unshift(WHOLE_MODEL);
+        for (const t of V15_TECHNIQUES) if (!techniques.some(x => sameText(x, t))) techniques.push(t);
+      }
+      // "Whole model" always comes first.
+      const whole = parts.findIndex(p => sameText(p, WHOLE_MODEL));
+      if (whole > 0) parts.unshift(...parts.splice(whole, 1));
+      return { parts, techniques, paints, recipes, schemes, v15: true };
     }
 
     // localStorage only holds text, so we turn the list into text (JSON) to save it,
@@ -3866,7 +3967,10 @@
       // No brand typed? Then any paint with that name counts as the same paint.
       let paint = book.paints.find(p => sameText(p.name, name) && (!brand || sameText(p.brand, brand)));
       if (!paint) {
-        paint = { id: Math.max(0, ...book.paints.map(p => p.id)) + 1, brand, name, colour: DEFAULT_PAINT_COLOUR };
+        const known = KNOWN_PAINTS.find(k => sameText(k.name, name) && (!brand || sameText(k.brand, brand)));
+        paint = { id: Math.max(0, ...book.paints.map(p => p.id)) + 1, brand: brand || (known ? known.brand : ""),
+                  name, colour: known ? known.colour : DEFAULT_PAINT_COLOUR };
+        if (MATERIAL_WORDS.test(name)) paint.type = "material";   // v15
         book.paints.push(paint);
       }
       // The untouched grey never overwrites a colour you've already picked.
@@ -4069,10 +4173,14 @@
         const li = document.createElement("li");
         const head = document.createElement("div");
         head.className = "step-title";
-        head.textContent = `${i + 1}. ${step.technique || "Step"} `;
+        // v15: a blank technique shows the app's guess from the paints.
+        const technique = step.technique || guessTechnique(step.paints.map(sp => paintById(sp.paint))) || "Step";
+        head.textContent = `${i + 1}. ${technique} `;
         const coats = document.createElement("small");
-        coats.textContent = `· ${coatsText(step.coats)}`;
+        coats.textContent = `· ${coatsText(step.coats)}` + (step.ratio ? ` · mix ${step.ratio}` : "") +
+                            (step.optional ? " · (optional)" : "");
         head.appendChild(coats);
+        if (step.optional) li.classList.add("optional-step");
         li.appendChild(head);
         const mixed = step.paints.length > 1;
         for (const sp of step.paints) {
@@ -4092,6 +4200,12 @@
             line.appendChild(mix);
           }
           li.appendChild(line);
+        }
+        if (step.note) {
+          const note = document.createElement("p");
+          note.className = "step-note";
+          note.textContent = step.note;
+          li.appendChild(note);
         }
         steps.appendChild(li);
       });
@@ -4534,13 +4648,13 @@
 
       const shown = paints.filter(p => paletteBrand === null || p.brand === paletteBrand);
       const sorters = {
-        colour: colourOrder,
+        colour: (a, b) => (isMaterial(a) - isMaterial(b)) || colourOrder(a, b),   // v15: materials last
         name: (a, b) => a.name.localeCompare(b.name),
         brand: (a, b) => (a.brand || "￿").localeCompare(b.brand || "￿") || a.name.localeCompare(b.name),
       };
       shown.sort(sorters[settings.paintSort]);
 
-      const unset = paints.filter(p => p.colour === DEFAULT_PAINT_COLOUR).length;
+      const unset = paints.filter(p => p.colour === DEFAULT_PAINT_COLOUR && !isMaterial(p)).length;
       paletteSummary.textContent = paints.length
         ? `${plural(paints.length, "paint")} from ${plural(brands.length, "brand")}` +
           (paletteBrand !== null ? ` · showing ${shown.length}` : "") +
@@ -4574,6 +4688,7 @@
       const meta = document.createElement("span");
       meta.className = "details";
       meta.textContent = [paint.brand || "No brand", `in ${plural(usedIn.length, "recipe")}`,
+                          isMaterial(paint) ? "basing material" :
                           paint.colour === DEFAULT_PAINT_COLOUR ? "colour not set" : ""].filter(Boolean).join(" · ");
       text.append(name, meta);
       head.append(swatch, text);
@@ -4658,16 +4773,17 @@
     // You edit a DRAFT copy, where each paint is written out in full (brand, name, colour).
     // Nothing changes until Save, which turns the paints back into ids in the paint list.
     function blankPaint(mix) { return { brand: "", name: "", colour: DEFAULT_PAINT_COLOUR, mix }; }
-    function blankStep() { return { technique: book.techniques[0] || "", coats: 1, paints: [blankPaint(100)] }; }
+    // v15: a new step's technique starts blank, meaning "guess it from the paints".
+    function blankStep() { return { technique: "", coats: 1, paints: [blankPaint(100)], ratio: "", note: "", optional: false }; }
 
     function draftFrom(recipe) {
       return {
         id: recipe.id, name: recipe.name, part: recipe.part, notes: recipe.notes, linkUnit: null,
         steps: recipe.steps.map(s => ({
-          technique: s.technique, coats: s.coats,
+          technique: s.technique, coats: s.coats, ratio: s.ratio || "", note: s.note || "", optional: !!s.optional,
           paints: s.paints.map(sp => {
             const p = paintById(sp.paint) || { brand: "", name: "", colour: DEFAULT_PAINT_COLOUR };
-            return { brand: p.brand, name: p.name, colour: p.colour, mix: sp.mix };
+            return { brand: p.brand, name: p.name, colour: p.colour, mix: sp.mix, type: p.type };
           }),
         })),
       };
@@ -4725,7 +4841,8 @@
       for (const b of uniqueSorted([...COMMON_BRANDS, ...book.paints.map(p => p.brand)])) brands.appendChild(new Option(b));
       const paintNames = document.createElement("datalist");
       paintNames.id = "paint-options";
-      for (const p of [...book.paints].sort((a, b) => a.name.localeCompare(b.name))) {
+      const suggest = [...book.paints, ...KNOWN_PAINTS.filter(k => !book.paints.some(p => sameText(p.name, k.name)))];
+      for (const p of suggest.sort((a, b) => a.name.localeCompare(b.name))) {
         const o = document.createElement("option");
         o.value = p.name;
         o.label = p.brand;
@@ -4851,7 +4968,11 @@
       const row = document.createElement("div");
       row.className = "row";
       const techLabel = document.createElement("label");
-      techLabel.append("Technique", pickOrAdd("techniques", "technique", step.technique, "", v => { step.technique = v; }));
+      // v15: the blank choice is "Auto", which shows the guess from this step's paints.
+      const autoText = () => { const g = guessTechnique(step.paints); return g ? `Auto: ${g}` : "Auto (from the paints)"; };
+      const techSelect = pickOrAdd("techniques", "technique", step.technique, autoText(), v => { step.technique = v; });
+      const refreshAuto = () => { techSelect.options[0].text = autoText(); };
+      techLabel.append("Technique", techSelect);
       const coatsLabel = document.createElement("label");
       const coats = document.createElement("input");
       coats.type = "number";
@@ -4862,14 +4983,58 @@
       row.append(techLabel, coatsLabel);
       li.appendChild(row);
 
+      // v15: a short note on how to do the step, and an "optional" tick.
+      const extra = document.createElement("div");
+      extra.className = "row step-extra";
+      const noteLabel = document.createElement("label");
+      const note = document.createElement("input");
+      note.placeholder = "e.g. heavier on the top";
+      note.value = step.note || "";
+      note.addEventListener("input", () => { step.note = note.value; });
+      noteLabel.append("Note (if any)", note);
+      const optLabel = document.createElement("label");
+      optLabel.className = "check-label";
+      const opt = document.createElement("input");
+      opt.type = "checkbox";
+      opt.checked = !!step.optional;
+      opt.addEventListener("change", () => { step.optional = opt.checked; });
+      optLabel.append(opt, "Optional");
+      extra.append(noteLabel, optLabel);
+      li.appendChild(extra);
+
       // The paints in this step.
       const warning = document.createElement("p");
       warning.className = "mix-warning";
       const updateWarning = () => {
-        warning.textContent = mixWarning(step.paints);
+        const n = step.paints.length;
+        const badRatio = n > 1 && step.ratio && step.ratio.trim() && !ratioPercents(step.ratio, n);
+        warning.textContent = badRatio
+          ? `The ratio needs ${n} numbers, one per paint, like ${Array(n).fill(1).join(":")}.`
+          : mixWarning(step.paints);
         warning.classList.toggle("hidden", !warning.textContent);
+        refreshAuto();
       };
-      step.paints.forEach((paint, pi) => li.appendChild(buildPaintEditor(step, paint, si, pi, updateWarning)));
+      const mixInputs = [];
+      let ratioBox = null;
+      const mixTyped = () => { step.ratio = ""; if (ratioBox) ratioBox.value = ""; };
+      step.paints.forEach((paint, pi) => li.appendChild(buildPaintEditor(step, paint, si, pi, updateWarning, mixInputs, mixTyped)));
+
+      // v15: mixing? Type a ratio like 2:1 and the %s are worked out for you.
+      if (step.paints.length > 1) {
+        const ratioLabel = document.createElement("label");
+        ratioBox = document.createElement("input");
+        ratioBox.placeholder = `e.g. ${step.paints.length === 2 ? "2:1" : "1:1:2"}`;
+        ratioBox.setAttribute("aria-label", "Mix ratio");
+        ratioBox.value = step.ratio || "";
+        ratioBox.addEventListener("input", () => {
+          step.ratio = ratioBox.value;
+          const pcs = ratioPercents(ratioBox.value, step.paints.length);
+          if (pcs) pcs.forEach((v, i) => { step.paints[i].mix = v; if (mixInputs[i]) mixInputs[i].value = v; });
+          updateWarning();
+        });
+        ratioLabel.append("Mix ratio, paints in the order above (or set each %)", ratioBox);
+        li.appendChild(ratioLabel);
+      }
       updateWarning();
       li.appendChild(warning);
 
@@ -4889,7 +5054,7 @@
       return li;
     }
 
-    function buildPaintEditor(step, paint, si, pi, updateWarning) {
+    function buildPaintEditor(step, paint, si, pi, updateWarning, mixInputs, mixTyped) {
       const box = document.createElement("div");
       box.className = "paint-edit";
 
@@ -4914,12 +5079,13 @@
       brand.setAttribute("aria-label", "Brand");
       brand.setAttribute("list", "brand-options");
       brand.value = paint.brand;
-      brand.addEventListener("input", () => { paint.brand = brand.value; });
+      brand.addEventListener("input", () => { paint.brand = brand.value; updateWarning(); });
 
       name.addEventListener("input", () => { paint.name = name.value; updateWarning(); });
       // A paint you've used before: fill in its brand and colour for you.
       name.addEventListener("change", () => {
-        const known = book.paints.find(p => sameText(p.name, paint.name) && (!paint.brand.trim() || sameText(p.brand, paint.brand)));
+        const known = book.paints.find(p => sameText(p.name, paint.name) && (!paint.brand.trim() || sameText(p.brand, paint.brand)))
+                   || KNOWN_PAINTS.find(p => sameText(p.name, paint.name));
         if (!known) return;
         if (!paint.brand.trim()) { paint.brand = known.brand; brand.value = known.brand; }
         if (paint.colour === DEFAULT_PAINT_COLOUR) { paint.colour = known.colour; colour.value = known.colour; }
@@ -4934,7 +5100,8 @@
       mix.placeholder = "Mix";
       mix.setAttribute("aria-label", "Mix %");
       mix.value = paint.mix === null ? "" : paint.mix;
-      mix.addEventListener("input", () => { paint.mix = cleanMix(mix.value); updateWarning(); });
+      mix.addEventListener("input", () => { paint.mix = cleanMix(mix.value); if (mixTyped) mixTyped(); updateWarning(); });
+      if (mixInputs) mixInputs[pi] = mix;
       mixBox.append(mix, "%");
 
       const remove = document.createElement("button");
@@ -4957,12 +5124,18 @@
       const name = d.name.trim();
       if (!name) { alert("Give the recipe a name first."); return; }
       // Paints with no name are skipped. Each named paint is found (or added) in the paint list.
-      const steps = d.steps.map(s => ({
-        technique: s.technique.trim(),
-        coats: cleanCount(s.coats),
-        paints: s.paints.filter(p => p.name.trim())
-          .map(p => ({ paint: findOrAddPaint(p.brand, p.name, p.colour).id, mix: cleanMix(p.mix) })),
-      }));
+      const steps = d.steps.map(s => {
+        const paints = s.paints.filter(p => p.name.trim())
+          .map(p => ({ paint: findOrAddPaint(p.brand, p.name, p.colour).id, mix: cleanMix(p.mix) }));
+        return {
+          technique: s.technique.trim(),
+          coats: cleanCount(s.coats),
+          paints,
+          ratio: paints.length > 1 && ratioPercents(s.ratio, paints.length) ? cleanRatio(s.ratio) : "",   // v15
+          note: String(s.note || "").trim(),   // v15
+          optional: !!s.optional,              // v15
+        };
+      });
       let recipe = d.id !== null ? recipeById(d.id) : null;
       if (recipe) {
         Object.assign(recipe, { name, part: d.part.trim(), notes: d.notes, steps });
@@ -6198,10 +6371,17 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v14";
+    const APP_VERSION = "v15";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v15", date: "9 Oct 2026", changes: [
+        "Technique can be left on Auto: the app guesses it from the step's paints (shade = Wash, Contrast = Contrast, 'Ardcoat = Varnish, otherwise Layer). Pick one yourself any time.",
+        "New \"Whole model\" part, always listed first, for priming, base coats and all-over dry brushes. New techniques: Technical, Texture and Varnish.",
+        "Mixes: type a ratio like 2:1 or 1:1:2 and the %s are worked out for you. Contrast Medium and Lahmian Medium are suggested as you type.",
+        "Each step can have a short note and an Optional tick. Optional steps show faded.",
+        "Basing materials (rocks, sand, snow, static grass…) can go in a step. Your Palette lists them as basing materials, at the end of the colour sort.",
+      ]},
       { version: "v14", date: "8 Oct 2026", changes: [
         "Safer saving: units, recipes and settings are now saved together. If storage is full, a big change (like editing your stages or restoring a backup) isn't made at all, instead of being half-saved.",
         "If storage is full, a red banner now stays at the top until saving works again, with a Save backup button. (Before, you were warned once and later changes were quietly lost.)",
