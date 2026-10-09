@@ -4,9 +4,10 @@ A recipe you copy with "Copy as text" should paste straight back in as the SAME 
 the same steps, techniques, paints, mix ratios and amounts, coats, notes and optional
 flags, using the paints already in your palette (no new paints added).
 
-v17.1 gets simple recipes right but breaks recipes with a ratio mix ("1:2"), even mixes
-("Nuln Oil + Lahmian Medium") and basing materials ("Texture Sand"). Those checks fail
-on purpose until the v18b fixes land (review section 1, item 2).
+v17.1 got simple recipes right but broke recipes with a ratio mix ("1:2"), even mixes
+("Nuln Oil + Lahmian Medium") and basing materials ("Texture Sand"). Fixed in v18b:
+Copy as text now always writes the ratio, so an even mix comes back as "1:1"; this test
+counts "1:1" and no ratio as the same thing (both mean equal parts).
 
 How it works: it loads a small recipe book into the app, then for each recipe it takes the
 text "Copy as text" would copy (the app's own recipeToText), pastes it into Paste recipes,
@@ -15,7 +16,7 @@ presses Read notes and Save, and compares the new recipe with the original.
 Serve the repo folder first (run_all.py does this for you), then run:
 python3 tests/test_v18_round_trip.py
 The port comes from the SOG_PORT environment variable, or 8765 if it isn't set."""
-import json, os, sys
+import json, os, re, sys
 from playwright.sync_api import sync_playwright
 
 PORT = os.environ.get("SOG_PORT", "8765")
@@ -63,6 +64,11 @@ SUMMARY_JS = """([book, id]) => {
     technique: s.technique, coats: s.coats, ratio: s.ratio || "", note: s.note || "", optional: !!s.optional,
     paints: s.paints.map(sp => name(sp.paint)), mix: s.paints.map(sp => sp.mix) })) };
 }"""
+
+def even_as_blank(ratio):
+    """An equal-parts ratio ("1:1", "1:1:1") means the same as no ratio: an even mix."""
+    parts = re.split(r"[:/]", ratio) if ratio else []
+    return "" if parts and len(set(parts)) == 1 else ratio
 
 results = []
 def check(name, ok, detail=""):
@@ -120,7 +126,10 @@ def main():
                 diffs.append(f"{len(pasted['steps'])} steps, want {len(original['steps'])}")
             for i, (got, want) in enumerate(zip(pasted["steps"], original["steps"]), 1):
                 for key in want:
-                    if got[key] != want[key]:
+                    g, w = got[key], want[key]
+                    if key == "ratio":   # Copy as text writes an even mix as "1:1"
+                        g, w = even_as_blank(g), even_as_blank(w)
+                    if g != w:
                         diffs.append(f"step {i} {key} is {got[key]!r}, want {want[key]!r}")
             if pasted["notes"] != original["notes"]:
                 diffs.append(f"notes {pasted['notes']!r}, want {original['notes']!r}")

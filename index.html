@@ -2223,6 +2223,15 @@
       if (onlyTechnique) { out.technique = onlyTechnique; out.note = out.note.join("; "); return out; }
       // The whole name first, before any words are taken off it ("Contrast Medium" is a paint).
       const whole = text && !bracketPaint ? matchPaint(text, hints) : null;
+      // v18: "Texture Sand" is the Texture technique with sand, not a material called "Texture Sand".
+      // ("Texture paste" stays a material.)
+      if (whole && whole.status === "material" && !/\btexture paste\b/i.test(text)) {
+        const t = splitTechnique(text);
+        const rest = t.technique && t.rest ? matchPaint(t.rest, hints) : null;
+        if (rest && (rest.status === "material" || rest.status === "sure")) {
+          out.technique = t.technique; out.paint = rest; out.note = out.note.join("; "); return out;
+        }
+      }
       if (whole && (whole.status === "sure" || whole.status === "material")) { out.paint = whole; out.note = out.note.join("; "); return out; }
       const split = splitTechnique(text);
       if (split.technique) out.technique = split.technique;
@@ -2273,6 +2282,15 @@
       let segTechnique = "";
       const techLead = text.match(/^([a-z' ]+?)\s+(\d.*)$/i);
       if (techLead && techniqueFromWords(techLead[1])) { segTechnique = techniqueFromWords(techLead[1]); text = techLead[2]; }
+      // v18: "Seraphim Sepia wash 1:2 with Contrast Medium": a paint, a ratio, then "with" the
+      // other paint. Rewritten as "1:2 Seraphim Sepia:Contrast Medium" and read as below.
+      const withMix = text.match(/^(.+?)\s+(\d+(?:\.\d+)?\s*[:\/]\s*\d+(?:\.\d+)?)\s+(?:with|and|to|in|\+|&)\s+(.+)$/i);
+      if (withMix) {
+        const asPaint = matchPaint(withMix[1], { brand: ctx.brand });
+        const first = asPaint.status === "sure" ? { technique: "", rest: withMix[1] } : splitTechnique(withMix[1]);
+        if (first.technique && !segTechnique) segTechnique = first.technique;
+        text = `${withMix[2]} ${first.rest}:${withMix[3]}`;
+      }
       // A ratio up front, with names joined by ":" or "/": "2:1 frostheart:CM".
       let ratio = "";
       const lead = text.match(/^(\d+(?:\.\d+)?(?:\s*[:\/]\s*\d+(?:\.\d+)?)+)\s+(.*)$/);
@@ -2333,7 +2351,11 @@
       const eq = line.match(/^([^=,()]+?)\s*=\s*(.*)$/);
       if (eq && !techniqueFromWords(eq[1])) return { kind: "sub", name: eq[1].trim(), rest: eq[2].trim() };
       const colon = line.match(/^([^:;,()]+?)\s*[:;]\s*(.*)$/);
-      if (colon && !RATIO_TEXT.test(colon[1]) && !/^\d/.test(colon[1]) && !techniqueFromWords(colon[1])) {
+      // v18: the ":" in a ratio isn't a heading ("Wet blend 3:1 Kantor Blue:White").
+      const ratioColon = colon && /\d$/.test(colon[1]) && /^\d/.test(colon[2]);
+      // v18: a line ending in ":" or ";" is always a heading, even a technique word ("Base;").
+      const endsLine = colon && !colon[2];
+      if (colon && !ratioColon && !RATIO_TEXT.test(colon[1]) && !/^\d/.test(colon[1]) && (endsLine || !techniqueFromWords(colon[1]))) {
         return { kind: "part", name: colon[1].trim(), rest: colon[2].trim() };
       }
       return null;
@@ -2400,6 +2422,8 @@
         // a gap of 2+ blank lines. It mustn't read as a step ("Prime", "Leadbelcher").
         const bare = !/[:;=,()]/.test(line) && !/\s[-–]\s/.test(line);
         if (bare && line.split(/\s+/).length <= 5 && (factions.has(matchKey(line)) || (afterBlanks >= 2 && (!scheme || scheme.parts.length)) || !schemes.length)) {
+          // v18: a known faction is checked before paints ("Dark Angels" isn't Dark Angels Green).
+          if (factions.has(matchKey(line))) { startScheme(line); continue; }
           const asStep = readMention(line, {});
           const stepLike = asStep.technique || (asStep.paint && (asStep.paint.status === "sure" || asStep.paint.status === "material"));
           if (!stepLike) { startScheme(line); continue; }
@@ -2462,7 +2486,9 @@
       if (paints.length > 1) {
         let ratio = step.ratio;
         if (!ratio && paints.every(x => x.sp.mix !== null) && !isEvenSplit(paints.map(x => ({ mix: x.sp.mix })))) ratio = paints.map(x => x.sp.mix).join(":");
-        body = ratio ? `${ratio} ${paints.map(x => nameOf(x.p)).join(":")}` : paints.map(x => nameOf(x.p)).join(" + ");
+        // v18: always write the ratio, so a mix pastes back as one step ("A + B" reads as two).
+        if (!ratio) ratio = paints.map(() => 1).join(":");
+        body = `${ratio} ${paints.map(x => nameOf(x.p)).join(":")}`;
       } else body = paints.length ? nameOf(paints[0].p) : "";
       const extras = [];
       if (step.coats > 1) extras.push(`${step.coats} coats`);

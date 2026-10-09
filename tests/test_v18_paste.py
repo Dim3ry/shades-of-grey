@@ -70,7 +70,8 @@ CASES = [
     {"name": "'Base:' is a section header, not a technique",
      "text": "Base:\nTexture Sand\nAgrax Earthshade",
      "parts": ["Base"],
-     "steps": {"Base": [{"paints": ["Texture Sand"]}, {"paints": ["Agrax Earthshade"]}]}},
+     # "Texture Sand" is the Texture technique with sand (how Copy as text writes it).
+     "steps": {"Base": [{"technique": "Texture", "paints": ["Sand"]}, {"paints": ["Agrax Earthshade"]}]}},
 
     # --- Words after a paint are a note (review section 2) ---
     {"name": "trailing words: Waywatcher Green to tie it together",
