@@ -620,6 +620,23 @@
     #import-save:disabled { opacity: 0.5; }
     .scan-result { margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; }
     .backup-old { color: #c4b5fd; }
+    /* v17: paint status, have/missing badges, search and shopping list */
+    .status-chip { border-color: var(--chip-colour); }
+    .status-chip[aria-pressed="true"] { background: var(--chip-colour); color: #0b1220; border-color: var(--chip-colour); }
+    .status-row { margin-top: 12px; }
+    .status-pill { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 999px; font-size: 12px; border: 1px solid; vertical-align: middle; white-space: nowrap; }
+    .status-pill.s-owned { color: #5eead4; border-color: #5eead4; }
+    .status-pill.s-low { color: #fde68a; border-color: #fde68a; }
+    .status-pill.s-empty { color: #fca5a5; border-color: #fca5a5; }
+    .status-pill.s-wishlist { color: #93c5fd; border-color: #93c5fd; }
+    .status-pill.s-notowned { color: #94a3b8; border-color: #94a3b8; }
+    .have-badge { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 999px; font-size: 12px; border: 1px solid; white-space: nowrap; }
+    .have-badge.have { color: #5eead4; border-color: #5eead4; background: rgba(94, 234, 212, 0.12); }
+    .have-badge.missing { color: #fca5a5; border-color: #fca5a5; background: rgba(252, 165, 165, 0.10); }
+    .shop-brand { font-weight: 600; color: var(--accent); margin: 12px 0 4px; }
+    .shop-list { margin: 0; padding-left: 20px; line-height: 1.6; }
+    .shop-list small { color: var(--muted); }
+    .shop-links-slot { margin-top: 14px; padding: 10px; border: 1px dashed var(--border); border-radius: 8px; }
     /* v16.1: camera view for scanning a pot label */
     #scan-camera { position: fixed; inset: 0; z-index: 100; background: #000; display: flex; flex-direction: column;
                    padding: env(safe-area-inset-top) 16px calc(16px + env(safe-area-inset-bottom)); }
@@ -869,6 +886,14 @@
           <button class="plain-button" id="scan-button" style="width: 100%; margin-top: 12px;">📷 Scan a paint pot (or check if you own it)</button>
           <div id="scan-panel" class="hidden" style="margin-top: 12px;"></div>
         </div>
+        <div class="card">
+          <input id="palette-search" type="search" placeholder="Search or add a paint, e.g. Macragge Blue"
+                 aria-label="Search or add a paint" autocomplete="off" style="width: 100%;">
+          <div id="palette-search-result" style="margin-top: 8px;"></div>
+        </div>
+        <button class="plain-button" id="shop-button" aria-expanded="false" aria-controls="shop-panel"
+                style="width: 100%; margin-bottom: 12px;">🛒 Shopping list</button>
+        <div id="shop-panel" class="hidden"></div>
         <ul class="paint-list" id="paint-list"></ul>
       </div>
 
@@ -878,6 +903,8 @@
           <select id="part-filter" aria-label="Filter by part"></select>
         </div>
         <button class="plain-button" id="paste-recipes" style="width: 100%; margin-bottom: 12px;">Paste recipes from your notes</button>
+        <div class="chips" id="can-paint-box" style="margin: 0 0 6px;"></div>
+        <p class="hint" id="can-paint-hint" style="margin: 0 0 12px;"></p>
         <ul class="recipe-list" id="recipe-list"></ul>
         <details class="card" id="recipe-lists">
           <summary>Parts and techniques</summary>
@@ -1748,6 +1775,307 @@
       book.shorthand = { ...(book.shorthand || {}), [key]: { brand: paint.brand || "", name: paint.name } };
     }
 
+    // ================= v17: PAINT STATUS, SEARCH AND SHOPPING =================
+    // Each paint can have a status, set with one tap. Blank = not set, so the app works the
+    // same for anyone who never sets one. Paints the scan added (owned: true) count as Owned.
+    const PAINT_STATUSES = [
+      { key: "owned", label: "Owned", colour: "#5eead4" },
+      { key: "low", label: "Running low", colour: "#fde68a" },
+      { key: "empty", label: "Empty", colour: "#fca5a5" },
+      { key: "wishlist", label: "Wishlist", colour: "#93c5fd" },
+      { key: "notowned", label: "Not owned", colour: "#94a3b8" },
+    ];
+    const PAINT_STATUS_KEYS = PAINT_STATUSES.map(s => s.key);
+    let recipeCanPaint = false;   // the "What can I paint now?" filter (kept while the app is open)
+    let shopOpen = false;
+
+    // A paint's status now: its own status, or Owned if the scan added it. "" = not set.
+    function paintStatus(paint) {
+      if (PAINT_STATUS_KEYS.includes(paint.status)) return paint.status;
+      return paint.owned === true ? "owned" : "";
+    }
+    const statusLabel = (key) => (PAINT_STATUSES.find(s => s.key === key) || {}).label || "";
+    // Do you have it to paint with? Owned and running low both count.
+    const haveIt = (paint) => { const s = paintStatus(paint); return s === "owned" || s === "low"; };
+    // Until someone sets a status, the have/missing badges and the filter stay off.
+    const anyStatusSet = () => book.paints.some(p => paintStatus(p) !== "");
+
+    // Sets a status (or clears it, with ""). Keeps the older owned field in step.
+    function applyPaintStatus(paint, key) {
+      if (key) {
+        paint.status = key;
+        paint.owned = key === "owned" || key === "low";
+        if (key !== "low") delete paint.spare;
+      } else {
+        delete paint.status;
+        delete paint.spare;
+        paint.owned = false;
+      }
+    }
+
+    // The status buttons in a paint's details. Tap one to set it; tap it again to clear it.
+    function buildStatusRow(paint) {
+      const wrap = document.createElement("div");
+      wrap.className = "status-row";
+      const label = document.createElement("div");
+      label.className = "panel-field";
+      label.textContent = "Status";
+      const chips = document.createElement("div");
+      chips.className = "chips";
+      chips.style.marginTop = "0";
+      const current = paintStatus(paint);
+      for (const s of PAINT_STATUSES) {
+        const chip = makeChip(s.label, current === s.key, () => {
+          applyPaintStatus(paint, current === s.key ? "" : s.key);
+          render();
+        }, s.colour);
+        chip.classList.add("status-chip");
+        chip.dataset.status = s.key;
+        chips.appendChild(chip);
+      }
+      wrap.append(label, chips);
+      if (current === "low") {
+        const spare = document.createElement("label");
+        spare.className = "check-label spare-tick";
+        const box = document.createElement("input");
+        box.type = "checkbox";
+        box.checked = paint.spare === true;
+        box.addEventListener("change", () => { paint.spare = box.checked; render(); });
+        spare.append(box, " Spare in stock");
+        wrap.appendChild(spare);
+      }
+      const hint = document.createElement("p");
+      hint.className = "hint";
+      hint.style.margin = "6px 0 0";
+      hint.textContent = "Tap a status again to clear it.";
+      wrap.appendChild(hint);
+      return wrap;
+    }
+
+    // A small coloured label showing a paint's status, or nothing if it isn't set.
+    function statusPill(paint) {
+      const key = paintStatus(paint);
+      if (!key) return null;
+      const pill = document.createElement("span");
+      pill.className = "status-pill s-" + key;
+      pill.textContent = statusLabel(key) + (key === "low" && paint.spare ? " · spare" : "");
+      return pill;
+    }
+
+    // Have / Missing next to each paint in a recipe. Hidden until a status is set.
+    function haveBadge(paint) {
+      if (!anyStatusSet()) return null;
+      const badge = document.createElement("span");
+      badge.className = "have-badge " + (haveIt(paint) ? "have" : "missing");
+      badge.textContent = haveIt(paint) ? "✓ Have" : "✗ Missing";
+      return badge;
+    }
+
+    // True if you have every paint a recipe uses.
+    function canPaintNow(recipe) {
+      const ids = new Set();
+      for (const s of recipe.steps) for (const sp of s.paints) ids.add(sp.paint);
+      if (!ids.size) return false;
+      return [...ids].every(id => { const p = paintById(id); return !!p && haveIt(p); });
+    }
+
+    // The "What can I paint now?" button above the recipe list.
+    function renderCanPaintBox() {
+      const box = document.getElementById("can-paint-box");
+      box.innerHTML = "";
+      box.appendChild(makeChip("What can I paint now?", recipeCanPaint, () => {
+        recipeCanPaint = !recipeCanPaint;
+        renderRecipeList();
+      }));
+      document.getElementById("can-paint-hint").textContent =
+        recipeCanPaint && !anyStatusSet() ? "Mark the paints you own on Your Palette first, then this list is useful." : "";
+    }
+
+    // ----- Shopping list -----
+    // Running low, empty and wishlist paints, plus paints a recipe uses that you don't have.
+    function shoppingItems() {
+      const recipeCount = new Map();
+      for (const r of book.recipes) {
+        const ids = new Set();
+        for (const s of r.steps) for (const sp of s.paints) ids.add(sp.paint);
+        for (const id of ids) recipeCount.set(id, (recipeCount.get(id) || 0) + 1);
+      }
+      const items = [];
+      for (const p of book.paints) {
+        const key = paintStatus(p);
+        const used = recipeCount.get(p.id) || 0;
+        let reason = "";
+        if (key === "low") reason = "running low" + (p.spare ? " (spare in stock)" : "");
+        else if (key === "empty") reason = "empty";
+        else if (key === "wishlist") reason = "wishlist";
+        else if (key !== "owned" && used) reason = `missing, used in ${plural(used, "recipe")}`;
+        if (reason) items.push({ paint: p, reason });
+      }
+      return items.sort((a, b) => (a.paint.brand || "￿").localeCompare(b.paint.brand || "￿") || a.paint.name.localeCompare(b.paint.name));
+    }
+
+    // The list as plain text, one brand at a time (for copy as text).
+    function shoppingText(items) {
+      const groups = new Map();
+      for (const i of items) {
+        const brand = i.paint.brand || "No brand";
+        if (!groups.has(brand)) groups.set(brand, []);
+        groups.get(brand).push(i);
+      }
+      const names = [...groups.keys()].sort((a, b) => (a === "No brand") - (b === "No brand") || a.localeCompare(b));
+      const lines = ["Shopping list", ""];
+      for (const brand of names) {
+        lines.push(brand);
+        for (const i of groups.get(brand)) lines.push(`- ${i.paint.name}: ${i.reason}`);
+        lines.push("");
+      }
+      if (!items.length) lines.push("Nothing to buy.");
+      return lines.join("\n").trimEnd();
+    }
+
+    function renderShopPanel() {
+      const panel = document.getElementById("shop-panel");
+      const button = document.getElementById("shop-button");
+      panel.classList.toggle("hidden", !shopOpen);
+      button.setAttribute("aria-expanded", String(shopOpen));
+      if (!shopOpen) return;
+      panel.innerHTML = "";
+      const items = shoppingItems();
+      const card = document.createElement("div");
+      card.className = "card";
+      const title = document.createElement("h2");
+      title.textContent = "Shopping list";
+      title.style.fontSize = "18px";
+      const sub = document.createElement("p");
+      sub.className = "hint";
+      sub.style.margin = "0 0 10px";
+      sub.textContent = !items.length ? "Nothing to buy. Mark your paints on Your Palette to build this list."
+        : `${plural(items.length, "paint")} to get: running low, empty, wishlist, and paints your recipes use that you don't have.`;
+      card.append(title, sub);
+      if (items.length && !anyStatusSet()) {
+        const warn = document.createElement("p");
+        warn.className = "hint";
+        warn.style.margin = "0 0 10px";
+        warn.textContent = "No statuses set yet, so every paint your recipes use is listed as missing. Mark what you own to make it accurate.";
+        card.appendChild(warn);
+      }
+      if (items.length) {
+        const groups = new Map();
+        for (const i of items) {
+          const brand = i.paint.brand || "No brand";
+          if (!groups.has(brand)) groups.set(brand, []);
+          groups.get(brand).push(i);
+        }
+        const names = [...groups.keys()].sort((a, b) => (a === "No brand") - (b === "No brand") || a.localeCompare(b));
+        for (const brand of names) {
+          const head = document.createElement("div");
+          head.className = "shop-brand";
+          head.textContent = brand;
+          const list = document.createElement("ul");
+          list.className = "shop-list";
+          for (const i of groups.get(brand)) {
+            const li = document.createElement("li");
+            li.textContent = i.paint.name + " ";
+            const why = document.createElement("small");
+            why.textContent = "· " + i.reason;
+            li.appendChild(why);
+            list.appendChild(li);
+          }
+          card.append(head, list);
+        }
+        const copy = document.createElement("button");
+        copy.className = "primary-button";
+        copy.style.width = "100%";
+        copy.style.marginTop = "12px";
+        copy.textContent = "Copy as text";
+        copy.addEventListener("click", () => copyText(shoppingText(shoppingItems()), "Shopping list"));
+        card.appendChild(copy);
+      }
+      // Clearly marked spot for shop links later. There are no links yet.
+      const slot = document.createElement("div");
+      slot.className = "shop-links-slot";
+      slot.id = "shop-links-slot";
+      slot.innerHTML = '<strong>Shop links</strong><p class="hint" style="margin: 4px 0 0;">Coming later. No links are added yet.</p>';
+      card.appendChild(slot);
+      panel.appendChild(card);
+    }
+    document.getElementById("shop-button").addEventListener("click", () => { shopOpen = !shopOpen; renderShopPanel(); });
+
+    // ----- Search or add a paint on Your Palette -----
+    // Type a name: see whether you own it, it's running low, or you don't have it.
+    // Typos and remembered shorthand work, because it uses the shared matcher.
+    function paletteResultCard(p) {
+      const found = () => book.paints.find(x => sameText(x.name, p.name) && (!p.brand || !x.brand || sameText(x.brand, p.brand)));
+      const mine = found();
+      const current = mine ? paintStatus(mine) : "";
+      const wrap = document.createElement("div");
+      wrap.className = "scan-result";
+      const head = document.createElement("div");
+      head.className = "paint-line";
+      head.append(makeSwatch(mine ? mine.colour : p.colour || DEFAULT_PAINT_COLOUR), p.name);
+      if (p.brand) {
+        const brand = document.createElement("span");
+        brand.className = "brand";
+        brand.textContent = p.brand;
+        head.appendChild(brand);
+      }
+      const verdict = document.createElement("p");
+      verdict.className = "hint";
+      verdict.style.margin = "6px 0 10px";
+      verdict.textContent = mine
+        ? (current ? `In your palette: ${statusLabel(current).toLowerCase()}.` : "In your palette. Status not set yet.")
+        : "Not in your palette yet. Tap a status to add it.";
+      const chips = document.createElement("div");
+      chips.className = "chips";
+      for (const s of PAINT_STATUSES) {
+        const chip = makeChip(s.label, current === s.key, () => {
+          const paint = found() || findOrAddPaint(p.brand || "", p.name, p.colour || DEFAULT_PAINT_COLOUR);
+          if (p.type === "material") paint.type = "material";
+          applyPaintStatus(paint, current === s.key ? "" : s.key);
+          render();
+        }, s.colour);
+        chip.classList.add("status-chip");
+        chip.dataset.status = s.key;
+        chips.appendChild(chip);
+      }
+      wrap.append(head, verdict, chips);
+      return wrap;
+    }
+
+    function renderPaletteSearch() {
+      const input = document.getElementById("palette-search");
+      const box = document.getElementById("palette-search-result");
+      if (!input || !box) return;
+      box.innerHTML = "";
+      const typed = input.value.trim();
+      if (!typed) return;
+      const m = matchPaint(typed);
+      if (m.status === "sure" || m.status === "material" || m.status === "new") {
+        box.appendChild(paletteResultCard(m.paint));
+      } else if (m.suggestions.length) {
+        const q = document.createElement("p");
+        q.className = "hint";
+        q.style.margin = "0 0 8px";
+        q.textContent = "Which paint do you mean?";
+        const chips = document.createElement("div");
+        chips.className = "chips";
+        for (const p of m.suggestions) {
+          chips.appendChild(makeChip(p.name + (p.brand ? ` · ${p.brand}` : ""), false, () => {
+            input.value = p.name;
+            renderPaletteSearch();
+          }));
+        }
+        box.append(q, chips);
+      } else {
+        const none = document.createElement("p");
+        none.className = "hint";
+        none.style.margin = "0";
+        none.textContent = "Not sure which paint that is. Try the full name.";
+        box.appendChild(none);
+      }
+    }
+    document.getElementById("palette-search").addEventListener("input", renderPaletteSearch);
+
     // ================= v16: READING PASTED RECIPE NOTES =================
     // Turns notes like the ones people keep in Google Keep into schemes, parts and steps.
     // The result is a preview: nothing is saved until you confirm it.
@@ -2139,8 +2467,12 @@
         const name = p && String(p.name || "").trim();
         if (!name || !Number.isInteger(p.id) || paintIds.has(p.id)) continue;
         paintIds.add(p.id);
-        paints.push({ ...p, brand: String(p.brand || "").trim(), name,
-                      colour: isColour(p.colour) ? p.colour.toLowerCase() : DEFAULT_PAINT_COLOUR });
+        // v17: a status (blank = not set), and the "spare in stock" tick, only for running low.
+        const paint = { ...p, brand: String(p.brand || "").trim(), name,
+                        colour: isColour(p.colour) ? p.colour.toLowerCase() : DEFAULT_PAINT_COLOUR };
+        if (!PAINT_STATUS_KEYS.includes(paint.status)) delete paint.status;
+        if (paint.status !== "low" || paint.spare !== true) delete paint.spare;
+        paints.push(paint);
       }
 
       const recipes = [];
@@ -4567,7 +4899,7 @@
     function pruneUnusedPaints() {
       const used = new Set();
       for (const r of book.recipes) for (const s of r.steps) for (const sp of s.paints) used.add(sp.paint);
-      book.paints = book.paints.filter(p => used.has(p.id) || p.owned === true);   // v16: paints added by scan stay
+      book.paints = book.paints.filter(p => used.has(p.id) || paintStatus(p) !== "");   // v16: scanned paints stay; v17: so do paints with a status
     }
 
     // Finds a paint by brand and name (ignoring capitals), or adds it. Its colour is updated.
@@ -4691,12 +5023,13 @@
       fillSelect(partFilter, "parts", partsUsed, recipePartFilter);
       partFilter.classList.toggle("hidden", partsUsed.length < 2);
 
+      renderCanPaintBox();
       recipeList.innerHTML = "";
       if (!book.recipes.length) {
         recipeList.innerHTML = '<li class="empty">No recipes yet. Press + New recipe to write down how you paint something, step by step.</li>';
       }
       const shown = book.recipes
-        .filter(r => !recipePartFilter || r.part === recipePartFilter)
+        .filter(r => (!recipePartFilter || r.part === recipePartFilter) && (!recipeCanPaint || canPaintNow(r)))
         .sort((a, b) => a.name.localeCompare(b.name));
       for (const recipe of shown) {
         const item = document.createElement("li");
@@ -4719,6 +5052,9 @@
         recipeList.appendChild(item);
       }
 
+      if (recipeCanPaint && !shown.length) {
+        recipeList.insertAdjacentHTML("beforeend", '<li class="empty">No recipe where you own every paint yet. Mark your paints on Your Palette to see what you can paint now.</li>');
+      }
       renderListChips("part-chips", "parts", "part");
       renderListChips("technique-chips", "techniques", "technique");
     }
@@ -4809,6 +5145,8 @@
           brand.className = "brand";
           brand.textContent = paint.brand;
           line.append(makeSwatch(paint.colour), paint.name, brand);
+          const badge = haveBadge(paint);   // v17
+          if (badge) line.appendChild(badge);
           // Show the mix % when paints are mixed, or a single paint isn't 100% (e.g. thinned).
           if (sp.mix !== null && (mixed || sp.mix !== 100)) {
             const mix = document.createElement("span");
@@ -5263,6 +5601,8 @@
     function renderPalette() {
       const paints = book.paints;
       paintSort.value = settings.paintSort;
+      renderPaletteSearch();   // v17
+      renderShopPanel();
 
       // Brand chips: one for each brand, tap again to show all.
       const brands = uniqueSorted(paints.map(p => p.brand));
@@ -5321,6 +5661,8 @@
                           isMaterial(paint) ? "basing material" :
                           paint.colour === DEFAULT_PAINT_COLOUR ? "colour not set" : ""].filter(Boolean).join(" · ");
       text.append(name, meta);
+      const pill = statusPill(paint);   // v17
+      if (pill) text.appendChild(pill);
       head.append(swatch, text);
       head.addEventListener("click", () => {
         if (openPaintIds.has(paint.id)) openPaintIds.delete(paint.id); else openPaintIds.add(paint.id);
@@ -5356,6 +5698,7 @@
       row.append(colour, nameBox, brandBox, brandList);
       panel.appendChild(row);
       panel.insertAdjacentHTML("beforeend", '<p class="hint" style="margin: 0;">Changes here apply in every recipe that uses this paint.</p>');
+      panel.appendChild(buildStatusRow(paint));   // v17
 
       const field = document.createElement("div");
       field.className = "panel-field";
@@ -6338,10 +6681,12 @@
         verdict.className = "hint";
         verdict.style.margin = "6px 0 10px";
         const used = mine ? recipesUsingPaint(mine.id).length : 0;
+        const mineStatus = mine ? paintStatus(mine) : "";   // v17
         verdict.textContent = mine
-          ? `✓ Already in your palette${used ? `, used in ${plural(used, "recipe")}` : ""}.`
+          ? `✓ Already in your palette${mineStatus ? ` · ${statusLabel(mineStatus).toLowerCase()}` : ""}${used ? `, used in ${plural(used, "recipe")}` : ""}.`
           : "Not in your palette yet.";
         box.append(head, verdict);
+        if (mine) box.appendChild(buildStatusRow(mine));   // v17
         if (!mine) {
           const add = document.createElement("button");
           add.className = "primary-button";
@@ -6349,7 +6694,7 @@
           add.textContent = "Add to my palette";
           add.addEventListener("click", () => {
             const paint = findOrAddPaint(p.brand || "", p.name, p.colour || DEFAULT_PAINT_COLOUR);
-            paint.owned = true;
+            applyPaintStatus(paint, "owned");   // v17: scanned paints are Owned
             if (p.type === "material") paint.type = "material";
             save();
             st.chosen = { ...p };
@@ -7580,10 +7925,17 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v16.1";
+    const APP_VERSION = "v17";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v17", date: "9 Oct 2026", changes: [
+        "Paint status: on any paint, tap Owned, Running low, Empty, Wishlist or Not owned. It's blank until you set one, so nothing changes if you never do. Running low paints have a 'spare in stock' tick.",
+        "Search or add a paint on Your Palette: type a name (typos and your shorthand work) to see if you own it, it's running low, or you don't have it. Tap a status to add it.",
+        "Paints added by scan count as Owned. The scan's 'Do I own this?' result shows the status too, and you can change it there.",
+        "In recipes, each paint shows Have or Missing once you've set a status. 'What can I paint now?' on the Recipes list shows only the recipes where you own every paint.",
+        "Shopping list (on Your Palette): running low, empty, wishlist, and paints your recipes use that you don't have, grouped by brand. Copy as text. A spot for shop links is there for later; none are added yet.",
+      ]},
       { version: "v16.1", date: "9 Oct 2026", changes: [
         "Pot scanning fixed: it now opens the camera with a box. Line the paint's name up in the box and tap Read label. Only the name is read, with a contrast boost for shiny or metallic labels, so it works far better (tested on white, blue and silver pots).",
         "No more jumbled text when a scan fails: it just says it couldn't read the name. Use a photo instead is still there if the camera won't open.",
