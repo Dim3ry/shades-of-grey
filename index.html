@@ -620,6 +620,15 @@
     #import-save:disabled { opacity: 0.5; }
     .scan-result { margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; }
     .backup-old { color: #c4b5fd; }
+    /* v16.1: camera view for scanning a pot label */
+    #scan-camera { position: fixed; inset: 0; z-index: 100; background: #000; display: flex; flex-direction: column;
+                   padding: env(safe-area-inset-top) 16px calc(16px + env(safe-area-inset-bottom)); }
+    .cam-frame { position: relative; flex: 1; overflow: hidden; border-radius: 12px; }
+    .cam-frame video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .cam-box { position: absolute; left: 8%; right: 8%; top: 40%; height: 20%; border: 3px solid var(--accent);
+               border-radius: 10px; box-shadow: 0 0 0 9999px rgba(11, 18, 32, 0.55); }
+    .cam-tip { color: var(--text); font-size: 14px; text-align: center; margin: 12px 0; }
+    .cam-buttons { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
     /* One paint: colour, name and ✕ on top; brand and mix % underneath. */
     .paint-edit {
       display: grid; gap: 6px; padding: 8px; border: 1px solid var(--border); border-radius: 8px;
@@ -6041,6 +6050,9 @@
     // Reads the label on the phone itself with Tesseract.js (free, no AI service). The first
     // scan downloads the reader (a few MB); after that it works offline. The matcher then
     // SUGGESTS paints and you pick one. Nothing is added until you say so.
+    // v16.1: reading the whole photo failed (the background drowned the label out). Now the
+    // camera shows a box: line the paint's NAME up in it, and only that strip is read, after
+    // a local contrast boost (it makes shiny, curved labels readable).
     const TESSERACT_URL = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
     let ocrWorker = null;
     function loadTesseract() {
@@ -6053,43 +6065,186 @@
         document.head.appendChild(s);
       });
     }
-    async function readLabel(file, onStatus) {
-      onStatus("Getting the label reader ready (the first time downloads a few MB)…");
+    async function getOcrWorker() {
       await loadTesseract();
-      if (!ocrWorker) ocrWorker = await Tesseract.createWorker("eng");
-      onStatus("Reading the label…");
-      // Shrink and boost the contrast: labels are small and shiny.
-      const bitmap = await createImageBitmap(file);
-      const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.round(bitmap.width * scale);
-      canvas.height = Math.round(bitmap.height * scale);
-      const g = canvas.getContext("2d");
-      g.filter = "grayscale(1) contrast(1.6)";
-      g.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-      const { data } = await ocrWorker.recognize(canvas);
-      return data.text || "";
-    }
-
-    // Label text to paint suggestions. Words printed on every pot (brand, BASE, 12ml...) are ignored.
-    const LABEL_NOISE = /\b(citadel|colour|color|games|workshop|warhammer|base|layer|shade|contrast|technical|dry|air|spray|acrylic|paint|ml|\d+\s*ml|non[- ]?toxic|made in|vallejo|xpress|game|model|army|painter|speedpaint|warpaints?|fanatic)\b/gi;
-    function suggestFromLabel(text) {
-      const lines = plainQuotes(text).split("\n").map(l => l.replace(LABEL_NOISE, " ").replace(/[^A-Za-z' -]+/g, " ").replace(/\s+/g, " ").trim())
-        .filter(l => l.replace(/[^a-z]/gi, "").length >= 3);
-      const tries = [];
-      lines.forEach((l, i) => { tries.push(l); if (lines[i + 1]) tries.push(`${l} ${lines[i + 1]}`); });
-      const sure = [], maybe = [];
-      for (const t of tries) {
-        const m = matchPaint(t);
-        if (m.status === "sure") sure.push(m.paint);
-        else if (m.status === "unsure") maybe.push(...m.suggestions);
+      if (!ocrWorker) {
+        ocrWorker = await Tesseract.createWorker("eng");
+        await ocrWorker.setParameters({ tessedit_pageseg_mode: "6" });   // "one block of text"
       }
-      const out = [];
-      for (const p of [...sure, ...maybe]) if (p && !out.some(o => sameText(o.name, p.name))) out.push(p);
-      return { lines, suggestions: out.slice(0, 4) };
+      return ocrWorker;
     }
 
-    // scanState: { status, read, suggestions, chosen } while the scan panel is open.
+    // Local contrast boost ("CLAHE"): each small patch of the picture gets its own contrast
+    // stretch, blended smoothly. Text on a shiny or shadowed label stands out evenly.
+    function boostContrast(grey, w, h, clip, tiles) {
+      const tw = Math.ceil(w / tiles), th = Math.ceil(h / tiles);
+      const maps = [];
+      for (let ty = 0; ty < tiles; ty++) for (let tx = 0; tx < tiles; tx++) {
+        const hist = new Array(256).fill(0);
+        let n = 0;
+        for (let y = ty * th; y < Math.min(h, (ty + 1) * th); y++)
+          for (let x = tx * tw; x < Math.min(w, (tx + 1) * tw); x++) { hist[grey[y * w + x]]++; n++; }
+        const limit = Math.max(1, Math.floor(clip * n / 256));
+        let excess = 0;
+        for (let i = 0; i < 256; i++) if (hist[i] > limit) { excess += hist[i] - limit; hist[i] = limit; }
+        const add = excess / 256;
+        const map = new Uint8Array(256);
+        let sum = 0;
+        for (let i = 0; i < 256; i++) { sum += hist[i] + add; map[i] = n ? Math.min(255, Math.round(sum * 255 / n)) : i; }
+        maps.push(map);
+      }
+      const out = new Uint8Array(w * h);
+      for (let y = 0; y < h; y++) {
+        const fy = Math.min(tiles - 1, Math.max(0, (y - th / 2) / th));
+        const y0 = Math.floor(fy), y1 = Math.min(tiles - 1, y0 + 1), ay = fy - y0;
+        for (let x = 0; x < w; x++) {
+          const fx = Math.min(tiles - 1, Math.max(0, (x - tw / 2) / tw));
+          const x0 = Math.floor(fx), x1 = Math.min(tiles - 1, x0 + 1), ax = fx - x0;
+          const v = grey[y * w + x];
+          const top = maps[y0 * tiles + x0][v] * (1 - ax) + maps[y0 * tiles + x1][v] * ax;
+          const bottom = maps[y1 * tiles + x0][v] * (1 - ax) + maps[y1 * tiles + x1][v] * ax;
+          out[y * w + x] = Math.round(top * (1 - ay) + bottom * ay);
+        }
+      }
+      return out;
+    }
+    // One strip of a picture, shrunk to "width" pixels wide, in grey with the contrast boost.
+    function labelStrip(source, sx, sy, sw, sh, width, clip, tiles) {
+      const h = Math.max(8, Math.round(sh * width / sw));
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = h;
+      const g = canvas.getContext("2d");
+      g.drawImage(source, sx, sy, sw, sh, 0, 0, width, h);
+      const img = g.getImageData(0, 0, width, h);
+      const grey = new Uint8Array(width * h);
+      for (let i = 0; i < grey.length; i++) grey[i] = Math.round(img.data[i * 4] * 0.299 + img.data[i * 4 + 1] * 0.587 + img.data[i * 4 + 2] * 0.114);
+      const boosted = boostContrast(grey, width, h, clip, tiles);
+      for (let i = 0; i < grey.length; i++) { img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = boosted[i]; img.data[i * 4 + 3] = 255; }
+      g.putImageData(img, 0, 0);
+      return canvas;
+    }
+    // The strips to read. From the camera box: that box, at two sizes and two contrast
+    // strengths. From a photo: horizontal strips across the middle, where the name usually is.
+    function labelStrips(source, box) {
+      if (box) return [[260, 2, 8], [350, 2, 8], [260, 3, 4], [350, 3, 4]]
+        .map(([w, c, t]) => labelStrip(source, box.x, box.y, box.w, box.h, w, c, t));
+      const W = source.width, H = source.height, strips = [];
+      for (let top = 0.34; top <= 0.68; top += 0.04) strips.push(labelStrip(source, W * 0.25, H * top, W * 0.5, H * 0.08, 340, 2, 8));
+      return strips;
+    }
+    async function readLabel(source, box, onStatus) {
+      onStatus("Getting the label reader ready (the first time downloads a few MB)…");
+      const worker = await getOcrWorker();
+      const strips = labelStrips(source, box);
+      const texts = [];
+      for (let i = 0; i < strips.length; i++) {
+        onStatus(`Reading the label… (${i + 1} of ${strips.length})`);
+        const { data } = await worker.recognize(strips[i]);
+        texts.push(data.text || "");
+      }
+      return texts.join("\n");
+    }
+
+    // Label text to paint suggestions. Each word of each paint's name is compared with the
+    // words read, allowing misread letters ("waite SCAR" = White Scar) and cut-off words
+    // ("STORMHOSBIELS" = Stormhost). Words printed on every pot (CITADEL, LAYER...) are ignored.
+    const LABEL_NOISE = new Set(["citadel", "colour", "color", "games", "workshop", "warhammer", "base", "layer", "shade",
+      "contrast", "technical", "dry", "air", "spray", "acrylic", "paint", "non", "toxic", "made", "vallejo", "xpress",
+      "game", "model", "army", "painter", "speedpaint", "warpaints", "fanatic"]);
+    function wordLikeness(word, token) {
+      const d = typoDistance(word, token, word.length);
+      let same = 0;
+      while (same < Math.min(word.length, token.length) && word[same] === token[same]) same++;
+      return Math.max(1 - d / Math.max(word.length, token.length), same >= 4 ? same / Math.max(word.length, token.length) : 0);
+    }
+    function suggestFromLabel(text) {
+      const tokens = [...new Set(plainQuotes(String(text)).toLowerCase().replace(/[^a-z\s]+/g, " ").split(/\s+/)
+        .filter(t => t.length >= 3 && !LABEL_NOISE.has(t)))];
+      const scored = [];
+      for (const c of matchCandidates()) {
+        const words = c.words.filter(w => w.length >= 3);
+        if (!words.length) continue;
+        let got = 0, letters = 0, special = false, strongWord = false;
+        for (const w of words) {
+          letters += w.length;
+          const best = Math.max(0, ...tokens.map(t => wordLikeness(w, t)));
+          if (best >= 0.7) { got += w.length * best; if (!VAGUE_WORDS.has(w)) special = true; }
+          // A long, unusual word read well ("STORMHO" for Stormhost) is enough on its own.
+          if (best >= 0.75 && w.length >= 6 && !VAGUE_WORDS.has(w)) strongWord = true;
+        }
+        const score = got / letters;
+        if (special && (score >= 0.5 || strongWord)) scored.push({ c, score, got });
+      }
+      // Most letters matched first (so "STORMHO" picks Stormhost over Storm Blue), then closeness.
+      scored.sort((a, b) => b.got - a.got || b.score - a.score || (b.c.mine === true) - (a.c.mine === true));
+      const out = [];
+      for (const { c } of scored) if (!out.some(o => sameText(o.name, c.name)))
+        out.push({ brand: c.brand, name: c.name, colour: c.colour || DEFAULT_PAINT_COLOUR, type: c.type });
+      return { tokens, suggestions: out.slice(0, 4) };
+    }
+
+    // ----- The camera, with the box to line the name up in -----
+    let cameraStream = null;
+    function closeCamera() {
+      if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+      cameraStream = null;
+      const view = document.getElementById("scan-camera");
+      if (view) view.remove();
+    }
+    async function openCamera() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { document.getElementById("scan-photo").click(); return; }
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
+      } catch (error) {
+        scanState.status = "Couldn't open the camera (it may need permission). Choose a photo instead, or type the name.";
+        renderScan();
+        return;
+      }
+      const view = document.createElement("div");
+      view.id = "scan-camera";
+      view.innerHTML = `<div class="cam-frame"><video playsinline muted autoplay></video><div class="cam-box"></div></div>
+        <p class="cam-tip">Line up the paint's <b>name</b> inside the box, close up and straight on. Hold still, then tap Read.</p>
+        <div class="cam-buttons"><button class="plain-button" id="cam-cancel">Cancel</button><button class="primary-button" id="cam-read">Read label</button></div>`;
+      document.body.appendChild(view);
+      const video = view.querySelector("video");
+      video.srcObject = cameraStream;
+      view.querySelector("#cam-cancel").addEventListener("click", closeCamera);
+      view.querySelector("#cam-read").addEventListener("click", () => {
+        if (!video.videoWidth) return;
+        // Work out which part of the camera picture is inside the box on screen.
+        const frame = view.querySelector(".cam-frame").getBoundingClientRect();
+        const boxRect = view.querySelector(".cam-box").getBoundingClientRect();
+        const scale = Math.max(frame.width / video.videoWidth, frame.height / video.videoHeight);
+        const offX = (frame.width - video.videoWidth * scale) / 2, offY = (frame.height - video.videoHeight * scale) / 2;
+        const box = { x: (boxRect.left - frame.left - offX) / scale, y: (boxRect.top - frame.top - offY) / scale,
+                      w: boxRect.width / scale, h: boxRect.height / scale };
+        const still = document.createElement("canvas");
+        still.width = video.videoWidth;
+        still.height = video.videoHeight;
+        still.getContext("2d").drawImage(video, 0, 0);
+        closeCamera();
+        scanLabel(still, box);
+      });
+    }
+
+    async function scanLabel(source, box) {
+      const st = scanState;
+      st.chosen = null;
+      st.suggestions = [];
+      try {
+        const text = await readLabel(source, box, (msg) => { st.status = msg; renderScan(); });
+        const found = suggestFromLabel(text);
+        st.suggestions = found.suggestions;
+        st.status = found.suggestions.length ? "Is it one of these?"
+          : "Couldn't read the name. Try again with the name filling the box and no glare on it, or type the name below.";
+      } catch (error) {
+        st.status = error.message || "Couldn't read the label.";
+      }
+      renderScan();
+    }
+
+    // scanState: { status, suggestions, chosen, typed } while the scan panel is open.
     let scanState = null;
     const scanPanel = document.getElementById("scan-panel");
     document.getElementById("scan-button").addEventListener("click", () => {
@@ -6104,32 +6259,31 @@
       const st = scanState;
       const intro = document.createElement("p");
       intro.className = "hint";
-      intro.textContent = "Take a photo of the pot's label, straight on and close up. The app suggests a paint and you pick it. You can also just type the name.";
+      intro.textContent = "Point the camera at the pot and line the paint's name up in the box. The app suggests a paint and you pick it. You can also just type the name.";
       const photo = document.createElement("input");
       photo.type = "file";
       photo.accept = "image/*";
-      photo.setAttribute("capture", "environment");
       photo.id = "scan-photo";
       photo.className = "hidden";
       const take = document.createElement("button");
       take.className = "primary-button";
       take.style.width = "100%";
-      take.textContent = "📷 Take or choose a photo";
-      take.addEventListener("click", () => photo.click());
+      take.textContent = "📷 Scan a label";
+      take.addEventListener("click", openCamera);
+      const fromPhoto = document.createElement("button");
+      fromPhoto.className = "link-button";
+      fromPhoto.textContent = "Use a photo instead";
+      fromPhoto.addEventListener("click", () => photo.click());
       photo.addEventListener("change", async () => {
         const file = photo.files && photo.files[0];
         if (!file) return;
-        st.chosen = null;
         try {
-          const text = await readLabel(file, (msg) => { st.status = msg; renderScan(); });
-          const found = suggestFromLabel(text);
-          st.read = found.lines.join(" / ");
-          st.suggestions = found.suggestions;
-          st.status = found.suggestions.length ? "Is it one of these?" : "Couldn't match the label. Try a closer, straighter photo, or type the name below.";
+          const bitmap = await createImageBitmap(file);
+          scanLabel(bitmap, null);
         } catch (error) {
-          st.status = error.message || "Couldn't read the photo.";
+          st.status = "Couldn't open that photo.";
+          renderScan();
         }
-        renderScan();
       });
 
       const typed = document.createElement("input");
@@ -6149,14 +6303,14 @@
         st.status = !typed.value.trim() ? "" : st.suggestions.length ? "Is it one of these?" : "No match. Check the spelling.";
         renderScan();
       });
-      scanPanel.append(intro, take, photo, typed);
+      scanPanel.append(intro, take, fromPhoto, photo, typed);
 
       if (st.status) {
         const s = document.createElement("p");
         s.className = "hint";
         s.id = "scan-status";
         s.style.margin = "10px 0 0";
-        s.textContent = st.status + (st.read ? ` (read: “${st.read}”)` : "");
+        s.textContent = st.status;
         scanPanel.appendChild(s);
       }
       if (st.suggestions.length) {
@@ -7426,10 +7580,14 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v16";
+    const APP_VERSION = "v16.1";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v16.1", date: "9 Oct 2026", changes: [
+        "Pot scanning fixed: it now opens the camera with a box. Line the paint's name up in the box and tap Read label. Only the name is read, with a contrast boost for shiny or metallic labels, so it works far better (tested on white, blue and silver pots).",
+        "No more jumbled text when a scan fails: it just says it couldn't read the name. Use a photo instead is still there if the camera won't open.",
+      ]},
       { version: "v16", date: "9 Oct 2026", changes: [
         "Paste recipes: paste your painting notes (e.g. from Google Keep) and the app turns them into a scheme, with one recipe per part. You see a preview first, and nothing is saved until you press Save.",
         "It reads parts ending in : or ; , steps one per line or split by commas, arrows (A -> B), numbered lists, mixes like 2:1 Baal:CM or 50/50, and notes in (brackets).",

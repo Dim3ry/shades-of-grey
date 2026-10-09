@@ -27,7 +27,7 @@ ANSWERS = {"Bleck Templar": "Black Templar", "CM": "Contrast Medium", "Ice": "Ba
            "blangels red": "Blood Angels Red", "ultramarine blue": "Ultramarines Blue"}
 
 with sync_playwright() as pw:
-    browser = pw.chromium.launch()
+    browser = pw.chromium.launch(args=["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"])
     for size, (w, h) in {"phone": (390, 844), "desktop": (1280, 900)}.items():
         page = browser.new_page(viewport={"width": w, "height": h})
         errors = []
@@ -38,7 +38,7 @@ with sync_playwright() as pw:
         page.wait_for_timeout(300)
 
         if size == "phone":
-            check("version is v16", page.evaluate("APP_VERSION") == "v16")
+            check("version is v16.1", page.evaluate("APP_VERSION") == "v16.1")
             b = page.evaluate("book")
             check("old book loads, shorthand defaults to empty", b["shorthand"] == {} and b["recipes"][0]["name"] == "Black armour", b.get("shorthand"))
 
@@ -197,8 +197,27 @@ with sync_playwright() as pw:
         check(f"{size}: label text -> Macragge Blue first", sug[:1] == ["Macragge Blue"], sug)
         sug = page.evaluate("suggestFromLabel('LAYER\\nKHORNE RFD').suggestions.map(p => p.name)")
         check(f"{size}: misread label still suggests", "Khorne Red" in sug, sug)
+        # v16.1: what the reader actually got from George's pots (framed in the box), and junk.
+        for text, want in [("STORMHO Sens | 'STORMHO SEs | 'STORMH O SiRES, 'STORMHO SBE", "Stormhost Silver"),
+                           ("WE aveR wuire scar an LAYER | write SCAP Me avER eb ware SCAT _", "White Scar"),
+                           ("& uver _ LOTHERN BLUE' caver _ LOTHERN BLUE' Pur -", "Lothern Blue")]:
+            sug = page.evaluate("t => suggestFromLabel(t).suggestions.map(p => p.name)", text)
+            check(f"{size}: real label read -> {want} first", sug[:1] == [want], sug)
+        junk = page.evaluate("suggestFromLabel('Tv ———! PY TADEI, (oe = OOS we 4. CYTADEL COL!').suggestions.length")
+        check(f"{size}: junk text suggests nothing", junk == 0, junk)
+        strips = page.evaluate("""() => { const c = document.createElement('canvas'); c.width = 800; c.height = 600;
+          const g = c.getContext('2d'); g.fillStyle = '#888'; g.fillRect(0, 0, 800, 600);
+          return [labelStrips(c, { x: 100, y: 250, w: 600, h: 100 }).map(s => s.width), labelStrips(c, null).length]; }""")
+        check(f"{size}: box gives 4 sized strips, photo gives 9", strips == [[260, 350, 260, 350], 9], strips)
         page.evaluate("openRecipeId = null; settings.recipeView = 'palette'; showTab('recipes'); renderRecipes()")
         page.click("#scan-button")
+        page.locator("#scan-panel button", has_text="Scan a label").click()
+        page.wait_for_selector("#scan-camera video", timeout=5000)
+        check(f"{size}: camera opens with a box", page.locator("#scan-camera .cam-box").count() == 1)
+        page.wait_for_timeout(500)
+        page.screenshot(path=f"{SHOTS}/v16-{size}-camera.png", full_page=False)
+        page.click("#cam-cancel")
+        check(f"{size}: camera closes", page.locator("#scan-camera").count() == 0)
         page.fill("#scan-typed", "macrage blue")
         page.locator("#scan-typed").dispatch_event("change")
         page.wait_for_timeout(100)
