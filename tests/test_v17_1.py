@@ -2,8 +2,10 @@
 Serve the repo folder with `python3 -m http.server 8765`, then run: python3 tests/test_v17_1.py <folder for screenshots>."""
 import os, sys
 from playwright.sync_api import sync_playwright
+import os as _os
+PORT = _os.environ.get("SOG_PORT", "8765")
 
-URL = "http://localhost:8765/index.html"
+URL = f"http://localhost:{PORT}/index.html"
 SHOTS = sys.argv[1] if len(sys.argv) > 1 else "."
 KEEP_NOTE = open(os.path.join(os.path.dirname(__file__), "keep_note.txt")).read()
 results = []

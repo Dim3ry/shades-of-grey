@@ -2,8 +2,10 @@
 `python3 -m http.server 8765`, then run: python3 tests/test_v14.py <folder for screenshots>."""
 import json, sys, time, base64, datetime
 from playwright.sync_api import sync_playwright
+import os as _os
+PORT = _os.environ.get("SOG_PORT", "8765")
 
-URL = "http://localhost:8765/index.html"
+URL = f"http://localhost:{PORT}/index.html"
 SHOTS = sys.argv[1] if len(sys.argv) > 1 else "."
 DEFAULT = ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted",
            "Battle ready", "Painted with issues", "Parade ready"]
@@ -56,7 +58,7 @@ def run(viewport, label):
 
         def seed(data, settings=None, extra=None):
             # Same web address but no app running, so nothing can save over the seeded data.
-            page.goto("http://localhost:8765/manifest.json")
+            page.goto(f"http://localhost:{PORT}/manifest.json")
             page.evaluate("""([d, s, x]) => { localStorage.clear();
               localStorage.setItem('mini-tracker-models', JSON.stringify(d));
               if (s !== null) localStorage.setItem('shades-of-grey-settings', typeof s === 'string' ? s : JSON.stringify(s));
@@ -324,3 +326,4 @@ fails = [r for r in results if not r[1]]
 print(f"\n{len(results) - len(fails)} of {len(results)} passed")
 real_errors = [e for e in errors if "favicon" not in e]
 print("Console/page errors:", real_errors or "none")
+sys.exit(0 if not fails and not real_errors else 1)

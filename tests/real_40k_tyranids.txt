@@ -1,0 +1,88 @@
+Experiment (1930 points)
+
+Tyranids
+Synaptic Nexus and Talons of the Norn Queen (3 Detachment Points)
+Strike Force (2000 points)
+ERRORS
+  • You have not selected a Force Disposition. Edit the Roster to select one.
+
+
+CHARACTERS
+
+Deathleaper (80 points)
+  • 1x Lictor claws and talons
+
+Hive Tyrant (195 points)
+  • 1x Monstrous bonesword and lash whip
+    1x Monstrous scything talons
+
+Neurotyrant (120 points)
+  • Warlord
+  • 1x Neurotyrant claws and lashes
+    1x Psychic scream
+
+Tervigon (150 points)
+  • 1x Massive scything talons
+    1x Stinger salvoes
+
+
+BATTLELINE
+
+Gargoyles (75 points)
+  • 10x Gargoyle
+    • 10x Blinding venom
+      10x Fleshborer
+
+Gargoyles (75 points)
+  • 10x Gargoyle
+    • 10x Blinding venom
+      10x Fleshborer
+
+Termagants (110 points)
+  • 20x Termagant
+    • 20x Chitinous claws and teeth
+      20x Fleshborer
+
+Termagants (110 points)
+  • 20x Termagant
+    • 20x Chitinous claws and teeth
+      20x Fleshborer
+
+
+OTHER DATASHEETS
+
+Biovores (60 points)
+  • 1x Chitin-barbed limbs
+    1x Spore Mine launcher
+
+Exocrine (135 points)
+  • 1x Bio-plasmic cannon
+    1x Powerful limbs
+
+Exocrine (135 points)
+  • 1x Bio-plasmic cannon
+    1x Powerful limbs
+
+Lictor (60 points)
+  • 1x Lictor claws and talons
+
+Lictor (60 points)
+  • 1x Lictor claws and talons
+
+Maleceptor (180 points)
+  • 1x Massive scything talons
+    1x Psychic overload
+
+Neurolictor (80 points)
+  • 1x Piercing claws and talons
+
+Norn Emissary (250 points)
+  • 1x Monstrous rending claws
+    1x Monstrous scything talons
+    1x Psychic Tendril
+
+Von Ryan’s Leapers (55 points)
+  • 3x Von Ryan’s Leaper
+    • 3x Leaper’s talons
+
+Exported with App Version: v2.7.1 (146), Data Version: v972
