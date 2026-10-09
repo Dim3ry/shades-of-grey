@@ -38,7 +38,7 @@ with sync_playwright() as pw:
         page.wait_for_timeout(300)
 
         if size == "phone":
-            check("version is v17 (v16 tests still pass)", page.evaluate("APP_VERSION") == "v17")
+            check("version starts with v17 (v16 tests still pass)", page.evaluate("APP_VERSION").startswith("v17"))
             b = page.evaluate("book")
             check("old book loads, shorthand defaults to empty", b["shorthand"] == {} and b["recipes"][0]["name"] == "Black armour", b.get("shorthand"))
 
@@ -158,7 +158,8 @@ with sync_playwright() as pw:
         check(f"{size}: shorthand remembered", sh.get("cm", {}).get("name") == "Contrast Medium" and sh.get("ss", {}).get("name") == "Screaming Skull"
               and sh.get("khorn red", {}).get("name") == "Khorne Red", sh)
         check(f"{size}: 'Keep'/material answers not remembered as shorthand", "ice" not in sh, sh)
-        check(f"{size}: schemes view shown after save", page.evaluate("settings.recipeView") == "schemes")
+        check(f"{size}: palette opens after save, to check the new paints (v17.1)", page.evaluate("settings.recipeView") == "palette")
+        page.click("#recipe-seg button[data-view='schemes']")
         page.screenshot(path=f"{SHOTS}/v16-{size}-schemes.png", full_page=False)
 
         # Remembered shorthand is now matched straight away.

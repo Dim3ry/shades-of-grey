@@ -637,6 +637,10 @@
     .shop-list { margin: 0; padding-left: 20px; line-height: 1.6; }
     .shop-list small { color: var(--muted); }
     .shop-links-slot { margin-top: 14px; padding: 10px; border: 1px dashed var(--border); border-radius: 8px; }
+    /* v17.1: how many you have */
+    .qty-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; color: var(--text); font-size: 15px; }
+    .qty-step { width: 44px; min-height: 44px; padding: 0; font-size: 20px; }
+    .qty-count { min-width: 28px; text-align: center; font-weight: 600; }
     /* v16.1: camera view for scanning a pot label */
     #scan-camera { position: fixed; inset: 0; z-index: 100; background: #000; display: flex; flex-direction: column;
                    padding: env(safe-area-inset-top) 16px calc(16px + env(safe-area-inset-bottom)); }
@@ -886,6 +890,7 @@
           <button class="plain-button" id="scan-button" style="width: 100%; margin-top: 12px;">📷 Scan a paint pot (or check if you own it)</button>
           <div id="scan-panel" class="hidden" style="margin-top: 12px;"></div>
         </div>
+        <div class="card hidden" id="import-review"></div>
         <div class="card">
           <input id="palette-search" type="search" placeholder="Search or add a paint, e.g. Macragge Blue"
                  aria-label="Search or add a paint" autocomplete="off" style="width: 100%;">
@@ -1788,6 +1793,7 @@
     const PAINT_STATUS_KEYS = PAINT_STATUSES.map(s => s.key);
     let recipeCanPaint = false;   // the "What can I paint now?" filter (kept while the app is open)
     let shopOpen = false;
+    let importReviewIds = null;   // v17.1: the paints a paste import just added, while you check them
 
     // A paint's status now: its own status, or Owned if the scan added it. "" = not set.
     function paintStatus(paint) {
@@ -1797,6 +1803,8 @@
     const statusLabel = (key) => (PAINT_STATUSES.find(s => s.key === key) || {}).label || "";
     // Do you have it to paint with? Owned and running low both count.
     const haveIt = (paint) => { const s = paintStatus(paint); return s === "owned" || s === "low"; };
+    // v17.1: how many you have. Blank means one; only counts above one are stored.
+    const paintQty = (paint) => (Number.isInteger(paint.qty) && paint.qty > 1 ? paint.qty : 1);
     // Until someone sets a status, the have/missing badges and the filter stay off.
     const anyStatusSet = () => book.paints.some(p => paintStatus(p) !== "");
 
@@ -1806,9 +1814,11 @@
         paint.status = key;
         paint.owned = key === "owned" || key === "low";
         if (key !== "low") delete paint.spare;
+        if (!haveIt({ status: key })) delete paint.qty;
       } else {
         delete paint.status;
         delete paint.spare;
+        delete paint.qty;
         paint.owned = false;
       }
     }
@@ -1834,6 +1844,32 @@
         chips.appendChild(chip);
       }
       wrap.append(label, chips);
+      if (haveIt(paint)) {   // v17.1: how many you have (default one)
+        const qtyRow = document.createElement("div");
+        qtyRow.className = "qty-row";
+        const howMany = document.createElement("span");
+        howMany.textContent = "How many";
+        const fewer = document.createElement("button");
+        fewer.className = "plain-button qty-step";
+        fewer.textContent = "−";
+        fewer.setAttribute("aria-label", "One fewer");
+        const count = document.createElement("span");
+        count.className = "qty-count";
+        count.textContent = String(paintQty(paint));
+        const more = document.createElement("button");
+        more.className = "plain-button qty-step";
+        more.textContent = "+";
+        more.setAttribute("aria-label", "One more");
+        const setQty = (n) => {
+          n = Math.max(1, Math.min(99, n));
+          if (n > 1) paint.qty = n; else delete paint.qty;
+          render();
+        };
+        fewer.addEventListener("click", () => setQty(paintQty(paint) - 1));
+        more.addEventListener("click", () => setQty(paintQty(paint) + 1));
+        qtyRow.append(howMany, fewer, count, more);
+        wrap.appendChild(qtyRow);
+      }
       if (current === "low") {
         const spare = document.createElement("label");
         spare.className = "check-label spare-tick";
@@ -2000,6 +2036,29 @@
       panel.appendChild(card);
     }
     document.getElementById("shop-button").addEventListener("click", () => { shopOpen = !shopOpen; renderShopPanel(); });
+
+    // ----- v17.1: check the paints a paste import just added -----
+    function renderImportReview() {
+      const box = document.getElementById("import-review");
+      if (!box) return;
+      const ids = importReviewIds ? importReviewIds.filter(id => paintById(id)) : [];
+      box.classList.toggle("hidden", !ids.length);
+      box.innerHTML = "";
+      if (!ids.length) return;
+      const title = document.createElement("h2");
+      title.textContent = "Check your import";
+      title.style.fontSize = "18px";
+      const hint = document.createElement("p");
+      hint.className = "hint";
+      hint.style.margin = "0 0 10px";
+      hint.textContent = `${plural(ids.length, "paint")} came in as Owned. Change the status or how many you have on any of them below, then press Done.`;
+      const done = document.createElement("button");
+      done.className = "primary-button";
+      done.style.width = "100%";
+      done.textContent = "Done";
+      done.addEventListener("click", () => { importReviewIds = null; render(); });
+      box.append(title, hint, done);
+    }
 
     // ----- Search or add a paint on Your Palette -----
     // Type a name: see whether you own it, it's running low, or you don't have it.
@@ -2472,6 +2531,10 @@
                         colour: isColour(p.colour) ? p.colour.toLowerCase() : DEFAULT_PAINT_COLOUR };
         if (!PAINT_STATUS_KEYS.includes(paint.status)) delete paint.status;
         if (paint.status !== "low" || paint.spare !== true) delete paint.spare;
+        // v17.1: quantity, only for paints you have and only above one.
+        const haveNow = paint.status === "owned" || paint.status === "low" || (!paint.status && paint.owned === true);
+        if (!haveNow || !Number.isInteger(paint.qty) || paint.qty <= 1) delete paint.qty;
+        else paint.qty = Math.min(99, paint.qty);
         paints.push(paint);
       }
 
@@ -5602,6 +5665,7 @@
       const paints = book.paints;
       paintSort.value = settings.paintSort;
       renderPaletteSearch();   // v17
+      renderImportReview();    // v17.1
       renderShopPanel();
 
       // Brand chips: one for each brand, tap again to show all.
@@ -5616,7 +5680,8 @@
           () => { paletteBrand = paletteBrand === brand ? null : brand; renderPalette(); }));
       }
 
-      const shown = paints.filter(p => paletteBrand === null || p.brand === paletteBrand);
+      const shown = paints.filter(p => (paletteBrand === null || p.brand === paletteBrand) &&
+                                       (!importReviewIds || importReviewIds.includes(p.id)));
       const sorters = {
         colour: (a, b) => (isMaterial(a) - isMaterial(b)) || colourOrder(a, b),   // v15: materials last
         name: (a, b) => a.name.localeCompare(b.name),
@@ -5658,6 +5723,7 @@
       const meta = document.createElement("span");
       meta.className = "details";
       meta.textContent = [paint.brand || "No brand", `in ${plural(usedIn.length, "recipe")}`,
+                          paintQty(paint) > 1 ? `× ${paintQty(paint)} in stock` : "",
                           isMaterial(paint) ? "basing material" :
                           paint.colour === DEFAULT_PAINT_COLOUR ? "colour not set" : ""].filter(Boolean).join(" · ");
       text.append(name, meta);
@@ -6320,13 +6386,18 @@
       for (const g of d.groups) if (g.choice.kind === "pick" || g.choice.kind === "other") rememberShorthand(g.typed, g.choice.paint);
       let recipeCount = 0;
       const made = [];
+      const importNewIds = [];   // v17.1
       d.parsed.schemes.forEach((s, si) => {
         const schemeName = (d.names[si] || "").trim() || "Imported recipes";
         const ids = [];
         for (const part of s.parts) {
           const steps = part.steps.map(step => {
             const paints = step.paints.map(importPaintFor).filter(Boolean).map(p => {
+              // v17.1: a paint new to your palette comes in as Owned (you're bringing your own list).
+              const known = book.paints.some(x => sameText(x.name, p.name) && (!p.brand || sameText(x.brand, p.brand)));
               const paint = findOrAddPaint(p.brand || "", p.name, p.colour || DEFAULT_PAINT_COLOUR);
+              if (!known && paintStatus(paint) === "") applyPaintStatus(paint, "owned");
+              if (!known) importNewIds.push(paint.id);
               if (p.type === "material") paint.type = "material";
               return paint;
             });
@@ -6349,7 +6420,10 @@
         made.push(schemeName);
       });
       importDraft = null;
-      settings.recipeView = "schemes";
+      // v17.1: new paints open on Your Palette for a quick check, with every row expanded.
+      importReviewIds = importNewIds.length ? importNewIds.slice() : null;
+      importNewIds.forEach(id => openPaintIds.add(id));
+      settings.recipeView = importNewIds.length ? "palette" : "schemes";
       saveSettings();
       render();
       window.scrollTo(0, 0);
@@ -7925,10 +7999,14 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v17";
+    const APP_VERSION = "v17.1";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v17.1", date: "9 Oct 2026", changes: [
+        "Paints brought in by Paste recipes now start as Owned, not missing. After an import, Your Palette opens on those paints with every one expanded, so you can change any status or quantity, then press Done.",
+        "Quantity: a paint you have counts as one. Tap + to say you have more (e.g. two Nuln Oil pots), and − to go back. Shown as '× 2 in stock' on the palette.",
+      ]},
       { version: "v17", date: "9 Oct 2026", changes: [
         "Paint status: on any paint, tap Owned, Running low, Empty, Wishlist or Not owned. It's blank until you set one, so nothing changes if you never do. Running low paints have a 'spare in stock' tick.",
         "Search or add a paint on Your Palette: type a name (typos and your shorthand work) to see if you own it, it's running low, or you don't have it. Tap a status to add it.",
