@@ -6,7 +6,8 @@ import os as _os
 PORT = _os.environ.get("SOG_PORT", "8765")
 
 URL = f"http://localhost:{PORT}/index.html"
-SHOTS = sys.argv[1] if len(sys.argv) > 1 else "."
+SHOTS = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "screenshots")
+os.makedirs(SHOTS, exist_ok=True)
 KEEP_NOTE = open(os.path.join(os.path.dirname(__file__), "keep_note.txt")).read()
 results = []
 def check(name, ok, detail=""):
