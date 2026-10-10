@@ -2995,11 +2995,31 @@
 
     // render() redraws the screen from the data. Change the data first, then render().
     // It saves first, so every change is saved from this one place.
+    // Saves, then redraws everything. v18c-3: reports back true if the save worked.
     function render() {
-      save();
+      const ok = save();
       renderDashboard();
       renderUnits();
       renderRecipes();
+      return ok;
+    }
+
+    // ================= v18c-3: HONEST "SAVED" MESSAGES =================
+    // commit() is render() plus the message: it saves, redraws, and only THEN says
+    // "Saved …" / "Added …" if the save really worked. If storage is full it says so
+    // plainly instead, with a Save backup button. The change stays on screen and the red
+    // banner stays up, so Retry on the banner can still save it once there's room.
+    // (Before v18c-3 every message said "Saved" whatever happened.)
+    const NOT_SAVED_MESSAGE = "Not saved: storage on this device is full. It's on screen for now, " +
+      "but will be lost when the app closes. Save a backup, then free some space.";
+    function showNotSaved(message) {
+      showToast(message || NOT_SAVED_MESSAGE, () => document.getElementById("export-button").click(), "Save backup", 12);
+    }
+    function commit(message, undo, buttonLabel, seconds) {
+      const ok = render();
+      if (ok) showToast(message, undo, buttonLabel, seconds);
+      else showNotSaved();
+      return ok;
     }
 
     // ================= FACTION COLOURS =================
@@ -4286,8 +4306,7 @@
         model.copy = highest + 1;
       }
       if (!isVisible(model)) clearFilters();  // so an edited unit never seems to vanish
-      render();
-      showToast(`Saved ${displayName(model)}`);
+      commit(`Saved ${displayName(model)}`);   // v18c-3: only says Saved if it was
     }
 
     // Move a unit up (+1) or back (-1) a stage, then show a message with Undo.
@@ -4501,8 +4520,7 @@
       model.photos = [...(model.photos || []), note];
       thumbUrls.set(record.id, URL.createObjectURL(record.thumb));
       fullUrls.set(record.id, URL.createObjectURL(record.full));
-      render();
-      showToast(`Photo added to ${displayName(model)} (${plural(model.photos.length, "photo")})`);
+      commit(`Photo added to ${displayName(model)} (${plural(model.photos.length, "photo")})`);   // v18c-3
       askToKeepStorage();
     }
 
@@ -4963,8 +4981,7 @@
       countInput.value = 1;
       nameInput.focus();
       // Game and faction stay filled in, since you'll often add several from one army.
-      render();
-      showToast(`Added ${displayName(newModel)}`);
+      commit(`Added ${displayName(newModel)}`);   // v18c-3
     });
 
     // ================= RECIPES TAB =================
@@ -5662,15 +5679,15 @@
       }
       Object.assign(scheme, { name, faction, auto: d.auto, recipes: d.recipes.filter(id => recipeById(id)) });
       schemeDraft = null;
-      render();
-      window.scrollTo(0, 0);
       // Offer to apply it straight away to units that don't have it all yet.
+      // v18c-3: commit() only says Saved (and offers Apply) if the save worked.
       const missing = unitsMissing(scheme);
       if (missing.length && scheme.recipes.length) {
-        showToast(`Saved ${name}`, () => applyScheme(scheme, missing), `Apply to ${plural(missing.length, "unit")}`, 8);
+        commit(`Saved ${name}`, () => applyScheme(scheme, missing), `Apply to ${plural(missing.length, "unit")}`, 8);
       } else {
-        showToast(`Saved ${name}`);
+        commit(`Saved ${name}`);
       }
+      window.scrollTo(0, 0);
     }
 
     // Deleting a scheme doesn't touch the recipes or the units' links: those stay.
@@ -5864,12 +5881,10 @@
         }
         paint[field] = old;   // so a typo you merge away is remembered as shorthand
         joinPaints(paint, twin);
-        render();
-        showToast(`Merged into ${twin.name}`);
+        commit(`Merged into ${twin.name}`);   // v18c-3
         return;
       }
-      render();
-      showToast(`Saved ${paint.name}`);
+      commit(`Saved ${paint.name}`);   // v18c-3
     }
 
     // ================= v18c-2: REMOVE AND MERGE PAINTS =================
@@ -5907,8 +5922,7 @@
       if (!from || !into || from === into) return;
       const before = JSON.stringify(book);
       joinPaints(from, into);
-      render();
-      showToast(`Merged ${from.name} into ${into.name}`, () => { book = cleanRecipeBook(JSON.parse(before)); render(); });
+      commit(`Merged ${from.name} into ${into.name}`, () => { book = cleanRecipeBook(JSON.parse(before)); render(); });   // v18c-3
     }
 
     // "Remove": only for a paint no recipe uses. Undo puts it back.
@@ -5919,8 +5933,7 @@
       repointShorthand(paint, null);
       openPaintIds.delete(paint.id);
       if (importReviewIds) importReviewIds = importReviewIds.filter(id => id !== paint.id);
-      render();
-      showToast(`Removed ${paint.name}`, () => { book = cleanRecipeBook(JSON.parse(before)); render(); });
+      commit(`Removed ${paint.name}`, () => { book = cleanRecipeBook(JSON.parse(before)); render(); });   // v18c-3
     }
 
     // The Remove and Merge into… buttons at the bottom of an open paint.
@@ -6404,9 +6417,8 @@
       pruneUnusedPaints();
       recipeDraft = null;
       openRecipeId = recipe.id;
-      render();
+      commit(`Saved ${name}`);   // v18c-3: only says Saved if it was
       window.scrollTo(0, 0);
-      showToast(`Saved ${name}`);
     }
 
 
@@ -6719,49 +6731,60 @@
       const d = importDraft;
       if (!d || !d.parsed || d.groups.some(g => !g.choice)) return;
       const before = JSON.stringify(book);
-      for (const g of d.groups) if (g.choice.kind === "pick" || g.choice.kind === "other") rememberShorthand(g.typed, g.choice.paint);
       let recipeCount = 0;
       const made = [];
       const importNewIds = [];   // v17.1
-      d.parsed.schemes.forEach((s, si) => {
-        const schemeName = (d.names[si] || "").trim() || "Imported recipes";
-        const ids = [];
-        for (const part of s.parts) {
-          const steps = part.steps.map(step => {
-            const paints = step.paints.map(importPaintFor).filter(Boolean).map(p => {
-              // v17.1: a paint new to your palette comes in as Owned (you're bringing your own list).
-              // v18c: unless you answered None, or untapped it, under "Do you own these?".
-              const known = isInPalette(p);
-              const paint = findOrAddPaint(p.brand || "", p.name, p.colour || DEFAULT_PAINT_COLOUR);
-              if (!known && paintStatus(paint) === "") applyPaintStatus(paint, ownsNewPaint(d.own, p) ? "owned" : "notowned");
-              if (!known) importNewIds.push(paint.id);
-              if (p.type === "material") paint.type = "material";
-              return paint;
+      // v18c-3: every change goes inside changeAndSave(). If the save fails (storage full),
+      // the recipe book is put back exactly as it was and the preview stays open with your
+      // notes, so nothing is lost and you can try again. Before, the notes were thrown away
+      // and it still said "Saved".
+      const kept = changeAndSave(() => {
+        for (const g of d.groups) if (g.choice.kind === "pick" || g.choice.kind === "other") rememberShorthand(g.typed, g.choice.paint);
+        d.parsed.schemes.forEach((s, si) => {
+          const schemeName = (d.names[si] || "").trim() || "Imported recipes";
+          const ids = [];
+          for (const part of s.parts) {
+            const steps = part.steps.map(step => {
+              const paints = step.paints.map(importPaintFor).filter(Boolean).map(p => {
+                // v17.1: a paint new to your palette comes in as Owned (you're bringing your own list).
+                // v18c: unless you answered None, or untapped it, under "Do you own these?".
+                const known = isInPalette(p);
+                const paint = findOrAddPaint(p.brand || "", p.name, p.colour || DEFAULT_PAINT_COLOUR);
+                if (!known && paintStatus(paint) === "") applyPaintStatus(paint, ownsNewPaint(d.own, p) ? "owned" : "notowned");
+                if (!known) importNewIds.push(paint.id);
+                if (p.type === "material") paint.type = "material";
+                return paint;
+              });
+              const ratio = paints.length > 1 && ratioPercents(step.ratio, paints.length) ? cleanRatio(step.ratio) : "";
+              const mixes = paints.length > 1 ? (ratioPercents(ratio, paints.length) || evenSplit(paints.length)) : [100];
+              return { technique: step.technique, coats: cleanCount(step.coats), ratio, note: step.note || "", optional: !!step.optional,
+                       paints: paints.map((p, i) => ({ paint: p.id, mix: mixes[i] })) };
             });
-            const ratio = paints.length > 1 && ratioPercents(step.ratio, paints.length) ? cleanRatio(step.ratio) : "";
-            const mixes = paints.length > 1 ? (ratioPercents(ratio, paints.length) || evenSplit(paints.length)) : [100];
-            return { technique: step.technique, coats: cleanCount(step.coats), ratio, note: step.note || "", optional: !!step.optional,
-                     paints: paints.map((p, i) => ({ paint: p.id, mix: mixes[i] })) };
-          });
-          const existingPart = book.parts.find(p => sameText(p, part.name) || sameText(p + "s", part.name) || sameText(p, part.name + "s"));
-          let name = part.name;
-          if (book.recipes.some(r => sameText(r.name, name))) name = `${part.name} (${schemeName})`;
-          const recipe = { id: Math.max(0, ...book.recipes.map(r => r.id)) + 1, name, part: existingPart || part.name,
-                           notes: part.notes.join("\n"), steps };
-          book.recipes.push(recipe);
-          ids.push(recipe.id);
-          recipeCount++;
-        }
-        const faction = (models.find(m => sameText(m.faction, schemeName)) || {}).faction || schemeName;
-        book.schemes.push({ id: Math.max(0, ...book.schemes.map(x => x.id)) + 1, name: schemeName, faction, auto: true, recipes: ids });
-        made.push(schemeName);
+            const existingPart = book.parts.find(p => sameText(p, part.name) || sameText(p + "s", part.name) || sameText(p, part.name + "s"));
+            let name = part.name;
+            if (book.recipes.some(r => sameText(r.name, name))) name = `${part.name} (${schemeName})`;
+            const recipe = { id: Math.max(0, ...book.recipes.map(r => r.id)) + 1, name, part: existingPart || part.name,
+                             notes: part.notes.join("\n"), steps };
+            book.recipes.push(recipe);
+            ids.push(recipe.id);
+            recipeCount++;
+          }
+          const faction = (models.find(m => sameText(m.faction, schemeName)) || {}).faction || schemeName;
+          book.schemes.push({ id: Math.max(0, ...book.schemes.map(x => x.id)) + 1, name: schemeName, faction, auto: true, recipes: ids });
+          made.push(schemeName);
+        });
+        settings.recipeView = importNewIds.length ? "palette" : "schemes";
       });
+      if (!kept) {
+        renderRecipes();   // the preview, still open, with your notes and answers
+        showNotSaved("Not saved: storage on this device is full. Your pasted notes are still here. " +
+                     "Save a backup, free some space, then tap Save again.");
+        return;
+      }
       importDraft = null;
       // v17.1: new paints open on Your Palette for a quick check, with every row expanded.
       importReviewIds = importNewIds.length ? importNewIds.slice() : null;
       importNewIds.forEach(id => openPaintIds.add(id));
-      settings.recipeView = importNewIds.length ? "palette" : "schemes";
-      saveSettings();
       render();
       window.scrollTo(0, 0);
       showToast(`Saved ${plural(made.length, "scheme")} with ${plural(recipeCount, "recipe")}`, () => {
@@ -7104,14 +7127,19 @@
           add.style.width = "100%";
           add.textContent = "Add to my palette";
           add.addEventListener("click", () => {
-            const paint = findOrAddPaint(p.brand || "", p.name, p.colour || DEFAULT_PAINT_COLOUR);
-            applyPaintStatus(paint, "owned");   // v17: scanned paints are Owned
-            if (p.type === "material") paint.type = "material";
-            save();
+            // v18c-3: added and saved together. If storage is full the paint is taken back
+            // out (so the palette shows what's really saved) and the message says so.
+            const kept = changeAndSave(() => {
+              const paint = findOrAddPaint(p.brand || "", p.name, p.colour || DEFAULT_PAINT_COLOUR);
+              applyPaintStatus(paint, "owned");   // v17: scanned paints are Owned
+              if (p.type === "material") paint.type = "material";
+            });
             st.chosen = { ...p };
             renderPalette();
             renderScan();
-            showToast(`Added ${p.name} to your palette`);
+            if (kept) showToast(`Added ${p.name} to your palette`);
+            else showNotSaved(`Not added: storage on this device is full, so ${p.name} isn't in your palette. ` +
+                              "Save a backup, free some space, then try again.");
           });
           box.appendChild(add);
         }
