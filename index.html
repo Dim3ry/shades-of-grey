@@ -2567,13 +2567,16 @@
 
       const paints = [];
       const paintIds = new Set();
+      const tidied = new Set();   // v18c: paints whose brand was typed twice ("CitadelCitadel")
       for (const p of Array.isArray(src.paints) ? src.paints : []) {
         const name = p && String(p.name || "").trim();
         if (!name || !Number.isInteger(p.id) || paintIds.has(p.id)) continue;
         paintIds.add(p.id);
         // v17: a status (blank = not set), and the "spare in stock" tick, only for running low.
-        const paint = { ...p, brand: String(p.brand || "").trim(), name,
+        const rawBrand = String(p.brand || "").trim();
+        const paint = { ...p, brand: tidyBrand(rawBrand), name,
                         colour: isColour(p.colour) ? p.colour.toLowerCase() : DEFAULT_PAINT_COLOUR };
+        if (paint.brand !== rawBrand) tidied.add(paint.id);
         if (!PAINT_STATUS_KEYS.includes(paint.status)) delete paint.status;
         if (paint.status !== "low" || paint.spare !== true) delete paint.spare;
         // v17.1: quantity, only for paints you have and only above one.
@@ -2582,6 +2585,23 @@
         else paint.qty = Math.min(99, paint.qty);
         paints.push(paint);
       }
+
+      // v18c: once a doubled brand is tidied, the paint may now be the same as another one
+      // (e.g. "CitadelCitadel Macragge Blue" and "Citadel Macragge Blue"). The two become one:
+      // recipes use the one you already had, and its status or colour is filled in if it had none.
+      const mergedInto = new Map();   // old paint id → the paint it joined
+      for (const paint of paints.filter(p => tidied.has(p.id))) {
+        const same = (x) => x !== paint && !mergedInto.has(x.id) && sameText(x.name, paint.name) && sameText(x.brand, paint.brand);
+        const twin = paints.find(x => same(x) && !tidied.has(x.id)) || paints.find(same);
+        if (!twin) continue;
+        if (!paintStatus(twin) && paintStatus(paint)) {
+          for (const k of ["status", "owned", "spare", "qty"]) if (k in paint) twin[k] = paint[k];
+        }
+        if (twin.colour === DEFAULT_PAINT_COLOUR && paint.colour !== DEFAULT_PAINT_COLOUR) twin.colour = paint.colour;
+        if (paint.type && !twin.type) twin.type = paint.type;
+        mergedInto.set(paint.id, twin.id);
+      }
+      const keptPaints = paints.filter(p => !mergedInto.has(p.id));
 
       const recipes = [];
       const recipeIds = new Set();
@@ -2595,7 +2615,7 @@
           coats: cleanCount(s.coats),
           paints: (Array.isArray(s.paints) ? s.paints : [])
             .filter(sp => sp && paintIds.has(sp.paint))
-            .map(sp => ({ paint: sp.paint, mix: cleanMix(sp.mix) })),
+            .map(sp => ({ paint: mergedInto.get(sp.paint) ?? sp.paint, mix: cleanMix(sp.mix) })),
           ratio: cleanRatio(s.ratio),               // v15
           note: String(s.note || "").trim(),        // v15
           optional: s.optional === true,            // v15
@@ -2638,10 +2658,10 @@
       const shorthand = {};
       if (src.shorthand && typeof src.shorthand === "object" && !Array.isArray(src.shorthand)) {
         for (const [k, v] of Object.entries(src.shorthand)) {
-          if (k && v && typeof v.name === "string" && v.name.trim()) shorthand[k] = { brand: String(v.brand || ""), name: v.name.trim() };
+          if (k && v && typeof v.name === "string" && v.name.trim()) shorthand[k] = { brand: tidyBrand(v.brand), name: v.name.trim() };
         }
       }
-      return { parts, techniques, paints, recipes, schemes, shorthand, v15: true };
+      return { parts, techniques, paints: keptPaints, recipes, schemes, shorthand, v15: true };
     }
 
     // localStorage only holds text, so we turn the list into text (JSON) to save it,
@@ -5012,7 +5032,7 @@
 
     // Finds a paint by brand and name (ignoring capitals), or adds it. Its colour is updated.
     function findOrAddPaint(brand, name, colour) {
-      brand = brand.trim();
+      brand = tidyBrand(brand);   // v18c: "CitadelCitadel" → "Citadel"
       name = name.trim();
       // No brand typed? Then any paint with that name counts as the same paint.
       let paint = book.paints.find(p => sameText(p.name, name) && (!brand || sameText(p.brand, brand)));
@@ -5826,7 +5846,7 @@
     // Rename a paint or change its brand. If that makes it the same as another paint
     // you have, offer to merge the two, so it's only in your palette once.
     function editPaint(paint, field, value) {
-      value = value.trim();
+      value = field === "brand" ? tidyBrand(value) : value.trim();   // v18c
       if (field === "name" && !value) { renderPalette(); return; }
       if (paint[field] === value) return;
       const old = paint[field];
@@ -5987,6 +6007,12 @@
       });
       stepsCard.appendChild(addStep);
       recipePage.appendChild(stepsCard);
+
+      // v18c: paints that are new to your palette: "Do you own these?" (All to start with).
+      d.own = d.own || newOwnChoice();
+      recipeOwnCard = buildOwnCard(d.own, () => draftNewPaints(d));
+      recipeOwnCard.id = "recipe-own";
+      recipePage.appendChild(recipeOwnCard);
 
       const actions = document.createElement("div");
       actions.className = "settings-actions";
@@ -6163,16 +6189,39 @@
       brand.setAttribute("aria-label", "Brand");
       brand.setAttribute("list", "brand-options");
       brand.value = paint.brand;
-      brand.addEventListener("input", () => { paint.brand = brand.value; updateWarning(); });
+      // v18c: when the app fills in the brand for you, tapping the box selects that text,
+      // so typing "Citadel" replaces it instead of making "CitadelCitadel".
+      let autoBrand = "";      // the brand the app filled in, until you type in the box
+      let selectOnTap = false;
+      const selectAutoBrand = () => {
+        if (!autoBrand || brand.value !== autoBrand) return;
+        brand.select();
+        selectOnTap = true;
+      };
+      brand.addEventListener("focus", () => setTimeout(() => { if (document.activeElement === brand) selectAutoBrand(); }, 0));
+      // A tap would otherwise move the cursor and undo the selection.
+      brand.addEventListener("mouseup", (e) => { if (selectOnTap) { e.preventDefault(); selectOnTap = false; } });
+      brand.addEventListener("input", () => { autoBrand = ""; selectOnTap = false; paint.brand = brand.value; updateWarning(); refreshRecipeOwn(); });
+      // Leaving the box: a brand typed twice is put back to once.
+      brand.addEventListener("change", () => {
+        const tidy = tidyBrand(brand.value);
+        if (tidy !== brand.value) { brand.value = tidy; paint.brand = tidy; updateWarning(); refreshRecipeOwn(); }
+      });
 
-      name.addEventListener("input", () => { paint.name = name.value; updateWarning(); });
+      name.addEventListener("input", () => { paint.name = name.value; updateWarning(); refreshRecipeOwn(); });
       // A paint you've used before: fill in its brand and colour for you.
       name.addEventListener("change", () => {
         const known = book.paints.find(p => sameText(p.name, paint.name) && (!paint.brand.trim() || sameText(p.brand, paint.brand)))
                    || KNOWN_PAINTS.find(p => sameText(p.name, paint.name));
         if (!known) return;
-        if (!paint.brand.trim()) { paint.brand = known.brand; brand.value = known.brand; }
+        if (!paint.brand.trim() && known.brand) {
+          paint.brand = known.brand;
+          brand.value = known.brand;
+          autoBrand = known.brand;
+          if (document.activeElement === brand) selectAutoBrand();
+        }
         if (paint.colour === DEFAULT_PAINT_COLOUR) { paint.colour = known.colour; colour.value = known.colour; }
+        refreshRecipeOwn();
       });
 
       const mixBox = document.createElement("span");
@@ -6208,9 +6257,16 @@
       const name = d.name.trim();
       if (!name) { alert("Give the recipe a name first."); return; }
       // Paints with no name are skipped. Each named paint is found (or added) in the paint list.
+      // v18c: a paint new to your palette gets your "Do you own these?" answer (Owned to start with).
       const steps = d.steps.map(s => {
         const paints = s.paints.filter(p => p.name.trim())
-          .map(p => ({ paint: findOrAddPaint(p.brand, p.name, p.colour).id, mix: cleanMix(p.mix) }));
+          .map(p => {
+            const fresh = { brand: tidyBrand(p.brand), name: p.name.trim() };
+            const known = isInPalette(fresh);
+            const paint = findOrAddPaint(p.brand, p.name, p.colour);
+            if (!known && paintStatus(paint) === "") applyPaintStatus(paint, ownsNewPaint(d.own, fresh) ? "owned" : "notowned");
+            return { paint: paint.id, mix: cleanMix(p.mix) };
+          });
         return {
           technique: s.technique.trim(),
           coats: cleanCount(s.coats),
@@ -6239,6 +6295,113 @@
       showToast(`Saved ${name}`);
     }
 
+
+    // ================= v18c: TIDY BRANDS AND "DO YOU OWN THESE?" =================
+    // The brand box used to fill itself in, so typing "Citadel" gave "CitadelCitadel".
+    // This puts a brand typed twice (or more) back to once: "CitadelCitadel" or "Citadel citadel" → "Citadel".
+    // Only repeats of 3 letters or more count, so short brands are left alone.
+    function tidyBrand(brand) {
+      const b = String(brand || "").trim().replace(/\s+/g, " ");
+      const twice = b.match(/^(.{3,}?)(?:\s*\1)+$/i);
+      return twice ? twice[1].trim() : b;
+    }
+
+    // Is this paint ({ brand, name }) already in your palette? No brand = any brand counts.
+    function isInPalette(p) {
+      const brand = tidyBrand(p.brand);
+      return book.paints.some(x => sameText(x.name, p.name) && (!brand || sameText(x.brand, brand)));
+    }
+
+    // Your answer to "Do you own these?" for the paints about to be added.
+    // mode: "all" (picked to start with), "none" or "pick". With "pick", notOwned holds the ones you untapped.
+    function newOwnChoice() { return { mode: "all", notOwned: new Set() }; }
+    // By name only, so a brand filled in later doesn't undo your tap.
+    function ownKey(p) { return sameKey(p.name); }
+    function sameKey(text) { return plainQuotes(String(text || "")).trim().toLowerCase(); }
+    function ownsNewPaint(choice, p) {
+      if (!choice || choice.mode === "all") return true;
+      if (choice.mode === "none") return false;
+      return !choice.notOwned.has(ownKey(p));
+    }
+
+    // Adds p to a list of new paints, unless the same paint is already in it.
+    function addNewPaint(list, p) {
+      const brand = tidyBrand(p.brand);
+      const name = String(p.name || "").trim();
+      if (!name || isInPalette({ brand, name })) return;
+      if (list.some(o => sameText(o.name, name) && (!o.brand || !brand || sameText(o.brand, brand)))) return;
+      const known = brand ? null : KNOWN_PAINTS.find(k => sameText(k.name, name));
+      list.push({ brand, name, label: `${brand || (known && known.brand) ? (brand || known.brand) + " " : ""}${name}` });
+    }
+    // The paints a paste import would add to your palette (paints you've answered count too).
+    function importNewPaints(d) {
+      const list = [];
+      if (d && d.parsed) for (const s of d.parsed.schemes) for (const part of s.parts) for (const step of part.steps)
+        for (const m of step.paints) { const p = importPaintFor(m); if (p) addNewPaint(list, p); }
+      return list;
+    }
+    // The paints a recipe you're writing would add to your palette.
+    function draftNewPaints(d) {
+      const list = [];
+      for (const s of d.steps) for (const p of s.paints) addNewPaint(list, p);
+      return list;
+    }
+
+    // The card: "Do you own these? All / None / Let me pick". getPaints() lists the new paints now.
+    // It only redraws itself, so the boxes you're typing in elsewhere on the page aren't disturbed.
+    let recipeOwnCard = null;   // the card in the recipe editor, if it's open
+    function refreshRecipeOwn() { if (recipeOwnCard && recipeOwnCard.isConnected) recipeOwnCard.refresh(); }
+    function buildOwnCard(choice, getPaints) {
+      const card = document.createElement("div");
+      card.className = "card own-check";
+      const draw = () => {
+        const paints = getPaints();
+        // Nothing changed? Leave it alone. (Redrawing as you tap a chip would lose the tap.)
+        const look = JSON.stringify([choice.mode, paints.map(p => [p.label, ownsNewPaint(choice, p)])]);
+        if (look === card.dataset.look) return;
+        card.dataset.look = look;
+        card.innerHTML = "";
+        card.hidden = !paints.length;
+        if (!paints.length) return;
+        const head = document.createElement("h2");
+        head.textContent = "Do you own these?";
+        const hint = document.createElement("p");
+        hint.className = "hint";
+        hint.textContent = `${plural(paints.length, "paint")} will be new to your palette. Ones you own stay off the shopping list; `
+          + "ones you don't go on it. You can change any of them later on Your Palette.";
+        const modes = document.createElement("div");
+        modes.className = "chips";
+        for (const [key, label] of [["all", "All"], ["none", "None"], ["pick", "Let me pick"]]) {
+          const chip = makeChip(label, choice.mode === key, () => { choice.mode = key; draw(); });
+          chip.dataset.own = key;
+          modes.appendChild(chip);
+        }
+        card.append(head, hint, modes);
+        if (choice.mode === "pick") {
+          const pickHint = document.createElement("p");
+          pickHint.className = "hint";
+          pickHint.style.margin = "10px 0 0";
+          pickHint.textContent = "Tap the ones you don't have.";
+          const list = document.createElement("div");
+          list.className = "chips";
+          for (const p of paints) {
+            const owned = ownsNewPaint(choice, p);
+            const chip = makeChip(`${owned ? "✓ " : ""}${p.label}`, owned, () => {
+              const k = ownKey(p);
+              if (choice.notOwned.has(k)) choice.notOwned.delete(k); else choice.notOwned.add(k);
+              draw();
+            });
+            chip.classList.add("own-paint");
+            chip.setAttribute("aria-label", `${p.label}: ${owned ? "owned" : "not owned"}`);
+            list.appendChild(chip);
+          }
+          card.append(pickHint, list);
+        }
+      };
+      card.refresh = draw;
+      draw();
+      return card;
+    }
 
     // ================= v16: PASTE RECIPES (the preview and saving) =================
     // importDraft: null, or { text, parsed, groups, names } while Paste recipes is open.
@@ -6422,6 +6585,12 @@
         importPage.appendChild(sc);
       });
 
+      // 3. v18c: "Do you own these?" for the paints new to your palette. All is picked to start with.
+      d.own = d.own || newOwnChoice();
+      const ownCard = buildOwnCard(d.own, () => importNewPaints(d));
+      ownCard.id = "import-own";
+      importPage.appendChild(ownCard);
+
       const save = document.createElement("button");
       save.className = "primary-button";
       save.id = "import-save";
@@ -6447,9 +6616,10 @@
           const steps = part.steps.map(step => {
             const paints = step.paints.map(importPaintFor).filter(Boolean).map(p => {
               // v17.1: a paint new to your palette comes in as Owned (you're bringing your own list).
-              const known = book.paints.some(x => sameText(x.name, p.name) && (!p.brand || sameText(x.brand, p.brand)));
+              // v18c: unless you answered None, or untapped it, under "Do you own these?".
+              const known = isInPalette(p);
               const paint = findOrAddPaint(p.brand || "", p.name, p.colour || DEFAULT_PAINT_COLOUR);
-              if (!known && paintStatus(paint) === "") applyPaintStatus(paint, "owned");
+              if (!known && paintStatus(paint) === "") applyPaintStatus(paint, ownsNewPaint(d.own, p) ? "owned" : "notowned");
               if (!known) importNewIds.push(paint.id);
               if (p.type === "material") paint.type = "material";
               return paint;
