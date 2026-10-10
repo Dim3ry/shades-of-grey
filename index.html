@@ -633,6 +633,16 @@
     .import-step-editor select, .import-step-editor input { width: 100%; background: var(--card); }
     .import-ratio-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
     .import-ratio-warning { margin: 0; color: #fde68a; font-size: 13px; }
+    /* v18d-2b: swap a paint in the step editor (one row per paint, and a small box to type the new one) */
+    .import-swap-list { display: grid; gap: 6px; }
+    .import-swap-title { color: var(--muted); font-size: 14px; }
+    .import-swap-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+    .import-swap-name { min-width: 0; overflow-wrap: anywhere; color: var(--text); font-size: 14px; }
+    .import-swap-name small { color: var(--muted); }
+    .import-swap, .import-swap-use, .import-swap-cancel { padding: 6px 12px; min-height: 36px; font-size: 13px; }
+    .import-swap-box { display: grid; gap: 6px; padding: 8px; border: 1px dashed var(--accent); border-radius: 8px; }
+    .import-swap-buttons { display: flex; gap: 8px; }
+    .import-paint.swapped { color: var(--accent); }
     .import-tech { color: var(--muted); margin-right: 6px; }
     .import-paint.unsure { background: rgba(196, 181, 253, 0.18); color: #c4b5fd; border: 1px dashed #c4b5fd; border-radius: 6px; padding: 0 5px; }
     .import-paint.resolved { color: #c4b5fd; }
@@ -6578,6 +6588,7 @@
       d.parsed = parseRecipeText(d.text.slice(0, PASTE_LIMIT));
       d.trimmed = false;   // v18d-1: no steps left out yet
       d.editing = null;    // v18d-2a: no step's editor open
+      d.swapAt = -1;       // v18d-2b: no paint's Change… box open
       d.groups = unsureMentions(d.parsed);
       d.names = d.parsed.schemes.map(s => s.name || "Imported recipes");
       renderImport();
@@ -6636,7 +6647,7 @@
       // v18d-1
       // v18d-2a: ✎ to change a step, ✕ on a part's name or a note too.
       card.insertAdjacentHTML("beforeend", '<p class="hint import-remove-hint" style="margin: 12px 0 0;">Something read wrong? ' +
-        'Tap ✎ on a step to change its technique or mix ratio. Tap ✕ on a step to leave it out, or ✕ on a part\'s name ' +
+        'Tap ✎ on a step to change its technique, mix ratio or paints. Tap ✕ on a step to leave it out, or ✕ on a part\'s name ' +
         'or a note to leave that out. This only changes the preview, not your notes, so Read again brings everything back as pasted.</p>');
 
       // 1. The paints it wasn't sure about. Nothing is picked for you.
@@ -6749,7 +6760,11 @@
               if (i) body.append(" + ");
               const span = document.createElement("span");
               const paint = paints[i];
-              if (m.status === "unsure") {
+              if (m.fromTyped !== undefined) {
+                // v18d-2b: a paint you changed with ✎ shows what was pasted → what it is now.
+                span.className = "import-paint swapped";
+                span.textContent = `${m.fromTyped} → ${paint.name}` + (m.status === "new" ? " (new)" : "");
+              } else if (m.status === "unsure") {
                 span.className = paint ? "import-paint resolved" : "import-paint unsure";
                 span.textContent = paint ? `${m.typed} → ${paint.name}` : `${m.typed}?`;
               } else {
@@ -6926,6 +6941,7 @@
       const d = importDraft;
       if (!d) return;
       d.editing = d.editing === step ? null : step;
+      d.swapAt = -1;   // v18d-2b: a fresh editor has no Change… box open
       renderImport();
       const at = findImportStep(step);
       if (!at) return;
@@ -6965,6 +6981,70 @@
       });
     }
 
+    // ================= v18d-2b: SWAP A PAINT IN A STEP OF THE PASTE PREVIEW =================
+    // In the ✎ editor, each paint in the step has a Change… button. You type the paint it should
+    // be, and it's matched the same way as "Other…" under "Check N paints": a paint it knows,
+    // or a near-exact suggestion, or else a new paint named as you typed it. Only this one step
+    // changes (a paint it wasn't sure about stays a question in other steps), "Check N paints",
+    // "Do you own these?" and the Save button update to match, and the mix ratio is unchanged
+    // (the step has the same number of paints). Your pasted notes aren't touched, so Read again
+    // brings back the original. Undo puts the old paint back.
+
+    // After a redraw, puts focus on a control in the open editor (by its data-import-focus).
+    function focusImportEditor(step, key) {
+      const d = importDraft;
+      if (!d || d.editing !== step) return;
+      const at = findImportStep(step);
+      const el = at && at.li.querySelector(`[data-import-focus="${key}"]`);
+      if (el) el.focus();
+    }
+
+    // What "typed" would be, matched like "Other…" does. Returns a mention for a preview step.
+    function importSwapMention(typed, old) {
+      const m = matchPaint(typed);
+      const top = m.suggestions[0];
+      const near = !m.paint && top && sameText(matchKey(top.name), matchKey(typed)) ? top : null;
+      const paint = m.paint || near || { brand: "", name: tidyName(typed), colour: DEFAULT_PAINT_COLOUR };
+      const status = m.status === "material" ? "material" : (m.paint && m.status !== "new") || near ? "sure" : "new";
+      // fromTyped keeps what was first pasted, so the preview can show "pasted → now".
+      return { status, typed, paint, suggestions: [], fromTyped: old.fromTyped !== undefined ? old.fromTyped : old.typed };
+    }
+
+    // Swaps paint number i of a step for what you typed. quiet = don't move focus (Done does that).
+    function swapImportPaint(step, i, typed, quiet) {
+      const d = importDraft;
+      const old = step && step.paints[i];
+      typed = String(typed || "").trim().replace(/\s+/g, " ");
+      if (!d || !old || !typed) return;
+      const label = importStepLabel(step);
+      const was = importPaintFor(old);
+      const wasName = was ? was.name : old.typed;
+      const mention = importSwapMention(typed, old);
+      d.swapAt = -1;
+      // The same paint as before? Nothing to change.
+      if (was && sameText(was.name, mention.paint.name) && sameText(tidyBrand(was.brand), tidyBrand(mention.paint.brand))) {
+        renderImport();
+        if (!quiet) focusImportEditor(step, `swap-${i}`);
+        showToast(`${wasName} is already that paint`);
+        return;
+      }
+      const groupsBefore = d.groups;
+      step.paints[i] = mention;
+      regroupImport(d, groupsBefore);
+      renderImport();
+      if (!quiet) focusImportEditor(step, `swap-${i}`);
+      showToast(`${label}: ${wasName} changed to ${mention.paint.name}${mention.status === "new" ? " (new)" : ""}`, () => {
+        if (importDraft !== d) return;
+        const at = step.paints.indexOf(mention);
+        if (at < 0) return;
+        const now = d.groups;
+        step.paints[at] = old;
+        // Answers given since are kept; one that only the old paint needed comes back too.
+        regroupImport(d, now, groupsBefore);
+        renderImport();
+      });
+    }
+
     function buildImportStepEditor(step, part) {
       const box = document.createElement("div");
       box.className = "import-step-editor";
@@ -6989,6 +7069,89 @@
       });
       techLabel.appendChild(select);
       box.appendChild(techLabel);
+
+      // v18d-2b: Paints: one row per paint (its name and Change…). Change… opens a box under it
+      // to type the paint it should be. Only one box is open at a time.
+      const d = importDraft;
+      let swapTyped = () => "";   // what's typed in the open box, so Done can use it
+      if (step.paints.length) {
+        const list = document.createElement("div");
+        list.className = "import-swap-list";
+        const title = document.createElement("div");
+        title.className = "import-swap-title";
+        title.textContent = step.paints.length > 1 ? "Paints" : "Paint";
+        list.appendChild(title);
+        step.paints.forEach((m, i) => {
+          const p = importPaintFor(m);
+          const name = p ? p.name : `${m.typed}?`;
+          const row = document.createElement("div");
+          row.className = "import-swap-row";
+          const nameEl = document.createElement("div");
+          nameEl.className = "import-swap-name";
+          nameEl.textContent = name;
+          if (m.fromTyped !== undefined) {
+            const was = document.createElement("small");
+            was.textContent = ` (pasted as “${m.fromTyped}”)`;
+            nameEl.appendChild(was);
+          }
+          const change = document.createElement("button");
+          change.type = "button";
+          change.className = "plain-button import-swap";
+          change.textContent = "Change…";
+          change.dataset.importFocus = `swap-${i}`;
+          change.setAttribute("aria-label", `Change ${name} to a different paint`);
+          change.setAttribute("aria-expanded", d.swapAt === i ? "true" : "false");
+          // Don't take the ratio box out of focus first (that redraws the editor and loses the tap).
+          change.addEventListener("mousedown", (e) => e.preventDefault());
+          change.addEventListener("click", () => {
+            d.swapAt = d.swapAt === i ? -1 : i;
+            renderImport();
+            focusImportEditor(step, d.swapAt === i ? "swap-input" : `swap-${i}`);
+          });
+          row.append(nameEl, change);
+          list.appendChild(row);
+          if (d.swapAt !== i) return;
+
+          // The box: type a name, then Use (or Enter). Cancel (or Esc) closes it.
+          const swapBox = document.createElement("div");
+          swapBox.className = "import-swap-box";
+          const swapLabel = document.createElement("label");
+          swapLabel.textContent = `Change ${name} to:`;
+          const input = document.createElement("input");
+          input.className = "import-swap-input";
+          input.dataset.importFocus = "swap-input";
+          input.placeholder = "Type the paint's name";
+          input.autocomplete = "off";
+          input.setAttribute("aria-label", `New paint instead of ${name}`);
+          swapLabel.appendChild(input);
+          const buttons = document.createElement("div");
+          buttons.className = "import-swap-buttons";
+          const use = document.createElement("button");
+          use.type = "button";
+          use.className = "plain-button import-swap-use";
+          use.textContent = "Use";
+          const cancel = document.createElement("button");
+          cancel.type = "button";
+          cancel.className = "plain-button import-swap-cancel";
+          cancel.textContent = "Cancel";
+          const useIt = () => { if (input.value.trim()) swapImportPaint(step, i, input.value); else input.focus(); };
+          const close = () => { d.swapAt = -1; renderImport(); focusImportEditor(step, `swap-${i}`); };
+          use.addEventListener("mousedown", (e) => e.preventDefault());
+          cancel.addEventListener("mousedown", (e) => e.preventDefault());
+          use.addEventListener("click", useIt);
+          cancel.addEventListener("click", close);
+          input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") { e.preventDefault(); useIt(); }
+            // Esc closes only this box, not the whole editor.
+            if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); }
+          });
+          swapTyped = () => input.value.trim();
+          buttons.append(use, cancel);
+          swapBox.append(swapLabel, buttons);
+          list.appendChild(swapBox);
+        });
+        box.appendChild(list);
+      }
 
       // Mix ratio: only for a step with 2 or more paints.
       const n = step.paints.length;
@@ -7046,8 +7209,12 @@
       // Done keeps a ratio you've typed but not yet confirmed (unless it doesn't fit), then closes.
       done.addEventListener("mousedown", (e) => e.preventDefault());
       done.addEventListener("click", () => {
+        // v18d-2b: a paint name typed in an open Change… box is used too.
+        const typed = swapTyped();
+        const at = d.swapAt;
         if (applyRatio && applyRatio() === false) return;
-        toggleImportEdit(step);
+        if (typed && at >= 0) swapImportPaint(step, at, typed, true);
+        if (d.editing === step) toggleImportEdit(step);
       });
       box.appendChild(done);
       box.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.preventDefault(); toggleImportEdit(step); } });
