@@ -14,6 +14,17 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon-192.png">
   <link rel="apple-touch-icon" href="icon-192.png">
+  <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
+       The full version (applyAppearance, further down) takes over once the app starts. -->
+  <script>
+    try {
+      const saved = JSON.parse(localStorage.getItem("shades-of-grey-settings") || "{}") || {};
+      const choice = saved.appearance;
+      const light = choice === "light" ||
+        (choice === "auto" && window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches);
+      if (light) document.documentElement.dataset.appearance = "light";
+    } catch (ignored) {}
+  </script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -21,7 +32,11 @@
     /* Colours are stored once here, so you can change the whole theme in one place.
        The stage colours (--stage-0, --stage-1 ...) are set by JavaScript, because
        you can have any number of stages and pick different colour sets. */
-    :root {
+    /* v20: two sets of base colours. DARK is the default. LIGHT is used when the page has
+       data-appearance="light" (Settings → Appearance), and swaps the whole set at once.
+       The photo viewer and the camera always use the dark set, like a phone's own
+       photo viewer, so they're listed here too. */
+    :root, .viewer, #scan-camera {
       --background: #0b1220;  /* deep navy, the page colour */
       --card: #141d2f;        /* slightly lighter, for each box */
       --border: #22304a;      /* thin outlines */
@@ -29,8 +44,57 @@
       --muted: #8193ad;       /* dimmer text */
       --accent: #7dd3fc;      /* ice blue, for highlights */
       --danger: #f87171;      /* soft red, for delete buttons */
-      --done-colour: #a7f3d0; /* the "finished" colour, also set by JavaScript */
+      /* v20: colours that used to be written straight into the rules below */
+      --shadow: rgba(0, 0, 0, 0.45);            /* under pop-up boxes */
+      --badge-bg: rgba(11, 18, 32, 0.85);       /* small labels on top of photos */
+      --accent-wash: rgba(125, 211, 252, 0.08); /* faint blue behind the open tab, Buy these bar */
+      --accent-wash-hover: rgba(125, 211, 252, 0.05);
+      --swatch-edge: rgba(255, 255, 255, 0.25); /* thin ring round a paint colour circle */
+      --note: #c4b5fd;      /* purple: "not sure" paints, older backups */
+      --note-wash: rgba(196, 181, 253, 0.18);
+      --good: #5eead4;      /* teal: owned, have it, new */
+      --good-wash: rgba(94, 234, 212, 0.12);
+      --bad: #fca5a5;       /* pink-red: empty, missing */
+      --bad-wash: rgba(252, 165, 165, 0.10);
+      --warn: #fde68a;      /* pale yellow: running low, ratio warning */
+      --caution: #fbbf24;   /* amber: clashes, mix warning */
+      --wish: #93c5fd;      /* blue: wishlist */
+      --grey-status: #94a3b8;  /* not owned */
+      --chip-on: #0b1220;   /* text on a pressed coloured chip */
+      --toast-action: #0369a1; /* the Undo button inside the toast */
+      --series-added: #6366f1; --series-painted: #10a99a;   /* dashboard graph lines */
     }
+    :root { --done-colour: #a7f3d0; } /* the "finished" colour, also set by JavaScript */
+    :root[data-appearance="light"] {
+      --background: #e9eff6;  /* pale cool blue-grey page */
+      --card: #f8fafc;        /* near-white boxes */
+      --border: #c4d0de;
+      --text: #0f1b2d;        /* deep navy text */
+      --muted: #4a5b73;
+      --accent: #0369a1;      /* deep sky blue */
+      --danger: #b91c1c;
+      --shadow: rgba(15, 27, 45, 0.18);
+      --badge-bg: rgba(248, 250, 252, 0.92);
+      --accent-wash: rgba(3, 105, 161, 0.09);
+      --accent-wash-hover: rgba(3, 105, 161, 0.05);
+      --swatch-edge: rgba(15, 27, 45, 0.3);
+      --note: #6d28d9;
+      --note-wash: rgba(109, 40, 217, 0.10);
+      --good: #0f766e;
+      --good-wash: rgba(15, 118, 110, 0.10);
+      --bad: #b91c1c;
+      --bad-wash: rgba(185, 28, 28, 0.08);
+      --warn: #854d0e;
+      --caution: #92400e;
+      --wish: #1d4ed8;
+      --grey-status: #475569;
+      --chip-on: #ffffff;
+      --toast-action: #7dd3fc;
+      --series-added: #4f46e5; --series-painted: #0f766e;
+      color-scheme: light;
+    }
+    :root, .viewer, #scan-camera { color-scheme: dark; }
+    :root[data-appearance="light"] .viewer, :root[data-appearance="light"] #scan-camera { color-scheme: dark; }
 
     * { box-sizing: border-box; }  /* makes widths include padding: far easier to reason about */
 
@@ -151,7 +215,6 @@
 
     /* Progress over time. The two line colours are checked for colour-blind safety
        against the card colour; each line also has a legend and an end label. */
-    :root { --series-added: #6366f1; --series-painted: #10a99a; }
     .legend-row { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
     .legend-key { display: inline-flex; align-items: center; gap: 6px; }
     .legend-key i { display: inline-block; width: 16px; height: 3px; border-radius: 2px; background: var(--key); }
@@ -163,7 +226,7 @@
       position: absolute; top: 4px; pointer-events: none; z-index: 2;
       background: var(--background); border: 1px solid var(--border); border-radius: 8px;
       padding: 8px 10px; font-size: 13px; line-height: 1.5; white-space: nowrap;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 4px 14px var(--shadow);
     }
     .chart-tip strong { display: block; margin-bottom: 2px; }
     .chart-tip .legend-key { display: flex; color: var(--text); }
@@ -334,7 +397,7 @@
     .photo-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .cover-badge {
       position: absolute; left: 4px; top: 4px; font-size: 11px; font-weight: 600;
-      background: rgba(11, 18, 32, 0.85); color: var(--accent); border-radius: 6px; padding: 2px 6px;
+      background: var(--badge-bg); color: var(--accent); border-radius: 6px; padding: 2px 6px;
     }
     .photo-caption { display: grid; grid-template-columns: auto 1fr; column-gap: 6px; align-items: center; line-height: 1.3; }
     .photo-caption .dot, .viewer-caption .dot {
@@ -387,7 +450,7 @@
     .slider-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; user-select: none; }
     .slider-line { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); pointer-events: none; }
     .slider-tag { position: absolute; top: 8px; font-size: 12px; padding: 2px 8px; border-radius: 6px;
-                  background: rgba(11, 18, 32, 0.85); color: var(--accent); }
+                  background: var(--badge-bg); color: var(--accent); }
     .viewer input[type=range] { width: 100%; accent-color: var(--accent); }
     .switch-row { display: flex; gap: 8px; }
     .switch-row button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
@@ -430,7 +493,9 @@
       font-size: 14px;
       z-index: 20;
     }
-    .toast button { margin-left: auto; background: none; color: #0369a1; font-weight: 700; padding: 10px 12px; margin: -8px -8px -8px auto; min-height: 44px; }
+    /* v20: in light mode the toast is dark, so a faint outline keeps it clear over the (always dark) photo viewer. */
+    :root[data-appearance="light"] .toast { box-shadow: 0 0 0 1px rgba(125, 211, 252, 0.45), 0 4px 14px var(--shadow); }
+    .toast button { margin-left: auto; background: none; color: var(--toast-action); font-weight: 700; padding: 10px 12px; margin: -8px -8px -8px auto; min-height: 44px; }
 
     /* ----- v14: banners at the top of the screen ----- */
     /* Red "not saving" banner: fixed to the top so you see it on every tab and while
@@ -469,12 +534,12 @@
       display: grid; gap: 6px; padding: 8px 10px; border-radius: 8px;
       background: var(--background); border: 1px solid var(--border); font-size: 14px;
     }
-    .review-row.clash { border-color: #fbbf24; }
+    .review-row.clash { border-color: var(--caution); }
     .review-row label { display: flex; gap: 10px; align-items: center; cursor: pointer; }
     .review-row input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--accent); flex-shrink: 0; }
     .review-row .meta { color: var(--muted); font-size: 12px; }
     .review-row .tag { font-size: 11px; padding: 2px 6px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); margin-left: auto; white-space: nowrap; }
-    .review-row.clash .tag { color: #fbbf24; border-color: #fbbf24; }
+    .review-row.clash .tag { color: var(--caution); border-color: var(--caution); }
     .review-row select { font-size: 14px; padding: 7px; }
     .review-row.off { opacity: 0.5; }
 
@@ -527,7 +592,7 @@
     /* A small circle of paint colour. --swatch is set by JavaScript. */
     .swatch {
       display: inline-block; width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
-      background: var(--swatch); border: 1px solid rgba(255, 255, 255, 0.25);
+      background: var(--swatch); border: 1px solid var(--swatch-edge);
     }
     .part-tag {
       display: inline-block; font-size: 12px; padding: 3px 10px; border-radius: 999px;
@@ -611,7 +676,7 @@
     /* v16: Paste recipes preview and pot scan */
     .import-ask { padding: 10px 0; border-top: 1px solid var(--border); }
     .import-ask.answered .import-typed { color: var(--muted); }
-    .import-typed { font-weight: 600; color: #c4b5fd; }
+    .import-typed { font-weight: 600; color: var(--note); }
     .import-part { font-weight: 600; color: var(--accent); margin: 14px 0 4px; }
     .import-steps { margin: 0; padding-left: 22px; font-size: 14px; line-height: 1.5; }
     .import-steps li { margin-bottom: 4px; }
@@ -632,7 +697,7 @@
     .import-step-editor label { display: grid; gap: 4px; color: var(--muted); font-size: 14px; }
     .import-step-editor select, .import-step-editor input { width: 100%; background: var(--card); }
     .import-ratio-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
-    .import-ratio-warning { margin: 0; color: #fde68a; font-size: 13px; }
+    .import-ratio-warning { margin: 0; color: var(--warn); font-size: 13px; }
     /* v18d-2b: swap a paint in the step editor (one row per paint, and a small box to type the new one) */
     .import-swap-list { display: grid; gap: 6px; }
     .import-swap-title { color: var(--muted); font-size: 14px; }
@@ -644,32 +709,32 @@
     .import-swap-buttons { display: flex; gap: 8px; }
     .import-paint.swapped { color: var(--accent); }
     .import-tech { color: var(--muted); margin-right: 6px; }
-    .import-paint.unsure { background: rgba(196, 181, 253, 0.18); color: #c4b5fd; border: 1px dashed #c4b5fd; border-radius: 6px; padding: 0 5px; }
-    .import-paint.resolved { color: #c4b5fd; }
-    .import-paint.is-new { color: #5eead4; }
+    .import-paint.unsure { background: var(--note-wash); color: var(--note); border: 1px dashed var(--note); border-radius: 6px; padding: 0 5px; }
+    .import-paint.resolved { color: var(--note); }
+    .import-paint.is-new { color: var(--good); }
     .import-steps small { color: var(--muted); }
     #import-save:disabled { opacity: 0.5; }
     .scan-result { margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; }
-    .backup-old { color: #c4b5fd; }
+    .backup-old { color: var(--note); }
     /* v17: paint status, have/missing badges, search and shopping list */
     .status-chip { border-color: var(--chip-colour); }
-    .status-chip[aria-pressed="true"] { background: var(--chip-colour); color: #0b1220; border-color: var(--chip-colour); }
+    .status-chip[aria-pressed="true"] { background: var(--chip-colour); color: var(--chip-on); border-color: var(--chip-colour); }
     .status-row { margin-top: 12px; }
     .status-pill { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 999px; font-size: 12px; border: 1px solid; vertical-align: middle; white-space: nowrap; }
-    .status-pill.s-owned { color: #5eead4; border-color: #5eead4; }
-    .status-pill.s-low { color: #fde68a; border-color: #fde68a; }
-    .status-pill.s-empty { color: #fca5a5; border-color: #fca5a5; }
-    .status-pill.s-wishlist { color: #93c5fd; border-color: #93c5fd; }
-    .status-pill.s-notowned { color: #94a3b8; border-color: #94a3b8; }
+    .status-pill.s-owned { color: var(--good); border-color: var(--good); }
+    .status-pill.s-low { color: var(--warn); border-color: var(--warn); }
+    .status-pill.s-empty { color: var(--bad); border-color: var(--bad); }
+    .status-pill.s-wishlist { color: var(--wish); border-color: var(--wish); }
+    .status-pill.s-notowned { color: var(--grey-status); border-color: var(--grey-status); }
     .have-badge { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 999px; font-size: 12px; border: 1px solid; white-space: nowrap; }
-    .have-badge.have { color: #5eead4; border-color: #5eead4; background: rgba(94, 234, 212, 0.12); }
-    .have-badge.missing { color: #fca5a5; border-color: #fca5a5; background: rgba(252, 165, 165, 0.10); }
+    .have-badge.have { color: var(--good); border-color: var(--good); background: var(--good-wash); }
+    .have-badge.missing { color: var(--bad); border-color: var(--bad); background: var(--bad-wash); }
     .shop-brand { font-weight: 600; color: var(--accent); margin: 12px 0 4px; }
     .shop-list { margin: 0; padding-left: 20px; line-height: 1.6; }
     .shop-list small { color: var(--muted); }
     /* v19.1: the "Buy these" bar at the top of the shopping list */
     .buy-bar { margin: 0 0 14px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px;
-               background: linear-gradient(to right, rgba(125, 211, 252, 0.08), transparent 80%), var(--card); }
+               background: linear-gradient(to right, var(--accent-wash), transparent 80%), var(--card); }
     .buy-bar h3 { margin: 0 0 8px; font-size: 15px; color: var(--accent); }
     .buy-shops { display: flex; flex-wrap: wrap; gap: 8px; }
     .buy-shops button { min-height: 44px; }
@@ -704,12 +769,12 @@
     .paint-edit .paint-brand { grid-area: brand; }
     .paint-edit .mix-box { grid-area: mix; display: flex; align-items: center; gap: 4px; color: var(--muted); }
     .paint-edit .remove { grid-area: remove; height: 44px; }
-    .mix-warning { color: #fbbf24; font-size: 13px; margin: 0; }
+    .mix-warning { color: var(--caution); font-size: 13px; margin: 0; }
 
     /* ----- Bigger tab buttons (all screen sizes) ----- */
     .tabs button { padding: 12px 0 14px; font-size: 13px; gap: 4px; min-height: 64px; }
     .tabs .icon { font-size: 24px; display: inline-flex; justify-content: center; }
-    .tabs button[aria-current="page"] { background: rgba(125, 211, 252, 0.08); box-shadow: inset 0 3px 0 var(--accent); }
+    .tabs button[aria-current="page"] { background: var(--accent-wash); box-shadow: inset 0 3px 0 var(--accent); }
     /* Six tabs on a narrow phone: slightly smaller labels so "Dashboard" still fits. */
     @media (max-width: 420px) { .tabs button { font-size: 11px; } }
 
@@ -733,7 +798,7 @@
         display: flex; justify-content: center; align-items: center; gap: 10px;
         font-size: 17px; min-height: 56px; border-radius: 10px;
       }
-      .tabs button:hover { color: var(--text); background: rgba(125, 211, 252, 0.05); }
+      .tabs button:hover { color: var(--text); background: var(--accent-wash-hover); }
       .tabs button[aria-current="page"] { box-shadow: inset 0 -3px 0 var(--accent); }
       h1 { font-size: 30px; margin: 24px 0 20px; }
       .card { padding: 22px; }
@@ -1037,6 +1102,16 @@
             <li>Units move with their stage when you reorder. If you remove a stage, its units drop to the stage before it.</li>
           </ul>
         </details>
+        <details id="help-appearance">
+          <summary>Appearance (light and dark) and stage colours</summary>
+          <ul>
+            <li>Choose how the app looks in <strong>Settings → Appearance</strong>: <strong>Dark</strong> (the usual look), <strong>Light</strong>, or <strong>Match my phone</strong>, which follows your phone's own dark mode setting and switches when your phone does.</li>
+            <li><strong>Settings → Colours</strong> picks the colour set for your stages: Ice, Frost, Greyscale or Colour-blind friendly.</li>
+            <li>In light mode, pale stage colours (like the pale green "finished" colour, or the white end of Greyscale) are shown a little deeper, so stage names stay easy to read on white. Your chosen set doesn't change, and dark mode shows it exactly as before.</li>
+            <li>Photos and the camera always show on a dark background, like your phone's own photo viewer.</li>
+            <li>Your Appearance and colour set are saved with your other settings and in backups, so a restore brings them back.</li>
+          </ul>
+        </details>
         <details>
           <summary>Faction colours</summary>
           <ul>
@@ -1115,7 +1190,7 @@
             <li>Everything is saved <strong>on this device only</strong>, in your browser. Nobody else can see it, and it isn't sent anywhere.</li>
             <li>Clearing your browser's data or uninstalling the app deletes it, so <strong>Save backup</strong> regularly. The app reminds you after a week (and if you have photos, it reminds you about a backup <em>with</em> photos). Every backup shows a message when it's saved.</li>
             <li><strong>Save backup</strong> is small and quick, but leaves out photos. <strong>Save full backup with photos</strong> makes one bigger file with everything, photos included.</li>
-            <li><strong>Restore backup</strong> brings either kind back, including your stages, recipes, schemes and faction colours. A backup without photos keeps any photos already on this device that match.</li>
+            <li><strong>Restore backup</strong> brings either kind back, including your stages, recipes, schemes, faction colours, stage colour set and Appearance (light or dark). A backup without photos keeps any photos already on this device that match.</li>
             <li>Photos are kept in a separate, much bigger store in your browser, so there's room for lots of them. Settings → Your data shows how many photos you have and how much space they use.</li>
             <li><strong>Clean up photo storage</strong> removes photo files no unit uses any more (for example after Delete all units) and tells you how much space it freed. Photos in the device's safety copy are left alone.</li>
             <li><strong>Export CSV</strong> saves your collection as a spreadsheet (without photos).</li>
@@ -1203,9 +1278,21 @@
         </div>
       </div>
 
+      <!-- v20: Appearance. Three buttons; only one is pressed at a time. -->
+      <div class="card" id="appearance-card">
+        <h2>Appearance</h2>
+        <div class="chips appearance-chips" role="group" aria-label="Appearance" style="margin-top: 0;">
+          <button class="chip" data-appearance-choice="dark" aria-pressed="true">Dark</button>
+          <button class="chip" data-appearance-choice="light" aria-pressed="false">Light</button>
+          <button class="chip" data-appearance-choice="auto" aria-pressed="false">Match my phone</button>
+        </div>
+        <p class="hint" id="appearance-note" style="margin: 10px 0 0;"></p>
+      </div>
+
       <div class="card">
         <h2>Colours</h2>
         <select id="palette-select" aria-label="Stage colours" style="width: 100%;"></select>
+        <p class="hint" id="palette-light-note" style="margin: 10px 0 0;" hidden>In light mode, pale stage colours are shown a little deeper so they're easy to read.</p>
       </div>
 
       <!-- Faction colours (v8). Filled in by renderFactionColours(). -->
@@ -1939,11 +2026,11 @@
     // Each paint can have a status, set with one tap. Blank = not set, so the app works the
     // same for anyone who never sets one. Paints the scan added (owned: true) count as Owned.
     const PAINT_STATUSES = [
-      { key: "owned", label: "Owned", colour: "#5eead4" },
-      { key: "low", label: "Running low", colour: "#fde68a" },
-      { key: "empty", label: "Empty", colour: "#fca5a5" },
-      { key: "wishlist", label: "Wishlist", colour: "#93c5fd" },
-      { key: "notowned", label: "Not owned", colour: "#94a3b8" },
+      { key: "owned", label: "Owned", colour: "var(--good)" },
+      { key: "low", label: "Running low", colour: "var(--warn)" },
+      { key: "empty", label: "Empty", colour: "var(--bad)" },
+      { key: "wishlist", label: "Wishlist", colour: "var(--wish)" },
+      { key: "notowned", label: "Not owned", colour: "var(--grey-status)" },
     ];
     const PAINT_STATUS_KEYS = PAINT_STATUSES.map(s => s.key);
     let recipeCanPaint = false;   // the "What can I paint now?" filter (kept while the app is open)
@@ -3274,8 +3361,10 @@
     // faded background. Dark colours are lightened for the tint only (keeping their hue),
     // otherwise a navy or black faction would vanish against the dark cards.
     // (Worked out here rather than with the newer CSS color-mix(), so older phones show it.)
+    // v20: in light mode a very pale faction colour (e.g. white) would vanish on the white
+    // cards, so its bar is shown a little deeper. The colour you picked doesn't change.
     function setFactionStyle(element, colour) {
-      element.style.setProperty("--faction-colour", colour);
+      element.style.setProperty("--faction-colour", isLight() ? deepenForLight(colour, 1.8) : colour);
       element.style.setProperty("--faction-tint", factionTint(colour));
     }
     function factionTint(hex) {
@@ -3289,7 +3378,8 @@
         h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
         h /= 6;
       }
-      light = Math.max(light, 0.5);
+      // v20: in light mode the tint sits on white, so it's kept as it is (just see-through).
+      if (!isLight()) light = Math.max(light, 0.5);
       const hue = (t) => {
         t = (t + 1) % 1;
         const q = light < 0.5 ? light * (1 + sat) : light + sat - light * sat, p = 2 * light - q;
@@ -7927,7 +8017,7 @@
     }
 
     function renderStageEditor() {
-      const colours = stageColours(settings.palette, draft.length);
+      const colours = shownStageColours(settings.palette, draft.length);
       stageList.innerHTML = "";
       draft.forEach((item, index) => {
         if (item === draftDoneItem) {
@@ -8093,12 +8183,112 @@
       });
     }
 
+    // ----- v20: Appearance (Dark / Light / Match my phone) -----
+    // settings.appearance is "dark" (the default), "light" or "auto" (follow the phone).
+    const APPEARANCES = { dark: "Dark", light: "Light", auto: "Match my phone" };
+    const phoneLight = window.matchMedia ? window.matchMedia("(prefers-color-scheme: light)") : null;
+    const goodAppearance = (value) => Object.prototype.hasOwnProperty.call(APPEARANCES, value);
+    // true when the app should be light right now.
+    function isLight() {
+      const choice = goodAppearance(settings.appearance) ? settings.appearance : "dark";
+      return choice === "light" || (choice === "auto" && !!phoneLight && phoneLight.matches);
+    }
+    // Puts data-appearance="light" on the page (or takes it off), which swaps the colour
+    // set at the top of the CSS. Also tells the phone what colour its top bar should be.
+    function setAppearanceMark() {
+      const light = isLight();
+      if (light) document.documentElement.dataset.appearance = "light";
+      else delete document.documentElement.dataset.appearance;
+      const bar = document.querySelector('meta[name="theme-color"]');
+      if (bar) bar.setAttribute("content", light ? "#e9eff6" : "#0b1220");
+      return light;
+    }
+    // When the phone switches its own dark mode, follow it (only if "Match my phone" is on).
+    if (phoneLight) {
+      const follow = () => { if (settings.appearance === "auto") { applyPalette(settings.palette); render(); showAppearanceChoice(); } };
+      if (phoneLight.addEventListener) phoneLight.addEventListener("change", follow);
+      else if (phoneLight.addListener) phoneLight.addListener(follow);   // older iPhones
+    }
+
+    // How easy a colour is to read against another, as a "contrast ratio": 1 = invisible,
+    // 21 = black on white. Normal text needs at least 4.5. (The standard web formula.)
+    function brightnessOf(hex) {
+      const [r, g, b] = [1, 3, 5].map(i => {
+        const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    }
+    function contrastRatio(a, b) {
+      const [x, y] = [brightnessOf(a), brightnessOf(b)].sort((p, q) => q - p);
+      return (x + 0.05) / (y + 0.05);
+    }
+    // Hue / saturation / lightness back to "#rrggbb" (the opposite of hexToHsl).
+    function hslToHex(h, sat, light) {
+      const k = (n) => (n + h / 30) % 12;
+      const a = sat * Math.min(light, 1 - light);
+      const f = (n) => light - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+      return "#" + [0, 8, 4].map(n => Math.round(f(n) * 255).toString(16).padStart(2, "0")).join("");
+    }
+    // The lightest version of a colour (same hue and saturation) that still reads at
+    // the given contrast on the light cards.
+    const LIGHT_CARD = "#f8fafc";
+    function lightnessCap(h, sat, target) {
+      let low = 0, high = 1;
+      for (let i = 0; i < 20; i++) {
+        const mid = (low + high) / 2;
+        if (contrastRatio(hslToHex(h, sat, mid), LIGHT_CARD) >= target) low = mid; else high = mid;
+      }
+      return low;
+    }
+    // Light mode: pale stage colours are made deeper, so they stay readable on white.
+    // Colours that already read well are left alone. A colour that was very pale goes a
+    // little DEEPER than one that was only slightly too pale, so stages stay different
+    // from each other (e.g. Greyscale's light greys and white become steps of darker grey).
+    function deepenForLight(hex, target = 4.5) {
+      if (contrastRatio(hex, LIGHT_CARD) >= target) return hex;
+      const { h, s: sat, l } = hexToHsl(hex);
+      const cap = lightnessCap(h, sat, target);
+      const over = cap < 1 ? Math.min(1, Math.max(0, (l - cap) / (1 - cap))) : 0;
+      return hslToHex(h, sat, cap * (1 - 0.35 * over));
+    }
+    // The stage colours as they're SHOWN: the set's own colours in dark mode, deepened
+    // ones in light mode.
+    function shownStageColours(paletteName, n) {
+      const colours = stageColours(paletteName, n);
+      return isLight() ? colours.map(c => deepenForLight(c)) : colours;
+    }
+
     // Sets --stage-0, --stage-1 ... so everything using them updates instantly.
+    // v20: also sets light or dark first, because that changes the stage colours.
     function applyPalette(name) {
-      const colours = stageColours(name, STAGES.length);
+      setAppearanceMark();
+      const colours = shownStageColours(name, STAGES.length);
       colours.forEach((colour, index) => document.documentElement.style.setProperty(`--stage-${index}`, colour));
       document.documentElement.style.setProperty("--done-colour", colours[colours.length - 1]);
     }
+
+    // v20: the Appearance buttons in Settings.
+    const appearanceButtons = [...document.querySelectorAll("[data-appearance-choice]")];
+    function showAppearanceChoice() {
+      const choice = goodAppearance(settings.appearance) ? settings.appearance : "dark";
+      for (const button of document.querySelectorAll("[data-appearance-choice]")) button.setAttribute("aria-pressed", String(button.dataset.appearanceChoice === choice));
+      document.getElementById("appearance-note").textContent = choice === "auto"
+        ? `Follows your phone's own dark mode setting. Right now: ${isLight() ? "light" : "dark"}.`
+        : "";
+      document.getElementById("palette-light-note").hidden = !isLight();
+    }
+    for (const button of appearanceButtons) {
+      button.addEventListener("click", () => {
+        settings.appearance = button.dataset.appearanceChoice;
+        saveSettings();
+        applyPalette(settings.palette);
+        render();
+        showAppearanceChoice();
+      });
+    }
+    if (!goodAppearance(settings.appearance)) settings.appearance = "dark";
+    showAppearanceChoice();
 
     const paletteSelect = document.getElementById("palette-select");
     for (const [key, palette] of Object.entries(PALETTES)) paletteSelect.add(new Option(palette.label, key));
@@ -8117,6 +8307,9 @@
     const storageNote = document.getElementById("storage-note");
 
     function renderSettings() {
+      // v20: after a restore or a change in another window, show the right choices.
+      showAppearanceChoice();
+      if (PALETTES[settings.palette]) document.getElementById("palette-select").value = settings.palette;
       startDraft();
       renderStageEditor();
       renderFactionColours();
@@ -8470,7 +8663,9 @@
     // the FULL backup, as text pictures in "photoFiles": { id: { full, thumb } }.
     function backupData() {
       return { app: "Minifolio", version: 6, dataVersion: DATA_VERSION, stages: STAGES, doneFrom: settings.doneFrom, models, recipes: book,
-               factionColours: settings.factionColours };
+               factionColours: settings.factionColours,
+               // v20: the look travels with the backup too. Older versions ignore these.
+               palette: settings.palette, appearance: settings.appearance };
     }
 
     document.getElementById("full-export-button").addEventListener("click", async (event) => {
@@ -8627,6 +8822,10 @@
             }
             // Backups from v8 onwards hold faction colours. Older ones don't, so yours stay.
             if (unitsToo && !isList && parsed.factionColours) settings.factionColours = cleanFactionColours(parsed.factionColours);
+            // v20: backups from v20 onwards hold the stage colour set and Appearance.
+            // Anything unknown is ignored, so older backups leave yours as they are.
+            if (unitsToo && !isList && typeof parsed.palette === "string" && Object.prototype.hasOwnProperty.call(PALETTES, parsed.palette)) settings.palette = parsed.palette;
+            if (unitsToo && !isList && goodAppearance(parsed.appearance)) settings.appearance = parsed.appearance;
           });
           if (!kept) { alert(fullMessage()); return; }
           recipeDraft = null;
@@ -9326,10 +9525,15 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v19.1";
+    const APP_VERSION = "v20";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v20", date: "10 Oct 2026", changes: [
+        "New: a light look. Settings → Appearance has Dark (still the usual look), Light, and Match my phone, which follows your phone's own dark mode setting.",
+        "Light mode keeps the cool blues and greys, and every screen has been checked for easy reading. Pale stage colours are shown a little deeper in light mode so stage names stay readable on white. Photos and the camera stay dark.",
+        "Backups now include your Appearance and your stage colour set, so restoring brings them back too.",
+      ]},
       { version: "v19.1", date: "10 Oct 2026", changes: [
         "The shopping list has a Buy these bar at the top: a button for each shop that sells your paints (Firestorm Games, Wayland Games, Element Games, and The Army Painter for its own paints). Tap a shop for a search link for each paint. Plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop.",
         "Import CSV checks the file first: it needs a name column (the other columns can be in any order), and pictures, Excel files and files over 2 MB are refused with a message instead of turning into odd units.",
