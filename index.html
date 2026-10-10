@@ -280,6 +280,18 @@
     .faction-colour-text { display: grid; min-width: 0; }
     .faction-colour-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .faction-colour-text small { color: var(--muted); font-size: 12px; }
+    /* v20.1: Custom stage colours. One row per stage, laid out like the faction colours. */
+    .custom-colour-list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+    .custom-colour-row {
+      display: grid; grid-template-columns: 44px 1fr; gap: 6px 10px; align-items: center;
+      padding: 10px; background: var(--background); border: 1px solid var(--border);
+      border-left: 4px solid var(--stage-colour, var(--border)); border-radius: 10px;
+    }
+    .custom-colour-row input[type=color] { width: 44px; height: 44px; padding: 3px; cursor: pointer; }
+    .custom-colour-text { display: grid; min-width: 0; }
+    .custom-colour-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--stage-colour, var(--text)); }
+    .custom-colour-text small { color: var(--muted); font-size: 12px; }
+    .custom-colour-text small.faint { color: var(--caution); font-weight: 600; }
     .faction-colour-buttons { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; }
     .faction-colour-buttons .plain-button { padding: 8px 12px; min-height: 36px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
     .faction-colour-buttons .swatch { width: 12px; height: 12px; }
@@ -1106,10 +1118,15 @@
           <summary>Appearance (light and dark) and stage colours</summary>
           <ul>
             <li>Choose how the app looks in <strong>Settings → Appearance</strong>: <strong>Dark</strong> (the usual look), <strong>Light</strong>, or <strong>Match my phone</strong>, which follows your phone's own dark mode setting and switches when your phone does.</li>
-            <li><strong>Settings → Colours</strong> picks the colour set for your stages: Ice, Frost, Greyscale or Colour-blind friendly.</li>
-            <li>In light mode, pale stage colours (like the pale green "finished" colour, or the white end of Greyscale) are shown a little deeper, so stage names stay easy to read on white. Your chosen set doesn't change, and dark mode shows it exactly as before.</li>
+            <li><strong>Settings → Colours</strong> picks the colour set for your stages: Ice, Frost, Greyscale, Colour-blind friendly, <strong>Forge</strong> (warm: ember red through amber and gold to cream), or <strong>Custom</strong>.</li>
+            <li><strong>Custom</strong> lets you pick a colour for each stage. It starts from the set you had. Tap a stage's colour square to change it; the whole app updates as you go.</li>
+            <li>A colour that's too faint to read on the dark cards gets a <strong>⚠ warning</strong> under its stage. You can still keep it.</li>
+            <li><strong>Reset</strong> puts every stage back to the set you started from. Press Undo on the message if you change your mind.</li>
+            <li>Your colours stay with their stages: rename, reorder or remove stages and each keeps its colour. A new stage gets the colour your starting set gives that spot.</li>
+            <li>Pick a named set again at any time; your Custom colours are kept for when you switch back.</li>
+            <li>In light mode, pale stage colours (like the pale green "finished" colour, the white end of Greyscale, or Forge's cream) are shown a little deeper, so stage names stay easy to read on white. This works for Custom colours too. The colours you chose don't change, and dark mode shows them exactly as chosen.</li>
             <li>Photos and the camera always show on a dark background, like your phone's own photo viewer.</li>
-            <li>Your Appearance and colour set are saved with your other settings and in backups, so a restore brings them back.</li>
+            <li>Your Appearance, colour set and Custom colours are saved with your other settings and in backups, so a restore brings them back.</li>
           </ul>
         </details>
         <details>
@@ -1293,6 +1310,12 @@
         <h2>Colours</h2>
         <select id="palette-select" aria-label="Stage colours" style="width: 100%;"></select>
         <p class="hint" id="palette-light-note" style="margin: 10px 0 0;" hidden>In light mode, pale stage colours are shown a little deeper so they're easy to read.</p>
+        <!-- v20.1: "Custom" in the list above shows this: a colour for each stage. -->
+        <div id="custom-colours" hidden>
+          <p class="hint" style="margin: 12px 0 0;">Tap a colour square to change that stage's colour. Each colour stays with its stage if you rename, reorder or remove stages.</p>
+          <ol class="custom-colour-list" id="custom-colour-list"></ol>
+          <button class="plain-button" id="custom-reset" style="margin-top: 10px; width: 100%;">Reset colours</button>
+        </div>
       </div>
 
       <!-- Faction colours (v8). Filled in by renderFactionColours(). -->
@@ -8016,8 +8039,18 @@
       draftDoneItem = draft[settings.doneFrom];
     }
 
+    // v20.1: the colour each draft row will have once saved. With Custom on, a stage keeps
+    // its own colour wherever it moves; a new stage gets the colour your starting set gives
+    // that spot. Without Custom, colours are spread along the set as before.
+    function draftColours() {
+      if (!usingCustom()) return stageColours(settings.palette, draft.length);
+      const mine = customColoursFor(STAGES.length);
+      const fresh = stageColours(settings.palette, draft.length);
+      return draft.map((item, i) => item.from !== null && mine[item.from] ? mine[item.from] : fresh[i]);
+    }
+
     function renderStageEditor() {
-      const colours = shownStageColours(settings.palette, draft.length);
+      const colours = forShow(draftColours());
       stageList.innerHTML = "";
       draft.forEach((item, index) => {
         if (item === draftDoneItem) {
@@ -8130,7 +8163,15 @@
       // everything goes back to how it was (before, the stages could be saved without
       // the units, which reset every unit to the first stage on the next open).
       const doneIndex = draft.indexOf(draftDoneItem);
+      // v20.1: your Custom colours move with their stages (worked out before STAGES changes).
+      const hadCustom = usingCustom() || (Array.isArray(settings.customColours) && settings.customColours.length > 0);
+      const newCustom = hadCustom ? (() => {
+        const mine = customColoursFor(STAGES.length);
+        const fresh = stageColours(settings.palette, draft.length);
+        return draft.map((item, i) => item.from !== null ? mine[item.from] : fresh[i]);
+      })() : null;
       const kept = changeAndSave(() => {
+        if (newCustom) settings.customColours = newCustom;
         models.forEach(m => {
           m.stage = map[m.stage];
           if (m.each) m.stages = m.stages.map(st => map[st]);
@@ -8160,6 +8201,8 @@
       greyscale:  { label: "Greyscale",               colours: ["#6b7280", "#8f96a3", "#b4bac4", "#d9dde3", "#ffffff"] },
       // Based on the Okabe-Ito colours, designed to stay distinct for common colour blindness.
       colourblind:{ label: "Colour-blind friendly",   colours: ["#8b95a5", "#56b4e9", "#cc79a7", "#e69f00", "#f0e442"] },
+      // v20.1: the one warm set: ember red → orange → amber → gold → warm cream.
+      forge:      { label: "Forge (warm)",            colours: ["#e0452b", "#f2701c", "#f59e0b", "#facc15", "#fde9c0"] },
     };
 
     // Mixes two colours: amount 0 = colour a, 1 = colour b, 0.5 = halfway.
@@ -8183,6 +8226,34 @@
       });
     }
 
+    // ----- v20.1: Custom stage colours -----
+    // settings.useCustom = true means "use my own colours". settings.customColours holds one
+    // "#rrggbb" per stage, in the same order as the stages. settings.palette still names a
+    // REAL set (the one Custom started from, and what Reset goes back to). That way an older
+    // version of the app, which doesn't know Custom, simply shows that set and changes
+    // nothing it doesn't understand (it keeps settings it doesn't know about).
+    const goodHex = (value) => typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value);
+    const usingCustom = () => settings.useCustom === true;
+    // A tidy copy of a saved list: at most 10 entries, anything that isn't a colour becomes "".
+    function cleanCustomColours(raw) {
+      return Array.isArray(raw) ? raw.slice(0, 10).map(c => goodHex(c) ? c.toLowerCase() : "") : [];
+    }
+    // Your colours for n stages. A missing or broken entry uses the colour your starting
+    // set gives that stage, so there's always a sensible colour.
+    function customColoursFor(n) {
+      const saved = Array.isArray(settings.customColours) ? settings.customColours : [];
+      return stageColours(settings.palette, n).map((fallback, i) => goodHex(saved[i]) ? saved[i].toLowerCase() : fallback);
+    }
+    // The colours in use now (before light mode deepens them): yours, or the set's.
+    function chosenStageColours(n) {
+      return usingCustom() ? customColoursFor(n) : stageColours(settings.palette, n);
+    }
+    // How a colour reads on the dark cards. Under 3 is too faint for a stage's name to be
+    // read easily. (Light mode deepens pale colours by itself, so light cards are fine.)
+    const DARK_CARD = "#141d2f";
+    const FAINT_BELOW = 3;
+    const tooFaintOnDark = (hex) => contrastRatio(hex, DARK_CARD) < FAINT_BELOW;
+
     // ----- v20: Appearance (Dark / Light / Match my phone) -----
     // settings.appearance is "dark" (the default), "light" or "auto" (follow the phone).
     const APPEARANCES = { dark: "Dark", light: "Light", auto: "Match my phone" };
@@ -8205,7 +8276,7 @@
     }
     // When the phone switches its own dark mode, follow it (only if "Match my phone" is on).
     if (phoneLight) {
-      const follow = () => { if (settings.appearance === "auto") { applyPalette(settings.palette); render(); showAppearanceChoice(); } };
+      const follow = () => { if (settings.appearance === "auto") { applyPalette(settings.palette); render(); showAppearanceChoice(); renderCustomColours(); } };
       if (phoneLight.addEventListener) phoneLight.addEventListener("change", follow);
       else if (phoneLight.addListener) phoneLight.addListener(follow);   // older iPhones
     }
@@ -8255,7 +8326,10 @@
     // The stage colours as they're SHOWN: the set's own colours in dark mode, deepened
     // ones in light mode.
     function shownStageColours(paletteName, n) {
-      const colours = stageColours(paletteName, n);
+      return forShow(stageColours(paletteName, n));
+    }
+    // v20.1: the same for any list of colours (e.g. your Custom ones).
+    function forShow(colours) {
       return isLight() ? colours.map(c => deepenForLight(c)) : colours;
     }
 
@@ -8263,7 +8337,8 @@
     // v20: also sets light or dark first, because that changes the stage colours.
     function applyPalette(name) {
       setAppearanceMark();
-      const colours = shownStageColours(name, STAGES.length);
+      // v20.1: your own colours when Custom is on.
+      const colours = forShow(usingCustom() ? customColoursFor(STAGES.length) : stageColours(name, STAGES.length));
       colours.forEach((colour, index) => document.documentElement.style.setProperty(`--stage-${index}`, colour));
       document.documentElement.style.setProperty("--done-colour", colours[colours.length - 1]);
     }
@@ -8285,6 +8360,7 @@
         applyPalette(settings.palette);
         render();
         showAppearanceChoice();
+        renderCustomColours();
       });
     }
     if (!goodAppearance(settings.appearance)) settings.appearance = "dark";
@@ -8292,14 +8368,101 @@
 
     const paletteSelect = document.getElementById("palette-select");
     for (const [key, palette] of Object.entries(PALETTES)) paletteSelect.add(new Option(palette.label, key));
-    if (!PALETTES[settings.palette]) settings.palette = "ice";
-    paletteSelect.value = settings.palette;
+    // v20.1: the 6th choice. "custom" is never stored as settings.palette (see usingCustom).
+    paletteSelect.add(new Option("Custom (pick your own)", "custom"));
+    if (!Object.prototype.hasOwnProperty.call(PALETTES, settings.palette)) settings.palette = "ice";
+    if (settings.useCustom !== undefined && typeof settings.useCustom !== "boolean") settings.useCustom = false;
+    if (settings.customColours !== undefined) settings.customColours = cleanCustomColours(settings.customColours);
+    paletteSelect.value = usingCustom() ? "custom" : settings.palette;
     paletteSelect.addEventListener("change", () => {
-      settings.palette = paletteSelect.value;
+      if (paletteSelect.value === "custom") {
+        // Start from the set you had (or keep the colours you picked last time).
+        settings.useCustom = true;
+        if (!Array.isArray(settings.customColours) || !settings.customColours.some(goodHex)) {
+          settings.customColours = stageColours(settings.palette, STAGES.length);
+        }
+      } else {
+        settings.palette = paletteSelect.value;
+        settings.useCustom = false;
+      }
       saveSettings();
       applyPalette(settings.palette);
       renderStageEditor();
+      renderCustomColours();
     });
+
+    // ----- v20.1: the Custom colour list -----
+    const customBox = document.getElementById("custom-colours");
+    const customList = document.getElementById("custom-colour-list");
+    const customReset = document.getElementById("custom-reset");
+    // What a row says under the stage name: a warning if the colour is too faint on the
+    // dark cards; in light mode, a note if it's shown deeper there.
+    function customColourNote(hex, note) {
+      const faint = tooFaintOnDark(hex);
+      note.classList.toggle("faint", faint);
+      note.textContent = faint
+        ? "⚠ Too faint to read on dark cards. Try a brighter colour."
+        : isLight() && contrastRatio(hex, LIGHT_CARD) < 4.5
+          ? "Shown a little deeper in light mode, so it's easy to read."
+          : "";
+      note.hidden = !note.textContent;
+    }
+    function renderCustomColours() {
+      customBox.hidden = !usingCustom();
+      customList.innerHTML = "";
+      if (!usingCustom()) return;
+      const colours = customColoursFor(STAGES.length);
+      const shown = forShow(colours);
+      STAGES.forEach((name, index) => {
+        const row = document.createElement("li");
+        row.className = "custom-colour-row";
+        row.style.setProperty("--stage-colour", shown[index]);
+        const picker = document.createElement("input");
+        picker.type = "color";
+        picker.value = colours[index];
+        picker.setAttribute("aria-label", `Colour for ${name}`);
+        const text = document.createElement("span");
+        text.className = "custom-colour-text";
+        const title = document.createElement("strong");
+        title.textContent = name;
+        const note = document.createElement("small");
+        text.append(title, note);
+        customColourNote(colours[index], note);
+        // While you drag, the whole app updates; it's saved when you let go.
+        const use = (save) => {
+          if (!goodHex(picker.value)) return;
+          const list = customColoursFor(STAGES.length);
+          list[index] = picker.value.toLowerCase();
+          settings.customColours = list;
+          applyPalette(settings.palette);
+          row.style.setProperty("--stage-colour", forShow([list[index]])[0]);
+          customColourNote(list[index], note);
+          if (save) { saveSettings(); renderStageEditor(); }
+        };
+        picker.addEventListener("input", () => use(false));
+        picker.addEventListener("change", () => use(true));
+        row.append(picker, text);
+        customList.appendChild(row);
+      });
+      const from = PALETTES[settings.palette] || PALETTES.ice;
+      customReset.textContent = `Reset to ${from.label} colours`;
+    }
+    customReset.addEventListener("click", () => {
+      const before = customColoursFor(STAGES.length);
+      settings.customColours = stageColours(settings.palette, STAGES.length);
+      saveSettings();
+      applyPalette(settings.palette);
+      renderStageEditor();
+      renderCustomColours();
+      showToast("Colours reset", () => {
+        settings.customColours = before;
+        saveSettings();
+        applyPalette(settings.palette);
+        renderStageEditor();
+        renderCustomColours();
+      });
+    });
+    renderCustomColours();
 
     // ----- Data summary and delete all -----
 
@@ -8309,7 +8472,9 @@
     function renderSettings() {
       // v20: after a restore or a change in another window, show the right choices.
       showAppearanceChoice();
-      if (PALETTES[settings.palette]) document.getElementById("palette-select").value = settings.palette;
+      if (usingCustom()) document.getElementById("palette-select").value = "custom";
+      else if (PALETTES[settings.palette]) document.getElementById("palette-select").value = settings.palette;
+      renderCustomColours();
       startDraft();
       renderStageEditor();
       renderFactionColours();
@@ -8665,7 +8830,9 @@
       return { app: "Minifolio", version: 6, dataVersion: DATA_VERSION, stages: STAGES, doneFrom: settings.doneFrom, models, recipes: book,
                factionColours: settings.factionColours,
                // v20: the look travels with the backup too. Older versions ignore these.
-               palette: settings.palette, appearance: settings.appearance };
+               palette: settings.palette, appearance: settings.appearance,
+               // v20.1: Custom stage colours (on or off, and one colour per stage).
+               useCustom: usingCustom(), customColours: Array.isArray(settings.customColours) && settings.customColours.length ? customColoursFor(STAGES.length) : [] };
     }
 
     document.getElementById("full-export-button").addEventListener("click", async (event) => {
@@ -8826,6 +8993,9 @@
             // Anything unknown is ignored, so older backups leave yours as they are.
             if (unitsToo && !isList && typeof parsed.palette === "string" && Object.prototype.hasOwnProperty.call(PALETTES, parsed.palette)) settings.palette = parsed.palette;
             if (unitsToo && !isList && goodAppearance(parsed.appearance)) settings.appearance = parsed.appearance;
+            // v20.1: Custom colours. Backups from before v20.1 don't have them, so yours stay.
+            if (unitsToo && !isList && Array.isArray(parsed.customColours)) settings.customColours = cleanCustomColours(parsed.customColours);
+            if (unitsToo && !isList && typeof parsed.useCustom === "boolean") settings.useCustom = parsed.useCustom;
           });
           if (!kept) { alert(fullMessage()); return; }
           recipeDraft = null;
@@ -9525,10 +9695,15 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v20";
+    const APP_VERSION = "v20.1";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v20.1", date: "10 Oct 2026", changes: [
+        "New warm stage colours: Forge, from ember red through amber and gold to warm cream. Find it in Settings → Colours.",
+        "New: Custom stage colours. Pick Custom in Settings → Colours and choose a colour for each stage. It starts from your current set, warns you if a colour is too faint to read, and has a Reset button.",
+        "Custom colours stay with their stages when you rename, reorder, add or remove stages, and they're saved in backups.",
+      ]},
       { version: "v20", date: "10 Oct 2026", changes: [
         "New: a light look. Settings → Appearance has Dark (still the usual look), Light, and Match my phone, which follows your phone's own dark mode setting.",
         "Light mode keeps the cool blues and greys, and every screen has been checked for easy reading. Pale stage colours are shown a little deeper in light mode so stage names stay readable on white. Photos and the camera stay dark.",
