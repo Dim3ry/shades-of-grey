@@ -171,7 +171,8 @@ with sync_playwright() as pw:
         text = page.evaluate("shoppingText(shoppingItems())")
         check(f"{size}: shopping list text", text == EXPECTED_SHOPPING, text)
         check(f"{size}: shop panel shows copy button", page.locator("#shop-panel button", has_text="Copy as text").count() == 1)
-        check(f"{size}: shop links slot is labelled, no links yet", "No links are added yet" in page.locator("#shop-links-slot").text_content())
+        # v19.1 replaced the "Coming later" box with the Buy these bar (checked in test_v19_1.py).
+        check(f"{size}: shop links: Buy these bar at the top of the list", page.locator("#buy-bar").count() == 1)
         page.screenshot(path=f"{SHOTS}/v17-{size}-shopping.png", full_page=True)
 
         # ---- Keep note: "What can I paint now?" with the real paste ----
