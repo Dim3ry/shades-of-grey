@@ -768,6 +768,12 @@
       .toast { bottom: 24px; }
     }
 
+    /* v19: army-list paste on the Units tab, and the buttons on an empty Units list. */
+    #units-import #wh-panel { margin-top: 0 !important; }
+    #units-import .review { margin-top: 12px; }
+    #units-import #wh-panel.hidden + .review { margin-top: 0; padding-top: 0; border-top: 0; }
+    .empty .button-grid { margin: 14px auto 0; max-width: 340px; text-align: left; }
+
     .hidden { display: none !important; }
   </style>
 </head>
@@ -862,7 +868,23 @@
           <input id="faction-input" placeholder="Faction" aria-label="Faction" list="faction-options">
         </div>
         <button class="primary-button" type="submit">Add</button>
+        <!-- v19: bringing in a whole army is offered right here, not only in Settings. -->
+        <p class="hint" style="margin: 4px 0 0;">Adding a whole army?</p>
+        <div class="button-grid" id="add-import-buttons">
+          <button type="button" class="plain-button" id="add-wh">Paste army list</button>
+          <button type="button" class="plain-button" id="add-csv">Import CSV</button>
+        </div>
       </form>
+
+      <!-- v19: the army-list paste and the import check, when started from the Units tab.
+           The same boxes as in Settings are moved in here (see placeImportArea()). -->
+      <div class="card hidden" id="units-import">
+        <div class="card-head">
+          <h2 style="margin: 0;">Import units</h2>
+          <button class="link-button" id="units-import-close">Close</button>
+        </div>
+        <div id="units-import-slot"></div>
+      </div>
 
       <!-- Filters start folded away so the units get the screen; "Filters" opens them. -->
       <div class="card hidden" id="filter-card">
@@ -966,11 +988,12 @@
           <summary>Getting started</summary>
           <ol>
             <li>The app starts with three example units. Clear them in <strong>Settings → Delete all units</strong>.</li>
-            <li>Add your units: one at a time with <strong>Units → + Add unit</strong>, or many at once from a CSV file or a pasted army list (see <strong>Importing</strong>).</li>
+            <li>Add your units: one at a time with <strong>Units → + Add unit</strong>, or a whole army at once with <strong>Paste army list</strong> or <strong>Import CSV</strong>, which are on the same panel (see <strong>Importing</strong>).</li>
             <li>As you build and paint, press <strong>▲</strong> on a unit to move it up a stage.</li>
             <li>Check the <strong>Dashboard</strong> to see how far you've got.</li>
             <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
           </ol>
+          <p id="help-back" style="margin: 8px 0 0;">The phone's <strong>Back</strong> button closes what's open first, one thing per press: a photo, the camera, a recipe, the paste box. Then it goes to the Dashboard. On the Dashboard, with nothing open, it leaves the app.</p>
         </details>
         <details>
           <summary>Adding and updating units</summary>
@@ -1065,11 +1088,11 @@
         <details>
           <summary>Importing (CSV and army lists)</summary>
           <ul>
-            <li><strong>From the Warhammer app:</strong> open a list, tap Export, copy it as text, then in <strong>Settings → Paste an army list</strong> paste it and press Read list. Only unit names and model counts are kept: points, wargear and rules text are thrown away.</li>
-            <li><strong>From a spreadsheet:</strong> save it as CSV with the columns name, game, faction, stage, nickname, count, repaint, notes, then use <strong>Import CSV</strong>. <strong>CSV template</strong> gives you an example file.</li>
+            <li><strong>From the Warhammer app:</strong> open a list, tap Export, copy it as text, then on the Units tab tap <strong>+ Add unit → Paste army list</strong> (it's also in Settings), paste it and press Read list. Only unit names and model counts are kept: points, wargear and rules text are thrown away.</li>
+            <li><strong>From a spreadsheet:</strong> save it as CSV with the columns name, game, faction, stage, nickname, count, repaint, notes, then use <strong>Import CSV</strong> (under + Add unit, or in Settings). <strong>CSV template</strong> in Settings gives you an example file.</li>
             <li>Before anything changes, you choose <strong>Add to my collection</strong> or <strong>Replace my collection</strong>, and can untick any units you don't want.</li>
             <li>Units you already have start unticked. If one has a different name in the import, it's highlighted so you can pick which name to keep. The Warhammer app's name is the default.</li>
-            <li>Changed your mind? Press <strong>Undo</strong> straight after.</li>
+            <li>After an import, the <strong>Units</strong> tab opens so you can see what came in. Changed your mind? Press <strong>Undo</strong> straight after.</li>
           </ul>
         </details>
         <details>
@@ -1105,6 +1128,16 @@
           <ul>
             <li>The version number is next to the title. The <strong>Updates</strong> tab lists what changed in each version.</li>
             <li>Found a bug or have an idea? Use <strong>Give feedback</strong> on the Updates tab.</li>
+          </ul>
+        </details>
+        <details id="privacy">
+          <summary>Privacy</summary>
+          <ul>
+            <li><strong>Stays on your phone:</strong> your units, photos, recipes, paints and settings. They're saved in this browser on this device only. There's no account and no cloud copy.</li>
+            <li><strong>Scanning a paint pot</strong> reads the label on your phone. The photo never leaves it.</li>
+            <li><strong>What goes out:</strong> only what you choose to send. <strong>Give feedback</strong> opens a form on Tally's website, which receives what you type there plus the app's version number. Backups and exports are files you save yourself.</li>
+            <li><strong>No tracking:</strong> no analytics, no adverts, no cookies, and nothing is sold.</li>
+            <li>Like any website, the site's host (GitHub Pages) sees basic technical details, such as your internet address, when the app loads or updates. Minifolio itself never sees or keeps them.</li>
           </ul>
         </details>
         <details id="about">
@@ -1180,6 +1213,9 @@
         </div>
         <p class="hint" id="backup-age" style="margin: 12px 0 0;"></p>
 
+        <!-- v19: the paste box and the import check live in #import-area, which is moved to
+             the Units tab when an import starts there, and back here when it starts here. -->
+        <div id="settings-import-slot"><div id="import-area">
         <!-- Import from the Warhammer app: hidden until the button above is pressed. -->
         <div id="wh-panel" class="hidden" style="margin-top: 14px; display: grid; gap: 10px;">
           <p class="hint" style="margin: 0;">
@@ -1233,6 +1269,7 @@
             <button class="plain-button" id="review-cancel">Cancel</button>
           </div>
         </div>
+        </div></div>
 
         <p class="hint" style="margin: 12px 0 0;">
           Save backup is small and quick but leaves out photos. Save full backup with photos
@@ -3577,7 +3614,7 @@
       donePercent.textContent = total ? `${percent}%` : "–";
       doneSummary.textContent = total
         ? `${done} of ${total} models done · ${models.length} units`
-        : "No units yet. Add some in Units, or import a CSV in Settings.";
+        : "No units yet. Add some on the Units tab: one at a time, or a whole army from a pasted army list or a CSV file.";
 
       todoButton.innerHTML = "";
       todoButton.append(Object.assign(document.createElement("strong"), { textContent: todo }), "models to do");
@@ -3955,7 +3992,13 @@
 
       list.innerHTML = "";
       if (models.length === 0) {
-        list.innerHTML = '<li class="empty">No units yet. Press + Add unit, or import a CSV in Settings.</li>';
+        // v19: a brand-new collection gets the import buttons right here.
+        list.innerHTML = '<li class="empty" id="units-empty">No units yet. Press <strong>+ Add unit</strong> to add one, ' +
+          'or bring in a whole army at once:<div class="button-grid">' +
+          '<button type="button" class="plain-button" id="empty-wh">Paste army list</button>' +
+          '<button type="button" class="plain-button" id="empty-csv">Import CSV</button></div></li>';
+        document.getElementById("empty-wh").addEventListener("click", startUnitsPaste);
+        document.getElementById("empty-csv").addEventListener("click", startUnitsCsv);
         return;
       }
       if (visible.length === 0) {
@@ -8521,7 +8564,10 @@
 
     // Import CSV reads the file, then shows the review so you can choose Add or Replace.
     const csvFile = document.getElementById("csv-file");
-    document.getElementById("csv-button").addEventListener("click", () => csvFile.click());
+    document.getElementById("csv-button").addEventListener("click", () => {
+      placeImportArea("settings");   // v19: the check shows here, under the Settings buttons
+      csvFile.click();
+    });
     csvFile.addEventListener("change", () => {
       const file = csvFile.files[0];
       if (!file) return;
@@ -8773,12 +8819,14 @@
       setDefaultChoices();
       renderReview();
       reviewBox.classList.remove("hidden");
+      refreshUnitsImport();
       reviewBox.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     function closeReview() {
       incoming = null;
       reviewBox.classList.add("hidden");
+      refreshUnitsImport();
     }
 
     function plural(n, word) { return `${n} ${word}${n === 1 ? "" : "s"}`; }
@@ -8968,9 +9016,12 @@
       closeReview();
       whText.value = "";
       whPanel.classList.add("hidden");
+      refreshUnitsImport();
+      closeAddForm();      // v19: so the new units have the screen
       clearFilters();
       render();
       renderSettings();
+      showTab("units");    // v19: after an import, show the units it brought in
       showToast(parts.join(", "), () => {
         models = before;
         render();
@@ -8980,6 +9031,7 @@
 
     // ----- Starting an import from the Warhammer app -----
     document.getElementById("wh-button").addEventListener("click", () => {
+      if (importWhere !== "settings") { placeImportArea("settings"); whPanel.classList.add("hidden"); closeReview(); }
       const opening = whPanel.classList.contains("hidden");
       whPanel.classList.toggle("hidden", !opening);
       if (opening) { closeReview(); whText.focus(); }
@@ -9002,6 +9054,55 @@
         rows: list.units.map(u => ({ name: u.name, count: u.count })),
       });
     });
+
+    // ================= v19: IMPORT FROM THE UNITS TAB =================
+    // "Paste army list" and "Import CSV" sit on the Add unit panel (and on an empty Units
+    // list), so nobody has to find them in Settings. Rather than a second copy of the paste
+    // box and the import check, the SAME boxes (#import-area) are moved to the Units tab
+    // while an import started there is open, and moved back when one starts in Settings.
+    const importArea = document.getElementById("import-area");
+    const unitsImport = document.getElementById("units-import");
+    let importWhere = "settings";   // where #import-area is right now: "settings" or "units"
+
+    function placeImportArea(where) {
+      const slot = document.getElementById(where === "units" ? "units-import-slot" : "settings-import-slot");
+      if (importArea.parentNode !== slot) slot.appendChild(importArea);
+      importWhere = where;
+      refreshUnitsImport();
+    }
+    // The Units tab's import card shows only while something is open in it.
+    function refreshUnitsImport() {
+      const open = importWhere === "units" &&
+        (!whPanel.classList.contains("hidden") || !reviewBox.classList.contains("hidden"));
+      unitsImport.classList.toggle("hidden", !open);
+    }
+    function closeUnitsImport() {
+      whPanel.classList.add("hidden");
+      closeReview();
+    }
+    function closeAddForm() {
+      form.classList.add("hidden");
+      toggleAdd.textContent = "+ Add unit";
+    }
+
+    function startUnitsPaste() {
+      placeImportArea("units");
+      closeReview();
+      whPanel.classList.remove("hidden");
+      refreshUnitsImport();
+      showTab("units");
+      unitsImport.scrollIntoView({ block: "start" });
+      whText.focus();
+    }
+    function startUnitsCsv() {
+      placeImportArea("units");
+      whPanel.classList.add("hidden");
+      closeReview();
+      csvFile.click();   // the check opens on the Units tab once a file is picked
+    }
+    document.getElementById("add-wh").addEventListener("click", startUnitsPaste);
+    document.getElementById("add-csv").addEventListener("click", startUnitsCsv);
+    document.getElementById("units-import-close").addEventListener("click", closeUnitsImport);
 
     // ================= "TIME TO BACK UP" REMINDER =================
     // Your data only lives on this device, so a backup is the safety net.
@@ -9061,10 +9162,15 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v18.3";
+    const APP_VERSION = "v19";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v19", date: "10 Oct 2026", changes: [
+        "The phone's Back button no longer leaves the app by mistake. It closes what's open first (a photo, the camera, a recipe, the paste box), then goes to the Dashboard. Only on the Dashboard does it leave the app.",
+        "Paste army list and Import CSV are now on the Units tab: tap + Add unit (or use the buttons on an empty Units list). They're still in Settings too. After an import, the Units tab opens on your units.",
+        "Help has a new Privacy topic: what stays on your phone, what goes out (only the feedback form, if you use it) and no tracking.",
+      ]},
       { version: "v18.3", date: "10 Oct 2026", changes: [
         "The camera can't be left on by accident any more: tapping Scan a label twice opens only one camera, and leaving the app or closing the scan panel switches it off.",
         "Scanning a paint pot now works offline: the label reader is part of Minifolio itself instead of being downloaded from other websites. After the first scan it works with no internet.",
@@ -9320,6 +9426,81 @@
       loadThumbs().catch(() => {});   // new photos added in the other window
       showToast("Updated with changes from another window", null, null, 4);
     }
+
+    // ================= v19: THE PHONE'S BACK BUTTON =================
+    // Before v19, the phone's Back button (or a swipe back) left the app from anywhere,
+    // even with a photo open. Now Back closes what's open first, one thing per press:
+    //   1. the photo viewer           2. the camera, then the scan panel
+    //   3. a page on the Recipes tab (paste recipes, a recipe being written or read, a scheme)
+    //   4. the import box on the Units tab
+    //   5. any tab other than the Dashboard goes back to the Dashboard
+    // and only on the Dashboard, with nothing open, does Back leave the app as normal.
+    //
+    // How: the browser keeps a list of "pages" for its Back button (the history). While
+    // something can be closed, the app adds ONE extra step to that list (a "back step").
+    // Pressing Back uses it up: the browser tells us ("popstate"), we close the top thing,
+    // and add a new step if something else is still open. When nothing is left open (say
+    // you pressed ✕ yourself), the spare step is taken away again, so Back never seems to
+    // do nothing. The web address never changes.
+
+    // What Back would close right now, as a function that closes it, or null if nothing.
+    function backTarget() {
+      if (viewer) return closeViewer;
+      const tab = settings.tab;
+      if (tab === "recipes") {
+        if (document.getElementById("scan-camera") || cameraOpening) return closeCamera;
+        if (scanState && settings.recipeView === "palette" && !importDraft && !recipeDraft && openRecipeId === null) {
+          return () => { scanState = null; closeCamera(); renderScan(); };
+        }
+        if (importDraft) return () => closeImport(true);
+        if (recipeDraft) return () => {
+          if (!okToLeaveDraft()) return;   // asks first if there are unsaved changes
+          if (recipeDraft.id !== null) openRecipeId = recipeDraft.id;
+          recipeDraft = null;
+          renderRecipes();
+          window.scrollTo(0, 0);
+        };
+        if (openRecipeId !== null) return () => { openRecipeId = null; renderRecipes(); window.scrollTo(0, 0); };
+        if (schemeDraft && settings.recipeView === "schemes") return () => closeScheme(true);
+      }
+      if (tab === "units" && !unitsImport.classList.contains("hidden")) return closeUnitsImport;
+      if (tab && tab !== "dashboard") return () => showTab("dashboard");
+      return null;
+    }
+
+    let backStep = false;        // true while our extra back step is the current history entry
+    // Reloaded (or reopened) while sitting on an old back step? Turn it into a plain entry:
+    // the page below it belongs to the page before the reload, so we can't use it.
+    if (history.state && history.state.minifolio === "back") {
+      try { history.replaceState(null, ""); } catch (e) { /* not allowed: harmless */ }
+    }
+    let ignoreNextPop = false;   // true while WE asked the browser to go back (to remove a spare step)
+    function syncBackStep() {
+      const wanted = !!backTarget();
+      if (wanted && !backStep) {
+        try { history.pushState({ minifolio: "back" }, ""); backStep = true; } catch (e) { /* history blocked: Back works as before */ }
+      } else if (!wanted && backStep) {
+        backStep = false;
+        ignoreNextPop = true;
+        history.back();
+      }
+    }
+    window.addEventListener("popstate", () => {
+      if (ignoreNextPop) { ignoreNextPop = false; return; }
+      backStep = false;            // the browser has just used our step
+      const close = backTarget();
+      if (close) close();
+      syncBackStep();              // something else still open? add a step for it
+    });
+    // Check after every tap, menu choice or key press. (Not at start-up: a browser ignores
+    // back steps added before you've touched the page.) setTimeout lets the tap finish first.
+    let backCheckQueued = false;
+    function queueBackCheck() {
+      if (backCheckQueued) return;
+      backCheckQueued = true;
+      setTimeout(() => { backCheckQueued = false; syncBackStep(); }, 0);
+    }
+    for (const type of ["click", "change", "keyup"]) document.addEventListener(type, queueBackCheck, true);
 
     // ================= PHASE 6: WORK OFFLINE =================
     // A "service worker" is a small helper script (sw.js) that the browser runs in the
