@@ -9,12 +9,18 @@
 //
 // WHEN YOU UPLOAD A NEW VERSION: change the number below (v1 -> v2 -> v3...).
 // That tells the phone to throw away the old saved copy and start a new one.
-const VERSION = "v18.2";
+const VERSION = "v18.3";
 const CACHE_NAME = "shades-of-grey-" + VERSION;
-// v16: the pot-label reader (Tesseract.js) is downloaded the first time you scan. It's kept
-// in its own store that ISN'T cleared on updates, so scanning keeps working offline.
+// The pot-label reader's big files (the engine and its English data, about 11 MB) are kept in
+// their own store that ISN'T cleared on updates, so they're only fetched once.
+// v18.3: they now come from the app's own "ocr" folder, not other websites. They're saved the
+// first time you scan, and after that scanning works offline. (Not saved at install, so people
+// who never scan don't download 11 MB.) ocr/ocr-worker.js itself is small and treated like any
+// other app file, so changes to it arrive with updates.
 const OCR_CACHE = "shades-of-grey-label-reader";
-const OCR_HOSTS = ["cdn.jsdelivr.net", "tessdata.projectnaptha.com"];
+function isOcrFile(url) {
+  return url.origin === self.location.origin && /\/ocr\/(tesseract-core[^/]*|eng\.traineddata)$/.test(url.pathname);
+}
 
 // The files that make up the app. Saved as soon as the app is installed.
 const APP_FILES = [
@@ -23,6 +29,7 @@ const APP_FILES = [
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png",
+  "./ocr/ocr-worker.js",
 ];
 
 // "install": runs once when this version of sw.js is first seen. Save the app files.
@@ -32,11 +39,16 @@ self.addEventListener("install", (event) => {
 });
 
 // "activate": runs when this version takes over. Delete saved copies from old versions.
+// v18.3: also clear out the label-reader files that used to come from other websites.
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys()
       .then((names) => Promise.all(
         names.filter((name) => name !== CACHE_NAME && name !== OCR_CACHE).map((name) => caches.delete(name))))
+      .then(() => caches.open(OCR_CACHE))
+      .then((cache) => cache.keys().then((requests) => Promise.all(requests
+        .filter((request) => new URL(request.url).origin !== self.location.origin)
+        .map((request) => cache.delete(request)))))
       .then(() => self.clients.claim())
   );
 });
@@ -46,8 +58,8 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return; // only plain "get a file" requests
 
-  // v16: label-reader files never change, so use the saved copy first, else download and keep it.
-  if (OCR_HOSTS.includes(new URL(event.request.url).hostname)) {
+  // Label-reader engine files never change, so use the saved copy first, else fetch and keep it.
+  if (isOcrFile(new URL(event.request.url))) {
     event.respondWith(
       caches.open(OCR_CACHE).then((cache) => cache.match(event.request).then((saved) => saved ||
         fetch(event.request).then((response) => {

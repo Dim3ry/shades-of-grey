@@ -775,7 +775,7 @@
 <body>
   <!-- v14: shown while saving isn't working (storage full). Stays until a save works. -->
   <div class="save-banner hidden" id="save-banner" role="alert">
-    <p><strong>Changes aren't being saved.</strong> Storage on this device is full. Save a backup now, then free some space (delete photos or units you no longer need).</p>
+    <p id="save-banner-text"><strong>Changes aren't being saved.</strong> Storage on this device is full. Save a backup now, then free some space (delete photos or units you no longer need).</p>
     <button id="banner-backup">Save backup</button>
     <button id="banner-retry">Try again</button>
   </div>
@@ -1039,6 +1039,7 @@
             <li><strong>Your Palette</strong> (top of the Recipes tab) lists every paint in your recipes, once each. It fills itself in: add a paint to a recipe and it appears.</li>
             <li>In Your Palette, sort by colour, name or brand, and tap a brand to show only its paints. Tap a paint to change its colour, name or brand: the change applies in every recipe that uses it.</li>
             <li>At the bottom of an open paint: <strong>Remove</strong> deletes a paint no recipe uses (a paint that's still in a recipe can't be removed). <strong>Merge into…</strong> joins it to another paint, handy for a typo twin like "Nuln Oill": its recipes move to the paint you pick, and that paint keeps its own name and brand. Both have Undo.</li>
+            <li><strong>📷 Scan a paint pot</strong> (in Your Palette) reads the paint's name from its label with the camera and suggests matches. The reading happens on your phone; the photo is never sent anywhere. The first scan loads the label reader (about 11 MB) from Minifolio's own site, and after that scanning works with no internet. Leaving the app, or closing the scan panel, switches the camera off.</li>
             <li>Typed a paint into a recipe that isn't in Your Palette yet? Above <strong>Save recipe</strong>, <strong>Do you own these?</strong> asks about the new paints: <strong>All</strong> (Owned), <strong>None</strong> (Not owned, so they go on the shopping list) or <strong>Let me pick</strong> (tap a paint to untick it).</li>
             <li><strong>Schemes</strong> (top of the Recipes tab) group the recipes you use for one faction, e.g. "My Ultramarines" = armour, trim, lenses and base. Press <strong>+ New scheme</strong>, name it, type the faction and tick its recipes.</li>
             <li><strong>Apply to … units</strong> links a scheme's recipes to every unit in its faction that doesn't have them all yet. Recipes a unit already has stay linked.</li>
@@ -1084,7 +1085,8 @@
             <li>If the device's storage is full, a <strong>red banner</strong> appears at the top saying changes aren't being saved. It stays until saving works again. Save a backup, then free some space. Big changes (new stages, a restore) are only made if they can be saved, so nothing gets half-saved.</li>
             <li><strong>Delete all units</strong>, <strong>Replace my collection</strong> and <strong>Restore backup</strong> keep a copy of what you had on this device for 30 days. Find them under <strong>Settings → Your data → Recover earlier data</strong>. Delete all also has an Undo button. If there isn't room for the copy, Delete all and Replace stop and change nothing.</li>
             <li>If some photos in a backup can't be loaded, the app tells you how many. Keep the backup file safe and try again later.</li>
-            <li>A backup with recipes but no units can be restored too: it replaces only your recipes.</li>
+            <li>A backup with recipes but no units can be restored too: it replaces only your recipes. It has an <strong>Undo</strong> button, and your old recipes are also kept for 30 days under <strong>Recover earlier data</strong> as "Before Restore backup (recipes only)".</li>
+            <li>Your data and backups carry a data version number. If an older copy of the app (say an installed app that hasn't updated yet) finds data saved by a newer one, it stops saving and asks you to <strong>reload</strong>, so it can't damage that newer data. A backup saved by a newer version asks you to update before it restores.</li>
             <li>A <strong>Saved</strong> message only shows when your change really was saved. If the device's storage is full you'll see <strong>Not saved</strong> with a <strong>Save backup</strong> button instead. A paste import that can't be saved is put back and stays open, so your answers aren't lost.</li>
             <li>Got the app open in two places at once (say the installed app and a browser tab)? Changes made in one now show up in the other, instead of being saved over.</li>
             <li>New phone? Save a backup on the old one, open the app on the new one, and restore it.</li>
@@ -1110,7 +1112,7 @@
           <ul>
             <li><strong>Unofficial fan-made app, not affiliated with or endorsed by Games Workshop or any paint maker.</strong> No Games Workshop artwork, rules, points or stats, and no brand logos.</li>
             <li>The app knows paint and faction names so it can recognise what you type or scan. Citadel, Warhammer and faction and paint names are trademarks of Games Workshop Ltd. Other paint names (such as Vallejo, The Army Painter and AK Interactive) belong to their makers. All are used only to identify those products.</li>
-            <li>Your data stays on this device. There's no account, and nothing you add is sent anywhere, except what you choose to write in the feedback form. The first time you scan a paint pot, the app downloads its free text-reading tool from the web; your photo never leaves your phone.</li>
+            <li>Your data stays on this device. There's no account, and nothing you add is sent anywhere, except what you choose to write in the feedback form.</li>
             <li><strong>Contact:</strong> use <strong>Give feedback</strong> on the Updates tab. Every message is read.</li>
           </ul>
         </details>
@@ -1305,12 +1307,34 @@
     // entries is a list of [name, text] pairs. Returns false only if storage is FULL.
     let holdSaves = false;   // true while showing changes made in another window (see below)
     let saveFailing = false; // true while saving isn't working, so the red banner stays up
+
+    // ----- Data version number (v18.3) -----
+    // A number saved with your data (in the settings, and in backups) that says which "shape"
+    // of data this copy of the app writes. Raise it by 1 whenever a future version saves data
+    // in a way older copies wouldn't understand. If an OLDER copy of the app (say an installed
+    // app that hasn't updated yet, open next to a newer browser tab) finds data saved by a
+    // NEWER one, it stops saving and asks you to reload, so it can't damage that newer data.
+    const DATA_VERSION = 1;
+    let dataTooNew = false;  // true once this copy has seen data from a newer version
+    function storedDataVersion() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "null");
+        const n = saved && typeof saved === "object" ? Number(saved.dataVersion) : 0;
+        return Number.isFinite(n) ? n : 0;
+      } catch (ignored) { return 0; }
+    }
+    function checkDataVersion() {
+      if (!dataTooNew && storedDataVersion() > DATA_VERSION) dataTooNew = true;
+      return !dataTooNew;
+    }
     function isStorageFull(error) {
       return !!error && (error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED" ||
                          error.code === 22 || error.code === 1014);
     }
     function writeTogether(entries) {
       if (holdSaves) return true;
+      // v18.3: newer data saved by a newer version of the app? Don't overwrite it.
+      if (!checkDataVersion()) return false;
       const before = [];
       try {
         for (const [key, text] of entries) {
@@ -1331,10 +1355,27 @@
 
     // The red banner at the top. It stays up while saving keeps failing, and goes away
     // by itself as soon as a save works again (before v14 you were warned only once).
+    const TOO_NEW_MESSAGE = "A newer version of Minifolio has saved your data on this device, so this older copy " +
+      "has stopped saving to keep that data safe. Nothing has changed. Please reload to update.";
     function showSaveProblem() {
       saveFailing = true;
       const banner = document.getElementById("save-banner");
-      if (banner) banner.classList.remove("hidden");
+      if (!banner) return;
+      // v18.3: a different message (and a Reload button) when the cause is newer data, not full storage.
+      if (dataTooNew) {
+        const text = document.getElementById("save-banner-text");
+        if (text) {
+          text.textContent = "";
+          const strong = document.createElement("strong");
+          strong.textContent = "Please reload. ";
+          text.append(strong, TOO_NEW_MESSAGE);
+        }
+        const retry = document.getElementById("banner-retry");
+        if (retry) retry.textContent = "Reload";
+        const backup = document.getElementById("banner-backup");
+        if (backup) backup.classList.add("hidden");
+      }
+      banner.classList.remove("hidden");
     }
     function hideSaveProblem() {
       saveFailing = false;
@@ -1371,6 +1412,9 @@
           try { localStorage.setItem(SETTINGS_KEY + "-unreadable", raw); } catch (ignored) {}
         }
       }
+      // v18.3: stamp the data version, unless the saved data came from a newer version.
+      if (!checkDataVersion()) setTimeout(showSaveProblem, 0);
+      else settings.dataVersion = DATA_VERSION;
     }
 
     // A stage list is usable if it's at least 2 names, all text. (Backups are checked
@@ -2850,6 +2894,8 @@
     }
     const FULL_MESSAGE = "Storage on this device is full, so that change couldn't be saved and nothing has changed. " +
       "Please save a backup, then free some space (for example delete photos or units you no longer need).";
+    // v18.3: the right "not saved" message: newer data from a newer version, or full storage.
+    function fullMessage() { return dataTooNew ? TOO_NEW_MESSAGE : FULL_MESSAGE; }
 
     // ================= SMALL HELPERS =================
 
@@ -3076,6 +3122,7 @@
     const NOT_SAVED_MESSAGE = "Not saved: storage on this device is full. It's on screen for now, " +
       "but will be lost when the app closes. Save a backup, then free some space.";
     function showNotSaved(message) {
+      if (dataTooNew) { showToast(TOO_NEW_MESSAGE, () => location.reload(), "Reload", 12); return; }
       showToast(message || NOT_SAVED_MESSAGE, () => document.getElementById("export-button").click(), "Save backup", 12);
     }
     function commit(message, undo, buttonLabel, seconds) {
@@ -7353,30 +7400,57 @@
     }
 
     // ================= v16: SCAN A PAINT POT =================
-    // Reads the label on the phone itself with Tesseract.js (free, no AI service). The first
-    // scan downloads the reader (a few MB); after that it works offline. The matcher then
-    // SUGGESTS paints and you pick one. Nothing is added until you say so.
+    // Reads the label on the phone itself with the Tesseract engine (free, no AI service).
+    // The matcher then SUGGESTS paints and you pick one. Nothing is added until you say so.
     // v16.1: reading the whole photo failed (the background drowned the label out). Now the
     // camera shows a box: line the paint's NAME up in it, and only that strip is read, after
     // a local contrast boost (it makes shiny, curved labels readable).
-    const TESSERACT_URL = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+    // v18.3: the engine and its English data are kept in the app's own "ocr" folder (see
+    // ocr/README.md), not downloaded from other websites on the first scan. So scanning works
+    // offline from the start, and nothing goes to an outside website. ocr/ocr-worker.js runs
+    // the engine in the background; this little "client" sends it pictures and gets text back.
+    const OCR_WORKER_URL = "ocr/ocr-worker.js";
     let ocrWorker = null;
-    function loadTesseract() {
-      if (window.Tesseract) return Promise.resolve();
-      return new Promise((resolve, reject) => {
-        const s = document.createElement("script");
-        s.src = TESSERACT_URL;
-        s.onload = resolve;
-        s.onerror = () => reject(new Error("Couldn't download the label reader. Check your internet for the first scan."));
-        document.head.appendChild(s);
+    function startOcrWorker() {
+      const worker = new Worker(OCR_WORKER_URL);
+      const waiting = new Map();
+      let nextId = 1;
+      const failAll = (message) => {
+        for (const w of waiting.values()) w.reject(new Error(message));
+        waiting.clear();
+      };
+      worker.onmessage = (event) => {
+        const { id, text, error } = event.data || {};
+        const w = waiting.get(id);
+        if (!w) return;
+        waiting.delete(id);
+        if (error) w.reject(new Error(error)); else w.resolve(text || "");
+      };
+      worker.onerror = () => {
+        ocrWorker = null;   // start afresh next time
+        failAll("The label reader stopped working. Please try again.");
+      };
+      const send = (message, transfer) => new Promise((resolve, reject) => {
+        const id = nextId++;
+        waiting.set(id, { resolve, reject });
+        worker.postMessage({ id, ...message }, transfer || []);
       });
+      const client = {
+        ready: send({ type: "init" }),
+        // Same shape as the old library's answer: { data: { text } }.
+        async recognize(canvas) {
+          const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+          if (!blob) throw new Error("Couldn't read that picture.");
+          const image = new Uint8Array(await blob.arrayBuffer());
+          return { data: { text: await send({ type: "read", image }, [image.buffer]) } };
+        },
+      };
+      client.ready.catch(() => { if (ocrWorker === client) ocrWorker = null; worker.terminate(); });
+      return client;
     }
     async function getOcrWorker() {
-      await loadTesseract();
-      if (!ocrWorker) {
-        ocrWorker = await Tesseract.createWorker("eng");
-        await ocrWorker.setParameters({ tessedit_pageseg_mode: "6" });   // "one block of text"
-      }
+      if (!ocrWorker) ocrWorker = startOcrWorker();
+      await ocrWorker.ready;
       return ocrWorker;
     }
 
@@ -7440,7 +7514,7 @@
       return strips;
     }
     async function readLabel(source, box, onStatus) {
-      onStatus("Getting the label reader ready (the first time downloads a few MB)…");
+      onStatus("Getting the label reader ready…");
       const worker = await getOcrWorker();
       const strips = labelStrips(source, box);
       const texts = [];
@@ -7491,22 +7565,37 @@
     }
 
     // ----- The camera, with the box to line the name up in -----
+    // v18.3: only ONE camera at a time. A second tap while the camera is opening (or open)
+    // is ignored, and the camera is switched off when you leave the app or it's hidden,
+    // so the camera light never stays on in the background.
     let cameraStream = null;
+    let cameraOpening = false;   // true while the phone is still asking for / starting the camera
+    let cameraCancelled = false; // set if the camera was closed while it was still starting
     function closeCamera() {
+      if (cameraOpening) cameraCancelled = true;
       if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
       cameraStream = null;
-      const view = document.getElementById("scan-camera");
-      if (view) view.remove();
+      document.querySelectorAll("#scan-camera").forEach(view => view.remove());
     }
     async function openCamera() {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { document.getElementById("scan-photo").click(); return; }
+      if (cameraOpening || cameraStream || document.getElementById("scan-camera")) return; // already opening or open
+      cameraOpening = true;
+      cameraCancelled = false;
+      let stream;
       try {
-        cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
       } catch (error) {
+        cameraOpening = false;
+        if (cameraCancelled || !scanState) return;
         scanState.status = "Couldn't open the camera (it may need permission). Choose a photo instead, or type the name.";
         renderScan();
         return;
       }
+      cameraOpening = false;
+      // Closed (or the app was hidden) while it was starting? Switch it straight off.
+      if (cameraCancelled || document.hidden || !scanState) { stream.getTracks().forEach(t => t.stop()); return; }
+      cameraStream = stream;
       const view = document.createElement("div");
       view.id = "scan-camera";
       view.innerHTML = `<div class="cam-frame"><video playsinline muted autoplay></video><div class="cam-box"></div></div>
@@ -7534,6 +7623,10 @@
       });
     }
 
+    // v18.3: leaving the app (switching apps, locking the phone, closing the tab) turns the camera off.
+    document.addEventListener("visibilitychange", () => { if (document.hidden) closeCamera(); });
+    window.addEventListener("pagehide", closeCamera);
+
     async function scanLabel(source, box) {
       const st = scanState;
       st.chosen = null;
@@ -7555,6 +7648,7 @@
     const scanPanel = document.getElementById("scan-panel");
     document.getElementById("scan-button").addEventListener("click", () => {
       scanState = scanState ? null : { status: "", read: "", suggestions: [], chosen: null, typed: "" };
+      if (!scanState) closeCamera(); // v18.3: closing the scan panel also switches the camera off
       renderScan();
     });
 
@@ -7819,7 +7913,7 @@
         settings.stages = STAGES = names;
         fixDoneFrom();
       });
-      if (!kept) { alert(FULL_MESSAGE); renderSettings(); return; }
+      if (!kept) { alert(fullMessage()); renderSettings(); return; }
       applyPalette(settings.palette);
       filters.stages = new Set();
       render();
@@ -7957,6 +8051,26 @@
       } catch (ignored) {}
       return null;
     }
+    // v18.3: a restore that replaces ONLY recipes keeps its own copy of your recipes, under
+    // "shades-of-grey-recipes-before-recipes-restore" as { date, book }. It's separate from the
+    // units copies, so it never mixes with (or overwrites) a copy kept by a full restore.
+    const RECIPES_ONLY_COPY = "-before-recipes-restore";
+    function keepRecipesCopy() {
+      try {
+        localStorage.setItem(RECIPES_KEY + RECIPES_ONLY_COPY, JSON.stringify({ date: todayISO(), book }));
+        return true;
+      } catch (error) { return false; }
+    }
+    function readRecipesCopy() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(RECIPES_KEY + RECIPES_ONLY_COPY) || "null");
+        if (raw && typeof raw === "object" && raw.book && typeof raw.book === "object") return raw;
+      } catch (ignored) {}
+      return null;
+    }
+    function forgetRecipesCopy() {
+      try { localStorage.removeItem(RECIPES_KEY + RECIPES_ONLY_COPY); } catch (ignored) {}
+    }
     function forgetSafetyCopy(suffix) {
       try { localStorage.removeItem(STORAGE_KEY + suffix); localStorage.removeItem(RECIPES_KEY + suffix); } catch (ignored) {}
     }
@@ -7973,6 +8087,8 @@
           forgetSafetyCopy(suffix);
         }
       }
+      const recipesCopy = readRecipesCopy();
+      if (recipesCopy && (!recipesCopy.date || daysSince(recipesCopy.date) > SAFETY_DAYS)) forgetRecipesCopy();
     }
 
     // The "Recover earlier data" list in Settings → Your data.
@@ -7996,7 +8112,39 @@
         li.append(text, button);
         list.appendChild(li);
       }
+      // v18.3: the copy kept by a recipes-only restore is listed too.
+      const recipesCopy = readRecipesCopy();
+      if (recipesCopy) {
+        any = true;
+        const count = Array.isArray(recipesCopy.book.recipes) ? recipesCopy.book.recipes.length : 0;
+        const li = document.createElement("li");
+        const text = document.createElement("span");
+        text.textContent = `Before Restore backup (recipes only): ${plural(count, "recipe")}` +
+          (recipesCopy.date ? `, saved ${shortDate(recipesCopy.date)}` : "");
+        const button = document.createElement("button");
+        button.className = "plain-button";
+        button.textContent = "Recover";
+        button.setAttribute("aria-label", "Recover: Before Restore backup (recipes only)");
+        button.addEventListener("click", recoverRecipesCopy);
+        li.append(text, button);
+        list.appendChild(li);
+      }
       document.getElementById("recover-card").classList.toggle("hidden", !any);
+    }
+
+    // v18.3: put back the recipes kept by a recipes-only restore. Units aren't touched.
+    function recoverRecipesCopy() {
+      const copy = readRecipesCopy();
+      if (!copy) { renderRecover(); return; }
+      const restored = cleanRecipeBook(copy.book);
+      if (!confirm(`Replace your current ${plural(book.recipes.length, "recipe")} with the ${plural(restored.recipes.length, "recipe")} in this copy? (Your units stay as they are.)`)) return;
+      const before = JSON.stringify(book);
+      if (!changeAndSave(() => { book = restored; })) { alert(fullMessage()); return; }
+      afterBigChange();
+      showToast(`Recovered ${plural(book.recipes.length, "recipe")}`, () => {
+        if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(before)); })) { alert(fullMessage()); return; }
+        afterBigChange();
+      }, "Undo", 10);
     }
 
     // Swap your current units for a safety copy. Your current units are kept as a copy
@@ -8027,7 +8175,7 @@
           fixDoneFrom();
         }
       });
-      if (!kept) { alert(FULL_MESSAGE); return; }
+      if (!kept) { alert(fullMessage()); return; }
       afterBigChange();
       showToast(`Recovered ${plural(units.length, "unit")}`, () => {
         const back = changeAndSave(() => {
@@ -8037,7 +8185,7 @@
           settings.doneFrom = undoState.doneFrom;
           fixDoneFrom();
         });
-        if (!back) { alert(FULL_MESSAGE); return; }
+        if (!back) { alert(fullMessage()); return; }
         afterBigChange();
       }, "Undo", 10);
     }
@@ -8151,7 +8299,7 @@
     // Units carry notes about their photos (ids), but the pictures themselves are only in
     // the FULL backup, as text pictures in "photoFiles": { id: { full, thumb } }.
     function backupData() {
-      return { app: "Minifolio", version: 6, stages: STAGES, doneFrom: settings.doneFrom, models, recipes: book,
+      return { app: "Minifolio", version: 6, dataVersion: DATA_VERSION, stages: STAGES, doneFrom: settings.doneFrom, models, recipes: book,
                factionColours: settings.factionColours };
     }
 
@@ -8168,7 +8316,7 @@
           if (!record) { missing++; continue; }
           backup.photoFiles[id] = { full: await blobToDataUrl(record.full), thumb: await blobToDataUrl(record.thumb) };
         }
-        const today = new Date().toISOString().slice(0, 10);
+        const today = todayISO();
         // No neat line breaks here: the file is big enough already.
         downloadFile(`minifolio-full-backup-${today}.json`, JSON.stringify(backup), "application/json");
         settings.lastBackup = today;
@@ -8202,7 +8350,7 @@
     }
 
     document.getElementById("export-button").addEventListener("click", () => {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = todayISO();
       downloadFile(`minifolio-backup-${today}.json`, JSON.stringify(backupData(), null, 2), "application/json");
       settings.lastBackup = today;   // remembered so the app knows when to remind you
       saveSettings();
@@ -8217,6 +8365,7 @@
     // The red banner's buttons (v14).
     document.getElementById("banner-backup").addEventListener("click", () => document.getElementById("export-button").click());
     document.getElementById("banner-retry").addEventListener("click", () => {
+      if (dataTooNew) { location.reload(); return; }
       if (saveAll()) showToast("Saved. Everything is up to date.");
       else alert("Still full. Please save a backup, then free some space (delete photos or units you no longer need).");
     });
@@ -8233,6 +8382,12 @@
         const isList = Array.isArray(parsed);   // the oldest backups are just a list of units
         if (!parsed || (!isList && typeof parsed !== "object")) {
           alert("That file doesn't look like a Minifolio backup.");
+          return;
+        }
+        // v18.3: a backup saved by a NEWER version of the app might hold things this copy
+        // doesn't understand (and would drop), so it asks you to update first.
+        if (!isList && Number(parsed.dataVersion) > DATA_VERSION) {
+          alert("This backup was saved by a newer version of Minifolio. Please reload the app to update it, then restore again. Nothing has changed.");
           return;
         }
         // v14: a damaged stage list (blank or repeated names, or more than 10) is refused,
@@ -8272,7 +8427,11 @@
         (photoFiles ? importPhotoFiles(photoFiles) : Promise.resolve(0)).then(async (imported) => {
           // Safety copies of what you had (best effort), listed under Recover earlier data.
           if (unitsToo) keepSafetyCopy("-before-restore");
-          if (backupBook) { try { localStorage.setItem(RECIPES_KEY + "-before-restore", JSON.stringify(book)); } catch (ignored) {} }
+          if (unitsToo && backupBook) { try { localStorage.setItem(RECIPES_KEY + "-before-restore", JSON.stringify(book)); } catch (ignored) {} }
+          // v18.3: a recipes-only restore keeps its own copy (listed under Recover earlier data)
+          // and gets an Undo button.
+          if (!unitsToo) keepRecipesCopy();
+          const recipesBefore = unitsToo ? null : JSON.stringify(book);
 
           // v14: units, recipes, stages and colours are saved TOGETHER, or not at all.
           const kept = changeAndSave(() => {
@@ -8286,7 +8445,7 @@
             // Backups from v8 onwards hold faction colours. Older ones don't, so yours stay.
             if (unitsToo && !isList && parsed.factionColours) settings.factionColours = cleanFactionColours(parsed.factionColours);
           });
-          if (!kept) { alert(FULL_MESSAGE); return; }
+          if (!kept) { alert(fullMessage()); return; }
           recipeDraft = null;
           openRecipeId = null;
           openIds.clear();
@@ -8309,7 +8468,12 @@
               ? `Backup restored, but ${missing} of ${plural(needed, "photo")} couldn't be loaded on this device (${imported} of ${photoCount} in the file worked), so they won't show. Keep the backup file safe: you can restore it again later, for example after freeing some space.`
               : `Backup restored, but this backup was saved without photos, so ${plural(missing, "photo")} won't show on this device. Keep the backup file safe. To bring photos across, use Save full backup with photos on the other device.`);
           } else {
-            showToast(unitsToo ? "Backup restored" : `Recipes restored (${plural(book.recipes.length, "recipe")})`);
+            if (unitsToo) showToast("Backup restored");
+            else showToast(`Recipes restored (${plural(book.recipes.length, "recipe")})`, () => {
+              if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(recipesBefore)); })) { alert(fullMessage()); return; }
+              afterBigChange();
+              showToast("Your recipes are back as they were");
+            }, "Undo", 10);
           }
           // Old backups may hold old-style photos: move them. Then load the thumbnails.
           startPhotos();
@@ -8416,7 +8580,7 @@
       const header = "name,game,faction,stage,nickname,count,repaint,notes";
       const rows = models.map(m => [m.name, m.hobby, m.faction, STAGES[m.stage], m.nickname || "",
         m.count || 1, m.repaint ? "yes" : "no", m.note || ""].map(csvCell).join(","));
-      const today = new Date().toISOString().slice(0, 10);
+      const today = todayISO();
       // "﻿" at the start helps Excel read accents and curly quotes properly.
       downloadFile(`minifolio-${today}.csv`, "﻿" + [header, ...rows].join("\r\n") + "\r\n", "text/csv");
     });
@@ -8842,15 +9006,19 @@
     // ================= "TIME TO BACK UP" REMINDER =================
     // Your data only lives on this device, so a backup is the safety net.
     // If you have real units and no backup in 14 days, the app nudges you, at most every 3 days.
+    // v18.3: a plain "2026-10-10" date is read as midnight in YOUR time zone (not world time),
+    // so "a day since" and "a week since" line up with the dates the app writes.
     function daysSince(isoDate) {
-      return isoDate ? (Date.now() - new Date(isoDate).getTime()) / 86400000 : Infinity;
+      if (!isoDate) return Infinity;
+      const when = /^\d{4}-\d{2}-\d{2}$/.test(isoDate) ? new Date(isoDate + "T00:00:00") : new Date(isoDate);
+      return (Date.now() - when.getTime()) / 86400000;
     }
     function maybeRemindToBackUp() {
       const onlyExamples = models.length <= EXAMPLES.length &&
         models.every(m => EXAMPLES.some(e => e.name === m.name && e.faction === m.faction));
       if (!models.length || onlyExamples) return;
       // Don't nag brand-new users: wait for 10+ units and a day since first real use.
-      if (!settings.firstRealUse) { settings.firstRealUse = new Date().toISOString().slice(0, 10); saveSettings(); }
+      if (!settings.firstRealUse) { settings.firstRealUse = todayISO(); saveSettings(); }
       if (models.length < 10 || daysSince(settings.firstRealUse) < 1) return;
       // v14: after a WEEK, not two (an iPhone can clear a website's data after 7 days
       // unused). If you have photos, the reminder is about a backup WITH photos, and its
@@ -8858,7 +9026,7 @@
       const withPhotos = models.some(hasPhoto);
       const last = withPhotos ? settings.lastFullBackup : settings.lastBackup;
       if (daysSince(last) < 7 || daysSince(settings.lastReminder) < 3) return;
-      settings.lastReminder = new Date().toISOString().slice(0, 10);
+      settings.lastReminder = todayISO();
       saveSettings();
       const message = !last
         ? (withPhotos ? "Your photos haven't been backed up yet" : "You haven't saved a backup yet")
@@ -8884,7 +9052,7 @@
       card.classList.toggle("hidden", !show);
     }
     document.getElementById("iphone-warning-ok").addEventListener("click", () => {
-      settings.iphoneWarningHidden = new Date().toISOString().slice(0, 10);
+      settings.iphoneWarningHidden = todayISO();
       saveSettings();
       showIphoneWarning();
     });
@@ -8893,10 +9061,17 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v18.2";
+    const APP_VERSION = "v18.3";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v18.3", date: "10 Oct 2026", changes: [
+        "The camera can't be left on by accident any more: tapping Scan a label twice opens only one camera, and leaving the app or closing the scan panel switches it off.",
+        "Scanning a paint pot now works offline: the label reader is part of Minifolio itself instead of being downloaded from other websites. After the first scan it works with no internet.",
+        "Restoring a backup that only has recipes now has an Undo button, and your old recipes are kept for 30 days under Recover earlier data.",
+        "Backup file names and backup reminders use your own time zone, so a backup made just after midnight is no longer dated the day before.",
+        "Safety: your data now carries a version number. An older copy of the app left open (for example an installed app that hasn't updated) stops saving and asks you to reload, instead of saving over newer data.",
+      ]},
       { version: "v18.2", date: "10 Oct 2026", changes: [
         "Shades of Grey is now called Minifolio, with its own web address: minifolio.app. Each web address keeps its own copy of your data, so if you used the old address, save a backup there and restore it here. Backups saved under the old name still restore, and new backup and export files are named minifolio-…",
         "The grey stage colour set is now called Greyscale. The colours are the same.",
@@ -9113,6 +9288,12 @@
       const sameSettings = !fresh || withoutViewSettings(fresh) === withoutViewSettings(settings);
       if (sameSettings && unitsText === JSON.stringify(models) && recipesText === JSON.stringify(book)) return;
 
+      // v18.3: the other window is a NEWER version that saved newer data: stop saving here.
+      if (fresh && Number(fresh.dataVersion) > DATA_VERSION) {
+        dataTooNew = true;
+        showSaveProblem();
+        return;
+      }
       if (fresh && typeof fresh === "object" && !Array.isArray(fresh) && usableStages(fresh.stages)) {
         const mine = {};
         for (const key of VIEW_ONLY_SETTINGS) if (key in settings) mine[key] = settings[key];
