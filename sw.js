@@ -9,7 +9,7 @@
 //
 // WHEN YOU UPLOAD A NEW VERSION: change the number below (v1 -> v2 -> v3...).
 // That tells the phone to throw away the old saved copy and start a new one.
-const VERSION = "v17.1";
+const VERSION = "v18";
 const CACHE_NAME = "shades-of-grey-" + VERSION;
 // v16: the pot-label reader (Tesseract.js) is downloaded the first time you scan. It's kept
 // in its own store that ISN'T cleared on updates, so scanning keeps working offline.

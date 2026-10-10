@@ -41,7 +41,7 @@ with sync_playwright() as pw:
         page.wait_for_timeout(300)
 
         if size == "phone":
-            check("version starts with v17 (v16 tests still pass)", page.evaluate("APP_VERSION").startswith("v17"))
+            check("version is v17 or later (v16 tests still pass)", float(page.evaluate("APP_VERSION")[1:]) >= 17)
             b = page.evaluate("book")
             check("old book loads, shorthand defaults to empty", b["shorthand"] == {} and b["recipes"][0]["name"] == "Black armour", b.get("shorthand"))
 

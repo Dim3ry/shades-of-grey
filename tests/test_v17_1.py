@@ -35,7 +35,7 @@ with sync_playwright() as pw:
     page.on("pageerror", lambda e: errors.append(str(e)))
 
     page.goto(URL)
-    check("version is v17.1", page.evaluate("APP_VERSION") == "v17.1")
+    check("version is v17.1 or later", float(page.evaluate("APP_VERSION")[1:]) >= 17.1)
     load(page, V17_1_BOOK)
 
     # Paste import: paints new to the palette default to Owned.

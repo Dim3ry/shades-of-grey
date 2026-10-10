@@ -1,7 +1,7 @@
 """v17 tests for Shades of Grey (paint status, search or add, have/missing badges, "What can I paint now?",
 shopping list). Serve the repo folder with `python3 -m http.server 8765`, then run:
 python3 tests/test_v17.py <folder for screenshots>. Also run test_v14.py to test_v16.py to check nothing broke."""
-import json, os, sys
+import json, os, re, sys
 from playwright.sync_api import sync_playwright
 import os as _os
 PORT = _os.environ.get("SOG_PORT", "8765")
@@ -82,8 +82,8 @@ with sync_playwright() as pw:
         # ---- Old data: a v16 book with a scanned paint (owned: true) ----
         load(page, V16_OWNED_BOOK)
         if size == "phone":
-            check("version starts with v17 (v17.1 is a patch)", page.evaluate("APP_VERSION").startswith("v17"))
-            check("sw.js is v17 (or a v17 patch)", "const VERSION = \"v17" in open(os.path.join(os.path.dirname(__file__), "..", "sw.js")).read())
+            check("version is v17 or later", float(page.evaluate("APP_VERSION")[1:]) >= 17)
+            check("sw.js is v17 or later", float(re.search(r'const VERSION = "v([\d.]+)"', open(os.path.join(os.path.dirname(__file__), "..", "sw.js")).read()).group(1)) >= 17)
             check("v16 book: scanned paint shows as Owned", page.evaluate("paintStatus(book.paints.find(p => p.id === 1))") == "owned")
             check("v16 book: owned field kept", page.evaluate("book.paints.find(p => p.id === 1).owned") is True)
             check("v16 book: no status set on old paints", page.evaluate("book.paints.find(p => p.id === 1).status") is None)

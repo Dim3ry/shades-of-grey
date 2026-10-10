@@ -1038,11 +1038,27 @@
             <li>Link a recipe to units from the recipe (<strong>Used on</strong>) or from a unit's details. Linked recipes show as buttons on the unit's card: tap one to open it.</li>
             <li><strong>Your Palette</strong> (top of the Recipes tab) lists every paint in your recipes, once each. It fills itself in: add a paint to a recipe and it appears.</li>
             <li>In Your Palette, sort by colour, name or brand, and tap a brand to show only its paints. Tap a paint to change its colour, name or brand: the change applies in every recipe that uses it.</li>
+            <li>At the bottom of an open paint: <strong>Remove</strong> deletes a paint no recipe uses (a paint that's still in a recipe can't be removed). <strong>Merge into…</strong> joins it to another paint, handy for a typo twin like "Nuln Oill": its recipes move to the paint you pick, and that paint keeps its own name and brand. Both have Undo.</li>
+            <li>Typed a paint into a recipe that isn't in Your Palette yet? Above <strong>Save recipe</strong>, <strong>Do you own these?</strong> asks about the new paints: <strong>All</strong> (Owned), <strong>None</strong> (Not owned, so they go on the shopping list) or <strong>Let me pick</strong> (tap a paint to untick it).</li>
             <li><strong>Schemes</strong> (top of the Recipes tab) group the recipes you use for one faction, e.g. "My Ultramarines" = armour, trim, lenses and base. Press <strong>+ New scheme</strong>, name it, type the faction and tick its recipes.</li>
             <li><strong>Apply to … units</strong> links a scheme's recipes to every unit in its faction that doesn't have them all yet. Recipes a unit already has stay linked.</li>
             <li>With <strong>New units … get these recipes automatically</strong> ticked, any unit you add to that faction later (by hand or by import) gets the scheme straight away.</li>
             <li>In a unit's details, the <strong>Link a recipe…</strong> menu also lists its faction's schemes. Deleting a scheme leaves its recipes and links alone.</li>
             <li>Need a part or technique that isn't listed? Choose <strong>＋ Add a new…</strong> in the menu. Remove ones you don't use under <strong>Parts and techniques</strong>.</li>
+          </ul>
+        </details>
+        <details id="help-paste">
+          <summary>Pasting recipes from your notes</summary>
+          <ul>
+            <li>Got recipes in Google Keep, a phone note or a Reddit post? On the Recipes tab, tap <strong>Paste recipes from your notes</strong>, paste them in and press <strong>Read notes</strong>. You get a preview first: nothing is saved until you press <strong>Save</strong>.</li>
+            <li>Put each part on its own line ending in a colon, like <strong>Eyes:</strong>, then one step per line (or several split by commas). Mixes like <strong>2:1 Baal Red:CM</strong>, <strong>50/50</strong> or <strong>Seraphim Sepia 1:2 with Contrast Medium</strong> are read as one mixed step. "Ushabti Bone and Wraithbone" is read as both paints.</li>
+            <li>Divider lines (<strong>-----</strong>, <strong>***</strong>, <strong>===</strong>) and lines with only emoji are skipped, like blank lines. Words the app can't read as a paint (say, in another alphabet) are kept as a note.</li>
+            <li>Up to <strong>20,000 characters</strong> are read at once (a few pages of notes). If yours is longer, the preview says so: paste the rest separately.</li>
+            <li>Not sure about a paint (like "CM")? <strong>Check … paints</strong> asks what you meant. The app remembers your answer for next time.</li>
+            <li><strong>✕</strong> next to a step, a part's name or a note leaves it out of the paste. Each has Undo. This only changes the preview, not your notes, so <strong>Read again</strong> brings everything back.</li>
+            <li><strong>✎</strong> on a step lets you change it before saving: its <strong>technique</strong>, its <strong>mix ratio</strong> (<strong>Clear</strong> makes it an even mix), or <strong>Change…</strong> any of its <strong>paints</strong> to a different one. Only that step changes, and each change has Undo.</li>
+            <li>If the paste has paints that aren't in Your Palette yet, <strong>Do you own these?</strong> sits above Save: <strong>All</strong> (Owned), <strong>None</strong> (Not owned, so they go on the shopping list) or <strong>Let me pick</strong>.</li>
+            <li><strong>Copy as text</strong> on a recipe writes it out in the same style, so you can share it or paste it back. Mixes are copied with their ratio (an even mix is written <strong>1:1</strong>), so they come back the same.</li>
           </ul>
         </details>
         <details>
@@ -1069,6 +1085,7 @@
             <li><strong>Delete all units</strong>, <strong>Replace my collection</strong> and <strong>Restore backup</strong> keep a copy of what you had on this device for 30 days. Find them under <strong>Settings → Your data → Recover earlier data</strong>. Delete all also has an Undo button. If there isn't room for the copy, Delete all and Replace stop and change nothing.</li>
             <li>If some photos in a backup can't be loaded, the app tells you how many. Keep the backup file safe and try again later.</li>
             <li>A backup with recipes but no units can be restored too: it replaces only your recipes.</li>
+            <li>A <strong>Saved</strong> message only shows when your change really was saved. If the device's storage is full you'll see <strong>Not saved</strong> with a <strong>Save backup</strong> button instead. A paste import that can't be saved is put back and stays open, so your answers aren't lost.</li>
             <li>Got the app open in two places at once (say the installed app and a browser tab)? Changes made in one now show up in the other, instead of being saved over.</li>
             <li>New phone? Save a backup on the old one, open the app on the new one, and restore it.</li>
           </ul>
@@ -2310,6 +2327,23 @@
       return out;
     }
 
+    // v18: "Ushabti Bone and Wraithbone" is two paints, like "+" (before, Wraithbone ended up in
+    // the note). Only split when EVERY piece is a paint the app is sure about (or a basing
+    // material), so "Ushabti Bone and a bit of white" or "Mephiston Red and then Agrax" stay
+    // one paint with a note, and a name that is itself a paint is never split.
+    function splitOnAnd(name, ctx) {
+      if (!/\band\b/i.test(name) || /[()]/.test(name)) return [name];
+      const pieces = name.split(/\s+and\s+/i).map(s => s.trim());
+      if (pieces.length < 2 || pieces.some(s => !s)) return [name];
+      const hints = { brand: ctx.brand, earlier: ctx.seen };
+      if (matchPaint(name, hints).status === "sure") return [name];
+      const ok = pieces.every(s => {
+        const m = readMention(s, hints);
+        return m.paint && (m.paint.status === "sure" || m.paint.status === "material") && !m.note;
+      });
+      return ok ? pieces : [name];
+    }
+
     // Reads one "segment" of a line (between commas) into one or more steps.
     function readSegment(segment, ctx) {
       let text = segment.trim().replace(/^(?:\d+[.)]|[-•*])\s+/, "").trim();
@@ -2357,7 +2391,7 @@
           if (ratio) ctx.pendingMix = { ratio, n: ratio.split(/[:\/]/).length, paints: [] };
           return [];
         }
-        names = splitOutside(text, ["+", "&"]);
+        names = splitOutside(text, ["+", "&"]).flatMap(n => splitOnAnd(n, ctx));
       }
       const mentions = names.map(n => readMention(n, { brand: ctx.brand, earlier: ctx.seen }));
       for (const m of mentions) if (m.paint && m.paint.paint) ctx.seen.push(m.paint.paint);
@@ -8858,10 +8892,19 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v17.1";
+    const APP_VERSION = "v18";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v18", date: "10 Oct 2026", changes: [
+        "Paste recipes reads far more notes correctly: mixes like 'Seraphim Sepia 1:2 with Contrast Medium', headings like 'Base;', a faction name on the first line, 'Texture Sand', accented letters, a brand named in the note ('Vallejo Ivory'), and 'Ushabti Bone and Wraithbone' as two paints. Divider lines and emoji-only lines are skipped. Long notes read much faster, up to 20,000 characters at once.",
+        "In the paste preview, ✕ leaves a step, a whole part or a note out, and ✎ changes a step's technique, mix ratio or paints before you save. Every change has Undo, and Read again brings back what you pasted.",
+        "'Do you own these?' asks about paints new to your palette when you paste recipes or type a new paint into a recipe: All, None (they go on the shopping list) or Let me pick.",
+        "Your Palette: Remove a paint no recipe uses, or Merge into… another paint (handy for typo twins). Both have Undo. Brands typed twice ('CitadelCitadel') are tidied, and paints that turn out to be the same are joined.",
+        "Copy as text always writes a mix's ratio (an even mix as 1:1), so a copied recipe pastes back the same.",
+        "'Saved' only shows when your change really was saved. If the phone's storage is full, you'll see 'Not saved' with a Save backup button, and a paste import stays open so nothing is lost.",
+        "Help has a new 'Pasting recipes from your notes' topic, and covers all of the above.",
+      ]},
       { version: "v17.1", date: "9 Oct 2026", changes: [
         "Paints brought in by Paste recipes now start as Owned, not missing. After an import, Your Palette opens on those paints with every one expanded, so you can change any status or quantity, then press Done.",
         "Quantity: a paint you have counts as one. Tap + to say you have more (e.g. two Nuln Oil pots), and − to go back. Shown as '× 2 in stock' on the palette.",
