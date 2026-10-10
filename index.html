@@ -620,6 +620,19 @@
     .import-line-body { flex: 1; min-width: 0; overflow-wrap: anywhere; }
     .import-remove { width: 32px; height: 32px; font-size: 13px; border-radius: 8px; margin-top: -4px; }
     @media (max-width: 400px) { .import-remove { width: 32px; height: 32px; } }
+    /* v18d-2a: ✎ (change a step), ✕ on a part's name and on a part note, and the small step editor */
+    .import-edit, .import-drop-part, .import-drop-note { width: 32px; height: 32px; min-width: 32px; padding: 0; font-size: 13px; border-radius: 8px; margin-top: -4px; }
+    .import-edit[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
+    .import-part-line { display: flex; align-items: center; gap: 8px; margin: 14px 0 4px; }
+    .import-part-line .import-part { flex: 1; min-width: 0; margin: 0; overflow-wrap: anywhere; }
+    .import-part-line .import-drop-part { margin-top: 0; }
+    .import-note-line { display: flex; align-items: flex-start; gap: 8px; margin: 4px 0 0; }
+    .import-note-line .step-note { flex: 1; min-width: 0; margin: 0; overflow-wrap: anywhere; }
+    .import-step-editor { margin: 6px 0 8px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; display: grid; gap: 8px; }
+    .import-step-editor label { display: grid; gap: 4px; color: var(--muted); font-size: 14px; }
+    .import-step-editor select, .import-step-editor input { width: 100%; background: var(--card); }
+    .import-ratio-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
+    .import-ratio-warning { margin: 0; color: #fde68a; font-size: 13px; }
     .import-tech { color: var(--muted); margin-right: 6px; }
     .import-paint.unsure { background: rgba(196, 181, 253, 0.18); color: #c4b5fd; border: 1px dashed #c4b5fd; border-radius: 6px; padding: 0 5px; }
     .import-paint.resolved { color: #c4b5fd; }
@@ -6564,6 +6577,7 @@
       d.cut = d.text.length > PASTE_LIMIT;
       d.parsed = parseRecipeText(d.text.slice(0, PASTE_LIMIT));
       d.trimmed = false;   // v18d-1: no steps left out yet
+      d.editing = null;    // v18d-2a: no step's editor open
       d.groups = unsureMentions(d.parsed);
       d.names = d.parsed.schemes.map(s => s.name || "Imported recipes");
       renderImport();
@@ -6620,8 +6634,10 @@
         return;
       }
       // v18d-1
+      // v18d-2a: ✎ to change a step, ✕ on a part's name or a note too.
       card.insertAdjacentHTML("beforeend", '<p class="hint import-remove-hint" style="margin: 12px 0 0;">Something read wrong? ' +
-        'Tap ✕ on a step to leave it out. Read again brings every step back.</p>');
+        'Tap ✎ on a step to change its technique or mix ratio. Tap ✕ on a step to leave it out, or ✕ on a part\'s name ' +
+        'or a note to leave that out. This only changes the preview, not your notes, so Read again brings everything back as pasted.</p>');
 
       // 1. The paints it wasn't sure about. Nothing is picked for you.
       const left = d.groups.filter(g => !g.choice).length;
@@ -6677,15 +6693,27 @@
         nameLabel.appendChild(nameBox);
         sc.appendChild(nameLabel);
         for (const [pi, part] of scheme.parts.entries()) {
+          // v18d-2a: the part's name with a ✕ to leave the whole part out.
+          const headLine = document.createElement("div");
+          headLine.className = "import-part-line";
           const head = document.createElement("div");
           head.className = "import-part";
           head.textContent = part.name;
-          sc.appendChild(head);
-          if (part.notes.length) {
+          const dropPart = importIconButton("✕", "icon-button remove import-drop-part", "Leave this whole part out",
+            `Leave out the whole ${part.name} part`, () => removeImportPart(si, pi));
+          headLine.append(head, dropPart);
+          sc.appendChild(headLine);
+          // v18d-2a: each part note on its own line, with a ✕ to leave that note out.
+          for (const [ni, text] of part.notes.entries()) {
+            const noteLine = document.createElement("div");
+            noteLine.className = "import-note-line";
             const n = document.createElement("p");
             n.className = "step-note";
-            n.textContent = part.notes.join(" · ");
-            sc.appendChild(n);
+            n.textContent = text;
+            const dropNote = importIconButton("✕", "icon-button remove import-drop-note", "Leave this note out",
+              `Leave out the note “${importShort(text)}” from ${part.name}`, () => removeImportNote(si, pi, ni));
+            noteLine.append(n, dropNote);
+            sc.appendChild(noteLine);
           }
           const ol = document.createElement("ol");
           ol.className = "import-steps";
@@ -6704,8 +6732,14 @@
             remove.title = "Leave this step out";
             remove.setAttribute("aria-label", `Leave out ${importStepLabel(step)} from ${part.name}`);
             remove.addEventListener("click", () => removeImportStep(si, pi, ti));
-            line.append(body, remove);
+            // v18d-2a: ✎ opens a small editor under the line (technique and mix ratio).
+            const editing = d.editing === step;
+            const edit = importIconButton("✎", "icon-button import-edit", editing ? "Close" : "Change this step",
+              `Change ${importStepLabel(step)} in ${part.name}`, () => toggleImportEdit(step));
+            edit.setAttribute("aria-expanded", editing ? "true" : "false");
+            line.append(body, edit, remove);
             li.appendChild(line);
+            if (editing) li.appendChild(buildImportStepEditor(step, part));
             const paints = step.paints.map(importPaintFor);
             const tech = document.createElement("span");
             tech.className = "import-tech";
@@ -6764,10 +6798,28 @@
       const text = names.length ? names.join(" + ") : (step.technique || step.note || "this step");
       return text.length > 60 ? text.slice(0, 57) + "…" : text;
     }
-    // The preview's shape (which schemes, parts and steps), so Undo can put it back exactly.
+    // The preview's shape (which schemes, parts, steps and part notes), so Undo can put it back exactly.
+    // v18d-2a: part notes are kept too, now they can be left out.
     function importSnapshot(d) {
       return { names: d.names.slice(), groups: d.groups, trimmed: d.trimmed,
-               schemes: d.parsed.schemes.map(s => [s, s.parts.map(p => [p, p.steps.slice()])]) };
+               schemes: d.parsed.schemes.map(s => [s, s.parts.map(p => [p, p.steps.slice(), p.notes.slice()])]) };
+    }
+    // Puts a snapshot back (Undo). Scheme names typed since are kept; a scheme that had gone
+    // gets its old name back. Steps are the same objects, so changes made with ✎ since stay.
+    function restoreImport(d, before) {
+      const now = d.groups;
+      const names = before.schemes.map(([s], i) => {
+        const j = d.parsed.schemes.indexOf(s);
+        return j >= 0 ? d.names[j] : before.names[i];
+      });
+      d.parsed.schemes = before.schemes.map(([s, parts]) => {
+        s.parts = parts.map(([p, steps, notes]) => { p.steps = steps; p.notes = notes; return p; });
+        return s;
+      });
+      d.names = names;
+      d.trimmed = before.trimmed;
+      regroupImport(d, now, before.groups);
+      renderImport();
     }
     // Rebuilds the "Check N paints" list after steps are left out or put back, so a paint that
     // was only in a removed step stops holding up Save. Answers you'd already given are kept.
@@ -6778,6 +6830,25 @@
         if (had) { g.choice = had.choice; break; }
       }
     }
+    // Takes out schemes left with no parts (and their names).
+    function dropEmptySchemes(d) {
+      for (let i = d.parsed.schemes.length - 1; i >= 0; i--) {
+        if (!d.parsed.schemes[i].parts.length) { d.parsed.schemes.splice(i, 1); d.names.splice(i, 1); }
+      }
+    }
+    // Runs a change to the preview, redraws it, and if one of these buttons had focus, moves
+    // focus to the next button of the same kind (or the notes box if there are none left).
+    function changeImport(selector, change) {
+      const all = [...importPage.querySelectorAll(selector)];
+      const at = all.indexOf(document.activeElement);
+      change();
+      renderImport();
+      if (at >= 0) {
+        const next = [...importPage.querySelectorAll(selector)];
+        const el = next[Math.min(at, next.length - 1)] || document.getElementById("import-text");
+        if (el) el.focus();
+      }
+    }
     function removeImportStep(si, pi, ti) {
       const d = importDraft;
       const scheme = d && d.parsed && d.parsed.schemes[si];
@@ -6785,41 +6856,202 @@
       if (!part || !part.steps[ti]) return;
       const label = importStepLabel(part.steps[ti]);
       const before = importSnapshot(d);
-      // Which ✕ had focus (counting from the top), so the next one can take it.
-      const all = [...importPage.querySelectorAll(".import-remove")];
-      const at = all.indexOf(document.activeElement);
-      part.steps.splice(ti, 1);
       let message = `Left out “${label}” from ${part.name}`;
-      if (!part.steps.length) {
+      changeImport(".import-remove", () => {
+        const [step] = part.steps.splice(ti, 1);
+        if (d.editing === step) d.editing = null;
+        if (!part.steps.length) {
+          scheme.parts.splice(pi, 1);
+          message = `Left out “${label}”. ${part.name} had no steps left, so it's left out too`;
+        }
+        dropEmptySchemes(d);
+        d.trimmed = true;
+        regroupImport(d, before.groups);
+      });
+      showToast(message, () => { if (importDraft === d) restoreImport(d, before); });
+    }
+
+    // ================= v18d-2a: LEAVE A PART OR NOTE OUT, AND CHANGE A STEP =================
+    // ✕ on a part's name leaves the whole part out; ✕ on a part note leaves that note out.
+    // ✎ on a step opens a small editor under it to change its technique, or change or clear
+    // its mix ratio. Like v18d-1, all of this only changes the preview: your pasted notes stay
+    // as they were, so Read again brings back exactly what you pasted. Each change has Undo.
+
+    // A small square button (✕ or ✎) with a tooltip and a screen-reader label.
+    function importIconButton(text, className, title, label, onClick) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = className;
+      b.textContent = text;
+      b.title = title;
+      b.setAttribute("aria-label", label);
+      b.addEventListener("click", onClick);
+      return b;
+    }
+    const importShort = (text) => { const t = String(text || ""); return t.length > 40 ? t.slice(0, 37) + "…" : t; };
+
+    function removeImportPart(si, pi) {
+      const d = importDraft;
+      const scheme = d && d.parsed && d.parsed.schemes[si];
+      const part = scheme && scheme.parts[pi];
+      if (!part) return;
+      const before = importSnapshot(d);
+      changeImport(".import-drop-part", () => {
         scheme.parts.splice(pi, 1);
-        message = `Left out “${label}”. ${part.name} had no steps left, so it's left out too`;
-      }
-      if (!scheme.parts.length) { d.parsed.schemes.splice(si, 1); d.names.splice(si, 1); }
-      d.trimmed = true;
-      regroupImport(d, before.groups);
+        if (part.steps.includes(d.editing)) d.editing = null;
+        dropEmptySchemes(d);
+        d.trimmed = true;
+        regroupImport(d, before.groups);
+      });
+      showToast(`Left out ${part.name} (${plural(part.steps.length, "step")})`,
+                () => { if (importDraft === d) restoreImport(d, before); });
+    }
+
+    function removeImportNote(si, pi, ni) {
+      const d = importDraft;
+      const part = d && d.parsed && d.parsed.schemes[si] && d.parsed.schemes[si].parts[pi];
+      if (!part || part.notes[ni] === undefined) return;
+      const text = part.notes[ni];
+      const before = importSnapshot(d);
+      changeImport(".import-drop-note", () => {
+        part.notes.splice(ni, 1);
+        d.trimmed = true;
+      });
+      showToast(`Left out the note “${importShort(text)}” from ${part.name}`,
+                () => { if (importDraft === d) restoreImport(d, before); });
+    }
+
+    // Opens or closes the ✎ editor for a step (only one is open at a time).
+    function toggleImportEdit(step) {
+      const d = importDraft;
+      if (!d) return;
+      d.editing = d.editing === step ? null : step;
       renderImport();
-      if (at >= 0) {
-        const next = [...importPage.querySelectorAll(".import-remove")];
-        const el = next[Math.min(at, next.length - 1)] || document.getElementById("import-text");
+      const at = findImportStep(step);
+      if (!at) return;
+      // Focus goes into the editor when it opens, and back to the ✎ when it closes.
+      const el = d.editing ? at.li.querySelector(".import-step-editor select") : at.li.querySelector(".import-edit");
+      if (el) el.focus();
+    }
+    // The <li> on screen for a step object.
+    function findImportStep(step) {
+      const d = importDraft;
+      let n = 0;
+      for (const s of d.parsed.schemes) for (const p of s.parts) for (const t of p.steps) {
+        if (t === step) return { li: importPage.querySelectorAll(".import-steps li")[n] };
+        n++;
+      }
+      return null;
+    }
+
+    // Changes a step's technique and/or ratio, redraws, keeps focus where it was in the editor,
+    // and shows a message with Undo (which puts back the old values).
+    function changeImportStep(step, changes, message) {
+      const d = importDraft;
+      const old = {};
+      for (const k of Object.keys(changes)) old[k] = step[k];
+      const focusKey = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.importFocus : "";
+      Object.assign(step, changes);
+      renderImport();
+      if (focusKey && d.editing === step) {
+        const at = findImportStep(step);
+        const el = at && at.li.querySelector(`[data-import-focus="${focusKey}"]`);
         if (el) el.focus();
       }
       showToast(message, () => {
-        if (importDraft !== d) return;   // the paste screen was closed or saved since
-        const now = d.groups;
-        // Keep any scheme name typed since; a scheme that had gone gets its old name back.
-        const names = before.schemes.map(([s], i) => {
-          const j = d.parsed.schemes.indexOf(s);
-          return j >= 0 ? d.names[j] : before.names[i];
-        });
-        d.parsed.schemes = before.schemes.map(([s, parts]) => {
-          s.parts = parts.map(([p, steps]) => { p.steps = steps; return p; });
-          return s;
-        });
-        d.names = names;
-        d.trimmed = before.trimmed;
-        regroupImport(d, now, before.groups);
+        if (importDraft !== d) return;
+        Object.assign(step, old);
         renderImport();
       });
+    }
+
+    function buildImportStepEditor(step, part) {
+      const box = document.createElement("div");
+      box.className = "import-step-editor";
+      const label = importStepLabel(step);
+      const paints = step.paints.map(importPaintFor).filter(Boolean);
+
+      // Technique: "Auto" (guess from the paints) or one from your list.
+      const techLabel = document.createElement("label");
+      techLabel.textContent = "Technique";
+      const select = document.createElement("select");
+      select.dataset.importFocus = "technique";
+      const guess = guessTechnique(paints);
+      select.add(new Option(guess ? `Auto: ${guess}` : "Auto (from the paints)", ""));
+      const values = book.techniques.slice();
+      if (step.technique && !values.some(v => sameText(v, step.technique))) values.push(step.technique);
+      for (const v of values) select.add(new Option(v, v));
+      select.value = values.find(v => sameText(v, step.technique)) || "";
+      select.addEventListener("change", () => {
+        const technique = select.value;
+        changeImportStep(step, { technique },
+          technique ? `${label}: technique changed to ${technique}` : `${label}: technique set to Auto`);
+      });
+      techLabel.appendChild(select);
+      box.appendChild(techLabel);
+
+      // Mix ratio: only for a step with 2 or more paints.
+      const n = step.paints.length;
+      let applyRatio = null;   // reads the ratio box; false if what's typed doesn't fit
+      if (n > 1) {
+        const row = document.createElement("div");
+        row.className = "import-ratio-row";
+        const ratioLabel = document.createElement("label");
+        ratioLabel.textContent = "Mix ratio (blank = even mix)";
+        const input = document.createElement("input");
+        input.dataset.importFocus = "ratio";
+        input.inputMode = "decimal";
+        input.placeholder = Array(n).fill(1).join(":");
+        input.value = step.ratio || "";
+        input.setAttribute("aria-label", `Mix ratio for ${label}`);
+        const warning = document.createElement("p");
+        warning.className = "import-ratio-warning";
+        warning.hidden = true;
+        const apply = () => {
+          const typed = input.value.trim();
+          if (!typed) {
+            if (step.ratio) changeImportStep(step, { ratio: "" }, `${label}: mix ratio cleared (even mix)`);
+            return true;
+          }
+          if (!ratioPercents(typed, n)) {
+            warning.textContent = `The ratio needs ${n} numbers, one per paint, like ${Array(n).fill(1).join(":")}. Not changed.`;
+            warning.hidden = false;
+            return false;
+          }
+          const ratio = cleanRatio(typed);
+          if (ratio !== step.ratio) changeImportStep(step, { ratio }, `${label}: mix ratio set to ${ratio}`);
+          return true;
+        };
+        applyRatio = apply;
+        input.addEventListener("change", apply);
+        input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); apply(); } });
+        ratioLabel.appendChild(input);
+        const clear = document.createElement("button");
+        clear.type = "button";
+        clear.className = "plain-button import-ratio-clear";
+        clear.textContent = "Clear";
+        clear.dataset.importFocus = "clear";
+        clear.disabled = !step.ratio;
+        // Pressing Clear mustn't first take the box out of focus (that would save what's typed).
+        clear.addEventListener("mousedown", (e) => e.preventDefault());
+        clear.addEventListener("click", () => changeImportStep(step, { ratio: "" }, `${label}: mix ratio cleared (even mix)`));
+        row.append(ratioLabel, clear);
+        box.append(row, warning);
+      }
+
+      const done = document.createElement("button");
+      done.type = "button";
+      done.className = "plain-button import-edit-done";
+      done.textContent = "Done";
+      // Done keeps a ratio you've typed but not yet confirmed (unless it doesn't fit), then closes.
+      done.addEventListener("mousedown", (e) => e.preventDefault());
+      done.addEventListener("click", () => {
+        if (applyRatio && applyRatio() === false) return;
+        toggleImportEdit(step);
+      });
+      box.appendChild(done);
+      box.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.preventDefault(); toggleImportEdit(step); } });
+      return box;
     }
 
     function saveImport() {
