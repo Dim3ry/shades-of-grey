@@ -667,7 +667,19 @@
     .shop-brand { font-weight: 600; color: var(--accent); margin: 12px 0 4px; }
     .shop-list { margin: 0; padding-left: 20px; line-height: 1.6; }
     .shop-list small { color: var(--muted); }
-    .shop-links-slot { margin-top: 14px; padding: 10px; border: 1px dashed var(--border); border-radius: 8px; }
+    /* v19.1: the "Buy these" bar at the top of the shopping list */
+    .buy-bar { margin: 0 0 14px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px;
+               background: linear-gradient(to right, rgba(125, 211, 252, 0.08), transparent 80%), var(--card); }
+    .buy-bar h3 { margin: 0 0 8px; font-size: 15px; color: var(--accent); }
+    .buy-shops { display: flex; flex-wrap: wrap; gap: 8px; }
+    .buy-shops button { min-height: 44px; }
+    .buy-shops button[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
+    .buy-links { list-style: none; margin: 10px 0 0; padding: 0; }
+    .buy-links li { border-top: 1px solid var(--border); }
+    .buy-links a { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px;
+                   color: var(--text); text-decoration: none; }
+    .buy-links a span:last-child { color: var(--accent); white-space: nowrap; font-size: 14px; }
+    .buy-bar .hint { margin: 8px 0 0; font-size: 13px; }
     /* v17.1: how many you have */
     .qty-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; color: var(--text); font-size: 15px; }
     .qty-step { width: 44px; min-height: 44px; padding: 0; font-size: 20px; }
@@ -1064,6 +1076,7 @@
             <li>At the bottom of an open paint: <strong>Remove</strong> deletes a paint no recipe uses (a paint that's still in a recipe can't be removed). <strong>Merge into…</strong> joins it to another paint, handy for a typo twin like "Nuln Oill": its recipes move to the paint you pick, and that paint keeps its own name and brand. Both have Undo.</li>
             <li><strong>📷 Scan a paint pot</strong> (in Your Palette) reads the paint's name from its label with the camera and suggests matches. The reading happens on your phone; the photo is never sent anywhere. The first scan loads the label reader (about 11 MB) from Minifolio's own site, and after that scanning works with no internet. Leaving the app, or closing the scan panel, switches the camera off.</li>
             <li>Typed a paint into a recipe that isn't in Your Palette yet? Above <strong>Save recipe</strong>, <strong>Do you own these?</strong> asks about the new paints: <strong>All</strong> (Owned), <strong>None</strong> (Not owned, so they go on the shopping list) or <strong>Let me pick</strong> (tap a paint to untick it).</li>
+            <li id="help-shop"><strong>🛒 Shopping list</strong> (in Your Palette) lists paints that are running low, empty, on your wishlist, or used in a recipe but not owned, grouped by brand. <strong>Buy these</strong> at the top has a button for each shop that sells them (Firestorm Games, Wayland Games, Element Games, and The Army Painter for Army Painter paints). Tap a shop for one search link per paint; each opens that shop's own search in a new tab. They're plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop. The link searches for the paint's name, so the results can include other brands' paints with the same name: check you've got the right pot before you buy.</li>
             <li><strong>Schemes</strong> (top of the Recipes tab) group the recipes you use for one faction, e.g. "My Ultramarines" = armour, trim, lenses and base. Press <strong>+ New scheme</strong>, name it, type the faction and tick its recipes.</li>
             <li><strong>Apply to … units</strong> links a scheme's recipes to every unit in its faction that doesn't have them all yet. Recipes a unit already has stay linked.</li>
             <li>With <strong>New units … get these recipes automatically</strong> ticked, any unit you add to that faction later (by hand or by import) gets the scheme straight away.</li>
@@ -1090,6 +1103,7 @@
           <ul>
             <li><strong>From the Warhammer app:</strong> open a list, tap Export, copy it as text, then on the Units tab tap <strong>+ Add unit → Paste army list</strong> (it's also in Settings), paste it and press Read list. Only unit names and model counts are kept: points, wargear and rules text are thrown away.</li>
             <li><strong>From a spreadsheet:</strong> save it as CSV with the columns name, game, faction, stage, nickname, count, repaint, notes, then use <strong>Import CSV</strong> (under + Add unit, or in Settings). <strong>CSV template</strong> in Settings gives you an example file.</li>
+            <li id="help-csv-checks">The first line of the CSV must be the column titles, and one must be <strong>name</strong>. The other columns are found by their titles, so they can be in any order or left out. A file without a name column, a picture, an Excel file that isn't saved as CSV, or a file over 2 MB is refused with a message, and nothing changes.</li>
             <li>Before anything changes, you choose <strong>Add to my collection</strong> or <strong>Replace my collection</strong>, and can untick any units you don't want.</li>
             <li>Units you already have start unticked. If one has a different name in the import, it's highlighted so you can pick which name to keep. The Warhammer app's name is the default.</li>
             <li>After an import, the <strong>Units</strong> tab opens so you can see what came in. Changed your mind? Press <strong>Undo</strong> straight after.</li>
@@ -1112,6 +1126,7 @@
             <li>Your data and backups carry a data version number. If an older copy of the app (say an installed app that hasn't updated yet) finds data saved by a newer one, it stops saving and asks you to <strong>reload</strong>, so it can't damage that newer data. A backup saved by a newer version asks you to update before it restores.</li>
             <li>A <strong>Saved</strong> message only shows when your change really was saved. If the device's storage is full you'll see <strong>Not saved</strong> with a <strong>Save backup</strong> button instead. A paste import that can't be saved is put back and stays open, so your answers aren't lost.</li>
             <li>Got the app open in two places at once (say the installed app and a browser tab)? Changes made in one now show up in the other, instead of being saved over.</li>
+            <li id="help-backup-checks"><strong>Restore backup</strong> checks the file first. A picture or other file picked by mistake, a file over 300 MB, or a backup that's damaged is refused with a message, and nothing changes.</li>
             <li>New phone? Save a backup on the old one, open the app on the new one, and restore it.</li>
           </ul>
         </details>
@@ -1136,6 +1151,7 @@
             <li><strong>Stays on your phone:</strong> your units, photos, recipes, paints and settings. They're saved in this browser on this device only. There's no account and no cloud copy.</li>
             <li><strong>Scanning a paint pot</strong> reads the label on your phone. The photo never leaves it.</li>
             <li><strong>What goes out:</strong> only what you choose to send. <strong>Give feedback</strong> opens a form on Tally's website, which receives what you type there plus the app's version number. Backups and exports are files you save yourself.</li>
+            <li><strong>Shop links</strong> (Buy these, on the shopping list) open the shop's website only when you tap one. The link carries just the paint's name for the shop's search, and the shop isn't told it came from Minifolio. From then on you're on the shop's site, under its own privacy rules.</li>
             <li><strong>No tracking:</strong> no analytics, no adverts, no cookies, and nothing is sold.</li>
             <li>Like any website, the site's host (GitHub Pages) sees basic technical details, such as your internet address, when the app loads or updates. Minifolio itself never sees or keeps them.</li>
           </ul>
@@ -1145,7 +1161,7 @@
           <ul>
             <li><strong>Unofficial fan-made app, not affiliated with or endorsed by Games Workshop or any paint maker.</strong> No Games Workshop artwork, rules, points or stats, and no brand logos.</li>
             <li>The app knows paint and faction names so it can recognise what you type or scan. Citadel, Warhammer and faction and paint names are trademarks of Games Workshop Ltd. Other paint names (such as Vallejo, The Army Painter and AK Interactive) belong to their makers. All are used only to identify those products.</li>
-            <li>Your data stays on this device. There's no account, and nothing you add is sent anywhere, except what you choose to write in the feedback form.</li>
+            <li>Your data stays on this device. There's no account, and nothing you add is sent anywhere, except what you choose to write in the feedback form and a paint's name when you tap a shop link.</li>
             <li><strong>Contact:</strong> use <strong>Give feedback</strong> on the Updates tab. Every message is read.</li>
           </ul>
         </details>
@@ -2108,6 +2124,91 @@
       return lines.join("\n").trimEnd();
     }
 
+    // ----- v19.1: SHOP LINKS ("Buy these") -----
+    // EVERY shop lives in this ONE list, so changing or adding a shop is one edit here.
+    //   name:   shown on the button
+    //   search: the shop's own search address; {q} is replaced by the paint's name (some shops,
+    //           like Wayland, want it twice)
+    //   brands: "all", or a list of the only brands the shop sells (its button shows only for those)
+    //   extra:  added to the end of every link for that shop. Empty for now (plain links, no
+    //           affiliate codes). An affiliate code would go here later, e.g. "&ref=CODE"
+    //           (and then: an "Ad" line, a Settings switch and an updated Privacy topic).
+    //   checked: when the search address was last tried by hand
+    const SHOPS = [
+      { id: "firestorm", name: "Firestorm Games", search: "https://www.firestormgames.co.uk/products?q={q}", brands: "all", extra: "", checked: "10 Oct 2026" },
+      { id: "wayland", name: "Wayland Games", search: "https://www.waylandgames.co.uk/search?query={q}&q={q}", brands: "all", extra: "", checked: "10 Oct 2026" },
+      { id: "element", name: "Element Games", search: "https://elementgames.co.uk/search?q={q}", brands: "all", extra: "", checked: "10 Oct 2026" },
+      { id: "armypainter", name: "The Army Painter", search: "https://thearmypainter.com/search?q={q}", brands: ["The Army Painter"], extra: "", checked: "10 Oct 2026" },
+    ];
+    let shopLinksOpen = null;   // the id of the shop whose links are showing, or null
+
+    const shopSells = (shop, brand) => shop.brands === "all" || shop.brands.some(b => sameText(b, brand || ""));
+    // What to type into the shop's search: the paint's name ONLY. Checked by hand on 10 Oct:
+    // shops' searches match words in their product titles, and many titles leave the brand out
+    // ("Warhammer Base: Macragge Blue", "Warpaints Fanatic: Ivory White"), so "Vallejo Ivory" or
+    // "The Army Painter Matt White" found nothing at Firestorm while "Ivory" and "Matt White" did.
+    function shopSearchWords(shop, paint) {
+      return String(paint.name || "").trim();
+    }
+    function shopLink(shop, paint) {
+      const words = encodeURIComponent(shopSearchWords(shop, paint)).replace(/%20/g, "+");
+      return shop.search.split("{q}").join(words) + shop.extra;
+    }
+    // The shops that sell at least one paint on the list, each with the paints it sells.
+    function shopsFor(items) {
+      return SHOPS.map(shop => ({ shop, paints: items.map(i => i.paint).filter(p => shopSells(shop, p.brand)) }))
+        .filter(x => x.paints.length);
+    }
+    function buildBuyBar(items) {
+      const bar = document.createElement("div");
+      bar.className = "buy-bar";
+      bar.id = "buy-bar";
+      const head = document.createElement("h3");
+      head.textContent = "Buy these";
+      const row = document.createElement("div");
+      row.className = "buy-shops";
+      bar.append(head, row);
+      const offers = shopsFor(items);
+      if (!offers.some(o => o.shop.id === shopLinksOpen)) shopLinksOpen = null;
+      for (const { shop, paints } of offers) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "plain-button";
+        b.dataset.shop = shop.id;
+        b.textContent = shop.name;
+        b.setAttribute("aria-expanded", String(shopLinksOpen === shop.id));
+        b.addEventListener("click", () => { shopLinksOpen = shopLinksOpen === shop.id ? null : shop.id; renderShopPanel(); });
+        row.appendChild(b);
+        if (shopLinksOpen !== shop.id) continue;
+        const list = document.createElement("ul");
+        list.className = "buy-links";
+        list.id = "buy-links";
+        for (const p of paints) {
+          const li = document.createElement("li");
+          const a = document.createElement("a");
+          a.href = shopLink(shop, p);
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";   // the shop isn't told which page sent you
+          const name = document.createElement("span");
+          name.textContent = p.name;
+          const go = document.createElement("span");
+          go.textContent = "Search ↗";
+          a.append(name, go);
+          a.setAttribute("aria-label", `Search ${shop.name} for ${p.name} (opens the shop's website)`);
+          li.appendChild(a);
+          list.appendChild(li);
+        }
+        bar.appendChild(list);
+      }
+      const note = document.createElement("p");
+      note.className = "hint";
+      note.textContent = shopLinksOpen
+        ? "Each link opens the shop's own search for that paint. Plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop."
+        : "Tap a shop to see a search link for each paint it sells.";
+      bar.appendChild(note);
+      return bar;
+    }
+
     function renderShopPanel() {
       const panel = document.getElementById("shop-panel");
       const button = document.getElementById("shop-button");
@@ -2135,6 +2236,7 @@
         card.appendChild(warn);
       }
       if (items.length) {
+        card.appendChild(buildBuyBar(items));   // v19.1: shop links at the top
         const groups = new Map();
         for (const i of items) {
           const brand = i.paint.brand || "No brand";
@@ -2166,12 +2268,6 @@
         copy.addEventListener("click", () => copyText(shoppingText(shoppingItems()), "Shopping list"));
         card.appendChild(copy);
       }
-      // Clearly marked spot for shop links later. There are no links yet.
-      const slot = document.createElement("div");
-      slot.className = "shop-links-slot";
-      slot.id = "shop-links-slot";
-      slot.innerHTML = '<strong>Shop links</strong><p class="hint" style="margin: 4px 0 0;">Coming later. No links are added yet.</p>';
-      card.appendChild(slot);
       panel.appendChild(card);
     }
     document.getElementById("shop-button").addEventListener("click", () => { shopOpen = !shopOpen; renderShopPanel(); });
@@ -8338,6 +8434,37 @@
       reader.readAsText(file);
     }
 
+    // ----- v19.1: check a file BEFORE reading it -----
+    // A very large file can freeze or crash a phone while it's read, and a picture picked by
+    // mistake used to turn into nonsense units. So: a size limit for each kind of file, and
+    // pictures, videos and other non-text files are refused straight away.
+    const MAX_CSV_BYTES = 2 * 1024 * 1024;        // 2 MB: thousands of units (600 units is about 40 KB)
+    const MAX_BACKUP_BYTES = 300 * 1024 * 1024;   // 300 MB: room for a full backup with hundreds of photos
+    const NOT_TEXT_ENDINGS = /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?|svg|mp4|mov|avi|mkv|mp3|m4a|wav|pdf|zip|rar|7z|gz|docx?|xlsx?|xlsm|pptx?|numbers|pages|key|exe|apk)$/i;
+    function sizeText(bytes) { return bytes >= 1024 * 1024 ? Math.round(bytes / 1024 / 1024) + " MB" : Math.max(1, Math.round(bytes / 1024)) + " KB"; }
+    function fileProblem(file, kind) {
+      const what = kind === "csv" ? "a CSV file" : "a Minifolio backup";
+      const type = String(file.type || "");
+      if (/^(image|video|audio)\//.test(type) || NOT_TEXT_ENDINGS.test(file.name || "")) {
+        return /\.(xlsx?|xlsm|numbers)$/i.test(file.name || "") && kind === "csv"
+          ? `"${file.name}" is a spreadsheet file, not a CSV. In your spreadsheet app, use Save as (or Download) → CSV, then import that. Nothing has changed.`
+          : `"${file.name}" isn't ${what} (it looks like a picture or another kind of file). Nothing has changed.`;
+      }
+      const limit = kind === "csv" ? MAX_CSV_BYTES : MAX_BACKUP_BYTES;
+      if (file.size > limit) {
+        return `"${file.name}" is too big (${sizeText(file.size)}; the limit for ${what} is ${sizeText(limit)}). It may not be the right file. Nothing has changed.`;
+      }
+      return "";
+    }
+    // After reading: a file that isn't really text (e.g. a picture renamed to .csv) is full of
+    // "can't read this" marks or zero bytes.
+    function looksLikeText(text) {
+      const sample = String(text).slice(0, 20000);
+      if (sample.includes("\u0000")) return false;
+      const odd = (sample.match(/\uFFFD/g) || []).length;
+      return odd <= Math.max(3, sample.length / 200);
+    }
+
     // Backups include your stages, since a unit's stage is a position in that list.
     // Units carry notes about their photos (ids), but the pictures themselves are only in
     // the FULL backup, as text pictures in "photoFiles": { id: { full, thumb } }.
@@ -8418,6 +8545,9 @@
     restoreFile.addEventListener("change", () => {
       const file = restoreFile.files[0];
       if (!file) return;
+      // v19.1: refuse pictures and very large files before reading anything.
+      const problem = fileProblem(file, "backup");
+      if (problem) { restoreFile.value = ""; alert(problem); return; }
       readFile(file, (text) => {
         restoreFile.value = "";
         let parsed;
@@ -8425,6 +8555,16 @@
         const isList = Array.isArray(parsed);   // the oldest backups are just a list of units
         if (!parsed || (!isList && typeof parsed !== "object")) {
           alert("That file doesn't look like a Minifolio backup.");
+          return;
+        }
+        // v19.1: each main part must be the right kind of thing (a list of units, a recipe
+        // book, a set of photos), or the file is refused before anything changes.
+        const wrongShape = !isList && (
+          (parsed.models !== undefined && !Array.isArray(parsed.models)) ||
+          (parsed.recipes !== undefined && (parsed.recipes === null || typeof parsed.recipes !== "object" || Array.isArray(parsed.recipes))) ||
+          (parsed.photoFiles !== undefined && (parsed.photoFiles === null || typeof parsed.photoFiles !== "object" || Array.isArray(parsed.photoFiles))));
+        if (wrongShape) {
+          alert("This backup is damaged (part of it isn't laid out the way Minifolio saves it), so it can't be restored safely. Nothing has changed.");
           return;
         }
         // v18.3: a backup saved by a NEWER version of the app might hold things this copy
@@ -8562,6 +8702,47 @@
       return 0;
     }
 
+    // v19.1: CSV rows to units. The FIRST line must be the column titles and include "name";
+    // the other columns are found by their titles, so they can be in any order (or missing).
+    // Without a "name" title the file is refused, so a random file can't become units.
+    const CSV_COLUMNS = { name: ["name", "unit", "unit name"], game: ["game", "hobby"], faction: ["faction", "army"],
+      stage: ["stage"], nickname: ["nickname"], count: ["count", "models", "number"], repaint: ["repaint"], notes: ["notes", "note"] };
+    function csvToUnits(rows) {
+      rows = rows.filter(cells => cells.some(c => String(c).trim()));
+      const noName = 'This file has no "name" column, so Minifolio can\'t tell which column holds your unit names. ' +
+        'The first line should be the column titles: name, game, faction, stage, nickname, count, repaint, notes ' +
+        '(only "name" is needed). CSV template in Settings gives you an example. Nothing has changed.';
+      if (!rows.length) return { problem: "That file is empty. Nothing has changed." };
+      const titles = rows[0].map(c => plainQuotes(String(c)).trim().toLowerCase());
+      const col = {};
+      for (const [key, words] of Object.entries(CSV_COLUMNS)) col[key] = titles.findIndex(t => words.includes(t));
+      if (col.name < 0) return { problem: noName };
+      const cell = (cells, key) => col[key] < 0 ? "" : String(cells[col[key]] || "").trim();
+      const unknownStages = new Set();
+      const units = [];
+      for (const cells of rows.slice(1)) {
+        const name = plainQuotes(cell(cells, "name"));
+        if (!name) continue;
+        const stageText = cell(cells, "stage");
+        const n = Number(stageText);
+        const validNumber = stageText !== "" && Number.isInteger(n) && n >= 0 && n < STAGES.length;
+        if (stageText && !STAGES.some(s => s.toLowerCase() === stageText.toLowerCase()) && !validNumber) {
+          unknownStages.add(stageText);
+        }
+        units.push({
+          name,
+          hobby: cell(cells, "game"),
+          faction: plainQuotes(cell(cells, "faction")),
+          stage: stageFromText(stageText),
+          nickname: cell(cells, "nickname"),
+          count: cleanCount(cell(cells, "count")),
+          repaint: ["yes", "y", "true", "1"].includes(cell(cells, "repaint").toLowerCase()),
+          note: cell(cells, "notes"),
+        });
+      }
+      return { units, unknownStages };
+    }
+
     // Import CSV reads the file, then shows the review so you can choose Add or Replace.
     const csvFile = document.getElementById("csv-file");
     document.getElementById("csv-button").addEventListener("click", () => {
@@ -8571,32 +8752,15 @@
     csvFile.addEventListener("change", () => {
       const file = csvFile.files[0];
       if (!file) return;
+      // v19.1: refuse pictures and very large files before reading anything.
+      const problem = fileProblem(file, "csv");
+      if (problem) { csvFile.value = ""; alert(problem); return; }
       readFile(file, (text) => {
-        let rows = parseCSV(text.replace(/^﻿/, ""));   // ﻿: an invisible mark Excel adds
-        if (rows.length && rows[0][0].trim().toLowerCase() === "name") rows = rows.slice(1); // skip titles
-        const unknownStages = new Set();
-        const units = [];
-        rows.forEach((cells) => {
-          const name = plainQuotes((cells[0] || "").trim());
-          if (!name) return;
-          const stageText = (cells[3] || "").trim();
-          const n = Number(stageText);
-          const validNumber = stageText !== "" && Number.isInteger(n) && n >= 0 && n < STAGES.length;
-          if (stageText && !STAGES.some(s => s.toLowerCase() === stageText.toLowerCase()) && !validNumber) {
-            unknownStages.add(stageText);
-          }
-          units.push({
-            name,
-            hobby: (cells[1] || "").trim(),
-            faction: plainQuotes((cells[2] || "").trim()),
-            stage: stageFromText(cells[3]),
-            nickname: (cells[4] || "").trim(),
-            count: cleanCount(cells[5]),
-            repaint: ["yes", "y", "true", "1"].includes((cells[6] || "").trim().toLowerCase()),
-            note: (cells[7] || "").trim(),
-          });
-        });
         csvFile.value = "";
+        if (!looksLikeText(text)) { alert(`"${file.name}" isn't a CSV file (it isn't plain text). Nothing has changed.`); return; }
+        const read = csvToUnits(parseCSV(text.replace(/^﻿/, "")));   // ﻿: an invisible mark Excel adds
+        if (read.problem) { alert(read.problem); return; }
+        const { units, unknownStages } = read;
         if (!units.length) { alert("No units found in that file."); return; }
         whPanel.classList.add("hidden");
         openReview({ source: "csv", title: `"${file.name}"`, rows: units, unknownStages: [...unknownStages] });
@@ -9162,10 +9326,15 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v19";
+    const APP_VERSION = "v19.1";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v19.1", date: "10 Oct 2026", changes: [
+        "The shopping list has a Buy these bar at the top: a button for each shop that sells your paints (Firestorm Games, Wayland Games, Element Games, and The Army Painter for its own paints). Tap a shop for a search link for each paint. Plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop.",
+        "Import CSV checks the file first: it needs a name column (the other columns can be in any order), and pictures, Excel files and files over 2 MB are refused with a message instead of turning into odd units.",
+        "Restore backup checks the file first too: pictures, files over 300 MB and damaged backups are refused, and nothing changes.",
+      ]},
       { version: "v19", date: "10 Oct 2026", changes: [
         "The phone's Back button no longer leaves the app by mistake. It closes what's open first (a photo, the camera, a recipe, the paste box), then goes to the Dashboard. Only on the Dashboard does it leave the app.",
         "Paste army list and Import CSV are now on the Units tab: tap + Add unit (or use the buttons on an empty Units list). They're still in Settings too. After an import, the Units tab opens on your units.",
