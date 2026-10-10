@@ -6,7 +6,7 @@
   <!-- Makes the page fit phone screens properly. Without it, phones zoom out. -->
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b1220">
-  <title>Shades of Grey</title>
+  <title>Minifolio</title>
 
   <!-- PHASE 6: these three lines make the app installable.
        manifest.json tells the phone the app's name, colours and icon.
@@ -790,7 +790,7 @@
   </nav>
   <!-- ===== HTML: this section is WHAT is on the page. ===== -->
   <main>
-    <h1>Shades of Grey <span class="version-tag" id="version-tag"></span></h1>
+    <h1>Minifolio <span class="version-tag" id="version-tag"></span></h1>
 
     <!-- ===== TAB 1: Dashboard ===== -->
     <section id="view-dashboard">
@@ -958,7 +958,7 @@
     <!-- ===== TAB: Help (how to use the app) ===== -->
     <section id="view-help" class="hidden">
       <div class="card help-intro">
-        <h2>How to use Shades of Grey</h2>
+        <h2>How to use Minifolio</h2>
         <p class="hint" style="margin: 0;">Tap a topic to open it. New here? Start with <strong>Getting started</strong>.</p>
       </div>
       <div class="card help">
@@ -7834,7 +7834,7 @@
     const PALETTES = {
       ice:        { label: "Ice (original)",          colours: ["#64748b", "#6366f1", "#38bdf8", "#22d3ee", "#a7f3d0"] },
       frost:      { label: "Frost (higher contrast)", colours: ["#64748b", "#6366f1", "#38bdf8", "#2dd4bf", "#a7f3d0"] },
-      greyscale:  { label: "Shades of Grey",          colours: ["#6b7280", "#8f96a3", "#b4bac4", "#d9dde3", "#ffffff"] },
+      greyscale:  { label: "Greyscale",               colours: ["#6b7280", "#8f96a3", "#b4bac4", "#d9dde3", "#ffffff"] },
       // Based on the Okabe-Ito colours, designed to stay distinct for common colour blindness.
       colourblind:{ label: "Colour-blind friendly",   colours: ["#8b95a5", "#56b4e9", "#cc79a7", "#e69f00", "#f0e442"] },
     };
@@ -8151,7 +8151,7 @@
     // Units carry notes about their photos (ids), but the pictures themselves are only in
     // the FULL backup, as text pictures in "photoFiles": { id: { full, thumb } }.
     function backupData() {
-      return { app: "Shades of Grey", version: 6, stages: STAGES, doneFrom: settings.doneFrom, models, recipes: book,
+      return { app: "Minifolio", version: 6, stages: STAGES, doneFrom: settings.doneFrom, models, recipes: book,
                factionColours: settings.factionColours };
     }
 
@@ -8170,7 +8170,7 @@
         }
         const today = new Date().toISOString().slice(0, 10);
         // No neat line breaks here: the file is big enough already.
-        downloadFile(`shades-of-grey-full-backup-${today}.json`, JSON.stringify(backup), "application/json");
+        downloadFile(`minifolio-full-backup-${today}.json`, JSON.stringify(backup), "application/json");
         settings.lastBackup = today;
         settings.lastFullBackup = today;   // v14: photo backups are tracked separately
         saveSettings();
@@ -8203,7 +8203,7 @@
 
     document.getElementById("export-button").addEventListener("click", () => {
       const today = new Date().toISOString().slice(0, 10);
-      downloadFile(`shades-of-grey-backup-${today}.json`, JSON.stringify(backupData(), null, 2), "application/json");
+      downloadFile(`minifolio-backup-${today}.json`, JSON.stringify(backupData(), null, 2), "application/json");
       settings.lastBackup = today;   // remembered so the app knows when to remind you
       saveSettings();
       renderSettings();
@@ -8232,7 +8232,7 @@
         try { parsed = JSON.parse(text); } catch (error) { parsed = null; }
         const isList = Array.isArray(parsed);   // the oldest backups are just a list of units
         if (!parsed || (!isList && typeof parsed !== "object")) {
-          alert("That file doesn't look like a Shades of Grey backup.");
+          alert("That file doesn't look like a Minifolio backup.");
           return;
         }
         // v14: a damaged stage list (blank or repeated names, or more than 10) is refused,
@@ -8255,7 +8255,7 @@
         // v14: a backup with recipes but no units is fine too: it replaces only your recipes.
         const unitsToo = restored.length > 0;
         if (!unitsToo && !hasRecipes) {
-          alert("That file doesn't look like a Shades of Grey backup: it has no units or recipes in it.");
+          alert("That file doesn't look like a Minifolio backup: it has no units or recipes in it.");
           return;
         }
         const photoFiles = !isList && parsed.photoFiles && typeof parsed.photoFiles === "object" ? parsed.photoFiles : null;
@@ -8400,7 +8400,7 @@
         `Intercessors,40K,Ultramarines,${STAGES[0]},,5,no,\n` +
         `Intercessors,40K,Ultramarines,${STAGES[Math.min(3, STAGES.length - 1)]},The Gold Squad,5,no,\n` +
         `Redemptor Dreadnought,40K,Ultramarines,${last},,1,yes,"Magnetised, so can swap guns"\n`;
-      downloadFile("shades-of-grey-template.csv", template, "text/csv");
+      downloadFile("minifolio-template.csv", template, "text/csv");
     });
 
 
@@ -8418,7 +8418,7 @@
         m.count || 1, m.repaint ? "yes" : "no", m.note || ""].map(csvCell).join(","));
       const today = new Date().toISOString().slice(0, 10);
       // "﻿" at the start helps Excel read accents and curly quotes properly.
-      downloadFile(`shades-of-grey-${today}.csv`, "﻿" + [header, ...rows].join("\r\n") + "\r\n", "text/csv");
+      downloadFile(`minifolio-${today}.csv`, "﻿" + [header, ...rows].join("\r\n") + "\r\n", "text/csv");
     });
 
     // ================= IMPORT FROM THE WARHAMMER APP =================
@@ -8893,10 +8893,14 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v18.1";
+    const APP_VERSION = "v18.2";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v18.2", date: "10 Oct 2026", changes: [
+        "Shades of Grey is now called Minifolio, with its own web address: minifolio.app. Each web address keeps its own copy of your data, so if you used the old address, save a backup there and restore it here. Backups saved under the old name still restore, and new backup and export files are named minifolio-…",
+        "The grey stage colour set is now called Greyscale. The colours are the same.",
+      ]},
       { version: "v18.1", date: "10 Oct 2026", changes: [
         "Clearer wording: the app is unofficial and fan-made, and isn't linked to Games Workshop or any paint maker. This now shows on the Updates tab as well as in Help → About, which also says other paint brand names belong to their makers.",
       ]},
