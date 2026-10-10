@@ -290,7 +290,7 @@ def run(viewport, label):
         page.click('nav button[data-tab="help"]')
         page.click("#about summary")
         about = page.inner_text("#about")
-        check(f"{label} 11b About has the fan-tool notice and contact", "Unofficial fan-made tool, not affiliated with or endorsed by Games Workshop" in about and "Contact" in about)
+        check(f"{label} 11b About has the fan-tool notice and contact", "Unofficial fan-made" in about and "not affiliated with or endorsed by Games Workshop" in about and "Contact" in about)
         page.locator("#about").scroll_into_view_if_needed()
         page.screenshot(path=f"{SHOTS}/{label}-about.png")
         page.click('nav button[data-tab="settings"]')

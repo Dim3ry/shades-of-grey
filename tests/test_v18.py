@@ -106,26 +106,28 @@ def main():
         start(page)
 
         print("--- Version numbers ---")
-        check("APP_VERSION is v18", page.evaluate("APP_VERSION") == "v18", page.evaluate("APP_VERSION"))
+        check("APP_VERSION is v18 or later", float(page.evaluate("APP_VERSION")[1:]) >= 18, page.evaluate("APP_VERSION"))
         m = re.search(r'const VERSION = "([^"]+)"', sw)
-        check("sw.js VERSION is v18 (so phones fetch the new copy)", m and m.group(1) == "v18", m and m.group(1))
-        check("the version next to the title shows v18", page.inner_text("#version-tag").strip() == "v18",
-              page.inner_text("#version-tag"))
+        check("sw.js VERSION is v18 or later (so phones fetch the new copy)", m and float(m.group(1)[1:]) >= 18, m and m.group(1))
+        check("the version next to the title matches APP_VERSION",
+              page.inner_text("#version-tag").strip() == page.evaluate("APP_VERSION"), page.inner_text("#version-tag"))
 
         print("\n--- Updates tab ---")
-        first = page.evaluate("CHANGELOG[0]")
-        check("newest Updates entry is v18, dated 10 Oct 2026",
+        v18_at = page.evaluate("CHANGELOG.findIndex(e => e.version === 'v18')")
+        first = page.evaluate(f"CHANGELOG[{max(v18_at, 0)}]")
+        check("Updates lists v18, dated 10 Oct 2026",
               first["version"] == "v18" and first["date"] == "10 Oct 2026", first["version"] + " " + first["date"])
         text = " ".join(first["changes"])
         for word in ["Paste recipes", "✕", "✎", "Do you own these?", "Remove", "Merge into…", "1:1",
                      "Saved", "20,000", "Ushabti Bone and Wraithbone", "Help"]:
             check(f"v18 entry mentions {word!r}", word in text)
-        check("v17.1 is still listed, below v18", page.evaluate("CHANGELOG[1].version") == "v17.1")
+        check("v17.1 is still listed, straight below v18", page.evaluate(f"CHANGELOG[{v18_at + 1}].version") == "v17.1")
         page.click("nav button[data-tab='updates']")
         page.wait_for_timeout(150)
-        check("Updates tab shows the v18 entry first",
-              page.inner_text("#changelog .release h3 >> nth=0").startswith("v18"),
-              page.inner_text("#changelog .release h3 >> nth=0"))
+        check("Updates tab shows the v18 entry",
+              any(h.startswith("v18") and not h.startswith("v18.")
+                  for h in page.locator("#changelog .release h3").all_inner_texts()),
+              page.locator("#changelog .release h3").all_inner_texts())
 
         print("\n--- Help ---")
         body = help_text(page)

@@ -1108,8 +1108,8 @@
         <details id="about">
           <summary>About</summary>
           <ul>
-            <li><strong>Unofficial fan-made tool, not affiliated with or endorsed by Games Workshop.</strong> No Games Workshop artwork, rules, points or stats.</li>
-            <li>The app knows paint and faction names so it can recognise what you type or scan. Citadel, Warhammer and faction and paint names are trademarks of Games Workshop Ltd, used only to identify those products.</li>
+            <li><strong>Unofficial fan-made app, not affiliated with or endorsed by Games Workshop or any paint maker.</strong> No Games Workshop artwork, rules, points or stats, and no brand logos.</li>
+            <li>The app knows paint and faction names so it can recognise what you type or scan. Citadel, Warhammer and faction and paint names are trademarks of Games Workshop Ltd. Other paint names (such as Vallejo, The Army Painter and AK Interactive) belong to their makers. All are used only to identify those products.</li>
             <li>Your data stays on this device. There's no account, and nothing you add is sent anywhere, except what you choose to write in the feedback form. The first time you scan a paint pot, the app downloads its free text-reading tool from the web; your photo never leaves your phone.</li>
             <li><strong>Contact:</strong> use <strong>Give feedback</strong> on the Updates tab. Every message is read.</li>
           </ul>
@@ -1129,6 +1129,7 @@
       <div class="card">
         <h2>What's new</h2>
         <p class="hint" id="version-note"></p>
+        <p class="hint" id="unofficial-note">Unofficial fan-made app. Not affiliated with Games Workshop or any paint maker.</p>
         <div id="changelog"></div>
       </div>
     </section>
@@ -8892,10 +8893,13 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v18";
+    const APP_VERSION = "v18.1";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v18.1", date: "10 Oct 2026", changes: [
+        "Clearer wording: the app is unofficial and fan-made, and isn't linked to Games Workshop or any paint maker. This now shows on the Updates tab as well as in Help → About, which also says other paint brand names belong to their makers.",
+      ]},
       { version: "v18", date: "10 Oct 2026", changes: [
         "Paste recipes reads far more notes correctly: mixes like 'Seraphim Sepia 1:2 with Contrast Medium', headings like 'Base;', a faction name on the first line, 'Texture Sand', accented letters, a brand named in the note ('Vallejo Ivory'), and 'Ushabti Bone and Wraithbone' as two paints. Divider lines and emoji-only lines are skipped. Long notes read much faster, up to 20,000 characters at once.",
         "In the paste preview, ✕ leaves a step, a whole part or a note out, and ✎ changes a step's technique, mix ratio or paints before you save. Every change has Undo, and Read again brings back what you pasted.",
