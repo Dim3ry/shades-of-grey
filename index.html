@@ -580,6 +580,9 @@
     .paint-text { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
     .swatch.big { width: 36px; height: 36px; }
     .paint-item .panel { margin-top: 10px; }
+    /* v18c-2: Remove and Merge into… under an open paint. */
+    .merge-box { display: grid; gap: 8px; }
+    .merge-pick { width: 100%; }
     .paint-edit-row { display: grid; grid-template-columns: 44px 1fr 1fr; gap: 8px; }
     .paint-edit-row input[type=color] { width: 44px; height: 44px; padding: 3px; cursor: pointer; }
     @media (max-width: 420px) {
@@ -1060,9 +1063,9 @@
         <details id="about">
           <summary>About</summary>
           <ul>
-            <li><strong>Unofficial fan-made tool, not affiliated with or endorsed by Games Workshop.</strong> Warhammer, Warhammer 40,000 and Age of Sigmar are trademarks of Games Workshop Ltd, used here only to describe what the app works with.</li>
-            <li>The app holds no Games Workshop artwork, rules, points or unit lists. Everything in it is what you type, import or photograph yourself.</li>
-            <li>Your data stays on this device. There's no account and nothing is sent anywhere, except what you choose to write in the feedback form.</li>
+            <li><strong>Unofficial fan-made tool, not affiliated with or endorsed by Games Workshop.</strong> No Games Workshop artwork, rules, points or stats.</li>
+            <li>The app knows paint and faction names so it can recognise what you type or scan. Citadel, Warhammer and faction and paint names are trademarks of Games Workshop Ltd, used only to identify those products.</li>
+            <li>Your data stays on this device. There's no account, and nothing you add is sent anywhere, except what you choose to write in the feedback form. The first time you scan a paint pot, the app downloads its free text-reading tool from the web; your photo never leaves your phone.</li>
             <li><strong>Contact:</strong> use <strong>Give feedback</strong> on the Updates tab. Every message is read.</li>
           </ul>
         </details>
@@ -5839,6 +5842,7 @@
       for (const r of usedIn) chips.appendChild(recipeChip(r, () => openRecipe(r.id)));
       field.appendChild(chips);
       panel.appendChild(field);
+      panel.appendChild(buildPaintActions(paint, usedIn));   // v18c-2
       item.appendChild(panel);
       return item;
     }
@@ -5858,17 +5862,127 @@
           renderPalette();
           return;
         }
-        for (const r of book.recipes) for (const s of r.steps) for (const sp of s.paints) if (sp.paint === paint.id) sp.paint = twin.id;
-        if (twin.colour === DEFAULT_PAINT_COLOUR) twin.colour = paint.colour;
-        openPaintIds.delete(paint.id);
-        openPaintIds.add(twin.id);
-        pruneUnusedPaints();
+        paint[field] = old;   // so a typo you merge away is remembered as shorthand
+        joinPaints(paint, twin);
         render();
         showToast(`Merged into ${twin.name}`);
         return;
       }
       render();
       showToast(`Saved ${paint.name}`);
+    }
+
+    // ================= v18c-2: REMOVE AND MERGE PAINTS =================
+    // Folds paint "from" into paint "into": every recipe step that used "from" uses "into",
+    // and "from" leaves your palette. "into" keeps its own details; it only takes the status,
+    // colour or material type from "from" where it had none. The old name is remembered, so
+    // pasting it again finds "into" straight away.
+    function joinPaints(from, into) {
+      for (const r of book.recipes) for (const s of r.steps) for (const sp of s.paints) if (sp.paint === from.id) sp.paint = into.id;
+      if (!paintStatus(into) && paintStatus(from)) {
+        for (const k of ["status", "owned", "spare", "qty"]) if (k in from) into[k] = from[k];
+      }
+      if (into.colour === DEFAULT_PAINT_COLOUR && from.colour !== DEFAULT_PAINT_COLOUR) into.colour = from.colour;
+      if (from.type && !into.type) into.type = from.type;
+      repointShorthand(from, into);
+      rememberShorthand(from.name, into);
+      book.paints = book.paints.filter(p => p !== from);
+      openPaintIds.delete(from.id);
+      openPaintIds.add(into.id);
+      if (importReviewIds) importReviewIds = importReviewIds.filter(id => id !== from.id);
+    }
+
+    // Remembered shorthand that pointed at "from" now points at "into" (or is forgotten, with no "into").
+    function repointShorthand(from, into) {
+      const out = {};
+      for (const [k, v] of Object.entries(book.shorthand || {})) {
+        if (!(sameText(v.name, from.name) && sameText(v.brand, from.brand))) out[k] = v;
+        else if (into) out[k] = { brand: into.brand || "", name: into.name };
+      }
+      book.shorthand = out;
+    }
+
+    // "Merge into…": pick the paint this one is a copy of. Undo puts everything back.
+    function mergePaintInto(from, into) {
+      if (!from || !into || from === into) return;
+      const before = JSON.stringify(book);
+      joinPaints(from, into);
+      render();
+      showToast(`Merged ${from.name} into ${into.name}`, () => { book = cleanRecipeBook(JSON.parse(before)); render(); });
+    }
+
+    // "Remove": only for a paint no recipe uses. Undo puts it back.
+    function removePaint(paint) {
+      if (!paint || recipesUsingPaint(paint.id).length) return;
+      const before = JSON.stringify(book);
+      book.paints = book.paints.filter(p => p !== paint);
+      repointShorthand(paint, null);
+      openPaintIds.delete(paint.id);
+      if (importReviewIds) importReviewIds = importReviewIds.filter(id => id !== paint.id);
+      render();
+      showToast(`Removed ${paint.name}`, () => { book = cleanRecipeBook(JSON.parse(before)); render(); });
+    }
+
+    // The Remove and Merge into… buttons at the bottom of an open paint.
+    function buildPaintActions(paint, usedIn) {
+      const wrap = document.createElement("div");
+      wrap.className = "panel-field paint-actions";
+      const buttons = document.createElement("div");
+      buttons.className = "panel-buttons";
+
+      const others = book.paints.filter(p => p !== paint)
+        .sort((a, b) => a.name.localeCompare(b.name) || (a.brand || "").localeCompare(b.brand || ""));
+      const mergeBox = document.createElement("div");
+      mergeBox.className = "merge-box hidden";
+      if (others.length) {
+        const merge = document.createElement("button");
+        merge.className = "plain-button";
+        merge.textContent = "Merge into…";
+        buttons.appendChild(merge);
+
+        const label = document.createElement("label");
+        label.textContent = `A misspelt copy? Pick the right paint. Recipes using ${paint.name} will use that one instead.`;
+        const pick = document.createElement("select");
+        pick.className = "merge-pick";
+        pick.setAttribute("aria-label", `Merge ${paint.name} into`);
+        pick.appendChild(new Option("Choose a paint…", ""));
+        label.appendChild(pick);
+        // The list of paints is only built when you tap Merge into… (a paste import opens
+        // every new paint at once, and each one carrying the whole list would be a lot).
+        merge.addEventListener("click", () => {
+          if (pick.options.length === 1) {
+            for (const p of others) pick.appendChild(new Option(p.brand ? `${p.name} (${p.brand})` : p.name, String(p.id)));
+          }
+          mergeBox.classList.toggle("hidden");
+          if (!mergeBox.classList.contains("hidden")) pick.focus();
+        });
+        const go = document.createElement("button");
+        go.className = "primary-button merge-go";
+        go.textContent = "Merge";
+        go.disabled = true;
+        pick.addEventListener("change", () => { go.disabled = !pick.value; });
+        go.addEventListener("click", () => mergePaintInto(paint, paintById(Number(pick.value))));
+        mergeBox.append(label, go);
+      }
+
+      if (!usedIn.length) {
+        const remove = document.createElement("button");
+        remove.className = "danger-button";
+        remove.textContent = "Remove";
+        remove.setAttribute("aria-label", `Remove ${paint.name} from your palette`);
+        remove.addEventListener("click", () => removePaint(paint));
+        buttons.appendChild(remove);
+      }
+      wrap.appendChild(buttons);
+      if (usedIn.length) {
+        const hint = document.createElement("p");
+        hint.className = "hint";
+        hint.style.margin = "0";
+        hint.textContent = "Only paints in no recipes can be removed.";
+        wrap.appendChild(hint);
+      }
+      wrap.appendChild(mergeBox);
+      return wrap;
     }
 
     paintSort.addEventListener("change", () => { settings.paintSort = paintSort.value; saveSettings(); renderPalette(); });
