@@ -615,6 +615,11 @@
     .import-part { font-weight: 600; color: var(--accent); margin: 14px 0 4px; }
     .import-steps { margin: 0; padding-left: 22px; font-size: 14px; line-height: 1.5; }
     .import-steps li { margin-bottom: 4px; }
+    /* v18d-1: a step's words, with its ✕ (leave it out) on the right */
+    .import-line { display: flex; align-items: flex-start; gap: 8px; }
+    .import-line-body { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+    .import-remove { width: 32px; height: 32px; font-size: 13px; border-radius: 8px; margin-top: -4px; }
+    @media (max-width: 400px) { .import-remove { width: 32px; height: 32px; } }
     .import-tech { color: var(--muted); margin-right: 6px; }
     .import-paint.unsure { background: rgba(196, 181, 253, 0.18); color: #c4b5fd; border: 1px dashed #c4b5fd; border-radius: 6px; padding: 0 5px; }
     .import-paint.resolved { color: #c4b5fd; }
@@ -6558,6 +6563,7 @@
       const d = importDraft;
       d.cut = d.text.length > PASTE_LIMIT;
       d.parsed = parseRecipeText(d.text.slice(0, PASTE_LIMIT));
+      d.trimmed = false;   // v18d-1: no steps left out yet
       d.groups = unsureMentions(d.parsed);
       d.names = d.parsed.schemes.map(s => s.name || "Imported recipes");
       renderImport();
@@ -6608,9 +6614,14 @@
           ${PASTE_LIMIT.toLocaleString("en-GB")} characters were read. Paste the rest separately.</p>`);
       }
       if (!d.parsed.schemes.length) {
-        card.insertAdjacentHTML("beforeend", '<p class="hint" style="margin: 12px 0 0;">No recipes found in that text.</p>');
+        card.insertAdjacentHTML("beforeend", d.trimmed
+          ? '<p class="hint" style="margin: 12px 0 0;">You\'ve left every step out, so there\'s nothing to save. Tap Read again to bring them all back.</p>'
+          : '<p class="hint" style="margin: 12px 0 0;">No recipes found in that text.</p>');
         return;
       }
+      // v18d-1
+      card.insertAdjacentHTML("beforeend", '<p class="hint import-remove-hint" style="margin: 12px 0 0;">Something read wrong? ' +
+        'Tap ✕ on a step to leave it out. Read again brings every step back.</p>');
 
       // 1. The paints it wasn't sure about. Nothing is picked for you.
       const left = d.groups.filter(g => !g.choice).length;
@@ -6665,7 +6676,7 @@
         nameBox.addEventListener("input", () => { d.names[si] = nameBox.value; });
         nameLabel.appendChild(nameBox);
         sc.appendChild(nameLabel);
-        for (const part of scheme.parts) {
+        for (const [pi, part] of scheme.parts.entries()) {
           const head = document.createElement("div");
           head.className = "import-part";
           head.textContent = part.name;
@@ -6678,16 +6689,30 @@
           }
           const ol = document.createElement("ol");
           ol.className = "import-steps";
-          for (const step of part.steps) {
+          for (const [ti, step] of part.steps.entries()) {
             const li = document.createElement("li");
             if (step.optional) li.classList.add("optional-step");
+            // v18d-1: the step's words on the left, a ✕ to leave it out on the right.
+            const line = document.createElement("div");
+            line.className = "import-line";
+            const body = document.createElement("div");
+            body.className = "import-line-body";
+            const remove = document.createElement("button");
+            remove.type = "button";
+            remove.className = "icon-button remove import-remove";
+            remove.textContent = "✕";
+            remove.title = "Leave this step out";
+            remove.setAttribute("aria-label", `Leave out ${importStepLabel(step)} from ${part.name}`);
+            remove.addEventListener("click", () => removeImportStep(si, pi, ti));
+            line.append(body, remove);
+            li.appendChild(line);
             const paints = step.paints.map(importPaintFor);
             const tech = document.createElement("span");
             tech.className = "import-tech";
             tech.textContent = step.technique || `${guessTechnique(paints.filter(Boolean)) || "Step"} (auto)`;
-            li.appendChild(tech);
+            body.appendChild(tech);
             step.paints.forEach((m, i) => {
-              if (i) li.append(" + ");
+              if (i) body.append(" + ");
               const span = document.createElement("span");
               const paint = paints[i];
               if (m.status === "unsure") {
@@ -6698,12 +6723,12 @@
                 // v18: never read .name of nothing (that stopped the whole preview).
                 span.textContent = (paint ? paint.name : m.typed) + (m.status === "new" ? " (new)" : "");
               }
-              li.appendChild(span);
+              body.appendChild(span);
             });
             const extra = [step.ratio ? `mix ${step.ratio}` : "", step.coats > 1 ? coatsText(step.coats) : "",
                            step.optional ? "(optional)" : ""].filter(Boolean).join(" · ");
-            if (extra) { const s = document.createElement("small"); s.textContent = ` · ${extra}`; li.appendChild(s); }
-            if (step.note) { const n = document.createElement("div"); n.className = "step-note"; n.textContent = step.note; li.appendChild(n); }
+            if (extra) { const s = document.createElement("small"); s.textContent = ` · ${extra}`; body.appendChild(s); }
+            if (step.note) { const n = document.createElement("div"); n.className = "step-note"; n.textContent = step.note; body.appendChild(n); }
             ol.appendChild(li);
           }
           sc.appendChild(ol);
@@ -6725,6 +6750,76 @@
       save.textContent = left ? `Pick ${plural(left, "more paint")} first` : `Save ${plural(importCount(d), "recipe")}`;
       save.addEventListener("click", saveImport);
       importPage.appendChild(save);
+    }
+
+    // ================= v18d-1: LEAVE A STEP OUT OF THE PASTE PREVIEW =================
+    // Each step line in the preview has a ✕. It takes that step out of what will be saved
+    // (your pasted notes in the box stay as they were, so Read again brings it back).
+    // A part with no steps left goes too, and a scheme with no parts left. Undo puts it back.
+
+    // A short name for a step, for the ✕ button's label and the message: its paints, or else
+    // its technique, or else its note.
+    function importStepLabel(step) {
+      const names = step.paints.map(m => { const p = importPaintFor(m); return p ? p.name : m.typed; }).filter(Boolean);
+      const text = names.length ? names.join(" + ") : (step.technique || step.note || "this step");
+      return text.length > 60 ? text.slice(0, 57) + "…" : text;
+    }
+    // The preview's shape (which schemes, parts and steps), so Undo can put it back exactly.
+    function importSnapshot(d) {
+      return { names: d.names.slice(), groups: d.groups, trimmed: d.trimmed,
+               schemes: d.parsed.schemes.map(s => [s, s.parts.map(p => [p, p.steps.slice()])]) };
+    }
+    // Rebuilds the "Check N paints" list after steps are left out or put back, so a paint that
+    // was only in a removed step stops holding up Save. Answers you'd already given are kept.
+    function regroupImport(d, ...older) {
+      d.groups = unsureMentions(d.parsed);
+      for (const g of d.groups) for (const list of older) {
+        const had = list.find(x => x.key === g.key && x.choice);
+        if (had) { g.choice = had.choice; break; }
+      }
+    }
+    function removeImportStep(si, pi, ti) {
+      const d = importDraft;
+      const scheme = d && d.parsed && d.parsed.schemes[si];
+      const part = scheme && scheme.parts[pi];
+      if (!part || !part.steps[ti]) return;
+      const label = importStepLabel(part.steps[ti]);
+      const before = importSnapshot(d);
+      // Which ✕ had focus (counting from the top), so the next one can take it.
+      const all = [...importPage.querySelectorAll(".import-remove")];
+      const at = all.indexOf(document.activeElement);
+      part.steps.splice(ti, 1);
+      let message = `Left out “${label}” from ${part.name}`;
+      if (!part.steps.length) {
+        scheme.parts.splice(pi, 1);
+        message = `Left out “${label}”. ${part.name} had no steps left, so it's left out too`;
+      }
+      if (!scheme.parts.length) { d.parsed.schemes.splice(si, 1); d.names.splice(si, 1); }
+      d.trimmed = true;
+      regroupImport(d, before.groups);
+      renderImport();
+      if (at >= 0) {
+        const next = [...importPage.querySelectorAll(".import-remove")];
+        const el = next[Math.min(at, next.length - 1)] || document.getElementById("import-text");
+        if (el) el.focus();
+      }
+      showToast(message, () => {
+        if (importDraft !== d) return;   // the paste screen was closed or saved since
+        const now = d.groups;
+        // Keep any scheme name typed since; a scheme that had gone gets its old name back.
+        const names = before.schemes.map(([s], i) => {
+          const j = d.parsed.schemes.indexOf(s);
+          return j >= 0 ? d.names[j] : before.names[i];
+        });
+        d.parsed.schemes = before.schemes.map(([s, parts]) => {
+          s.parts = parts.map(([p, steps]) => { p.steps = steps; return p; });
+          return s;
+        });
+        d.names = names;
+        d.trimmed = before.trimmed;
+        regroupImport(d, now, before.groups);
+        renderImport();
+      });
     }
 
     function saveImport() {
