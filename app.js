@@ -3123,6 +3123,9 @@
 
     // Which units have their details panel open. Not saved.
     const openIds = new Set();
+    // v23: units whose folded "Edit details" section is open. Not saved: only for this visit.
+    // Every change redraws the panel, so without this the section would shut after each edit.
+    const editOpenIds = new Set();
 
     function fillSelect(select, label, values, current) {
       select.innerHTML = "";
@@ -3325,7 +3328,8 @@
       info.append(name, details, stage, pips);
       const toggle = () => {
         if (selectMode) { toggleTick(model.id); return; }   // v21.1: in select mode a tap ticks
-        if (openIds.has(model.id)) openIds.delete(model.id); else openIds.add(model.id);
+        // v23: closing a unit also puts its "Edit details" section away again.
+        if (openIds.has(model.id)) { openIds.delete(model.id); editOpenIds.delete(model.id); } else openIds.add(model.id);
         render();
       };
       info.addEventListener("click", toggle);
@@ -3398,7 +3402,11 @@
         (to) => jumpToStage(model.id, to), spread ? "Mixed stages" : "");
       stageMenu.classList.add("jump-stage");
       stageLabel.appendChild(stageMenu);
-      panel.append(nameEdit, editRow, stageLabel);
+      // v23: PANEL ORDER. What people use most comes first: stage, (each model's stage),
+      // photos, recipes, notes. The edit boxes are collected in editFields and put away in
+      // one closed "Edit details" section further down (see the end of this function).
+      panel.append(stageLabel);
+      const editFields = [nameEdit, editRow];
 
       // Nickname: saves as you type ("input"), redraws when you leave the box ("change").
       const nicknameLabel = document.createElement("label");
@@ -3447,7 +3455,7 @@
       note.addEventListener("blur", save);
       noteLabel.appendChild(note);
 
-      panel.append(nicknameLabel, extras);
+      editFields.push(nicknameLabel, extras);
 
       // Track each model separately (only makes sense with 2 or more models).
       if ((model.count || 1) > 1) {
@@ -3458,7 +3466,7 @@
         eachBox.checked = !!model.each;
         eachBox.addEventListener("change", () => setEach(model, eachBox.checked));
         eachLabel.append(eachBox, "Track each model separately (for painting one at a time)");
-        panel.appendChild(eachLabel);
+        editFields.push(eachLabel);
       }
 
       if (model.each) {
@@ -3502,7 +3510,8 @@
         panel.appendChild(list);
       }
 
-      panel.appendChild(noteLabel);
+      // Photos come straight after the stage (v23), then recipes, then the scheme notes.
+      panel.appendChild(buildGallery(model));
 
       // Paint recipes: linked ones (tap to open, ✕ to unlink), and a menu to link more.
       const recipeField = document.createElement("div");
@@ -3544,7 +3553,28 @@
       recipeField.appendChild(recipePicker);
       panel.appendChild(recipeField);
 
-      panel.appendChild(buildGallery(model));
+      panel.appendChild(noteLabel);
+
+      // v23: the edit boxes live in ONE closed section with a clear label, one tap away.
+      // It's a real <details>, so the keyboard and screen readers work without extra code.
+      // Whether it is open is remembered per unit (editOpenIds) so a redraw doesn't shut it.
+      const editSection = document.createElement("details");
+      editSection.className = "edit-details";
+      const editSummary = document.createElement("summary");
+      editSummary.textContent = "Edit details";
+      const editHint = document.createElement("span");
+      editHint.className = "edit-details-hint";
+      editHint.textContent = "name, game, faction, nickname, models";
+      editSummary.appendChild(editHint);
+      const editBody = document.createElement("div");
+      editBody.className = "edit-details-body";
+      editBody.append(...editFields);
+      editSection.append(editSummary, editBody);
+      editSection.open = editOpenIds.has(model.id);
+      editSection.addEventListener("toggle", () => {
+        if (editSection.open) editOpenIds.add(model.id); else editOpenIds.delete(model.id);
+      });
+      panel.appendChild(editSection);
 
       const buttons = document.createElement("div");
       buttons.className = "panel-buttons";
@@ -9397,10 +9427,14 @@
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
     // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=22". v21.4 test checks.)
-    const APP_VERSION = "v22";
+    const APP_VERSION = "v23";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v23", date: "11 Oct 2026", changes: [
+        "A unit's details now start with what you use most: its stage, then photos, recipes and paint notes.",
+        "The boxes for changing the unit (name, game, faction, nickname, number of models, repaint and tracking each model) are folded away under one \u201cEdit details\u201d heading. Tap it to open them; it stays open while you make changes.",
+      ]},
       { version: "v22", date: "11 Oct 2026", changes: [
         "Backups now come first on the Settings page, in their own Backups card, so they're easy to find.",
         "New Send backup to… button. It opens your phone's share menu, so you can put the backup straight into OneDrive, an email or a message. It sends the same small backup as Save backup (no photos), and the app itself still sends nothing anywhere. If your phone can't send files from here, or sending fails, the backup is saved to your device instead and the app tells you.",

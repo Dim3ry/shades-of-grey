@@ -39,7 +39,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=22"></script>
+  <script src="early.js?v=23"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -459,6 +459,16 @@
     .photo { width: 100%; max-height: 320px; object-fit: cover; border-radius: 8px; }
     .panel-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
     .panel-buttons .danger-button { margin-left: auto; }
+    /* v23: the edit boxes (name, game, faction, nickname, models...) are folded away in one
+       closed section under the stage, photos, recipes and notes. */
+    .panel .edit-details { border-top: 1px solid var(--border); }
+    .edit-details summary {
+      display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px;
+      min-height: 44px; box-sizing: border-box; padding: 10px 0;
+      color: var(--accent); font-size: 15px; font-weight: 600; cursor: pointer;
+    }
+    .edit-details-hint { font-size: 12px; font-weight: 400; color: var(--muted); }
+    .edit-details-body { display: grid; gap: 12px; padding: 4px 0 6px; }
 
     /* ----- Photo gallery / progress timeline (v11) ----- */
     .gallery { display: grid; gap: 8px; font-size: 13px; color: var(--muted); }
@@ -1247,7 +1257,8 @@
             <li id="help-model-dates"><strong>When did it get there?</strong> If you track each model separately, each model says under its name when it reached its stage: <strong>Today</strong>, <strong>Yesterday</strong>, or <strong>Since 7 Oct</strong> (with the year added for an earlier year). Hold or long-press the date to see it in full. A model with no date shown has no record of when it moved.</li>
             <li id="help-typing"><strong>Typing:</strong> while the cursor is in a text box, the tab bar at the bottom hides so it can't sit on your keyboard. Tap somewhere else and it comes back.</li>
             <li id="help-move-many"><strong>Move several units at once:</strong> on the Units tab press <strong>Select</strong>. Each unit gets a tick box (tapping a unit ticks it). Tick the ones you want, or press <strong>Select all shown</strong> to tick every unit your filters are showing. Then pick a stage from <strong>Move … to stage</strong> in the bar at the bottom. Units tracked model by model have all their models moved. One <strong>Undo</strong> puts every unit back as it was, diary included. <strong>Cancel</strong>, the phone's Back button or leaving the tab stops selecting without changing anything.</li>
-            <li>Tap a unit's name to open its details: nickname, model count, repaint flag, paint notes, photos, <strong>back a stage</strong>, and delete.</li>
+            <li>Tap a unit's name to open its details: its <strong>stage</strong>, photos, paint recipes and paint notes, then <strong>back a stage</strong> and delete.</li>
+            <li id="help-edit-details"><strong>Changing a unit:</strong> the boxes for its name, game, faction, nickname, number of models, repaint flag and <strong>Track each model separately</strong> are folded away under <strong>Edit details</strong>, near the bottom of its details. Tap it to open them. It stays open while you make changes, and shuts when you open the unit again later.</li>
             <li id="help-questions"><strong>Questions:</strong> when the app needs to check before doing something (deleting, replacing, leaving a recipe you haven't saved) or needs a name from you, it asks in its own small box over the page. Tap <strong>Yes</strong> or <strong>No</strong>, or type the name and tap <strong>OK</strong>. <strong>No</strong>, <strong>Cancel</strong>, the <strong>Escape</strong> key and the phone's <strong>Back</strong> button all mean no, and nothing changes. On a keyboard, <strong>Enter</strong> means yes.</li>
             <li id="help-delete-unit"><strong>Deleting a unit:</strong> press <strong>Delete</strong> in its details and say yes. Changed your mind? Press <strong>Undo</strong> on the message that appears (it stays about 8 seconds): the unit comes back exactly as it was, photos, recipes and diary included.</li>
             <li>Use the game and faction menus and the stage chips to filter the list. Tap several stage chips to combine them.</li>
@@ -1640,7 +1651,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=22" makes phones fetch the new file after an update instead of an old saved one. -->
-  <script src="app.js?v=22"></script>
+       The "?v=23" makes phones fetch the new file after an update instead of an old saved one. -->
+  <script src="app.js?v=23"></script>
 </body>
 </html>

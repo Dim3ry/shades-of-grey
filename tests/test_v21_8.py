@@ -402,7 +402,9 @@ def main():
         # Boxes that don't open a keyboard don't hide the bar.
         tab(page, "units")
         open_unit(page, 1)
-        box = page.locator('#view-units li.unit[data-id="1"] .panel input[type="checkbox"]').first
+        # v23: the tick boxes and the nickname are folded under "Edit details"; open it first.
+        page.locator('#view-units li.unit[data-id="1"] .panel details.edit-details > summary').click()
+        box = page.locator('#view-units li.unit[data-id="1"] .panel .edit-details-body input[type="checkbox"]').first
         if box.count():
             box.focus()
             check("a tick box with the cursor doesn't hide the tab bar", not typing(page) and not tabs_hidden(page))

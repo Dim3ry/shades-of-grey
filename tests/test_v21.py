@@ -229,7 +229,9 @@ def main():
         seed(page, fresh=True)
         tab(page, "units")
         open_unit(page, 1)
-        name_box = page.locator(f'{card(page, 1)} .panel input').first
+        # v23: the edit boxes are folded under "Edit details"; open it first, like a real user.
+        page.locator(f'{card(page, 1)} .panel details.edit-details > summary').click()
+        name_box = page.locator(f'{card(page, 1)} .panel .edit-details-body input').first
         name_box.fill("Lieutenant")
         name_box.dispatch_event("change")
         page.wait_for_timeout(150)
