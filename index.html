@@ -39,7 +39,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=21.4"></script>
+  <script src="early.js?v=21.5"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -331,7 +331,17 @@
     }
     .unit-tick input { width: 24px; height: 24px; margin: 0; accent-color: var(--accent); cursor: pointer; }
     li.unit.ticked { box-shadow: 0 0 0 2px var(--accent); }
+    /* v21.5: a unit you've just added is outlined for a moment, then fades back. */
+    li.unit.just-added { box-shadow: 0 0 0 3px var(--accent); animation: just-added 2.5s ease-out forwards; }
+    @keyframes just-added {
+      0%, 60% { box-shadow: 0 0 0 3px var(--accent); }
+      100% { box-shadow: 0 0 0 3px transparent; }
+    }
+    @media (prefers-reduced-motion: reduce) { li.unit.just-added { animation: none; } }
     body.selecting { padding-bottom: calc(210px + env(safe-area-inset-bottom)); }
+    /* v21.5: room under the last unit, so it can scroll clear of the message above the tab
+       bar (a new unit is scrolled into view there, and Undo no longer covers the last ▲). */
+    #view-units { padding-bottom: 64px; }
     .select-bar {
       position: fixed; left: 16px; right: 16px;
       bottom: calc(74px + env(safe-area-inset-bottom));
@@ -1173,10 +1183,12 @@
             <li><strong>+ Add unit</strong> on the Units tab. The number box is how many models are in the unit (up to 999; tracking each model separately works for up to 100).</li>
             <li>Add the same unit twice (same name, game and faction) and they're numbered for you: Intercessors 1, Intercessors 2.</li>
             <li><strong>Starting stage</strong> in the Add form puts a new unit straight at the stage it's really at (it stays picked for the next unit you add).</li>
+            <li id="help-new-unit-shown">Each new unit is <strong>scrolled into view</strong> and outlined for a moment, so you can see where it went in the list.</li>
             <li>Press <strong>▲</strong> to move a unit up a stage. Made a mistake? Press <strong>Undo</strong> on the message that pops up.</li>
             <li id="help-jump-stage"><strong>Jump to a stage:</strong> tap a unit's name and pick from its <strong>Stage</strong> menu, to go straight to any stage (forwards or back). If you track each model separately, each model has its own stage menu, and <strong>Move all models to stage</strong> moves them all at once. Every jump has an <strong>Undo</strong>.</li>
             <li id="help-move-many"><strong>Move several units at once:</strong> on the Units tab press <strong>Select</strong>. Each unit gets a tick box (tapping a unit ticks it). Tick the ones you want, or press <strong>Select all shown</strong> to tick every unit your filters are showing. Then pick a stage from <strong>Move … to stage</strong> in the bar at the bottom. Units tracked model by model have all their models moved. One <strong>Undo</strong> puts every unit back as it was, diary included. <strong>Cancel</strong>, the phone's Back button or leaving the tab stops selecting without changing anything.</li>
             <li>Tap a unit's name to open its details: nickname, model count, repaint flag, paint notes, photos, <strong>back a stage</strong>, and delete.</li>
+            <li id="help-delete-unit"><strong>Deleting a unit:</strong> press <strong>Delete</strong> in its details and say yes. Changed your mind? Press <strong>Undo</strong> on the message that appears (it stays about 8 seconds): the unit comes back exactly as it was, photos, recipes and diary included.</li>
             <li>Use the game and faction menus and the stage chips to filter the list. Tap several stage chips to combine them.</li>
           </ul>
         </details>
@@ -1539,7 +1551,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=21.4" makes phones fetch the new file after an update instead of an old saved one. -->
-  <script src="app.js?v=21.4"></script>
+       The "?v=21.5" makes phones fetch the new file after an update instead of an old saved one. -->
+  <script src="app.js?v=21.5"></script>
 </body>
 </html>

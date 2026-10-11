@@ -2289,6 +2289,9 @@
     // ticked = the ids of the ticked units. Neither is saved: it's only for this visit.
     let selectMode = false;
     const ticked = new Set();
+    // v21.5: the unit just added (outlined for a moment; see showNewUnit()). Not saved.
+    let justAddedId = null;
+    let justAddedTimer = null;
 
     function clearFilters() {
       filters.hobby = "";
@@ -3214,6 +3217,7 @@
       const item = document.createElement("li");
       item.className = "unit";
       item.dataset.id = model.id;   // so we can scroll to it from a recipe
+      if (model.id === justAddedId) item.classList.add("just-added");   // v21.5
       item.style.setProperty("--stage-colour", `var(--stage-${model.stage})`);
       const isOpen = openIds.has(model.id) && !selectMode;
 
@@ -3913,15 +3917,44 @@
       }, "Undo", 8);
     }
 
+    // v21.5: deleting a unit still asks first, then offers Undo (8 seconds), like
+    // deleting a photo. Undo puts the unit back exactly as it was, in the same place in
+    // the list, details open if they were. Its photo FILES are only deleted once the Undo
+    // message has gone (and only if no unit uses them again), so Undo brings photos back.
+    // If the save fails (storage full), the files are left alone: the unit would come
+    // back from the old saved copy next time, and it should still have its photos.
+    // "Clean up photo storage" in Settings can tidy any left behind.
+    const DELETE_UNIT_SECONDS = 8;
     function deleteModel(id) {
       const model = models.find(m => m.id === id);
-      if (model && confirm(`Delete "${displayName(model)}"?`)) {
-        models = models.filter(m => m.id !== id);
-        openIds.delete(id);
-        render();
-        // Its photo files go too.
-        for (const photoId of photoIds(model)) { forgetUrls(photoId); deletePhotoFile(photoId); }
-      }
+      if (!model || !confirm(`Delete "${displayName(model)}"?`)) return;
+      const spot = models.indexOf(model);
+      const wasOpen = openIds.has(id);
+      const files = photoIds(model);
+      models = models.filter(m => m !== model);
+      openIds.delete(id);
+      for (const f of files) pendingPhotoDeletes.add(f);
+      const photosText = files.length ? ` and ${files.length === 1 ? "its photo" : "its " + files.length + " photos"}` : "";
+      const saved = commit(`Deleted ${displayName(model)}${photosText}`, () => {
+        if (!models.includes(model)) {
+          // Very rare: a unit added since took this id number. Give this one a new number.
+          if (models.some(m => m.id === model.id)) model.id = nextId();
+          models.splice(Math.min(spot, models.length), 0, model);
+        }
+        for (const f of files) pendingPhotoDeletes.delete(f);
+        if (wasOpen) openIds.add(model.id);
+        commit(`${displayName(model)} is back`);
+      }, "Undo", DELETE_UNIT_SECONDS);
+      if (!saved) { for (const f of files) pendingPhotoDeletes.delete(f); return; }
+      setTimeout(() => {
+        for (const f of files) {
+          if (!pendingPhotoDeletes.has(f)) continue;     // Undo was pressed
+          pendingPhotoDeletes.delete(f);
+          if (models.some(m => photoIds(m).includes(f))) continue;
+          forgetUrls(f);
+          deletePhotoFile(f);
+        }
+      }, DELETE_UNIT_SECONDS * 1000 + 500);
     }
 
     // ================= THE PHOTO STORE (v10) =================
@@ -4585,11 +4618,44 @@
       if (!isVisible(newModel)) clearFilters();  // so a new unit never seems to vanish
       nameInput.value = "";
       countInput.value = 1;
-      nameInput.focus();
+      // preventScroll: keep the box ready for the next name without jumping back up to it.
+      nameInput.focus({ preventScroll: true });
       // Game, faction and starting stage stay filled in, since you'll often add several
       // from one army.
-      commit(`Added ${displayName(newModel)}`);   // v18c-3
+      justAddedId = newModel.id;   // v21.5: highlighted when the list is drawn
+      if (commit(`Added ${displayName(newModel)}`)) showNewUnit(newModel.id);   // v18c-3
     });
+
+    // v21.5: a newly added unit is brought into view and briefly outlined, instead of
+    // appearing somewhere off-screen. It scrolls only as far as needed (not at all if the
+    // card is already on screen), and stops ABOVE the tab bar and the "Added…" message at
+    // the bottom, which would otherwise cover it. Smooth unless the phone asks for less motion.
+    const JUST_ADDED_MS = 2500;
+    function showNewUnit(id) {
+      const card = list.querySelector(`li.unit[data-id="${id}"]`);
+      if (card) {
+        const gap = 12;
+        let bottom = window.innerHeight - gap;
+        for (const el of [document.querySelector(".tabs"), toast]) {
+          if (!el || el.classList.contains("hidden")) continue;
+          const r = el.getBoundingClientRect();
+          if (r.height && r.top > window.innerHeight / 2) bottom = Math.min(bottom, r.top - gap);   // only bars along the bottom
+        }
+        const box = card.getBoundingClientRect();
+        let by = 0;
+        if (box.bottom > bottom) by = box.bottom - bottom;     // below the clear area: scroll down
+        if (box.top - by < gap) by = box.top - gap;            // taller than the gap, or above: show its top
+        if (Math.abs(by) > 1) {
+          const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          window.scrollBy({ top: by, behavior: calm ? "auto" : "smooth" });
+        }
+      }
+      clearTimeout(justAddedTimer);
+      justAddedTimer = setTimeout(() => {
+        justAddedId = null;
+        list.querySelectorAll("li.unit.just-added").forEach(li => li.classList.remove("just-added"));
+      }, JUST_ADDED_MS);
+    }
 
     // ================= RECIPES TAB =================
 
@@ -8988,10 +9054,14 @@
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
     // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=21.4". v21.4 test checks.)
-    const APP_VERSION = "v21.4";
+    const APP_VERSION = "v21.5";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v21.5", date: "11 Oct 2026", changes: [
+        "Deleted a unit by mistake? Press Undo on the message that appears: it comes back exactly as it was, photos included. (The app still asks \"Are you sure?\" first.)",
+        "A unit you've just added is scrolled into view and outlined for a moment, instead of landing somewhere off-screen.",
+      ]},
       { version: "v21.4", date: "11 Oct 2026", changes: [
         "Safety: the app's code now lives in its own files, so your browser can refuse any code that isn't one of them, including code someone tried to slip into the page itself. Nothing you see or do has changed.",
       ]},
