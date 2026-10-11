@@ -2185,7 +2185,7 @@
     // Switch "track each model" on or off.
     function setEach(model, on) {
       if (on && model.count > MAX_EACH) {
-        alert(`Tracking each model works for units of up to ${MAX_EACH} models.`);
+        notify(`Tracking each model works for units of up to ${MAX_EACH} models.`);
         render();
         return;
       }
@@ -4119,13 +4119,13 @@
         const img = await loadImage(file);
         record = { id: newPhotoId(), full: await resizeToBlob(img, 1200, 0.82), thumb: await resizeToBlob(img, 240, 0.75) };
       } catch (error) {
-        alert("Sorry, that image couldn't be read.");
+        notify("Sorry, that image couldn't be read.");
         return;
       }
       try {
         await putPhoto(record);
       } catch (error) {
-        alert("The photo couldn't be saved. The device may be out of space, or this browser may block storage (e.g. a private window).");
+        notify("The photo couldn't be saved. The device may be out of space, or this browser may block storage (e.g. a private window).");
         return;
       }
       // A photo of one model records that model's own stage; otherwise the unit's.
@@ -4528,6 +4528,7 @@
 
     // The button usually says "Undo", but can say something else (e.g. "Back up").
     function showToast(message, undo, buttonLabel, seconds) {
+      delete toast.dataset.kind;   // v21.6: notify() marks a plain notice below; every other message is unmarked
       toastText.textContent = message;
       undoAction = undo || null;
       toastUndo.textContent = buttonLabel || "Undo";
@@ -4543,6 +4544,21 @@
       undoAction = null;
       toast.classList.add("hidden");
       if (action) action();
+    });
+
+    // v21.6: NOTICES. These used to be the browser's own pop-up boxes (alert). Now they use the
+    // same little message as everything else: no box to dismiss, nothing blocks the page.
+    // Longer messages stay up longer (about 1 second per 14 letters, between 6 and 20 seconds),
+    // and a tap on a notice hides it. (Questions that need a yes or no are still pop-ups for now:
+    // confirm and prompt move to an in-app dialog in v21.7.)
+    function notify(message, seconds) {
+      showToast(message, null, null, seconds || Math.min(20, Math.max(6, Math.ceil(message.length / 14))));
+      toast.dataset.kind = "notice";
+    }
+    toast.addEventListener("click", (event) => {
+      if (undoAction || event.target === toastUndo) return;   // a message with a button isn't hidden by a stray tap
+      clearTimeout(toastTimer);
+      toast.classList.add("hidden");
     });
 
     // ----- Filters and the add form -----
@@ -4889,7 +4905,7 @@
       box.innerHTML = "";
       for (const value of book[key]) {
         box.appendChild(makeChip(`${value}  ✕`, false, () => {
-          if (book[key].length <= 1) { alert(`Keep at least one ${word}.`); return; }
+          if (book[key].length <= 1) { notify(`Keep at least one ${word}.`); return; }
           book[key] = book[key].filter(v => v !== value);
           render();
         }));
@@ -5340,8 +5356,8 @@
       const d = schemeDraft;
       const name = d.name.trim();
       let faction = d.faction.trim();
-      if (!name) { alert("Give the scheme a name."); return; }
-      if (!faction) { alert("Pick the faction this scheme is for."); return; }
+      if (!name) { notify("Give the scheme a name."); return; }
+      if (!faction) { notify("Pick the faction this scheme is for."); return; }
       // Match the spelling your units already use, so "ultramarines" finds "Ultramarines".
       const existing = models.find(m => sameText(m.faction, faction));
       if (existing) faction = existing.faction;
@@ -6056,7 +6072,7 @@
     function saveRecipeDraft() {
       const d = recipeDraft;
       const name = d.name.trim();
-      if (!name) { alert("Give the recipe a name first."); return; }
+      if (!name) { notify("Give the recipe a name first."); return; }
       // Paints with no name are skipped. Each named paint is found (or added) in the paint list.
       // v18c: a paint new to your palette gets your "Do you own these?" answer (Owned to start with).
       const steps = d.steps.map(s => {
@@ -7479,7 +7495,7 @@
     });
 
     document.getElementById("add-stage").addEventListener("click", () => {
-      if (draft.length >= 10) { alert("You can have up to 10 stages."); return; }
+      if (draft.length >= 10) { notify("You can have up to 10 stages."); return; }
       draft.push({ name: "New stage", from: null });
       renderStageEditor();
       const inputs = stageList.querySelectorAll("input");
@@ -7495,9 +7511,9 @@
 
     document.getElementById("save-stages").addEventListener("click", () => {
       const names = draft.map(item => item.name.trim());
-      if (names.some(n => !n)) { alert("Every stage needs a name."); return; }
+      if (names.some(n => !n)) { notify("Every stage needs a name."); return; }
       const lower = names.map(n => n.toLowerCase());
-      if (new Set(lower).size !== lower.length) { alert("Each stage needs a different name."); return; }
+      if (new Set(lower).size !== lower.length) { notify("Each stage needs a different name."); return; }
 
       // Work out where each OLD stage now sits. "map[old] = new".
       const map = new Array(STAGES.length);
@@ -7541,7 +7557,7 @@
         settings.stages = STAGES = names;
         fixDoneFrom();
       });
-      if (!kept) { alert(fullMessage()); renderSettings(); return; }
+      if (!kept) { notify(fullMessage()); renderSettings(); return; }
       applyPalette(settings.palette);
       filters.stages = new Set();
       render();
@@ -7994,10 +8010,10 @@
       const restored = cleanRecipeBook(copy.book);
       if (!confirm(`Replace your current ${plural(book.recipes.length, "recipe")} with the ${plural(restored.recipes.length, "recipe")} in this copy? (Your units stay as they are.)`)) return;
       const before = JSON.stringify(book);
-      if (!changeAndSave(() => { book = restored; })) { alert(fullMessage()); return; }
+      if (!changeAndSave(() => { book = restored; })) { notify(fullMessage()); return; }
       afterBigChange();
       showToast(`Recovered ${plural(book.recipes.length, "recipe")}`, () => {
-        if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(before)); })) { alert(fullMessage()); return; }
+        if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(before)); })) { notify(fullMessage()); return; }
         afterBigChange();
       }, "Undo", 10);
     }
@@ -8017,7 +8033,7 @@
       if (!confirm(`Replace your current ${plural(models.length, "unit")} with the ${plural(units.length, "unit")} in this copy` +
           (recipesCopy ? " (and its recipes)" : "") + "?")) return;
       if (models.length && suffix !== "-before-recover" && !keepSafetyCopy("-before-recover")) {
-        alert("There isn't room on this device to keep a copy of your current units first, so nothing has changed. Please save a backup first.");
+        notify("There isn't room on this device to keep a copy of your current units first, so nothing has changed. Please save a backup first.");
         return;
       }
       const undoState = { models: JSON.stringify(models), book: JSON.stringify(book), stages: STAGES.slice(), doneFrom: settings.doneFrom };
@@ -8030,7 +8046,7 @@
           fixDoneFrom();
         }
       });
-      if (!kept) { alert(fullMessage()); return; }
+      if (!kept) { notify(fullMessage()); return; }
       afterBigChange();
       showToast(`Recovered ${plural(units.length, "unit")}`, () => {
         const back = changeAndSave(() => {
@@ -8040,7 +8056,7 @@
           settings.doneFrom = undoState.doneFrom;
           fixDoneFrom();
         });
-        if (!back) { alert(fullMessage()); return; }
+        if (!back) { notify(fullMessage()); return; }
         afterBigChange();
       }, "Undo", 10);
     }
@@ -8115,7 +8131,7 @@
           `(Settings → Recover earlier data), but please save a backup first.`)) return;
       // v14: STOP if the safety copy can't be kept, rather than delete with no safety net.
       if (!keepSafetyCopy("-before-delete-all")) {
-        alert("There isn't room on this device to keep a safety copy of your units, so nothing has been deleted. " +
+        notify("There isn't room on this device to keep a safety copy of your units, so nothing has been deleted. " +
               "Please press Save backup first, then delete some photos or units you no longer need.");
         return;
       }
@@ -8216,7 +8232,7 @@
         const count = Object.keys(backup.photoFiles).length;
         showToast(`Full backup saved with ${plural(count, "photo")}` + (missing ? ` (${missing} couldn't be read)` : ""));
       } catch (error) {
-        alert("Sorry, the full backup couldn't be made. Try Save backup (without photos) instead.");
+        notify("Sorry, the full backup couldn't be made. Try Save backup (without photos) instead.");
       }
       button.disabled = false;
       button.textContent = "Save full backup with photos";
@@ -8257,7 +8273,7 @@
     document.getElementById("banner-retry").addEventListener("click", () => {
       if (dataTooNew) { location.reload(); return; }
       if (saveAll()) showToast("Saved. Everything is up to date.");
-      else alert("Still full. Please save a backup, then free some space (delete photos or units you no longer need).");
+      else notify("Still full. Please save a backup, then free some space (delete photos or units you no longer need).");
     });
 
     const restoreFile = document.getElementById("restore-file");
@@ -8267,14 +8283,14 @@
       if (!file) return;
       // v19.1: refuse pictures and very large files before reading anything.
       const problem = fileProblem(file, "backup");
-      if (problem) { restoreFile.value = ""; alert(problem); return; }
+      if (problem) { restoreFile.value = ""; notify(problem); return; }
       readFile(file, (text) => {
         restoreFile.value = "";
         let parsed;
         try { parsed = JSON.parse(text); } catch (error) { parsed = null; }
         const isList = Array.isArray(parsed);   // the oldest backups are just a list of units
         if (!parsed || (!isList && typeof parsed !== "object")) {
-          alert("That file doesn't look like a Minifolio backup.");
+          notify("That file doesn't look like a Minifolio backup.");
           return;
         }
         // v19.1: each main part must be the right kind of thing (a list of units, a recipe
@@ -8284,19 +8300,19 @@
           (parsed.recipes !== undefined && (parsed.recipes === null || typeof parsed.recipes !== "object" || Array.isArray(parsed.recipes))) ||
           (parsed.photoFiles !== undefined && (parsed.photoFiles === null || typeof parsed.photoFiles !== "object" || Array.isArray(parsed.photoFiles))));
         if (wrongShape) {
-          alert("This backup is damaged (part of it isn't laid out the way Minifolio saves it), so it can't be restored safely. Nothing has changed.");
+          notify("This backup is damaged (part of it isn't laid out the way Minifolio saves it), so it can't be restored safely. Nothing has changed.");
           return;
         }
         // v18.3: a backup saved by a NEWER version of the app might hold things this copy
         // doesn't understand (and would drop), so it asks you to update first.
         if (!isList && Number(parsed.dataVersion) > DATA_VERSION) {
-          alert("This backup was saved by a newer version of Minifolio. Please reload the app to update it, then restore again. Nothing has changed.");
+          notify("This backup was saved by a newer version of Minifolio. Please reload the app to update it, then restore again. Nothing has changed.");
           return;
         }
         // v14: a damaged stage list (blank or repeated names, or more than 10) is refused,
         // because every unit's stage is a position in that list.
         if (!isList && parsed.stages !== undefined && !goodStageList(parsed.stages)) {
-          alert("This backup's list of stages is damaged (blank or repeated names, or more than 10), so it can't be restored safely. Nothing has changed.");
+          notify("This backup's list of stages is damaged (blank or repeated names, or more than 10), so it can't be restored safely. Nothing has changed.");
           return;
         }
         const backupStages = !isList && parsed.stages ? parsed.stages.map(String) : null;
@@ -8313,7 +8329,7 @@
         // v14: a backup with recipes but no units is fine too: it replaces only your recipes.
         const unitsToo = restored.length > 0;
         if (!unitsToo && !hasRecipes) {
-          alert("That file doesn't look like a Minifolio backup: it has no units or recipes in it.");
+          notify("That file doesn't look like a Minifolio backup: it has no units or recipes in it.");
           return;
         }
         const photoFiles = !isList && parsed.photoFiles && typeof parsed.photoFiles === "object" ? parsed.photoFiles : null;
@@ -8355,7 +8371,7 @@
             if (unitsToo && !isList && Array.isArray(parsed.customColours)) settings.customColours = cleanCustomColours(parsed.customColours);
             if (unitsToo && !isList && typeof parsed.useCustom === "boolean") settings.useCustom = parsed.useCustom;
           });
-          if (!kept) { alert(fullMessage()); return; }
+          if (!kept) { notify(fullMessage()); return; }
           recipeDraft = null;
           openRecipeId = null;
           openIds.clear();
@@ -8374,13 +8390,13 @@
             }
           }
           if (missing) {
-            alert(photoFiles
+            notify(photoFiles
               ? `Backup restored, but ${missing} of ${plural(needed, "photo")} couldn't be loaded on this device (${imported} of ${photoCount} in the file worked), so they won't show. Keep the backup file safe: you can restore it again later, for example after freeing some space.`
               : `Backup restored, but this backup was saved without photos, so ${plural(missing, "photo")} won't show on this device. Keep the backup file safe. To bring photos across, use Save full backup with photos on the other device.`);
           } else {
             if (unitsToo) showToast("Backup restored");
             else showToast(`Recipes restored (${plural(book.recipes.length, "recipe")})`, () => {
-              if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(recipesBefore)); })) { alert(fullMessage()); return; }
+              if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(recipesBefore)); })) { notify(fullMessage()); return; }
               afterBigChange();
               showToast("Your recipes are back as they were");
             }, "Undo", 10);
@@ -8481,14 +8497,14 @@
       if (!file) return;
       // v19.1: refuse pictures and very large files before reading anything.
       const problem = fileProblem(file, "csv");
-      if (problem) { csvFile.value = ""; alert(problem); return; }
+      if (problem) { csvFile.value = ""; notify(problem); return; }
       readFile(file, (text) => {
         csvFile.value = "";
-        if (!looksLikeText(text)) { alert(`"${file.name}" isn't a CSV file (it isn't plain text). Nothing has changed.`); return; }
+        if (!looksLikeText(text)) { notify(`"${file.name}" isn't a CSV file (it isn't plain text). Nothing has changed.`); return; }
         const read = csvToUnits(parseCSV(text.replace(/^﻿/, "")));   // ﻿: an invisible mark Excel adds
-        if (read.problem) { alert(read.problem); return; }
+        if (read.problem) { notify(read.problem); return; }
         const { units, unknownStages } = read;
-        if (!units.length) { alert("No units found in that file."); return; }
+        if (!units.length) { notify("No units found in that file."); return; }
         whPanel.classList.add("hidden");
         openReview({ source: "csv", title: `"${file.name}"`, rows: units, unknownStages: [...unknownStages] });
       });
@@ -8513,7 +8529,7 @@
       return /[",\n\r]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
     }
     document.getElementById("csv-export-button").addEventListener("click", () => {
-      if (!models.length) { alert("There are no units to export yet."); return; }
+      if (!models.length) { notify("There are no units to export yet."); return; }
       const header = "name,game,faction,stage,nickname,count,repaint,notes";
       const rows = models.map(m => [m.name, m.hobby, m.faction, STAGES[m.stage], m.nickname || "",
         m.count || 1, m.repaint ? "yes" : "no", m.note || ""].map(csvCell).join(","));
@@ -8868,7 +8884,7 @@
         // space), stop rather than carry on with no safety net.
         // (v14: kept for 30 days, with the stage list, and listed under Recover earlier data.)
         if (!keepSafetyCopy("-before-replace")) {
-          alert("There isn't room on this device to keep a safety copy of your current units, so nothing has been changed. Please press Save backup first, then try again.");
+          notify("There isn't room on this device to keep a safety copy of your current units, so nothing has been changed. Please press Save backup first, then try again.");
           return;
         }
       }
@@ -8931,7 +8947,7 @@
     document.getElementById("wh-read").addEventListener("click", () => {
       const list = parseWarhammerList(whText.value);
       if (!list) {
-        alert("That doesn't look like a list exported from the Warhammer app. Each unit should be a name followed by its points, e.g. \"Lictor (60 points)\".");
+        notify("That doesn't look like a list exported from the Warhammer app. Each unit should be a name followed by its points, e.g. \"Lictor (60 points)\".");
         return;
       }
       // Use the spelling of a faction you already have, and its game.
@@ -9053,11 +9069,15 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=21.4". v21.4 test checks.)
-    const APP_VERSION = "v21.5";
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=21.6". v21.4 test checks.)
+    const APP_VERSION = "v21.6";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v21.6", date: "11 Oct 2026", changes: [
+        "Notices no longer pop up as a plain browser box that you have to dismiss. \"That file doesn't look like a Minifolio backup\", \"Every stage needs a name\" and the rest now appear as the app's own message at the bottom of the screen. The words are the same, longer ones stay up longer, and a tap hides one.",
+        "Questions that need a yes or no (like \"Are you sure?\") still use the browser's box for now. They move into the app in the next update.",
+      ]},
       { version: "v21.5", date: "11 Oct 2026", changes: [
         "Deleted a unit by mistake? Press Undo on the message that appears: it comes back exactly as it was, photos included. (The app still asks \"Are you sure?\" first.)",
         "A unit you've just added is scrolled into view and outlined for a moment, instead of landing somewhere off-screen.",

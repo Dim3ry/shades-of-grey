@@ -13,6 +13,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import datetime, json, os, re, sys
 from playwright.sync_api import sync_playwright
+from notice_watch import attach_notices
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}/"
@@ -77,6 +78,7 @@ def main():
             dialogs.append(d.message)
             d.accept()
         page.on("dialog", on_dialog)
+        attach_notices(page, lambda text: dialogs.append(text))
         seed(page)
         version = page.evaluate("APP_VERSION")
         check("APP_VERSION is v18.3 or later", float(version[1:]) >= 18.3, version)
@@ -193,6 +195,7 @@ def main():
         page.on("pageerror", lambda e: errors.append(str(e)))
         dialogs = []
         page.on("dialog", on_dialog)
+        attach_notices(page, lambda text: dialogs.append(text))
         seed(page, OLD_BOOK)
         ronly = {"app": "Minifolio", "version": 6, "models": [], "recipes": BACKUP_BOOK}
         page.click("nav button[data-tab='settings']")
@@ -244,6 +247,7 @@ def main():
         page.on("pageerror", lambda e: errors.append(str(e)))
         dialogs = []
         page.on("dialog", on_dialog)
+        attach_notices(page, lambda text: dialogs.append(text))
         seed(page)
         page.evaluate("save()")
         dv = page.evaluate("DATA_VERSION")

@@ -16,6 +16,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from notice_watch import attach_notices
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}/"
@@ -96,6 +97,7 @@ def main():
             dialogs.append(d.message)
             d.accept()
         page.on("dialog", on_dialog)
+        attach_notices(page, lambda text: dialogs.append(text))
 
         # ---------- 1. Versions and kept things ----------
         print("--- 1. Versions and kept things ---")

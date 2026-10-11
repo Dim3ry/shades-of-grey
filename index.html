@@ -39,7 +39,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=21.5"></script>
+  <script src="early.js?v=21.6"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -570,6 +570,8 @@
       font-size: 14px;
       z-index: 20;
     }
+    /* v21.6: notices can be long; a long word or file name wraps instead of pushing the page sideways. */
+    .toast span { min-width: 0; overflow-wrap: anywhere; }
     /* v20: in light mode the toast is dark, so a faint outline keeps it clear over the (always dark) photo viewer. */
     :root[data-appearance="light"] .toast { box-shadow: 0 0 0 1px rgba(125, 211, 252, 0.45), 0 4px 14px var(--shadow); }
     .toast button { margin-left: auto; background: none; color: var(--toast-action); font-weight: 700; padding: 10px 12px; margin: -8px -8px -8px auto; min-height: 44px; }
@@ -1551,7 +1553,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=21.5" makes phones fetch the new file after an update instead of an old saved one. -->
-  <script src="app.js?v=21.5"></script>
+       The "?v=21.6" makes phones fetch the new file after an update instead of an old saved one. -->
+  <script src="app.js?v=21.6"></script>
 </body>
 </html>
