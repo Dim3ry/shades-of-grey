@@ -8539,17 +8539,51 @@
       return done;
     }
 
-    document.getElementById("export-button").addEventListener("click", () => {
-      const today = todayISO();
-      downloadFile(`minifolio-backup-${today}.json`, JSON.stringify(backupData(), null, 2), "application/json");
-      settings.lastBackup = today;   // remembered so the app knows when to remind you
+    // v22: the small backup's name and contents, shared by Save backup and Send backup to…
+    // so the file is exactly the same either way.
+    function smallBackupName(today) { return `minifolio-backup-${today}.json`; }
+    function smallBackupText() { return JSON.stringify(backupData(), null, 2); }
+    function noteBackupDone() {
+      settings.lastBackup = todayISO();   // remembered so the app knows when to remind you
       saveSettings();
       renderSettings();
+    }
+
+    // Save backup (a download). `note` replaces the usual message (v22: Send backup to… uses
+    // it to explain why it saved the file instead of sending it).
+    function saveSmallBackup(note) {
+      downloadFile(smallBackupName(todayISO()), smallBackupText(), "application/json");
+      noteBackupDone();
       // v14: always say it worked, and that photos aren't in this one.
       const photos = models.reduce((sum, m) => sum + photoIds(m).length, 0);
-      showToast(photos
-        ? `Backup saved, without your ${plural(photos, "photo")}. Use Save full backup with photos for those.`
-        : "Backup saved. Keep the file somewhere safe, like OneDrive or email.", null, null, 6);
+      const photoWords = photos ? ` Your ${plural(photos, "photo")} aren't in it: use Save full backup with photos for those.` : "";
+      showToast(note
+        ? note + photoWords
+        : photos
+          ? `Backup saved, without your ${plural(photos, "photo")}. Use Save full backup with photos for those.`
+          : "Backup saved. Keep the file somewhere safe, like OneDrive or email.", null, null, note ? 10 : 6);
+    }
+    document.getElementById("export-button").addEventListener("click", () => saveSmallBackup());
+
+    // v22: Send backup to… hands the same file to the phone's share menu. The app sends nothing
+    // itself: the share menu only goes where the person picks. If the browser can't share files,
+    // or the share fails (not if the person closes the menu), the backup is saved instead.
+    document.getElementById("share-button").addEventListener("click", async () => {
+      const file = new File([smallBackupText()], smallBackupName(todayISO()), { type: "application/json" });
+      let canShare = false;
+      try { canShare = typeof navigator.share === "function" && typeof navigator.canShare === "function" && navigator.canShare({ files: [file] }); } catch (error) { canShare = false; }
+      if (!canShare) {
+        saveSmallBackup("This browser can't send files to other apps, so the backup was saved to your device instead.");
+        return;
+      }
+      try {
+        await navigator.share({ files: [file], title: "Minifolio backup" });
+        noteBackupDone();
+        showToast("Backup sent. Keep it somewhere safe, like OneDrive or email.", null, null, 6);
+      } catch (error) {
+        if (error && error.name === "AbortError") return;   // the person closed the menu: nothing happened
+        saveSmallBackup("The share menu couldn't send the backup, so it was saved to your device instead.");
+      }
     });
 
     // The red banner's buttons (v14).
@@ -9362,11 +9396,15 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=21.8". v21.4 test checks.)
-    const APP_VERSION = "v21.9";
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=22". v21.4 test checks.)
+    const APP_VERSION = "v22";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v22", date: "11 Oct 2026", changes: [
+        "Backups now come first on the Settings page, in their own Backups card, so they're easy to find.",
+        "New Send backup to… button. It opens your phone's share menu, so you can put the backup straight into OneDrive, an email or a message. It sends the same small backup as Save backup (no photos), and the app itself still sends nothing anywhere. If your phone can't send files from here, or sending fails, the backup is saved to your device instead and the app tells you.",
+      ]},
       { version: "v21.9", date: "11 Oct 2026", changes: [
         "Fewer tabs: Help and Updates now live inside the Settings tab, so there are four tabs along the bottom (Dashboard, Units, Recipes, Settings). At the top of Settings, a Settings / Help / Updates switch moves between the three.",
         "The app still remembers the page you were on, and the phone's Back button works as before.",

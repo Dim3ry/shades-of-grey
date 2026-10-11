@@ -39,7 +39,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=21.9"></script>
+  <script src="early.js?v=22"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -171,6 +171,8 @@
     .danger-button { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 11px 14px; font-size: 14px; }
     .link-button { background: transparent; color: var(--accent); padding: 10px 0; font-size: 14px; }
     .button-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    /* v22: the backup buttons are the ones people most need to hit, so they are full 44 px targets. */
+    #backup-card .plain-button { min-height: 44px; }
 
     /* ----- The tab bar at the bottom ----- */
     .tabs {
@@ -1367,6 +1369,7 @@
             <li>Everything is saved <strong>on this device only</strong>, in your browser. Nobody else can see it, and it isn't sent anywhere.</li>
             <li>Clearing your browser's data or uninstalling the app deletes it, so <strong>Save backup</strong> regularly. The app reminds you after a week (and if you have photos, it reminds you about a backup <em>with</em> photos). Every backup shows a message when it's saved.</li>
             <li><strong>Save backup</strong> is small and quick, but leaves out photos. <strong>Save full backup with photos</strong> makes one bigger file with everything, photos included.</li>
+            <li id="help-send-backup"><strong>Send backup to…</strong> opens your phone's share menu, so you can put the small backup straight into OneDrive, an email or a message. It's the same file as Save backup (no photos). If your phone can't send files from the app, or sending fails, the backup is saved to your device instead and the app says so. Closing the share menu changes nothing.</li>
             <li><strong>Restore backup</strong> brings either kind back, including your stages, recipes, schemes, faction colours, stage colour set and Appearance (light or dark). A backup without photos keeps any photos already on this device that match.</li>
             <li>Photos are kept in a separate, much bigger store in your browser, so there's room for lots of them. Settings → Your data shows how many photos you have and how much space they use.</li>
             <li><strong>Clean up photo storage</strong> removes photo files no unit uses any more (for example after Delete all units) and tells you how much space it freed. Photos in the device's safety copy are left alone.</li>
@@ -1402,7 +1405,7 @@
           <ul>
             <li><strong>Stays on your phone:</strong> your units, photos, recipes, paints and settings. They're saved in this browser on this device only. There's no account and no cloud copy.</li>
             <li><strong>Scanning a paint pot</strong> reads the label on your phone. The photo never leaves it.</li>
-            <li><strong>What goes out:</strong> only what you choose to send. <strong>Give feedback</strong> opens a form on Tally's website, which receives what you type there plus the app's version number. Backups and exports are files you save yourself.</li>
+            <li><strong>What goes out:</strong> only what you choose to send. <strong>Give feedback</strong> opens a form on Tally's website, which receives what you type there plus the app's version number. Backups and exports are files you save yourself. <strong>Send backup to…</strong> only opens your phone's own share menu: the backup goes where you choose, and the app sends nothing itself.</li>
             <li><strong>Shop links</strong> (Buy these, on the shopping list) open the shop's website only when you tap one. The link carries just the paint's name for the shop's search, and the shop isn't told it came from Minifolio. From then on you're on the shop's site, under its own privacy rules.</li>
             <li><strong>Locked down:</strong> the app only runs its own code, from its own files. Your browser is told to refuse scripts from any other website, or slipped into the page itself, and the app itself can't quietly send your data to another website (a “Content Security Policy”).</li>
             <li><strong>No tracking:</strong> no analytics, no adverts, no cookies, and nothing is sold.</li>
@@ -1441,6 +1444,28 @@
 
     <!-- ===== TAB 3: Settings ===== -->
     <section id="view-settings" class="hidden">
+
+      <!-- v22: backups come first on Settings, because they're the thing people most need to find.
+           "Send backup to…" opens the phone's own share menu (OneDrive, email, Messages…). -->
+      <div class="card" id="backup-card">
+        <h2>Backups</h2>
+        <div class="button-grid">
+          <button class="plain-button" id="export-button">Save backup</button>
+          <button class="plain-button" id="share-button">Send backup to…</button>
+          <button class="plain-button" id="full-export-button" style="grid-column: 1 / -1;">Save full backup with photos</button>
+          <button class="plain-button" id="restore-button" style="grid-column: 1 / -1;">Restore backup</button>
+        </div>
+        <p class="hint" id="backup-age" style="margin: 12px 0 0;"></p>
+        <p class="hint" style="margin: 8px 0 0;">
+          Save backup is small and quick but leaves out photos. Save full backup with photos
+          makes one bigger file with everything. Restore backup reads either kind.
+        </p>
+        <p class="hint" id="share-hint" style="margin: 8px 0 0;">
+          Send backup to… opens your phone's share menu, so you can put the backup straight into OneDrive, an email or a message.
+          It sends the same small backup (no photos). If your phone can't send files from here, it saves the backup instead.
+        </p>
+        <input type="file" id="restore-file" class="hidden" accept=".json">
+      </div>
 
       <div class="card">
         <h2>Stages</h2>
@@ -1489,18 +1514,13 @@
       </div>
 
       <div class="card">
-        <h2>Import and backup</h2>
+        <h2>Import</h2>
         <div class="button-grid">
-          <button class="plain-button" id="export-button">Save backup</button>
-          <button class="plain-button" id="restore-button">Restore backup</button>
-          <button class="plain-button" id="full-export-button" style="grid-column: 1 / -1;">Save full backup with photos</button>
           <button class="plain-button" id="csv-button">Import CSV</button>
           <button class="plain-button" id="template-button">CSV template</button>
           <button class="plain-button" id="csv-export-button">Export CSV</button>
           <button class="plain-button" id="wh-button">Paste an army list</button>
         </div>
-        <p class="hint" id="backup-age" style="margin: 12px 0 0;"></p>
-
         <!-- v19: the paste box and the import check live in #import-area, which is moved to
              the Units tab when an import starts there, and back here when it starts here. -->
         <div id="settings-import-slot"><div id="import-area">
@@ -1560,16 +1580,11 @@
         </div></div>
 
         <p class="hint" style="margin: 12px 0 0;">
-          Save backup is small and quick but leaves out photos. Save full backup with photos
-          makes one bigger file with everything. Restore backup reads either kind.
-        </p>
-        <p class="hint" style="margin: 8px 0 0;">
           Export CSV gives you a spreadsheet of your collection (no photos), which Import CSV can read back.
           CSV columns: name, game, faction, stage, nickname, count, repaint, notes.
           Only name is needed. Stage should match one of your stages. Repeat a row for
           several of the same unit; they'll be numbered for you.
         </p>
-        <input type="file" id="restore-file" class="hidden" accept=".json">
         <input type="file" id="csv-file" class="hidden" accept=".csv,text/csv">
       </div>
 
@@ -1625,7 +1640,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=21.9" makes phones fetch the new file after an update instead of an old saved one. -->
-  <script src="app.js?v=21.9"></script>
+       The "?v=22" makes phones fetch the new file after an update instead of an old saved one. -->
+  <script src="app.js?v=22"></script>
 </body>
 </html>
