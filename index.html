@@ -39,7 +39,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=23"></script>
+  <script src="early.js?v=24"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -428,6 +428,7 @@
     /* v21: the "These are examples" card. */
     .examples-card p { margin: 0 0 10px; }
     .examples-card .button-grid button { min-height: 44px; }
+    .recipes-examples-card { margin-bottom: 12px; }
 
     /* The big "move up a stage" button: deliberate, hard to hit by accident. */
     .up-button {
@@ -1151,6 +1152,8 @@
     <!-- ===== TAB: Recipes (how you paint things, step by step) ===== -->
     <section id="view-recipes" class="hidden">
       <!-- The list of recipes. Hidden while one recipe is open. -->
+      <!-- v24: shown while any example recipes or paints are still there. Filled by renderRecipeExamplesCard(). -->
+      <div class="card notice-card examples-card recipes-examples-card hidden" id="examples-card-recipes" role="note"></div>
       <!-- Switch between your recipes and your palette (the paints those recipes use). -->
       <div class="seg" id="recipe-seg" role="tablist" aria-label="Recipes, schemes or palette">
         <button role="tab" data-view="recipes">Recipes</button>
@@ -1236,6 +1239,7 @@
         <details open>
           <summary>Getting started</summary>
           <ol>
+            <li id="help-example-recipes">A brand-new start also comes with two <strong>example recipes</strong> (Ultramarines armour and Ork skin), and the paints they use show in <strong>Your Palette</strong>. A card on the <strong>Recipes</strong> tab says so. <strong>Clear examples</strong> removes only the examples (with Undo): a paint you've used in your own recipe or given a status stays, and example paints never go on the shopping list. <strong>Keep them</strong> makes them yours. If you already had recipes, nothing is added.</li>
             <li>The app starts with three example units, marked with a <strong>These are examples</strong> card on the Dashboard and Units tab. <strong>Clear examples</strong> removes only those three (with Undo); <strong>Keep them</strong> keeps them as your own units.</li>
             <li>Add your units: one at a time with <strong>Units → + Add unit</strong>, or a whole army at once with <strong>Paste army list</strong> or <strong>Import CSV</strong>, which are on the same panel (see <strong>Importing</strong>).</li>
             <li>As you build and paint, press <strong>▲</strong> on a unit to move it up a stage (or tap its name and pick any stage from its <strong>Stage</strong> menu).</li>
@@ -1651,7 +1655,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=23" makes phones fetch the new file after an update instead of an old saved one. -->
-  <script src="app.js?v=23"></script>
+       The "?v=24" makes phones fetch the new file after an update instead of an old saved one. -->
+  <script src="app.js?v=24"></script>
 </body>
 </html>

@@ -267,6 +267,14 @@
       { id: 3, name: "Liberators", hobby: "Age of Sigmar", faction: "Stormcast Eternals", stage: 6, count: 5, example: true },
     ];
 
+    // v24: is this the very first visit (no units and no recipes saved yet)? Only then do the
+    // example recipes and paints get added (see seedExampleRecipes). Anyone who already has data,
+    // even an empty saved recipe book, is left alone.
+    const RECIPES_KEY = "shades-of-grey-recipes";
+    const freshStart = (() => {
+      try { return !localStorage.getItem(STORAGE_KEY) && !localStorage.getItem(RECIPES_KEY); } catch (e) { return false; }
+    })();
+
     // All units live in this list. Each is a small bundle of facts (an "object").
     let models = load();
 
@@ -295,7 +303,7 @@
     //   recipes:    { id, name, part, notes, steps: [{ technique, coats, paints: [{ paint, mix }] }] }
     //               "paint" is a paint's id; "mix" is its share in % (null if not given).
     // A unit lists the recipes it uses in unit.recipes, a list of recipe ids.
-    const RECIPES_KEY = "shades-of-grey-recipes";
+    // (RECIPES_KEY is declared higher up, just before freshStart, because that needs it first.)
     // v15: "Whole model" is for steps done all over (prime, base coat, zenithal, all-over dry
     // brush). It is always listed first.
     const WHOLE_MODEL = "Whole model";
@@ -1139,6 +1147,7 @@
       }
       const items = [];
       for (const p of book.paints) {
+        if (isExamplePaint(p)) continue;   // v24: example paints never go on the shopping list
         const key = paintStatus(p);
         const used = recipeCount.get(p.id) || 0;
         let reason = "";
@@ -1901,6 +1910,7 @@
                         colour: isColour(p.colour) ? p.colour.toLowerCase() : DEFAULT_PAINT_COLOUR };
         if (paint.brand !== rawBrand) tidied.add(paint.id);
         if (!PAINT_STATUS_KEYS.includes(paint.status)) delete paint.status;
+        if (p.example !== true) delete paint.example;   // v24: only a real true counts
         if (paint.status !== "low" || paint.spare !== true) delete paint.spare;
         // v17.1: quantity, only for paints you have and only above one.
         const haveNow = paint.status === "owned" || paint.status === "low" || (!paint.status && paint.owned === true);
@@ -1943,8 +1953,10 @@
           note: String(s.note || "").trim(),        // v15
           optional: s.optional === true,            // v15
         }));
-        recipes.push({ ...r, id, name: r.name.trim(), part: String(r.part || "").trim(),
-                       notes: String(r.notes || ""), steps });
+        const cleanRecipe = { ...r, id, name: r.name.trim(), part: String(r.part || "").trim(),
+                              notes: String(r.notes || ""), steps };
+        if (r.example !== true) delete cleanRecipe.example;   // v24: only a real true counts
+        recipes.push(cleanRecipe);
       }
       let next = Math.max(0, ...recipeIds) + 1;
       for (const r of recipes) if (r.id === null) r.id = next++;
@@ -3857,6 +3869,151 @@
       });
     }
 
+    // ----- v24: EXAMPLE RECIPES AND PAINTS -----
+    // A brand-new start (no units saved yet, an empty recipe book) also gets two example recipes,
+    // and the Citadel paints they use appear in Your Palette. A card on the Recipes tab says so,
+    // with "Clear examples" (Undo for 8 seconds) and "Keep them". Anyone who already had data is
+    // left alone. The marks are "example: true" on a recipe or a paint; older versions keep
+    // unknown fields, so nothing here changes the shape of saved data (DATA_VERSION stays 1).
+    // Rules: Clear removes only the example recipes, and the example paints that nothing of
+    // yours uses. A paint you've used in your own recipe, given a status or edited is yours.
+    // Example paints never appear on the shopping list. Each example recipe is linked to the
+    // example unit it suits (Captain, Boyz), so you can see how recipes and units connect.
+    const EXAMPLE_RECIPES = [
+      { name: "Ultramarines armour", part: "Armour", unit: 1,
+        notes: "An example recipe, to show how they look. Clear it when you're ready to write your own.",
+        steps: [
+          { technique: "Base coat", coats: 2, paints: [["Citadel", "Macragge Blue"]] },
+          { technique: "Shade", coats: 1, paints: [["Citadel", "Nuln Oil"]] },
+          { technique: "Layer", coats: 1, paints: [["Citadel", "Calgar Blue"]] },
+          { technique: "Edge highlight", coats: 1, paints: [["Citadel", "Fenrisian Grey"]] },
+        ] },
+      { name: "Ork skin", part: "Skin", unit: 2,
+        notes: "An example recipe, to show how they look. Clear it when you're ready to write your own.",
+        steps: [
+          { technique: "Base coat", coats: 2, paints: [["Citadel", "Waaagh! Flesh"]] },
+          { technique: "Shade", coats: 1, paints: [["Citadel", "Agrax Earthshade"]] },
+          { technique: "Layer", coats: 1, paints: [["Citadel", "Warboss Green"]] },
+          { technique: "Edge highlight", coats: 1, paints: [["Citadel", "Skarsnik Green"]] },
+        ] },
+    ];
+    function seedExampleRecipes() {
+      if (!freshStart || settings.recipeExamplesChecked) return;
+      settings.recipeExamplesChecked = true;   // saved by the start-up render()
+      if (book.recipes.length || book.paints.length || book.schemes.length) return;
+      for (const ex of EXAMPLE_RECIPES) {
+        const steps = ex.steps.map(s => ({
+          technique: s.technique, coats: s.coats,
+          paints: s.paints.map(([brand, name]) => {
+            const paint = findOrAddPaint(brand, name, "");
+            paint.example = true;
+            return { paint: paint.id, mix: null };
+          }),
+          ratio: "", note: "", optional: false,
+        }));
+        const recipe = { id: Math.max(0, ...book.recipes.map(r => r.id)) + 1, name: ex.name, part: ex.part,
+                         notes: ex.notes, steps, example: true };
+        book.recipes.push(recipe);
+        const unit = models.find(m => m.id === ex.unit && m.example === true);
+        if (unit) linkRecipe(unit, recipe.id);
+      }
+    }
+    function exampleRecipes() { return book.recipes.filter(r => r.example === true); }
+    // An example paint that is still only an example: nothing of yours uses it, it has no status.
+    function usedByYourRecipe(paintId) {
+      return book.recipes.some(r => r.example !== true && r.steps.some(s => s.paints.some(sp => sp.paint === paintId)));
+    }
+    function isExamplePaint(paint) {
+      return paint.example === true && paintStatus(paint) === "" && !usedByYourRecipe(paint.id);
+    }
+    function examplePaints() { return book.paints.filter(isExamplePaint); }
+    function exampleRecipeWords(recipes, paints) {
+      const parts = [];
+      if (recipes) parts.push(plural(recipes, "example recipe"));
+      if (paints) parts.push(plural(paints, "example paint"));
+      return parts.join(" and ");
+    }
+    function renderRecipeExamplesCard(show) {
+      const card = document.getElementById("examples-card-recipes");
+      const recipes = exampleRecipes(), paints = examplePaints();
+      const any = show && (recipes.length || paints.length);
+      card.classList.toggle("hidden", !any);
+      card.innerHTML = "";
+      if (!any) return;
+      const text = document.createElement("p");
+      const strong = document.createElement("strong");
+      const many = recipes.length + paints.length > 1;
+      strong.textContent = many ? "These are examples." : "This is an example.";
+      const names = recipes.map(r => r.name).join(", ");
+      text.append(strong, ` The app starts with ${exampleRecipeWords(recipes.length, paints.length)}` +
+        (names ? ` (${names})` : "") + `, so you can see how recipes and your palette work. ` +
+        `Clear ${many ? "them" : "it"} when you're ready to add your own. ` +
+        `Paints you've used in your own recipes, or given a status, are kept.`);
+      const buttons = document.createElement("div");
+      buttons.className = "button-grid";
+      const clear = document.createElement("button");
+      clear.type = "button";
+      clear.className = "danger-button clear-recipe-examples";
+      clear.textContent = "Clear examples";
+      clear.addEventListener("click", clearRecipeExamples);
+      const keep = document.createElement("button");
+      keep.type = "button";
+      keep.className = "plain-button keep-recipe-examples";
+      keep.textContent = many ? "Keep them" : "Keep it";
+      keep.addEventListener("click", keepRecipeExamples);
+      buttons.append(clear, keep);
+      card.append(text, buttons);
+    }
+    function clearRecipeExamples() {
+      const goneRecipes = exampleRecipes();
+      const gonePaints = examplePaints();
+      if (!goneRecipes.length && !gonePaints.length) return;
+      // Remember where everything was, and which units were linked, so Undo can put it all back.
+      const recipeSpots = goneRecipes.map(r => [book.recipes.indexOf(r), r]);
+      const paintSpots = gonePaints.map(p => [book.paints.indexOf(p), p]);
+      const links = [];
+      for (const m of models) {
+        const ids = (m.recipes || []).filter(id => goneRecipes.some(r => r.id === id));
+        if (ids.length) links.push([m, ids.map(id => goneRecipes.find(r => r.id === id))]);
+      }
+      for (const [m, rs] of links) for (const r of rs) unlinkRecipe(m, r.id);
+      book.recipes = book.recipes.filter(r => !goneRecipes.includes(r));
+      book.paints = book.paints.filter(p => !gonePaints.includes(p));
+      const message = `Cleared ${exampleRecipeWords(goneRecipes.length, gonePaints.length)}`;
+      commit(message, () => {
+        // Put each back in its old place. If its number has been taken since, it gets a new one
+        // (and the steps and links that point at it follow).
+        const paintIdMap = new Map();
+        for (const [spot, p] of paintSpots) {
+          if (book.paints.some(x => x.id === p.id)) {
+            const fresh = Math.max(0, ...book.paints.map(x => x.id)) + 1;
+            paintIdMap.set(p.id, fresh);
+            p.id = fresh;
+          }
+          book.paints.splice(Math.min(spot, book.paints.length), 0, p);
+        }
+        for (const [spot, r] of recipeSpots) {
+          for (const s of r.steps) for (const sp of s.paints) if (paintIdMap.has(sp.paint)) sp.paint = paintIdMap.get(sp.paint);
+          if (book.recipes.some(x => x.id === r.id)) r.id = Math.max(0, ...book.recipes.map(x => x.id)) + 1;
+          book.recipes.splice(Math.min(spot, book.recipes.length), 0, r);
+          for (const [m, rs] of links) if (rs.includes(r) && models.includes(m)) linkRecipe(m, r.id);
+        }
+        render();
+      }, "Undo", 8);
+    }
+    function keepRecipeExamples() {
+      const recipes = book.recipes.filter(r => r.example === true);
+      const paints = book.paints.filter(p => p.example === true);
+      if (!recipes.length && !paints.length) return;
+      for (const r of recipes) delete r.example;
+      for (const p of paints) delete p.example;
+      commit(`Kept the examples as your own`, () => {
+        for (const r of recipes) if (book.recipes.includes(r)) r.example = true;
+        for (const p of paints) if (book.paints.includes(p)) p.example = true;
+        render();
+      });
+    }
+
     // ----- v21: JUMP TO STAGE -----
     // A menu listing every stage. current = the stage it shows (null = none, then
     // "placeholder" is shown as a first line you can't pick). onPick(stage) runs when
@@ -5006,6 +5163,7 @@
       // v16: Paste recipes fills the screen while it's open.
       importPage.classList.toggle("hidden", !importDraft);
       if (importDraft) {
+        renderRecipeExamplesCard(false);
         for (const el of [recipeSeg, recipeHome, paletteView, schemeView, recipePage]) el.classList.add("hidden");
         renderImport();
         return;
@@ -5016,6 +5174,7 @@
       const current = onPalette ? "palette" : onSchemes ? "schemes" : "recipes";
       // The switch hides while a recipe or a scheme being edited fills the screen.
       recipeSeg.classList.toggle("hidden", onPage || (onSchemes && !!schemeDraft));
+      renderRecipeExamplesCard(!onPage && !(onSchemes && !!schemeDraft));   // v24
       recipeSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", b.dataset.view === current));
       recipeHome.classList.toggle("hidden", onPage || onPalette || onSchemes);
       paletteView.classList.toggle("hidden", !onPalette);
@@ -5791,11 +5950,14 @@
       if (paint[field] === value) return;
       const old = paint[field];
       paint[field] = value;
+      const wasExample = paint.example === true;
+      delete paint.example;   // v24: you've changed it, so it's yours now (put back below if a merge question is refused)
       const twin = book.paints.find(p => p !== paint && sameText(p.name, paint.name) && sameText(p.brand, paint.brand));
       if (twin) {
         // v21.7: the paint goes back to how it was while the question is showing (a typo you
         // merge away is remembered as shorthand, and "No" leaves it untouched). Then it asks.
         paint[field] = old;
+        if (wasExample) paint.example = true;
         askYesNo(`You already have ${twin.brand ? twin.brand + " " : ""}${twin.name}. Merge the two into one paint?`, () => {
           if (!book.paints.includes(paint) || !book.paints.includes(twin)) { renderPalette(); return; }   // changed meanwhile
           joinPaints(paint, twin);
@@ -6330,6 +6492,7 @@
       let recipe = d.id !== null ? recipeById(d.id) : null;
       if (recipe) {
         Object.assign(recipe, { name, part: d.part.trim(), notes: d.notes, steps });
+        delete recipe.example;   // v24: you've changed it, so it's yours now
       } else {
         recipe = { id: Math.max(0, ...book.recipes.map(r => r.id)) + 1, name, part: d.part.trim(), notes: d.notes, steps };
         book.recipes.push(recipe);
@@ -9426,11 +9589,15 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=22". v21.4 test checks.)
-    const APP_VERSION = "v23";
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=24". v21.4 test checks.)
+    const APP_VERSION = "v24";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v24", date: "11 Oct 2026", changes: [
+        "A new start now comes with two example recipes (Ultramarines armour and Ork skin), and the paints they use appear in Your Palette. They are linked to the example units Captain and Boyz, so you can see how recipes and units connect.",
+        "A \u201cThese are examples\u201d card on the Recipes tab has Clear examples (with Undo) and Keep them. Clearing removes only the examples: a paint you've used in your own recipe or given a status is kept, and example paints never go on your shopping list. If you already had recipes, nothing is added.",
+      ]},
       { version: "v23", date: "11 Oct 2026", changes: [
         "A unit's details now start with what you use most: its stage, then photos, recipes and paint notes.",
         "The boxes for changing the unit (name, game, faction, nickname, number of models, repaint and tracking each model) are folded away under one \u201cEdit details\u201d heading. Tap it to open them; it stays open while you make changes.",
@@ -9686,6 +9853,7 @@
 
     // ================= START UP =================
     applyPalette(settings.palette);
+    seedExampleRecipes();   // v24: only on a brand-new start
     render();
     startPhotos();   // moves any old photos across, then loads thumbnails (in the background)
     // Safety copies (Delete all, Replace, Restore, Recover) are kept for 30 days.
