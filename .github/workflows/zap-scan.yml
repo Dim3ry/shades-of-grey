@@ -1,7 +1,7 @@
 # Security check: runs the free ZAP "baseline" scan against the live site.
 # The baseline scan only looks; it doesn't attack or change anything.
 # Run it any time from the repo's Actions tab: "ZAP security scan" > "Run workflow".
-# Re-run 11 Oct 2026 after v21.4 (scripts moved out, CSP script-src without 'unsafe-inline').
+# Re-run 11 Oct 2026 after v21.4 (scripts moved out, CSP script-src without 'unsafe-inline'); second run, after the CDN copy expired.
 name: ZAP security scan
 
 on:
