@@ -5,6 +5,26 @@
   <meta charset="UTF-8">
   <!-- Makes the page fit phone screens properly. Without it, phones zoom out. -->
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- v21.2: the Content Security Policy ("CSP"). A list of what this page is allowed to load and run.
+       If something tries to break those rules (for example a script from another website sneaking in),
+       the browser refuses it. What each line allows:
+         default-src 'self'    anything not listed below: only files from minifolio.app itself
+         script-src            our own files and the code written inside this page ('unsafe-inline'),
+                               plus 'wasm-unsafe-eval' so the pot-label reader's WebAssembly engine can start.
+                               NO scripts from other websites.
+         style-src             our own styles, including those written inside this page
+         img-src               our own pictures, plus blob: and data: (how your photos are shown)
+         media-src             our own files and blob: (the camera preview)
+         connect-src 'self'    the page may only talk to minifolio.app
+         worker-src 'self'     background helpers (the label reader, the offline helper sw.js) must be our own files
+         object-src 'none'     no old-style plug-ins (Flash and similar)
+         base-uri 'none'       nobody can change where the page's links point to
+         form-action 'none'    forms can't send anything anywhere (ours are all handled inside the app)
+         frame-src 'none'      no other websites shown inside the app
+       Links that open another website (feedback form, shop links) are NOT affected: they're you leaving the app.
+       One rule (frame-ancestors, "don't let other sites show Minifolio inside theirs") only works when the
+       host sends it, so it waits for the move to Cloudflare Pages or Netlify. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
   <meta name="theme-color" content="#0b1220">
   <title>Minifolio</title>
 
@@ -1316,6 +1336,7 @@
             <li><strong>Scanning a paint pot</strong> reads the label on your phone. The photo never leaves it.</li>
             <li><strong>What goes out:</strong> only what you choose to send. <strong>Give feedback</strong> opens a form on Tally's website, which receives what you type there plus the app's version number. Backups and exports are files you save yourself.</li>
             <li><strong>Shop links</strong> (Buy these, on the shopping list) open the shop's website only when you tap one. The link carries just the paint's name for the shop's search, and the shop isn't told it came from Minifolio. From then on you're on the shop's site, under its own privacy rules.</li>
+            <li><strong>Locked down:</strong> the app only runs its own code. Your browser is told to refuse scripts from any other website, and the app itself can't quietly send your data to another website (a “Content Security Policy”).</li>
             <li><strong>No tracking:</strong> no analytics, no adverts, no cookies, and nothing is sold.</li>
             <li>Like any website, the site's host (GitHub Pages) sees basic technical details, such as your internet address, when the app loads or updates. Minifolio itself never sees or keeps them.</li>
           </ul>
@@ -1337,7 +1358,7 @@
       <div class="card">
         <h2>Tell me what you think</h2>
         <p class="hint">Found a bug, or wish the app did something? A short form, about 2 minutes. Every reply is read.</p>
-        <a class="primary-button" id="feedback-link" target="_blank" rel="noopener"
+        <a class="primary-button" id="feedback-link" target="_blank" rel="noopener noreferrer"
            style="display: block; text-align: center; text-decoration: none;">Give feedback</a>
         <p class="hint hidden" id="feedback-soon" style="margin: 0;">The feedback form is coming very soon. Until then, please send your thoughts to the person who shared the app with you.</p>
       </div>
@@ -10092,10 +10113,14 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v21.1";
+    const APP_VERSION = "v21.2";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v21.2", date: "11 Oct 2026", changes: [
+        "Safety: the app now tells your browser exactly what it's allowed to load and run (a Content Security Policy). Code from other websites can't run inside Minifolio, even if something tried to sneak it in.",
+        "The Give feedback link no longer tells the form's website which page you came from.",
+      ]},
       { version: "v21.1", date: "11 Oct 2026", changes: [
         "New: move several units to a stage at once. On the Units tab press Select, tick the units (or Select all shown), then pick a stage from Move to stage at the bottom. One Undo puts them all back.",
         "Pasted notes that start with a faction and a part, like \"Ultramarines armour\", are now read as that faction's armour recipe, not as the paint Ultramarines Blue.",
