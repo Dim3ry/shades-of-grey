@@ -359,7 +359,19 @@
                     border: 1px solid var(--border); border-left: 4px solid var(--stage-colour); border-radius: 8px; }
     .each-list .each-name { font-size: 13px; color: var(--muted); width: 64px; flex-shrink: 0; }
     .each-list .each-stage { flex: 1; font-size: 13px; font-weight: 600; color: var(--stage-colour); }
-    .each-list button { min-width: 40px; min-height: 36px; padding: 4px 10px; }
+    /* v21: 44 px, the size a fingertip needs (was 40 × 36). */
+    .each-list button { min-width: 44px; min-height: 44px; padding: 4px 10px; flex-shrink: 0; }
+    /* v21: each model's stage is a menu you can jump with. */
+    .each-list select.each-stage { flex: 1; min-height: 44px; padding: 6px 8px; font-size: 16px; }
+
+    /* v21: "Jump to stage" menus (unit details, each model, the Add form). The stage's
+       colour shows as a stripe on the left, like the stage chips. */
+    .stage-pick { min-height: 44px; width: 100%; border-left: 4px solid var(--stage-colour, var(--border)); }
+    .stage-pick-label { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
+
+    /* v21: the "These are examples" card. */
+    .examples-card p { margin: 0 0 10px; }
+    .examples-card .button-grid button { min-height: 44px; }
 
     /* The big "move up a stage" button: deliberate, hard to hit by accident. */
     .up-button {
@@ -475,12 +487,13 @@
     ol.stage-list { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 8px; }
     .stage-row { display: flex; align-items: center; gap: 6px; }
     .stage-row input { flex: 1; padding: 9px; min-width: 0; width: 100%; }   /* min-width 0 lets it shrink on small phones */
+    /* v21: 44 × 44 everywhere (was 40 × 40, and 36 × 40 on small phones). */
     .icon-button {
-      width: 40px; height: 40px; flex-shrink: 0;
+      width: 44px; height: 44px; flex-shrink: 0;
       background: transparent; color: var(--muted); border: 1px solid var(--border);
       font-size: 15px;
     }
-    @media (max-width: 400px) { .icon-button { width: 36px; height: 40px; } .stage-row { gap: 4px; } }
+    @media (max-width: 400px) { .stage-row { gap: 4px; } }
     .icon-button.remove:hover { color: var(--danger); border-color: var(--danger); }
     .done-divider {
       font-size: 12px; color: var(--done-colour); text-align: center;
@@ -556,10 +569,12 @@
     .review-row.off { opacity: 0.5; }
 
     /* ----- Help tab ----- */
-    .help details { border-top: 1px solid var(--border); padding: 12px 0; }
+    /* v21: each Help topic's tappable title is at least 44 px tall (was 28). */
+    .help details { border-top: 1px solid var(--border); padding: 2px 0; }
     .help details:first-child { border-top: none; padding-top: 0; }
     .help details:last-child { padding-bottom: 0; }
-    .help summary { font-size: 16px; color: var(--accent); }
+    .help summary { font-size: 16px; color: var(--accent); padding: 10px 0; min-height: 44px; box-sizing: border-box; }
+    .help details[open] { padding-bottom: 12px; }
     .help ol, .help ul { padding-left: 20px; margin: 10px 0 0; color: var(--text); font-size: 15px; line-height: 1.55; }
     .help li { margin-bottom: 6px; }
 
@@ -894,6 +909,8 @@
         <p><strong>Keep your data safe on iPhone.</strong> Safari can delete this app's saved units and photos if you don't open it for 7 days. Add it to your Home Screen to stop that: tap Safari's Share button, then <strong>Add to Home Screen</strong>, and open it from there.</p>
         <button class="plain-button" id="iphone-warning-ok">Got it</button>
       </div>
+      <!-- v21: shown while any of the 3 starting example units are still there. -->
+      <div class="card notice-card examples-card hidden" id="examples-card-dash" role="note"></div>
       <div class="card">
         <div class="headline">
           <span class="big" id="done-percent">–</span>
@@ -956,6 +973,10 @@
           <input id="hobby-input" placeholder="Game, e.g. 40K" aria-label="Game" list="game-options">
           <input id="faction-input" placeholder="Faction" aria-label="Faction" list="faction-options">
         </div>
+        <!-- v21: start a unit at the stage it's really at, instead of tapping ▲ several times. -->
+        <label class="stage-pick-label">Starting stage
+          <select id="stage-input" class="stage-pick"></select>
+        </label>
         <button class="primary-button" type="submit">Add</button>
         <!-- v19: bringing in a whole army is offered right here, not only in Settings. -->
         <p class="hint" style="margin: 4px 0 0;">Adding a whole army?</p>
@@ -974,6 +995,9 @@
         </div>
         <div id="units-import-slot"></div>
       </div>
+
+      <!-- v21: the same "These are examples" card as on the Dashboard. -->
+      <div class="card notice-card examples-card hidden" id="examples-card" role="note"></div>
 
       <!-- Filters start folded away so the units get the screen; "Filters" opens them. -->
       <div class="card hidden" id="filter-card">
@@ -1076,9 +1100,9 @@
         <details open>
           <summary>Getting started</summary>
           <ol>
-            <li>The app starts with three example units. Clear them in <strong>Settings → Delete all units</strong>.</li>
+            <li>The app starts with three example units, marked with a <strong>These are examples</strong> card on the Dashboard and Units tab. <strong>Clear examples</strong> removes only those three (with Undo); <strong>Keep them</strong> keeps them as your own units.</li>
             <li>Add your units: one at a time with <strong>Units → + Add unit</strong>, or a whole army at once with <strong>Paste army list</strong> or <strong>Import CSV</strong>, which are on the same panel (see <strong>Importing</strong>).</li>
-            <li>As you build and paint, press <strong>▲</strong> on a unit to move it up a stage.</li>
+            <li>As you build and paint, press <strong>▲</strong> on a unit to move it up a stage (or tap its name and pick any stage from its <strong>Stage</strong> menu).</li>
             <li>Check the <strong>Dashboard</strong> to see how far you've got.</li>
             <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
           </ol>
@@ -1089,7 +1113,9 @@
           <ul>
             <li><strong>+ Add unit</strong> on the Units tab. The number box is how many models are in the unit (up to 999; tracking each model separately works for up to 100).</li>
             <li>Add the same unit twice (same name, game and faction) and they're numbered for you: Intercessors 1, Intercessors 2.</li>
+            <li><strong>Starting stage</strong> in the Add form puts a new unit straight at the stage it's really at (it stays picked for the next unit you add).</li>
             <li>Press <strong>▲</strong> to move a unit up a stage. Made a mistake? Press <strong>Undo</strong> on the message that pops up.</li>
+            <li id="help-jump-stage"><strong>Jump to a stage:</strong> tap a unit's name and pick from its <strong>Stage</strong> menu, to go straight to any stage (forwards or back). If you track each model separately, each model has its own stage menu, and <strong>Move all models to stage</strong> moves them all at once. Every jump has an <strong>Undo</strong>.</li>
             <li>Tap a unit's name to open its details: nickname, model count, repaint flag, paint notes, photos, <strong>back a stage</strong>, and delete.</li>
             <li>Use the game and faction menus and the stage chips to filter the list. Tap several stage chips to combine them.</li>
           </ul>
@@ -1703,14 +1729,29 @@
     // ================= LOADING AND SAVING UNITS =================
 
     // Example units, only used the very first time (when nothing is saved yet).
+    // v21: each carries "example: true", so the "These are examples" card can find them.
     const EXAMPLES = [
-      { id: 1, name: "Captain", hobby: "40K", faction: "Ultramarines", stage: 3, count: 1 },
-      { id: 2, name: "Boyz", hobby: "40K", faction: "Orks", stage: 0, count: 10 },
-      { id: 3, name: "Liberators", hobby: "Age of Sigmar", faction: "Stormcast Eternals", stage: 6, count: 5 },
+      { id: 1, name: "Captain", hobby: "40K", faction: "Ultramarines", stage: 3, count: 1, example: true },
+      { id: 2, name: "Boyz", hobby: "40K", faction: "Orks", stage: 0, count: 10, example: true },
+      { id: 3, name: "Liberators", hobby: "Age of Sigmar", faction: "Stormcast Eternals", stage: 6, count: 5, example: true },
     ];
 
     // All units live in this list. Each is a small bundle of facts (an "object").
     let models = load();
+
+    // v21: example units saved BEFORE v21 have no "example" mark. Recognise them once:
+    // same id, name, game and faction as an example, and nothing of yours added to them
+    // (no photos, recipes, nickname or copy number). "examplesChecked" makes sure this only
+    // happens once, so "Keep them" (which removes the marks) isn't undone on the next visit.
+    // (Saved by the start-up render(), units and settings together.)
+    if (!settings.examplesChecked) {
+      for (const m of models) {
+        const e = EXAMPLES.find(x => x.id === m.id);
+        if (e && m.name === e.name && m.hobby === e.hobby && m.faction === e.faction &&
+            !m.photos && !m.photo && !m.recipes && !m.nickname && !m.copy) m.example = true;
+      }
+      settings.examplesChecked = true;
+    }
 
     // ================= PAINT RECIPES: THE DATA =================
     // Recipes are saved separately from units, under their own name in browser storage.
@@ -3052,6 +3093,7 @@
           count: cleanCount(m.count),
           repaint: m.repaint === true,
         };
+        if (m.example !== true) delete model.example;   // v21: only a real true counts
         // Track-each-model: one valid stage per model, otherwise switch it off.
         const validStage = (x) => Number.isInteger(x) && x >= 0 && x < STAGES.length;
         if (m.each === true && Array.isArray(m.stages) && model.count <= MAX_EACH) {
@@ -4198,6 +4240,8 @@
       };
       fillList("game-options", games);
       fillList("faction-options", uniqueSorted(models.map(m => m.faction)));
+      fillStartStage();
+      renderExamplesCards();
 
       list.innerHTML = "";
       if (models.length === 0) {
@@ -4347,7 +4391,20 @@
       const editRow = document.createElement("div");
       editRow.className = "edit-row";
       editRow.append(makeEdit("Game", "hobby", "game-options"), makeEdit("Faction", "faction", "faction-options"));
-      panel.append(nameEdit, editRow);
+
+      // v21: JUMP TO STAGE. Pick the stage straight from a menu instead of tapping ▲ up
+      // to 7 times. For a unit tracked model by model it moves EVERY model (each model
+      // also has its own menu further down); while they're at different stages the menu
+      // says "Mixed stages".
+      const spread = model.each && new Set(model.stages).size > 1;
+      const stageLabel = document.createElement("label");
+      stageLabel.textContent = model.each ? "Move all models to stage" : "Stage";
+      const stageMenu = stagePicker(spread ? null : model.stage,
+        model.each ? `Move all models of ${displayName(model)} to stage` : `Stage of ${displayName(model)}`,
+        (to) => jumpToStage(model.id, to), spread ? "Mixed stages" : "");
+      stageMenu.classList.add("jump-stage");
+      stageLabel.appendChild(stageMenu);
+      panel.append(nameEdit, editRow, stageLabel);
 
       // Nickname: saves as you type ("input"), redraws when you leave the box ("change").
       const nicknameLabel = document.createElement("label");
@@ -4420,9 +4477,10 @@
           const label = document.createElement("span");
           label.className = "each-name";
           label.textContent = `Model ${i + 1}`;
-          const stageName = document.createElement("span");
-          stageName.className = "each-stage";
-          stageName.textContent = STAGES[st];
+          // v21: the stage is a menu, so one model can jump straight to any stage.
+          const stageName = stagePicker(st, `Model ${i + 1} of ${displayName(model)}: stage`,
+                                        (to) => jumpToStage(model.id, to, i));
+          stageName.classList.add("each-stage");
           const down = document.createElement("button");
           down.className = "plain-button";
           down.textContent = "◀";
@@ -4657,6 +4715,7 @@
         saveSettings();
       }
       model[field] = value;
+      delete model.example;   // v21: renamed or moved to another army: it's yours now, not an example
       delete model.copy;
       // The group it left: if only one is left, it no longer needs a number.
       if (oldGroup.length === 1) delete oldGroup[0].copy;
@@ -4689,6 +4748,118 @@
       const who = model.each ? `${displayName(model)}, model ${index + 1}` : displayName(model);
       showToast(`${who} → ${STAGES[after]}`, () => {
         setStage(model, before, model.each ? index : undefined);
+        render();
+      });
+    }
+
+    // ----- v21: "THESE ARE EXAMPLES" -----
+    // The app starts with 3 example units so there's something to look at. While any of
+    // them are still there, a card on the Dashboard and the Units tab says so, with
+    // "Clear examples" (removes ONLY those units, with Undo) and "Keep them" (they become
+    // ordinary units and the card goes away). Renaming an example, or changing its game or
+    // faction, also makes it yours (see editUnit).
+    function exampleUnits() { return models.filter(m => m.example === true); }
+    function renderExamplesCards() {
+      const examples = exampleUnits();
+      for (const id of ["examples-card-dash", "examples-card"]) {
+        const card = document.getElementById(id);
+        card.classList.toggle("hidden", !examples.length);
+        card.innerHTML = "";
+        if (!examples.length) continue;
+        const text = document.createElement("p");
+        const strong = document.createElement("strong");
+        strong.textContent = examples.length === 1 ? "This is an example." : "These are examples.";
+        const names = examples.map(m => displayName(m)).join(", ");
+        text.append(strong, ` The app starts with ${examples.length === 1 ? "an example unit" : plural(examples.length, "example unit")} ` +
+          `(${names}) so you can try things out. Clear ${examples.length === 1 ? "it" : "them"} when you're ready to add your own.`);
+        const buttons = document.createElement("div");
+        buttons.className = "button-grid";
+        const clear = document.createElement("button");
+        clear.type = "button";
+        clear.className = "danger-button clear-examples";
+        clear.textContent = "Clear examples";
+        clear.addEventListener("click", clearExamples);
+        const keep = document.createElement("button");
+        keep.type = "button";
+        keep.className = "plain-button keep-examples";
+        keep.textContent = examples.length === 1 ? "Keep it" : "Keep them";
+        keep.addEventListener("click", keepExamples);
+        buttons.append(clear, keep);
+        card.append(text, buttons);
+      }
+    }
+    function clearExamples() {
+      const gone = exampleUnits();
+      if (!gone.length) return;
+      // Remember where each one was, so Undo puts it back in the same place.
+      const spots = gone.map(m => [models.indexOf(m), m]);
+      models = models.filter(m => m.example !== true);
+      for (const m of gone) openIds.delete(m.id);
+      // Their photo files (if you added any) are left in the photo store, so Undo brings
+      // them back too. "Clean up photo storage" in Settings removes them later.
+      commit(`Cleared ${plural(gone.length, "example unit")}`, () => {
+        for (const [spot, m] of spots) {
+          if (models.some(x => x.id === m.id)) continue;   // that id is in use again: skip
+          models.splice(Math.min(spot, models.length), 0, m);
+        }
+        render();
+      }, "Undo", 8);
+    }
+    function keepExamples() {
+      const kept = exampleUnits();
+      if (!kept.length) return;
+      for (const m of kept) delete m.example;
+      commit(`Kept ${kept.length === 1 ? "the example as your own unit" : "the examples as your own units"}`, () => {
+        for (const m of kept) if (models.includes(m)) m.example = true;
+        render();
+      });
+    }
+
+    // ----- v21: JUMP TO STAGE -----
+    // A menu listing every stage. current = the stage it shows (null = none, then
+    // "placeholder" is shown as a first line you can't pick). onPick(stage) runs when
+    // you choose a different stage. A phone shows its own big, easy picker for a menu.
+    function stagePicker(current, label, onPick, placeholder) {
+      const menu = document.createElement("select");
+      menu.className = "stage-pick";
+      menu.setAttribute("aria-label", label);
+      if (current === null || current === undefined) {
+        const first = new Option(placeholder || "Pick a stage…", "");
+        first.disabled = true;
+        menu.add(first);
+      }
+      STAGES.forEach((name, i) => menu.add(new Option(name, String(i))));
+      menu.value = current === null || current === undefined ? "" : String(current);
+      if (current !== null && current !== undefined) menu.style.setProperty("--stage-colour", `var(--stage-${current})`);
+      menu.addEventListener("change", () => {
+        if (menu.value === "") return;
+        onPick(Number(menu.value));
+      });
+      return menu;
+    }
+
+    // Put a unit (or one model, if index is given) straight at a stage, with Undo.
+    // Without an index, a unit tracked model by model has ALL its models moved.
+    // Undo puts back exactly how it was, diary included.
+    function jumpToStage(id, stage, index) {
+      const model = models.find(m => m.id === id);
+      if (!model || !Number.isInteger(stage) || stage < 0 || stage >= STAGES.length) return;
+      if (!model.each) index = undefined;
+      if (model.each && index !== undefined && !(index >= 0 && index < model.stages.length)) return;
+      const already = index !== undefined ? model.stages[index] === stage
+        : model.each ? model.stages.every(s => s === stage) : model.stage === stage;
+      if (already) { render(); return; }
+      const before = JSON.stringify({ stage: model.stage, stages: model.stages, log: model.log });
+      setStage(model, stage, index);
+      const who = index !== undefined ? `${displayName(model)}, model ${index + 1}`
+        : model.each ? `All of ${displayName(model)}` : displayName(model);
+      commit(`${who} → ${STAGES[stage]}`, () => {
+        const unit = models.find(m => m.id === id);
+        if (!unit) return;
+        const was = JSON.parse(before);
+        unit.stage = was.stage;
+        if (Array.isArray(was.stages)) unit.stages = was.stages;
+        unit.log = was.log;
         render();
       });
     }
@@ -5322,6 +5493,23 @@
     const hobbyInput = document.getElementById("hobby-input");
     const factionInput = document.getElementById("faction-input");
 
+    // v21: the Add form's "Starting stage" menu. Rebuilt with every redraw (stages can be
+    // renamed or added in Settings), keeping your choice while that stage still exists.
+    const stageInput = document.getElementById("stage-input");
+    function fillStartStage() {
+      const keep = Number(stageInput.value);
+      stageInput.innerHTML = "";
+      STAGES.forEach((name, i) => stageInput.add(new Option(name, String(i))));
+      stageInput.value = Number.isInteger(keep) && keep >= 0 && keep < STAGES.length ? String(keep) : "0";
+      stageInput.style.setProperty("--stage-colour", `var(--stage-${stageInput.value})`);
+    }
+    function startStage() {
+      const n = Number(stageInput.value);
+      return Number.isInteger(n) && n >= 0 && n < STAGES.length ? n : 0;
+    }
+    stageInput.addEventListener("change", () =>
+      stageInput.style.setProperty("--stage-colour", `var(--stage-${stageInput.value})`));
+
     toggleAdd.addEventListener("click", () => {
       const opening = form.classList.contains("hidden");
       form.classList.toggle("hidden", !opening);
@@ -5337,12 +5525,14 @@
         count: cleanCount(countInput.value),
         hobby: hobbyInput.value.trim(),
         faction: factionInput.value.trim(),
+        stage: startStage(),   // v21: the stage picked in "Starting stage"
       });
       if (!isVisible(newModel)) clearFilters();  // so a new unit never seems to vanish
       nameInput.value = "";
       countInput.value = 1;
       nameInput.focus();
-      // Game and faction stay filled in, since you'll often add several from one army.
+      // Game, faction and starting stage stay filled in, since you'll often add several
+      // from one army.
       commit(`Added ${displayName(newModel)}`);   // v18c-3
     });
 
@@ -6641,6 +6831,7 @@
       addPaint.className = "link-button";
       addPaint.style.justifySelf = "start";
       addPaint.style.padding = "4px 0";
+      addPaint.style.minHeight = "44px";   // v21: was 25 px tall, too small for a fingertip
       addPaint.textContent = step.paints.length ? "+ Mix in another paint" : "+ Add paint";
       addPaint.addEventListener("click", () => {
         const even = isEvenSplit(step.paints);
@@ -9695,10 +9886,16 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v20.1";
+    const APP_VERSION = "v21";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v21", date: "11 Oct 2026", changes: [
+        "New: the three example units the app starts with now say so, on the Dashboard and the Units tab. Clear examples removes only those (with Undo); Keep them turns them into your own units.",
+        "New: jump straight to a stage. Open a unit and pick its stage from the Stage menu, instead of tapping ▲ up to 7 times. Units tracked model by model have a menu for each model too, and one to move them all.",
+        "New: Starting stage when adding a unit, so a unit that's already primed or painted starts at the right stage.",
+        "Easier to tap: the per-model ◀ ▲ buttons, the stage editor's ↑ ↓ ✕ buttons, + Mix in another paint and the Help topic titles are now at least 44 pixels, the size a fingertip needs.",
+      ]},
       { version: "v20.1", date: "10 Oct 2026", changes: [
         "New warm stage colours: Forge, from ember red through amber and gold to warm cream. Find it in Settings → Colours.",
         "New: Custom stage colours. Pick Custom in Settings → Colours and choose a colour for each stage. It starts from your current set, warns you if a colour is too faint to read, and has a Reset button.",
