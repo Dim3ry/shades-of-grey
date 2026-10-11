@@ -301,8 +301,35 @@
     }
 
     /* ----- Units: toolbar and filters ----- */
-    .units-toolbar { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-bottom: 12px; }
+    .units-toolbar { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; margin-bottom: 12px; }
     .units-toolbar .plain-button { padding: 12px 16px; }
+    @media (max-width: 400px) {
+      .units-toolbar { gap: 8px; }
+      .units-toolbar .plain-button { padding: 12px 12px; }
+    }
+    .units-toolbar .plain-button[aria-pressed="true"] { color: var(--background); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+
+    /* v21.1: SELECT MODE. A tick box on each card, and a bar at the bottom to move them all. */
+    .unit-tick {
+      width: 44px; height: 44px; flex-shrink: 0; margin: -6px 0 -6px -6px;
+      display: grid; place-items: center; cursor: pointer;
+    }
+    .unit-tick input { width: 24px; height: 24px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+    li.unit.ticked { box-shadow: 0 0 0 2px var(--accent); }
+    body.selecting { padding-bottom: calc(210px + env(safe-area-inset-bottom)); }
+    .select-bar {
+      position: fixed; left: 16px; right: 16px;
+      bottom: calc(74px + env(safe-area-inset-bottom));
+      max-width: 480px; margin: 0 auto;
+      background: var(--card); border: 1px solid var(--accent); border-radius: 12px;
+      box-shadow: 0 6px 20px var(--shadow);
+      padding: 10px 12px 12px; display: grid; gap: 8px; z-index: 15;
+    }
+    .select-bar-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .select-bar-top .hint { margin: 0; flex: 1; min-width: 0; }
+    .select-bar-top .link-button { min-height: 44px; }
+    .select-bar .stage-pick { font-size: 16px; font-weight: 600; }
+    .select-bar .stage-pick:disabled { opacity: 0.55; }
     .filter-summary { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 0 2px 10px; }
     .filter-summary .hint { margin: 0; }
     .filter-summary .link-button { flex-shrink: 0; }
@@ -753,6 +780,9 @@
     .status-pill.s-empty { color: var(--bad); border-color: var(--bad); }
     .status-pill.s-wishlist { color: var(--wish); border-color: var(--wish); }
     .status-pill.s-notowned { color: var(--grey-status); border-color: var(--grey-status); }
+    /* v21.1: on Your Palette the pill sits in a stacked grid, which stretched it across the
+       whole row. "start" keeps it only as wide as its words. */
+    .paint-text .status-pill { justify-self: start; margin-left: 0; }
     .have-badge { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 999px; font-size: 12px; border: 1px solid; white-space: nowrap; }
     .have-badge.have { color: var(--good); border-color: var(--good); background: var(--good-wash); }
     .have-badge.missing { color: var(--bad); border-color: var(--bad); background: var(--bad-wash); }
@@ -870,6 +900,8 @@
 
       /* The pop-up message sits at the bottom now the tabs are at the top. */
       .toast { bottom: 24px; }
+      .select-bar { bottom: 24px; }
+      body.selecting { padding-bottom: 200px; }
     }
 
     /* v19: army-list paste on the Units tab, and the buttons on an empty Units list. */
@@ -960,6 +992,8 @@
     <section id="view-units" class="hidden">
       <div class="units-toolbar">
         <button class="primary-button" id="toggle-add">+ Add unit</button>
+        <!-- v21.1: tick several units and move them to a stage in one go. -->
+        <button class="plain-button" id="toggle-select" aria-pressed="false">Select</button>
         <button class="plain-button" id="toggle-filters" aria-expanded="false" aria-controls="filter-card">Filters ▾</button>
       </div>
 
@@ -1019,6 +1053,16 @@
       <datalist id="faction-options"></datalist>
 
       <ul class="units" id="unit-list"></ul>
+
+      <!-- v21.1: the bar shown while selecting. The stage menu is filled in by refreshSelectBar(). -->
+      <div class="select-bar hidden" id="select-bar" role="region" aria-label="Move ticked units">
+        <div class="select-bar-top">
+          <span class="hint" id="select-count" aria-live="polite"></span>
+          <button type="button" class="link-button" id="select-all">Select all shown</button>
+          <button type="button" class="link-button" id="select-cancel">Cancel</button>
+        </div>
+        <div id="select-move-slot"></div>
+      </div>
     </section>
 
     <!-- ===== TAB: Recipes (how you paint things, step by step) ===== -->
@@ -1116,6 +1160,7 @@
             <li><strong>Starting stage</strong> in the Add form puts a new unit straight at the stage it's really at (it stays picked for the next unit you add).</li>
             <li>Press <strong>▲</strong> to move a unit up a stage. Made a mistake? Press <strong>Undo</strong> on the message that pops up.</li>
             <li id="help-jump-stage"><strong>Jump to a stage:</strong> tap a unit's name and pick from its <strong>Stage</strong> menu, to go straight to any stage (forwards or back). If you track each model separately, each model has its own stage menu, and <strong>Move all models to stage</strong> moves them all at once. Every jump has an <strong>Undo</strong>.</li>
+            <li id="help-move-many"><strong>Move several units at once:</strong> on the Units tab press <strong>Select</strong>. Each unit gets a tick box (tapping a unit ticks it). Tick the ones you want, or press <strong>Select all shown</strong> to tick every unit your filters are showing. Then pick a stage from <strong>Move … to stage</strong> in the bar at the bottom. Units tracked model by model have all their models moved. One <strong>Undo</strong> puts every unit back as it was, diary included. <strong>Cancel</strong>, the phone's Back button or leaving the tab stops selecting without changing anything.</li>
             <li>Tap a unit's name to open its details: nickname, model count, repaint flag, paint notes, photos, <strong>back a stage</strong>, and delete.</li>
             <li>Use the game and faction menus and the stage chips to filter the list. Tap several stage chips to combine them.</li>
           </ul>
@@ -1207,6 +1252,7 @@
           <ul>
             <li>Got recipes in Google Keep, a phone note or a Reddit post? On the Recipes tab, tap <strong>Paste recipes from your notes</strong>, paste them in and press <strong>Read notes</strong>. You get a preview first: nothing is saved until you press <strong>Save</strong>.</li>
             <li>Put each part on its own line ending in a colon, like <strong>Eyes:</strong>, then one step per line (or several split by commas). Mixes like <strong>2:1 Baal Red:CM</strong>, <strong>50/50</strong> or <strong>Seraphim Sepia 1:2 with Contrast Medium</strong> are read as one mixed step. "Ushabti Bone and Wraithbone" is read as both paints.</li>
+            <li id="help-faction-part">A line with just a faction name (<strong>Ultramarines</strong>) starts that faction's scheme. A faction followed by a part (<strong>Ultramarines armour</strong>, <strong>Death Guard cloak</strong>) starts that scheme and that part, so it isn't mistaken for a paint like Ultramarines Blue.</li>
             <li>Divider lines (<strong>-----</strong>, <strong>***</strong>, <strong>===</strong>) and lines with only emoji are skipped, like blank lines. Words the app can't read as a paint (say, in another alphabet) are kept as a note.</li>
             <li>Up to <strong>20,000 characters</strong> are read at once (a few pages of notes). If yours is longer, the preview says so: paste the rest separately.</li>
             <li>Not sure about a paint (like "CM")? <strong>Check … paints</strong> asks what you meant. The app remembers your answer for next time.</li>
@@ -2773,6 +2819,29 @@
       return names;
     }
 
+    // v21.1: "Ultramarines armour" / "Death Guard cloak and trim": a known faction name
+    // followed only by part or heading words. Returns { faction, part } (part may be "")
+    // or null. Without this the line read as the paint "Ultramarines Blue".
+    const HEADING_WORDS = new Set(["armor", "armour", "armours", "armors", "cloth", "cloak", "cloaks", "robe", "robes",
+      "skin", "flesh", "metal", "metals", "metallics", "trim", "eyes", "eye", "lenses", "lens", "weapon", "weapons",
+      "leather", "gems", "gem", "base", "bases", "basing", "scheme", "schemes", "recipe", "recipes", "colours",
+      "colors", "colour", "color", "paints", "paint", "army", "notes", "guide"]);
+    function factionLead(line, factions) {
+      const words = line.trim().split(/\s+/);
+      for (let k = words.length - 1; k >= 1; k--) {
+        if (!factions.has(matchKey(words.slice(0, k).join(" ")))) continue;
+        const rest = words.slice(k);
+        const own = new Set((Array.isArray(book.parts) ? book.parts : DEFAULT_PARTS).map(p => matchKey(p)));
+        const fits = rest.every(w => ["and", "&", "+"].includes(w.toLowerCase()) || HEADING_WORDS.has(matchKey(w)) || own.has(matchKey(w)));
+        if (!fits || !rest.some(w => !["and", "&", "+"].includes(w.toLowerCase()))) return null;
+        const restText = rest.join(" ");
+        // Only a part if it's a real part word (not "scheme", "recipes", "colours"...).
+        const general = rest.every(w => ["scheme", "schemes", "recipe", "recipes", "colours", "colors", "colour", "color", "paints", "paint", "army", "notes", "guide", "and", "&", "+"].includes(w.toLowerCase()));
+        return { faction: words.slice(0, k).join(" "), part: general ? "" : restText.charAt(0).toUpperCase() + restText.slice(1) };
+      }
+      return null;
+    }
+
     // The main reader. Returns { schemes: [{ name, parts: [{ name, notes, steps }] }] }.
     // v18: builds the paint list once for the whole paste (much faster), then lets it go.
     function parseRecipeText(text) {
@@ -2837,6 +2906,17 @@
         if (bare && line.split(/\s+/).length <= 5 && (factions.has(matchKey(line)) || (afterBlanks >= 2 && (!scheme || scheme.parts.length)) || !schemes.length)) {
           // v18: a known faction is checked before paints ("Dark Angels" isn't Dark Angels Green).
           if (factions.has(matchKey(line))) { startScheme(line); continue; }
+        }
+        // v21.1: "Ultramarines armour": the faction is the scheme, "Armour" the part (it used
+        // to read as the paint Ultramarines Blue). Checked wherever a bare line could start
+        // a section, not only at the top.
+        const lead = bare && line.split(/\s+/).length <= 6 ? factionLead(line, factions) : null;
+        if (lead) {
+          if (!scheme || !sameText(scheme.name, lead.faction)) startScheme(lead.faction);
+          if (lead.part) startPart(lead.part, false);
+          continue;
+        }
+        if (bare && line.split(/\s+/).length <= 5 && (factions.has(matchKey(line)) || (afterBlanks >= 2 && (!scheme || scheme.parts.length)) || !schemes.length)) {
           const asStep = readMention(line, {});
           const stepLike = asStep.technique || (asStep.paint && (asStep.paint.status === "sure" || asStep.paint.status === "material"));
           if (!stepLike) { startScheme(line); continue; }
@@ -3330,6 +3410,7 @@
 
     function showTab(name) {
       if (!views[name]) name = "dashboard";
+      if (name !== "units" && selectMode) closeSelect();   // v21.1: leaving Units ends select mode
       for (const [key, view] of Object.entries(views)) view.classList.toggle("hidden", key !== name);
       tabButtons.forEach(b => {
         if (b.dataset.tab === name) b.setAttribute("aria-current", "page");
@@ -3354,6 +3435,11 @@
 
     // What the Units list is showing. An empty stages Set means "every stage".
     const filters = { hobby: "", faction: "", stages: new Set(), repaint: false };
+
+    // v21.1: SELECT MODE on the Units tab. selectMode = are the tick boxes showing;
+    // ticked = the ids of the ticked units. Neither is saved: it's only for this visit.
+    let selectMode = false;
+    const ticked = new Set();
 
     function clearFilters() {
       filters.hobby = "";
@@ -4159,6 +4245,11 @@
     const stageChips = document.getElementById("stage-chips");
     const filterNote = document.getElementById("filter-note");
     const clearFiltersButton = document.getElementById("clear-filters");
+    const selectButton = document.getElementById("toggle-select");      // v21.1
+    const selectBar = document.getElementById("select-bar");
+    const selectCount = document.getElementById("select-count");
+    const selectAllButton = document.getElementById("select-all");
+    const selectMoveSlot = document.getElementById("select-move-slot");
 
     // Which units have their details panel open. Not saved.
     const openIds = new Set();
@@ -4243,6 +4334,15 @@
       fillStartStage();
       renderExamplesCards();
 
+      // v21.1: only units you can see can stay ticked (a filter change unticks the rest,
+      // so you never move something that's off screen). No units at all: no Select.
+      if (models.length === 0 && selectMode) selectMode = false;
+      if (!selectMode) ticked.clear();
+      const shownIds = new Set(visible.map(m => m.id));
+      for (const id of [...ticked]) if (!shownIds.has(id)) ticked.delete(id);
+      selectButton.classList.toggle("hidden", models.length === 0);
+      refreshSelectBar(visible);
+
       list.innerHTML = "";
       if (models.length === 0) {
         // v19: a brand-new collection gets the import buttons right here.
@@ -4266,7 +4366,21 @@
       item.className = "unit";
       item.dataset.id = model.id;   // so we can scroll to it from a recipe
       item.style.setProperty("--stage-colour", `var(--stage-${model.stage})`);
-      const isOpen = openIds.has(model.id);
+      const isOpen = openIds.has(model.id) && !selectMode;
+
+      // v21.1: in select mode each card starts with a tick box.
+      if (selectMode) {
+        const tickWrap = document.createElement("label");
+        tickWrap.className = "unit-tick";
+        const tick = document.createElement("input");
+        tick.type = "checkbox";
+        tick.checked = ticked.has(model.id);
+        tick.setAttribute("aria-label", `Tick ${displayName(model)}`);
+        tick.addEventListener("change", () => toggleTick(model.id));
+        tickWrap.appendChild(tick);
+        item.appendChild(tickWrap);
+        item.classList.toggle("ticked", tick.checked);
+      }
 
       if (hasPhoto(model)) {
         // The small picture: an old-style photo, or the thumbnail from the photo store
@@ -4284,8 +4398,13 @@
       info.className = "info";
       info.setAttribute("role", "button");
       info.tabIndex = 0;
-      info.setAttribute("aria-expanded", isOpen);
-      info.setAttribute("aria-label", `${displayName(model)}, ${STAGES[model.stage]}. Show details.`);
+      if (selectMode) {
+        info.setAttribute("aria-pressed", ticked.has(model.id));
+        info.setAttribute("aria-label", `${displayName(model)}, ${STAGES[model.stage]}. ${ticked.has(model.id) ? "Ticked" : "Tap to tick"}.`);
+      } else {
+        info.setAttribute("aria-expanded", isOpen);
+        info.setAttribute("aria-label", `${displayName(model)}, ${STAGES[model.stage]}. Show details.`);
+      }
 
       const name = document.createElement("div");
       name.className = "name";
@@ -4334,6 +4453,7 @@
 
       info.append(name, details, stage, pips);
       const toggle = () => {
+        if (selectMode) { toggleTick(model.id); return; }   // v21.1: in select mode a tap ticks
         if (openIds.has(model.id)) openIds.delete(model.id); else openIds.add(model.id);
         render();
       };
@@ -4355,6 +4475,9 @@
           : `Move ${displayName(model)} up to ${STAGES[model.stage + 1]}`);
       up.addEventListener("click", () => changeStage(model.id, +1));
 
+      // v21.1: while selecting, the ▲ and the recipe buttons step aside so a tap can't
+      // change a stage or open something by accident.
+      if (selectMode) { item.append(info); return item; }
       item.append(info, up);
 
       // Its recipes, as buttons that open them.
@@ -4862,6 +4985,83 @@
         unit.log = was.log;
         render();
       });
+    }
+
+    // ----- v21.1: SELECT MODE AND BULK "MOVE TO STAGE" -----
+    // "Select" on the Units tab puts a tick box on every card you can see. The bar at the
+    // bottom counts the ticks and has a "Move N to stage…" menu; picking a stage moves them
+    // all at once, and ONE Undo puts every unit back exactly (diary included).
+    function openSelect() {
+      if (!models.length) return;
+      selectMode = true;
+      ticked.clear();
+      closeAddForm();
+      renderUnits();
+    }
+    function closeSelect() {
+      selectMode = false;
+      ticked.clear();
+      renderUnits();
+    }
+    function toggleTick(id) {
+      if (!selectMode) return;
+      if (ticked.has(id)) ticked.delete(id); else ticked.add(id);
+      renderUnits();
+    }
+    // Draws the bar to match the ticks. visible = the units the filters are showing.
+    function refreshSelectBar(visible) {
+      selectBar.classList.toggle("hidden", !selectMode);
+      document.body.classList.toggle("selecting", selectMode);
+      selectButton.setAttribute("aria-pressed", selectMode);
+      if (!selectMode) { selectMoveSlot.innerHTML = ""; return; }
+      const n = ticked.size;
+      selectCount.textContent = `${n} of ${plural(visible.length, "unit")} ticked`;
+      const allTicked = visible.length > 0 && visible.every(m => ticked.has(m.id));
+      selectAllButton.textContent = allTicked ? "Untick all" : "Select all shown";
+      selectAllButton.classList.toggle("hidden", visible.length === 0);
+      const menu = stagePicker(null, `Move ${n} ticked to stage`, moveTicked,
+        n ? `Move ${n} to stage…` : "Tick units to move them");
+      menu.id = "select-move";
+      menu.disabled = n === 0;
+      selectMoveSlot.innerHTML = "";
+      selectMoveSlot.appendChild(menu);
+    }
+    function selectAllShown() {
+      const visible = models.filter(isVisible);
+      if (visible.every(m => ticked.has(m.id))) ticked.clear();
+      else for (const m of visible) ticked.add(m.id);
+      renderUnits();
+    }
+    // Move every ticked unit (all models of a model-by-model unit) to one stage.
+    function moveTicked(stage) {
+      if (!Number.isInteger(stage) || stage < 0 || stage >= STAGES.length) return;
+      const chosen = models.filter(m => ticked.has(m.id) && isVisible(m));
+      const moving = chosen.filter(m => m.each ? !m.stages.every(s => s === stage) : m.stage !== stage);
+      selectMode = false;     // select mode closes after a move
+      ticked.clear();
+      if (!moving.length) {
+        render();
+        showToast(chosen.length === 1 ? `${displayName(chosen[0])} is already ${STAGES[stage]}`
+          : `All ${chosen.length} are already ${STAGES[stage]}`);
+        return;
+      }
+      // A snapshot of each unit as it was, so Undo can put it back exactly.
+      const before = moving.map(m => ({ id: m.id, was: JSON.stringify({ stage: m.stage, stages: m.stages, log: m.log }) }));
+      for (const m of moving) setStage(m, stage);
+      const skipped = chosen.length - moving.length;
+      const who = moving.length === 1 ? displayName(moving[0]) : `${moving.length} units`;
+      const message = `${who} → ${STAGES[stage]}` + (skipped ? ` (${skipped} already there)` : "");
+      commit(message, () => {
+        for (const b of before) {
+          const unit = models.find(m => m.id === b.id);
+          if (!unit) continue;
+          const was = JSON.parse(b.was);
+          unit.stage = was.stage;
+          if (Array.isArray(was.stages)) unit.stages = was.stages;
+          unit.log = was.log;
+        }
+        render();
+      }, "Undo", 8);
     }
 
     function deleteModel(id) {
@@ -5514,8 +5714,14 @@
       const opening = form.classList.contains("hidden");
       form.classList.toggle("hidden", !opening);
       toggleAdd.textContent = opening ? "Close" : "+ Add unit";
+      if (opening && selectMode) closeSelect();   // v21.1: one thing at a time
       if (opening) nameInput.focus();
     });
+
+    // v21.1: Select (tap again to stop), Select all shown, Cancel.
+    selectButton.addEventListener("click", () => { if (selectMode) closeSelect(); else openSelect(); });
+    selectAllButton.addEventListener("click", selectAllShown);
+    document.getElementById("select-cancel").addEventListener("click", closeSelect);
 
     form.addEventListener("submit", (event) => {
       event.preventDefault();                   // stop the browser reloading the page
@@ -9886,10 +10092,15 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v21";
+    const APP_VERSION = "v21.1";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v21.1", date: "11 Oct 2026", changes: [
+        "New: move several units to a stage at once. On the Units tab press Select, tick the units (or Select all shown), then pick a stage from Move to stage at the bottom. One Undo puts them all back.",
+        "Pasted notes that start with a faction and a part, like \"Ultramarines armour\", are now read as that faction's armour recipe, not as the paint Ultramarines Blue.",
+        "Tidier Your Palette: the status labels (Owned, Low, Wishlist…) are now only as wide as their words.",
+      ]},
       { version: "v21", date: "11 Oct 2026", changes: [
         "New: the three example units the app starts with now say so, on the Dashboard and the Units tab. Clear examples removes only those (with Undo); Keep them turns them into your own units.",
         "New: jump straight to a stage. Open a unit and pick its stage from the Stage menu, instead of tapping ▲ up to 7 times. Units tracked model by model have a menu for each model too, and one to move them all.",
@@ -10178,6 +10389,7 @@
     //   1. the photo viewer           2. the camera, then the scan panel
     //   3. a page on the Recipes tab (paste recipes, a recipe being written or read, a scheme)
     //   4. the import box on the Units tab
+    //   4b. (v21.1) select mode on the Units tab (the tick boxes and the Move bar)
     //   5. any tab other than the Dashboard goes back to the Dashboard
     // and only on the Dashboard, with nothing open, does Back leave the app as normal.
     //
@@ -10209,6 +10421,7 @@
         if (schemeDraft && settings.recipeView === "schemes") return () => closeScheme(true);
       }
       if (tab === "units" && !unitsImport.classList.contains("hidden")) return closeUnitsImport;
+      if (tab === "units" && selectMode) return closeSelect;   // v21.1: select mode's tick boxes
       if (tab && tab !== "dashboard") return () => showTab("dashboard");
       return null;
     }
