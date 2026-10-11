@@ -39,7 +39,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=21.6"></script>
+  <script src="early.js?v=21.7"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -575,6 +575,31 @@
     /* v20: in light mode the toast is dark, so a faint outline keeps it clear over the (always dark) photo viewer. */
     :root[data-appearance="light"] .toast { box-shadow: 0 0 0 1px rgba(125, 211, 252, 0.45), 0 4px 14px var(--shadow); }
     .toast button { margin-left: auto; background: none; color: var(--toast-action); font-weight: 700; padding: 10px 12px; margin: -8px -8px -8px auto; min-height: 44px; }
+
+    /* ----- v21.7: the in-app question box (replaces the browser's own pop-up questions) ----- */
+    /* Sits over everything, even the photo viewer (15) and the toast (20). Uses the page's own
+       colours, so it follows dark and light. Long names wrap instead of pushing sideways. */
+    .dialog-backdrop {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(5, 9, 17, 0.72);
+      display: flex; align-items: center; justify-content: center;
+      padding: calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
+      overscroll-behavior: contain;
+    }
+    .dialog {
+      width: 100%; max-width: 420px; max-height: 100%; overflow-y: auto;
+      background: var(--card); color: var(--text);
+      border: 1px solid var(--border); border-radius: 12px;
+      padding: 18px 16px 16px;
+      box-shadow: 0 8px 28px var(--shadow);
+      display: grid; gap: 14px;
+    }
+    .dialog-message { margin: 0; font-size: 16px; line-height: 1.45; overflow-wrap: anywhere; white-space: pre-line; }
+    .dialog input, .dialog textarea { width: 100%; box-sizing: border-box; }
+    .dialog textarea { min-height: 120px; resize: none; }
+    .dialog-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .dialog-buttons.single { grid-template-columns: 1fr; }
+    .dialog-buttons button { min-height: 44px; padding: 10px 12px; font-size: 16px; overflow-wrap: anywhere; }
 
     /* ----- v14: banners at the top of the screen ----- */
     /* Red "not saving" banner: fixed to the top so you see it on every tab and while
@@ -1177,7 +1202,7 @@
             <li>Check the <strong>Dashboard</strong> to see how far you've got.</li>
             <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
           </ol>
-          <p id="help-back" style="margin: 8px 0 0;">The phone's <strong>Back</strong> button closes what's open first, one thing per press: a photo, the camera, a recipe, the paste box. Then it goes to the Dashboard. On the Dashboard, with nothing open, it leaves the app.</p>
+          <p id="help-back" style="margin: 8px 0 0;">The phone's <strong>Back</strong> button closes what's open first, one thing per press: a question box (it counts as No), a photo, the camera, a recipe, the paste box. Then it goes to the Dashboard. On the Dashboard, with nothing open, it leaves the app.</p>
         </details>
         <details>
           <summary>Adding and updating units</summary>
@@ -1190,6 +1215,7 @@
             <li id="help-jump-stage"><strong>Jump to a stage:</strong> tap a unit's name and pick from its <strong>Stage</strong> menu, to go straight to any stage (forwards or back). If you track each model separately, each model has its own stage menu, and <strong>Move all models to stage</strong> moves them all at once. Every jump has an <strong>Undo</strong>.</li>
             <li id="help-move-many"><strong>Move several units at once:</strong> on the Units tab press <strong>Select</strong>. Each unit gets a tick box (tapping a unit ticks it). Tick the ones you want, or press <strong>Select all shown</strong> to tick every unit your filters are showing. Then pick a stage from <strong>Move … to stage</strong> in the bar at the bottom. Units tracked model by model have all their models moved. One <strong>Undo</strong> puts every unit back as it was, diary included. <strong>Cancel</strong>, the phone's Back button or leaving the tab stops selecting without changing anything.</li>
             <li>Tap a unit's name to open its details: nickname, model count, repaint flag, paint notes, photos, <strong>back a stage</strong>, and delete.</li>
+            <li id="help-questions"><strong>Questions:</strong> when the app needs to check before doing something (deleting, replacing, leaving a recipe you haven't saved) or needs a name from you, it asks in its own small box over the page. Tap <strong>Yes</strong> or <strong>No</strong>, or type the name and tap <strong>OK</strong>. <strong>No</strong>, <strong>Cancel</strong>, the <strong>Escape</strong> key and the phone's <strong>Back</strong> button all mean no, and nothing changes. On a keyboard, <strong>Enter</strong> means yes.</li>
             <li id="help-delete-unit"><strong>Deleting a unit:</strong> press <strong>Delete</strong> in its details and say yes. Changed your mind? Press <strong>Undo</strong> on the message that appears (it stays about 8 seconds): the unit comes back exactly as it was, photos, recipes and diary included.</li>
             <li>Use the game and faction menus and the stage chips to filter the list. Tap several stage chips to combine them.</li>
           </ul>
@@ -1551,9 +1577,23 @@
     <button id="toast-undo">Undo</button>
   </div>
 
+  <!-- v21.7: the in-app question box. Hidden until the app needs to ask something. Only
+       markup and styles live here; the code that fills it in and opens it is in app.js. -->
+  <div class="dialog-backdrop hidden" id="dialog-backdrop">
+    <div class="dialog" id="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-message">
+      <p class="dialog-message" id="dialog-message"></p>
+      <input id="dialog-input" class="hidden" type="text" autocomplete="off" autocapitalize="sentences" maxlength="200" aria-labelledby="dialog-message">
+      <textarea id="dialog-area" class="hidden" readonly aria-labelledby="dialog-message"></textarea>
+      <div class="dialog-buttons" id="dialog-buttons">
+        <button type="button" class="plain-button" id="dialog-no">No</button>
+        <button type="button" class="primary-button" id="dialog-yes">Yes</button>
+      </div>
+    </div>
+  </div>
+
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=21.6" makes phones fetch the new file after an update instead of an old saved one. -->
-  <script src="app.js?v=21.6"></script>
+       The "?v=21.7" makes phones fetch the new file after an update instead of an old saved one. -->
+  <script src="app.js?v=21.7"></script>
 </body>
 </html>

@@ -14,6 +14,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from dialog_watch import DialogAnswers
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}/"
@@ -84,11 +85,7 @@ def main():
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
         dialogs = []
-        answer = {"accept": True}
-        def on_dialog(d):
-            dialogs.append(d.message)
-            d.accept() if answer["accept"] else d.dismiss()
-        page.on("dialog", on_dialog)
+        answers = DialogAnswers(page, dialogs.append)
 
         # ---------- 1. Versions and kept things ----------
         print("--- 1. Versions and kept things ---")
@@ -173,13 +170,13 @@ def main():
         page.wait_for_timeout(100)
         page.locator("#recipe-page input").first.fill("Half-written recipe")
         page.wait_for_timeout(100)
-        answer["accept"] = False
+        answers.yes = False
         dialogs.clear()
         back(page)
         check("Back on a changed recipe asks before leaving", any("Discard" in d for d in dialogs), dialogs)
         check("…saying No keeps the recipe open", page.evaluate("!!recipeDraft") and page.is_visible("#recipe-page"))
         check("…and Back is ready again", has_step(page))
-        answer["accept"] = True
+        answers.yes = True
         back(page)
         check("…saying Yes closes it", not page.evaluate("!!recipeDraft"))
         tab(page, "dashboard")

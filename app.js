@@ -2192,18 +2192,24 @@
       if (on) {
         model.each = true;
         model.stages = new Array(model.count || 1).fill(model.stage);
-      } else {
-        const spread = new Set(model.stages).size > 1;
-        if (spread && !confirm(`Go back to painting ${displayName(model)} as a batch? ` +
-            `All its models will be set to ${STAGES[model.stage]}, the stage of the furthest-behind model.`)) {
-          render();
-          return;
-        }
+        render();
+        return;
+      }
+      const spread = new Set(model.stages).size > 1;
+      const goBack = () => {
         delete model.each;
         delete model.stages;
         if (spread) logStage(model, model.stage);
+        render();
+      };
+      // v21.7: asks in the app's own box, then carries on when you answer. "No" just redraws.
+      if (spread) {
+        askYesNo(`Go back to painting ${displayName(model)} as a batch? ` +
+          `All its models will be set to ${STAGES[model.stage]}, the stage of the furthest-behind model.`,
+          goBack, { onNo: render });
+      } else {
+        goBack();
       }
-      render();
     }
 
     // When the number of models changes, add new models at the first stage, or drop the last ones.
@@ -2685,8 +2691,9 @@
         rename.textContent = "Rename";
         rename.setAttribute("aria-label", `Rename ${faction}`);
         rename.addEventListener("click", () => {
-          const answer = prompt(`Rename "${faction}" on all ${plural(units, "unit")} to:`, faction);
-          if (answer !== null) renameFaction(faction, answer);
+          askText(`Rename "${faction}" on all ${plural(units, "unit")} to:`, faction, (answer) => {
+            if (answer !== null) renameFaction(faction, answer);
+          });
         });
         buttons.appendChild(rename);
         if (colour) {
@@ -3926,8 +3933,14 @@
     // "Clean up photo storage" in Settings can tidy any left behind.
     const DELETE_UNIT_SECONDS = 8;
     function deleteModel(id) {
-      const model = models.find(m => m.id === id);
-      if (!model || !confirm(`Delete "${displayName(model)}"?`)) return;
+      const asked = models.find(m => m.id === id);
+      if (!asked) return;
+      // v21.7: the question is asked in the app's own box; the delete (and its Undo) happen when you say yes.
+      askYesNo(`Delete "${displayName(asked)}"?`, () => deleteModelNow(id), { danger: true });
+    }
+    function deleteModelNow(id) {
+      const model = models.find(m => m.id === id);   // looked up again: the list could have changed while the question was showing
+      if (!model) return;
       const spot = models.indexOf(model);
       const wasOpen = openIds.has(id);
       const files = photoIds(model);
@@ -4561,6 +4574,118 @@
       toast.classList.add("hidden");
     });
 
+    // ================= v21.7: THE IN-APP QUESTION BOX =================
+    // Before v21.7, the app asked questions ("Delete this unit?", "Name of the new part:")
+    // with the browser's own pop-up boxes. Those look different on every phone, can't be
+    // styled, and stop the whole page while they're up. Now the app has its own small box:
+    //   askYesNo(message, onYes, { onNo, danger, yes, no })  - a yes/no question
+    //   askText(message, start, onDone)                       - "type a name": onDone(text), or null if cancelled
+    //   showTextToCopy(message, text)                         - shows some text to copy by hand
+    // IMPORTANT difference: the old pop-ups stopped the code until you answered, so a line
+    // an "ask, and give up if the answer is no" line worked. The new box can't do that. The code asks,
+    // then carries on LATER, from the function handed in (onYes / onDone), when you answer.
+    // Cancel, the Escape key and the phone's Back button all count as "no".
+    // The box lives in index.html (markup and styles only); this is the code that runs it.
+    const dialogBackdrop = document.getElementById("dialog-backdrop");
+    const dialogBox = document.getElementById("dialog");
+    const dialogMessage = document.getElementById("dialog-message");
+    const dialogInput = document.getElementById("dialog-input");
+    const dialogArea = document.getElementById("dialog-area");
+    const dialogButtons = document.getElementById("dialog-buttons");
+    const dialogYes = document.getElementById("dialog-yes");
+    const dialogNo = document.getElementById("dialog-no");
+    let dialogState = null;   // null, or { cfg, opener } while a question is showing
+
+    function showDialog(cfg) {
+      if (dialogState) finishDialog(dialogState.cfg.mode === "text" ? null : false);   // a new question replaces the old one, which counts as "no"
+      const text = cfg.mode === "text", show = cfg.mode === "show";
+      dialogMessage.textContent = cfg.message;
+      dialogInput.classList.toggle("hidden", !text);
+      dialogArea.classList.toggle("hidden", !show);
+      dialogInput.value = text ? (cfg.initial || "") : "";
+      dialogArea.value = show ? (cfg.initial || "") : "";
+      dialogYes.textContent = cfg.yes || (text ? "OK" : show ? "Close" : "Yes");
+      dialogNo.textContent = cfg.no || (text ? "Cancel" : "No");
+      // A question about something destructive makes the safe answer the bold one.
+      dialogYes.className = cfg.danger ? "danger-button" : "primary-button";
+      dialogNo.className = cfg.danger ? "primary-button" : "plain-button";
+      dialogNo.classList.toggle("hidden", show);   // (after the line above, which sets the whole class)
+      dialogButtons.classList.toggle("single", show);
+      dialogState = { cfg, opener: document.activeElement };
+      dialogBackdrop.classList.remove("hidden");
+      const first = text ? dialogInput : show ? dialogArea : dialogYes;
+      first.focus();
+      if (text || show) first.select();
+      queueBackCheck();   // so the phone's Back button can close it
+    }
+
+    // Close the box and hand back the answer (true/false, the typed text, or null).
+    function finishDialog(answer) {
+      const state = dialogState;
+      if (!state) return;
+      dialogState = null;
+      dialogBackdrop.classList.add("hidden");
+      dialogInput.value = "";
+      dialogArea.value = "";
+      const opener = state.opener;
+      if (opener && opener.isConnected && typeof opener.focus === "function") {
+        try { opener.focus({ preventScroll: true }); } catch (ignored) {}
+      }
+      queueBackCheck();
+      state.cfg.onDone(answer);
+    }
+    // What Back, Escape and the "No" / "Cancel" button do.
+    function cancelDialog() {
+      if (dialogState) finishDialog(dialogState.cfg.mode === "text" ? null : false);
+    }
+    function acceptDialog() {
+      if (!dialogState) return;
+      const mode = dialogState.cfg.mode;
+      finishDialog(mode === "text" ? dialogInput.value : true);
+    }
+    dialogYes.addEventListener("click", acceptDialog);
+    dialogNo.addEventListener("click", cancelDialog);
+    // Escape = no. Enter = yes (unless a button has the focus: then Enter presses that button).
+    // Tab stays inside the box. Written to run first, so nothing else sees these keys.
+    document.addEventListener("keydown", (event) => {
+      if (!dialogState || event.isComposing) return;
+      if (event.key === "Escape") {
+        event.preventDefault(); event.stopPropagation();
+        cancelDialog();
+      } else if (event.key === "Enter" && !(event.target instanceof HTMLButtonElement)) {
+        event.preventDefault(); event.stopPropagation();
+        acceptDialog();
+      } else if (event.key === "Tab") {
+        const stops = [dialogInput, dialogArea, dialogNo, dialogYes].filter(el => !el.classList.contains("hidden"));
+        const at = stops.indexOf(document.activeElement);
+        const next = event.shiftKey ? (at <= 0 ? stops.length - 1 : at - 1) : (at < 0 || at === stops.length - 1 ? 0 : at + 1);
+        event.preventDefault();
+        stops[next].focus();
+      }
+    }, true);
+    // If focus somehow lands outside the box (a screen reader's own keys, say), pull it back in.
+    document.addEventListener("focusin", (event) => {
+      if (dialogState && !dialogBox.contains(event.target)) {
+        const first = !dialogInput.classList.contains("hidden") ? dialogInput : !dialogArea.classList.contains("hidden") ? dialogArea : dialogYes;
+        first.focus();
+      }
+    });
+
+    function askYesNo(message, onYes, options) {
+      const opts = options || {};
+      showDialog({
+        mode: "yesno", message, yes: opts.yes, no: opts.no, danger: !!opts.danger,
+        onDone: (ok) => { if (ok) onYes(); else if (opts.onNo) opts.onNo(); },
+      });
+    }
+    function askText(message, initial, onDone, options) {
+      const opts = options || {};
+      showDialog({ mode: "text", message, initial, yes: opts.yes, no: opts.no, onDone });
+    }
+    function showTextToCopy(message, text) {
+      showDialog({ mode: "show", message, initial: text, onDone: () => {} });
+    }
+
     // ----- Filters and the add form -----
 
     hobbyFilter.addEventListener("change", () => {
@@ -4826,20 +4951,22 @@
       renderRecipes();
     }));
 
-    // Leaving the editor with unsaved changes? Check first. True = OK to carry on.
-    function okToLeaveDraft() {
-      if (!recipeDraft) return true;
-      if (draftSnapshot(recipeDraft) === recipeDraft.original) return true;
-      return confirm("Discard the changes to the recipe you're writing?");
+    // Leaving the editor with unsaved changes? Check first. v21.7: it can't answer instantly
+    // any more (the question is in the app's own box), so it works like this: nothing to lose,
+    // carries on straight away; otherwise it asks, and carries on only if you say yes.
+    function whenOkToLeaveDraft(carryOn) {
+      if (!recipeDraft || draftSnapshot(recipeDraft) === recipeDraft.original) { carryOn(); return; }
+      askYesNo("Discard the changes to the recipe you're writing?", carryOn, { danger: true });
     }
     function draftSnapshot(d) { return JSON.stringify({ n: d.name, p: d.part, o: d.notes, s: d.steps }); }
 
     function openRecipe(id) {
-      if (!okToLeaveDraft()) return;
-      recipeDraft = null;
-      openRecipeId = id;
-      renderRecipes();
-      showTab("recipes");
+      whenOkToLeaveDraft(() => {
+        recipeDraft = null;
+        openRecipeId = id;
+        renderRecipes();
+        showTab("recipes");
+      });
     }
 
     // Jump to one unit on the Units tab, with its details open.
@@ -4915,8 +5042,10 @@
       add.className = "link-button";
       add.textContent = `+ Add ${word}`;
       add.addEventListener("click", () => {
-        const typed = (prompt(`Name of the new ${word}:`) || "").trim();
-        if (typed && !book[key].some(v => sameText(v, typed))) { book[key].push(typed); render(); }
+        askText(`Name of the new ${word}:`, "", (answer) => {
+          const typed = (answer || "").trim();
+          if (typed && !book[key].some(v => sameText(v, typed))) { book[key].push(typed); render(); }
+        });
       });
       box.appendChild(add);
     }
@@ -5078,14 +5207,20 @@
     }
 
     function deleteRecipe(id) {
-      const recipe = recipeById(id);
+      const asked = recipeById(id);
+      if (!asked) return;
+      const usersNow = unitsUsing(id).length;
+      const schemesNow = book.schemes.filter(s => s.recipes.includes(id)).length;
+      const unlinkFrom = [usersNow ? plural(usersNow, "unit") : "",
+                          schemesNow ? plural(schemesNow, "scheme") : ""].filter(Boolean).join(" and ");
+      askYesNo(`Delete the recipe "${asked.name}"?` + (unlinkFrom ? ` It will be removed from ${unlinkFrom}.` : ""),
+        () => deleteRecipeNow(id), { danger: true });
+    }
+    function deleteRecipeNow(id) {
+      const recipe = recipeById(id);   // looked up again, in case it changed while the question was showing
       if (!recipe) return;
       const users = unitsUsing(id);
       const inSchemes = book.schemes.filter(s => s.recipes.includes(id));
-      const unlinkFrom = [users.length ? plural(users.length, "unit") : "",
-                          inSchemes.length ? plural(inSchemes.length, "scheme") : ""].filter(Boolean).join(" and ");
-      if (!confirm(`Delete the recipe "${recipe.name}"?` +
-                   (unlinkFrom ? ` It will be removed from ${unlinkFrom}.` : ""))) return;
       const before = JSON.parse(JSON.stringify(book));   // a copy, for Undo (schemes included)
       book.recipes = book.recipes.filter(r => r.id !== id);
       for (const s of inSchemes) s.recipes = s.recipes.filter(r => r !== id);
@@ -5227,11 +5362,16 @@
     }
     function schemeSnapshot(d) { return JSON.stringify([d.name, d.faction, d.auto, d.recipes]); }
     function closeScheme(askFirst) {
-      if (askFirst && schemeDraft && schemeSnapshot(schemeDraft) !== schemeDraft.original &&
-          !confirm("Discard the changes to this scheme?")) return;
-      schemeDraft = null;
-      renderRecipes();
-      window.scrollTo(0, 0);
+      const leave = () => {
+        schemeDraft = null;
+        renderRecipes();
+        window.scrollTo(0, 0);
+      };
+      if (askFirst && schemeDraft && schemeSnapshot(schemeDraft) !== schemeDraft.original) {
+        askYesNo("Discard the changes to this scheme?", leave, { danger: true });
+        return;
+      }
+      leave();
     }
     document.getElementById("new-scheme").addEventListener("click", () => startScheme(null));
 
@@ -5381,8 +5521,14 @@
 
     // Deleting a scheme doesn't touch the recipes or the units' links: those stay.
     function deleteScheme(id) {
-      const scheme = book.schemes.find(s => s.id === id);
-      if (!scheme || !confirm(`Delete the scheme "${scheme.name}"? Its recipes, and the units they're linked to, stay as they are.`)) return;
+      const asked = book.schemes.find(s => s.id === id);
+      if (!asked) return;
+      askYesNo(`Delete the scheme "${asked.name}"? Its recipes, and the units they're linked to, stay as they are.`,
+        () => deleteSchemeNow(id), { danger: true });
+    }
+    function deleteSchemeNow(id) {
+      const scheme = book.schemes.find(s => s.id === id);   // looked up again, in case the book changed meanwhile
+      if (!scheme) return;
       const index = book.schemes.indexOf(scheme);
       book.schemes.splice(index, 1);
       schemeDraft = null;
@@ -5563,14 +5709,14 @@
       paint[field] = value;
       const twin = book.paints.find(p => p !== paint && sameText(p.name, paint.name) && sameText(p.brand, paint.brand));
       if (twin) {
-        if (!confirm(`You already have ${twin.brand ? twin.brand + " " : ""}${twin.name}. Merge the two into one paint?`)) {
-          paint[field] = old;
-          renderPalette();
-          return;
-        }
-        paint[field] = old;   // so a typo you merge away is remembered as shorthand
-        joinPaints(paint, twin);
-        commit(`Merged into ${twin.name}`);   // v18c-3
+        // v21.7: the paint goes back to how it was while the question is showing (a typo you
+        // merge away is remembered as shorthand, and "No" leaves it untouched). Then it asks.
+        paint[field] = old;
+        askYesNo(`You already have ${twin.brand ? twin.brand + " " : ""}${twin.name}. Merge the two into one paint?`, () => {
+          if (!book.paints.includes(paint) || !book.paints.includes(twin)) { renderPalette(); return; }   // changed meanwhile
+          joinPaints(paint, twin);
+          commit(`Merged into ${twin.name}`);   // v18c-3
+        }, { onNo: renderPalette });
         return;
       }
       commit(`Saved ${paint.name}`);   // v18c-3
@@ -5718,12 +5864,13 @@
 
     // linkUnit: the unit to link it to when saved (when started from a unit), or null.
     function startNewRecipe(linkUnit) {
-      if (!okToLeaveDraft()) return;
-      openRecipeId = null;
-      startRecipeDraft({ id: null, name: "", part: recipePartFilter, notes: "", linkUnit, steps: [blankStep()] });
-      showTab("recipes");
-      const nameBox = recipePage.querySelector("input");
-      if (nameBox) nameBox.focus();
+      whenOkToLeaveDraft(() => {
+        openRecipeId = null;
+        startRecipeDraft({ id: null, name: "", part: recipePartFilter, notes: "", linkUnit, steps: [blankStep()] });
+        showTab("recipes");
+        const nameBox = recipePage.querySelector("input");
+        if (nameBox) nameBox.focus();
+      });
     }
 
     // A dropdown of a list (parts or techniques) with "＋ Add a new…" at the bottom.
@@ -5737,13 +5884,15 @@
       select.value = current || "";
       select.addEventListener("change", () => {
         if (select.value !== "\u0000new") { onPick(select.value); return; }
-        const typed = (prompt(`Name of the new ${word}:`) || "").trim();
-        if (typed) {
-          const existing = book[key].find(v => sameText(v, typed));
-          if (!existing) { book[key].push(typed); save(); }
-          onPick(existing || typed);
-        }
-        renderRecipeEditor();
+        askText(`Name of the new ${word}:`, "", (answer) => {
+          const typed = (answer || "").trim();
+          if (typed) {
+            const existing = book[key].find(v => sameText(v, typed));
+            if (!existing) { book[key].push(typed); save(); }
+            onPick(existing || typed);
+          }
+          renderRecipeEditor();   // also on Cancel: puts the menu back to what it was
+        });
       });
       return select;
     }
@@ -5842,11 +5991,12 @@
       cancel.className = "plain-button";
       cancel.textContent = "Cancel";
       cancel.addEventListener("click", () => {
-        if (!okToLeaveDraft()) return;
-        if (d.id !== null) openRecipeId = d.id;
-        recipeDraft = null;
-        renderRecipes();
-        window.scrollTo(0, 0);
+        whenOkToLeaveDraft(() => {
+          if (d.id !== null) openRecipeId = d.id;
+          recipeDraft = null;
+          renderRecipes();
+          window.scrollTo(0, 0);
+        });
       });
       actions.append(saveButton, cancel);
       recipePage.appendChild(actions);
@@ -5884,9 +6034,9 @@
         iconButton("↓", `Move step ${si + 1} down`, si === d.steps.length - 1, () => move(+1)),
         iconButton("✕", `Remove step ${si + 1}`, false, () => {
           const hasPaints = step.paints.some(p => p.name.trim());
-          if (hasPaints && !confirm(`Remove step ${si + 1}?`)) return;
-          d.steps.splice(si, 1);
-          renderRecipeEditor();
+          const remove = () => { d.steps.splice(si, 1); renderRecipeEditor(); };
+          if (hasPaints) askYesNo(`Remove step ${si + 1}?`, remove, { danger: true });
+          else remove();
         }, "remove"));
       li.appendChild(head);
 
@@ -6225,19 +6375,26 @@
     let importDraft = null;
 
     function startImport() {
-      if (!okToLeaveDraft()) return;
-      recipeDraft = null;
-      openRecipeId = null;
-      importDraft = { text: "", parsed: null, groups: [], names: [] };
-      renderRecipes();
-      showTab("recipes");
-      window.scrollTo(0, 0);
+      whenOkToLeaveDraft(() => {
+        recipeDraft = null;
+        openRecipeId = null;
+        importDraft = { text: "", parsed: null, groups: [], names: [] };
+        renderRecipes();
+        showTab("recipes");
+        window.scrollTo(0, 0);
+      });
     }
     function closeImport(askFirst) {
-      if (askFirst && importDraft && importDraft.text.trim() && !confirm("Leave without saving these recipes?")) return;
-      importDraft = null;
-      renderRecipes();
-      window.scrollTo(0, 0);
+      const leave = () => {
+        importDraft = null;
+        renderRecipes();
+        window.scrollTo(0, 0);
+      };
+      if (askFirst && importDraft && importDraft.text.trim()) {
+        askYesNo("Leave without saving these recipes?", leave, { danger: true });
+        return;
+      }
+      leave();
     }
     document.getElementById("paste-recipes").addEventListener("click", startImport);
     document.getElementById("paste-recipes-schemes").addEventListener("click", startImport);
@@ -6335,12 +6492,14 @@
           chips.appendChild(makeChip(`Keep “${tidyName(g.typed)}”`, pressed("keep"), () => choose("keep", { brand: "", name: tidyName(g.typed), colour: DEFAULT_PAINT_COLOUR })));
           chips.appendChild(makeChip("Basing material", pressed("material"), () => choose("material", { brand: "", name: tidyName(g.typed), colour: DEFAULT_PAINT_COLOUR, type: "material" })));
           const other = makeChip(g.choice && g.choice.kind === "other" ? `Other: ${g.choice.paint.name}` : "Other…", pressed("other"), () => {
-            const typed = (prompt(`What is “${g.typed}”? Type the paint's name:`) || "").trim();
-            if (!typed) return;
-            const m = matchPaint(typed);
-            const paint = m.paint || (m.suggestions[0] && sameText(matchKey(m.suggestions[0].name), matchKey(typed)) ? m.suggestions[0] : null)
-                          || { brand: "", name: tidyName(typed), colour: DEFAULT_PAINT_COLOUR };
-            choose("other", paint);
+            askText(`What is “${g.typed}”? Type the paint's name:`, "", (answer) => {
+              const typed = (answer || "").trim();
+              if (!typed) return;
+              const m = matchPaint(typed);
+              const paint = m.paint || (m.suggestions[0] && sameText(matchKey(m.suggestions[0].name), matchKey(typed)) ? m.suggestions[0] : null)
+                            || { brand: "", name: tidyName(typed), colour: DEFAULT_PAINT_COLOUR };
+              choose("other", paint);
+            });
           });
           chips.appendChild(other);
           row.append(label, chips);
@@ -6962,7 +7121,7 @@
         let ok = false;
         try { ok = document.execCommand("copy"); } catch (ignored) {}
         area.remove();
-        if (ok) done(); else prompt("Copy this text:", text);
+        if (ok) done(); else showTextToCopy("Copy this text:", text);   // v21.7: the app's own box, text already selected
       };
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
       else fallback();
@@ -7528,41 +7687,46 @@
         map[old] = k >= 0 ? map[k] : 0;
       }
       const affected = models.filter(m => stagesOf(m).some(st => removed.includes(st)));
-      if (affected.length && !confirm(
-        `${affected.length} unit(s) are in a stage you've removed. They'll move to the nearest earlier stage. Continue?`)) {
-        return;
-      }
-
-      // v14: the units and the new stage list are saved TOGETHER. If there's no room,
-      // everything goes back to how it was (before, the stages could be saved without
-      // the units, which reset every unit to the first stage on the next open).
-      const doneIndex = draft.indexOf(draftDoneItem);
-      // v20.1: your Custom colours move with their stages (worked out before STAGES changes).
-      const hadCustom = usingCustom() || (Array.isArray(settings.customColours) && settings.customColours.length > 0);
-      const newCustom = hadCustom ? (() => {
-        const mine = customColoursFor(STAGES.length);
-        const fresh = stageColours(settings.palette, draft.length);
-        return draft.map((item, i) => item.from !== null ? mine[item.from] : fresh[i]);
-      })() : null;
-      const kept = changeAndSave(() => {
-        if (newCustom) settings.customColours = newCustom;
-        models.forEach(m => {
-          m.stage = map[m.stage];
-          if (m.each) m.stages = m.stages.map(st => map[st]);
-          if (Array.isArray(m.log)) m.log.forEach(e => { e[1] = map[e[1]]; });
-          // v14: each photo's stage label moves with its stage too.
-          if (Array.isArray(m.photos)) m.photos.forEach(p => { if (Number.isInteger(p.stage)) p.stage = map[p.stage]; });
+      // v21.7: if some units are in a removed stage it asks in the app's own box first, and the
+      // saving below runs when you say yes (or straight away when nobody is affected).
+      const saveNow = () => {
+        // v14: the units and the new stage list are saved TOGETHER. If there's no room,
+        // everything goes back to how it was (before, the stages could be saved without
+        // the units, which reset every unit to the first stage on the next open).
+        const doneIndex = draft.indexOf(draftDoneItem);
+        // v20.1: your Custom colours move with their stages (worked out before STAGES changes).
+        const hadCustom = usingCustom() || (Array.isArray(settings.customColours) && settings.customColours.length > 0);
+        const newCustom = hadCustom ? (() => {
+          const mine = customColoursFor(STAGES.length);
+          const fresh = stageColours(settings.palette, draft.length);
+          return draft.map((item, i) => item.from !== null ? mine[item.from] : fresh[i]);
+        })() : null;
+        const kept = changeAndSave(() => {
+          if (newCustom) settings.customColours = newCustom;
+          models.forEach(m => {
+            m.stage = map[m.stage];
+            if (m.each) m.stages = m.stages.map(st => map[st]);
+            if (Array.isArray(m.log)) m.log.forEach(e => { e[1] = map[e[1]]; });
+            // v14: each photo's stage label moves with its stage too.
+            if (Array.isArray(m.photos)) m.photos.forEach(p => { if (Number.isInteger(p.stage)) p.stage = map[p.stage]; });
+          });
+          settings.doneFrom = doneIndex;
+          settings.stages = STAGES = names;
+          fixDoneFrom();
         });
-        settings.doneFrom = doneIndex;
-        settings.stages = STAGES = names;
-        fixDoneFrom();
-      });
-      if (!kept) { notify(fullMessage()); renderSettings(); return; }
-      applyPalette(settings.palette);
-      filters.stages = new Set();
-      render();
-      renderSettings();
-      showToast("Stages saved");
+        if (!kept) { notify(fullMessage()); renderSettings(); return; }
+        applyPalette(settings.palette);
+        filters.stages = new Set();
+        render();
+        renderSettings();
+        showToast("Stages saved");
+      };
+      if (affected.length) {
+        askYesNo(`${affected.length} unit(s) are in a stage you've removed. They'll move to the nearest earlier stage. Continue?`,
+          saveNow, { danger: true });
+      } else {
+        saveNow();
+      }
     });
 
     // ----- Colours -----
@@ -8008,14 +8172,15 @@
       const copy = readRecipesCopy();
       if (!copy) { renderRecover(); return; }
       const restored = cleanRecipeBook(copy.book);
-      if (!confirm(`Replace your current ${plural(book.recipes.length, "recipe")} with the ${plural(restored.recipes.length, "recipe")} in this copy? (Your units stay as they are.)`)) return;
-      const before = JSON.stringify(book);
-      if (!changeAndSave(() => { book = restored; })) { notify(fullMessage()); return; }
-      afterBigChange();
-      showToast(`Recovered ${plural(book.recipes.length, "recipe")}`, () => {
-        if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(before)); })) { notify(fullMessage()); return; }
+      askYesNo(`Replace your current ${plural(book.recipes.length, "recipe")} with the ${plural(restored.recipes.length, "recipe")} in this copy? (Your units stay as they are.)`, () => {
+        const before = JSON.stringify(book);
+        if (!changeAndSave(() => { book = restored; })) { notify(fullMessage()); return; }
         afterBigChange();
-      }, "Undo", 10);
+        showToast(`Recovered ${plural(book.recipes.length, "recipe")}`, () => {
+          if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(before)); })) { notify(fullMessage()); return; }
+          afterBigChange();
+        }, "Undo", 10);
+      }, { danger: true });
     }
 
     // Swap your current units for a safety copy. Your current units are kept as a copy
@@ -8030,35 +8195,37 @@
       const units = cleanModels(copy.models);
       STAGES = currentStages;
       const recipesCopy = (() => { try { return JSON.parse(localStorage.getItem(RECIPES_KEY + suffix) || "null"); } catch (e) { return null; } })();
-      if (!confirm(`Replace your current ${plural(models.length, "unit")} with the ${plural(units.length, "unit")} in this copy` +
-          (recipesCopy ? " (and its recipes)" : "") + "?")) return;
-      if (models.length && suffix !== "-before-recover" && !keepSafetyCopy("-before-recover")) {
-        notify("There isn't room on this device to keep a copy of your current units first, so nothing has changed. Please save a backup first.");
-        return;
-      }
-      const undoState = { models: JSON.stringify(models), book: JSON.stringify(book), stages: STAGES.slice(), doneFrom: settings.doneFrom };
-      const kept = changeAndSave(() => {
-        models = units;
-        if (recipesCopy) book = cleanRecipeBook(recipesCopy);
-        if (copyStages) {
-          settings.stages = STAGES = copyStages;
-          if (copy.doneFrom !== undefined) settings.doneFrom = copy.doneFrom;
-          fixDoneFrom();
+      // v21.7: asks in the app's own box; the swap (and its Undo) happen when you say yes.
+      askYesNo(`Replace your current ${plural(models.length, "unit")} with the ${plural(units.length, "unit")} in this copy` +
+          (recipesCopy ? " (and its recipes)" : "") + "?", () => {
+        if (models.length && suffix !== "-before-recover" && !keepSafetyCopy("-before-recover")) {
+          notify("There isn't room on this device to keep a copy of your current units first, so nothing has changed. Please save a backup first.");
+          return;
         }
-      });
-      if (!kept) { notify(fullMessage()); return; }
-      afterBigChange();
-      showToast(`Recovered ${plural(units.length, "unit")}`, () => {
-        const back = changeAndSave(() => {
-          models = JSON.parse(undoState.models);
-          book = JSON.parse(undoState.book);
-          settings.stages = STAGES = undoState.stages;
-          settings.doneFrom = undoState.doneFrom;
-          fixDoneFrom();
+        const undoState = { models: JSON.stringify(models), book: JSON.stringify(book), stages: STAGES.slice(), doneFrom: settings.doneFrom };
+        const kept = changeAndSave(() => {
+          models = units;
+          if (recipesCopy) book = cleanRecipeBook(recipesCopy);
+          if (copyStages) {
+            settings.stages = STAGES = copyStages;
+            if (copy.doneFrom !== undefined) settings.doneFrom = copy.doneFrom;
+            fixDoneFrom();
+          }
         });
-        if (!back) { notify(fullMessage()); return; }
+        if (!kept) { notify(fullMessage()); return; }
         afterBigChange();
-      }, "Undo", 10);
+        showToast(`Recovered ${plural(units.length, "unit")}`, () => {
+          const back = changeAndSave(() => {
+            models = JSON.parse(undoState.models);
+            book = JSON.parse(undoState.book);
+            settings.stages = STAGES = undoState.stages;
+            settings.doneFrom = undoState.doneFrom;
+            fixDoneFrom();
+          });
+          if (!back) { notify(fullMessage()); return; }
+          afterBigChange();
+        }, "Undo", 10);
+      }, { danger: true });
     }
 
     // Redraw everything after units, recipes or stages were swapped wholesale.
@@ -8119,33 +8286,37 @@
     cleanPhotosButton.addEventListener("click", async () => {
       const r = await photoStoreReport();
       if (!r.orphans.length) { renderPhotoSummary(); return; }
-      if (!confirm(`Delete ${plural(r.orphans.length, "photo file")} that no unit uses? This frees about ${sizeText(r.orphanBytes)}.`)) return;
-      for (const id of r.orphans) { forgetUrls(id); await deletePhotoFile(id); }
-      showToast(`Cleaned up: ${plural(r.orphans.length, "photo file")} removed, about ${sizeText(r.orphanBytes)} freed`, null, null, 6);
-      renderPhotoSummary();
+      askYesNo(`Delete ${plural(r.orphans.length, "photo file")} that no unit uses? This frees about ${sizeText(r.orphanBytes)}.`, async () => {
+        for (const id of r.orphans) { forgetUrls(id); await deletePhotoFile(id); }
+        showToast(`Cleaned up: ${plural(r.orphans.length, "photo file")} removed, about ${sizeText(r.orphanBytes)} freed`, null, null, 6);
+        renderPhotoSummary();
+      }, { danger: true });
     });
 
     document.getElementById("delete-all").addEventListener("click", () => {
       if (!models.length) return;
-      if (!confirm(`Delete all ${models.length} units? A copy is kept on this device for ${SAFETY_DAYS} days ` +
-          `(Settings → Recover earlier data), but please save a backup first.`)) return;
-      // v14: STOP if the safety copy can't be kept, rather than delete with no safety net.
-      if (!keepSafetyCopy("-before-delete-all")) {
-        notify("There isn't room on this device to keep a safety copy of your units, so nothing has been deleted. " +
-              "Please press Save backup first, then delete some photos or units you no longer need.");
-        return;
-      }
-      const before = models;
-      models = [];
-      openIds.clear();
-      clearFilters();
-      render();
-      renderSettings();
-      showToast(`Deleted ${plural(before.length, "unit")}`, () => {
-        models = before;
+      // v21.7: asks in the app's own box; everything below runs when you say yes.
+      askYesNo(`Delete all ${models.length} units? A copy is kept on this device for ${SAFETY_DAYS} days ` +
+          `(Settings → Recover earlier data), but please save a backup first.`, () => {
+        if (!models.length) return;
+        // v14: STOP if the safety copy can't be kept, rather than delete with no safety net.
+        if (!keepSafetyCopy("-before-delete-all")) {
+          notify("There isn't room on this device to keep a safety copy of your units, so nothing has been deleted. " +
+                "Please press Save backup first, then delete some photos or units you no longer need.");
+          return;
+        }
+        const before = models;
+        models = [];
+        openIds.clear();
+        clearFilters();
         render();
         renderSettings();
-      }, "Undo", 10);
+        showToast(`Deleted ${plural(before.length, "unit")}`, () => {
+          models = before;
+          render();
+          renderSettings();
+        }, "Undo", 10);
+      }, { danger: true });
     });
 
     // ================= BACKUPS AND CSV =================
@@ -8341,69 +8512,70 @@
               `${plural(restored.length, "unit")} and ${plural(backupBook.recipes.length, "recipe")} from the backup?`
             : `Replace your current ${models.length} units with ${restored.length} from the backup? (Your recipes stay as they are.)`)
           + (photoCount ? ` It includes ${plural(photoCount, "photo")}.` : "");
-        if (!confirm(question)) return;
+        // v21.7: asks in the app's own box; the restore runs when you say yes.
+        askYesNo(question, () => {
+          (photoFiles ? importPhotoFiles(photoFiles) : Promise.resolve(0)).then(async (imported) => {
+            // Safety copies of what you had (best effort), listed under Recover earlier data.
+            if (unitsToo) keepSafetyCopy("-before-restore");
+            if (unitsToo && backupBook) { try { localStorage.setItem(RECIPES_KEY + "-before-restore", JSON.stringify(book)); } catch (ignored) {} }
+            // v18.3: a recipes-only restore keeps its own copy (listed under Recover earlier data)
+            // and gets an Undo button.
+            if (!unitsToo) keepRecipesCopy();
+            const recipesBefore = unitsToo ? null : JSON.stringify(book);
 
-        (photoFiles ? importPhotoFiles(photoFiles) : Promise.resolve(0)).then(async (imported) => {
-          // Safety copies of what you had (best effort), listed under Recover earlier data.
-          if (unitsToo) keepSafetyCopy("-before-restore");
-          if (unitsToo && backupBook) { try { localStorage.setItem(RECIPES_KEY + "-before-restore", JSON.stringify(book)); } catch (ignored) {} }
-          // v18.3: a recipes-only restore keeps its own copy (listed under Recover earlier data)
-          // and gets an Undo button.
-          if (!unitsToo) keepRecipesCopy();
-          const recipesBefore = unitsToo ? null : JSON.stringify(book);
+            // v14: units, recipes, stages and colours are saved TOGETHER, or not at all.
+            const kept = changeAndSave(() => {
+              if (unitsToo) models = restored;
+              if (backupBook) book = backupBook;
+              if (unitsToo && backupStages) {
+                settings.stages = STAGES = backupStages;
+                settings.doneFrom = parsed.doneFrom;
+                fixDoneFrom();
+              }
+              // Backups from v8 onwards hold faction colours. Older ones don't, so yours stay.
+              if (unitsToo && !isList && parsed.factionColours) settings.factionColours = cleanFactionColours(parsed.factionColours);
+              // v20: backups from v20 onwards hold the stage colour set and Appearance.
+              // Anything unknown is ignored, so older backups leave yours as they are.
+              if (unitsToo && !isList && typeof parsed.palette === "string" && Object.prototype.hasOwnProperty.call(PALETTES, parsed.palette)) settings.palette = parsed.palette;
+              if (unitsToo && !isList && goodAppearance(parsed.appearance)) settings.appearance = parsed.appearance;
+              // v20.1: Custom colours. Backups from before v20.1 don't have them, so yours stay.
+              if (unitsToo && !isList && Array.isArray(parsed.customColours)) settings.customColours = cleanCustomColours(parsed.customColours);
+              if (unitsToo && !isList && typeof parsed.useCustom === "boolean") settings.useCustom = parsed.useCustom;
+            });
+            if (!kept) { notify(fullMessage()); return; }
+            recipeDraft = null;
+            openRecipeId = null;
+            openIds.clear();
+            clearFilters();
+            applyPalette(settings.palette);
+            render();
+            renderSettings();
 
-          // v14: units, recipes, stages and colours are saved TOGETHER, or not at all.
-          const kept = changeAndSave(() => {
-            if (unitsToo) models = restored;
-            if (backupBook) book = backupBook;
-            if (unitsToo && backupStages) {
-              settings.stages = STAGES = backupStages;
-              settings.doneFrom = parsed.doneFrom;
-              fixDoneFrom();
+            // v14: check every photo the restored units need is really on this device. If
+            // some couldn't be loaded, say so clearly (they're removed from the units next).
+            let missing = 0, needed = 0;
+            if (unitsToo) {
+              for (const m of models) for (const id of photoIds(m)) {
+                needed++;
+                try { if (!(await getPhoto(id))) missing++; } catch (error) { missing++; }
+              }
             }
-            // Backups from v8 onwards hold faction colours. Older ones don't, so yours stay.
-            if (unitsToo && !isList && parsed.factionColours) settings.factionColours = cleanFactionColours(parsed.factionColours);
-            // v20: backups from v20 onwards hold the stage colour set and Appearance.
-            // Anything unknown is ignored, so older backups leave yours as they are.
-            if (unitsToo && !isList && typeof parsed.palette === "string" && Object.prototype.hasOwnProperty.call(PALETTES, parsed.palette)) settings.palette = parsed.palette;
-            if (unitsToo && !isList && goodAppearance(parsed.appearance)) settings.appearance = parsed.appearance;
-            // v20.1: Custom colours. Backups from before v20.1 don't have them, so yours stay.
-            if (unitsToo && !isList && Array.isArray(parsed.customColours)) settings.customColours = cleanCustomColours(parsed.customColours);
-            if (unitsToo && !isList && typeof parsed.useCustom === "boolean") settings.useCustom = parsed.useCustom;
+            if (missing) {
+              notify(photoFiles
+                ? `Backup restored, but ${missing} of ${plural(needed, "photo")} couldn't be loaded on this device (${imported} of ${photoCount} in the file worked), so they won't show. Keep the backup file safe: you can restore it again later, for example after freeing some space.`
+                : `Backup restored, but this backup was saved without photos, so ${plural(missing, "photo")} won't show on this device. Keep the backup file safe. To bring photos across, use Save full backup with photos on the other device.`);
+            } else {
+              if (unitsToo) showToast("Backup restored");
+              else showToast(`Recipes restored (${plural(book.recipes.length, "recipe")})`, () => {
+                if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(recipesBefore)); })) { notify(fullMessage()); return; }
+                afterBigChange();
+                showToast("Your recipes are back as they were");
+              }, "Undo", 10);
+            }
+            // Old backups may hold old-style photos: move them. Then load the thumbnails.
+            startPhotos();
           });
-          if (!kept) { notify(fullMessage()); return; }
-          recipeDraft = null;
-          openRecipeId = null;
-          openIds.clear();
-          clearFilters();
-          applyPalette(settings.palette);
-          render();
-          renderSettings();
-
-          // v14: check every photo the restored units need is really on this device. If
-          // some couldn't be loaded, say so clearly (they're removed from the units next).
-          let missing = 0, needed = 0;
-          if (unitsToo) {
-            for (const m of models) for (const id of photoIds(m)) {
-              needed++;
-              try { if (!(await getPhoto(id))) missing++; } catch (error) { missing++; }
-            }
-          }
-          if (missing) {
-            notify(photoFiles
-              ? `Backup restored, but ${missing} of ${plural(needed, "photo")} couldn't be loaded on this device (${imported} of ${photoCount} in the file worked), so they won't show. Keep the backup file safe: you can restore it again later, for example after freeing some space.`
-              : `Backup restored, but this backup was saved without photos, so ${plural(missing, "photo")} won't show on this device. Keep the backup file safe. To bring photos across, use Save full backup with photos on the other device.`);
-          } else {
-            if (unitsToo) showToast("Backup restored");
-            else showToast(`Recipes restored (${plural(book.recipes.length, "recipe")})`, () => {
-              if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(recipesBefore)); })) { notify(fullMessage()); return; }
-              afterBigChange();
-              showToast("Your recipes are back as they were");
-            }, "Undo", 10);
-          }
-          // Old backups may hold old-style photos: move them. Then load the thumbnails.
-          startPhotos();
-        });
+        }, { danger: true });
       });
     });
 
@@ -8878,62 +9050,70 @@
       const matched = matchRows();
       const toAdd = matched.filter((m, i) => choices[i].tick);
       const renames = renamesToMake(matched);
-      if (reviewMode === "replace" && models.length) {
-        if (!confirm(`Remove your ${plural(models.length, "unit")} and replace them with ${plural(toAdd.length, "unit")}?`)) return;
-        // Keep a safety copy on the device. If there isn't room (photos take a lot of
-        // space), stop rather than carry on with no safety net.
-        // (v14: kept for 30 days, with the stage list, and listed under Recover earlier data.)
-        if (!keepSafetyCopy("-before-replace")) {
-          notify("There isn't room on this device to keep a safety copy of your current units, so nothing has been changed. Please press Save backup first, then try again.");
-          return;
+      // v21.7: the "replace everything" question is asked in the app's own box; the rest runs
+      // when you say yes (straight away for "add", or when there's nothing to replace).
+      const run = () => {
+        if (reviewMode === "replace" && models.length) {
+          // Keep a safety copy on the device. If there isn't room (photos take a lot of
+          // space), stop rather than carry on with no safety net.
+          // (v14: kept for 30 days, with the stage list, and listed under Recover earlier data.)
+          if (!keepSafetyCopy("-before-replace")) {
+            notify("There isn't room on this device to keep a safety copy of your current units, so nothing has been changed. Please press Save backup first, then try again.");
+            return;
+          }
         }
-      }
 
-      const before = models.map(m => ({ ...m }));   // a copy, so Undo can put everything back
-      if (reviewMode === "replace") {
-        models = [];
-        openIds.clear();
-      } else {
-        // Rename first, so new copies are numbered alongside them.
-        for (const r of renames) {
-          const unit = models.find(m => m.id === r.id);
-          if (unit) unit.name = r.to;
+        const before = models.map(m => ({ ...m }));   // a copy, so Undo can put everything back
+        if (reviewMode === "replace") {
+          models = [];
+          openIds.clear();
+        } else {
+          // Rename first, so new copies are numbered alongside them.
+          for (const r of renames) {
+            const unit = models.find(m => m.id === r.id);
+            if (unit) unit.name = r.to;
+          }
+          for (const r of renames) { fixCopies(r.from, r.faction); fixCopies(r.to, r.faction); }
         }
-        for (const r of renames) { fixCopies(r.from, r.faction); fixCopies(r.to, r.faction); }
-      }
-      const whStageNumber = Number(whStage.value) || 0;
-      matched.forEach((m, i) => {
-        const c = choices[i];
-        if (!c.tick) return;
-        // Extra copies of a unit you have, where you chose to keep your name, use your name.
-        const useYours = reviewMode === "add" && m.match && c.keep === "yours";
-        addModel({
-          ...m.row,
-          name: useYours ? m.match.name : m.row.name,
-          stage: incoming.source === "wh" ? whStageNumber : m.row.stage,
+        const whStageNumber = Number(whStage.value) || 0;
+        matched.forEach((m, i) => {
+          const c = choices[i];
+          if (!c.tick) return;
+          // Extra copies of a unit you have, where you chose to keep your name, use your name.
+          const useYours = reviewMode === "add" && m.match && c.keep === "yours";
+          addModel({
+            ...m.row,
+            name: useYours ? m.match.name : m.row.name,
+            stage: incoming.source === "wh" ? whStageNumber : m.row.stage,
+          });
         });
-      });
 
-      const parts = [];
-      if (reviewMode === "replace") parts.push(`Replaced with ${plural(toAdd.length, "unit")}`);
-      else {
-        if (toAdd.length) parts.push(`Added ${plural(toAdd.length, "unit")}`);
-        if (renames.length) parts.push(`${toAdd.length ? "renamed" : "Renamed"} ${plural(renames.length, "unit")}`);
-      }
-      closeReview();
-      whText.value = "";
-      whPanel.classList.add("hidden");
-      refreshUnitsImport();
-      closeAddForm();      // v19: so the new units have the screen
-      clearFilters();
-      render();
-      renderSettings();
-      showTab("units");    // v19: after an import, show the units it brought in
-      showToast(parts.join(", "), () => {
-        models = before;
+        const parts = [];
+        if (reviewMode === "replace") parts.push(`Replaced with ${plural(toAdd.length, "unit")}`);
+        else {
+          if (toAdd.length) parts.push(`Added ${plural(toAdd.length, "unit")}`);
+          if (renames.length) parts.push(`${toAdd.length ? "renamed" : "Renamed"} ${plural(renames.length, "unit")}`);
+        }
+        closeReview();
+        whText.value = "";
+        whPanel.classList.add("hidden");
+        refreshUnitsImport();
+        closeAddForm();      // v19: so the new units have the screen
+        clearFilters();
         render();
         renderSettings();
-      }, "Undo", 10);
+        showTab("units");    // v19: after an import, show the units it brought in
+        showToast(parts.join(", "), () => {
+          models = before;
+          render();
+          renderSettings();
+        }, "Undo", 10);
+      };
+      if (reviewMode === "replace" && models.length) {
+        askYesNo(`Remove your ${plural(models.length, "unit")} and replace them with ${plural(toAdd.length, "unit")}?`, run, { danger: true });
+      } else {
+        run();
+      }
     });
 
     // ----- Starting an import from the Warhammer app -----
@@ -9069,11 +9249,15 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=21.6". v21.4 test checks.)
-    const APP_VERSION = "v21.6";
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=21.7". v21.4 test checks.)
+    const APP_VERSION = "v21.7";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v21.7", date: "11 Oct 2026", changes: [
+        "Questions like \"Delete this unit?\" and \"Discard the changes?\" no longer use your browser's plain pop-up. The app asks in its own small box, in the same dark or light colours as the rest of the app, with big Yes and No buttons. The questions say the same things and do the same things as before. No, Cancel, the Escape key and the phone's Back button all mean no.",
+        "Asking for a name (a new part or technique, renaming a faction, naming a paint the scanner wasn't sure of) uses the same box, with a text box to type in. That finishes the move away from the browser's own pop-ups.",
+      ]},
       { version: "v21.6", date: "11 Oct 2026", changes: [
         "Notices no longer pop up as a plain browser box that you have to dismiss. \"That file doesn't look like a Minifolio backup\", \"Every stage needs a name\" and the rest now appear as the app's own message at the bottom of the screen. The words are the same, longer ones stay up longer, and a tap hides one.",
         "Questions that need a yes or no (like \"Are you sure?\") still use the browser's box for now. They move into the app in the next update.",
@@ -9384,6 +9568,7 @@
     // ================= v19: THE PHONE'S BACK BUTTON =================
     // Before v19, the phone's Back button (or a swipe back) left the app from anywhere,
     // even with a photo open. Now Back closes what's open first, one thing per press:
+    //   0. (v21.7) a question box ("Delete this unit?"): Back answers No / Cancel
     //   1. the photo viewer           2. the camera, then the scan panel
     //   3. a page on the Recipes tab (paste recipes, a recipe being written or read, a scheme)
     //   4. the import box on the Units tab
@@ -9400,6 +9585,7 @@
 
     // What Back would close right now, as a function that closes it, or null if nothing.
     function backTarget() {
+      if (dialogState) return cancelDialog;   // v21.7: a question box sits over everything; Back = No / Cancel
       if (viewer) return closeViewer;
       const tab = settings.tab;
       if (tab === "recipes") {
@@ -9409,11 +9595,13 @@
         }
         if (importDraft) return () => closeImport(true);
         if (recipeDraft) return () => {
-          if (!okToLeaveDraft()) return;   // asks first if there are unsaved changes
-          if (recipeDraft.id !== null) openRecipeId = recipeDraft.id;
-          recipeDraft = null;
-          renderRecipes();
-          window.scrollTo(0, 0);
+          whenOkToLeaveDraft(() => {   // asks first if there are unsaved changes (v21.7: in the app's own box)
+            if (!recipeDraft) return;
+            if (recipeDraft.id !== null) openRecipeId = recipeDraft.id;
+            recipeDraft = null;
+            renderRecipes();
+            window.scrollTo(0, 0);
+          });
         };
         if (openRecipeId !== null) return () => { openRecipeId = null; renderRecipes(); window.scrollTo(0, 0); };
         if (schemeDraft && settings.recipeView === "schemes") return () => closeScheme(true);

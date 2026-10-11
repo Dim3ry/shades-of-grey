@@ -20,6 +20,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, struct, sys, zlib
 from playwright.sync_api import sync_playwright
+from dialog_watch import DialogAnswers
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}/"
@@ -108,7 +109,7 @@ def loaded(page, selector):
 def watch(page, errors, csp):
     page.on("pageerror", lambda e: errors.append(str(e)))
     page.on("console", lambda m: csp.append(m.text) if "Content Security Policy" in m.text and "csp-probe" not in m.text else None)
-    page.on("dialog", lambda d: d.accept())
+    DialogAnswers(page)
 
 def main():
     sw = read("sw.js")

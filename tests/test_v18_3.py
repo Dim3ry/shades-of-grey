@@ -13,6 +13,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import datetime, json, os, re, sys
 from playwright.sync_api import sync_playwright
+from dialog_watch import DialogAnswers
 from notice_watch import attach_notices
 
 PORT = os.environ.get("SOG_PORT", "8765")
@@ -74,10 +75,7 @@ def main():
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
         dialogs = []
-        def on_dialog(d):
-            dialogs.append(d.message)
-            d.accept()
-        page.on("dialog", on_dialog)
+        DialogAnswers(page, dialogs.append)
         attach_notices(page, lambda text: dialogs.append(text))
         seed(page)
         version = page.evaluate("APP_VERSION")
@@ -194,7 +192,7 @@ def main():
         page = context.new_page()
         page.on("pageerror", lambda e: errors.append(str(e)))
         dialogs = []
-        page.on("dialog", on_dialog)
+        DialogAnswers(page, dialogs.append)
         attach_notices(page, lambda text: dialogs.append(text))
         seed(page, OLD_BOOK)
         ronly = {"app": "Minifolio", "version": 6, "models": [], "recipes": BACKUP_BOOK}
@@ -246,7 +244,7 @@ def main():
         page = context.new_page()
         page.on("pageerror", lambda e: errors.append(str(e)))
         dialogs = []
-        page.on("dialog", on_dialog)
+        DialogAnswers(page, dialogs.append)
         attach_notices(page, lambda text: dialogs.append(text))
         seed(page)
         page.evaluate("save()")

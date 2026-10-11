@@ -19,6 +19,7 @@ python3 tests/test_v18c2.py
 The port comes from the SOG_PORT environment variable, or 8765 if it isn't set."""
 import json, os, sys
 from playwright.sync_api import sync_playwright
+from dialog_watch import DialogAnswers
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}"
@@ -76,7 +77,7 @@ def main():
         page = browser.new_page(viewport={"width": 390, "height": 844})
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
-        page.on("dialog", lambda d: d.accept())   # the "Merge the two?" question when renaming
+        DialogAnswers(page)   # the "Merge the two?" question when renaming
 
         # ---------- 1. Remove ----------
         start(page)

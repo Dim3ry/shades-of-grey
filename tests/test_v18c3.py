@@ -21,6 +21,7 @@ python3 tests/test_v18c3.py
 The port comes from the SOG_PORT environment variable, or 8765 if it isn't set."""
 import json, os, sys
 from playwright.sync_api import sync_playwright
+from dialog_watch import DialogAnswers
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}"
@@ -92,7 +93,7 @@ def main():
         page.add_init_script(FAKE_STORAGE)
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
-        page.on("dialog", lambda d: d.accept())
+        DialogAnswers(page)
 
         # ---------- 0. The fake works ----------
         start(page)

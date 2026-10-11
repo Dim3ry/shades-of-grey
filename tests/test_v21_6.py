@@ -22,6 +22,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, struct, sys, zlib
 from playwright.sync_api import sync_playwright
+from dialog_watch import DialogAnswers
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}/"
@@ -104,12 +105,13 @@ def main():
         page = context.new_page()
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.on("console", lambda m: csp.append(m.text) if "Content Security Policy" in m.text else None)
-        # Any browser pop-up that is an ALERT is a failure now. (Questions are still pop-ups until v21.7.)
+        # Any browser pop-up at all is a failure (since v21.7 the questions are the app's own box too;
+        # this test only needs the in-app box answered if one ever shows).
         def on_dialog(d):
-            if d.type == "alert":
-                browser_boxes.append(d.message)
+            browser_boxes.append(d.message)
             d.accept()
         page.on("dialog", on_dialog)
+        DialogAnswers(page)
 
         # ---------- 1. Versions and kept things ----------
         print("--- 1. Versions and kept things ---")
@@ -150,9 +152,10 @@ def main():
         code = "\n".join(re.sub(r"\s//.*$", "", l) for l in app.splitlines() if not l.strip().startswith("//"))   # without comments
         calls = len(re.findall(r"(?<![A-Za-z_.])notify\(", code)) - 1   # minus the definition
         check("35 notices go through notify()", calls == 35, calls)
-        check("confirm( questions (16) are left for v21.7", len(re.findall(r"(?<![A-Za-z_.])confirm\(", app)) == 16,
+        # v21.7 replaced these, so "left for v21.7" became "no more than at v21.6" (16 and 5).
+        check("no more than the 16 confirm( questions of v21.6", len(re.findall(r"(?<![A-Za-z_.])confirm\(", app)) <= 16,
               len(re.findall(r"(?<![A-Za-z_.])confirm\(", app)))
-        check("prompt( questions (5) are left for v21.7", len(re.findall(r"(?<![A-Za-z_.])prompt\(", app)) == 5,
+        check("no more than the 5 prompt( questions of v21.6", len(re.findall(r"(?<![A-Za-z_.])prompt\(", app)) <= 5,
               len(re.findall(r"(?<![A-Za-z_.])prompt\(", app)))
 
         # ---------- 3. Real notices ----------

@@ -24,6 +24,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, re, socket, subprocess, sys, time
 from playwright.sync_api import sync_playwright
+from dialog_watch import DialogAnswers
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}/"
@@ -87,7 +88,7 @@ def watch(page, errors, csp):
             csp.append(m.text)
     page.on("pageerror", lambda e: errors.append(str(e)))
     page.on("console", on_console)
-    page.on("dialog", lambda d: d.accept())
+    DialogAnswers(page)
 
 def before_drawing(browser, appearance, scheme="dark"):
     """Open the app with app.js held back, and report what early.js alone has done."""

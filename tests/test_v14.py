@@ -2,6 +2,7 @@
 `python3 -m http.server 8765`, then run: python3 tests/test_v14.py <folder for screenshots>."""
 import json, sys, time, base64, datetime
 from playwright.sync_api import sync_playwright
+from dialog_watch import DialogAnswers
 from notice_watch import attach_notices
 import os as _os
 PORT = _os.environ.get("SOG_PORT", "8765")
@@ -50,7 +51,7 @@ def run(viewport, label):
 
         def new_page():
             page = ctx.new_page()
-            page.on("dialog", lambda d: (dialogs.append(d.message), d.accept()))
+            DialogAnswers(page, dialogs.append)
             attach_notices(page, lambda text: dialogs.append(text))
             page.on("pageerror", lambda e: errors.append(f"{label} pageerror: {e}"))
             page.on("console", lambda m: m.type == "error" and errors.append(f"{label} console: {m.text}"))

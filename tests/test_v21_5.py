@@ -18,6 +18,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, struct, sys, zlib
 from playwright.sync_api import sync_playwright
+from dialog_watch import DialogAnswers
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}/"
@@ -128,18 +129,14 @@ def delete_button(page, uid):
     return page.locator(f'#view-units li.unit[data-id="{uid}"] .panel button.danger-button', has_text="Delete").last
 
 def main():
-    errors, csp, dialogs = [], [], []
-    answer = {"yes": True}
+    errors, csp = [], []
     with sync_playwright() as p:
         browser = p.chromium.launch()
         context = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
         page = context.new_page()
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.on("console", lambda m: csp.append(m.text) if "Content Security Policy" in m.text else None)
-        def on_dialog(d):
-            dialogs.append((d.type, d.message))
-            d.accept() if answer["yes"] else d.dismiss()
-        page.on("dialog", on_dialog)
+        answers = DialogAnswers(page)   # v21.7: the question is the app's own box now; this taps its buttons
 
         # ---------- 1. Versions and kept things ----------
         print("\n--- 1. Versions and kept things ---")
@@ -194,18 +191,18 @@ def main():
         check("set-up: list order 1, 2, 3", card_ids(page) == [1, 2, 3], card_ids(page))
 
         # Say no first.
-        answer["yes"] = False
-        dialogs.clear()
+        answers.yes = False
+        answers.clear()
         page.evaluate("() => document.getElementById('toast').classList.add('hidden')")
         delete_button(page, 2).click()
         page.wait_for_timeout(300)
-        check("Delete still asks first", dialogs and dialogs[0] == ("confirm", 'Delete "Termagants"?'), dialogs)
+        check("Delete still asks first", answers.seen and answers.seen[0] == ("yesno", 'Delete "Termagants"?'), answers.seen)
         check("saying no keeps the unit", card_ids(page) == [1, 2, 3] and saved_units(page) == before)
         check("saying no shows no message", not toast(page)["shown"], toast(page))
 
         # Now yes.
-        answer["yes"] = True
-        dialogs.clear()
+        answers.yes = True
+        answers.clear()
         delete_button(page, 2).click()
         page.wait_for_timeout(300)
         t = toast(page)
@@ -325,7 +322,7 @@ def main():
         page = ctx.new_page()
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.on("console", lambda m: csp.append(m.text) if "Content Security Policy" in m.text else None)
-        page.on("dialog", lambda d: d.accept())
+        DialogAnswers(page)
         seed(page)
         help_delete = page.evaluate("() => (document.getElementById('help-delete-unit') || {}).textContent || ''")
         check("Help explains Undo after deleting a unit", "Undo" in help_delete and "photos" in help_delete, help_delete)
