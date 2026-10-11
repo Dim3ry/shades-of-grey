@@ -1,0 +1,28 @@
+# Security check: runs the free ZAP "baseline" scan against the live site.
+# The baseline scan only looks; it doesn't attack or change anything.
+# Run it any time from the repo's Actions tab: "ZAP security scan" > "Run workflow".
+name: ZAP security scan
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/zap-scan.yml'
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  zap-baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scan minifolio.app
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: 'https://minifolio.app/'
+          issue_title: 'ZAP security scan report'
+          allow_issue_writing: true
+          fail_action: false
+          artifact_name: 'zap_scan'
