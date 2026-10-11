@@ -7,3 +7,4 @@ brand names belong to their makers. They are used only to identify those product
 
 © 2026 George Atter-Dimery. All rights reserved.
 The pot-label reader in the `ocr` folder is the Tesseract engine and English data, used under the Apache License 2.0 (see `ocr/README.md`).
+The Vallejo, Army Painter, Pro Acryl and AK paint names, colours and code numbers come from the open [miniature-paints](https://github.com/Arcturus5404/miniature-paints) list by Rick Fleuren, used under the MIT licence (see `LICENSE-paint-list.txt`).

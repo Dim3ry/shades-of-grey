@@ -65,8 +65,9 @@ with sync_playwright() as pw:
             check("matcher: Gloss = 'Ardcoat", r["status"] == "sure" and r["paint"]["name"] == "'Ardcoat", r)
             r = m("static grass")
             check("matcher: basing material", r["status"] == "material", r)
-            r = m("Vallejo Mystic blue")
-            check("matcher: unknown name kept as typed with brand", r["status"] == "new" and r["paint"]["name"] == "Mystic Blue" and r["paint"]["brand"] == "Vallejo", r)
+            # v21.3: Mystic Blue is now a known Vallejo Xpress paint, so a made-up name is used here.
+            r = m("Vallejo Moonlit teal")
+            check("matcher: unknown name kept as typed with brand", r["status"] == "new" and r["paint"]["name"] == "Moonlit Teal" and r["paint"]["brand"] == "Vallejo", r)
 
             # The Keep note, read without saving.
             parsed = page.evaluate("t => parseRecipeText(t)", KEEP_NOTE)

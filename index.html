@@ -1258,6 +1258,7 @@
             <li>In Your Palette, sort by colour, name or brand, and tap a brand to show only its paints. Tap a paint to change its colour, name or brand: the change applies in every recipe that uses it.</li>
             <li>At the bottom of an open paint: <strong>Remove</strong> deletes a paint no recipe uses (a paint that's still in a recipe can't be removed). <strong>Merge into…</strong> joins it to another paint, handy for a typo twin like "Nuln Oill": its recipes move to the paint you pick, and that paint keeps its own name and brand. Both have Undo.</li>
             <li><strong>📷 Scan a paint pot</strong> (in Your Palette) reads the paint's name from its label with the camera and suggests matches. The reading happens on your phone; the photo is never sent anywhere. The first scan loads the label reader (about 11 MB) from Minifolio's own site, and after that scanning works with no internet. Leaving the app, or closing the scan panel, switches the camera off.</li>
+            <li id="help-scan-brands"><strong>Brands the scanner knows:</strong> Citadel, plus Vallejo Game Color, Model Color and Xpress Color, The Army Painter's Warpaints Fanatic, Pro Acryl and AK 3rd Gen (about 1,200 paints), and every paint already in Your Palette. On a Vallejo pot it also reads the <strong>code number</strong> (like 72.021), which picks the exact paint even if the name is hard to read. Other brands still work: if the scanner doesn't know the name, type it in. The same lists help when you paste recipes from your notes. Where two brands share a name (like "Black"), you're asked which one. The colours for these brands are close guesses, so tap a paint to fix its colour.</li>
             <li>Typed a paint into a recipe that isn't in Your Palette yet? Above <strong>Save recipe</strong>, <strong>Do you own these?</strong> asks about the new paints: <strong>All</strong> (Owned), <strong>None</strong> (Not owned, so they go on the shopping list) or <strong>Let me pick</strong> (tap a paint to untick it).</li>
             <li id="help-shop"><strong>🛒 Shopping list</strong> (in Your Palette) lists paints that are running low, empty, on your wishlist, or used in a recipe but not owned, grouped by brand. <strong>Buy these</strong> at the top has a button for each shop that sells them (Firestorm Games, Wayland Games, Element Games, and The Army Painter for Army Painter paints). Tap a shop for one search link per paint; each opens that shop's own search in a new tab. They're plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop. The link searches for the paint's name, so the results can include other brands' paints with the same name: check you've got the right pot before you buy.</li>
             <li><strong>Schemes</strong> (top of the Recipes tab) group the recipes you use for one faction, e.g. "My Ultramarines" = armour, trim, lenses and base. Press <strong>+ New scheme</strong>, name it, type the faction and tick its recipes.</li>
@@ -1346,6 +1347,7 @@
           <ul>
             <li><strong>Unofficial fan-made app, not affiliated with or endorsed by Games Workshop or any paint maker.</strong> No Games Workshop artwork, rules, points or stats, and no brand logos.</li>
             <li>The app knows paint and faction names so it can recognise what you type or scan. Citadel, Warhammer and faction and paint names are trademarks of Games Workshop Ltd. Other paint names (such as Vallejo, The Army Painter and AK Interactive) belong to their makers. All are used only to identify those products.</li>
+            <li>The Vallejo, Army Painter, Pro Acryl and AK paint names, colours and codes come from the free <strong>miniature-paints</strong> list by Rick Fleuren (MIT licence). The colours are close guesses, not exact matches.</li>
             <li>Your data stays on this device. There's no account, and nothing you add is sent anywhere, except what you choose to write in the feedback form and a paint's name when you tap a shop link.</li>
             <li><strong>Contact:</strong> use <strong>Give feedback</strong> on the Updates tab. Every message is read.</li>
           </ul>
@@ -1928,6 +1930,329 @@
       const [name, colour] = row.split("|");
       if (!KNOWN_PAINTS.some(k => k.brand === brand && k.name === name)) KNOWN_PAINTS.push({ brand, name, colour });
     }
+    // v21.3: more brands, so pot-label scans (and pasted notes) recognise them, not just Citadel.
+    // Names, colours and Vallejo code numbers come from the open "miniature-paints" list by Rick Fleuren
+    // (github.com/Arcturus5404/miniature-paints, MIT licence; see LICENSE-paint-list.txt). Colours are
+    // the list's approximations, not exact matches for the real pots. Format: "Name|colour" or
+    // "Name|colour|code code" (a name used in two Vallejo ranges, like Black, has both codes).
+    // These are "extra" paints: Citadel and your own paints are always tried first, so they never change
+    // how a Citadel name is matched.
+    const EXTRA_PAINT_TABLE = {
+      // Vallejo Game Color (with washes and special effects), Model Color and Xpress Color, with code numbers: 420
+      "Vallejo": [
+        "Abyssal Turquoise|#1b3e54|72.120", "Acid|#539e5d|72.607", "Alien Purple|#7161a8|72.076",
+        "Amaranth Red|#d14e30|70.829", "Andrea Blue|#0270af|70.841", "Angel Green|#324d2c|72.123",
+        "Aquamarine|#007c74|72.119", "Arctic White|#ffffff|72.002", "Armor Green|#1e462b|72.466",
+        "Athena Skin|#c85b54|72.107", "Azure|#5b6b9e|70.902", "BC Dark Brown|#76563d|70.768",
+        "Bag of Bones|#c1a16e|72.450", "Barbarian Skin|#926641|72.071", "Basalt Grey|#5c5a5d|70.869",
+        "Basic Skin Tone|#e9ac8d|70.815", "Battledress Brown|#5d4c32|72.473", "Beasty Brown|#7f5525|72.043",
+        "Beige|#dfbe6f|70.917", "Beige Brown|#816041|70.875", "Beige Red|#b06e4b|70.804", "Bile|#a4c600|72.606",
+        "Bile Green|#d5d900|72.122", "Black|#000000|72.051 72.094 70.950", "Black Glaze|#383838|70.855",
+        "Black Green|#2a342b|70.980 72.090", "Black Grey|#302722|70.862", "Black Lotus|#302627|72.423",
+        "Black Red|#552f2c|70.859", "Black Violet|#392a31|70.751", "Black Wash|#0e0d0e|73.301 73.201",
+        "Bloody Red|#d41c1c|72.010", "Blue|#00528e|72.088 70.925", "Blue Fluorescent|#0370b1|70.736",
+        "Blue Green|#007a89|70.808", "Blue Grey Pale|#808686|70.905", "Blue Violet|#59467e|70.811",
+        "Blue Wash|#1a5b9b|73.207", "Bone White|#bea374|72.034", "Brass|#643b1d|70.801",
+        "Brassy Brass|#e9d7cb|72.058", "Bright Bronze|#e7d5bf|72.057", "Bright Orange|#e05921|70.851",
+        "Bronze|#533c1d|70.998", "Bronze Brown|#b16921|72.036", "Bronze Green|#313a29|70.897", "Brown|#9a632a|72.092",
+        "Brown Glaze|#4e403d|70.854", "Brown Rose|#9c6560|70.803", "Brown Sand|#906145|70.876", "Buff|#d7af4d|70.976",
+        "Burnt Red|#763c3a|70.814", "Burnt Umber|#513b2e|70.941", "Camouflage Black Brown|#403436|70.822",
+        "Camouflage Black Green|#313129|70.741", "Camouflage Dark Green|#263025|70.979",
+        "Camouflage Green|#605d32|72.467 72.031", "Camouflage Middle Brown|#513e20|70.740",
+        "Camouflage Olive Green|#3c3d2f|70.894", "Canvas|#4d3e1f|70.763", "Cardinal Purple|#c81928|72.408",
+        "Caribbean Turquoise|#005961|72.414", "Carmine Red|#97211f|70.908", "Cavalry Brown|#84443a|70.982",
+        "Cayman Green|#59542a|72.067", "Chainmail|#e4e5e9|72.053", "Chameleon Orange|#ce652e|72.455",
+        "Charcoal|#363638|72.155", "Charred Brown|#422a26|72.045", "Chestnut Brown|#603f36|70.746",
+        "Chocolate Brown|#58443d|70.872", "Clear Orange|#cc4527|70.956", "Cold White|#f6f6f8|70.919",
+        "Commando Green|#3e4f3c|72.468", "Continental Blue|#25242a|70.754", "Copper|#803427|70.999",
+        "Copper Brown|#532c25|72.421", "Cork Brown|#a16f4e|70.843", "Corrosion|#572922|72.608",
+        "Cream White|#e3d1c3|70.766", "Dark Blue|#464775|72.017 70.930", "Dark Blue Grey|#6d8589|70.904 70.867",
+        "Dark Flesh|#d3933b|70.927", "Dark Fleshtone|#603429|72.044", "Dark Green|#1f3727|72.028",
+        "Dark Grey|#312f32|70.994", "Dark Gunmetal|#dadada|72.054", "Dark Prussian Blue|#372741|70.899",
+        "Dark Purple|#452733|70.749", "Dark Red|#692f24|70.946", "Dark Rose|#805252|70.745",
+        "Dark Rust|#3b2625|70.771", "Dark Sand|#cba868|70.847", "Dark Sea Blue|#262c38|70.898",
+        "Dark Sea Green|#4b4545|70.868", "Dark Sea Grey|#6c6b69|70.991", "Dark Turquoise|#01708b|72.084",
+        "Dark Vermilion|#b52a27|70.947", "Dark Yellow|#90873a|70.978", "Dead Flesh|#c3aa4d|72.035",
+        "Dead White|#ffffff|72.001", "Deck Tan|#aba390|70.986", "Deep Green|#1b4b33|70.970",
+        "Deep Magenta|#622640|72.113", "Deep Purple|#6f2b42|72.409", "Deep Sky Blue|#4d95c5|70.844",
+        "Deep Yellow|#f1c701|70.915", "Demon Blood|#66477e|72.603", "Demonic Skin|#965c58|72.458",
+        "Desert Brown|#ab8556|70.767", "Desert Ochre|#9d6729|72.454", "Desert Yellow|#b6854a|70.977 72.063",
+        "Dirty Grey|#675f30|72.145", "Dreadnought Yellow|#d38821|72.477", "Dried Blood|#622a1d|72.133",
+        "Dry Rust|#5e332d|72.136", "Dwarf Skin|#d99169|72.041 72.402", "Earth|#775730|72.062",
+        "Electric Blue|#4399b2|72.023", "Elf Skin Tone|#ca8854|72.004", "Elfic Blue|#50617d|72.117",
+        "Elfic Flesh|#ead7b9|72.098", "Emerald|#00624b|70.838", "English Uniform|#6f532b|70.921",
+        "Evil Red|#461e26|72.112", "Extra Dark Green|#282a14|70.896", "Fairy Skin|#ca8774|72.457",
+        "Fern Green|#475436|70.833", "Field Blue|#4d5256|70.964", "Filthy Brown|#e99300|72.037",
+        "Flat Blue|#3f4873|70.962", "Flat Brown|#703f38|70.984", "Flat Earth|#69442a|70.983",
+        "Flat Flesh|#e09959|70.955", "Flat Green|#374b2f|70.968", "Flat Red|#a12b29|70.957",
+        "Flat Yellow|#f6ba36|70.953", "Flesh Blood|#f27466|72.601", "Flesh Wash|#b67c78|73.204",
+        "Fluid Pink|#c06793|72.459", "Fluorescent Blue|#0082cd|72.160", "Fluorescent Cold Green|#007074|72.161",
+        "Fluorescent Green|#74b72c|72.104", "Fluorescent Magenta|#e8348d|72.158", "Fluorescent Orange|#e84e10|72.156",
+        "Fluorescent Red|#dd2f52|72.157", "Fluorescent Violet|#6f257a|72.159", "Fluorescent Yellow|#f0e639|72.103",
+        "Forest Green|#11662d|72.465", "Foul Green|#00a27d|72.025", "French Mirage Blue|#5f6772|70.900",
+        "Fresh Blood|#7e2b19|72.132", "Frost|#8ac9e3|72.604", "Galvanic Corrosion|#eeae76|72.610",
+        "German Beige WWII|#796950|70.821", "German Fieldgrey WWII|#58523c|70.830", "German Grey|#2e2e2c|70.995",
+        "German Orange|#ba6254|70.805", "German Tank Crew|#544a3e|70.759", "German Uniform|#434d42|70.920",
+        "German Yellow|#ceb65e|70.806", "Ghost Green|#83c192|72.121", "Ghost Grey|#c2cbd4|72.046",
+        "Glacier Blue|#cdd9f1|72.095", "Gloomy Violet|#402f59|72.410", "Glorious Gold|#f4e3c5|72.056",
+        "Gloss White|#f5f3f4|70.842", "Glossy Black|#241e1e|70.861", "Goblin Green|#576033|72.030",
+        "Gold|#996728|70.996", "Gold Brown|#bf873c|70.877", "Gold Yellow|#d67419|72.007",
+        "Golden Olive|#808145|70.857", "Golden Yellow|#f8a734|70.948", "Gorgon Brown|#5a2e23|72.124",
+        "Gory Red|#7d1f1f|72.011", "Greasy Black|#413736|72.476", "Green|#007133|72.089",
+        "Green Brown|#816d32|70.879", "Green Fluorescent|#a8c958|70.737", "Green Grey|#b5b6ae|70.971 70.886",
+        "Green Ochre|#a17f35|70.914", "Green Rush|#8cc5b2|72.605", "Green Sky|#7a9165|70.974",
+        "Green Wash|#72b25b|73.205", "Green Yellow|#6e653c|70.881", "Grey Blue|#596d85|70.943",
+        "Grey Brown|#5b4923|70.762", "Grey Green|#41403e|70.866", "Grunge Brown|#864326|72.115",
+        "Gunmetal|#352a2e|70.863", "Gunmetal Blue|#282834|70.800", "Gunship Green|#4c5840|70.895",
+        "Hammered Copper|#dccfc7|72.059", "Heavy Black Green|#3e4943|72.147", "Heavy Blue|#405b78|72.143",
+        "Heavy Bluegrey|#cbcac8|72.144", "Heavy Brown|#7b674e|72.153", "Heavy Gold Brown|#b68644|72.151",
+        "Heavy Green|#566637|72.146", "Heavy Kakhi|#b49f50|72.149", "Heavy Ochre|#ae7727|72.150",
+        "Heavy Orange|#ea5e0f|72.152", "Heavy Red|#8d363c|72.141", "Heavy Siena|#5e483b|72.154",
+        "Heavy Skin Tone|#ad8468|72.140", "Heavy Violet|#484069|72.142", "Heretic Turquoise|#13514b|72.481",
+        "Hexed Lichen|#4b2753|72.015", "Hospitallier Black|#252527|72.484", "Hot Orange|#e23922|72.009",
+        "Hull Red|#5c383c|70.985", "Ice Yellow|#eecf72|70.858", "Iceberg Grey|#42576c|72.463",
+        "Imperial Blue|#262a47|72.020", "Imperial Yellow|#f59f2e|72.403", "Infantry Blue|#25212f|70.752",
+        "Intermediate Blue|#646d76|70.903", "Intermediate Green|#506544|70.891", "Iraqi Sand|#b49360|70.819",
+        "Ivory|#ebe2d1|70.918", "Jade Green|#007155|72.026", "Japanese Uniform WWII|#9f7f2a|70.923",
+        "Khaki|#9a7b4c|72.061 70.988", "Khaki Drill|#c7945b|72.451", "Khaki Grey|#7e6338|70.880",
+        "Landser Grey|#524f48|72.469", "Lavender Grey|#7f6f6f|70.774", "Leather Brown|#594335|70.871 72.040",
+        "Legacy Blue|#272961|72.480", "Lemon Yellow|#e4d202|70.952", "Light Brown|#a25b31|70.929",
+        "Light Flesh|#f3d4b8|70.928", "Light Green|#007943|70.942", "Light Green Blue|#86958e|70.972",
+        "Light Grey|#919294|70.990", "Light Mud|#7c745d|70.760", "Light Orange|#ee7228|70.911",
+        "Light Sea Grey|#a1b1b1|70.973", "Light Turquoise|#006989|70.840", "Light Violet|#a893bc|70.750",
+        "Light Yellow|#f8d347|70.949", "Lime Green|#7f9435|70.827", "Livery Green|#9dc451|72.033",
+        "Lizard Green|#223a2c|72.418", "London Grey|#696363|70.836", "Luftwaffe Green|#393f25|70.823",
+        "Luftwaffe Uniform WWII|#44404e|70.816", "Lustful Purple|#b78bbc|72.114", "Magenta|#903153|70.945 72.083",
+        "Magenta Fluorescent|#e6418d|70.735", "Magic Blue|#0069aa|72.021", "Mahogany|#5a3930|72.472",
+        "Mahogany Brown|#79504a|70.846", "Mahogany Ink|#674641|70.828", "Martian Orange|#cd4619|72.405",
+        "Medium Blue|#16416c|70.963", "Medium Brown|#5b483a|70.826", "Medium Fleshtone|#b07940|70.860",
+        "Medium Grey|#867259|70.987", "Medium Grey Blue|#779d92|70.772", "Medium Olive|#414e32|70.850",
+        "Medium Sea Grey|#7d7b7c|70.870", "Medium Xpress|#fffbf8|72.448", "Middle Stone|#937f42|70.882",
+        "Midnight Purple|#2d1e33|72.116", "Military Green|#434434|70.975", "Military Yellow|#937626|70.764 72.453",
+        "Monastic Green|#004b37|72.482", "Moon Yellow|#eeb800|72.005", "Moss and Lichen|#dad76c|72.611",
+        "Muddy Ground|#452e28|72.475", "Mummy White|#cfb496|72.449", "Mustard Brown|#9d714a|70.769",
+        "Mutation Green|#4c7650|72.105", "Mystic Blue|#004a87|72.411", "Natural Steel|#535258|70.864",
+        "Natural Wood Grain|#eaa432|70.834", "Neutral Grey|#6f6d61|72.050 70.992", "New Wood|#8a633c|70.770",
+        "Night Blue|#202430|72.019", "Nocturnal Red|#551c22|72.111", "Nuclear Yellow|#dd9213|72.404",
+        "Ochre Brown|#aa793e|70.856", "Off-White|#fef3dd|72.101 70.820", "Oily Steel|#484246|70.865",
+        "Old Gold|#55371d|70.878", "Old Rose|#bc6d70|70.944", "Olive Brown|#3f3126|70.889",
+        "Olive Green|#526138|70.967", "Olive Grey|#40422d|70.888", "Omega Blue|#3a365b|72.413",
+        "Orange Brown|#ad623a|70.981", "Orange Fire|#eb5b1e|72.008", "Orange Fluorescent|#e86016|70.733",
+        "Orange Ochre|#ac8035|70.824", "Orange Red|#dc4319|70.910", "Orc Skin|#5e752d|72.415",
+        "Oxford Blue|#3e3a53|70.807", "Pale Blue|#90a3a9|70.906", "Pale Brown|#9f8375|70.825",
+        "Pale Flesh|#cba37f|72.003", "Pale Grey Blue|#a7b6b3|70.907", "Pale Grey Wash|#cacad2|73.202",
+        "Pale Sand|#e3c28f|70.837", "Pale Yellow|#ebce7e|72.097", "Parasite Brown|#a35c1e|72.042",
+        "Park Green Flat|#21624a|70.969", "Pastel Blue|#607a93|70.901", "Pastel Green|#939870|70.885",
+        "Phoenix Orange|#b1401e|72.478", "Pink|#b04f7c|70.958", "Plague Brown|#ab7131|72.039",
+        "Plague Green|#4c4d2e|72.419", "Plasma Red|#a52822|72.406", "Polished Gold|#f8ecc2|72.055",
+        "Prussian Blue|#3c405d|70.965", "Purple|#533152|70.959", "Red|#cd1316|72.086 70.926",
+        "Red Leather|#95543e|70.818", "Red Wash|#d55e86|73.206", "Refractive Green|#474a35|70.890",
+        "Rosy Flesh|#e58a6b|72.100", "Rotten Flesh|#89763b|72.452", "Rotten White|#f0eeef|72.130",
+        "Royal Blue|#1a427d|70.809", "Royal Purple|#4d2740|70.810 72.016", "Russian Uniform WWII|#585336|70.924",
+        "Rust|#e45314|72.131 72.609", "Saddle Brown|#8c645c|70.940", "Salmon Rose|#e28f7f|70.835",
+        "Sand Yellow|#eabf56|70.916", "Scarlet|#c23d2e|70.817", "Scarlet Blood|#c22222|72.106",
+        "Scarlet Red|#761e1d|72.012", "Scorpy Green|#4f8436|72.032", "Scrofulous Brown|#a7691c|72.038",
+        "Scurvy Green|#1f4d43|72.027", "Sepia|#563d27|72.091", "Sepia Wash|#8b622c|73.200 73.300",
+        "Seraph Red|#6b1411|72.479", "Sick Green|#406037|72.029", "Silver|#ebedec|72.052 70.997",
+        "Silver Grey|#d8cdc9|70.883", "Skin|#5c2d27|72.093", "Skin Tone|#e5ab85|72.099", "Sky Blue|#74b8cf|70.961",
+        "Sky Grey|#aaabad|70.989", "Smoke Ink|#5c4847|70.939", "Smokey Ink|#493632|72.068",
+        "Snake Green|#015a46|72.417", "Sombre Grey|#535d69|72.048", "Space Grey|#2d5a5d|72.422",
+        "Splinter Green|#456341|70.756", "Squid Pink|#c778a5|72.013", "Starship Steel|#517375|72.462",
+        "Steel Grey|#7b92a2|72.102", "Stone Grey|#8c7c63|70.884", "Stonewall Grey|#9c9384|72.049",
+        "Storm Blue|#303a7f|72.412", "Stormy Blue|#413f57|72.018", "Succubus Skin|#933d46|72.108",
+        "Sun Yellow|#f6a300|72.006", "Sunny Skin Tone|#ed9646|70.845", "Sunrise Blue|#73c9ec|72.118",
+        "Sunset Orange|#f4973a|72.110", "Sunset Red|#c02b49|70.802", "Tan|#95604e|72.066", "Tan Earth|#997457|70.874",
+        "Tan Glaze|#d59335|70.831", "Tan Yellow|#c19b6e|70.912", "Tanned Skin|#81452d|72.471",
+        "Templar White|#cccecd|72.401", "Terracotta|#693e38|72.065", "Thick Blood|#954e43|72.602",
+        "Tinny Tin|#d5c7c6|72.060", "Toxic Yellow|#e8d457|72.109", "Transparent Blue|#323d5d|70.938",
+        "Transparent Green|#007943|70.936", "Transparent Orange|#ea651a|70.935", "Transparent Red|#b62336|70.934",
+        "Transparent Yellow|#f7a501|70.937", "Troll Green|#015e32|72.416", "Turquoise|#0c425a|70.966 72.024",
+        "Twilight Rose|#774755|72.460", "US Dark Green|#494b36|70.893", "US Field Drab|#826545|70.873",
+        "US Olive Drab|#59513c|70.887", "Ultramarine|#2d559d|70.839", "Ultramarine Blue|#383967|72.022",
+        "Umber Wash|#766053|73.203", "Uniform Green|#4b5230|70.922", "Vampiric Purple|#492857|72.461",
+        "Velvet Red|#81282e|72.407", "Verdigris|#91cbcc|72.135 72.096", "Verdigris Glaze|#99d0ca|70.832",
+        "Vermilion|#c42a28|70.909", "Viking Grey|#45515d|72.483", "Violet|#3c2c49|70.960 72.087",
+        "Violet Grey|#5a5957|70.773", "Violet Red|#64353f|70.812", "Violeta Wash|#886ca7|73.209",
+        "Vomit|#faac42|72.600 72.134", "Wagram Blue|#014461|72.464", "Warlord Purple|#862351|72.014",
+        "Warm Grey|#b29e9d|72.148", "Wasteland Brown|#684527|72.420", "White|#ffffff|70.951 72.082",
+        "White Glaze|#f4f4f6|70.853", "White Grey|#e3e2e0|70.993", "Wicked Purple|#756566|72.456",
+        "Willow Bark|#392b27|72.474", "Wolf Grey|#c3d1d1|72.047", "Yellow|#eba90c|72.085",
+        "Yellow Fluorescent|#efe641|70.730", "Yellow Green|#dede26|70.954", "Yellow Ochre|#deaa47|70.913",
+        "Yellow Olive|#1e4f39|72.064 70.892", "Yellow Wash|#e9e85c|73.208", "Zombie Flesh|#856b5a|72.470",
+      ],
+      // Warpaints Fanatic (with washes): 212
+      "The Army Painter": [
+        "Abyssal Blue|#00506c", "Aegis Aqua|#32b3d5", "Afterglow|#e4ea8d", "Agate Skin|#d7877b",
+        "Alien Purple|#6154a3", "Alpha Blue|#667dc0", "Amber Skin|#c4a083", "Amulet Aqua|#68c5b6",
+        "Ancient Stone|#d0c3a3", "Angel Green|#173e31", "Angelic Red|#d42c39", "Aqua Alchemy|#24bba6",
+        "Aquamarine|#56c4cd", "Arctic Gem|#1995d4", "Army Green|#5d7554", "Ash Grey|#84878f", "Augur Blue|#acbce2",
+        "Autumn Sage|#75ad98", "Barbarian Flesh|#f69b7f", "Baron Blue|#7c95cc", "Barren Dune|#debb72",
+        "Basilisk Red|#6c2539", "Blood Chalice|#db4b50", "Blue Tone|#132b47", "Boney Spikes|#e6d4c1",
+        "Bootstrap Brown|#5d4d4d", "Brainmatter Beige|#dedbd3", "Brigade Grey|#d0d0d2", "Brigadine Brown|#443a40",
+        "Bright Gold|#987b1a", "Bright Sapphire|#84cef0", "Brush-On Primer|#727475", "Buffed Hide|#b3756a",
+        "Burning Ore|#f2653e", "Burnt Turf|#be9859", "Camouflage Green|#6e8358", "Carnelian Skin|#5d3e46",
+        "Cobalt Metal|#2e4249", "Command Khaki|#b49488", "Company Grey|#bcbec2", "Crystal Blue|#0273bc",
+        "Cultist Purple|#6962ab", "Daemonic Yellow|#fece2a", "Dark Blue Tone|#17202e", "Dark Emerald|#3b4a25",
+        "Dark Red Tone|#2e131a", "Dark Rust|#290f12", "Dark Skin Shade|#443638", "Dark Tone|#1f1f1f",
+        "Data System Glow|#87c866", "Death Metal|#2b2b2b", "Deep Azure|#006b79", "Deep Grey|#4b5164",
+        "Deep Ocean Blue|#1b3044", "Demigod Flames|#d17b41", "Desert Yellow|#856d45", "Diabolic Plum|#562d74",
+        "Disgusting Slime|#a5c345", "Diviner Light|#d59fc5", "Doomfire Drab|#f9d9e6", "Dorado Skin|#eec79e",
+        "Dragon Red|#bf283b", "Dry Blood|#24000e", "Dryad Brown|#613630", "Dusty Skull|#8b7c68",
+        "Elder Flower|#a8577b", "Electric Lime|#bdd532", "Emerald Forest|#5bbb4d", "Enchanted Pink|#b66cae",
+        "Eternal Hunt|#279a4c", "Evergreen Fog|#396360", "Evil Chrome|#5b3b2f", "Ferocious Green|#75c377",
+        "Fiendish Yellow|#ec9a44", "Figgy Pink|#e3afc9", "Flickering Flame|#f58b3d", "Forbidden Fruit|#cd88a9",
+        "Forest Faun|#a1c7af", "Fresh Rust|#c25428", "Frost Blue|#9abede", "Fur Brown|#774544",
+        "Gargoyle Grey|#a8a292", "Gemstone Red|#821d23", "Glittering Green|#2e794a", "Glowing Inferno|#f79d42",
+        "Gothic Blue|#2e3e79", "Great Hall Grey|#bbb4a6", "Greedy Gold|#745218", "Green Tone|#1f3625",
+        "Greenskin|#1f7843", "Grey Castle|#929286", "Grotesque Green|#b3c29d", "Guardian Green|#226248",
+        "Gun Metal|#4f5053", "Hexed Violet|#8d81be", "Hydra Turquoise|#149398", "Ice Yellow|#ffedad",
+        "Imperial Navy|#063565", "Impish Rouge|#d957a0", "Inner Light|#fdcb5f", "Jasper Skin|#ba7372",
+        "Kraken Lavender|#d5cae5", "Lava Orange|#f5792c", "Leafy Green|#76c045", "Leather Brown|#7c5b54",
+        "Legendary Red|#ef4b3e", "Lens Flare Glow|#fff464", "Leopard Stone Skin|#e7b4b1", "Light Tone|#7f5216",
+        "Magecast Magenta|#704099", "Magenta Tone|#590135", "Marine Mist|#94d6d7", "Matt Black|#000000",
+        "Matt White|#ffffff", "Medieval Forest|#437c6d", "Military Shade|#23270e", "Mithril|#9e9fa3",
+        "Mocca Skin|#81655a", "Moldy Wine|#7d3451", "Molten Lava|#f05a3e", "Moonstone Skin|#c57b74",
+        "Mossy Green|#b1dcc0", "Mulled Berry|#623348", "Necrotic Flesh|#9aa984", "Neptune Glow|#75ced4",
+        "Night Sky|#304358", "Oak Brown|#39262a", "Obsidian Skin|#4a4046", "Oil Stains|#1d252b", "Olive Drab|#7a905f",
+        "Onyx Skin|#664a4d", "Oozing Vomit|#7b5c1d", "Opal Skin|#ffd2c8", "Orange Tone|#64300f", "Pale Sand|#efead3",
+        "Paratrooper Tan|#9a776c", "Patagon Pine|#63917f", "Pearl Skin|#ffe3d8", "Phalanx Blue|#048bae",
+        "Pharaoh Guard|#0c7c61", "Pink Potion|#f4b9d4", "Pixie Pink|#d96fae", "Plasma Coil Glow|#5ecdf4",
+        "Plate Mail Metal|#686a6e", "Power Node Glow|#f286b5", "Prairie Ochre|#696242", "Pure Red|#cd151c",
+        "Purple Tone|#241c31", "Quartz Skin|#f0d0b4", "Radiation Glow|#fbb375", "Raging Rose|#e96663",
+        "Raging Rouge|#f68f82", "Rainforest|#8bc63e", "Red Copper|#4d2c30", "Red Tone|#531f28", "Regal Blue|#004f88",
+        "Resplendent Red|#96272f", "Rough Iron|#352d25", "Royal Blue|#0162af", "Ruby Skin|#fbb99d",
+        "Ruddy Umber|#985951", "Runic Cobalt|#7496b4", "Rust Tone|#452a11", "Sacred Scarlet|#f1634c",
+        "Scarab Green|#193c44", "Sepia Tone|#734014", "Shieldwall Blue|#08a1cc", "Shining Silver|#86888c",
+        "Skeleton Bone|#c2b293", "Soft Tone|#563d2a", "Space Dust|#ffe388", "Spellbound Fuchsia|#ad4da0",
+        "Stratos Blue|#33658f", "Strong Skin Shade|#442824", "Strong Tone|#211913", "Tainted Gold|#575235",
+        "Talisman Teal|#1fae91", "Temple Gate Teal|#046154", "Terrestial Titan|#303149", "Thunderous Blue|#34577b",
+        "Tidal Blue|#026b93", "Tiger's Eye Skin|#904d52", "Tomb King Tan|#a29278", "Topaz Skin|#b25a53",
+        "Tourmaline Skin|#e3988b", "Tree Ancient|#513430", "Triumphant Navy|#1a2c53", "True Blood|#8d0422",
+        "True Brass|#635d58", "True Copper|#6b4731", "Tundra Taupe|#4b4d3e", "Turquoise Siren|#29b3b9",
+        "Ultramarine Blue|#284d8e", "Uniform Grey|#6b707c", "Urban Buff|#dbb9ab", "Verdigris|#61b89b",
+        "Violent Vermillion|#f37964", "Violet Coven|#a999c7", "Vivid Volt|#cfdc51", "Warlock Magenta|#834d9f",
+        "Warped Yellow|#fed548", "Wash Medium|#b1b3b4", "Wasteland Clay|#a38755", "Weapon Bronze|#955610",
+        "Weird Elixir|#e092bf", "Wicked Pink|#ce0886", "Wild Green|#46b758", "Wilted Rose|#ecc5d7",
+        "Wolf Grey|#4f78a3", "Woodland Camo|#4b6149", "Worn Stone|#c4bfb1", "Wyvern Fury|#993243",
+      ],
+      // Pro Acryl (with Signature Series): 117
+      "Pro Acryl": [
+        "Ben Komets Advanced Flesh Tone|#8f5d4c", "Ben Komets Dark Burgundy|#2e1b1b",
+        "Ben Komets Dark Sea Ben|#09202e", "Ben Komets Green Oxide|#296155", "Ben Komets Heavy Warm White|#f1d0a1",
+        "Ben Komets Petroleum Brown|#3b2313", "Black Brown|#2c2d28", "Black Green|#3f5f50", "Blue|#0855a3",
+        "Blue Black|#517283", "Bold Pyrrole Red|#a90f0f", "Bold Titanium White|#e7e9e4", "Bright Gold|#bc9866",
+        "Bright Ivory|#e7e8c8", "Bright Jade|#408c8e", "Bright Neutral Grey|#abaea7", "Bright Pale Green|#d8f4e8",
+        "Bright Warm Grey|#bbc0ac", "Bright Yellow Green|#88b423", "Bronze|#78685b", "Burgundy|#733739",
+        "Burnt Orange|#802715", "Burnt Red|#631410", "Burnt Sienna|#ad4e32", "Camo Green|#365337",
+        "Coal Black|#18191b", "Copper|#ae7849", "Dark Blue|#142038", "Dark Camo Green|#313c2c", "Dark Flesh|#674137",
+        "Dark Golden Brown|#a58f56", "Dark Grey Blue|#184366", "Dark Neutral Grey|#2a3235", "Dark Purple|#1d2347",
+        "Dark Silver|#25292c", "Dark Umber|#423431", "Dark Warm Grey|#464c4c", "Faded Green|#9aa37f",
+        "Faded Plum|#c8b5d5", "Faded Ultramarine|#638ac1", "Flameon Bright Pale Yellow|#fff7cc",
+        "Flameon Bright Yellow Ochre|#dda55b", "Flameon Caramel Brown|#805f3e", "Flameon Dark Green Brown|#614529",
+        "Flameon Dark Orange Brown|#8d5c25", "Flameon Orange Brown|#805f3e", "Fluorescent Green|#3fb549",
+        "Fluorescent Orange|#f04d26", "Fluorescent Pink|#ee387c", "Fluorescent Purple|#a32388",
+        "Fluorescent Red|#ef3a37", "Fluorescent Yellow|#f2dd26", "Golden Brown|#be9953", "Golden Yellow|#e9d035",
+        "Green|#16864e", "Grey Blue|#bce3f2", "Ivory|#d5d0b3", "Jade|#03535a", "Khaki|#ac9e6b",
+        "Light Bronze|#9c8d64", "Light Umber|#5e4433", "Magenta|#a14d6f", "Mahogany|#261410",
+        "Matt Cexwish Bone|#8d857e", "Matt Cexwish Brown Grey|#4b4945", "Matt Cexwish Dark Bronze|#3f311f",
+        "Matt Cexwish Dark Crimson|#3e1714", "Matt Cexwish Dark Emerald|#194245",
+        "Matt Cexwish Heavy Titanium White|#e6e6e6", "Metallic Medium|#d3d4cc", "Neutral Grey|#5e5e5e",
+        "Ninjon Dark Ivory|#b7b4a6", "Ninjon Dark Magenta|#80303f", "Ninjon Dark Plum|#4e3b3d",
+        "Ninjon Dark Warm Flesh|#c59157", "Ninjon Red Grey|#837876", "Ninjon Warm Brown|#6b4b38",
+        "Olive Flesh|#ccc6ae", "Orange|#e56b20", "Pale Pink|#e0cabf", "Pale Yellow|#e8e7d2", "Pink|#eba59f",
+        "Plum|#8e5384", "Purple|#63306b", "Rich Gold|#b47a30", "Rogue Hobbies Bismuth Yellow|#f9d967",
+        "Rogue Hobbies Bright Green|#12a361", "Rogue Hobbies Dark Hot Pink|#c32c5b",
+        "Rogue Hobbies Dark Turquoise|#167d94", "Rogue Hobbies Orange Red|#e53941",
+        "Rogue Hobbies Ultramarine|#3d5eab", "Shadow Flesh|#8d5345", "Silver|#9a9e9d", "Sky Blue|#248ccb",
+        "Tan Flesh|#c39f85", "Transparent Black|#1d1e22", "Transparent Blue|#09125d", "Transparent Brown|#372525",
+        "Transparent Green|#082930", "Transparent Orange|#a22207", "Transparent Purple|#16172b",
+        "Transparent Red|#90111c", "Transparent White|#f5f5f5", "Transparent Yellow|#e6b802", "Turquoise|#75f1f1",
+        "Vince Venturella Beige Red|#a68e86", "Vince Venturella Dark Jade|#2c4855",
+        "Vince Venturella Dark Yellow Green|#6a7546", "Vince Venturella Payne's Grey|#2d3844",
+        "Vince Venturella Royal Purple|#3b3053", "Vince Venturella White Blue|#afbdba", "Warm Flesh|#f6c67c",
+        "Warm Grey|#54544a", "Warm Yellow|#f6c847", "White Gold|#9e9b8a", "Yellow Green|#879245",
+        "Yellow Ochre|#ae7f31",
+      ],
+      // AK 3rd Gen (standard, metallic, intense, ink): 217
+      "AK Interactive": [
+        "Alga Green|#555e1b", "Aluminium|#afafaf", "Amaranth Red|#cf4e27", "Amethyst Blue|#332a47",
+        "Anodized Violet|#9d8696", "Anthracite Grey|#1c2a2b", "Aquatic Turquoise|#006557",
+        "Archaic Turquoise|#003839", "Ash Grey|#42423a", "Astral Beryllium|#799e8d", "Basalt Grey|#5b605a",
+        "Basic Skin Tone|#f7b57b", "Beige|#e2b848", "Beige Red|#de935a", "Black|#101207", "Black Green|#131e0d",
+        "Black Red|#42271e", "Blood Red|#c52219", "Blue Grey|#c7d0cd", "Blue Violet|#886da4", "Blue-green|#358578",
+        "Bordeaux Red|#a13b2f", "Brass|#a55d09", "Brick Red|#9e4429", "British Khaki|#654d1f", "Bronze|#7f5405",
+        "Brown Rose|#d78464", "Brownish Green|#57460e", "Buff|#d1ac5c", "Burn Orange|#db5e30", "Burnt Red|#533125",
+        "Burnt Tin|#331702", "Burnt Umber|#2d1e01", "Cadmium Red|#e9582c", "Camouflage Green|#4f411c",
+        "Carbon Black|#110801", "Carmine|#b83e26", "Chocolate (chipping)|#331e09", "Clear Blue|#0d265c",
+        "Clear Green|#029837", "Clear Orange|#eb5d0b", "Clear Red|#c61215", "Clear Smoke|#734c21",
+        "Clear Yellow|#f49401", "Cobalt Blue|#012136", "Command Green|#312e0d", "Copper|#bd500b",
+        "Dark Aluminium|#787878", "Dark Blue|#1e2d4c", "Dark Blue-grey|#4a5e53", "Dark Brown|#533914",
+        "Dark Flesh|#eba43a", "Dark Green|#224618", "Dark Green-grey|#3b4d3d", "Dark Grey|#494a45",
+        "Dark Prussian Blue|#0a0c1b", "Dark Rust|#542303", "Dark Sand|#e6bc56", "Dark Sea Blue|#0d1814",
+        "Dark Sea Grey|#7b7873", "Dead Red|#f54949", "Deck Tan|#ccc4af", "Decomposed Flesh|#b7a261",
+        "Deep Blue|#1a4067", "Deep Brown|#854a2a", "Deep Green|#1c6128", "Deep Orange|#fe5e14", "Deep Purple|#7a4967",
+        "Deep Red|#dc211a", "Deep Sky Blue|#69b4c7", "Deep Violet|#74536e", "Deep Yellow|#fdc500",
+        "Dirty Red|#7f190d", "Dirty Yellow|#eca71c", "Ducat Blue|#3a889f", "Emerald|#036242",
+        "Emerald Metallic Green|#21753a", "English Grey|#6d6d65", "Extra Dark Green|#243128", "Faded Green|#7c8872",
+        "Fluorescent Blue|#004064", "Fluorescent Green|#98c31e", "Fluorescent Magenta|#ff4c69",
+        "Fluorescent Orange|#fe5102", "Fluorescent Yellow|#f6f101", "Foundry Red|#c53733", "French Blue|#545653",
+        "Frog Green|#97b821", "German Field Grey|#423e23", "German Grey|#383830", "Gold|#9e6806",
+        "Golden Brown|#ab7602", "Golden Olive|#737b26", "Golden Yellow|#feb449", "Graphite|#6c6e60",
+        "Grass Green|#62832c", "Green Ochre|#a68236", "Green Sky|#8bb283", "Green-brown|#705923",
+        "Green-grey|#dfe4bc", "Greenish White|#e4eecc", "Grey Green|#808064", "Grey-blue|#5f6772",
+        "Grey-brown|#705b3c", "Grim Brown|#211404", "Grimy Grey|#dfc998", "Gun Metal|#4e4e4c",
+        "Gunship Green|#485335", "Hull Red|#381a02", "Ice Yellow|#feee8e", "Imperial Blue|#192152",
+        "Intense Pink|#e9748f", "Interior Yellow Green|#aca300", "Intermediate Blue|#676966",
+        "Intermediate Green|#506e32", "Ivory|#f3eec8", "Japanese Brown|#966d1b", "Laser Magenta|#6b102f",
+        "Laser Yellow|#f5ef2b", "Lead Grey|#464741", "Leather Brown|#46311e", "Lemon Yellow|#ffe121",
+        "Light Brown|#cf8139", "Light Earth|#d0b580", "Light Flesh|#ffdfb6", "Light Green|#59922b",
+        "Light Orange|#f07a3c", "Light Prussian Blue|#132a38", "Light Rust|#db5615", "Lilac|#656074",
+        "Lime Green|#819f1d", "Lizard Green|#175a31", "Luminous Flesh|#edc180", "Luminous Green|#73b72c",
+        "Luminous Orange|#f18700", "Magenta|#b1325f", "Mahogany Brown|#622a05", "Matt Red|#b5311c",
+        "Medium Blue|#163a48", "Medium Flesh Tone|#c98230", "Medium Grey|#b6b8a3", "Medium Olive Green|#3e501c",
+        "Medium Orange|#fa682c", "Medium Rust|#9c4b30", "Medium Sand|#cc9b35", "Medium Sea Grey|#a19b81",
+        "Metallic Blue|#829c99", "Middle Stone|#8b7029", "Mint Green|#008c5f", "Mud Brown|#705331",
+        "Natural Steel|#a7a6a1", "Neutral Grey|#696e68", "Night Blue|#0b1c26", "Ocean Blue|#1e3636",
+        "Ocher Orange|#f5a75f", "Ochre|#c7932d", "Offwhite|#ebebe1", "Oily Steel|#a7a491", "Old Gold|#b89402",
+        "Old Rose|#fe9679", "Olive Green|#4b5f20", "Orange Brown|#b1581e", "Oxford|#353942", "Pale Blue|#b4c4b7",
+        "Pale Grey|#aeafb4", "Pale Sand|#efd581", "Pale Yellow|#fedd58", "Pearl|#f5efd5", "Penetrating Red|#b64026",
+        "Pistachio|#dcd225", "Purple|#b47c89", "Purulent Yellow|#ebd03b", "Radiant Flesh|#feb254",
+        "Radiant Yellow|#ffd409", "Reddish Grey|#7b6b52", "Reflective Green|#352e11", "Rock Grey|#c1b897",
+        "Rubber Black|#29251a", "Ruby|#cf4747", "Russian Green|#292907", "Rusty Brass|#a04d0b", "Rusty Gold|#734b03",
+        "Saddle Brown|#683a2b", "Sahara Yellow|#b1930d", "Salmon|#f5a175", "Sand Yellow|#e9bd3a",
+        "Scarlet Red|#d03b27", "Sepia|#230d00", "Sickly Pink|#f6af91", "Silver|#a0aaac", "Silver Grey|#e2d7b7",
+        "Skin|#943718", "Sky Blue|#88c2cd", "Sky Grey|#bbbab6", "Smoke Black|#2b2b21", "Snow Blue|#cae4e1",
+        "Sooty Black|#5f5d48", "Spectrum Blue|#b4bebf", "Star Blue|#014760", "Strong Dark Blue|#04151f",
+        "Sunny Skin Tone|#ffa84f", "Tan Earth|#7d5c33", "Tan Yellow|#d19849", "Tenebrous Grey|#302c21",
+        "Titanium White|#ffffff", "Turquoise|#005e5e", "Ultramarine|#1e357b", "Us Dark Green|#423910",
+        "Vampiric Flesh|#cfbc81", "Vermillion|#c44c33", "Violet Red|#573536", "Volcanic Yellow|#f09218",
+        "Warm Grey|#b6a88b", "White|#ffffff", "White Grey|#f5f5ed", "Wine Red|#69140d", "Yellow|#fab711",
+      ],
+    };
+    for (const [brand, rows] of Object.entries(EXTRA_PAINT_TABLE)) for (const row of rows) {
+      const [name, colour, codes] = row.split("|");
+      if (KNOWN_PAINTS.some(k => k.brand === brand && sameName(k.name, name))) continue;
+      const paint = { brand, name, colour, extra: true };
+      if (codes) paint.codes = codes.split(" ");
+      KNOWN_PAINTS.push(paint);
+    }
+    // Upper/lower case and curly quotes don't count when spotting a repeat (sameText isn't defined yet here).
+    function sameName(a, b) { return String(a).replace(/[\u2018\u2019]/g, "'").toLowerCase() === String(b).replace(/[\u2018\u2019]/g, "'").toLowerCase(); }
+    // Every Vallejo code in a bit of text (a label can show more than one number).
+    // The camera often reads 0 as the letter O and 1 as l or I ("72.O21"), so those count as digits
+    // in the last three places, as long as at least one real digit is there too.
+    function vallejoCodes(text) {
+      const out = [];
+      const re = /(?:^|[^0-9A-Za-z])(7[0-3])\s?[.,·:\-]?\s?([0-9OoIl]{3})(?![0-9A-Za-z])/g;
+      let m;
+      while ((m = re.exec(String(text || "")))) {
+        re.lastIndex = m.index + 1;
+        if (!/[0-9]/.test(m[2])) continue;
+        const c = m[1] + "." + m[2].replace(/[Oo]/g, "0").replace(/[Il]/g, "1");
+        if (!out.includes(c)) out.push(c);
+      }
+      return out;
+    }
 
     // v15: basing materials (rocks, sand, static grass, snow...) aren't paints, but a step can
     // use one. They're kept in the paint list with type "material", so they can sit in a step,
@@ -2074,7 +2399,18 @@
     function matchCandidates() {
       if (candidateCache) return candidateCache;
       const out =book.paints.map(p => ({ brand: p.brand, name: p.name, colour: p.colour, type: p.type, mine: true }));
-      for (const k of KNOWN_PAINTS) if (!out.some(o => sameText(o.name, k.name))) out.push({ ...k });
+      // v21.3: a known paint is left out if one of YOUR paints has its name (as before), or if the app
+      // already listed the same brand + name. Different brands may share a name ("Black").
+      // (Looked up by key, not by searching the list each time: there are 1,000+ known paints now.)
+      const textKey = (t) => plainQuotes(String(t || "")).trim().toLowerCase();
+      const mineNames = new Set(out.map(o => textKey(o.name)));
+      const seen = new Set();
+      for (const k of KNOWN_PAINTS) {
+        const both = textKey(k.brand) + "|" + textKey(k.name);
+        if (mineNames.has(textKey(k.name)) || seen.has(both)) continue;
+        seen.add(both);
+        out.push({ ...k });
+      }
       for (const c of out) { c.key = matchKey(c.name); c.words = c.key.split(" "); }
       return out;
     }
@@ -2086,7 +2422,32 @@
     }
 
     // The matcher itself. hints: { brand, earlier: [paints already seen in the same text] }.
+    // v21.3: two passes. First your paints, Citadel and the app's older short lists (so a Citadel
+    // name is matched exactly as before); only if that isn't sure are the extra brands tried, and
+    // their suggestions go after the first pass's. A Vallejo code ("72.021") is matched straight away.
     function matchPaint(text, hints) {
+      hints = hints || {};
+      const typed = String(text || "").trim().replace(/\s+/g, " ");
+      const everything = matchCandidates();
+      const rest = splitBrand(typed);
+      const codes = /^[0-9\s.,·:\-]+$/.test(rest.rest || typed) ? vallejoCodes(rest.rest || typed) : [];
+      if (codes.length === 1) {
+        const hit = everything.find(c => c.codes && c.codes.includes(codes[0]));
+        if (hit) return { status: "sure", typed, paint: { brand: hit.brand, name: hit.name, colour: hit.colour || DEFAULT_PAINT_COLOUR, type: hit.type }, suggestions: [] };
+      }
+      const first = matchPaintIn(text, hints, everything.filter(c => !c.extra));
+      if (first.status === "sure" || first.status === "material" || first.status === "none") return first;
+      const second = matchPaintIn(text, hints, everything.filter(c => c.extra || c.mine));
+      if (first.status === "unsure") {
+        const more = second.status === "sure" ? [second.paint] : second.status === "unsure" ? second.suggestions : [];
+        const suggestions = first.suggestions.slice();
+        for (const s of more) if (suggestions.length < 4 && !suggestions.some(x => sameText(x.name, s.name) && sameText(x.brand, s.brand))) suggestions.push(s);
+        return { ...first, suggestions };
+      }
+      // Nothing like it in the first pass ("new"): the extra brands decide.
+      return second.status === "sure" || second.status === "unsure" ? second : first;
+    }
+    function matchPaintIn(text, hints, pool) {
       hints = hints || {};
       const typed = String(text || "").trim().replace(/\s+/g, " ");
       const result = (status, paint, suggestions) => ({ status, typed, paint: paint || null, suggestions: suggestions || [] });
@@ -2097,7 +2458,7 @@
       if (!key) return result("none");
       // v18: if the text names a brand ("Vallejo Ivory"), only that brand's paints (or paints with
       // no brand) can match, so it never picks your AK Ivory instead.
-      const all = split.brand ? matchCandidates().filter(c => !c.brand || sameText(c.brand, split.brand)) : matchCandidates();
+      const all = split.brand ? pool.filter(c => !c.brand || sameText(c.brand, split.brand)) : pool;
       const pick = (c) => {
         const full = all.find(x => sameText(x.name, c.name) && (!c.brand || sameText(x.brand, c.brand))) || c;
         return { brand: full.brand || brand, name: full.name, colour: full.colour || DEFAULT_PAINT_COLOUR, type: full.type };
@@ -2110,13 +2471,18 @@
       if (remembered) return result("sure", pick(remembered));
       // 2. The exact name.
       const exact = ranked(all.filter(c => c.key === key));
+      // v21.3: the same name in two brands (Vallejo Black, Army Painter Black) with no brand given,
+      // none of them yours: ask which.
+      const brandsOf = new Set(exact.map(c => matchKey(c.brand)));
+      if (exact.length > 1 && brandsOf.size > 1 && !exact[0].mine && !(brand && sameText(exact[0].brand, brand)))
+        return result("unsure", null, exact.slice(0, 4).map(pick));
       if (exact.length) return result("sure", pick(exact[0]));
       // 3. A basing material: kept as you wrote it.
       if (MATERIAL_WORDS.test(typed)) return result("material", { brand: "", name: tidyName(split.rest || typed), colour: DEFAULT_PAINT_COLOUR, type: "material" });
 
       const words = key.split(" ");
       const suggestions = [];
-      const suggest = (c) => { if (!suggestions.some(s => sameText(s.name, c.name))) suggestions.push(pick(c)); };
+      const suggest = (c) => { if (!suggestions.some(s => sameText(s.name, c.name) && sameText(s.brand, c.brand))) suggestions.push(pick(c)); };
       // 4. The start of a name, whole words: "nuln" = Nuln Oil, "baal" = Baal Red.
       const starts = ranked(all.filter(c => c.words.length > words.length && words.every((w, i) => c.words[i] === w)));
       const vague = words.length === 1 && (VAGUE_WORDS.has(words[0]) || words[0].length < 3);
@@ -8201,7 +8567,20 @@
     // ("STORMHOSBIELS" = Stormhost). Words printed on every pot (CITADEL, LAYER...) are ignored.
     const LABEL_NOISE = new Set(["citadel", "colour", "color", "games", "workshop", "warhammer", "base", "layer", "shade",
       "contrast", "technical", "dry", "air", "spray", "acrylic", "paint", "non", "toxic", "made", "vallejo", "xpress",
-      "game", "model", "army", "painter", "speedpaint", "warpaints", "fanatic"]);
+      "game", "model", "army", "painter", "speedpaint", "warpaints", "fanatic",
+      // v21.3: words on Army Painter, AK and Pro Acryl pots that aren't part of a paint's name
+      "acrylics", "interactive", "generation", "gen", "pro", "acryl", "monument", "premium", "series", "signature"]);
+    // v21.3: the brand a label names, if it names one. Its paints go first when the name could fit several brands.
+    const LABEL_BRANDS = [
+      [/citadel|games\s*workshop/, "Citadel"], [/vallejo|game\s*colou?r|model\s*colou?r/, "Vallejo"],
+      [/army\s*painter|warpaints|fanatic/, "The Army Painter"], [/pro\s*acryl|monument/, "Pro Acryl"],
+      [/\bak\b.{0,3}interactive|ak\s*interactive|3rd\s*gen/, "AK Interactive"],
+    ];
+    function brandOnLabel(text) {
+      const t = String(text || "").toLowerCase();
+      const hit = LABEL_BRANDS.find(([re]) => re.test(t));
+      return hit ? hit[1] : "";
+    }
     function wordLikeness(word, token) {
       const d = typoDistance(word, token, word.length);
       let same = 0;
@@ -8211,27 +8590,60 @@
     function suggestFromLabel(text) {
       const tokens = [...new Set(plainQuotes(String(text)).toLowerCase().replace(/[^a-z\s]+/g, " ").split(/\s+/)
         .filter(t => t.length >= 3 && !LABEL_NOISE.has(t)))];
+      // v21.3: some extra-brand names use a word that's also label print ("Dry Rust", "Army Green", "Toxic
+      // Yellow"), so those paints may use the label words too, as long as another word of the name matched.
+      const allTokens = [...new Set(plainQuotes(String(text)).toLowerCase().replace(/[^a-z\s]+/g, " ").split(/\s+/)
+        .filter(t => t.length >= 3))];
+      // v21.3: Vallejo pots print a code number (72.021). A code that matches a known paint wins outright.
+      const codes = vallejoCodes(text);
+      const brand = brandOnLabel(text);
+      const labelKey = " " + matchKey(text) + " ";
       const scored = [];
       for (const c of matchCandidates()) {
+        if (c.codes && codes.some(code => c.codes.includes(code))) { scored.push({ c, score: 2, got: 1e6, rank: 1e6, phrase: 0 }); continue; }
+        // A label that names its brand: the extra lists' OTHER brands are left out (your own paints never are).
+        if (brand && c.extra && !sameText(c.brand, brand)) continue;
         const words = c.words.filter(w => w.length >= 3);
         if (!words.length) continue;
-        let got = 0, letters = 0, special = false, strongWord = false;
+        let got = 0, letters = 0, special = false, strongWord = false, allClear = true, realWord = false, clearGot = 0;
         for (const w of words) {
           letters += w.length;
-          const best = Math.max(0, ...tokens.map(t => wordLikeness(w, t)));
-          if (best >= 0.7) { got += w.length * best; if (!VAGUE_WORDS.has(w)) special = true; }
+          const fromNoise = c.extra && LABEL_NOISE.has(w);
+          const best = Math.max(0, ...(fromNoise ? allTokens : tokens).map(t => wordLikeness(w, t)));
+          if (best < 0.85) allClear = false; else clearGot += w.length * best;
+          if (best >= 0.7 && !fromNoise) realWord = true;
+          if (best >= 0.7) { got += w.length * best; if (!VAGUE_WORDS.has(w) && !fromNoise) special = true; }
           // A long, unusual word read well ("STORMHO" for Stormhost) is enough on its own.
           if (best >= 0.75 && w.length >= 6 && !VAGUE_WORDS.has(w)) strongWord = true;
         }
         const score = got / letters;
-        if (special && (score >= 0.5 || strongWord)) scored.push({ c, score, got });
+        if (!realWord) continue;
+        // v21.3: extra-brand paints are ranked by the words read CLEARLY, plus whether the whole name is
+        // on the label word for word, so "GREY GREEN" picks Grey Green over Green Grey and "GOLD" picks
+        // Gold over Old Gold. (Citadel and your own paints rank exactly as before.)
+        const rank = c.extra ? clearGot : got;
+        const phrase = c.extra && labelKey.includes(" " + c.key + " ") ? c.key.length : 0;
+        if (special && (score >= 0.5 || strongWord)) scored.push({ c, score, got, rank, phrase });
+        // v21.3: many Vallejo, AK and Pro Acryl names are only everyday words ("Dark Blue", "Bone White").
+        // Those extra paints count when EVERY word of the name was read clearly. (Citadel's rule is unchanged.)
+        else if (c.extra && allClear) scored.push({ c, score, got, rank, phrase });
       }
       // Most letters matched first (so "STORMHO" picks Stormhost over Storm Blue), then closeness.
-      scored.sort((a, b) => b.got - a.got || b.score - a.score || (b.c.mine === true) - (a.c.mine === true));
+      // v21.3: a code match first, then the brand the label names. When letters matched are equal,
+      // your own paints, Citadel and the older lists go before the extra brands (so a Citadel label
+      // reads exactly as it did before).
+      const onBrand = (c) => brand && sameText(c.brand, brand) ? 1 : 0;
+      scored.sort((a, b) => (b.got >= 1e6) - (a.got >= 1e6) || onBrand(b.c) - onBrand(a.c) || b.rank - a.rank
+        || (a.c.extra === true) - (b.c.extra === true) || b.phrase - a.phrase || b.score - a.score || (b.c.mine === true) - (a.c.mine === true));
       const out = [];
-      for (const { c } of scored) if (!out.some(o => sameText(o.name, c.name)))
-        out.push({ brand: c.brand, name: c.name, colour: c.colour || DEFAULT_PAINT_COLOUR, type: c.type });
-      return { tokens, suggestions: out.slice(0, 4) };
+      for (const { c } of scored) if (!out.some(o => sameText(o.name, c.name) && sameText(o.brand, c.brand)))
+        out.push({ brand: c.brand, name: c.name, colour: c.colour || DEFAULT_PAINT_COLOUR, type: c.type, extra: c.extra === true });
+      // v21.3: the top 4 that aren't extra-brand paints always stay in (so a Citadel label offers what it
+      // did before); extra brands fill the spare places, in the same order.
+      // (Not when the label names one of the extra brands: then that brand's paints come first.)
+      const keep = new Set(!brand || brand === "Citadel" ? out.filter(o => !o.extra).slice(0, 4) : []);
+      for (const o of out) { if (keep.size >= 4) break; keep.add(o); }
+      return { tokens, suggestions: out.filter(o => keep.has(o)).map(({ extra, ...o }) => o) };
     }
 
     // ----- The camera, with the box to line the name up in -----
@@ -8387,7 +8799,7 @@
         const chips = document.createElement("div");
         chips.className = "chips";
         for (const p of st.suggestions) {
-          chips.appendChild(makeChip(p.name + (p.brand ? ` · ${p.brand}` : ""), !!st.chosen && sameText(st.chosen.name, p.name), () => {
+          chips.appendChild(makeChip(p.name + (p.brand ? ` · ${p.brand}` : ""), !!st.chosen && sameText(st.chosen.name, p.name) && sameText(st.chosen.brand, p.brand), () => {
             st.chosen = p;
             if (st.typed && st.typed.trim() && !sameText(st.typed, p.name)) rememberShorthand(st.typed, p);
             renderScan();
@@ -8403,7 +8815,7 @@
         box.id = "scan-result";
         const head = document.createElement("div");
         head.className = "paint-line";
-        head.append(makeSwatch(mine ? mine.colour : p.colour || DEFAULT_PAINT_COLOUR), p.name);
+        head.append(makeSwatch(mine ? mine.colour : p.colour || DEFAULT_PAINT_COLOUR), p.name + (p.brand ? ` · ${p.brand}` : ""));
         const verdict = document.createElement("p");
         verdict.className = "hint";
         verdict.style.margin = "6px 0 10px";
@@ -10113,10 +10525,15 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy.)
-    const APP_VERSION = "v21.2";
+    const APP_VERSION = "v21.3";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v21.3", date: "11 Oct 2026", changes: [
+        "Scan a paint pot now knows more brands: Vallejo Game Color, Model Color and Xpress Color, The Army Painter's Warpaints Fanatic, Pro Acryl and AK 3rd Gen, about 950 more paints, not just Citadel.",
+        "On a Vallejo pot the scanner also reads the code number (like 72.021), so it finds the exact paint even when the name is hard to read. Typing a Vallejo code in your notes works too.",
+        "Pasting recipes from your notes recognises these brands too. Where two brands share a name, like \"Black\", the app asks which one. Citadel names are matched exactly as before.",
+      ]},
       { version: "v21.2", date: "11 Oct 2026", changes: [
         "Safety: the app now tells your browser exactly what it's allowed to load and run (a Content Security Policy). Code from other websites can't run inside Minifolio, even if something tried to sneak it in.",
         "The Give feedback link no longer tells the form's website which page you came from.",
