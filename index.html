@@ -39,7 +39,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=21.7"></script>
+  <script src="early.js?v=21.8"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -409,7 +409,9 @@
     .each-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
     .each-list li { display: flex; align-items: center; gap: 8px; padding: 6px 8px;
                     border: 1px solid var(--border); border-left: 4px solid var(--stage-colour); border-radius: 8px; }
-    .each-list .each-name { font-size: 13px; color: var(--muted); width: 64px; flex-shrink: 0; }
+    .each-list .each-name { font-size: 13px; color: var(--muted); width: 64px; flex-shrink: 0; display: grid; gap: 1px; align-content: center; }
+    /* v21.8: "Today", "Yesterday" or "Since 7 Oct" under the model's name (a long one wraps). */
+    .each-list .each-since { font-size: 11px; overflow-wrap: anywhere; line-height: 1.25; }
     .each-list .each-stage { flex: 1; font-size: 13px; font-weight: 600; color: var(--stage-colour); }
     /* v21: 44 px, the size a fingertip needs (was 40 × 36). */
     .each-list button { min-width: 44px; min-height: 44px; padding: 4px 10px; flex-shrink: 0; }
@@ -471,6 +473,15 @@
       background: var(--border); border: 2px solid var(--stage-colour); border-radius: 10px;
     }
     .photo-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    /* v21.8: on a phone the strip opens scrolled to the newest photo, and the fixed 116 px
+       tiles left the oldest one cut off at the left edge (by 7 px at 390 wide, 37 px at 360).
+       Here exactly two tiles fill the strip's width, so whenever the strip comes to rest
+       (the start, the end, or a snap in between) every tile on show is whole. */
+    @media (max-width: 480px) {
+      .photo-strip li { flex: 0 0 calc((100% - 10px) / 2); min-width: 0; }
+      .photo-tile { width: 100%; height: auto; aspect-ratio: 1 / 1; }
+      .photo-tile img { position: absolute; inset: 0; }
+    }
     .cover-badge {
       position: absolute; left: 4px; top: 4px; font-size: 11px; font-weight: 600;
       background: var(--badge-bg); color: var(--accent); border-radius: 6px; padding: 2px 6px;
@@ -575,6 +586,16 @@
     /* v20: in light mode the toast is dark, so a faint outline keeps it clear over the (always dark) photo viewer. */
     :root[data-appearance="light"] .toast { box-shadow: 0 0 0 1px rgba(125, 211, 252, 0.45), 0 4px 14px var(--shadow); }
     .toast button { margin-left: auto; background: none; color: var(--toast-action); font-weight: 700; padding: 10px 12px; margin: -8px -8px -8px auto; min-height: 44px; }
+
+    /* v21.8: while a text box has the cursor (app.js puts the class "typing" on <body>), the
+       bottom tab bar steps aside so it can't sit on the keyboard and cover what you're typing,
+       and the message and the Select bar drop down to the bottom edge. Only below 900 px wide:
+       from 900 px the tabs are a bar at the top, which is never in the way. */
+    @media (max-width: 899.98px) {
+      body.typing .tabs { display: none; }
+      body.typing .toast { bottom: calc(12px + env(safe-area-inset-bottom)); }
+      body.typing .select-bar { bottom: calc(12px + env(safe-area-inset-bottom)); }
+    }
 
     /* ----- v21.7: the in-app question box (replaces the browser's own pop-up questions) ----- */
     /* Sits over everything, even the photo viewer (15) and the toast (20). Uses the page's own
@@ -1213,6 +1234,8 @@
             <li id="help-new-unit-shown">Each new unit is <strong>scrolled into view</strong> and outlined for a moment, so you can see where it went in the list.</li>
             <li>Press <strong>▲</strong> to move a unit up a stage. Made a mistake? Press <strong>Undo</strong> on the message that pops up.</li>
             <li id="help-jump-stage"><strong>Jump to a stage:</strong> tap a unit's name and pick from its <strong>Stage</strong> menu, to go straight to any stage (forwards or back). If you track each model separately, each model has its own stage menu, and <strong>Move all models to stage</strong> moves them all at once. Every jump has an <strong>Undo</strong>.</li>
+            <li id="help-model-dates"><strong>When did it get there?</strong> If you track each model separately, each model says under its name when it reached its stage: <strong>Today</strong>, <strong>Yesterday</strong>, or <strong>Since 7 Oct</strong> (with the year added for an earlier year). Hold or long-press the date to see it in full. A model with no date shown has no record of when it moved.</li>
+            <li id="help-typing"><strong>Typing:</strong> while the cursor is in a text box, the tab bar at the bottom hides so it can't sit on your keyboard. Tap somewhere else and it comes back.</li>
             <li id="help-move-many"><strong>Move several units at once:</strong> on the Units tab press <strong>Select</strong>. Each unit gets a tick box (tapping a unit ticks it). Tick the ones you want, or press <strong>Select all shown</strong> to tick every unit your filters are showing. Then pick a stage from <strong>Move … to stage</strong> in the bar at the bottom. Units tracked model by model have all their models moved. One <strong>Undo</strong> puts every unit back as it was, diary included. <strong>Cancel</strong>, the phone's Back button or leaving the tab stops selecting without changing anything.</li>
             <li>Tap a unit's name to open its details: nickname, model count, repaint flag, paint notes, photos, <strong>back a stage</strong>, and delete.</li>
             <li id="help-questions"><strong>Questions:</strong> when the app needs to check before doing something (deleting, replacing, leaving a recipe you haven't saved) or needs a name from you, it asks in its own small box over the page. Tap <strong>Yes</strong> or <strong>No</strong>, or type the name and tap <strong>OK</strong>. <strong>No</strong>, <strong>Cancel</strong>, the <strong>Escape</strong> key and the phone's <strong>Back</strong> button all mean no, and nothing changes. On a keyboard, <strong>Enter</strong> means yes.</li>
@@ -1224,7 +1247,7 @@
           <summary>Photos and progress timeline</summary>
           <ul>
             <li>Open a unit's details and press <strong>＋ Add photo</strong>. You can add as many as you like, and pick several at once. Each one remembers the unit's stage and today's date.</li>
-            <li>The photos sit in a strip, <strong>oldest on the left, newest on the right</strong>, each with a coloured dot and the stage it was at. Add one at each stage and you get a timeline of the unit going from grey plastic to painted.</li>
+            <li>The photos sit in a strip, <strong>oldest on the left, newest on the right</strong> (swipe along it; on a phone two photos fit at a time), each with a coloured dot and the stage it was at. Add one at each stage and you get a timeline of the unit going from grey plastic to painted.</li>
             <li>Tap a photo to see it <strong>full size</strong>. Use ‹ › (or swipe, or the arrow keys) to move between photos, and ✕ to close.</li>
             <li>In the full-size view you can fix a photo's <strong>stage</strong> or <strong>date</strong>, make it the <strong>cover</strong> (the picture on the unit's card, marked ★), or <strong>delete</strong> it. Deleted by mistake? Press Undo.</li>
             <li>No cover chosen? The newest photo is used.</li>
@@ -1250,7 +1273,8 @@
             <li><strong>Reset</strong> puts every stage back to the set you started from. Press Undo on the message if you change your mind.</li>
             <li>Your colours stay with their stages: rename, reorder or remove stages and each keeps its colour. A new stage gets the colour your starting set gives that spot.</li>
             <li>Pick a named set again at any time; your Custom colours are kept for when you switch back.</li>
-            <li>In light mode, pale stage colours (like the pale green "finished" colour, the white end of Greyscale, or Forge's cream) are shown a little deeper, so stage names stay easy to read on white. This works for Custom colours too. The colours you chose don't change, and dark mode shows them exactly as chosen.</li>
+            <li>In light mode, pale stage colours (like the pale green "finished" colour, the white end of Greyscale, or Forge's cream) are shown a little deeper, so stage names stay easy to read on white. This works for Custom colours too. The colours you chose don't change, only how they're shown.</li>
+            <li id="help-dark-readable">In dark mode it works the other way round: a stage colour that's a little too dark to read as text on the dark cards (some in Ice, Frost, Greyscale and Forge) is shown a bit brighter. Colours that are already easy to read are left as they are (Greyscale's run of greys is spaced out again, so its steps stay easy to tell apart). A Custom colour shown this way says so under its stage.</li>
             <li>Photos and the camera always show on a dark background, like your phone's own photo viewer.</li>
             <li>Your Appearance, colour set and Custom colours are saved with your other settings and in backups, so a restore brings them back.</li>
           </ul>
@@ -1593,7 +1617,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=21.7" makes phones fetch the new file after an update instead of an old saved one. -->
-  <script src="app.js?v=21.7"></script>
+       The "?v=21.8" makes phones fetch the new file after an update instead of an old saved one. -->
+  <script src="app.js?v=21.8"></script>
 </body>
 </html>

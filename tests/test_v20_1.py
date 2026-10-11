@@ -69,6 +69,13 @@ def tab(page, name):
 def saved(page):
     return json.loads(page.evaluate("localStorage.getItem('shades-of-grey-settings') || '{}'"))
 
+def sh(page, colour):
+    """v21.8: how the app SHOWS a stored colour (dark mode lifts a colour that is too dark to read)."""
+    return page.evaluate("(c) => forShow([c])[0]", colour)
+
+def shl(page, colours):
+    return page.evaluate("(l) => l.map(c => forShow([c])[0])", colours)
+
 def stage_vars(page, n=None):
     return page.evaluate("""(n) => { const s = getComputedStyle(document.documentElement);
         return Array.from({ length: n || STAGES.length }, (u, i) => s.getPropertyValue('--stage-' + i).trim()); }""", n)
@@ -139,7 +146,7 @@ def main():
         choose_palette(page, "forge")
         check("choosing Forge saves it", saved(page).get("palette") == "forge" and saved(page).get("useCustom") is not True)
         check("Forge shows across the app in dark mode (first and last stage)",
-              stage_vars(page)[0] == FORGE[0] and stage_vars(page)[-1] == FORGE[-1], stage_vars(page))
+              stage_vars(page)[0] == sh(page, FORGE[0]) and stage_vars(page)[-1] == sh(page, FORGE[-1]), stage_vars(page))
         dark_ok = page.evaluate("""() => [2, 5, 8, 10].every(n => stageColours('forge', n).every(c => contrastRatio(c, '#141d2f') >= 3))""")
         check("every Forge stage reads on the dark cards (2, 5, 8 and 10 stages)", dark_ok)
         # Neighbouring stages must look different: some colour channel differs by 8 or more.
@@ -155,7 +162,7 @@ def main():
         check("in light mode every Forge stage reads at 4.5 on the light cards", page.evaluate(
             """() => [2, 5, 8, 10].every(n => stageColours('forge', n).every(c => contrastRatio(deepenForLight(c), LIGHT_CARD) >= 4.5))"""))
         page.reload(); page.wait_for_timeout(300); tab(page, "settings")
-        check("Forge survives a reload", page.input_value("#palette-select") == "forge" and stage_vars(page)[0] == FORGE[0])
+        check("Forge survives a reload", page.input_value("#palette-select") == "forge" and stage_vars(page)[0] == sh(page, FORGE[0]))
         tab(page, "dashboard"); shot(page, "v20.1-forge-dark-dashboard.png")
         tab(page, "units"); shot(page, "v20.1-forge-dark-units.png")
         seed(page, full_settings(palette="forge", appearance="light"))
@@ -190,10 +197,10 @@ def main():
         check("a too-faint colour gets a warning", warn.is_visible() and "faint" in warn.inner_text().lower(), warn.inner_text())
         tab(page, "settings"); shot(page, "v20.1-custom-faint-warning.png")
         pick(page, 4, "#a855f7")
-        check("the warning goes when you pick a readable colour", warn.is_hidden())
+        check("the warning goes when you pick a readable colour", "faint" not in warn.inner_text().lower())
         # Undo-able Reset
         page.click("#custom-reset"); page.wait_for_timeout(100)
-        check("Reset puts every stage back to the starting set", saved(page).get("customColours") == start and stage_vars(page) == start)
+        check("Reset puts every stage back to the starting set", saved(page).get("customColours") == start and stage_vars(page) == shl(page, start))
         check("Reset says so, with Undo", "reset" in page.inner_text("#toast").lower() and page.locator("#toast-undo").is_visible())
         page.click("#toast-undo"); page.wait_for_timeout(100)
         cc = saved(page).get("customColours")
@@ -201,9 +208,9 @@ def main():
         # Switch away and back
         choose_palette(page, "ice")
         check("picking a named set turns Custom off and shows that set",
-              saved(page).get("useCustom") is False and stage_vars(page)[0] == page.evaluate("stageColours('ice', 8)[0]"))
+              saved(page).get("useCustom") is False and stage_vars(page)[0] == page.evaluate("forShow([stageColours('ice', 8)[0]])[0]"))
         choose_palette(page, "custom")
-        check("switching back to Custom keeps your colours", stage_vars(page)[2] == "#00ffaa" and stage_vars(page)[4] == "#a855f7")
+        check("switching back to Custom keeps your colours", stage_vars(page)[2] == "#00ffaa" and stage_vars(page)[4] == sh(page, "#a855f7"))
         check("…and Reset now goes back to Ice (the set you came from)", "Ice" in page.inner_text("#custom-reset"))
         page.reload(); page.wait_for_timeout(300); tab(page, "settings")
         check("Custom survives a reload", page.input_value("#palette-select") == "custom"
@@ -236,12 +243,12 @@ def main():
         tab(page, "settings")
         page.click(f"#stage-list button[aria-label='Move {STAGES[0]} down']")
         dots = page.evaluate("[...document.querySelectorAll('#stage-list .stage-row .dot')].map(d => d.style.getPropertyValue('--dot'))")
-        check("before saving, the editor's dots already show each colour moving with its stage", dots[:2] == [MINE[1], MINE[0]], dots[:3])
+        check("before saving, the editor's dots already show each colour moving with its stage", dots[:2] == shl(page, [MINE[1], MINE[0]]), dots[:3])
         page.click("#save-stages"); page.wait_for_timeout(150)
         s = saved(page)
         check("reorder: the first two stages swapped places", s.get("stages", [])[:2] == [STAGES[1], STAGES[0]], s.get("stages"))
         check("reorder: their colours moved with them", s.get("customColours", [])[:2] == [MINE[1], MINE[0]], s.get("customColours"))
-        check("reorder: shown across the app", stage_vars(page)[:2] == [MINE[1], MINE[0]])
+        check("reorder: shown across the app", stage_vars(page)[:2] == shl(page, [MINE[1], MINE[0]]))
         names = s["stages"]
         page.click(f"#stage-list button[aria-label='Remove {names[2]}']")
         page.click("#save-stages"); page.wait_for_timeout(150)
@@ -269,7 +276,7 @@ def main():
         page.click("#save-stages"); page.wait_for_timeout(150)
         check("with Custom off, saved custom colours still move with their stages",
               saved(page).get("customColours", [])[:2] == [MINE[1], MINE[0]])
-        check("…and the named set's colours are shown, not yours", stage_vars(page)[0] == FORGE[0])
+        check("…and the named set's colours are shown, not yours", stage_vars(page)[0] == sh(page, FORGE[0]))
 
         # ---------- 5. Backups ----------
         print("--- 5. Backups ---")
@@ -283,21 +290,21 @@ def main():
         s = saved(page)
         tab(page, "settings")
         check("restoring brings Custom back", s.get("useCustom") is True and s.get("customColours") == MINE
-              and s.get("palette") == "forge" and page.input_value("#palette-select") == "custom" and stage_vars(page) == MINE,
+              and s.get("palette") == "forge" and page.input_value("#palette-select") == "custom" and stage_vars(page) == shl(page, MINE),
               (s.get("useCustom"), s.get("customColours")))
         page.reload(); page.wait_for_timeout(300)
-        check("…and it survives a reload after the restore", stage_vars(page) == MINE)
+        check("…and it survives a reload after the restore", stage_vars(page) == shl(page, MINE))
         seed(page, full_settings(palette="forge"))
         fb = page.evaluate("backupData()")
         seed(page, full_settings(palette="ice"))
         restore(page, fb)
-        check("restoring a Forge backup brings Forge back", saved(page).get("palette") == "forge" and stage_vars(page)[0] == FORGE[0])
+        check("restoring a Forge backup brings Forge back", saved(page).get("palette") == "forge" and stage_vars(page)[0] == sh(page, FORGE[0]))
         old = {"app": "Minifolio", "version": 6, "dataVersion": 1, "stages": STAGES, "doneFrom": 5, "models": UNITS,
                "recipes": {"paints": [], "recipes": [], "schemes": []}, "factionColours": {}, "palette": "ice", "appearance": "dark"}
         seed(page, full_settings(palette="forge", useCustom=True, customColours=MINE))
         restore(page, {k: v for k, v in old.items() if k != "palette"})
         check("an older backup (no Custom) leaves your Custom colours alone",
-              saved(page).get("useCustom") is True and saved(page).get("customColours") == MINE and stage_vars(page) == MINE)
+              saved(page).get("useCustom") is True and saved(page).get("customColours") == MINE and stage_vars(page) == shl(page, MINE))
         seed(page, full_settings(palette="ice"))
         restore(page, {**old, "useCustom": True,
                        "customColours": ["red", "#12345", "url(javascript:alert(1))", 7, None, "#ABCDEF", {"x": 1}, "#0f0f0f"]})
@@ -305,8 +312,8 @@ def main():
         check("nonsense colours in a backup are cleaned up (only real colours kept)",
               isinstance(cc, list) and cc[5] == "#abcdef" and cc[7] == "#0f0f0f" and all(c in ("", "#abcdef", "#0f0f0f") for c in cc), cc)
         shown = stage_vars(page)
-        check("…and broken entries show the starting set's colour instead", shown[0] == page.evaluate("stageColours('ice', 8)[0]")
-              and shown[5] == "#abcdef" and not errors, (shown, errors))
+        check("…and broken entries show the starting set's colour instead", shown[0] == page.evaluate("forShow([stageColours('ice', 8)[0]])[0]")
+              and shown[5] == sh(page, "#abcdef") and not errors, (shown, errors))
         seed(page, full_settings(palette="ice"))
         restore(page, {**old, "useCustom": "yes", "customColours": "nope"})
         check("a nonsense Custom switch in a backup is ignored", saved(page).get("useCustom") is not True and not errors, errors)
@@ -315,12 +322,12 @@ def main():
         seed(page, full_settings(palette="ice", useCustom=True, customColours=MINE))
         tab(page, "settings")
         check("after an older version reset the set to Ice, your Custom colours still show",
-              stage_vars(page) == MINE and page.input_value("#palette-select") == "custom")
+              stage_vars(page) == shl(page, MINE) and page.input_value("#palette-select") == "custom")
         seed(page, full_settings(palette="forge", useCustom=True, customColours=MINE[:5]))
         check("a short colour list (stages added by an older version) fills the gap from the starting set",
-              stage_vars(page)[:5] == MINE[:5] and stage_vars(page)[5:] == page.evaluate("stageColours('forge', 8).slice(5)"))
+              stage_vars(page)[:5] == shl(page, MINE[:5]) and stage_vars(page)[5:] == page.evaluate("stageColours('forge', 8).slice(5).map(c => forShow([c])[0])"))
         seed(page, full_settings(palette="constructor", useCustom="maybe"))
-        check("a broken saved set or switch falls back safely", stage_vars(page)[0] == page.evaluate("stageColours('ice', 8)[0]") and not errors, errors)
+        check("a broken saved set or switch falls back safely", stage_vars(page)[0] == page.evaluate("forShow([stageColours('ice', 8)[0]])[0]") and not errors, errors)
 
         # ---------- 6. Help ----------
         print("--- 6. Help ---")

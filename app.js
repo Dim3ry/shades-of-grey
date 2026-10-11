@@ -3460,6 +3460,15 @@
           const label = document.createElement("span");
           label.className = "each-name";
           label.textContent = `Model ${i + 1}`;
+          // v21.8: when this model reached its stage, in plain words, under its name.
+          const since = modelSince(model, i);
+          if (since) {
+            const when = document.createElement("small");
+            when.className = "each-since";
+            when.textContent = sinceWording(since);
+            when.title = `Model ${i + 1} reached ${STAGES[st]} on ${shortDate(since)}`;
+            label.appendChild(when);
+          }
           // v21: the stage is a menu, so one model can jump straight to any stage.
           const stageName = stagePicker(st, `Model ${i + 1} of ${displayName(model)}: stage`,
                                         (to) => jumpToStage(model.id, to, i));
@@ -3726,11 +3735,20 @@
       const before = model.each ? model.stages[index] : model.stage;
       const after = before + direction;
       if (after < 0 || after >= STAGES.length) return;
+      // v21.8: remember stage, stages and diary exactly, so Undo puts them back as they were
+      // (before, Undo moved the model back but added a new diary entry dated today, which would
+      // now show as the wrong date under a model's name).
+      const snapshot = JSON.stringify({ stage: model.stage, stages: model.stages, log: model.log });
       setStage(model, after, model.each ? index : undefined);
       render();
       const who = model.each ? `${displayName(model)}, model ${index + 1}` : displayName(model);
       showToast(`${who} → ${STAGES[after]}`, () => {
-        setStage(model, before, model.each ? index : undefined);
+        const unit = models.find(m => m.id === id);
+        if (!unit) return;
+        const was = JSON.parse(snapshot);
+        unit.stage = was.stage;
+        if (Array.isArray(was.stages)) unit.stages = was.stages;
+        unit.log = was.log;
         render();
       });
     }
@@ -4037,6 +4055,31 @@
       if (!iso) return "No date";
       const [y, mo, d] = iso.split("-").map(Number);
       return `${d} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][mo - 1]} ${y}`;
+    }
+
+    // v21.8: plain wording for "how long ago", used under each model's name:
+    // "Today", "Yesterday", "Since 7 Oct" (this year) or "Since 7 Oct 2025" (earlier years).
+    function sinceWording(iso) {
+      if (typeof iso !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "";
+      const days = Math.floor(daysSince(iso));
+      if (days === 0) return "Today";
+      if (days === 1) return "Yesterday";
+      const [y, mo, d] = iso.split("-").map(Number);
+      const month = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][mo - 1];
+      return y === new Date().getFullYear() ? `Since ${d} ${month}` : `Since ${d} ${month} ${y}`;
+    }
+    // When did model number `index` (0 = Model 1) of a track-each-model unit reach the stage
+    // it's at now? The unit's diary has it: an entry [date, stage, n] is that one model
+    // moving, an entry [date, stage] is the whole unit moving. The newest entry that
+    // concerns this model wins. If that entry disagrees with where the model is now (the
+    // diary can't say), or there's no entry, the answer is null and no date is shown.
+    function modelSince(model, index) {
+      const log = Array.isArray(model.log) ? model.log : [];
+      for (let k = log.length - 1; k >= 0; k--) {
+        const entry = log[k];
+        if (entry[2] === undefined || entry[2] === index) return entry[1] === model.stages[index] ? entry[0] : null;
+      }
+      return null;
     }
 
     // Ask the browser to keep our data even when the device is short of space.
@@ -7842,11 +7885,15 @@
     // The lightest version of a colour (same hue and saturation) that still reads at
     // the given contrast on the light cards.
     const LIGHT_CARD = "#f8fafc";
-    function lightnessCap(h, sat, target) {
+    // v21.8: the light PAGE colour (a little darker than the cards). Some stage names sit
+    // straight on the page (the big ▲ button, the Custom colour rows), so stage colours
+    // are made readable against this one, which also covers the cards.
+    const LIGHT_PAGE = "#e9eff6";
+    function lightnessCap(h, sat, target, surface = LIGHT_CARD) {
       let low = 0, high = 1;
       for (let i = 0; i < 20; i++) {
         const mid = (low + high) / 2;
-        if (contrastRatio(hslToHex(h, sat, mid), LIGHT_CARD) >= target) low = mid; else high = mid;
+        if (contrastRatio(hslToHex(h, sat, mid), surface) >= target) low = mid; else high = mid;
       }
       return low;
     }
@@ -7854,21 +7901,74 @@
     // Colours that already read well are left alone. A colour that was very pale goes a
     // little DEEPER than one that was only slightly too pale, so stages stay different
     // from each other (e.g. Greyscale's light greys and white become steps of darker grey).
-    function deepenForLight(hex, target = 4.5) {
-      if (contrastRatio(hex, LIGHT_CARD) >= target) return hex;
+    function deepenForLight(hex, target = 4.5, surface = LIGHT_CARD) {
+      if (contrastRatio(hex, surface) >= target) return hex;
       const { h, s: sat, l } = hexToHsl(hex);
-      const cap = lightnessCap(h, sat, target);
+      const cap = lightnessCap(h, sat, target, surface);
       const over = cap < 1 ? Math.min(1, Math.max(0, (l - cap) / (1 - cap))) : 0;
       return hslToHex(h, sat, cap * (1 - 0.35 * over));
     }
-    // The stage colours as they're SHOWN: the set's own colours in dark mode, deepened
+
+    // ----- v21.8: dark mode readability -----
+    // The mirror of deepenForLight. Some stage colours are too dark to read easily as text
+    // on the dark cards (Ice, Frost, Greyscale and Forge had names at 3.5 to 4.5; the
+    // target is 4.5). Only the colours that fall short are lightened, and only as far as
+    // needed (same hue and saturation). The STORED colours never change; this is only how
+    // they're shown. Greyscale needs one more step: its lightened greys would bunch up
+    // against each other, so the whole run is spread out again between the lightened first
+    // grey and the last (see readableOnDark).
+    const READABLE = 4.5;
+    // The smallest lightness (same hue and saturation) that reads at the target on the dark card.
+    function lightnessFloor(h, sat, target) {
+      let low = 0, high = 1;
+      for (let i = 0; i < 20; i++) {
+        const mid = (low + high) / 2;
+        if (contrastRatio(hslToHex(h, sat, mid), DARK_CARD) >= target) high = mid; else low = mid;
+      }
+      return high;
+    }
+    function brightenForDark(hex, target = READABLE) {
+      if (contrastRatio(hex, DARK_CARD) >= target) return hex;
+      const { h, s: sat } = hexToHsl(hex);
+      return hslToHex(h, sat, lightnessFloor(h, sat, target));
+    }
+    // How far apart the closest two neighbours in a list of colours are (plain colour distance).
+    function closestNeighbours(list) {
+      let least = Infinity;
+      for (let i = 1; i < list.length; i++) {
+        const a = list[i - 1], b = list[i];
+        const gap = Math.hypot(...[1, 3, 5].map(k => parseInt(a.slice(k, k + 2), 16) - parseInt(b.slice(k, k + 2), 16)));
+        if (gap < least) least = gap;
+      }
+      return least;
+    }
+    function readableOnDark(list, target = READABLE) {
+      const lifted = list.map(c => brightenForDark(c, target));
+      if (lifted.every((c, i) => c === list[i])) return list;           // nothing was too dark
+      // Lightening should keep the stages apart. If it did, we're done.
+      if (closestNeighbours(lifted) >= Math.min(closestNeighbours(list) * 0.6, 12)) return lifted;
+      // Otherwise (a run of greys, getting lighter and lighter): spread the run out again.
+      const lights = list.map(c => hexToHsl(c).l);
+      for (let i = 1; i < lights.length; i++) if (lights[i] < lights[i - 1]) return lifted;
+      const lowest = lights[0], highest = lights[lights.length - 1], span = highest - lowest || 1;
+      return list.map((c, i) => {
+        const { h, s: sat } = hexToHsl(c);
+        const floor = lightnessFloor(h, sat, target);
+        const placed = floor + (lights[i] - lowest) / span * (highest - floor);
+        return hslToHex(h, sat, Math.max(placed, lights[i]));
+      });
+    }
+
+    // The stage colours as they're SHOWN: lightened where needed in dark mode, deepened
     // ones in light mode.
     function shownStageColours(paletteName, n) {
       return forShow(stageColours(paletteName, n));
     }
     // v20.1: the same for any list of colours (e.g. your Custom ones).
+    // v21.8: dark mode now lightens the ones that were too dark to read; light mode checks
+    // against the page colour as well as the cards.
     function forShow(colours) {
-      return isLight() ? colours.map(c => deepenForLight(c)) : colours;
+      return isLight() ? colours.map(c => deepenForLight(c, READABLE, LIGHT_PAGE)) : readableOnDark(colours);
     }
 
     // Sets --stage-0, --stage-1 ... so everything using them updates instantly.
@@ -7940,9 +8040,11 @@
       note.classList.toggle("faint", faint);
       note.textContent = faint
         ? "⚠ Too faint to read on dark cards. Try a brighter colour."
-        : isLight() && contrastRatio(hex, LIGHT_CARD) < 4.5
+        : isLight() && contrastRatio(hex, LIGHT_PAGE) < READABLE
           ? "Shown a little deeper in light mode, so it's easy to read."
-          : "";
+          : !isLight() && contrastRatio(hex, DARK_CARD) < READABLE
+            ? "Shown a little brighter in dark mode, so it's easy to read."
+            : "";
       note.hidden = !note.textContent;
     }
     function renderCustomColours() {
@@ -9249,11 +9351,17 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=21.7". v21.4 test checks.)
-    const APP_VERSION = "v21.7";
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=21.8". v21.4 test checks.)
+    const APP_VERSION = "v21.8";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v21.8", date: "11 Oct 2026", changes: [
+        "Stage names are easier to read in dark mode. A few stage colours (some in Ice, Frost, Greyscale and Forge) were a bit too dark to read as text on the dark cards, so they're now shown a little brighter. The colours you picked aren't changed, only how they're shown. Light mode is checked against the page colour as well as the cards.",
+        "On a phone, the first photo in a unit's photo strip is no longer cut off at the edge. Two photos now fill the strip, and the strip still starts at the newest one.",
+        "While you're typing in a text box, the tab bar steps out of the way so it can't sit on top of your keyboard and cover what you're typing. It comes back as soon as you tap somewhere else.",
+        "When you track each model separately, each model now says when it reached its stage (\"Today\", \"Yesterday\" or \"Since 7 Oct\"), under its name. The dates were being saved all along; now you can see them. (Undo on a model's ▲ button now puts its date back exactly too.)",
+      ]},
       { version: "v21.7", date: "11 Oct 2026", changes: [
         "Questions like \"Delete this unit?\" and \"Discard the changes?\" no longer use your browser's plain pop-up. The app asks in its own small box, in the same dark or light colours as the rest of the app, with big Yes and No buttons. The questions say the same things and do the same things as before. No, Cancel, the Escape key and the phone's Back button all mean no.",
         "Asking for a name (a new part or technique, renaming a faction, naming a paint the scanner wasn't sure of) uses the same box, with a text box to type in. That finishes the move away from the browser's own pop-ups.",
@@ -9645,6 +9753,42 @@
       setTimeout(() => { backCheckQueued = false; syncBackStep(); }, 0);
     }
     for (const type of ["click", "change", "keyup"]) document.addEventListener(type, queueBackCheck, true);
+
+    // ================= v21.8: THE TAB BAR GETS OUT OF THE WAY WHILE YOU TYPE =================
+    // On a phone the tab bar is fixed to the bottom of the screen, so when the keyboard
+    // opens it can sit right on top of the keyboard and cover what you're typing. While a
+    // text box has the cursor, the page gets the mark class "typing" (on <body>); the CSS
+    // hides the tab bar for as long as it's there and lowers the message and the Select bar
+    // to the bottom edge. When the cursor leaves the text box, the mark goes and the bar
+    // is back. (On a wide screen the tabs are a bar at the TOP, which is never in the way,
+    // so the CSS only does this on narrower screens.)
+    // Boxes that don't open a keyboard (ticks, round buttons, colour pickers, file pickers,
+    // sliders, read-only boxes) don't count.
+    const KEYBOARD_INPUT_TYPES = new Set(["text", "search", "email", "url", "tel", "password", "number"]);
+    function isTextBox(element) {
+      if (!element || element.disabled || element.readOnly) return false;
+      if (element.tagName === "TEXTAREA") return true;
+      if (element.tagName === "INPUT") return KEYBOARD_INPUT_TYPES.has((element.type || "text").toLowerCase());
+      return element.isContentEditable === true;
+    }
+    function updateTyping() {
+      document.body.classList.toggle("typing", isTextBox(document.activeElement));
+    }
+    // Focus moves in and out of boxes; "focusout" is checked a moment later, once we can see
+    // where the cursor went (so tapping from one text box to another doesn't flicker the bar).
+    // A tap, a key or a menu choice is checked too, in case the box that had the cursor was
+    // taken away when the screen was redrawn (the browser doesn't always say so).
+    document.addEventListener("focusin", updateTyping, true);
+    document.addEventListener("focusout", () => setTimeout(updateTyping, 0), true);
+    for (const type of ["click", "change", "keyup"]) document.addEventListener(type, () => setTimeout(updateTyping, 0), true);
+    // Pressing a button on the message (Undo) or the Select bar must not take the cursor out
+    // of a text box: that would end "typing", the message would jump back up, and the press
+    // could miss its button. So a press on those buttons leaves the cursor where it is.
+    // (Only buttons: the Select bar's stage menu still needs its normal press to open.)
+    for (const id of ["toast", "select-bar"]) {
+      const bar = document.getElementById(id);
+      if (bar) bar.addEventListener("mousedown", (event) => { if (event.target.closest("button")) event.preventDefault(); });
+    }
 
     // ================= PHASE 6: WORK OFFLINE =================
     // A "service worker" is a small helper script (sw.js) that the browser runs in the

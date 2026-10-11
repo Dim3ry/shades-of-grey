@@ -330,6 +330,9 @@ def main():
             if width == 360: shot(page, "v21-tap-targets-units-360.png")
             page.click("#toggle-add")
             check(f"[{width}px] the Starting stage menu is at least 44 tall", all_big(sizes(page, "#stage-input"), need_width=False))
+            # v21.8: the Add form's name box has the cursor, so the tab bar is out of the way; tap away first.
+            page.evaluate("() => document.activeElement && document.activeElement.blur()")
+            page.wait_for_timeout(100)
             tab(page, "settings")
             icons = sizes(page, "#stage-list .icon-button")
             check(f"[{width}px] the stage editor's ↑ ↓ ✕ are at least 44 × 44", len(icons) == 3 * len(STAGES) and all_big(icons), icons[:3])
@@ -344,6 +347,9 @@ def main():
             mix = [x for x in sizes(page, "#recipe-page button.link-button") if x[2].startswith("+ Mix in another paint")]
             check(f"[{width}px] + Mix in another paint is at least 44 tall", all_big(mix, need_width=False), mix)
             page.evaluate("recipeDraft = null")   # leave the half-made recipe without the Discard question
+            # v21.8: the recipe's name box has the cursor, so the tab bar is out of the way; tap away first.
+            page.evaluate("() => document.activeElement && document.activeElement.blur()")
+            page.wait_for_timeout(100)
             tab(page, "help")
             rows = sizes(page, ".help summary")
             check(f"[{width}px] every Help topic title is at least 44 tall", len(rows) >= 10 and all_big(rows, need_width=False),

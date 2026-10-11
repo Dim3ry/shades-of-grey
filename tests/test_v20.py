@@ -147,9 +147,9 @@ def main():
             const a = document.getElementById('appearance-card'); const next = a.nextElementSibling;
             return !!next && next.contains(document.getElementById('palette-select')); }"""))
         seed(page, full_settings(palette="ice"))
-        check("dark mode shows the colour set's own stage colours", page.evaluate("""() => {
+        check("dark mode shows the colour set's own stage colours (v21.8: lifted only where too dark to read)", page.evaluate("""() => {
             const s = getComputedStyle(document.documentElement);
-            return stageColours('ice', STAGES.length).every((c, i) => s.getPropertyValue('--stage-' + i).trim() === c); }"""))
+            return forShow(stageColours('ice', STAGES.length)).every((c, i) => s.getPropertyValue('--stage-' + i).trim() === c); }"""))
 
         # ---------- 3. Choosing Light, and each choice surviving a reload ----------
         print("--- 3. Light, and reloads ---")
