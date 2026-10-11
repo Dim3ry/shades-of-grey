@@ -78,7 +78,11 @@ def start(page, units=UNITS, book=BOOK, settings=None):
     page.wait_for_timeout(300)
 
 def tab(page, name):
-    page.click(f'nav button[data-tab="{name}"]')
+    if name in ("help", "updates"):   # v21.9: these are sub-tabs of Settings now
+        page.click('nav button[data-tab="settings"]')
+        page.click(f'#more-seg button[data-page="{name}"]')
+    else:
+        page.click(f'nav button[data-tab="{name}"]')
     page.wait_for_timeout(150)
 
 def shot(page, name):

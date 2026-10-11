@@ -2263,14 +2263,25 @@
     };
     const tabButtons = document.querySelectorAll(".tabs button");
 
+    // v21.9: Settings, Help and Updates are ONE main tab (Settings) with a Settings / Help /
+    // Updates switch (#more-seg) at the top. The page names are still "settings", "help" and
+    // "updates", so a saved settings.tab of "help" or "updates" (from before v21.9) opens the
+    // right page, and nothing about how it's saved has changed.
+    const MORE_PAGES = ["settings", "help", "updates"];
+    const moreSeg = document.getElementById("more-seg");
+    moreSeg.querySelectorAll("button").forEach(b => b.addEventListener("click", () => showTab(b.dataset.page)));
+
     function showTab(name) {
       if (!views[name]) name = "dashboard";
       if (name !== "units" && selectMode) closeSelect();   // v21.1: leaving Units ends select mode
       for (const [key, view] of Object.entries(views)) view.classList.toggle("hidden", key !== name);
+      const mainTab = MORE_PAGES.includes(name) ? "settings" : name;   // the bottom-bar tab to light up
       tabButtons.forEach(b => {
-        if (b.dataset.tab === name) b.setAttribute("aria-current", "page");
+        if (b.dataset.tab === mainTab) b.setAttribute("aria-current", "page");
         else b.removeAttribute("aria-current");
       });
+      moreSeg.classList.toggle("hidden", !MORE_PAGES.includes(name));
+      moreSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.page === name)));
       settings.tab = name;
       saveSettings();
       if (name === "settings") renderSettings();
@@ -9352,10 +9363,15 @@
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
     // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=21.8". v21.4 test checks.)
-    const APP_VERSION = "v21.8";
+    const APP_VERSION = "v21.9";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
     const CHANGELOG = [
+      { version: "v21.9", date: "11 Oct 2026", changes: [
+        "Fewer tabs: Help and Updates now live inside the Settings tab, so there are four tabs along the bottom (Dashboard, Units, Recipes, Settings). At the top of Settings, a Settings / Help / Updates switch moves between the three.",
+        "The app still remembers the page you were on, and the phone's Back button works as before.",
+        "Friendlier wording: \"Tell us what you think\" on the Updates page.",
+      ]},
       { version: "v21.8", date: "11 Oct 2026", changes: [
         "Stage names are easier to read in dark mode. A few stage colours (some in Ice, Frost, Greyscale and Forge) were a bit too dark to read as text on the dark cards, so they're now shown a little brighter. The colours you picked aren't changed, only how they're shown. Light mode is checked against the page colour as well as the cards.",
         "On a phone, the first photo in a unit's photo strip is no longer cut off at the edge. Two photos now fill the strip, and the strip still starts at the newest one.",

@@ -52,7 +52,8 @@ def main():
         check("v18 is listed straight below v18.1", page.evaluate(f"CHANGELOG[{at + 1}].version") == "v18")
 
         print("\n--- Help → About ---")
-        page.click("nav button[data-tab='help']")
+        page.click('nav button[data-tab="settings"]')   # v21.9: Help and Updates are sub-tabs of Settings
+        page.click('#more-seg button[data-page="help"]')
         page.wait_for_timeout(150)
         page.evaluate("document.getElementById('about').open = true")
         about = page.inner_text("#about")
@@ -68,7 +69,8 @@ def main():
         check("About still says data stays on this device", "Your data stays on this device" in about)
 
         print("\n--- Updates tab note ---")
-        page.click("nav button[data-tab='updates']")
+        page.click('nav button[data-tab="settings"]')   # v21.9: Help and Updates are sub-tabs of Settings
+        page.click('#more-seg button[data-page="updates"]')
         page.wait_for_timeout(150)
         note = page.locator("#unofficial-note")
         check("the unofficial note is on the Updates tab", note.count() == 1)
@@ -89,7 +91,8 @@ def main():
         small.on("pageerror", lambda e: errors.append(str(e)))
         start(small)
         for tab in ["updates", "help"]:
-            small.click(f"nav button[data-tab='{tab}']")
+            small.click("nav button[data-tab='settings']")   # v21.9: Help and Updates are sub-tabs of Settings
+            small.click(f"#more-seg button[data-page='{tab}']")
             small.wait_for_timeout(150)
             if tab == "help":
                 small.evaluate("document.getElementById('about').open = true")
@@ -97,7 +100,8 @@ def main():
             check(f"360px phone, {tab} tab: no sideways scroll", not wide)
         shots = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "screenshots")
         os.makedirs(shots, exist_ok=True)
-        small.click("nav button[data-tab='updates']")
+        small.click('nav button[data-tab="settings"]')   # v21.9: Help and Updates are sub-tabs of Settings
+        small.click('#more-seg button[data-page="updates"]')
         small.screenshot(path=os.path.join(shots, "v18_1_updates_phone.png"), full_page=True)
 
         check("no page errors", not errors, errors)

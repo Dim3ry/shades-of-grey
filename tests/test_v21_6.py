@@ -77,7 +77,11 @@ def seed(page, units=UNITS, settings=None):
     page.wait_for_timeout(300)
 
 def tab(page, name):
-    page.click(f'nav button[data-tab="{name}"]')
+    if name in ("help", "updates"):   # v21.9: these are sub-tabs of Settings now
+        page.click('nav button[data-tab="settings"]')
+        page.click(f'#more-seg button[data-page="{name}"]')
+    else:
+        page.click(f'nav button[data-tab="{name}"]')
     page.wait_for_timeout(150)
 
 def shot(page, name):
@@ -168,8 +172,14 @@ def main():
         # Stage editor
         seed(page)
         tab(page, "settings")
+        # v21.9: the Settings page has the Settings / Help / Updates switch above it now, so the button sits lower.
+        # Near the bottom edge the tab bar coming back (the cursor leaves the new box) would cover it, so centre it first.
+        centre = "() => document.getElementById('add-stage').scrollIntoView({ block: 'center' })"
+        page.evaluate(centre)
         page.click("#add-stage")
+        page.evaluate(centre)
         page.click("#add-stage")           # 8 + 2 = 10
+        page.evaluate(centre)
         page.click("#add-stage")           # the 11th is refused
         ok, t = says("You can have up to 10 stages.")
         check("an 11th stage gets the notice 'You can have up to 10 stages.'", ok, t)

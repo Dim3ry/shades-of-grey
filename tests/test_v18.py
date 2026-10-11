@@ -90,7 +90,8 @@ def compare(case, parts):
     return problems
 
 def help_text(page):
-    page.click("nav button[data-tab='help']")
+    page.click('nav button[data-tab="settings"]')   # v21.9: Help and Updates are sub-tabs of Settings
+    page.click('#more-seg button[data-page="help"]')
     page.wait_for_timeout(150)
     # Closed topics' text isn't visible, so open them all before reading.
     page.evaluate("document.querySelectorAll('#view-help details').forEach(d => d.open = true)")
@@ -122,7 +123,8 @@ def main():
                      "Saved", "20,000", "Ushabti Bone and Wraithbone", "Help"]:
             check(f"v18 entry mentions {word!r}", word in text)
         check("v17.1 is still listed, straight below v18", page.evaluate(f"CHANGELOG[{v18_at + 1}].version") == "v17.1")
-        page.click("nav button[data-tab='updates']")
+        page.click('nav button[data-tab="settings"]')   # v21.9: Help and Updates are sub-tabs of Settings
+        page.click('#more-seg button[data-page="updates"]')
         page.wait_for_timeout(150)
         check("Updates tab shows the v18 entry",
               any(h.startswith("v18") and not h.startswith("v18.")

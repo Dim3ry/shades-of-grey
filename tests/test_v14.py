@@ -290,7 +290,8 @@ def run(viewport, label):
         # ---------- 11. Fan-tool basics ----------
         seed(units(1, 0), base_settings)
         check(f"{label} 11a import button says Paste an army list", page.inner_text("#wh-button") == "Paste an army list")
-        page.click('nav button[data-tab="help"]')
+        page.click('nav button[data-tab="settings"]')   # v21.9: Help and Updates are sub-tabs of Settings
+        page.click('#more-seg button[data-page="help"]')
         page.click("#about summary")
         about = page.inner_text("#about")
         check(f"{label} 11b About has the fan-tool notice and contact", "Unofficial fan-made" in about and "not affiliated with or endorsed by Games Workshop" in about and "Contact" in about)

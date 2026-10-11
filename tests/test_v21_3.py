@@ -88,7 +88,8 @@ with sync_playwright() as p:
     check("Updates has a v21.3 entry", entry and len(entry["changes"]) >= 1, entry)
     check("the v21.3 entry names the new brands and codes", entry and all(w in " ".join(entry["changes"])
           for w in ["Vallejo", "Fanatic", "Pro Acryl", "AK", "72.021"]))
-    page.click('nav button[data-tab="updates"]')
+    page.click('nav button[data-tab="settings"]')   # v21.9: Help and Updates are sub-tabs of Settings
+    page.click('#more-seg button[data-page="updates"]')
     heads = page.locator("#view-updates h3").all_inner_texts()
     check("the Updates tab shows v21.3", any(h.startswith("v21.3") for h in heads), heads[:3])
     check("CNAME is kept (minifolio.app)", read("CNAME").strip() == "minifolio.app")
@@ -279,7 +280,8 @@ with sync_playwright() as p:
 
     # ---------- 8. Help, About, errors ----------
     print("\n--- 8. Help and About ---")
-    page.click('nav button[data-tab="help"]')
+    page.click('nav button[data-tab="settings"]')   # v21.9: Help and Updates are sub-tabs of Settings
+    page.click('#more-seg button[data-page="help"]')
     helps = page.locator("#help-scan-brands").text_content() or ""
     check("Help lists the brands the scanner knows", all(w in helps for w in ["Vallejo Game Color", "Model Color", "Xpress Color", "Fanatic", "Pro Acryl", "AK 3rd Gen"]), helps[:200])
     check("Help explains Vallejo code numbers", "code number" in helps and "72.021" in helps)

@@ -336,7 +336,8 @@ def main():
             text = str(error)
         check("with the internet off, a scan still reads", "NULN" in text.upper(), text)
         context.set_offline(False)
-        page.click("nav button[data-tab='help']")
+        page.click('nav button[data-tab="settings"]')   # v21.9: Help and Updates are sub-tabs of Settings
+        page.click('#more-seg button[data-page="help"]')
         page.evaluate("document.getElementById('about').open = true")
         about = page.inner_text("#about")
         check("About no longer says the scan downloads a tool from the web",

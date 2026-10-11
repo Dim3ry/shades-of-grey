@@ -39,7 +39,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=21.8"></script>
+  <script src="early.js?v=21.9"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -905,7 +905,7 @@
     .tabs button { padding: 12px 0 14px; font-size: 13px; gap: 4px; min-height: 64px; }
     .tabs .icon { font-size: 24px; display: inline-flex; justify-content: center; }
     .tabs button[aria-current="page"] { background: var(--accent-wash); box-shadow: inset 0 3px 0 var(--accent); }
-    /* Six tabs on a narrow phone: slightly smaller labels so "Dashboard" still fits. */
+    /* Slightly smaller labels on a narrow phone so "Dashboard" still fits. */
     @media (max-width: 420px) { .tabs button { font-size: 11px; } }
 
     /* ----- Wide screens (laptops and desktops) -----
@@ -999,8 +999,6 @@
     <button data-tab="dashboard"><span class="icon"><svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="3" opacity="0.35"/><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="34 51" transform="rotate(-90 12 12)"/></svg></span>Dashboard</button>
     <button data-tab="units"><span class="icon">☰</span>Units</button>
     <button data-tab="recipes"><span class="icon"><svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><path d="M12 3c3.5 4.2 6 7.6 6 10.5a6 6 0 0 1-12 0C6 10.6 8.5 7.2 12 3z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg></span>Recipes</button>
-    <button data-tab="help"><span class="icon"><svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.6v.6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="17.3" r="1.3" fill="currentColor"/></svg></span>Help</button>
-    <button data-tab="updates"><span class="icon"><svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg></span>Updates</button>
     <button data-tab="settings"><span class="icon">⚙</span>Settings</button>
   </nav>
   <!-- ===== HTML: this section is WHAT is on the page. ===== -->
@@ -1207,6 +1205,15 @@
       <div id="recipe-page" class="hidden"></div>
     </section>
 
+    <!-- v21.9: Settings, Help and Updates share ONE main tab (Settings). This switch (same style as
+         the Recipes tab's) moves between the three pages. It shows only on those pages and is
+         filled in by showTab(). -->
+    <div class="seg hidden" id="more-seg" role="tablist" aria-label="Settings, help or updates">
+      <button role="tab" data-page="settings">Settings</button>
+      <button role="tab" data-page="help">Help</button>
+      <button role="tab" data-page="updates">Updates</button>
+    </div>
+
     <!-- ===== TAB: Help (how to use the app) ===== -->
     <section id="view-help" class="hidden">
       <div class="card help-intro">
@@ -1223,6 +1230,7 @@
             <li>Check the <strong>Dashboard</strong> to see how far you've got.</li>
             <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
           </ol>
+          <p id="help-tabs" style="margin: 8px 0 0;">There are four tabs along the bottom: <strong>Dashboard</strong>, <strong>Units</strong>, <strong>Recipes</strong> and <strong>Settings</strong>. Help and Updates live inside Settings: open it and use the <strong>Settings / Help / Updates</strong> switch at the top. The app remembers which page you were on.</p>
           <p id="help-back" style="margin: 8px 0 0;">The phone's <strong>Back</strong> button closes what's open first, one thing per press: a question box (it counts as No), a photo, the camera, a recipe, the paste box. Then it goes to the Dashboard. On the Dashboard, with nothing open, it leaves the app.</p>
         </details>
         <details>
@@ -1386,7 +1394,7 @@
           <summary>Updates and feedback</summary>
           <ul>
             <li>The version number is next to the title. The <strong>Updates</strong> tab lists what changed in each version.</li>
-            <li>Found a bug or have an idea? Use <strong>Give feedback</strong> on the Updates tab.</li>
+            <li>Found a bug or have an idea? Use <strong>Give feedback</strong> under <strong>Settings → Updates</strong>.</li>
           </ul>
         </details>
         <details id="privacy">
@@ -1408,7 +1416,7 @@
             <li>The app knows paint and faction names so it can recognise what you type or scan. Citadel, Warhammer and faction and paint names are trademarks of Games Workshop Ltd. Other paint names (such as Vallejo, The Army Painter and AK Interactive) belong to their makers. All are used only to identify those products.</li>
             <li>The Vallejo, Army Painter, Pro Acryl and AK paint names, colours and codes come from the free <strong>miniature-paints</strong> list by Rick Fleuren (MIT licence). The colours are close guesses, not exact matches.</li>
             <li>Your data stays on this device. There's no account, and nothing you add is sent anywhere, except what you choose to write in the feedback form and a paint's name when you tap a shop link.</li>
-            <li><strong>Contact:</strong> use <strong>Give feedback</strong> on the Updates tab. Every message is read.</li>
+            <li><strong>Contact:</strong> use <strong>Give feedback</strong> under <strong>Settings → Updates</strong>. Every message is read.</li>
           </ul>
         </details>
       </div>
@@ -1417,7 +1425,7 @@
     <!-- ===== TAB: Updates (feedback and change history) ===== -->
     <section id="view-updates" class="hidden">
       <div class="card">
-        <h2>Tell me what you think</h2>
+        <h2>Tell us what you think</h2>
         <p class="hint">Found a bug, or wish the app did something? A short form, about 2 minutes. Every reply is read.</p>
         <a class="primary-button" id="feedback-link" target="_blank" rel="noopener noreferrer"
            style="display: block; text-align: center; text-decoration: none;">Give feedback</a>
@@ -1617,7 +1625,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=21.8" makes phones fetch the new file after an update instead of an old saved one. -->
-  <script src="app.js?v=21.8"></script>
+       The "?v=21.9" makes phones fetch the new file after an update instead of an old saved one. -->
+  <script src="app.js?v=21.9"></script>
 </body>
 </html>
