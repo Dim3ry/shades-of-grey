@@ -22,7 +22,14 @@ if LOG:
         def _watch(page):
             def on_console(msg):
                 text = msg.text
-                if "Content Security Policy" in text and "csp-probe" not in text:
+                # v21.4: a refused INLINE script has no address of its own, so the browser's message
+                # can't carry the marker. Those tries run on a page opened as "index.html?csp-probe",
+                # so the page's own address is checked too.
+                try:
+                    where = page.url
+                except Exception:
+                    where = ""
+                if "Content Security Policy" in text and "csp-probe" not in text and "csp-probe" not in where:
                     with open(LOG, "a", encoding="utf-8") as f:
                         f.write(text.replace("\n", " ") + "\n")
             page.on("console", on_console)

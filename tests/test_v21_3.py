@@ -34,9 +34,14 @@ def check(name, ok, detail=""):
     print(("PASS " if ok else "FAIL ") + name + ("" if ok else f"  -> {detail}"))
 
 def read(name):
+    # v21.4: the app's code moved out of index.html into early.js and app.js, so "index.html"
+    # here means the page plus those two files (the source checks look across all three).
+    if name == "index.html":
+        return "\n".join(open(os.path.join(ROOT, n), encoding="utf-8").read() for n in ("index.html", "early.js", "app.js"))
     return open(os.path.join(ROOT, name), encoding="utf-8").read()
 
-V21_2_CSP = ("default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; "
+# v21.4: the same as v21.2's policy except script-src no longer has 'unsafe-inline'.
+V21_2_CSP = ("default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; "
              "img-src 'self' blob: data:; media-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; "
              "manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'")
 
@@ -93,7 +98,7 @@ with sync_playwright() as p:
     for key in ["mini-tracker-models", "shades-of-grey-settings", "shades-of-grey-recipes"]:
         check(f"storage key {key} still used", key in html)
     tags = re.findall(r'<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
-    check("the CSP is exactly as in v21.2 (lists live inside the app)", tags == [V21_2_CSP], tags)
+    check("the CSP is exactly as in v21.2 (apart from v21.4's script change; lists live inside the app)", tags == [V21_2_CSP], tags)
     check("no web address is fetched for the lists", "fetch(" not in html[html.find("EXTRA_PAINT_TABLE"):html.find("EXTRA_PAINT_TABLE") + 40000])
 
     # ---------- 2. The lists ----------

@@ -34,6 +34,10 @@ def check(name, ok, detail=""):
     print(("PASS " if ok else "FAIL ") + name + ("" if ok else f"  -> {detail}"))
 
 def read(name):
+    # v21.4: the app's code moved out of index.html into early.js and app.js, so "index.html"
+    # here means the page plus those two files (the source checks look across all three).
+    if name == "index.html":
+        return "\n".join(open(os.path.join(ROOT, n), encoding="utf-8").read() for n in ("index.html", "early.js", "app.js"))
     return open(os.path.join(ROOT, name), encoding="utf-8").read()
 
 def png(width=64, height=48, rgb=(40, 90, 160)):
@@ -59,7 +63,8 @@ TABS = ["dashboard", "units", "recipes", "help", "updates", "settings"]
 
 EXPECTED = {
     "default-src": ["'self'"],
-    "script-src": ["'self'", "'unsafe-inline'", "'wasm-unsafe-eval'"],
+    # v21.4: 'unsafe-inline' dropped from script-src (the app's code moved into app.js and early.js).
+    "script-src": ["'self'", "'wasm-unsafe-eval'"],
     "style-src": ["'self'", "'unsafe-inline'"],
     "img-src": ["'self'", "blob:", "data:"],
     "media-src": ["'self'", "blob:"],
@@ -222,7 +227,7 @@ def main():
         page = context.new_page()
         watch(page, errors, csp)
         seed(page, settings=full_settings())
-        page.wait_for_function("navigator.serviceWorker && navigator.serviceWorker.controller", timeout=15000)
+        page.wait_for_function("() => navigator.serviceWorker && navigator.serviceWorker.controller", timeout=15000)
         text = page.evaluate("""async () => {
           const c = document.createElement('canvas'); c.width = 700; c.height = 140;
           const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, 700, 140);

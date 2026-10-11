@@ -9,7 +9,7 @@
 //
 // WHEN YOU UPLOAD A NEW VERSION: change the number below (v1 -> v2 -> v3...).
 // That tells the phone to throw away the old saved copy and start a new one.
-const VERSION = "v21.3";
+const VERSION = "v21.4";
 const CACHE_NAME = "shades-of-grey-" + VERSION;
 // The pot-label reader's big files (the engine and its English data, about 11 MB) are kept in
 // their own store that ISN'T cleared on updates, so they're only fetched once.
@@ -23,9 +23,16 @@ function isOcrFile(url) {
 }
 
 // The files that make up the app. Saved as soon as the app is installed.
+// v21.4: the app's code moved out of index.html into app.js and early.js. index.html asks for them
+// with "?v=" and the version number on the end (e.g. "app.js?v=21.4"), so after an update the phone
+// fetches the new files rather than an old saved copy. The same addresses are saved here, built
+// from VERSION, so they always match (a test checks index.html uses the same number).
+const CODE_TAG = "?v=" + VERSION.slice(1); // "v21.4" -> "?v=21.4"
 const APP_FILES = [
   "./",
   "./index.html",
+  "./app.js" + CODE_TAG,
+  "./early.js" + CODE_TAG,
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png",
@@ -80,8 +87,12 @@ self.addEventListener("fetch", (event) => {
         return response;
       })
       .catch(() =>
-        // No internet: look for a saved copy. Any page request falls back to the app itself.
+        // No internet: look for a saved copy. A page request with no saved copy falls back to the
+        // app itself. (v21.4: only PAGE requests do that. A missing script or picture just fails,
+        // rather than being handed the page by mistake.)
         caches.match(event.request, { ignoreSearch: true })
-          .then((saved) => saved || caches.match("./index.html")))
+          .then((saved) => saved || (event.request.mode === "navigate"
+            ? caches.match("./index.html")
+            : Response.error())))
   );
 });

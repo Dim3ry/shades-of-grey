@@ -26,6 +26,10 @@ def check(name, ok, detail=""):
     print(("PASS " if ok else "FAIL ") + name + ("" if ok else f"  -> {detail}"))
 
 def read(name):
+    # v21.4: the app's code moved out of index.html into early.js and app.js, so "index.html"
+    # here means the page plus those two files (the source checks look across all three).
+    if name == "index.html":
+        return "\n".join(open(os.path.join(ROOT, n), encoding="utf-8").read() for n in ("index.html", "early.js", "app.js"))
     return open(os.path.join(ROOT, name), encoding="utf-8").read()
 
 OLD_BOOK = {
@@ -309,7 +313,7 @@ def main():
         outside = []
         context.on("request", lambda r: outside.append(r.url) if not r.url.startswith(BASE) and not r.url.startswith("data:") and not r.url.startswith("blob:") else None)
         seed(page)
-        page.wait_for_function("navigator.serviceWorker && navigator.serviceWorker.controller", timeout=10000)
+        page.wait_for_function("() => navigator.serviceWorker && navigator.serviceWorker.controller", timeout=10000)
         draw = """async (word) => {
           const c = document.createElement('canvas'); c.width = 700; c.height = 140;
           const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, 700, 140);
