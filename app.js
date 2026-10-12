@@ -3218,6 +3218,7 @@
       fillList("faction-options", uniqueSorted(models.map(m => m.faction)));
       fillStartStage();
       renderExamplesCards();
+      renderFeedbackCard();   // v25
 
       // v21.1: only units you can see can stay ticked (a filter change unticks the rest,
       // so you never move something that's off screen). No units at all: no Select.
@@ -9589,11 +9590,106 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=24". v21.4 test checks.)
-    const APP_VERSION = "v24";
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=25". v21.4 test checks.)
+    const APP_VERSION = "v25";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
+
+    // ================= v25: ONE GENTLE "SEND FEEDBACK?" CARD =================
+    // About a week after someone starts using the app, ONE small card on the Dashboard asks if they
+    // would like to send feedback. Nothing is tracked or sent: the app only saves, in the settings
+    // on this device, the day it was first opened and what the person chose:
+    //   settings.feedbackFirstSeen  "2026-10-12"  first day this device opened v25 or later
+    //   settings.feedbackHidden     "done" (opened the form) | "never" (Don't ask again) | unset
+    //   settings.feedbackNextAfter  "2026-11-11"  after "Not now": not before this day
+    //   settings.feedbackShownOn    "2026-10-19"  the day the card was put up (it stays that day)
+    // People who already used the app get TODAY as their first day (they are asked a week after
+    // they update, not at once). If the card is not answered, the next visit counts it as
+    // "Not now", so it can never show on two days running. Saved settings, so DATA_VERSION stays 1
+    // (older versions keep settings they don't know).
+    const FEEDBACK_AFTER_DAYS = 7;
+    const FEEDBACK_WAIT_DAYS = 30;
+    const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+    // The same address the Give feedback button under Settings -> Updates uses.
+    function feedbackAddress() {
+      return FEEDBACK_URL ? `${FEEDBACK_URL}?version=${encodeURIComponent(APP_VERSION)}` : "";
+    }
+    function dayFromToday(days) {
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    }
+    // Runs once at start-up (before the first render(), which saves the settings).
+    function planFeedbackPrompt() {
+      const today = todayISO();
+      if (!ISO_DAY.test(settings.feedbackFirstSeen || "")) settings.feedbackFirstSeen = today;
+      if (settings.feedbackHidden === "done" || settings.feedbackHidden === "never") return;
+      const shown = settings.feedbackShownOn;
+      if (ISO_DAY.test(shown || "")) {
+        if (shown === today) return;   // put up earlier today: it stays up
+        // Put up on an earlier day and never answered: treat it as "Not now".
+        settings.feedbackShownOn = "";
+        settings.feedbackNextAfter = dayFromToday(FEEDBACK_WAIT_DAYS);
+        return;
+      }
+      if (!FEEDBACK_URL) return;
+      if (daysSince(settings.feedbackFirstSeen) < FEEDBACK_AFTER_DAYS) return;
+      const next = settings.feedbackNextAfter;
+      if (ISO_DAY.test(next || "") && today < next) return;
+      settings.feedbackShownOn = today;
+    }
+    function feedbackCardWanted() {
+      return !!FEEDBACK_URL && settings.feedbackHidden !== "done" && settings.feedbackHidden !== "never" &&
+        ISO_DAY.test(settings.feedbackShownOn || "") && settings.feedbackShownOn === todayISO();
+    }
+    function answerFeedback(choice) {
+      settings.feedbackShownOn = "";
+      if (choice === "later") settings.feedbackNextAfter = dayFromToday(FEEDBACK_WAIT_DAYS);
+      else settings.feedbackHidden = choice;   // "done" or "never"
+      saveSettings();
+      // Redraw after the tap has finished, so the Give feedback link isn't taken off the page
+      // before the browser has opened it.
+      setTimeout(renderFeedbackCard, 0);
+      if (choice === "never") notify("OK, we won't ask again. You can still give feedback under Settings \u2192 Updates.");
+    }
+    function renderFeedbackCard() {
+      const card = document.getElementById("feedback-card");
+      if (!card) return;
+      const show = feedbackCardWanted();
+      card.classList.toggle("hidden", !show);
+      card.innerHTML = "";
+      if (!show) return;
+      const text = document.createElement("p");
+      const strong = document.createElement("strong");
+      strong.textContent = "Enjoying Minifolio?";
+      text.append(strong, " Would you like to tell us what you think? It's a short form, about 2 minutes, and every reply is read.");
+      const give = document.createElement("a");
+      give.className = "primary-button feedback-give";
+      give.href = feedbackAddress();
+      give.target = "_blank";
+      give.rel = "noopener noreferrer";
+      give.textContent = "Give feedback";
+      give.addEventListener("click", () => answerFeedback("done"));   // no preventDefault: the link opens
+      const buttons = document.createElement("div");
+      buttons.className = "button-grid";
+      const later = document.createElement("button");
+      later.type = "button";
+      later.className = "plain-button feedback-later";
+      later.textContent = "Not now";
+      later.addEventListener("click", () => answerFeedback("later"));
+      const never = document.createElement("button");
+      never.type = "button";
+      never.className = "plain-button feedback-never";
+      never.textContent = "Don't ask again";
+      never.addEventListener("click", () => answerFeedback("never"));
+      buttons.append(later, never);
+      card.append(text, give, buttons);
+    }
     const CHANGELOG = [
+      { version: "v25", date: "12 Oct 2026", changes: [
+        "About a week after you start using the app, one small \u201cEnjoying Minifolio?\u201d card on the Dashboard asks if you'd like to send feedback. Give feedback opens the same form, Not now asks again in 30 days, and Don't ask again stops it for good. It never shows two days running.",
+        "The app only remembers the day you started and your choice, on this device. Nothing is sent anywhere. If you already use the app, the week starts when you update.",
+      ]},
       { version: "v24", date: "11 Oct 2026", changes: [
         "A new start now comes with two example recipes (Ultramarines armour and Ork skin), and the paints they use appear in Your Palette. They are linked to the example units Captain and Boyz, so you can see how recipes and units connect.",
         "A \u201cThese are examples\u201d card on the Recipes tab has Clear examples (with Undo) and Keep them. Clearing removes only the examples: a paint you've used in your own recipe or given a status is kept, and example paints never go on your shopping list. If you already had recipes, nothing is added.",
@@ -9826,7 +9922,7 @@
       link.classList.toggle("hidden", !FEEDBACK_URL);
       document.getElementById("feedback-soon").classList.toggle("hidden", !!FEEDBACK_URL);
       // "?version=v2" tells the form which version the tester is on, so they don't have to.
-      if (FEEDBACK_URL) link.href = `${FEEDBACK_URL}?version=${encodeURIComponent(APP_VERSION)}`;
+      if (FEEDBACK_URL) link.href = feedbackAddress();
       document.getElementById("version-note").textContent = `You're on version ${APP_VERSION}.`;
       document.getElementById("version-tag").textContent = APP_VERSION;
       const box = document.getElementById("changelog");
@@ -9854,6 +9950,7 @@
     // ================= START UP =================
     applyPalette(settings.palette);
     seedExampleRecipes();   // v24: only on a brand-new start
+    planFeedbackPrompt();   // v25: decides whether the feedback card shows today (saved by the render below)
     render();
     startPhotos();   // moves any old photos across, then loads thumbnails (in the background)
     // Safety copies (Delete all, Replace, Restore, Recover) are kept for 30 days.

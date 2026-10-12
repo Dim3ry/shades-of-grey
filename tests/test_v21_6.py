@@ -155,7 +155,7 @@ def main():
         check("no window.alert either", "window.alert" not in app)
         code = "\n".join(re.sub(r"\s//.*$", "", l) for l in app.splitlines() if not l.strip().startswith("//"))   # without comments
         calls = len(re.findall(r"(?<![A-Za-z_.])notify\(", code)) - 1   # minus the definition
-        check("35 notices go through notify()", calls == 35, calls)
+        check("at least the 35 original notices go through notify() (later versions add a few)", calls >= 35, calls)
         # v21.7 replaced these, so "left for v21.7" became "no more than at v21.6" (16 and 5).
         check("no more than the 16 confirm( questions of v21.6", len(re.findall(r"(?<![A-Za-z_.])confirm\(", app)) <= 16,
               len(re.findall(r"(?<![A-Za-z_.])confirm\(", app)))

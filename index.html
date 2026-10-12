@@ -39,7 +39,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=24"></script>
+  <script src="early.js?v=25"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -429,6 +429,12 @@
     .examples-card p { margin: 0 0 10px; }
     .examples-card .button-grid button { min-height: 44px; }
     .recipes-examples-card { margin-bottom: 12px; }
+    /* v25: the feedback card (same look as the examples cards). Buttons are 44 px tall. */
+    .feedback-card p { margin: 0 0 10px; }
+    .feedback-card .feedback-give { display: flex; align-items: center; justify-content: center;
+      min-height: 44px; text-decoration: none; text-align: center; box-sizing: border-box; }
+    .feedback-card .button-grid { margin-top: 8px; }
+    .feedback-card .button-grid button { min-height: 44px; }
 
     /* The big "move up a stage" button: deliberate, hard to hit by accident. */
     .up-button {
@@ -1027,6 +1033,8 @@
       </div>
       <!-- v21: shown while any of the 3 starting example units are still there. -->
       <div class="card notice-card examples-card hidden" id="examples-card-dash" role="note"></div>
+      <!-- v25: one gentle "send feedback?" card, about a week after first use. Filled by renderFeedbackCard(). -->
+      <div class="card notice-card feedback-card hidden" id="feedback-card" role="note"></div>
       <div class="card">
         <div class="headline">
           <span class="big" id="done-percent">–</span>
@@ -1413,6 +1421,7 @@
           <ul>
             <li>The version number is next to the title. The <strong>Updates</strong> tab lists what changed in each version.</li>
             <li>Found a bug or have an idea? Use <strong>Give feedback</strong> under <strong>Settings → Updates</strong>.</li>
+            <li id="help-feedback-prompt">About a week after you start using the app, a small card on the Dashboard asks if you'd like to send feedback. <strong>Give feedback</strong> opens the same form and the card goes away for good. <strong>Not now</strong> hides it for 30 days. <strong>Don't ask again</strong> hides it for good. If you don't answer, it hides itself the next day and waits 30 days, so it never shows two days running. The app only remembers the date you started and your choice, on this device. Nothing is sent anywhere.</li>
           </ul>
         </details>
         <details id="privacy">
@@ -1421,6 +1430,7 @@
             <li><strong>Stays on your phone:</strong> your units, photos, recipes, paints and settings. They're saved in this browser on this device only. There's no account and no cloud copy.</li>
             <li><strong>Scanning a paint pot</strong> reads the label on your phone. The photo never leaves it.</li>
             <li><strong>What goes out:</strong> only what you choose to send. <strong>Give feedback</strong> opens a form on Tally's website, which receives what you type there plus the app's version number. Backups and exports are files you save yourself. <strong>Send backup to…</strong> only opens your phone's own share menu: the backup goes where you choose, and the app sends nothing itself.</li>
+            <li><strong>The feedback card:</strong> to know when to ask, the app saves the date you first opened it, and your choice on the card, in your settings on this device. They are never sent anywhere.</li>
             <li><strong>Shop links</strong> (Buy these, on the shopping list) open the shop's website only when you tap one. The link carries just the paint's name for the shop's search, and the shop isn't told it came from Minifolio. From then on you're on the shop's site, under its own privacy rules.</li>
             <li><strong>Locked down:</strong> the app only runs its own code, from its own files. Your browser is told to refuse scripts from any other website, or slipped into the page itself, and the app itself can't quietly send your data to another website (a “Content Security Policy”).</li>
             <li><strong>No tracking:</strong> no analytics, no adverts, no cookies, and nothing is sold.</li>
@@ -1655,7 +1665,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=24" makes phones fetch the new file after an update instead of an old saved one. -->
-  <script src="app.js?v=24"></script>
+       The "?v=25" makes phones fetch the new file after an update instead of an old saved one. -->
+  <script src="app.js?v=25"></script>
 </body>
 </html>
