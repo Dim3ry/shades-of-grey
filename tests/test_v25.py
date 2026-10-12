@@ -41,7 +41,7 @@ def read(name):
     return open(os.path.join(ROOT, name), encoding="utf-8").read()
 
 V21_4_CSP = ("default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; "
-             "img-src 'self' blob: data:; media-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; "
+             "img-src 'self' blob: data: https://dim3ry.goatcounter.com/count; media-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; "
              "manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'")
 UNITS = [{"id": 1, "name": "Termagants", "hobby": "40K", "faction": "Tyranids", "stage": 2, "count": 10},
          {"id": 2, "name": "Hormagaunts", "hobby": "40K", "faction": "Tyranids", "stage": 4, "count": 10}]
@@ -318,7 +318,9 @@ def main():
         main_tab(page, "units"); main_tab(page, "dashboard")
         check("nothing left the app while the card was shown, answered and reloaded", outside == [], outside)
         start = app.index("v25: ONE GENTLE")
-        section = app[start:app.index("const CHANGELOG", start)]
+        # v27: its section sits just before the Updates list, so stop where v27's begins.
+        stop = app.find("v27: COUNTING VISITS", start)
+        section = app[start:(stop if stop > 0 else app.index("const CHANGELOG", start))]
         check("the new code has no fetch, XMLHttpRequest, sendBeacon, WebSocket or image pings",
               not re.search(r"fetch\(|XMLHttpRequest|sendBeacon|WebSocket|new Image", section), section[:200])
         check("the card's code uses no inline handlers or eval", not re.search(r"onclick=|eval\(|new Function", section))

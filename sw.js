@@ -9,7 +9,7 @@
 //
 // WHEN YOU UPLOAD A NEW VERSION: change the number below (v1 -> v2 -> v3...).
 // That tells the phone to throw away the old saved copy and start a new one.
-const VERSION = "v26";
+const VERSION = "v27";
 const CACHE_NAME = "shades-of-grey-" + VERSION;
 // The pot-label reader's big files (the engine and its English data, about 11 MB) are kept in
 // their own store that ISN'T cleared on updates, so they're only fetched once.
@@ -64,6 +64,10 @@ self.addEventListener("activate", (event) => {
 // Your units are NOT involved here: they live in the browser's storage, not in files.
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return; // only plain "get a file" requests
+
+  // v27: the visit counter's picture (a tiny image from GoatCounter) is left alone: it goes straight
+  // to the network, is never saved, and with no internet it simply fails without anyone noticing.
+  if (new URL(event.request.url).hostname.endsWith(".goatcounter.com")) return;
 
   // Label-reader engine files never change, so use the saved copy first, else fetch and keep it.
   if (isOcrFile(new URL(event.request.url))) {

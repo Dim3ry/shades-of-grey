@@ -53,7 +53,7 @@ TABS = ["dashboard", "units", "recipes", "help", "updates", "settings"]
 
 # The whole policy at v21.4: v21.2's, minus 'unsafe-inline' in script-src.
 V21_4_CSP = ("default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; "
-             "img-src 'self' blob: data:; media-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; "
+             "img-src 'self' blob: data: https://dim3ry.goatcounter.com/count; media-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; "
              "manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'")
 LIGHT_PAGE = "rgb(233, 239, 246)"   # #e9eff6, the light page colour (v20)
 

@@ -8325,6 +8325,7 @@
     function renderSettings() {
       // v20: after a restore or a change in another window, show the right choices.
       showAppearanceChoice();
+      showCountingChoice();   // v27
       if (usingCustom()) document.getElementById("palette-select").value = "custom";
       else if (PALETTES[settings.palette]) document.getElementById("palette-select").value = settings.palette;
       renderCustomColours();
@@ -9598,8 +9599,8 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=26". v21.4 test checks.)
-    const APP_VERSION = "v26";
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=27". v21.4 test checks.)
+    const APP_VERSION = "v27";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -9953,7 +9954,59 @@
     }
     loadKeptDrafts();
 
+    // ================= v27: COUNTING VISITS (anonymous, no cookies) =================
+    // To learn roughly how many people open Minifolio, each time the app starts it asks GoatCounter
+    // (goatcounter.com, a small privacy-friendly counting service) for ONE tiny 1x1 picture, the
+    // "tracking pixel" way of counting. That request is all that is sent: no cookies, nothing saved
+    // on the device, no account or ID, and nothing from the person's units, recipes, photos or settings.
+    // It is a picture and not a script, so the Content Security Policy only had to allow that one
+    // picture address (img-src); script-src and connect-src are unchanged.
+    //   - Only counts when the app runs from minifolio.app (never on a test or local copy).
+    //   - The picture is asked for without telling GoatCounter which page it came from (no referrer).
+    //   - One count per start-up, never from the other-window sync or a redraw.
+    //   - No internet: the request just fails and nothing else happens (sw.js leaves it alone).
+    //   - Settings -> Counting visits switches it off. The choice is settings.countVisits: only an
+    //     explicit false means off (saved settings, so DATA_VERSION stays 1; older versions keep it).
+    //     It is not in backups, like the feedback card's dates.
+    const COUNTER_CODE = "dim3ry";
+    const COUNTER_URL = "https://" + COUNTER_CODE + ".goatcounter.com/count";
+    const COUNTED_HOSTS = ["minifolio.app"];
+    let visitCounted = false;
+    function countingIsOn() { return settings.countVisits !== false; }
+    function countingHere() { return COUNTED_HOSTS.includes(location.hostname); }
+    // Runs once at start-up. Returns true if it asked for the picture.
+    function countThisVisit() {
+      if (visitCounted || !countingIsOn() || !countingHere()) return false;
+      visitCounted = true;
+      try {
+        const pixel = new Image();
+        pixel.referrerPolicy = "no-referrer";
+        pixel.onload = pixel.onerror = () => {};
+        pixel.src = COUNTER_URL + "?p=" + encodeURIComponent("/") + "&rnd=" + Math.random().toString(36).slice(2, 10);
+      } catch (ignored) {}
+      return true;
+    }
+    // The tick box in Settings -> Counting visits.
+    const countingBox = document.getElementById("count-visits");
+    function showCountingChoice() {
+      countingBox.checked = countingIsOn();
+      document.getElementById("counting-note").textContent = countingIsOn()
+        ? "On. When the app opens, it asks GoatCounter for one tiny picture so we can count visits. It sets no cookies, stores nothing on your device and sends nothing from your collection."
+        : "Off. The app won't ask GoatCounter for anything, so you aren't counted.";
+    }
+    countingBox.addEventListener("change", () => {
+      settings.countVisits = countingBox.checked;
+      saveSettings();
+      showCountingChoice();
+    });
+    if (settings.countVisits !== undefined && typeof settings.countVisits !== "boolean") delete settings.countVisits;
+    showCountingChoice();
+
     const CHANGELOG = [
+      { version: "v27", date: "12 Oct 2026", changes: [
+        "Minifolio now counts roughly how many people open it, so we can tell whether it is being used. Each time the app opens it asks GoatCounter, a small privacy-friendly service, for one tiny picture. There are no cookies and no account, nothing is stored on your device, and nothing from your collection is sent.",
+        "You can switch it off under Settings \u2192 Counting visits. Help \u2192 Privacy now says exactly what is counted and who receives it. The app's security rules were widened for that one picture address only.",
+      ]},
       { version: "v26", date: "12 Oct 2026", changes: [
         "Your unfinished work now survives a reload. If you are part-way through adding a unit, writing a recipe or pasting notes into Paste recipes and the page reloads (or your phone closes the app), a card says \u201cWe kept your unfinished\u2026\u201d with Keep going and Discard. Nothing opens by itself.",
         "What you were typing is kept on this device only (nothing is sent anywhere, and it is not in your backups). It goes when you finish it, or when you discard it. A kept draft is never replaced by accident, and one you discarded never comes back.",
@@ -10224,6 +10277,7 @@
     seedExampleRecipes();   // v24: only on a brand-new start
     planFeedbackPrompt();   // v25: decides whether the feedback card shows today (saved by the render below)
     render();
+    countThisVisit();   // v27: one anonymous visit count (only from minifolio.app, and only if switched on)
     startPhotos();   // moves any old photos across, then loads thumbnails (in the background)
     // Safety copies (Delete all, Replace, Restore, Recover) are kept for 30 days.
     // (Before v14 only Replace's copy expired, after 7 days, using settings.replaceCopyDate.)

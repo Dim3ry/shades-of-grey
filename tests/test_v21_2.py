@@ -67,7 +67,8 @@ EXPECTED = {
     # v21.4: 'unsafe-inline' dropped from script-src (the app's code moved into app.js and early.js).
     "script-src": ["'self'", "'wasm-unsafe-eval'"],
     "style-src": ["'self'", "'unsafe-inline'"],
-    "img-src": ["'self'", "blob:", "data:"],
+    # v27: plus the visit counter's one picture address (a picture, not a script).
+    "img-src": ["'self'", "blob:", "data:", "https://dim3ry.goatcounter.com/count"],
     "media-src": ["'self'", "blob:"],
     "connect-src": ["'self'"],
     "worker-src": ["'self'"],
@@ -161,7 +162,9 @@ def main():
         for name, values in EXPECTED.items():
             check(f"{name} is exactly {' '.join(values)}", sorted(rules.get(name, [])) == sorted(values), rules.get(name))
         everything = " ".join(" ".join(v) for v in rules.values())
-        check("no outside websites are allowed anywhere", "http" not in everything and "*" not in everything, everything)
+        # v27: the only outside address is the visit counter's picture, and only in img-src.
+        outside = [w for w in everything.split() if w.startswith("http")]
+        check("no outside websites are allowed anywhere except the visit counter's one picture", outside == ["https://dim3ry.goatcounter.com/count"] and "*" not in everything, everything)
         check("no 'unsafe-eval' (only the WebAssembly one)", "'unsafe-eval'" not in rules.get("script-src", []))
         live = page.evaluate("document.querySelector('meta[http-equiv=\"Content-Security-Policy\"]').content")
         check("the browser sees the same policy", live == policy)

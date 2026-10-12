@@ -46,7 +46,7 @@ def read(name):
     return open(os.path.join(ROOT, name), encoding="utf-8").read()
 
 V21_4_CSP = ("default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; "
-             "img-src 'self' blob: data:; media-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; "
+             "img-src 'self' blob: data: https://dim3ry.goatcounter.com/count; media-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; "
              "manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'")
 DRAFTS = "shades-of-grey-drafts"
 UNITS = [{"id": 1, "name": "Termagants", "hobby": "40K", "faction": "Tyranids", "stage": 2, "count": 10},
@@ -705,7 +705,9 @@ def main():
         check("the only new storage entry is the drafts one",
               set(keys) <= {"mini-tracker-models", "shades-of-grey-recipes", "shades-of-grey-settings", DRAFTS}, keys)
         start = app.index("v26: UNFINISHED WORK")
-        section = app[start:app.index("const CHANGELOG", start)]
+        # v27: its section sits just before the Updates list, so stop where v27's begins.
+        stop = app.find("v27: COUNTING VISITS", start)
+        section = app[start:(stop if stop > 0 else app.index("const CHANGELOG", start))]
         check("the new code has no fetch, XMLHttpRequest, sendBeacon, WebSocket or image pings",
               not re.search(r"fetch\(|XMLHttpRequest|sendBeacon|WebSocket|new Image", section), section[:200])
         check("it uses no inline handlers, eval, innerHTML with typed text or browser pop-ups",
