@@ -3219,6 +3219,7 @@
       fillStartStage();
       renderExamplesCards();
       renderFeedbackCard();   // v25
+      fillDraftCard("unit", true);   // v26: a kept unfinished unit
 
       // v21.1: only units you can see can stay ticked (a filter change unticks the rest,
       // so you never move something that's off screen). No units at all: no Select.
@@ -4977,6 +4978,7 @@
 
     toggleAdd.addEventListener("click", () => {
       const opening = form.classList.contains("hidden");
+      if (opening && draftWaiting("unit")) return;   // v26: a kept unfinished unit is offered first
       form.classList.toggle("hidden", !opening);
       toggleAdd.textContent = opening ? "Close" : "+ Add unit";
       if (opening && selectMode) closeSelect();   // v21.1: one thing at a time
@@ -5165,6 +5167,7 @@
       importPage.classList.toggle("hidden", !importDraft);
       if (importDraft) {
         renderRecipeExamplesCard(false);
+        fillDraftCard("recipe", false); fillDraftCard("paste", false);   // v26
         for (const el of [recipeSeg, recipeHome, paletteView, schemeView, recipePage]) el.classList.add("hidden");
         renderImport();
         return;
@@ -5176,6 +5179,8 @@
       // The switch hides while a recipe or a scheme being edited fills the screen.
       recipeSeg.classList.toggle("hidden", onPage || (onSchemes && !!schemeDraft));
       renderRecipeExamplesCard(!onPage && !(onSchemes && !!schemeDraft));   // v24
+      fillDraftCard("recipe", !onPage && !(onSchemes && !!schemeDraft));    // v26: kept unfinished work
+      fillDraftCard("paste", !onPage && !(onSchemes && !!schemeDraft));
       recipeSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", b.dataset.view === current));
       recipeHome.classList.toggle("hidden", onPage || onPalette || onSchemes);
       paletteView.classList.toggle("hidden", !onPalette);
@@ -6103,7 +6108,9 @@
     }
 
     function startRecipeDraft(draft) {
-      draft.original = draftSnapshot(draft);
+      if (draftWaiting("recipe")) return;   // v26: a kept unfinished recipe is offered first
+      // (a recipe brought back by Keep going already knows what "unchanged" means)
+      if (typeof draft.original !== "string") draft.original = draftSnapshot(draft);
       recipeDraft = draft;
       renderRecipes();
       window.scrollTo(0, 0);
@@ -6623,6 +6630,7 @@
     let importDraft = null;
 
     function startImport() {
+      if (draftWaiting("paste")) return;   // v26: kept pasted notes are offered first
       whenOkToLeaveDraft(() => {
         recipeDraft = null;
         openRecipeId = null;
@@ -9590,8 +9598,8 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=25". v21.4 test checks.)
-    const APP_VERSION = "v25";
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=26". v21.4 test checks.)
+    const APP_VERSION = "v26";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -9685,7 +9693,271 @@
       buttons.append(later, never);
       card.append(text, give, buttons);
     }
+    // ================= v26: UNFINISHED WORK SURVIVES A RELOAD =================
+    // Before v26, a half-filled Add unit form, a recipe you were writing and the text in Paste
+    // recipes were only held in memory, so reloading the page (or the phone closing the app in
+    // the background) lost them. Now the app keeps a DRAFT of each, on this device only:
+    //   "unit"   the Add unit boxes (name, number of models, game, faction, starting stage),
+    //            kept while the name box has something in it
+    //   "recipe" a recipe being written or edited, kept while it has unsaved changes
+    //   "paste"  the text in Paste recipes, kept while the box has something in it
+    // They live in ONE separate storage entry (DRAFTS_KEY), not in the units, recipes or settings,
+    // so they never travel in a backup, never trigger the other-window reload, and a save that
+    // fails can never roll them back. Older versions simply ignore an entry they don't know, so
+    // DATA_VERSION stays 1. Nothing is sent anywhere.
+    //
+    // How it works. syncDrafts() looks at what's on screen and writes it down. It runs a moment after
+    // every tap, key press or change, when the page is hidden or closed, and every few seconds as a
+    // safety net. When the app starts it finds the kept drafts and shows a small card for each
+    // (Keep going / Discard); nothing opens by itself. THE RULE THAT KEEPS DRAFTS SAFE: while a kept
+    // draft is waiting for an answer, you can't start a new one of the same kind (the app first asks
+    // whether to keep going with the old one), and syncDrafts() never touches a waiting draft. So a new
+    // draft can never quietly replace an old one. A draft is removed when it's finished (Add, Save, an
+    // import, Cancel and "yes, discard") or when you tap Discard and say yes. A discarded draft is gone
+    // for good: there is no Undo and nothing brings it back.
+    const DRAFTS_KEY = "shades-of-grey-drafts";
+    const DRAFT_KINDS = ["unit", "recipe", "paste"];
+    const DRAFT_SYNC_MS = 300;        // how long after the last change a draft is written
+    const DRAFT_SAFETY_MS = 4000;     // the safety net
+    const DRAFT_TEXT_LIMIT = 500000;  // longest piece of text a draft keeps
+    let draftOffers = { unit: null, recipe: null, paste: null };    // kept drafts waiting for an answer
+    const draftWritten = { unit: null, recipe: null, paste: null }; // what THIS window last wrote (null = nothing)
+    let draftSyncTimer = null;
+
+    function readDraftStore() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(DRAFTS_KEY) || "null");
+        return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+      } catch (ignored) { return {}; }
+    }
+    function writeDraftStore(store) {
+      try {
+        if (Object.keys(store).length) localStorage.setItem(DRAFTS_KEY, JSON.stringify(store));
+        else localStorage.removeItem(DRAFTS_KEY);
+        return true;
+      } catch (ignored) { return false; }   // storage full or off: the draft just isn't kept this time
+    }
+
+    // ----- What's on screen, as something that can be saved -----
+    const draftText = (value, limit) => typeof value === "string" ? value.slice(0, limit || DRAFT_TEXT_LIMIT) : "";
+    function liveUnitDraft() {
+      if (!nameInput.value.trim()) return null;
+      return {
+        name: draftText(nameInput.value, 300), count: draftText(countInput.value, 8),
+        game: draftText(hobbyInput.value, 300), faction: draftText(factionInput.value, 300),
+        stage: STAGES[startStage()] || "",
+      };
+    }
+    function liveRecipeDraft() {
+      const d = recipeDraft;
+      if (!d || draftSnapshot(d) === d.original) return null;   // nothing changed yet: nothing to keep
+      return {
+        id: Number.isInteger(d.id) ? d.id : null, name: draftText(d.name), part: draftText(d.part, 300),
+        notes: draftText(d.notes), linkUnit: Number.isInteger(d.linkUnit) ? d.linkUnit : null,
+        steps: d.steps.map(s => ({
+          technique: draftText(s.technique, 300), coats: s.coats, ratio: draftText(s.ratio, 300),
+          note: draftText(s.note), optional: !!s.optional,
+          paints: s.paints.map(p => ({
+            brand: draftText(p.brand, 300), name: draftText(p.name, 300), colour: p.colour,
+            mix: p.mix === undefined ? null : p.mix, type: typeof p.type === "string" ? p.type : undefined,
+          })),
+        })),
+        own: d.own ? { mode: d.own.mode, notOwned: [...d.own.notOwned].map(String) } : null,
+      };
+    }
+    function livePasteDraft() {
+      return importDraft && importDraft.text.trim() ? { text: draftText(importDraft.text) } : null;
+    }
+    const LIVE_DRAFTS = { unit: liveUnitDraft, recipe: liveRecipeDraft, paste: livePasteDraft };
+
+    // ----- Checking what was kept (it came from storage, so it is checked like any saved data) -----
+    const goodDraftColour = (c) => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c) ? c.toLowerCase() : DEFAULT_PAINT_COLOUR;
+    function cleanUnitDraft(raw) {
+      if (!raw || typeof raw !== "object" || typeof raw.name !== "string" || !raw.name.trim()) return null;
+      return {
+        name: draftText(raw.name, 300), count: draftText(raw.count, 8) || "1",
+        game: draftText(raw.game, 300), faction: draftText(raw.faction, 300), stage: draftText(raw.stage, 300),
+      };
+    }
+    function cleanRecipeDraft(raw) {
+      if (!raw || typeof raw !== "object" || !Array.isArray(raw.steps)) return null;
+      const steps = raw.steps.slice(0, 60).filter(s => s && typeof s === "object" && Array.isArray(s.paints)).map(s => ({
+        technique: draftText(s.technique, 300), coats: cleanCount(s.coats), ratio: draftText(s.ratio, 300),
+        note: draftText(s.note), optional: s.optional === true,
+        paints: s.paints.slice(0, 12).filter(p => p && typeof p === "object").map(p => {
+          const paint = { brand: draftText(p.brand, 300), name: draftText(p.name, 300), colour: goodDraftColour(p.colour), mix: cleanMix(p.mix) };
+          if (typeof p.type === "string") paint.type = p.type.slice(0, 100);
+          return paint;
+        }),
+      })).map(s => ({ ...s, paints: s.paints.length ? s.paints : [blankPaint(100)] }));
+      const own = raw.own && typeof raw.own === "object" && ["all", "none", "pick"].includes(raw.own.mode)
+        ? { mode: raw.own.mode, notOwned: new Set(Array.isArray(raw.own.notOwned) ? raw.own.notOwned.filter(x => typeof x === "string") : []) }
+        : newOwnChoice();
+      return {
+        id: Number.isInteger(raw.id) ? raw.id : null, name: draftText(raw.name), part: draftText(raw.part, 300),
+        notes: draftText(raw.notes), linkUnit: Number.isInteger(raw.linkUnit) ? raw.linkUnit : null,
+        steps: steps.length ? steps : [blankStep()], own,
+      };
+    }
+    function cleanPasteDraft(raw) {
+      return raw && typeof raw === "object" && typeof raw.text === "string" && raw.text.trim() ? { text: draftText(raw.text) } : null;
+    }
+    const CLEAN_DRAFTS = { unit: cleanUnitDraft, recipe: cleanRecipeDraft, paste: cleanPasteDraft };
+
+    // ----- Writing drafts down -----
+    function syncDrafts() {
+      clearTimeout(draftSyncTimer);
+      draftSyncTimer = null;
+      if (dataTooNew) return;   // like the units: a newer version has taken over, so this copy stops saving
+      let store = null;
+      const changes = [];
+      for (const kind of DRAFT_KINDS) {
+        if (draftOffers[kind]) continue;   // an old kept draft is waiting for an answer: leave it exactly as it is
+        const live = LIVE_DRAFTS[kind]();
+        const text = live ? JSON.stringify(live) : null;
+        if (text === draftWritten[kind]) continue;   // nothing new (and a window that never wrote one never removes one)
+        if (!store) store = readDraftStore();   // read just before writing, so another window's drafts are kept
+        if (live) store[kind] = live; else delete store[kind];
+        changes.push([kind, text]);
+      }
+      if (!changes.length) return;
+      if (writeDraftStore(store)) for (const [kind, text] of changes) draftWritten[kind] = text;
+    }
+    function queueDraftSync() {
+      clearTimeout(draftSyncTimer);
+      draftSyncTimer = setTimeout(syncDrafts, DRAFT_SYNC_MS);
+    }
+    for (const type of ["input", "change", "click", "keyup"]) document.addEventListener(type, queueDraftSync, true);
+    window.addEventListener("pagehide", syncDrafts);
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") syncDrafts(); });
+    setInterval(syncDrafts, DRAFT_SAFETY_MS);
+
+    // ----- At start-up: find what was kept -----
+    function loadKeptDrafts() {
+      const store = readDraftStore();
+      let tidy = false;
+      for (const kind of DRAFT_KINDS) {
+        if (!(kind in store)) continue;
+        const kept = CLEAN_DRAFTS[kind](store[kind]);
+        if (kept) draftOffers[kind] = kept;
+        else { delete store[kind]; tidy = true; }   // unreadable or empty: nothing worth offering
+      }
+      if (tidy) writeDraftStore(store);
+    }
+
+    // ----- The cards and what their buttons do -----
+    const DRAFT_NAMES = { unit: "unit", recipe: "recipe", paste: "pasted recipe notes" };
+    function draftCardLine(kind, kept) {
+      const short = (t) => { const s = String(t).trim().replace(/\s+/g, " "); return s.length > 60 ? s.slice(0, 57) + "…" : s; };
+      if (kind === "unit") return `You hadn't finished adding “${short(kept.name)}”.`;
+      if (kind === "recipe") {
+        const name = kept.name.trim();
+        const was = kept.id !== null && recipeById(kept.id) ? "changes to" : "";
+        return name ? `You hadn't saved ${was ? was + " " : ""}“${short(name)}”.` : "You hadn't saved the recipe you were writing.";
+      }
+      const n = kept.text.length;
+      return `You hadn't saved these recipes (${n.toLocaleString("en-GB")} character${n === 1 ? "" : "s"}).`;
+    }
+    function fillDraftCard(kind, show) {
+      const card = document.getElementById(`draft-card-${kind}`);
+      if (!card) return;
+      const kept = draftOffers[kind];
+      const on = !!(show && kept);
+      card.classList.toggle("hidden", !on);
+      card.innerHTML = "";
+      if (!on) return;
+      const text = document.createElement("p");
+      const strong = document.createElement("strong");
+      strong.textContent = kind === "paste" ? "We kept your pasted recipe notes." : `We kept your unfinished ${DRAFT_NAMES[kind]}.`;
+      text.append(strong, " " + draftCardLine(kind, kept) + " It's saved on this device only.");
+      const buttons = document.createElement("div");
+      buttons.className = "button-grid";
+      const go = document.createElement("button");
+      go.type = "button";
+      go.className = "primary-button draft-keep";
+      go.textContent = "Keep going";
+      go.addEventListener("click", () => keepDraft(kind));
+      const bin = document.createElement("button");
+      bin.type = "button";
+      bin.className = "danger-button draft-discard";
+      bin.textContent = "Discard";
+      bin.addEventListener("click", () => discardDraft(kind));
+      buttons.append(go, bin);
+      card.append(text, buttons);
+    }
+
+    // Bring a kept draft back to life.
+    function keepDraft(kind) {
+      const kept = draftOffers[kind];
+      if (!kept) return;
+      draftOffers[kind] = null;
+      draftWritten[kind] = "kept";   // so that finishing or cancelling it later removes it
+      if (kind === "unit") {
+        if (selectMode) closeSelect();
+        showTab("units");
+        form.classList.remove("hidden");
+        toggleAdd.textContent = "Close";
+        nameInput.value = kept.name;
+        countInput.value = kept.count;
+        hobbyInput.value = kept.game;
+        factionInput.value = kept.faction;
+        const at = STAGES.indexOf(kept.stage);
+        stageInput.value = String(at >= 0 ? at : startStage());
+        stageInput.style.setProperty("--stage-colour", `var(--stage-${stageInput.value})`);
+        renderUnits();
+        form.scrollIntoView({ block: "start" });
+        nameInput.focus({ preventScroll: true });
+      } else if (kind === "recipe") {
+        const d = kept;
+        const existing = d.id !== null ? recipeById(d.id) : null;
+        if (!existing) d.id = null;   // the recipe it was changing has gone since: it comes back as a new one
+        if (d.linkUnit !== null && !models.some(m => m.id === d.linkUnit)) d.linkUnit = null;
+        // What "unchanged" means for the Cancel question: the saved recipe, or nothing for a new one.
+        d.original = existing ? draftSnapshot(draftFrom(existing)) : "";
+        importDraft = null;
+        openRecipeId = null;
+        startRecipeDraft(d);
+        showTab("recipes");
+      } else {
+        recipeDraft = null;
+        openRecipeId = null;
+        importDraft = { text: kept.text, parsed: null, groups: [], names: [] };
+        renderRecipes();
+        showTab("recipes");
+        window.scrollTo(0, 0);
+      }
+      queueDraftSync();
+    }
+    // Throw a kept draft away for good. It asks first (No is the bold button), and there is no Undo.
+    function discardDraft(kind) {
+      if (!draftOffers[kind]) return;
+      const what = kind === "paste" ? "pasted recipe notes" : `unfinished ${DRAFT_NAMES[kind]}`;
+      askYesNo(`Throw away your ${what}? This can't be undone.`, () => {
+        if (!draftOffers[kind]) return;   // already dealt with (say, from another card)
+        draftOffers[kind] = null;
+        draftWritten[kind] = null;
+        const store = readDraftStore();
+        delete store[kind];
+        writeDraftStore(store);
+        renderUnits();
+        renderRecipes();
+      }, { danger: true, yes: "Discard", no: "Keep it" });
+    }
+    // Starting a new draft while an old one waits would quietly replace it, so the app asks first.
+    // Returns true if the new thing must wait.
+    function draftWaiting(kind) {
+      if (!draftOffers[kind]) return false;
+      askYesNo(`You have an unfinished ${DRAFT_NAMES[kind]} kept from earlier. Keep going with it first?`,
+        () => keepDraft(kind), { yes: "Keep going", no: "Not now" });
+      return true;
+    }
+    loadKeptDrafts();
+
     const CHANGELOG = [
+      { version: "v26", date: "12 Oct 2026", changes: [
+        "Your unfinished work now survives a reload. If you are part-way through adding a unit, writing a recipe or pasting notes into Paste recipes and the page reloads (or your phone closes the app), a card says \u201cWe kept your unfinished\u2026\u201d with Keep going and Discard. Nothing opens by itself.",
+        "What you were typing is kept on this device only (nothing is sent anywhere, and it is not in your backups). It goes when you finish it, or when you discard it. A kept draft is never replaced by accident, and one you discarded never comes back.",
+      ]},
       { version: "v25", date: "12 Oct 2026", changes: [
         "About a week after you start using the app, one small \u201cEnjoying Minifolio?\u201d card on the Dashboard asks if you'd like to send feedback. Give feedback opens the same form, Not now asks again in 30 days, and Don't ask again stops it for good. It never shows two days running.",
         "The app only remembers the day you started and your choice, on this device. Nothing is sent anywhere. If you already use the app, the week starts when you update.",

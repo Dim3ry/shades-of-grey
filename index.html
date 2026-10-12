@@ -39,7 +39,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=25"></script>
+  <script src="early.js?v=26"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -435,6 +435,10 @@
       min-height: 44px; text-decoration: none; text-align: center; box-sizing: border-box; }
     .feedback-card .button-grid { margin-top: 8px; }
     .feedback-card .button-grid button { min-height: 44px; }
+    /* v26: the "We kept your unfinished ..." cards (same look as the examples cards). */
+    .draft-card { margin-bottom: 12px; }
+    .draft-card p { margin: 0 0 10px; }
+    .draft-card .button-grid button { min-height: 44px; }
 
     /* The big "move up a stage" button: deliberate, hard to hit by accident. */
     .up-button {
@@ -1082,6 +1086,8 @@
 
     <!-- ===== TAB 2: Units ===== -->
     <section id="view-units" class="hidden">
+      <!-- v26: a kept, unfinished unit (the Add unit boxes). Filled by fillDraftCard(). -->
+      <div class="card notice-card draft-card hidden" id="draft-card-unit" role="note"></div>
       <div class="units-toolbar">
         <button class="primary-button" id="toggle-add">+ Add unit</button>
         <!-- v21.1: tick several units and move them to a stage in one go. -->
@@ -1160,6 +1166,9 @@
     <!-- ===== TAB: Recipes (how you paint things, step by step) ===== -->
     <section id="view-recipes" class="hidden">
       <!-- The list of recipes. Hidden while one recipe is open. -->
+      <!-- v26: kept, unfinished work: a recipe being written, or the text in Paste recipes. Filled by fillDraftCard(). -->
+      <div class="card notice-card draft-card hidden" id="draft-card-recipe" role="note"></div>
+      <div class="card notice-card draft-card hidden" id="draft-card-paste" role="note"></div>
       <!-- v24: shown while any example recipes or paints are still there. Filled by renderRecipeExamplesCard(). -->
       <div class="card notice-card examples-card recipes-examples-card hidden" id="examples-card-recipes" role="note"></div>
       <!-- Switch between your recipes and your palette (the paints those recipes use). -->
@@ -1267,6 +1276,7 @@
             <li>Press <strong>▲</strong> to move a unit up a stage. Made a mistake? Press <strong>Undo</strong> on the message that pops up.</li>
             <li id="help-jump-stage"><strong>Jump to a stage:</strong> tap a unit's name and pick from its <strong>Stage</strong> menu, to go straight to any stage (forwards or back). If you track each model separately, each model has its own stage menu, and <strong>Move all models to stage</strong> moves them all at once. Every jump has an <strong>Undo</strong>.</li>
             <li id="help-model-dates"><strong>When did it get there?</strong> If you track each model separately, each model says under its name when it reached its stage: <strong>Today</strong>, <strong>Yesterday</strong>, or <strong>Since 7 Oct</strong> (with the year added for an earlier year). Hold or long-press the date to see it in full. A model with no date shown has no record of when it moved.</li>
+            <li id="help-unfinished-work"><strong>Unfinished work is kept:</strong> if the page reloads or the app closes while you are part-way through adding a unit (the name box has something in it), writing a recipe, or pasting notes into Paste recipes, the app keeps what you had. Next time you open the Units or Recipes tab, a card says <strong>We kept your unfinished…</strong>. <strong>Keep going</strong> puts it all back. <strong>Discard</strong> asks first, then throws it away for good (there is no Undo). Nothing opens by itself, and a kept draft is never replaced by accident: if you try to start a new one first, the app asks. It goes when you press Add or Save, or Cancel and say yes. It stays on this device and is not in your backups.</li>
             <li id="help-typing"><strong>Typing:</strong> while the cursor is in a text box, the tab bar at the bottom hides so it can't sit on your keyboard. Tap somewhere else and it comes back.</li>
             <li id="help-move-many"><strong>Move several units at once:</strong> on the Units tab press <strong>Select</strong>. Each unit gets a tick box (tapping a unit ticks it). Tick the ones you want, or press <strong>Select all shown</strong> to tick every unit your filters are showing. Then pick a stage from <strong>Move … to stage</strong> in the bar at the bottom. Units tracked model by model have all their models moved. One <strong>Undo</strong> puts every unit back as it was, diary included. <strong>Cancel</strong>, the phone's Back button or leaving the tab stops selecting without changing anything.</li>
             <li>Tap a unit's name to open its details: its <strong>stage</strong>, photos, paint recipes and paint notes, then <strong>back a stage</strong> and delete.</li>
@@ -1431,6 +1441,7 @@
             <li><strong>Scanning a paint pot</strong> reads the label on your phone. The photo never leaves it.</li>
             <li><strong>What goes out:</strong> only what you choose to send. <strong>Give feedback</strong> opens a form on Tally's website, which receives what you type there plus the app's version number. Backups and exports are files you save yourself. <strong>Send backup to…</strong> only opens your phone's own share menu: the backup goes where you choose, and the app sends nothing itself.</li>
             <li><strong>The feedback card:</strong> to know when to ask, the app saves the date you first opened it, and your choice on the card, in your settings on this device. They are never sent anywhere.</li>
+            <li id="privacy-drafts"><strong>Unfinished work:</strong> to keep a half-written recipe, a half-filled Add unit form or pasted notes through a reload, the app saves what you typed in this browser on this device. It is never sent anywhere, it is not in your backups, and it is removed when you finish it or discard it.</li>
             <li><strong>Shop links</strong> (Buy these, on the shopping list) open the shop's website only when you tap one. The link carries just the paint's name for the shop's search, and the shop isn't told it came from Minifolio. From then on you're on the shop's site, under its own privacy rules.</li>
             <li><strong>Locked down:</strong> the app only runs its own code, from its own files. Your browser is told to refuse scripts from any other website, or slipped into the page itself, and the app itself can't quietly send your data to another website (a “Content Security Policy”).</li>
             <li><strong>No tracking:</strong> no analytics, no adverts, no cookies, and nothing is sold.</li>
@@ -1665,7 +1676,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=25" makes phones fetch the new file after an update instead of an old saved one. -->
-  <script src="app.js?v=25"></script>
+       The "?v=26" makes phones fetch the new file after an update instead of an old saved one. -->
+  <script src="app.js?v=26"></script>
 </body>
 </html>
