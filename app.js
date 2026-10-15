@@ -6528,7 +6528,7 @@
     // draws them. It works offline and sends nothing anywhere. Paint names and brands are always shown as plain
     // text (never as HTML), because they can be anything the user typed or pasted.
     let recipeIdeasCard = null;   // the card in the recipe editor, if it's open
-    let colourIdeasState = { open: false, base: "whole", role: "glow", check: false, scheme: "" };   // kept while the app is open
+    let colourIdeasState = { open: false, base: "whole", role: "glow", check: false, scheme: "", mood: "" };   // kept while the app is open
     // Is a finger (or mouse button) down right now? The panel never redraws itself under a press: typing a paint
     // name and then tapping a chip makes the paint box "change" (it fills in the colour) in the middle of that tap,
     // and a redraw there would replace the chip before the tap finished, so the tap would be lost.
@@ -6983,35 +6983,11 @@
     }
 
     // ---- (2) Starter schemes ----
-    // Hand-written and generic: each is a handful of plain colours (the hex is the colour we look for), with the part it is
-    // for, a plain word for the colour, and one short reason. Names describe the colours, nothing else. Keep it that way:
-    // no Games Workshop, faction or scheme names, and nothing that points at a real army (see the IP notes).
-    const STARTER_SCHEMES = [
-      { key: "blue-gold", name: "Cold blue and gold", summary: "Cold blue armour, gold trim, red eyes",
-        reason: "Blue and gold is a classic pair. One small bright red spot makes the eyes the first thing people see.",
-        colours: [ { part: "Armour", look: "a deep blue", hex: "#1f4287" }, { part: "Armour highlight", look: "a lighter blue", hex: "#6d93d6" },
-                   { part: "Trim", look: "gold", hex: "#c8a02a" }, { part: "Eyes", look: "a bright red", hex: "#d62b2b" } ] },
-      { key: "green-bone", name: "Dark green and bone", summary: "Dark green armour, bone trim, orange glow",
-        reason: "Dark green is calm and pale bone lifts the edges. Orange glows against green because it sits on the other side of the colour wheel.",
-        colours: [ { part: "Armour", look: "a dark green", hex: "#2e5d3b" }, { part: "Armour highlight", look: "a lighter green", hex: "#5f9a62" },
-                   { part: "Trim", look: "a pale bone colour", hex: "#d9cfb0" }, { part: "Glow", look: "a bright orange", hex: "#ee7d1b" } ] },
-      { key: "red-grey", name: "Deep red and dark grey", summary: "Deep red armour, dark grey cloth, pale gold trim",
-        reason: "Dark red and dark grey feel serious and tidy. Pale gold gives clean, bright edges.",
-        colours: [ { part: "Armour", look: "a deep red", hex: "#8c1d22" }, { part: "Armour highlight", look: "a brighter red", hex: "#c2383a" },
-                   { part: "Cloth", look: "a dark grey", hex: "#3b3d44" }, { part: "Trim", look: "a pale gold", hex: "#d8bc62" } ] },
-      { key: "grey-cyan", name: "Pale grey and cyan", summary: "Pale grey armour, dark blue trim, cyan glow",
-        reason: "A light armour makes dark trim easy to read. Cyan glow stands out on cool colours.",
-        colours: [ { part: "Armour", look: "a pale grey", hex: "#b9bdc4" }, { part: "Trim", look: "a dark blue", hex: "#22365c" },
-                   { part: "Cloth", look: "a mid grey", hex: "#6b7078" }, { part: "Glow", look: "a bright cyan", hex: "#3ed3e6" } ] },
-      { key: "sand-teal", name: "Sand and teal", summary: "Sandy armour, brown cloth, teal gems",
-        reason: "Earth tones are calm and sit well together. Teal is the opposite of warm brown, so small gems in it stand out.",
-        colours: [ { part: "Armour", look: "a sandy tan", hex: "#c4aa78" }, { part: "Cloth", look: "a brown", hex: "#5c4330" },
-                   { part: "Gems", look: "a teal", hex: "#1f9e9a" }, { part: "Base", look: "a dark earth brown", hex: "#3a2f26" } ] },
-      { key: "dark-bright", name: "Dark with one bright colour", summary: "Near-black armour, pale trim, one bright purple",
-        reason: "Strong light and dark makes the shapes easy to read. One bright colour keeps the eye in one place.",
-        colours: [ { part: "Armour", look: "a near-black", hex: "#1d1e23" }, { part: "Cloth", look: "a mid grey", hex: "#5a5c63" },
-                   { part: "Trim", look: "an off-white", hex: "#e6e3da" }, { part: "Bright spot", look: "a bright purple", hex: "#8a3fd1" } ] },
-    ];
+    // v31: the schemes themselves (STARTER_SCHEMES, grouped by mood in STARTER_MOODS) now live in schemes.js, which loads just
+    // before this file. They are hand-written and generic: each is four plain colours (the hex is the colour we look for),
+    // with the part it is for, a plain word for the colour and one short reason. Names describe the colours, nothing else.
+    // Keep it that way: no Games Workshop, faction or scheme names, and nothing that points at a real army (see the IP notes).
+    // A test scans all of that text.
 
     // The paints for a starter scheme: for each colour, the nearest paint (yours first, the built-in list after), the same
     // paint never twice. Each is { colour, hit } where hit is a nearestPaints result, so the tags are the same honest ones.
@@ -7025,7 +7001,14 @@
       return out;
     }
 
-    function buildStarterSchemes(d, onPick) {
+    // v31: the mood chips (All, Cold, Warm, Dark, Bright) sit above the scheme chips and only change which scheme chips show,
+    // so the list stays short on a phone. "All" is the default. A scheme that is picked but not in the chosen mood is put away.
+    function starterSchemesShown() {
+      const mood = STARTER_MOODS.some(m => m.key === colourIdeasState.mood) ? colourIdeasState.mood : "";
+      return STARTER_SCHEMES.filter(s => !mood || s.mood === mood);
+    }
+
+    function buildStarterSchemes(d, onPick, onMood) {
       const box = document.createElement("div");
       box.className = "starter-schemes";
       box.id = "starter-schemes";
@@ -7034,17 +7017,30 @@
       title.textContent = "Starter schemes";
       const hint = document.createElement("p");
       hint.className = "hint";
-      hint.textContent = "A few plain colour schemes to start from. Pick one to see matching paints, yours first. Tap a paint to add it as a step.";
+      hint.textContent = "Plain colour schemes to start from. Pick a mood to shorten the list, then pick a scheme to see matching paints, yours first. Tap a paint to add it as a step.";
+      const moods = document.createElement("div");
+      moods.className = "chips mood-chips";
+      moods.id = "starter-moods";
+      moods.style.marginTop = "0";
+      moods.setAttribute("role", "group");
+      moods.setAttribute("aria-label", "Show schemes by mood");
+      const activeMood = STARTER_MOODS.some(m => m.key === colourIdeasState.mood) ? colourIdeasState.mood : "";
+      for (const m of [{ key: "", name: "All" }, ...STARTER_MOODS]) {
+        const chip = makeChip(m.name, m.key === activeMood, () => onMood(m.key));
+        chip.dataset.mood = m.key || "all";
+        moods.appendChild(chip);
+      }
       const chips = document.createElement("div");
       chips.className = "chips";
+      chips.id = "starter-chips";
       chips.style.marginTop = "0";
-      for (const s of STARTER_SCHEMES) {
+      for (const s of starterSchemesShown()) {
         const chip = makeChip(s.name, s.key === colourIdeasState.scheme, () => onPick(s.key === colourIdeasState.scheme ? "" : s.key, s.key));
         chip.dataset.scheme = s.key;
         chips.appendChild(chip);
       }
-      box.append(title, hint, chips);
-      const scheme = STARTER_SCHEMES.find(s => s.key === colourIdeasState.scheme);
+      box.append(title, hint, moods, chips);
+      const scheme = starterSchemesShown().find(s => s.key === colourIdeasState.scheme);
       if (!scheme) return box;
 
       const summary = document.createElement("p");
@@ -7088,7 +7084,17 @@
       // v30: your faction history and the starter schemes (they need no start colour, so they also show without one)
       const addYourSchemes = () => {
         body.appendChild(buildFactionHistory(d));
-        body.appendChild(buildStarterSchemes(d, (key, clicked) => { colourIdeasState.scheme = key; focusNext = `[data-scheme="${clicked}"]`; draw(); }));
+        // v31: the schemes come from schemes.js. If that file is somehow missing, the rest of the card still works.
+        if (typeof STARTER_SCHEMES === "undefined" || typeof STARTER_MOODS === "undefined") return;
+        body.appendChild(buildStarterSchemes(d,
+          (key, clicked) => { colourIdeasState.scheme = key; focusNext = `[data-scheme="${clicked}"]`; draw(); },
+          (mood) => {
+            colourIdeasState.mood = mood;
+            const picked = STARTER_SCHEMES.find(x => x.key === colourIdeasState.scheme);
+            if (picked && mood && picked.mood !== mood) colourIdeasState.scheme = "";   // v31: a pick outside the mood is put away
+            focusNext = `[data-mood="${mood || "all"}"]`;
+            draw();
+          }));
       };
       const draw = () => {
         const bases = colourIdeaBases(d);
@@ -7110,7 +7116,7 @@
         }
         const role = COLOUR_ROLES.find(r => r.key === colourIdeasState.role) || COLOUR_ROLES[0];
         const look = JSON.stringify([colourIdeasState.base, role.key, bases.map(b => [b.key, b.colour, b.uses]),
-                                     wholeRecipes.map(r => [r.id, r.name, r.colour, r.linked]), ownIsWhole, colourIdeasState.check, colourIdeasState.scheme]);
+                                     wholeRecipes.map(r => [r.id, r.name, r.colour, r.linked]), ownIsWhole, colourIdeasState.check, colourIdeasState.scheme, colourIdeasState.mood]);
         if (look === lastLook && !focusNext) return;   // nothing changed: leave it alone
         lastLook = look;
         body.innerHTML = "";
@@ -10333,8 +10339,8 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=30". v21.4 test checks.)
-    const APP_VERSION = "v30";
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=31". v21.4 test checks.)
+    const APP_VERSION = "v31";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -10737,6 +10743,10 @@
     showCountingChoice();
 
     const CHANGELOG = [
+      { version: "v31", date: "15 Oct 2026", changes: [
+        "Pro preview, Colour ideas: there are now 24 starter schemes instead of 6, in four moods: cold, warm, dark and bright. New mood buttons (All, Cold, Warm, Dark, Bright) sit above the scheme buttons, so you can show just one mood and keep the list short on a phone. All is the default.",
+        "Picking a scheme, the short summary and reason, the four colours, the nearest paint (yours first), the You own this tags and tapping a paint to add a step all work exactly as before. Every scheme is plain colours in our own words, with no official names or artwork. Like the other ideas, it sends nothing anywhere and works offline.",
+      ]},
       { version: "v30", date: "15 Oct 2026", changes: [
         "Pro preview, Colour ideas: two new parts. Colours you've used on this faction before lists the paints from your own saved recipes on units in the same faction as the recipe you are writing, most used first, and says plainly when there is no faction or no history yet. It only uses what you have already saved.",
         "Starter schemes: a few plain, hand-written colour schemes (for example cold blue armour, gold trim, red eyes). Pick one to see matching paints, yours first, and tap a paint to add it as a step. Like the other ideas, each says You own this or Closest you own. It all runs on your phone, works offline and sends nothing anywhere.",

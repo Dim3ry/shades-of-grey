@@ -11,7 +11,7 @@ Checks:
    untouched grey, duplicates, rough metallic/Contrast paints, poor matches flagged), the real built-in catalogue,
    and a scan that the file never touches the network, storage or the page.
 2. The same file in a real browser (Chromium) gives the same answers and adds exactly one name to the page.
-3. The wiring (v28): index.html has three script tags (early.js, colour.js, app.js) with the same ?v= number, sw.js lists
+3. The wiring (v28): index.html has the script tags early.js, colour.js, app.js (v31: plus schemes.js) with the same ?v= number, sw.js lists
    colour.js, and app.js uses the engine.
 Run all tests with `python3 tests/run_all.py`, or run this file on its own."""
 import os, re, subprocess, sys
@@ -74,9 +74,9 @@ def main():
     print("\n--- 3. The wiring (v28) ---")
     html, sw, app = read("index.html"), read("sw.js"), read("app.js")
     tags = re.findall(r'<script src="([a-z]+)\.js\?v=([\d.]+)"></script>', html)
-    check("index.html has three script tags: early.js, colour.js, then app.js",
-          [t[0] for t in tags] == ["early", "colour", "app"] and len(re.findall(r"<script\b", html)) == 3, re.findall(r'<script[^>]*>', html))
-    check("all three carry the same ?v= number", len({t[1] for t in tags}) == 1, tags)
+    check("index.html has the script tags early.js, colour.js, then app.js (v31: schemes.js sits between colour.js and app.js)",
+          [t[0] for t in tags] in (["early", "colour", "app"], ["early", "colour", "schemes", "app"]) and len(re.findall(r"<script\b", html)) == len(tags), re.findall(r'<script[^>]*>', html))
+    check("all of them carry the same ?v= number", len({t[1] for t in tags}) == 1, tags)
     check("colour.js loads before app.js (app.js is still last)", html.rfind("colour.js") < html.rfind("app.js"))
     check("sw.js saves colour.js for offline use, with the version tag", '"./colour.js" + CODE_TAG' in sw)
     check("app.js uses the engine (and checks it is there first)", "MinifolioColour" in app and 'typeof MinifolioColour !== "undefined"' in app)

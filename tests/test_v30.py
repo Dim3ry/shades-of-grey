@@ -235,10 +235,10 @@ def main():
         m = re.search(r'const VERSION = "([^"]+)"', sw)
         check("sw.js VERSION matches APP_VERSION", m and m.group(1) == version, m and m.group(1))
         tags = re.findall(r'<script src="(early|colour|app)\.js\?v=([\d.]+)"></script>', html)
-        check("index.html still loads early.js, colour.js, then app.js (no new file), all with ?v= matching the version",
-              [t[0] for t in tags] == ["early", "colour", "app"] and len(re.findall(r"<script\b", html)) == 3 and all(t[1] == version[1:] for t in tags), tags)
-        check("sw.js lists the same app files as before and nothing new", '"./colour.js" + CODE_TAG' in sw
-              and len(re.findall(r'"\./[a-z-]+\.js" \+ CODE_TAG', sw)) == 3, re.findall(r'"\./[^"]+"', sw))
+        check("index.html still loads early.js, colour.js, then app.js, all with ?v= matching the version (v31 adds schemes.js in between, so four tags in all)",
+              [t[0] for t in tags] == ["early", "colour", "app"] and len(re.findall(r"<script\b", html)) in (3, 4) and all(t[1] == version[1:] for t in tags), tags)
+        check("sw.js lists the same app files as before (v31 adds schemes.js) and nothing else new", '"./colour.js" + CODE_TAG' in sw
+              and len(re.findall(r'"\./[a-z-]+\.js" \+ CODE_TAG', sw)) in (3, 4), re.findall(r'"\./[^"]+"', sw))
         check("the comments naming the version number match", f'The "?v={version[1:]}" makes' in html and f'e.g. "app.js?v={version[1:]}"' in app)
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v30')")
         check("Updates has a v30 entry with at least two lines", entry and len(entry["changes"]) >= 2, entry)
@@ -261,10 +261,10 @@ def main():
               and panel_code.count("innerHTML") == 1 and 'body.innerHTML = ""' in panel_code, [m.group(0) for m in re.finditer(r"innerHTML[^\n]*", panel_code)])
         check("colour.js was not touched by this chunk (no new maths needed)", "schemeCheck" in colour and "root.MinifolioColour = api;" in colour)
         schemes = page.evaluate("STARTER_SCHEMES")
-        new_text = json.dumps(schemes) + page.evaluate("""() => JSON.stringify(['Colours you\\'ve used on this faction before', 'Starter schemes',
+        new_text = json.dumps(schemes) + json.dumps(page.evaluate("STARTER_MOODS")) + page.evaluate("""() => JSON.stringify(['Colours you\\'ve used on this faction before', 'Starter schemes',
             document.getElementById('colour-ideas') ? '' : ''])""")
         gw_extra = re.compile(r"\b(primaris|aeldari|skaven|nurgle|khorne|slaanesh|tzeentch|cadian|ultramar|adepta|sororitas|stormcast|space wolves|grey knights|imperial|hive fleet|waaagh)\b", re.I)
-        check("the starter scheme text names no Games Workshop game, faction, scheme or product",
+        check("the starter scheme text (v31: all schemes and the mood names) names no Games Workshop game, faction, scheme or product",
               not GW_WORDS.search(new_text) and not gw_extra.search(new_text), GW_WORDS.findall(new_text) + gw_extra.findall(new_text))
         check("there is no list of factions in the new code (faction names only ever come from the user's own units)",
               not re.search(r"(?i)faction[s]?\s*[:=]\s*\[", panel_code))
@@ -329,13 +329,13 @@ def main():
         check("a new recipe that is linked to no unit says so plainly and shows no paints",
               page.locator("#faction-history-none").count() == 1 and "not linked to a unit that has a faction" in txt
               and page.locator("#faction-history button").count() == 0 and page.locator("#faction-history-list").count() == 0, txt)
-        check("the starter schemes show here too", page.locator("#starter-schemes .chip").count() == 6)
+        check("the starter schemes show here too", page.locator("#starter-chips .chip").count() >= 6)
         load(page, recipes=[RECIPES[1]], units=UNITS)   # no Whole model recipe and no paints in the draft: there is no start colour
         open_editor(page)
         open_panel(page)
         check("with no start colour at all the card says so, and the faction history and starter schemes still show below it",
               "Add a paint to a step first" in page.inner_text("#colour-ideas .ideas-body") and page.locator("#colour-ideas button.idea").count() == 0
-              and page.locator("#faction-history-none").count() == 1 and page.locator("#starter-schemes .chip").count() == 6)
+              and page.locator("#faction-history-none").count() == 1 and page.locator("#starter-chips .chip").count() >= 6)
         pick_scheme(page, "sand-teal")
         check("and a starter scheme can still be picked there", len(starter_rows(page)) == 4)
         load(page, recipes=RECIPES, units=UNITS)
@@ -365,7 +365,7 @@ def main():
 
         # ---------- 4. Starter schemes ----------
         print("\n--- 4. Starter schemes ---")
-        check("a small set: 4 to 8 schemes with unique keys and names", 4 <= len(schemes) <= 8 and len({s["key"] for s in schemes}) == len(schemes)
+        check("a set of schemes (v31 grew it to 24) with unique keys and names", len(schemes) >= 6 and len({s["key"] for s in schemes}) == len(schemes)
               and len({s["name"] for s in schemes}) == len(schemes), len(schemes))
         check("each scheme is a handful (3 to 5) of colours with a part, a plain word and a real hex, no repeated hex",
               all(3 <= len(s["colours"]) <= 5 and all(re.fullmatch(r"#[0-9a-f]{6}", c["hex"]) and c["part"] and c["look"] for c in s["colours"])
@@ -376,9 +376,9 @@ def main():
         load(page, recipes=RECIPES, units=UNITS)
         edit_recipe(page, 106)
         open_panel(page)
-        chips = page.evaluate("() => [...document.querySelectorAll('#starter-schemes .chip')].map(c => [c.textContent, c.getAttribute('aria-pressed')])")
-        check("six chips, named after the colours, none picked to start, and no rows yet",
-              len(chips) == 6 and all(c[1] == "false" for c in chips) and [c[0] for c in chips] == [s["name"] for s in schemes]
+        chips = page.evaluate("() => [...document.querySelectorAll('#starter-chips .chip')].map(c => [c.textContent, c.getAttribute('aria-pressed')])")
+        check("one chip per scheme (all moods shown to start), named after the colours, none picked to start, and no rows yet",
+              len(chips) == len(schemes) and all(c[1] == "false" for c in chips) and [c[0] for c in chips] == [s["name"] for s in schemes]
               and page.locator("#starter-list").count() == 0, chips)
         pick_scheme(page, "blue-gold")
         rows_s = starter_rows(page)
