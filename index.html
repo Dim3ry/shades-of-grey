@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=27"></script>
+  <script src="early.js?v=28"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -887,6 +887,31 @@
     .have-badge { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 999px; font-size: 12px; border: 1px solid; white-space: nowrap; }
     .have-badge.have { color: var(--good); border-color: var(--good); background: var(--good-wash); }
     .have-badge.missing { color: var(--bad); border-color: var(--bad); background: var(--bad-wash); }
+    /* v28: Colour ideas (Pro preview) in the recipe editor */
+    .colour-ideas > summary { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-height: 44px; cursor: pointer; list-style: none; }
+    .colour-ideas > summary::-webkit-details-marker { display: none; }
+    .colour-ideas > summary h2 { margin: 0; }
+    .colour-ideas > summary::after { content: "\25BE"; margin-left: auto; color: var(--muted); }
+    .colour-ideas[open] > summary::after { content: "\25B4"; }
+    .pro-pill { padding: 0 8px; border-radius: 999px; font-size: 12px; border: 1px solid var(--accent); color: var(--accent); background: var(--accent-wash); white-space: nowrap; }
+    .ideas-body { display: grid; gap: 12px; margin-top: 10px; }
+    .ideas-body .hint { margin: 0; }
+    .idea-label { margin: 0; font-size: 13px; color: var(--muted); }
+    .idea-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    button.idea { display: flex; gap: 12px; align-items: flex-start; width: 100%; min-height: 44px; padding: 10px 12px; text-align: left; font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; }
+    button.idea:hover { border-color: var(--accent); }
+    button.idea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .idea .swatch { width: 32px; height: 32px; flex: none; margin-top: 2px; }
+    .idea-text { display: grid; gap: 4px; min-width: 0; flex: 1; }
+    .idea-name { font-weight: 600; overflow-wrap: anywhere; }
+    .idea-name small { margin-left: 6px; font-weight: 400; color: var(--muted); }
+    .idea-tag { justify-self: start; padding: 0 8px; border-radius: 999px; font-size: 12px; border: 1px solid; white-space: nowrap; }
+    .idea-tag.own { color: var(--good); border-color: var(--good); background: var(--good-wash); }
+    .idea-tag.near { color: var(--warn); border-color: var(--warn); }
+    .idea-tag.none { color: var(--grey-status); border-color: var(--grey-status); }
+    .idea-why { font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
+    .idea-note { font-size: 13px; color: var(--muted); }
+    .idea-add { font-size: 13px; color: var(--accent); }
     .shop-brand { font-weight: 600; color: var(--accent); margin: 12px 0 4px; }
     .shop-list { margin: 0; padding-left: 20px; line-height: 1.6; }
     .shop-list small { color: var(--muted); }
@@ -1690,7 +1715,10 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=27" makes phones fetch the new file after an update instead of an old saved one. -->
-  <script src="app.js?v=27"></script>
+       The "?v=28" makes phones fetch the new file after an update instead of an old saved one.
+       v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
+       MinifolioColour, and does nothing until app.js asks. -->
+  <script src="colour.js?v=28"></script>
+  <script src="app.js?v=28"></script>
 </body>
 </html>

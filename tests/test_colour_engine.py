@@ -1,9 +1,9 @@
 """Coach 1 tests for Minifolio: the colour engine (colour.js). Nothing is visible to users yet.
 
-colour.js is the offline colour maths for the coming "Colour ideas" panel: paint colour to hue / saturation /
+colour.js is the offline colour maths for the "Colour ideas" panel: paint colour to hue / saturation /
 lightness, harmonies (opposite, neighbours, split-opposite, triad, neutrals), and the nearest-paint finder
-(paints you own first, with an honest "how sure" label). It is NOT yet loaded by index.html or saved by sw.js:
-Coach 2 wires it in (and does the version bump and Updates entry then), so today's app is byte-for-byte unchanged.
+(paints you own first, with an honest "how sure" label). Coach 1 built it unwired; Coach 2 (v28) wired it in:
+index.html loads it just before app.js, sw.js saves it for offline use, and app.js uses it for the panel.
 
 Checks:
 1. The maths, in Node (tests/colour_engine_check.js): known colour values, the published CIEDE2000 test table,
@@ -11,7 +11,8 @@ Checks:
    untouched grey, duplicates, rough metallic/Contrast paints, poor matches flagged), the real built-in catalogue,
    and a scan that the file never touches the network, storage or the page.
 2. The same file in a real browser (Chromium) gives the same answers and adds exactly one name to the page.
-3. The running app is untouched: index.html still has only its two script tags, and sw.js does not list colour.js yet.
+3. The wiring (v28): index.html has three script tags (early.js, colour.js, app.js) with the same ?v= number, sw.js lists
+   colour.js, and app.js uses the engine.
 Run all tests with `python3 tests/run_all.py`, or run this file on its own."""
 import os, re, subprocess, sys
 from playwright.sync_api import sync_playwright
@@ -70,12 +71,15 @@ def main():
         check("no page errors", not errors, errors[:3])
         browser.close()
 
-    print("\n--- 3. The running app is untouched ---")
-    html, sw = read("index.html"), read("sw.js")
-    check("index.html has only its two script tags (early.js, app.js)",
-          re.findall(r'<script src="([a-z]+)\.js', html) == ["early", "app"], re.findall(r'<script[^>]*>', html))
-    check("sw.js does not list colour.js yet (Coach 2 adds it)", "colour.js" not in sw)
-    check("app.js does not use the engine yet", "MinifolioColour" not in read("app.js"))
+    print("\n--- 3. The wiring (v28) ---")
+    html, sw, app = read("index.html"), read("sw.js"), read("app.js")
+    tags = re.findall(r'<script src="([a-z]+)\.js\?v=([\d.]+)"></script>', html)
+    check("index.html has three script tags: early.js, colour.js, then app.js",
+          [t[0] for t in tags] == ["early", "colour", "app"] and len(re.findall(r"<script\b", html)) == 3, re.findall(r'<script[^>]*>', html))
+    check("all three carry the same ?v= number", len({t[1] for t in tags}) == 1, tags)
+    check("colour.js loads before app.js (app.js is still last)", html.rfind("colour.js") < html.rfind("app.js"))
+    check("sw.js saves colour.js for offline use, with the version tag", '"./colour.js" + CODE_TAG' in sw)
+    check("app.js uses the engine (and checks it is there first)", "MinifolioColour" in app and 'typeof MinifolioColour !== "undefined"' in app)
 
     print(f"\n{sum(results)} of {len(results)} checks passed")
     sys.exit(0 if all(results) else 1)

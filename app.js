@@ -6227,6 +6227,10 @@
       stepsCard.appendChild(addStep);
       recipePage.appendChild(stepsCard);
 
+      // v28: "Colour ideas" (Pro preview): 3 paint ideas that go with a colour in this recipe.
+      recipeIdeasCard = (typeof MinifolioColour !== "undefined") ? buildColourIdeasCard(d) : null;
+      if (recipeIdeasCard) recipePage.appendChild(recipeIdeasCard);
+
       // v18c: paints that are new to your palette: "Do you own these?" (All to start with).
       d.own = d.own || newOwnChoice();
       recipeOwnCard = buildOwnCard(d.own, () => draftNewPaints(d));
@@ -6517,6 +6521,310 @@
     }
 
 
+    // ================= v28: "COLOUR IDEAS" (Pro preview) =================
+    // In the recipe editor: pick a colour from the recipe (or "Whole model", the recipe's main colour), say what
+    // you're painting, and see 3 paint ideas, each with a plain-English reason. Tap one to add it as a new step.
+    // All the colour maths lives in colour.js (MinifolioColour). This part only decides which ideas to ask for and
+    // draws them. It works offline and sends nothing anywhere. Paint names and brands are always shown as plain
+    // text (never as HTML), because they can be anything the user typed or pasted.
+    let recipeIdeasCard = null;   // the card in the recipe editor, if it's open
+    let colourIdeasState = { open: false, base: "whole", role: "glow" };   // kept while the app is open
+    // Is a finger (or mouse button) down right now? The panel never redraws itself under a press: typing a paint
+    // name and then tapping a chip makes the paint box "change" (it fills in the colour) in the middle of that tap,
+    // and a redraw there would replace the chip before the tap finished, so the tap would be lost.
+    let colourIdeasPressing = false;
+    for (const [name, down] of [["pointerdown", true], ["pointerup", false], ["pointercancel", false]]) {
+      document.addEventListener(name, () => { colourIdeasPressing = down; }, true);
+    }
+
+    // What each role asks for. "boost" lifts a too-dull idea (dark blue armour's opposite is a muddy brown,
+    // which makes poor eyes): s = least colour strength, l = lightest and darkest allowed. Coach 3 adds the advice.
+    const COLOUR_ROLES = [
+      { key: "glow",   label: "Eyes or glow", note: "eyes or glow", boost: { s: 0.85, l: [0.55, 0.65] }, picks: ["complementary", "split0", "split1"] },
+      { key: "trim",   label: "Trim",         note: "trim",         boost: { s: 0.5,  l: [0.5, 0.7] },   picks: ["complementary", "analogous0", "light"] },
+      { key: "gems",   label: "Gems",         note: "gems",         boost: { s: 0.75, l: [0.4, 0.55] },  picks: ["triad0", "triad1", "complementary"] },
+      { key: "weapon", label: "Weapon",       note: "weapon",       boost: { s: 0.3,  l: [0.35, 0.6] },  picks: ["mid", "dark", "analogous1"] },
+      { key: "cloth",  label: "Cloth",        note: "cloth",        boost: { s: 0.35, l: [0.25, 0.5] },  picks: ["analogous0", "analogous1", "triad0"] },
+      { key: "base",   label: "Base",         note: "base",         boost: { s: 0.2,  l: [0.2, 0.4] },   picks: ["dark", "mid", "analogous0"] },
+    ];
+    // If the chosen colour is grey, black or white, "opposite" means nothing, so these accents are offered instead.
+    const NEUTRAL_ACCENT_HUES = [25, 195, 330];   // orange, cyan, pink
+
+    function colourIdeaIsReal(hex) {
+      return MinifolioColour.isHex(hex) && String(hex).toLowerCase() !== DEFAULT_PAINT_COLOUR;
+    }
+
+    // The distinct paints written in the recipe being edited, with how many steps use each.
+    function colourIdeaBases(d) {
+      const seen = new Map();
+      for (const s of d.steps) for (const p of s.paints) {
+        const name = String(p.name || "").trim();
+        if (!name) continue;
+        const brand = tidyBrand(p.brand);   // "CitadelCitadel" (typed over the filled-in brand) shows as "Citadel"
+        const key = sameKey(brand) + "|" + sameKey(name);
+        const entry = seen.get(key) || { key, name, brand, colour: p.colour, uses: 0 };
+        entry.uses++;
+        if (!colourIdeaIsReal(entry.colour) && colourIdeaIsReal(p.colour)) entry.colour = p.colour;
+        seen.set(key, entry);
+      }
+      return [...seen.values()];
+    }
+
+    // "Whole model": the colour used in the most steps (the first one if there is a tie).
+    function colourIdeaWholeBase(bases) {
+      let best = null;
+      for (const b of bases) if (colourIdeaIsReal(b.colour) && (!best || b.uses > best.uses)) best = b;
+      return best;
+    }
+
+    // Every paint we may suggest: your palette first, then the built-in list for paints you don't have yet.
+    function colourIdeaPool() {
+      const have = new Set(book.paints.map(p => sameKey(p.name)));
+      return [...book.paints, ...KNOWN_PAINTS.filter(k => !have.has(sameKey(k.name)))];
+    }
+
+    // The colour an idea is aiming for, before we look for the nearest paint.
+    function colourIdeaWanted(harmony, role, pick, hueSlot) {
+      const C = MinifolioColour;
+      if (pick === "dark" || pick === "mid" || pick === "light") {
+        return { hex: harmony.neutrals[{ dark: 0, mid: 1, light: 2 }[pick]], relation: pick };
+      }
+      let hex, relation;
+      if (!harmony.hueMeaningful) {
+        hex = C.hslToHex(NEUTRAL_ACCENT_HUES[hueSlot % NEUTRAL_ACCENT_HUES.length], 0.8, 0.5);
+        relation = "accent";
+      } else {
+        hex = { complementary: harmony.complementary, split0: harmony.split[0], split1: harmony.split[1],
+                triad0: harmony.triad[0], triad1: harmony.triad[1],
+                analogous0: harmony.analogous[0], analogous1: harmony.analogous[1] }[pick];
+        relation = pick.replace(/\d$/, "");
+      }
+      const hsl = C.hexToHsl(hex);
+      const s = Math.max(hsl.s, role.boost.s);
+      const l = Math.min(role.boost.l[1], Math.max(role.boost.l[0], hsl.l));
+      return { hex: C.hslToHex(hsl.h, s, l), relation };
+    }
+
+    // One short, plain sentence saying why the idea works.
+    function colourIdeaReason(relation, wantedHex, baseHex) {
+      const C = MinifolioColour;
+      const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+      const fam = C.colourFamily(wantedHex) || "this colour";
+      const baseFam = C.colourFamily(baseHex) || "your colour";
+      switch (relation) {
+        case "complementary": return `${cap(fam)} is the opposite of ${baseFam} on the colour wheel, so it stands out the most.`;
+        case "split": return `${cap(fam)} is nearly opposite ${baseFam}. It still stands out, but looks less harsh than the straight opposite.`;
+        case "analogous": return `${cap(fam)} sits right next to ${baseFam} on the colour wheel, so it blends in calmly.`;
+        case "triad": return `${cap(fam)} is spaced evenly round the colour wheel from ${baseFam}: lively, but it doesn't clash.`;
+        case "accent": return `Your colour is neutral, so a ${fam} accent stands out without clashing.`;
+        case "dark": return `A dark neutral stays quietly in the background next to ${baseFam}.`;
+        case "mid": return `A mid grey sits comfortably beside ${baseFam} without competing with it.`;
+        default: return `A pale neutral gives ${baseFam} a clean, light edge.`;
+      }
+    }
+
+    // Up to 3 ideas for a base colour and a role. Each is { wanted, relation, hit } where hit is a nearestPaints result.
+    function colourIdeas(d, baseHex, role) {
+      const C = MinifolioColour;
+      const harmony = C.harmonies(baseHex);
+      if (!harmony) return [];
+      const pool = colourIdeaPool();
+      const skip = [baseHex];
+      for (const s of d.steps) for (const p of s.paints) if (MinifolioColour.isHex(p.colour)) skip.push(p.colour);
+      const out = [];
+      let slot = 0;
+      for (const pick of role.picks) {
+        const wanted = colourIdeaWanted(harmony, role, pick, slot);
+        if (!["dark", "mid", "light"].includes(pick)) slot++;
+        // Paints you own come first, and the same paint is never suggested twice.
+        const hit = C.nearestPaints(wanted.hex, pool, { limit: 1, ownedFirst: true, exclude: [...skip, ...out.map(o => o.hit.paint.colour)] })[0];
+        if (hit) out.push({ wanted: wanted.hex, relation: wanted.relation, hit });
+      }
+      return out;
+    }
+
+    // The words under a suggestion that say how far to trust the match.
+    function colourIdeaTag(hit) {
+      if (!hit.owned) return { cls: "none", text: "Not in your palette" };
+      return hit.quality === "good" ? { cls: "own", text: "You own this" } : { cls: "near", text: "Closest you own" };
+    }
+    function colourIdeaNote(hit) {
+      if (hit.quality === "poor") return "Not very close. It is the nearest we found.";
+      if (hit.quality === "close") return "Similar, not exact.";
+      if (hit.approximate) return "Close enough. This kind of paint looks different on the model than in the pot.";
+      return "";
+    }
+
+    // Adds the idea to the recipe being edited as a new last step.
+    function addColourIdeaStep(d, paint, role) {
+      d.steps.push({
+        technique: "", coats: 1, ratio: "", optional: false, note: `Colour idea for ${role.note}`,
+        paints: [{ brand: String(paint.brand || ""), name: String(paint.name || ""), colour: paint.colour, mix: 100 }],
+      });
+      colourIdeasState.open = true;
+      renderRecipeEditor();
+      notify(`Added step ${d.steps.length}: ${paint.name}`);
+    }
+
+    function buildColourIdeasCard(d) {
+      const card = document.createElement("details");
+      card.className = "card colour-ideas";
+      card.id = "colour-ideas";
+      card.open = colourIdeasState.open;
+      const summary = document.createElement("summary");
+      const title = document.createElement("h2");
+      title.textContent = "Colour ideas";
+      const pill = document.createElement("span");
+      pill.className = "pro-pill";
+      pill.textContent = "Pro preview";
+      summary.append(title, pill);
+      const body = document.createElement("div");
+      body.className = "ideas-body";
+      card.append(summary, body);
+
+      let lastLook = "";
+      let focusNext = "";
+      const draw = () => {
+        const bases = colourIdeaBases(d);
+        const whole = colourIdeaWholeBase(bases);
+        let base = colourIdeasState.base === "whole" ? whole : bases.find(b => b.key === colourIdeasState.base);
+        if (!base && colourIdeasState.base !== "whole") { colourIdeasState.base = "whole"; base = whole; }
+        const role = COLOUR_ROLES.find(r => r.key === colourIdeasState.role) || COLOUR_ROLES[0];
+        const look = JSON.stringify([colourIdeasState.base, role.key, bases.map(b => [b.key, b.colour, b.uses])]);
+        if (look === lastLook && !focusNext) return;   // nothing changed: leave it alone
+        lastLook = look;
+        body.innerHTML = "";
+
+        const hint = document.createElement("p");
+        hint.className = "hint";
+        hint.textContent = "Pick a colour from this recipe and what you are painting. You get 3 paints that go with it. Tap one to add it as a new step.";
+        body.appendChild(hint);
+
+        if (!bases.length || !whole) {
+          const empty = document.createElement("p");
+          empty.className = "hint";
+          empty.textContent = bases.length
+            ? "Set a colour on one of the paints first (the round colour button in a step), then ideas show here."
+            : "Add a paint to a step first. Ideas show here once the recipe has a colour.";
+          body.appendChild(empty);
+          return;
+        }
+
+        const pick = document.createElement("label");
+        pick.append("Start from");
+        const select = document.createElement("select");
+        select.style.width = "100%";
+        select.id = "colour-ideas-base";
+        select.add(new Option("Whole model (main colour)", "whole"));
+        for (const b of bases) select.add(new Option(b.brand ? `${b.name} (${b.brand})` : b.name, b.key));
+        select.value = colourIdeasState.base;
+        select.addEventListener("change", () => { colourIdeasState.base = select.value; focusNext = "#colour-ideas-base"; draw(); });
+        pick.appendChild(select);
+        body.appendChild(pick);
+
+        const roleLabel = document.createElement("p");
+        roleLabel.className = "idea-label";
+        roleLabel.textContent = "What are you painting?";
+        const chips = document.createElement("div");
+        chips.className = "chips";
+        chips.style.marginTop = "0";
+        for (const r of COLOUR_ROLES) {
+          const chip = makeChip(r.label, r.key === role.key, () => { colourIdeasState.role = r.key; focusNext = `[data-role="${r.key}"]`; draw(); });
+          chip.dataset.role = r.key;
+          chips.appendChild(chip);
+        }
+        body.append(roleLabel, chips);
+
+        const baseHex = base ? base.colour : "";
+        if (base && !colourIdeaIsReal(baseHex)) {
+          const unset = document.createElement("p");
+          unset.className = "hint";
+          unset.textContent = "This paint's colour isn't set yet, so it counts as neutral. Tap its round colour button in the step to set it.";
+          body.appendChild(unset);
+        }
+
+        const ideas = colourIdeas(d, baseHex, role);
+        if (!ideas.length) {
+          const none = document.createElement("p");
+          none.className = "hint";
+          none.textContent = "No paints with a known colour to suggest yet. Add paints on Your Palette first.";
+          body.appendChild(none);
+        }
+        const list = document.createElement("ul");
+        list.className = "idea-list";
+        for (const idea of ideas) {
+          const paint = idea.hit.paint;
+          const tag = colourIdeaTag(idea.hit);
+          const reason = colourIdeaReason(idea.relation, idea.wanted, baseHex);
+          const note = colourIdeaNote(idea.hit);
+          const li = document.createElement("li");
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "idea";
+          button.setAttribute("aria-label", `Add ${paint.name} as a new step. ${tag.text}. ${reason}`);
+          const text = document.createElement("span");
+          text.className = "idea-text";
+          const name = document.createElement("span");
+          name.className = "idea-name";
+          name.append(paint.name);
+          if (paint.brand) {
+            const brand = document.createElement("small");
+            brand.textContent = paint.brand;
+            name.appendChild(brand);
+          }
+          const tagEl = document.createElement("span");
+          tagEl.className = "idea-tag " + tag.cls;
+          tagEl.textContent = tag.text;
+          const why = document.createElement("span");
+          why.className = "idea-why";
+          why.textContent = reason;
+          text.append(name, tagEl, why);
+          if (note) {
+            const noteEl = document.createElement("span");
+            noteEl.className = "idea-note";
+            noteEl.textContent = note;
+            text.appendChild(noteEl);
+          }
+          const add = document.createElement("span");
+          add.className = "idea-add";
+          add.textContent = "+ Add as a step";
+          text.appendChild(add);
+          button.append(makeSwatch(paint.colour), text);
+          button.addEventListener("click", () => addColourIdeaStep(d, paint, role));
+          li.appendChild(button);
+          list.appendChild(li);
+        }
+        body.appendChild(list);
+
+        const foot = document.createElement("p");
+        foot.className = "hint";
+        foot.textContent = "Ideas use paints you own first. Colours on a screen are only a guide, so check them on your model. Nothing leaves your phone.";
+        body.appendChild(foot);
+
+        if (focusNext) {
+          const target = body.querySelector(focusNext);
+          if (target) target.focus();
+          focusNext = "";
+        }
+      };
+
+      card.addEventListener("toggle", () => { colourIdeasState.open = card.open; if (card.open) draw(); });
+      // Typing in a paint box asks for a refresh on every key. Wait a moment (and for any press to finish), then redraw once.
+      let refreshTimer = null;
+      card.refresh = () => {
+        if (!card.open) return;
+        clearTimeout(refreshTimer);
+        const later = () => {
+          if (!card.isConnected) return;
+          if (colourIdeasPressing) { refreshTimer = setTimeout(later, 120); return; }
+          draw();
+        };
+        refreshTimer = setTimeout(later, 200);
+      };
+      if (card.open) draw();
+      return card;
+    }
+
     // ================= v18c: TIDY BRANDS AND "DO YOU OWN THESE?" =================
     // The brand box used to fill itself in, so typing "Citadel" gave "CitadelCitadel".
     // This puts a brand typed twice (or more) back to once: "CitadelCitadel" or "Citadel citadel" → "Citadel".
@@ -6571,7 +6879,10 @@
     // The card: "Do you own these? All / None / Let me pick". getPaints() lists the new paints now.
     // It only redraws itself, so the boxes you're typing in elsewhere on the page aren't disturbed.
     let recipeOwnCard = null;   // the card in the recipe editor, if it's open
-    function refreshRecipeOwn() { if (recipeOwnCard && recipeOwnCard.isConnected) recipeOwnCard.refresh(); }
+    function refreshRecipeOwn() {
+      if (recipeOwnCard && recipeOwnCard.isConnected) recipeOwnCard.refresh();
+      if (recipeIdeasCard && recipeIdeasCard.isConnected) recipeIdeasCard.refresh();   // v28
+    }
     function buildOwnCard(choice, getPaints) {
       const card = document.createElement("div");
       card.className = "card own-check";
@@ -9599,8 +9910,8 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=27". v21.4 test checks.)
-    const APP_VERSION = "v27";
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=28". v21.4 test checks.)
+    const APP_VERSION = "v28";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -10003,6 +10314,10 @@
     showCountingChoice();
 
     const CHANGELOG = [
+      { version: "v28", date: "15 Oct 2026", changes: [
+        "New Pro preview: Colour ideas, inside a recipe you are writing or editing. Pick a colour from the recipe (or Whole model, its main colour), say what you are painting (eyes or glow, trim, gems, weapon, cloth or base) and you get 3 paint ideas, each with a short reason such as \u201corange is the opposite of blue, so it stands out\u201d.",
+        "Each idea says You own this or Closest you own, so paints you already have come first. Tap one to add it to the recipe as a new step. It is free while it is a preview. The colour maths runs on your phone, works offline and sends nothing anywhere.",
+      ]},
       { version: "v27", date: "12 Oct 2026", changes: [
         "Minifolio now counts roughly how many people open it, so we can tell whether it is being used. Each time the app opens it asks GoatCounter, a small privacy-friendly service, for one tiny picture. There are no cookies and no account, nothing is stored on your device, and nothing from your collection is sent.",
         "You can switch it off under Settings \u2192 Counting visits. Help \u2192 Privacy now says exactly what is counted and who receives it. The app's security rules were widened for that one picture address only.",
