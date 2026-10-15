@@ -3,8 +3,8 @@
 // The app can call these helpers to answer questions like:
 //   - "What are the opposite and neighbouring colours of this paint?"   -> harmonies()
 //   - "Which paint in the catalogue is closest to this colour?"          -> nearestPaints()
-// Later chunks (the "Colour ideas" panel, smarter tips) will use them. Right now nothing
-// calls them, so nobody using the app sees any change.
+//   - "Do the colours of this recipe hang together?"                     -> schemeCheck()
+// The "Colour ideas" panel in the recipe editor uses all of these.
 //
 // How it is shared: the app loads this file as a plain script, which adds ONE name to the page,
 // MinifolioColour. The test file loads the very same file in Node and checks the answers.
@@ -276,11 +276,95 @@
     return nearestPaints(wanted, paints, { limit: 1, ownedFirst: false })[0] || null;
   }
 
+  // ---------- does a scheme hang together? (Coach 3) ----------
+  // Looks at the colours of one recipe and answers three plain questions. It hands back numbers and
+  // colours only; the screen chooses the words. It is a rule of thumb, not a verdict.
+  //   1. How many STRONG colours are there? Strong means clearly coloured (not grey, not brown), and not
+  //      so dark or so pale that it fades into the background. Colours whose hues are within 20 degrees
+  //      of each other on the colour wheel count as ONE, so a base, shade and highlight of the same red is one red.
+  //      Painters' guides say one or two colours should lead and the rest support. Past 3 strong
+  //      colours they start to fight each other.
+  //   2. Is there light and dark? Compare the lightest and darkest colour (the Lab "L" number, 0 black
+  //      to 100 white). Less than 30 apart and the model can look flat.
+  //   3. Which strong colour should be the focus? The one that stands out most against the main colour
+  //      (the strong colour used in the most steps, or the one listed first on a tie): the furthest
+  //      round the colour wheel from it.
+  //      If there is only one strong colour it is the focus already.
+  const STRONG_SATURATION = 0.45;         // colourful enough (0 grey to 1 pure colour)
+  const STRONG_LIGHTNESS = [0.15, 0.8];   // not almost black, not almost white
+  const SAME_COLOUR_WITHIN = 20;          // hues this close (degrees) count as the same colour
+  const MAX_STRONG = 3;                   // more than this many strong colours is too many
+  const FLAT_UNDER = 30;                  // lightest and darkest less than this far apart is "flat"
+
+  function isStrongColour(hex) {
+    const c = hexToHsl(hex);
+    if (!c || colourFamily(hex) === "brown") return false;
+    return c.s >= STRONG_SATURATION && c.s >= GREY_BELOW && c.l >= STRONG_LIGHTNESS[0] && c.l <= STRONG_LIGHTNESS[1];
+  }
+
+  const hueGap = (a, b) => { const d = Math.abs(a - b) % 360; return Math.min(d, 360 - d); };
+
+  // entries: [{ colour: "#rrggbb", uses: how many steps use it }]. Anything that isn't a colour, and the
+  // untouched grey, is ignored. Never throws.
+  function schemeCheck(entries) {
+    const byHex = new Map();
+    for (const e of Array.isArray(entries) ? entries : []) {
+      if (!e || !isHex(e.colour) || e.colour.toLowerCase() === DEFAULT_GREY) continue;
+      const hex = e.colour.toLowerCase();
+      const uses = Number.isFinite(e.uses) && e.uses > 0 ? e.uses : 1;
+      byHex.set(hex, (byHex.get(hex) || 0) + uses);
+    }
+    const colours = [...byHex].map(([hex, uses]) => ({ hex, uses, L: hexToLab(hex).L }));
+
+    // 1. strong colours, merged when their hues are close
+    // Most-used first. On a tie the colour listed first wins (a recipe usually starts with its main colour).
+    const strong = colours.filter((c) => isStrongColour(c.hex)).map((c) => Object.assign({ hsl: hexToHsl(c.hex) }, c))
+      .sort((a, b) => b.uses - a.uses);
+    const groups = [];
+    for (const c of strong) {
+      const group = groups.find((g) => hueGap(g.hsl.h, c.hsl.h) <= SAME_COLOUR_WITHIN);
+      if (group) group.uses += c.uses; else groups.push({ hex: c.hex, hsl: c.hsl, uses: c.uses });
+    }
+    groups.sort((a, b) => b.uses - a.uses);   // a stable sort: ties keep the order the colours were listed in
+    const shape = (g) => ({ hex: g.hex, family: colourFamily(g.hex), uses: g.uses });
+
+    // 3. the focus colour
+    let focus = null, focusKind = "none";
+    if (groups.length === 1) { focus = groups[0]; focusKind = "only"; }
+    else if (groups.length > 1) {
+      focus = groups.slice(1).sort((a, b) => hueGap(b.hsl.h, groups[0].hsl.h) - hueGap(a.hsl.h, groups[0].hsl.h) || b.hsl.s - a.hsl.s)[0];
+      focusKind = "accent";
+    }
+
+    // 2. light and dark
+    const enough = colours.length >= 2;
+    const byLight = colours.slice().sort((a, b) => a.L - b.L);
+    const darkest = byLight[0] || null, lightest = byLight[byLight.length - 1] || null;
+    const lightRange = enough ? lightest.L - darkest.L : 0;
+    const tooManyStrong = groups.length > MAX_STRONG;
+    const flat = enough && lightRange < FLAT_UNDER;
+    return {
+      enough,
+      colourCount: colours.length,
+      strong: groups.map(shape),
+      tooManyStrong,
+      dominant: groups[0] ? shape(groups[0]) : null,
+      focus: focus ? shape(focus) : null,
+      focusKind,
+      darkest: darkest && { hex: darkest.hex, L: Math.round(darkest.L * 10) / 10 },
+      lightest: lightest && { hex: lightest.hex, L: Math.round(lightest.L * 10) / 10 },
+      lightRange: Math.round(lightRange * 10) / 10,
+      flat,
+      hangsTogether: enough && !tooManyStrong && !flat,
+    };
+  }
+
   const api = {
     isHex, hexToRgb, rgbToHex, hexToHsl, hslToHex, hexToLab,
     labDistance, colourDistance, harmonies, colourFamily,
     haveIt, isRoughColour, canMatch, judgeMatch,
     nearestPaints, closestOwned, closestAny,
+    isStrongColour, schemeCheck,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.MinifolioColour = api;

@@ -252,6 +252,75 @@ check("a real blue's opposite lands on a warm paint", (() => {
   return /orange|yellow|brown/.test(fam);
 })());
 
+// ---- 6b. "Does this scheme hang together?" (Coach 3: schemeCheck) ----
+// Expected answers come from colour theory and painters' rules of thumb, worked out by hand:
+// more than 3 strong colours is too many, lightest and darkest less than 30 apart is flat, and the focus is the
+// strong colour furthest round the wheel from the main one.
+const scheme = (list) => C.schemeCheck(list.map(([colour, uses]) => ({ colour, uses })));
+const notEnough = [[], [["#0d407f", 1]], [["#0d407f", 1], ["#0D407F", 2]], [[null, 1], ["nope", 2], ["#808080", 1]], [["#808080", 1], ["#0d407f", 1]]];
+for (const list of notEnough) {
+  const r = scheme(list);
+  check("fewer than two different colours: not enough to check " + JSON.stringify(list), r.enough === false && r.hangsTogether === false && r.flat === false, r);
+}
+for (const bad of [undefined, null, 42, "x", {}, [null], [{}], [{ colour: 5 }]]) {
+  let r = null, threw = false;
+  try { r = C.schemeCheck(bad); } catch (e) { threw = true; }
+  check("schemeCheck never throws on " + JSON.stringify(bad), !threw && r && r.enough === false && Array.isArray(r.strong), r);
+}
+// Which colours count as strong
+const strongYes = ["#0d407f", "#f4741c", "#228b22", "#7b2d8b", "#c1272d", "#fbb81c", "#6a0001"];
+const strongNo = ["#7a7a7a", "#8b4513", "#0b0b0b", "#f5f5f5", "#001a33", "#9e915c", "#a7a28f", "#462f30", "#fdf2c4"];
+for (const hex of strongYes) check("strong colour: " + hex, C.isStrongColour(hex) === true);
+for (const hex of strongNo) check("not a strong colour (grey, brown, near-black or white, too dark, muted, too pale): " + hex, C.isStrongColour(hex) === false);
+check("isStrongColour rejects non-colours", [null, "", "#12", 7].every((v) => C.isStrongColour(v) === false));
+// A base, shade and highlight of one blue plus a black undercoat: one strong colour, plenty of light and dark, already focused
+let r = scheme([["#0d407f", 3], ["#1f56a7", 2], ["#4c8bd1", 1], ["#0b0b0b", 1]]);
+check("one blue with shades and black: 1 strong colour", r.enough && r.strong.length === 1 && r.strong[0].family.includes("blue"), r.strong);
+check("...has light and dark (not flat), not too many, and hangs together", !r.flat && !r.tooManyStrong && r.hangsTogether === true, r);
+check("...the blue is its own focus colour (only strong colour)", r.focusKind === "only" && r.focus.hex === r.strong[0].hex, r);
+check("...its lightness range is big: black to light blue", r.lightRange > 45 && r.darkest.hex === "#0b0b0b", r);
+// Blue armour with orange eyes: orange is the focus (opposite of the main blue)
+r = scheme([["#0d407f", 3], ["#4c8bd1", 1], ["#f4741c", 1], ["#0b0b0b", 1]]);
+check("blue and orange: 2 strong colours, blue is the main one", r.strong.length === 2 && r.dominant.family.includes("blue"), r);
+check("...the orange is the suggested focus colour (an accent)", r.focusKind === "accent" && r.focus.family === "orange", r.focus);
+// The focus is the strong colour furthest round the wheel from the main colour
+r = scheme([["#0d407f", 3], ["#228b22", 1], ["#f4741c", 1], ["#0b0b0b", 1]]);
+check("blue with green and orange: the focus is the orange, not the green (it is opposite the blue)", r.focus.family === "orange", r.focus);
+// The most-used strong colour is the main one
+r = scheme([["#f4741c", 1], ["#0d407f", 4], ["#0b0b0b", 1]]);
+check("the colour used in most steps is the main colour", r.dominant.family.includes("blue") && r.focus.family === "orange", r);
+// On a tie the colour listed first is the main one (a recipe usually starts with its main colour), whichever is more vivid
+r = scheme([["#0d407f", 1], ["#f4741c", 1]]);
+check("tie: blue listed first is the main colour, orange is the focus", r.dominant.family.includes("blue") && r.focus.family === "orange", r);
+r = scheme([["#f4741c", 1], ["#0d407f", 1]]);
+check("tie: orange listed first is the main colour, blue is the focus", r.dominant.family === "orange" && r.focus.family.includes("blue"), r);
+// Hues close together are one colour; red and orange are different colours
+r = scheme([["#6a0001", 2], ["#9a1115", 2], ["#d03a2e", 1], ["#0b0b0b", 1]]);
+check("three reds (shade, base, highlight) count as ONE strong colour", r.strong.length === 1 && r.strong[0].uses === 5, r.strong);
+r = scheme([["#c1272d", 2], ["#f4741c", 2], ["#0b0b0b", 1]]);
+check("red and orange count as two strong colours", r.strong.length === 2, r.strong);
+// Too many strong colours
+r = scheme([["#0d407f", 3], ["#f4741c", 2], ["#228b22", 2], ["#7b2d8b", 1], ["#c1272d", 1], ["#0b0b0b", 1]]);
+check("five strong colours is too many", r.strong.length === 5 && r.tooManyStrong === true && r.hangsTogether === false, r);
+check("...but there is still a focus colour to suggest", r.focus !== null && r.focusKind === "accent", r);
+r = scheme([["#0d407f", 3], ["#f4741c", 2], ["#228b22", 2], ["#0b0b0b", 1]]);
+check("exactly three strong colours is fine", r.strong.length === 3 && r.tooManyStrong === false && r.hangsTogether === true, r);
+r = scheme([["#0d407f", 3], ["#f4741c", 2], ["#228b22", 2], ["#7b2d8b", 1], ["#0b0b0b", 1]]);
+check("four strong colours is too many", r.strong.length === 4 && r.tooManyStrong === true, r);
+// Light and dark
+r = scheme([["#3b6fb0", 2], ["#6b8fc2", 1], ["#5a7fb5", 1]]);
+check("three mid blues of nearly the same lightness are flat", r.flat === true && r.lightRange < 30 && r.hangsTogether === false, r);
+r = scheme([["#3b6fb0", 2], ["#f5f5f5", 1]]);
+check("a mid blue with white has plenty of light and dark", r.flat === false && r.lightRange > 30, r);
+r = scheme([["#7a7a7a", 1], ["#0b0b0b", 1]]);
+check("neutrals count for light and dark: grey and black are not flat", r.enough && r.flat === false && r.strong.length === 0, r);
+check("no strong colours: no focus colour to suggest", r.focus === null && r.focusKind === "none", r);
+r = scheme([["#462f30", 2], ["#9e915c", 1], ["#a7a28f", 1], ["#0b0b0b", 1]]);
+check("muted earth tones with black: calm, nothing strong, still hangs together", r.strong.length === 0 && r.hangsTogether === true, r);
+// Case and uses don't matter for identity; bad uses count as 1
+r = scheme([["#0D407F", 1], ["#0d407f", 1], ["#f4741c", "many"], ["#0b0b0b", -3]]);
+check("capital letters are the same colour, and a bad uses number counts as one use", r.colourCount === 3 && r.strong.find((s) => s.family === "orange").uses === 1, r);
+
 // ---- 7. It stays offline and invisible ----
 const src = fs.readFileSync(path.join(__dirname, "..", "colour.js"), "utf8");
 const forbidden = ["fetch(", "XMLHttpRequest", "WebSocket", "sendBeacon", "localStorage", "sessionStorage", "document.", "innerHTML", "eval(", "new Function", "importScripts", "http://", "https://"];

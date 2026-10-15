@@ -6528,7 +6528,7 @@
     // draws them. It works offline and sends nothing anywhere. Paint names and brands are always shown as plain
     // text (never as HTML), because they can be anything the user typed or pasted.
     let recipeIdeasCard = null;   // the card in the recipe editor, if it's open
-    let colourIdeasState = { open: false, base: "whole", role: "glow" };   // kept while the app is open
+    let colourIdeasState = { open: false, base: "whole", role: "glow", check: false };   // kept while the app is open
     // Is a finger (or mouse button) down right now? The panel never redraws itself under a press: typing a paint
     // name and then tapping a chip makes the paint box "change" (it fills in the colour) in the middle of that tap,
     // and a redraw there would replace the chip before the tap finished, so the tap would be lost.
@@ -6538,14 +6538,42 @@
     }
 
     // What each role asks for. "boost" lifts a too-dull idea (dark blue armour's opposite is a muddy brown,
-    // which makes poor eyes): s = least colour strength, l = lightest and darkest allowed. Coach 3 adds the advice.
+    // which makes poor eyes): s = least colour strength, l = lightest and darkest allowed.
+    // v29: "tip" is hand-written advice for the role, shown when the role is chosen. "why" holds role-specific reasons
+    // that replace the generic reason on an idea where they say it better (the key is the idea's relation to the colour:
+    // complementary, split, analogous, triad, accent, dark, mid, light). {Fam} / {fam} is the idea's colour word and {base}
+    // the chosen colour's word, both from colourFamily. Paint and recipe names never go into a reason.
     const COLOUR_ROLES = [
-      { key: "glow",   label: "Eyes or glow", note: "eyes or glow", boost: { s: 0.85, l: [0.55, 0.65] }, picks: ["complementary", "split0", "split1"] },
-      { key: "trim",   label: "Trim",         note: "trim",         boost: { s: 0.5,  l: [0.5, 0.7] },   picks: ["complementary", "analogous0", "light"] },
-      { key: "gems",   label: "Gems",         note: "gems",         boost: { s: 0.75, l: [0.4, 0.55] },  picks: ["triad0", "triad1", "complementary"] },
-      { key: "weapon", label: "Weapon",       note: "weapon",       boost: { s: 0.3,  l: [0.35, 0.6] },  picks: ["mid", "dark", "analogous1"] },
-      { key: "cloth",  label: "Cloth",        note: "cloth",        boost: { s: 0.35, l: [0.25, 0.5] },  picks: ["analogous0", "analogous1", "triad0"] },
-      { key: "base",   label: "Base",         note: "base",         boost: { s: 0.2,  l: [0.2, 0.4] },   picks: ["dark", "mid", "analogous0"] },
+      { key: "glow",   label: "Eyes or glow", note: "eyes or glow", boost: { s: 0.85, l: [0.55, 0.65] }, picks: ["complementary", "split0", "split1"],
+        tip: "Keep eyes and glow the brightest, most saturated spot on the model. A small bright spot pulls the eye straight to it.",
+        why: { complementary: "{Fam} is the opposite of {base}, so eyes in it stand out the most.",
+               split: "{Fam} is almost opposite {base}. Eyes still stand out, with a softer feel.",
+               accent: "Your colour is neutral, so {fam} eyes or glow stand out without clashing." } },
+      { key: "trim",   label: "Trim",         note: "trim",         boost: { s: 0.5,  l: [0.5, 0.7] },   picks: ["complementary", "analogous0", "light"],
+        tip: "Use one trim colour all over the model so it looks planned. Trim looks best a little lighter or brighter than the armour next to it.",
+        why: { complementary: "{Fam} is the opposite of {base}, so trim in it gives a bold, clear edge.",
+               analogous: "{Fam} sits next to {base} on the colour wheel, so trim in it looks neat and calm.",
+               light: "A pale trim lifts the edges of {base} and makes the shapes easy to read.",
+               accent: "Your colour is neutral, so {fam} trim adds interest without clashing." } },
+      { key: "gems",   label: "Gems",         note: "gems",         boost: { s: 0.75, l: [0.4, 0.55] },  picks: ["triad0", "triad1", "complementary"],
+        tip: "Gems are small, so make them bold. A tiny light dot on one side makes them look shiny.",
+        why: { triad: "{Fam} is spaced evenly round the colour wheel from {base}, so gems in it are rich but don't clash.",
+               complementary: "{Fam} is the opposite of {base}, so gems in it pop as small bright spots.",
+               accent: "Your colour is neutral, so {fam} gems stand out without clashing." } },
+      { key: "weapon", label: "Weapon",       note: "weapon",       boost: { s: 0.3,  l: [0.35, 0.6] },  picks: ["mid", "dark", "analogous1"],
+        tip: "Keep the weapon calmer than the eyes and face, so the eye goes to them first. Dark or mid tones work well.",
+        why: { mid: "A mid grey keeps the weapon calm next to {base}, so the eyes and face stay the focus.",
+               dark: "A dark neutral keeps the weapon quiet next to {base}.",
+               analogous: "{Fam} sits next to {base} on the colour wheel, so the weapon matches the rest of the model." } },
+      { key: "cloth",  label: "Cloth",        note: "cloth",        boost: { s: 0.35, l: [0.25, 0.5] },  picks: ["analogous0", "analogous1", "triad0"],
+        tip: "Cloth looks best in a colour next to your main one. Keep it a little darker or duller than the armour so it doesn't compete.",
+        why: { analogous: "{Fam} cloth sits next to {base} on the colour wheel, so it looks calm and matches.",
+               triad: "{Fam} is spaced evenly round the colour wheel from {base}: lively cloth that doesn't clash." } },
+      { key: "base",   label: "Base",         note: "base",         boost: { s: 0.2,  l: [0.2, 0.4] },   picks: ["dark", "mid", "analogous0"],
+        tip: "Keep the base darker and duller than the model, so the model stands out. Earth and grey tones rarely clash.",
+        why: { dark: "A dark neutral base lets {base} on the model stand out.",
+               mid: "A mid grey base is neutral, so it won't pull the eye away from {base}.",
+               analogous: "{Fam} sits next to {base} on the colour wheel, so the base feels part of the model." } },
     ];
     // If the chosen colour is grey, black or white, "opposite" means nothing, so these accents are offered instead.
     const NEUTRAL_ACCENT_HUES = [25, 195, 330];   // orange, cyan, pink
@@ -6632,12 +6660,15 @@
       return { hex: C.hslToHex(hsl.h, s, l), relation };
     }
 
-    // One short, plain sentence saying why the idea works.
-    function colourIdeaReason(relation, wantedHex, baseHex) {
+    // One short, plain sentence saying why the idea works. v29: where the role has its own wording for this
+    // relation (COLOUR_ROLES[].why) that is used; otherwise the general sentence below.
+    function colourIdeaReason(relation, wantedHex, baseHex, role) {
       const C = MinifolioColour;
       const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
       const fam = C.colourFamily(wantedHex) || "this colour";
       const baseFam = C.colourFamily(baseHex) || "your colour";
+      const own = role && role.why && role.why[relation];
+      if (own) return own.replace(/\{(Fam|fam|base)\}/g, (m, key) => key === "Fam" ? cap(fam) : key === "fam" ? fam : baseFam);
       switch (relation) {
         case "complementary": return `${cap(fam)} is the opposite of ${baseFam} on the colour wheel, so it stands out the most.`;
         case "split": return `${cap(fam)} is nearly opposite ${baseFam}. It still stands out, but looks less harsh than the straight opposite.`;
@@ -6693,6 +6724,111 @@
       notify(`Added step ${d.steps.length}: ${paint.name}`);
     }
 
+    // ---- v29: "Does this scheme hang together?" ----
+    // A rule-of-thumb check of the colours in the recipe being edited. The maths is MinifolioColour.schemeCheck; this
+    // part only turns its answer into short, plain sentences. They are fixed sentences filled in with colour words
+    // only (never paint or recipe names), and they always say it is only a guide.
+    function colourWordList(words) {
+      return words.length < 2 ? (words[0] || "") : words.slice(0, -1).join(", ") + " and " + words[words.length - 1];
+    }
+    const SCHEME_NEEDS_TWO = "Add at least two paints with different colours set (the round colour button in a step), then this check can run.";
+    const SCHEME_ONLY_A_GUIDE = "This is only a guide, not a rule. Plenty of good schemes break these tips, and colours on a screen look different from real paint.";
+
+    // The answer as { verdict, rows: [{ cls, tag, label, text }] }. cls matches the idea tags: own (fine), near (look at this), none (suggestion).
+    function schemeCheckWords(r) {
+      const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+      const rows = [];
+      const n = r.strong.length;
+      const names = colourWordList(r.strong.map(s => s.family));
+      if (r.tooManyStrong) {
+        rows.push({ cls: "near", tag: "Look at this", label: "Strong colours", text: `You have ${n}: ${names}. That many strong colours fight for attention, so the eye has nowhere to rest.` });
+      } else if (n === 0) {
+        rows.push({ cls: "own", tag: "Fine", label: "Strong colours", text: "None. Your colours are calm and muted, which keeps things tidy." });
+      } else {
+        rows.push({ cls: "own", tag: "Fine", label: "Strong colours", text: `${n} (${names}). That is a good number.` });
+      }
+      rows.push(r.flat
+        ? { cls: "near", tag: "Look at this", label: "Light and dark", text: "Your colours are all about the same lightness, so the model may look flat. Add a darker shade or a lighter highlight." }
+        : { cls: "own", tag: "Fine", label: "Light and dark", text: "Your darkest and lightest colours are far enough apart for the model to have depth." });
+      if (r.focus && r.focusKind === "only") {
+        rows.push({ cls: "none", tag: "Suggestion", label: "Focus colour", text: `${cap(r.focus.family)} is your only strong colour, so it is already the star. Keep the rest calmer.` });
+      } else if (r.focus) {
+        rows.push({ cls: "none", tag: "Suggestion", label: "Focus colour", text: `Let ${r.focus.family} be the star. It stands out most against your main colour, ${r.dominant.family}. Use it in small areas and keep the other strong colours darker or duller.` });
+      } else {
+        rows.push({ cls: "none", tag: "Suggestion", label: "Focus colour", text: "Your colours are all calm. For one spot to stand out, make a small area (like the eyes) a stronger colour. The ideas above can suggest one." });
+      }
+      const problems = (r.tooManyStrong ? 1 : 0) + (r.flat ? 1 : 0);
+      const verdict = problems === 0 ? "Yes, this looks like it hangs together."
+        : problems === 1 ? "Nearly. One thing to look at." : "Not quite yet. Two things to look at.";
+      return { verdict, rows };
+    }
+
+    // The check's part of the panel: a title, a button, and (once the button is pressed) the answer.
+    function buildSchemeCheck(bases, onToggle) {
+      const box = document.createElement("div");
+      box.className = "scheme-check";
+      box.id = "scheme-check";
+      const title = document.createElement("h3");
+      title.className = "scheme-title";
+      title.textContent = "Does this scheme hang together?";
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "plain-button";
+      toggle.id = "scheme-check-toggle";
+      toggle.textContent = colourIdeasState.check ? "Hide the check" : "Check this recipe";
+      toggle.setAttribute("aria-expanded", colourIdeasState.check ? "true" : "false");
+      toggle.setAttribute("aria-controls", "scheme-result");
+      toggle.addEventListener("click", onToggle);
+      box.append(title, toggle);
+      if (!colourIdeasState.check) return box;
+
+      const result = document.createElement("div");
+      result.className = "scheme-result";
+      result.id = "scheme-result";
+      const entries = bases.filter(b => colourIdeaIsReal(b.colour)).map(b => ({ colour: b.colour, uses: b.uses }));
+      const answer = MinifolioColour.schemeCheck(entries);
+      if (!answer.enough) {
+        const need = document.createElement("p");
+        need.className = "hint";
+        need.textContent = SCHEME_NEEDS_TWO;
+        result.appendChild(need);
+      } else {
+        const words = schemeCheckWords(answer);
+        const verdict = document.createElement("p");
+        verdict.className = "scheme-verdict";
+        verdict.textContent = words.verdict;
+        const list = document.createElement("ul");
+        list.className = "scheme-list";
+        for (const row of words.rows) {
+          const li = document.createElement("li");
+          const tag = document.createElement("span");
+          tag.className = "idea-tag " + row.cls;
+          tag.textContent = row.tag;
+          const what = document.createElement("span");
+          what.className = "scheme-what";
+          const label = document.createElement("strong");
+          label.textContent = row.label + ": ";
+          what.append(label, row.text);
+          li.append(tag, what);
+          list.appendChild(li);
+        }
+        result.append(verdict, list);
+        const left = bases.length - entries.length;
+        if (left > 0) {
+          const skipped = document.createElement("p");
+          skipped.className = "hint";
+          skipped.textContent = `${left} ${left === 1 ? "paint has" : "paints have"} no colour set, so ${left === 1 ? "it was" : "they were"} left out.`;
+          result.appendChild(skipped);
+        }
+      }
+      const guide = document.createElement("p");
+      guide.className = "hint";
+      guide.textContent = SCHEME_ONLY_A_GUIDE;
+      result.appendChild(guide);
+      box.appendChild(result);
+      return box;
+    }
+
     function buildColourIdeasCard(d) {
       const card = document.createElement("details");
       card.className = "card colour-ideas";
@@ -6731,7 +6867,7 @@
         }
         const role = COLOUR_ROLES.find(r => r.key === colourIdeasState.role) || COLOUR_ROLES[0];
         const look = JSON.stringify([colourIdeasState.base, role.key, bases.map(b => [b.key, b.colour, b.uses]),
-                                     wholeRecipes.map(r => [r.id, r.name, r.colour, r.linked]), ownIsWhole]);
+                                     wholeRecipes.map(r => [r.id, r.name, r.colour, r.linked]), ownIsWhole, colourIdeasState.check]);
         if (look === lastLook && !focusNext) return;   // nothing changed: leave it alone
         lastLook = look;
         body.innerHTML = "";
@@ -6787,6 +6923,15 @@
         }
         body.append(roleLabel, chips);
 
+        // v29: hand-written advice for the chosen role
+        const tip = document.createElement("p");
+        tip.className = "role-tip";
+        tip.id = "colour-ideas-tip";
+        const tipLabel = document.createElement("strong");
+        tipLabel.textContent = "Tip: ";
+        tip.append(tipLabel, role.tip);
+        body.appendChild(tip);
+
         const baseHex = base.colour;
         if (baseHint) {
           const using = document.createElement("p");
@@ -6814,7 +6959,7 @@
         for (const idea of ideas) {
           const paint = idea.hit.paint;
           const tag = colourIdeaTag(idea.hit);
-          const reason = colourIdeaReason(idea.relation, idea.wanted, baseHex);
+          const reason = colourIdeaReason(idea.relation, idea.wanted, baseHex, role);
           const note = colourIdeaNote(idea.hit);
           const li = document.createElement("li");
           const button = document.createElement("button");
@@ -6854,6 +6999,15 @@
           list.appendChild(li);
         }
         body.appendChild(list);
+
+        // v29: "Does this scheme hang together?" (skipped if an older colour.js without schemeCheck is somehow loaded)
+        if (typeof MinifolioColour.schemeCheck === "function") {
+          body.appendChild(buildSchemeCheck(bases, () => {
+            colourIdeasState.check = !colourIdeasState.check;
+            focusNext = "#scheme-check-toggle";
+            draw();
+          }));
+        }
 
         const foot = document.createElement("p");
         foot.className = "hint";
@@ -9969,8 +10123,8 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=28". v21.4 test checks.)
-    const APP_VERSION = "v28";
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=29". v21.4 test checks.)
+    const APP_VERSION = "v29";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -10373,6 +10527,10 @@
     showCountingChoice();
 
     const CHANGELOG = [
+      { version: "v29", date: "15 Oct 2026", changes: [
+        "Pro preview, Colour ideas: each thing you can paint now comes with a short tip written by hand (for example: keep eyes the brightest, most saturated spot on the model), and the reasons under the ideas use that advice where it says it better.",
+        "New check at the bottom of Colour ideas: Does this scheme hang together? It looks at the colours in your recipe and says if there are too many strong colours or no light and dark, and suggests one colour to be the star. It is only a guide. It all runs on your phone, works offline and sends nothing anywhere.",
+      ]},
       { version: "v28", date: "15 Oct 2026", changes: [
         "New Pro preview: Colour ideas, inside a recipe you are writing or editing. Pick a colour from the recipe (or Whole model, the main colour of your Whole model recipe, so ideas go with the whole model and not just this recipe), say what you are painting (eyes or glow, trim, gems, weapon, cloth or base) and you get 3 paint ideas, each with a short reason such as \u201corange is the opposite of blue, so it stands out\u201d.",
         "Each idea says You own this or Closest you own, so paints you already have come first. Tap one to add it to the recipe as a new step. It is free while it is a preview. The colour maths runs on your phone, works offline and sends nothing anywhere.",
