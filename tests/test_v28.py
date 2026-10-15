@@ -1,7 +1,7 @@
 """v28 tests for Minifolio (Coach 2): the "Colour ideas" panel (Pro preview) inside the recipe editor.
 
-In a recipe you are writing or editing: choose the base colour (a paint from the recipe, or "Whole model", the recipe's
-main colour), choose what you are painting (eyes or glow, trim, gems, weapon, cloth, base) and see 3 paint ideas with a
+In a recipe you are writing or editing: choose the base colour (a paint from the recipe, or "Whole model", the main colour of
+your recipe filed under the Whole model part), choose what you are painting (eyes or glow, trim, gems, weapon, cloth, base) and see 3 paint ideas with a
 plain-English reason. Each says "You own this" or "Closest you own". Tapping one adds it to the recipe as a new step.
 All the maths is in colour.js (tested by test_colour_engine.py), which v28 wires into index.html and sw.js.
 
@@ -9,7 +9,8 @@ Checks:
 1. Versions, the Updates entry, colour.js wired in (script tag, offline list), CSP and data unchanged, no new network code.
 2. The panel: heading, Pro preview label, closed to start, 6 roles, base choices, 3 ideas, reasons, owned labels.
 3. The ideas are right: blue armour's glow idea is warm; owned paints come first; no paint twice; the base is never suggested.
-4. Whole model means the colour used in the most steps; a neutral base gets accents; an unset colour is explained.
+4. Whole model: with no Whole model recipe it is this recipe's main colour (colourful beats black primer); a neutral base gets accents; an unset colour is explained.
+4b. Whole model recipes: ideas go with the Whole model recipe's colour, not the recipe being edited; one linked to the same unit wins; several unlinked ones ask you to pick; hostile names are plain text.
 5. Tapping an idea adds a new last step (right paint, 100%, a note), the page keeps working, Save keeps it.
 6. Hostile text: paint names and brands full of HTML are shown as plain text; nothing is injected, no pop-ups.
 7. Empty and odd states: no paints yet, no owned paints, no colour.js (the card just isn't there), no page errors.
@@ -56,11 +57,12 @@ def book(paints=None, recipes=None):
     return {"parts": ["Whole model", "Armour"], "techniques": ["Layer", "Base coat", "Wash"],
             "paints": PAINTS if paints is None else paints, "recipes": recipes or [], "schemes": [], "shorthand": {}, "v15": True}
 
-def load(page, paints=None, settings=None):
+def load(page, paints=None, settings=None, recipes=None, units=None):
     page.goto(URL)
-    page.evaluate("""([b, s]) => { localStorage.clear();
+    page.evaluate("""([b, s, u]) => { localStorage.clear();
         localStorage.setItem('shades-of-grey-recipes', JSON.stringify(b));
-        if (s) localStorage.setItem('shades-of-grey-settings', JSON.stringify(s)); }""", [book(paints), settings])
+        if (u) localStorage.setItem('mini-tracker-models', JSON.stringify(u));
+        if (s) localStorage.setItem('shades-of-grey-settings', JSON.stringify(s)); }""", [book(paints, recipes), settings, units])
     page.evaluate("""async () => { await new Promise(done => { const r = indexedDB.deleteDatabase('shades-of-grey-photos');
         r.onsuccess = r.onerror = r.onblocked = () => done(); }); }""")
     page.reload()
@@ -89,6 +91,23 @@ def set_step_paint(page, step, name, colour=None):
 
 def draft_paints(page):
     return page.evaluate("() => recipeDraft.steps.map(s => s.paints.map(p => [p.name, p.colour, p.mix]))")
+
+def rec(rid, name, part, paint_ids):
+    return {"id": rid, "name": name, "part": part, "notes": "",
+            "steps": [{"technique": "Base coat", "coats": 1, "paints": [{"paint": pid, "mix": None}], "ratio": "", "note": "", "optional": False} for pid in paint_ids]}
+
+def edit_recipe(page, rid):
+    blur(page)
+    page.click('nav button[data-tab="recipes"]')
+    page.wait_for_timeout(150)
+    page.evaluate("(id) => startRecipeDraft(draftFrom(recipeById(id)))", rid)
+    page.wait_for_timeout(300)
+
+def base_labels(page):
+    return page.evaluate("() => [...document.querySelectorAll('#colour-ideas-base option')].map(o => o.textContent)")
+
+def using_text(page):
+    return page.evaluate("() => (document.getElementById('colour-ideas-using') || {}).textContent || ''")
 
 def open_panel(page):
     if not page.evaluate("() => document.getElementById('colour-ideas').open"):
@@ -265,7 +284,7 @@ def main():
         open_panel(page)
         who = page.evaluate("() => { const b = MinifolioColour; return null; }")
         whole = ideas(page)
-        check("Whole model uses the colour used in the most steps (orange here), so the first reason names orange or blue's opposite",
+        check("with no Whole model recipe, Whole model is this recipe's main colour (orange is used most here), so the first reason is about orange",
               whole and ("blue" in whole[0]["why"].lower() and "orange" in whole[0]["why"].lower()), whole)
         page.select_option("#colour-ideas-base", index=1)
         page.wait_for_timeout(150)
@@ -291,6 +310,81 @@ def main():
         page.wait_for_timeout(450)
         check("a paint with no colour set asks you to set it instead of guessing",
               "Set a colour on one of the paints first" in page.inner_text("#colour-ideas .ideas-body"), page.inner_text("#colour-ideas .ideas-body"))
+
+        # ---------- 4b. Whole model recipes ----------
+        print("\n--- 4b. Whole model recipes ---")
+        BLACK = {"id": 40, "brand": "Citadel", "name": "Abaddon Black", "colour": "#231f20", "status": "owned"}
+        P2 = PAINTS + [BLACK]
+        UN = [{"id": 1, "name": "Termagants", "hobby": "40K", "faction": "Tyranids", "stage": 2, "count": 10, "recipes": [11]},
+              {"id": 2, "name": "Hormagaunts", "hobby": "40K", "faction": "Tyranids", "stage": 4, "count": 10}]
+        eyes = rec(11, "Orange eyes", "Eyes", [2])
+        prime_blue = rec(10, "Prime and base", "Whole model", [40, 1])
+        # One Whole model recipe (black primer, then blue): ideas go with BLUE, not the orange eyes recipe's own paints.
+        load(page, paints=P2, recipes=[prime_blue, eyes])
+        edit_recipe(page, 11)
+        open_panel(page)
+        labels = base_labels(page)
+        check("the first choice names your Whole model recipe", labels and labels[0] == "Whole model: Prime and base", labels)
+        check("it says which recipe it is using", "Prime and base" in using_text(page) and using_text(page).startswith("Using the main colour of"), using_text(page))
+        idea = ideas(page)
+        check("ideas go with the blue of the Whole model recipe (the black primer is skipped), not the orange of this recipe",
+              idea and "dark blue" in idea[0]["why"] and "of orange" not in idea[0]["why"], idea)
+        check("the paints in this recipe are still on the list, under their own heading",
+              "Troll Slayer Orange (Citadel)" in labels, labels)
+        page.select_option("#colour-ideas-base", index=len(labels) - 1)
+        page.wait_for_timeout(200)
+        check("choosing this recipe's own paint instead drops the 'Using the main colour' line and bases ideas on orange",
+              using_text(page) == "" and "of orange" in ideas(page)[0]["why"], [using_text(page), ideas(page)])
+        # Editing the Whole model recipe itself: it never bases itself on itself.
+        edit_recipe(page, 10)
+        open_panel(page)
+        check("editing the Whole model recipe itself: no recipe to borrow from, so it uses its own colours",
+              base_labels(page)[0] == "Whole model: none yet, using this recipe" and using_text(page) == "", base_labels(page))
+        check("...and its own main colour is the blue, not the black primer", "dark blue" in ideas(page)[0]["why"], ideas(page))
+        # A new recipe whose part is switched to Whole model while the panel is open follows along.
+        load(page, paints=P2, recipes=[prime_blue, eyes])
+        open_editor(page)
+        set_step_paint(page, 0, "Troll Slayer Orange")
+        open_panel(page)
+        check("a new recipe with no part yet uses the Whole model recipe", base_labels(page)[0] == "Whole model: Prime and base", base_labels(page))
+        page.evaluate("() => { recipeDraft.part = 'Whole model'; recipeIdeasCard.refresh(); }")
+        page.wait_for_timeout(450)
+        check("once its part is Whole model it stops borrowing and uses its own colours",
+              base_labels(page)[0] == "Whole model: none yet, using this recipe" and using_text(page) == "", base_labels(page))
+        # Two Whole model recipes, one linked to the same unit as the recipe being edited: that one wins.
+        prime_red = rec(12, "Hive prime", "Whole model", [7])
+        load(page, paints=P2, recipes=[prime_blue, prime_red, eyes], units=[dict(UN[0], recipes=[11, 12]), UN[1]])
+        edit_recipe(page, 11)
+        open_panel(page)
+        labels = base_labels(page)
+        check("the Whole model recipe linked to the same unit comes first and is chosen",
+              labels[0] == "Whole model: Hive prime" and "Prime and base" in labels, labels)
+        check("no 'pick one' nag when one is clearly the right one", "several Whole model recipes" not in using_text(page), using_text(page))
+        check("its colour (red) drives the ideas: the first reason is about the opposite of red", "red" in ideas(page)[0]["why"].lower(), ideas(page))
+        page.select_option("#colour-ideas-base", value="wm:10")
+        page.wait_for_timeout(200)
+        check("picking the other Whole model recipe switches to it", "Prime and base" in using_text(page) and "dark blue" in ideas(page)[0]["why"], [using_text(page), ideas(page)])
+        # Two Whole model recipes, none linked: it asks you to pick.
+        load(page, paints=P2, recipes=[prime_blue, prime_red, eyes], units=[dict(UN[0], recipes=[11]), UN[1]])
+        edit_recipe(page, 11)
+        open_panel(page)
+        check("two Whole model recipes and none linked: it says to pick the one for this model",
+              "several Whole model recipes" in using_text(page) and "pick the one for this model" in using_text(page), using_text(page))
+        # Hostile recipe name.
+        evil_prime = rec(10, HOSTILE, "Whole model", [40, 1])
+        load(page, paints=P2, recipes=[evil_prime, eyes])
+        edit_recipe(page, 11)
+        open_panel(page)
+        check("a hostile Whole model recipe name is plain text in the list and the 'using' line, and nothing runs",
+              HOSTILE in base_labels(page)[0] and HOSTILE in using_text(page)
+              and page.evaluate("() => document.querySelectorAll('#colour-ideas img, #colour-ideas script, #colour-ideas b, #colour-ideas-base img').length") == 0
+              and page.evaluate("() => window.__pwned") is None and not dialogs, [base_labels(page), using_text(page), dialogs])
+        # A Whole model recipe with no usable colours is ignored.
+        load(page, paints=P2, recipes=[rec(10, "Empty prime", "Whole model", []), eyes])
+        edit_recipe(page, 11)
+        open_panel(page)
+        check("a Whole model recipe with no paints is ignored (back to this recipe's colour)",
+              base_labels(page)[0] == "Whole model: none yet, using this recipe", base_labels(page))
 
         # ---------- 5. Tapping adds a step ----------
         print("\n--- 5. Tapping an idea adds a step ---")

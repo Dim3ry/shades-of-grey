@@ -6570,11 +6570,38 @@
       return [...seen.values()];
     }
 
-    // "Whole model": the colour used in the most steps (the first one if there is a tie).
-    function colourIdeaWholeBase(bases) {
-      let best = null;
-      for (const b of bases) if (colourIdeaIsReal(b.colour) && (!best || b.uses > best.uses)) best = b;
-      return best;
+    // The main colour of a list of { colour, uses }: the one used in the most steps (the first on a tie). Colourful paints
+    // win over black, white and grey ones, so a black primer doesn't make the main colour "black".
+    function colourIdeaMainColour(entries) {
+      let best = null, bestColourful = null;
+      for (const e of entries) {
+        if (!colourIdeaIsReal(e.colour)) continue;
+        const h = MinifolioColour.harmonies(e.colour);
+        if (h && h.hueMeaningful && (!bestColourful || e.uses > bestColourful.uses)) bestColourful = e;
+        if (!best || e.uses > best.uses) best = e;
+      }
+      return bestColourful || best;
+    }
+
+    // "Whole model": your recipes filed under the Whole model part (priming, base coats, all-over steps), each with its
+    // main colour. Recipes linked to the same unit as the one being edited come first. The recipe being edited is left out.
+    function colourIdeaWholeRecipes(d) {
+      const mine = new Set([...(d.linkUnit ? [d.linkUnit] : []), ...(d.id !== null ? unitsUsing(d.id).map(m => m.id) : [])]);
+      const out = [];
+      for (const r of book.recipes) {
+        if (!sameText(r.part, WHOLE_MODEL) || (d.id !== null && r.id === d.id)) continue;
+        const counts = new Map();
+        for (const st of r.steps) for (const sp of st.paints) {
+          const paint = paintById(sp.paint);
+          if (!paint) continue;
+          const e = counts.get(paint.id) || { colour: paint.colour, uses: 0 };
+          e.uses++;
+          counts.set(paint.id, e);
+        }
+        const main = colourIdeaMainColour([...counts.values()]);
+        if (main) out.push({ id: r.id, name: r.name, colour: main.colour, linked: unitsUsing(r.id).some(m => mine.has(m.id)) });
+      }
+      return out.sort((a, b) => (b.linked ? 1 : 0) - (a.linked ? 1 : 0));   // stable: otherwise your own order
     }
 
     // Every paint we may suggest: your palette first, then the built-in list for paints you don't have yet.
@@ -6686,11 +6713,25 @@
       let focusNext = "";
       const draw = () => {
         const bases = colourIdeaBases(d);
-        const whole = colourIdeaWholeBase(bases);
-        let base = colourIdeasState.base === "whole" ? whole : bases.find(b => b.key === colourIdeasState.base);
-        if (!base && colourIdeasState.base !== "whole") { colourIdeasState.base = "whole"; base = whole; }
+        const ownMain = colourIdeaMainColour(bases);
+        const ownIsWhole = sameText(d.part, WHOLE_MODEL);   // writing the Whole model recipe itself: use its own colours
+        const wholeRecipes = ownIsWhole ? [] : colourIdeaWholeRecipes(d);
+        const auto = wholeRecipes[0] || null;               // what "Whole model" means right now
+        const choice = colourIdeasState.base;
+        let base = null, baseHint = "";
+        if (choice.startsWith("wm:")) base = wholeRecipes.find(r => "wm:" + r.id === choice) || null;
+        else if (choice !== "whole") base = bases.find(b => b.key === choice) || null;
+        if (!base) {
+          colourIdeasState.base = "whole";
+          base = auto || ownMain;
+        }
+        if (wholeRecipes.includes(base)) baseHint = `Using the main colour of \u201c${base.name}\u201d.`;
+        if (colourIdeasState.base === "whole" && wholeRecipes.length > 1 && !wholeRecipes[0].linked) {
+          baseHint += " You have several Whole model recipes: pick the one for this model.";
+        }
         const role = COLOUR_ROLES.find(r => r.key === colourIdeasState.role) || COLOUR_ROLES[0];
-        const look = JSON.stringify([colourIdeasState.base, role.key, bases.map(b => [b.key, b.colour, b.uses])]);
+        const look = JSON.stringify([colourIdeasState.base, role.key, bases.map(b => [b.key, b.colour, b.uses]),
+                                     wholeRecipes.map(r => [r.id, r.name, r.colour, r.linked]), ownIsWhole]);
         if (look === lastLook && !focusNext) return;   // nothing changed: leave it alone
         lastLook = look;
         body.innerHTML = "";
@@ -6700,12 +6741,12 @@
         hint.textContent = "Pick a colour from this recipe and what you are painting. You get 3 paints that go with it. Tap one to add it as a new step.";
         body.appendChild(hint);
 
-        if (!bases.length || !whole) {
+        if (!base) {
           const empty = document.createElement("p");
           empty.className = "hint";
           empty.textContent = bases.length
             ? "Set a colour on one of the paints first (the round colour button in a step), then ideas show here."
-            : "Add a paint to a step first. Ideas show here once the recipe has a colour.";
+            : "Add a paint to a step first (or write a Whole model recipe). Ideas show here once there is a colour to start from.";
           body.appendChild(empty);
           return;
         }
@@ -6715,8 +6756,19 @@
         const select = document.createElement("select");
         select.style.width = "100%";
         select.id = "colour-ideas-base";
-        select.add(new Option("Whole model (main colour)", "whole"));
-        for (const b of bases) select.add(new Option(b.brand ? `${b.name} (${b.brand})` : b.name, b.key));
+        select.add(new Option(auto ? `Whole model: ${auto.name}` : "Whole model: none yet, using this recipe", "whole"));
+        if (wholeRecipes.length > 1) {
+          const group = document.createElement("optgroup");
+          group.label = "Other Whole model recipes";
+          for (const r of wholeRecipes.slice(1)) group.appendChild(new Option(r.name, "wm:" + r.id));
+          select.appendChild(group);
+        }
+        if (bases.length) {
+          const group = document.createElement("optgroup");
+          group.label = "Paints in this recipe";
+          for (const b of bases) group.appendChild(new Option(b.brand ? `${b.name} (${b.brand})` : b.name, b.key));
+          select.appendChild(group);
+        }
         select.value = colourIdeasState.base;
         select.addEventListener("change", () => { colourIdeasState.base = select.value; focusNext = "#colour-ideas-base"; draw(); });
         pick.appendChild(select);
@@ -6735,8 +6787,15 @@
         }
         body.append(roleLabel, chips);
 
-        const baseHex = base ? base.colour : "";
-        if (base && !colourIdeaIsReal(baseHex)) {
+        const baseHex = base.colour;
+        if (baseHint) {
+          const using = document.createElement("p");
+          using.className = "hint";
+          using.id = "colour-ideas-using";
+          using.textContent = baseHint;
+          body.appendChild(using);
+        }
+        if (!colourIdeaIsReal(baseHex)) {
           const unset = document.createElement("p");
           unset.className = "hint";
           unset.textContent = "This paint's colour isn't set yet, so it counts as neutral. Tap its round colour button in the step to set it.";
@@ -10315,7 +10374,7 @@
 
     const CHANGELOG = [
       { version: "v28", date: "15 Oct 2026", changes: [
-        "New Pro preview: Colour ideas, inside a recipe you are writing or editing. Pick a colour from the recipe (or Whole model, its main colour), say what you are painting (eyes or glow, trim, gems, weapon, cloth or base) and you get 3 paint ideas, each with a short reason such as \u201corange is the opposite of blue, so it stands out\u201d.",
+        "New Pro preview: Colour ideas, inside a recipe you are writing or editing. Pick a colour from the recipe (or Whole model, the main colour of your Whole model recipe, so ideas go with the whole model and not just this recipe), say what you are painting (eyes or glow, trim, gems, weapon, cloth or base) and you get 3 paint ideas, each with a short reason such as \u201corange is the opposite of blue, so it stands out\u201d.",
         "Each idea says You own this or Closest you own, so paints you already have come first. Tap one to add it to the recipe as a new step. It is free while it is a preview. The colour maths runs on your phone, works offline and sends nothing anywhere.",
       ]},
       { version: "v27", date: "12 Oct 2026", changes: [
