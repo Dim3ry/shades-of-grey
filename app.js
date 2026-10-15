@@ -2442,6 +2442,11 @@
     // matched loosely: capitals, accents and apostrophes don't matter, and a longer name
     // that CONTAINS one of these (e.g. "Space Marines - Ultramarines") still matches.
     // Several spellings can share one colour: "eldar|aeldari|craftworlds".
+    // IP note (ip-tidy): this table DOES exist (older notes said there was no built-in
+    // faction list). The names are only used to recognise what the user types and to
+    // suggest a colour; they are never shown as official schemes. It also feeds
+    // knownFactionNames() (pasted recipe notes). Don't add official scheme names or
+    // artwork here, and don't remove entries without checking both uses and the tests.
     const USUAL_FACTION_COLOURS = {
       // Warhammer 40,000: Imperium
       "ultramarines|space marines|adeptus astartes": "#1f4fa3",
