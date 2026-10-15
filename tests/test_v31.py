@@ -271,9 +271,9 @@ def main():
         tags = re.findall(r'<script src="(early|colour|schemes|detail-recipes|app)\.js\?v=([\d.]+)"></script>', html)
         tags = [t for t in tags if t[0] != "detail-recipes"]   # v32 adds detail-recipes.js between schemes.js and app.js (tests/test_v32.py checks it)
         check("index.html loads early.js, colour.js, schemes.js, then app.js (v32 adds one more tag), all with ?v= matching the version",
-              [t[0] for t in tags] == ["early", "colour", "schemes", "app"] and len(re.findall(r"<script\b", html)) in (4, 5) and all(t[1] == version[1:] for t in tags), tags)
+              [t[0] for t in tags] == ["early", "colour", "schemes", "app"] and len(re.findall(r"<script\b", html)) in (4, 5, 6) and all(t[1] == version[1:] for t in tags), tags)
         check("schemes.js is saved for offline use by sw.js, with the same ?v= tag as the other files",
-              '"./schemes.js" + CODE_TAG' in sw and len(re.findall(r'"\./[a-z-]+\.js" \+ CODE_TAG', sw)) in (4, 5), re.findall(r'"\./[^"]+"', sw))
+              '"./schemes.js" + CODE_TAG' in sw and len(re.findall(r'"\./[a-z-]+\.js" \+ CODE_TAG', sw)) in (4, 5, 6), re.findall(r'"\./[^"]+"', sw))
         check("the comments naming the version number match", f'The "?v={version[1:]}" makes' in html and f'e.g. "app.js?v={version[1:]}"' in app)
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v31')")
         check("Updates has a v31 entry with at least two lines", entry and len(entry["changes"]) >= 2, entry)

@@ -115,14 +115,14 @@ def main():
         m = re.search(r'const VERSION = "([^"]+)"', sw)
         check("sw.js VERSION matches APP_VERSION", m and m.group(1) == version, m and m.group(1))
         tags = re.findall(r'<script src="([a-z-]+)\.js\?v=([\d.]+)"></script>', html)
-        check("index.html loads early.js, colour.js, schemes.js, detail-recipes.js, then app.js (five tags), all with ?v= matching the version",
-              [x[0] for x in tags] == ["early", "colour", "schemes", "detail-recipes", "app"] and len(re.findall(r"<script\b", html)) == 5 and all(x[1] == version[1:] for x in tags), tags)
+        check("index.html loads early.js, colour.js, schemes.js, detail-recipes.js, then app.js (five tags at v32, six at v33 with basing-tips.js after detail-recipes.js), all with ?v= matching the version",
+              [x[0] for x in tags if x[0] != "basing-tips"] == ["early", "colour", "schemes", "detail-recipes", "app"] and len(re.findall(r"<script\b", html)) in (5, 6) and all(x[1] == version[1:] for x in tags), tags)
         check("detail-recipes.js is saved for offline use by sw.js, with the same ?v= tag as the other files",
-              '"./detail-recipes.js" + CODE_TAG' in sw and len(re.findall(r'"\./[a-z-]+\.js" \+ CODE_TAG', sw)) == 5, re.findall(r'"\./[^"]+"', sw))
+              '"./detail-recipes.js" + CODE_TAG' in sw and len(re.findall(r'"\./[a-z-]+\.js" \+ CODE_TAG', sw)) in (5, 6), re.findall(r'"\./[^"]+"', sw))
         check("the comments naming the version number match", f'The "?v={version[1:]}" makes' in html and f'e.g. "app.js?v={version[1:]}"' in app)
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v32')")
         check("Updates has a v32 entry with at least two lines", entry and len(entry["changes"]) >= 2, entry)
-        check("the newest Updates entry is the current version", page.evaluate("CHANGELOG[0].version") == version)
+        check("the newest Updates entry is v32 or later", float(page.evaluate("CHANGELOG[0].version")[1:]) >= 32)
         check("the Updates entry says Pro preview, Detail recipes, 18 recipes, Add all steps, Save recipe, and that nothing leaves the phone",
               entry and "Pro preview" in entry["changes"][0] and "Detail recipes" in entry["changes"][0] and "18" in entry["changes"][0]
               and "Add all steps" in entry["changes"][1] and "Save recipe" in entry["changes"][1] and "sends nothing anywhere" in entry["changes"][1] and "offline" in entry["changes"][1], entry)

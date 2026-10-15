@@ -6528,7 +6528,7 @@
     // draws them. It works offline and sends nothing anywhere. Paint names and brands are always shown as plain
     // text (never as HTML), because they can be anything the user typed or pasted.
     let recipeIdeasCard = null;   // the card in the recipe editor, if it's open
-    let colourIdeasState = { open: false, base: "whole", role: "glow", check: false, scheme: "", mood: "", detail: "", detailGroup: "" };   // kept while the app is open
+    let colourIdeasState = { open: false, base: "whole", role: "glow", check: false, scheme: "", mood: "", detail: "", detailGroup: "", basing: "", basingGroup: "" };   // kept while the app is open
     // Is a finger (or mouse button) down right now? The panel never redraws itself under a press: typing a paint
     // name and then tapping a chip makes the paint box "change" (it fills in the colour) in the middle of that tap,
     // and a redraw there would replace the chip before the tap finished, so the tap would be lost.
@@ -7171,6 +7171,117 @@
       return box;
     }
 
+    // ---- (4) v33: Basing tips ----
+    // The tips (BASING_TIPS, grouped by BASING_GROUPS) live in basing-tips.js, which loads between detail-recipes.js and this file.
+    // Each has a plain list of materials, a few how-to steps and optional paint steps. The materials and how-to steps are only
+    // SHOWN, they never go into a recipe. A paint step names a TARGET COLOUR (a plain colour word and a hex), never a paint, and is
+    // matched exactly like a detail recipe step (nearest paint, yours first, same honest tags and notes). Same rules for the text:
+    // generic, our own words, no brand or product names, no Games Workshop, faction or scheme names. A test scans all of it.
+    function basingTipsShown() {
+      const group = BASING_GROUPS.some(g => g.key === colourIdeasState.basingGroup) ? colourIdeasState.basingGroup : "";
+      return BASING_TIPS.filter(t => !group || t.group === group);
+    }
+
+    function basingPlainList(tag, id, lines) {
+      const list = document.createElement(tag);
+      list.className = "basing-list";
+      list.id = id;
+      for (const line of lines) {
+        const li = document.createElement("li");
+        li.textContent = line;
+        list.appendChild(li);
+      }
+      return list;
+    }
+
+    function buildBasingTips(d, onPick, onGroup) {
+      const box = document.createElement("div");
+      box.className = "basing-tips";
+      box.id = "basing-tips";
+      const title = document.createElement("h3");
+      title.className = "scheme-title";
+      title.textContent = "Basing tips";
+      const hint = document.createElement("p");
+      hint.className = "hint";
+      hint.textContent = "Plain how-tos for the base of a model. Pick a group to shorten the list, then pick a tip to see what you need, how to build it and some optional paint steps with matching paints, yours first. Only the paint steps can be added to your recipe.";
+      const groups = document.createElement("div");
+      groups.className = "chips mood-chips";
+      groups.id = "basing-groups";
+      groups.style.marginTop = "0";
+      groups.setAttribute("role", "group");
+      groups.setAttribute("aria-label", "Show basing tips by group");
+      const activeGroup = BASING_GROUPS.some(g => g.key === colourIdeasState.basingGroup) ? colourIdeasState.basingGroup : "";
+      for (const g of [{ key: "", name: "All" }, ...BASING_GROUPS]) {
+        const chip = makeChip(g.name, g.key === activeGroup, () => onGroup(g.key));
+        chip.dataset.basingGroup = g.key || "all";
+        groups.appendChild(chip);
+      }
+      const chips = document.createElement("div");
+      chips.className = "chips";
+      chips.id = "basing-chips";
+      chips.style.marginTop = "0";
+      for (const t of basingTipsShown()) {
+        const chip = makeChip(t.name, t.key === colourIdeasState.basing, () => onPick(t.key === colourIdeasState.basing ? "" : t.key, t.key));
+        chip.dataset.basing = t.key;
+        chips.appendChild(chip);
+      }
+      box.append(title, hint, groups, chips);
+      const tip = basingTipsShown().find(t => t.key === colourIdeasState.basing);
+      if (!tip) return box;
+
+      const summary = document.createElement("p");
+      summary.className = "starter-summary";
+      summary.id = "basing-summary";
+      summary.textContent = tip.summary;
+      const matTitle = document.createElement("h4");
+      matTitle.className = "basing-sub";
+      matTitle.textContent = "What you need";
+      const howTitle = document.createElement("h4");
+      howTitle.className = "basing-sub";
+      howTitle.textContent = "How to build it";
+      box.append(summary, matTitle, basingPlainList("ul", "basing-materials", tip.materials),
+                 howTitle, basingPlainList("ol", "basing-howto", tip.howto));
+
+      if (!tip.paintSteps.length) {
+        const none = document.createElement("p");
+        none.className = "hint";
+        none.id = "basing-no-paint";
+        none.textContent = "There are no paint steps for this one.";
+        box.appendChild(none);
+        return box;
+      }
+      const paintTitle = document.createElement("h4");
+      paintTitle.className = "basing-sub";
+      paintTitle.textContent = "Paint steps (optional)";
+      box.appendChild(paintTitle);
+      const items = detailRecipePaints({ steps: tip.paintSteps });
+      if (!items.length) {
+        const none = document.createElement("p");
+        none.className = "hint";
+        none.id = "basing-none";
+        none.textContent = "No paints with a known colour to suggest yet. Add paints on Your Palette first.";
+        box.appendChild(none);
+        return box;
+      }
+      const all = document.createElement("button");
+      all.type = "button";
+      all.className = "primary-button";
+      all.id = "basing-add-all";
+      all.textContent = "Add all paint steps";
+      all.setAttribute("aria-label", `Add all ${items.length} paint steps of ${tip.name} to this recipe`);
+      all.addEventListener("click", () => addDetailSteps(d, items));
+      const list = document.createElement("ul");
+      list.className = "idea-list";
+      list.id = "basing-list";
+      items.forEach(({ step, hit }, i) => {
+        const paint = hit.paint;
+        const reason = `Paint step ${i + 1}: ${step.technique}, ${plural(step.coats, "coat")}, ${step.mix}% paint. ${step.look.charAt(0).toUpperCase() + step.look.slice(1)}. ${step.note}`;
+        list.appendChild(buildIdeaItem(paint, colourIdeaTag(hit), reason, colourIdeaNote(hit), () => addDetailSteps(d, [{ step, hit }]), "idea-pick"));
+      });
+      box.append(all, list);
+      return box;
+    }
+
     function buildColourIdeasCard(d) {
       const card = document.createElement("details");
       card.className = "card colour-ideas";
@@ -7216,6 +7327,18 @@
               draw();
             }));
         }
+        // v33: the basing tips come from basing-tips.js, below the detail recipes. If that file is missing, the rest still works.
+        if (typeof BASING_TIPS !== "undefined" && typeof BASING_GROUPS !== "undefined") {
+          body.appendChild(buildBasingTips(d,
+            (key, clicked) => { colourIdeasState.basing = key; focusNext = `[data-basing="${clicked}"]`; draw(); },
+            (group) => {
+              colourIdeasState.basingGroup = group;
+              const picked = BASING_TIPS.find(x => x.key === colourIdeasState.basing);
+              if (picked && group && picked.group !== group) colourIdeasState.basing = "";   // a pick outside the group is put away
+              focusNext = `[data-basing-group="${group || "all"}"]`;
+              draw();
+            }));
+        }
       };
       const draw = () => {
         const bases = colourIdeaBases(d);
@@ -7238,7 +7361,7 @@
         const role = COLOUR_ROLES.find(r => r.key === colourIdeasState.role) || COLOUR_ROLES[0];
         const look = JSON.stringify([colourIdeasState.base, role.key, bases.map(b => [b.key, b.colour, b.uses]),
                                      wholeRecipes.map(r => [r.id, r.name, r.colour, r.linked]), ownIsWhole, colourIdeasState.check, colourIdeasState.scheme, colourIdeasState.mood,
-                                     colourIdeasState.detail, colourIdeasState.detailGroup]);
+                                     colourIdeasState.detail, colourIdeasState.detailGroup, colourIdeasState.basing, colourIdeasState.basingGroup]);
         if (look === lastLook && !focusNext) return;   // nothing changed: leave it alone
         lastLook = look;
         body.innerHTML = "";
@@ -10461,8 +10584,8 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=32". v21.4 test checks.)
-    const APP_VERSION = "v32";
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=33". v21.4 test checks.)
+    const APP_VERSION = "v33";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -10865,6 +10988,10 @@
     showCountingChoice();
 
     const CHANGELOG = [
+      { version: "v33", date: "15 Oct 2026", changes: [
+        "Pro preview, Colour ideas: a new Basing tips part, below Detail recipes. It has 12 plain how-tos for the base of a model: sand, gravel, cracked earth, ash and soot, mud, snow, ice, grass, moss, rock, rubble and lava. Use the group buttons (All, Dry ground, Wet and cold, Plants, Stone and fire) to keep the list short on a phone.",
+        "Pick a tip to see the things you need, the steps to build it, and then some optional paint steps, each with the nearest paint to the colour it needs, yours first, with the same tags as the other ideas: You own this, Closest you own, Not in your palette. Tap one paint to add just that step, or tap Add all paint steps to add them all to the recipe you are writing. The materials and building steps are only shown, they are never added. Nothing is saved until you press Save recipe. It all runs on your phone, works offline and sends nothing anywhere.",
+      ]},
       { version: "v32", date: "15 Oct 2026", changes: [
         "Pro preview, Colour ideas: a new Detail recipes part, below Starter schemes. It has 18 plain how-to recipes for small details: teeth, bone, chitin, skin, blood, rusty, oiled and gold metal, bright steel, verdigris, chips and weathering, leather, cloth, wood, mud, scorch marks, glowing eyes, and gems and lenses. Use the group buttons (All, Body, Metal, Materials, Light) to keep the list short on a phone.",
         "Pick a recipe to see its steps. Each step says how to paint it (technique, coats, how thin) and the nearest paint to the colour it needs, yours first, with the same tags as the schemes: You own this, Closest you own, Not in your palette. Tap Add all steps to add every step to the recipe you are writing, or tap one paint to add just that step. Nothing is saved until you press Save recipe. It all runs on your phone, works offline and sends nothing anywhere.",

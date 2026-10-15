@@ -200,9 +200,9 @@ def main():
         check("sw.js VERSION matches APP_VERSION", m and m.group(1) == version, m and m.group(1))
         tags = re.findall(r'<script src="(early|colour|app)\.js\?v=([\d.]+)"></script>', html)
         check("index.html still loads early.js, colour.js, then app.js (no new file), all with ?v= matching the version",
-              [t[0] for t in tags] == ["early", "colour", "app"] and len(re.findall(r"<script\b", html)) in (3, 4, 5) and all(t[1] == version[1:] for t in tags), tags)
+              [t[0] for t in tags] == ["early", "colour", "app"] and len(re.findall(r"<script\b", html)) in (3, 4, 5, 6) and all(t[1] == version[1:] for t in tags), tags)
         check("sw.js lists the same app files as before (colour.js included) and nothing new", '"./colour.js" + CODE_TAG' in sw
-              and len(re.findall(r'"\./[a-z-]+\.js" \+ CODE_TAG', sw)) in (3, 4, 5), re.findall(r'"\./[^"]+"', sw))
+              and len(re.findall(r'"\./[a-z-]+\.js" \+ CODE_TAG', sw)) in (3, 4, 5, 6), re.findall(r'"\./[^"]+"', sw))
         check("the comment above the script tags names the same number", f'The "?v={version[1:]}" makes' in html)
         check("the comment in app.js names the same number", f'e.g. "app.js?v={version[1:]}"' in app)
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v29')")
