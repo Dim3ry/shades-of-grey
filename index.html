@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=29"></script>
+  <script src="early.js?v=30"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -898,10 +898,10 @@
     .ideas-body .hint { margin: 0; }
     .idea-label { margin: 0; font-size: 13px; color: var(--muted); }
     .idea-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-    button.idea { display: flex; gap: 12px; align-items: flex-start; width: 100%; min-height: 44px; padding: 10px 12px; text-align: left; font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; }
-    button.idea:hover { border-color: var(--accent); }
-    button.idea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-    .idea .swatch { width: 32px; height: 32px; flex: none; margin-top: 2px; }
+    button.idea, button.idea-pick { display: flex; gap: 12px; align-items: flex-start; width: 100%; min-height: 44px; padding: 10px 12px; text-align: left; font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; }
+    button.idea:hover, button.idea-pick:hover { border-color: var(--accent); }
+    button.idea:focus-visible, button.idea-pick:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .idea .swatch, .idea-pick .swatch { width: 32px; height: 32px; flex: none; margin-top: 2px; }
     .idea-text { display: grid; gap: 4px; min-width: 0; flex: 1; }
     .idea-name { font-weight: 600; overflow-wrap: anywhere; }
     .idea-name small { margin-left: 6px; font-weight: 400; color: var(--muted); }
@@ -915,6 +915,10 @@
     /* v29: the tip for the chosen role, and "Does this scheme hang together?" */
     .role-tip { margin: 0; padding: 8px 12px; border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; background: var(--accent-wash); font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
     .role-tip strong { color: var(--accent); }
+    /* v30: your faction history and the starter schemes (rows outside the main three ideas are "idea-pick", same look) */
+    .faction-history, .starter-schemes { display: grid; gap: 10px; padding-top: 12px; border-top: 1px solid var(--border); }
+    .faction-history .hint, .starter-schemes .hint { margin: 0; overflow-wrap: anywhere; }
+    .starter-summary { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
     .scheme-check { display: grid; gap: 10px; padding-top: 12px; border-top: 1px solid var(--border); }
     .scheme-title { margin: 0; font-size: 16px; }
     .scheme-check .plain-button { min-height: 44px; justify-self: start; }
@@ -1727,10 +1731,10 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=29" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=30" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks. -->
-  <script src="colour.js?v=29"></script>
-  <script src="app.js?v=29"></script>
+  <script src="colour.js?v=30"></script>
+  <script src="app.js?v=30"></script>
 </body>
 </html>
