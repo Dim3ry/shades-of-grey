@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=31"></script>
+  <script src="early.js?v=32"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -916,8 +916,8 @@
     .role-tip { margin: 0; padding: 8px 12px; border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; background: var(--accent-wash); font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
     .role-tip strong { color: var(--accent); }
     /* v30: your faction history and the starter schemes (rows outside the main three ideas are "idea-pick", same look) */
-    .faction-history, .starter-schemes { display: grid; gap: 10px; padding-top: 12px; border-top: 1px solid var(--border); }
-    .faction-history .hint, .starter-schemes .hint { margin: 0; overflow-wrap: anywhere; }
+    .faction-history, .starter-schemes, .detail-recipes { display: grid; gap: 10px; padding-top: 12px; border-top: 1px solid var(--border); }
+    .faction-history .hint, .starter-schemes .hint, .detail-recipes .hint { margin: 0; overflow-wrap: anywhere; }
     .starter-summary { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
     /* v31: the mood buttons above the scheme buttons reuse .chip and .chips (still 40 px tall); a little less side padding so all five fit on one line at 360 px */
     .mood-chips { gap: 6px; }
@@ -1734,13 +1734,16 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=31" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=32" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
-       STARTER_MOODS and STARTER_SCHEMES, and does nothing until app.js asks. -->
-  <script src="colour.js?v=31"></script>
-  <script src="schemes.js?v=31"></script>
-  <script src="app.js?v=31"></script>
+       STARTER_MOODS and STARTER_SCHEMES, and does nothing until app.js asks.
+       v32: detail-recipes.js (the detail recipes, plain data) loads between schemes.js and app.js. It only adds two
+       names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks. -->
+  <script src="colour.js?v=32"></script>
+  <script src="schemes.js?v=32"></script>
+  <script src="detail-recipes.js?v=32"></script>
+  <script src="app.js?v=32"></script>
 </body>
 </html>

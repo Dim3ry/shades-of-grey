@@ -5,7 +5,7 @@ is gone from script-src).
 Checks:
 1. Version numbers (plain numbers), sw.js matches, the Updates entry, kept things (CNAME, the ocr
    folder, LICENSE-paint-list.txt, the ZAP workflow), storage names and the data version (still 1).
-2. The files: app.js and early.js exist and load; index.html has exactly two <script> tags (v28: three, with colour.js; v31: four, with schemes.js), both
+2. The files: app.js and early.js exist and load; index.html has exactly two <script> tags (v28: three, with colour.js; v31: four, with schemes.js; v32: five, with detail-recipes.js), both
    pointing at those files with "?v=" + the version, and no code written inside the page; early.js
    sits in <head> before the styles; app.js is last, just before </body>; the app's code (APP_VERSION,
    EXTRA_PAINT_TABLE…) is in app.js, not index.html. sw.js lists both files for offline use.
@@ -106,6 +106,10 @@ def before_drawing(browser, appearance, scheme="dark"):
     page.route("**/app.js*", lambda route: held.append(route))
     page.goto(URL, wait_until="commit")
     page.wait_for_selector("#toast", state="attached", timeout=10000)   # the last thing before app.js
+    for _ in range(200):   # v32: the page asks for app.js only after the scripts before it have loaded (now four of them), so wait until it is held
+        if held:
+            break
+        page.wait_for_timeout(50)
     state = page.evaluate("""() => ({ app: typeof APP_VERSION, mark: document.documentElement.dataset.appearance || '',
         page: getComputedStyle(document.body).backgroundColor })""")
     for route in held:
@@ -155,13 +159,13 @@ def main():
         print("\n--- 2. The new files ---")
         tag = "?v=" + version[1:]
         scripts = re.findall(r"<script\b([^>]*)>(.*?)</script>", html, re.S)
-        check("index.html has exactly four <script> tags (v28: early.js, colour.js, app.js; v31: plus schemes.js)", len(scripts) == 4, len(scripts))
+        check("index.html has exactly five <script> tags (v28: early.js, colour.js, app.js; v31: plus schemes.js; v32: plus detail-recipes.js)", len(scripts) == 5, len(scripts))
         check("both load a file (src=…)", all('src="' in attrs for attrs, _ in scripts), [a for a, _ in scripts])
         check("no code written inside the page (both tags are empty)", all(not body.strip() for _, body in scripts))
         check("no inline onclick= style handlers", not re.search(r"<[^>]+\son[a-z]+\s*=", html))
         check("no javascript: links", "javascript:" not in html.lower())
         srcs = [re.search(r'src="([^"]+)"', a).group(1) for a, _ in scripts if 'src="' in a]
-        check(f"they are early.js{tag}, colour.js{tag} (v28), schemes.js{tag} (v31) then app.js{tag}", srcs == [f"early.js{tag}", f"colour.js{tag}", f"schemes.js{tag}", f"app.js{tag}"], srcs)
+        check(f"they are early.js{tag}, colour.js{tag} (v28), schemes.js{tag} (v31), detail-recipes.js{tag} (v32) then app.js{tag}", srcs == [f"early.js{tag}", f"colour.js{tag}", f"schemes.js{tag}", f"detail-recipes.js{tag}", f"app.js{tag}"], srcs)
         head = html[:html.find("</head>")]
         check("early.js loads in <head>, before the styles", f'src="early.js{tag}"' in head
               and head.find('src="early.js') < head.find("<style"))

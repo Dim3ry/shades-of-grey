@@ -268,15 +268,16 @@ def main():
         check("APP_VERSION is v31 or later", float(version[1:]) >= 31, version)
         m = re.search(r'const VERSION = "([^"]+)"', sw)
         check("sw.js VERSION matches APP_VERSION", m and m.group(1) == version, m and m.group(1))
-        tags = re.findall(r'<script src="(early|colour|schemes|app)\.js\?v=([\d.]+)"></script>', html)
-        check("index.html loads early.js, colour.js, schemes.js, then app.js (four tags), all with ?v= matching the version",
-              [t[0] for t in tags] == ["early", "colour", "schemes", "app"] and len(re.findall(r"<script\b", html)) == 4 and all(t[1] == version[1:] for t in tags), tags)
+        tags = re.findall(r'<script src="(early|colour|schemes|detail-recipes|app)\.js\?v=([\d.]+)"></script>', html)
+        tags = [t for t in tags if t[0] != "detail-recipes"]   # v32 adds detail-recipes.js between schemes.js and app.js (tests/test_v32.py checks it)
+        check("index.html loads early.js, colour.js, schemes.js, then app.js (v32 adds one more tag), all with ?v= matching the version",
+              [t[0] for t in tags] == ["early", "colour", "schemes", "app"] and len(re.findall(r"<script\b", html)) in (4, 5) and all(t[1] == version[1:] for t in tags), tags)
         check("schemes.js is saved for offline use by sw.js, with the same ?v= tag as the other files",
-              '"./schemes.js" + CODE_TAG' in sw and len(re.findall(r'"\./[a-z-]+\.js" \+ CODE_TAG', sw)) == 4, re.findall(r'"\./[^"]+"', sw))
+              '"./schemes.js" + CODE_TAG' in sw and len(re.findall(r'"\./[a-z-]+\.js" \+ CODE_TAG', sw)) in (4, 5), re.findall(r'"\./[^"]+"', sw))
         check("the comments naming the version number match", f'The "?v={version[1:]}" makes' in html and f'e.g. "app.js?v={version[1:]}"' in app)
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v31')")
         check("Updates has a v31 entry with at least two lines", entry and len(entry["changes"]) >= 2, entry)
-        check("the newest Updates entry is the current version", page.evaluate("CHANGELOG[0].version") == version)
+        check("the newest Updates entry is v31 or later", float(page.evaluate("CHANGELOG[0].version")[1:]) >= 31)
         check("the Updates entry says Pro preview, 24 schemes, the four moods and that nothing leaves the phone",
               entry and "Pro preview" in entry["changes"][0] and "24" in entry["changes"][0] and all(w in entry["changes"][0] for w in ["cold", "warm", "dark", "bright"])
               and "sends nothing anywhere" in entry["changes"][1] and "offline" in entry["changes"][1], entry)

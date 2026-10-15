@@ -6528,7 +6528,7 @@
     // draws them. It works offline and sends nothing anywhere. Paint names and brands are always shown as plain
     // text (never as HTML), because they can be anything the user typed or pasted.
     let recipeIdeasCard = null;   // the card in the recipe editor, if it's open
-    let colourIdeasState = { open: false, base: "whole", role: "glow", check: false, scheme: "", mood: "" };   // kept while the app is open
+    let colourIdeasState = { open: false, base: "whole", role: "glow", check: false, scheme: "", mood: "", detail: "", detailGroup: "" };   // kept while the app is open
     // Is a finger (or mouse button) down right now? The panel never redraws itself under a press: typing a paint
     // name and then tapping a chip makes the paint box "change" (it fills in the colour) in the middle of that tap,
     // and a redraw there would replace the chip before the tap finished, so the tap would be lost.
@@ -7063,6 +7063,114 @@
       return box;
     }
 
+    // ---- (3) v32: Detail recipes ----
+    // The recipes (DETAIL_RECIPES, grouped by DETAIL_GROUPS) live in detail-recipes.js, which loads between schemes.js and this
+    // file. Each is a few steps (technique, coats, how thin, one short note) and each step names a TARGET COLOUR (a plain colour
+    // word and a hex), never a paint. Here the target is matched to the nearest paint, yours first, the built-in list after,
+    // with the same honest tags and notes as the starter scheme rows. Same rules for the text as the schemes: generic, our own
+    // words, no Games Workshop, faction or scheme names. A test scans all of it.
+
+    // The nearest paint for each step. Each is { step, hit } where hit is a nearestPaints result. (The same paint may come up
+    // for two steps if it really is the nearest to both, so the tags stay honest.)
+    function detailRecipePaints(recipe) {
+      const pool = colourIdeaPool();
+      const out = [];
+      for (const step of recipe.steps) {
+        const hit = MinifolioColour.nearestPaints(step.hex, pool, { limit: 1, ownedFirst: true })[0];
+        if (hit) out.push({ step, hit });
+      }
+      return out;
+    }
+
+    // Adds steps to the recipe being edited as new last steps, in order, with the technique, coats, mix % and note kept.
+    // Nothing is saved until Save recipe, as usual. One redraw and one message however many steps are added.
+    function addDetailSteps(d, items) {
+      for (const { step, hit } of items) {
+        const paint = hit.paint;
+        d.steps.push({
+          technique: String(step.technique || ""), coats: step.coats, ratio: "", optional: false, note: String(step.note || ""),
+          paints: [{ brand: String(paint.brand || ""), name: String(paint.name || ""), colour: paint.colour, mix: step.mix }],
+        });
+      }
+      if (!items.length) return;
+      colourIdeasState.open = true;
+      renderRecipeEditor();
+      notify(items.length === 1 ? `Added step ${d.steps.length}: ${items[0].hit.paint.name}` : `Added ${items.length} steps (steps ${d.steps.length - items.length + 1} to ${d.steps.length})`);
+    }
+
+    function detailRecipesShown() {
+      const group = DETAIL_GROUPS.some(g => g.key === colourIdeasState.detailGroup) ? colourIdeasState.detailGroup : "";
+      return DETAIL_RECIPES.filter(r => !group || r.group === group);
+    }
+
+    function buildDetailRecipes(d, onPick, onGroup) {
+      const box = document.createElement("div");
+      box.className = "detail-recipes";
+      box.id = "detail-recipes";
+      const title = document.createElement("h3");
+      title.className = "scheme-title";
+      title.textContent = "Detail recipes";
+      const hint = document.createElement("p");
+      hint.className = "hint";
+      hint.textContent = "Plain step-by-step recipes for small details. Pick a group to shorten the list, then pick a recipe to see its steps with matching paints, yours first. Add all steps, or tap one paint to add just that step.";
+      const groups = document.createElement("div");
+      groups.className = "chips mood-chips";
+      groups.id = "detail-groups";
+      groups.style.marginTop = "0";
+      groups.setAttribute("role", "group");
+      groups.setAttribute("aria-label", "Show detail recipes by group");
+      const activeGroup = DETAIL_GROUPS.some(g => g.key === colourIdeasState.detailGroup) ? colourIdeasState.detailGroup : "";
+      for (const g of [{ key: "", name: "All" }, ...DETAIL_GROUPS]) {
+        const chip = makeChip(g.name, g.key === activeGroup, () => onGroup(g.key));
+        chip.dataset.detailGroup = g.key || "all";
+        groups.appendChild(chip);
+      }
+      const chips = document.createElement("div");
+      chips.className = "chips";
+      chips.id = "detail-chips";
+      chips.style.marginTop = "0";
+      for (const r of detailRecipesShown()) {
+        const chip = makeChip(r.name, r.key === colourIdeasState.detail, () => onPick(r.key === colourIdeasState.detail ? "" : r.key, r.key));
+        chip.dataset.detail = r.key;
+        chips.appendChild(chip);
+      }
+      box.append(title, hint, groups, chips);
+      const recipe = detailRecipesShown().find(r => r.key === colourIdeasState.detail);
+      if (!recipe) return box;
+
+      const summary = document.createElement("p");
+      summary.className = "starter-summary";
+      summary.id = "detail-summary";
+      summary.textContent = recipe.summary;
+      box.appendChild(summary);
+      const items = detailRecipePaints(recipe);
+      if (!items.length) {
+        const none = document.createElement("p");
+        none.className = "hint";
+        none.id = "detail-none";
+        none.textContent = "No paints with a known colour to suggest yet. Add paints on Your Palette first.";
+        box.appendChild(none);
+        return box;
+      }
+      const all = document.createElement("button");
+      all.type = "button";
+      all.className = "primary-button";
+      all.id = "detail-add-all";
+      all.textContent = "Add all steps";
+      all.setAttribute("aria-label", `Add all ${items.length} steps of ${recipe.name} to this recipe`);
+      all.addEventListener("click", () => addDetailSteps(d, items));
+      const list = document.createElement("ul");
+      list.className = "idea-list";
+      list.id = "detail-list";
+      items.forEach(({ step, hit }, i) => {
+        const paint = hit.paint;
+        const reason = `Step ${i + 1}: ${step.technique}, ${plural(step.coats, "coat")}, ${step.mix}% paint. ${step.look.charAt(0).toUpperCase() + step.look.slice(1)}. ${step.note}`;
+        list.appendChild(buildIdeaItem(paint, colourIdeaTag(hit), reason, colourIdeaNote(hit), () => addDetailSteps(d, [{ step, hit }]), "idea-pick"));
+      });
+      box.append(all, list);
+      return box;
+    }
+
     function buildColourIdeasCard(d) {
       const card = document.createElement("details");
       card.className = "card colour-ideas";
@@ -7085,16 +7193,29 @@
       const addYourSchemes = () => {
         body.appendChild(buildFactionHistory(d));
         // v31: the schemes come from schemes.js. If that file is somehow missing, the rest of the card still works.
-        if (typeof STARTER_SCHEMES === "undefined" || typeof STARTER_MOODS === "undefined") return;
-        body.appendChild(buildStarterSchemes(d,
-          (key, clicked) => { colourIdeasState.scheme = key; focusNext = `[data-scheme="${clicked}"]`; draw(); },
-          (mood) => {
-            colourIdeasState.mood = mood;
-            const picked = STARTER_SCHEMES.find(x => x.key === colourIdeasState.scheme);
-            if (picked && mood && picked.mood !== mood) colourIdeasState.scheme = "";   // v31: a pick outside the mood is put away
-            focusNext = `[data-mood="${mood || "all"}"]`;
-            draw();
-          }));
+        if (typeof STARTER_SCHEMES !== "undefined" && typeof STARTER_MOODS !== "undefined") {
+          body.appendChild(buildStarterSchemes(d,
+            (key, clicked) => { colourIdeasState.scheme = key; focusNext = `[data-scheme="${clicked}"]`; draw(); },
+            (mood) => {
+              colourIdeasState.mood = mood;
+              const picked = STARTER_SCHEMES.find(x => x.key === colourIdeasState.scheme);
+              if (picked && mood && picked.mood !== mood) colourIdeasState.scheme = "";   // v31: a pick outside the mood is put away
+              focusNext = `[data-mood="${mood || "all"}"]`;
+              draw();
+            }));
+        }
+        // v32: the detail recipes come from detail-recipes.js, below the starter schemes. If that file is missing, the rest still works.
+        if (typeof DETAIL_RECIPES !== "undefined" && typeof DETAIL_GROUPS !== "undefined") {
+          body.appendChild(buildDetailRecipes(d,
+            (key, clicked) => { colourIdeasState.detail = key; focusNext = `[data-detail="${clicked}"]`; draw(); },
+            (group) => {
+              colourIdeasState.detailGroup = group;
+              const picked = DETAIL_RECIPES.find(x => x.key === colourIdeasState.detail);
+              if (picked && group && picked.group !== group) colourIdeasState.detail = "";   // a pick outside the group is put away
+              focusNext = `[data-detail-group="${group || "all"}"]`;
+              draw();
+            }));
+        }
       };
       const draw = () => {
         const bases = colourIdeaBases(d);
@@ -7116,7 +7237,8 @@
         }
         const role = COLOUR_ROLES.find(r => r.key === colourIdeasState.role) || COLOUR_ROLES[0];
         const look = JSON.stringify([colourIdeasState.base, role.key, bases.map(b => [b.key, b.colour, b.uses]),
-                                     wholeRecipes.map(r => [r.id, r.name, r.colour, r.linked]), ownIsWhole, colourIdeasState.check, colourIdeasState.scheme, colourIdeasState.mood]);
+                                     wholeRecipes.map(r => [r.id, r.name, r.colour, r.linked]), ownIsWhole, colourIdeasState.check, colourIdeasState.scheme, colourIdeasState.mood,
+                                     colourIdeasState.detail, colourIdeasState.detailGroup]);
         if (look === lastLook && !focusNext) return;   // nothing changed: leave it alone
         lastLook = look;
         body.innerHTML = "";
@@ -10339,8 +10461,8 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=31". v21.4 test checks.)
-    const APP_VERSION = "v31";
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=32". v21.4 test checks.)
+    const APP_VERSION = "v32";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -10743,6 +10865,10 @@
     showCountingChoice();
 
     const CHANGELOG = [
+      { version: "v32", date: "15 Oct 2026", changes: [
+        "Pro preview, Colour ideas: a new Detail recipes part, below Starter schemes. It has 18 plain how-to recipes for small details: teeth, bone, chitin, skin, blood, rusty, oiled and gold metal, bright steel, verdigris, chips and weathering, leather, cloth, wood, mud, scorch marks, glowing eyes, and gems and lenses. Use the group buttons (All, Body, Metal, Materials, Light) to keep the list short on a phone.",
+        "Pick a recipe to see its steps. Each step says how to paint it (technique, coats, how thin) and the nearest paint to the colour it needs, yours first, with the same tags as the schemes: You own this, Closest you own, Not in your palette. Tap Add all steps to add every step to the recipe you are writing, or tap one paint to add just that step. Nothing is saved until you press Save recipe. It all runs on your phone, works offline and sends nothing anywhere.",
+      ]},
       { version: "v31", date: "15 Oct 2026", changes: [
         "Pro preview, Colour ideas: there are now 24 starter schemes instead of 6, in four moods: cold, warm, dark and bright. New mood buttons (All, Cold, Warm, Dark, Bright) sit above the scheme buttons, so you can show just one mood and keep the list short on a phone. All is the default.",
         "Picking a scheme, the short summary and reason, the four colours, the nearest paint (yours first), the You own this tags and tapping a paint to add a step all work exactly as before. Every scheme is plain colours in our own words, with no official names or artwork. Like the other ideas, it sends nothing anywhere and works offline.",
