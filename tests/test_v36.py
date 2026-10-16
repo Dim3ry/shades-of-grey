@@ -32,6 +32,7 @@ from playwright.sync_api import sync_playwright
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
 import test_v31 as t   # the helpers (loading the app, the palette, the colours) and the Games Workshop word lists
+from combo_helpers import pick_combo   # v37 part 2: "Start from" is a search box now
 
 SHOTS, ROOT = t.SHOTS, t.ROOT
 read, load, blur, edit_recipe, open_panel = t.read, t.load, t.blur, t.edit_recipe, t.open_panel
@@ -84,6 +85,11 @@ def open_comp(page):
     blur(page)
     page.click('nav button[data-tab="compendium"]')
     page.wait_for_timeout(200)
+    # v37: the five parts under the wheel fold and start closed; open them so the rest of the Compendium can be checked as before
+    for key in ["ideas", "history", "starter", "detail", "basing"]:
+        if page.get_attribute(f"#cmp-fold-{key}-button", "aria-expanded") != "true":
+            page.click(f"#cmp-fold-{key}-button")
+    page.wait_for_timeout(100)
 
 def tap(page, key):
     page.click(f'[data-wheel="{key}"]')
@@ -142,7 +148,7 @@ def main():
               re.findall(r'"\./([^"?]*)', files) == ["", "index.html", "app.js", "early.js", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js", "manifest.json", "icon-192.png", "icon-512.png", "ocr/ocr-worker.js"],
               re.findall(r'"\./([^"?]*)', files))
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v36')")
-        check("Updates has a v36 entry that is the newest", entry and page.evaluate("CHANGELOG[0].version") == "v36", entry)
+        check("Updates has a v36 entry, and the newest entry is v36 or later", entry and float(page.evaluate("CHANGELOG[0].version")[1:]) >= 36, entry)
         joined = " ".join(entry["changes"]) if entry else ""
         check("the Updates entry says colour wheel, Compendium, Pro preview, You own this, Show other paints, gold, silver and bronze, offline and sends nothing anywhere",
               all(w in joined for w in ["colour wheel", "Compendium", "Pro preview", "You own this", "Show other paints", "gold, silver and bronze", "offline", "sends nothing anywhere"]), joined[:300])
@@ -198,13 +204,13 @@ def main():
 
         # ---------- 3. Where paints land ----------
         print("\n--- 3. Where paints land ---")
-        table = [("#c1272d", "Test Red", None, "red/red"), ("#ff69b4", "Test Pink", None, "red/red"), ("#ff6a00", "Bright Orange", None, "orange/orange"),
+        table = [("#c1272d", "Test Red", None, "red/red"), ("#ff69b4", "Test Pink", None, "red/pink"), ("#ff6a00", "Bright Orange", None, "orange/orange"),
                  ("#4a2d12", "Dark Brown", None, "orange/brown"), ("#84443a", "Red Brown", None, "orange/brown"), ("#7a4a1f", "Gold Brown", None, "orange/brown"),
                  ("#e6c82e", "Sun", None, "yellow/yellow"), ("#d9cba4", "Pale Bone", None, "yellow/bone"),
-                 ("#228b22", "Forest", None, "green/green"), ("#5a5a28", "Dark Olive", None, "green/green"), ("#313a29", "Bronze Green", None, "green/green"),
-                 ("#2fb5a8", "Teal", None, "blue/blue"), ("#3b6fb0", "Mid Blue", None, "blue/blue"), ("#7b2d8b", "Deep Purple", None, "purple/purple"),
-                 ("#ffffff", "Pure White", None, "white/white"), ("#e8eef2", "Snow", None, "white/white"),
-                 ("#8a9099", "Mid Grey", None, "grey/grey"), ("#0b0d10", "Near Black", None, "black/black"), ("#0b1220", "Dark Navy", None, "black/black"),
+                 ("#228b22", "Forest", None, "green/green"), ("#5a5a28", "Dark Olive", None, "green/olive"), ("#313a29", "Bronze Green", None, "green/green"),
+                 ("#2fb5a8", "Teal", None, "blue/blue"), ("#3b6fb0", "Mid Blue", None, "blue/blue"), ("#7b2d8b", "Deep Purple", None, "purple/violet"),
+                 ("#ffffff", "Pure White", None, "white/neutral"), ("#e8eef2", "Snow", None, "white/cool"),
+                 ("#8a9099", "Mid Grey", None, "grey/cool"), ("#0b0d10", "Near Black", None, "black/neutral"), ("#0b1220", "Dark Navy", None, "black/cool"),
                  ("#c9a227", "Pale Gold", None, "metallic/gold"), ("#b8bec6", "Steel Wool", None, "metallic/silver"), ("#b4693a", "Copper Pot", None, "metallic/bronze"),
                  ("#8d9299", "Test Metallic", None, "metallic/silver"), ("#c8a06a", "Odd Shine", "metallic", "metallic/bronze"), ("#6a6d73", "Iron Grey", None, "metallic/silver"),
                  ("#c75b12", "Iron Orange", None, "orange/orange"),
@@ -266,13 +272,19 @@ def main():
         groups = page.evaluate(GROUPS_JS)
         names = [r["name"] for g in groups for r in g["rows"]]
         tags = [r["tag"] for g in groups for r in g["rows"]]
-        check("Blue first shows only your own palette (the other paints are behind a button): 5 blue paints of yours", len(names) == 5 and len(groups) == 1, names)
-        check("yours come first, marked You own this, then the wishlist and the empty one",
-              tags == ["You own this"] * 3 + ["On your wishlist", "In your palette, not owned"], tags)
+        whys = [r["why"] for g in groups for r in g["rows"]]
+        heads = [g["heading"] for g in groups if g["heading"]]
+        check("Blue first shows only your own palette (the other paints are behind a button): 5 blue paints of yours, in three groups (v37 part 2)",
+              len(names) == 5 and heads == ["Navy and deep blue (1)", "Blues (3)", "Sky and pale blue (1)"], (names, heads))
+        by_group = {g["heading"]: [(r["name"], r["tag"]) for r in g["rows"]] for g in groups if g["heading"]}
+        check("yours come first in each group, marked You own this, then the wishlist and the empty one",
+              by_group["Blues (3)"] == [("Mid Test Blue", "You own this"), ("Wish Blue", "On your wishlist"), ("Empty Blue", "In your palette, not owned")]
+              and by_group["Navy and deep blue (1)"] == [("Deep Test Blue", "You own this")] and by_group["Sky and pale blue (1)"] == [("Pale Test Blue", "You own this")], by_group)
         lab = lambda n: page.evaluate("(c) => MinifolioColour.hexToLab(c).L", COLOUR_OF[n])
-        owned_L = [lab(n) for n in names[:3]]
-        check("your own paints run dark to light: Deep, Mid, Pale", names[:3] == ["Deep Test Blue", "Mid Test Blue", "Pale Test Blue"] and owned_L == sorted(owned_L), (names, owned_L))
-        check("the reason line gives the tone and the colour (for example Very dark blue.)", groups[0]["rows"][0]["why"] == "Very dark blue." and groups[0]["rows"][2]["why"] in ("Light blue.", "Very light blue."), [r["why"] for r in groups[0]["rows"]])
+        owned = [n for n, tg in zip(names, tags) if tg == "You own this"]
+        owned_L = [lab(n) for n in owned]
+        check("your own paints run dark to light across the groups: Deep, Mid, Pale", owned == ["Deep Test Blue", "Mid Test Blue", "Pale Test Blue"] and owned_L == sorted(owned_L), (owned, owned_L))
+        check("the reason line gives the tone and the colour (for example Very dark blue.)", whys[0] == "Very dark blue." and whys[4] in ("Light blue.", "Very light blue."), whys)
         count_line = page.inner_text("#cmp-wheel-detail .idea-label")
         built_in_blue = page.evaluate("() => wheelItems().filter(x => x.at.seg === 'blue' && x.origin === 2).length")
         check("the count is honest: You own 3 of (5 of yours + the built-in ones)", count_line == f"You own 3 of {5 + built_in_blue} paints in this colour.", count_line)
@@ -280,22 +292,34 @@ def main():
         check("the other paints are behind one button that says how many", btn == f"Show other paints ({built_in_blue})" and page.get_attribute("#cmp-wheel-others", "aria-expanded") == "false", btn)
         page.click("#cmp-wheel-others")
         page.wait_for_timeout(150)
+        check("the button now says Hide and the built-in paints are in, but each group still stops after its first few (v37 part 2: Show all N)",
+              page.inner_text("#cmp-wheel-others") == "Hide other paints" and page.get_attribute("#cmp-wheel-others", "aria-expanded") == "true"
+              and len(page.evaluate(GROUPS_JS)) > 1 and page.locator('#cmp-wheel-detail button[id^="cmp-wheel-more-"]').count() >= 1)
+        for _ in range(6):   # open every group fully so the whole list can be checked
+            more = page.locator('#cmp-wheel-detail button[id^="cmp-wheel-more-"][aria-expanded="false"]')
+            if not more.count():
+                break
+            more.first.click()
+            page.wait_for_timeout(80)
         groups = page.evaluate(GROUPS_JS)
         all_rows = [r for g in groups for r in g["rows"]]
-        check("Show other paints adds the built-in blues after yours, and the button now says Hide", len(all_rows) == 5 + built_in_blue and page.inner_text("#cmp-wheel-others") == "Hide other paints" and page.get_attribute("#cmp-wheel-others", "aria-expanded") == "true")
-        rest = [r for r in all_rows[5:]]
-        check("every built-in paint is tagged Not in your palette", all(r["tag"] == "Not in your palette" for r in rest) and len(rest) == built_in_blue)
-        lights = page.evaluate("""() => [...document.querySelectorAll('#cmp-wheel-detail .idea-static')].slice(5).map(b => MinifolioColour.hexToLab(b.querySelector('.swatch').style.getPropertyValue('--swatch')).L)""")
-        check("the built-in paints also run dark to light", lights == sorted(lights) and len(lights) == built_in_blue, lights[:6])
-        check("the focus stays on the button after it is pressed", page.evaluate("() => document.activeElement.id") == "cmp-wheel-others")
+        check("Show other paints adds the built-in blues after yours (all of them once every group is opened)", len(all_rows) == 5 + built_in_blue, (len(all_rows), built_in_blue))
+        rest = [r for r in all_rows if r["tag"] == "Not in your palette"]
+        check("every built-in paint is tagged Not in your palette", len(rest) == built_in_blue and all(r["tag"] != "Not in your palette" for r in all_rows if r not in rest))
+        per_group_lights = page.evaluate("""() => { const out = []; let cur = null; for (const el of document.querySelectorAll('#cmp-wheel-detail > h4.wheel-sub, #cmp-wheel-detail > ul.idea-list')) {
+            if (el.tagName === 'H4') { cur = []; out.push(cur); continue; }
+            for (const b of el.querySelectorAll('.idea-static')) if (b.querySelector('.idea-tag').textContent === 'Not in your palette') cur.push(MinifolioColour.hexToLab(b.querySelector('.swatch').style.getPropertyValue('--swatch')).L); }
+            return out; }""")
+        check("the built-in paints also run dark to light inside each group", all(g == sorted(g) for g in per_group_lights) and sum(len(g) for g in per_group_lights) == built_in_blue, [g[:4] for g in per_group_lights])
         page.click("#cmp-wheel-others")
         page.wait_for_timeout(150)
-        check("Hide other paints puts them away again", len(page.evaluate(GROUPS_JS)[0]["rows"]) == 5)
+        check("the focus stays on the button after it is pressed", page.evaluate("() => document.activeElement.id") == "cmp-wheel-others")
+        check("Hide other paints puts them away again", sum(len(g["rows"]) for g in page.evaluate(GROUPS_JS)) == 5)
 
         tap(page, "orange")
         groups = page.evaluate(GROUPS_JS)
         heads = [g["heading"] for g in groups]
-        check("Orange has two groups, Oranges then Browns, each with its count", heads == ["Oranges (2)", "Browns (2)"], heads)
+        check("Orange shows two groups with these paints, Browns then Oranges (dark to light, v37 part 2), each with its count", heads == ["Browns (2)", "Oranges (2)"], heads)
         by = {g["heading"].split(" (")[0]: [r["name"] for r in g["rows"]] for g in groups}
         check("browns sit under orange (as their own group), dark to light; owned oranges first", by["Browns"] == ["Dark Brown Test", "Light Brown Test"] and by["Oranges"] == ["Test Orange", "Wish Orange"], by)
         tap(page, "red")
@@ -350,14 +374,13 @@ def main():
         open_comp(page)
         tap(page, "orange")
         page.click("#cmp-wheel-others")
-        page.select_option("#cmp-colour-ideas-base", index=1)
-        page.wait_for_timeout(150)
+        pick_combo(page, "#cmp-colour-ideas-base", index=1)
         dupes = page.evaluate("() => { const ids = [...document.querySelectorAll('[id]')].map(e => e.id); return ids.filter((x, i) => ids.indexOf(x) !== i); }")
         check("no page id appears twice with the wheel open next to the rest of the Compendium", not dupes, dupes[:5])
         check("every id the wheel adds starts with cmp- (so the recipe editor can never clash)",
               page.evaluate("() => [...document.querySelectorAll('#cmp-wheel-block [id], #cmp-wheel-block + * [id]')].filter(e => e.closest('#cmp-wheel-block')).every(e => e.id.startsWith('cmp-'))"))
         check("the rest of the Compendium still works with the wheel open (choose a colour, get 3 ideas, and the wheel stays open)",
-              page.locator("#compendium-body > .idea-list .idea-static").count() == 3 and open_key(page) == "orange" and page.locator("#cmp-wheel-detail").count() == 1)
+              page.locator("#cmp-fold-ideas-panel > .idea-list .idea-static").count() == 3 and open_key(page) == "orange" and page.locator("#cmp-wheel-detail").count() == 1)
         page.click('#compendium-body [data-role="trim"]')
         page.wait_for_timeout(150)
         check("changing the role redraws the page and the wheel keeps its choice (and its other-paints switch)", open_key(page) == "orange" and page.get_attribute("#cmp-wheel-others", "aria-expanded") == "true")
@@ -421,7 +444,7 @@ def main():
         tap(page, "blue")
         check("a hostile paint name and brand never become markup in the blue list and no script runs",
               page.locator("#view-compendium img, #view-compendium script, #view-compendium b, #view-compendium iframe").count() == 0 and page.evaluate("() => window.__pwned") is None)
-        blue_rows = page.evaluate(GROUPS_JS)[0]["rows"]
+        blue_rows = [r for g in page.evaluate(GROUPS_JS) for r in g["rows"]]   # v37 part 2: the blues are in three groups now
         check("it shows as plain text instead", any("<img src=x" in r["name"] for r in blue_rows) and "<script>" in page.inner_text("#cmp-wheel-detail"), [r["name"] for r in blue_rows][:5])
         tap(page, "metallic")
         check("the same in the metallics (a hostile name with a metal word in it)", page.locator("#view-compendium img, #view-compendium script, #view-compendium b").count() == 0
@@ -479,6 +502,12 @@ def main():
             tap(page, "orange")
             page.click("#cmp-wheel-others")
             page.wait_for_timeout(200)
+            for _ in range(6):   # v37 part 2: each group stops after its first few paints, so open every group to get the longest list
+                more = page.locator('#cmp-wheel-detail button[id^="cmp-wheel-more-"][aria-expanded="false"]')
+                if not more.count():
+                    break
+                more.first.click()
+                page.wait_for_timeout(80)
             check(f"at {width} px nothing scrolls sideways with the longest list open (every orange and brown)", no_sideways(page) and page.locator("#cmp-wheel-detail .idea-static").count() > 100)
             outside = page.evaluate("""() => { const c = document.querySelector('#view-compendium .card').getBoundingClientRect();
                 return [...document.querySelectorAll('#cmp-wheel-block *')].filter(e => { const r = e.getBoundingClientRect();
@@ -531,7 +560,8 @@ def main():
             page.wait_for_timeout(120)
             check(f"the {tab} tab opens its own page and hides the others", page.is_visible(f"#{view}") and sum(page.is_visible(f"#{v}") for v in ["view-dashboard", "view-units", "view-recipes", "view-settings", "view-compendium"]) == 1)
         open_comp(page)
-        ids = page.evaluate("() => [...document.querySelectorAll('#compendium-body > *')].map(e => e.id).filter(Boolean)")
+        # v37: the five parts now sit under folding headings (each opened by open_comp), so look inside them as well as at the top level
+        ids = page.evaluate("() => [...document.querySelectorAll('#compendium-body > *, #compendium-body .fold-panel > *')].map(e => e.id).filter(Boolean)")
         want = ["cmp-intro", "cmp-wheel-block", "cmp-colour-ideas-none", "cmp-faction-history", "cmp-starter-schemes", "cmp-detail-recipes", "cmp-basing-tips", "cmp-foot"]
         check("the rest of the Compendium is all still there, in the same order, after the wheel", [i for i in ids if i in want] == want, ids)
         check("the card in a recipe has no wheel and still starts closed", (lambda: (load(page, paints=WPAINTS, recipes=[rec(1, "R", "Armour", [1])]), t.open_editor(page), page.evaluate("() => [document.getElementById('colour-ideas').open, document.querySelectorAll('#view-recipes .wheel-svg').length]"))[-1])() == [False, 0])

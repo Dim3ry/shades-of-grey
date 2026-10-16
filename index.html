@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=36"></script>
+  <script src="early.js?v=37"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -940,6 +940,43 @@
     .wheel-detail .hint { margin: 0; overflow-wrap: anywhere; }
     .wheel-detail .plain-button { min-height: 44px; justify-self: start; }
     .wheel-sub { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
+    /* v37: the folding parts of the Compendium. Each heading is a full-width button; the panel under it is empty and hidden until opened. */
+    .fold { display: grid; gap: 10px; }
+    .fold-head { margin: 0; font-size: 16px; }
+    .fold-button { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 48px; padding: 10px 14px; text-align: left; font: inherit; font-weight: 600; color: var(--text); background: var(--card); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; }
+    .fold-button:hover { border-color: var(--accent); }
+    .fold-button[aria-expanded="true"] { border-color: var(--accent); }
+    .fold-mark { flex: none; width: 10px; height: 10px; margin-right: 4px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg) translate(-2px, -2px); transition: transform .15s; }
+    .fold-button[aria-expanded="true"] .fold-mark { transform: rotate(-135deg) translate(-2px, -2px); }
+    .fold-panel { display: grid; gap: 10px; }
+    .fold-panel[hidden] { display: none; }
+    .fold-panel > .faction-history, .fold-panel > .starter-schemes, .fold-panel > .detail-recipes, .fold-panel > .basing-tips { border-top: 0; padding-top: 0; }
+    /* v37: the Themes | Combinations switch: two equal buttons side by side */
+    .view-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .view-switch .chip { justify-content: center; min-height: 44px; }
+    /* v37 part 2: the search boxes. A box you type in with a list under it (Start from, Faction), and a plain search box above a list of buttons. */
+    .combo, .list-search { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+    .combo-label { font-size: 13px; color: var(--muted); }
+    .combo-row { display: flex; gap: 8px; align-items: stretch; }
+    .combo-input { flex: 1 1 0; width: 0; min-width: 0; min-height: 44px; }   /* width 0 so the box never makes its row wider than the screen */
+    .combo-input::placeholder { color: var(--muted); opacity: 1; }
+    .combo-input:disabled { opacity: 0.5; }
+    .combo-toggle, .combo-clear { flex: none; min-height: 44px; }
+    .combo-toggle { width: 44px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+    .combo-clear { padding: 0 14px; }
+    .combo-clear[hidden] { display: none; }
+    .combo-mark { width: 9px; height: 9px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg) translate(-2px, -2px); transition: transform .15s; }
+    .combo-toggle[aria-expanded="true"] .combo-mark { transform: rotate(-135deg) translate(-2px, -2px); }
+    .combo-list { position: relative; list-style: none; margin: 0; padding: 4px; max-height: 288px; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+                  background: var(--card); border: 1px solid var(--border); border-radius: 10px; }
+    .combo-list[hidden] { display: none; }
+    .combo-group { padding: 8px 10px 4px; font-size: 12px; font-weight: 600; letter-spacing: .02em; color: var(--muted); }
+    .combo-option { min-height: 44px; display: flex; align-items: center; padding: 8px 10px; border-radius: 8px; font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; cursor: pointer; }
+    .combo-option:hover { background: var(--accent-wash); }
+    .combo-option[aria-selected="true"] { font-weight: 600; color: var(--accent); }
+    .combo-option.is-active { background: var(--accent-wash); outline: 2px solid var(--accent); outline-offset: -2px; }
+    .combo-status, .list-search-status { margin: 0; min-height: 1.4em; }
+    .list-search-status:empty { display: none; }
     /* v29: the tip for the chosen role, and "Does this scheme hang together?" */
     .role-tip { margin: 0; padding: 8px 12px; border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; background: var(--accent-wash); font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
     .role-tip strong { color: var(--accent); }
@@ -1352,7 +1389,7 @@
             <li>Check the <strong>Dashboard</strong> to see how far you've got.</li>
             <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
           </ol>
-          <p id="help-tabs" style="margin: 8px 0 0;">There are five tabs along the bottom: <strong>Dashboard</strong>, <strong>Units</strong>, <strong>Recipes</strong>, <strong>Compendium</strong> and <strong>Settings</strong>. Compendium (a Pro preview) has a colour wheel (tap a colour to see its paints), colour ideas, starter schemes, detail recipes and basing tips, all without needing a recipe. Help and Updates live inside Settings: open it and use the <strong>Settings / Help / Updates</strong> switch at the top. The app remembers which page you were on.</p>
+          <p id="help-tabs" style="margin: 8px 0 0;">There are five tabs along the bottom: <strong>Dashboard</strong>, <strong>Units</strong>, <strong>Recipes</strong>, <strong>Compendium</strong> and <strong>Settings</strong>. Compendium (a Pro preview) has a colour wheel (tap a colour to see its paints, split into groups), then colour ideas, your schemes, starter schemes, detail recipes and basing tips, each under a heading you tap to open and close, all without needing a recipe. Starter schemes has a Themes | Combinations switch. Start from and Faction are boxes you can type in, and the lists of schemes, recipes and tips have a search box. Help and Updates live inside Settings: open it and use the <strong>Settings / Help / Updates</strong> switch at the top. The app remembers which page you were on.</p>
           <p id="help-back" style="margin: 8px 0 0;">The phone's <strong>Back</strong> button closes what's open first, one thing per press: a question box (it counts as No), a photo, the camera, a recipe, the paste box. Then it goes to the Dashboard. On the Dashboard, with nothing open, it leaves the app.</p>
         </details>
         <details>
@@ -1774,7 +1811,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=36" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=37" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -1783,10 +1820,10 @@
        names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks.
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=36"></script>
-  <script src="schemes.js?v=36"></script>
-  <script src="detail-recipes.js?v=36"></script>
-  <script src="basing-tips.js?v=36"></script>
-  <script src="app.js?v=36"></script>
+  <script src="colour.js?v=37"></script>
+  <script src="schemes.js?v=37"></script>
+  <script src="detail-recipes.js?v=37"></script>
+  <script src="basing-tips.js?v=37"></script>
+  <script src="app.js?v=37"></script>
 </body>
 </html>
