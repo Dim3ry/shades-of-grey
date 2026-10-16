@@ -387,7 +387,7 @@ def main():
         help_text = page.evaluate("document.getElementById('view-help').textContent")
         check("Help explains moving several units at once",
               "Move several units at once" in help_text and "Select all shown" in help_text)
-        check("Help explains a faction followed by a part", "Ultramarines armour" in help_text)
+        check("Help explains a faction followed by a part", "Blue Army armour" in help_text)
         page.evaluate("settings.appearance = 'light'; applyPalette(); render();")
         tab(page, "units")
         page.click("#toggle-select")

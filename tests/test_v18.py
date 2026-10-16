@@ -146,7 +146,7 @@ def main():
             "'Do you own these?' with All / None / Let me pick": ["Do you own these?", "All", "None", "Let me pick"],
             "✕ to leave a step, part or note out": ["✕", "step", "part's name", "note", "Read again"],
             "✎ to change a step's technique, mix ratio or paints": ["✎", "technique", "mix ratio", "Change…", "paints"],
-            "'and' between two paints": ["Ushabti Bone and Wraithbone"],
+            "'and' between two paints": ["Bone and Pale Bone"],
             "nothing is saved until Save": ["nothing is saved until"],
         }
         for what, words in wants.items():

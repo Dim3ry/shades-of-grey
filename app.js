@@ -261,10 +261,19 @@
 
     // Example units, only used the very first time (when nothing is saved yet).
     // v21: each carries "example: true", so the "These are examples" card can find them.
+    // v34 (IP tidy): plain, made-up names instead of well-known game, faction and unit names.
     const EXAMPLES = [
-      { id: 1, name: "Captain", hobby: "40K", faction: "Ultramarines", stage: 3, count: 1, example: true },
-      { id: 2, name: "Boyz", hobby: "40K", faction: "Orks", stage: 0, count: 10, example: true },
-      { id: 3, name: "Liberators", hobby: "Age of Sigmar", faction: "Stormcast Eternals", stage: 6, count: 5, example: true },
+      { id: 1, name: "Captain", hobby: "Sci-fi", faction: "Blue army", stage: 3, count: 1, example: true },
+      { id: 2, name: "Brutes", hobby: "Sci-fi", faction: "Green army", stage: 0, count: 10, example: true },
+      { id: 3, name: "Guardians", hobby: "Fantasy", faction: "Gold army", stage: 6, count: 5, example: true },
+    ];
+    // The examples v21 to v33 started people with. Only used to RECOGNISE units already saved
+    // with these names (the one-off check below, and the backup reminder), so nothing a user
+    // has saved is read differently. Never added to anyone's data.
+    const LEGACY_EXAMPLES = [
+      { id: 1, name: "Captain", hobby: "40K", faction: "Ultramarines" },
+      { id: 2, name: "Boyz", hobby: "40K", faction: "Orks" },
+      { id: 3, name: "Liberators", hobby: "Age of Sigmar", faction: "Stormcast Eternals" },
     ];
 
     // v24: is this the very first visit (no units and no recipes saved yet)? Only then do the
@@ -285,9 +294,9 @@
     // (Saved by the start-up render(), units and settings together.)
     if (!settings.examplesChecked) {
       for (const m of models) {
-        const e = EXAMPLES.find(x => x.id === m.id);
-        if (e && m.name === e.name && m.hobby === e.hobby && m.faction === e.faction &&
-            !m.photos && !m.photo && !m.recipes && !m.nickname && !m.copy) m.example = true;
+        const isExample = EXAMPLES.concat(LEGACY_EXAMPLES).some(x => x.id === m.id && m.name === x.name &&
+          m.hobby === x.hobby && m.faction === x.faction);
+        if (isExample && !m.photos && !m.photo && !m.recipes && !m.nickname && !m.copy) m.example = true;
       }
       settings.examplesChecked = true;
     }
@@ -2442,6 +2451,11 @@
     // matched loosely: capitals, accents and apostrophes don't matter, and a longer name
     // that CONTAINS one of these (e.g. "Space Marines - Ultramarines") still matches.
     // Several spellings can share one colour: "eldar|aeldari|craftworlds".
+    // IP note (ip-tidy): this table DOES exist (older notes said there was no built-in
+    // faction list). The names are only used to recognise what the user types and to
+    // suggest a colour; they are never shown as official schemes. It also feeds
+    // knownFactionNames() (pasted recipe notes). Don't add official scheme names or
+    // artwork here, and don't remove entries without checking both uses and the tests.
     const USUAL_FACTION_COLOURS = {
       // Warhammer 40,000: Imperium
       "ultramarines|space marines|adeptus astartes": "#1f4fa3",
@@ -3873,7 +3887,7 @@
 
     // ----- v24: EXAMPLE RECIPES AND PAINTS -----
     // A brand-new start (no units saved yet, an empty recipe book) also gets two example recipes,
-    // and the Citadel paints they use appear in Your Palette. A card on the Recipes tab says so,
+    // and the (made-up, plain-named) example paints they use appear in Your Palette. A card on the Recipes tab says so,
     // with "Clear examples" (Undo for 8 seconds) and "Keep them". Anyone who already had data is
     // left alone. The marks are "example: true" on a recipe or a paint; older versions keep
     // unknown fields, so nothing here changes the shape of saved data (DATA_VERSION stays 1).
@@ -3882,21 +3896,23 @@
     // Example paints never appear on the shopping list. Each example recipe is linked to the
     // example unit it suits (Captain, Boyz), so you can see how recipes and units connect.
     const EXAMPLE_RECIPES = [
-      { name: "Ultramarines armour", part: "Armour", unit: 1,
+      // v34 (IP tidy): made-up paints with no brand and a plain colour name (third item = colour),
+      // so nothing here names a real paint, faction or unit. "Example" keeps them from matching real paints.
+      { name: "Blue armour", part: "Armour", unit: 1,
         notes: "An example recipe, to show how they look. Clear it when you're ready to write your own.",
         steps: [
-          { technique: "Base coat", coats: 2, paints: [["Citadel", "Macragge Blue"]] },
-          { technique: "Shade", coats: 1, paints: [["Citadel", "Nuln Oil"]] },
-          { technique: "Layer", coats: 1, paints: [["Citadel", "Calgar Blue"]] },
-          { technique: "Edge highlight", coats: 1, paints: [["Citadel", "Fenrisian Grey"]] },
+          { technique: "Base coat", coats: 2, paints: [["", "Example deep blue", "#1f3f8f"]] },
+          { technique: "Shade", coats: 1, paints: [["", "Example dark wash", "#2a2a2e"]] },
+          { technique: "Layer", coats: 1, paints: [["", "Example mid blue", "#2f62c4"]] },
+          { technique: "Edge highlight", coats: 1, paints: [["", "Example pale grey", "#cfd3d8"]] },
         ] },
-      { name: "Ork skin", part: "Skin", unit: 2,
+      { name: "Green skin", part: "Skin", unit: 2,
         notes: "An example recipe, to show how they look. Clear it when you're ready to write your own.",
         steps: [
-          { technique: "Base coat", coats: 2, paints: [["Citadel", "Waaagh! Flesh"]] },
-          { technique: "Shade", coats: 1, paints: [["Citadel", "Agrax Earthshade"]] },
-          { technique: "Layer", coats: 1, paints: [["Citadel", "Warboss Green"]] },
-          { technique: "Edge highlight", coats: 1, paints: [["Citadel", "Skarsnik Green"]] },
+          { technique: "Base coat", coats: 2, paints: [["", "Example mid green", "#4f7a2b"]] },
+          { technique: "Shade", coats: 1, paints: [["", "Example brown wash", "#4a3320"]] },
+          { technique: "Layer", coats: 1, paints: [["", "Example bright green", "#6fa03a"]] },
+          { technique: "Edge highlight", coats: 1, paints: [["", "Example pale green", "#b7d28a"]] },
         ] },
     ];
     function seedExampleRecipes() {
@@ -3906,8 +3922,8 @@
       for (const ex of EXAMPLE_RECIPES) {
         const steps = ex.steps.map(s => ({
           technique: s.technique, coats: s.coats,
-          paints: s.paints.map(([brand, name]) => {
-            const paint = findOrAddPaint(brand, name, "");
+          paints: s.paints.map(([brand, name, colour]) => {
+            const paint = findOrAddPaint(brand, name, colour || "");
             paint.example = true;
             return { paint: paint.id, mix: null };
           }),
@@ -6227,6 +6243,10 @@
       stepsCard.appendChild(addStep);
       recipePage.appendChild(stepsCard);
 
+      // v28: "Colour ideas" (Pro preview): 3 paint ideas that go with a colour in this recipe.
+      recipeIdeasCard = (typeof MinifolioColour !== "undefined") ? buildColourIdeasCard(d) : null;
+      if (recipeIdeasCard) recipePage.appendChild(recipeIdeasCard);
+
       // v18c: paints that are new to your palette: "Do you own these?" (All to start with).
       d.own = d.own || newOwnChoice();
       recipeOwnCard = buildOwnCard(d.own, () => draftNewPaints(d));
@@ -6517,6 +6537,984 @@
     }
 
 
+    // ================= v28: "COLOUR IDEAS" (Pro preview) =================
+    // In the recipe editor: pick a colour from the recipe (or "Whole model", the recipe's main colour), say what
+    // you're painting, and see 3 paint ideas, each with a plain-English reason. Tap one to add it as a new step.
+    // All the colour maths lives in colour.js (MinifolioColour). This part only decides which ideas to ask for and
+    // draws them. It works offline and sends nothing anywhere. Paint names and brands are always shown as plain
+    // text (never as HTML), because they can be anything the user typed or pasted.
+    let recipeIdeasCard = null;   // the card in the recipe editor, if it's open
+    let colourIdeasState = { open: false, base: "whole", role: "glow", check: false, scheme: "", mood: "", detail: "", detailGroup: "", basing: "", basingGroup: "" };   // kept while the app is open
+    // Is a finger (or mouse button) down right now? The panel never redraws itself under a press: typing a paint
+    // name and then tapping a chip makes the paint box "change" (it fills in the colour) in the middle of that tap,
+    // and a redraw there would replace the chip before the tap finished, so the tap would be lost.
+    let colourIdeasPressing = false;
+    for (const [name, down] of [["pointerdown", true], ["pointerup", false], ["pointercancel", false]]) {
+      document.addEventListener(name, () => { colourIdeasPressing = down; }, true);
+    }
+
+    // What each role asks for. "boost" lifts a too-dull idea (dark blue armour's opposite is a muddy brown,
+    // which makes poor eyes): s = least colour strength, l = lightest and darkest allowed.
+    // v29: "tip" is hand-written advice for the role, shown when the role is chosen. "why" holds role-specific reasons
+    // that replace the generic reason on an idea where they say it better (the key is the idea's relation to the colour:
+    // complementary, split, analogous, triad, accent, dark, mid, light). {Fam} / {fam} is the idea's colour word and {base}
+    // the chosen colour's word, both from colourFamily. Paint and recipe names never go into a reason.
+    const COLOUR_ROLES = [
+      { key: "glow",   label: "Eyes or glow", note: "eyes or glow", boost: { s: 0.85, l: [0.55, 0.65] }, picks: ["complementary", "split0", "split1"],
+        tip: "Keep eyes and glow the brightest, most saturated spot on the model. A small bright spot pulls the eye straight to it.",
+        why: { complementary: "{Fam} is the opposite of {base}, so eyes in it stand out the most.",
+               split: "{Fam} is almost opposite {base}. Eyes still stand out, with a softer feel.",
+               accent: "Your colour is neutral, so {fam} eyes or glow stand out without clashing." } },
+      { key: "trim",   label: "Trim",         note: "trim",         boost: { s: 0.5,  l: [0.5, 0.7] },   picks: ["complementary", "analogous0", "light"],
+        tip: "Use one trim colour all over the model so it looks planned. Trim looks best a little lighter or brighter than the armour next to it.",
+        why: { complementary: "{Fam} is the opposite of {base}, so trim in it gives a bold, clear edge.",
+               analogous: "{Fam} sits next to {base} on the colour wheel, so trim in it looks neat and calm.",
+               light: "A pale trim lifts the edges of {base} and makes the shapes easy to read.",
+               accent: "Your colour is neutral, so {fam} trim adds interest without clashing." } },
+      { key: "gems",   label: "Gems",         note: "gems",         boost: { s: 0.75, l: [0.4, 0.55] },  picks: ["triad0", "triad1", "complementary"],
+        tip: "Gems are small, so make them bold. A tiny light dot on one side makes them look shiny.",
+        why: { triad: "{Fam} is spaced evenly round the colour wheel from {base}, so gems in it are rich but don't clash.",
+               complementary: "{Fam} is the opposite of {base}, so gems in it pop as small bright spots.",
+               accent: "Your colour is neutral, so {fam} gems stand out without clashing." } },
+      { key: "weapon", label: "Weapon",       note: "weapon",       boost: { s: 0.3,  l: [0.35, 0.6] },  picks: ["mid", "dark", "analogous1"],
+        tip: "Keep the weapon calmer than the eyes and face, so the eye goes to them first. Dark or mid tones work well.",
+        why: { mid: "A mid grey keeps the weapon calm next to {base}, so the eyes and face stay the focus.",
+               dark: "A dark neutral keeps the weapon quiet next to {base}.",
+               analogous: "{Fam} sits next to {base} on the colour wheel, so the weapon matches the rest of the model." } },
+      { key: "cloth",  label: "Cloth",        note: "cloth",        boost: { s: 0.35, l: [0.25, 0.5] },  picks: ["analogous0", "analogous1", "triad0"],
+        tip: "Cloth looks best in a colour next to your main one. Keep it a little darker or duller than the armour so it doesn't compete.",
+        why: { analogous: "{Fam} cloth sits next to {base} on the colour wheel, so it looks calm and matches.",
+               triad: "{Fam} is spaced evenly round the colour wheel from {base}: lively cloth that doesn't clash." } },
+      { key: "base",   label: "Base",         note: "base",         boost: { s: 0.2,  l: [0.2, 0.4] },   picks: ["dark", "mid", "analogous0"],
+        tip: "Keep the base darker and duller than the model, so the model stands out. Earth and grey tones rarely clash.",
+        why: { dark: "A dark neutral base lets {base} on the model stand out.",
+               mid: "A mid grey base is neutral, so it won't pull the eye away from {base}.",
+               analogous: "{Fam} sits next to {base} on the colour wheel, so the base feels part of the model." } },
+    ];
+    // If the chosen colour is grey, black or white, "opposite" means nothing, so these accents are offered instead.
+    const NEUTRAL_ACCENT_HUES = [25, 195, 330];   // orange, cyan, pink
+
+    function colourIdeaIsReal(hex) {
+      return MinifolioColour.isHex(hex) && String(hex).toLowerCase() !== DEFAULT_PAINT_COLOUR;
+    }
+
+    // The distinct paints written in the recipe being edited, with how many steps use each.
+    function colourIdeaBases(d) {
+      const seen = new Map();
+      for (const s of d.steps) for (const p of s.paints) {
+        const name = String(p.name || "").trim();
+        if (!name) continue;
+        const brand = tidyBrand(p.brand);   // "CitadelCitadel" (typed over the filled-in brand) shows as "Citadel"
+        const key = sameKey(brand) + "|" + sameKey(name);
+        const entry = seen.get(key) || { key, name, brand, colour: p.colour, uses: 0 };
+        entry.uses++;
+        if (!colourIdeaIsReal(entry.colour) && colourIdeaIsReal(p.colour)) entry.colour = p.colour;
+        seen.set(key, entry);
+      }
+      return [...seen.values()];
+    }
+
+    // The main colour of a list of { colour, uses }: the one used in the most steps (the first on a tie). Colourful paints
+    // win over black, white and grey ones, so a black primer doesn't make the main colour "black".
+    function colourIdeaMainColour(entries) {
+      let best = null, bestColourful = null;
+      for (const e of entries) {
+        if (!colourIdeaIsReal(e.colour)) continue;
+        const h = MinifolioColour.harmonies(e.colour);
+        if (h && h.hueMeaningful && (!bestColourful || e.uses > bestColourful.uses)) bestColourful = e;
+        if (!best || e.uses > best.uses) best = e;
+      }
+      return bestColourful || best;
+    }
+
+    // "Whole model": your recipes filed under the Whole model part (priming, base coats, all-over steps), each with its
+    // main colour. Recipes linked to the same unit as the one being edited come first. The recipe being edited is left out.
+    function colourIdeaWholeRecipes(d) {
+      const mine = new Set([...(d.linkUnit ? [d.linkUnit] : []), ...(d.id !== null ? unitsUsing(d.id).map(m => m.id) : [])]);
+      const out = [];
+      for (const r of book.recipes) {
+        if (!sameText(r.part, WHOLE_MODEL) || (d.id !== null && r.id === d.id)) continue;
+        const counts = new Map();
+        for (const st of r.steps) for (const sp of st.paints) {
+          const paint = paintById(sp.paint);
+          if (!paint) continue;
+          const e = counts.get(paint.id) || { colour: paint.colour, uses: 0 };
+          e.uses++;
+          counts.set(paint.id, e);
+        }
+        const main = colourIdeaMainColour([...counts.values()]);
+        if (main) out.push({ id: r.id, name: r.name, colour: main.colour, linked: unitsUsing(r.id).some(m => mine.has(m.id)) });
+      }
+      return out.sort((a, b) => (b.linked ? 1 : 0) - (a.linked ? 1 : 0));   // stable: otherwise your own order
+    }
+
+    // Every paint we may suggest: your palette first, then the built-in list for paints you don't have yet.
+    function colourIdeaPool() {
+      const have = new Set(book.paints.map(p => sameKey(p.name)));
+      return [...book.paints, ...KNOWN_PAINTS.filter(k => !have.has(sameKey(k.name)))];
+    }
+
+    // The colour an idea is aiming for, before we look for the nearest paint.
+    function colourIdeaWanted(harmony, role, pick, hueSlot) {
+      const C = MinifolioColour;
+      if (pick === "dark" || pick === "mid" || pick === "light") {
+        return { hex: harmony.neutrals[{ dark: 0, mid: 1, light: 2 }[pick]], relation: pick };
+      }
+      let hex, relation;
+      if (!harmony.hueMeaningful) {
+        hex = C.hslToHex(NEUTRAL_ACCENT_HUES[hueSlot % NEUTRAL_ACCENT_HUES.length], 0.8, 0.5);
+        relation = "accent";
+      } else {
+        hex = { complementary: harmony.complementary, split0: harmony.split[0], split1: harmony.split[1],
+                triad0: harmony.triad[0], triad1: harmony.triad[1],
+                analogous0: harmony.analogous[0], analogous1: harmony.analogous[1] }[pick];
+        relation = pick.replace(/\d$/, "");
+      }
+      const hsl = C.hexToHsl(hex);
+      const s = Math.max(hsl.s, role.boost.s);
+      const l = Math.min(role.boost.l[1], Math.max(role.boost.l[0], hsl.l));
+      return { hex: C.hslToHex(hsl.h, s, l), relation };
+    }
+
+    // One short, plain sentence saying why the idea works. v29: where the role has its own wording for this
+    // relation (COLOUR_ROLES[].why) that is used; otherwise the general sentence below.
+    function colourIdeaReason(relation, wantedHex, baseHex, role) {
+      const C = MinifolioColour;
+      const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+      const fam = C.colourFamily(wantedHex) || "this colour";
+      const baseFam = C.colourFamily(baseHex) || "your colour";
+      const own = role && role.why && role.why[relation];
+      if (own) return own.replace(/\{(Fam|fam|base)\}/g, (m, key) => key === "Fam" ? cap(fam) : key === "fam" ? fam : baseFam);
+      switch (relation) {
+        case "complementary": return `${cap(fam)} is the opposite of ${baseFam} on the colour wheel, so it stands out the most.`;
+        case "split": return `${cap(fam)} is nearly opposite ${baseFam}. It still stands out, but looks less harsh than the straight opposite.`;
+        case "analogous": return `${cap(fam)} sits right next to ${baseFam} on the colour wheel, so it blends in calmly.`;
+        case "triad": return `${cap(fam)} is spaced evenly round the colour wheel from ${baseFam}: lively, but it doesn't clash.`;
+        case "accent": return `Your colour is neutral, so a ${fam} accent stands out without clashing.`;
+        case "dark": return `A dark neutral stays quietly in the background next to ${baseFam}.`;
+        case "mid": return `A mid grey sits comfortably beside ${baseFam} without competing with it.`;
+        default: return `A pale neutral gives ${baseFam} a clean, light edge.`;
+      }
+    }
+
+    // Up to 3 ideas for a base colour and a role. Each is { wanted, relation, hit } where hit is a nearestPaints result.
+    function colourIdeas(d, baseHex, role) {
+      const C = MinifolioColour;
+      const harmony = C.harmonies(baseHex);
+      if (!harmony) return [];
+      const pool = colourIdeaPool();
+      const skip = [baseHex];
+      for (const s of d.steps) for (const p of s.paints) if (MinifolioColour.isHex(p.colour)) skip.push(p.colour);
+      const out = [];
+      let slot = 0;
+      for (const pick of role.picks) {
+        const wanted = colourIdeaWanted(harmony, role, pick, slot);
+        if (!["dark", "mid", "light"].includes(pick)) slot++;
+        // Paints you own come first, and the same paint is never suggested twice.
+        const hit = C.nearestPaints(wanted.hex, pool, { limit: 1, ownedFirst: true, exclude: [...skip, ...out.map(o => o.hit.paint.colour)] })[0];
+        if (hit) out.push({ wanted: wanted.hex, relation: wanted.relation, hit });
+      }
+      return out;
+    }
+
+    // The words under a suggestion that say how far to trust the match.
+    function colourIdeaTag(hit) {
+      if (!hit.owned) return { cls: "none", text: "Not in your palette" };
+      return hit.quality === "good" ? { cls: "own", text: "You own this" } : { cls: "near", text: "Closest you own" };
+    }
+    function colourIdeaNote(hit) {
+      if (hit.quality === "poor") return "Not very close. It is the nearest we found.";
+      if (hit.quality === "close") return "Similar, not exact.";
+      if (hit.approximate) return "Close enough. This kind of paint looks different on the model than in the pot.";
+      return "";
+    }
+
+    // Adds the idea to the recipe being edited as a new last step. (v30: the step's note is passed in, so the same
+    // function serves the ideas, the faction history and the starter schemes.)
+    function addColourIdeaStep(d, paint, noteText) {
+      d.steps.push({
+        technique: "", coats: 1, ratio: "", optional: false, note: noteText,
+        paints: [{ brand: String(paint.brand || ""), name: String(paint.name || ""), colour: paint.colour, mix: 100 }],
+      });
+      colourIdeasState.open = true;
+      renderRecipeEditor();
+      notify(`Added step ${d.steps.length}: ${paint.name}`);
+    }
+
+    // ---- v29: "Does this scheme hang together?" ----
+    // A rule-of-thumb check of the colours in the recipe being edited. The maths is MinifolioColour.schemeCheck; this
+    // part only turns its answer into short, plain sentences. They are fixed sentences filled in with colour words
+    // only (never paint or recipe names), and they always say it is only a guide.
+    function colourWordList(words) {
+      return words.length < 2 ? (words[0] || "") : words.slice(0, -1).join(", ") + " and " + words[words.length - 1];
+    }
+    const SCHEME_NEEDS_TWO = "Add at least two paints with different colours set (the round colour button in a step), then this check can run.";
+    const SCHEME_ONLY_A_GUIDE = "This is only a guide, not a rule. Plenty of good schemes break these tips, and colours on a screen look different from real paint.";
+
+    // The answer as { verdict, rows: [{ cls, tag, label, text }] }. cls matches the idea tags: own (fine), near (look at this), none (suggestion).
+    function schemeCheckWords(r) {
+      const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+      const rows = [];
+      const n = r.strong.length;
+      const names = colourWordList(r.strong.map(s => s.family));
+      if (r.tooManyStrong) {
+        rows.push({ cls: "near", tag: "Look at this", label: "Strong colours", text: `You have ${n}: ${names}. That many strong colours fight for attention, so the eye has nowhere to rest.` });
+      } else if (n === 0) {
+        rows.push({ cls: "own", tag: "Fine", label: "Strong colours", text: "None. Your colours are calm and muted, which keeps things tidy." });
+      } else {
+        rows.push({ cls: "own", tag: "Fine", label: "Strong colours", text: `${n} (${names}). That is a good number.` });
+      }
+      rows.push(r.flat
+        ? { cls: "near", tag: "Look at this", label: "Light and dark", text: "Your colours are all about the same lightness, so the model may look flat. Add a darker shade or a lighter highlight." }
+        : { cls: "own", tag: "Fine", label: "Light and dark", text: "Your darkest and lightest colours are far enough apart for the model to have depth." });
+      if (r.focus && r.focusKind === "only") {
+        rows.push({ cls: "none", tag: "Suggestion", label: "Focus colour", text: `${cap(r.focus.family)} is your only strong colour, so it is already the star. Keep the rest calmer.` });
+      } else if (r.focus) {
+        rows.push({ cls: "none", tag: "Suggestion", label: "Focus colour", text: `Let ${r.focus.family} be the star. It stands out most against your main colour, ${r.dominant.family}. Use it in small areas and keep the other strong colours darker or duller.` });
+      } else {
+        rows.push({ cls: "none", tag: "Suggestion", label: "Focus colour", text: "Your colours are all calm. For one spot to stand out, make a small area (like the eyes) a stronger colour. The ideas above can suggest one." });
+      }
+      const problems = (r.tooManyStrong ? 1 : 0) + (r.flat ? 1 : 0);
+      const verdict = problems === 0 ? "Yes, this looks like it hangs together."
+        : problems === 1 ? "Nearly. One thing to look at." : "Not quite yet. Two things to look at.";
+      return { verdict, rows };
+    }
+
+    // The check's part of the panel: a title, a button, and (once the button is pressed) the answer.
+    function buildSchemeCheck(bases, onToggle) {
+      const box = document.createElement("div");
+      box.className = "scheme-check";
+      box.id = "scheme-check";
+      const title = document.createElement("h3");
+      title.className = "scheme-title";
+      title.textContent = "Does this scheme hang together?";
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "plain-button";
+      toggle.id = "scheme-check-toggle";
+      toggle.textContent = colourIdeasState.check ? "Hide the check" : "Check this recipe";
+      toggle.setAttribute("aria-expanded", colourIdeasState.check ? "true" : "false");
+      toggle.setAttribute("aria-controls", "scheme-result");
+      toggle.addEventListener("click", onToggle);
+      box.append(title, toggle);
+      if (!colourIdeasState.check) return box;
+
+      const result = document.createElement("div");
+      result.className = "scheme-result";
+      result.id = "scheme-result";
+      const entries = bases.filter(b => colourIdeaIsReal(b.colour)).map(b => ({ colour: b.colour, uses: b.uses }));
+      const answer = MinifolioColour.schemeCheck(entries);
+      if (!answer.enough) {
+        const need = document.createElement("p");
+        need.className = "hint";
+        need.textContent = SCHEME_NEEDS_TWO;
+        result.appendChild(need);
+      } else {
+        const words = schemeCheckWords(answer);
+        const verdict = document.createElement("p");
+        verdict.className = "scheme-verdict";
+        verdict.textContent = words.verdict;
+        const list = document.createElement("ul");
+        list.className = "scheme-list";
+        for (const row of words.rows) {
+          const li = document.createElement("li");
+          const tag = document.createElement("span");
+          tag.className = "idea-tag " + row.cls;
+          tag.textContent = row.tag;
+          const what = document.createElement("span");
+          what.className = "scheme-what";
+          const label = document.createElement("strong");
+          label.textContent = row.label + ": ";
+          what.append(label, row.text);
+          li.append(tag, what);
+          list.appendChild(li);
+        }
+        result.append(verdict, list);
+        const left = bases.length - entries.length;
+        if (left > 0) {
+          const skipped = document.createElement("p");
+          skipped.className = "hint";
+          skipped.textContent = `${left} ${left === 1 ? "paint has" : "paints have"} no colour set, so ${left === 1 ? "it was" : "they were"} left out.`;
+          result.appendChild(skipped);
+        }
+      }
+      const guide = document.createElement("p");
+      guide.className = "hint";
+      guide.textContent = SCHEME_ONLY_A_GUIDE;
+      result.appendChild(guide);
+      box.appendChild(result);
+      return box;
+    }
+
+    // ================= v30: "YOUR SCHEMES" (Pro preview) =================
+    // Two more parts of the Colour ideas card, built the same way as the ideas above (same look, same tags, same tap to
+    // add a step, same honesty about what you own):
+    //  (1) Colours you've used on this faction before: worked out from your own saved recipes only. Recipes are linked to
+    //      units and units have a faction, so it finds the units in the same faction as this recipe, takes the paints in the
+    //      other recipes linked to those units, and lists them most-used first. No new data is stored anywhere.
+    //  (2) Starter schemes: a few hand-written, generic colour schemes (plain colours, plain words). There are no Games
+    //      Workshop names, faction names, scheme names or artwork in them. Tapping one shows its colours as paints.
+    // Everything runs on the phone, works offline and sends nothing anywhere. Faction, paint and recipe names are always
+    // shown as plain text (never as HTML), because they can be anything the user typed or pasted.
+
+    // One tappable idea row (swatch, name, brand, tag, reason, optional note, "+ Add as a step"). Used by every list.
+    // v30: rows outside the main three ideas carry the class "idea-pick" instead of "idea" (same look, see index.html).
+    function buildIdeaItem(paint, tag, reason, note, onAdd, extraClass) {
+      const li = document.createElement("li");
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = extraClass || "idea";
+      button.setAttribute("aria-label", `Add ${paint.name} as a new step. ${tag.text}. ${reason}`);
+      const text = document.createElement("span");
+      text.className = "idea-text";
+      const name = document.createElement("span");
+      name.className = "idea-name";
+      name.append(paint.name);
+      if (paint.brand) {
+        const brand = document.createElement("small");
+        brand.textContent = paint.brand;
+        name.appendChild(brand);
+      }
+      const tagEl = document.createElement("span");
+      tagEl.className = "idea-tag " + tag.cls;
+      tagEl.textContent = tag.text;
+      const why = document.createElement("span");
+      why.className = "idea-why";
+      why.textContent = reason;
+      text.append(name, tagEl, why);
+      if (note) {
+        const noteEl = document.createElement("span");
+        noteEl.className = "idea-note";
+        noteEl.textContent = note;
+        text.appendChild(noteEl);
+      }
+      const add = document.createElement("span");
+      add.className = "idea-add";
+      add.textContent = "+ Add as a step";
+      text.appendChild(add);
+      button.append(makeSwatch(paint.colour), text);
+      button.addEventListener("click", onAdd);
+      li.appendChild(button);
+      return li;
+    }
+
+    // ---- (1) Colours you've used on this faction before ----
+    const FACTION_HISTORY_SHOWN = 6;   // the most-used paints shown; a line says when there are more
+    const factionKey = (text) => plainQuotes(String(text || "")).trim().toLowerCase();   // same rule as sameText
+
+    // The faction(s) of the recipe being edited: those of the units that use it, plus the unit it will be linked to
+    // when saved (a new recipe started from a unit). A Map of lowercase key -> the name as first typed. Empty = none.
+    function colourHistoryFactions(d) {
+      const units = d.id !== null ? unitsUsing(d.id).slice() : [];
+      if (d.linkUnit) {
+        const unit = models.find(m => m.id === d.linkUnit);
+        if (unit && !units.includes(unit)) units.push(unit);
+      }
+      const found = new Map();
+      for (const unit of units) {
+        const name = String(unit.faction || "").trim();
+        if (name && !found.has(factionKey(name))) found.set(factionKey(name), name);
+      }
+      return found;
+    }
+
+    // The paints in your other recipes that are linked to units of those factions, most-used first. "Used" counts the units
+    // that have a recipe with the paint (then recipes, then name, so the order never jumps about). The recipe being edited
+    // is left out (it is not "before"), and so are paints already in the draft (the same paint is never suggested twice).
+    // Returns { total, list } where total counts every paint found and list leaves out the ones already in the draft.
+    function colourHistoryPaints(d, factions) {
+      const used = new Map();   // palette paint id -> { paint, units, recipes }
+      for (const unit of models) {
+        if (!factions.has(factionKey(unit.faction))) continue;
+        for (const recipe of recipesOf(unit)) {
+          if (d.id !== null && recipe.id === d.id) continue;
+          for (const step of recipe.steps) for (const sp of step.paints) {
+            const paint = paintById(sp.paint);
+            if (!paint) continue;
+            const entry = used.get(paint.id) || { paint, units: new Set(), recipes: new Set() };
+            entry.units.add(unit.id);
+            entry.recipes.add(recipe.id);
+            used.set(paint.id, entry);
+          }
+        }
+      }
+      const inDraft = new Set(colourIdeaBases(d).map(b => b.key));
+      const all = [...used.values()].map(e => ({ paint: e.paint, units: e.units.size, recipes: e.recipes.size }));
+      const list = all
+        .filter(e => !inDraft.has(sameKey(tidyBrand(e.paint.brand)) + "|" + sameKey(e.paint.name)))
+        .sort((a, b) => b.units - a.units || b.recipes - a.recipes || String(a.paint.name).localeCompare(String(b.paint.name)));
+      return { total: all.length, list };
+    }
+
+    // The honest tag. These are your own palette paints, so there is no matching to judge: you either have it or you don't.
+    function colourHistoryTag(paint) {
+      return MinifolioColour.haveIt(paint) ? { cls: "own", text: "You own this" } : { cls: "none", text: "You don't own this" };
+    }
+
+    function buildFactionHistory(d) {
+      const box = document.createElement("div");
+      box.className = "faction-history";
+      box.id = "faction-history";
+      const title = document.createElement("h3");
+      title.className = "scheme-title";
+      title.textContent = "Colours you've used on this faction before";
+      box.appendChild(title);
+      const say = (text, id) => {
+        const p = document.createElement("p");
+        p.className = "hint";
+        if (id) p.id = id;
+        p.textContent = text;
+        box.appendChild(p);
+      };
+
+      const factions = colourHistoryFactions(d);
+      if (!factions.size) {
+        say("This recipe is not linked to a unit that has a faction, so there is no history to show. Link it to a unit and give that unit a faction, and the paints you have used on that faction show here.", "faction-history-none");
+        return box;
+      }
+      const names = [...factions.values()];
+      say(`${names.length === 1 ? "Faction" : "Factions"}: ${colourWordList(names)}.`, "faction-history-for");
+      const history = colourHistoryPaints(d, factions);
+      if (!history.total) {
+        say("No history yet. Your other units in this faction have no saved recipes with paints in them.", "faction-history-empty");
+        return box;
+      }
+      if (!history.list.length) {
+        say("Every paint you have used on this faction is already in this recipe.", "faction-history-empty");
+        return box;
+      }
+      const list = document.createElement("ul");
+      list.className = "idea-list";
+      list.id = "faction-history-list";
+      for (const entry of history.list.slice(0, FACTION_HISTORY_SHOWN)) {
+        const paint = entry.paint;
+        const reason = `Used on ${plural(entry.units, "unit")} in this faction, in ${plural(entry.recipes, "recipe")}.`;
+        const note = colourIdeaIsReal(paint.colour) ? "" : "This paint has no colour set, so the swatch is grey.";
+        list.appendChild(buildIdeaItem(paint, colourHistoryTag(paint), reason, note,
+          () => addColourIdeaStep(d, paint, "Used before on this faction"), "idea-pick"));
+      }
+      box.appendChild(list);
+      if (history.list.length > FACTION_HISTORY_SHOWN) say(`Showing the ${FACTION_HISTORY_SHOWN} most used of ${history.list.length}.`);
+      return box;
+    }
+
+    // ---- (2) Starter schemes ----
+    // v31: the schemes themselves (STARTER_SCHEMES, grouped by mood in STARTER_MOODS) now live in schemes.js, which loads just
+    // before this file. They are hand-written and generic: each is four plain colours (the hex is the colour we look for),
+    // with the part it is for, a plain word for the colour and one short reason. Names describe the colours, nothing else.
+    // Keep it that way: no Games Workshop, faction or scheme names, and nothing that points at a real army (see the IP notes).
+    // A test scans all of that text.
+
+    // The paints for a starter scheme: for each colour, the nearest paint (yours first, the built-in list after), the same
+    // paint never twice. Each is { colour, hit } where hit is a nearestPaints result, so the tags are the same honest ones.
+    function starterSchemePaints(scheme) {
+      const pool = colourIdeaPool();
+      const out = [];
+      for (const colour of scheme.colours) {
+        const hit = MinifolioColour.nearestPaints(colour.hex, pool, { limit: 1, ownedFirst: true, exclude: out.map(o => o.hit.paint.colour) })[0];
+        if (hit) out.push({ colour, hit });
+      }
+      return out;
+    }
+
+    // v31: the mood chips (All, Cold, Warm, Dark, Bright) sit above the scheme chips and only change which scheme chips show,
+    // so the list stays short on a phone. "All" is the default. A scheme that is picked but not in the chosen mood is put away.
+    function starterSchemesShown() {
+      const mood = STARTER_MOODS.some(m => m.key === colourIdeasState.mood) ? colourIdeasState.mood : "";
+      return STARTER_SCHEMES.filter(s => !mood || s.mood === mood);
+    }
+
+    function buildStarterSchemes(d, onPick, onMood) {
+      const box = document.createElement("div");
+      box.className = "starter-schemes";
+      box.id = "starter-schemes";
+      const title = document.createElement("h3");
+      title.className = "scheme-title";
+      title.textContent = "Starter schemes";
+      const hint = document.createElement("p");
+      hint.className = "hint";
+      hint.textContent = "Plain colour schemes to start from. Pick a mood to shorten the list, then pick a scheme to see matching paints, yours first. Tap a paint to add it as a step.";
+      const moods = document.createElement("div");
+      moods.className = "chips mood-chips";
+      moods.id = "starter-moods";
+      moods.style.marginTop = "0";
+      moods.setAttribute("role", "group");
+      moods.setAttribute("aria-label", "Show schemes by mood");
+      const activeMood = STARTER_MOODS.some(m => m.key === colourIdeasState.mood) ? colourIdeasState.mood : "";
+      for (const m of [{ key: "", name: "All" }, ...STARTER_MOODS]) {
+        const chip = makeChip(m.name, m.key === activeMood, () => onMood(m.key));
+        chip.dataset.mood = m.key || "all";
+        moods.appendChild(chip);
+      }
+      const chips = document.createElement("div");
+      chips.className = "chips";
+      chips.id = "starter-chips";
+      chips.style.marginTop = "0";
+      for (const s of starterSchemesShown()) {
+        const chip = makeChip(s.name, s.key === colourIdeasState.scheme, () => onPick(s.key === colourIdeasState.scheme ? "" : s.key, s.key));
+        chip.dataset.scheme = s.key;
+        chips.appendChild(chip);
+      }
+      box.append(title, hint, moods, chips);
+      const scheme = starterSchemesShown().find(s => s.key === colourIdeasState.scheme);
+      if (!scheme) return box;
+
+      const summary = document.createElement("p");
+      summary.className = "starter-summary";
+      summary.id = "starter-summary";
+      summary.textContent = scheme.summary;
+      const why = document.createElement("p");
+      why.className = "hint";
+      why.id = "starter-reason";
+      why.textContent = scheme.reason;
+      const list = document.createElement("ul");
+      list.className = "idea-list";
+      list.id = "starter-list";
+      for (const { colour, hit } of starterSchemePaints(scheme)) {
+        const paint = hit.paint;
+        list.appendChild(buildIdeaItem(paint, colourIdeaTag(hit), `${colour.part}: ${colour.look}.`, colourIdeaNote(hit),
+          () => addColourIdeaStep(d, paint, `Starter scheme (${scheme.name}): ${colour.part.toLowerCase()}`), "idea-pick"));
+      }
+      box.append(summary, why, list);
+      return box;
+    }
+
+    // ---- (3) v32: Detail recipes ----
+    // The recipes (DETAIL_RECIPES, grouped by DETAIL_GROUPS) live in detail-recipes.js, which loads between schemes.js and this
+    // file. Each is a few steps (technique, coats, how thin, one short note) and each step names a TARGET COLOUR (a plain colour
+    // word and a hex), never a paint. Here the target is matched to the nearest paint, yours first, the built-in list after,
+    // with the same honest tags and notes as the starter scheme rows. Same rules for the text as the schemes: generic, our own
+    // words, no Games Workshop, faction or scheme names. A test scans all of it.
+
+    // The nearest paint for each step. Each is { step, hit } where hit is a nearestPaints result. (The same paint may come up
+    // for two steps if it really is the nearest to both, so the tags stay honest.)
+    function detailRecipePaints(recipe) {
+      const pool = colourIdeaPool();
+      const out = [];
+      for (const step of recipe.steps) {
+        const hit = MinifolioColour.nearestPaints(step.hex, pool, { limit: 1, ownedFirst: true })[0];
+        if (hit) out.push({ step, hit });
+      }
+      return out;
+    }
+
+    // Adds steps to the recipe being edited as new last steps, in order, with the technique, coats, mix % and note kept.
+    // Nothing is saved until Save recipe, as usual. One redraw and one message however many steps are added.
+    function addDetailSteps(d, items) {
+      for (const { step, hit } of items) {
+        const paint = hit.paint;
+        d.steps.push({
+          technique: String(step.technique || ""), coats: step.coats, ratio: "", optional: false, note: String(step.note || ""),
+          paints: [{ brand: String(paint.brand || ""), name: String(paint.name || ""), colour: paint.colour, mix: step.mix }],
+        });
+      }
+      if (!items.length) return;
+      colourIdeasState.open = true;
+      renderRecipeEditor();
+      notify(items.length === 1 ? `Added step ${d.steps.length}: ${items[0].hit.paint.name}` : `Added ${items.length} steps (steps ${d.steps.length - items.length + 1} to ${d.steps.length})`);
+    }
+
+    function detailRecipesShown() {
+      const group = DETAIL_GROUPS.some(g => g.key === colourIdeasState.detailGroup) ? colourIdeasState.detailGroup : "";
+      return DETAIL_RECIPES.filter(r => !group || r.group === group);
+    }
+
+    function buildDetailRecipes(d, onPick, onGroup) {
+      const box = document.createElement("div");
+      box.className = "detail-recipes";
+      box.id = "detail-recipes";
+      const title = document.createElement("h3");
+      title.className = "scheme-title";
+      title.textContent = "Detail recipes";
+      const hint = document.createElement("p");
+      hint.className = "hint";
+      hint.textContent = "Plain step-by-step recipes for small details. Pick a group to shorten the list, then pick a recipe to see its steps with matching paints, yours first. Add all steps, or tap one paint to add just that step.";
+      const groups = document.createElement("div");
+      groups.className = "chips mood-chips";
+      groups.id = "detail-groups";
+      groups.style.marginTop = "0";
+      groups.setAttribute("role", "group");
+      groups.setAttribute("aria-label", "Show detail recipes by group");
+      const activeGroup = DETAIL_GROUPS.some(g => g.key === colourIdeasState.detailGroup) ? colourIdeasState.detailGroup : "";
+      for (const g of [{ key: "", name: "All" }, ...DETAIL_GROUPS]) {
+        const chip = makeChip(g.name, g.key === activeGroup, () => onGroup(g.key));
+        chip.dataset.detailGroup = g.key || "all";
+        groups.appendChild(chip);
+      }
+      const chips = document.createElement("div");
+      chips.className = "chips";
+      chips.id = "detail-chips";
+      chips.style.marginTop = "0";
+      for (const r of detailRecipesShown()) {
+        const chip = makeChip(r.name, r.key === colourIdeasState.detail, () => onPick(r.key === colourIdeasState.detail ? "" : r.key, r.key));
+        chip.dataset.detail = r.key;
+        chips.appendChild(chip);
+      }
+      box.append(title, hint, groups, chips);
+      const recipe = detailRecipesShown().find(r => r.key === colourIdeasState.detail);
+      if (!recipe) return box;
+
+      const summary = document.createElement("p");
+      summary.className = "starter-summary";
+      summary.id = "detail-summary";
+      summary.textContent = recipe.summary;
+      box.appendChild(summary);
+      const items = detailRecipePaints(recipe);
+      if (!items.length) {
+        const none = document.createElement("p");
+        none.className = "hint";
+        none.id = "detail-none";
+        none.textContent = "No paints with a known colour to suggest yet. Add paints on Your Palette first.";
+        box.appendChild(none);
+        return box;
+      }
+      const all = document.createElement("button");
+      all.type = "button";
+      all.className = "primary-button";
+      all.id = "detail-add-all";
+      all.textContent = "Add all steps";
+      all.setAttribute("aria-label", `Add all ${items.length} steps of ${recipe.name} to this recipe`);
+      all.addEventListener("click", () => addDetailSteps(d, items));
+      const list = document.createElement("ul");
+      list.className = "idea-list";
+      list.id = "detail-list";
+      items.forEach(({ step, hit }, i) => {
+        const paint = hit.paint;
+        const reason = `Step ${i + 1}: ${step.technique}, ${plural(step.coats, "coat")}, ${step.mix}% paint. ${step.look.charAt(0).toUpperCase() + step.look.slice(1)}. ${step.note}`;
+        list.appendChild(buildIdeaItem(paint, colourIdeaTag(hit), reason, colourIdeaNote(hit), () => addDetailSteps(d, [{ step, hit }]), "idea-pick"));
+      });
+      box.append(all, list);
+      return box;
+    }
+
+    // ---- (4) v33: Basing tips ----
+    // The tips (BASING_TIPS, grouped by BASING_GROUPS) live in basing-tips.js, which loads between detail-recipes.js and this file.
+    // Each has a plain list of materials, a few how-to steps and optional paint steps. The materials and how-to steps are only
+    // SHOWN, they never go into a recipe. A paint step names a TARGET COLOUR (a plain colour word and a hex), never a paint, and is
+    // matched exactly like a detail recipe step (nearest paint, yours first, same honest tags and notes). Same rules for the text:
+    // generic, our own words, no brand or product names, no Games Workshop, faction or scheme names. A test scans all of it.
+    function basingTipsShown() {
+      const group = BASING_GROUPS.some(g => g.key === colourIdeasState.basingGroup) ? colourIdeasState.basingGroup : "";
+      return BASING_TIPS.filter(t => !group || t.group === group);
+    }
+
+    function basingPlainList(tag, id, lines) {
+      const list = document.createElement(tag);
+      list.className = "basing-list";
+      list.id = id;
+      for (const line of lines) {
+        const li = document.createElement("li");
+        li.textContent = line;
+        list.appendChild(li);
+      }
+      return list;
+    }
+
+    function buildBasingTips(d, onPick, onGroup) {
+      const box = document.createElement("div");
+      box.className = "basing-tips";
+      box.id = "basing-tips";
+      const title = document.createElement("h3");
+      title.className = "scheme-title";
+      title.textContent = "Basing tips";
+      const hint = document.createElement("p");
+      hint.className = "hint";
+      hint.textContent = "Plain how-tos for the base of a model. Pick a group to shorten the list, then pick a tip to see what you need, how to build it and some optional paint steps with matching paints, yours first. Only the paint steps can be added to your recipe.";
+      const groups = document.createElement("div");
+      groups.className = "chips mood-chips";
+      groups.id = "basing-groups";
+      groups.style.marginTop = "0";
+      groups.setAttribute("role", "group");
+      groups.setAttribute("aria-label", "Show basing tips by group");
+      const activeGroup = BASING_GROUPS.some(g => g.key === colourIdeasState.basingGroup) ? colourIdeasState.basingGroup : "";
+      for (const g of [{ key: "", name: "All" }, ...BASING_GROUPS]) {
+        const chip = makeChip(g.name, g.key === activeGroup, () => onGroup(g.key));
+        chip.dataset.basingGroup = g.key || "all";
+        groups.appendChild(chip);
+      }
+      const chips = document.createElement("div");
+      chips.className = "chips";
+      chips.id = "basing-chips";
+      chips.style.marginTop = "0";
+      for (const t of basingTipsShown()) {
+        const chip = makeChip(t.name, t.key === colourIdeasState.basing, () => onPick(t.key === colourIdeasState.basing ? "" : t.key, t.key));
+        chip.dataset.basing = t.key;
+        chips.appendChild(chip);
+      }
+      box.append(title, hint, groups, chips);
+      const tip = basingTipsShown().find(t => t.key === colourIdeasState.basing);
+      if (!tip) return box;
+
+      const summary = document.createElement("p");
+      summary.className = "starter-summary";
+      summary.id = "basing-summary";
+      summary.textContent = tip.summary;
+      const matTitle = document.createElement("h4");
+      matTitle.className = "basing-sub";
+      matTitle.textContent = "What you need";
+      const howTitle = document.createElement("h4");
+      howTitle.className = "basing-sub";
+      howTitle.textContent = "How to build it";
+      box.append(summary, matTitle, basingPlainList("ul", "basing-materials", tip.materials),
+                 howTitle, basingPlainList("ol", "basing-howto", tip.howto));
+
+      if (!tip.paintSteps.length) {
+        const none = document.createElement("p");
+        none.className = "hint";
+        none.id = "basing-no-paint";
+        none.textContent = "There are no paint steps for this one.";
+        box.appendChild(none);
+        return box;
+      }
+      const paintTitle = document.createElement("h4");
+      paintTitle.className = "basing-sub";
+      paintTitle.textContent = "Paint steps (optional)";
+      box.appendChild(paintTitle);
+      const items = detailRecipePaints({ steps: tip.paintSteps });
+      if (!items.length) {
+        const none = document.createElement("p");
+        none.className = "hint";
+        none.id = "basing-none";
+        none.textContent = "No paints with a known colour to suggest yet. Add paints on Your Palette first.";
+        box.appendChild(none);
+        return box;
+      }
+      const all = document.createElement("button");
+      all.type = "button";
+      all.className = "primary-button";
+      all.id = "basing-add-all";
+      all.textContent = "Add all paint steps";
+      all.setAttribute("aria-label", `Add all ${items.length} paint steps of ${tip.name} to this recipe`);
+      all.addEventListener("click", () => addDetailSteps(d, items));
+      const list = document.createElement("ul");
+      list.className = "idea-list";
+      list.id = "basing-list";
+      items.forEach(({ step, hit }, i) => {
+        const paint = hit.paint;
+        const reason = `Paint step ${i + 1}: ${step.technique}, ${plural(step.coats, "coat")}, ${step.mix}% paint. ${step.look.charAt(0).toUpperCase() + step.look.slice(1)}. ${step.note}`;
+        list.appendChild(buildIdeaItem(paint, colourIdeaTag(hit), reason, colourIdeaNote(hit), () => addDetailSteps(d, [{ step, hit }]), "idea-pick"));
+      });
+      box.append(all, list);
+      return box;
+    }
+
+    function buildColourIdeasCard(d) {
+      const card = document.createElement("details");
+      card.className = "card colour-ideas";
+      card.id = "colour-ideas";
+      card.open = colourIdeasState.open;
+      const summary = document.createElement("summary");
+      const title = document.createElement("h2");
+      title.textContent = "Colour ideas";
+      const pill = document.createElement("span");
+      pill.className = "pro-pill";
+      pill.textContent = "Pro preview";
+      summary.append(title, pill);
+      const body = document.createElement("div");
+      body.className = "ideas-body";
+      card.append(summary, body);
+
+      let lastLook = "";
+      let focusNext = "";
+      // v30: your faction history and the starter schemes (they need no start colour, so they also show without one)
+      const addYourSchemes = () => {
+        body.appendChild(buildFactionHistory(d));
+        // v31: the schemes come from schemes.js. If that file is somehow missing, the rest of the card still works.
+        if (typeof STARTER_SCHEMES !== "undefined" && typeof STARTER_MOODS !== "undefined") {
+          body.appendChild(buildStarterSchemes(d,
+            (key, clicked) => { colourIdeasState.scheme = key; focusNext = `[data-scheme="${clicked}"]`; draw(); },
+            (mood) => {
+              colourIdeasState.mood = mood;
+              const picked = STARTER_SCHEMES.find(x => x.key === colourIdeasState.scheme);
+              if (picked && mood && picked.mood !== mood) colourIdeasState.scheme = "";   // v31: a pick outside the mood is put away
+              focusNext = `[data-mood="${mood || "all"}"]`;
+              draw();
+            }));
+        }
+        // v32: the detail recipes come from detail-recipes.js, below the starter schemes. If that file is missing, the rest still works.
+        if (typeof DETAIL_RECIPES !== "undefined" && typeof DETAIL_GROUPS !== "undefined") {
+          body.appendChild(buildDetailRecipes(d,
+            (key, clicked) => { colourIdeasState.detail = key; focusNext = `[data-detail="${clicked}"]`; draw(); },
+            (group) => {
+              colourIdeasState.detailGroup = group;
+              const picked = DETAIL_RECIPES.find(x => x.key === colourIdeasState.detail);
+              if (picked && group && picked.group !== group) colourIdeasState.detail = "";   // a pick outside the group is put away
+              focusNext = `[data-detail-group="${group || "all"}"]`;
+              draw();
+            }));
+        }
+        // v33: the basing tips come from basing-tips.js, below the detail recipes. If that file is missing, the rest still works.
+        if (typeof BASING_TIPS !== "undefined" && typeof BASING_GROUPS !== "undefined") {
+          body.appendChild(buildBasingTips(d,
+            (key, clicked) => { colourIdeasState.basing = key; focusNext = `[data-basing="${clicked}"]`; draw(); },
+            (group) => {
+              colourIdeasState.basingGroup = group;
+              const picked = BASING_TIPS.find(x => x.key === colourIdeasState.basing);
+              if (picked && group && picked.group !== group) colourIdeasState.basing = "";   // a pick outside the group is put away
+              focusNext = `[data-basing-group="${group || "all"}"]`;
+              draw();
+            }));
+        }
+      };
+      const draw = () => {
+        const bases = colourIdeaBases(d);
+        const ownMain = colourIdeaMainColour(bases);
+        const ownIsWhole = sameText(d.part, WHOLE_MODEL);   // writing the Whole model recipe itself: use its own colours
+        const wholeRecipes = ownIsWhole ? [] : colourIdeaWholeRecipes(d);
+        const auto = wholeRecipes[0] || null;               // what "Whole model" means right now
+        const choice = colourIdeasState.base;
+        let base = null, baseHint = "";
+        if (choice.startsWith("wm:")) base = wholeRecipes.find(r => "wm:" + r.id === choice) || null;
+        else if (choice !== "whole") base = bases.find(b => b.key === choice) || null;
+        if (!base) {
+          colourIdeasState.base = "whole";
+          base = auto || ownMain;
+        }
+        if (wholeRecipes.includes(base)) baseHint = `Using the main colour of \u201c${base.name}\u201d.`;
+        if (colourIdeasState.base === "whole" && wholeRecipes.length > 1 && !wholeRecipes[0].linked) {
+          baseHint += " You have several Whole model recipes: pick the one for this model.";
+        }
+        const role = COLOUR_ROLES.find(r => r.key === colourIdeasState.role) || COLOUR_ROLES[0];
+        const look = JSON.stringify([colourIdeasState.base, role.key, bases.map(b => [b.key, b.colour, b.uses]),
+                                     wholeRecipes.map(r => [r.id, r.name, r.colour, r.linked]), ownIsWhole, colourIdeasState.check, colourIdeasState.scheme, colourIdeasState.mood,
+                                     colourIdeasState.detail, colourIdeasState.detailGroup, colourIdeasState.basing, colourIdeasState.basingGroup]);
+        if (look === lastLook && !focusNext) return;   // nothing changed: leave it alone
+        lastLook = look;
+        body.innerHTML = "";
+
+        const hint = document.createElement("p");
+        hint.className = "hint";
+        hint.textContent = "Pick a colour from this recipe and what you are painting. You get 3 paints that go with it. Tap one to add it as a new step.";
+        body.appendChild(hint);
+
+        if (!base) {
+          const empty = document.createElement("p");
+          empty.className = "hint";
+          empty.textContent = bases.length
+            ? "Set a colour on one of the paints first (the round colour button in a step), then ideas show here."
+            : "Add a paint to a step first (or write a Whole model recipe). Ideas show here once there is a colour to start from.";
+          body.appendChild(empty);
+          addYourSchemes();
+          return;
+        }
+
+        const pick = document.createElement("label");
+        pick.append("Start from");
+        const select = document.createElement("select");
+        select.style.width = "100%";
+        select.id = "colour-ideas-base";
+        select.add(new Option(auto ? `Whole model: ${auto.name}` : "Whole model: none yet, using this recipe", "whole"));
+        if (wholeRecipes.length > 1) {
+          const group = document.createElement("optgroup");
+          group.label = "Other Whole model recipes";
+          for (const r of wholeRecipes.slice(1)) group.appendChild(new Option(r.name, "wm:" + r.id));
+          select.appendChild(group);
+        }
+        if (bases.length) {
+          const group = document.createElement("optgroup");
+          group.label = "Paints in this recipe";
+          for (const b of bases) group.appendChild(new Option(b.brand ? `${b.name} (${b.brand})` : b.name, b.key));
+          select.appendChild(group);
+        }
+        select.value = colourIdeasState.base;
+        select.addEventListener("change", () => { colourIdeasState.base = select.value; focusNext = "#colour-ideas-base"; draw(); });
+        pick.appendChild(select);
+        body.appendChild(pick);
+
+        const roleLabel = document.createElement("p");
+        roleLabel.className = "idea-label";
+        roleLabel.textContent = "What are you painting?";
+        const chips = document.createElement("div");
+        chips.className = "chips";
+        chips.style.marginTop = "0";
+        for (const r of COLOUR_ROLES) {
+          const chip = makeChip(r.label, r.key === role.key, () => { colourIdeasState.role = r.key; focusNext = `[data-role="${r.key}"]`; draw(); });
+          chip.dataset.role = r.key;
+          chips.appendChild(chip);
+        }
+        body.append(roleLabel, chips);
+
+        // v29: hand-written advice for the chosen role
+        const tip = document.createElement("p");
+        tip.className = "role-tip";
+        tip.id = "colour-ideas-tip";
+        const tipLabel = document.createElement("strong");
+        tipLabel.textContent = "Tip: ";
+        tip.append(tipLabel, role.tip);
+        body.appendChild(tip);
+
+        const baseHex = base.colour;
+        if (baseHint) {
+          const using = document.createElement("p");
+          using.className = "hint";
+          using.id = "colour-ideas-using";
+          using.textContent = baseHint;
+          body.appendChild(using);
+        }
+        if (!colourIdeaIsReal(baseHex)) {
+          const unset = document.createElement("p");
+          unset.className = "hint";
+          unset.textContent = "This paint's colour isn't set yet, so it counts as neutral. Tap its round colour button in the step to set it.";
+          body.appendChild(unset);
+        }
+
+        const ideas = colourIdeas(d, baseHex, role);
+        if (!ideas.length) {
+          const none = document.createElement("p");
+          none.className = "hint";
+          none.textContent = "No paints with a known colour to suggest yet. Add paints on Your Palette first.";
+          body.appendChild(none);
+        }
+        const list = document.createElement("ul");
+        list.className = "idea-list";
+        for (const idea of ideas) {
+          const paint = idea.hit.paint;
+          const tag = colourIdeaTag(idea.hit);
+          const reason = colourIdeaReason(idea.relation, idea.wanted, baseHex, role);
+          const note = colourIdeaNote(idea.hit);
+          list.appendChild(buildIdeaItem(paint, tag, reason, note, () => addColourIdeaStep(d, paint, `Colour idea for ${role.note}`)));
+        }
+        body.appendChild(list);
+        addYourSchemes();
+
+        // v29: "Does this scheme hang together?" (skipped if an older colour.js without schemeCheck is somehow loaded)
+        if (typeof MinifolioColour.schemeCheck === "function") {
+          body.appendChild(buildSchemeCheck(bases, () => {
+            colourIdeasState.check = !colourIdeasState.check;
+            focusNext = "#scheme-check-toggle";
+            draw();
+          }));
+        }
+
+        const foot = document.createElement("p");
+        foot.className = "hint";
+        foot.textContent = "Ideas use paints you own first. Colours on a screen are only a guide, so check them on your model. Nothing leaves your phone.";
+        body.appendChild(foot);
+
+        if (focusNext) {
+          const target = body.querySelector(focusNext);
+          if (target) target.focus();
+          focusNext = "";
+        }
+      };
+
+      card.addEventListener("toggle", () => { colourIdeasState.open = card.open; if (card.open) draw(); });
+      // Typing in a paint box asks for a refresh on every key. Wait a moment (and for any press to finish), then redraw once.
+      let refreshTimer = null;
+      card.refresh = () => {
+        if (!card.open) return;
+        clearTimeout(refreshTimer);
+        const later = () => {
+          if (!card.isConnected) return;
+          if (colourIdeasPressing) { refreshTimer = setTimeout(later, 120); return; }
+          draw();
+        };
+        refreshTimer = setTimeout(later, 200);
+      };
+      if (card.open) draw();
+      return card;
+    }
+
     // ================= v18c: TIDY BRANDS AND "DO YOU OWN THESE?" =================
     // The brand box used to fill itself in, so typing "Citadel" gave "CitadelCitadel".
     // This puts a brand typed twice (or more) back to once: "CitadelCitadel" or "Citadel citadel" → "Citadel".
@@ -6571,7 +7569,10 @@
     // The card: "Do you own these? All / None / Let me pick". getPaints() lists the new paints now.
     // It only redraws itself, so the boxes you're typing in elsewhere on the page aren't disturbed.
     let recipeOwnCard = null;   // the card in the recipe editor, if it's open
-    function refreshRecipeOwn() { if (recipeOwnCard && recipeOwnCard.isConnected) recipeOwnCard.refresh(); }
+    function refreshRecipeOwn() {
+      if (recipeOwnCard && recipeOwnCard.isConnected) recipeOwnCard.refresh();
+      if (recipeIdeasCard && recipeIdeasCard.isConnected) recipeIdeasCard.refresh();   // v28
+    }
     function buildOwnCard(choice, getPaints) {
       const card = document.createElement("div");
       card.className = "card own-check";
@@ -9553,7 +10554,7 @@
     }
     function maybeRemindToBackUp() {
       const onlyExamples = models.length <= EXAMPLES.length &&
-        models.every(m => EXAMPLES.some(e => e.name === m.name && e.faction === m.faction));
+        models.every(m => EXAMPLES.concat(LEGACY_EXAMPLES).some(e => e.name === m.name && e.faction === m.faction));
       if (!models.length || onlyExamples) return;
       // Don't nag brand-new users: wait for 10+ units and a day since first real use.
       if (!settings.firstRealUse) { settings.firstRealUse = todayISO(); saveSettings(); }
@@ -9599,8 +10600,8 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=27". v21.4 test checks.)
-    const APP_VERSION = "v27";
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=34". v21.4 test checks.)
+    const APP_VERSION = "v34";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -10003,6 +11004,34 @@
     showCountingChoice();
 
     const CHANGELOG = [
+      { version: "v34", date: "16 Oct 2026", changes: [
+        "Tidy-up: the examples a brand-new start comes with (three units, two recipes and their paints) and the hints in the boxes and in Help now use plain, made-up names instead of well-known game, army and paint names.",
+        "Nothing you have saved changes. Examples you already have stay as they are, and you can still keep or clear them.",
+      ]},
+      { version: "v33", date: "15 Oct 2026", changes: [
+        "Pro preview, Colour ideas: a new Basing tips part, below Detail recipes. It has 12 plain how-tos for the base of a model: sand, gravel, cracked earth, ash and soot, mud, snow, ice, grass, moss, rock, rubble and lava. Use the group buttons (All, Dry ground, Wet and cold, Plants, Stone and fire) to keep the list short on a phone.",
+        "Pick a tip to see the things you need, the steps to build it, and then some optional paint steps, each with the nearest paint to the colour it needs, yours first, with the same tags as the other ideas: You own this, Closest you own, Not in your palette. Tap one paint to add just that step, or tap Add all paint steps to add them all to the recipe you are writing. The materials and building steps are only shown, they are never added. Nothing is saved until you press Save recipe. It all runs on your phone, works offline and sends nothing anywhere.",
+      ]},
+      { version: "v32", date: "15 Oct 2026", changes: [
+        "Pro preview, Colour ideas: a new Detail recipes part, below Starter schemes. It has 18 plain how-to recipes for small details: teeth, bone, chitin, skin, blood, rusty, oiled and gold metal, bright steel, verdigris, chips and weathering, leather, cloth, wood, mud, scorch marks, glowing eyes, and gems and lenses. Use the group buttons (All, Body, Metal, Materials, Light) to keep the list short on a phone.",
+        "Pick a recipe to see its steps. Each step says how to paint it (technique, coats, how thin) and the nearest paint to the colour it needs, yours first, with the same tags as the schemes: You own this, Closest you own, Not in your palette. Tap Add all steps to add every step to the recipe you are writing, or tap one paint to add just that step. Nothing is saved until you press Save recipe. It all runs on your phone, works offline and sends nothing anywhere.",
+      ]},
+      { version: "v31", date: "15 Oct 2026", changes: [
+        "Pro preview, Colour ideas: there are now 24 starter schemes instead of 6, in four moods: cold, warm, dark and bright. New mood buttons (All, Cold, Warm, Dark, Bright) sit above the scheme buttons, so you can show just one mood and keep the list short on a phone. All is the default.",
+        "Picking a scheme, the short summary and reason, the four colours, the nearest paint (yours first), the You own this tags and tapping a paint to add a step all work exactly as before. Every scheme is plain colours in our own words, with no official names or artwork. Like the other ideas, it sends nothing anywhere and works offline.",
+      ]},
+      { version: "v30", date: "15 Oct 2026", changes: [
+        "Pro preview, Colour ideas: two new parts. Colours you've used on this faction before lists the paints from your own saved recipes on units in the same faction as the recipe you are writing, most used first, and says plainly when there is no faction or no history yet. It only uses what you have already saved.",
+        "Starter schemes: a few plain, hand-written colour schemes (for example cold blue armour, gold trim, red eyes). Pick one to see matching paints, yours first, and tap a paint to add it as a step. Like the other ideas, each says You own this or Closest you own. It all runs on your phone, works offline and sends nothing anywhere.",
+      ]},
+      { version: "v29", date: "15 Oct 2026", changes: [
+        "Pro preview, Colour ideas: each thing you can paint now comes with a short tip written by hand (for example: keep eyes the brightest, most saturated spot on the model), and the reasons under the ideas use that advice where it says it better.",
+        "New check at the bottom of Colour ideas: Does this scheme hang together? It looks at the colours in your recipe and says if there are too many strong colours or no light and dark, and suggests one colour to be the star. It is only a guide. It all runs on your phone, works offline and sends nothing anywhere.",
+      ]},
+      { version: "v28", date: "15 Oct 2026", changes: [
+        "New Pro preview: Colour ideas, inside a recipe you are writing or editing. Pick a colour from the recipe (or Whole model, the main colour of your Whole model recipe, so ideas go with the whole model and not just this recipe), say what you are painting (eyes or glow, trim, gems, weapon, cloth or base) and you get 3 paint ideas, each with a short reason such as \u201corange is the opposite of blue, so it stands out\u201d.",
+        "Each idea says You own this or Closest you own, so paints you already have come first. Tap one to add it to the recipe as a new step. It is free while it is a preview. The colour maths runs on your phone, works offline and sends nothing anywhere.",
+      ]},
       { version: "v27", date: "12 Oct 2026", changes: [
         "Minifolio now counts roughly how many people open it, so we can tell whether it is being used. Each time the app opens it asks GoatCounter, a small privacy-friendly service, for one tiny picture. There are no cookies and no account, nothing is stored on your device, and nothing from your collection is sent.",
         "You can switch it off under Settings \u2192 Counting visits. Help \u2192 Privacy now says exactly what is counted and who receives it. The app's security rules were widened for that one picture address only.",
