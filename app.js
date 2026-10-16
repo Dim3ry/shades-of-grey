@@ -261,10 +261,19 @@
 
     // Example units, only used the very first time (when nothing is saved yet).
     // v21: each carries "example: true", so the "These are examples" card can find them.
+    // v34 (IP tidy): plain, made-up names instead of well-known game, faction and unit names.
     const EXAMPLES = [
-      { id: 1, name: "Captain", hobby: "40K", faction: "Ultramarines", stage: 3, count: 1, example: true },
-      { id: 2, name: "Boyz", hobby: "40K", faction: "Orks", stage: 0, count: 10, example: true },
-      { id: 3, name: "Liberators", hobby: "Age of Sigmar", faction: "Stormcast Eternals", stage: 6, count: 5, example: true },
+      { id: 1, name: "Captain", hobby: "Sci-fi", faction: "Blue army", stage: 3, count: 1, example: true },
+      { id: 2, name: "Brutes", hobby: "Sci-fi", faction: "Green army", stage: 0, count: 10, example: true },
+      { id: 3, name: "Guardians", hobby: "Fantasy", faction: "Gold army", stage: 6, count: 5, example: true },
+    ];
+    // The examples v21 to v33 started people with. Only used to RECOGNISE units already saved
+    // with these names (the one-off check below, and the backup reminder), so nothing a user
+    // has saved is read differently. Never added to anyone's data.
+    const LEGACY_EXAMPLES = [
+      { id: 1, name: "Captain", hobby: "40K", faction: "Ultramarines" },
+      { id: 2, name: "Boyz", hobby: "40K", faction: "Orks" },
+      { id: 3, name: "Liberators", hobby: "Age of Sigmar", faction: "Stormcast Eternals" },
     ];
 
     // v24: is this the very first visit (no units and no recipes saved yet)? Only then do the
@@ -285,9 +294,9 @@
     // (Saved by the start-up render(), units and settings together.)
     if (!settings.examplesChecked) {
       for (const m of models) {
-        const e = EXAMPLES.find(x => x.id === m.id);
-        if (e && m.name === e.name && m.hobby === e.hobby && m.faction === e.faction &&
-            !m.photos && !m.photo && !m.recipes && !m.nickname && !m.copy) m.example = true;
+        const isExample = EXAMPLES.concat(LEGACY_EXAMPLES).some(x => x.id === m.id && m.name === x.name &&
+          m.hobby === x.hobby && m.faction === x.faction);
+        if (isExample && !m.photos && !m.photo && !m.recipes && !m.nickname && !m.copy) m.example = true;
       }
       settings.examplesChecked = true;
     }
@@ -3878,7 +3887,7 @@
 
     // ----- v24: EXAMPLE RECIPES AND PAINTS -----
     // A brand-new start (no units saved yet, an empty recipe book) also gets two example recipes,
-    // and the Citadel paints they use appear in Your Palette. A card on the Recipes tab says so,
+    // and the (made-up, plain-named) example paints they use appear in Your Palette. A card on the Recipes tab says so,
     // with "Clear examples" (Undo for 8 seconds) and "Keep them". Anyone who already had data is
     // left alone. The marks are "example: true" on a recipe or a paint; older versions keep
     // unknown fields, so nothing here changes the shape of saved data (DATA_VERSION stays 1).
@@ -3887,21 +3896,23 @@
     // Example paints never appear on the shopping list. Each example recipe is linked to the
     // example unit it suits (Captain, Boyz), so you can see how recipes and units connect.
     const EXAMPLE_RECIPES = [
-      { name: "Ultramarines armour", part: "Armour", unit: 1,
+      // v34 (IP tidy): made-up paints with no brand and a plain colour name (third item = colour),
+      // so nothing here names a real paint, faction or unit. "Example" keeps them from matching real paints.
+      { name: "Blue armour", part: "Armour", unit: 1,
         notes: "An example recipe, to show how they look. Clear it when you're ready to write your own.",
         steps: [
-          { technique: "Base coat", coats: 2, paints: [["Citadel", "Macragge Blue"]] },
-          { technique: "Shade", coats: 1, paints: [["Citadel", "Nuln Oil"]] },
-          { technique: "Layer", coats: 1, paints: [["Citadel", "Calgar Blue"]] },
-          { technique: "Edge highlight", coats: 1, paints: [["Citadel", "Fenrisian Grey"]] },
+          { technique: "Base coat", coats: 2, paints: [["", "Example deep blue", "#1f3f8f"]] },
+          { technique: "Shade", coats: 1, paints: [["", "Example dark wash", "#2a2a2e"]] },
+          { technique: "Layer", coats: 1, paints: [["", "Example mid blue", "#2f62c4"]] },
+          { technique: "Edge highlight", coats: 1, paints: [["", "Example pale grey", "#cfd3d8"]] },
         ] },
-      { name: "Ork skin", part: "Skin", unit: 2,
+      { name: "Green skin", part: "Skin", unit: 2,
         notes: "An example recipe, to show how they look. Clear it when you're ready to write your own.",
         steps: [
-          { technique: "Base coat", coats: 2, paints: [["Citadel", "Waaagh! Flesh"]] },
-          { technique: "Shade", coats: 1, paints: [["Citadel", "Agrax Earthshade"]] },
-          { technique: "Layer", coats: 1, paints: [["Citadel", "Warboss Green"]] },
-          { technique: "Edge highlight", coats: 1, paints: [["Citadel", "Skarsnik Green"]] },
+          { technique: "Base coat", coats: 2, paints: [["", "Example mid green", "#4f7a2b"]] },
+          { technique: "Shade", coats: 1, paints: [["", "Example brown wash", "#4a3320"]] },
+          { technique: "Layer", coats: 1, paints: [["", "Example bright green", "#6fa03a"]] },
+          { technique: "Edge highlight", coats: 1, paints: [["", "Example pale green", "#b7d28a"]] },
         ] },
     ];
     function seedExampleRecipes() {
@@ -3911,8 +3922,8 @@
       for (const ex of EXAMPLE_RECIPES) {
         const steps = ex.steps.map(s => ({
           technique: s.technique, coats: s.coats,
-          paints: s.paints.map(([brand, name]) => {
-            const paint = findOrAddPaint(brand, name, "");
+          paints: s.paints.map(([brand, name, colour]) => {
+            const paint = findOrAddPaint(brand, name, colour || "");
             paint.example = true;
             return { paint: paint.id, mix: null };
           }),
@@ -10543,7 +10554,7 @@
     }
     function maybeRemindToBackUp() {
       const onlyExamples = models.length <= EXAMPLES.length &&
-        models.every(m => EXAMPLES.some(e => e.name === m.name && e.faction === m.faction));
+        models.every(m => EXAMPLES.concat(LEGACY_EXAMPLES).some(e => e.name === m.name && e.faction === m.faction));
       if (!models.length || onlyExamples) return;
       // Don't nag brand-new users: wait for 10+ units and a day since first real use.
       if (!settings.firstRealUse) { settings.firstRealUse = todayISO(); saveSettings(); }
@@ -10589,8 +10600,8 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=33". v21.4 test checks.)
-    const APP_VERSION = "v33";
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=34". v21.4 test checks.)
+    const APP_VERSION = "v34";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -10993,6 +11004,10 @@
     showCountingChoice();
 
     const CHANGELOG = [
+      { version: "v34", date: "16 Oct 2026", changes: [
+        "Tidy-up: the examples a brand-new start comes with (three units, two recipes and their paints) and the hints in the boxes and in Help now use plain, made-up names instead of well-known game, army and paint names.",
+        "Nothing you have saved changes. Examples you already have stay as they are, and you can still keep or clear them.",
+      ]},
       { version: "v33", date: "15 Oct 2026", changes: [
         "Pro preview, Colour ideas: a new Basing tips part, below Detail recipes. It has 12 plain how-tos for the base of a model: sand, gravel, cracked earth, ash and soot, mud, snow, ice, grass, moss, rock, rubble and lava. Use the group buttons (All, Dry ground, Wet and cold, Plants, Stone and fire) to keep the list short on a phone.",
         "Pick a tip to see the things you need, the steps to build it, and then some optional paint steps, each with the nearest paint to the colour it needs, yours first, with the same tags as the other ideas: You own this, Closest you own, Not in your palette. Tap one paint to add just that step, or tap Add all paint steps to add them all to the recipe you are writing. The materials and building steps are only shown, they are never added. Nothing is saved until you press Save recipe. It all runs on your phone, works offline and sends nothing anywhere.",

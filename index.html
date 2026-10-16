@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=33"></script>
+  <script src="early.js?v=34"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -1154,7 +1154,7 @@
           <input id="count-input" type="number" min="1" max="999" value="1" aria-label="Number of models" title="Number of models">
         </div>
         <div class="row">
-          <input id="hobby-input" placeholder="Game, e.g. 40K" aria-label="Game" list="game-options">
+          <input id="hobby-input" placeholder="Game, e.g. Sci-fi" aria-label="Game" list="game-options">
           <input id="faction-input" placeholder="Faction" aria-label="Faction" list="faction-options">
         </div>
         <!-- v21: start a unit at the stage it's really at, instead of tapping ▲ several times. -->
@@ -1257,7 +1257,7 @@
         </div>
         <div class="card hidden" id="import-review"></div>
         <div class="card">
-          <input id="palette-search" type="search" placeholder="Search or add a paint, e.g. Macragge Blue"
+          <input id="palette-search" type="search" placeholder="Search or add a paint, e.g. Mid Blue"
                  aria-label="Search or add a paint" autocomplete="off" style="width: 100%;">
           <div id="palette-search-result" style="margin-top: 8px;"></div>
         </div>
@@ -1308,7 +1308,7 @@
         <details open>
           <summary>Getting started</summary>
           <ol>
-            <li id="help-example-recipes">A brand-new start also comes with two <strong>example recipes</strong> (Ultramarines armour and Ork skin), and the paints they use show in <strong>Your Palette</strong>. A card on the <strong>Recipes</strong> tab says so. <strong>Clear examples</strong> removes only the examples (with Undo): a paint you've used in your own recipe or given a status stays, and example paints never go on the shopping list. <strong>Keep them</strong> makes them yours. If you already had recipes, nothing is added.</li>
+            <li id="help-example-recipes">A brand-new start also comes with two <strong>example recipes</strong> (Blue armour and Green skin), and the paints they use show in <strong>Your Palette</strong>. A card on the <strong>Recipes</strong> tab says so. <strong>Clear examples</strong> removes only the examples (with Undo): a paint you've used in your own recipe or given a status stays, and example paints never go on the shopping list. <strong>Keep them</strong> makes them yours. If you already had recipes, nothing is added.</li>
             <li>The app starts with three example units, marked with a <strong>These are examples</strong> card on the Dashboard and Units tab. <strong>Clear examples</strong> removes only those three (with Undo); <strong>Keep them</strong> keeps them as your own units.</li>
             <li>Add your units: one at a time with <strong>Units → + Add unit</strong>, or a whole army at once with <strong>Paste army list</strong> or <strong>Import CSV</strong>, which are on the same panel (see <strong>Importing</strong>).</li>
             <li>As you build and paint, press <strong>▲</strong> on a unit to move it up a stage (or tap its name and pick any stage from its <strong>Stage</strong> menu).</li>
@@ -1410,12 +1410,12 @@
             <li>Link a recipe to units from the recipe (<strong>Used on</strong>) or from a unit's details. Linked recipes show as buttons on the unit's card: tap one to open it.</li>
             <li><strong>Your Palette</strong> (top of the Recipes tab) lists every paint in your recipes, once each. It fills itself in: add a paint to a recipe and it appears.</li>
             <li>In Your Palette, sort by colour, name or brand, and tap a brand to show only its paints. Tap a paint to change its colour, name or brand: the change applies in every recipe that uses it.</li>
-            <li>At the bottom of an open paint: <strong>Remove</strong> deletes a paint no recipe uses (a paint that's still in a recipe can't be removed). <strong>Merge into…</strong> joins it to another paint, handy for a typo twin like "Nuln Oill": its recipes move to the paint you pick, and that paint keeps its own name and brand. Both have Undo.</li>
+            <li>At the bottom of an open paint: <strong>Remove</strong> deletes a paint no recipe uses (a paint that's still in a recipe can't be removed). <strong>Merge into…</strong> joins it to another paint, handy for a typo twin like "Deep Bluee": its recipes move to the paint you pick, and that paint keeps its own name and brand. Both have Undo.</li>
             <li><strong>📷 Scan a paint pot</strong> (in Your Palette) reads the paint's name from its label with the camera and suggests matches. The reading happens on your phone; the photo is never sent anywhere. The first scan loads the label reader (about 11 MB) from Minifolio's own site, and after that scanning works with no internet. Leaving the app, or closing the scan panel, switches the camera off.</li>
             <li id="help-scan-brands"><strong>Brands the scanner knows:</strong> Citadel, plus Vallejo Game Color, Model Color and Xpress Color, The Army Painter's Warpaints Fanatic, Pro Acryl and AK 3rd Gen (about 1,200 paints), and every paint already in Your Palette. On a Vallejo pot it also reads the <strong>code number</strong> (like 72.021), which picks the exact paint even if the name is hard to read. Other brands still work: if the scanner doesn't know the name, type it in. The same lists help when you paste recipes from your notes. Where two brands share a name (like "Black"), you're asked which one. The colours for these brands are close guesses, so tap a paint to fix its colour.</li>
             <li>Typed a paint into a recipe that isn't in Your Palette yet? Above <strong>Save recipe</strong>, <strong>Do you own these?</strong> asks about the new paints: <strong>All</strong> (Owned), <strong>None</strong> (Not owned, so they go on the shopping list) or <strong>Let me pick</strong> (tap a paint to untick it).</li>
             <li id="help-shop"><strong>🛒 Shopping list</strong> (in Your Palette) lists paints that are running low, empty, on your wishlist, or used in a recipe but not owned, grouped by brand. <strong>Buy these</strong> at the top has a button for each shop that sells them (Firestorm Games, Wayland Games, Element Games, and The Army Painter for Army Painter paints). Tap a shop for one search link per paint; each opens that shop's own search in a new tab. They're plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop. The link searches for the paint's name, so the results can include other brands' paints with the same name: check you've got the right pot before you buy.</li>
-            <li><strong>Schemes</strong> (top of the Recipes tab) group the recipes you use for one faction, e.g. "My Ultramarines" = armour, trim, lenses and base. Press <strong>+ New scheme</strong>, name it, type the faction and tick its recipes.</li>
+            <li><strong>Schemes</strong> (top of the Recipes tab) group the recipes you use for one faction, e.g. "My Blue Army" = armour, trim, lenses and base. Press <strong>+ New scheme</strong>, name it, type the faction and tick its recipes.</li>
             <li><strong>Apply to … units</strong> links a scheme's recipes to every unit in its faction that doesn't have them all yet. Recipes a unit already has stay linked.</li>
             <li>With <strong>New units … get these recipes automatically</strong> ticked, any unit you add to that faction later (by hand or by import) gets the scheme straight away.</li>
             <li>In a unit's details, the <strong>Link a recipe…</strong> menu also lists its faction's schemes. Deleting a scheme leaves its recipes and links alone.</li>
@@ -1426,8 +1426,8 @@
           <summary>Pasting recipes from your notes</summary>
           <ul>
             <li>Got recipes in Google Keep, a phone note or a Reddit post? On the Recipes tab, tap <strong>Paste recipes from your notes</strong>, paste them in and press <strong>Read notes</strong>. You get a preview first: nothing is saved until you press <strong>Save</strong>.</li>
-            <li>Put each part on its own line ending in a colon, like <strong>Eyes:</strong>, then one step per line (or several split by commas). Mixes like <strong>2:1 Baal Red:CM</strong>, <strong>50/50</strong> or <strong>Seraphim Sepia 1:2 with Contrast Medium</strong> are read as one mixed step. "Ushabti Bone and Wraithbone" is read as both paints.</li>
-            <li id="help-faction-part">A line with just a faction name (<strong>Ultramarines</strong>) starts that faction's scheme. A faction followed by a part (<strong>Ultramarines armour</strong>, <strong>Death Guard cloak</strong>) starts that scheme and that part, so it isn't mistaken for a paint like Ultramarines Blue.</li>
+            <li>Put each part on its own line ending in a colon, like <strong>Eyes:</strong>, then one step per line (or several split by commas). Mixes like <strong>2:1 Dark Red:CM</strong>, <strong>50/50</strong> or <strong>Brown Wash 1:2 with Contrast Medium</strong> are read as one mixed step. "Bone and Pale Bone" is read as both paints.</li>
+            <li id="help-faction-part">A line with just a faction name (<strong>Blue Army</strong>) starts that faction's scheme. A faction followed by a part (<strong>Blue Army armour</strong>, <strong>Green Army cloak</strong>) starts that scheme and that part, so it isn't mistaken for a paint with a similar name.</li>
             <li>Divider lines (<strong>-----</strong>, <strong>***</strong>, <strong>===</strong>) and lines with only emoji are skipped, like blank lines. Words the app can't read as a paint (say, in another alphabet) are kept as a note.</li>
             <li>Up to <strong>20,000 characters</strong> are read at once (a few pages of notes). If yours is longer, the preview says so: paste the rest separately.</li>
             <li>Not sure about a paint (like "CM")? <strong>Check … paints</strong> asks what you meant. The app remembers your answer for next time.</li>
@@ -1653,8 +1653,8 @@
           <div id="review-wh-fields" style="display: grid; gap: 6px;">
             <p class="hint" style="margin: 0;">Game and faction for these units (check they match the spelling you use):</p>
             <div class="row">
-              <label class="hint" style="margin: 0; display: grid; gap: 4px;">Game<input id="wh-game" placeholder="e.g. 40K"></label>
-              <label class="hint" style="margin: 0; display: grid; gap: 4px;">Faction<input id="wh-faction" placeholder="e.g. Tyranids"></label>
+              <label class="hint" style="margin: 0; display: grid; gap: 4px;">Game<input id="wh-game" placeholder="e.g. Sci-fi"></label>
+              <label class="hint" style="margin: 0; display: grid; gap: 4px;">Faction<input id="wh-faction" placeholder="e.g. Green army"></label>
             </div>
           </div>
           <label id="review-stage-label" class="hint" style="margin: 0; display: grid; gap: 6px;">
@@ -1737,7 +1737,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=33" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=34" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -1746,10 +1746,10 @@
        names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks.
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=33"></script>
-  <script src="schemes.js?v=33"></script>
-  <script src="detail-recipes.js?v=33"></script>
-  <script src="basing-tips.js?v=33"></script>
-  <script src="app.js?v=33"></script>
+  <script src="colour.js?v=34"></script>
+  <script src="schemes.js?v=34"></script>
+  <script src="detail-recipes.js?v=34"></script>
+  <script src="basing-tips.js?v=34"></script>
+  <script src="app.js?v=34"></script>
 </body>
 </html>

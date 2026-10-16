@@ -151,11 +151,11 @@ def main():
         seed(page, fresh=True)   # a first ever visit: nothing saved
         saved = units(page)
         check("a first visit saves the 3 example units, each marked as an example",
-              [u["name"] for u in saved] == ["Captain", "Boyz", "Liberators"] and all(u.get("example") is True for u in saved), saved)
+              [u["name"] for u in saved] == ["Captain", "Brutes", "Guardians"] and all(u.get("example") is True for u in saved), saved)
         check("the examples card shows on the Dashboard", page.is_visible("#examples-card-dash"))
         dash_text = page.inner_text("#examples-card-dash")
         check("…saying they're examples and naming them", "These are examples" in dash_text and
-              all(n in dash_text for n in ["Captain", "Boyz", "Liberators"]), dash_text)
+              all(n in dash_text for n in ["Captain", "Brutes", "Guardians"]), dash_text)
         check("…with Clear examples and Keep them", page.is_visible("#examples-card-dash .clear-examples")
               and page.inner_text("#examples-card-dash .keep-examples") == "Keep them")
         shot(page, "v21-examples-card-dashboard.png")
@@ -184,7 +184,7 @@ def main():
         undo(page)
         back = units(page)
         check("Undo puts the 3 examples back, in their old places, still marked",
-              [u["name"] for u in back] == ["Captain", "Boyz", "Liberators", "Hormagaunts"] and
+              [u["name"] for u in back] == ["Captain", "Brutes", "Guardians", "Hormagaunts"] and
               all(u.get("example") is True for u in back[:3]) and "example" not in back[3], [u["name"] for u in back])
         check("…and the card is back", page.is_visible("#examples-card"))
         page.reload(); page.wait_for_timeout(300)
