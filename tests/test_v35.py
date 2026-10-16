@@ -129,11 +129,11 @@ def main():
         print("\n--- 1. Versions and wiring ---")
         load(page, recipes=RECIPES, units=UNITS)
         html, sw, app = read("index.html"), read("sw.js"), read("app.js")
-        check("APP_VERSION is v35", page.evaluate("APP_VERSION") == "v35", page.evaluate("APP_VERSION"))
-        check("sw.js VERSION is v35", 'const VERSION = "v35"' in sw)
+        check("APP_VERSION is v35 or later", float(page.evaluate("APP_VERSION")[1:]) >= 35, page.evaluate("APP_VERSION"))
+        check("sw.js VERSION is v35 or later", float(re.search(r'const VERSION = "v([\d.]+)"', sw).group(1)) >= 35)
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
-        check("every script tag carries ?v=35, and there are still exactly six script files (no new file)",
-              len(tags) == 6 and all(v == "35" for _, v in tags), tags)
+        check("every script tag carries the same ?v= number (35 or later), and there are still exactly six script files (no new file)",
+              len(tags) == 6 and len({v for _, v in tags}) == 1 and float(tags[0][1]) >= 35, tags)
         check("the script files are the same six as before, in the same order",
               [n for n, _ in tags] == ["early.js", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js", "app.js"], tags)
         files = re.search(r"const APP_FILES = \[(.*?)\];", sw, re.S).group(1)
@@ -141,7 +141,7 @@ def main():
               re.findall(r'"\./([^"?]*)', files) == ["", "index.html", "app.js", "early.js", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js", "manifest.json", "icon-192.png", "icon-512.png", "ocr/ocr-worker.js"],
               re.findall(r'"\./([^"?]*)', files))
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v35')")
-        check("Updates has a v35 entry that is the newest", entry and page.evaluate("CHANGELOG[0].version") == "v35", entry)
+        check("Updates has a v35 entry, and the newest entry is v35 or later", entry and float(page.evaluate("CHANGELOG[0].version")[1:]) >= 35, entry)
         joined = " ".join(entry["changes"]) if entry else ""
         check("the Updates entry says Compendium, Pro preview, Copy as text, Save into a new recipe, Save recipe, that nothing is saved before, offline, sends nothing anywhere and no colour wheel yet",
               all(w in joined for w in ["Compendium", "Pro preview", "Copy as text", "Save into a new recipe", "Save recipe", "offline", "sends nothing anywhere", "no colour wheel yet"]), joined[:300])

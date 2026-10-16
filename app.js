@@ -6549,7 +6549,8 @@
     let recipeIdeasCard = null;   // the card in the recipe editor, if it's open
     let colourIdeasState = { open: false, base: "whole", role: "glow", check: false, scheme: "", mood: "", detail: "", detailGroup: "", basing: "", basingGroup: "" };   // kept while the app is open
     // v35: the Compendium tab keeps its own picks (also only while the app is open), so what you pick there never changes the card in a recipe.
-    let compendiumState = { base: "", role: "glow", scheme: "", mood: "", detail: "", detailGroup: "", basing: "", basingGroup: "", faction: "" };
+    // v36: wheel = the colour wheel part that is open ("" = none), wheelOthers = which parts also show paints you do not have yet.
+    let compendiumState = { base: "", role: "glow", scheme: "", mood: "", detail: "", detailGroup: "", basing: "", basingGroup: "", faction: "", wheel: "", wheelOthers: {} };
 
     // v35: ONE set of building blocks, TWO doors. The parts of the Colour ideas card (the ideas, Your schemes, Starter schemes,
     // Detail recipes and Basing tips) are built by the functions below, and BOTH the recipe editor and the Compendium tab use them.
@@ -7677,7 +7678,7 @@
     // choose, Your schemes, Starter schemes, Detail recipes, Basing tips) WITHOUT needing a recipe. It is the second "door" onto the
     // shared building blocks above (see "ONE set of building blocks, TWO doors"): there is no recipe to add steps to, so the rows
     // are plain and each part ends with "Copy as text" and "Save into a new recipe…" instead. The data files are the same ones.
-    // No colour wheel yet (that is the next chunk). Works offline and sends nothing anywhere. Paint, faction and recipe names are
+    // v36 adds the colour wheel at the top (see "THE COLOUR WHEEL" below). Works offline and sends nothing anywhere. Paint, faction and recipe names are
     // always shown as plain text (never as HTML), because they can be anything the user typed or pasted.
 
     // The paints you can start from: your own palette first (paints you own, then the rest), then the built-in list by brand.
@@ -7735,6 +7736,237 @@
       });
     }
 
+    // ---- v36: THE COLOUR WHEEL (the top of the Compendium) ----
+    // One round picture: an outer ring of six colours, and a grey circle in the middle split into four slices (whites, greys, blacks,
+    // metallics). Tap one and its paints open BELOW the wheel: a short description, then the paints that sit there, yours first
+    // (marked), each group sorted dark to light. Browns sit under orange, bone under yellow, and metallics are split into gold, silver
+    // and bronze. Plain SVG, no library, works offline, sends nothing anywhere.
+    // It uses the same pieces as the rest of the Compendium (no copy): the rows are buildIdeaItem rows, "Copy as text" is buildShareRow,
+    // the paints come from compendiumBaseChoices, and the door keeps the picks. Where a paint sits comes from its COLOUR, never from
+    // its name (the one exception: a metal word in the name, or a paint type of metallic, puts it with the metallics).
+    const WHEEL = [
+      { key: "red", label: "Red", ring: 0, text: "Warm and strong. Red grabs the eye first, so it works best in small amounts: eyes, gems, trim or a banner. Dark reds look rich and heavy, bright reds look hot.",
+        subs: [{ key: "red", label: "Reds", word: "red" }] },
+      { key: "orange", label: "Orange", ring: 1, text: "Between red and yellow. It sits opposite blue, so the two make each other stand out. Browns live here too: they are dull, darker oranges, good for leather, wood and earth.",
+        subs: [{ key: "orange", label: "Oranges", word: "orange" }, { key: "brown", label: "Browns", word: "brown" }] },
+      { key: "yellow", label: "Yellow", ring: 2, text: "Light and bright. A little yellow lifts a dark model. Bone is the soft, dull cream next to it, good for cloth, parchment and old bone.",
+        subs: [{ key: "yellow", label: "Yellows", word: "yellow" }, { key: "bone", label: "Bone", word: "bone" }] },
+      { key: "green", label: "Green", ring: 3, text: "Calm and natural. Green sits well beside blue and yellow, and a touch of red or orange nearby makes it stand out. Very dark greens can almost pass for black.",
+        subs: [{ key: "green", label: "Greens", word: "green" }] },
+      { key: "blue", label: "Blue", ring: 4, text: "Cool and steady. Blue calms a scheme, and a little orange or gold makes it come alive. A deep blue is a soft stand-in for black.",
+        subs: [{ key: "blue", label: "Blues", word: "blue" }] },
+      { key: "purple", label: "Purple", ring: 5, text: "Rich and a little unusual. It sits between blue and red, and it looks strong beside yellow. Dark purples make good shadows for yellows and reds.",
+        subs: [{ key: "purple", label: "Purples", word: "purple" }] },
+      { key: "white", label: "Whites", centre: 0, text: "The palest paints. Pure white can look harsh on a model, so many painters use an off-white and keep the brightest white for the tiniest highlights.",
+        subs: [{ key: "white", label: "Whites", word: "white" }] },
+      { key: "grey", label: "Greys", centre: 1, text: "The calm middle. Greys hold other colours steady. They suit stone, metal armour and shading, and a grey with a hint of colour looks warmer or cooler.",
+        subs: [{ key: "grey", label: "Greys", word: "grey" }] },
+      { key: "black", label: "Blacks", centre: 2, text: "The darkest paints. Pure black can flatten the detail, so many painters use a very dark blue, brown or grey for deep shadows.",
+        subs: [{ key: "black", label: "Blacks", word: "black" }] },
+      { key: "metallic", label: "Metallics", centre: 3, text: "Shiny paints for metal. The colour shown is only a guide, because shine looks different on the model than in the pot. They are split into gold, silver and bronze below.",
+        subs: [{ key: "gold", label: "Gold", word: "gold" }, { key: "silver", label: "Silver", word: "silver" }, { key: "bronze", label: "Bronze", word: "bronze" }] },
+    ];
+    const WHEEL_METAL_WORDS = /\b(gold|golden|silver|bronze|copper|brass|steel|chrome|chain ?mail|nickel|aluminium|aluminum|pewter|gunmetal|metallic|metal)\b/i;
+    const WHEEL_NOT_METAL = /\b(gold|golden|bronze|brass|copper|silver|steel)\s+(green|brown|blue|yellow|orange|red|olive|ochre)\b/i;   // "Bronze Green" is a green
+
+    // Where a paint sits on the wheel: { seg, sub, L } (L = how light it is, 0 black to 100 white), or null when its colour is not known yet.
+    function wheelPlace(paint) {
+      const C = MinifolioColour;
+      if (!paint || paint.type === "material" || !colourIdeaIsReal(paint.colour)) return null;
+      const hsl = C.hexToHsl(paint.colour), lab = C.hexToLab(paint.colour);
+      if (!hsl || !lab) return null;
+      const name = String(paint.name || "");
+      const { h, s, l } = hsl;
+      const typeSaysMetal = typeof paint.type === "string" && /^metallic$/i.test(paint.type.trim());
+      const nameSaysMetal = (WHEEL_METAL_WORDS.test(name) && !WHEEL_NOT_METAL.test(name)) || (/\biron\b/i.test(name) && s < 0.2);
+      if (typeSaysMetal || nameSaysMetal) {
+        let sub;
+        if (/\b(bronze|copper)\b/i.test(name)) sub = "bronze";
+        else if (/\b(gold|golden|brass)\b/i.test(name)) sub = "gold";
+        else if (/\b(silver|steel|chrome|chain ?mail|nickel|aluminium|aluminum|pewter|gunmetal|iron)\b/i.test(name)) sub = "silver";
+        else sub = s < 0.2 ? "silver" : h < 35 ? "bronze" : "gold";   // no metal word: the colour decides
+        return { seg: "metallic", sub, L: lab.L };
+      }
+      const at = (seg, sub) => ({ seg, sub: sub || seg, L: lab.L });
+      if (l >= 0.9) return at("white");
+      if (l <= 0.1) return at("black");
+      if (s < 0.12) return at("grey");
+      if (h >= 15 && h < 50 && l < 0.4) return at("orange", "brown");          // dark, dull orange or yellow-orange
+      if (h < 15 && l < 0.42 && s < 0.5) return at("orange", "brown");        // dark, dull red-brown
+      if (h >= 30 && h < 65 && l >= 0.6 && s <= 0.5) return at("yellow", "bone");   // pale, dull warm yellow
+      if (h >= 50 && h < 68 && l < 0.38) return at("green");                  // dark olive
+      if (h < 15 || h >= 320) return at("red");
+      if (h < 45) return at("orange");
+      if (h < 68) return at("yellow");
+      if (h < 170) return at("green");
+      if (h < 255) return at("blue");
+      return at("purple");
+    }
+    function wheelTone(L) { return L < 20 ? "Very dark" : L < 40 ? "Dark" : L < 60 ? "Mid" : L < 80 ? "Light" : "Very light"; }
+
+    // Every paint with a known colour, with its place: yours that you own (origin 0), the rest of your palette (1), the built-in list (2).
+    function wheelItems() {
+      const choices = compendiumBaseChoices();
+      const items = [];
+      const add = (list, origin) => { for (const paint of list) { const at = wheelPlace(paint); if (at) items.push({ paint, at, origin }); } };
+      add(choices.own, 0);
+      add(choices.other, 1);
+      add(choices.brands.flatMap(b => b.list), 2);
+      return items;
+    }
+    function wheelTag(item) {
+      if (item.origin === 1) return { cls: "none", text: item.paint.status === "wishlist" ? "On your wishlist" : "In your palette, not owned" };
+      return colourIdeaTag({ owned: item.origin === 0, quality: "good" });   // the same two tags the colour ideas use: You own this / Not in your palette
+    }
+    const WHEEL_ROUGH_NOTE = "The colour shown is only a guide for this kind of paint.";
+
+    // The words under the wheel part that is open: its name, what it is, how many you own, then the paints (grouped where the wheel
+    // part has groups), and Copy as text. Paints you do not have yet stay behind one button so the list stays short on a phone.
+    function buildWheelDetail(door, seg, items, redraw) {
+      const st = door.state;
+      const box = document.createElement("div");
+      box.className = "wheel-detail";
+      box.id = door.id("wheel-detail");
+      const title = document.createElement("h3");
+      title.className = "scheme-title";
+      title.textContent = seg.label;
+      const about = document.createElement("p");
+      about.className = "hint";
+      about.textContent = seg.text;
+      const owned = items.filter(x => x.origin === 0).length;
+      const count = document.createElement("p");
+      count.className = "idea-label";
+      count.textContent = items.length
+        ? `You own ${owned} of ${items.length} ${items.length === 1 ? "paint" : "paints"} in this colour.`
+        : "There are no paints in this colour to show yet.";
+      box.append(title, about, count);
+      const lines = [seg.label, seg.text, count.textContent];
+
+      const others = items.filter(x => x.origin === 2);
+      const showOthers = !!st.wheelOthers[seg.key];
+      const shown = showOthers ? items : items.filter(x => x.origin < 2);
+      if (others.length) {
+        const toggle = document.createElement("button");
+        toggle.type = "button";
+        toggle.className = "plain-button";
+        toggle.id = door.id("wheel-others");
+        toggle.setAttribute("aria-expanded", String(showOthers));
+        toggle.textContent = showOthers ? "Hide other paints" : `Show other paints (${others.length})`;
+        toggle.addEventListener("click", () => { st.wheelOthers[seg.key] = !showOthers; redraw(`#${door.id("wheel-others")}`); });
+        box.appendChild(toggle);
+      }
+      if (!shown.length && others.length) {
+        const none = document.createElement("p");
+        none.className = "hint";
+        none.textContent = "You have none of these in your palette yet. Use the button above to see the others.";
+        box.appendChild(none);
+      }
+      for (const sub of seg.subs) {
+        const group = shown.filter(x => x.at.sub === sub.key);
+        if (!group.length) continue;
+        if (seg.subs.length > 1) {
+          const heading = document.createElement("h4");
+          heading.className = "wheel-sub";
+          heading.textContent = `${sub.label} (${group.length})`;
+          box.appendChild(heading);
+          lines.push("", `${sub.label} (${group.length})`);
+        }
+        const list = document.createElement("ul");
+        list.className = "idea-list";
+        for (const x of group.sort((a, b) => a.origin - b.origin || a.at.L - b.at.L || String(a.paint.name).localeCompare(String(b.paint.name)))) {
+          const tag = wheelTag(x);
+          const reason = `${wheelTone(x.at.L)} ${sub.word}.`;
+          const note = seg.key === "metallic" || MinifolioColour.isRoughColour(x.paint) ? WHEEL_ROUGH_NOTE : "";
+          list.appendChild(buildIdeaItem(x.paint, tag, reason, note, null));
+          lines.push(ideaTextLine(x.paint, tag, reason, note));
+        }
+        box.appendChild(list);
+      }
+      const share = buildShareRow(door, `${seg.label} list`, [...lines, "", COMPENDIUM_TEXT_FOOT], null);
+      if (share) box.appendChild(share);
+      return box;
+    }
+
+    // The wheel itself. A slice is a path: from angle a0 to a1 (degrees, clockwise from the top), between radius r0 and r1.
+    function wheelSlicePath(cx, cy, r0, r1, a0, a1) {
+      const pt = (r, a) => { const t = a * Math.PI / 180; return [(cx + r * Math.sin(t)).toFixed(2), (cy - r * Math.cos(t)).toFixed(2)]; };
+      const big = a1 - a0 > 180 ? 1 : 0;
+      const [x0, y0] = pt(r1, a0), [x1, y1] = pt(r1, a1);
+      if (r0 <= 0) return `M${cx} ${cy}L${x0} ${y0}A${r1} ${r1} 0 ${big} 1 ${x1} ${y1}Z`;
+      const [x2, y2] = pt(r0, a1), [x3, y3] = pt(r0, a0);
+      return `M${x0} ${y0}A${r1} ${r1} 0 ${big} 1 ${x1} ${y1}L${x2} ${y2}A${r0} ${r0} 0 ${big} 0 ${x3} ${y3}Z`;
+    }
+    function appendColourWheel(body, door, redraw) {
+      const st = door.state;
+      const SVG = "http://www.w3.org/2000/svg";
+      const items = wheelItems();
+      const block = document.createElement("div");
+      block.className = "wheel-block";
+      block.id = door.id("wheel-block");
+      const hint = document.createElement("p");
+      hint.className = "wheel-hint";
+      hint.id = door.id("wheel-hint");
+      hint.textContent = "Tap a colour to see what's in it";
+      const svg = document.createElementNS(SVG, "svg");
+      svg.setAttribute("viewBox", "0 0 320 320");
+      svg.setAttribute("class", "wheel-svg");
+      svg.setAttribute("role", "group");
+      svg.setAttribute("aria-label", "Colour wheel");
+      svg.id = door.id("wheel");
+      const defs = document.createElementNS(SVG, "defs");
+      const metal = document.createElementNS(SVG, "linearGradient");
+      metal.id = door.id("wheel-metal");
+      metal.setAttribute("x1", "0"); metal.setAttribute("y1", "0"); metal.setAttribute("x2", "1"); metal.setAttribute("y2", "1");
+      for (const [offset, colour] of [["0", "#b9c3d1"], ["0.55", "#d1b25a"], ["1", "#a56b3f"]]) {
+        const stop = document.createElementNS(SVG, "stop");
+        stop.setAttribute("offset", offset);
+        stop.setAttribute("stop-color", colour);
+        metal.appendChild(stop);
+      }
+      defs.appendChild(metal);
+      svg.appendChild(defs);
+      const CX = 160, CY = 160, RING_IN = 100, RING_OUT = 152, CENTRE = 92;
+      const slices = [];
+      for (const seg of WHEEL) {
+        const mine = items.filter(x => x.at.seg === seg.key);
+        const ownedHere = mine.filter(x => x.origin === 0).length;
+        const path = document.createElementNS(SVG, "path");
+        const [r0, r1, a0, a1] = seg.ring !== undefined
+          ? [RING_IN, RING_OUT, -30 + 60 * seg.ring, 30 + 60 * seg.ring]
+          : [0, CENTRE, 90 * seg.centre, 90 * seg.centre + 90];
+        path.setAttribute("d", wheelSlicePath(CX, CY, r0, r1, a0, a1));
+        path.setAttribute("class", `wheel-seg ${seg.key}`);
+        if (seg.key === "metallic") path.setAttribute("fill", `url(#${door.id("wheel-metal")})`);
+        path.setAttribute("role", "button");
+        path.setAttribute("tabindex", "0");
+        path.setAttribute("aria-pressed", String(st.wheel === seg.key));
+        path.setAttribute("aria-label", `${seg.label}, ${mine.length === 1 ? "1 paint" : mine.length + " paints"}, you own ${ownedHere}`);
+        path.dataset.wheel = seg.key;
+        const tip = document.createElementNS(SVG, "title");
+        tip.textContent = seg.label;
+        path.appendChild(tip);
+        const choose = () => { st.wheel = st.wheel === seg.key ? "" : seg.key; redraw(`[data-wheel="${seg.key}"]`); };
+        path.addEventListener("click", choose);
+        path.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(); } });
+        slices.push({ key: seg.key, path });
+      }
+      // the open part is drawn last, so its outline is not covered by its neighbours
+      for (const s of slices.filter(x => x.key !== st.wheel).concat(slices.filter(x => x.key === st.wheel))) svg.appendChild(s.path);
+      for (const r of [RING_OUT, CENTRE]) {
+        const edge = document.createElementNS(SVG, "circle");
+        edge.setAttribute("cx", CX); edge.setAttribute("cy", CY); edge.setAttribute("r", r);
+        edge.setAttribute("class", "wheel-edge");
+        svg.appendChild(edge);
+      }
+      const caption = document.createElement("p");
+      caption.className = "wheel-caption";
+      caption.textContent = "In the middle, clockwise from the top right: whites, greys, blacks and metallics.";
+      block.append(hint, svg, caption);
+      const open = WHEEL.find(w => w.key === st.wheel);
+      if (open) block.appendChild(buildWheelDetail(door, open, items.filter(x => x.at.seg === open.key), redraw));
+      body.appendChild(block);
+    }
+
     function renderCompendium(focusSelector) {
       const body = document.getElementById("compendium-body");
       if (!body) return;
@@ -7755,7 +7987,10 @@
       const door = compendiumDoor();
       const redraw = (selector) => renderCompendium(selector);
 
-      say("Colour ideas, starter schemes, detail recipes and basing tips, without needing a recipe. Pick a colour and what you are painting to get 3 paints that go with it, yours first. Use Copy as text to keep anything, or Save into a new recipe\u2026 to start a recipe from it.", "intro");
+      say("A colour wheel, colour ideas, starter schemes, detail recipes and basing tips, without needing a recipe. Use Copy as text to keep anything, or Save into a new recipe\u2026 to start a recipe from colour ideas, schemes, detail recipes and basing tips.", "intro");
+
+      // v36: the colour wheel comes first
+      appendColourWheel(body, door, redraw);
 
       // ---- paint ideas for a colour you choose ----
       const choices = compendiumBaseChoices();
@@ -10893,8 +11128,8 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=35". v21.4 test checks.)
-    const APP_VERSION = "v35";
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=36". v21.4 test checks.)
+    const APP_VERSION = "v36";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -11297,6 +11532,11 @@
     showCountingChoice();
 
     const CHANGELOG = [
+      { version: "v36", date: "16 Oct 2026", changes: [
+        "The Compendium (Pro preview) now starts with a colour wheel. The outer ring has red, orange, yellow, green, blue and purple. The grey circle in the middle has four slices: whites, greys, blacks and metallics. Tap one and its paints open below the wheel, with a short description first.",
+        "The paints you own come first, marked You own this, then the rest from dark to light. Browns sit under orange, bone sits under yellow, and metallics are split into gold, silver and bronze. Paints you do not have yet are behind a Show other paints button, so the list stays short.",
+        "A paint's place on the wheel comes from its colour (metallics from a metal word in the name, such as gold or silver), so a few may sit in an unexpected spot. It works offline and sends nothing anywhere. Copy as text keeps the list you are looking at.",
+      ]},
       { version: "v35", date: "16 Oct 2026", changes: [
         "New Compendium tab (Pro preview) in the bottom bar, between Recipes and Settings. It shows the same things as the Colour ideas card in a recipe, but without needing a recipe: pick a colour and what you are painting to get 3 paints that go with it, then Colours you've used on this faction before, Starter schemes, Detail recipes and Basing tips.",
         "There is no recipe open there, so the rows have no add buttons. Each part has Copy as text instead, and Save into a new recipe\u2026, which opens the recipe editor with a new recipe that already has those steps. Nothing is saved until you press Save recipe.",
