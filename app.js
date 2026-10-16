@@ -6553,8 +6553,9 @@
     // v37: open = which of the five folding parts are open (all start closed). view = "themes" or "combos" (the Starter schemes switch),
     // combo = the chosen group in the Combinations view. In the Compendium a group of schemes, detail recipes or tips is chosen before
     // its list shows ("" = none yet, "all" = everything), so the page stays short.
+    // v37 part 2: wheelMore = which wheel groups show all their paints; search = what is typed in the search box of each button list.
     let compendiumState = { base: "", role: "glow", scheme: "", mood: "", detail: "", detailGroup: "", basing: "", basingGroup: "", faction: "", wheel: "", wheelOthers: {},
-                            open: {}, view: "themes", combo: "" };
+                            open: {}, view: "themes", combo: "", wheelMore: {}, search: { starter: "", detail: "", basing: "" } };
 
     // v35: ONE set of building blocks, TWO doors. The parts of the Colour ideas card (the ideas, Your schemes, Starter schemes,
     // Detail recipes and Basing tips) are built by the functions below, and BOTH the recipe editor and the Compendium tab use them.
@@ -6566,12 +6567,14 @@
     //   share         null in a recipe. In the Compendium { copy(text, what), startRecipe(steps) }: each part with something picked
     //                 then ends with "Copy as text" and "Save into a new recipe…".
     //   factions()    the Map (lowercase key -> name) of factions that Your schemes looks at
-    //   factionPick   Compendium only: { names, onChange } the drop-down for choosing the faction
+    //   factionPick   Compendium only: { names, onChange } the box (a search box with a list; v37 part 2) for choosing the faction
     //   noFactionText what Your schemes says when there is no faction to look at
     //   id(name)      the page id for a part, so the two doors never share an id (the recipe editor keeps its old ids)
     //   fold, short, switcher   (v37, Compendium only; all false in a recipe, which looks and works as before)
     //                 fold: each part sits under a heading you tap to open and close. short: no list shows until a group is chosen.
     //                 switcher: Starter schemes has the Themes | Combinations switch.
+    //   search        (v37 part 2, Compendium only) "Start from" and "Faction" are boxes you type in (buildSearchPicker), and Starter schemes,
+    //                 Detail recipes and Basing tips have a search box above their buttons (buildListSearch). What is typed is kept in state.search.
     const doorId = (name) => name;
     const compendiumId = (name) => "cmp-" + name;
     // Is a finger (or mouse button) down right now? The panel never redraws itself under a press: typing a paint
@@ -7044,17 +7047,14 @@
       };
       // v35: with no recipe, you choose which faction to look at
       if (door.factionPick) {
-        const label = document.createElement("label");
-        label.append("Faction");
-        const select = document.createElement("select");
-        select.style.width = "100%";
-        select.id = door.id("faction-history-pick");
-        select.add(new Option(door.factionPick.names.length ? "Choose a faction" : "No factions yet", ""));
-        for (const name of door.factionPick.names) select.add(new Option(name, factionKey(name)));
-        select.value = door.state.faction;
-        select.addEventListener("change", () => door.factionPick.onChange(select.value));
-        label.appendChild(select);
-        box.appendChild(label);
+        // v37 part 2: a box you type in, with the factions in a list under it (the same builder as "Start from")
+        box.appendChild(buildSearchPicker(door, {
+          id: "faction-history-pick", label: "Faction", one: "faction",
+          placeholder: "Type or choose a faction", emptyPlaceholder: "No factions yet",
+          groups: [{ label: "", options: door.factionPick.names.map(name => ({ value: factionKey(name), text: name })) }],
+          value: door.state.faction,
+          onPick: (value, focus) => door.factionPick.onChange(value, focus),
+        }));
       }
 
       const factions = door.factions();
@@ -7140,6 +7140,306 @@
       return p;
     }
 
+    // ---- v37 part 2: SEARCH ----
+    // Switched on by the door flag door.search (Compendium only; the recipe card has no search and works exactly as before). Two shared builders:
+    //  - buildSearchPicker: a box you type in, with a list under it that narrows as you type and that you can still scroll and pick from.
+    //    It is the standard "combobox with a list" pattern, so a keyboard and a screen reader work. Used for "Start from" and "Faction".
+    //  - buildListSearch: a plain search box above a list of buttons (Starter schemes, Detail recipes, Basing tips). What is typed is kept in
+    //    the door's state (door.state.search), and only what is under the box is rebuilt, so the box keeps the focus while you type.
+    // Matching ignores capitals, accents and punctuation, and every word you type has to be somewhere in the name (in any order).
+    function searchNorm(text) {
+      return String(text || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+    }
+    // the words you typed, each of which must be in the text (an "offwhite" typed also finds "Off-White")
+    function searchHit(words, hay, compact) {
+      return words.every(w => hay.includes(w) || compact.includes(w));
+    }
+    function searchMatches(query, text) {
+      const q = searchNorm(query);
+      if (!q) return true;
+      const hay = searchNorm(text);
+      return searchHit(q.split(" "), hay, hay.replace(/ /g, ""));
+    }
+    function searchQuery(st, key) { return String((st && st.search && st.search[key]) || "").trim(); }
+    // While something is typed, a group that is chosen still narrows the list, and with no group chosen the search covers everything.
+    function groupAllowsNow(door, groups, value, group, q, text) {
+      if (!q) return groupAllows(door, groups, value, group);
+      const v = groupValue(door, groups, value);
+      return (v === "" || v === "all" || group === v) && searchMatches(q, text);
+    }
+    function searchStatus(q, n, groupName) {   // the plain line under a search box
+      if (!q) return "";
+      return n === 0 ? "No matches." : `${n} ${n === 1 ? "match" : "matches"}${groupName ? ` in ${groupName}` : ""}.`;
+    }
+
+    // The box you type in, with its list. o = { id, label, groups: [{ label, options: [{ value, text }] }], value, one (what one option is, for
+    // the count: "paint"), placeholder, onPick(value, focusSelector) }. The list shows only some of the options at first (60) and adds more as
+    // you scroll or press the down arrow, so 500+ paints stay quick on a phone.
+    function buildSearchPicker(door, o) {
+      const CHUNK = 60;
+      const options = [];
+      for (const g of o.groups) for (const opt of g.options) {
+        const hay = searchNorm(opt.text);
+        options.push({ value: opt.value, text: opt.text, group: g.label, hay, compact: hay.replace(/ /g, "") });
+      }
+      const chosen = options.find(x => x.value === o.value) || null;
+      const chosenText = chosen ? chosen.text : "";
+      const ids = { input: door.id(o.id), list: door.id(`${o.id}-list`), status: door.id(`${o.id}-status`), toggle: door.id(`${o.id}-toggle`), clear: door.id(`${o.id}-clear`), label: door.id(`${o.id}-label`) };
+
+      const wrap = document.createElement("div");
+      wrap.className = "combo";
+      wrap.id = door.id(`${o.id}-combo`);
+      const label = document.createElement("label");
+      label.id = ids.label;
+      label.htmlFor = ids.input;
+      label.className = "combo-label";
+      label.textContent = o.label;
+      const row = document.createElement("div");
+      row.className = "combo-row";
+      const input = document.createElement("input");
+      input.type = "text";
+      input.id = ids.input;
+      input.className = "combo-input";
+      input.setAttribute("role", "combobox");
+      input.setAttribute("aria-autocomplete", "list");
+      input.setAttribute("aria-haspopup", "listbox");
+      input.setAttribute("aria-expanded", "false");
+      input.setAttribute("aria-controls", ids.list);
+      input.setAttribute("autocomplete", "off");
+      input.setAttribute("autocapitalize", "none");
+      input.setAttribute("autocorrect", "off");
+      input.setAttribute("spellcheck", "false");
+      input.setAttribute("enterkeyhint", "done");
+      input.placeholder = options.length ? o.placeholder : (o.emptyPlaceholder || o.placeholder);
+      input.disabled = !options.length;
+      input.value = chosenText;
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.id = ids.toggle;
+      toggle.className = "plain-button combo-toggle";
+      toggle.tabIndex = -1;   // the keyboard opens the list with the down arrow; a screen reader or a finger can still reach this button
+      toggle.disabled = !options.length;
+      toggle.setAttribute("aria-label", `Show the list: ${o.label}`);
+      toggle.setAttribute("aria-controls", ids.list);
+      toggle.setAttribute("aria-expanded", "false");
+      const mark = document.createElement("span");
+      mark.className = "combo-mark";
+      mark.setAttribute("aria-hidden", "true");
+      toggle.appendChild(mark);
+      const clear = document.createElement("button");
+      clear.type = "button";
+      clear.id = ids.clear;
+      clear.className = "plain-button combo-clear";
+      clear.textContent = "Clear";
+      clear.setAttribute("aria-label", `Clear ${o.label}`);
+      clear.hidden = !chosen;
+      row.append(input, toggle, clear);
+      const list = document.createElement("ul");
+      list.id = ids.list;
+      list.className = "combo-list";
+      list.setAttribute("role", "listbox");
+      list.tabIndex = -1;   // a scrolling box can be Tabbed into by the browser; the keyboard uses the arrow keys instead
+      list.setAttribute("aria-labelledby", ids.label);
+      list.hidden = true;
+      const status = document.createElement("p");
+      status.id = ids.status;
+      status.className = "hint combo-status";
+      status.setAttribute("role", "status");
+      status.setAttribute("aria-live", "polite");
+      wrap.append(label, row, list, status);
+
+      let isOpen = false, typed = false, active = -1, rendered = 0, matched = options, viewListener = null;
+      const addOptions = () => {
+        const end = Math.min(matched.length, rendered + CHUNK);
+        for (let i = rendered; i < end; i++) {
+          const x = matched[i];
+          if (x.group && (i === 0 || matched[i - 1].group !== x.group)) {
+            const head = document.createElement("li");
+            head.className = "combo-group";
+            head.setAttribute("role", "presentation");
+            head.textContent = x.group;
+            list.appendChild(head);
+          }
+          const li = document.createElement("li");
+          li.id = `${ids.list}-${i}`;
+          li.className = "combo-option";
+          li.setAttribute("role", "option");
+          li.setAttribute("aria-selected", String(x === chosen));
+          li.setAttribute("aria-posinset", String(i + 1));
+          li.setAttribute("aria-setsize", String(matched.length));
+          li.dataset.i = String(i);
+          li.dataset.value = x.value;
+          li.textContent = x.text;
+          if (i === active) li.classList.add("is-active");
+          list.appendChild(li);
+        }
+        rendered = end;
+      };
+      const say = () => {
+        const n = matched.length;
+        status.textContent = !isOpen ? "" : typed || n === 0 ? searchStatus("typed", n, "") : `${plural(n, o.one)}. Type to narrow the list.`;
+      };
+      const refill = () => {
+        const q = typed ? searchNorm(input.value) : "";
+        const words = q ? q.split(" ") : [];
+        matched = words.length ? options.filter(x => searchHit(words, x.hay, x.compact)) : options;
+        active = -1;
+        input.removeAttribute("aria-activedescendant");
+        list.replaceChildren();
+        list.scrollTop = 0;
+        rendered = 0;
+        addOptions();
+        const at = words.length ? -1 : matched.indexOf(chosen);   // opening again: show the chosen paint, scrolled into view
+        while (at >= rendered) addOptions();
+        list.hidden = !isOpen || matched.length === 0;
+        if (at >= 0 && isOpen) {
+          const sel = list.querySelector('[aria-selected="true"]');
+          if (sel) list.scrollTop = Math.max(0, sel.getBoundingClientRect().top - list.getBoundingClientRect().top - list.clientHeight / 3);
+        }
+        say();
+      };
+      const fit = () => {   // on a phone the keyboard covers the lower half: keep the list short and the box near the top of what is left
+        const vv = window.visualViewport, vh = vv ? vv.height : window.innerHeight;
+        list.style.maxHeight = `${Math.round(Math.max(150, Math.min(288, vh * 0.42)))}px`;
+        if (window.innerWidth < 700 && input.getBoundingClientRect().top > vh * 0.3) input.scrollIntoView({ block: "start" });
+      };
+      const outside = (e) => { if (!wrap.isConnected || !wrap.contains(e.target)) close(true); };
+      const open = () => {
+        if (isOpen) return;
+        isOpen = true;
+        input.setAttribute("aria-expanded", "true");
+        toggle.setAttribute("aria-expanded", "true");
+        refill();
+        fit();
+        document.addEventListener("pointerdown", outside, true);
+        if (window.visualViewport) { viewListener = fit; window.visualViewport.addEventListener("resize", viewListener); }
+      };
+      const close = (restore) => {
+        isOpen = false;
+        typed = false;
+        active = -1;
+        input.setAttribute("aria-expanded", "false");
+        toggle.setAttribute("aria-expanded", "false");
+        input.removeAttribute("aria-activedescendant");
+        list.hidden = true;
+        say();
+        document.removeEventListener("pointerdown", outside, true);
+        if (viewListener && window.visualViewport) window.visualViewport.removeEventListener("resize", viewListener);
+        viewListener = null;
+        if (restore) input.value = chosenText;
+      };
+      const setActive = (i) => {
+        if (!matched.length) return;
+        i = Math.max(0, Math.min(matched.length - 1, i));
+        while (i >= rendered) addOptions();
+        const old = list.querySelector(".is-active");
+        if (old) old.classList.remove("is-active");
+        active = i;
+        const el = document.getElementById(`${ids.list}-${i}`);
+        el.classList.add("is-active");
+        input.setAttribute("aria-activedescendant", el.id);
+        const top = el.offsetTop, bottom = top + el.offsetHeight;
+        if (top < list.scrollTop) list.scrollTop = top; else if (bottom > list.scrollTop + list.clientHeight) list.scrollTop = bottom - list.clientHeight;
+      };
+      const choose = (x, byKey) => {
+        close(false);
+        input.value = x.text;
+        o.onPick(x.value, `#${byKey ? ids.input : ids.toggle}`);
+      };
+
+      input.addEventListener("input", () => { typed = true; if (!isOpen) open(); else refill(); clear.hidden = true; });
+      input.addEventListener("click", () => {
+        const first = !isOpen;
+        open();
+        if (first && chosenText && input.value === chosenText) input.select();   // so typing replaces the paint that is chosen
+      });
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+          e.preventDefault();
+          if (!isOpen) { open(); setActive(Math.max(0, matched.findIndex(x => x === chosen))); return; }
+          setActive(active < 0 ? (e.key === "ArrowDown" ? 0 : matched.length - 1) : active + (e.key === "ArrowDown" ? 1 : -1));
+        } else if ((e.key === "PageDown" || e.key === "PageUp") && isOpen) {
+          e.preventDefault();
+          setActive(active + (e.key === "PageDown" ? 8 : -8));
+        } else if (e.key === "Enter" && isOpen) {
+          const i = active >= 0 ? active : matched.length === 1 ? 0 : -1;
+          if (i >= 0) { e.preventDefault(); choose(matched[i], true); }
+        } else if (e.key === "Escape" && (isOpen || input.value !== chosenText)) {
+          e.preventDefault();
+          e.stopPropagation();
+          close(true);
+          clear.hidden = !chosen;
+        }
+      });
+      wrap.addEventListener("focusout", (e) => { if (isOpen && e.relatedTarget && !wrap.contains(e.relatedTarget)) { close(true); clear.hidden = !chosen; } });
+      list.addEventListener("mousedown", (e) => e.preventDefault());   // a tap on the list must not take the focus out of the box
+      list.addEventListener("click", (e) => {
+        const li = e.target.closest ? e.target.closest('[role="option"]') : null;
+        const x = li ? matched[Number(li.dataset.i)] : null;
+        if (x) choose(x, false);
+      });
+      list.addEventListener("scroll", () => { if (rendered < matched.length && list.scrollTop + list.clientHeight >= list.scrollHeight - 120) addOptions(); });
+      toggle.addEventListener("mousedown", (e) => e.preventDefault());
+      toggle.addEventListener("click", () => { if (isOpen) { close(true); clear.hidden = !chosen; } else open(); });
+      clear.addEventListener("click", () => { o.onPick("", `#${ids.input}`); });
+      return wrap;
+    }
+
+    // The plain search box above a list of buttons. o = { label, status, rebuild(value) }: rebuild stores the new text in the state and builds the
+    // whole part again; only what comes after the search box is taken from it, so this box (and the focus, and a half-typed word) stays put.
+    function buildListSearch(door, key, o) {
+      const st = door.state;
+      const wrap = document.createElement("div");
+      wrap.className = "list-search";
+      wrap.id = door.id(`${key}-search-box`);
+      const label = document.createElement("label");
+      label.className = "combo-label";
+      label.htmlFor = door.id(`${key}-search`);
+      label.id = door.id(`${key}-search-label`);
+      label.textContent = o.label;
+      const row = document.createElement("div");
+      row.className = "combo-row";
+      const input = document.createElement("input");
+      input.type = "search";
+      input.id = door.id(`${key}-search`);
+      input.className = "combo-input";
+      input.setAttribute("autocomplete", "off");
+      input.setAttribute("autocapitalize", "none");
+      input.setAttribute("autocorrect", "off");
+      input.setAttribute("spellcheck", "false");
+      input.setAttribute("enterkeyhint", "search");
+      input.setAttribute("aria-describedby", door.id(`${key}-search-status`));
+      input.placeholder = "Type to search";
+      input.value = st.search[key] || "";
+      const clear = document.createElement("button");
+      clear.type = "button";
+      clear.className = "plain-button combo-clear";
+      clear.id = door.id(`${key}-search-clear`);
+      clear.textContent = "Clear";
+      clear.setAttribute("aria-label", `Clear the search: ${o.label}`);
+      clear.hidden = !input.value;
+      row.append(input, clear);
+      const status = document.createElement("p");
+      status.className = "hint list-search-status";
+      status.id = door.id(`${key}-search-status`);
+      status.setAttribute("role", "status");
+      status.setAttribute("aria-live", "polite");
+      status.textContent = o.status;
+      wrap.append(label, row, status);
+      const apply = (value) => {
+        const fresh = o.rebuild(value);
+        const next = fresh.querySelector(":scope > .list-search");
+        status.textContent = next.querySelector(".list-search-status").textContent;
+        clear.hidden = !value;
+        while (wrap.nextSibling) wrap.nextSibling.remove();
+        while (next.nextSibling) wrap.parentNode.appendChild(next.nextSibling);
+      };
+      input.addEventListener("input", () => apply(input.value));
+      input.addEventListener("keydown", (e) => { if (e.key === "Escape" && input.value) { e.preventDefault(); e.stopPropagation(); input.value = ""; apply(""); } });
+      clear.addEventListener("click", () => { input.value = ""; apply(""); input.focus(); });
+      return wrap;
+    }
+
     // v37: the other way to browse the starter schemes: "Combinations" groups them by their main colour (the first, armour colour), so
     // you can look for blue and gold, or red and grey, and so on. The group comes from the colour's place on the wheel (wheelPlace),
     // never from the words in a scheme's name. Whites, greys and blacks are one group ("neutral").
@@ -7158,7 +7458,8 @@
     function starterSchemesShown(st = colourIdeasState, door = null) {
       if (door && door.switcher) {
         const combos = st.view === "combos";
-        return STARTER_SCHEMES.filter(s => groupAllows(door, combos ? STARTER_COMBOS : STARTER_MOODS, combos ? st.combo : st.mood, combos ? starterComboKey(s) : s.mood));
+        const q = door.search ? searchQuery(st, "starter") : "";   // v37 part 2: what is typed in the search box
+        return STARTER_SCHEMES.filter(s => groupAllowsNow(door, combos ? STARTER_COMBOS : STARTER_MOODS, combos ? st.combo : st.mood, combos ? starterComboKey(s) : s.mood, q, `${s.name} ${s.summary}`));
       }
       const mood = STARTER_MOODS.some(m => m.key === st.mood) ? st.mood : "";
       return STARTER_SCHEMES.filter(s => !mood || s.mood === mood);
@@ -7181,7 +7482,7 @@
     }
 
     // v35: door = where this is shown (see "ONE set of building blocks" above).
-    function buildStarterSchemes(door, onPick, onMood, onView, onCombo) {
+    function buildStarterSchemes(door, onPick, onMood, onView, onCombo, onSearch) {
       const st = door.state;
       const box = document.createElement("div");
       box.className = "starter-schemes";
@@ -7221,9 +7522,17 @@
       }
       box.append(title, hint);
       if (door.switcher) box.appendChild(buildSchemeSwitch(door, combos ? "combos" : "themes", onView));
+      const q = door.search ? searchQuery(st, "starter") : "";
+      if (door.search) {   // v37 part 2: the search box (only what comes after it is rebuilt while you type)
+        const groupName = (groups.find(g => g.key === value && value !== "all") || {}).name || "";
+        box.appendChild(buildListSearch(door, "starter", {
+          label: "Search starter schemes", status: searchStatus(q, starterSchemesShown(st, door).length, groupName),
+          rebuild: (text) => { onSearch(text); return buildStarterSchemes(door, onPick, onMood, onView, onCombo, onSearch); },
+        }));
+      }
       box.append(moods);
-      if (door.short && !value) box.appendChild(groupNone(door, "starter-none", "schemes"));
-      else box.appendChild(chips);
+      if (door.short && !value && !q) box.appendChild(groupNone(door, "starter-none", "schemes"));
+      else if (!q || chips.childElementCount) box.appendChild(chips);
       const scheme = starterSchemesShown(st, door).find(s => s.key === st.scheme);
       if (!scheme) return box;
 
@@ -7283,7 +7592,10 @@
     }
 
     function detailRecipesShown(st = colourIdeasState, door = null) {
-      if (door && door.short) return DETAIL_RECIPES.filter(r => groupAllows(door, DETAIL_GROUPS, st.detailGroup, r.group));   // v37
+      if (door && door.short) {   // v37 (part 2: and what is typed in the search box)
+        const q = door.search ? searchQuery(st, "detail") : "";
+        return DETAIL_RECIPES.filter(r => groupAllowsNow(door, DETAIL_GROUPS, st.detailGroup, r.group, q, `${r.name} ${r.summary}`));
+      }
       const group = DETAIL_GROUPS.some(g => g.key === st.detailGroup) ? st.detailGroup : "";
       return DETAIL_RECIPES.filter(r => !group || r.group === group);
     }
@@ -7293,7 +7605,7 @@
       return `${label} ${i + 1}: ${step.technique}, ${plural(step.coats, "coat")}, ${step.mix}% paint. ${step.look.charAt(0).toUpperCase() + step.look.slice(1)}. ${step.note}`;
     }
 
-    function buildDetailRecipes(door, onPick, onGroup) {
+    function buildDetailRecipes(door, onPick, onGroup, onSearch) {
       const st = door.state;
       const box = document.createElement("div");
       box.className = "detail-recipes";
@@ -7327,9 +7639,18 @@
         chip.dataset.detail = r.key;
         chips.appendChild(chip);
       }
-      box.append(title, hint, groups);
-      if (door.short && !activeGroup) box.appendChild(groupNone(door, "detail-none-group", "recipes"));
-      else box.appendChild(chips);
+      box.append(title, hint);
+      const q = door.search ? searchQuery(st, "detail") : "";
+      if (door.search) {   // v37 part 2: the search box
+        const groupName = (DETAIL_GROUPS.find(g => g.key === activeGroup && activeGroup !== "all") || {}).name || "";
+        box.appendChild(buildListSearch(door, "detail", {
+          label: "Search detail recipes", status: searchStatus(q, detailRecipesShown(st, door).length, groupName),
+          rebuild: (text) => { onSearch(text); return buildDetailRecipes(door, onPick, onGroup, onSearch); },
+        }));
+      }
+      box.appendChild(groups);
+      if (door.short && !activeGroup && !q) box.appendChild(groupNone(door, "detail-none-group", "recipes"));
+      else if (!q || chips.childElementCount) box.appendChild(chips);
       const recipe = detailRecipesShown(st, door).find(r => r.key === st.detail);
       if (!recipe) return box;
 
@@ -7382,7 +7703,10 @@
     // matched exactly like a detail recipe step (nearest paint, yours first, same honest tags and notes). Same rules for the text:
     // generic, our own words, no brand or product names, no Games Workshop, faction or scheme names. A test scans all of it.
     function basingTipsShown(st = colourIdeasState, door = null) {
-      if (door && door.short) return BASING_TIPS.filter(t => groupAllows(door, BASING_GROUPS, st.basingGroup, t.group));   // v37
+      if (door && door.short) {   // v37 (part 2: and what is typed in the search box)
+        const q = door.search ? searchQuery(st, "basing") : "";
+        return BASING_TIPS.filter(t => groupAllowsNow(door, BASING_GROUPS, st.basingGroup, t.group, q, `${t.name} ${t.summary}`));
+      }
       const group = BASING_GROUPS.some(g => g.key === st.basingGroup) ? st.basingGroup : "";
       return BASING_TIPS.filter(t => !group || t.group === group);
     }
@@ -7399,7 +7723,7 @@
       return list;
     }
 
-    function buildBasingTips(door, onPick, onGroup) {
+    function buildBasingTips(door, onPick, onGroup, onSearch) {
       const st = door.state;
       const box = document.createElement("div");
       box.className = "basing-tips";
@@ -7433,9 +7757,18 @@
         chip.dataset.basing = t.key;
         chips.appendChild(chip);
       }
-      box.append(title, hint, groups);
-      if (door.short && !activeGroup) box.appendChild(groupNone(door, "basing-none-group", "tips"));
-      else box.appendChild(chips);
+      box.append(title, hint);
+      const q = door.search ? searchQuery(st, "basing") : "";
+      if (door.search) {   // v37 part 2: the search box
+        const groupName = (BASING_GROUPS.find(g => g.key === activeGroup && activeGroup !== "all") || {}).name || "";
+        box.appendChild(buildListSearch(door, "basing", {
+          label: "Search basing tips", status: searchStatus(q, basingTipsShown(st, door).length, groupName),
+          rebuild: (text) => { onSearch(text); return buildBasingTips(door, onPick, onGroup, onSearch); },
+        }));
+      }
+      box.appendChild(groups);
+      if (door.short && !activeGroup && !q) box.appendChild(groupNone(door, "basing-none-group", "tips"));
+      else if (!q || chips.childElementCount) box.appendChild(chips);
       const tip = basingTipsShown(st, door).find(t => t.key === st.basing);
       if (!tip) return box;
 
@@ -7539,6 +7872,13 @@
             const picked = STARTER_SCHEMES.find(x => x.key === st.scheme);
             if (picked && combo && combo !== "all" && starterComboKey(picked) !== combo) st.scheme = "";
             redraw(`[data-combo="${clicked || "all"}"]`);
+          },
+          (text) => {   // v37 part 2: the search box. When it is emptied, a scheme you picked stays in sight (its group is chosen).
+            st.search.starter = text;
+            const picked = STARTER_SCHEMES.find(x => x.key === st.scheme);
+            if (picked && !text.trim() && !starterSchemesShown(st, door).some(x => x.key === picked.key)) {
+              if (st.view === "combos") st.combo = starterComboKey(picked); else st.mood = picked.mood;
+            }
           });
       }
       if (typeof DETAIL_RECIPES !== "undefined" && typeof DETAIL_GROUPS !== "undefined") {
@@ -7549,6 +7889,11 @@
             const picked = DETAIL_RECIPES.find(x => x.key === st.detail);
             if (picked && group && group !== "all" && picked.group !== group) st.detail = "";   // a pick outside the group is put away
             redraw(`[data-detail-group="${clicked || "all"}"]`);
+          },
+          (text) => {   // v37 part 2: the search box (see Starter schemes)
+            st.search.detail = text;
+            const picked = DETAIL_RECIPES.find(x => x.key === st.detail);
+            if (picked && !text.trim() && !detailRecipesShown(st, door).some(x => x.key === picked.key)) st.detailGroup = picked.group;
           });
       }
       if (typeof BASING_TIPS !== "undefined" && typeof BASING_GROUPS !== "undefined") {
@@ -7559,6 +7904,11 @@
             const picked = BASING_TIPS.find(x => x.key === st.basing);
             if (picked && group && group !== "all" && picked.group !== group) st.basing = "";   // a pick outside the group is put away
             redraw(`[data-basing-group="${clicked || "all"}"]`);
+          },
+          (text) => {   // v37 part 2: the search box (see Starter schemes)
+            st.search.basing = text;
+            const picked = BASING_TIPS.find(x => x.key === st.basing);
+            if (picked && !text.trim() && !basingTipsShown(st, door).some(x => x.key === picked.key)) st.basingGroup = picked.group;
           });
       }
       return parts;
@@ -7809,10 +8159,10 @@
       if (!chosen) st.faction = "";
       return {
         state: st, d: null, addStep: null, addSteps: null,
-        fold: true, short: true, switcher: true,   // v37: folding parts, short lists, the Themes | Combinations switch
+        fold: true, short: true, switcher: true, search: true,   // v37: folding parts, short lists, the Themes | Combinations switch, search boxes
         share: { copy: (text, what) => copyText(text, what, "Paste it anywhere."), startRecipe: startRecipeFromCompendium },
         factions: () => new Map(chosen ? [[factionKey(chosen), chosen]] : []),
-        factionPick: { names, onChange: (key) => { st.faction = key; renderCompendium(`#${compendiumId("faction-history-pick")}`); } },
+        factionPick: { names, onChange: (key, focus) => { st.faction = key; renderCompendium(focus || `#${compendiumId("faction-history-pick")}`); } },
         noFactionText: names.length
           ? "Choose a faction above to see the paints you have used on it. It looks at the recipes saved on your units of that faction."
           : "None of your units has a faction yet, so there is no history to show. Give a unit a faction on the Units tab, and the paints you use on it show here.",
@@ -7846,25 +8196,28 @@
     // It uses the same pieces as the rest of the Compendium (no copy): the rows are buildIdeaItem rows, "Copy as text" is buildShareRow,
     // the paints come from compendiumBaseChoices, and the door keeps the picks. Where a paint sits comes from its COLOUR, never from
     // its name (the one exception: a metal word in the name, or a paint type of metallic, puts it with the metallics).
+    // v37 part 2: every wheel part is split into two or three named groups (subs), each with a heading in the detail. Browns and bone are
+    // decided in wheelPlace; the other groups are decided by wheelSub (lightness, hue, or tint), still from the colour alone. Each group runs
+    // dark to light with yours first, shows its first few paints, and has a "Show all" button for the rest (WHEEL_GROUP_SHOWN).
     const WHEEL = [
       { key: "red", label: "Red", ring: 0, text: "Warm and strong. Red grabs the eye first, so it works best in small amounts: eyes, gems, trim or a banner. Dark reds look rich and heavy, bright reds look hot.",
-        subs: [{ key: "red", label: "Reds", word: "red" }] },
+        subs: [{ key: "deep", label: "Deep reds", word: "red" }, { key: "red", label: "Reds", word: "red" }, { key: "pink", label: "Pinks", word: "pink" }] },
       { key: "orange", label: "Orange", ring: 1, text: "Between red and yellow. It sits opposite blue, so the two make each other stand out. Browns live here too: they are dull, darker oranges, good for leather, wood and earth.",
-        subs: [{ key: "orange", label: "Oranges", word: "orange" }, { key: "brown", label: "Browns", word: "brown" }] },
+        subs: [{ key: "brown", label: "Browns", word: "brown" }, { key: "orange", label: "Oranges", word: "orange" }, { key: "peach", label: "Peach and apricot", word: "peach" }] },
       { key: "yellow", label: "Yellow", ring: 2, text: "Light and bright. A little yellow lifts a dark model. Bone is the soft, dull cream next to it, good for cloth, parchment and old bone.",
-        subs: [{ key: "yellow", label: "Yellows", word: "yellow" }, { key: "bone", label: "Bone", word: "bone" }] },
+        subs: [{ key: "mustard", label: "Mustard and ochre", word: "mustard" }, { key: "yellow", label: "Yellows", word: "yellow" }, { key: "bone", label: "Bone", word: "bone" }] },
       { key: "green", label: "Green", ring: 3, text: "Calm and natural. Green sits well beside blue and yellow, and a touch of red or orange nearby makes it stand out. Very dark greens can almost pass for black.",
-        subs: [{ key: "green", label: "Greens", word: "green" }] },
+        subs: [{ key: "olive", label: "Olive and moss", word: "olive" }, { key: "green", label: "Greens", word: "green" }, { key: "sea", label: "Sea green and mint", word: "sea green" }] },
       { key: "blue", label: "Blue", ring: 4, text: "Cool and steady. Blue calms a scheme, and a little orange or gold makes it come alive. A deep blue is a soft stand-in for black.",
-        subs: [{ key: "blue", label: "Blues", word: "blue" }] },
+        subs: [{ key: "navy", label: "Navy and deep blue", word: "blue" }, { key: "blue", label: "Blues", word: "blue" }, { key: "light", label: "Sky and pale blue", word: "blue" }] },
       { key: "purple", label: "Purple", ring: 5, text: "Rich and a little unusual. It sits between blue and red, and it looks strong beside yellow. Dark purples make good shadows for yellows and reds.",
-        subs: [{ key: "purple", label: "Purples", word: "purple" }] },
-      { key: "white", label: "Whites", centre: 0, text: "The palest paints. Pure white can look harsh on a model, so many painters use an off-white and keep the brightest white for the tiniest highlights.",
-        subs: [{ key: "white", label: "Whites", word: "white" }] },
-      { key: "grey", label: "Greys", centre: 1, text: "The calm middle. Greys hold other colours steady. They suit stone, metal armour and shading, and a grey with a hint of colour looks warmer or cooler.",
-        subs: [{ key: "grey", label: "Greys", word: "grey" }] },
-      { key: "black", label: "Blacks", centre: 2, text: "The darkest paints. Pure black can flatten the detail, so many painters use a very dark blue, brown or grey for deep shadows.",
-        subs: [{ key: "black", label: "Blacks", word: "black" }] },
+        subs: [{ key: "deep", label: "Deep purple", word: "purple" }, { key: "violet", label: "Violet", word: "violet" }, { key: "lavender", label: "Lavender and lilac", word: "lavender" }] },
+      { key: "white", label: "Whites", centre: 0, text: "The palest paints. Pure white can look harsh on a model, so many painters use an off-white and keep the brightest white for the tiniest highlights. Warm whites lean cream or pink, cool whites lean blue or green.",
+        subs: [{ key: "neutral", label: "Pure whites", word: "white" }, { key: "warm", label: "Warm whites", word: "warm white" }, { key: "cool", label: "Cool whites", word: "cool white" }] },
+      { key: "grey", label: "Greys", centre: 1, text: "The calm middle: greys hold other colours steady and suit stone, metal armour and shading. A grey with a hint of colour looks warmer or cooler. Warm greys lean brown or yellow, cool greys lean blue or green.",
+        subs: [{ key: "neutral", label: "Neutral greys", word: "grey" }, { key: "warm", label: "Warm greys", word: "warm grey" }, { key: "cool", label: "Cool greys", word: "cool grey" }] },
+      { key: "black", label: "Blacks", centre: 2, text: "The darkest paints. Pure black can flatten the detail, so many painters use a very dark blue, brown or grey for deep shadows. Warm blacks lean brown or red, cool blacks lean blue or green.",
+        subs: [{ key: "neutral", label: "True blacks", word: "black" }, { key: "warm", label: "Warm blacks", word: "warm black" }, { key: "cool", label: "Cool blacks", word: "cool black" }] },
       { key: "metallic", label: "Metallics", centre: 3, text: "Shiny paints for metal. The colour shown is only a guide, because shine looks different on the model than in the pot. They are split into gold, silver and bronze below.",
         subs: [{ key: "gold", label: "Gold", word: "gold" }, { key: "silver", label: "Silver", word: "silver" }, { key: "bronze", label: "Bronze", word: "bronze" }] },
     ];
@@ -7889,7 +8242,7 @@
         else sub = s < 0.2 ? "silver" : h < 35 ? "bronze" : "gold";   // no metal word: the colour decides
         return { seg: "metallic", sub, L: lab.L };
       }
-      const at = (seg, sub) => ({ seg, sub: sub || seg, L: lab.L });
+      const at = (seg, sub) => ({ seg, sub: sub || wheelSub(seg, hsl, lab), L: lab.L });
       if (l >= 0.9) return at("white");
       if (l <= 0.1) return at("black");
       if (s < 0.12) return at("grey");
@@ -7903,6 +8256,31 @@
       if (h < 170) return at("green");
       if (h < 255) return at("blue");
       return at("purple");
+    }
+    // v37 part 2: the groups inside a wheel part. Like the part itself, a group comes from the paint's COLOUR, never from its name (a paint
+    // called "Deep Purple" that is a mid purple sits in Violet). Browns and bone are decided above (wheelPlace); the rest are decided here:
+    //  - lightness (HSL l, 0 black to 1 white) and, for pinks, the hue, split reds, oranges, yellows, blues and purples;
+    //  - hue splits the greens (olive, green, sea green);
+    //  - whites, greys and blacks are split by tint: how much colour they carry (Lab chroma, WHEEL_TINT_C) and, when there is some, whether it
+    //    leans warm (red, orange, yellow: Lab hue 330 to 130 degrees) or cool (green, blue, violet: the rest).
+    // The numbers are in this one place so a test can walk across them. (Metallics are split in wheelPlace, as before.)
+    const WHEEL_TINT_C = { white: 1.5, grey: 3, black: 4 };   // below this much colour a white, grey or black is neutral
+    function wheelTint(seg, lab) {
+      if (Math.hypot(lab.a, lab.b) < WHEEL_TINT_C[seg]) return "neutral";
+      const hue = (Math.atan2(lab.b, lab.a) * 180 / Math.PI + 360) % 360;
+      return hue < 130 || hue >= 330 ? "warm" : "cool";
+    }
+    function wheelSub(seg, hsl, lab) {
+      const { h, l } = hsl;
+      switch (seg) {
+        case "red": return l >= 0.62 || (h >= 320 && h < 345 && l >= 0.3) ? "pink" : l < 0.3 ? "deep" : "red";   // light, or a magenta-leaning mid red, is pink
+        case "orange": return l >= 0.66 ? "peach" : "orange";   // (browns are decided in wheelPlace)
+        case "yellow": return l < 0.5 ? "mustard" : "yellow";   // (bone is decided in wheelPlace)
+        case "green": return h < 90 ? "olive" : h < 150 ? "green" : "sea";
+        case "blue": return l < 0.3 ? "navy" : l < 0.62 ? "blue" : "light";
+        case "purple": return l < 0.3 ? "deep" : l < 0.6 ? "violet" : "lavender";
+        default: return wheelTint(seg, lab);   // white, grey, black
+      }
     }
     function wheelTone(L) { return L < 20 ? "Very dark" : L < 40 ? "Dark" : L < 60 ? "Mid" : L < 80 ? "Light" : "Very light"; }
 
@@ -7921,6 +8299,7 @@
       return colourIdeaTag({ owned: item.origin === 0, quality: "good" });   // the same two tags the colour ideas use: You own this / Not in your palette
     }
     const WHEEL_ROUGH_NOTE = "The colour shown is only a guide for this kind of paint.";
+    const WHEEL_GROUP_SHOWN = 8;   // v37 part 2: how many paints a group shows before "Show all" (your own paints are never hidden)
 
     // The words under the wheel part that is open: its name, what it is, how many you own, then the paints (grouped where the wheel
     // part has groups), and Copy as text. Paints you do not have yet stay behind one button so the list stays short on a phone.
@@ -7941,8 +8320,12 @@
       count.textContent = items.length
         ? `You own ${owned} of ${items.length} ${items.length === 1 ? "paint" : "paints"} in this colour.`
         : "There are no paints in this colour to show yet.";
-      box.append(title, about, count);
-      const lines = [seg.label, seg.text, count.textContent];
+      const split = document.createElement("p");   // v37 part 2: the groups, so you know what the headings below are
+      split.className = "hint";
+      split.id = door.id("wheel-groups");
+      split.textContent = `Split into ${colourWordList(seg.subs.map(s => s.label.toLowerCase()))}. Each group runs from dark to light, yours first.`;
+      box.append(title, about, split, count);
+      const lines = [seg.label, seg.text, split.textContent, count.textContent];
 
       const others = items.filter(x => x.origin === 2);
       const showOthers = !!st.wheelOthers[seg.key];
@@ -7964,18 +8347,23 @@
         box.appendChild(none);
       }
       for (const sub of seg.subs) {
-        const group = shown.filter(x => x.at.sub === sub.key);
+        const group = shown.filter(x => x.at.sub === sub.key)
+          .sort((a, b) => a.origin - b.origin || a.at.L - b.at.L || String(a.paint.name).localeCompare(String(b.paint.name)));
         if (!group.length) continue;
-        if (seg.subs.length > 1) {
-          const heading = document.createElement("h4");
-          heading.className = "wheel-sub";
-          heading.textContent = `${sub.label} (${group.length})`;
-          box.appendChild(heading);
-          lines.push("", `${sub.label} (${group.length})`);
-        }
+        // v37 part 2: a group shows its first few paints (yours are always all shown) and one button for the rest, so a long group stays short
+        const mine = group.filter(x => x.origin < 2).length;
+        const base = Math.max(WHEEL_GROUP_SHOWN, mine);
+        const moreKey = `${seg.key}/${sub.key}`;
+        const all = !!st.wheelMore[moreKey];
+        const visible = all ? group : group.slice(0, base);
+        const heading = document.createElement("h4");
+        heading.className = "wheel-sub";
+        heading.textContent = `${sub.label} (${group.length})`;
+        box.appendChild(heading);
+        lines.push("", `${sub.label} (${group.length})`);
         const list = document.createElement("ul");
         list.className = "idea-list";
-        for (const x of group.sort((a, b) => a.origin - b.origin || a.at.L - b.at.L || String(a.paint.name).localeCompare(String(b.paint.name)))) {
+        for (const x of visible) {
           const tag = wheelTag(x);
           const reason = `${wheelTone(x.at.L)} ${sub.word}.`;
           const note = seg.key === "metallic" || MinifolioColour.isRoughColour(x.paint) ? WHEEL_ROUGH_NOTE : "";
@@ -7983,6 +8371,17 @@
           lines.push(ideaTextLine(x.paint, tag, reason, note));
         }
         box.appendChild(list);
+        if (group.length > base) {
+          const more = document.createElement("button");
+          more.type = "button";
+          more.className = "plain-button";
+          more.id = door.id(`wheel-more-${sub.key}`);
+          more.setAttribute("aria-expanded", String(all));
+          more.textContent = all ? "Show fewer" : `Show all ${group.length}`;
+          more.setAttribute("aria-label", all ? `Show fewer ${sub.label.toLowerCase()}` : `Show all ${group.length} ${sub.label.toLowerCase()}`);
+          more.addEventListener("click", () => { st.wheelMore[moreKey] = !all; redraw(`#${door.id(`wheel-more-${sub.key}`)}`); });
+          box.appendChild(more);
+        }
       }
       const share = buildShareRow(door, `${seg.label} list`, [...lines, "", COMPENDIUM_TEXT_FOOT], null);
       if (share) box.appendChild(share);
@@ -8138,26 +8537,20 @@
       const all = [...choices.own, ...choices.other, ...choices.brands.flatMap(b => b.list)];
       const base = all.find(p => choices.key(p) === st.base) || null;
       if (!base) st.base = "";
-      const pick = document.createElement("label");
-      pick.append("Start from");
-      const select = document.createElement("select");
-      select.style.width = "100%";
-      select.id = compendiumId("colour-ideas-base");
-      select.add(new Option("Choose a colour\u2026", ""));
+      // v37 part 2: a box you type in, with the paints in a list under it that narrows as you type (and can still be scrolled)
+      const pickGroups = [];
       const addGroup = (label, list) => {
-        if (!list.length) return;
-        const group = document.createElement("optgroup");
-        group.label = label;
-        for (const p of list) group.appendChild(new Option(p.brand ? `${p.name} (${p.brand})` : p.name, choices.key(p)));
-        select.appendChild(group);
+        if (list.length) pickGroups.push({ label, options: list.map(p => ({ value: choices.key(p), text: p.brand ? `${p.name} (${p.brand})` : p.name })) });
       };
       addGroup("Paints you own", choices.own);
       addGroup("Other paints in your palette", choices.other);
       for (const b of choices.brands) addGroup(`More ${b.brand} paints`, b.list);
-      select.value = st.base;
-      select.addEventListener("change", () => { st.base = select.value; redraw(`#${compendiumId("colour-ideas-base")}`); });
-      pick.appendChild(select);
-      body.appendChild(pick);
+      body.appendChild(buildSearchPicker(door, {
+        id: "colour-ideas-base", label: "Start from", one: "paint", placeholder: "Type or choose a paint",
+        emptyPlaceholder: "No paints with a colour yet",
+        groups: pickGroups, value: st.base,
+        onPick: (value, focus) => { st.base = value; redraw(focus); },
+      }));
 
       if (!base) {
         say("Choose a colour above and you get 3 paints that go with it. The parts below do not need one.", "colour-ideas-none");
@@ -8194,7 +8587,7 @@
       const door = compendiumDoor();
       const redraw = (selector) => renderCompendium(selector);
 
-      say("A colour wheel, colour ideas, starter schemes, detail recipes and basing tips, without needing a recipe. Tap a heading to open it. Use Copy as text to keep anything, or Save into a new recipe\u2026 to start a recipe from colour ideas, schemes, detail recipes and basing tips.", "intro");
+      say("A colour wheel, colour ideas, starter schemes, detail recipes and basing tips, without needing a recipe. Tap a heading to open it, and type in a search box to find things fast. Use Copy as text to keep anything, or Save into a new recipe\u2026 to start a recipe from colour ideas, schemes, detail recipes and basing tips.", "intro");
 
       // v36: the colour wheel comes first
       appendColourWheel(body, door, redraw);
@@ -11710,6 +12103,8 @@
         "Compendium (Pro preview), tidier and shorter. The colour wheel stays open at the top. Colour ideas, Your schemes, Starter schemes, Detail recipes and Basing tips are now headings you tap to open and close. They all start closed, and the app remembers which you opened while it is open.",
         "Starter schemes has a Themes | Combinations switch. Themes shows the cold, warm, dark and bright groups. Combinations groups the same schemes by their main colour, so you can look for blue and gold, red and grey, and so on. Every scheme is in both views.",
         "Long lists now stay short until you ask: pick a group (or All) in Starter schemes, Detail recipes or Basing tips to see its list. Tap the group again to put it away. Recipes in the editor work as before.",
+        "Search boxes in the Compendium. Start from and Faction are now boxes you type in: the list under the box gets shorter as you type, and you can still scroll it and pick. Starter schemes, Detail recipes and Basing tips each have a search box above their buttons, and matches show even when no group is picked. When nothing fits it says No matches.",
+        "Each colour on the wheel is now split into two or three groups with their own headings, for example Deep purple, Violet, and Lavender and lilac. Each group runs from dark to light with the paints you own first. Whites, greys and blacks are split by tint: neutral, warm or cool. A group shows its first few paints, and a Show all button gives you the rest.",
       ]},
       { version: "v36", date: "16 Oct 2026", changes: [
         "The Compendium (Pro preview) now starts with a colour wheel. The outer ring has red, orange, yellow, green, blue and purple. The grey circle in the middle has four slices: whites, greys, blacks and metallics. Tap one and its paints open below the wheel, with a short description first.",

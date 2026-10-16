@@ -29,6 +29,7 @@ from playwright.sync_api import sync_playwright
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
 import test_v31 as t   # the helpers (loading the app, the palette, the colours) and the Games Workshop word lists
+from combo_helpers import pick_combo   # v37 part 2: "Start from" is a search box now
 
 SHOTS, ROOT = t.SHOTS, t.ROOT
 read, load, blur, edit_recipe, open_panel = t.read, t.load, t.blur, t.edit_recipe, t.open_panel
@@ -213,8 +214,7 @@ def main():
         # state is kept
         fold(page, "ideas", True)
         fold(page, "detail", True)
-        page.select_option("#cmp-colour-ideas-base", index=1)
-        page.wait_for_timeout(150)
+        pick_combo(page, "#cmp-colour-ideas-base", index=1)
         check("choosing a colour inside Colour ideas redraws the page and the open parts stay open", [is_open(page, k) for k in KEYS] == [True, False, False, True, False])
         tab_away_and_back(page)
         check("which parts are open is kept while the app is open (leave the tab and come back)", [is_open(page, k) for k in KEYS] == [True, False, False, True, False],

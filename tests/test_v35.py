@@ -29,6 +29,7 @@ from playwright.sync_api import sync_playwright
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
 import test_v31 as t   # the helpers (loading the app, the palette, the colours) and the Games Workshop word lists
+from combo_helpers import pick_combo   # v37 part 2: "Start from" and "Faction" are search boxes now, not drop-downs
 
 SHOTS, ROOT = t.SHOTS, t.ROOT
 read, load, blur, edit_recipe, open_panel = t.read, t.load, t.blur, t.edit_recipe, t.open_panel
@@ -81,8 +82,7 @@ def open_comp(page):
     page.wait_for_timeout(100)
 
 def pick_base(page, value):
-    page.select_option("#cmp-colour-ideas-base", value=value)
-    page.wait_for_timeout(150)
+    pick_combo(page, "#cmp-colour-ideas-base", value=value)
 
 def comp_role(page, key):
     page.click(f'#compendium-body [data-role="{key}"]')
@@ -225,12 +225,16 @@ def main():
         check("before a colour is chosen there are no role buttons and no ideas, but all four library parts are there",
               page.locator("#compendium-body [data-role]").count() == 0 and page.locator("#cmp-fold-ideas-panel > .idea-list").count() == 0
               and all(page.locator(f"#{i}").count() == 1 for i in ["cmp-faction-history", "cmp-starter-schemes", "cmp-detail-recipes", "cmp-basing-tips"]))
-        opts = page.evaluate("""() => [...document.querySelectorAll('#cmp-colour-ideas-base optgroup')].map(g => [g.label, g.children.length])""")
+        page.click("#cmp-colour-ideas-base-toggle")
+        opts = page.evaluate("""() => { const out = []; for (const el of document.querySelectorAll('#cmp-colour-ideas-base-list > li')) {
+            if (el.classList.contains('combo-group')) out.push([el.textContent, 0]); else if (out.length) out[out.length - 1][1]++; } return out; }""")
         check("the colour chooser lists your paints first (owned, then the rest), then the built-in list by brand",
               opts and opts[0][0] == "Paints you own" and opts[0][1] == 14 and any(l.startswith("More ") for l, _ in opts)
-              and page.evaluate("() => document.querySelector('#cmp-colour-ideas-base').options[0].textContent") == "Choose a colour…", opts[:4])
+              and page.input_value("#cmp-colour-ideas-base") == "" and page.get_attribute("#cmp-colour-ideas-base", "placeholder") == "Type or choose a paint", opts[:4])
+        page.fill("#cmp-colour-ideas-base", "macragge blue")
         check("a paint in your palette is not listed twice (the built-in list leaves out paints you already have)",
-              page.evaluate("() => [...document.querySelectorAll('#cmp-colour-ideas-base option')].filter(o => /^Macragge Blue/.test(o.textContent)).length") == 1)
+              page.evaluate("() => [...document.querySelectorAll('#cmp-colour-ideas-base-list [role=option]')].filter(o => /^Macragge Blue/.test(o.textContent)).length") == 1)
+        page.keyboard.press("Escape")
         pick_base(page, BLUE)
         chips = page.evaluate("() => [...document.querySelectorAll('#compendium-body [data-role]')].map(c => [c.textContent, c.getAttribute('aria-pressed')])")
         check("after choosing a colour: six role buttons (Eyes or glow pressed to start) and the role's tip",
@@ -358,11 +362,13 @@ def main():
         print("\n--- 5. Your schemes ---")
         load(page, recipes=RECIPES, units=UNITS)
         open_comp(page)
-        names_f = page.evaluate("() => [...document.querySelectorAll('#cmp-faction-history-pick option')].map(o => o.textContent)")
-        check("the faction drop-down lists the factions of your units once each (Gloom Legion once, however it was typed), sorted, with units that have no faction left out",
-              names_f == ["Choose a faction", "Gloom Legion", "Lonely Host", "Other Host"], names_f)
+        page.click("#cmp-faction-history-pick-toggle")
+        names_f = page.evaluate("() => [...document.querySelectorAll('#cmp-faction-history-pick-list [role=option]')].map(o => o.textContent)")
+        check("the faction box lists the factions of your units once each (Gloom Legion once, however it was typed), sorted, with units that have no faction left out",
+              names_f == ["Gloom Legion", "Lonely Host", "Other Host"], names_f)
+        page.click("#cmp-faction-history-pick-toggle")
         check("until you choose one it says to choose a faction", "Choose a faction above" in page.inner_text("#cmp-faction-history-none"))
-        page.select_option("#cmp-faction-history-pick", label="Gloom Legion")
+        pick_combo(page, "#cmp-faction-history-pick", text="Gloom Legion")
         page.wait_for_timeout(150)
         hist = rows(page, "#cmp-faction-history-list .idea-static")
         check("Gloom Legion shows the paints from the recipes on its units, most used first, then by name",
@@ -370,23 +376,23 @@ def main():
         check("the reasons count units and recipes (Mid Blue A: 2 units, 3 recipes)", hist[0]["why"] == "Used on 2 units in this faction, in 3 recipes.", hist[0])
         check("honest tags: owned paints say You own this, the wishlist paint says You don't own this",
               [h["tag"] for h in hist] == ["You own this", "You own this", "You own this", "You don't own this", "You own this", "You own this"], [h["tag"] for h in hist])
-        check("the faction is named and the focus stays on the drop-down", "Gloom Legion" in page.inner_text("#cmp-faction-history-for")
+        check("the faction is named and the focus stays in the faction box", "Gloom Legion" in page.inner_text("#cmp-faction-history-for")
               and page.evaluate("() => document.activeElement.id") == "cmp-faction-history-pick")
-        page.select_option("#cmp-faction-history-pick", label="Lonely Host")
+        pick_combo(page, "#cmp-faction-history-pick", text="Lonely Host")
         page.wait_for_timeout(150)
         check("a faction whose units have no saved recipes says there is no history yet", "No history yet" in page.inner_text("#cmp-faction-history-empty"))
-        page.select_option("#cmp-faction-history-pick", label="Other Host")
+        pick_combo(page, "#cmp-faction-history-pick", text="Other Host")
         page.wait_for_timeout(150)
         check("Other Host shows only its own paint", [h["name"] for h in rows(page, "#cmp-faction-history-list .idea-static")] == ["Evil Sunz Scarlet"])
-        page.select_option("#cmp-faction-history-pick", label="Gloom Legion")
+        pick_combo(page, "#cmp-faction-history-pick", text="Gloom Legion")
         page.wait_for_timeout(150)
         # the card in a recipe for Gloom Legion gives the same rows (apart from the paints already in that recipe)
         check("the faction history has Copy as text and Save into a new recipe…", page.locator("#cmp-faction-history .share-row button").count() == 2)
         load(page, recipes=RECIPES, units=[unit(1, "Solo", "")])
         open_comp(page)
-        check("with no faction on any unit it says so and the drop-down says there are none",
+        check("with no faction on any unit it says so and the faction box says there are none",
               "None of your units has a faction yet" in page.inner_text("#cmp-faction-history-none")
-              and page.evaluate("() => document.querySelector('#cmp-faction-history-pick').options[0].textContent") == "No factions yet")
+              and page.get_attribute("#cmp-faction-history-pick", "placeholder") == "No factions yet" and page.is_disabled("#cmp-faction-history-pick"))
         load(page, recipes=RECIPES, units=UNITS)
         page.evaluate("() => { compendiumState.faction = 'gone host'; }")
         open_comp(page)
@@ -427,7 +433,7 @@ def main():
         check("Copy as text on a basing tip: What you need, How to build it, Paint steps (optional) and the footnote",
               text.splitlines()[0] == "Basing tip: Snow" and "What you need:" in text and "How to build it:" in text and "Paint steps (optional):" in text
               and "1. " in text and text.splitlines()[-1].startswith("Colours on a screen"), text[:200])
-        page.select_option("#cmp-faction-history-pick", label="Gloom Legion")
+        pick_combo(page, "#cmp-faction-history-pick", text="Gloom Legion")
         page.wait_for_timeout(150)
         page.click("#cmp-faction-history .share-row button:has-text('Copy as text')")
         text = copied(page)
@@ -531,8 +537,8 @@ def main():
         open_comp(page)
         cmp_pick(page, "starter-chips", "blue-gold")
         check("with an empty palette every row says Not in your palette", all(r["tag"] == "Not in your palette" for r in rows(page, "#cmp-starter-list .idea-static")))
-        check("with an empty palette the colour chooser still has the built-in list", page.locator("#cmp-colour-ideas-base option").count() > 100)
-        pick_base(page, page.evaluate("() => document.querySelector('#cmp-colour-ideas-base optgroup:nth-of-type(1) option').value"))
+        check("with an empty palette the colour chooser still has the built-in list", page.evaluate("() => { const c = compendiumBaseChoices(); return c.brands.flatMap(b => b.list).length; }") > 100)
+        pick_combo(page, "#cmp-colour-ideas-base", index=1)
         check("with an empty palette you can still choose a colour and get three ideas, none of them owned",
               len(comp_idea_rows(page)) == 3 and all(r["tag"] == "Not in your palette" for r in comp_idea_rows(page)))
         check("the footnote says colours are only a guide and nothing leaves the phone", all(w in page.inner_text("#cmp-foot") for w in ["only a guide", "Nothing leaves your phone"]))
@@ -557,17 +563,18 @@ def main():
               and page.get_attribute('#starter-chips [data-scheme="green-bone"]', "aria-pressed") == "true")
         open_comp(page)
         check("coming back to the Compendium, your picks are still there (scheme, colour and role)",
-              page.get_attribute('#cmp-starter-chips [data-scheme="red-grey"]', "aria-pressed") == "true" and page.input_value("#cmp-colour-ideas-base") == BLUE
+              page.get_attribute('#cmp-starter-chips [data-scheme="red-grey"]', "aria-pressed") == "true" and page.evaluate("() => compendiumState.base") == BLUE
               and page.get_attribute('#compendium-body [data-role="gems"]', "aria-pressed") == "true")
         page.evaluate("() => { recipeDraft = null; }")
         # data changed elsewhere shows when you come back
-        n_before = page.locator("#cmp-colour-ideas-base option").count()
         page.evaluate("() => { book.paints.push({ id: 999, brand: 'Test', name: 'Brand New Teal', colour: '#1f9e9a', status: 'owned' }); }")
         blur(page)
         page.click('nav button[data-tab="dashboard"]')
         page.wait_for_timeout(100)
         open_comp(page)
-        check("a paint added meanwhile shows in the colour chooser when you come back", page.locator("#cmp-colour-ideas-base option:text-is('Brand New Teal (Test)')").count() == 1)
+        page.fill("#cmp-colour-ideas-base", "brand new teal")
+        check("a paint added meanwhile shows in the colour chooser when you come back", page.locator("#cmp-colour-ideas-base-list [role=option]:text-is('Brand New Teal (Test)')").count() == 1)
+        page.keyboard.press("Escape")
 
         # ---------- 9. Text scan ----------
         print("\n--- 9. Text scan: no Games Workshop names in any new text ---")
@@ -590,7 +597,7 @@ def main():
             cmp_pick(page, "basing-chips", key)
             shown.append(page.evaluate(SHOWN_JS))
             cmp_pick(page, "basing-chips", key)
-        page.select_option("#cmp-faction-history-pick", label="Gloom Legion")
+        pick_combo(page, "#cmp-faction-history-pick", text="Gloom Legion")
         shown.append(page.evaluate(SHOWN_JS))
         everything = "\n".join(shown)
         hits = GW_WORDS.findall(everything) + GW_MORE.findall(everything)
@@ -611,9 +618,9 @@ def main():
         load(page, paints=evil_paints, recipes=evil_recipes, units=evil_units)
         open_comp(page)
         copy_spy(page)
-        evil_key = page.evaluate("() => [...document.querySelectorAll('#cmp-colour-ideas-base option')].find(o => o.textContent.includes('Evil')).value")
+        evil_key = page.evaluate("() => { const c = compendiumBaseChoices(); return c.key([...c.own, ...c.other].find(p => p.name.includes('Evil'))); }")
         pick_base(page, evil_key)
-        page.select_option("#cmp-faction-history-pick", index=1)
+        pick_combo(page, "#cmp-faction-history-pick", index=1)
         page.wait_for_timeout(150)
         cmp_pick(page, "starter-chips", "blue-gold")
         cmp_pick(page, "detail-chips", keys_d[0])
@@ -622,7 +629,7 @@ def main():
               page.locator("#view-compendium img, #view-compendium script, #view-compendium b, #view-compendium iframe").count() == 0 and page.evaluate("() => window.__pwned") is None)
         check("they show as plain text instead", "<img src=x" in page.inner_text("#cmp-faction-history-for") or "<img src=x" in page.inner_text("#cmp-faction-history"), page.inner_text("#cmp-faction-history")[:200])
         check("the chosen hostile paint shows as plain text in the chooser and in the copied heading",
-              "<img src=x" in page.evaluate("() => document.querySelector('#cmp-colour-ideas-base').selectedOptions[0].textContent"))
+              "<img src=x" in page.input_value('#cmp-colour-ideas-base'))
         page.click("#cmp-fold-ideas-panel > .share-row button:has-text('Copy as text')")
         text = copied(page)
         check("Copy as text keeps it as plain text (the heading names the paint as typed)", text.splitlines()[0].startswith("Colour ideas for eyes or glow with ") and "<img src=x" in text.splitlines()[0], text.splitlines()[0])
@@ -660,7 +667,7 @@ def main():
                 load(page, recipes=RECIPES, units=UNITS, settings={"appearance": appearance})
                 open_comp(page)
                 pick_base(page, BLUE)
-                page.select_option("#cmp-faction-history-pick", label="Gloom Legion")
+                pick_combo(page, "#cmp-faction-history-pick", text="Gloom Legion")
                 page.wait_for_timeout(120)
                 cmp_pick(page, "starter-chips", "blue-gold")
                 cmp_pick(page, "detail-chips", keys_d[0])
