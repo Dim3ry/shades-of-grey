@@ -2278,6 +2278,7 @@
       dashboard: document.getElementById("view-dashboard"),
       units: document.getElementById("view-units"),
       recipes: document.getElementById("view-recipes"),
+      compendium: document.getElementById("view-compendium"),   // v35
       settings: document.getElementById("view-settings"),
       updates: document.getElementById("view-updates"),
       help: document.getElementById("view-help"),
@@ -2306,6 +2307,7 @@
       settings.tab = name;
       saveSettings();
       if (name === "settings") renderSettings();
+      if (name === "compendium") renderCompendium();   // v35: built fresh each time, from your palette and units as they are now
       if (name === "dashboard") renderHistory();   // the graph needs to be on screen to measure its width
       window.scrollTo(0, 0);
     }
@@ -2371,6 +2373,7 @@
       renderDashboard();
       renderUnits();
       renderRecipes();
+      if (settings.tab === "compendium") renderCompendium();   // v35: only while you are looking at it
       return ok;
     }
 
@@ -6545,6 +6548,24 @@
     // text (never as HTML), because they can be anything the user typed or pasted.
     let recipeIdeasCard = null;   // the card in the recipe editor, if it's open
     let colourIdeasState = { open: false, base: "whole", role: "glow", check: false, scheme: "", mood: "", detail: "", detailGroup: "", basing: "", basingGroup: "" };   // kept while the app is open
+    // v35: the Compendium tab keeps its own picks (also only while the app is open), so what you pick there never changes the card in a recipe.
+    let compendiumState = { base: "", role: "glow", scheme: "", mood: "", detail: "", detailGroup: "", basing: "", basingGroup: "", faction: "" };
+
+    // v35: ONE set of building blocks, TWO doors. The parts of the Colour ideas card (the ideas, Your schemes, Starter schemes,
+    // Detail recipes and Basing tips) are built by the functions below, and BOTH the recipe editor and the Compendium tab use them.
+    // Only what differs is handed in, as a "door":
+    //   state         the picks (which scheme, which mood, and so on). Each door keeps its own.
+    //   d             the recipe being edited, or null in the Compendium (there is no recipe there)
+    //   addStep       (paint, noteText) adds a step to the recipe. null in the Compendium: its rows are then plain text, not buttons.
+    //   addSteps      (items) adds detail or basing steps to the recipe. null in the Compendium.
+    //   share         null in a recipe. In the Compendium { copy(text, what), startRecipe(steps) }: each part with something picked
+    //                 then ends with "Copy as text" and "Save into a new recipe…".
+    //   factions()    the Map (lowercase key -> name) of factions that Your schemes looks at
+    //   factionPick   Compendium only: { names, onChange } the drop-down for choosing the faction
+    //   noFactionText what Your schemes says when there is no faction to look at
+    //   id(name)      the page id for a part, so the two doors never share an id (the recipe editor keeps its old ids)
+    const doorId = (name) => name;
+    const compendiumId = (name) => "cmp-" + name;
     // Is a finger (or mouse button) down right now? The panel never redraws itself under a press: typing a paint
     // name and then tapping a chip makes the paint box "change" (it fills in the colour) in the middle of that tap,
     // and a redraw there would replace the chip before the tap finished, so the tap would be lost.
@@ -6704,7 +6725,8 @@
       if (!harmony) return [];
       const pool = colourIdeaPool();
       const skip = [baseHex];
-      for (const s of d.steps) for (const p of s.paints) if (MinifolioColour.isHex(p.colour)) skip.push(p.colour);
+      // v35: in the Compendium there is no recipe (d is null), so only the chosen colour itself is left out
+      if (d) for (const s of d.steps) for (const p of s.paints) if (MinifolioColour.isHex(p.colour)) skip.push(p.colour);
       const out = [];
       let slot = 0;
       for (const pick of role.picks) {
@@ -6731,11 +6753,15 @@
 
     // Adds the idea to the recipe being edited as a new last step. (v30: the step's note is passed in, so the same
     // function serves the ideas, the faction history and the starter schemes.)
+    // v35: the step itself is made by draftStepFrom (also used to start a new recipe from the Compendium).
+    function draftStepFrom(paint, technique, coats, mix, noteText) {
+      return {
+        technique: String(technique || ""), coats, ratio: "", optional: false, note: String(noteText || ""),
+        paints: [{ brand: String(paint.brand || ""), name: String(paint.name || ""), colour: paint.colour, mix }],
+      };
+    }
     function addColourIdeaStep(d, paint, noteText) {
-      d.steps.push({
-        technique: "", coats: 1, ratio: "", optional: false, note: noteText,
-        paints: [{ brand: String(paint.brand || ""), name: String(paint.name || ""), colour: paint.colour, mix: 100 }],
-      });
+      d.steps.push(draftStepFrom(paint, "", 1, 100, noteText));
       colourIdeasState.open = true;
       renderRecipeEditor();
       notify(`Added step ${d.steps.length}: ${paint.name}`);
@@ -6859,12 +6885,17 @@
 
     // One tappable idea row (swatch, name, brand, tag, reason, optional note, "+ Add as a step"). Used by every list.
     // v30: rows outside the main three ideas carry the class "idea-pick" instead of "idea" (same look, see index.html).
+    // v35: with no onAdd (the Compendium has no recipe to add to) the row is plain text in a box: same look, no button, no "+ Add" line.
     function buildIdeaItem(paint, tag, reason, note, onAdd, extraClass) {
       const li = document.createElement("li");
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = extraClass || "idea";
-      button.setAttribute("aria-label", `Add ${paint.name} as a new step. ${tag.text}. ${reason}`);
+      const button = document.createElement(onAdd ? "button" : "div");
+      if (onAdd) {
+        button.type = "button";
+        button.className = extraClass || "idea";
+        button.setAttribute("aria-label", `Add ${paint.name} as a new step. ${tag.text}. ${reason}`);
+      } else {
+        button.className = (extraClass || "idea") + " idea-static";
+      }
       const text = document.createElement("span");
       text.className = "idea-text";
       const name = document.createElement("span");
@@ -6888,14 +6919,49 @@
         noteEl.textContent = note;
         text.appendChild(noteEl);
       }
-      const add = document.createElement("span");
-      add.className = "idea-add";
-      add.textContent = "+ Add as a step";
-      text.appendChild(add);
+      if (onAdd) {
+        const add = document.createElement("span");
+        add.className = "idea-add";
+        add.textContent = "+ Add as a step";
+        text.appendChild(add);
+      }
       button.append(makeSwatch(paint.colour), text);
-      button.addEventListener("click", onAdd);
+      if (onAdd) button.addEventListener("click", onAdd);
       li.appendChild(button);
       return li;
+    }
+
+    // v35: how a door that has no recipe (the Compendium) lets you keep what you picked: "Copy as text" and "Save into a new recipe…".
+    // lines = the text to copy; steps = [{ paint, technique, coats, mix, note }] for the new recipe (none = no second button).
+    // A door with no share (the recipe editor) gets nothing: there the rows themselves add steps.
+    function buildShareRow(door, what, lines, steps) {
+      if (!door.share) return null;
+      const row = document.createElement("div");
+      row.className = "share-row";
+      const copy = document.createElement("button");
+      copy.type = "button";
+      copy.className = "plain-button";
+      copy.textContent = "Copy as text";
+      copy.setAttribute("aria-label", `Copy ${what} as text`);
+      copy.addEventListener("click", () => door.share.copy(lines.join("\n"), what));
+      row.appendChild(copy);
+      if (steps && steps.length) {
+        const start = document.createElement("button");
+        start.type = "button";
+        start.className = "plain-button";
+        start.textContent = "Save into a new recipe…";
+        start.setAttribute("aria-label", `Save ${what} into a new recipe`);
+        start.addEventListener("click", () => door.share.startRecipe(steps));
+        row.appendChild(start);
+      }
+      return row;
+    }
+
+    // v35: the words for "Copy as text". Plain text only (paint names and brands go in as typed; it is a clipboard, never markup).
+    const COMPENDIUM_TEXT_FOOT = "Colours on a screen are only a guide, so check them on your model.";
+    function paintLabel(paint) { return paint.brand ? `${paint.name} (${paint.brand})` : String(paint.name || ""); }
+    function ideaTextLine(paint, tag, reason, note) {
+      return `- ${paintLabel(paint)}: ${tag.text}. ${reason}${note ? " " + note : ""}`;
     }
 
     // ---- (1) Colours you've used on this faction before ----
@@ -6927,7 +6993,7 @@
       for (const unit of models) {
         if (!factions.has(factionKey(unit.faction))) continue;
         for (const recipe of recipesOf(unit)) {
-          if (d.id !== null && recipe.id === d.id) continue;
+          if (d && d.id !== null && recipe.id === d.id) continue;   // v35: no recipe (d is null) in the Compendium
           for (const step of recipe.steps) for (const sp of step.paints) {
             const paint = paintById(sp.paint);
             if (!paint) continue;
@@ -6938,7 +7004,7 @@
           }
         }
       }
-      const inDraft = new Set(colourIdeaBases(d).map(b => b.key));
+      const inDraft = new Set(d ? colourIdeaBases(d).map(b => b.key) : []);
       const all = [...used.values()].map(e => ({ paint: e.paint, units: e.units.size, recipes: e.recipes.size }));
       const list = all
         .filter(e => !inDraft.has(sameKey(tidyBrand(e.paint.brand)) + "|" + sameKey(e.paint.name)))
@@ -6951,10 +7017,12 @@
       return MinifolioColour.haveIt(paint) ? { cls: "own", text: "You own this" } : { cls: "none", text: "You don't own this" };
     }
 
-    function buildFactionHistory(d) {
+    // v35: door = where this is shown (see "ONE set of building blocks" above); redraw(selector) redraws that door's body.
+    function buildFactionHistory(door, redraw) {
+      const d = door.d;
       const box = document.createElement("div");
       box.className = "faction-history";
-      box.id = "faction-history";
+      box.id = door.id("faction-history");
       const title = document.createElement("h3");
       title.className = "scheme-title";
       title.textContent = "Colours you've used on this faction before";
@@ -6962,14 +7030,28 @@
       const say = (text, id) => {
         const p = document.createElement("p");
         p.className = "hint";
-        if (id) p.id = id;
+        if (id) p.id = door.id(id);
         p.textContent = text;
         box.appendChild(p);
       };
+      // v35: with no recipe, you choose which faction to look at
+      if (door.factionPick) {
+        const label = document.createElement("label");
+        label.append("Faction");
+        const select = document.createElement("select");
+        select.style.width = "100%";
+        select.id = door.id("faction-history-pick");
+        select.add(new Option(door.factionPick.names.length ? "Choose a faction" : "No factions yet", ""));
+        for (const name of door.factionPick.names) select.add(new Option(name, factionKey(name)));
+        select.value = door.state.faction;
+        select.addEventListener("change", () => door.factionPick.onChange(select.value));
+        label.appendChild(select);
+        box.appendChild(label);
+      }
 
-      const factions = colourHistoryFactions(d);
+      const factions = door.factions();
       if (!factions.size) {
-        say("This recipe is not linked to a unit that has a faction, so there is no history to show. Link it to a unit and give that unit a faction, and the paints you have used on that faction show here.", "faction-history-none");
+        say(door.noFactionText, "faction-history-none");
         return box;
       }
       const names = [...factions.values()];
@@ -6985,16 +7067,23 @@
       }
       const list = document.createElement("ul");
       list.className = "idea-list";
-      list.id = "faction-history-list";
-      for (const entry of history.list.slice(0, FACTION_HISTORY_SHOWN)) {
+      list.id = door.id("faction-history-list");
+      const shown = history.list.slice(0, FACTION_HISTORY_SHOWN);
+      const lines = [`Colours used on this faction before: ${colourWordList(names)}`], steps = [];
+      for (const entry of shown) {
         const paint = entry.paint;
         const reason = `Used on ${plural(entry.units, "unit")} in this faction, in ${plural(entry.recipes, "recipe")}.`;
         const note = colourIdeaIsReal(paint.colour) ? "" : "This paint has no colour set, so the swatch is grey.";
-        list.appendChild(buildIdeaItem(paint, colourHistoryTag(paint), reason, note,
-          () => addColourIdeaStep(d, paint, "Used before on this faction"), "idea-pick"));
+        const tag = colourHistoryTag(paint);
+        list.appendChild(buildIdeaItem(paint, tag, reason, note,
+          door.addStep ? () => door.addStep(paint, "Used before on this faction") : null, "idea-pick"));
+        lines.push(ideaTextLine(paint, tag, reason, note));
+        steps.push({ paint, technique: "", coats: 1, mix: 100, note: "Used before on this faction" });
       }
       box.appendChild(list);
       if (history.list.length > FACTION_HISTORY_SHOWN) say(`Showing the ${FACTION_HISTORY_SHOWN} most used of ${history.list.length}.`);
+      const share = buildShareRow(door, "Your faction colours", [...lines, COMPENDIUM_TEXT_FOOT], steps);
+      if (share) box.appendChild(share);
       return box;
     }
 
@@ -7019,28 +7108,32 @@
 
     // v31: the mood chips (All, Cold, Warm, Dark, Bright) sit above the scheme chips and only change which scheme chips show,
     // so the list stays short on a phone. "All" is the default. A scheme that is picked but not in the chosen mood is put away.
-    function starterSchemesShown() {
-      const mood = STARTER_MOODS.some(m => m.key === colourIdeasState.mood) ? colourIdeasState.mood : "";
+    function starterSchemesShown(st = colourIdeasState) {
+      const mood = STARTER_MOODS.some(m => m.key === st.mood) ? st.mood : "";
       return STARTER_SCHEMES.filter(s => !mood || s.mood === mood);
     }
 
-    function buildStarterSchemes(d, onPick, onMood) {
+    // v35: door = where this is shown (see "ONE set of building blocks" above).
+    function buildStarterSchemes(door, onPick, onMood) {
+      const st = door.state;
       const box = document.createElement("div");
       box.className = "starter-schemes";
-      box.id = "starter-schemes";
+      box.id = door.id("starter-schemes");
       const title = document.createElement("h3");
       title.className = "scheme-title";
       title.textContent = "Starter schemes";
       const hint = document.createElement("p");
       hint.className = "hint";
-      hint.textContent = "Plain colour schemes to start from. Pick a mood to shorten the list, then pick a scheme to see matching paints, yours first. Tap a paint to add it as a step.";
+      hint.textContent = door.addStep
+        ? "Plain colour schemes to start from. Pick a mood to shorten the list, then pick a scheme to see matching paints, yours first. Tap a paint to add it as a step."
+        : "Plain colour schemes to start from. Pick a mood to shorten the list, then pick a scheme to see matching paints, yours first.";
       const moods = document.createElement("div");
       moods.className = "chips mood-chips";
-      moods.id = "starter-moods";
+      moods.id = door.id("starter-moods");
       moods.style.marginTop = "0";
       moods.setAttribute("role", "group");
       moods.setAttribute("aria-label", "Show schemes by mood");
-      const activeMood = STARTER_MOODS.some(m => m.key === colourIdeasState.mood) ? colourIdeasState.mood : "";
+      const activeMood = STARTER_MOODS.some(m => m.key === st.mood) ? st.mood : "";
       for (const m of [{ key: "", name: "All" }, ...STARTER_MOODS]) {
         const chip = makeChip(m.name, m.key === activeMood, () => onMood(m.key));
         chip.dataset.mood = m.key || "all";
@@ -7048,34 +7141,40 @@
       }
       const chips = document.createElement("div");
       chips.className = "chips";
-      chips.id = "starter-chips";
+      chips.id = door.id("starter-chips");
       chips.style.marginTop = "0";
-      for (const s of starterSchemesShown()) {
-        const chip = makeChip(s.name, s.key === colourIdeasState.scheme, () => onPick(s.key === colourIdeasState.scheme ? "" : s.key, s.key));
+      for (const s of starterSchemesShown(st)) {
+        const chip = makeChip(s.name, s.key === st.scheme, () => onPick(s.key === st.scheme ? "" : s.key, s.key));
         chip.dataset.scheme = s.key;
         chips.appendChild(chip);
       }
       box.append(title, hint, moods, chips);
-      const scheme = starterSchemesShown().find(s => s.key === colourIdeasState.scheme);
+      const scheme = starterSchemesShown(st).find(s => s.key === st.scheme);
       if (!scheme) return box;
 
       const summary = document.createElement("p");
       summary.className = "starter-summary";
-      summary.id = "starter-summary";
+      summary.id = door.id("starter-summary");
       summary.textContent = scheme.summary;
       const why = document.createElement("p");
       why.className = "hint";
-      why.id = "starter-reason";
+      why.id = door.id("starter-reason");
       why.textContent = scheme.reason;
       const list = document.createElement("ul");
       list.className = "idea-list";
-      list.id = "starter-list";
+      list.id = door.id("starter-list");
+      const lines = [`Starter scheme: ${scheme.name}`, scheme.summary, scheme.reason], steps = [];
       for (const { colour, hit } of starterSchemePaints(scheme)) {
         const paint = hit.paint;
-        list.appendChild(buildIdeaItem(paint, colourIdeaTag(hit), `${colour.part}: ${colour.look}.`, colourIdeaNote(hit),
-          () => addColourIdeaStep(d, paint, `Starter scheme (${scheme.name}): ${colour.part.toLowerCase()}`), "idea-pick"));
+        const tag = colourIdeaTag(hit), reason = `${colour.part}: ${colour.look}.`, note = colourIdeaNote(hit);
+        const stepNote = `Starter scheme (${scheme.name}): ${colour.part.toLowerCase()}`;
+        list.appendChild(buildIdeaItem(paint, tag, reason, note, door.addStep ? () => door.addStep(paint, stepNote) : null, "idea-pick"));
+        lines.push(ideaTextLine(paint, tag, reason, note));
+        steps.push({ paint, technique: "", coats: 1, mix: 100, note: stepNote });
       }
       box.append(summary, why, list);
+      const share = buildShareRow(door, scheme.name, [...lines, COMPENDIUM_TEXT_FOOT], steps);
+      if (share) box.appendChild(share);
       return box;
     }
 
@@ -7101,41 +7200,43 @@
     // Adds steps to the recipe being edited as new last steps, in order, with the technique, coats, mix % and note kept.
     // Nothing is saved until Save recipe, as usual. One redraw and one message however many steps are added.
     function addDetailSteps(d, items) {
-      for (const { step, hit } of items) {
-        const paint = hit.paint;
-        d.steps.push({
-          technique: String(step.technique || ""), coats: step.coats, ratio: "", optional: false, note: String(step.note || ""),
-          paints: [{ brand: String(paint.brand || ""), name: String(paint.name || ""), colour: paint.colour, mix: step.mix }],
-        });
-      }
+      for (const { step, hit } of items) d.steps.push(draftStepFrom(hit.paint, step.technique, step.coats, step.mix, step.note));
       if (!items.length) return;
       colourIdeasState.open = true;
       renderRecipeEditor();
       notify(items.length === 1 ? `Added step ${d.steps.length}: ${items[0].hit.paint.name}` : `Added ${items.length} steps (steps ${d.steps.length - items.length + 1} to ${d.steps.length})`);
     }
 
-    function detailRecipesShown() {
-      const group = DETAIL_GROUPS.some(g => g.key === colourIdeasState.detailGroup) ? colourIdeasState.detailGroup : "";
+    function detailRecipesShown(st = colourIdeasState) {
+      const group = DETAIL_GROUPS.some(g => g.key === st.detailGroup) ? st.detailGroup : "";
       return DETAIL_RECIPES.filter(r => !group || r.group === group);
     }
 
-    function buildDetailRecipes(d, onPick, onGroup) {
+    // v35: the line of words under one paint row of a detail recipe or a basing tip (the same in both doors).
+    function detailStepReason(label, i, step) {
+      return `${label} ${i + 1}: ${step.technique}, ${plural(step.coats, "coat")}, ${step.mix}% paint. ${step.look.charAt(0).toUpperCase() + step.look.slice(1)}. ${step.note}`;
+    }
+
+    function buildDetailRecipes(door, onPick, onGroup) {
+      const st = door.state;
       const box = document.createElement("div");
       box.className = "detail-recipes";
-      box.id = "detail-recipes";
+      box.id = door.id("detail-recipes");
       const title = document.createElement("h3");
       title.className = "scheme-title";
       title.textContent = "Detail recipes";
       const hint = document.createElement("p");
       hint.className = "hint";
-      hint.textContent = "Plain step-by-step recipes for small details. Pick a group to shorten the list, then pick a recipe to see its steps with matching paints, yours first. Add all steps, or tap one paint to add just that step.";
+      hint.textContent = door.addSteps
+        ? "Plain step-by-step recipes for small details. Pick a group to shorten the list, then pick a recipe to see its steps with matching paints, yours first. Add all steps, or tap one paint to add just that step."
+        : "Plain step-by-step recipes for small details. Pick a group to shorten the list, then pick a recipe to see its steps with matching paints, yours first.";
       const groups = document.createElement("div");
       groups.className = "chips mood-chips";
-      groups.id = "detail-groups";
+      groups.id = door.id("detail-groups");
       groups.style.marginTop = "0";
       groups.setAttribute("role", "group");
       groups.setAttribute("aria-label", "Show detail recipes by group");
-      const activeGroup = DETAIL_GROUPS.some(g => g.key === colourIdeasState.detailGroup) ? colourIdeasState.detailGroup : "";
+      const activeGroup = DETAIL_GROUPS.some(g => g.key === st.detailGroup) ? st.detailGroup : "";
       for (const g of [{ key: "", name: "All" }, ...DETAIL_GROUPS]) {
         const chip = makeChip(g.name, g.key === activeGroup, () => onGroup(g.key));
         chip.dataset.detailGroup = g.key || "all";
@@ -7143,47 +7244,56 @@
       }
       const chips = document.createElement("div");
       chips.className = "chips";
-      chips.id = "detail-chips";
+      chips.id = door.id("detail-chips");
       chips.style.marginTop = "0";
-      for (const r of detailRecipesShown()) {
-        const chip = makeChip(r.name, r.key === colourIdeasState.detail, () => onPick(r.key === colourIdeasState.detail ? "" : r.key, r.key));
+      for (const r of detailRecipesShown(st)) {
+        const chip = makeChip(r.name, r.key === st.detail, () => onPick(r.key === st.detail ? "" : r.key, r.key));
         chip.dataset.detail = r.key;
         chips.appendChild(chip);
       }
       box.append(title, hint, groups, chips);
-      const recipe = detailRecipesShown().find(r => r.key === colourIdeasState.detail);
+      const recipe = detailRecipesShown(st).find(r => r.key === st.detail);
       if (!recipe) return box;
 
       const summary = document.createElement("p");
       summary.className = "starter-summary";
-      summary.id = "detail-summary";
+      summary.id = door.id("detail-summary");
       summary.textContent = recipe.summary;
       box.appendChild(summary);
       const items = detailRecipePaints(recipe);
       if (!items.length) {
         const none = document.createElement("p");
         none.className = "hint";
-        none.id = "detail-none";
+        none.id = door.id("detail-none");
         none.textContent = "No paints with a known colour to suggest yet. Add paints on Your Palette first.";
         box.appendChild(none);
         return box;
       }
-      const all = document.createElement("button");
-      all.type = "button";
-      all.className = "primary-button";
-      all.id = "detail-add-all";
-      all.textContent = "Add all steps";
-      all.setAttribute("aria-label", `Add all ${items.length} steps of ${recipe.name} to this recipe`);
-      all.addEventListener("click", () => addDetailSteps(d, items));
       const list = document.createElement("ul");
       list.className = "idea-list";
-      list.id = "detail-list";
+      list.id = door.id("detail-list");
+      const lines = [`Detail recipe: ${recipe.name}`, recipe.summary], steps = [];
       items.forEach(({ step, hit }, i) => {
         const paint = hit.paint;
-        const reason = `Step ${i + 1}: ${step.technique}, ${plural(step.coats, "coat")}, ${step.mix}% paint. ${step.look.charAt(0).toUpperCase() + step.look.slice(1)}. ${step.note}`;
-        list.appendChild(buildIdeaItem(paint, colourIdeaTag(hit), reason, colourIdeaNote(hit), () => addDetailSteps(d, [{ step, hit }]), "idea-pick"));
+        const tag = colourIdeaTag(hit), reason = detailStepReason("Step", i, step), note = colourIdeaNote(hit);
+        list.appendChild(buildIdeaItem(paint, tag, reason, note, door.addSteps ? () => door.addSteps([{ step, hit }]) : null, "idea-pick"));
+        lines.push(ideaTextLine(paint, tag, reason, note));
+        steps.push({ paint, technique: step.technique, coats: step.coats, mix: step.mix, note: step.note });
       });
-      box.append(all, list);
+      if (door.addSteps) {
+        const all = document.createElement("button");
+        all.type = "button";
+        all.className = "primary-button";
+        all.id = door.id("detail-add-all");
+        all.textContent = "Add all steps";
+        all.setAttribute("aria-label", `Add all ${items.length} steps of ${recipe.name} to this recipe`);
+        all.addEventListener("click", () => door.addSteps(items));
+        box.append(all, list);
+      } else {
+        box.appendChild(list);
+      }
+      const share = buildShareRow(door, recipe.name, [...lines, COMPENDIUM_TEXT_FOOT], steps);
+      if (share) box.appendChild(share);
       return box;
     }
 
@@ -7193,8 +7303,8 @@
     // SHOWN, they never go into a recipe. A paint step names a TARGET COLOUR (a plain colour word and a hex), never a paint, and is
     // matched exactly like a detail recipe step (nearest paint, yours first, same honest tags and notes). Same rules for the text:
     // generic, our own words, no brand or product names, no Games Workshop, faction or scheme names. A test scans all of it.
-    function basingTipsShown() {
-      const group = BASING_GROUPS.some(g => g.key === colourIdeasState.basingGroup) ? colourIdeasState.basingGroup : "";
+    function basingTipsShown(st = colourIdeasState) {
+      const group = BASING_GROUPS.some(g => g.key === st.basingGroup) ? st.basingGroup : "";
       return BASING_TIPS.filter(t => !group || t.group === group);
     }
 
@@ -7210,23 +7320,26 @@
       return list;
     }
 
-    function buildBasingTips(d, onPick, onGroup) {
+    function buildBasingTips(door, onPick, onGroup) {
+      const st = door.state;
       const box = document.createElement("div");
       box.className = "basing-tips";
-      box.id = "basing-tips";
+      box.id = door.id("basing-tips");
       const title = document.createElement("h3");
       title.className = "scheme-title";
       title.textContent = "Basing tips";
       const hint = document.createElement("p");
       hint.className = "hint";
-      hint.textContent = "Plain how-tos for the base of a model. Pick a group to shorten the list, then pick a tip to see what you need, how to build it and some optional paint steps with matching paints, yours first. Only the paint steps can be added to your recipe.";
+      hint.textContent = door.addSteps
+        ? "Plain how-tos for the base of a model. Pick a group to shorten the list, then pick a tip to see what you need, how to build it and some optional paint steps with matching paints, yours first. Only the paint steps can be added to your recipe."
+        : "Plain how-tos for the base of a model. Pick a group to shorten the list, then pick a tip to see what you need, how to build it and some optional paint steps with matching paints, yours first. Only the paint steps can go into a recipe.";
       const groups = document.createElement("div");
       groups.className = "chips mood-chips";
-      groups.id = "basing-groups";
+      groups.id = door.id("basing-groups");
       groups.style.marginTop = "0";
       groups.setAttribute("role", "group");
       groups.setAttribute("aria-label", "Show basing tips by group");
-      const activeGroup = BASING_GROUPS.some(g => g.key === colourIdeasState.basingGroup) ? colourIdeasState.basingGroup : "";
+      const activeGroup = BASING_GROUPS.some(g => g.key === st.basingGroup) ? st.basingGroup : "";
       for (const g of [{ key: "", name: "All" }, ...BASING_GROUPS]) {
         const chip = makeChip(g.name, g.key === activeGroup, () => onGroup(g.key));
         chip.dataset.basingGroup = g.key || "all";
@@ -7234,20 +7347,20 @@
       }
       const chips = document.createElement("div");
       chips.className = "chips";
-      chips.id = "basing-chips";
+      chips.id = door.id("basing-chips");
       chips.style.marginTop = "0";
-      for (const t of basingTipsShown()) {
-        const chip = makeChip(t.name, t.key === colourIdeasState.basing, () => onPick(t.key === colourIdeasState.basing ? "" : t.key, t.key));
+      for (const t of basingTipsShown(st)) {
+        const chip = makeChip(t.name, t.key === st.basing, () => onPick(t.key === st.basing ? "" : t.key, t.key));
         chip.dataset.basing = t.key;
         chips.appendChild(chip);
       }
       box.append(title, hint, groups, chips);
-      const tip = basingTipsShown().find(t => t.key === colourIdeasState.basing);
+      const tip = basingTipsShown(st).find(t => t.key === st.basing);
       if (!tip) return box;
 
       const summary = document.createElement("p");
       summary.className = "starter-summary";
-      summary.id = "basing-summary";
+      summary.id = door.id("basing-summary");
       summary.textContent = tip.summary;
       const matTitle = document.createElement("h4");
       matTitle.className = "basing-sub";
@@ -7255,15 +7368,20 @@
       const howTitle = document.createElement("h4");
       howTitle.className = "basing-sub";
       howTitle.textContent = "How to build it";
-      box.append(summary, matTitle, basingPlainList("ul", "basing-materials", tip.materials),
-                 howTitle, basingPlainList("ol", "basing-howto", tip.howto));
+      box.append(summary, matTitle, basingPlainList("ul", door.id("basing-materials"), tip.materials),
+                 howTitle, basingPlainList("ol", door.id("basing-howto"), tip.howto));
+      // the words for "Copy as text" (built as we go; the materials and how-to are only ever shown or copied, never put in a recipe)
+      const lines = [`Basing tip: ${tip.name}`, tip.summary, "", "What you need:", ...tip.materials.map(m => `- ${m}`),
+                     "", "How to build it:", ...tip.howto.map((h, i) => `${i + 1}. ${h}`)];
 
       if (!tip.paintSteps.length) {
         const none = document.createElement("p");
         none.className = "hint";
-        none.id = "basing-no-paint";
+        none.id = door.id("basing-no-paint");
         none.textContent = "There are no paint steps for this one.";
         box.appendChild(none);
+        const share = buildShareRow(door, tip.name, [...lines, "", COMPENDIUM_TEXT_FOOT], []);
+        if (share) box.appendChild(share);
         return box;
       }
       const paintTitle = document.createElement("h4");
@@ -7274,28 +7392,123 @@
       if (!items.length) {
         const none = document.createElement("p");
         none.className = "hint";
-        none.id = "basing-none";
+        none.id = door.id("basing-none");
         none.textContent = "No paints with a known colour to suggest yet. Add paints on Your Palette first.";
         box.appendChild(none);
+        const share = buildShareRow(door, tip.name, [...lines, "", COMPENDIUM_TEXT_FOOT], []);
+        if (share) box.appendChild(share);
         return box;
       }
-      const all = document.createElement("button");
-      all.type = "button";
-      all.className = "primary-button";
-      all.id = "basing-add-all";
-      all.textContent = "Add all paint steps";
-      all.setAttribute("aria-label", `Add all ${items.length} paint steps of ${tip.name} to this recipe`);
-      all.addEventListener("click", () => addDetailSteps(d, items));
       const list = document.createElement("ul");
       list.className = "idea-list";
-      list.id = "basing-list";
+      list.id = door.id("basing-list");
+      lines.push("", "Paint steps (optional):");
+      const steps = [];
       items.forEach(({ step, hit }, i) => {
         const paint = hit.paint;
-        const reason = `Paint step ${i + 1}: ${step.technique}, ${plural(step.coats, "coat")}, ${step.mix}% paint. ${step.look.charAt(0).toUpperCase() + step.look.slice(1)}. ${step.note}`;
-        list.appendChild(buildIdeaItem(paint, colourIdeaTag(hit), reason, colourIdeaNote(hit), () => addDetailSteps(d, [{ step, hit }]), "idea-pick"));
+        const tag = colourIdeaTag(hit), reason = detailStepReason("Paint step", i, step), note = colourIdeaNote(hit);
+        list.appendChild(buildIdeaItem(paint, tag, reason, note, door.addSteps ? () => door.addSteps([{ step, hit }]) : null, "idea-pick"));
+        lines.push(ideaTextLine(paint, tag, reason, note));
+        steps.push({ paint, technique: step.technique, coats: step.coats, mix: step.mix, note: step.note });
       });
-      box.append(all, list);
+      if (door.addSteps) {
+        const all = document.createElement("button");
+        all.type = "button";
+        all.className = "primary-button";
+        all.id = door.id("basing-add-all");
+        all.textContent = "Add all paint steps";
+        all.setAttribute("aria-label", `Add all ${items.length} paint steps of ${tip.name} to this recipe`);
+        all.addEventListener("click", () => door.addSteps(items));
+        box.append(all, list);
+      } else {
+        box.appendChild(list);
+      }
+      const share = buildShareRow(door, tip.name, [...lines, "", COMPENDIUM_TEXT_FOOT], steps);
+      if (share) box.appendChild(share);
       return box;
+    }
+
+    // v35: the three library parts, in the card's order, with the picks wired to the door's own state. Used by BOTH doors.
+    // redraw(selector) redraws the door's body and puts the focus back on the thing just tapped. If a data file is somehow
+    // missing, its part is simply not shown and the rest still works.
+    function appendLibraryParts(body, door, redraw) {
+      const st = door.state;
+      body.appendChild(buildFactionHistory(door, redraw));
+      if (typeof STARTER_SCHEMES !== "undefined" && typeof STARTER_MOODS !== "undefined") {
+        body.appendChild(buildStarterSchemes(door,
+          (key, clicked) => { st.scheme = key; redraw(`[data-scheme="${clicked}"]`); },
+          (mood) => {
+            st.mood = mood;
+            const picked = STARTER_SCHEMES.find(x => x.key === st.scheme);
+            if (picked && mood && picked.mood !== mood) st.scheme = "";   // v31: a pick outside the mood is put away
+            redraw(`[data-mood="${mood || "all"}"]`);
+          }));
+      }
+      if (typeof DETAIL_RECIPES !== "undefined" && typeof DETAIL_GROUPS !== "undefined") {
+        body.appendChild(buildDetailRecipes(door,
+          (key, clicked) => { st.detail = key; redraw(`[data-detail="${clicked}"]`); },
+          (group) => {
+            st.detailGroup = group;
+            const picked = DETAIL_RECIPES.find(x => x.key === st.detail);
+            if (picked && group && picked.group !== group) st.detail = "";   // a pick outside the group is put away
+            redraw(`[data-detail-group="${group || "all"}"]`);
+          }));
+      }
+      if (typeof BASING_TIPS !== "undefined" && typeof BASING_GROUPS !== "undefined") {
+        body.appendChild(buildBasingTips(door,
+          (key, clicked) => { st.basing = key; redraw(`[data-basing="${clicked}"]`); },
+          (group) => {
+            st.basingGroup = group;
+            const picked = BASING_TIPS.find(x => x.key === st.basing);
+            if (picked && group && picked.group !== group) st.basing = "";   // a pick outside the group is put away
+            redraw(`[data-basing-group="${group || "all"}"]`);
+          }));
+      }
+    }
+
+    // v35: "What are you painting?", the role buttons and the role's tip, used by BOTH doors.
+    function appendRolePicker(body, door, onRole) {
+      const role = COLOUR_ROLES.find(r => r.key === door.state.role) || COLOUR_ROLES[0];
+      const roleLabel = document.createElement("p");
+      roleLabel.className = "idea-label";
+      roleLabel.textContent = "What are you painting?";
+      const chips = document.createElement("div");
+      chips.className = "chips";
+      chips.style.marginTop = "0";
+      for (const r of COLOUR_ROLES) {
+        const chip = makeChip(r.label, r.key === role.key, () => onRole(r.key));
+        chip.dataset.role = r.key;
+        chips.appendChild(chip);
+      }
+      body.append(roleLabel, chips);
+      // v29: hand-written advice for the chosen role
+      const tip = document.createElement("p");
+      tip.className = "role-tip";
+      tip.id = door.id("colour-ideas-tip");
+      const tipLabel = document.createElement("strong");
+      tipLabel.textContent = "Tip: ";
+      tip.append(tipLabel, role.tip);
+      body.appendChild(tip);
+      return role;
+    }
+
+    // v35: the up-to-3 paint ideas as a list, used by BOTH doors. In a recipe a tap adds a step; in the Compendium the rows are plain.
+    // Returns { list, lines, steps }: the list, the words for "Copy as text" and the steps for "Save into a new recipe…".
+    function buildIdeasList(door, ideas, baseHex, role) {
+      const list = document.createElement("ul");
+      list.className = "idea-list";
+      const lines = [], steps = [];
+      for (const idea of ideas) {
+        const paint = idea.hit.paint;
+        const tag = colourIdeaTag(idea.hit);
+        const reason = colourIdeaReason(idea.relation, idea.wanted, baseHex, role);
+        const note = colourIdeaNote(idea.hit);
+        const stepNote = `Colour idea for ${role.note}`;
+        list.appendChild(buildIdeaItem(paint, tag, reason, note, door.addStep ? () => door.addStep(paint, stepNote) : null));
+        lines.push(ideaTextLine(paint, tag, reason, note));
+        steps.push({ paint, technique: "", coats: 1, mix: 100, note: stepNote });
+      }
+      return { list, lines, steps };
     }
 
     function buildColourIdeasCard(d) {
@@ -7316,46 +7529,19 @@
 
       let lastLook = "";
       let focusNext = "";
-      // v30: your faction history and the starter schemes (they need no start colour, so they also show without one)
-      const addYourSchemes = () => {
-        body.appendChild(buildFactionHistory(d));
-        // v31: the schemes come from schemes.js. If that file is somehow missing, the rest of the card still works.
-        if (typeof STARTER_SCHEMES !== "undefined" && typeof STARTER_MOODS !== "undefined") {
-          body.appendChild(buildStarterSchemes(d,
-            (key, clicked) => { colourIdeasState.scheme = key; focusNext = `[data-scheme="${clicked}"]`; draw(); },
-            (mood) => {
-              colourIdeasState.mood = mood;
-              const picked = STARTER_SCHEMES.find(x => x.key === colourIdeasState.scheme);
-              if (picked && mood && picked.mood !== mood) colourIdeasState.scheme = "";   // v31: a pick outside the mood is put away
-              focusNext = `[data-mood="${mood || "all"}"]`;
-              draw();
-            }));
-        }
-        // v32: the detail recipes come from detail-recipes.js, below the starter schemes. If that file is missing, the rest still works.
-        if (typeof DETAIL_RECIPES !== "undefined" && typeof DETAIL_GROUPS !== "undefined") {
-          body.appendChild(buildDetailRecipes(d,
-            (key, clicked) => { colourIdeasState.detail = key; focusNext = `[data-detail="${clicked}"]`; draw(); },
-            (group) => {
-              colourIdeasState.detailGroup = group;
-              const picked = DETAIL_RECIPES.find(x => x.key === colourIdeasState.detail);
-              if (picked && group && picked.group !== group) colourIdeasState.detail = "";   // a pick outside the group is put away
-              focusNext = `[data-detail-group="${group || "all"}"]`;
-              draw();
-            }));
-        }
-        // v33: the basing tips come from basing-tips.js, below the detail recipes. If that file is missing, the rest still works.
-        if (typeof BASING_TIPS !== "undefined" && typeof BASING_GROUPS !== "undefined") {
-          body.appendChild(buildBasingTips(d,
-            (key, clicked) => { colourIdeasState.basing = key; focusNext = `[data-basing="${clicked}"]`; draw(); },
-            (group) => {
-              colourIdeasState.basingGroup = group;
-              const picked = BASING_TIPS.find(x => x.key === colourIdeasState.basing);
-              if (picked && group && picked.group !== group) colourIdeasState.basing = "";   // a pick outside the group is put away
-              focusNext = `[data-basing-group="${group || "all"}"]`;
-              draw();
-            }));
-        }
+      // v35: the card is one "door" onto the shared building blocks (the Compendium tab is the other). Here a tap adds a step to the recipe.
+      const door = {
+        state: colourIdeasState, d,
+        addStep: (paint, noteText) => addColourIdeaStep(d, paint, noteText),
+        addSteps: (items) => addDetailSteps(d, items),
+        share: null,
+        factions: () => colourHistoryFactions(d),
+        noFactionText: "This recipe is not linked to a unit that has a faction, so there is no history to show. Link it to a unit and give that unit a faction, and the paints you have used on that faction show here.",
+        id: doorId,
       };
+      const redraw = (selector) => { focusNext = selector; draw(); };
+      // v30: your faction history and the starter schemes, v32 detail recipes, v33 basing tips (they need no start colour, so they also show without one)
+      const addYourSchemes = () => appendLibraryParts(body, door, redraw);
       const draw = () => {
         const bases = colourIdeaBases(d);
         const ownMain = colourIdeaMainColour(bases);
@@ -7421,27 +7607,7 @@
         pick.appendChild(select);
         body.appendChild(pick);
 
-        const roleLabel = document.createElement("p");
-        roleLabel.className = "idea-label";
-        roleLabel.textContent = "What are you painting?";
-        const chips = document.createElement("div");
-        chips.className = "chips";
-        chips.style.marginTop = "0";
-        for (const r of COLOUR_ROLES) {
-          const chip = makeChip(r.label, r.key === role.key, () => { colourIdeasState.role = r.key; focusNext = `[data-role="${r.key}"]`; draw(); });
-          chip.dataset.role = r.key;
-          chips.appendChild(chip);
-        }
-        body.append(roleLabel, chips);
-
-        // v29: hand-written advice for the chosen role
-        const tip = document.createElement("p");
-        tip.className = "role-tip";
-        tip.id = "colour-ideas-tip";
-        const tipLabel = document.createElement("strong");
-        tipLabel.textContent = "Tip: ";
-        tip.append(tipLabel, role.tip);
-        body.appendChild(tip);
+        appendRolePicker(body, door, (key) => { colourIdeasState.role = key; redraw(`[data-role="${key}"]`); });
 
         const baseHex = base.colour;
         if (baseHint) {
@@ -7465,16 +7631,7 @@
           none.textContent = "No paints with a known colour to suggest yet. Add paints on Your Palette first.";
           body.appendChild(none);
         }
-        const list = document.createElement("ul");
-        list.className = "idea-list";
-        for (const idea of ideas) {
-          const paint = idea.hit.paint;
-          const tag = colourIdeaTag(idea.hit);
-          const reason = colourIdeaReason(idea.relation, idea.wanted, baseHex, role);
-          const note = colourIdeaNote(idea.hit);
-          list.appendChild(buildIdeaItem(paint, tag, reason, note, () => addColourIdeaStep(d, paint, `Colour idea for ${role.note}`)));
-        }
-        body.appendChild(list);
+        body.appendChild(buildIdeasList(door, ideas, baseHex, role).list);
         addYourSchemes();
 
         // v29: "Does this scheme hang together?" (skipped if an older colour.js without schemeCheck is somehow loaded)
@@ -7513,6 +7670,141 @@
       };
       if (card.open) draw();
       return card;
+    }
+
+    // ================= v35: THE COMPENDIUM TAB (Pro preview) =================
+    // The fifth bottom tab. It shows the same content as the Colour ideas card in the recipe editor (paint ideas for a colour you
+    // choose, Your schemes, Starter schemes, Detail recipes, Basing tips) WITHOUT needing a recipe. It is the second "door" onto the
+    // shared building blocks above (see "ONE set of building blocks, TWO doors"): there is no recipe to add steps to, so the rows
+    // are plain and each part ends with "Copy as text" and "Save into a new recipe…" instead. The data files are the same ones.
+    // No colour wheel yet (that is the next chunk). Works offline and sends nothing anywhere. Paint, faction and recipe names are
+    // always shown as plain text (never as HTML), because they can be anything the user typed or pasted.
+
+    // The paints you can start from: your own palette first (paints you own, then the rest), then the built-in list by brand.
+    function compendiumBaseChoices() {
+      const paintKey = (p) => sameKey(tidyBrand(p.brand)) + "|" + sameKey(p.name);
+      const byName = (a, b) => String(a.name).localeCompare(String(b.name));
+      const mine = book.paints.filter(p => colourIdeaIsReal(p.colour));
+      const have = new Set(book.paints.map(p => sameKey(p.name)));
+      const known = KNOWN_PAINTS.filter(k => !have.has(sameKey(k.name)) && colourIdeaIsReal(k.colour));
+      const brands = new Map();
+      for (const k of known) brands.set(k.brand, [...(brands.get(k.brand) || []), k]);
+      return {
+        own: mine.filter(p => MinifolioColour.haveIt(p)).sort(byName),
+        other: mine.filter(p => !MinifolioColour.haveIt(p)).sort(byName),
+        brands: [...brands.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([brand, list]) => ({ brand, list: list.sort(byName) })),
+        key: paintKey,
+      };
+    }
+
+    function compendiumDoor() {
+      const st = compendiumState;
+      // each faction once, however it was typed (capitals and spaces at the ends do not count): the name as first typed is shown
+      const seen = new Map();
+      for (const m of models) { const name = String(m.faction || "").trim(); if (name && !seen.has(factionKey(name))) seen.set(factionKey(name), name); }
+      const names = [...seen.values()].sort((a, b) => a.localeCompare(b));
+      const chosen = names.find(n => factionKey(n) === st.faction);
+      if (!chosen) st.faction = "";
+      return {
+        state: st, d: null, addStep: null, addSteps: null,
+        share: { copy: (text, what) => copyText(text, what, "Paste it anywhere."), startRecipe: startRecipeFromCompendium },
+        factions: () => new Map(chosen ? [[factionKey(chosen), chosen]] : []),
+        factionPick: { names, onChange: (key) => { st.faction = key; renderCompendium(`#${compendiumId("faction-history-pick")}`); } },
+        noFactionText: names.length
+          ? "Choose a faction above to see the paints you have used on it. It looks at the recipes saved on your units of that faction."
+          : "None of your units has a faction yet, so there is no history to show. Give a unit a faction on the Units tab, and the paints you use on it show here.",
+        id: compendiumId,
+      };
+    }
+
+    // "Save into a new recipe…": opens the recipe editor with a new recipe that already has these steps. Nothing is saved until you
+    // press Save recipe, and Cancel asks first (the steps are not saved anywhere yet).
+    function startRecipeFromCompendium(steps) {
+      if (!steps || !steps.length) return;
+      whenOkToLeaveDraft(() => {
+        openRecipeId = null;
+        const draft = {
+          id: null, name: "", part: recipePartFilter, notes: "", linkUnit: null,
+          steps: steps.map(x => draftStepFrom(x.paint, x.technique, x.coats, x.mix, x.note)),
+          original: "",   // never equal to the draft, so Cancel asks first
+        };
+        startRecipeDraft(draft);
+        if (recipeDraft !== draft) return;   // a kept unfinished recipe was offered first instead
+        showTab("recipes");
+        notify(`Started a new recipe with ${plural(steps.length, "step")}. Give it a name and press Save recipe.`);
+      });
+    }
+
+    function renderCompendium(focusSelector) {
+      const body = document.getElementById("compendium-body");
+      if (!body) return;
+      body.replaceChildren();
+      const say = (text, id) => {
+        const p = document.createElement("p");
+        p.className = "hint";
+        if (id) p.id = compendiumId(id);
+        p.textContent = text;
+        body.appendChild(p);
+        return p;
+      };
+      if (typeof MinifolioColour === "undefined") {
+        say("The colour part of the app did not load, so the Compendium cannot show anything. Close the app and open it again.");
+        return;
+      }
+      const st = compendiumState;
+      const door = compendiumDoor();
+      const redraw = (selector) => renderCompendium(selector);
+
+      say("Colour ideas, starter schemes, detail recipes and basing tips, without needing a recipe. Pick a colour and what you are painting to get 3 paints that go with it, yours first. Use Copy as text to keep anything, or Save into a new recipe\u2026 to start a recipe from it.", "intro");
+
+      // ---- paint ideas for a colour you choose ----
+      const choices = compendiumBaseChoices();
+      const all = [...choices.own, ...choices.other, ...choices.brands.flatMap(b => b.list)];
+      const base = all.find(p => choices.key(p) === st.base) || null;
+      if (!base) st.base = "";
+      const pick = document.createElement("label");
+      pick.append("Start from");
+      const select = document.createElement("select");
+      select.style.width = "100%";
+      select.id = compendiumId("colour-ideas-base");
+      select.add(new Option("Choose a colour\u2026", ""));
+      const addGroup = (label, list) => {
+        if (!list.length) return;
+        const group = document.createElement("optgroup");
+        group.label = label;
+        for (const p of list) group.appendChild(new Option(p.brand ? `${p.name} (${p.brand})` : p.name, choices.key(p)));
+        select.appendChild(group);
+      };
+      addGroup("Paints you own", choices.own);
+      addGroup("Other paints in your palette", choices.other);
+      for (const b of choices.brands) addGroup(`More ${b.brand} paints`, b.list);
+      select.value = st.base;
+      select.addEventListener("change", () => { st.base = select.value; renderCompendium(`#${compendiumId("colour-ideas-base")}`); });
+      pick.appendChild(select);
+      body.appendChild(pick);
+
+      if (!base) {
+        say("Choose a colour above and you get 3 paints that go with it. The parts below do not need one.", "colour-ideas-none");
+      } else {
+        const role = appendRolePicker(body, door, (key) => { st.role = key; redraw(`[data-role="${key}"]`); });
+        const ideas = colourIdeas(null, base.colour, role);
+        if (!ideas.length) say("No paints with a known colour to suggest yet. Add paints on Your Palette first.");
+        const built = buildIdeasList(door, ideas, base.colour, role);
+        body.appendChild(built.list);
+        if (ideas.length) {
+          const head = `Colour ideas for ${role.note} with ${base.name}${base.brand ? ` (${base.brand})` : ""}`;
+          const share = buildShareRow(door, "Colour ideas", [head, ...built.lines, COMPENDIUM_TEXT_FOOT], built.steps);
+          if (share) body.appendChild(share);
+        }
+      }
+
+      appendLibraryParts(body, door, redraw);
+      say("Ideas use paints you own first. Colours on a screen are only a guide, so check them on your model. Nothing leaves your phone.", "foot");
+
+      if (focusSelector) {
+        const target = body.querySelector(focusSelector);
+        if (target) target.focus();
+      }
     }
 
     // ================= v18c: TIDY BRANDS AND "DO YOU OWN THESE?" =================
@@ -8366,8 +8658,9 @@
     }
 
     // ================= v16: COPY AS TEXT (the button) =================
-    function copyText(text, what) {
-      const done = () => showToast(`${what} copied. Paste it anywhere, or back into Paste recipes.`);
+    // v35: the ending of the message can be changed (the Compendium has no Paste recipes to paste back into).
+    function copyText(text, what, ending) {
+      const done = () => showToast(`${what} copied. ${ending || "Paste it anywhere, or back into Paste recipes."}`);
       const fallback = () => {
         const area = document.createElement("textarea");
         area.value = text;
@@ -10600,8 +10893,8 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=34". v21.4 test checks.)
-    const APP_VERSION = "v34";
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=35". v21.4 test checks.)
+    const APP_VERSION = "v35";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -11004,6 +11297,11 @@
     showCountingChoice();
 
     const CHANGELOG = [
+      { version: "v35", date: "16 Oct 2026", changes: [
+        "New Compendium tab (Pro preview) in the bottom bar, between Recipes and Settings. It shows the same things as the Colour ideas card in a recipe, but without needing a recipe: pick a colour and what you are painting to get 3 paints that go with it, then Colours you've used on this faction before, Starter schemes, Detail recipes and Basing tips.",
+        "There is no recipe open there, so the rows have no add buttons. Each part has Copy as text instead, and Save into a new recipe\u2026, which opens the recipe editor with a new recipe that already has those steps. Nothing is saved until you press Save recipe.",
+        "It works the same as the card in a recipe: your own paints first, colours are only a guide, it works offline and sends nothing anywhere. The picks you make in the Compendium are separate from the ones in a recipe. There is no colour wheel yet.",
+      ]},
       { version: "v34", date: "16 Oct 2026", changes: [
         "Tidy-up: the examples a brand-new start comes with (three units, two recipes and their paints) and the hints in the boxes and in Help now use plain, made-up names instead of well-known game, army and paint names.",
         "Nothing you have saved changes. Examples you already have stay as they are, and you can still keep or clear them.",

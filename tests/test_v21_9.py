@@ -169,8 +169,8 @@ def main():
                 page.set_viewport_size({"width": width, "height": 844})
                 seed(page, settings=full_settings(appearance=appearance))
                 names = page.evaluate("() => [...document.querySelectorAll('nav.tabs button')].map(b => b.dataset.tab)")
-                check(f"{appearance} {width}px: the bar has exactly Dashboard, Units, Recipes, Settings",
-                      names == ["dashboard", "units", "recipes", "settings"], names)
+                check(f"{appearance} {width}px: the bar has exactly Dashboard, Units, Recipes, Compendium, Settings",
+                      names == ["dashboard", "units", "recipes", "compendium", "settings"], names)
                 check(f"{appearance} {width}px: no Help or Updates button in the bar",
                       page.locator('nav.tabs button[data-tab="help"], nav.tabs button[data-tab="updates"]').count() == 0)
                 heights = page.evaluate("() => [...document.querySelectorAll('nav.tabs button')].map(b => b.getBoundingClientRect().height)")
@@ -178,7 +178,7 @@ def main():
                 check(f"{appearance} {width}px: every tab button is at least 44 px tall and wide", min(heights) >= 44 and min(widths) >= 44, [heights, widths])
                 labels = page.evaluate("""() => [...document.querySelectorAll('nav.tabs button')].map(b =>
                     [...b.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim())""")
-                check(f"{appearance} {width}px: the labels read Dashboard, Units, Recipes, Settings", labels == ["Dashboard", "Units", "Recipes", "Settings"], labels)
+                check(f"{appearance} {width}px: the labels read Dashboard, Units, Recipes, Compendium, Settings", labels == ["Dashboard", "Units", "Recipes", "Compendium", "Settings"], labels)
                 fits = page.evaluate("""() => [...document.querySelectorAll('nav.tabs button')].every(b => b.scrollWidth <= b.clientWidth + 1)""")
                 check(f"{appearance} {width}px: no label is cut off", fits)
                 check(f"{appearance} {width}px: nothing scrolls sideways", no_sideways(page))
@@ -351,7 +351,7 @@ def main():
         def help_text(i):
             return page.evaluate(f"() => document.getElementById('{i}') ? document.getElementById('{i}').textContent : ''")
         tabs_text = help_text("help-tabs")
-        check("Help explains the four tabs and the switch", all(w in tabs_text for w in ["four tabs", "Dashboard", "Units", "Recipes", "Settings", "Settings / Help / Updates", "remembers"]), tabs_text)
+        check("Help explains the five tabs and the switch", all(w in tabs_text for w in ["five tabs", "Dashboard", "Units", "Recipes", "Compendium", "Settings", "Settings / Help / Updates", "remembers"]), tabs_text)
         feedback_lines = [t for t in page.eval_on_selector_all("#view-help li", "els => els.map(e => e.textContent)") if "Give feedback" in t]
         check("the Help lines that tell you where to find Give feedback say Settings → Updates",
               sum("Settings → Updates" in t for t in feedback_lines) >= 2 and not any("Updates tab" in t for t in feedback_lines), feedback_lines)
@@ -395,7 +395,7 @@ def main():
         page.set_viewport_size({"width": 1100, "height": 800})
         seed(page, settings=full_settings(tab="settings"))
         names = page.evaluate("() => [...document.querySelectorAll('nav.tabs button')].map(b => b.dataset.tab)")
-        check("the top bar has the same four tabs", names == ["dashboard", "units", "recipes", "settings"], names)
+        check("the top bar has the same five tabs", names == ["dashboard", "units", "recipes", "compendium", "settings"], names)
         top_pos = page.evaluate("() => { const r = document.querySelector('nav.tabs').getBoundingClientRect(); return r.top; }")
         check("the bar is along the top", top_pos <= 1, top_pos)
         for name in PAGES:
