@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=35"></script>
+  <script src="early.js?v=36"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -917,6 +917,29 @@
     .idea-static .swatch { width: 32px; height: 32px; flex: none; margin-top: 2px; }
     .share-row { display: flex; flex-wrap: wrap; gap: 10px; }
     .share-row .plain-button { min-height: 44px; }
+    /* v36: the colour wheel at the top of the Compendium. Slices are plain SVG paths: a ring of six colours and four slices in the middle.
+       Cool, slightly deep colours so it sits well on the dark theme; the open slice gets the accent outline. */
+    .wheel-block { display: grid; gap: 10px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+    .wheel-hint { margin: 0; font-weight: 600; text-align: center; }
+    .wheel-caption { margin: 0; font-size: 13px; color: var(--muted); text-align: center; }
+    .wheel-svg { display: block; width: 100%; max-width: 320px; height: auto; margin: 0 auto; touch-action: manipulation; }
+    .wheel-seg { stroke: var(--card); stroke-width: 4; cursor: pointer; outline: none; -webkit-tap-highlight-color: transparent; }
+    .wheel-seg:hover { filter: brightness(1.12); }
+    .wheel-seg[aria-pressed="true"], .wheel-seg:focus-visible { stroke: var(--accent); stroke-width: 5; }
+    .wheel-seg.red { fill: #bd4352; }
+    .wheel-seg.orange { fill: #d4793f; }
+    .wheel-seg.yellow { fill: #d3b744; }
+    .wheel-seg.green { fill: #3f9a74; }
+    .wheel-seg.blue { fill: #3f78c8; }
+    .wheel-seg.purple { fill: #8461c4; }
+    .wheel-seg.white { fill: #e3e9f1; }
+    .wheel-seg.grey { fill: #7b8594; }
+    .wheel-seg.black { fill: #06080c; }
+    .wheel-edge { fill: none; stroke: var(--border); stroke-width: 1; pointer-events: none; }
+    .wheel-detail { display: grid; gap: 10px; padding-top: 12px; border-top: 1px solid var(--border); }
+    .wheel-detail .hint { margin: 0; overflow-wrap: anywhere; }
+    .wheel-detail .plain-button { min-height: 44px; justify-self: start; }
+    .wheel-sub { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
     /* v29: the tip for the chosen role, and "Does this scheme hang together?" */
     .role-tip { margin: 0; padding: 8px 12px; border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; background: var(--accent-wash); font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
     .role-tip strong { color: var(--accent); }
@@ -1329,7 +1352,7 @@
             <li>Check the <strong>Dashboard</strong> to see how far you've got.</li>
             <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
           </ol>
-          <p id="help-tabs" style="margin: 8px 0 0;">There are five tabs along the bottom: <strong>Dashboard</strong>, <strong>Units</strong>, <strong>Recipes</strong>, <strong>Compendium</strong> and <strong>Settings</strong>. Compendium (a Pro preview) shows colour ideas, starter schemes, detail recipes and basing tips without needing a recipe. Help and Updates live inside Settings: open it and use the <strong>Settings / Help / Updates</strong> switch at the top. The app remembers which page you were on.</p>
+          <p id="help-tabs" style="margin: 8px 0 0;">There are five tabs along the bottom: <strong>Dashboard</strong>, <strong>Units</strong>, <strong>Recipes</strong>, <strong>Compendium</strong> and <strong>Settings</strong>. Compendium (a Pro preview) has a colour wheel (tap a colour to see its paints), colour ideas, starter schemes, detail recipes and basing tips, all without needing a recipe. Help and Updates live inside Settings: open it and use the <strong>Settings / Help / Updates</strong> switch at the top. The app remembers which page you were on.</p>
           <p id="help-back" style="margin: 8px 0 0;">The phone's <strong>Back</strong> button closes what's open first, one thing per press: a question box (it counts as No), a photo, the camera, a recipe, the paste box. Then it goes to the Dashboard. On the Dashboard, with nothing open, it leaves the app.</p>
         </details>
         <details>
@@ -1751,7 +1774,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=35" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=36" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -1760,10 +1783,10 @@
        names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks.
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=35"></script>
-  <script src="schemes.js?v=35"></script>
-  <script src="detail-recipes.js?v=35"></script>
-  <script src="basing-tips.js?v=35"></script>
-  <script src="app.js?v=35"></script>
+  <script src="colour.js?v=36"></script>
+  <script src="schemes.js?v=36"></script>
+  <script src="detail-recipes.js?v=36"></script>
+  <script src="basing-tips.js?v=36"></script>
+  <script src="app.js?v=36"></script>
 </body>
 </html>
