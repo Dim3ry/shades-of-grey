@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=34"></script>
+  <script src="early.js?v=35"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -912,6 +912,11 @@
     .idea-why { font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
     .idea-note { font-size: 13px; color: var(--muted); }
     .idea-add { font-size: 13px; color: var(--accent); }
+    /* v35: the Compendium has no recipe to add to, so its rows are plain boxes (same look as the tappable rows, no hover or pointer) */
+    .idea-static { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; text-align: left; color: var(--text); background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+    .idea-static .swatch { width: 32px; height: 32px; flex: none; margin-top: 2px; }
+    .share-row { display: flex; flex-wrap: wrap; gap: 10px; }
+    .share-row .plain-button { min-height: 44px; }
     /* v29: the tip for the chosen role, and "Does this scheme hang together?" */
     .role-tip { margin: 0; padding: 8px 12px; border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; background: var(--accent-wash); font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
     .role-tip strong { color: var(--accent); }
@@ -1041,7 +1046,7 @@
       #view-updates .card { margin-bottom: 0; }
       #view-help .help:not(.hidden) { columns: 2; column-gap: 40px; }
       ul.recipe-list { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
-      #recipe-page, #scheme-page { max-width: 780px; }
+      #recipe-page, #scheme-page, #view-compendium { max-width: 780px; }
       .seg { max-width: 480px; }
       ul.paint-list { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; align-items: start; }
       .help details { break-inside: avoid; }
@@ -1074,6 +1079,7 @@
     <button data-tab="dashboard"><span class="icon"><svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="3" opacity="0.35"/><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="34 51" transform="rotate(-90 12 12)"/></svg></span>Dashboard</button>
     <button data-tab="units"><span class="icon">☰</span>Units</button>
     <button data-tab="recipes"><span class="icon"><svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><path d="M12 3c3.5 4.2 6 7.6 6 10.5a6 6 0 0 1-12 0C6 10.6 8.5 7.2 12 3z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg></span>Recipes</button>
+    <button data-tab="compendium"><span class="icon"><svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><path d="M12 6.5C10.3 5.3 8 5 4.5 5v12.5c3.5 0 5.8.4 7.5 1.7 1.7-1.3 4-1.7 7.5-1.7V5c-3.5 0-5.8.3-7.5 1.5zM12 6.5v12.7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg></span>Compendium</button>
     <button data-tab="settings"><span class="icon">⚙</span>Settings</button>
   </nav>
   <!-- ===== HTML: this section is WHAT is on the page. ===== -->
@@ -1298,6 +1304,14 @@
       <button role="tab" data-page="updates">Updates</button>
     </div>
 
+    <!-- ===== TAB: Compendium (v35, Pro preview: colour ideas, schemes, detail recipes and basing tips, no recipe needed) ===== -->
+    <section id="view-compendium" class="hidden">
+      <div class="card compendium-card">
+        <div class="card-head"><h2>Compendium</h2><span class="pro-pill">Pro preview</span></div>
+        <div class="ideas-body" id="compendium-body"></div>
+      </div>
+    </section>
+
     <!-- ===== TAB: Help (how to use the app) ===== -->
     <section id="view-help" class="hidden">
       <div class="card help-intro">
@@ -1315,7 +1329,7 @@
             <li>Check the <strong>Dashboard</strong> to see how far you've got.</li>
             <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
           </ol>
-          <p id="help-tabs" style="margin: 8px 0 0;">There are four tabs along the bottom: <strong>Dashboard</strong>, <strong>Units</strong>, <strong>Recipes</strong> and <strong>Settings</strong>. Help and Updates live inside Settings: open it and use the <strong>Settings / Help / Updates</strong> switch at the top. The app remembers which page you were on.</p>
+          <p id="help-tabs" style="margin: 8px 0 0;">There are five tabs along the bottom: <strong>Dashboard</strong>, <strong>Units</strong>, <strong>Recipes</strong>, <strong>Compendium</strong> and <strong>Settings</strong>. Compendium (a Pro preview) shows colour ideas, starter schemes, detail recipes and basing tips without needing a recipe. Help and Updates live inside Settings: open it and use the <strong>Settings / Help / Updates</strong> switch at the top. The app remembers which page you were on.</p>
           <p id="help-back" style="margin: 8px 0 0;">The phone's <strong>Back</strong> button closes what's open first, one thing per press: a question box (it counts as No), a photo, the camera, a recipe, the paste box. Then it goes to the Dashboard. On the Dashboard, with nothing open, it leaves the app.</p>
         </details>
         <details>
@@ -1737,7 +1751,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=34" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=35" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -1746,10 +1760,10 @@
        names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks.
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=34"></script>
-  <script src="schemes.js?v=34"></script>
-  <script src="detail-recipes.js?v=34"></script>
-  <script src="basing-tips.js?v=34"></script>
-  <script src="app.js?v=34"></script>
+  <script src="colour.js?v=35"></script>
+  <script src="schemes.js?v=35"></script>
+  <script src="detail-recipes.js?v=35"></script>
+  <script src="basing-tips.js?v=35"></script>
+  <script src="app.js?v=35"></script>
 </body>
 </html>

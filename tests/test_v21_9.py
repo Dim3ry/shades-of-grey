@@ -351,7 +351,7 @@ def main():
         def help_text(i):
             return page.evaluate(f"() => document.getElementById('{i}') ? document.getElementById('{i}').textContent : ''")
         tabs_text = help_text("help-tabs")
-        check("Help explains the four tabs and the switch", all(w in tabs_text for w in ["four tabs", "Dashboard", "Units", "Recipes", "Settings", "Settings / Help / Updates", "remembers"]), tabs_text)
+        check("Help explains the five tabs and the switch", all(w in tabs_text for w in ["five tabs", "Dashboard", "Units", "Recipes", "Compendium", "Settings", "Settings / Help / Updates", "remembers"]), tabs_text)
         feedback_lines = [t for t in page.eval_on_selector_all("#view-help li", "els => els.map(e => e.textContent)") if "Give feedback" in t]
         check("the Help lines that tell you where to find Give feedback say Settings → Updates",
               sum("Settings → Updates" in t for t in feedback_lines) >= 2 and not any("Updates tab" in t for t in feedback_lines), feedback_lines)
@@ -395,7 +395,7 @@ def main():
         page.set_viewport_size({"width": 1100, "height": 800})
         seed(page, settings=full_settings(tab="settings"))
         names = page.evaluate("() => [...document.querySelectorAll('nav.tabs button')].map(b => b.dataset.tab)")
-        check("the top bar has the same four tabs", names == ["dashboard", "units", "recipes", "settings"], names)
+        check("the top bar has the same five tabs", names == ["dashboard", "units", "recipes", "compendium", "settings"], names)
         top_pos = page.evaluate("() => { const r = document.querySelector('nav.tabs').getBoundingClientRect(); return r.top; }")
         check("the bar is along the top", top_pos <= 1, top_pos)
         for name in PAGES:
