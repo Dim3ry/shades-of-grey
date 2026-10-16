@@ -84,6 +84,11 @@ def open_comp(page):
     blur(page)
     page.click('nav button[data-tab="compendium"]')
     page.wait_for_timeout(200)
+    # v37: the five parts under the wheel fold and start closed; open them so the rest of the Compendium can be checked as before
+    for key in ["ideas", "history", "starter", "detail", "basing"]:
+        if page.get_attribute(f"#cmp-fold-{key}-button", "aria-expanded") != "true":
+            page.click(f"#cmp-fold-{key}-button")
+    page.wait_for_timeout(100)
 
 def tap(page, key):
     page.click(f'[data-wheel="{key}"]')
@@ -142,7 +147,7 @@ def main():
               re.findall(r'"\./([^"?]*)', files) == ["", "index.html", "app.js", "early.js", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js", "manifest.json", "icon-192.png", "icon-512.png", "ocr/ocr-worker.js"],
               re.findall(r'"\./([^"?]*)', files))
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v36')")
-        check("Updates has a v36 entry that is the newest", entry and page.evaluate("CHANGELOG[0].version") == "v36", entry)
+        check("Updates has a v36 entry, and the newest entry is v36 or later", entry and float(page.evaluate("CHANGELOG[0].version")[1:]) >= 36, entry)
         joined = " ".join(entry["changes"]) if entry else ""
         check("the Updates entry says colour wheel, Compendium, Pro preview, You own this, Show other paints, gold, silver and bronze, offline and sends nothing anywhere",
               all(w in joined for w in ["colour wheel", "Compendium", "Pro preview", "You own this", "Show other paints", "gold, silver and bronze", "offline", "sends nothing anywhere"]), joined[:300])
@@ -357,7 +362,7 @@ def main():
         check("every id the wheel adds starts with cmp- (so the recipe editor can never clash)",
               page.evaluate("() => [...document.querySelectorAll('#cmp-wheel-block [id], #cmp-wheel-block + * [id]')].filter(e => e.closest('#cmp-wheel-block')).every(e => e.id.startsWith('cmp-'))"))
         check("the rest of the Compendium still works with the wheel open (choose a colour, get 3 ideas, and the wheel stays open)",
-              page.locator("#compendium-body > .idea-list .idea-static").count() == 3 and open_key(page) == "orange" and page.locator("#cmp-wheel-detail").count() == 1)
+              page.locator("#cmp-fold-ideas-panel > .idea-list .idea-static").count() == 3 and open_key(page) == "orange" and page.locator("#cmp-wheel-detail").count() == 1)
         page.click('#compendium-body [data-role="trim"]')
         page.wait_for_timeout(150)
         check("changing the role redraws the page and the wheel keeps its choice (and its other-paints switch)", open_key(page) == "orange" and page.get_attribute("#cmp-wheel-others", "aria-expanded") == "true")
@@ -531,7 +536,8 @@ def main():
             page.wait_for_timeout(120)
             check(f"the {tab} tab opens its own page and hides the others", page.is_visible(f"#{view}") and sum(page.is_visible(f"#{v}") for v in ["view-dashboard", "view-units", "view-recipes", "view-settings", "view-compendium"]) == 1)
         open_comp(page)
-        ids = page.evaluate("() => [...document.querySelectorAll('#compendium-body > *')].map(e => e.id).filter(Boolean)")
+        # v37: the five parts now sit under folding headings (each opened by open_comp), so look inside them as well as at the top level
+        ids = page.evaluate("() => [...document.querySelectorAll('#compendium-body > *, #compendium-body .fold-panel > *')].map(e => e.id).filter(Boolean)")
         want = ["cmp-intro", "cmp-wheel-block", "cmp-colour-ideas-none", "cmp-faction-history", "cmp-starter-schemes", "cmp-detail-recipes", "cmp-basing-tips", "cmp-foot"]
         check("the rest of the Compendium is all still there, in the same order, after the wheel", [i for i in ids if i in want] == want, ids)
         check("the card in a recipe has no wheel and still starts closed", (lambda: (load(page, paints=WPAINTS, recipes=[rec(1, "R", "Armour", [1])]), t.open_editor(page), page.evaluate("() => [document.getElementById('colour-ideas').open, document.querySelectorAll('#view-recipes .wheel-svg').length]"))[-1])() == [False, 0])

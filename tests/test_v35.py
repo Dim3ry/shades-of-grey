@@ -70,6 +70,15 @@ def open_comp(page):
     blur(page)
     page.click('nav button[data-tab="compendium"]')
     page.wait_for_timeout(200)
+    # v37: the five parts fold and start closed, and the lists start short (no group chosen). This test is about what is INSIDE them, so
+    # open every part and choose "All" in each group row first (what v35 looked like). The new layout has its own test (test_v37).
+    for key in ["ideas", "history", "starter", "detail", "basing"]:
+        if page.get_attribute(f"#cmp-fold-{key}-button", "aria-expanded") != "true":
+            page.click(f"#cmp-fold-{key}-button")
+    for sel in ['#cmp-starter-moods [data-mood="all"]', '#cmp-detail-groups [data-detail-group="all"]', '#cmp-basing-groups [data-basing-group="all"]']:
+        if page.get_attribute(sel, "aria-pressed") != "true":
+            page.click(sel)
+    page.wait_for_timeout(100)
 
 def pick_base(page, value):
     page.select_option("#cmp-colour-ideas-base", value=value)
@@ -80,7 +89,7 @@ def comp_role(page, key):
     page.wait_for_timeout(120)
 
 def comp_idea_rows(page):
-    return rows(page, "#compendium-body > .idea-list .idea-static")
+    return rows(page, "#cmp-fold-ideas-panel > .idea-list .idea-static")
 
 def card_idea_rows(page):
     return rows(page, "#colour-ideas button.idea")
@@ -162,8 +171,8 @@ def main():
         check("the new code has no network code, no storage, no innerHTML, no links and no shop wording; the panel still has exactly one innerHTML (the card's own clear)",
               not re.search(r"\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage|sessionStorage|\beval\s*\(|new Function|insertAdjacentHTML|outerHTML|innerHTML|createElement\('a'\)|createElement\(\"a\"\)|href|affiliate", new_code)
               and panel_code.count("innerHTML") == 1, [mm.group(0) for mm in re.finditer(r"innerHTML[^\n]*", panel_code)])
-        check("the card's pieces are shared, not copied: the card and the Compendium both call appendLibraryParts, appendRolePicker and buildIdeasList, and each builder is defined once",
-              app.count("appendLibraryParts(") >= 3 and app.count("appendRolePicker(") >= 3 and app.count("buildIdeasList(") >= 3
+        check("the card's pieces are shared, not copied: the card (appendLibraryParts) and the Compendium (libraryParts) both use the same parts, and both call appendRolePicker and buildIdeasList, and each builder is defined once",
+              app.count("appendLibraryParts(") >= 2 and app.count("libraryParts(") >= 3 and app.count("appendRolePicker(") >= 3 and app.count("buildIdeasList(") >= 3
               and all(app.count(f"function {n}(") == 1 for n in ["buildStarterSchemes", "buildDetailRecipes", "buildBasingTips", "buildFactionHistory", "buildIdeaItem", "appendLibraryParts", "appendRolePicker", "buildIdeasList"]))
         check("the Pro preview label is on the Compendium", page.inner_text("#view-compendium .pro-pill") == "Pro preview" if page.locator("#view-compendium .pro-pill").count() else False)
         help_text = page.evaluate("() => document.getElementById('help-tabs').textContent")
@@ -207,13 +216,14 @@ def main():
         print("\n--- 3. Same content in both doors ---")
         load(page, recipes=RECIPES, units=UNITS)
         open_comp(page)
-        order = page.evaluate("""() => { const ids = ['cmp-intro', 'cmp-colour-ideas-base'].map(i => document.getElementById(i));
-            const body = document.getElementById('compendium-body'); return ['cmp-intro', 'cmp-colour-ideas-none', 'cmp-faction-history', 'cmp-starter-schemes', 'cmp-detail-recipes', 'cmp-basing-tips', 'cmp-foot']
-              .map(i => [...body.children].indexOf(document.getElementById(i))); }""")
+        # v37: the parts sit under folding headings (open_comp has opened them), so read the ids at the top level and inside the panels
+        order = page.evaluate("""() => { const want = ['cmp-intro', 'cmp-colour-ideas-none', 'cmp-faction-history', 'cmp-starter-schemes', 'cmp-detail-recipes', 'cmp-basing-tips', 'cmp-foot'];
+            const seen = [...document.querySelectorAll('#compendium-body > *, #compendium-body .fold-panel > *')].map(e => e.id);
+            return want.map(i => seen.indexOf(i)); }""")
         check("with no colour chosen: the intro, the choose-a-colour line, then Your schemes, Starter schemes, Detail recipes, Basing tips, then the footnote, in the card's order",
               order == sorted(order) and -1 not in order, order)
         check("before a colour is chosen there are no role buttons and no ideas, but all four library parts are there",
-              page.locator("#compendium-body [data-role]").count() == 0 and page.locator("#compendium-body > .idea-list").count() == 0
+              page.locator("#compendium-body [data-role]").count() == 0 and page.locator("#cmp-fold-ideas-panel > .idea-list").count() == 0
               and all(page.locator(f"#{i}").count() == 1 for i in ["cmp-faction-history", "cmp-starter-schemes", "cmp-detail-recipes", "cmp-basing-tips"]))
         opts = page.evaluate("""() => [...document.querySelectorAll('#cmp-colour-ideas-base optgroup')].map(g => [g.label, g.children.length])""")
         check("the colour chooser lists your paints first (owned, then the rest), then the built-in list by brand",
@@ -388,7 +398,7 @@ def main():
         open_comp(page)
         copy_spy(page)
         pick_base(page, BLUE)
-        page.click("#compendium-body > .share-row button:has-text('Copy as text')")
+        page.click("#cmp-fold-ideas-panel > .share-row button:has-text('Copy as text')")
         text = copied(page)
         check("Copy as text on the colour ideas copies a heading, three lines and the footnote",
               text and text.splitlines()[0] == "Colour ideas for eyes or glow with Macragge Blue (Citadel)" and len(text.splitlines()) == 5
@@ -483,7 +493,7 @@ def main():
         load(page, recipes=RECIPES, units=UNITS)
         open_comp(page)
         pick_base(page, BLUE)
-        page.click("#compendium-body > .share-row button:has-text('Save into a new recipe')")
+        page.click("#cmp-fold-ideas-panel > .share-row button:has-text('Save into a new recipe')")
         page.wait_for_timeout(350)
         steps = draft_steps(page)
         check("Save into a new recipe… on the colour ideas makes three steps with the note 'Colour idea for eyes or glow'", len(steps) == 3 and all(s["note"] == "Colour idea for eyes or glow" and s["mix"] == 100 and s["coats"] == 1 for s in steps), steps)
@@ -613,7 +623,7 @@ def main():
         check("they show as plain text instead", "<img src=x" in page.inner_text("#cmp-faction-history-for") or "<img src=x" in page.inner_text("#cmp-faction-history"), page.inner_text("#cmp-faction-history")[:200])
         check("the chosen hostile paint shows as plain text in the chooser and in the copied heading",
               "<img src=x" in page.evaluate("() => document.querySelector('#cmp-colour-ideas-base').selectedOptions[0].textContent"))
-        page.click("#compendium-body > .share-row button:has-text('Copy as text')")
+        page.click("#cmp-fold-ideas-panel > .share-row button:has-text('Copy as text')")
         text = copied(page)
         check("Copy as text keeps it as plain text (the heading names the paint as typed)", text.splitlines()[0].startswith("Colour ideas for eyes or glow with ") and "<img src=x" in text.splitlines()[0], text.splitlines()[0])
         page.click("#cmp-faction-history .share-row button:has-text('Save into a new recipe')")
@@ -667,8 +677,8 @@ def main():
                         if (v && v !== 'transparent' && !(m && parseFloat(m[1]) < 0.9)) return v; e = e.parentElement; } return 'rgb(0,0,0)'; };
                     const out = {};
                     const pairs = [['intro', '#cmp-intro'], ['role on', '#compendium-body [data-role][aria-pressed="true"]'], ['role off', '#compendium-body [data-role][aria-pressed="false"]'],
-                                   ['tip', '#cmp-colour-ideas-tip'], ['idea name', '#compendium-body > .idea-list .idea-name'], ['idea why', '#compendium-body > .idea-list .idea-why'],
-                                   ['idea tag', '#compendium-body > .idea-list .idea-tag'], ['history why', '#cmp-faction-history-list .idea-why'],
+                                   ['tip', '#cmp-colour-ideas-tip'], ['idea name', '#cmp-fold-ideas-panel > .idea-list .idea-name'], ['idea why', '#cmp-fold-ideas-panel > .idea-list .idea-why'],
+                                   ['idea tag', '#cmp-fold-ideas-panel > .idea-list .idea-tag'], ['history why', '#cmp-faction-history-list .idea-why'],
                                    ['mood on', '#cmp-starter-moods .chip[aria-pressed="true"]'], ['mood off', '#cmp-starter-moods .chip[aria-pressed="false"]'],
                                    ['scheme on', '#cmp-starter-chips .chip[aria-pressed="true"]'], ['summary', '#cmp-starter-summary'], ['reason', '#cmp-starter-reason'],
                                    ['scheme why', '#cmp-starter-list .idea-why'], ['detail why', '#cmp-detail-list .idea-why'], ['detail note', '#cmp-detail-list .idea-note'],

@@ -6550,7 +6550,11 @@
     let colourIdeasState = { open: false, base: "whole", role: "glow", check: false, scheme: "", mood: "", detail: "", detailGroup: "", basing: "", basingGroup: "" };   // kept while the app is open
     // v35: the Compendium tab keeps its own picks (also only while the app is open), so what you pick there never changes the card in a recipe.
     // v36: wheel = the colour wheel part that is open ("" = none), wheelOthers = which parts also show paints you do not have yet.
-    let compendiumState = { base: "", role: "glow", scheme: "", mood: "", detail: "", detailGroup: "", basing: "", basingGroup: "", faction: "", wheel: "", wheelOthers: {} };
+    // v37: open = which of the five folding parts are open (all start closed). view = "themes" or "combos" (the Starter schemes switch),
+    // combo = the chosen group in the Combinations view. In the Compendium a group of schemes, detail recipes or tips is chosen before
+    // its list shows ("" = none yet, "all" = everything), so the page stays short.
+    let compendiumState = { base: "", role: "glow", scheme: "", mood: "", detail: "", detailGroup: "", basing: "", basingGroup: "", faction: "", wheel: "", wheelOthers: {},
+                            open: {}, view: "themes", combo: "" };
 
     // v35: ONE set of building blocks, TWO doors. The parts of the Colour ideas card (the ideas, Your schemes, Starter schemes,
     // Detail recipes and Basing tips) are built by the functions below, and BOTH the recipe editor and the Compendium tab use them.
@@ -6565,6 +6569,9 @@
     //   factionPick   Compendium only: { names, onChange } the drop-down for choosing the faction
     //   noFactionText what Your schemes says when there is no faction to look at
     //   id(name)      the page id for a part, so the two doors never share an id (the recipe editor keeps its old ids)
+    //   fold, short, switcher   (v37, Compendium only; all false in a recipe, which looks and works as before)
+    //                 fold: each part sits under a heading you tap to open and close. short: no list shows until a group is chosen.
+    //                 switcher: Starter schemes has the Themes | Combinations switch.
     const doorId = (name) => name;
     const compendiumId = (name) => "cmp-" + name;
     // Is a finger (or mouse button) down right now? The panel never redraws itself under a press: typing a paint
@@ -7109,13 +7116,72 @@
 
     // v31: the mood chips (All, Cold, Warm, Dark, Bright) sit above the scheme chips and only change which scheme chips show,
     // so the list stays short on a phone. "All" is the default. A scheme that is picked but not in the chosen mood is put away.
-    function starterSchemesShown(st = colourIdeasState) {
+    // v37: the group buttons (moods, detail groups, basing groups, combinations) work in one of two ways, decided by the door.
+    //  - In a recipe (door.short is false): "All" is the same as no choice, and the list always shows. Exactly as before.
+    //  - In the Compendium (door.short): nothing is listed until a group is chosen, "All" is a choice of its own ("all"), and tapping the
+    //    group that is on puts it away again. That keeps a long list out of the page by default.
+    // value is the stored choice; groups is the list of { key, name }. These four small functions are used by all the group rows.
+    function groupValue(door, groups, value) {
+      const known = groups.some(g => g.key === value);
+      if (door.short) return known || value === "all" ? value : "";
+      return known ? value : "";
+    }
+    function groupAllows(door, groups, value, group) {
+      const v = groupValue(door, groups, value);
+      return door.short ? (v === "all" || (v !== "" && group === v)) : (v === "" || group === v);
+    }
+    function groupButtons(door, groups) { return [{ key: door.short ? "all" : "", name: "All" }, ...groups]; }
+    function groupNext(door, key, active) { return door.short && key === active ? "" : key; }
+    function groupNone(door, id, what) {   // the plain line shown while no group is chosen (Compendium only)
+      const p = document.createElement("p");
+      p.className = "hint";
+      p.id = door.id(id);
+      p.textContent = `Pick a group above to see its ${what}, or tap All.`;
+      return p;
+    }
+
+    // v37: the other way to browse the starter schemes: "Combinations" groups them by their main colour (the first, armour colour), so
+    // you can look for blue and gold, or red and grey, and so on. The group comes from the colour's place on the wheel (wheelPlace),
+    // never from the words in a scheme's name. Whites, greys and blacks are one group ("neutral").
+    const STARTER_COMBOS = [
+      { key: "red", name: "Reds" }, { key: "orange", name: "Oranges and browns" }, { key: "yellow", name: "Yellows and sand" },
+      { key: "green", name: "Greens" }, { key: "blue", name: "Blues" }, { key: "purple", name: "Purples" },
+      { key: "neutral", name: "Greys, blacks and whites" },
+    ];
+    function starterComboKey(scheme) {
+      const at = wheelPlace({ name: "", colour: scheme.colours[0].hex });
+      const seg = at ? at.seg : "";
+      return STARTER_COMBOS.some(c => c.key === seg) ? seg : "neutral";
+    }
+
+    // The schemes the buttons show. In the Compendium the switch decides whether the mood or the combination group is used.
+    function starterSchemesShown(st = colourIdeasState, door = null) {
+      if (door && door.switcher) {
+        const combos = st.view === "combos";
+        return STARTER_SCHEMES.filter(s => groupAllows(door, combos ? STARTER_COMBOS : STARTER_MOODS, combos ? st.combo : st.mood, combos ? starterComboKey(s) : s.mood));
+      }
       const mood = STARTER_MOODS.some(m => m.key === st.mood) ? st.mood : "";
       return STARTER_SCHEMES.filter(s => !mood || s.mood === mood);
     }
 
+    // v37: the "Themes | Combinations" switch (two buttons, one on).
+    function buildSchemeSwitch(door, view, onView) {
+      const row = document.createElement("div");
+      row.className = "chips view-switch";
+      row.id = door.id("starter-view");
+      row.style.marginTop = "0";
+      row.setAttribute("role", "group");
+      row.setAttribute("aria-label", "Browse starter schemes by");
+      for (const v of [{ key: "themes", name: "Themes" }, { key: "combos", name: "Combinations" }]) {
+        const chip = makeChip(v.name, v.key === view, () => onView(v.key));
+        chip.dataset.view = v.key;
+        row.appendChild(chip);
+      }
+      return row;
+    }
+
     // v35: door = where this is shown (see "ONE set of building blocks" above).
-    function buildStarterSchemes(door, onPick, onMood) {
+    function buildStarterSchemes(door, onPick, onMood, onView, onCombo) {
       const st = door.state;
       const box = document.createElement("div");
       box.className = "starter-schemes";
@@ -7125,32 +7191,40 @@
       title.textContent = "Starter schemes";
       const hint = document.createElement("p");
       hint.className = "hint";
-      hint.textContent = door.addStep
+      hint.textContent = door.switcher
+        ? "Plain colour schemes to start from. Choose Themes (cold, warm, dark, bright) or Combinations (by main colour), pick a group, then pick a scheme to see matching paints, yours first."
+        : door.addStep
         ? "Plain colour schemes to start from. Pick a mood to shorten the list, then pick a scheme to see matching paints, yours first. Tap a paint to add it as a step."
         : "Plain colour schemes to start from. Pick a mood to shorten the list, then pick a scheme to see matching paints, yours first.";
+      const combos = !!door.switcher && st.view === "combos";
+      const groups = combos ? STARTER_COMBOS : STARTER_MOODS;
+      const value = groupValue(door, groups, combos ? st.combo : st.mood);
       const moods = document.createElement("div");
       moods.className = "chips mood-chips";
-      moods.id = door.id("starter-moods");
+      moods.id = door.id(combos ? "starter-combos" : "starter-moods");
       moods.style.marginTop = "0";
       moods.setAttribute("role", "group");
-      moods.setAttribute("aria-label", "Show schemes by mood");
-      const activeMood = STARTER_MOODS.some(m => m.key === st.mood) ? st.mood : "";
-      for (const m of [{ key: "", name: "All" }, ...STARTER_MOODS]) {
-        const chip = makeChip(m.name, m.key === activeMood, () => onMood(m.key));
-        chip.dataset.mood = m.key || "all";
+      moods.setAttribute("aria-label", combos ? "Show schemes by main colour" : "Show schemes by mood");
+      for (const m of groupButtons(door, groups)) {
+        const chip = makeChip(m.name, m.key === value, () => (combos ? onCombo : onMood)(groupNext(door, m.key, value), m.key));
+        chip.dataset[combos ? "combo" : "mood"] = m.key || "all";
         moods.appendChild(chip);
       }
       const chips = document.createElement("div");
       chips.className = "chips";
       chips.id = door.id("starter-chips");
       chips.style.marginTop = "0";
-      for (const s of starterSchemesShown(st)) {
+      for (const s of starterSchemesShown(st, door)) {
         const chip = makeChip(s.name, s.key === st.scheme, () => onPick(s.key === st.scheme ? "" : s.key, s.key));
         chip.dataset.scheme = s.key;
         chips.appendChild(chip);
       }
-      box.append(title, hint, moods, chips);
-      const scheme = starterSchemesShown(st).find(s => s.key === st.scheme);
+      box.append(title, hint);
+      if (door.switcher) box.appendChild(buildSchemeSwitch(door, combos ? "combos" : "themes", onView));
+      box.append(moods);
+      if (door.short && !value) box.appendChild(groupNone(door, "starter-none", "schemes"));
+      else box.appendChild(chips);
+      const scheme = starterSchemesShown(st, door).find(s => s.key === st.scheme);
       if (!scheme) return box;
 
       const summary = document.createElement("p");
@@ -7208,7 +7282,8 @@
       notify(items.length === 1 ? `Added step ${d.steps.length}: ${items[0].hit.paint.name}` : `Added ${items.length} steps (steps ${d.steps.length - items.length + 1} to ${d.steps.length})`);
     }
 
-    function detailRecipesShown(st = colourIdeasState) {
+    function detailRecipesShown(st = colourIdeasState, door = null) {
+      if (door && door.short) return DETAIL_RECIPES.filter(r => groupAllows(door, DETAIL_GROUPS, st.detailGroup, r.group));   // v37
       const group = DETAIL_GROUPS.some(g => g.key === st.detailGroup) ? st.detailGroup : "";
       return DETAIL_RECIPES.filter(r => !group || r.group === group);
     }
@@ -7237,9 +7312,9 @@
       groups.style.marginTop = "0";
       groups.setAttribute("role", "group");
       groups.setAttribute("aria-label", "Show detail recipes by group");
-      const activeGroup = DETAIL_GROUPS.some(g => g.key === st.detailGroup) ? st.detailGroup : "";
-      for (const g of [{ key: "", name: "All" }, ...DETAIL_GROUPS]) {
-        const chip = makeChip(g.name, g.key === activeGroup, () => onGroup(g.key));
+      const activeGroup = groupValue(door, DETAIL_GROUPS, st.detailGroup);
+      for (const g of groupButtons(door, DETAIL_GROUPS)) {
+        const chip = makeChip(g.name, g.key === activeGroup, () => onGroup(groupNext(door, g.key, activeGroup), g.key));
         chip.dataset.detailGroup = g.key || "all";
         groups.appendChild(chip);
       }
@@ -7247,13 +7322,15 @@
       chips.className = "chips";
       chips.id = door.id("detail-chips");
       chips.style.marginTop = "0";
-      for (const r of detailRecipesShown(st)) {
+      for (const r of detailRecipesShown(st, door)) {
         const chip = makeChip(r.name, r.key === st.detail, () => onPick(r.key === st.detail ? "" : r.key, r.key));
         chip.dataset.detail = r.key;
         chips.appendChild(chip);
       }
-      box.append(title, hint, groups, chips);
-      const recipe = detailRecipesShown(st).find(r => r.key === st.detail);
+      box.append(title, hint, groups);
+      if (door.short && !activeGroup) box.appendChild(groupNone(door, "detail-none-group", "recipes"));
+      else box.appendChild(chips);
+      const recipe = detailRecipesShown(st, door).find(r => r.key === st.detail);
       if (!recipe) return box;
 
       const summary = document.createElement("p");
@@ -7304,7 +7381,8 @@
     // SHOWN, they never go into a recipe. A paint step names a TARGET COLOUR (a plain colour word and a hex), never a paint, and is
     // matched exactly like a detail recipe step (nearest paint, yours first, same honest tags and notes). Same rules for the text:
     // generic, our own words, no brand or product names, no Games Workshop, faction or scheme names. A test scans all of it.
-    function basingTipsShown(st = colourIdeasState) {
+    function basingTipsShown(st = colourIdeasState, door = null) {
+      if (door && door.short) return BASING_TIPS.filter(t => groupAllows(door, BASING_GROUPS, st.basingGroup, t.group));   // v37
       const group = BASING_GROUPS.some(g => g.key === st.basingGroup) ? st.basingGroup : "";
       return BASING_TIPS.filter(t => !group || t.group === group);
     }
@@ -7340,9 +7418,9 @@
       groups.style.marginTop = "0";
       groups.setAttribute("role", "group");
       groups.setAttribute("aria-label", "Show basing tips by group");
-      const activeGroup = BASING_GROUPS.some(g => g.key === st.basingGroup) ? st.basingGroup : "";
-      for (const g of [{ key: "", name: "All" }, ...BASING_GROUPS]) {
-        const chip = makeChip(g.name, g.key === activeGroup, () => onGroup(g.key));
+      const activeGroup = groupValue(door, BASING_GROUPS, st.basingGroup);
+      for (const g of groupButtons(door, BASING_GROUPS)) {
+        const chip = makeChip(g.name, g.key === activeGroup, () => onGroup(groupNext(door, g.key, activeGroup), g.key));
         chip.dataset.basingGroup = g.key || "all";
         groups.appendChild(chip);
       }
@@ -7350,13 +7428,15 @@
       chips.className = "chips";
       chips.id = door.id("basing-chips");
       chips.style.marginTop = "0";
-      for (const t of basingTipsShown(st)) {
+      for (const t of basingTipsShown(st, door)) {
         const chip = makeChip(t.name, t.key === st.basing, () => onPick(t.key === st.basing ? "" : t.key, t.key));
         chip.dataset.basing = t.key;
         chips.appendChild(chip);
       }
-      box.append(title, hint, groups, chips);
-      const tip = basingTipsShown(st).find(t => t.key === st.basing);
+      box.append(title, hint, groups);
+      if (door.short && !activeGroup) box.appendChild(groupNone(door, "basing-none-group", "tips"));
+      else box.appendChild(chips);
+      const tip = basingTipsShown(st, door).find(t => t.key === st.basing);
       if (!tip) return box;
 
       const summary = document.createElement("p");
@@ -7429,42 +7509,63 @@
       return box;
     }
 
-    // v35: the three library parts, in the card's order, with the picks wired to the door's own state. Used by BOTH doors.
+    // v35: the library parts, in the card's order, with the picks wired to the door's own state. Used by BOTH doors.
     // redraw(selector) redraws the door's body and puts the focus back on the thing just tapped. If a data file is somehow
-    // missing, its part is simply not shown and the rest still works.
-    function appendLibraryParts(body, door, redraw) {
+    // missing, its part is simply not there and the rest still works.
+    // v37: libraryParts gives each part as its own function ({ history, starter, detail, basing }, each builds one box or is null) so the
+    // recipe card can add them one after another (appendLibraryParts, as before) and the Compendium can put each under its own heading.
+    function libraryParts(door, redraw) {
       const st = door.state;
-      body.appendChild(buildFactionHistory(door, redraw));
+      const parts = { history: () => buildFactionHistory(door, redraw), starter: null, detail: null, basing: null };
       if (typeof STARTER_SCHEMES !== "undefined" && typeof STARTER_MOODS !== "undefined") {
-        body.appendChild(buildStarterSchemes(door,
+        parts.starter = () => buildStarterSchemes(door,
           (key, clicked) => { st.scheme = key; redraw(`[data-scheme="${clicked}"]`); },
-          (mood) => {
+          (mood, clicked) => {
             st.mood = mood;
             const picked = STARTER_SCHEMES.find(x => x.key === st.scheme);
-            if (picked && mood && picked.mood !== mood) st.scheme = "";   // v31: a pick outside the mood is put away
-            redraw(`[data-mood="${mood || "all"}"]`);
-          }));
+            if (picked && mood && mood !== "all" && picked.mood !== mood) st.scheme = "";   // v31: a pick outside the mood is put away
+            redraw(`[data-mood="${clicked || "all"}"]`);
+          },
+          (view) => {   // v37: the Themes | Combinations switch. A scheme you picked stays in sight: its group in the other view is chosen.
+            st.view = view;
+            const picked = STARTER_SCHEMES.find(x => x.key === st.scheme);
+            if (picked && !starterSchemesShown(st, door).some(x => x.key === picked.key)) {
+              if (view === "combos") st.combo = starterComboKey(picked); else st.mood = picked.mood;
+            }
+            redraw(`[data-view="${view}"]`);
+          },
+          (combo, clicked) => {
+            st.combo = combo;
+            const picked = STARTER_SCHEMES.find(x => x.key === st.scheme);
+            if (picked && combo && combo !== "all" && starterComboKey(picked) !== combo) st.scheme = "";
+            redraw(`[data-combo="${clicked || "all"}"]`);
+          });
       }
       if (typeof DETAIL_RECIPES !== "undefined" && typeof DETAIL_GROUPS !== "undefined") {
-        body.appendChild(buildDetailRecipes(door,
+        parts.detail = () => buildDetailRecipes(door,
           (key, clicked) => { st.detail = key; redraw(`[data-detail="${clicked}"]`); },
-          (group) => {
+          (group, clicked) => {
             st.detailGroup = group;
             const picked = DETAIL_RECIPES.find(x => x.key === st.detail);
-            if (picked && group && picked.group !== group) st.detail = "";   // a pick outside the group is put away
-            redraw(`[data-detail-group="${group || "all"}"]`);
-          }));
+            if (picked && group && group !== "all" && picked.group !== group) st.detail = "";   // a pick outside the group is put away
+            redraw(`[data-detail-group="${clicked || "all"}"]`);
+          });
       }
       if (typeof BASING_TIPS !== "undefined" && typeof BASING_GROUPS !== "undefined") {
-        body.appendChild(buildBasingTips(door,
+        parts.basing = () => buildBasingTips(door,
           (key, clicked) => { st.basing = key; redraw(`[data-basing="${clicked}"]`); },
-          (group) => {
+          (group, clicked) => {
             st.basingGroup = group;
             const picked = BASING_TIPS.find(x => x.key === st.basing);
-            if (picked && group && picked.group !== group) st.basing = "";   // a pick outside the group is put away
-            redraw(`[data-basing-group="${group || "all"}"]`);
-          }));
+            if (picked && group && group !== "all" && picked.group !== group) st.basing = "";   // a pick outside the group is put away
+            redraw(`[data-basing-group="${clicked || "all"}"]`);
+          });
       }
+      return parts;
+    }
+    function appendLibraryParts(body, door, redraw) {
+      const parts = libraryParts(door, redraw);
+      for (const key of ["history", "starter", "detail", "basing"]) if (parts[key]) body.appendChild(parts[key]());
     }
 
     // v35: "What are you painting?", the role buttons and the role's tip, used by BOTH doors.
@@ -7708,6 +7809,7 @@
       if (!chosen) st.faction = "";
       return {
         state: st, d: null, addStep: null, addSteps: null,
+        fold: true, short: true, switcher: true,   // v37: folding parts, short lists, the Themes | Combinations switch
         share: { copy: (text, what) => copyText(text, what, "Paste it anywhere."), startRecipe: startRecipeFromCompendium },
         factions: () => new Map(chosen ? [[factionKey(chosen), chosen]] : []),
         factionPick: { names, onChange: (key) => { st.faction = key; renderCompendium(`#${compendiumId("faction-history-pick")}`); } },
@@ -7967,10 +8069,62 @@
       body.appendChild(block);
     }
 
-    function renderCompendium(focusSelector) {
-      const body = document.getElementById("compendium-body");
-      if (!body) return;
-      body.replaceChildren();
+    // v37: one folding part. The heading is a button (aria-expanded, aria-controls) that opens and closes its panel. A closed panel is
+    // empty and hidden, and its content is only built when it is opened, so a closed page is short and quick. make() returns what goes in
+    // the panel. Which parts are open is kept in the door's state (door.state.open), so it survives redraws.
+    function foldSection(door, key, label, make) {
+      const open = !!door.state.open[key];
+      const wrap = document.createElement("section");
+      wrap.className = "fold";
+      wrap.id = door.id(`fold-${key}`);
+      const head = document.createElement("h3");
+      head.className = "fold-head";
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "fold-button";
+      button.id = door.id(`fold-${key}-button`);
+      const panel = document.createElement("div");
+      panel.className = "fold-panel";
+      panel.id = door.id(`fold-${key}-panel`);
+      button.setAttribute("aria-controls", panel.id);
+      const text = document.createElement("span");
+      text.textContent = label;
+      const mark = document.createElement("span");
+      mark.className = "fold-mark";
+      mark.setAttribute("aria-hidden", "true");
+      button.append(text, mark);
+      head.appendChild(button);
+      const show = (isOpen) => {
+        door.state.open[key] = isOpen;
+        button.setAttribute("aria-expanded", String(isOpen));
+        panel.hidden = !isOpen;
+        panel.replaceChildren();
+        if (isOpen) panel.appendChild(make());
+      };
+      button.addEventListener("click", () => show(!door.state.open[key]));
+      show(open);
+      wrap.append(head, panel);
+      return wrap;
+    }
+
+    // A part's own title is not needed under a folding heading (the heading says it). If the title said something extra, that goes in
+    // as a plain line instead.
+    function dropTitle(box, line) {
+      const title = box.querySelector(":scope > .scheme-title");
+      if (title && line) {
+        const p = document.createElement("p");
+        p.className = "hint";
+        p.textContent = line;
+        title.replaceWith(p);
+      } else if (title) {
+        title.remove();
+      }
+      return box;
+    }
+
+    // "Colour ideas": pick a colour to start from, say what you are painting, get 3 paints (the first part of the Compendium).
+    function buildCompendiumIdeas(body, door, redraw) {
+      const st = door.state;
       const say = (text, id) => {
         const p = document.createElement("p");
         p.className = "hint";
@@ -7979,19 +8133,6 @@
         body.appendChild(p);
         return p;
       };
-      if (typeof MinifolioColour === "undefined") {
-        say("The colour part of the app did not load, so the Compendium cannot show anything. Close the app and open it again.");
-        return;
-      }
-      const st = compendiumState;
-      const door = compendiumDoor();
-      const redraw = (selector) => renderCompendium(selector);
-
-      say("A colour wheel, colour ideas, starter schemes, detail recipes and basing tips, without needing a recipe. Use Copy as text to keep anything, or Save into a new recipe\u2026 to start a recipe from colour ideas, schemes, detail recipes and basing tips.", "intro");
-
-      // v36: the colour wheel comes first
-      appendColourWheel(body, door, redraw);
-
       // ---- paint ideas for a colour you choose ----
       const choices = compendiumBaseChoices();
       const all = [...choices.own, ...choices.other, ...choices.brands.flatMap(b => b.list)];
@@ -8014,7 +8155,7 @@
       addGroup("Other paints in your palette", choices.other);
       for (const b of choices.brands) addGroup(`More ${b.brand} paints`, b.list);
       select.value = st.base;
-      select.addEventListener("change", () => { st.base = select.value; renderCompendium(`#${compendiumId("colour-ideas-base")}`); });
+      select.addEventListener("change", () => { st.base = select.value; redraw(`#${compendiumId("colour-ideas-base")}`); });
       pick.appendChild(select);
       body.appendChild(pick);
 
@@ -8032,8 +8173,41 @@
           if (share) body.appendChild(share);
         }
       }
+    }
 
-      appendLibraryParts(body, door, redraw);
+    function renderCompendium(focusSelector) {
+      const body = document.getElementById("compendium-body");
+      if (!body) return;
+      body.replaceChildren();
+      const say = (text, id) => {
+        const p = document.createElement("p");
+        p.className = "hint";
+        if (id) p.id = compendiumId(id);
+        p.textContent = text;
+        body.appendChild(p);
+        return p;
+      };
+      if (typeof MinifolioColour === "undefined") {
+        say("The colour part of the app did not load, so the Compendium cannot show anything. Close the app and open it again.");
+        return;
+      }
+      const door = compendiumDoor();
+      const redraw = (selector) => renderCompendium(selector);
+
+      say("A colour wheel, colour ideas, starter schemes, detail recipes and basing tips, without needing a recipe. Tap a heading to open it. Use Copy as text to keep anything, or Save into a new recipe\u2026 to start a recipe from colour ideas, schemes, detail recipes and basing tips.", "intro");
+
+      // v36: the colour wheel comes first
+      appendColourWheel(body, door, redraw);
+
+      // v37: the five parts each sit under a heading you tap to open and close. They all start closed; which are open is kept in
+      // st.open while the app is open, like the other Compendium picks. The wheel above stays open.
+      const parts = libraryParts(door, redraw);
+      const fold = (key, label, make) => { if (make) body.appendChild(foldSection(door, key, label, make)); };
+      fold("ideas", "Colour ideas", () => { const out = document.createDocumentFragment(); buildCompendiumIdeas(out, door, redraw); return out; });
+      fold("history", "Your schemes", parts.history && (() => dropTitle(parts.history(), "Colours you've used on this faction before.")));
+      fold("starter", "Starter schemes", parts.starter && (() => dropTitle(parts.starter())));
+      fold("detail", "Detail recipes", parts.detail && (() => dropTitle(parts.detail())));
+      fold("basing", "Basing tips", parts.basing && (() => dropTitle(parts.basing())));
       say("Ideas use paints you own first. Colours on a screen are only a guide, so check them on your model. Nothing leaves your phone.", "foot");
 
       if (focusSelector) {
@@ -11128,8 +11302,8 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=36". v21.4 test checks.)
-    const APP_VERSION = "v36";
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=37". v21.4 test checks.)
+    const APP_VERSION = "v37";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -11532,6 +11706,11 @@
     showCountingChoice();
 
     const CHANGELOG = [
+      { version: "v37", date: "16 Oct 2026", changes: [
+        "Compendium (Pro preview), tidier and shorter. The colour wheel stays open at the top. Colour ideas, Your schemes, Starter schemes, Detail recipes and Basing tips are now headings you tap to open and close. They all start closed, and the app remembers which you opened while it is open.",
+        "Starter schemes has a Themes | Combinations switch. Themes shows the cold, warm, dark and bright groups. Combinations groups the same schemes by their main colour, so you can look for blue and gold, red and grey, and so on. Every scheme is in both views.",
+        "Long lists now stay short until you ask: pick a group (or All) in Starter schemes, Detail recipes or Basing tips to see its list. Tap the group again to put it away. Recipes in the editor work as before.",
+      ]},
       { version: "v36", date: "16 Oct 2026", changes: [
         "The Compendium (Pro preview) now starts with a colour wheel. The outer ring has red, orange, yellow, green, blue and purple. The grey circle in the middle has four slices: whites, greys, blacks and metallics. Tap one and its paints open below the wheel, with a short description first.",
         "The paints you own come first, marked You own this, then the rest from dark to light. Browns sit under orange, bone sits under yellow, and metallics are split into gold, silver and bronze. Paints you do not have yet are behind a Show other paints button, so the list stays short.",
