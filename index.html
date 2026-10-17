@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=38"></script>
+  <script src="early.js?v=39"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -472,6 +472,8 @@
     .check-label input { width: 22px; height: 22px; accent-color: var(--accent); }
     /* v27: the Counting visits tick box (outside the unit panel, so it needs its own row style). */
     #counting-card .count-label { display: flex; align-items: center; gap: 10px; min-height: 44px; color: var(--text); font-size: 15px; }
+    /* v39: the Shop links tick box, the same look as Counting visits */
+    #shoplinks-card .shoplinks-label { display: flex; align-items: center; gap: 10px; min-height: 44px; color: var(--text); font-size: 15px; }
     .photo { width: 100%; max-height: 320px; object-fit: cover; border-radius: 8px; }
     .panel-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
     .panel-buttons .danger-button { margin-left: auto; }
@@ -954,6 +956,25 @@
     .paint-panel-title { margin: 0; font-size: 15px; overflow-wrap: anywhere; }
     .paint-panel-label { margin: 4px 0 0; font-size: 13px; font-weight: 600; color: var(--muted); }
     .paint-panel .share-row .plain-button { min-height: 44px; }
+    /* v39: the closed "Shop links" fold-out under a suggested paint you do not own. Small and quiet: the colour suggestion above it comes first.
+       Plain text buttons and links only (no logos). Uses the same colour variables, so dark and light follow the theme. */
+    .shop-more { margin: 4px 0 0; min-width: 0; }
+    .shop-more > summary { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; font-size: 13px; font-weight: 400; color: var(--muted); cursor: pointer; list-style: none; border-radius: 10px; }
+    .shop-more > summary::-webkit-details-marker { display: none; }
+    .shop-more > summary::after { content: "\25BE"; }
+    .shop-more[open] > summary { color: var(--accent); }
+    .shop-more[open] > summary::after { content: "\25B4"; }
+    .shop-more > summary:hover { color: var(--text); }
+    .shop-more > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .shop-body { display: grid; gap: 10px; min-width: 0; padding: 4px 12px 10px; }
+    .shop-body .hint { margin: 0; font-size: 13px; overflow-wrap: anywhere; }
+    .shop-add .plain-button { min-height: 44px; }
+    .shop-onlist { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; color: var(--muted); }
+    .shop-onlist:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .shop-links { display: flex; flex-wrap: wrap; gap: 8px; }
+    .shop-links a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; color: var(--text); text-decoration: none; background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow-wrap: anywhere; }
+    .shop-links a:hover { border-color: var(--accent); }
+    .shop-links a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     /* v37: the folding parts of the Compendium. Each heading is a full-width button; the panel under it is empty and hidden until opened. */
     .fold { display: grid; gap: 10px; }
     .fold-head { margin: 0; font-size: 16px; }
@@ -1503,6 +1524,7 @@
             <li id="help-scan-brands"><strong>Brands the scanner knows:</strong> Citadel, plus Vallejo Game Color, Model Color and Xpress Color, The Army Painter's Warpaints Fanatic, Pro Acryl and AK 3rd Gen (about 1,200 paints), and every paint already in Your Palette. On a Vallejo pot it also reads the <strong>code number</strong> (like 72.021), which picks the exact paint even if the name is hard to read. Other brands still work: if the scanner doesn't know the name, type it in. The same lists help when you paste recipes from your notes. Where two brands share a name (like "Black"), you're asked which one. The colours for these brands are close guesses, so tap a paint to fix its colour.</li>
             <li>Typed a paint into a recipe that isn't in Your Palette yet? Above <strong>Save recipe</strong>, <strong>Do you own these?</strong> asks about the new paints: <strong>All</strong> (Owned), <strong>None</strong> (Not owned, so they go on the shopping list) or <strong>Let me pick</strong> (tap a paint to untick it).</li>
             <li id="help-shop"><strong>🛒 Shopping list</strong> (in Your Palette) lists paints that are running low, empty, on your wishlist, or used in a recipe but not owned, grouped by brand. <strong>Buy these</strong> at the top has a button for each shop that sells them (Firestorm Games, Wayland Games, Element Games, and The Army Painter for Army Painter paints). Tap a shop for one search link per paint; each opens that shop's own search in a new tab. They're plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop. The link searches for the paint's name, so the results can include other brands' paints with the same name: check you've got the right pot before you buy.</li>
+            <li id="help-shop-links"><strong>Shop links on suggested paints</strong> (Pro preview): under a suggested paint you don't own, in the colour wheel's paint panel and in <strong>Colour ideas</strong> (in a recipe and in the Compendium), tap <strong>Shop links</strong> to open a small fold-out. It has <strong>Add to shopping list</strong> (Undo is offered) and a plain search link for each shop that sells the paint. Paints you own show nothing. They're plain links, the same as in Buy these: Minifolio isn't paid for them, and only the paint's name goes to the shop. To hide every shop link and shop button, including Buy these, untick <strong>Settings → Shop links</strong>. Your shopping list stays.</li>
             <li><strong>Schemes</strong> (top of the Recipes tab) group the recipes you use for one faction, e.g. "My Blue Army" = armour, trim, lenses and base. Press <strong>+ New scheme</strong>, name it, type the faction and tick its recipes.</li>
             <li><strong>Apply to … units</strong> links a scheme's recipes to every unit in its faction that doesn't have them all yet. Recipes a unit already has stay linked.</li>
             <li>With <strong>New units … get these recipes automatically</strong> ticked, any unit you add to that faction later (by hand or by import) gets the scheme straight away.</li>
@@ -1583,7 +1605,7 @@
             <li id="privacy-counting"><strong>Counting visits:</strong> to learn roughly how many people use Minifolio, each time the app opens it asks <strong>GoatCounter</strong> (goatcounter.com, a small privacy-friendly counting service run from Ireland, with its data kept in Finland and Germany) for one tiny, empty picture. That request is all that is sent. There are no cookies, nothing is saved on your device, there is no account or ID, and nothing from your units, recipes, photos or settings goes with it. It doesn't tell GoatCounter which page you came from. Like any request to a website, it carries your device's internet address and browser type. GoatCounter uses them only to add up visits and totals of countries, browsers and systems, and says it doesn't keep the address. It only counts when the app is opened from minifolio.app, and with no internet it does nothing. <strong>You can switch it off</strong> under Settings → Counting visits; the app then asks GoatCounter for nothing.</li>
             <li><strong>The feedback card:</strong> to know when to ask, the app saves the date you first opened it, and your choice on the card, in your settings on this device. They are never sent anywhere.</li>
             <li id="privacy-drafts"><strong>Unfinished work:</strong> to keep a half-written recipe, a half-filled Add unit form or pasted notes through a reload, the app saves what you typed in this browser on this device. It is never sent anywhere, it is not in your backups, and it is removed when you finish it or discard it.</li>
-            <li><strong>Shop links</strong> (Buy these, on the shopping list) open the shop's website only when you tap one. The link carries just the paint's name for the shop's search, and the shop isn't told it came from Minifolio. From then on you're on the shop's site, under its own privacy rules.</li>
+            <li><strong>Shop links</strong> (Buy these on the shopping list, and the Shop links fold-outs under suggested paints) open the shop's website only when you tap one. They are plain links: Minifolio earns nothing from them. You can hide them all under Settings → Shop links. The link carries just the paint's name for the shop's search, and the shop isn't told it came from Minifolio. From then on you're on the shop's site, under its own privacy rules.</li>
             <li><strong>Locked down:</strong> the app only runs its own code, from its own files. Your browser is told to refuse scripts from any other website, or slipped into the page itself, and the only other address it is allowed to load anything from is the visit counter's tiny picture (above). The app can't quietly send your data to any other website (a “Content Security Policy”).</li>
             <li><strong>No tracking of you:</strong> no adverts, no cookies, no accounts, nothing about your collection is ever sent, and nothing is sold. The only counting is the anonymous visit count above, which you can switch off.</li>
             <li>Like any website, the site's host (GitHub Pages) sees basic technical details, such as your internet address, when the app loads or updates. Minifolio itself never sees or keeps them.</li>
@@ -1676,6 +1698,13 @@
         <label class="check-label count-label"><input type="checkbox" id="count-visits"> Count my visits (anonymous)</label>
         <p class="hint" id="counting-note" style="margin: 6px 0 0;"></p>
         <p class="hint" style="margin: 6px 0 0;">Takes effect the next time the app opens. Details: Help → Privacy.</p>
+      </div>
+
+      <!-- v39: Shop links. One tick box; on by default; not in backups. See "v39: THE SHOP LINKS SWITCH" in app.js. -->
+      <div class="card" id="shoplinks-card">
+        <h2>Shop links</h2>
+        <label class="check-label shoplinks-label"><input type="checkbox" id="show-shop-links"> Show shop links</label>
+        <p class="hint" id="shoplinks-note" style="margin: 6px 0 0;"></p>
       </div>
 
       <div class="card">
@@ -1825,7 +1854,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=38" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=39" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -1834,10 +1863,10 @@
        names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks.
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=38"></script>
-  <script src="schemes.js?v=38"></script>
-  <script src="detail-recipes.js?v=38"></script>
-  <script src="basing-tips.js?v=38"></script>
-  <script src="app.js?v=38"></script>
+  <script src="colour.js?v=39"></script>
+  <script src="schemes.js?v=39"></script>
+  <script src="detail-recipes.js?v=39"></script>
+  <script src="basing-tips.js?v=39"></script>
+  <script src="app.js?v=39"></script>
 </body>
 </html>
