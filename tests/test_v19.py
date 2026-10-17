@@ -106,7 +106,7 @@ def main():
             text = page.locator("#changelog .release").nth(v19[-1]).inner_text()
             check("the v19 entry mentions Back, Paste army list and Privacy",
                   "Back" in text and "Paste army list" in text and "Privacy" in text, text)
-        check("CNAME file kept (minifolio.app)", read("CNAME").strip() == "minifolio.app")
+        check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
         check("ocr folder kept", all(os.path.exists(os.path.join(ROOT, "ocr", f)) for f in
                                      ["ocr-worker.js", "eng.traineddata", "tesseract-core-simd-lstm.wasm"]))
         for key in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"',

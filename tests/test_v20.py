@@ -129,7 +129,7 @@ def main():
             text = page.locator("#changelog .release").nth(v20[0]).inner_text()
             check("the v20 entry mentions Appearance, Match my phone and backups",
                   "Appearance" in text and "Match my phone" in text and "Backups" in text, text)
-        check("CNAME file kept", os.path.exists(os.path.join(ROOT, "CNAME")) and "minifolio.app" in read("CNAME"))
+        check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
         check("ocr folder kept", os.path.exists(os.path.join(ROOT, "ocr", "ocr-worker.js")))
         for key in ['"mini-tracker-models"', '"shades-of-grey-settings"', '"shades-of-grey-recipes"', '"shades-of-grey-photos"']:
             check(f"storage name {key} unchanged", key in html)

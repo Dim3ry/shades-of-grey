@@ -140,7 +140,7 @@ def main():
         tab(page, "updates")
         heads = page.locator("#view-updates h3").all_inner_texts()
         check("the Updates tab shows v21.2", any(h.startswith("v21.2") for h in heads), heads[:3])
-        check("CNAME is kept (minifolio.app)", read("CNAME").strip() == "minifolio.app")
+        check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
         check("ocr folder is kept", all(os.path.exists(os.path.join(ROOT, "ocr", f)) for f in
               ["ocr-worker.js", "tesseract-core-simd-lstm.wasm", "tesseract-core-lstm.wasm", "eng.traineddata"]))
         check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
