@@ -6555,7 +6555,8 @@
     // its list shows ("" = none yet, "all" = everything), so the page stays short.
     // v37 part 2: wheelMore = which wheel groups show all their paints; search = what is typed in the search box of each button list.
     let compendiumState = { base: "", role: "glow", scheme: "", mood: "", detail: "", detailGroup: "", basing: "", basingGroup: "", faction: "", wheel: "", wheelOthers: {},
-                            open: {}, view: "themes", combo: "", wheelMore: {}, search: { starter: "", detail: "", basing: "" } };
+                            open: {}, view: "themes", combo: "", wheelMore: {}, search: { starter: "", detail: "", basing: "" },
+                            paintOpen: "" };   // v38: paintOpen = the key of the wheel paint whose "matching colours" panel is open ("" = none)
 
     // v35: ONE set of building blocks, TWO doors. The parts of the Colour ideas card (the ideas, Your schemes, Starter schemes,
     // Detail recipes and Basing tips) are built by the functions below, and BOTH the recipe editor and the Compendium tab use them.
@@ -6897,13 +6898,22 @@
     // One tappable idea row (swatch, name, brand, tag, reason, optional note, "+ Add as a step"). Used by every list.
     // v30: rows outside the main three ideas carry the class "idea-pick" instead of "idea" (same look, see index.html).
     // v35: with no onAdd (the Compendium has no recipe to add to) the row is plain text in a box: same look, no button, no "+ Add" line.
-    function buildIdeaItem(paint, tag, reason, note, onAdd, extraClass) {
+    // v38: a door that has no recipe but does have "links" (the Compendium) can hand in a 7th argument, link = { expanded, controls, onToggle(li) }.
+    // The row is then a button (still the same look and the same classes as the plain row, so nothing else about it changes) that opens
+    // and closes a short panel for that paint. It says whether the panel is open (aria-expanded) and, while it is open, which panel it controls.
+    function buildIdeaItem(paint, tag, reason, note, onAdd, extraClass, link) {
       const li = document.createElement("li");
-      const button = document.createElement(onAdd ? "button" : "div");
+      const button = document.createElement(onAdd || link ? "button" : "div");
       if (onAdd) {
         button.type = "button";
         button.className = extraClass || "idea";
         button.setAttribute("aria-label", `Add ${paint.name} as a new step. ${tag.text}. ${reason}`);
+      } else if (link) {
+        button.type = "button";
+        button.className = (extraClass || "idea") + " idea-static idea-link";
+        button.setAttribute("aria-expanded", String(!!link.expanded));
+        if (link.expanded && link.controls) button.setAttribute("aria-controls", link.controls);
+        // no aria-label: the button's own words (name, brand, tag, reason, "Matching colours") are its name for a screen reader
       } else {
         button.className = (extraClass || "idea") + " idea-static";
       }
@@ -6935,9 +6945,15 @@
         add.className = "idea-add";
         add.textContent = "+ Add as a step";
         text.appendChild(add);
+      } else if (link) {
+        const open = document.createElement("span");
+        open.className = "idea-open";
+        open.textContent = "Matching colours";
+        text.appendChild(open);
       }
       button.append(makeSwatch(paint.colour), text);
       if (onAdd) button.addEventListener("click", onAdd);
+      else if (link && link.onToggle) button.addEventListener("click", () => link.onToggle(li));
       li.appendChild(button);
       return li;
     }
@@ -8160,6 +8176,7 @@
       return {
         state: st, d: null, addStep: null, addSteps: null,
         fold: true, short: true, switcher: true, search: true,   // v37: folding parts, short lists, the Themes | Combinations switch, search boxes
+        links: true,   // v38: a paint in the colour wheel's lists can be tapped to open its "matching colours" panel (the recipe card has no such panels)
         share: { copy: (text, what) => copyText(text, what, "Paste it anywhere."), startRecipe: startRecipeFromCompendium },
         factions: () => new Map(chosen ? [[factionKey(chosen), chosen]] : []),
         factionPick: { names, onChange: (key, focus) => { st.faction = key; renderCompendium(focus || `#${compendiumId("faction-history-pick")}`); } },
@@ -8288,7 +8305,7 @@
     function wheelItems() {
       const choices = compendiumBaseChoices();
       const items = [];
-      const add = (list, origin) => { for (const paint of list) { const at = wheelPlace(paint); if (at) items.push({ paint, at, origin }); } };
+      const add = (list, origin) => { for (const paint of list) { const at = wheelPlace(paint); if (at) items.push({ paint, at, origin, key: choices.key(paint) }); } };
       add(choices.own, 0);
       add(choices.other, 1);
       add(choices.brands.flatMap(b => b.list), 2);
@@ -8300,6 +8317,154 @@
     }
     const WHEEL_ROUGH_NOTE = "The colour shown is only a guide for this kind of paint.";
     const WHEEL_GROUP_SHOWN = 8;   // v37 part 2: how many paints a group shows before "Show all" (your own paints are never hidden)
+
+    // ---- v38: PAINT LINKS (a short panel for one paint in the wheel's lists) ----
+    // Tap a paint in a wheel list and a short panel opens right under it: the colours that go with it (opposite, neighbours, triad; the
+    // same colour engine and the same nearest-paint search as Colour ideas, yours first) and the starter schemes that use a similar colour.
+    // The panel is plain text built from the same shared rows, with nothing to tap inside it except Copy as text, and no web links of any
+    // kind. It is switched on by the door flag door.links (the Compendium only; the recipe card has no panels). One panel is open at a time;
+    // which one is kept in door.state.paintOpen. Paint names only ever go in as text; the sentences use colour words, never names.
+    const PAINT_PANEL_ROLE = { boost: { s: 0, l: [0, 1] } };   // no lift: the matches aim at the exact spot on the colour wheel
+    const PAINT_PANEL_GROUPS = [
+      { label: "Opposite", picks: ["complementary"] },
+      { label: "Neighbours", picks: ["analogous0", "analogous1"] },
+      { label: "Triad", picks: ["triad0", "triad1"] },
+    ];
+    const PAINT_PANEL_NEUTRAL = { label: "Accents that stand out", picks: ["complementary", "analogous0", "analogous1"] };   // a grey, black or white has no true opposite
+    const PAINT_SCHEMES_SHOWN = 3;   // the closest few starter schemes, to keep the panel short; a line says when there are more
+
+    // The starter schemes with a colour close to this paint's colour (a good or close match by the colour engine; looser for rough paints
+    // such as metallics), closest first. Each is { scheme, colour, distance, quality } where colour is the scheme colour that matched.
+    function starterSchemesLike(paint) {
+      const C = MinifolioColour;
+      if (typeof STARTER_SCHEMES === "undefined" || !paint || !colourIdeaIsReal(paint.colour)) return [];
+      const rough = C.isRoughColour(paint);
+      const out = [];
+      for (const scheme of STARTER_SCHEMES) {
+        let best = null;
+        for (const colour of scheme.colours) {
+          const distance = C.colourDistance(paint.colour, colour.hex);
+          if (distance !== null && (!best || distance < best.distance)) best = { colour, distance };
+        }
+        if (!best) continue;
+        const judged = C.judgeMatch(best.distance, rough);
+        if (judged.quality !== "poor") out.push({ scheme, colour: best.colour, distance: best.distance, quality: judged.quality });
+      }
+      return out.sort((a, b) => a.distance - b.distance || String(a.scheme.name).localeCompare(String(b.scheme.name)));
+    }
+
+    // The panel itself. x is a wheel item ({ paint, at, origin, key }).
+    function buildPaintPanel(door, x) {
+      const C = MinifolioColour;
+      const paint = x.paint;
+      const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+      const box = document.createElement("div");
+      box.className = "paint-panel";
+      box.id = door.id("paint-panel");
+      box.setAttribute("role", "group");
+      const title = document.createElement("h5");
+      title.className = "paint-panel-title";
+      title.id = door.id("paint-panel-title");
+      title.textContent = `Matching colours for ${paintLabel(paint)}`;
+      box.setAttribute("aria-labelledby", title.id);
+      box.appendChild(title);
+      const lines = [title.textContent];
+      const say = (text) => {
+        const p = document.createElement("p");
+        p.className = "hint";
+        p.textContent = text;
+        box.appendChild(p);
+        return p;
+      };
+      const label = (text) => {
+        const p = document.createElement("p");
+        p.className = "paint-panel-label";
+        p.textContent = text;
+        box.appendChild(p);
+        lines.push("", text);
+      };
+      const harmony = C.harmonies(paint.colour);
+      if (!harmony) {
+        say("This paint has no colour set, so there is nothing to match.");
+        return box;
+      }
+      const family = C.colourFamily(paint.colour) || "this colour";
+      lines.push(say(harmony.hueMeaningful
+        ? `Its colour is ${family}. These go with it, yours first.`
+        : `Its colour is ${family}, which is neutral, so it has no true opposite. These accents stand out beside it, yours first.`).textContent);
+      if (x.at.seg === "metallic" || C.isRoughColour(paint)) lines.push(say(`${WHEEL_ROUGH_NOTE} The matches are only a guide too.`).textContent);
+
+      const pool = colourIdeaPool();
+      const used = [paint.colour];   // the paint itself is never offered as its own match, and the same colour is never offered twice
+      let slot = 0, found = false;
+      for (const group of harmony.hueMeaningful ? PAINT_PANEL_GROUPS : [PAINT_PANEL_NEUTRAL]) {
+        const rows = [];
+        for (const pick of group.picks) {
+          const wanted = colourIdeaWanted(harmony, PAINT_PANEL_ROLE, pick, slot++);
+          const hit = C.nearestPaints(wanted.hex, pool, { limit: 1, ownedFirst: true, exclude: used })[0];
+          if (!hit) continue;
+          used.push(hit.paint.colour);
+          const reason = harmony.hueMeaningful
+            ? colourIdeaReason(wanted.relation, wanted.hex, paint.colour, null)
+            : `${cap(C.colourFamily(wanted.hex) || "this colour")} is an accent that stands out without clashing.`;
+          rows.push({ hit, reason });
+        }
+        if (!rows.length) continue;
+        found = true;
+        label(group.label);
+        const list = document.createElement("ul");
+        list.className = "idea-list";
+        for (const { hit, reason } of rows) {
+          const tag = colourIdeaTag(hit), note = colourIdeaNote(hit);
+          list.appendChild(buildIdeaItem(hit.paint, tag, reason, note, null, "idea-pick"));
+          lines.push(ideaTextLine(hit.paint, tag, reason, note));
+        }
+        box.appendChild(list);
+      }
+      if (!found) say("No paints with a known colour to suggest yet.");
+
+      label("Starter schemes with a similar colour");
+      const like = starterSchemesLike(paint);
+      if (!like.length) {
+        lines.push(say("No starter scheme uses a colour close to this one.").textContent);
+      } else {
+        const list = document.createElement("ul");
+        list.className = "idea-list";
+        for (const m of like.slice(0, PAINT_SCHEMES_SHOWN)) {
+          const stand = { name: m.scheme.name, brand: "", colour: m.colour.hex };   // the scheme's own colour, shown as a swatch
+          const tag = { cls: "none", text: m.quality === "good" ? "Very close colour" : "Similar colour" };
+          const reason = `${m.colour.part}: ${m.colour.look}.`;
+          list.appendChild(buildIdeaItem(stand, tag, reason, m.scheme.summary, null, "idea-pick"));
+          lines.push(ideaTextLine(stand, tag, reason, m.scheme.summary));
+        }
+        box.appendChild(list);
+        if (like.length > PAINT_SCHEMES_SHOWN) lines.push(say(`Showing the ${PAINT_SCHEMES_SHOWN} closest of ${like.length}.`).textContent);
+      }
+      const share = buildShareRow(door, `matching colours for ${paint.name}`, [...lines, "", COMPENDIUM_TEXT_FOOT], null);
+      if (share) box.appendChild(share);
+      return box;
+    }
+
+    // Opens the panel under a row, or closes it if that row's panel is already open. Done in place (the rest of the page is not redrawn), so
+    // the button keeps the focus and the page does not jump. Any other open panel is closed first (one at a time).
+    function togglePaintPanel(door, x, li) {
+      const st = door.state;
+      const wrap = li.closest(".wheel-detail");
+      const opening = st.paintOpen !== x.key;
+      if (wrap) for (const old of wrap.querySelectorAll(".paint-panel")) {
+        const owner = old.parentElement && old.parentElement.querySelector(".idea-link");
+        old.remove();
+        if (owner) { owner.setAttribute("aria-expanded", "false"); owner.removeAttribute("aria-controls"); }
+      }
+      st.paintOpen = "";
+      if (!opening) return;
+      const panel = buildPaintPanel(door, x);
+      li.appendChild(panel);
+      const button = li.querySelector(".idea-link");
+      if (button) { button.setAttribute("aria-expanded", "true"); button.setAttribute("aria-controls", panel.id); }
+      st.paintOpen = x.key;
+      if (panel.scrollIntoView) panel.scrollIntoView({ block: "nearest" });
+    }
 
     // The words under the wheel part that is open: its name, what it is, how many you own, then the paints (grouped where the wheel
     // part has groups), and Copy as text. Paints you do not have yet stay behind one button so the list stays short on a phone.
@@ -8325,7 +8490,15 @@
       split.id = door.id("wheel-groups");
       split.textContent = `Split into ${colourWordList(seg.subs.map(s => s.label.toLowerCase()))}. Each group runs from dark to light, yours first.`;
       box.append(title, about, split, count);
+      if (door.links && items.length) {   // v38: say that a paint can be tapped
+        const tapHint = document.createElement("p");
+        tapHint.className = "hint";
+        tapHint.id = door.id("wheel-links-hint");
+        tapHint.textContent = "Tap a paint to see colours that go with it, and starter schemes with a similar colour.";
+        box.appendChild(tapHint);
+      }
       const lines = [seg.label, seg.text, split.textContent, count.textContent];
+      let openShown = false;   // v38: is the paint whose panel is open still on show? (Show fewer, or Hide other paints, can put it away)
 
       const others = items.filter(x => x.origin === 2);
       const showOthers = !!st.wheelOthers[seg.key];
@@ -8367,7 +8540,20 @@
           const tag = wheelTag(x);
           const reason = `${wheelTone(x.at.L)} ${sub.word}.`;
           const note = seg.key === "metallic" || MinifolioColour.isRoughColour(x.paint) ? WHEEL_ROUGH_NOTE : "";
-          list.appendChild(buildIdeaItem(x.paint, tag, reason, note, null));
+          // v38: with door.links the row is a button that opens the paint's panel right under it (in place); Escape closes it again
+          const link = door.links ? { expanded: st.paintOpen === x.key, controls: door.id("paint-panel"), onToggle: (li) => togglePaintPanel(door, x, li) } : null;
+          const row = buildIdeaItem(x.paint, tag, reason, note, null, undefined, link);
+          if (link) {
+            if (link.expanded) { row.appendChild(buildPaintPanel(door, x)); openShown = true; }
+            row.addEventListener("keydown", (e) => {
+              if (e.key !== "Escape" || st.paintOpen !== x.key) return;
+              e.preventDefault();
+              togglePaintPanel(door, x, row);
+              const back = row.querySelector(".idea-link");
+              if (back) back.focus();
+            });
+          }
+          list.appendChild(row);
           lines.push(ideaTextLine(x.paint, tag, reason, note));
         }
         box.appendChild(list);
@@ -8383,6 +8569,7 @@
           box.appendChild(more);
         }
       }
+      if (st.paintOpen && !openShown) st.paintOpen = "";   // its paint is not on show now, so its panel is closed (nothing stale is kept)
       const share = buildShareRow(door, `${seg.label} list`, [...lines, "", COMPENDIUM_TEXT_FOOT], null);
       if (share) box.appendChild(share);
       return box;
@@ -8446,7 +8633,7 @@
         const tip = document.createElementNS(SVG, "title");
         tip.textContent = seg.label;
         path.appendChild(tip);
-        const choose = () => { st.wheel = st.wheel === seg.key ? "" : seg.key; redraw(`[data-wheel="${seg.key}"]`); };
+        const choose = () => { st.wheel = st.wheel === seg.key ? "" : seg.key; st.paintOpen = ""; redraw(`[data-wheel="${seg.key}"]`); };   // v38: a paint panel never carries over to another part
         path.addEventListener("click", choose);
         path.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(); } });
         slices.push({ key: seg.key, path });
@@ -11695,8 +11882,8 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=37". v21.4 test checks.)
-    const APP_VERSION = "v37";
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=38". v21.4 test checks.)
+    const APP_VERSION = "v38";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -12099,6 +12286,11 @@
     showCountingChoice();
 
     const CHANGELOG = [
+      { version: "v38", date: "17 Oct 2026", changes: [
+        "Paint links in the colour wheel (Pro preview). In the Compendium, tap a paint in any of the wheel's lists and a short panel opens under it: the colours that go with it (the opposite, the two neighbours and the two in its triad, with the paints you own first), and the starter schemes that use a similar colour.",
+        "It works with a keyboard (Enter or Space opens it, Escape closes it), with a screen reader, and on a phone. It also works on paints you reveal with Show all. Tap the paint again to close the panel. Only one panel is open at a time, and Copy as text keeps what it shows.",
+        "Nothing leaves your phone, and there are no web links in the panel. A grey, black or white paint has no true opposite, so it gets a few accents that stand out instead. Colours on a screen are only a guide, so check them on your model.",
+      ]},
       { version: "v37", date: "16 Oct 2026", changes: [
         "Compendium (Pro preview), tidier and shorter. The colour wheel stays open at the top. Colour ideas, Your schemes, Starter schemes, Detail recipes and Basing tips are now headings you tap to open and close. They all start closed, and the app remembers which you opened while it is open.",
         "Starter schemes has a Themes | Combinations switch. Themes shows the cold, warm, dark and bright groups. Combinations groups the same schemes by their main colour, so you can look for blue and gold, red and grey, and so on. Every scheme is in both views.",
