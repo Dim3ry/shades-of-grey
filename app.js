@@ -11009,13 +11009,18 @@
     });
 
     // Put the pictures from a full backup into the photo store. Returns how many worked.
+    // Only ordinary photo types are accepted from a backup file. The app itself only ever saves
+    // JPEG; PNG and WebP are allowed for older or hand-made backups. Anything else, such as an
+    // SVG (a drawing that can carry code), is skipped. The photo is only ever shown inside an
+    // <img>, where code can't run, so this is a second lock on a door that was already shut.
+    const SAFE_PHOTO_TEXT = /^data:image\/(?:jpeg|png|webp);base64,/;
     async function importPhotoFiles(files) {
       let done = 0;
       for (const [id, pair] of Object.entries(files || {})) {
         try {
-          if (!pair || typeof pair.full !== "string" || !pair.full.startsWith("data:image")) continue;
+          if (!pair || typeof pair.full !== "string" || !SAFE_PHOTO_TEXT.test(pair.full)) continue;
           const full = dataUrlToBlob(pair.full);
-          const thumb = typeof pair.thumb === "string" && pair.thumb.startsWith("data:image")
+          const thumb = typeof pair.thumb === "string" && SAFE_PHOTO_TEXT.test(pair.thumb)
             ? dataUrlToBlob(pair.thumb) : await resizeToBlob(await loadImage(full), 240, 0.75);
           await putPhoto({ id, full, thumb });
           forgetUrls(id);   // in case an older copy of this photo was on screen
