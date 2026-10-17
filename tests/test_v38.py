@@ -123,9 +123,10 @@ def main():
         load(page, paints=PAL)
         html, sw, app = read("index.html"), read("sw.js"), read("app.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
-        check("the version is v38 everywhere: APP_VERSION, sw.js, the six script tags, and the two comments that name it",
-              page.evaluate("APP_VERSION") == "v38" and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) == "38" and len(tags) == 6 and {v for _, v in tags} == {"38"}
-              and '"?v=38"' in html and '"app.js?v=38"' in app, (page.evaluate("APP_VERSION"), tags))
+        check("the version is v38 or later everywhere, and the same everywhere (v39 bumped it later): APP_VERSION, sw.js, the six script tags, and the two comments that name it",
+              float(page.evaluate("APP_VERSION")[1:]) >= 38 and page.evaluate("APP_VERSION")[1:] == re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) and len(tags) == 6
+              and {v for _, v in tags} == {page.evaluate("APP_VERSION")[1:]} and f'"?v={page.evaluate("APP_VERSION")[1:]}"' in html
+              and f'"app.js?v={page.evaluate("APP_VERSION")[1:]}"' in app, (page.evaluate("APP_VERSION"), tags))
         files = re.search(r"const APP_FILES = \[(.*?)\];", sw, re.S).group(1)
         cached = re.findall(r'"\./([^"?]*)', files)
         root_js = sorted(f for f in os.listdir(ROOT) if f.endswith(".js") and f != "sw.js")
@@ -134,8 +135,8 @@ def main():
               and all(f in cached for f in root_js), (cached, root_js))
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v38')")
         joined = " ".join(entry["changes"]) if entry else ""
-        check("the v38 Updates entry exists once, is the newest, and tells about tapping a paint, the panel, the keyboard (Enter, Space, Escape), Show all and Copy as text",
-              entry and page.evaluate("CHANGELOG.filter(r => r.version === 'v38').length") == 1 and page.evaluate("CHANGELOG[0].version") == "v38"
+        check("the v38 Updates entry exists once, is still there (v39 is newer), and tells about tapping a paint, the panel, the keyboard (Enter, Space, Escape), Show all and Copy as text",
+              entry and page.evaluate("CHANGELOG.filter(r => r.version === 'v38').length") == 1 and float(page.evaluate("CHANGELOG[0].version")[1:]) >= 38
               and all(w in joined for w in ["tap a paint", "opposite", "neighbours", "triad", "starter schemes", "keyboard", "Escape", "screen reader", "Show all", "Copy as text"]), joined[:300])
         check("the v37, v36, v35 and v34 entries are still there", page.evaluate("['v37', 'v36', 'v35', 'v34'].every(v => !!CHANGELOG.find(r => r.version === v))"))
         help_text = page.evaluate("() => document.getElementById('help-tabs').textContent")

@@ -173,7 +173,7 @@ def main():
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v23')")
         check("Updates has a v23 entry with two lines, at the top", entry and len(entry["changes"]) >= 2
               and page.evaluate("CHANGELOG[0].version") == version, entry)
-        check("CNAME kept (minifolio.app)", read("CNAME").strip() == "minifolio.app")
+        check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
         check("ocr folder and the paint-list licence kept",
               os.path.isdir(os.path.join(ROOT, "ocr")) and os.path.exists(os.path.join(ROOT, "LICENSE-paint-list.txt")))
         wf = read(".github/workflows/zap-scan.yml")

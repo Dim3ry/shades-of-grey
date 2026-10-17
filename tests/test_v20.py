@@ -129,7 +129,7 @@ def main():
             text = page.locator("#changelog .release").nth(v20[0]).inner_text()
             check("the v20 entry mentions Appearance, Match my phone and backups",
                   "Appearance" in text and "Match my phone" in text and "Backups" in text, text)
-        check("CNAME file kept", os.path.exists(os.path.join(ROOT, "CNAME")) and "minifolio.app" in read("CNAME"))
+        check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
         check("ocr folder kept", os.path.exists(os.path.join(ROOT, "ocr", "ocr-worker.js")))
         for key in ['"mini-tracker-models"', '"shades-of-grey-settings"', '"shades-of-grey-recipes"', '"shades-of-grey-photos"']:
             check(f"storage name {key} unchanged", key in html)
@@ -147,10 +147,12 @@ def main():
         check("Settings has the three Appearance choices",
               page.locator("#appearance-card [data-appearance-choice]").all_inner_texts() == ["Dark", "Light", "Match my phone"])
         check("Dark is pressed to start with", pressed(page) == ["dark"], pressed(page))
-        # v27: the Counting visits card now sits between them, so the check is "before Colours, with only that card between".
-        check("the Appearance card sits just above Colours (v27: with the Counting visits card between)", page.evaluate("""() => {
+        # v27: the Counting visits card now sits between them, and v39 added the Shop links card after it, so the check is
+        # "before Colours, with only those two cards between".
+        check("the Appearance card sits just above Colours (v27: with the Counting visits card between; v39: and the Shop links card)", page.evaluate("""() => {
             const a = document.getElementById('appearance-card'); let next = a.nextElementSibling;
             if (next && next.id === 'counting-card') next = next.nextElementSibling;
+            if (next && next.id === 'shoplinks-card') next = next.nextElementSibling;
             return !!next && next.contains(document.getElementById('palette-select')); }"""))
         seed(page, full_settings(palette="ice"))
         check("dark mode shows the colour set's own stage colours (v21.8: lifted only where too dark to read)", page.evaluate("""() => {

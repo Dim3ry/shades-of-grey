@@ -173,7 +173,7 @@ def main():
         tab(page, "updates")
         heads = page.evaluate("() => [...document.querySelectorAll('#view-updates h2, #view-updates h3')].map(h => h.textContent.trim())")
         check("the Updates tab lists v21.7", any(h.startswith("v21.7") for h in heads), heads[:4])
-        check("CNAME kept", read("CNAME").strip() == "minifolio.app")
+        check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
         check("ocr folder kept", os.path.isfile(os.path.join(ROOT, "ocr", "ocr-worker.js")) and os.path.isfile(os.path.join(ROOT, "ocr", "eng.traineddata")))
         check("LICENSE-paint-list.txt kept", os.path.isfile(os.path.join(ROOT, "LICENSE-paint-list.txt")))
         wf = read(".github/workflows/zap-scan.yml")

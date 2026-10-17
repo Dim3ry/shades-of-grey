@@ -149,7 +149,7 @@ def main():
               all(w in joined for w in ["four tabs", "Settings / Help / Updates", "remembers", "Back", "Tell us what you think"]), joined[:300])
         top = page.evaluate("CHANGELOG[0].version")
         check("the v21.9 entry is at the top of the list", top == version, top)
-        check("CNAME is kept and says minifolio.app", read("CNAME").strip() == "minifolio.app")
+        check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
         check("the ocr folder is kept", os.path.exists(os.path.join(ROOT, "ocr", "ocr-worker.js")) and os.path.exists(os.path.join(ROOT, "ocr", "eng.traineddata")))
         check("LICENSE-paint-list.txt is kept", os.path.exists(os.path.join(ROOT, "LICENSE-paint-list.txt")))
         wf = read(".github/workflows/zap-scan.yml")

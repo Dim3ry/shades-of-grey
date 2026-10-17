@@ -156,7 +156,7 @@ def main():
             text = page.locator("#changelog .release").nth(entry[0]).inner_text()
             check("the v21.1 entry mentions Select, Ultramarines armour and the status labels",
                   all(w in text for w in ["Select", "Ultramarines armour", "status labels"]), text[:300])
-        check("CNAME is kept", os.path.exists(os.path.join(ROOT, "CNAME")) and read("CNAME").strip() == "minifolio.app")
+        check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
         check("the ocr folder is kept", all(os.path.exists(os.path.join(ROOT, "ocr", f)) for f in
               ["ocr-worker.js", "eng.traineddata", "tesseract-core-simd-lstm.wasm", "README.md"]))
         check("the data version is still 1", page.evaluate("DATA_VERSION") == 1)

@@ -1196,7 +1196,11 @@
     //   brands: "all", or a list of the only brands the shop sells (its button shows only for those)
     //   extra:  added to the end of every link for that shop. Empty for now (plain links, no
     //           affiliate codes). An affiliate code would go here later, e.g. "&ref=CODE"
-    //           (and then: an "Ad" line, a Settings switch and an updated Privacy topic).
+    //           (and then: an "Ad" line and an updated Privacy topic; the Settings switch to hide
+    //           shop links was built in v39). It MUST start with "&", never "?": every search address
+    //           above already has a "?", and a second one would break the link (a test checks this).
+    //           v39: the same table and the same `extra` slot serve the Buy these bar AND the shop
+    //           links on suggested paints, so filling a slot later changes every link at once.
     //   checked: when the search address was last tried by hand
     const SHOPS = [
       { id: "firestorm", name: "Firestorm Games", search: "https://www.firestormgames.co.uk/products?q={q}", brands: "all", extra: "", checked: "10 Oct 2026" },
@@ -1223,6 +1227,95 @@
       return SHOPS.map(shop => ({ shop, paints: items.map(i => i.paint).filter(p => shopSells(shop, p.brand)) }))
         .filter(x => x.paints.length);
     }
+    // ----- v39: plain shop links on suggested paints (Pro preview) -----
+    // Under a suggested paint you do NOT own there is a small closed "Shop links" fold-out: an "Add to shopping list" button and a plain
+    // search link for each shop that sells the paint. It reuses SHOPS, shopsFor, shopLink and the words of the Buy these bar (no second
+    // table). The colour suggestion always comes first; this stays tucked away until you open it. Plain links earn nothing (no "Ad" label,
+    // the fold-out says so). Only the paint's name is in the link, and only when you tap it. A door switches it on with door.shops.
+    // Shown only for paints you do not own, and never when Settings -> Shop links is off (that switch also hides the Buy these bar).
+    const SHOP_PLAIN_WORDS = "Plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop.";
+    function shopLinksOn() { return settings.hideShopLinks !== true; }
+    // The copy of a paint in your palette, if you have one (the suggestion may come from the built-in list instead).
+    function palettePaintFor(paint) {
+      return book.paints.find(p => sameText(p.name, paint.name) && (!paint.brand || sameText(p.brand, paint.brand))) || null;
+    }
+    // On the shopping list = wishlist or empty (see shoppingItems). Owned and running low paints never get a shop fold-out at all.
+    function onShoppingList(paint) {
+      const mine = palettePaintFor(paint);
+      const status = mine ? paintStatus(mine) : "";
+      return status === "wishlist" || status === "empty";
+    }
+    // Puts a paint on the shopping list as Wishlist (adding it to your palette first if it is only in the built-in list).
+    // Undo puts the palette back as it was. Done in place: the page is not redrawn, so the button keeps its place on the screen.
+    function addToShoppingList(paint) {
+      const before = JSON.stringify(book);
+      const mine = findOrAddPaint(paint.brand, paint.name, "");   // "" = leave a colour you already picked alone
+      if (haveIt(mine)) return false;                            // you own it: nothing to add
+      applyPaintStatus(mine, "wishlist");
+      const ok = save();
+      if (!recipeDraft) renderRecipes();                          // keep the (hidden) palette list up to date; never rebuild an open recipe editor
+      if (shopOpen) renderShopPanel();
+      updateShopFoldouts();
+      if (ok) showToast(`Added ${mine.name} to your shopping list`, () => { book = cleanRecipeBook(JSON.parse(before)); render(); updateShopFoldouts(); });
+      else showNotSaved();
+      return true;
+    }
+    function updateShopFoldouts() {
+      for (const el of document.querySelectorAll(".shop-more")) if (el.redrawAdd) el.redrawAdd();
+    }
+    // The fold-out for one paint. Returns null when there is nothing to show (you own it, switched off, or no shop sells it).
+    function buildShopFoldout(paint, owned) {
+      if (owned || !shopLinksOn() || !paint || !String(paint.name || "").trim()) return null;
+      const shops = shopsFor([{ paint }]).map(x => x.shop);
+      if (!shops.length) return null;
+      const box = document.createElement("details");
+      box.className = "shop-more";
+      const summary = document.createElement("summary");
+      summary.textContent = "Shop links";
+      summary.setAttribute("aria-label", `Shop links for ${paint.name}`);
+      const body = document.createElement("div");
+      body.className = "shop-body";
+      const addSlot = document.createElement("div");
+      addSlot.className = "shop-add";
+      box.redrawAdd = () => {
+        addSlot.replaceChildren();
+        if (onShoppingList(paint)) {
+          const done = document.createElement("span");
+          done.className = "shop-onlist";
+          done.tabIndex = -1;
+          done.textContent = "On your shopping list";
+          addSlot.appendChild(done);
+          return done;
+        }
+        const add = document.createElement("button");
+        add.type = "button";
+        add.className = "plain-button";
+        add.textContent = "Add to shopping list";
+        add.setAttribute("aria-label", `Add ${paint.name} to your shopping list`);
+        add.addEventListener("click", () => { if (addToShoppingList(paint)) { const done = addSlot.querySelector(".shop-onlist"); if (done) done.focus(); } });
+        addSlot.appendChild(add);
+        return add;
+      };
+      box.redrawAdd();
+      const links = document.createElement("div");
+      links.className = "shop-links";
+      for (const shop of shops) {
+        const a = document.createElement("a");
+        a.href = shopLink(shop, paint);
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";   // the shop isn't told which page sent you
+        a.textContent = `${shop.name} ↗`;
+        a.setAttribute("aria-label", `Search ${shop.name} for ${paint.name} (opens the shop's website)`);
+        links.appendChild(a);
+      }
+      const note = document.createElement("p");
+      note.className = "hint";
+      note.textContent = SHOP_PLAIN_WORDS;
+      body.append(addSlot, links, note);
+      box.append(summary, body);
+      return box;
+    }
+
     function buildBuyBar(items) {
       const bar = document.createElement("div");
       bar.className = "buy-bar";
@@ -1267,7 +1360,7 @@
       const note = document.createElement("p");
       note.className = "hint";
       note.textContent = shopLinksOpen
-        ? "Each link opens the shop's own search for that paint. Plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop."
+        ? "Each link opens the shop's own search for that paint. " + SHOP_PLAIN_WORDS
         : "Tap a shop to see a search link for each paint it sells.";
       bar.appendChild(note);
       return bar;
@@ -1300,7 +1393,7 @@
         card.appendChild(warn);
       }
       if (items.length) {
-        card.appendChild(buildBuyBar(items));   // v19.1: shop links at the top
+        if (shopLinksOn()) card.appendChild(buildBuyBar(items));   // v19.1: shop links at the top (v39: unless Settings -> Shop links is off)
         const groups = new Map();
         for (const i of items) {
           const brand = i.paint.brand || "No brand";
@@ -7972,7 +8065,11 @@
         const reason = colourIdeaReason(idea.relation, idea.wanted, baseHex, role);
         const note = colourIdeaNote(idea.hit);
         const stepNote = `Colour idea for ${role.note}`;
-        list.appendChild(buildIdeaItem(paint, tag, reason, note, door.addStep ? () => door.addStep(paint, stepNote) : null));
+        const row = buildIdeaItem(paint, tag, reason, note, door.addStep ? () => door.addStep(paint, stepNote) : null);
+        // v39: a paint you do not own gets the small closed "Shop links" fold-out under its row (door.shops; the row itself is unchanged)
+        const shops = door.shops ? buildShopFoldout(paint, idea.hit.owned) : null;
+        if (shops) row.appendChild(shops);
+        list.appendChild(row);
         lines.push(ideaTextLine(paint, tag, reason, note));
         steps.push({ paint, technique: "", coats: 1, mix: 100, note: stepNote });
       }
@@ -8002,6 +8099,7 @@
         state: colourIdeasState, d,
         addStep: (paint, noteText) => addColourIdeaStep(d, paint, noteText),
         addSteps: (items) => addDetailSteps(d, items),
+        shops: true,   // v39: the same fold-out for paints you do not own (the recipe card has no wheel panels, only this list)
         share: null,
         factions: () => colourHistoryFactions(d),
         noFactionText: "This recipe is not linked to a unit that has a faction, so there is no history to show. Link it to a unit and give that unit a faction, and the paints you have used on that faction show here.",
@@ -8031,7 +8129,8 @@
         const role = COLOUR_ROLES.find(r => r.key === colourIdeasState.role) || COLOUR_ROLES[0];
         const look = JSON.stringify([colourIdeasState.base, role.key, bases.map(b => [b.key, b.colour, b.uses]),
                                      wholeRecipes.map(r => [r.id, r.name, r.colour, r.linked]), ownIsWhole, colourIdeasState.check, colourIdeasState.scheme, colourIdeasState.mood,
-                                     colourIdeasState.detail, colourIdeasState.detailGroup, colourIdeasState.basing, colourIdeasState.basingGroup]);
+                                     colourIdeasState.detail, colourIdeasState.detailGroup, colourIdeasState.basing, colourIdeasState.basingGroup,
+                                     shopLinksOn(), book.paints.filter(p => ["wishlist", "empty"].includes(paintStatus(p))).map(p => p.name)]);   // v39: the shop fold-outs follow the switch and your list
         if (look === lastLook && !focusNext) return;   // nothing changed: leave it alone
         lastLook = look;
         body.innerHTML = "";
@@ -8177,6 +8276,7 @@
         state: st, d: null, addStep: null, addSteps: null,
         fold: true, short: true, switcher: true, search: true,   // v37: folding parts, short lists, the Themes | Combinations switch, search boxes
         links: true,   // v38: a paint in the colour wheel's lists can be tapped to open its "matching colours" panel (the recipe card has no such panels)
+        shops: true,   // v39: paints you do not own, in that panel and in Colour ideas, get a closed "Shop links" fold-out (plain links)
         share: { copy: (text, what) => copyText(text, what, "Paste it anywhere."), startRecipe: startRecipeFromCompendium },
         factions: () => new Map(chosen ? [[factionKey(chosen), chosen]] : []),
         factionPick: { names, onChange: (key, focus) => { st.faction = key; renderCompendium(focus || `#${compendiumId("faction-history-pick")}`); } },
@@ -8416,7 +8516,10 @@
         list.className = "idea-list";
         for (const { hit, reason } of rows) {
           const tag = colourIdeaTag(hit), note = colourIdeaNote(hit);
-          list.appendChild(buildIdeaItem(hit.paint, tag, reason, note, null, "idea-pick"));
+          const row = buildIdeaItem(hit.paint, tag, reason, note, null, "idea-pick");
+          const shops = door.shops ? buildShopFoldout(hit.paint, hit.owned) : null;   // v39: only for paints you do not own
+          if (shops) row.appendChild(shops);
+          list.appendChild(row);
           lines.push(ideaTextLine(hit.paint, tag, reason, note));
         }
         box.appendChild(list);
@@ -11009,13 +11112,18 @@
     });
 
     // Put the pictures from a full backup into the photo store. Returns how many worked.
+    // Only ordinary photo types are accepted from a backup file. The app itself only ever saves
+    // JPEG; PNG and WebP are allowed for older or hand-made backups. Anything else, such as an
+    // SVG (a drawing that can carry code), is skipped. The photo is only ever shown inside an
+    // <img>, where code can't run, so this is a second lock on a door that was already shut.
+    const SAFE_PHOTO_TEXT = /^data:image\/(?:jpeg|png|webp);base64,/;
     async function importPhotoFiles(files) {
       let done = 0;
       for (const [id, pair] of Object.entries(files || {})) {
         try {
-          if (!pair || typeof pair.full !== "string" || !pair.full.startsWith("data:image")) continue;
+          if (!pair || typeof pair.full !== "string" || !SAFE_PHOTO_TEXT.test(pair.full)) continue;
           const full = dataUrlToBlob(pair.full);
-          const thumb = typeof pair.thumb === "string" && pair.thumb.startsWith("data:image")
+          const thumb = typeof pair.thumb === "string" && SAFE_PHOTO_TEXT.test(pair.thumb)
             ? dataUrlToBlob(pair.thumb) : await resizeToBlob(await loadImage(full), 240, 0.75);
           await putPhoto({ id, full, thumb });
           forgetUrls(id);   // in case an older copy of this photo was on screen
@@ -11882,8 +11990,8 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=38". v21.4 test checks.)
-    const APP_VERSION = "v38";
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=39". v21.4 test checks.)
+    const APP_VERSION = "v39";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -12285,7 +12393,36 @@
     if (settings.countVisits !== undefined && typeof settings.countVisits !== "boolean") delete settings.countVisits;
     showCountingChoice();
 
+    // ================= v39: THE SHOP LINKS SWITCH =================
+    // Settings -> Shop links. On by default. Off hides EVERY shop link and shop button: the Buy these bar on the shopping list, and the
+    // "Shop links" fold-outs (with Add to shopping list) under suggested paints. Your shopping list itself stays. The choice is
+    // settings.hideShopLinks: only an explicit true means hidden (saved settings, so DATA_VERSION stays 1). Like the visit counter
+    // it is not in backups (a backup holds your units, recipes and stages, never settings like this one).
+    const shopLinksBox = document.getElementById("show-shop-links");
+    function showShopLinksChoice() {
+      shopLinksBox.checked = shopLinksOn();
+      document.getElementById("shoplinks-note").textContent = shopLinksOn()
+        ? "On. Plain shop links show under suggested paints you don't own, and in the Buy these bar on the shopping list. Tapping one opens the shop's own search, and only the paint's name goes to the shop. Minifolio earns nothing from them."
+        : "Off. All shop links and shop buttons are hidden. Your shopping list is still there.";
+    }
+    shopLinksBox.addEventListener("change", () => {
+      settings.hideShopLinks = !shopLinksBox.checked;
+      saveSettings();
+      showShopLinksChoice();
+      render();                                  // redraws the lists that carry shop links
+      if (shopOpen) renderShopPanel();
+      for (const card of document.querySelectorAll("details.colour-ideas")) if (card.refresh) card.refresh();
+    });
+    if (settings.hideShopLinks !== undefined && typeof settings.hideShopLinks !== "boolean") delete settings.hideShopLinks;
+    showShopLinksChoice();
+
     const CHANGELOG = [
+      { version: "v39", date: "17 Oct 2026", changes: [
+        "Shop links on suggested paints (Pro preview). Under a suggested paint you don't own, in the colour wheel's paint panel and in Colour ideas (in a recipe and in the Compendium), there is now a small Shop links fold-out. It stays closed until you tap it. Inside: Add to shopping list, and a plain search link for Firestorm Games, Wayland Games and Element Games (and The Army Painter, for its own paints). Paints you own show nothing.",
+        "These are plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop, and only when you tap a link. They use the same shop list as the Buy these bar, and the colour suggestion always comes first.",
+        "New in Settings: Shop links. Untick Show shop links to hide every shop link and shop button, including the Buy these bar. Your shopping list stays. This choice isn't saved in backups.",
+        "Restoring a backup now only accepts ordinary photo files (JPEG, PNG or WebP).",
+      ]},
       { version: "v38", date: "17 Oct 2026", changes: [
         "Paint links in the colour wheel (Pro preview). In the Compendium, tap a paint in any of the wheel's lists and a short panel opens under it: the colours that go with it (the opposite, the two neighbours and the two in its triad, with the paints you own first), and the starter schemes that use a similar colour.",
         "It works with a keyboard (Enter or Space opens it, Escape closes it), with a screen reader, and on a phone. It also works on paints you reveal with Show all. Tap the paint again to close the panel. Only one panel is open at a time, and Copy as text keeps what it shows.",

@@ -92,7 +92,7 @@ def main():
         check("README says © 2026 George Atter-Dimery. All rights reserved.",
               "© 2026 George Atter-Dimery. All rights reserved." in readme, readme)
         check("README credits the label reader's Apache licence", "Apache License 2.0" in readme)
-        check("CNAME file is still there", os.path.exists(os.path.join(ROOT, "CNAME")) and "minifolio.app" in read("CNAME"))
+        check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
         for key in ["mini-tracker-models", "shades-of-grey-settings", "shades-of-grey-recipes", "shades-of-grey-photos"]:
             check(f"storage name {key!r} unchanged", f'"{key}"' in html)
         check("sw.js cache names unchanged", '"shades-of-grey-" + VERSION' in sw and '"shades-of-grey-label-reader"' in sw)
