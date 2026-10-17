@@ -162,8 +162,9 @@ def main():
         load(page, paints=PAINTS, recipes=RECIPES, units=UNITS)
         html, sw, app = read("index.html"), read("sw.js"), read("app.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
-        check("the version is still v37 everywhere (part 2 does not bump it): APP_VERSION, sw.js and the six script tags",
-              page.evaluate("APP_VERSION") == "v37" and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) == "37" and len(tags) == 6 and {v for _, v in tags} == {"37"},
+        check("the version is v37 or later everywhere, and the same everywhere (v38 bumped it later): APP_VERSION, sw.js and the six script tags",
+              float(page.evaluate("APP_VERSION")[1:]) >= 37 and page.evaluate("APP_VERSION")[1:] == re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) and len(tags) == 6
+              and len({v for _, v in tags}) == 1 and {v for _, v in tags} == {page.evaluate("APP_VERSION")[1:]},
               (page.evaluate("APP_VERSION"), tags))
         files = re.search(r"const APP_FILES = \[(.*?)\];", sw, re.S).group(1)
         check("sw.js still saves the same twelve app files for offline use (nothing new was added to the app)",
