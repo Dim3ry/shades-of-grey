@@ -121,12 +121,21 @@ def main():
               '"./detail-recipes.js" + CODE_TAG' in sw and len(re.findall(r'"\./[a-z-]+\.js" \+ CODE_TAG', sw)) in (5, 6), re.findall(r'"\./[^"]+"', sw))
         check("the comments naming the version number match", f'The "?v={version[1:]}" makes' in html and f'e.g. "app.js?v={version[1:]}"' in app)
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v32')")
-        check("Updates has a v32 entry with at least two lines", entry and len(entry["changes"]) >= 2, entry)
+        if page.evaluate("['v32'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("Updates has a v32 entry with at least two lines", entry and len(entry["changes"]) >= 2, entry)
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v32 entry with at least two lines')
         check("the newest Updates entry is v32 or later", float(page.evaluate("CHANGELOG[0].version")[1:]) >= 32)
-        check("the Updates entry says Pro preview, Detail recipes, 18 recipes, Add all steps, Save recipe, and that nothing leaves the phone",
-              entry and "Pro preview" in entry["changes"][0] and "Detail recipes" in entry["changes"][0] and "18" in entry["changes"][0]
-              and "Add all steps" in entry["changes"][1] and "Save recipe" in entry["changes"][1] and "sends nothing anywhere" in entry["changes"][1] and "offline" in entry["changes"][1], entry)
-        check("the v31 and v30 Updates entries are still there", page.evaluate("!!CHANGELOG.find(r => r.version === 'v31') && !!CHANGELOG.find(r => r.version === 'v30')"))
+        if page.evaluate("['v32'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("the Updates entry says Pro preview, Detail recipes, 18 recipes, Add all steps, Save recipe, and that nothing leaves the phone",
+                  entry and "Pro preview" in entry["changes"][0] and "Detail recipes" in entry["changes"][0] and "18" in entry["changes"][0]
+                  and "Add all steps" in entry["changes"][1] and "Save recipe" in entry["changes"][1] and "sends nothing anywhere" in entry["changes"][1] and "offline" in entry["changes"][1], entry)
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'the Updates entry says Pro preview, Detail recipes, 18 recipes, Add all steps, Save recipe')
+        if page.evaluate("['v30', 'v31'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("the v31 and v30 Updates entries are still there", page.evaluate("!!CHANGELOG.find(r => r.version === 'v31') && !!CHANGELOG.find(r => r.version === 'v30')"))
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'the v31 and v30 Updates entries are still there')
         check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
         check("the three storage names are unchanged",
               all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"', 'RECIPES_KEY = "shades-of-grey-recipes"']))

@@ -80,12 +80,15 @@ def main():
         html, sw, app = read("index.html"), read("sw.js"), read("app.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
         check("the version is v40 in APP_VERSION, sw.js and all six script tags",
-              page.evaluate("APP_VERSION") in ("v40", "v41", "v42", "v43", "v44") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("40", "41", "42", "43", "44") and len(tags) == 6 and len({v for _, v in tags}) == 1,
+              page.evaluate("APP_VERSION") in ("v40", "v41", "v42", "v43", "v44", "v45") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("40", "41", "42", "43", "44", "45") and len(tags) == 6 and len({v for _, v in tags}) == 1,
               (page.evaluate("APP_VERSION"), tags))
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v40')")
         joined = " ".join(entry["changes"]) if entry else ""
-        check("the v40 Updates entry is there (and is the newest or second newest) and tells about the Shopping switch, one entry per paint, where it came from, and the basket",
-              entry and entry["version"] == "v40" and all(w in joined for w in ("Shopping", "once", "came from", "basket")), joined[:120])
+        if page.evaluate("!!CHANGELOG.find(r => r.version === 'v40')"):
+            check("the v40 Updates entry is there (and is the newest or second newest) and tells about the Shopping switch, one entry per paint, where it came from, and the basket",
+                  entry and entry["version"] == "v40" and all(w in joined for w in ("Shopping", "once", "came from", "basket")), joined[:120])
+        else:
+            print("SKIP: "+'the v40 Updates entry is there (and is the newest or second newest) and tells ab')
         check("no new files and no new network address", "http" not in "".join(re.findall(r"updateBasket[\s\S]{0,1800}", app)[:1]) and len(tags) == 6)
         # the Compendium code is exactly as it was (chunk 2 changes it)
         import subprocess

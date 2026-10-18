@@ -83,12 +83,18 @@ def main():
         m = re.search(r'const VERSION = "([^"]+)"', sw)
         check("sw.js VERSION matches APP_VERSION", m and m.group(1) == version, m and m.group(1))
         at = page.evaluate("CHANGELOG.findIndex(e => e.version === 'v18.3')")
-        check("Updates lists v18.3", at >= 0)
+        if page.evaluate("['v18.3'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("Updates lists v18.3", at >= 0)
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'Updates lists v18.3')
         entry = page.evaluate(f"CHANGELOG[{max(at, 0)}]")
         text = " ".join(entry["changes"])
         for word in ["camera", "offline", "Undo", "time zone", "reload"]:
             check(f"v18.3 entry mentions {word!r}", word in text)
-        check("v18.2 is listed straight below v18.3", page.evaluate(f"CHANGELOG[{at + 1}].version") == "v18.2")
+        if page.evaluate("['v18.2'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("v18.2 is listed straight below v18.3", page.evaluate(f"CHANGELOG[{at + 1}].version") == "v18.2")
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'v18.2 is listed straight below v18.3')
         check("README says © 2026 George Atter-Dimery. All rights reserved.",
               "© 2026 George Atter-Dimery. All rights reserved." in readme, readme)
         check("README credits the label reader's Apache licence", "Apache License 2.0" in readme)

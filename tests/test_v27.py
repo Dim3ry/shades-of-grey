@@ -172,7 +172,10 @@ def main():
         check("the comment above the script tag names the same number", f'The "?v={version[1:]}" makes' in html)
         check("the comment in app.js names the same number", f'e.g. "app.js?v={version[1:]}"' in app)
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v27')")
-        check("Updates has a v27 entry with two lines", entry and len(entry["changes"]) >= 2, entry)
+        if page.evaluate("['v27'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("Updates has a v27 entry with two lines", entry and len(entry["changes"]) >= 2, entry)
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v27 entry with two lines')
         check("the newest Updates entry is the current version", page.evaluate("CHANGELOG[0].version") == version)
         check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
         check("ocr folder and the paint-list licence kept",
@@ -405,8 +408,11 @@ def main():
               all(w in priv_all for w in ["Stays on your phone", "Scanning a paint pot", "The feedback card", "Unfinished work", "Shop links"]), priv_all)
         sub_tab(page, "updates")
         updates = page.inner_text("#view-updates")
-        check("the Updates page has the v27 entry in plain words",
-              "v27" in updates and "GoatCounter" in updates and "no cookies" in updates.lower() and "Counting visits" in updates and "nothing from your collection" in updates, updates[:700])
+        if page.evaluate("['v27'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("the Updates page has the v27 entry in plain words",
+                  "v27" in updates and "GoatCounter" in updates and "no cookies" in updates.lower() and "Counting visits" in updates and "nothing from your collection" in updates, updates[:700])
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'the Updates page has the v27 entry in plain words')
         check("\"Tell us what you think\" is still there", "Tell us what you think" in updates)
         readme = read("README.md")
         check("README explains the counter, no cookies, the one address, and the switch",

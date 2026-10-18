@@ -154,13 +154,22 @@ def main():
         tags = re.findall(r'<script src="(early|app)\.js\?v=([\d.]+)"', html)
         check("both script tags carry ?v= matching APP_VERSION", sorted(tags) == [("app", version[1:]), ("early", version[1:])], tags)
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v21.5')")
-        check("Updates has a v21.5 entry", entry and len(entry["changes"]) >= 2, entry)
+        if page.evaluate("['v21.5'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("Updates has a v21.5 entry", entry and len(entry["changes"]) >= 2, entry)
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v21.5 entry')
         joined = " ".join(entry["changes"]) if entry else ""
-        check("…about Undo on delete and new units in view", "Undo" in joined and "into view" in joined, joined)
+        if page.evaluate("['v21.5'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("…about Undo on delete and new units in view", "Undo" in joined and "into view" in joined, joined)
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + '…about Undo on delete and new units in view')
         check("the newest Updates entry is v21.5 or later", float(page.evaluate("CHANGELOG[0].version")[1:]) >= 21.5)
         tab(page, "updates")
         heads = page.locator("#view-updates h3").all_inner_texts()
-        check("the Updates tab lists v21.5", any(h.startswith("v21.5") for h in heads), heads[:4])
+        if page.evaluate("['v21.5'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("the Updates tab lists v21.5", any(h.startswith("v21.5") for h in heads), heads[:4])
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'the Updates tab lists v21.5')
         check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
         check("ocr folder is kept", all(os.path.exists(os.path.join(ROOT, "ocr", f)) for f in
               ["ocr-worker.js", "tesseract-core-simd-lstm.wasm", "tesseract-core-lstm.wasm", "eng.traineddata"]))

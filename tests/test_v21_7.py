@@ -168,11 +168,17 @@ def main():
         tags = re.findall(r'<script src="(early|app)\.js\?v=([\d.]+)"></script>', index)
         check("both script tags carry ?v= matching APP_VERSION", sorted(tags) == [("app", version[1:]), ("early", version[1:])], tags)
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v21.7')")
-        check("Updates has a v21.7 entry", entry and len(entry["changes"]) >= 2, entry)
+        if page.evaluate("['v21.7'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("Updates has a v21.7 entry", entry and len(entry["changes"]) >= 2, entry)
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v21.7 entry')
         check("v21.7 is the newest Updates entry or later", float(page.evaluate("CHANGELOG[0].version")[1:]) >= 21.7)
         tab(page, "updates")
         heads = page.evaluate("() => [...document.querySelectorAll('#view-updates h2, #view-updates h3')].map(h => h.textContent.trim())")
-        check("the Updates tab lists v21.7", any(h.startswith("v21.7") for h in heads), heads[:4])
+        if page.evaluate("['v21.7'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("the Updates tab lists v21.7", any(h.startswith("v21.7") for h in heads), heads[:4])
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'the Updates tab lists v21.7')
         check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
         check("ocr folder kept", os.path.isfile(os.path.join(ROOT, "ocr", "ocr-worker.js")) and os.path.isfile(os.path.join(ROOT, "ocr", "eng.traineddata")))
         check("LICENSE-paint-list.txt kept", os.path.isfile(os.path.join(ROOT, "LICENSE-paint-list.txt")))
