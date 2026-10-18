@@ -396,7 +396,7 @@ def main():
         check("example paints are not on the shopping list", page.evaluate("() => shoppingItems().length") == 0)
         main_tab(page, "recipes")
         recipe_view(page, "palette")
-        page.click("#shop-button")
+        page.click("#recipe-seg button[data-view='shopping']")
         page.wait_for_timeout(200)
         check("the shopping list says there is nothing to buy",
               "Nothing to buy" in page.inner_text("#shop-panel"), page.inner_text("#shop-panel"))

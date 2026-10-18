@@ -75,7 +75,7 @@ def tab(page, name):
 def open_shop(page):
     page.evaluate("showTab('recipes')")
     page.click("#recipe-seg button[data-view='palette']")
-    page.click("#shop-button")
+    page.click("#recipe-seg button[data-view='shopping']")
     page.wait_for_timeout(100)
 
 def shop_buttons(page):

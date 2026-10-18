@@ -427,7 +427,7 @@ def main():
         # ---------- 8. Nothing else broke ----------
         print("\n--- 8. Nothing else broke ---")
         site_load(page, units=UNITS)
-        check("five tabs along the bottom", page.locator("nav.tabs button").count() == 5)
+        check("five tabs along the bottom", page.locator("nav.tabs button[data-tab]").count() == 5)
         main_tab(page, "settings")
         for name in ["help", "updates", "settings"]:
             sub_tab(page, name)

@@ -1010,7 +1010,6 @@
     ];
     const PAINT_STATUS_KEYS = PAINT_STATUSES.map(s => s.key);
     let recipeCanPaint = false;   // the "What can I paint now?" filter (kept while the app is open)
-    let shopOpen = false;
     let importReviewIds = null;   // v17.1: the paints a paste import just added, while you check them
 
     // A paint's status now: its own status, or Owned if the scan added it. "" = not set.
@@ -1033,10 +1032,12 @@
         paint.owned = key === "owned" || key === "low";
         if (key !== "low") delete paint.spare;
         if (!haveIt({ status: key })) delete paint.qty;
+        if (key === "owned") delete paint.shopFrom;   // v40: owned paints are off the list, so they forget where they came from
       } else {
         delete paint.status;
         delete paint.spare;
         delete paint.qty;
+        delete paint.shopFrom;   // v40
         paint.owned = false;
       }
     }
@@ -1149,10 +1150,15 @@
     // Running low, empty and wishlist paints, plus paints a recipe uses that you don't have.
     function shoppingItems() {
       const recipeCount = new Map();
+      const recipeNames = new Map();   // v40: paint id -> the names of the recipes that use it
       for (const r of book.recipes) {
         const ids = new Set();
         for (const s of r.steps) for (const sp of s.paints) ids.add(sp.paint);
-        for (const id of ids) recipeCount.set(id, (recipeCount.get(id) || 0) + 1);
+        for (const id of ids) {
+          recipeCount.set(id, (recipeCount.get(id) || 0) + 1);
+          if (!recipeNames.has(id)) recipeNames.set(id, []);
+          if (!r.example) recipeNames.get(id).push(String(r.name || ""));
+        }
       }
       const items = [];
       for (const p of book.paints) {
@@ -1164,7 +1170,14 @@
         else if (key === "empty") reason = "empty";
         else if (key === "wishlist") reason = "wishlist";
         else if (key !== "owned" && used) reason = `missing, used in ${plural(used, "recipe")}`;
-        if (reason) items.push({ paint: p, reason });
+        if (!reason) continue;
+        // v40: where it came from. The notes saved with the paint (a colour suggestion, a recipe, later a scheme), plus the recipes
+        // that use it when it is on the list only because you don't have it. One paint is one entry, however many places added it.
+        const from = [];
+        const addFrom = (t) => { t = String(t || "").trim(); if (t && !from.some(o => sameText(o, t))) from.push(t); };
+        for (const f of Array.isArray(p.shopFrom) ? p.shopFrom : []) addFrom(f);
+        if (reason.startsWith("missing")) for (const n of recipeNames.get(p.id) || []) addFrom(`Recipe: ${n}`);
+        items.push({ paint: p, reason, from });
       }
       return items.sort((a, b) => (a.paint.brand || "￿").localeCompare(b.paint.brand || "￿") || a.paint.name.localeCompare(b.paint.name));
     }
@@ -1181,7 +1194,7 @@
       const lines = ["Shopping list", ""];
       for (const brand of names) {
         lines.push(brand);
-        for (const i of groups.get(brand)) lines.push(`- ${i.paint.name}: ${i.reason}`);
+        for (const i of groups.get(brand)) lines.push(`- ${i.paint.name}: ${i.reason}${i.from && i.from.length ? ` (from ${i.from.join(", ")})` : ""}`);
         lines.push("");
       }
       if (!items.length) lines.push("Nothing to buy.");
@@ -1247,14 +1260,23 @@
     }
     // Puts a paint on the shopping list as Wishlist (adding it to your palette first if it is only in the built-in list).
     // Undo puts the palette back as it was. Done in place: the page is not redrawn, so the button keeps its place on the screen.
-    function addToShoppingList(paint) {
+    // v40: remember where a paint on the list came from. A paint is on the list once; a second place only adds its name (newest 5 kept).
+    function noteShopSource(paint, source) {
+      const t = String(source || "").trim().slice(0, 60);
+      if (!t) return;
+      const list = Array.isArray(paint.shopFrom) ? paint.shopFrom.slice() : [];
+      if (!list.some(o => sameText(o, t))) list.push(t);
+      paint.shopFrom = list.slice(-5);
+    }
+    function addToShoppingList(paint, source) {
       const before = JSON.stringify(book);
       const mine = findOrAddPaint(paint.brand, paint.name, "");   // "" = leave a colour you already picked alone
       if (haveIt(mine)) return false;                            // you own it: nothing to add
       applyPaintStatus(mine, "wishlist");
+      noteShopSource(mine, source || "Colour suggestion");        // v40
       const ok = save();
-      if (!recipeDraft) renderRecipes();                          // keep the (hidden) palette list up to date; never rebuild an open recipe editor
-      if (shopOpen) renderShopPanel();
+      if (!recipeDraft) renderRecipes();                          // keep the (hidden) palette and shopping lists up to date; never rebuild an open recipe editor
+      updateBasket();                                             // v40
       updateShopFoldouts();
       if (ok) showToast(`Added ${mine.name} to your shopping list`, () => { book = cleanRecipeBook(JSON.parse(before)); render(); updateShopFoldouts(); });
       else showNotSaved();
@@ -1264,7 +1286,7 @@
       for (const el of document.querySelectorAll(".shop-more")) if (el.redrawAdd) el.redrawAdd();
     }
     // The fold-out for one paint. Returns null when there is nothing to show (you own it, switched off, or no shop sells it).
-    function buildShopFoldout(paint, owned) {
+    function buildShopFoldout(paint, owned, source) {
       if (owned || !shopLinksOn() || !paint || !String(paint.name || "").trim()) return null;
       const shops = shopsFor([{ paint }]).map(x => x.shop);
       if (!shops.length) return null;
@@ -1292,7 +1314,7 @@
         add.className = "plain-button";
         add.textContent = "Add to shopping list";
         add.setAttribute("aria-label", `Add ${paint.name} to your shopping list`);
-        add.addEventListener("click", () => { if (addToShoppingList(paint)) { const done = addSlot.querySelector(".shop-onlist"); if (done) done.focus(); } });
+        add.addEventListener("click", () => { if (addToShoppingList(paint, source)) { const done = addSlot.querySelector(".shop-onlist"); if (done) done.focus(); } });
         addSlot.appendChild(add);
         return add;
       };
@@ -1366,13 +1388,11 @@
       return bar;
     }
 
+    // v40: the shopping list is its own tab under Recipes (it used to fold out under Your Palette). Everything typed or pasted is
+    // set with textContent, so it always shows as plain text. renderRecipes() draws it whenever that tab is open.
     function renderShopPanel() {
       const panel = document.getElementById("shop-panel");
-      const button = document.getElementById("shop-button");
-      panel.classList.toggle("hidden", !shopOpen);
-      button.setAttribute("aria-expanded", String(shopOpen));
-      if (!shopOpen) return;
-      panel.innerHTML = "";
+      panel.replaceChildren();
       const items = shoppingItems();
       const card = document.createElement("div");
       card.className = "card";
@@ -1382,8 +1402,8 @@
       const sub = document.createElement("p");
       sub.className = "hint";
       sub.style.margin = "0 0 10px";
-      sub.textContent = !items.length ? "Nothing to buy. Mark your paints on Your Palette to build this list."
-        : `${plural(items.length, "paint")} to get: running low, empty, wishlist, and paints your recipes use that you don't have.`;
+      sub.textContent = !items.length ? "Nothing to buy. Paints you add from your recipes and from colour suggestions land here, once each, and you can mark paints on Your Palette too."
+        : `${plural(items.length, "paint")} to get: running low, empty, wishlist, and paints your recipes use that you don't have. Each paint is listed once, with where it came from.`;
       card.append(title, sub);
       if (items.length && !anyStatusSet()) {
         const warn = document.createElement("p");
@@ -1413,6 +1433,12 @@
             const why = document.createElement("small");
             why.textContent = "· " + i.reason;
             li.appendChild(why);
+            if (i.from && i.from.length) {   // v40: where it came from (first three, then a count)
+              const src = document.createElement("small");
+              src.className = "shop-from";
+              src.textContent = "from " + i.from.slice(0, 3).join(", ") + (i.from.length > 3 ? ` and ${i.from.length - 3} more` : "");
+              li.appendChild(src);
+            }
             list.appendChild(li);
           }
           card.append(head, list);
@@ -1427,7 +1453,53 @@
       }
       panel.appendChild(card);
     }
-    document.getElementById("shop-button").addEventListener("click", () => { shopOpen = !shopOpen; renderShopPanel(); });
+
+    // v40: the small basket count on the tab bar. Shows how many paints are on the list (hidden at none) and, when tapped, takes you
+    // to the Shopping list tab from anywhere. It will not interrupt an open Paste recipes page or a scheme being edited.
+    const basketButton = document.getElementById("basket-button");
+    // The picture is a little drawn basket (built with createElementNS, no HTML text) and the number beside it. When the count changes the
+    // pill gives one small pop (skipped for people who ask their phone for less motion).
+    let basketShown = -1;
+    function updateBasket() {
+      const n = shoppingItems().length;
+      basketButton.classList.toggle("hidden", n === 0);
+      if (n !== basketShown) {
+        const NS = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(NS, "svg");
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("aria-hidden", "true");
+        const path = document.createElementNS(NS, "path");
+        path.setAttribute("d", "M3 9h18l-1.8 9.2a2 2 0 0 1-2 1.6H6.8a2 2 0 0 1-2-1.6L3 9zm4-1.5 3-4.5m7 4.5-3-4.5M9 13v3m3-3v3m3-3v3");
+        path.setAttribute("fill", "none");
+        path.setAttribute("stroke", "currentColor");
+        path.setAttribute("stroke-width", "2");
+        path.setAttribute("stroke-linecap", "round");
+        path.setAttribute("stroke-linejoin", "round");
+        svg.appendChild(path);
+        const num = document.createElement("span");
+        num.className = "basket-count";
+        num.textContent = n > 99 ? "99+" : String(n);
+        basketButton.replaceChildren(svg, num);
+        if (basketShown > -1 && n > 0) {
+          basketButton.classList.remove("pop");
+          void basketButton.offsetWidth;   // lets the pop play again
+          basketButton.classList.add("pop");
+        }
+        basketShown = n;
+      }
+      basketButton.setAttribute("aria-label", `Shopping list, ${plural(n, "paint")}. Tap to open it.`);
+    }
+    basketButton.addEventListener("click", () => {
+      if (importDraft) { showToast("Close Paste recipes first, then tap the basket."); return; }
+      if (schemeDraft) { showToast("Finish or close the scheme you're editing first, then tap the basket."); return; }
+      whenOkToLeaveDraft(() => {
+        recipeDraft = null;
+        openRecipeId = null;
+        settings.recipeView = "shopping";
+        renderRecipes();
+        showTab("recipes");
+      });
+    });
 
     // ----- v17.1: check the paints a paste import just added -----
     function renderImportReview() {
@@ -2014,6 +2086,14 @@
         if (!PAINT_STATUS_KEYS.includes(paint.status)) delete paint.status;
         if (p.example !== true) delete paint.example;   // v24: only a real true counts
         if (paint.status !== "low" || paint.spare !== true) delete paint.spare;
+        // v40: where a paint on the shopping list came from (a recipe or scheme name). Up to 5, each cut to 60 characters, plain text only.
+        // A paint you own is not on the list, so it keeps no notes.
+        const fromClean = [];
+        for (const f of Array.isArray(p.shopFrom) ? p.shopFrom : []) {
+          const t = String(f ?? "").trim().slice(0, 60);
+          if (t && !fromClean.some(o => sameText(o, t))) fromClean.push(t);
+        }
+        if (fromClean.length && paintStatus(paint) !== "owned") paint.shopFrom = fromClean.slice(0, 5); else delete paint.shopFrom;
         // v17.1: quantity, only for paints you have and only above one.
         const haveNow = paint.status === "owned" || paint.status === "low" || (!paint.status && paint.owned === true);
         if (!haveNow || !Number.isInteger(paint.qty) || paint.qty <= 1) delete paint.qty;
@@ -2376,7 +2456,7 @@
       updates: document.getElementById("view-updates"),
       help: document.getElementById("view-help"),
     };
-    const tabButtons = document.querySelectorAll(".tabs button");
+    const tabButtons = document.querySelectorAll(".tabs button[data-tab]");   // v40: not the basket
 
     // v21.9: Settings, Help and Updates are ONE main tab (Settings) with a Settings / Help /
     // Updates switch (#more-seg) at the top. The page names are still "settings", "help" and
@@ -5271,30 +5351,34 @@
     let openRecipeId = null;   // the recipe being read, or null for the list
     let recipeDraft = null;    // the recipe being edited (a copy), or null
     const schemeView = document.getElementById("scheme-view");
+    const shoppingView = document.getElementById("shopping-view");   // v40
     let schemeDraft = null;    // the painting scheme being edited (a copy), or null
 
     function renderRecipes() {
+      updateBasket();   // v40: the basket count on the tab bar
       if (openRecipeId !== null && !recipeById(openRecipeId)) openRecipeId = null;
       // v16: Paste recipes fills the screen while it's open.
       importPage.classList.toggle("hidden", !importDraft);
       if (importDraft) {
         renderRecipeExamplesCard(false);
         fillDraftCard("recipe", false); fillDraftCard("paste", false);   // v26
-        for (const el of [recipeSeg, recipeHome, paletteView, schemeView, recipePage]) el.classList.add("hidden");
+        for (const el of [recipeSeg, recipeHome, paletteView, schemeView, shoppingView, recipePage]) el.classList.add("hidden");
         renderImport();
         return;
       }
       const onPage = !!recipeDraft || openRecipeId !== null;
       const onPalette = !onPage && settings.recipeView === "palette";
       const onSchemes = !onPage && settings.recipeView === "schemes";
-      const current = onPalette ? "palette" : onSchemes ? "schemes" : "recipes";
+      const onShopping = !onPage && settings.recipeView === "shopping";   // v40
+      const current = onPalette ? "palette" : onSchemes ? "schemes" : onShopping ? "shopping" : "recipes";
       // The switch hides while a recipe or a scheme being edited fills the screen.
       recipeSeg.classList.toggle("hidden", onPage || (onSchemes && !!schemeDraft));
       renderRecipeExamplesCard(!onPage && !(onSchemes && !!schemeDraft));   // v24
       fillDraftCard("recipe", !onPage && !(onSchemes && !!schemeDraft));    // v26: kept unfinished work
       fillDraftCard("paste", !onPage && !(onSchemes && !!schemeDraft));
       recipeSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", b.dataset.view === current));
-      recipeHome.classList.toggle("hidden", onPage || onPalette || onSchemes);
+      recipeHome.classList.toggle("hidden", onPage || onPalette || onSchemes || onShopping);
+      shoppingView.classList.toggle("hidden", !onShopping);
       paletteView.classList.toggle("hidden", !onPalette);
       schemeView.classList.toggle("hidden", !onSchemes);
       recipePage.classList.toggle("hidden", !onPage);
@@ -5302,6 +5386,7 @@
       else if (openRecipeId !== null) renderRecipeView(recipeById(openRecipeId));
       else if (onPalette) renderPalette();
       else if (onSchemes) renderSchemes();
+      else if (onShopping) renderShopPanel();
       else renderRecipeList();
     }
 
@@ -8067,7 +8152,7 @@
         const stepNote = `Colour idea for ${role.note}`;
         const row = buildIdeaItem(paint, tag, reason, note, door.addStep ? () => door.addStep(paint, stepNote) : null);
         // v39: a paint you do not own gets the small closed "Shop links" fold-out under its row (door.shops; the row itself is unchanged)
-        const shops = door.shops ? buildShopFoldout(paint, idea.hit.owned) : null;
+        const shops = door.shops ? buildShopFoldout(paint, idea.hit.owned, door.shopSource ? door.shopSource() : "") : null;
         if (shops) row.appendChild(shops);
         list.appendChild(row);
         lines.push(ideaTextLine(paint, tag, reason, note));
@@ -8100,6 +8185,7 @@
         addStep: (paint, noteText) => addColourIdeaStep(d, paint, noteText),
         addSteps: (items) => addDetailSteps(d, items),
         shops: true,   // v39: the same fold-out for paints you do not own (the recipe card has no wheel panels, only this list)
+        shopSource: () => (String(d.name || "").trim() ? `Recipe: ${String(d.name).trim()}` : "A recipe"),   // v40: what the shopping list remembers
         share: null,
         factions: () => colourHistoryFactions(d),
         noFactionText: "This recipe is not linked to a unit that has a faction, so there is no history to show. Link it to a unit and give that unit a faction, and the paints you have used on that faction show here.",
@@ -11990,8 +12076,8 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=39". v21.4 test checks.)
-    const APP_VERSION = "v39";
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=40". v21.4 test checks.)
+    const APP_VERSION = "v40";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -12409,14 +12495,18 @@
       settings.hideShopLinks = !shopLinksBox.checked;
       saveSettings();
       showShopLinksChoice();
-      render();                                  // redraws the lists that carry shop links
-      if (shopOpen) renderShopPanel();
+      render();                                  // redraws the lists that carry shop links (and the Shopping list tab when it is open)
       for (const card of document.querySelectorAll("details.colour-ideas")) if (card.refresh) card.refresh();
     });
     if (settings.hideShopLinks !== undefined && typeof settings.hideShopLinks !== "boolean") delete settings.hideShopLinks;
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v40", date: "18 Oct 2026", changes: [
+        "The shopping list has its own tab. On the Recipes tab there is now a Shopping switch next to Recipes, Schemes and Your Palette. It holds everything the list did before (running low, empty, wishlist, paints your recipes use that you don't have, the Buy these bar, Copy as text). It no longer sits under Your Palette.",
+        "One shared list, one entry per paint: a paint added from two places still shows once. Each paint now says where it came from, such as a recipe name.",
+        "A small basket with a count sits on the tab bar on every tab (it hides when the list is empty). Tap it to jump straight to the Shopping tab.",
+      ]},
       { version: "v39", date: "17 Oct 2026", changes: [
         "Shop links on suggested paints (Pro preview). Under a suggested paint you don't own, in the colour wheel's paint panel and in Colour ideas (in a recipe and in the Compendium), there is now a small Shop links fold-out. It stays closed until you tap it. Inside: Add to shopping list, and a plain search link for Firestorm Games, Wayland Games and Element Games (and The Army Painter, for its own paints). Paints you own show nothing.",
         "These are plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop, and only when you tap a link. They use the same shop list as the Buy these bar, and the colour suggestion always comes first.",
@@ -12595,7 +12685,7 @@
         "Search or add a paint on Your Palette: type a name (typos and your shorthand work) to see if you own it, it's running low, or you don't have it. Tap a status to add it.",
         "Paints added by scan count as Owned. The scan's 'Do I own this?' result shows the status too, and you can change it there.",
         "In recipes, each paint shows Have or Missing once you've set a status. 'What can I paint now?' on the Recipes list shows only the recipes where you own every paint.",
-        "Shopping list (on Your Palette): running low, empty, wishlist, and paints your recipes use that you don't have, grouped by brand. Copy as text. A spot for shop links is there for later; none are added yet.",
+        "Shopping list (its own switch on the Recipes tab, next to Your Palette): running low, empty, wishlist, and paints your recipes use that you don't have, grouped by brand. Copy as text. A spot for shop links is there for later; none are added yet.",
       ]},
       { version: "v16.1", date: "9 Oct 2026", changes: [
         "Pot scanning fixed: it now opens the camera with a box. Line the paint's name up in the box and tap Read label. Only the name is read, with a contrast boost for shiny or metallic labels, so it works far better (tested on white, blue and silver pots).",
