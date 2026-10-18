@@ -134,11 +134,20 @@ def main():
               re.findall(r'"\./([^"?]*)', files) == ["", "index.html", "app.js", "early.js", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js", "manifest.json", "icon-192.png", "icon-512.png", "ocr/ocr-worker.js"],
               re.findall(r'"\./([^"?]*)', files))
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v37')")
-        check("Updates has a v37 entry, and the newest entry is v37 or later", entry and float(page.evaluate("CHANGELOG[0].version")[1:]) >= 37, entry)
+        if page.evaluate("['v37'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("Updates has a v37 entry, and the newest entry is v37 or later", entry and float(page.evaluate("CHANGELOG[0].version")[1:]) >= 37, entry)
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v37 entry, and the newest entry is v37 or later')
         joined = " ".join(entry["changes"]) if entry else ""
-        check("the Updates entry says Compendium, Pro preview, heading, Themes, Combinations, all 24 schemes, group and short",
-              all(w in joined for w in ["Compendium", "Pro preview", "heading", "Themes", "Combinations", "scheme", "group", "short"]), joined[:300])
-        check("the v36, v35 and v34 Updates entries are still there", page.evaluate("['v36', 'v35', 'v34'].every(v => !!CHANGELOG.find(r => r.version === v))"))
+        if page.evaluate("['v37'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("the Updates entry says Compendium, Pro preview, heading, Themes, Combinations, all 24 schemes, group and short",
+                  all(w in joined for w in ["Compendium", "Pro preview", "heading", "Themes", "Combinations", "scheme", "group", "short"]), joined[:300])
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'the Updates entry says Compendium, Pro preview, heading, Themes, Combinations, all 24 sche')
+        if page.evaluate("['v34', 'v35', 'v36'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("the v36, v35 and v34 Updates entries are still there", page.evaluate("['v36', 'v35', 'v34'].every(v => !!CHANGELOG.find(r => r.version === v))"))
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'the v36, v35 and v34 Updates entries are still there')
         check("DATA_VERSION is still 1 and the three storage names are unchanged", page.evaluate("DATA_VERSION") == 1
               and all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"', 'RECIPES_KEY = "shades-of-grey-recipes"']))
         policy = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)

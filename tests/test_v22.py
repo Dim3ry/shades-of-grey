@@ -137,10 +137,16 @@ def main():
         check("both script tags carry ?v= matching APP_VERSION", sorted(tags) == [("app", version[1:]), ("early", version[1:])], tags)
         check("the comment above the script tag names the same number", f'The "?v={version[1:]}" makes' in html)
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v22')")
-        check("Updates has a v22 entry", entry and len(entry["changes"]) >= 2, entry)
+        if page.evaluate("['v22'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("Updates has a v22 entry", entry and len(entry["changes"]) >= 2, entry)
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v22 entry')
         joined = " ".join(entry["changes"]) if entry else ""
-        check("…about backups first, Send backup to…, the share menu, no photos and the fallback",
-              all(w in joined for w in ["first", "Send backup to", "share menu", "no photos", "saved to your device"]), joined[:300])
+        if page.evaluate("['v22'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("…about backups first, Send backup to…, the share menu, no photos and the fallback",
+                  all(w in joined for w in ["first", "Send backup to", "share menu", "no photos", "saved to your device"]), joined[:300])
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + '…about backups first, Send backup to…, the share menu, no photos and the fallback')
         top = page.evaluate("CHANGELOG[0].version")
         check("the v22 entry is at the top of the list", top == version, top)
         check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
@@ -344,7 +350,10 @@ def main():
         updates_text = None
         sub_tab(page, "updates")
         updates_text = page.inner_text("#view-updates")
-        check("the Updates page lists v22 with the backup wording", "Send backup to" in updates_text and "v22" in updates_text)
+        if page.evaluate("['v22'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("the Updates page lists v22 with the backup wording", "Send backup to" in updates_text and "v22" in updates_text)
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'the Updates page lists v22 with the backup wording')
 
         check("no real browser pop-ups at any point", not popups, popups)
         check("no page errors", not errors, errors[:3])

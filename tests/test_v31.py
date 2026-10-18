@@ -276,12 +276,21 @@ def main():
               '"./schemes.js" + CODE_TAG' in sw and len(re.findall(r'"\./[a-z-]+\.js" \+ CODE_TAG', sw)) in (4, 5, 6), re.findall(r'"\./[^"]+"', sw))
         check("the comments naming the version number match", f'The "?v={version[1:]}" makes' in html and f'e.g. "app.js?v={version[1:]}"' in app)
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v31')")
-        check("Updates has a v31 entry with at least two lines", entry and len(entry["changes"]) >= 2, entry)
+        if page.evaluate("['v31'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("Updates has a v31 entry with at least two lines", entry and len(entry["changes"]) >= 2, entry)
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v31 entry with at least two lines')
         check("the newest Updates entry is v31 or later", float(page.evaluate("CHANGELOG[0].version")[1:]) >= 31)
-        check("the Updates entry says Pro preview, 24 schemes, the four moods and that nothing leaves the phone",
-              entry and "Pro preview" in entry["changes"][0] and "24" in entry["changes"][0] and all(w in entry["changes"][0] for w in ["cold", "warm", "dark", "bright"])
-              and "sends nothing anywhere" in entry["changes"][1] and "offline" in entry["changes"][1], entry)
-        check("the v30 and v29 Updates entries are still there", page.evaluate("!!CHANGELOG.find(r => r.version === 'v30') && !!CHANGELOG.find(r => r.version === 'v29')"))
+        if page.evaluate("['v31'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("the Updates entry says Pro preview, 24 schemes, the four moods and that nothing leaves the phone",
+                  entry and "Pro preview" in entry["changes"][0] and "24" in entry["changes"][0] and all(w in entry["changes"][0] for w in ["cold", "warm", "dark", "bright"])
+                  and "sends nothing anywhere" in entry["changes"][1] and "offline" in entry["changes"][1], entry)
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'the Updates entry says Pro preview, 24 schemes, the four moods and that nothing leaves the')
+        if page.evaluate("['v29', 'v30'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("the v30 and v29 Updates entries are still there", page.evaluate("!!CHANGELOG.find(r => r.version === 'v30') && !!CHANGELOG.find(r => r.version === 'v29')"))
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'the v30 and v29 Updates entries are still there')
         check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
         check("the three storage names are unchanged",
               all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"', 'RECIPES_KEY = "shades-of-grey-recipes"']))

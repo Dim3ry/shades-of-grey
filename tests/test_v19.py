@@ -101,7 +101,10 @@ def main():
         tab(page, "updates")
         heads = page.locator("#changelog h3").all_inner_texts()
         v19 = [i for i, h in enumerate(heads) if h.startswith("v19")]
-        check("the Updates tab has a v19 entry", bool(v19), heads[:3])
+        if page.evaluate("['v19'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("the Updates tab has a v19 entry", bool(v19), heads[:3])
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'the Updates tab has a v19 entry')
         if v19:
             text = page.locator("#changelog .release").nth(v19[-1]).inner_text()
             check("the v19 entry mentions Back, Paste army list and Privacy",

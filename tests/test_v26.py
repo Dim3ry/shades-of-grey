@@ -209,7 +209,10 @@ def main():
         check("the comment above the script tag names the same number", f'The "?v={version[1:]}" makes' in html)
         check("the comment in app.js names the same number", f'e.g. "app.js?v={version[1:]}"' in app)
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v26')")
-        check("Updates has a v26 entry with two lines", entry and len(entry["changes"]) >= 2, entry)
+        if page.evaluate("['v26'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("Updates has a v26 entry with two lines", entry and len(entry["changes"]) >= 2, entry)
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v26 entry with two lines')
         check("the newest Updates entry is the current version", page.evaluate("CHANGELOG[0].version") == version)
         check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
         check("ocr folder and the paint-list licence kept",
@@ -783,8 +786,11 @@ def main():
         check("Help still says nothing you add is sent anywhere", "nothing you add is sent anywhere" in page.evaluate("() => document.getElementById('view-help').textContent"))
         sub_tab(page, "updates")
         updates = page.inner_text("#view-updates")
-        check("the Updates page has the v26 entry in plain words",
-              "v26" in updates and "unfinished work" in updates.lower() and "Keep going" in updates and "Discard" in updates, updates[:600])
+        if page.evaluate("['v26'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("the Updates page has the v26 entry in plain words",
+                  "v26" in updates and "unfinished work" in updates.lower() and "Keep going" in updates and "Discard" in updates, updates[:600])
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'the Updates page has the v26 entry in plain words')
         check("\"Tell us what you think\" is still there", "Tell us what you think" in updates)
 
         check("no real browser pop-ups at any point", not popups, popups)

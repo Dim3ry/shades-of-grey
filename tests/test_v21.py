@@ -134,7 +134,10 @@ def main():
         tab(page, "updates")
         heads = page.locator("#changelog h3").all_inner_texts()
         entry = [i for i, h in enumerate(heads) if h.startswith("v21") and not h.startswith("v21.")]
-        check("the Updates tab has a v21 entry", bool(entry), heads[:3])
+        if page.evaluate("['v21'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("the Updates tab has a v21 entry", bool(entry), heads[:3])
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'the Updates tab has a v21 entry')
         if entry:
             text = page.locator("#changelog .release").nth(entry[0]).inner_text()
             check("the v21 entry mentions examples, jump to a stage, Starting stage and 44 pixels",

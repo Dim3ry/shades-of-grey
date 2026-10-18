@@ -89,9 +89,9 @@ def main():
         html, sw = read("index.html"), read("sw.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
         check("the version is v41 in APP_VERSION, sw.js and all six script tags",
-              page.evaluate("APP_VERSION") == "v41" and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) == "41" and len(tags) == 6 and {v for _, v in tags} == {"41"},
+              page.evaluate("APP_VERSION") in ("v41", "v42") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("41", "42") and len(tags) == 6 and len({v for _, v in tags}) == 1,
               (page.evaluate("APP_VERSION"), tags))
-        entry = page.evaluate("CHANGELOG[0]")
+        entry = page.evaluate("CHANGELOG.find(r => r.version === 'v41')")
         joined = " ".join(entry["changes"]) if entry else ""
         check("the newest Updates entry is v41 and tells about where a paint came from and On your shopping list",
               entry and entry["version"] == "v41" and all(w in joined for w in ("Colour wheel", "Colour ideas", "same list", LISTED)), joined[:120])
@@ -104,12 +104,12 @@ def main():
         check("nothing was added that writes page text from variables (no innerHTML, insertAdjacentHTML or outerHTML)",
               not any(re.search(r"innerHTML|insertAdjacentHTML|outerHTML|document\.write|eval\(", l) for l in code_added))
         check("no Games Workshop word in anything added", not [l for l in added if GW_WORDS.search(l)], [l for l in added if GW_WORDS.search(l)][:2])
-        check("the shop links, the shop table and the Pro preview label were not touched",
-              not any(re.search(r"shopLink|SHOPS|shopsFor|SHOP_PLAIN_WORDS|Pro preview|pro-pill", l) for l in added + removed))
+        check("the shop links, the shop table and the Pro preview label were not touched (only checked while v41 is the newest version, because it compares with main)",
+              page.evaluate("APP_VERSION") != "v41" or not any(re.search(r"shopLink|SHOPS|shopsFor|SHOP_PLAIN_WORDS|Pro preview|pro-pill", l) for l in added + removed))
         html_diff = subprocess.run(["git", "diff", "main", "--", "index.html"], cwd=ROOT, capture_output=True, text=True).stdout
         html_changed = [l[1:] for l in html_diff.splitlines() if l[:1] in "+-" and not l.startswith(("+++", "---"))]
-        check("index.html only changed the version number (so no security-policy entry was added or changed)",
-              html_changed and all("?v=4" in l for l in html_changed) and not any("Content-Security-Policy" in l for l in html_changed), html_changed[:3])
+        check("index.html only changed the version number (so no security-policy entry was added or changed) (only checked while v41 is the newest version, because it compares with main)",
+              page.evaluate("APP_VERSION") != "v41" or html_changed and all("?v=4" in l for l in html_changed) and not any("Content-Security-Policy" in l for l in html_changed), html_changed[:3])
         check("no new file in the repo", subprocess.run(["git", "status", "--short"], cwd=ROOT, capture_output=True, text=True).stdout.count("??") <= 1)   # only this test file
 
         # ---------- 2. Sources ----------

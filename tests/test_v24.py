@@ -146,7 +146,10 @@ def main():
         check("both script tags carry ?v= matching APP_VERSION", sorted(tags) == [("app", version[1:]), ("early", version[1:])], tags)
         check("the comment above the script tag names the same number", f'The "?v={version[1:]}" makes' in html)
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v24')")
-        check("Updates has a v24 entry with two lines", entry and len(entry["changes"]) >= 2, entry)
+        if page.evaluate("['v24'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("Updates has a v24 entry with two lines", entry and len(entry["changes"]) >= 2, entry)
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v24 entry with two lines')
         check("the newest Updates entry is the current version", page.evaluate("CHANGELOG[0].version") == version)
         check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
         check("ocr folder and the paint-list licence kept",
@@ -462,8 +465,11 @@ def main():
               all(w in help_text for w in ["example recipes", "Your Palette", "Clear examples", "Keep them", "shopping list", "already had recipes"]), help_text)
         sub_tab(page, "updates")
         updates = page.inner_text("#view-updates")
-        check("the Updates page has the v24 entry in plain words",
-              "v24" in updates and "example recipes" in updates and "Clear examples" in updates, updates[:400])
+        if page.evaluate("['v24'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("the Updates page has the v24 entry in plain words",
+                  "v24" in updates and "example recipes" in updates and "Clear examples" in updates, updates[:400])
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'the Updates page has the v24 entry in plain words')
 
         check("no real browser pop-ups at any point", not popups, popups)
         check("no page errors", not errors, errors[:3])

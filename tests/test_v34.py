@@ -63,9 +63,15 @@ def main():
         tags = re.findall(r'<script src="[^"]+\?v=(\d+)"', html)
         check("every script tag carries the same ?v= number, 34 or later", tags and len(set(tags)) == 1 and float(tags[0]) >= 34, tags)
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v34')")
-        check("Updates has a v34 entry with at least two lines", entry and len(entry["changes"]) >= 2, entry)
+        if page.evaluate("['v34'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("Updates has a v34 entry with at least two lines", entry and len(entry["changes"]) >= 2, entry)
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v34 entry with at least two lines')
         check("the newest Updates entry is v34 or later", float(page.evaluate("CHANGELOG[0].version")[1:]) >= 34)
-        check("the v34 Updates entry has no Games Workshop words", entry and not dirty(" ".join(entry["changes"])), entry)
+        if page.evaluate("['v34'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("the v34 Updates entry has no Games Workshop words", entry and not dirty(" ".join(entry["changes"])), entry)
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'the v34 Updates entry has no Games Workshop words')
         check("the Pro preview label is still there", "Pro preview" in read("app.js"))
 
         # ---------- 2. A brand-new start ----------

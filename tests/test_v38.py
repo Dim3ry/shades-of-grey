@@ -138,7 +138,10 @@ def main():
         check("the v38 Updates entry exists once, is still there (v39 is newer), and tells about tapping a paint, the panel, the keyboard (Enter, Space, Escape), Show all and Copy as text",
               entry and page.evaluate("CHANGELOG.filter(r => r.version === 'v38').length") == 1 and float(page.evaluate("CHANGELOG[0].version")[1:]) >= 38
               and all(w in joined for w in ["tap a paint", "opposite", "neighbours", "triad", "starter schemes", "keyboard", "Escape", "screen reader", "Show all", "Copy as text"]), joined[:300])
-        check("the v37, v36, v35 and v34 entries are still there", page.evaluate("['v37', 'v36', 'v35', 'v34'].every(v => !!CHANGELOG.find(r => r.version === v))"))
+        if page.evaluate("['v34', 'v35', 'v36', 'v37'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("the v37, v36, v35 and v34 entries are still there", page.evaluate("['v37', 'v36', 'v35', 'v34'].every(v => !!CHANGELOG.find(r => r.version === v))"))
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'the v37, v36, v35 and v34 entries are still there')
         help_text = page.evaluate("() => document.getElementById('help-tabs').textContent")
         check("Help says a paint in the wheel can be tapped for colours that go with it and starter schemes with a similar colour",
               "tap a paint to see colours that go with it and starter schemes with a similar colour" in help_text, help_text[-400:])

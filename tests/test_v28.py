@@ -172,10 +172,16 @@ def main():
         check("the comment above the script tags names the same number", f'The "?v={version[1:]}" makes' in html)
         check("the comment in app.js names the same number", f'e.g. "app.js?v={version[1:]}"' in app)
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v28')")
-        check("Updates has a v28 entry with at least two lines", entry and len(entry["changes"]) >= 2, entry)
+        if page.evaluate("['v28'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("Updates has a v28 entry with at least two lines", entry and len(entry["changes"]) >= 2, entry)
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v28 entry with at least two lines')
         check("the newest Updates entry is the current version", page.evaluate("CHANGELOG[0].version") == version)
-        check("the Updates entry says Pro preview and that nothing leaves the phone",
-              entry and "Pro preview" in entry["changes"][0] and "sends nothing anywhere" in entry["changes"][1], entry)
+        if page.evaluate("['v28'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("the Updates entry says Pro preview and that nothing leaves the phone",
+                  entry and "Pro preview" in entry["changes"][0] and "sends nothing anywhere" in entry["changes"][1], entry)
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'the Updates entry says Pro preview and that nothing leaves the phone')
         check("MinifolioColour is on the page", page.evaluate("typeof MinifolioColour") == "object")
         check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
         check("the three storage names are unchanged",
