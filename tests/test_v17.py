@@ -50,8 +50,8 @@ V17_BOOK = {
 EXPECTED_SHOPPING = """Shopping list
 
 Citadel
-- Abaddon Black: missing, used in 1 recipe
-- Leadbelcher: missing, used in 1 recipe
+- Abaddon Black: missing, used in 1 recipe (from Recipe: Black trim)
+- Leadbelcher: missing, used in 1 recipe (from Recipe: Chainmail)
 - Mephiston Red: empty
 - Nuln Oil: running low (spare in stock)
 
