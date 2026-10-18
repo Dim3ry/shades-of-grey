@@ -155,7 +155,7 @@ def main():
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
         check("the version is v39 everywhere: APP_VERSION, sw.js, the six script tags, and the two comments that name it",
               page.evaluate("APP_VERSION") in ("v39", "v40", "v41", "v42") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("39", "40", "41", "42") and len(tags) == 6 and len({v for _, v in tags}) == 1
-              and re.search(r'The "\?v=(39|40|41)"', html) and re.search(r'"app\.js\?v=(39|40|41)"', app), (page.evaluate("APP_VERSION"), tags))
+              and re.search(r'The "\?v=(39|40|41|42)"', html) and re.search(r'"app\.js\?v=(39|40|41|42)"', app), (page.evaluate("APP_VERSION"), tags))
         files = re.search(r"const APP_FILES = \[(.*?)\];", sw, re.S).group(1)
         cached = re.findall(r'"\./([^"?]*)', files)
         root_js = sorted(f for f in os.listdir(ROOT) if f.endswith(".js") and f != "sw.js")
