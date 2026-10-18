@@ -556,18 +556,21 @@ def main():
         load(page, paints=GPAINTS)
         open_tab(page)
         heads_all = {}
-        for part in PART_ORDER:
+        def part_groups(part):   # v43: the six colours open one group at a time, so open each in turn; the grey centre shows all its groups at once
+            if part in wh.HUES:
+                return [g for res in wh.open_each_group(page, part, lambda pg: pg.evaluate(GROUPS_JS)) for g in res]
             tap(page, part)
-            heads_all[part] = [g["heading"] for g in page.evaluate(GROUPS_JS)]
+            return page.evaluate(GROUPS_JS)
+        for part in PART_ORDER:
+            heads_all[part] = [g["heading"] for g in part_groups(part)]
         want_heads = {part: [f"{g[2]} (1)" for g in GROUPS if g[0] == part] for part in PART_ORDER}
         check("every one of the ten wheel parts shows its two or three named groups as headings, each with its count, in this order (30 groups in all)", heads_all == want_heads, heads_all)
         check("every part has two or three groups", all(2 <= len([g for g in GROUPS if g[0] == part]) <= 3 for part in PART_ORDER) and len(GROUPS) == 30)
-        wh = page.evaluate("() => WHEEL.map(w => [w.key, w.subs.map(s => s.label)])")
-        check("the headings come from one list in the code (WHEEL) and match", [[k, labels] for k, labels in wh] == [[part, [g[2] for g in GROUPS if g[0] == part]] for part in PART_ORDER], wh)
+        wheel_def = page.evaluate("() => WHEEL.map(w => [w.key, w.subs.map(s => s.label)])")
+        check("the headings come from one list in the code (WHEEL) and match", [[k, labels] for k, labels in wheel_def] == [[part, [g[2] for g in GROUPS if g[0] == part]] for part in PART_ORDER], wheel_def)
         names_by = {}
         for part in PART_ORDER:
-            tap(page, part)
-            for g in page.evaluate(GROUPS_JS):
+            for g in part_groups(part):
                 names_by[(part, g["heading"].split(" (")[0])] = [r["name"] for r in g["rows"]]
         bad = [(part, key, label) for part, key, label, colour in GROUPS if names_by.get((part, label)) != [f"Probe {label}" if part != "metallic" else f"Probe {key} metal"]]
         check("each probe paint is in exactly its own group, one paint in each of the 30 groups", not bad, bad[:4])

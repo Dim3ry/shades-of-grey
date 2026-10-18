@@ -26,6 +26,8 @@ def go_back(page):
     page.wait_for_timeout(120)
 
 def zoom_in(page, key):
+    if wheel_state(page)["zoom"]:
+        go_back(page)   # another colour (or this one) is drilled into: the colour slices are not on show, so go back up first
     page.evaluate("() => document.getElementById('cmp-wheel').scrollIntoView({ block: 'center' })")
     page.click(f'[data-wheel="{key}"]')
     page.wait_for_timeout(120)

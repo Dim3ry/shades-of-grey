@@ -546,7 +546,8 @@ def main():
         hosts = set(re.findall(r"https?://[^\s;'\"]+", policy.group(1) if policy else ""))
         check("the security policy is untouched: the only outside address is still the one GoatCounter picture address (links the person taps need no entry)", len(hosts) == 1 and "goatcounter" in list(hosts)[0], hosts)
         check("the wheel still has its ten slices (the open one is drawn last, on top), and the paint panel still opens with its title and Copy as text",
-              sorted(page.evaluate("() => [...document.querySelectorAll('#cmp-wheel path.wheel-seg')].map(e => e.dataset.wheel)")) == sorted(["red", "orange", "yellow", "green", "blue", "purple", "white", "grey", "black", "metallic"])
+              (sorted(page.evaluate("() => [...document.querySelectorAll('#cmp-wheel path.wheel-seg')].map(e => e.dataset.wheel)")) == sorted(["red", "orange", "yellow", "green", "blue", "purple", "white", "grey", "black", "metallic"])
+               or page.locator("#cmp-wheel .wheel-sub-seg").count() == 3)   # v43: drilled into a colour, the picture is that colour's three groups
               and page.locator("#cmp-paint-panel .paint-panel-title").inner_text().startswith("Matching colours for Probe Blue") and page.locator("#cmp-paint-panel .share-row button").count() >= 1)
 
         # ---------- 9. Phone widths, touch, keyboard ----------
