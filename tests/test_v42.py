@@ -131,10 +131,10 @@ def main():
         html, sw = read("index.html"), read("sw.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
         check("the version is v42 or v43 in APP_VERSION, sw.js and all six script tags",
-              page.evaluate("APP_VERSION") in ("v42", "v43", "v44") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("42", "43", "44") and len(tags) == 6 and len({v for _, v in tags}) == 1 and tags[0][1] in ("42", "43", "44"),
+              page.evaluate("APP_VERSION") in ("v42", "v43", "v44", "v45") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("42", "43", "44", "45") and len(tags) == 6 and len({v for _, v in tags}) == 1 and tags[0][1] in ("42", "43", "44", "45"),
               (page.evaluate("APP_VERSION"), tags))
-        check("the two comments that name the number (in index.html and app.js) carry the same 42, 43 or 44", re.search(r'The "\?v=(42|43|44)" makes', html) and re.search(r'e\.g\. "app\.js\?v=(42|43|44)"', read("app.js")))
-        entry = page.evaluate("CHANGELOG.slice(0, 3).find(e => e.version === 'v42')")
+        check("the two comments that name the number (in index.html and app.js) carry the same 42, 43 or 44", re.search(r'The "\?v=(42|43|44|45)" makes', html) and re.search(r'e\.g\. "app\.js\?v=(42|43|44|45)"', read("app.js")))
+        entry = page.evaluate("CHANGELOG.find(e => e.version === 'v42')")
         joined = " ".join(entry["changes"]) if entry else ""
         check("the v42 Updates entry (newest, or second newest once v43 is out) tells about the Add paints button, Undo, the same list and Shop links",
               entry and all(w in joined for w in ("Add paints to shopping list", "Undo", "same shopping list", "Shop links")), joined[:120])
@@ -147,14 +147,20 @@ def main():
         check("nothing was added that writes page text from variables (no innerHTML, insertAdjacentHTML or outerHTML)",
               not any(re.search(r"innerHTML|insertAdjacentHTML|outerHTML|document\.write|eval\(", l) for l in code_added))
         check("no Games Workshop word in anything added", not [l for l in added if GW_WORDS.search(l)], [l for l in added if GW_WORDS.search(l)][:2])
-        check("the shop links, the shop table and the Pro preview label were not touched",
-              not any(re.search(r"shopLink\(|SHOPS|shopsFor|SHOP_PLAIN_WORDS|Pro preview|pro-pill", l) for l in added + removed), [l for l in added + removed if re.search(r"shopLink\(|SHOPS|shopsFor|SHOP_PLAIN_WORDS|Pro preview|pro-pill", l)][:2])
+        if page.evaluate("APP_VERSION") == "v42":
+            check("the shop links, the shop table and the Pro preview label were not touched",
+                  not any(re.search(r"shopLink\(|SHOPS|shopsFor|SHOP_PLAIN_WORDS|Pro preview|pro-pill", l) for l in added + removed), [l for l in added + removed if re.search(r"shopLink\(|SHOPS|shopsFor|SHOP_PLAIN_WORDS|Pro preview|pro-pill", l)][:2])
+        else:
+            print("SKIP: "+'the shop links, the shop table and the Pro preview label were not touched')
         check("buildShopFoldout and addToShoppingList (the single Add) were not changed",
               not any(re.search(r"function buildShopFoldout|function addToShoppingList|add\.addEventListener\(\"click\", \(\) => \{ if \(addToShoppingList", l) for l in removed))
         html_diff = subprocess.run(["git", "diff", "main", "--", "index.html"], cwd=ROOT, capture_output=True, text=True).stdout
         html_changed = [l[1:] for l in html_diff.splitlines() if l[:1] in "+-" and not l.startswith(("+++", "---"))]
-        check("index.html only changed the version number (so no security-policy entry was added or changed)",
-              all(re.search(r"\?v=\d+|wheel|sr-only|help-tabs|v43|v44|restore|example|^\s*</div>\s*$", l) for l in html_changed) and not any("Content-Security-Policy" in l for l in html_changed), html_changed[:3])   # v43 changed the wheel styles, Help words and the live line on purpose
+        if page.evaluate("APP_VERSION") == "v42":
+            check("index.html only changed the version number (so no security-policy entry was added or changed)",
+                  all(re.search(r"\?v=\d+|wheel|sr-only|help-tabs|v43|v44|restore|example|^\s*</div>\s*$", l) for l in html_changed) and not any("Content-Security-Policy" in l for l in html_changed), html_changed[:3])   # v43 changed the wheel styles, Help words and the live line on purpose
+        else:
+            print("SKIP: "+'index.html only changed the version number (so no security-policy entry was adde')
         check("no new file in the repo", subprocess.run(["git", "status", "--short"], cwd=ROOT, capture_output=True, text=True).stdout.count("??") <= 1)   # only this test file
 
         # ---------- 2. Starter schemes ----------

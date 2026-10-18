@@ -12445,8 +12445,11 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=44". v21.4 test checks.)
-    const APP_VERSION = "v44";
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=45". v21.4 test checks.)
+    // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
+    // deleted from the bottom of the list: the full history is kept outside this public repo.
+    const UPDATES_SHOWN = 5;
+    const APP_VERSION = "v45";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -12871,6 +12874,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v45", date: "18 Oct 2026", changes: [
+        "The Updates page now shows only the latest five versions, so it is quicker to read.",
+        "Help \u2192 Privacy now names the site's current host, and the Updates part of Help matches the shorter list.",
+      ]},
       { version: "v44", date: "18 Oct 2026", changes: [
         "A brand-new start now comes with five example recipes (armour, metal, skin, eyes and a base) and two example schemes that group them, all with plain made-up colour names and linked to the example units. The card on the Recipes tab still has Clear examples (with Undo for 8 seconds) and Keep them, and now covers the example schemes too. Anything you edit, use in your own recipe or give a status is kept as yours, and example paints never go on the shopping list.",
         "New in Settings, under Your data: Restore example recipes. It adds the examples back for anyone, including people who started before, without changing your own recipes, schemes or paints and without adding any twice. The card on the Recipes tab then shows again.",
@@ -12887,304 +12894,6 @@
         "The Compendium now remembers where a paint on your shopping list came from. Adding a paint from the colour wheel's matching colours says \"Compendium: Colour wheel\" and the colour part you were in (for example Blue). Adding from the Compendium's Colour ideas says \"Compendium: Colour ideas\". It is the same list the Recipes tab uses, and a paint is still on it once.",
         "A paint that is already on your shopping list now says \"On your shopping list\" on its row in the Compendium (in the colour wheel's lists and matching colours, and in Colour ideas). It updates when you add a paint or tap Undo.",
       ]},
-      { version: "v40", date: "18 Oct 2026", changes: [
-        "The shopping list has its own tab. On the Recipes tab there is now a Shopping switch next to Recipes, Schemes and Your Palette. It holds everything the list did before (running low, empty, wishlist, paints your recipes use that you don't have, the Buy these bar, Copy as text). It no longer sits under Your Palette.",
-        "One shared list, one entry per paint: a paint added from two places still shows once. Each paint now says where it came from, such as a recipe name.",
-        "A small basket with a count sits on the tab bar on every tab (it hides when the list is empty). Tap it to jump straight to the Shopping tab.",
-      ]},
-      { version: "v39", date: "17 Oct 2026", changes: [
-        "Shop links on suggested paints (Pro preview). Under a suggested paint you don't own, in the colour wheel's paint panel and in Colour ideas (in a recipe and in the Compendium), there is now a small Shop links fold-out. It stays closed until you tap it. Inside: Add to shopping list, and a plain search link for Firestorm Games, Wayland Games and Element Games (and The Army Painter, for its own paints). Paints you own show nothing.",
-        "These are plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop, and only when you tap a link. They use the same shop list as the Buy these bar, and the colour suggestion always comes first.",
-        "New in Settings: Shop links. Untick Show shop links to hide every shop link and shop button, including the Buy these bar. Your shopping list stays. This choice isn't saved in backups.",
-        "Restoring a backup now only accepts ordinary photo files (JPEG, PNG or WebP).",
-      ]},
-      { version: "v38", date: "17 Oct 2026", changes: [
-        "Paint links in the colour wheel (Pro preview). In the Compendium, tap a paint in any of the wheel's lists and a short panel opens under it: the colours that go with it (the opposite, the two neighbours and the two in its triad, with the paints you own first), and the starter schemes that use a similar colour.",
-        "It works with a keyboard (Enter or Space opens it, Escape closes it), with a screen reader, and on a phone. It also works on paints you reveal with Show all. Tap the paint again to close the panel. Only one panel is open at a time, and Copy as text keeps what it shows.",
-        "Nothing leaves your phone, and there are no web links in the panel. A grey, black or white paint has no true opposite, so it gets a few accents that stand out instead. Colours on a screen are only a guide, so check them on your model.",
-      ]},
-      { version: "v37", date: "16 Oct 2026", changes: [
-        "Compendium (Pro preview), tidier and shorter. The colour wheel stays open at the top. Colour ideas, Your schemes, Starter schemes, Detail recipes and Basing tips are now headings you tap to open and close. They all start closed, and the app remembers which you opened while it is open.",
-        "Starter schemes has a Themes | Combinations switch. Themes shows the cold, warm, dark and bright groups. Combinations groups the same schemes by their main colour, so you can look for blue and gold, red and grey, and so on. Every scheme is in both views.",
-        "Long lists now stay short until you ask: pick a group (or All) in Starter schemes, Detail recipes or Basing tips to see its list. Tap the group again to put it away. Recipes in the editor work as before.",
-        "Search boxes in the Compendium. Start from and Faction are now boxes you type in: the list under the box gets shorter as you type, and you can still scroll it and pick. Starter schemes, Detail recipes and Basing tips each have a search box above their buttons, and matches show even when no group is picked. When nothing fits it says No matches.",
-        "Each colour on the wheel is now split into two or three groups with their own headings, for example Deep purple, Violet, and Lavender and lilac. Each group runs from dark to light with the paints you own first. Whites, greys and blacks are split by tint: neutral, warm or cool. A group shows its first few paints, and a Show all button gives you the rest.",
-      ]},
-      { version: "v36", date: "16 Oct 2026", changes: [
-        "The Compendium (Pro preview) now starts with a colour wheel. The outer ring has red, orange, yellow, green, blue and purple. The grey circle in the middle has four slices: whites, greys, blacks and metallics. Tap one and its paints open below the wheel, with a short description first.",
-        "The paints you own come first, marked You own this, then the rest from dark to light. Browns sit under orange, bone sits under yellow, and metallics are split into gold, silver and bronze. Paints you do not have yet are behind a Show other paints button, so the list stays short.",
-        "A paint's place on the wheel comes from its colour (metallics from a metal word in the name, such as gold or silver), so a few may sit in an unexpected spot. It works offline and sends nothing anywhere. Copy as text keeps the list you are looking at.",
-      ]},
-      { version: "v35", date: "16 Oct 2026", changes: [
-        "New Compendium tab (Pro preview) in the bottom bar, between Recipes and Settings. It shows the same things as the Colour ideas card in a recipe, but without needing a recipe: pick a colour and what you are painting to get 3 paints that go with it, then Colours you've used on this faction before, Starter schemes, Detail recipes and Basing tips.",
-        "There is no recipe open there, so the rows have no add buttons. Each part has Copy as text instead, and Save into a new recipe\u2026, which opens the recipe editor with a new recipe that already has those steps. Nothing is saved until you press Save recipe.",
-        "It works the same as the card in a recipe: your own paints first, colours are only a guide, it works offline and sends nothing anywhere. The picks you make in the Compendium are separate from the ones in a recipe. There is no colour wheel yet.",
-      ]},
-      { version: "v34", date: "16 Oct 2026", changes: [
-        "Tidy-up: the examples a brand-new start comes with (three units, two recipes and their paints) and the hints in the boxes and in Help now use plain, made-up names instead of well-known game, army and paint names.",
-        "Nothing you have saved changes. Examples you already have stay as they are, and you can still keep or clear them.",
-      ]},
-      { version: "v33", date: "15 Oct 2026", changes: [
-        "Pro preview, Colour ideas: a new Basing tips part, below Detail recipes. It has 12 plain how-tos for the base of a model: sand, gravel, cracked earth, ash and soot, mud, snow, ice, grass, moss, rock, rubble and lava. Use the group buttons (All, Dry ground, Wet and cold, Plants, Stone and fire) to keep the list short on a phone.",
-        "Pick a tip to see the things you need, the steps to build it, and then some optional paint steps, each with the nearest paint to the colour it needs, yours first, with the same tags as the other ideas: You own this, Closest you own, Not in your palette. Tap one paint to add just that step, or tap Add all paint steps to add them all to the recipe you are writing. The materials and building steps are only shown, they are never added. Nothing is saved until you press Save recipe. It all runs on your phone, works offline and sends nothing anywhere.",
-      ]},
-      { version: "v32", date: "15 Oct 2026", changes: [
-        "Pro preview, Colour ideas: a new Detail recipes part, below Starter schemes. It has 18 plain how-to recipes for small details: teeth, bone, chitin, skin, blood, rusty, oiled and gold metal, bright steel, verdigris, chips and weathering, leather, cloth, wood, mud, scorch marks, glowing eyes, and gems and lenses. Use the group buttons (All, Body, Metal, Materials, Light) to keep the list short on a phone.",
-        "Pick a recipe to see its steps. Each step says how to paint it (technique, coats, how thin) and the nearest paint to the colour it needs, yours first, with the same tags as the schemes: You own this, Closest you own, Not in your palette. Tap Add all steps to add every step to the recipe you are writing, or tap one paint to add just that step. Nothing is saved until you press Save recipe. It all runs on your phone, works offline and sends nothing anywhere.",
-      ]},
-      { version: "v31", date: "15 Oct 2026", changes: [
-        "Pro preview, Colour ideas: there are now 24 starter schemes instead of 6, in four moods: cold, warm, dark and bright. New mood buttons (All, Cold, Warm, Dark, Bright) sit above the scheme buttons, so you can show just one mood and keep the list short on a phone. All is the default.",
-        "Picking a scheme, the short summary and reason, the four colours, the nearest paint (yours first), the You own this tags and tapping a paint to add a step all work exactly as before. Every scheme is plain colours in our own words, with no official names or artwork. Like the other ideas, it sends nothing anywhere and works offline.",
-      ]},
-      { version: "v30", date: "15 Oct 2026", changes: [
-        "Pro preview, Colour ideas: two new parts. Colours you've used on this faction before lists the paints from your own saved recipes on units in the same faction as the recipe you are writing, most used first, and says plainly when there is no faction or no history yet. It only uses what you have already saved.",
-        "Starter schemes: a few plain, hand-written colour schemes (for example cold blue armour, gold trim, red eyes). Pick one to see matching paints, yours first, and tap a paint to add it as a step. Like the other ideas, each says You own this or Closest you own. It all runs on your phone, works offline and sends nothing anywhere.",
-      ]},
-      { version: "v29", date: "15 Oct 2026", changes: [
-        "Pro preview, Colour ideas: each thing you can paint now comes with a short tip written by hand (for example: keep eyes the brightest, most saturated spot on the model), and the reasons under the ideas use that advice where it says it better.",
-        "New check at the bottom of Colour ideas: Does this scheme hang together? It looks at the colours in your recipe and says if there are too many strong colours or no light and dark, and suggests one colour to be the star. It is only a guide. It all runs on your phone, works offline and sends nothing anywhere.",
-      ]},
-      { version: "v28", date: "15 Oct 2026", changes: [
-        "New Pro preview: Colour ideas, inside a recipe you are writing or editing. Pick a colour from the recipe (or Whole model, the main colour of your Whole model recipe, so ideas go with the whole model and not just this recipe), say what you are painting (eyes or glow, trim, gems, weapon, cloth or base) and you get 3 paint ideas, each with a short reason such as \u201corange is the opposite of blue, so it stands out\u201d.",
-        "Each idea says You own this or Closest you own, so paints you already have come first. Tap one to add it to the recipe as a new step. It is free while it is a preview. The colour maths runs on your phone, works offline and sends nothing anywhere.",
-      ]},
-      { version: "v27", date: "12 Oct 2026", changes: [
-        "Minifolio now counts roughly how many people open it, so we can tell whether it is being used. Each time the app opens it asks GoatCounter, a small privacy-friendly service, for one tiny picture. There are no cookies and no account, nothing is stored on your device, and nothing from your collection is sent.",
-        "You can switch it off under Settings \u2192 Counting visits. Help \u2192 Privacy now says exactly what is counted and who receives it. The app's security rules were widened for that one picture address only.",
-      ]},
-      { version: "v26", date: "12 Oct 2026", changes: [
-        "Your unfinished work now survives a reload. If you are part-way through adding a unit, writing a recipe or pasting notes into Paste recipes and the page reloads (or your phone closes the app), a card says \u201cWe kept your unfinished\u2026\u201d with Keep going and Discard. Nothing opens by itself.",
-        "What you were typing is kept on this device only (nothing is sent anywhere, and it is not in your backups). It goes when you finish it, or when you discard it. A kept draft is never replaced by accident, and one you discarded never comes back.",
-      ]},
-      { version: "v25", date: "12 Oct 2026", changes: [
-        "About a week after you start using the app, one small \u201cEnjoying Minifolio?\u201d card on the Dashboard asks if you'd like to send feedback. Give feedback opens the same form, Not now asks again in 30 days, and Don't ask again stops it for good. It never shows two days running.",
-        "The app only remembers the day you started and your choice, on this device. Nothing is sent anywhere. If you already use the app, the week starts when you update.",
-      ]},
-      { version: "v24", date: "11 Oct 2026", changes: [
-        "A new start now comes with two example recipes (Ultramarines armour and Ork skin), and the paints they use appear in Your Palette. They are linked to the example units Captain and Boyz, so you can see how recipes and units connect.",
-        "A \u201cThese are examples\u201d card on the Recipes tab has Clear examples (with Undo) and Keep them. Clearing removes only the examples: a paint you've used in your own recipe or given a status is kept, and example paints never go on your shopping list. If you already had recipes, nothing is added.",
-      ]},
-      { version: "v23", date: "11 Oct 2026", changes: [
-        "A unit's details now start with what you use most: its stage, then photos, recipes and paint notes.",
-        "The boxes for changing the unit (name, game, faction, nickname, number of models, repaint and tracking each model) are folded away under one \u201cEdit details\u201d heading. Tap it to open them; it stays open while you make changes.",
-      ]},
-      { version: "v22", date: "11 Oct 2026", changes: [
-        "Backups now come first on the Settings page, in their own Backups card, so they're easy to find.",
-        "New Send backup to… button. It opens your phone's share menu, so you can put the backup straight into OneDrive, an email or a message. It sends the same small backup as Save backup (no photos), and the app itself still sends nothing anywhere. If your phone can't send files from here, or sending fails, the backup is saved to your device instead and the app tells you.",
-      ]},
-      { version: "v21.9", date: "11 Oct 2026", changes: [
-        "Fewer tabs: Help and Updates now live inside the Settings tab, so there are four tabs along the bottom (Dashboard, Units, Recipes, Settings). At the top of Settings, a Settings / Help / Updates switch moves between the three.",
-        "The app still remembers the page you were on, and the phone's Back button works as before.",
-        "Friendlier wording: \"Tell us what you think\" on the Updates page.",
-      ]},
-      { version: "v21.8", date: "11 Oct 2026", changes: [
-        "Stage names are easier to read in dark mode. A few stage colours (some in Ice, Frost, Greyscale and Forge) were a bit too dark to read as text on the dark cards, so they're now shown a little brighter. The colours you picked aren't changed, only how they're shown. Light mode is checked against the page colour as well as the cards.",
-        "On a phone, the first photo in a unit's photo strip is no longer cut off at the edge. Two photos now fill the strip, and the strip still starts at the newest one.",
-        "While you're typing in a text box, the tab bar steps out of the way so it can't sit on top of your keyboard and cover what you're typing. It comes back as soon as you tap somewhere else.",
-        "When you track each model separately, each model now says when it reached its stage (\"Today\", \"Yesterday\" or \"Since 7 Oct\"), under its name. The dates were being saved all along; now you can see them. (Undo on a model's ▲ button now puts its date back exactly too.)",
-      ]},
-      { version: "v21.7", date: "11 Oct 2026", changes: [
-        "Questions like \"Delete this unit?\" and \"Discard the changes?\" no longer use your browser's plain pop-up. The app asks in its own small box, in the same dark or light colours as the rest of the app, with big Yes and No buttons. The questions say the same things and do the same things as before. No, Cancel, the Escape key and the phone's Back button all mean no.",
-        "Asking for a name (a new part or technique, renaming a faction, naming a paint the scanner wasn't sure of) uses the same box, with a text box to type in. That finishes the move away from the browser's own pop-ups.",
-      ]},
-      { version: "v21.6", date: "11 Oct 2026", changes: [
-        "Notices no longer pop up as a plain browser box that you have to dismiss. \"That file doesn't look like a Minifolio backup\", \"Every stage needs a name\" and the rest now appear as the app's own message at the bottom of the screen. The words are the same, longer ones stay up longer, and a tap hides one.",
-        "Questions that need a yes or no (like \"Are you sure?\") still use the browser's box for now. They move into the app in the next update.",
-      ]},
-      { version: "v21.5", date: "11 Oct 2026", changes: [
-        "Deleted a unit by mistake? Press Undo on the message that appears: it comes back exactly as it was, photos included. (The app still asks \"Are you sure?\" first.)",
-        "A unit you've just added is scrolled into view and outlined for a moment, instead of landing somewhere off-screen.",
-      ]},
-      { version: "v21.4", date: "11 Oct 2026", changes: [
-        "Safety: the app's code now lives in its own files, so your browser can refuse any code that isn't one of them, including code someone tried to slip into the page itself. Nothing you see or do has changed.",
-      ]},
-      { version: "v21.3", date: "11 Oct 2026", changes: [
-        "Scan a paint pot now knows more brands: Vallejo Game Color, Model Color and Xpress Color, The Army Painter's Warpaints Fanatic, Pro Acryl and AK 3rd Gen, about 950 more paints, not just Citadel.",
-        "On a Vallejo pot the scanner also reads the code number (like 72.021), so it finds the exact paint even when the name is hard to read. Typing a Vallejo code in your notes works too.",
-        "Pasting recipes from your notes recognises these brands too. Where two brands share a name, like \"Black\", the app asks which one. Citadel names are matched exactly as before.",
-      ]},
-      { version: "v21.2", date: "11 Oct 2026", changes: [
-        "Safety: the app now tells your browser exactly what it's allowed to load and run (a Content Security Policy). Code from other websites can't run inside Minifolio, even if something tried to sneak it in.",
-        "The Give feedback link no longer tells the form's website which page you came from.",
-      ]},
-      { version: "v21.1", date: "11 Oct 2026", changes: [
-        "New: move several units to a stage at once. On the Units tab press Select, tick the units (or Select all shown), then pick a stage from Move to stage at the bottom. One Undo puts them all back.",
-        "Pasted notes that start with a faction and a part, like \"Ultramarines armour\", are now read as that faction's armour recipe, not as the paint Ultramarines Blue.",
-        "Tidier Your Palette: the status labels (Owned, Low, Wishlist…) are now only as wide as their words.",
-      ]},
-      { version: "v21", date: "11 Oct 2026", changes: [
-        "New: the three example units the app starts with now say so, on the Dashboard and the Units tab. Clear examples removes only those (with Undo); Keep them turns them into your own units.",
-        "New: jump straight to a stage. Open a unit and pick its stage from the Stage menu, instead of tapping ▲ up to 7 times. Units tracked model by model have a menu for each model too, and one to move them all.",
-        "New: Starting stage when adding a unit, so a unit that's already primed or painted starts at the right stage.",
-        "Easier to tap: the per-model ◀ ▲ buttons, the stage editor's ↑ ↓ ✕ buttons, + Mix in another paint and the Help topic titles are now at least 44 pixels, the size a fingertip needs.",
-      ]},
-      { version: "v20.1", date: "10 Oct 2026", changes: [
-        "New warm stage colours: Forge, from ember red through amber and gold to warm cream. Find it in Settings → Colours.",
-        "New: Custom stage colours. Pick Custom in Settings → Colours and choose a colour for each stage. It starts from your current set, warns you if a colour is too faint to read, and has a Reset button.",
-        "Custom colours stay with their stages when you rename, reorder, add or remove stages, and they're saved in backups.",
-      ]},
-      { version: "v20", date: "10 Oct 2026", changes: [
-        "New: a light look. Settings → Appearance has Dark (still the usual look), Light, and Match my phone, which follows your phone's own dark mode setting.",
-        "Light mode keeps the cool blues and greys, and every screen has been checked for easy reading. Pale stage colours are shown a little deeper in light mode so stage names stay readable on white. Photos and the camera stay dark.",
-        "Backups now include your Appearance and your stage colour set, so restoring brings them back too.",
-      ]},
-      { version: "v19.1", date: "10 Oct 2026", changes: [
-        "The shopping list has a Buy these bar at the top: a button for each shop that sells your paints (Firestorm Games, Wayland Games, Element Games, and The Army Painter for its own paints). Tap a shop for a search link for each paint. Plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop.",
-        "Import CSV checks the file first: it needs a name column (the other columns can be in any order), and pictures, Excel files and files over 2 MB are refused with a message instead of turning into odd units.",
-        "Restore backup checks the file first too: pictures, files over 300 MB and damaged backups are refused, and nothing changes.",
-      ]},
-      { version: "v19", date: "10 Oct 2026", changes: [
-        "The phone's Back button no longer leaves the app by mistake. It closes what's open first (a photo, the camera, a recipe, the paste box), then goes to the Dashboard. Only on the Dashboard does it leave the app.",
-        "Paste army list and Import CSV are now on the Units tab: tap + Add unit (or use the buttons on an empty Units list). They're still in Settings too. After an import, the Units tab opens on your units.",
-        "Help has a new Privacy topic: what stays on your phone, what goes out (only the feedback form, if you use it) and no tracking.",
-      ]},
-      { version: "v18.3", date: "10 Oct 2026", changes: [
-        "The camera can't be left on by accident any more: tapping Scan a label twice opens only one camera, and leaving the app or closing the scan panel switches it off.",
-        "Scanning a paint pot now works offline: the label reader is part of Minifolio itself instead of being downloaded from other websites. After the first scan it works with no internet.",
-        "Restoring a backup that only has recipes now has an Undo button, and your old recipes are kept for 30 days under Recover earlier data.",
-        "Backup file names and backup reminders use your own time zone, so a backup made just after midnight is no longer dated the day before.",
-        "Safety: your data now carries a version number. An older copy of the app left open (for example an installed app that hasn't updated) stops saving and asks you to reload, instead of saving over newer data.",
-      ]},
-      { version: "v18.2", date: "10 Oct 2026", changes: [
-        "Shades of Grey is now called Minifolio, with its own web address: minifolio.app. Each web address keeps its own copy of your data, so if you used the old address, save a backup there and restore it here. Backups saved under the old name still restore, and new backup and export files are named minifolio-…",
-        "The grey stage colour set is now called Greyscale. The colours are the same.",
-      ]},
-      { version: "v18.1", date: "10 Oct 2026", changes: [
-        "Clearer wording: the app is unofficial and fan-made, and isn't linked to Games Workshop or any paint maker. This now shows on the Updates tab as well as in Help → About, which also says other paint brand names belong to their makers.",
-      ]},
-      { version: "v18", date: "10 Oct 2026", changes: [
-        "Paste recipes reads far more notes correctly: mixes like 'Seraphim Sepia 1:2 with Contrast Medium', headings like 'Base;', a faction name on the first line, 'Texture Sand', accented letters, a brand named in the note ('Vallejo Ivory'), and 'Ushabti Bone and Wraithbone' as two paints. Divider lines and emoji-only lines are skipped. Long notes read much faster, up to 20,000 characters at once.",
-        "In the paste preview, ✕ leaves a step, a whole part or a note out, and ✎ changes a step's technique, mix ratio or paints before you save. Every change has Undo, and Read again brings back what you pasted.",
-        "'Do you own these?' asks about paints new to your palette when you paste recipes or type a new paint into a recipe: All, None (they go on the shopping list) or Let me pick.",
-        "Your Palette: Remove a paint no recipe uses, or Merge into… another paint (handy for typo twins). Both have Undo. Brands typed twice ('CitadelCitadel') are tidied, and paints that turn out to be the same are joined.",
-        "Copy as text always writes a mix's ratio (an even mix as 1:1), so a copied recipe pastes back the same.",
-        "'Saved' only shows when your change really was saved. If the phone's storage is full, you'll see 'Not saved' with a Save backup button, and a paste import stays open so nothing is lost.",
-        "Help has a new 'Pasting recipes from your notes' topic, and covers all of the above.",
-      ]},
-      { version: "v17.1", date: "9 Oct 2026", changes: [
-        "Paints brought in by Paste recipes now start as Owned, not missing. After an import, Your Palette opens on those paints with every one expanded, so you can change any status or quantity, then press Done.",
-        "Quantity: a paint you have counts as one. Tap + to say you have more (e.g. two Nuln Oil pots), and − to go back. Shown as '× 2 in stock' on the palette.",
-      ]},
-      { version: "v17", date: "9 Oct 2026", changes: [
-        "Paint status: on any paint, tap Owned, Running low, Empty, Wishlist or Not owned. It's blank until you set one, so nothing changes if you never do. Running low paints have a 'spare in stock' tick.",
-        "Search or add a paint on Your Palette: type a name (typos and your shorthand work) to see if you own it, it's running low, or you don't have it. Tap a status to add it.",
-        "Paints added by scan count as Owned. The scan's 'Do I own this?' result shows the status too, and you can change it there.",
-        "In recipes, each paint shows Have or Missing once you've set a status. 'What can I paint now?' on the Recipes list shows only the recipes where you own every paint.",
-        "Shopping list (its own switch on the Recipes tab, next to Your Palette): running low, empty, wishlist, and paints your recipes use that you don't have, grouped by brand. Copy as text. A spot for shop links is there for later; none are added yet.",
-      ]},
-      { version: "v16.1", date: "9 Oct 2026", changes: [
-        "Pot scanning fixed: it now opens the camera with a box. Line the paint's name up in the box and tap Read label. Only the name is read, with a contrast boost for shiny or metallic labels, so it works far better (tested on white, blue and silver pots).",
-        "No more jumbled text when a scan fails: it just says it couldn't read the name. Use a photo instead is still there if the camera won't open.",
-      ]},
-      { version: "v16", date: "9 Oct 2026", changes: [
-        "Paste recipes: paste your painting notes (e.g. from Google Keep) and the app turns them into a scheme, with one recipe per part. You see a preview first, and nothing is saved until you press Save.",
-        "It reads parts ending in : or ; , steps one per line or split by commas, arrows (A -> B), numbered lists, mixes like 2:1 Baal:CM or 50/50, and notes in (brackets).",
-        "Paint names are matched for you, ignoring capitals and small typos. If it isn't sure (like \"CM\"), it asks you instead of guessing, and remembers your answer for next time.",
-        "Copy as text: on a recipe or a scheme. It copies in the same format, so you can share it (e.g. on Reddit) and paste it straight back in.",
-        "Scan a paint pot (Your Palette): take a photo of the label and the app suggests the paint, then tells you if you already have it, or adds it. It reads the label on your phone, free. The first scan downloads the reader; after that it works offline.",
-        "Settings shows when you last saved a backup. The app now knows the names and colours of the Citadel range, so they're suggested as you type.",
-      ]},
-      { version: "v15", date: "9 Oct 2026", changes: [
-        "Technique can be left on Auto: the app guesses it from the step's paints (shade = Wash, Contrast = Contrast, 'Ardcoat = Varnish, otherwise Layer). Pick one yourself any time.",
-        "New \"Whole model\" part, always listed first, for priming, base coats and all-over dry brushes. New techniques: Technical, Texture and Varnish.",
-        "Mixes: type a ratio like 2:1 or 1:1:2 and the %s are worked out for you. Contrast Medium and Lahmian Medium are suggested as you type.",
-        "Each step can have a short note and an Optional tick. Optional steps show faded.",
-        "Basing materials (rocks, sand, snow, static grass…) can go in a step. Your Palette lists them as basing materials, at the end of the colour sort.",
-      ]},
-      { version: "v14", date: "8 Oct 2026", changes: [
-        "Safer saving: units, recipes and settings are now saved together. If storage is full, a big change (like editing your stages or restoring a backup) isn't made at all, instead of being half-saved.",
-        "If storage is full, a red banner now stays at the top until saving works again, with a Save backup button. (Before, you were warned once and later changes were quietly lost.)",
-        "Open in two places at once? Changes made in one window now appear in the other, instead of one saving over the other.",
-        "Delete all units now stops if it can't keep a safety copy, and has an Undo button.",
-        "New: Settings → Your data → Recover earlier data. Copies kept by Delete all, Replace and Restore are listed for 30 days, and you can bring one back.",
-        "Restoring a backup now tells you if some photos couldn't be loaded, accepts backups that only hold recipes, and refuses backups with a damaged stage list.",
-        "Fixed: a faction called \"constructor\" (and a few other special words) could stop the Units list showing. Units are now limited to 999 models.",
-        "If your settings ever can't be read, a copy is kept and your units keep their stages.",
-        "Editing your stages now keeps each photo's stage label right.",
-        "Save backup now shows a message. The backup reminder comes after a week, and reminds you about photos separately. iPhone users opening the app in Safari see a tip to add it to the Home Screen, so their data isn't wiped.",
-        "The Warhammer app import button is now called Paste an army list. Only unit names and model counts are kept; points are thrown away.",
-        "Help has a new About section: this is an unofficial fan-made tool, not affiliated with Games Workshop.",
-      ] },
-      { version: "v13", date: "7 Oct 2026", changes: [
-        "Several photos per unit. Add photo now adds another photo instead of replacing the old one, and you can pick several at once.",
-        "Progress timeline: a unit's photos sit in a strip from oldest to newest, each labelled with its stage (and coloured dot) and date.",
-        "Tap a photo to see it full size. Swipe or use ‹ › to move between photos.",
-        "In the full-size view, change a photo's stage or date, choose it as the unit's cover photo (shown on its card), or delete it, with Undo.",
-        "New Before / after view: two photos side by side, or a slider to wipe between them.",
-        "Units tracked model-by-model can label a photo with which model it shows.",
-        "Settings → Your data shows how many photos you have and the space they use, and a new Clean up photo storage button removes leftover photo files no unit uses.",
-      ] },
-      { version: "v12", date: "7 Oct 2026", changes: [
-        "Suggested faction colours now work straight away: the app knows the colours well-known factions are usually painted (Ultramarines blue, Orks green, Blood Angels red, Stormcast gold and many more).",
-        "If a faction's units have recipes linked, Suggest still prefers a colour from those recipes, and says so.",
-        "New Use suggested colours button in Settings → Faction colours: colours every faction that hasn't got one yet, in one tap, with Undo.",
-      ]},
-      { version: "v11", date: "7 Oct 2026", changes: [
-        "Faction colours show more clearly on cards: the faded tint is stronger, dark colours (like deep blue or black) are lightened for the tint so they don't disappear, and it now works on older phones too.",
-      ]},
-      { version: "v10", date: "7 Oct 2026", changes: [
-        "Photos now have far more room. They're kept in the browser's bigger photo storage instead of sharing the small 5 MB space with your units, so you can add many more.",
-        "New photos are saved sharper (twice the size as before), with a small copy for the unit list so it stays quick.",
-        "Photos you already had are moved across automatically the first time you open this version. Each one is checked before the old copy is removed.",
-        "New Save full backup with photos button in Settings. Save backup is still there for a small, quick backup without photos. Restore backup reads both.",
-        "Settings now shows roughly how much space the app is using altogether.",
-      ]},
-      { version: "v9", date: "7 Oct 2026", changes: [
-        "Painting schemes: a new Schemes view at the top of the Recipes tab. A scheme is a named group of recipes for one faction, e.g. \"My Ultramarines\" = armour, trim, lenses and base.",
-        "Apply a scheme to every unit in its faction with one tap (with Undo). It shows how many of the faction's units already have it.",
-        "New units added in that faction (by hand, CSV or Warhammer app import) get the scheme's recipes linked automatically. You can switch this off per scheme.",
-        "In a unit's details, the \"Link a recipe\" menu now offers its faction's schemes too.",
-        "Renaming a faction moves its schemes with it. Deleting a recipe removes it from schemes (with Undo). Backups include your schemes.",
-      ]},
-      { version: "v8", date: "7 Oct 2026", changes: [
-        "Faction colours: give each faction its own colour in Settings → Faction colours, or tap Faction colours on the dashboard.",
-        "Not sure which colour? Press Suggest to pick one from the recipes linked to that faction's units (armour recipes first).",
-        "The colour shows as a bar on the dashboard's faction cards, a soft tint and a dot on unit cards, and a stripe on the faction filter. The stage stripe on unit cards stays as it was.",
-        "Rename a faction on all its units at once (Settings → Faction colours → Rename). Its colour goes with it.",
-        "Backups now include your faction colours.",
-      ]},
-      { version: "v7", date: "7 Oct 2026", changes: [
-        "Progress over time: a new graph on the dashboard showing the models you've added and how many are painted, day by day.",
-        "Choose 1 month, 3 months, 1 year or all time. Touch or hover over the graph to read any day's numbers, or open it as a table.",
-      ]},
-      { version: "v6", date: "7 Oct 2026", changes: [
-        "Your Palette: switch to it at the top of the Recipes tab. It lists every paint in your recipes, once each, and fills itself in as you write recipes.",
-        "Sort your palette by colour (round the colour wheel, then greys), by name or by brand, and tap a brand to show only its paints.",
-        "Tap a paint to change its colour, name or brand everywhere at once, and see which recipes use it. Paints whose colour you haven't set yet are flagged.",
-      ]},
-      { version: "v5", date: "7 Oct 2026", changes: [
-        "New Recipes tab: write down how you paint each part (armour, eyes, trim…) as ordered steps. Each step has a technique, the number of coats, and one or more paints with brand, colour and mix %.",
-        "Reorder steps with ↑ ↓, and duplicate a recipe to make a variation.",
-        "Link recipes to units. A unit's card shows its recipes as buttons that open them, and each recipe lists the units it's used on.",
-        "Add your own parts and techniques to the lists.",
-        "Backups now include your recipes.",
-      ]},
-      { version: "v4", date: "7 Oct 2026", changes: [
-        "Paint one model at a time: open a unit with 2 or more models and tick \"Track each model separately\". Each model gets its own stage and ◀ ▲ buttons. The big ▲ on the card moves up whichever model is furthest behind.",
-        "The dashboard counts each of those models at its own stage.",
-        "The app now quietly notes the date you add a unit and when it changes stage. This is getting ready for a progress-over-time graph.",
-      ]},
-      { version: "v3", date: "7 Oct 2026", changes: [
-        "New final stage: Parade ready. The default order now ends Battle ready → Painted with issues → Parade ready, and all three count as Done. If you were on the old default stages, your units have been moved over automatically.",
-        "Edit a unit: open its details to change its name, game or faction.",
-        "Units page is tidier on phones: the filters fold away behind a Filters button, so you see more units at once.",
-        "Game and faction boxes now suggest names you've already used.",
-      ]},
-      { version: "v2", date: "6 Oct 2026", changes: [
-        "Import a list from the Warhammer app: paste it in Settings and its units are added. Units you already own are skipped and renamed to the app's names.",
-        "Export CSV: save your collection as a spreadsheet.",
-        "A reminder if you haven't saved a backup in two weeks.",
-        "Bigger layout on laptops and desktops, with the tabs along the top.",
-        "Bigger tab buttons.",
-        "Every import now asks: add to your collection, or replace it? Untick units you don't want, and choose which name to keep when names clash.",
-        "This Updates tab, with a link to send feedback, and the version number beside the title.",
-        "A Help tab explaining how everything works.",
-      ]},
-      { version: "v1", date: "5 Oct 2026", changes: [
-        "First version: dashboard, units, editable stages, photos and notes.",
-        "Backups and CSV import.",
-        "Installs on your phone and works offline.",
-      ]},
     ];
 
     function renderUpdates() {
@@ -13197,7 +12906,7 @@
       document.getElementById("version-tag").textContent = APP_VERSION;
       const box = document.getElementById("changelog");
       box.innerHTML = "";
-      for (const release of CHANGELOG) {
+      for (const release of CHANGELOG.slice(0, UPDATES_SHOWN)) {
         const div = document.createElement("div");
         div.className = "release";
         const h3 = document.createElement("h3");

@@ -158,11 +158,20 @@ def main():
               re.findall(r'"\./([^"?]*)', files) == ["", "index.html", "app.js", "early.js", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js", "manifest.json", "icon-192.png", "icon-512.png", "ocr/ocr-worker.js"],
               re.findall(r'"\./([^"?]*)', files))
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v36')")
-        check("Updates has a v36 entry, and the newest entry is v36 or later", entry and float(page.evaluate("CHANGELOG[0].version")[1:]) >= 36, entry)
+        if page.evaluate("['v36'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("Updates has a v36 entry, and the newest entry is v36 or later", entry and float(page.evaluate("CHANGELOG[0].version")[1:]) >= 36, entry)
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v36 entry, and the newest entry is v36 or later')
         joined = " ".join(entry["changes"]) if entry else ""
-        check("the Updates entry says colour wheel, Compendium, Pro preview, You own this, Show other paints, gold, silver and bronze, offline and sends nothing anywhere",
-              all(w in joined for w in ["colour wheel", "Compendium", "Pro preview", "You own this", "Show other paints", "gold, silver and bronze", "offline", "sends nothing anywhere"]), joined[:300])
-        check("the v35, v34 and v33 Updates entries are still there", page.evaluate("['v35', 'v34', 'v33'].every(v => !!CHANGELOG.find(r => r.version === v))"))
+        if page.evaluate("['v36'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("the Updates entry says colour wheel, Compendium, Pro preview, You own this, Show other paints, gold, silver and bronze, offline and sends nothing anywhere",
+                  all(w in joined for w in ["colour wheel", "Compendium", "Pro preview", "You own this", "Show other paints", "gold, silver and bronze", "offline", "sends nothing anywhere"]), joined[:300])
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'the Updates entry says colour wheel, Compendium, Pro preview, You own this, Show other pai')
+        if page.evaluate("['v33', 'v34', 'v35'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("the v35, v34 and v33 Updates entries are still there", page.evaluate("['v35', 'v34', 'v33'].every(v => !!CHANGELOG.find(r => r.version === v))"))
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'the v35, v34 and v33 Updates entries are still there')
         check("DATA_VERSION is still 1 and the three storage names are unchanged", page.evaluate("DATA_VERSION") == 1
               and all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"', 'RECIPES_KEY = "shades-of-grey-recipes"']))
         policy = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)

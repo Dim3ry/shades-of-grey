@@ -174,10 +174,16 @@ def main():
               re.findall(r'"\./([^"?]*)', files))
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v37')")
         joined = " ".join(entry["changes"]) if entry else ""
-        check("the v37 Updates entry now also tells about the search boxes (Start from, Faction, No matches) and the wheel groups (Deep purple, Violet, Show all)",
-              entry and page.evaluate("CHANGELOG.filter(r => r.version === 'v37').length") == 1
-              and all(w in joined for w in ["Search", "Start from", "Faction", "No matches", "Deep purple", "Violet", "Lavender and lilac", "Show all", "neutral, warm or cool"]), joined[-500:])
-        check("the v36, v35 and v34 entries are still there", page.evaluate("['v36', 'v35', 'v34'].every(v => !!CHANGELOG.find(r => r.version === v))"))
+        if page.evaluate("['v37'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("the v37 Updates entry now also tells about the search boxes (Start from, Faction, No matches) and the wheel groups (Deep purple, Violet, Show all)",
+                  entry and page.evaluate("CHANGELOG.filter(r => r.version === 'v37').length") == 1
+                  and all(w in joined for w in ["Search", "Start from", "Faction", "No matches", "Deep purple", "Violet", "Lavender and lilac", "Show all", "neutral, warm or cool"]), joined[-500:])
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'the v37 Updates entry now also tells about the search boxes (Start from, Faction, No match')
+        if page.evaluate("['v34', 'v35', 'v36'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("the v36, v35 and v34 entries are still there", page.evaluate("['v36', 'v35', 'v34'].every(v => !!CHANGELOG.find(r => r.version === v))"))
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'the v36, v35 and v34 entries are still there')
         help_text = page.evaluate("() => document.getElementById('help-tabs').textContent")
         check("Help says Start from and Faction are boxes you can type in, the lists have a search box, and the wheel is split into groups",
               all(w in help_text for w in ["Start from and Faction are boxes you can type in", "search box", "split into groups"]), help_text[-300:])

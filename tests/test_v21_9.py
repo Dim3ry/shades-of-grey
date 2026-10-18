@@ -143,10 +143,16 @@ def main():
         tags = re.findall(r'<script src="(early|app)\.js\?v=([\d.]+)"', html)
         check("both script tags carry ?v= matching APP_VERSION", sorted(tags) == [("app", version[1:]), ("early", version[1:])], tags)
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v21.9')")
-        check("Updates has a v21.9 entry", entry and len(entry["changes"]) >= 3, entry)
+        if page.evaluate("['v21.9'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("Updates has a v21.9 entry", entry and len(entry["changes"]) >= 3, entry)
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v21.9 entry')
         joined = " ".join(entry["changes"]) if entry else ""
-        check("…about fewer tabs, the switch, remembering the page, Back and the new wording",
-              all(w in joined for w in ["four tabs", "Settings / Help / Updates", "remembers", "Back", "Tell us what you think"]), joined[:300])
+        if page.evaluate("['v21.9'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("…about fewer tabs, the switch, remembering the page, Back and the new wording",
+                  all(w in joined for w in ["four tabs", "Settings / Help / Updates", "remembers", "Back", "Tell us what you think"]), joined[:300])
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + '…about fewer tabs, the switch, remembering the page, Back and the new wording')
         top = page.evaluate("CHANGELOG[0].version")
         check("the v21.9 entry is at the top of the list", top == version, top)
         check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
@@ -216,8 +222,11 @@ def main():
         sub_tab(page, "help")
         check("the Help page content is there (How to use Minifolio)", "How to use Minifolio" in page.inner_text("#view-help"))
         sub_tab(page, "updates")
-        check("the Updates page content is there (What's new + a v21.9 heading)",
-              "What's new" in page.inner_text("#view-updates") and any(h.startswith("v21.9") for h in page.eval_on_selector_all("#changelog h3", "els => els.map(e => e.textContent)")))
+        if page.evaluate("['v21.9'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("the Updates page content is there (What's new + a v21.9 heading)",
+                  "What's new" in page.inner_text("#view-updates") and any(h.startswith("v21.9") for h in page.eval_on_selector_all("#changelog h3", "els => els.map(e => e.textContent)")))
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + "the Updates page content is there (What's new + a v21.9 heading)")
         main_tab(page, "units")
         check("leaving for Units hides the switch and shows the Units page", not seg_state(page)["shown"] and shown_views(page) == ["units"])
         main_tab(page, "settings")

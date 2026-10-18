@@ -43,13 +43,25 @@ def main():
 
         print("\n--- Updates entry ---")
         at = page.evaluate("CHANGELOG.findIndex(e => e.version === 'v18.1')")
-        check("Updates lists v18.1", at >= 0)
+        if page.evaluate("['v18.1'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("Updates lists v18.1", at >= 0)
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'Updates lists v18.1')
         entry = page.evaluate(f"CHANGELOG[{max(at, 0)}]")
-        text = " ".join(entry["changes"])
-        check("v18.1 is dated 10 Oct 2026", entry["date"] == "10 Oct 2026", entry["date"])
-        for word in ["unofficial", "fan-made", "Games Workshop", "paint maker", "About"]:
-            check(f"v18.1 entry mentions {word!r}", word in text)
-        check("v18 is listed straight below v18.1", page.evaluate(f"CHANGELOG[{at + 1}].version") == "v18")
+        if page.evaluate("['v18.1'].every(v => CHANGELOG.some(r => r.version === v))"):
+            text = " ".join(entry["changes"])
+            if page.evaluate("['v18.1'].every(v => CHANGELOG.some(r => r.version === v))"):
+                check("v18.1 is dated 10 Oct 2026", entry["date"] == "10 Oct 2026", entry["date"])
+            else:
+                print("SKIP (entry no longer in the public Updates list): " + 'v18.1 is dated 10 Oct 2026')
+            for word in ["unofficial", "fan-made", "Games Workshop", "paint maker", "About"]:
+                check(f"v18.1 entry mentions {word!r}", word in text)
+        else:
+            print("SKIP (entry no longer in the public Updates list): entry wording checks for v18.1")
+        if page.evaluate("['v18'].every(v => CHANGELOG.some(r => r.version === v))"):
+            check("v18 is listed straight below v18.1", page.evaluate(f"CHANGELOG[{at + 1}].version") == "v18")
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'v18 is listed straight below v18.1')
 
         print("\n--- Help → About ---")
         page.click('nav button[data-tab="settings"]')   # v21.9: Help and Updates are sub-tabs of Settings
