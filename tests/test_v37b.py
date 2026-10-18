@@ -96,6 +96,8 @@ GROUPS_JS = """() => { const out = []; let cur = null;
             tag: b.querySelector('.idea-tag').textContent, why: b.querySelector('.idea-why').textContent,
             colour: b.querySelector('.swatch').style.getPropertyValue('--swatch') }); }
     return out; }"""
+ROWS_JS = """() => [...document.querySelectorAll('#cmp-wheel-detail .idea-static')].map(b => ({ name: b.querySelector('.idea-name').childNodes[0].textContent,
+    tag: b.querySelector('.idea-tag').textContent, why: b.querySelector('.idea-why').textContent, colour: b.querySelector('.swatch').style.getPropertyValue('--swatch') }))"""
 CHIPS_JS = "(s) => [...document.querySelectorAll(s)].map(c => c.textContent)"
 
 def open_tab(page):
@@ -618,82 +620,82 @@ def main():
         check(f"all 30 groups have built-in paints in them (none is empty), and no built-in paint falls outside a group ({cover['total']} paints)", not missing and cover["outside"] == 0, (missing, cover["outside"]))
         check("no group is a dump: none has more than 70% of its part", all(max(v for k, v in cover["out"].items() if k.startswith(part + "/")) <= 0.7 * sum(v for k, v in cover["out"].items() if k.startswith(part + "/"))
                                                                           for part in PART_ORDER if part not in ("white", "black")), cover["out"])
-        # the description says what the groups are
-        tap(page, "purple")
-        check("the open part says what its groups are (Split into deep purple, violet and lavender and lilac. Each group runs from dark to light, yours first.)",
-              page.inner_text("#cmp-wheel-groups") == "Split into deep purple, violet and lavender and lilac. Each group runs from dark to light, yours first.", page.inner_text("#cmp-wheel-groups"))
+        # the description says what the groups are (the grey middle still lists all its groups at once)
         tap(page, "grey")
+        check("the grey middle says what its groups are and how they run (Split into ... Each group runs from dark to light, yours first.)",
+              page.inner_text("#cmp-wheel-groups").startswith("Split into ") and page.inner_text("#cmp-wheel-groups").endswith("Each group runs from dark to light, yours first."), page.inner_text("#cmp-wheel-groups"))
         check("the neutral parts explain warm and cool in their description", "Warm greys lean brown or yellow, cool greys lean blue or green" in page.inner_text("#cmp-wheel-detail"))
         tap(page, "grey")
-        # dark to light, yours first, marked, and short by default
+        # dark to light, yours first, marked, and short by default (a colour's paints are listed one group at a time since v43)
         mine = [P(300 + i, f"Own Blue {i:02d}", hx(220, .6, .35 + (11 - i) * .01)) for i in range(12)]   # 12 owned blues in Blues, lightest first by name
         wish = P(320, "Wish Blue X", hx(220, .6, .36), "wishlist")
         pal = mine + [wish, P(321, "Empty Blue X", hx(220, .6, .37), "empty"), P(322, "Own Navy", hx(220, .6, .2)), P(323, "Own Sky", hx(220, .6, .8))]
         load(page, paints=pal)
         open_tab(page)
-        tap(page, "blue")
-        groups = page.evaluate(GROUPS_JS)
-        by = {g["heading"].split(" (")[0]: g["rows"] for g in groups}
-        blues = by["Blues"]
+        by = dict(zip(["navy", "blue", "light"], wh.open_each_group(page, "blue", lambda p: p.evaluate(ROWS_JS))))
+        blues = by["blue"]
         check("Blues shows all 14 of your own paints in the group (the short limit never hides yours): 12 owned, then the wishlist, then the one that is not owned",
               len(blues) == 14 and [r["tag"] for r in blues] == ["You own this"] * 12 + ["On your shopping list", "On your shopping list"], [r["tag"] for r in blues])
         labs = page.evaluate("(cs) => cs.map(c => MinifolioColour.hexToLab(c).L)", [r["colour"] for r in blues[:12]])
         check("yours run dark to light inside the group (the names were made to run the other way, so this is the colour, not the name)", labs == sorted(labs) and [r["name"] for r in blues[:12]] == [f"Own Blue {i:02d}" for i in range(11, -1, -1)], [r["name"] for r in blues[:3]])
-        check("the other groups hold their own: Navy has Own Navy and Sky has Own Sky", [r["name"] for r in by["Navy and deep blue"]] == ["Own Navy"] and [r["name"] for r in by["Sky and pale blue"]] == ["Own Sky"])
-        check("the heading counts what the group holds (Blues (14))", [g["heading"] for g in groups] == ["Navy and deep blue (1)", "Blues (14)", "Sky and pale blue (1)"], [g["heading"] for g in groups])
-        built_in = page.evaluate("() => wheelItems().filter(x => x.at.seg === 'blue' && x.origin === 2).length")
+        check("the other groups hold their own: Navy has Own Navy and Sky has Own Sky", [r["name"] for r in by["navy"]] == ["Own Navy"] and [r["name"] for r in by["light"]] == ["Own Sky"])
         per = page.evaluate("() => { const o = {}; for (const x of wheelItems().filter(i => i.at.seg === 'blue' && i.origin === 2)) o[x.at.sub] = (o[x.at.sub] || 0) + 1; return o; }")
+        wh.zoom_in(page, "blue")
+        wh.open_group(page, "blue", "blue")
         page.click("#cmp-wheel-others")
         page.wait_for_timeout(150)
-        groups = page.evaluate(GROUPS_JS)
-        by = {g["heading"].split(" (")[0]: g for g in groups}
-        shown_counts = {k: len(g["rows"]) for k, g in by.items()}
-        check("with the other paints on, each group shows only its first few: 8 or all of yours, whichever is more (Navy 8, Blues 14, Sky 8)", shown_counts == {"Navy and deep blue": 8, "Blues": 14, "Sky and pale blue": 8}, shown_counts)
-        check("the headings count the whole group, not just what shows (yours + built-in)", {k.split(" (")[0]: int(k.split("(")[1].rstrip(")")) for k in [g["heading"] for g in groups]}
-              == {"Navy and deep blue": per["navy"] + 1, "Blues": per["blue"] + 14, "Sky and pale blue": per["light"] + 1}, [g["heading"] for g in groups])
-        btns = page.evaluate("""() => [...document.querySelectorAll('#cmp-wheel-detail button[id^="cmp-wheel-more-"]')].map(b => ({ id: b.id, text: b.textContent, label: b.getAttribute('aria-label'), exp: b.getAttribute('aria-expanded'), h: b.getBoundingClientRect().height }))""")
+        info = {}
+        for sub in wh.SUBS["blue"]:
+            wh.open_group(page, "blue", sub)
+            info[sub] = {"rows": page.evaluate(ROWS_JS), "btns": page.evaluate("""() => [...document.querySelectorAll('#cmp-wheel-detail button[id^="cmp-wheel-more-"]')].map(b => ({ id: b.id, text: b.textContent, label: b.getAttribute('aria-label'), exp: b.getAttribute('aria-expanded'), h: b.getBoundingClientRect().height }))""")}
+            wh.open_group(page, "blue", sub) if sub != "light" else None
+        shown_counts = {k: len(v["rows"]) for k, v in info.items()}
+        check("with the other paints on, each group shows only its first few: 8 or all of yours, whichever is more (Navy 8, Blues 14, Sky 8)", shown_counts == {"navy": 8, "blue": 14, "light": 8}, shown_counts)
+        btns = [b for v in info.values() for b in v["btns"]]
         check("each group with more has one button under its list: Show all N (with a longer spoken name), not expanded, 44 px tall",
               [b["id"] for b in btns] == ["cmp-wheel-more-navy", "cmp-wheel-more-blue", "cmp-wheel-more-light"]
               and btns[0]["text"] == f"Show all {per['navy'] + 1}" and btns[0]["label"] == f"Show all {per['navy'] + 1} navy and deep blue" and all(b["exp"] == "false" and b["h"] >= 44 for b in btns), btns)
-        mine_rows = [r["name"] for r in by["Blues"]["rows"][:14]]
-        check("in a group, yours always come before the built-in paints", all(r["tag"] != "Not in your palette" for r in by["Blues"]["rows"][:14]) and all(r["tag"] == "Not in your palette" for r in by["Navy and deep blue"]["rows"][1:]), mine_rows[:3])
+        check("in a group, yours always come before the built-in paints", all(r["tag"] != "Not in your palette" for r in info["blue"]["rows"][:14]) and all(r["tag"] == "Not in your palette" for r in info["navy"]["rows"][1:]))
+        wh.open_group(page, "blue", "blue")   # light is open: tap Blues (switches group)
         page.click("#cmp-wheel-more-blue")
         page.wait_for_timeout(150)
-        rows_blue = page.evaluate(GROUPS_JS)[1]["rows"]
-        check("Show all opens that group fully (and no other), the button now says Show fewer, is expanded, and keeps the focus",
+        rows_blue = page.evaluate(ROWS_JS)
+        check("Show all opens that group fully, the button now says Show fewer, is expanded, and keeps the focus",
               len(rows_blue) == per["blue"] + 14 and page.inner_text("#cmp-wheel-more-blue") == "Show fewer" and page.get_attribute("#cmp-wheel-more-blue", "aria-expanded") == "true"
-              and page.evaluate("() => document.activeElement.id") == "cmp-wheel-more-blue" and len(page.evaluate(GROUPS_JS)[0]["rows"]) == 8, len(rows_blue))
+              and page.evaluate("() => document.activeElement.id") == "cmp-wheel-more-blue", len(rows_blue))
         lights_built = page.evaluate("(cs) => cs.map(c => MinifolioColour.hexToLab(c).L)", [r["colour"] for r in rows_blue[14:]])
         check("the built-in paints in the group run dark to light too", lights_built == sorted(lights_built) and len(lights_built) == per["blue"], lights_built[:4])
-        tap(page, "blue")
-        tap(page, "blue")
-        check("closing the part and opening it again keeps the group open (kept while the app is open)", page.inner_text("#cmp-wheel-more-blue") == "Show fewer")
         copy_spy(page)
         page.click("#cmp-wheel-detail .share-row button")
         text = copied(page)
-        check("Copy as text keeps the headings and the paints that show (not the ones behind Show all)",
-              text and "Navy and deep blue (" in text and "Blues (" in text and "Sky and pale blue (" in text and text.count("Not in your palette") == per["blue"] + 7 + 7, (text or "")[:200])
+        check("Copy as text keeps the group's heading and the paints that show",
+              text and "Blue" in text and "Own Blue 00" in text and text.count("Not in your palette") == per["blue"], (text or "")[:200])
         page.click("#cmp-wheel-more-blue")
         page.wait_for_timeout(100)
-        check("Show fewer puts the rest away again", len(page.evaluate(GROUPS_JS)[1]["rows"]) == 14)
+        check("Show fewer puts the rest away again", len(page.evaluate(ROWS_JS)) == 14)
         shot(page, "v37b-wheel-blue-390.png")
         # a group with few paints has no button; a group at exactly 8 has none
         load(page, paints=[P(400 + i, f"Eight {i}", hx(220, .6, .35 + i * .01)) for i in range(8)])
         open_tab(page)
         tap(page, "blue")
-        check("a group of eight or fewer has no Show all button", page.locator('#cmp-wheel-detail button[id^="cmp-wheel-more-"]').count() == 0 and len(page.evaluate(GROUPS_JS)[0]["rows"]) == 8)
+        check("a group of eight or fewer has no Show all button", page.locator('#cmp-wheel-detail button[id^="cmp-wheel-more-"]').count() == 0 and len(page.evaluate(ROWS_JS)) == 8)
         load(page, paints=[])
         open_tab(page)
         tap(page, "purple")
-        check("with an empty palette a part with no paints of yours says so, and the button shows the built-in ones in their groups",
+        check("with an empty palette a group with no paints of yours says so, and the button shows the built-in ones",
               "You have none of these in your palette yet" in page.inner_text("#cmp-wheel-detail") and page.locator("#cmp-wheel-others").count() == 1)
         page.click("#cmp-wheel-others")
         page.wait_for_timeout(150)
-        gs = page.evaluate(GROUPS_JS)
-        check("then Purple shows Deep purple, Violet and Lavender and lilac, each with built-in paints", [g["heading"].split(" (")[0] for g in gs] == ["Deep purple", "Violet", "Lavender and lilac"] and all(len(g["rows"]) >= 1 for g in gs), [g["heading"] for g in gs])
-        # every part, every group, built-in: heading counts equal the data
+        gs = wh.open_each_group(page, "purple", lambda p: len(p.evaluate(ROWS_JS)))
+        check("then Purple's three groups (Deep purple, Violet, Lavender and lilac) each have built-in paints", all(n >= 1 for n in gs) and len(gs) == 3, gs)
+        # every part, every group, built-in: counts equal the data
         counts_ok = []
         for part in PART_ORDER:
+            if part in wh.HUES:
+                rows3 = wh.open_each_group(page, part, lambda p: (p.click("#cmp-wheel-others") if p.locator("#cmp-wheel-others").count() and p.get_attribute("#cmp-wheel-others", "aria-expanded") != "true" else None, p.wait_for_timeout(80), len(p.evaluate(ROWS_JS)))[2])
+                want3 = page.evaluate("(p) => { const o = {}; for (const x of wheelItems().filter(i => i.at.seg === p)) o[x.at.sub] = (o[x.at.sub] || 0) + 1; return WHEEL.find(w => w.key === p).subs.map(s => Math.min(8, o[s.key] || 0)); }", part)
+                counts_ok.append((part, rows3 == want3, max(rows3) <= 8, rows3, want3) if rows3 != want3 else (part, True, max(rows3) <= 8))
+                continue
             tap(page, part)
             if page.locator("#cmp-wheel-others").get_attribute("aria-expanded") != "true":
                 page.click("#cmp-wheel-others")
@@ -701,7 +703,8 @@ def main():
             gs = page.evaluate(GROUPS_JS)
             want = page.evaluate("(p) => { const o = {}; for (const x of wheelItems().filter(i => i.at.seg === p)) o[x.at.sub] = (o[x.at.sub] || 0) + 1; return WHEEL.find(w => w.key === p).subs.filter(s => o[s.key]).map(s => s.label + ' (' + o[s.key] + ')'); }", part)
             counts_ok.append((part, [g["heading"] for g in gs] == want, max(len(g["rows"]) for g in gs) <= 8))
-        check("for all ten parts, with the other paints on, the headings are the groups that have paints with the right counts, and no group lists more than 8 until Show all", all(a and b for _, a, b in counts_ok), counts_ok)
+            tap(page, part)
+        check("for all ten parts, with the other paints on, the groups have the right counts, and no group lists more than 8 until Show all", all(c[1] and c[2] for c in counts_ok), counts_ok)
 
         # ---------- 6. Hostile text and the text scan ----------
         print("\n--- 6. Hostile text and the text scan ---")
@@ -838,7 +841,9 @@ def main():
             load(page, paints=pal)
             open_tab(page)
             tap(page, "blue")
-            page.click("#cmp-wheel-others")
+            wh.open_group(page, "blue", "blue")
+            if page.locator("#cmp-wheel-others").get_attribute("aria-expanded") != "true":
+                page.click("#cmp-wheel-others")
             page.click("#cmp-wheel-more-blue")
             page.wait_for_timeout(150)
             check(f"at {width} px the group with Show all open fits and nothing scrolls sideways", no_sideways(page) and page.evaluate("() => document.getElementById('cmp-wheel-more-blue').getBoundingClientRect().height") >= 44)
@@ -916,7 +921,7 @@ def main():
                 page.keyboard.press("Escape")
                 load(page, paints=GPAINTS, settings={"appearance": appearance})
                 open_tab(page)
-                tap(page, "purple")
+                tap(page, "grey")
                 col2 = page.evaluate("""() => { const bg = (el) => { let e = el; while (e) { const v = getComputedStyle(e).backgroundColor; const m = v.match(/rgba\\(.*,\\s*([\\d.]+)\\)/);
                         if (v && v !== 'transparent' && !(m && parseFloat(m[1]) < 0.9)) return v; e = e.parentElement; } return 'rgb(0,0,0)'; };
                     const out = {}; for (const [k, s] of [['group heading', '#cmp-wheel-detail .wheel-sub'], ['groups line', '#cmp-wheel-groups'], ['row why', '#cmp-wheel-detail .idea-why'], ['tag', '#cmp-wheel-detail .idea-tag']]) {
