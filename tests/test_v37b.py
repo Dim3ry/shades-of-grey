@@ -633,7 +633,7 @@ def main():
         by = {g["heading"].split(" (")[0]: g["rows"] for g in groups}
         blues = by["Blues"]
         check("Blues shows all 14 of your own paints in the group (the short limit never hides yours): 12 owned, then the wishlist, then the one that is not owned",
-              len(blues) == 14 and [r["tag"] for r in blues] == ["You own this"] * 12 + ["On your wishlist", "In your palette, not owned"], [r["tag"] for r in blues])
+              len(blues) == 14 and [r["tag"] for r in blues] == ["You own this"] * 12 + ["On your shopping list", "On your shopping list"], [r["tag"] for r in blues])
         labs = page.evaluate("(cs) => cs.map(c => MinifolioColour.hexToLab(c).L)", [r["colour"] for r in blues[:12]])
         check("yours run dark to light inside the group (the names were made to run the other way, so this is the colour, not the name)", labs == sorted(labs) and [r["name"] for r in blues[:12]] == [f"Own Blue {i:02d}" for i in range(11, -1, -1)], [r["name"] for r in blues[:3]])
         check("the other groups hold their own: Navy has Own Navy and Sky has Own Sky", [r["name"] for r in by["Navy and deep blue"]] == ["Own Navy"] and [r["name"] for r in by["Sky and pale blue"]] == ["Own Sky"])

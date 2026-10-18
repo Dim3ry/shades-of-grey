@@ -278,7 +278,7 @@ def main():
               len(names) == 5 and heads == ["Navy and deep blue (1)", "Blues (3)", "Sky and pale blue (1)"], (names, heads))
         by_group = {g["heading"]: [(r["name"], r["tag"]) for r in g["rows"]] for g in groups if g["heading"]}
         check("yours come first in each group, marked You own this, then the wishlist and the empty one",
-              by_group["Blues (3)"] == [("Mid Test Blue", "You own this"), ("Wish Blue", "On your wishlist"), ("Empty Blue", "In your palette, not owned")]
+              by_group["Blues (3)"] == [("Mid Test Blue", "You own this"), ("Wish Blue", "On your shopping list"), ("Empty Blue", "On your shopping list")]
               and by_group["Navy and deep blue (1)"] == [("Deep Test Blue", "You own this")] and by_group["Sky and pale blue (1)"] == [("Pale Test Blue", "You own this")], by_group)
         lab = lambda n: page.evaluate("(c) => MinifolioColour.hexToLab(c).L", COLOUR_OF[n])
         owned = [n for n, tg in zip(names, tags) if tg == "You own this"]

@@ -80,18 +80,18 @@ def main():
         html, sw, app = read("index.html"), read("sw.js"), read("app.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
         check("the version is v40 in APP_VERSION, sw.js and all six script tags",
-              page.evaluate("APP_VERSION") == "v40" and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) == "40" and len(tags) == 6 and {v for _, v in tags} == {"40"},
+              page.evaluate("APP_VERSION") in ("v40", "v41") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("40", "41") and len(tags) == 6 and len({v for _, v in tags}) == 1,
               (page.evaluate("APP_VERSION"), tags))
-        entry = page.evaluate("CHANGELOG[0]")
+        entry = page.evaluate("CHANGELOG.find(r => r.version === 'v40')")
         joined = " ".join(entry["changes"]) if entry else ""
-        check("the newest Updates entry is v40 and tells about the Shopping switch, one entry per paint, where it came from, and the basket",
+        check("the v40 Updates entry is there (and is the newest or second newest) and tells about the Shopping switch, one entry per paint, where it came from, and the basket",
               entry and entry["version"] == "v40" and all(w in joined for w in ("Shopping", "once", "came from", "basket")), joined[:120])
         check("no new files and no new network address", "http" not in "".join(re.findall(r"updateBasket[\s\S]{0,1800}", app)[:1]) and len(tags) == 6)
         # the Compendium code is exactly as it was (chunk 2 changes it)
         import subprocess
         diff = subprocess.run(["git", "diff", "main", "--", "app.js"], cwd=ROOT, capture_output=True, text=True).stdout
         compendium_touched = [l for l in diff.splitlines() if l.startswith(("+", "-")) and re.search(r"compendiumDoor|renderCompendium|cmp-|buildPaintPanel", l)]
-        check("no line that belongs to the Compendium was changed in app.js", not compendium_touched, compendium_touched[:3])
+        check("no line that belongs to the Compendium was changed in app.js (only checked while v40 is the newest version; v41 changes it on purpose)", page.evaluate("APP_VERSION") != "v40" or not compendium_touched, compendium_touched[:3])
 
         # ---------- 2. The new switch ----------
         print("\n--- 2. The new switch ---")

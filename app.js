@@ -1258,6 +1258,14 @@
       const status = mine ? paintStatus(mine) : "";
       return status === "wishlist" || status === "empty";
     }
+    // v41: the Compendium says so on a paint's row when it is already on the list. The words replace the usual tag ("Not in your palette")
+    // and are kept in step after Add and Undo (updateShopFoldouts), so the row, the fold-out and the basket always agree.
+    const LISTED_TAG = { cls: "none", text: "On your shopping list" };
+    function shopListTag(paint, tag) { return onShoppingList(paint) ? LISTED_TAG : tag; }
+    function watchShopTag(row, paint, tag) {
+      const el = row && row.querySelector(".idea-tag");
+      if (el) { el.shopPaint = paint; el.shopTag = tag; }
+    }
     // Puts a paint on the shopping list as Wishlist (adding it to your palette first if it is only in the built-in list).
     // Undo puts the palette back as it was. Done in place: the page is not redrawn, so the button keeps its place on the screen.
     // v40: remember where a paint on the list came from. A paint is on the list once; a second place only adds its name (newest 5 kept).
@@ -1284,6 +1292,12 @@
     }
     function updateShopFoldouts() {
       for (const el of document.querySelectorAll(".shop-more")) if (el.redrawAdd) el.redrawAdd();
+      for (const el of document.querySelectorAll(".idea-tag")) {   // v41: the row tags the Compendium watches
+        if (!el.shopPaint) continue;
+        const t = shopListTag(el.shopPaint, el.shopTag);
+        el.className = "idea-tag " + t.cls;
+        el.textContent = t.text;
+      }
     }
     // The fold-out for one paint. Returns null when there is nothing to show (you own it, switched off, or no shop sells it).
     function buildShopFoldout(paint, owned, source) {
@@ -8146,11 +8160,13 @@
       const lines = [], steps = [];
       for (const idea of ideas) {
         const paint = idea.hit.paint;
-        const tag = colourIdeaTag(idea.hit);
+        const baseTag = colourIdeaTag(idea.hit);
+        const tag = door.listMarks && !idea.hit.owned ? shopListTag(paint, baseTag) : baseTag;   // v41: Compendium only
         const reason = colourIdeaReason(idea.relation, idea.wanted, baseHex, role);
         const note = colourIdeaNote(idea.hit);
         const stepNote = `Colour idea for ${role.note}`;
         const row = buildIdeaItem(paint, tag, reason, note, door.addStep ? () => door.addStep(paint, stepNote) : null);
+        if (door.listMarks && !idea.hit.owned) watchShopTag(row, paint, baseTag);
         // v39: a paint you do not own gets the small closed "Shop links" fold-out under its row (door.shops; the row itself is unchanged)
         const shops = door.shops ? buildShopFoldout(paint, idea.hit.owned, door.shopSource ? door.shopSource() : "") : null;
         if (shops) row.appendChild(shops);
@@ -8363,6 +8379,8 @@
         fold: true, short: true, switcher: true, search: true,   // v37: folding parts, short lists, the Themes | Combinations switch, search boxes
         links: true,   // v38: a paint in the colour wheel's lists can be tapped to open its "matching colours" panel (the recipe card has no such panels)
         shops: true,   // v39: paints you do not own, in that panel and in Colour ideas, get a closed "Shop links" fold-out (plain links)
+        shopSource: () => "Compendium: Colour ideas",   // v41: what the shopping list remembers for Add buttons in the Compendium's Colour ideas
+        listMarks: true,   // v41: a paint already on the shopping list says "On your shopping list" on its row
         share: { copy: (text, what) => copyText(text, what, "Paste it anywhere."), startRecipe: startRecipeFromCompendium },
         factions: () => new Map(chosen ? [[factionKey(chosen), chosen]] : []),
         factionPick: { names, onChange: (key, focus) => { st.faction = key; renderCompendium(focus || `#${compendiumId("faction-history-pick")}`); } },
@@ -8580,6 +8598,8 @@
         : `Its colour is ${family}, which is neutral, so it has no true opposite. These accents stand out beside it, yours first.`).textContent);
       if (x.at.seg === "metallic" || C.isRoughColour(paint)) lines.push(say(`${WHEEL_ROUGH_NOTE} The matches are only a guide too.`).textContent);
 
+      const part = WHEEL.find(w => w.key === x.at.seg);
+      const panelSource = `Compendium: Colour wheel${part ? ", " + part.label : ""}`;   // v41: what the shopping list remembers
       const pool = colourIdeaPool();
       const used = [paint.colour];   // the paint itself is never offered as its own match, and the same colour is never offered twice
       let slot = 0, found = false;
@@ -8601,9 +8621,11 @@
         const list = document.createElement("ul");
         list.className = "idea-list";
         for (const { hit, reason } of rows) {
-          const tag = colourIdeaTag(hit), note = colourIdeaNote(hit);
+          const baseTag = colourIdeaTag(hit), note = colourIdeaNote(hit);
+          const tag = door.listMarks && !hit.owned ? shopListTag(hit.paint, baseTag) : baseTag;   // v41
           const row = buildIdeaItem(hit.paint, tag, reason, note, null, "idea-pick");
-          const shops = door.shops ? buildShopFoldout(hit.paint, hit.owned) : null;   // v39: only for paints you do not own
+          if (door.listMarks && !hit.owned) watchShopTag(row, hit.paint, baseTag);
+          const shops = door.shops ? buildShopFoldout(hit.paint, hit.owned, panelSource) : null;   // v39: only for paints you do not own; v41: says which wheel part you were in
           if (shops) row.appendChild(shops);
           list.appendChild(row);
           lines.push(ideaTextLine(hit.paint, tag, reason, note));
@@ -8726,7 +8748,8 @@
         const list = document.createElement("ul");
         list.className = "idea-list";
         for (const x of visible) {
-          const tag = wheelTag(x);
+          const baseTag = wheelTag(x);
+          const tag = x.origin === 0 ? baseTag : shopListTag(x.paint, baseTag);   // v41: paints already on the shopping list say so
           const reason = `${wheelTone(x.at.L)} ${sub.word}.`;
           const note = seg.key === "metallic" || MinifolioColour.isRoughColour(x.paint) ? WHEEL_ROUGH_NOTE : "";
           // v38: with door.links the row is a button that opens the paint's panel right under it (in place); Escape closes it again
@@ -8742,6 +8765,7 @@
               if (back) back.focus();
             });
           }
+          if (x.origin !== 0) watchShopTag(row, x.paint, baseTag);
           list.appendChild(row);
           lines.push(ideaTextLine(x.paint, tag, reason, note));
         }
@@ -12076,8 +12100,8 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=40". v21.4 test checks.)
-    const APP_VERSION = "v40";
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=41". v21.4 test checks.)
+    const APP_VERSION = "v41";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -12502,6 +12526,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v41", date: "18 Oct 2026", changes: [
+        "The Compendium now remembers where a paint on your shopping list came from. Adding a paint from the colour wheel's matching colours says \"Compendium: Colour wheel\" and the colour part you were in (for example Blue). Adding from the Compendium's Colour ideas says \"Compendium: Colour ideas\". It is the same list the Recipes tab uses, and a paint is still on it once.",
+        "A paint that is already on your shopping list now says \"On your shopping list\" on its row in the Compendium (in the colour wheel's lists and matching colours, and in Colour ideas). It updates when you add a paint or tap Undo.",
+      ]},
       { version: "v40", date: "18 Oct 2026", changes: [
         "The shopping list has its own tab. On the Recipes tab there is now a Shopping switch next to Recipes, Schemes and Your Palette. It holds everything the list did before (running low, empty, wishlist, paints your recipes use that you don't have, the Buy these bar, Copy as text). It no longer sits under Your Palette.",
         "One shared list, one entry per paint: a paint added from two places still shows once. Each paint now says where it came from, such as a recipe name.",
