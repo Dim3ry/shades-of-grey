@@ -24,6 +24,7 @@ import colorsys, os, re, subprocess, sys, time
 from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import wheel_helpers as wh   # v43
 from notice_watch import attach_notices
 import test_v31 as t   # the helpers (loading the app, the palette, the colours) and the Games Workshop word lists
 
@@ -78,8 +79,7 @@ def open_tab(page):
     page.wait_for_timeout(200)
 
 def tap(page, key):
-    page.click(f'[data-wheel="{key}"]')
-    page.wait_for_timeout(120)
+    wh.tap(page, key)   # v43: a colour opens its groups first (see wheel_helpers.py); same meaning as before
 
 def row(page, name):
     names = page.evaluate(ROWS_JS)
@@ -303,8 +303,7 @@ def main():
         tap(page, "blue")
         check("switching to another colour part and back never carries a panel over", page.locator(".paint-panel").count() == 0 and page.evaluate("() => compendiumState.paintOpen") == "")
         open_row(page, "Probe Blue")
-        page.click('[data-wheel="blue"]')
-        page.wait_for_timeout(100)
+        tap(page, "blue")   # v43: back up to the whole wheel
         check("closing the wheel part removes the panel with it, and the state is clear", page.locator(".paint-panel").count() == 0 and page.evaluate("() => compendiumState.paintOpen") == "")
         tap(page, "blue")
         open_row(page, "Probe Blue")
@@ -495,8 +494,7 @@ def main():
         tp.on("pageerror", lambda e: errors.append(str(e)))
         load(tp, paints=PAL)
         open_tab(tp)
-        tp.tap('[data-wheel="blue"]')
-        tp.wait_for_timeout(150)
+        wh.touch_open(tp, "blue")
         names_t = tp.evaluate(ROWS_JS)
         tp.locator("#cmp-wheel-detail button.idea-link").nth(names_t.index("Probe Blue")).tap()
         tp.wait_for_timeout(200)

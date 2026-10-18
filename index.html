@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=42"></script>
+  <script src="early.js?v=43"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -961,6 +961,22 @@
     .wheel-seg.grey { fill: #7b8594; }
     .wheel-seg.black { fill: #06080c; }
     .wheel-edge { fill: none; stroke: var(--border); stroke-width: 1; pointer-events: none; }
+    /* v43: drill-down. A hue colour redraws as its three groups: big segments, names outside the ring (with a small chip of the group's colour),
+       a round Back button in the middle. The open group gets the accent outline and an accent name. Same colour variables, so dark and light follow the theme. */
+    .wheel-sub-seg, .wheel-back-seg { cursor: pointer; outline: none; -webkit-tap-highlight-color: transparent; }
+    .wheel-zoom-seg { stroke: var(--card); stroke-width: 4; }
+    .wheel-sub-seg:hover .wheel-zoom-seg { filter: brightness(1.12); }
+    .wheel-sub-seg[aria-pressed="true"] .wheel-zoom-seg, .wheel-sub-seg:focus-visible .wheel-zoom-seg { stroke: var(--accent); stroke-width: 5; }
+    .wheel-chip { stroke: var(--border); stroke-width: 1; }
+    .wheel-label { fill: var(--text); font-size: 15px; font-weight: 600; }
+    .wheel-sub-seg[aria-pressed="true"] .wheel-label { fill: var(--accent); }
+    .wheel-sub-seg:focus-visible .wheel-label { fill: var(--accent); text-decoration: underline; }
+    .wheel-back-disc { fill: var(--card); stroke: var(--border); stroke-width: 2; }
+    .wheel-back-seg:hover .wheel-back-disc { stroke: var(--accent); }
+    .wheel-back-seg:focus-visible .wheel-back-disc { stroke: var(--accent); stroke-width: 3; }
+    .wheel-back-text { fill: var(--text); font-size: 16px; font-weight: 600; }
+    .wheel-block .wheel-back { justify-self: center; min-height: 44px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
     .wheel-detail { display: grid; gap: 10px; padding-top: 12px; border-top: 1px solid var(--border); }
     .wheel-detail .hint { margin: 0; overflow-wrap: anywhere; }
     .wheel-detail .plain-button { min-height: 44px; justify-self: start; }
@@ -1434,6 +1450,7 @@
       <div class="card compendium-card">
         <div class="card-head"><h2>Compendium</h2><span class="pro-pill">Pro preview</span></div>
         <div class="ideas-body" id="compendium-body"></div>
+        <p class="sr-only" id="wheel-live" role="status" aria-live="polite"></p>
       </div>
     </section>
 
@@ -1454,7 +1471,7 @@
             <li>Check the <strong>Dashboard</strong> to see how far you've got.</li>
             <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
           </ol>
-          <p id="help-tabs" style="margin: 8px 0 0;">There are five tabs along the bottom: <strong>Dashboard</strong>, <strong>Units</strong>, <strong>Recipes</strong>, <strong>Compendium</strong> and <strong>Settings</strong>. Compendium (a Pro preview) has a colour wheel (tap a colour to see its paints, split into groups; tap a paint to see colours that go with it and starter schemes with a similar colour), then colour ideas, your schemes, starter schemes, detail recipes and basing tips, each under a heading you tap to open and close, all without needing a recipe. Starter schemes has a Themes | Combinations switch. Start from and Faction are boxes you can type in, and the lists of schemes, recipes and tips have a search box. Help and Updates live inside Settings: open it and use the <strong>Settings / Help / Updates</strong> switch at the top. The app remembers which page you were on.</p>
+          <p id="help-tabs" style="margin: 8px 0 0;">There are five tabs along the bottom: <strong>Dashboard</strong>, <strong>Units</strong>, <strong>Recipes</strong>, <strong>Compendium</strong> and <strong>Settings</strong>. Compendium (a Pro preview) has a colour wheel, split into groups (tap red, orange, yellow, green, blue or purple and the wheel opens into that colour's three groups; tap a group to see its paints, and tap it again to close it; tap the middle or Back to go back up; the grey middle opens its paints as before; tap a paint to see colours that go with it and starter schemes with a similar colour), then colour ideas, your schemes, starter schemes, detail recipes and basing tips, each under a heading you tap to open and close, all without needing a recipe. Starter schemes has a Themes | Combinations switch. Start from and Faction are boxes you can type in, and the lists of schemes, recipes and tips have a search box. Help and Updates live inside Settings: open it and use the <strong>Settings / Help / Updates</strong> switch at the top. The app remembers which page you were on.</p>
           <p id="help-back" style="margin: 8px 0 0;">The phone's <strong>Back</strong> button closes what's open first, one thing per press: a question box (it counts as No), a photo, the camera, a recipe, the paste box. Then it goes to the Dashboard. On the Dashboard, with nothing open, it leaves the app.</p>
         </details>
         <details>
@@ -1884,7 +1901,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=42" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=43" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -1893,10 +1910,10 @@
        names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks.
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=42"></script>
-  <script src="schemes.js?v=42"></script>
-  <script src="detail-recipes.js?v=42"></script>
-  <script src="basing-tips.js?v=42"></script>
-  <script src="app.js?v=42"></script>
+  <script src="colour.js?v=43"></script>
+  <script src="schemes.js?v=43"></script>
+  <script src="detail-recipes.js?v=43"></script>
+  <script src="basing-tips.js?v=43"></script>
+  <script src="app.js?v=43"></script>
 </body>
 </html>

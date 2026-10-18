@@ -27,6 +27,7 @@ import os, re, subprocess, sys
 from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import wheel_helpers as wh   # v43
 from notice_watch import attach_notices
 import test_v31 as t   # the helpers (loading the app, the palette, the colours) and the Games Workshop word lists
 from combo_helpers import pick_combo   # v37 part 2: "Start from" is a search box now
@@ -181,11 +182,10 @@ def main():
         check("none of the five parts' content is on the page while they are closed",
               all(page.locator(f"#{i}").count() == 0 for i in ["cmp-colour-ideas-base", "cmp-faction-history", "cmp-starter-schemes", "cmp-detail-recipes", "cmp-basing-tips"]))
         closed_height = page.evaluate("() => document.getElementById('compendium-body').offsetHeight")
-        page.click('[data-wheel="blue"]')
-        page.wait_for_timeout(120)
+        wh.tap(page, "blue")   # v43: drills into blue and opens a group
         check("the wheel works while the parts are closed (tap a colour: its detail opens below) and no part opens by itself",
               page.locator("#cmp-wheel-detail").count() == 1 and all(not is_open(page, k) for k in KEYS))
-        page.click('[data-wheel="blue"]')
+        wh.tap(page, "blue")   # v43: back up to the whole wheel
         page.click("#cmp-fold-starter-button")
         page.wait_for_timeout(120)
         check("tapping Starter schemes opens it: the button says expanded, the panel shows, and the part is inside",

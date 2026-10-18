@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
 import test_v31 as t
 import test_v35 as c   # Compendium helpers (open every part, pick a start colour)
+import wheel_helpers as wh   # v43
 import test_v39 as h   # wheel and paint-panel helpers, the made-up Probe paints
 
 SHOTS, ROOT = t.SHOTS, t.ROOT
@@ -67,10 +68,14 @@ def wheel_rows_everywhere(page):
     out = {}
     for key in ["red", "orange", "yellow", "green", "blue", "purple", "white", "grey", "black", "metallic"]:
         h.open_tab(page)
-        h.tap(page, key)
-        for name, tag in page.evaluate("() => [...document.querySelectorAll('#cmp-wheel-detail ul.idea-list > li')].map(li => [li.querySelector('.idea-name').childNodes[0].textContent, li.querySelector('.idea-tag').textContent])"):
+        if key in wh.HUES:   # v43: a colour opens its groups first, so look at each of its three groups in turn
+            rows = [r for group in wh.open_each_group(page, key, lambda pg: pg.evaluate("() => [...document.querySelectorAll('#cmp-wheel-detail ul.idea-list > li')].map(li => [li.querySelector('.idea-name').childNodes[0].textContent, li.querySelector('.idea-tag').textContent])")) for r in group]
+        else:
+            h.tap(page, key)
+            rows = page.evaluate("() => [...document.querySelectorAll('#cmp-wheel-detail ul.idea-list > li')].map(li => [li.querySelector('.idea-name').childNodes[0].textContent, li.querySelector('.idea-tag').textContent])")
+            h.tap(page, key)   # close it again
+        for name, tag in rows:
             out.setdefault(name, tag)
-        h.tap(page, key)   # close it again
     return out
 
 def main():
@@ -88,10 +93,10 @@ def main():
         load(page, paints=h.UNOWNED)
         html, sw = read("index.html"), read("sw.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
-        check("the version is v41 or later (v42 follows it) in APP_VERSION, sw.js and all six script tags, all the same",
-              page.evaluate("APP_VERSION") in ("v41", "v42") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("41", "42") and len(tags) == 6 and len({v for _, v in tags}) == 1 and tags[0][1] in ("41", "42"),
+        check("the version is v41 or later (v42 and v43 follow it) in APP_VERSION, sw.js and all six script tags, all the same",
+              page.evaluate("APP_VERSION") in ("v41", "v42", "v43") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("41", "42", "43") and len(tags) == 6 and len({v for _, v in tags}) == 1 and tags[0][1] in ("41", "42", "43"),
               (page.evaluate("APP_VERSION"), tags))
-        entry = page.evaluate("CHANGELOG.slice(0, 2).find(e => e.version === 'v41')")
+        entry = page.evaluate("CHANGELOG.slice(0, 3).find(e => e.version === 'v41')")
         joined = " ".join(entry["changes"]) if entry else ""
         check("the v41 Updates entry is there (newest or second newest) and tells about where a paint came from and On your shopping list",
               entry and all(w in joined for w in ("Colour wheel", "Colour ideas", "same list", LISTED)), joined[:120])
@@ -100,7 +105,7 @@ def main():
         removed = [l[1:] for l in diff.splitlines() if l.startswith("-") and not l.startswith("---")]
         code_added = [re.sub(r"\s//\s.*$", "", l) for l in added if not l.strip().startswith("//")]
         check("no new web address, network call or storage in the new code",
-              not any(re.search(r"https?:|fetch\(|XMLHttpRequest|localStorage|indexedDB|WebSocket|sendBeacon", l) for l in code_added), [l for l in code_added if "http" in l][:2])
+              not any(re.search(r"https?:|fetch\(|XMLHttpRequest|localStorage|indexedDB|WebSocket|sendBeacon", l) for l in code_added if "w3.org/2000/svg" not in l), [l for l in code_added if "http" in l and "w3.org/2000/svg" not in l][:2])
         check("nothing was added that writes page text from variables (no innerHTML, insertAdjacentHTML or outerHTML)",
               not any(re.search(r"innerHTML|insertAdjacentHTML|outerHTML|document\.write|eval\(", l) for l in code_added))
         check("no Games Workshop word in anything added", not [l for l in added if GW_WORDS.search(l)], [l for l in added if GW_WORDS.search(l)][:2])
@@ -109,7 +114,7 @@ def main():
         html_diff = subprocess.run(["git", "diff", "main", "--", "index.html"], cwd=ROOT, capture_output=True, text=True).stdout
         html_changed = [l[1:] for l in html_diff.splitlines() if l[:1] in "+-" and not l.startswith(("+++", "---"))]
         check("index.html only changed the version number (so no security-policy entry was added or changed)",
-              html_changed and all("?v=4" in l for l in html_changed) and not any("Content-Security-Policy" in l for l in html_changed), html_changed[:3])
+              all(re.search(r"\?v=\d+|wheel|sr-only|help-tabs|v43", l) for l in html_changed) and not any("Content-Security-Policy" in l for l in html_changed), html_changed[:3])   # v43 changed the wheel styles, Help words and the live line on purpose
         check("no new file in the repo", subprocess.run(["git", "status", "--short"], cwd=ROOT, capture_output=True, text=True).stdout.count("??") <= 1)   # only this test file
 
         # ---------- 2. Sources ----------

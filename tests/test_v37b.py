@@ -27,6 +27,7 @@ import colorsys, hashlib, os, re, subprocess, sys, unicodedata
 from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import wheel_helpers as wh   # v43
 from notice_watch import attach_notices
 import test_v31 as t   # the helpers (loading the app, the palette, the colours) and the Games Workshop word lists
 from combo_helpers import pick_combo
@@ -115,8 +116,7 @@ def open_all(page):
         fold(page, key, True)
 
 def tap(page, key):
-    page.click(f'[data-wheel="{key}"]')
-    page.wait_for_timeout(120)
+    wh.tap(page, key)   # v43: a colour opens its groups first (see wheel_helpers.py); same meaning as before
 
 def place(page, colour, name="Plain", ptype=None):
     return page.evaluate("([c, n, ty]) => { const r = wheelPlace({ colour: c, name: n, type: ty || undefined }); return r ? r.seg + '/' + r.sub : null; }", [colour, name, ptype])
