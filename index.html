@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=44"></script>
+  <script src="early.js?v=45"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -1639,7 +1639,7 @@
         <details>
           <summary>Updates and feedback</summary>
           <ul>
-            <li>The version number is next to the title. The <strong>Updates</strong> tab lists what changed in each version.</li>
+            <li>The version number is next to the title. The <strong>Updates</strong> tab lists what changed in the latest five versions.</li>
             <li>Found a bug or have an idea? Use <strong>Give feedback</strong> under <strong>Settings → Updates</strong>.</li>
             <li id="help-feedback-prompt">About a week after you start using the app, a small card on the Dashboard asks if you'd like to send feedback. <strong>Give feedback</strong> opens the same form and the card goes away for good. <strong>Not now</strong> hides it for 30 days. <strong>Don't ask again</strong> hides it for good. If you don't answer, it hides itself the next day and waits 30 days, so it never shows two days running. The app only remembers the date you started and your choice, on this device. Nothing is sent anywhere.</li>
           </ul>
@@ -1656,7 +1656,7 @@
             <li><strong>Shop links</strong> (Buy these on the shopping list, and the Shop links fold-outs under suggested paints) open the shop's website only when you tap one. They are plain links: Minifolio earns nothing from them. You can hide them all under Settings → Shop links. The link carries just the paint's name for the shop's search, and the shop isn't told it came from Minifolio. From then on you're on the shop's site, under its own privacy rules.</li>
             <li><strong>Locked down:</strong> the app only runs its own code, from its own files. Your browser is told to refuse scripts from any other website, or slipped into the page itself, and the only other address it is allowed to load anything from is the visit counter's tiny picture (above). The app can't quietly send your data to any other website (a “Content Security Policy”).</li>
             <li><strong>No tracking of you:</strong> no adverts, no cookies, no accounts, nothing about your collection is ever sent, and nothing is sold. The only counting is the anonymous visit count above, which you can switch off.</li>
-            <li>Like any website, the site's host (GitHub Pages) sees basic technical details, such as your internet address, when the app loads or updates. Minifolio itself never sees or keeps them.</li>
+            <li>Like any website, the site's host (Cloudflare) sees basic technical details, such as your internet address, when the app loads or updates. Minifolio itself never sees or keeps them.</li>
           </ul>
         </details>
         <details id="about">
@@ -1908,7 +1908,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=44" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=45" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -1917,10 +1917,10 @@
        names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks.
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=44"></script>
-  <script src="schemes.js?v=44"></script>
-  <script src="detail-recipes.js?v=44"></script>
-  <script src="basing-tips.js?v=44"></script>
-  <script src="app.js?v=44"></script>
+  <script src="colour.js?v=45"></script>
+  <script src="schemes.js?v=45"></script>
+  <script src="detail-recipes.js?v=45"></script>
+  <script src="basing-tips.js?v=45"></script>
+  <script src="app.js?v=45"></script>
 </body>
 </html>
