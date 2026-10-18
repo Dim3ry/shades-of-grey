@@ -88,9 +88,12 @@ def main():
         else:
             print("SKIP (entry no longer in the public Updates list): " + 'Updates lists v18.3')
         entry = page.evaluate(f"CHANGELOG[{max(at, 0)}]")
-        text = " ".join(entry["changes"])
-        for word in ["camera", "offline", "Undo", "time zone", "reload"]:
-            check(f"v18.3 entry mentions {word!r}", word in text)
+        if page.evaluate("['v18.3'].every(v => CHANGELOG.some(r => r.version === v))"):
+            text = " ".join(entry["changes"])
+            for word in ["camera", "offline", "Undo", "time zone", "reload"]:
+                check(f"v18.3 entry mentions {word!r}", word in text)
+        else:
+            print("SKIP (entry no longer in the public Updates list): entry wording checks for v18.3")
         if page.evaluate("['v18.2'].every(v => CHANGELOG.some(r => r.version === v))"):
             check("v18.2 is listed straight below v18.3", page.evaluate(f"CHANGELOG[{at + 1}].version") == "v18.2")
         else:

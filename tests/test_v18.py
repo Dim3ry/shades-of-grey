@@ -121,10 +121,13 @@ def main():
                   first["version"] == "v18" and first["date"] == "10 Oct 2026", first["version"] + " " + first["date"])
         else:
             print("SKIP (entry no longer in the public Updates list): " + 'Updates lists v18, dated 10 Oct 2026')
-        text = " ".join(first["changes"])
-        for word in ["Paste recipes", "✕", "✎", "Do you own these?", "Remove", "Merge into…", "1:1",
-                     "Saved", "20,000", "Ushabti Bone and Wraithbone", "Help"]:
-            check(f"v18 entry mentions {word!r}", word in text)
+        if page.evaluate("['v18'].every(v => CHANGELOG.some(r => r.version === v))"):
+            text = " ".join(first["changes"])
+            for word in ["Paste recipes", "✕", "✎", "Do you own these?", "Remove", "Merge into…", "1:1",
+                         "Saved", "20,000", "Ushabti Bone and Wraithbone", "Help"]:
+                check(f"v18 entry mentions {word!r}", word in text)
+        else:
+            print("SKIP (entry no longer in the public Updates list): entry wording checks for v18")
         if page.evaluate("['v17.1'].every(v => CHANGELOG.some(r => r.version === v))"):
             check("v17.1 is still listed, straight below v18", page.evaluate(f"CHANGELOG[{v18_at + 1}].version") == "v17.1")
         else:
