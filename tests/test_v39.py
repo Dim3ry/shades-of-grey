@@ -25,6 +25,7 @@ import colorsys, json, os, re, subprocess, sys, time
 from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import wheel_helpers as wh   # v43
 from notice_watch import attach_notices
 import test_v31 as t   # the helpers (loading the app, the palette, the colours) and the Games Workshop word lists
 import test_v35 as c   # the Compendium helpers (open every part, pick a start colour)
@@ -82,8 +83,7 @@ def open_tab(page):
     page.wait_for_timeout(200)
 
 def tap(page, key):
-    page.click(f'[data-wheel="{key}"]')
-    page.wait_for_timeout(120)
+    wh.tap(page, key)   # v43: a colour opens its groups first (see wheel_helpers.py); same meaning as before
 
 def open_row(page, name, wait=150):
     names = page.evaluate(ROWS_JS)
@@ -154,8 +154,8 @@ def main():
         html, sw, app = read("index.html"), read("sw.js"), read("app.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
         check("the version is v39 everywhere: APP_VERSION, sw.js, the six script tags, and the two comments that name it",
-              page.evaluate("APP_VERSION") in ("v39", "v40", "v41") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("39", "40", "41") and len(tags) == 6 and len({v for _, v in tags}) == 1
-              and re.search(r'The "\?v=(39|40|41)"', html) and re.search(r'"app\.js\?v=(39|40|41)"', app), (page.evaluate("APP_VERSION"), tags))
+              page.evaluate("APP_VERSION") in ("v39", "v40", "v41", "v42", "v43") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("39", "40", "41", "42", "43") and len(tags) == 6 and len({v for _, v in tags}) == 1
+              and re.search(r'The "\?v=(39|40|41|42|43)"', html) and re.search(r'"app\.js\?v=(39|40|41|42|43)"', app), (page.evaluate("APP_VERSION"), tags))
         files = re.search(r"const APP_FILES = \[(.*?)\];", sw, re.S).group(1)
         cached = re.findall(r'"\./([^"?]*)', files)
         root_js = sorted(f for f in os.listdir(ROOT) if f.endswith(".js") and f != "sw.js")
@@ -165,7 +165,7 @@ def main():
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v39')")
         joined = " ".join(entry["changes"]) if entry else ""
         check("the v39 Updates entry exists once, is the newest, and tells about the Shop links fold-out, plain links, Add to shopping list, the Settings switch, the Buy these bar, and (one plain line) that restoring a backup now only accepts ordinary photo files",
-              entry and page.evaluate("CHANGELOG.filter(r => r.version === 'v39').length") == 1 and page.evaluate("CHANGELOG[0].version") in ("v39", "v40", "v41")
+              entry and page.evaluate("CHANGELOG.filter(r => r.version === 'v39').length") == 1 and page.evaluate("CHANGELOG[0].version") in ("v39", "v40", "v41", "v42", "v43")
               and all(w in joined for w in ["Shop links", "plain", "Add to shopping list", "Settings", "Buy these"]) and "Restoring a backup now only accepts ordinary photo files" in joined, joined[:300])
         check("the v38, v37, v36, v35 and v34 entries are still there", page.evaluate("['v38', 'v37', 'v36', 'v35', 'v34'].every(v => !!CHANGELOG.find(r => r.version === v))"))
         help_li = page.evaluate("() => (document.getElementById('help-shop-links') || {}).textContent || ''")
@@ -546,7 +546,8 @@ def main():
         hosts = set(re.findall(r"https?://[^\s;'\"]+", policy.group(1) if policy else ""))
         check("the security policy is untouched: the only outside address is still the one GoatCounter picture address (links the person taps need no entry)", len(hosts) == 1 and "goatcounter" in list(hosts)[0], hosts)
         check("the wheel still has its ten slices (the open one is drawn last, on top), and the paint panel still opens with its title and Copy as text",
-              sorted(page.evaluate("() => [...document.querySelectorAll('#cmp-wheel path.wheel-seg')].map(e => e.dataset.wheel)")) == sorted(["red", "orange", "yellow", "green", "blue", "purple", "white", "grey", "black", "metallic"])
+              (sorted(page.evaluate("() => [...document.querySelectorAll('#cmp-wheel path.wheel-seg')].map(e => e.dataset.wheel)")) == sorted(["red", "orange", "yellow", "green", "blue", "purple", "white", "grey", "black", "metallic"])
+               or page.locator("#cmp-wheel .wheel-sub-seg").count() == 3)   # v43: drilled into a colour, the picture is that colour's three groups
               and page.locator("#cmp-paint-panel .paint-panel-title").inner_text().startswith("Matching colours for Probe Blue") and page.locator("#cmp-paint-panel .share-row button").count() >= 1)
 
         # ---------- 9. Phone widths, touch, keyboard ----------
@@ -597,8 +598,7 @@ def main():
         tp.on("pageerror", lambda e: errors.append(str(e)))
         load(tp, paints=JUST_BLUE)
         open_tab(tp)
-        tp.tap('[data-wheel="blue"]')
-        tp.wait_for_timeout(150)
+        wh.touch_open(tp, "blue")
         tp.locator("#cmp-wheel-detail button.idea-link").first.tap()
         tp.wait_for_timeout(200)
         tp.locator("#cmp-paint-panel .shop-more > summary").first.tap()

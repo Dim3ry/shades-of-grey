@@ -24,6 +24,7 @@ import colorsys, os, re, subprocess, sys, time
 from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import wheel_helpers as wh   # v43
 from notice_watch import attach_notices
 import test_v31 as t   # the helpers (loading the app, the palette, the colours) and the Games Workshop word lists
 
@@ -78,8 +79,7 @@ def open_tab(page):
     page.wait_for_timeout(200)
 
 def tap(page, key):
-    page.click(f'[data-wheel="{key}"]')
-    page.wait_for_timeout(120)
+    wh.tap(page, key)   # v43: a colour opens its groups first (see wheel_helpers.py); same meaning as before
 
 def row(page, name):
     names = page.evaluate(ROWS_JS)
@@ -303,8 +303,7 @@ def main():
         tap(page, "blue")
         check("switching to another colour part and back never carries a panel over", page.locator(".paint-panel").count() == 0 and page.evaluate("() => compendiumState.paintOpen") == "")
         open_row(page, "Probe Blue")
-        page.click('[data-wheel="blue"]')
-        page.wait_for_timeout(100)
+        tap(page, "blue")   # v43: back up to the whole wheel
         check("closing the wheel part removes the panel with it, and the state is clear", page.locator(".paint-panel").count() == 0 and page.evaluate("() => compendiumState.paintOpen") == "")
         tap(page, "blue")
         open_row(page, "Probe Blue")
@@ -323,15 +322,16 @@ def main():
         print("\n--- 5. Inside the wheel groups: Show all ---")
         load(page, paints=PAL)
         open_tab(page)
-        tap(page, "blue")
+        wh.zoom_in(page, "blue")
+        wh.open_group(page, "blue", "blue")   # v43: the Blues group, opened by itself
         page.click("#cmp-wheel-others")
         page.wait_for_timeout(150)
         total_blue = page.evaluate("() => wheelItems().filter(x => x.at.seg === 'blue' && x.at.sub === 'blue').length")
         check("the Blues group has more than eight paints, so it starts collapsed behind Show all", total_blue > 9 and page.get_attribute("#cmp-wheel-more-blue", "aria-expanded") == "false")
-        before = page.evaluate("""() => [...document.querySelectorAll('#cmp-wheel-detail ul.idea-list')][1].querySelectorAll('li').length""")
+        before = page.evaluate("""() => [...document.querySelectorAll('#cmp-wheel-detail ul.idea-list')][0].querySelectorAll('li').length""")
         page.click("#cmp-wheel-more-blue")
         page.wait_for_timeout(150)
-        grp = page.evaluate("""() => { const ul = [...document.querySelectorAll('#cmp-wheel-detail ul.idea-list')][1]; return [...ul.querySelectorAll(':scope > li > button.idea-link .idea-name')].map(n => n.childNodes[0].textContent); }""")
+        grp = page.evaluate("""() => { const ul = [...document.querySelectorAll('#cmp-wheel-detail ul.idea-list')][0]; return [...ul.querySelectorAll(':scope > li > button.idea-link .idea-name')].map(n => n.childNodes[0].textContent); }""")
         check("Show all reveals the rest, and every revealed paint is a button too", len(grp) == total_blue > before and page.locator("#cmp-wheel-detail li > .idea-link").count() >= total_blue)
         last_name = grp[-1]
         open_row(page, last_name)
@@ -495,8 +495,7 @@ def main():
         tp.on("pageerror", lambda e: errors.append(str(e)))
         load(tp, paints=PAL)
         open_tab(tp)
-        tp.tap('[data-wheel="blue"]')
-        tp.wait_for_timeout(150)
+        wh.touch_open(tp, "blue")
         names_t = tp.evaluate(ROWS_JS)
         tp.locator("#cmp-wheel-detail button.idea-link").nth(names_t.index("Probe Blue")).tap()
         tp.wait_for_timeout(200)

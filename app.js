@@ -1299,6 +1299,92 @@
         el.textContent = t.text;
       }
     }
+    // ----- v42: "Add paints to shopping list" on the Compendium's schemes (Starter schemes and Your schemes) -----
+    // One small, closed fold-out under a scheme's paints (it looks like the "Shop links" fold-outs: same classes, no new styles). Inside, one
+    // button puts every paint of the scheme that you do NOT have on the one shared shopping list, remembering "Scheme: <name>".
+    // It uses the single-paint pieces (findOrAddPaint, applyPaintStatus, noteShopSource), so there is still one list, one entry per paint
+    // and one place for the sources. Paints you own (or have running low) are skipped; paints already on the list are not added twice;
+    // a paint that is only in the built-in list is added to your palette as Wishlist, exactly as the single Add does.
+    // It is NOT a shop button: it only writes to your own list, so the Settings -> Shop links switch does not hide it (that switch hides
+    // shop links and the shop buttons). A door switches it on with door.schemeShop (Compendium only; the recipe card is unchanged).
+    function schemePaintsToAdd(paints) {
+      const out = [];
+      for (const paint of paints || []) {
+        if (!paint || !String(paint.name || "").trim()) continue;
+        if (out.some(o => sameText(o.name, paint.name) && sameText(o.brand || "", paint.brand || ""))) continue;   // the same paint twice counts once
+        const mine = palettePaintFor(paint);
+        if (mine && haveIt(mine)) continue;     // you own it (or it is running low)
+        if (onShoppingList(paint)) continue;    // already on the list
+        out.push(paint);
+      }
+      return out;
+    }
+    // Returns how many paints were added. None added: a plain notice, no Undo. Otherwise one message and ONE Undo for all of them.
+    function addSchemePaintsToShoppingList(paints, source) {
+      const todo = schemePaintsToAdd(paints);
+      if (!todo.length) {
+        notify("Nothing added: you own these paints, or they are already on your shopping list.");
+        return 0;
+      }
+      const before = JSON.stringify(book);
+      let added = 0;
+      for (const paint of todo) {
+        const mine = findOrAddPaint(paint.brand, paint.name, "");   // "" = leave a colour you already picked alone
+        if (haveIt(mine)) continue;
+        applyPaintStatus(mine, "wishlist");
+        noteShopSource(mine, source || "Scheme");
+        added++;
+      }
+      const ok = save();
+      if (!recipeDraft) renderRecipes();
+      updateBasket();
+      updateShopFoldouts();
+      if (ok) {
+        showToast(`Added ${plural(added, "paint")} to your shopping list`, () => {
+          book = cleanRecipeBook(JSON.parse(before));
+          render(); updateBasket(); updateShopFoldouts();
+          notify(`Took ${plural(added, "paint")} off your shopping list again.`);
+        });
+      } else showNotSaved();
+      return added;
+    }
+    function buildSchemeShopFoldout(paints, source) {
+      if (!paints || !paints.length) return null;
+      const box = document.createElement("details");
+      box.className = "shop-more scheme-shop";
+      const summary = document.createElement("summary");
+      summary.textContent = "Shopping list";
+      summary.setAttribute("aria-label", "Shopping list for this scheme");
+      const body = document.createElement("div");
+      body.className = "shop-body";
+      const slot = document.createElement("div");
+      slot.className = "shop-add";
+      box.redrawAdd = () => {   // run again by updateShopFoldouts after every add and Undo, so the words and the button stay right
+        slot.replaceChildren();
+        const n = schemePaintsToAdd(paints).length;
+        const say = document.createElement("p");
+        say.className = "hint";
+        say.tabIndex = -1;
+        say.textContent = n
+          ? `${plural(n, "paint")} in this scheme ${n === 1 ? "is" : "are"} not on your shopping list yet. Paints you own are left out.`
+          : "Nothing to add: you own these paints, or they are already on your shopping list.";
+        slot.appendChild(say);
+        if (n) {
+          const add = document.createElement("button");
+          add.type = "button";
+          add.className = "plain-button";
+          add.textContent = "Add paints to shopping list";
+          add.setAttribute("aria-label", `Add ${plural(n, "paint")} from this scheme to your shopping list`);
+          add.addEventListener("click", () => { if (addSchemePaintsToShoppingList(paints, source)) { const s = slot.querySelector(".hint"); if (s) s.focus(); } });
+          slot.appendChild(add);
+        }
+      };
+      box.redrawAdd();
+      body.appendChild(slot);
+      box.append(summary, body);
+      return box;
+    }
+
     // The fold-out for one paint. Returns null when there is nothing to show (you own it, switched off, or no shop sells it).
     function buildShopFoldout(paint, owned, source) {
       if (owned || !shopLinksOn() || !paint || !String(paint.name || "").trim()) return null;
@@ -6748,7 +6834,8 @@
     // v37 part 2: wheelMore = which wheel groups show all their paints; search = what is typed in the search box of each button list.
     let compendiumState = { base: "", role: "glow", scheme: "", mood: "", detail: "", detailGroup: "", basing: "", basingGroup: "", faction: "", wheel: "", wheelOthers: {},
                             open: {}, view: "themes", combo: "", wheelMore: {}, search: { starter: "", detail: "", basing: "" },
-                            paintOpen: "" };   // v38: paintOpen = the key of the wheel paint whose "matching colours" panel is open ("" = none)
+                            paintOpen: "",   // v38: paintOpen = the key of the wheel paint whose "matching colours" panel is open ("" = none)
+                            wheelZoom: "", wheelGroup: "" };   // v43: wheelZoom = the hue colour the picture is drilled into ("" = the whole wheel), wheelGroup = its open group ("" = none)
 
     // v35: ONE set of building blocks, TWO doors. The parts of the Colour ideas card (the ideas, Your schemes, Starter schemes,
     // Detail recipes and Basing tips) are built by the functions below, and BOTH the recipe editor and the Compendium tab use them.
@@ -7297,6 +7384,9 @@
         steps.push({ paint, technique: "", coats: 1, mix: 100, note: "Used before on this faction" });
       }
       box.appendChild(list);
+      // v42: Your schemes (the colours used on the faction) get the same closed "Shopping list" fold-out, for the paints shown (Compendium only)
+      const schemeShop = door.schemeShop ? buildSchemeShopFoldout(shown.map(x => x.paint), `Scheme: ${names.join(", ")} colours`) : null;
+      if (schemeShop) box.appendChild(schemeShop);
       if (history.list.length > FACTION_HISTORY_SHOWN) say(`Showing the ${FACTION_HISTORY_SHOWN} most used of ${history.list.length}.`);
       const share = buildShareRow(door, "Your faction colours", [...lines, COMPENDIUM_TEXT_FOOT], steps);
       if (share) box.appendChild(share);
@@ -7756,7 +7846,8 @@
       list.className = "idea-list";
       list.id = door.id("starter-list");
       const lines = [`Starter scheme: ${scheme.name}`, scheme.summary, scheme.reason], steps = [];
-      for (const { colour, hit } of starterSchemePaints(scheme)) {
+      const schemeHits = starterSchemePaints(scheme);
+      for (const { colour, hit } of schemeHits) {
         const paint = hit.paint;
         const tag = colourIdeaTag(hit), reason = `${colour.part}: ${colour.look}.`, note = colourIdeaNote(hit);
         const stepNote = `Starter scheme (${scheme.name}): ${colour.part.toLowerCase()}`;
@@ -7765,6 +7856,9 @@
         steps.push({ paint, technique: "", coats: 1, mix: 100, note: stepNote });
       }
       box.append(summary, why, list);
+      // v42: a closed "Shopping list" fold-out with the Add paints button (Compendium only)
+      const schemeShop = door.schemeShop ? buildSchemeShopFoldout(schemeHits.map(x => x.hit.paint), `Scheme: ${scheme.name}`) : null;
+      if (schemeShop) box.appendChild(schemeShop);
       const share = buildShareRow(door, scheme.name, [...lines, COMPENDIUM_TEXT_FOOT], steps);
       if (share) box.appendChild(share);
       return box;
@@ -8381,6 +8475,7 @@
         shops: true,   // v39: paints you do not own, in that panel and in Colour ideas, get a closed "Shop links" fold-out (plain links)
         shopSource: () => "Compendium: Colour ideas",   // v41: what the shopping list remembers for Add buttons in the Compendium's Colour ideas
         listMarks: true,   // v41: a paint already on the shopping list says "On your shopping list" on its row
+        schemeShop: true,  // v42: Starter schemes and Your schemes get a closed "Shopping list" fold-out with "Add paints to shopping list"
         share: { copy: (text, what) => copyText(text, what, "Paste it anywhere."), startRecipe: startRecipeFromCompendium },
         factions: () => new Map(chosen ? [[factionKey(chosen), chosen]] : []),
         factionPick: { names, onChange: (key, focus) => { st.faction = key; renderCompendium(focus || `#${compendiumId("faction-history-pick")}`); } },
@@ -8521,6 +8616,43 @@
     }
     const WHEEL_ROUGH_NOTE = "The colour shown is only a guide for this kind of paint.";
     const WHEEL_GROUP_SHOWN = 8;   // v37 part 2: how many paints a group shows before "Show all" (your own paints are never hidden)
+
+    // ---- v43: DRILL-DOWN (the six hue colours open into their three groups) ----
+    // Tap red, orange, yellow, green, blue or purple and the picture is redrawn as that colour's three groups from WHEEL (the same groups and
+    // names the lists use), each a labelled segment, with the three labels OUTSIDE the ring so nothing is crowded at 360 px. Tap a group and its
+    // paints open below the picture (buildWheelDetail, with only that group); tap it again and they close. The grey centre is not drilled and
+    // works as before. The way back up is the round Back button in the middle of the picture, the Back button under it, or the Escape key.
+    // Which colour and which group are open is kept in door.state (wheelZoom, wheelGroup), like the other Compendium picks. The fills are just
+    // paint-like swatches for the three groups, dark to light (the same order as the groups); the groups themselves still come from wheelSub.
+    const WHEEL_ZOOM_FILL = {
+      red: ["#7d2230", "#bd4352", "#e8a0ad"],
+      orange: ["#7a4a2a", "#d4793f", "#f2c3a0"],
+      yellow: ["#a58a1c", "#d3b744", "#e6dcb8"],
+      green: ["#69792f", "#3f9a5a", "#74cdb0"],
+      blue: ["#2a4a8c", "#3f78c8", "#a9cdf0"],
+      purple: ["#52308a", "#8461c4", "#cdb8ee"],
+    };
+    // A group's name as one or two short lines for the picture: one line when it is short, otherwise split at the space that keeps the
+    // longer line as short as possible ("Navy and deep blue" -> "Navy and" / "deep blue").
+    function wheelLabelLines(text) {
+      const words = String(text).split(" ");
+      if (text.length <= 11 || words.length < 2) return [text];
+      let best = null;
+      for (let i = 1; i < words.length; i++) {
+        const a = words.slice(0, i).join(" "), b = words.slice(i).join(" ");
+        const worst = Math.max(a.length, b.length);
+        if (!best || worst < best.worst) best = { worst, lines: [a, b] };
+      }
+      return best.lines;
+    }
+    // Said out loud when the level changes. The element lives in index.html outside the Compendium's body, so a redraw does not lose it.
+    function wheelAnnounce(text) {
+      const live = document.getElementById("wheel-live");
+      if (!live) return;
+      live.textContent = "";
+      setTimeout(() => { live.textContent = text; }, 40);
+    }
+    function wheelPaintCount(items) { return items.length === 1 ? "1 paint" : `${items.length} paints`; }
 
     // ---- v38: PAINT LINKS (a short panel for one paint in the wheel's lists) ----
     // Tap a paint in a wheel list and a short panel opens right under it: the colours that go with it (opposite, neighbours, triad; the
@@ -8679,14 +8811,17 @@
 
     // The words under the wheel part that is open: its name, what it is, how many you own, then the paints (grouped where the wheel
     // part has groups), and Copy as text. Paints you do not have yet stay behind one button so the list stays short on a phone.
-    function buildWheelDetail(door, seg, items, redraw) {
+    // v43: with `only` (a group's key) the same detail is built for that one group of the part: items is then just that group's paints.
+    function buildWheelDetail(door, seg, items, redraw, only) {
       const st = door.state;
+      const onlySub = only ? seg.subs.find(s => s.key === only) : null;
+      const where = onlySub ? "group" : "colour";
       const box = document.createElement("div");
       box.className = "wheel-detail";
       box.id = door.id("wheel-detail");
       const title = document.createElement("h3");
       title.className = "scheme-title";
-      title.textContent = seg.label;
+      title.textContent = onlySub ? `${seg.label}: ${onlySub.label}` : seg.label;
       const about = document.createElement("p");
       about.className = "hint";
       about.textContent = seg.text;
@@ -8694,13 +8829,13 @@
       const count = document.createElement("p");
       count.className = "idea-label";
       count.textContent = items.length
-        ? `You own ${owned} of ${items.length} ${items.length === 1 ? "paint" : "paints"} in this colour.`
-        : "There are no paints in this colour to show yet.";
+        ? `You own ${owned} of ${items.length} ${items.length === 1 ? "paint" : "paints"} in this ${where}.`
+        : `There are no paints in this ${where} to show yet.`;
       const split = document.createElement("p");   // v37 part 2: the groups, so you know what the headings below are
       split.className = "hint";
       split.id = door.id("wheel-groups");
       split.textContent = `Split into ${colourWordList(seg.subs.map(s => s.label.toLowerCase()))}. Each group runs from dark to light, yours first.`;
-      box.append(title, about, split, count);
+      if (onlySub) box.append(title, about, count); else box.append(title, about, split, count);
       if (door.links && items.length) {   // v38: say that a paint can be tapped
         const tapHint = document.createElement("p");
         tapHint.className = "hint";
@@ -8708,7 +8843,7 @@
         tapHint.textContent = "Tap a paint to see colours that go with it, and starter schemes with a similar colour.";
         box.appendChild(tapHint);
       }
-      const lines = [seg.label, seg.text, split.textContent, count.textContent];
+      const lines = onlySub ? [title.textContent, seg.text, count.textContent] : [seg.label, seg.text, split.textContent, count.textContent];
       let openShown = false;   // v38: is the paint whose panel is open still on show? (Show fewer, or Hide other paints, can put it away)
 
       const others = items.filter(x => x.origin === 2);
@@ -8730,7 +8865,7 @@
         none.textContent = "You have none of these in your palette yet. Use the button above to see the others.";
         box.appendChild(none);
       }
-      for (const sub of seg.subs) {
+      for (const sub of onlySub ? [onlySub] : seg.subs) {
         const group = shown.filter(x => x.at.sub === sub.key)
           .sort((a, b) => a.origin - b.origin || a.at.L - b.at.L || String(a.paint.name).localeCompare(String(b.paint.name)));
         if (!group.length) continue;
@@ -8783,7 +8918,7 @@
         }
       }
       if (st.paintOpen && !openShown) st.paintOpen = "";   // its paint is not on show now, so its panel is closed (nothing stale is kept)
-      const share = buildShareRow(door, `${seg.label} list`, [...lines, "", COMPENDIUM_TEXT_FOOT], null);
+      const share = buildShareRow(door, onlySub ? `${title.textContent} list` : `${seg.label} list`, [...lines, "", COMPENDIUM_TEXT_FOOT], null);
       if (share) box.appendChild(share);
       return box;
     }
@@ -8797,10 +8932,102 @@
       const [x2, y2] = pt(r0, a1), [x3, y3] = pt(r0, a0);
       return `M${x0} ${y0}A${r1} ${r1} 0 ${big} 1 ${x1} ${y1}L${x2} ${y2}A${r0} ${r0} 0 ${big} 0 ${x3} ${y3}Z`;
     }
+    // v43: the drilled-down picture for one hue colour: its groups as three big labelled segments, a round Back button in the middle, the
+    // group's paints (when one is open) below. Segment i covers 120 degrees: the first group at the top, the second lower right, the third
+    // lower left, and the names sit outside the ring (the first above it, the other two under it, one on each side) so they never crowd.
+    function appendWheelDrill(body, door, items, redraw, seg) {
+      const st = door.state;
+      const SVG = "http://www.w3.org/2000/svg";
+      const mk = (tag, attrs) => { const e = document.createElementNS(SVG, tag); for (const k of Object.keys(attrs || {})) e.setAttribute(k, attrs[k]); return e; };
+      if (!seg.subs.some(s => s.key === st.wheelGroup)) st.wheelGroup = "";
+      const mine = items.filter(x => x.at.seg === seg.key);
+      const block = document.createElement("div");
+      block.className = "wheel-block";
+      block.id = door.id("wheel-block");
+      const hint = document.createElement("p");
+      hint.className = "wheel-hint";
+      hint.id = door.id("wheel-hint");
+      hint.textContent = `${seg.label}: tap a group to see its paints`;
+      const svg = mk("svg", { viewBox: "0 0 320 300", class: "wheel-svg wheel-zoom", role: "group", "aria-label": `${seg.label} colour wheel, ${seg.subs.length} groups` });
+      svg.id = door.id("wheel");
+      const CX = 160, CY = 150, R_OUT = 96, R_IN = 50, CHIP = 10;
+      const back = () => {
+        st.wheelZoom = ""; st.wheelGroup = ""; st.paintOpen = "";
+        redraw(`[data-wheel="${seg.key}"]`);
+        wheelAnnounce("Back to all colours.");
+      };
+      const pieces = [];
+      seg.subs.forEach((sub, i) => {
+        const group = mine.filter(x => x.at.sub === sub.key);
+        const ownedHere = group.filter(x => x.origin === 0).length;
+        const fill = WHEEL_ZOOM_FILL[seg.key][i];
+        const g = mk("g", { class: "wheel-sub-seg", role: "button", tabindex: "0", "aria-pressed": String(st.wheelGroup === sub.key),
+          "aria-label": `${seg.label}, ${sub.label}, ${wheelPaintCount(group)}, you own ${ownedHere}` });
+        g.dataset.wheelSub = `${seg.key}/${sub.key}`;
+        const a0 = -60 + 120 * i;
+        const path = mk("path", { d: wheelSlicePath(CX, CY, R_IN, R_OUT, a0, a0 + 120), class: "wheel-zoom-seg", fill });
+        const tip = mk("title");
+        tip.textContent = sub.label;
+        // the name: one or two short lines, outside the ring, with a small chip of the group's colour so it is clear which segment it names
+        const lines = wheelLabelLines(sub.label);
+        const wide = Math.max(...lines.map(t => t.length)) * 8;   // a safe guess at the widest line, in picture units
+        const chipX = i === 0 ? CX - (CHIP + 6 + wide) / 2 : i === 1 ? 172 : 10;
+        const lastY = i === 0 ? 38 : 270 + (lines.length - 1) * 17;
+        const firstY = lastY - (lines.length - 1) * 17;
+        const hitH = Math.max(48, lines.length * 17 + 14);
+        const hit = mk("rect", { x: chipX - 6, y: (firstY - 12 + lastY + 4) / 2 - hitH / 2, width: CHIP + 6 + wide + 14, height: hitH, rx: 8, class: "wheel-hit", fill: "rgba(0,0,0,0)" });
+        const chip = mk("rect", { x: chipX, y: firstY - 11, width: CHIP, height: CHIP, rx: 2, class: "wheel-chip", fill });
+        g.append(path, hit, chip, tip);
+        lines.forEach((t, k) => {
+          const text = mk("text", { x: chipX + CHIP + 6, y: firstY + k * 17, class: "wheel-label" });
+          text.textContent = t;
+          g.appendChild(text);
+        });
+        const choose = () => {
+          const closing = st.wheelGroup === sub.key;
+          st.wheelGroup = closing ? "" : sub.key;
+          st.paintOpen = "";   // a paint panel never carries over to another group
+          redraw(`[data-wheel-sub="${seg.key}/${sub.key}"]`);
+          wheelAnnounce(closing ? `${sub.label} closed.` : `${seg.label}, ${sub.label}. Its paints are listed below the picture.`);
+        };
+        g.addEventListener("click", choose);
+        g.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(); } });
+        pieces.push({ key: sub.key, g });
+      });
+      // the open group is drawn last, so its outline is not covered by its neighbours
+      for (const p of pieces.filter(x => x.key !== st.wheelGroup).concat(pieces.filter(x => x.key === st.wheelGroup))) svg.appendChild(p.g);
+      const edge = mk("circle", { cx: CX, cy: CY, r: R_OUT, class: "wheel-edge" });
+      svg.appendChild(edge);
+      const disc = mk("g", { class: "wheel-back-seg", role: "button", tabindex: "0", "aria-label": "Back to all colours" });
+      disc.dataset.wheelBack = "1";
+      const circle = mk("circle", { cx: CX, cy: CY, r: R_IN - 6, class: "wheel-back-disc" });
+      const word = mk("text", { x: CX, y: CY + 5, class: "wheel-back-text", "text-anchor": "middle" });
+      word.textContent = "‹ Back";
+      disc.append(circle, word);
+      disc.addEventListener("click", back);
+      disc.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); back(); } });
+      svg.appendChild(disc);
+      svg.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.preventDefault(); back(); } });   // Escape goes back up one level, from anywhere in the picture
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "plain-button wheel-back";
+      button.id = door.id("wheel-back");
+      button.textContent = "Back to all colours";
+      button.addEventListener("click", back);
+      block.append(hint, svg, button);
+      const open = seg.subs.find(s => s.key === st.wheelGroup);
+      if (open) block.appendChild(buildWheelDetail(door, seg, mine.filter(x => x.at.sub === open.key), redraw, open.key));
+      body.appendChild(block);
+    }
+
     function appendColourWheel(body, door, redraw) {
       const st = door.state;
       const SVG = "http://www.w3.org/2000/svg";
       const items = wheelItems();
+      // v43: a hue colour can be drilled into (state.wheelZoom); then the picture and the detail are drawn by appendWheelDrill instead
+      const zoomed = WHEEL.find(w => w.key === st.wheelZoom && w.ring !== undefined) || null;
+      if (zoomed) { st.wheel = ""; appendWheelDrill(body, door, items, redraw, zoomed); return; }
+      st.wheelZoom = ""; st.wheelGroup = "";
       const block = document.createElement("div");
       block.className = "wheel-block";
       block.id = door.id("wheel-block");
@@ -8841,12 +9068,19 @@
         path.setAttribute("role", "button");
         path.setAttribute("tabindex", "0");
         path.setAttribute("aria-pressed", String(st.wheel === seg.key));
-        path.setAttribute("aria-label", `${seg.label}, ${mine.length === 1 ? "1 paint" : mine.length + " paints"}, you own ${ownedHere}`);
+        const drills = seg.ring !== undefined;   // v43: the six hue colours open into their groups; the grey centre works as before
+        path.setAttribute("aria-label", `${seg.label}, ${mine.length === 1 ? "1 paint" : mine.length + " paints"}, you own ${ownedHere}${drills ? ", opens its groups" : ""}`);
         path.dataset.wheel = seg.key;
         const tip = document.createElementNS(SVG, "title");
         tip.textContent = seg.label;
         path.appendChild(tip);
-        const choose = () => { st.wheel = st.wheel === seg.key ? "" : seg.key; st.paintOpen = ""; redraw(`[data-wheel="${seg.key}"]`); };   // v38: a paint panel never carries over to another part
+        const choose = drills
+          ? () => {
+            st.wheelZoom = seg.key; st.wheelGroup = ""; st.wheel = ""; st.paintOpen = "";
+            redraw(`[data-wheel-sub="${seg.key}/${seg.subs[0].key}"]`);
+            wheelAnnounce(`${seg.label}. ${seg.subs.length} groups: ${colourWordList(seg.subs.map(s => s.label.toLowerCase()))}. Tap a group to see its paints, or Back to return to all colours.`);
+          }
+          : () => { st.wheel = st.wheel === seg.key ? "" : seg.key; st.paintOpen = ""; redraw(`[data-wheel="${seg.key}"]`); };   // v38: a paint panel never carries over to another part
         path.addEventListener("click", choose);
         path.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(); } });
         slices.push({ key: seg.key, path });
@@ -8987,7 +9221,7 @@
       const door = compendiumDoor();
       const redraw = (selector) => renderCompendium(selector);
 
-      say("A colour wheel, colour ideas, starter schemes, detail recipes and basing tips, without needing a recipe. Tap a heading to open it, and type in a search box to find things fast. Use Copy as text to keep anything, or Save into a new recipe\u2026 to start a recipe from colour ideas, schemes, detail recipes and basing tips.", "intro");
+      say("A colour wheel (tap a colour to open its groups), colour ideas, starter schemes, detail recipes and basing tips, without needing a recipe. Tap a heading to open it, and type in a search box to find things fast. Use Copy as text to keep anything, or Save into a new recipe\u2026 to start a recipe from colour ideas, schemes, detail recipes and basing tips.", "intro");
 
       // v36: the colour wheel comes first
       appendColourWheel(body, door, redraw);
@@ -12100,8 +12334,8 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=41". v21.4 test checks.)
-    const APP_VERSION = "v41";
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=43". v21.4 test checks.)
+    const APP_VERSION = "v43";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -12526,6 +12760,14 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v43", date: "18 Oct 2026", changes: [
+        "The Compendium's colour wheel now opens up. Tap red, orange, yellow, green, blue or purple and the picture is redrawn as that colour's three groups (for example Deep reds, Reds and Pinks), each a big labelled segment with its name outside the ring. Tap a group to see its paints below the picture (yours first, dark to light, with Show all and Copy as text), and tap it again to close it.",
+        "To go back up, tap the Back button in the middle of the picture, the Back to all colours button under it, or press Escape. The grey middle (whites, greys, blacks and metallics) works as before. Which colour and group are open is kept while the app is open. Everything works with a keyboard and a screen reader, which says when the level changes.",
+      ]},
+      { version: "v42", date: "18 Oct 2026", changes: [
+        "In the Compendium, Starter schemes and Your schemes each have a small closed Shopping list heading under their paints. Open it and tap Add paints to shopping list to put every paint of that scheme you don't own on your shopping list in one go. Paints you own, or have running low, are left out, and paints already on the list are not added twice.",
+        "Each paint remembers the scheme it came from (for example \"Scheme: <name>\"). The message says how many were added, and one Undo puts them all back. If nothing needed adding, it says so. It uses the same shopping list as everything else, and the basket count and \"On your shopping list\" marks stay right. It stays when Shop links is switched off, because it only adds to your own list.",
+      ]},
       { version: "v41", date: "18 Oct 2026", changes: [
         "The Compendium now remembers where a paint on your shopping list came from. Adding a paint from the colour wheel's matching colours says \"Compendium: Colour wheel\" and the colour part you were in (for example Blue). Adding from the Compendium's Colour ideas says \"Compendium: Colour ideas\". It is the same list the Recipes tab uses, and a paint is still on it once.",
         "A paint that is already on your shopping list now says \"On your shopping list\" on its row in the Compendium (in the colour wheel's lists and matching colours, and in Colour ideas). It updates when you add a paint or tap Undo.",
