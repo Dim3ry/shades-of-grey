@@ -2254,8 +2254,10 @@
         const id = Number.isInteger(s.id) && !schemeIds.has(s.id) ? s.id : null;
         if (id !== null) schemeIds.add(id);
         const ids = Array.isArray(s.recipes) ? [...new Set(s.recipes.filter(r => allRecipeIds.has(r)))] : [];
-        schemes.push({ ...s, id, name: s.name.trim(), faction: String(s.faction || "").trim(),
-                       auto: s.auto !== false, recipes: ids });
+        const cleanScheme = { ...s, id, name: s.name.trim(), faction: String(s.faction || "").trim(),
+                              auto: s.auto !== false, recipes: ids };
+        if (s.example !== true) delete cleanScheme.example;   // v44: only a real true counts (same as recipes and paints)
+        schemes.push(cleanScheme);
       }
       let nextScheme = Math.max(0, ...schemeIds) + 1;
       for (const s of schemes) if (s.id === null) s.id = nextScheme++;
@@ -4161,20 +4163,25 @@
       });
     }
 
-    // ----- v24: EXAMPLE RECIPES AND PAINTS -----
-    // A brand-new start (no units saved yet, an empty recipe book) also gets two example recipes,
-    // and the (made-up, plain-named) example paints they use appear in Your Palette. A card on the Recipes tab says so,
-    // with "Clear examples" (Undo for 8 seconds) and "Keep them". Anyone who already had data is
-    // left alone. The marks are "example: true" on a recipe or a paint; older versions keep
-    // unknown fields, so nothing here changes the shape of saved data (DATA_VERSION stays 1).
-    // Rules: Clear removes only the example recipes, and the example paints that nothing of
-    // yours uses. A paint you've used in your own recipe, given a status or edited is yours.
-    // Example paints never appear on the shopping list. Each example recipe is linked to the
-    // example unit it suits (Captain, Boyz), so you can see how recipes and units connect.
+    // ----- v24: EXAMPLE RECIPES AND PAINTS (v44: five recipes, two schemes, Restore in Settings) -----
+    // A brand-new start (no units saved yet, an empty recipe book) also gets example recipes and
+    // example schemes, and the (made-up, plain-named) example paints they use appear in Your
+    // Palette. A card on the Recipes tab says so, with "Clear examples" (Undo for 8 seconds) and
+    // "Keep them". Anyone who already had data is left alone by the automatic start-up seeding
+    // (but v44's Settings → Restore example recipes can bring the examples back for anyone, on
+    // purpose, with a click). The marks are "example: true" on a recipe, a scheme or a paint;
+    // older versions keep unknown fields (cleanRecipeBook copies recipes, schemes and paints with
+    // ...), so nothing here changes the shape of saved data (DATA_VERSION stays 1).
+    // Rules: Clear removes only the example recipes, the example schemes, and the example paints
+    // that nothing of yours uses. A paint you've used in your own recipe or given a status, and a
+    // recipe, scheme or paint you edited, is yours. Example paints never appear on the shopping
+    // list. Each example recipe is linked to the example units it suits, so you can see how
+    // recipes and units connect.
     const EXAMPLE_RECIPES = [
       // v34 (IP tidy): made-up paints with no brand and a plain colour name (third item = colour),
       // so nothing here names a real paint, faction or unit. "Example" keeps them from matching real paints.
-      { name: "Blue armour", part: "Armour", unit: 1,
+      // v44: "units" = the example unit ids it is linked to (only if that unit is still an example).
+      { name: "Blue armour", part: "Armour", units: [1],
         notes: "An example recipe, to show how they look. Clear it when you're ready to write your own.",
         steps: [
           { technique: "Base coat", coats: 2, paints: [["", "Example deep blue", "#1f3f8f"]] },
@@ -4182,7 +4189,15 @@
           { technique: "Layer", coats: 1, paints: [["", "Example mid blue", "#2f62c4"]] },
           { technique: "Edge highlight", coats: 1, paints: [["", "Example pale grey", "#cfd3d8"]] },
         ] },
-      { name: "Green skin", part: "Skin", unit: 2,
+      { name: "Gold metal", part: "Metal", units: [1, 3],
+        notes: "An example recipe, to show how they look. Clear it when you're ready to write your own.",
+        steps: [
+          { technique: "Base coat", coats: 2, paints: [["", "Example dark gold", "#8a6a1f"]] },
+          { technique: "Shade", coats: 1, paints: [["", "Example dark wash", "#2a2a2e"]] },
+          { technique: "Layer", coats: 1, paints: [["", "Example bright gold", "#d4a73a"]] },
+          { technique: "Edge highlight", coats: 1, paints: [["", "Example pale gold", "#f0dca0"]] },
+        ] },
+      { name: "Green skin", part: "Skin", units: [2],
         notes: "An example recipe, to show how they look. Clear it when you're ready to write your own.",
         steps: [
           { technique: "Base coat", coats: 2, paints: [["", "Example mid green", "#4f7a2b"]] },
@@ -4190,17 +4205,54 @@
           { technique: "Layer", coats: 1, paints: [["", "Example bright green", "#6fa03a"]] },
           { technique: "Edge highlight", coats: 1, paints: [["", "Example pale green", "#b7d28a"]] },
         ] },
+      { name: "Glowing eyes", part: "Eyes", units: [1, 2],
+        notes: "An example recipe, to show how they look. Clear it when you're ready to write your own.",
+        steps: [
+          { technique: "Base coat", coats: 1, paints: [["", "Example deep red", "#7a1414"]] },
+          { technique: "Layer", coats: 1, paints: [["", "Example bright orange", "#e8741c"]] },
+          { technique: "Edge highlight", coats: 1, paints: [["", "Example pale yellow", "#f6e7a3"]] },
+        ] },
+      { name: "Stone base", part: "Base", units: [1, 2, 3],
+        notes: "An example recipe, to show how they look. Clear it when you're ready to write your own.",
+        steps: [
+          { technique: "Base coat", coats: 2, paints: [["", "Example dark grey", "#3b3d42"]] },
+          { technique: "Dry brush", coats: 1, paints: [["", "Example mid grey", "#7b7f87"]] },
+          { technique: "Dry brush", coats: 1, paints: [["", "Example pale grey", "#cfd3d8"]] },
+        ] },
     ];
-    function seedExampleRecipes() {
-      if (!freshStart || settings.recipeExamplesChecked) return;
-      settings.recipeExamplesChecked = true;   // saved by the start-up render()
-      if (book.recipes.length || book.paints.length || book.schemes.length) return;
+    // v44: two example schemes. A scheme groups recipes for one faction (the plain made-up armies the
+    // example units belong to). "auto" is off, so a new unit of yours in that army is not handed
+    // the example recipes by surprise.
+    const EXAMPLE_SCHEMES = [
+      { name: "Blue army colours", faction: "Blue army", recipes: ["Blue armour", "Gold metal", "Glowing eyes", "Stone base"] },
+      { name: "Green army colours", faction: "Green army", recipes: ["Green skin", "Glowing eyes", "Stone base"] },
+    ];
+
+    // Adds whichever examples are not there yet and says how many it added. Used by the automatic
+    // seeding on a brand-new start and by Settings → Restore example recipes. It never changes anything
+    // of yours:
+    //  - a recipe or scheme with the same name as an example counts as already there (so nothing is
+    //    added twice, whether it is still marked as an example or you kept it as your own);
+    //  - a paint you already have with an example's name is used as it is (its colour and status are
+    //    left alone) and is only ever marked as an example if it already was one;
+    //  - links to the example units are made only for units that are still examples.
+    function addExamples() {
+      const added = { recipes: 0, schemes: 0, paints: 0 };
+      const named = (list, name) => list.find(x => sameText(x.name, name));
+      const ids = new Map();   // example recipe name -> its recipe id now
       for (const ex of EXAMPLE_RECIPES) {
+        const there = named(book.recipes, ex.name);
+        if (there) { ids.set(ex.name, there.id); continue; }
         const steps = ex.steps.map(s => ({
           technique: s.technique, coats: s.coats,
           paints: s.paints.map(([brand, name, colour]) => {
-            const paint = findOrAddPaint(brand, name, colour || "");
-            paint.example = true;
+            const wanted = tidyBrand(brand);
+            let paint = book.paints.find(p => sameText(p.name, name.trim()) && (!wanted || sameText(p.brand, wanted)));
+            if (!paint) {
+              paint = findOrAddPaint(brand, name, colour || "");
+              paint.example = true;
+              added.paints++;
+            }
             return { paint: paint.id, mix: null };
           }),
           ratio: "", note: "", optional: false,
@@ -4208,11 +4260,29 @@
         const recipe = { id: Math.max(0, ...book.recipes.map(r => r.id)) + 1, name: ex.name, part: ex.part,
                          notes: ex.notes, steps, example: true };
         book.recipes.push(recipe);
-        const unit = models.find(m => m.id === ex.unit && m.example === true);
-        if (unit) linkRecipe(unit, recipe.id);
+        added.recipes++;
+        ids.set(ex.name, recipe.id);
+        for (const unitId of ex.units || []) {
+          const unit = models.find(m => m.id === unitId && m.example === true);
+          if (unit) linkRecipe(unit, recipe.id);
+        }
       }
+      for (const ex of EXAMPLE_SCHEMES) {
+        if (named(book.schemes, ex.name)) continue;
+        book.schemes.push({ id: Math.max(0, ...book.schemes.map(s => s.id)) + 1, name: ex.name, faction: ex.faction,
+                            auto: false, recipes: ex.recipes.map(n => ids.get(n)).filter(id => id !== undefined), example: true });
+        added.schemes++;
+      }
+      return added;
+    }
+    function seedExampleRecipes() {
+      if (!freshStart || settings.recipeExamplesChecked) return;
+      settings.recipeExamplesChecked = true;   // saved by the start-up render()
+      if (book.recipes.length || book.paints.length || book.schemes.length) return;
+      addExamples();
     }
     function exampleRecipes() { return book.recipes.filter(r => r.example === true); }
+    function exampleSchemes() { return book.schemes.filter(s => s.example === true); }
     // An example paint that is still only an example: nothing of yours uses it, it has no status.
     function usedByYourRecipe(paintId) {
       return book.recipes.some(r => r.example !== true && r.steps.some(s => s.paints.some(sp => sp.paint === paintId)));
@@ -4221,28 +4291,29 @@
       return paint.example === true && paintStatus(paint) === "" && !usedByYourRecipe(paint.id);
     }
     function examplePaints() { return book.paints.filter(isExamplePaint); }
-    function exampleRecipeWords(recipes, paints) {
+    function exampleRecipeWords(recipes, paints, schemes) {
       const parts = [];
       if (recipes) parts.push(plural(recipes, "example recipe"));
+      if (schemes) parts.push(plural(schemes, "example scheme"));
       if (paints) parts.push(plural(paints, "example paint"));
-      return parts.join(" and ");
+      return parts.length > 1 ? parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1] : parts.join("");
     }
+    // The card shows only while something is still an example, so once everything is cleared or kept
+    // it is gone (it is redrawn by every render(), also after a reload or a change in another window).
     function renderRecipeExamplesCard(show) {
       const card = document.getElementById("examples-card-recipes");
-      const recipes = exampleRecipes(), paints = examplePaints();
-      const any = show && (recipes.length || paints.length);
+      const recipes = exampleRecipes(), schemes = exampleSchemes(), paints = examplePaints();
+      const any = show && (recipes.length || schemes.length || paints.length);
       card.classList.toggle("hidden", !any);
       card.innerHTML = "";
       if (!any) return;
       const text = document.createElement("p");
       const strong = document.createElement("strong");
-      const many = recipes.length + paints.length > 1;
+      const many = recipes.length + schemes.length + paints.length > 1;
       strong.textContent = many ? "These are examples." : "This is an example.";
-      const names = recipes.map(r => r.name).join(", ");
-      text.append(strong, ` The app starts with ${exampleRecipeWords(recipes.length, paints.length)}` +
-        (names ? ` (${names})` : "") + `, so you can see how recipes and your palette work. ` +
+      text.append(strong, ` You have ${exampleRecipeWords(recipes.length, paints.length, schemes.length)}. ` +
         `Clear ${many ? "them" : "it"} when you're ready to add your own. ` +
-        `Paints you've used in your own recipes, or given a status, are kept.`);
+        `Anything you edit, and any paint you use in your own recipe or give a status, stays yours.`);
       const buttons = document.createElement("div");
       buttons.className = "button-grid";
       const clear = document.createElement("button");
@@ -4260,24 +4331,30 @@
     }
     function clearRecipeExamples() {
       const goneRecipes = exampleRecipes();
+      const goneSchemes = exampleSchemes();
       const gonePaints = examplePaints();
-      if (!goneRecipes.length && !gonePaints.length) return;
-      // Remember where everything was, and which units were linked, so Undo can put it all back.
+      if (!goneRecipes.length && !goneSchemes.length && !gonePaints.length) return;
+      // Remember where everything was, and what was linked to what, so Undo can put it all back.
+      const goneIds = new Set(goneRecipes.map(r => r.id));
       const recipeSpots = goneRecipes.map(r => [book.recipes.indexOf(r), r]);
+      const schemeSpots = goneSchemes.map(s => [book.schemes.indexOf(s), s]);
       const paintSpots = gonePaints.map(p => [book.paints.indexOf(p), p]);
-      const links = [];
-      for (const m of models) {
-        const ids = (m.recipes || []).filter(id => goneRecipes.some(r => r.id === id));
-        if (ids.length) links.push([m, ids.map(id => goneRecipes.find(r => r.id === id))]);
-      }
-      for (const [m, rs] of links) for (const r of rs) unlinkRecipe(m, r.id);
+      const links = [];   // [unit, the unit's recipe list as it was] for units linked to an example recipe
+      for (const m of models) if ((m.recipes || []).some(id => goneIds.has(id))) links.push([m, m.recipes.slice()]);
+      // A scheme of yours that includes an example recipe loses it from its list (Undo puts it back).
+      const yourSchemes = book.schemes.filter(s => !goneSchemes.includes(s) && s.recipes.some(id => goneIds.has(id)))
+        .map(s => [s, s.recipes.slice()]);
+      for (const [m] of links) for (const id of goneIds) unlinkRecipe(m, id);
+      for (const [s] of yourSchemes) s.recipes = s.recipes.filter(id => !goneIds.has(id));
       book.recipes = book.recipes.filter(r => !goneRecipes.includes(r));
+      book.schemes = book.schemes.filter(s => !goneSchemes.includes(s));
       book.paints = book.paints.filter(p => !gonePaints.includes(p));
-      const message = `Cleared ${exampleRecipeWords(goneRecipes.length, gonePaints.length)}`;
+      const message = `Cleared ${exampleRecipeWords(goneRecipes.length, gonePaints.length, goneSchemes.length)}`;
       commit(message, () => {
         // Put each back in its old place. If its number has been taken since, it gets a new one
-        // (and the steps and links that point at it follow).
+        // (and the steps, schemes and links that point at it follow).
         const paintIdMap = new Map();
+        const recipeIdMap = new Map();
         for (const [spot, p] of paintSpots) {
           if (book.paints.some(x => x.id === p.id)) {
             const fresh = Math.max(0, ...book.paints.map(x => x.id)) + 1;
@@ -4288,25 +4365,58 @@
         }
         for (const [spot, r] of recipeSpots) {
           for (const s of r.steps) for (const sp of s.paints) if (paintIdMap.has(sp.paint)) sp.paint = paintIdMap.get(sp.paint);
+          const oldId = r.id;
           if (book.recipes.some(x => x.id === r.id)) r.id = Math.max(0, ...book.recipes.map(x => x.id)) + 1;
+          recipeIdMap.set(oldId, r.id);
           book.recipes.splice(Math.min(spot, book.recipes.length), 0, r);
-          for (const [m, rs] of links) if (rs.includes(r) && models.includes(m)) linkRecipe(m, r.id);
+        }
+        const nowIds = (list) => [...new Set(list.map(id => recipeIdMap.get(id) ?? id).filter(id => recipeById(id)))];
+        for (const [spot, s] of schemeSpots) {
+          s.recipes = nowIds(s.recipes);
+          if (book.schemes.some(x => x.id === s.id)) s.id = Math.max(0, ...book.schemes.map(x => x.id)) + 1;
+          book.schemes.splice(Math.min(spot, book.schemes.length), 0, s);
+        }
+        for (const [s, before] of yourSchemes) if (book.schemes.includes(s)) {
+          s.recipes = nowIds([...before, ...s.recipes.filter(id => !before.includes(id))]);
+        }
+        for (const [m, before] of links) if (models.includes(m)) {
+          const back = nowIds(before);
+          const extra = (m.recipes || []).filter(id => !back.includes(id) && recipeById(id));
+          m.recipes = [...back, ...extra];
+          if (!m.recipes.length) delete m.recipes;
         }
         render();
       }, "Undo", 8);
     }
     function keepRecipeExamples() {
       const recipes = book.recipes.filter(r => r.example === true);
+      const schemes = book.schemes.filter(s => s.example === true);
       const paints = book.paints.filter(p => p.example === true);
-      if (!recipes.length && !paints.length) return;
+      if (!recipes.length && !schemes.length && !paints.length) return;
       for (const r of recipes) delete r.example;
+      for (const s of schemes) delete s.example;
       for (const p of paints) delete p.example;
       commit(`Kept the examples as your own`, () => {
         for (const r of recipes) if (book.recipes.includes(r)) r.example = true;
+        for (const s of schemes) if (book.schemes.includes(s)) s.example = true;
         for (const p of paints) if (book.paints.includes(p)) p.example = true;
         render();
       });
     }
+    // v44: Settings → Your data → Restore example recipes. A deliberate click, available to everyone
+    // (also people who started before the examples existed). It adds back only what is missing
+    // (see addExamples), then the card on the Recipes tab shows again with Clear and Keep.
+    function restoreExampleRecipes() {
+      const added = addExamples();
+      settings.recipeExamplesChecked = true;   // the start-up seeding never needs to run after this
+      saveSettings();
+      if (!added.recipes && !added.schemes && !added.paints) {
+        notify("The examples are already here (or you kept them as your own), so nothing was added.");
+        return;
+      }
+      commit(`Added ${exampleRecipeWords(added.recipes, added.paints, added.schemes)}. You'll find them on the Recipes tab.`);
+    }
+    document.getElementById("restore-examples").addEventListener("click", restoreExampleRecipes);
 
     // ----- v21: JUMP TO STAGE -----
     // A menu listing every stage. current = the stage it shows (null = none, then
@@ -6053,6 +6163,7 @@
         book.schemes.push(scheme);
       }
       Object.assign(scheme, { name, faction, auto: d.auto, recipes: d.recipes.filter(id => recipeById(id)) });
+      delete scheme.example;   // v44: saved with the editor, so it's yours now, not an example
       schemeDraft = null;
       // Offer to apply it straight away to units that don't have it all yet.
       // v18c-3: commit() only says Saved (and offers Apply) if the save worked.
@@ -12334,8 +12445,8 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=43". v21.4 test checks.)
-    const APP_VERSION = "v43";
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=44". v21.4 test checks.)
+    const APP_VERSION = "v44";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -12760,6 +12871,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v44", date: "18 Oct 2026", changes: [
+        "A brand-new start now comes with five example recipes (armour, metal, skin, eyes and a base) and two example schemes that group them, all with plain made-up colour names and linked to the example units. The card on the Recipes tab still has Clear examples (with Undo for 8 seconds) and Keep them, and now covers the example schemes too. Anything you edit, use in your own recipe or give a status is kept as yours, and example paints never go on the shopping list.",
+        "New in Settings, under Your data: Restore example recipes. It adds the examples back for anyone, including people who started before, without changing your own recipes, schemes or paints and without adding any twice. The card on the Recipes tab then shows again.",
+      ]},
       { version: "v43", date: "18 Oct 2026", changes: [
         "The Compendium's colour wheel now opens up. Tap red, orange, yellow, green, blue or purple and the picture is redrawn as that colour's three groups (for example Deep reds, Reds and Pinks), each a big labelled segment with its name outside the ring. Tap a group to see its paints below the picture (yours first, dark to light, with Show all and Copy as text), and tap it again to close it.",
         "To go back up, tap the Back button in the middle of the picture, the Back to all colours button under it, or press Escape. The grey middle (whites, greys, blacks and metallics) works as before. Which colour and group are open is kept while the app is open. Everything works with a keyboard and a screen reader, which says when the level changes.",

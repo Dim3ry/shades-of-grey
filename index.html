@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=43"></script>
+  <script src="early.js?v=44"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -451,6 +451,7 @@
     .examples-card p { margin: 0 0 10px; }
     .examples-card .button-grid button { min-height: 44px; }
     .recipes-examples-card { margin-bottom: 12px; }
+    #restore-examples { min-height: 44px; }   /* v44 */
     /* v25: the feedback card (same look as the examples cards). Buttons are 44 px tall. */
     .feedback-card p { margin: 0 0 10px; }
     .feedback-card .feedback-give { display: flex; align-items: center; justify-content: center;
@@ -1464,7 +1465,7 @@
         <details open>
           <summary>Getting started</summary>
           <ol>
-            <li id="help-example-recipes">A brand-new start also comes with two <strong>example recipes</strong> (Blue armour and Green skin), and the paints they use show in <strong>Your Palette</strong>. A card on the <strong>Recipes</strong> tab says so. <strong>Clear examples</strong> removes only the examples (with Undo): a paint you've used in your own recipe or given a status stays, and example paints never go on the shopping list. <strong>Keep them</strong> makes them yours. If you already had recipes, nothing is added.</li>
+            <li id="help-example-recipes">A brand-new start also comes with five <strong>example recipes</strong> (Blue armour, Gold metal, Green skin, Glowing eyes and Stone base), two <strong>example schemes</strong> that group them (Blue army colours and Green army colours), and the made-up paints they use, which show in <strong>Your Palette</strong>. A card on the <strong>Recipes</strong> tab says so. <strong>Clear examples</strong> removes only the examples (with Undo): anything you've edited, and any paint you've used in your own recipe or given a status, stays yours, and example paints never go on the shopping list. <strong>Keep them</strong> makes them yours. If you already had recipes, nothing is added by itself, but <strong>Settings → Your data → Restore example recipes</strong> brings the examples back for anyone, without changing your own recipes, schemes or paints and without adding any twice.</li>
             <li>The app starts with three example units, marked with a <strong>These are examples</strong> card on the Dashboard and Units tab. <strong>Clear examples</strong> removes only those three (with Undo); <strong>Keep them</strong> keeps them as your own units.</li>
             <li>Add your units: one at a time with <strong>Units → + Add unit</strong>, or a whole army at once with <strong>Paste army list</strong> or <strong>Import CSV</strong>, which are on the same panel (see <strong>Importing</strong>).</li>
             <li>As you build and paint, press <strong>▲</strong> on a unit to move it up a stage (or tap its name and pick any stage from its <strong>Stage</strong> menu).</li>
@@ -1857,6 +1858,12 @@
         <div class="settings-actions" style="margin: 0 0 12px;">
           <button class="plain-button" id="clean-photos" disabled>Clean up photo storage</button>
         </div>
+        <!-- v44: bring the example recipes, schemes and paints back (for anyone). -->
+        <div id="restore-examples-section" style="margin: 0 0 12px;">
+          <h3 style="margin: 4px 0 0;">Restore example recipes</h3>
+          <p class="hint" style="margin: 4px 0 8px;">Adds the example recipes, schemes and paints back if you cleared them. Your own recipes, schemes and paints are never changed, and nothing is added twice. Examples you kept as your own count as already here.</p>
+          <button class="plain-button" id="restore-examples" type="button">Restore example recipes</button>
+        </div>
         <!-- v14: safety copies kept by Delete all, Replace and Restore, for 30 days. -->
         <div id="recover-card" class="hidden">
           <h3 style="margin: 4px 0 0;">Recover earlier data</h3>
@@ -1901,7 +1908,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=43" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=44" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -1910,10 +1917,10 @@
        names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks.
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=43"></script>
-  <script src="schemes.js?v=43"></script>
-  <script src="detail-recipes.js?v=43"></script>
-  <script src="basing-tips.js?v=43"></script>
-  <script src="app.js?v=43"></script>
+  <script src="colour.js?v=44"></script>
+  <script src="schemes.js?v=44"></script>
+  <script src="detail-recipes.js?v=44"></script>
+  <script src="basing-tips.js?v=44"></script>
+  <script src="app.js?v=44"></script>
 </body>
 </html>

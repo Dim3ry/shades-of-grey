@@ -4,7 +4,7 @@ plain made-up names instead of well-known game, army and paint names. Nothing sa
 What is checked:
 1. Versions: APP_VERSION v34, sw.js v34, every script tag ?v=34, a v34 Updates entry that is the newest, and the Updates entry
    text is free of Games Workshop words.
-2. A brand-new start: the 3 example units, 2 example recipes and 8 example paints use only plain names (scanned with the same
+2. A brand-new start: the 3 example units, 5 example recipes, 2 example schemes and 16 example paints use only plain names (scanned with the same
    Games Workshop word lists as the library tests), the paints have no brand and a real colour, the units are marked as examples,
    the recipes are linked to the right units, and the example card says so.
 3. The reworded hints: the box hints (game, palette search, army list game and faction) and the Help lines are free of those
@@ -79,19 +79,21 @@ def main():
               and [u["hobby"] for u in units] == ["Sci-fi", "Sci-fi", "Fantasy"], units)
         check("no unit text has a Games Workshop word", not dirty(json.dumps(units)), units)
         book = page.evaluate("book")
-        check("2 example recipes with plain names", [r["name"] for r in book["recipes"]] == ["Blue armour", "Green skin"]
-              and all(r.get("example") is True and len(r["steps"]) == 4 for r in book["recipes"]), book["recipes"])
+        check("5 example recipes with plain names (v44: was 2)", [r["name"] for r in book["recipes"]] == ["Blue armour", "Gold metal", "Green skin", "Glowing eyes", "Stone base"]
+              and all(r.get("example") is True and len(r["steps"]) in (3, 4) for r in book["recipes"]), book["recipes"])
         paints = book["paints"]
-        check("8 example paints, no brand, plain names, a real colour, marked",
-              len(paints) == 8 and all(p["brand"] == "" and p["name"].startswith("Example ") and p.get("example") is True
+        check("16 example paints, no brand, plain names, a real colour, marked (v44: was 8)",
+              len(paints) == 16 and all(p["brand"] == "" and p["name"].startswith("Example ") and p.get("example") is True
                                        and re.match(r"^#[0-9a-f]{6}$", p["colour"]) and p["colour"] != "#808080" for p in paints), paints)
-        check("no recipe or paint text has a Games Workshop word", not dirty(json.dumps(book["recipes"]) + json.dumps(paints)))
+        check("no recipe, scheme or paint text has a Games Workshop word", not dirty(json.dumps(book["recipes"]) + json.dumps(book["schemes"]) + json.dumps(paints)))
         linked = page.evaluate("() => models.filter(m => m.recipes).map(m => [m.name, m.recipes.map(id => recipeById(id).name)])")
-        check("Captain is linked to Blue armour and Brutes to Green skin",
-              linked == [["Captain", ["Blue armour"]], ["Brutes", ["Green skin"]]], linked)
+        check("the example units are linked to the example recipes that suit them (v44: more of them)",
+              linked == [["Captain", ["Blue armour", "Gold metal", "Glowing eyes", "Stone base"]],
+                         ["Brutes", ["Green skin", "Glowing eyes", "Stone base"]],
+                         ["Guardians", ["Gold metal", "Stone base"]]], linked)
         page.click('button[data-tab="recipes"]'); page.wait_for_timeout(300)
         card = page.inner_text("#examples-card-recipes")
-        check("the Recipes card names the new examples", "Blue armour" in card and "Green skin" in card and not dirty(card), card)
+        check("the Recipes card counts the new examples in plain words", "5 example recipes" in card and "2 example schemes" in card and not dirty(card), card)
         check("Clear examples is offered", page.locator("#examples-card-recipes button").count() == 2)
 
         # ---------- 3. The reworded hints and Help ----------
