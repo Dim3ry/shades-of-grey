@@ -128,6 +128,7 @@ def main():
         check("the version is v42 in APP_VERSION, sw.js and all six script tags",
               page.evaluate("APP_VERSION") == "v42" and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) == "42" and len(tags) == 6 and {v for _, v in tags} == {"42"},
               (page.evaluate("APP_VERSION"), tags))
+        check("the two comments that name the number (in index.html and app.js) say 42 too", 'The "?v=42" makes' in html and 'e.g. "app.js?v=42"' in read("app.js"))
         entry = page.evaluate("CHANGELOG[0]")
         joined = " ".join(entry["changes"]) if entry else ""
         check("the newest Updates entry is v42 and tells about the Add paints button, Undo, the same list and Shop links",
