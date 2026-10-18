@@ -178,10 +178,11 @@ def main():
             return { ids: [...c.querySelectorAll('button, input')].map(b => b.id),
                      labels: [...c.querySelectorAll('button')].map(b => b.textContent.trim()),
                      age: !!c.querySelector('#backup-age'), hint: !!c.querySelector('#share-hint') }; }""")
-        check("the Backups card holds the four buttons, the restore file box, the last-backed-up line and the hint",
-              inside["ids"] == ["export-button", "share-button", "full-export-button", "restore-button", "restore-file"] and inside["age"] and inside["hint"], inside)
-        check("button words: Save backup, Send backup to…, Save full backup with photos, Restore backup",
-              inside["labels"] == ["Save backup", "Send backup to…", "Save full backup with photos", "Restore backup"], inside["labels"])
+        # v46 added "Send full backup with photos to…" straight after Save full backup, so the card now holds five buttons.
+        check("the Backups card holds the five buttons, the restore file box, the last-backed-up line and the hint",
+              inside["ids"] == ["export-button", "share-button", "full-export-button", "full-share-button", "restore-button", "restore-file"] and inside["age"] and inside["hint"], inside)
+        check("button words: Save backup, Send backup to…, Save full backup with photos, Send full backup with photos to…, Restore backup",
+              inside["labels"] == ["Save backup", "Send backup to…", "Save full backup with photos", "Send full backup with photos to…", "Restore backup"], inside["labels"])
         in_import = page.evaluate("""() => { const h = [...document.querySelectorAll('#view-settings > .card h2')].find(x => x.textContent === 'Import').parentElement;
             return { ids: [...h.querySelectorAll('button')].filter(b => b.id).map(b => b.id).slice(0, 4), slot: !!h.querySelector('#settings-import-slot') }; }""")
         check("Import CSV, CSV template, Export CSV and Paste an army list are still together in Import",
@@ -324,8 +325,9 @@ def main():
         privacy = page.evaluate("() => document.getElementById('privacy').textContent")
         check("Privacy still says only what you choose goes out, and says the app sends nothing itself",
               "only what you choose to send" in privacy and "the app sends nothing itself" in privacy, privacy[-400:])
-        check("the Help line stays true to the code: the app only calls navigator.share from the button",
-              len(re.findall(r"navigator\.share\(", read("app.js"))) == 1 and "fetch(" not in "".join(re.findall(r"share-button.*?\}\);\n", read("app.js"), re.S)))
+        # v46 added the full-backup share button, so there are now exactly two calls: one in each Send button's handler.
+        check("the Help line stays true to the code: the app only calls navigator.share from the two Send buttons",
+              len(re.findall(r"navigator\.share\(", read("app.js"))) == 2 and "fetch(" not in "".join(re.findall(r"share-button.*?\}\);\n", read("app.js"), re.S)))
         check("the switch is still on Help and Back goes to the Dashboard",
               page.evaluate("() => settings.tab") == "help")
         back(page)

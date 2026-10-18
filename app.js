@@ -3122,9 +3122,13 @@
       const todo = total - done;
       const percent = total ? Math.round(done / total * 100) : 0;
 
+      // v46: a collection that is built and primed but not finished used to read "0%" and "0 of 9 done", as if
+      // nothing had happened. "Under way" counts models past the first stage that are not done yet, so the
+      // headline line also shows that progress (left out while it is 0, so a brand-new collection reads as before).
+      const underWay = stageCounts(models).reduce((sum, c, i) => sum + (i >= 1 && !isDone(i) ? c : 0), 0);
       donePercent.textContent = total ? `${percent}%` : "–";
       doneSummary.textContent = total
-        ? `${done} of ${total} models done · ${models.length} units`
+        ? `${done} of ${total} models done · ${underWay ? `${underWay} under way · ` : ""}${models.length} units`
         : "No units yet. Add some on the Units tab: one at a time, or a whole army from a pasted army list or a CSV file.";
 
       todoButton.innerHTML = "";
@@ -11537,33 +11541,118 @@
                useCustom: usingCustom(), customColours: Array.isArray(settings.customColours) && settings.customColours.length ? customColoursFor(STAGES.length) : [] };
     }
 
+    // v46: the full backup (units, recipes and every photo) made into one piece of text, shared by
+    // Save full backup with photos and Send full backup with photos to… so the file is the same either way.
+    // No neat line breaks here: the file is big enough already.
+    async function buildFullBackup() {
+      const backup = backupData();
+      backup.photoFiles = {};
+      let missing = 0;
+      for (const m of models) for (const id of photoIds(m)) {
+        const record = await getPhoto(id);
+        if (!record) { missing++; continue; }
+        backup.photoFiles[id] = { full: await blobToDataUrl(record.full), thumb: await blobToDataUrl(record.thumb) };
+      }
+      return { text: JSON.stringify(backup), count: Object.keys(backup.photoFiles).length, missing };
+    }
+    function fullBackupName(today) { return `minifolio-full-backup-${today}.json`; }
+    function noteFullBackupDone() {
+      const today = todayISO();
+      settings.lastBackup = today;
+      settings.lastFullBackup = today;   // v14: photo backups are tracked separately
+      saveSettings();
+      renderSettings();
+    }
+    function fullBackupWords(made) {
+      return `${plural(made.count, "photo")}` + (made.missing ? ` (${made.missing} couldn't be read)` : "");
+    }
+
     document.getElementById("full-export-button").addEventListener("click", async (event) => {
       const button = event.currentTarget;
       button.disabled = true;
       button.textContent = "Preparing backup…";
       try {
-        const backup = backupData();
-        backup.photoFiles = {};
-        let missing = 0;
-        for (const m of models) for (const id of photoIds(m)) {
-          const record = await getPhoto(id);
-          if (!record) { missing++; continue; }
-          backup.photoFiles[id] = { full: await blobToDataUrl(record.full), thumb: await blobToDataUrl(record.thumb) };
-        }
-        const today = todayISO();
-        // No neat line breaks here: the file is big enough already.
-        downloadFile(`minifolio-full-backup-${today}.json`, JSON.stringify(backup), "application/json");
-        settings.lastBackup = today;
-        settings.lastFullBackup = today;   // v14: photo backups are tracked separately
-        saveSettings();
-        renderSettings();
-        const count = Object.keys(backup.photoFiles).length;
-        showToast(`Full backup saved with ${plural(count, "photo")}` + (missing ? ` (${missing} couldn't be read)` : ""));
+        const made = await buildFullBackup();
+        downloadFile(fullBackupName(todayISO()), made.text, "application/json");
+        noteFullBackupDone();
+        showToast(`Full backup saved with ${fullBackupWords(made)}`);
       } catch (error) {
         notify("Sorry, the full backup couldn't be made. Try Save backup (without photos) instead.");
       }
       button.disabled = false;
       button.textContent = "Save full backup with photos";
+    });
+
+    // v46: Send full backup with photos to… works like Send backup to… (the phone's own share menu; the app
+    // sends nothing itself), but the full backup can take a while to put together, and a phone only lets an app
+    // open the share menu shortly after a tap. If that moment has passed, the finished backup is kept in memory
+    // (for two minutes at most) and the button turns into "Backup ready: tap to send", so the next tap can open
+    // the share menu straight away. If sharing isn't possible or fails, the backup is saved to the device instead.
+    const FULL_SHARE_LABEL = "Send full backup with photos to…";
+    const fullShareButton = document.getElementById("full-share-button");
+    const fullSaveButton = document.getElementById("full-export-button");
+    let fullBackupReady = null;      // { file, text, made } while a finished backup waits for a fresh tap
+    let fullBackupTimer = null;
+    function dropReadyBackup() {
+      fullBackupReady = null;
+      clearTimeout(fullBackupTimer);
+      fullShareButton.textContent = FULL_SHARE_LABEL;
+    }
+    function saveFullInstead(text, made, note) {
+      downloadFile(fullBackupName(todayISO()), text, "application/json");
+      noteFullBackupDone();
+      showToast(`${note} (${fullBackupWords(made)})`, null, null, 10);
+    }
+    fullShareButton.addEventListener("click", async () => {
+      const waiting = fullBackupReady;       // set when the last tap came too late to open the share menu
+      let file, text, made;
+      if (waiting) {
+        ({ file, text, made } = waiting);
+      } else {
+        fullShareButton.disabled = true;
+        fullSaveButton.disabled = true;
+        fullShareButton.textContent = "Preparing backup…";
+        try {
+          made = await buildFullBackup();
+          text = made.text;
+          file = new File([text], fullBackupName(todayISO()), { type: "application/json" });
+        } catch (error) {
+          notify("Sorry, the full backup couldn't be made. Try Save backup (without photos) instead.");
+          fullShareButton.disabled = false;
+          fullSaveButton.disabled = false;
+          fullShareButton.textContent = FULL_SHARE_LABEL;
+          return;
+        }
+        fullShareButton.disabled = false;
+        fullSaveButton.disabled = false;
+        fullShareButton.textContent = FULL_SHARE_LABEL;
+      }
+      let canShare = false;
+      try { canShare = typeof navigator.share === "function" && typeof navigator.canShare === "function" && navigator.canShare({ files: [file] }); } catch (error) { canShare = false; }
+      if (!canShare) {
+        dropReadyBackup();
+        saveFullInstead(text, made, "This browser can't send files to other apps, so the full backup was saved to your device instead");
+        return;
+      }
+      try {
+        await navigator.share({ files: [file], title: "Minifolio full backup" });
+        dropReadyBackup();
+        noteFullBackupDone();
+        showToast(`Full backup sent with ${fullBackupWords(made)}. Keep it somewhere safe, like OneDrive.`, null, null, 6);
+      } catch (error) {
+        if (error && error.name === "AbortError") { dropReadyBackup(); return; }   // the person closed the menu: nothing happened
+        if (!waiting && error && error.name === "NotAllowedError") {
+          // Too long since the tap. Keep the finished backup and ask for one more tap.
+          fullBackupReady = { file, text, made };
+          fullShareButton.textContent = "Backup ready: tap to send";
+          clearTimeout(fullBackupTimer);
+          fullBackupTimer = setTimeout(dropReadyBackup, 120000);
+          showToast("Your full backup is ready. Tap the button once more to open the share menu.", null, null, 8);
+          return;
+        }
+        dropReadyBackup();
+        saveFullInstead(text, made, "The share menu couldn't send the full backup, so it was saved to your device instead");
+      }
     });
 
     // Put the pictures from a full backup into the photo store. Returns how many worked.
@@ -12445,11 +12534,11 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=45". v21.4 test checks.)
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=46". v21.4 test checks.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v45";
+    const APP_VERSION = "v46";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -12817,6 +12906,27 @@
     //   - Settings -> Counting visits switches it off. The choice is settings.countVisits: only an
     //     explicit false means off (saved settings, so DATA_VERSION stays 1; older versions keep it).
     //     It is not in backups, like the feedback card's dates.
+    // v46: LINK TAG. A link such as minifolio.app/?from=dakka is counted under the tag "dakka", so the
+    // count can show which place a visit came from even though no referrer is sent. How: GoatCounter's own
+    // pixel documentation (goatcounter.com/help/pixel) lists a `q` setting, "query parameters, used for
+    // getting campaigns", and its campaigns page says the campaign name is read from `campaign` (or
+    // `utm_campaign`). So the picture's address gets `&q=campaign%3Ddakka`, and the tag shows up under
+    // Campaigns on the GoatCounter dashboard. Rules:
+    //   - Only the word after `from=` is read, and only if it is 1 to 20 characters of a-z, 0-9 and
+    //     dashes. Anything else (capitals, spaces, symbols, longer, empty) is ignored: the visit is still
+    //     counted, just without a tag.
+    //   - The tag is only used inside that one picture address. It is never saved (not in settings, not in
+    //     backups, not in storage) and never written into the page, so it cannot show up as HTML.
+    //   - Sent only when the Counting visits switch is on and the app runs from minifolio.app, exactly like
+    //     the visit count itself. Nothing else about the network changes (the security policy needs no
+    //     change: img-src already allows that address, and policy paths ignore the "?" part).
+    const LINK_TAG_PATTERN = /^[a-z0-9-]{1,20}$/;
+    function linkTag() {
+      try {
+        const tag = new URLSearchParams(location.search).get("from");
+        return typeof tag === "string" && LINK_TAG_PATTERN.test(tag) ? tag : "";
+      } catch (ignored) { return ""; }
+    }
     const COUNTER_CODE = "dim3ry";
     const COUNTER_URL = "https://" + COUNTER_CODE + ".goatcounter.com/count";
     const COUNTED_HOSTS = ["minifolio.app"];
@@ -12831,7 +12941,10 @@
         const pixel = new Image();
         pixel.referrerPolicy = "no-referrer";
         pixel.onload = pixel.onerror = () => {};
-        pixel.src = COUNTER_URL + "?p=" + encodeURIComponent("/") + "&rnd=" + Math.random().toString(36).slice(2, 10);
+        const tag = linkTag();
+        pixel.src = COUNTER_URL + "?p=" + encodeURIComponent("/")
+          + (tag ? "&q=" + encodeURIComponent("campaign=" + tag) : "")
+          + "&rnd=" + Math.random().toString(36).slice(2, 10);
       } catch (ignored) {}
       return true;
     }
@@ -12874,6 +12987,12 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v46", date: "18 Oct 2026", changes: [
+        "Links can now end in a short tag, like minifolio.app/?from=club, so the visit count can tell where a visit came from. Only that one short word is sent, only when Counting visits is on, and it is never saved.",
+        "The Dashboard now shows how many models are under way, so a collection that is built and primed no longer reads like nothing has happened.",
+        "The \u25B2 button is now always the same bright blue, so a new unit's button no longer looks switched off.",
+        "New in Settings, under Backups: Send full backup with photos to\u2026, which opens your phone's share menu with the full backup, like Send backup to\u2026 does for the small one.",
+      ]},
       { version: "v45", date: "18 Oct 2026", changes: [
         "The Updates page now shows only the latest five versions, so it is quicker to read.",
         "Help \u2192 Privacy now names the site's current host, and the Updates part of Help matches the shorter list.",
