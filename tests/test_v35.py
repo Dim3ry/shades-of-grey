@@ -180,14 +180,14 @@ def main():
 
         # ---------- 2. The five-tab bar ----------
         print("\n--- 2. The five-tab bar ---")
-        names = page.evaluate("() => [...document.querySelectorAll('nav.tabs button')].map(b => b.dataset.tab)")
+        names = page.evaluate("() => [...document.querySelectorAll('nav.tabs button[data-tab]')].map(b => b.dataset.tab)")
         check("five tabs in order: Dashboard, Units, Recipes, Compendium, Settings", names == ["dashboard", "units", "recipes", "compendium", "settings"], names)
         label = page.evaluate("() => [...document.querySelector('nav.tabs button[data-tab=compendium]').childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('')")
         check("the label is Compendium in full", label == "Compendium", label)
         for width in (360, 375, 390, 400):
             page.set_viewport_size({"width": width, "height": 800})
             page.wait_for_timeout(100)
-            m = page.evaluate("""() => { const out = []; for (const b of document.querySelectorAll('nav.tabs button')) {
+            m = page.evaluate("""() => { const out = []; for (const b of document.querySelectorAll('nav.tabs button[data-tab]')) {
                 const n = [...b.childNodes].find(x => x.nodeType === 3), r = document.createRange(); r.selectNodeContents(n);
                 const tr = r.getBoundingClientRect(), br = b.getBoundingClientRect();
                 out.push({ tab: b.dataset.tab, text: tr.width, left: tr.left - br.left, right: br.right - tr.right, w: br.width, bl: br.left, br: br.right }); }
@@ -208,7 +208,7 @@ def main():
         check("Back from the Compendium goes to the Dashboard", page.evaluate("() => typeof backTarget() === 'function'"))
         page.set_viewport_size({"width": 1100, "height": 800})
         page.wait_for_timeout(100)
-        names_top = page.evaluate("() => [...document.querySelectorAll('nav.tabs button')].map(b => b.dataset.tab)")
+        names_top = page.evaluate("() => [...document.querySelectorAll('nav.tabs button[data-tab]')].map(b => b.dataset.tab)")
         check("on a wide screen the top bar has all five tabs and the Compendium page is still there", names_top == names and page.is_visible("#view-compendium") and no_sideways(page))
         page.set_viewport_size({"width": 390, "height": 844})
 

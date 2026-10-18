@@ -96,7 +96,7 @@ def shown_views(page):
         .filter(s => !s.classList.contains('hidden')).map(s => s.id.replace('view-', ''))""")
 
 def lit_tabs(page):
-    return page.evaluate("""() => [...document.querySelectorAll('nav.tabs button')]
+    return page.evaluate("""() => [...document.querySelectorAll('nav.tabs button[data-tab]')]
         .filter(b => b.getAttribute('aria-current') === 'page').map(b => b.dataset.tab)""")
 
 def seg_state(page):
@@ -168,18 +168,18 @@ def main():
             for width in [390, 360]:
                 page.set_viewport_size({"width": width, "height": 844})
                 seed(page, settings=full_settings(appearance=appearance))
-                names = page.evaluate("() => [...document.querySelectorAll('nav.tabs button')].map(b => b.dataset.tab)")
+                names = page.evaluate("() => [...document.querySelectorAll('nav.tabs button[data-tab]')].map(b => b.dataset.tab)")
                 check(f"{appearance} {width}px: the bar has exactly Dashboard, Units, Recipes, Compendium, Settings",
                       names == ["dashboard", "units", "recipes", "compendium", "settings"], names)
                 check(f"{appearance} {width}px: no Help or Updates button in the bar",
                       page.locator('nav.tabs button[data-tab="help"], nav.tabs button[data-tab="updates"]').count() == 0)
-                heights = page.evaluate("() => [...document.querySelectorAll('nav.tabs button')].map(b => b.getBoundingClientRect().height)")
-                widths = page.evaluate("() => [...document.querySelectorAll('nav.tabs button')].map(b => b.getBoundingClientRect().width)")
+                heights = page.evaluate("() => [...document.querySelectorAll('nav.tabs button[data-tab]')].map(b => b.getBoundingClientRect().height)")
+                widths = page.evaluate("() => [...document.querySelectorAll('nav.tabs button[data-tab]')].map(b => b.getBoundingClientRect().width)")
                 check(f"{appearance} {width}px: every tab button is at least 44 px tall and wide", min(heights) >= 44 and min(widths) >= 44, [heights, widths])
-                labels = page.evaluate("""() => [...document.querySelectorAll('nav.tabs button')].map(b =>
+                labels = page.evaluate("""() => [...document.querySelectorAll('nav.tabs button[data-tab]')].map(b =>
                     [...b.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim())""")
                 check(f"{appearance} {width}px: the labels read Dashboard, Units, Recipes, Compendium, Settings", labels == ["Dashboard", "Units", "Recipes", "Compendium", "Settings"], labels)
-                fits = page.evaluate("""() => [...document.querySelectorAll('nav.tabs button')].every(b => b.scrollWidth <= b.clientWidth + 1)""")
+                fits = page.evaluate("""() => [...document.querySelectorAll('nav.tabs button[data-tab]')].every(b => b.scrollWidth <= b.clientWidth + 1)""")
                 check(f"{appearance} {width}px: no label is cut off", fits)
                 check(f"{appearance} {width}px: nothing scrolls sideways", no_sideways(page))
                 shot(page, f"v21-9-bar-{appearance}-{width}.png")
@@ -394,7 +394,7 @@ def main():
         print("\n--- 8. A wide screen ---")
         page.set_viewport_size({"width": 1100, "height": 800})
         seed(page, settings=full_settings(tab="settings"))
-        names = page.evaluate("() => [...document.querySelectorAll('nav.tabs button')].map(b => b.dataset.tab)")
+        names = page.evaluate("() => [...document.querySelectorAll('nav.tabs button[data-tab]')].map(b => b.dataset.tab)")
         check("the top bar has the same five tabs", names == ["dashboard", "units", "recipes", "compendium", "settings"], names)
         top_pos = page.evaluate("() => { const r = document.querySelector('nav.tabs').getBoundingClientRect(); return r.top; }")
         check("the bar is along the top", top_pos <= 1, top_pos)

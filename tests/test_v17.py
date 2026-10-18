@@ -50,8 +50,8 @@ V17_BOOK = {
 EXPECTED_SHOPPING = """Shopping list
 
 Citadel
-- Abaddon Black: missing, used in 1 recipe
-- Leadbelcher: missing, used in 1 recipe
+- Abaddon Black: missing, used in 1 recipe (from Recipe: Black trim)
+- Leadbelcher: missing, used in 1 recipe (from Recipe: Chainmail)
 - Mephiston Red: empty
 - Nuln Oil: running low (spare in stock)
 
@@ -167,7 +167,7 @@ with sync_playwright() as pw:
         # ---- Shopping list ----
         page.evaluate("showTab('recipes')")
         page.click("#recipe-seg button[data-view='palette']")
-        page.click("#shop-button")
+        page.click("#recipe-seg button[data-view='shopping']")
         text = page.evaluate("shoppingText(shoppingItems())")
         check(f"{size}: shopping list text", text == EXPECTED_SHOPPING, text)
         check(f"{size}: shop panel shows copy button", page.locator("#shop-panel button", has_text="Copy as text").count() == 1)

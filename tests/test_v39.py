@@ -133,12 +133,9 @@ def open_shopping(page):
     blur(page)
     page.click('nav button[data-tab="recipes"]')
     page.wait_for_timeout(150)
-    if not page.is_visible("#shop-button"):
-        page.click('#recipe-seg [data-view="palette"]')
-        page.wait_for_timeout(150)
-    if page.locator("#shop-panel.hidden").count():
-        page.click("#shop-button")
-        page.wait_for_timeout(150)
+    # v40: the shopping list is its own switch on the Recipes tab (it used to fold out under Your Palette)
+    page.click('#recipe-seg [data-view="shopping"]')
+    page.wait_for_timeout(150)
 
 def main():
     with sync_playwright() as p:
@@ -157,8 +154,8 @@ def main():
         html, sw, app = read("index.html"), read("sw.js"), read("app.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
         check("the version is v39 everywhere: APP_VERSION, sw.js, the six script tags, and the two comments that name it",
-              page.evaluate("APP_VERSION") == "v39" and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) == "39" and len(tags) == 6 and {v for _, v in tags} == {"39"}
-              and '"?v=39"' in html and '"app.js?v=39"' in app, (page.evaluate("APP_VERSION"), tags))
+              page.evaluate("APP_VERSION") in ("v39", "v40") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("39", "40") and len(tags) == 6 and len({v for _, v in tags}) == 1
+              and re.search(r'The "\?v=(39|40)"', html) and re.search(r'"app\.js\?v=(39|40)"', app), (page.evaluate("APP_VERSION"), tags))
         files = re.search(r"const APP_FILES = \[(.*?)\];", sw, re.S).group(1)
         cached = re.findall(r'"\./([^"?]*)', files)
         root_js = sorted(f for f in os.listdir(ROOT) if f.endswith(".js") and f != "sw.js")
@@ -168,7 +165,7 @@ def main():
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v39')")
         joined = " ".join(entry["changes"]) if entry else ""
         check("the v39 Updates entry exists once, is the newest, and tells about the Shop links fold-out, plain links, Add to shopping list, the Settings switch, the Buy these bar, and (one plain line) that restoring a backup now only accepts ordinary photo files",
-              entry and page.evaluate("CHANGELOG.filter(r => r.version === 'v39').length") == 1 and page.evaluate("CHANGELOG[0].version") == "v39"
+              entry and page.evaluate("CHANGELOG.filter(r => r.version === 'v39').length") == 1 and page.evaluate("CHANGELOG[0].version") in ("v39", "v40")
               and all(w in joined for w in ["Shop links", "plain", "Add to shopping list", "Settings", "Buy these"]) and "Restoring a backup now only accepts ordinary photo files" in joined, joined[:300])
         check("the v38, v37, v36, v35 and v34 entries are still there", page.evaluate("['v38', 'v37', 'v36', 'v35', 'v34'].every(v => !!CHANGELOG.find(r => r.version === v))"))
         help_li = page.evaluate("() => (document.getElementById('help-shop-links') || {}).textContent || ''")
@@ -320,9 +317,8 @@ def main():
         page.wait_for_timeout(200)
         listed = page.evaluate("(n) => [...document.querySelectorAll('#paint-list li')].some(li => li.textContent.includes(n))", first["name"])
         check("the Your Palette list is already up to date when you go there (nothing to refresh by hand)", listed, first["name"])
-        if page.locator("#shop-panel.hidden").count():
-            page.click("#shop-button")
-            page.wait_for_timeout(150)
+        page.click('#recipe-seg [data-view="shopping"]')   # v40: its own switch now
+        page.wait_for_timeout(150)
         shopping = page.inner_text("#shop-panel")
         check("the shopping list shows it, and the Buy these bar offers it", first["name"] in shopping and "Buy these" in shopping, shopping[:200])
         reopen_panel(page)
@@ -420,7 +416,7 @@ def main():
         open_shopping(page)
         check("the Buy these bar is gone from the shopping list (every shop button and link), while the shopping list itself and its Copy as text stay",
               page.locator("#buy-bar, #buy-links, .buy-shops, [data-shop]").count() == 0 and page.locator("#shop-panel .shop-list li").count() >= 2 and page.locator("#shop-panel button:has-text('Copy')").count() >= 1
-              and page.is_visible("#shop-button"), page.inner_text("#shop-panel")[:200])
+              and page.is_visible('#recipe-seg [data-view="shopping"]'), page.inner_text("#shop-panel")[:200])
         open_tab(page)
         tap(page, "blue")
         open_row(page, "Probe Blue")
