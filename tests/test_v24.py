@@ -42,8 +42,15 @@ STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted"
 V21_4_CSP = ("default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; "
              "img-src 'self' blob: data: https://dim3ry.goatcounter.com/count; media-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; "
              "manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'")
+# v44: five example recipes and sixteen example paints (was two and eight)
 PAINTS = ["Example deep blue", "Example dark wash", "Example mid blue", "Example pale grey",
-          "Example mid green", "Example brown wash", "Example bright green", "Example pale green"]
+          "Example mid green", "Example brown wash", "Example bright green", "Example pale green",
+          "Example dark gold", "Example bright gold", "Example pale gold", "Example deep red",
+          "Example bright orange", "Example pale yellow", "Example dark grey", "Example mid grey"]
+RECIPE_NAMES = ["Blue armour", "Gold metal", "Green skin", "Glowing eyes", "Stone base"]
+CAPTAIN_LINKS = ["Blue armour", "Gold metal", "Glowing eyes", "Stone base"]
+BRUTES_LINKS = ["Green skin", "Glowing eyes", "Stone base"]
+GUARDIANS_LINKS = ["Gold metal", "Stone base"]
 BOOK_KEYS = ["paints", "parts", "recipes", "schemes", "shorthand", "techniques", "v15"]
 
 def fresh(page, settings=None):
@@ -166,10 +173,11 @@ def main():
         print("\n--- 2. A brand-new start ---")
         fresh(page)
         recipes = page.evaluate("() => book.recipes.map(r => ({ name: r.name, part: r.part, example: r.example, steps: r.steps.length }))")
-        check("two example recipes", [r["name"] for r in recipes] == ["Blue armour", "Green skin"], recipes)
-        check("both are marked as examples and have four steps", all(r["example"] is True and r["steps"] == 4 for r in recipes), recipes)
-        check("their parts are Armour and Skin", [r["part"] for r in recipes] == ["Armour", "Skin"], recipes)
-        check("the eight paints they use are in the palette", palette_names(page) == sorted(PAINTS), palette_names(page))
+        check("five example recipes", [r["name"] for r in recipes] == RECIPE_NAMES, recipes)
+        check("all are marked as examples and have three or four steps", all(r["example"] is True for r in recipes)
+              and [r["steps"] for r in recipes] == [4, 4, 4, 3, 3], recipes)
+        check("their parts are Armour, Metal, Skin, Eyes and Base", [r["part"] for r in recipes] == ["Armour", "Metal", "Skin", "Eyes", "Base"], recipes)
+        check("the sixteen paints they use are in the palette", palette_names(page) == sorted(PAINTS), palette_names(page))
         check("every example paint is marked and has a real colour (not the unset grey)",
               page.evaluate("() => book.paints.every(p => p.example === true && p.colour !== DEFAULT_PAINT_COLOUR && p.brand === '')"))
         check("no paint has a status yet", page.evaluate("() => book.paints.every(p => paintStatus(p) === '')"))
@@ -178,21 +186,23 @@ def main():
         captain = next(u for u in units if u["name"] == "Captain")
         boyz = next(u for u in units if u["name"] == "Brutes")
         names = page.evaluate("() => Object.fromEntries(book.recipes.map(r => [r.id, r.name]))")
-        check("Captain is linked to Blue armour", [names[str(i)] for i in captain.get("recipes", [])] == ["Blue armour"], captain)
-        check("Brutes are linked to Green skin", [names[str(i)] for i in boyz.get("recipes", [])] == ["Green skin"], boyz)
-        check("Guardians have no recipe link", "recipes" not in next(u for u in units if u["name"] == "Guardians"))
+        guardians = next(u for u in units if u["name"] == "Guardians")
+        check("Captain is linked to the four recipes that suit the Blue army", [names[str(i)] for i in captain.get("recipes", [])] == CAPTAIN_LINKS, captain)
+        check("Brutes are linked to the three recipes that suit the Green army", [names[str(i)] for i in boyz.get("recipes", [])] == BRUTES_LINKS, boyz)
+        check("Guardians are linked to the metal and the base", [names[str(i)] for i in guardians.get("recipes", [])] == GUARDIANS_LINKS, guardians)
         saved = saved_book(page)
-        check("saved: both recipes and eight paints carry the example mark",
-              [r.get("example") for r in saved["recipes"]] == [True, True] and sum(1 for q in saved["paints"] if q.get("example") is True) == 8, saved["recipes"])
+        check("saved: all five recipes, both schemes and sixteen paints carry the example mark",
+              [r.get("example") for r in saved["recipes"]] == [True] * 5 and [s.get("example") for s in saved["schemes"]] == [True, True]
+              and sum(1 for q in saved["paints"] if q.get("example") is True) == 16, saved["recipes"])
         check("saved settings remember the examples were given (so they never come back)", saved_settings(page).get("recipeExamplesChecked") is True)
         check("the saved recipe book still has the same keys", sorted(saved.keys()) == sorted(BOOK_KEYS), sorted(saved.keys()))
         main_tab(page, "recipes")
-        check("the Recipes tab lists both recipes", page.locator("#recipe-list li").count() == 2, page.locator("#recipe-list li").count())
+        check("the Recipes tab lists all five recipes", page.locator("#recipe-list li").count() == 5, page.locator("#recipe-list li").count())
         check("the card shows on the Recipes sub-page", card_visible(page))
         card_text = page.inner_text("#examples-card-recipes")
-        check("the card says these are examples and names the recipes",
-              "These are examples" in card_text and "Blue armour" in card_text and "Green skin" in card_text
-              and "2 example recipes" in card_text and "8 example paints" in card_text, card_text)
+        check("the card says these are examples and counts the recipes, schemes and paints",
+              "These are examples" in card_text and "5 example recipes" in card_text
+              and "2 example schemes" in card_text and "16 example paints" in card_text, card_text)
         check("the card has Clear examples and Keep them",
               page.locator("#examples-card-recipes .clear-recipe-examples").inner_text() == "Clear examples"
               and page.locator("#examples-card-recipes .keep-recipe-examples").inner_text() == "Keep them")
@@ -200,7 +210,7 @@ def main():
         check("the card also shows on Schemes", card_visible(page))
         recipe_view(page, "palette")
         check("the card also shows on Your Palette", card_visible(page))
-        check("Your Palette lists the eight paints", page.locator("#paint-list li.paint-item").count() == 8,
+        check("Your Palette lists the sixteen paints", page.locator("#paint-list li.paint-item").count() == 16,
               page.locator("#paint-list li.paint-item").count())
         recipe_view(page, "recipes")
         page.click("#recipe-list li >> nth=0")
@@ -272,7 +282,7 @@ def main():
         page.wait_for_timeout(300)
         t = toast(page)
         check("a message says exactly what was cleared, with Undo",
-              t["shown"] and t["undo"] and t["text"] == "Cleared 2 example recipes and 8 example paints", t)
+              t["shown"] and t["undo"] and t["text"] == "Cleared 5 example recipes, 2 example schemes and 16 example paints", t)
         check("no recipes and no paints are left", page.evaluate("() => book.recipes.length + book.paints.length") == 0)
         check("the card is gone", not card_visible(page))
         check("the recipe list no longer shows the examples", "Blue armour" not in page.inner_text("#recipe-list")
@@ -304,11 +314,11 @@ def main():
         page.click("#toast-undo")
         page.wait_for_timeout(300)
         ids = page.evaluate("() => book.recipes.map(r => r.id)")
-        check("Undo after a new recipe took a number: all three recipes exist with different numbers", len(ids) == 3 and len(set(ids)) == 3, ids)
+        check("Undo after a new recipe took a number: all six recipes exist with different numbers", len(ids) == 6 and len(set(ids)) == 6, ids)
         check("and every recipe step still points at a real paint",
               page.evaluate("() => book.recipes.every(r => r.steps.every(s => s.paints.every(sp => paintById(sp.paint))))"))
         check("and the example units are linked to their recipes again",
-              page.evaluate("() => models.filter(m => m.recipes).map(m => m.recipes.map(id => recipeById(id).name).join()).join('|')") == "Blue armour|Green skin")
+              page.evaluate("() => models.filter(m => m.recipes).map(m => m.recipes.map(id => recipeById(id).name).join()).join('|')") == "|".join([",".join(CAPTAIN_LINKS), ",".join(BRUTES_LINKS), ",".join(GUARDIANS_LINKS)]))
         # Keep them
         fresh(page)
         main_tab(page, "recipes")
@@ -317,14 +327,14 @@ def main():
         t = toast(page)
         check("Keep them: a message with Undo", t["shown"] and t["undo"] and "Kept" in t["text"], t)
         check("Keep them: nothing removed, the marks are gone",
-              page.evaluate("() => book.recipes.length") == 2 and page.evaluate("() => book.paints.length") == 8
-              and page.evaluate("() => book.recipes.every(r => !('example' in r)) && book.paints.every(p => !('example' in p))"))
+              page.evaluate("() => book.recipes.length") == 5 and page.evaluate("() => book.paints.length") == 16
+              and page.evaluate("() => book.recipes.every(r => !('example' in r)) && book.paints.every(p => !('example' in p)) && book.schemes.every(s => !('example' in s))"))
         check("Keep them: the card is gone", not card_visible(page))
         page.reload()
         page.wait_for_function("() => typeof APP_VERSION === 'string'")
         page.wait_for_timeout(300)
         check("Keep them sticks after a reload (not given again, not marked again)",
-              page.evaluate("() => book.recipes.length") == 2 and page.evaluate("() => book.recipes.every(r => !('example' in r))"))
+              page.evaluate("() => book.recipes.length") == 5 and page.evaluate("() => book.recipes.every(r => !('example' in r))"))
         fresh(page)
         main_tab(page, "recipes")
         page.click("#examples-card-recipes .keep-recipe-examples")
@@ -339,11 +349,11 @@ def main():
         fresh(page)
         page.evaluate("() => { applyPaintStatus(book.paints.find(p => p.name === 'Example mid blue'), 'owned'); render(); }")
         main_tab(page, "recipes")
-        check("the card counts 2 recipes and 7 paints once one has a status",
-              "2 example recipes and 7 example paints" in page.inner_text("#examples-card-recipes"), page.inner_text("#examples-card-recipes"))
+        check("the card counts 15 paints once one has a status",
+              "5 example recipes, 2 example schemes and 15 example paints" in page.inner_text("#examples-card-recipes"), page.inner_text("#examples-card-recipes"))
         page.click("#examples-card-recipes .clear-recipe-examples")
         page.wait_for_timeout(300)
-        check("Clear says 2 recipes and 7 paints", toast(page)["text"] == "Cleared 2 example recipes and 7 example paints", toast(page))
+        check("Clear says 5 recipes, 2 schemes and 15 paints", toast(page)["text"] == "Cleared 5 example recipes, 2 example schemes and 15 example paints", toast(page))
         check("the paint with a status is kept (and nothing else is)", palette_names(page) == ["Example mid blue"], palette_names(page))
         check("it keeps its status", page.evaluate("() => paintStatus(book.paints[0])") == "owned")
         check("the kept paint is saved without an example claim on the card (card gone)", not card_visible(page))
@@ -354,7 +364,7 @@ def main():
               paints: [{ paint: p.id, mix: null }], ratio: '', note: '', optional: false }] }); render(); }""")
         main_tab(page, "recipes")
         check("a paint your own recipe uses is no longer counted as an example",
-              "2 example recipes and 7 example paints" in page.inner_text("#examples-card-recipes"), page.inner_text("#examples-card-recipes"))
+              "5 example recipes, 2 example schemes and 15 example paints" in page.inner_text("#examples-card-recipes"), page.inner_text("#examples-card-recipes"))
         page.click("#examples-card-recipes .clear-recipe-examples")
         page.wait_for_timeout(300)
         check("Clear leaves your recipe and the paint it uses",
@@ -363,7 +373,7 @@ def main():
         page.click("#toast-undo")
         page.wait_for_timeout(300)
         check("Undo brings the examples back and your own recipe stays",
-              page.evaluate("() => book.recipes.length") == 3 and len(palette_names(page)) == 8)
+              page.evaluate("() => book.recipes.length") == 6 and len(palette_names(page)) == 16)
 
         fresh(page)
         page.evaluate("() => { editPaint(book.paints.find(p => p.name === 'Example dark wash'), 'colour', '#101820'); }")
@@ -408,7 +418,7 @@ def main():
         page.evaluate("() => keepRecipeExamples()")
         page.wait_for_timeout(200)
         check("after Keep them the paints count like any other (missing, used in a recipe)",
-              page.evaluate("() => shoppingItems().length") == 8)
+              page.evaluate("() => shoppingItems().length") == 16)
 
         # ---------- 7. Saved data's shape ----------
         print("\n--- 7. Saved data's shape ---")

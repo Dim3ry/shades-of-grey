@@ -131,10 +131,10 @@ def main():
         html, sw = read("index.html"), read("sw.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
         check("the version is v42 or v43 in APP_VERSION, sw.js and all six script tags",
-              page.evaluate("APP_VERSION") in ("v42", "v43") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("42", "43") and len(tags) == 6 and len({v for _, v in tags}) == 1 and tags[0][1] in ("42", "43"),
+              page.evaluate("APP_VERSION") in ("v42", "v43", "v44") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("42", "43", "44") and len(tags) == 6 and len({v for _, v in tags}) == 1 and tags[0][1] in ("42", "43", "44"),
               (page.evaluate("APP_VERSION"), tags))
-        check("the two comments that name the number (in index.html and app.js) carry the same 42 or 43", re.search(r'The "\?v=(42|43)" makes', html) and re.search(r'e\.g\. "app\.js\?v=(42|43)"', read("app.js")))
-        entry = page.evaluate("CHANGELOG.slice(0, 2).find(e => e.version === 'v42')")
+        check("the two comments that name the number (in index.html and app.js) carry the same 42, 43 or 44", re.search(r'The "\?v=(42|43|44)" makes', html) and re.search(r'e\.g\. "app\.js\?v=(42|43|44)"', read("app.js")))
+        entry = page.evaluate("CHANGELOG.slice(0, 3).find(e => e.version === 'v42')")
         joined = " ".join(entry["changes"]) if entry else ""
         check("the v42 Updates entry (newest, or second newest once v43 is out) tells about the Add paints button, Undo, the same list and Shop links",
               entry and all(w in joined for w in ("Add paints to shopping list", "Undo", "same shopping list", "Shop links")), joined[:120])
@@ -154,7 +154,7 @@ def main():
         html_diff = subprocess.run(["git", "diff", "main", "--", "index.html"], cwd=ROOT, capture_output=True, text=True).stdout
         html_changed = [l[1:] for l in html_diff.splitlines() if l[:1] in "+-" and not l.startswith(("+++", "---"))]
         check("index.html only changed the version number (so no security-policy entry was added or changed)",
-              all(re.search(r"\?v=\d+|wheel|sr-only|help-tabs|v43", l) for l in html_changed) and not any("Content-Security-Policy" in l for l in html_changed), html_changed[:3])   # v43 changed the wheel styles, Help words and the live line on purpose
+              all(re.search(r"\?v=\d+|wheel|sr-only|help-tabs|v43|v44|restore|example|^\s*</div>\s*$", l) for l in html_changed) and not any("Content-Security-Policy" in l for l in html_changed), html_changed[:3])   # v43 changed the wheel styles, Help words and the live line on purpose
         check("no new file in the repo", subprocess.run(["git", "status", "--short"], cwd=ROOT, capture_output=True, text=True).stdout.count("??") <= 1)   # only this test file
 
         # ---------- 2. Starter schemes ----------

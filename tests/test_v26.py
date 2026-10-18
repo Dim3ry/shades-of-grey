@@ -672,7 +672,7 @@ def main():
         page.evaluate("() => localStorage.clear()")
         page.evaluate("([k]) => localStorage.setItem(k, JSON.stringify({ paste: { text: 'x' } }))", [DRAFTS])
         reload(page)
-        check("a drafts entry on its own does not count as having used the app (examples still appear)", page.evaluate("book.recipes.length") == 2, page.evaluate("book.recipes.length"))
+        check("a drafts entry on its own does not count as having used the app (examples still appear)", page.evaluate("book.recipes.length") == 5, page.evaluate("book.recipes.length"))
         # Storage failing for drafts only
         fresh(page)
         page.evaluate("""() => { const orig = Storage.prototype.setItem; window.__orig = orig;
