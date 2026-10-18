@@ -88,13 +88,13 @@ def main():
         load(page, paints=h.UNOWNED)
         html, sw = read("index.html"), read("sw.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
-        check("the version is v41 in APP_VERSION, sw.js and all six script tags",
-              page.evaluate("APP_VERSION") == "v41" and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) == "41" and len(tags) == 6 and {v for _, v in tags} == {"41"},
+        check("the version is v41 or later (v42 follows it) in APP_VERSION, sw.js and all six script tags, all the same",
+              page.evaluate("APP_VERSION") in ("v41", "v42") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("41", "42") and len(tags) == 6 and len({v for _, v in tags}) == 1 and tags[0][1] in ("41", "42"),
               (page.evaluate("APP_VERSION"), tags))
-        entry = page.evaluate("CHANGELOG[0]")
+        entry = page.evaluate("CHANGELOG.slice(0, 2).find(e => e.version === 'v41')")
         joined = " ".join(entry["changes"]) if entry else ""
-        check("the newest Updates entry is v41 and tells about where a paint came from and On your shopping list",
-              entry and entry["version"] == "v41" and all(w in joined for w in ("Colour wheel", "Colour ideas", "same list", LISTED)), joined[:120])
+        check("the v41 Updates entry is there (newest or second newest) and tells about where a paint came from and On your shopping list",
+              entry and all(w in joined for w in ("Colour wheel", "Colour ideas", "same list", LISTED)), joined[:120])
         diff = subprocess.run(["git", "diff", "main", "--", "app.js"], cwd=ROOT, capture_output=True, text=True).stdout
         added = [l[1:] for l in diff.splitlines() if l.startswith("+") and not l.startswith("+++")]
         removed = [l[1:] for l in diff.splitlines() if l.startswith("-") and not l.startswith("---")]

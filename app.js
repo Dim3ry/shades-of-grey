@@ -1299,6 +1299,92 @@
         el.textContent = t.text;
       }
     }
+    // ----- v42: "Add paints to shopping list" on the Compendium's schemes (Starter schemes and Your schemes) -----
+    // One small, closed fold-out under a scheme's paints (it looks like the "Shop links" fold-outs: same classes, no new styles). Inside, one
+    // button puts every paint of the scheme that you do NOT have on the one shared shopping list, remembering "Scheme: <name>".
+    // It uses the single-paint pieces (findOrAddPaint, applyPaintStatus, noteShopSource), so there is still one list, one entry per paint
+    // and one place for the sources. Paints you own (or have running low) are skipped; paints already on the list are not added twice;
+    // a paint that is only in the built-in list is added to your palette as Wishlist, exactly as the single Add does.
+    // It is NOT a shop button: it only writes to your own list, so the Settings -> Shop links switch does not hide it (that switch hides
+    // shop links and the shop buttons). A door switches it on with door.schemeShop (Compendium only; the recipe card is unchanged).
+    function schemePaintsToAdd(paints) {
+      const out = [];
+      for (const paint of paints || []) {
+        if (!paint || !String(paint.name || "").trim()) continue;
+        if (out.some(o => sameText(o.name, paint.name) && sameText(o.brand || "", paint.brand || ""))) continue;   // the same paint twice counts once
+        const mine = palettePaintFor(paint);
+        if (mine && haveIt(mine)) continue;     // you own it (or it is running low)
+        if (onShoppingList(paint)) continue;    // already on the list
+        out.push(paint);
+      }
+      return out;
+    }
+    // Returns how many paints were added. None added: a plain notice, no Undo. Otherwise one message and ONE Undo for all of them.
+    function addSchemePaintsToShoppingList(paints, source) {
+      const todo = schemePaintsToAdd(paints);
+      if (!todo.length) {
+        notify("Nothing added: you own these paints, or they are already on your shopping list.");
+        return 0;
+      }
+      const before = JSON.stringify(book);
+      let added = 0;
+      for (const paint of todo) {
+        const mine = findOrAddPaint(paint.brand, paint.name, "");   // "" = leave a colour you already picked alone
+        if (haveIt(mine)) continue;
+        applyPaintStatus(mine, "wishlist");
+        noteShopSource(mine, source || "Scheme");
+        added++;
+      }
+      const ok = save();
+      if (!recipeDraft) renderRecipes();
+      updateBasket();
+      updateShopFoldouts();
+      if (ok) {
+        showToast(`Added ${plural(added, "paint")} to your shopping list`, () => {
+          book = cleanRecipeBook(JSON.parse(before));
+          render(); updateBasket(); updateShopFoldouts();
+          notify(`Took ${plural(added, "paint")} off your shopping list again.`);
+        });
+      } else showNotSaved();
+      return added;
+    }
+    function buildSchemeShopFoldout(paints, source) {
+      if (!paints || !paints.length) return null;
+      const box = document.createElement("details");
+      box.className = "shop-more scheme-shop";
+      const summary = document.createElement("summary");
+      summary.textContent = "Shopping list";
+      summary.setAttribute("aria-label", "Shopping list for this scheme");
+      const body = document.createElement("div");
+      body.className = "shop-body";
+      const slot = document.createElement("div");
+      slot.className = "shop-add";
+      box.redrawAdd = () => {   // run again by updateShopFoldouts after every add and Undo, so the words and the button stay right
+        slot.replaceChildren();
+        const n = schemePaintsToAdd(paints).length;
+        const say = document.createElement("p");
+        say.className = "hint";
+        say.tabIndex = -1;
+        say.textContent = n
+          ? `${plural(n, "paint")} in this scheme ${n === 1 ? "is" : "are"} not on your shopping list yet. Paints you own are left out.`
+          : "Nothing to add: you own these paints, or they are already on your shopping list.";
+        slot.appendChild(say);
+        if (n) {
+          const add = document.createElement("button");
+          add.type = "button";
+          add.className = "plain-button";
+          add.textContent = "Add paints to shopping list";
+          add.setAttribute("aria-label", `Add ${plural(n, "paint")} from this scheme to your shopping list`);
+          add.addEventListener("click", () => { if (addSchemePaintsToShoppingList(paints, source)) { const s = slot.querySelector(".hint"); if (s) s.focus(); } });
+          slot.appendChild(add);
+        }
+      };
+      box.redrawAdd();
+      body.appendChild(slot);
+      box.append(summary, body);
+      return box;
+    }
+
     // The fold-out for one paint. Returns null when there is nothing to show (you own it, switched off, or no shop sells it).
     function buildShopFoldout(paint, owned, source) {
       if (owned || !shopLinksOn() || !paint || !String(paint.name || "").trim()) return null;
@@ -7297,6 +7383,9 @@
         steps.push({ paint, technique: "", coats: 1, mix: 100, note: "Used before on this faction" });
       }
       box.appendChild(list);
+      // v42: Your schemes (the colours used on the faction) get the same closed "Shopping list" fold-out, for the paints shown (Compendium only)
+      const schemeShop = door.schemeShop ? buildSchemeShopFoldout(shown.map(x => x.paint), `Scheme: ${names.join(", ")} colours`) : null;
+      if (schemeShop) box.appendChild(schemeShop);
       if (history.list.length > FACTION_HISTORY_SHOWN) say(`Showing the ${FACTION_HISTORY_SHOWN} most used of ${history.list.length}.`);
       const share = buildShareRow(door, "Your faction colours", [...lines, COMPENDIUM_TEXT_FOOT], steps);
       if (share) box.appendChild(share);
@@ -7756,7 +7845,8 @@
       list.className = "idea-list";
       list.id = door.id("starter-list");
       const lines = [`Starter scheme: ${scheme.name}`, scheme.summary, scheme.reason], steps = [];
-      for (const { colour, hit } of starterSchemePaints(scheme)) {
+      const schemeHits = starterSchemePaints(scheme);
+      for (const { colour, hit } of schemeHits) {
         const paint = hit.paint;
         const tag = colourIdeaTag(hit), reason = `${colour.part}: ${colour.look}.`, note = colourIdeaNote(hit);
         const stepNote = `Starter scheme (${scheme.name}): ${colour.part.toLowerCase()}`;
@@ -7765,6 +7855,9 @@
         steps.push({ paint, technique: "", coats: 1, mix: 100, note: stepNote });
       }
       box.append(summary, why, list);
+      // v42: a closed "Shopping list" fold-out with the Add paints button (Compendium only)
+      const schemeShop = door.schemeShop ? buildSchemeShopFoldout(schemeHits.map(x => x.hit.paint), `Scheme: ${scheme.name}`) : null;
+      if (schemeShop) box.appendChild(schemeShop);
       const share = buildShareRow(door, scheme.name, [...lines, COMPENDIUM_TEXT_FOOT], steps);
       if (share) box.appendChild(share);
       return box;
@@ -8381,6 +8474,7 @@
         shops: true,   // v39: paints you do not own, in that panel and in Colour ideas, get a closed "Shop links" fold-out (plain links)
         shopSource: () => "Compendium: Colour ideas",   // v41: what the shopping list remembers for Add buttons in the Compendium's Colour ideas
         listMarks: true,   // v41: a paint already on the shopping list says "On your shopping list" on its row
+        schemeShop: true,  // v42: Starter schemes and Your schemes get a closed "Shopping list" fold-out with "Add paints to shopping list"
         share: { copy: (text, what) => copyText(text, what, "Paste it anywhere."), startRecipe: startRecipeFromCompendium },
         factions: () => new Map(chosen ? [[factionKey(chosen), chosen]] : []),
         factionPick: { names, onChange: (key, focus) => { st.faction = key; renderCompendium(focus || `#${compendiumId("faction-history-pick")}`); } },
@@ -12101,7 +12195,7 @@
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
     // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=41". v21.4 test checks.)
-    const APP_VERSION = "v41";
+    const APP_VERSION = "v42";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -12526,6 +12620,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v42", date: "18 Oct 2026", changes: [
+        "In the Compendium, Starter schemes and Your schemes each have a small closed Shopping list heading under their paints. Open it and tap Add paints to shopping list to put every paint of that scheme you don't own on your shopping list in one go. Paints you own, or have running low, are left out, and paints already on the list are not added twice.",
+        "Each paint remembers the scheme it came from (for example \"Scheme: <name>\"). The message says how many were added, and one Undo puts them all back. If nothing needed adding, it says so. It uses the same shopping list as everything else, and the basket count and \"On your shopping list\" marks stay right. It stays when Shop links is switched off, because it only adds to your own list.",
+      ]},
       { version: "v41", date: "18 Oct 2026", changes: [
         "The Compendium now remembers where a paint on your shopping list came from. Adding a paint from the colour wheel's matching colours says \"Compendium: Colour wheel\" and the colour part you were in (for example Blue). Adding from the Compendium's Colour ideas says \"Compendium: Colour ideas\". It is the same list the Recipes tab uses, and a paint is still on it once.",
         "A paint that is already on your shopping list now says \"On your shopping list\" on its row in the Compendium (in the colour wheel's lists and matching colours, and in Colour ideas). It updates when you add a paint or tap Undo.",
