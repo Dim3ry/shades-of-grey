@@ -14172,6 +14172,7 @@
     const CHANGELOG = [
       { version: "v49", date: "19 Oct 2026", changes: [
         "Groups of option buttons (paint status, the stage filters, Paint brands and the rest) now always sit on one row. When a group is too long for the screen, it scrolls sideways: a fade shows there are more, and your choice is always in view.",
+        "Scanning a pot label works properly with all the new paints: every Vallejo code number is read (Model Air, Game Air, Mecha and the rest), Tamiya codes like XF-1 are read on Tamiya pots, and a Citadel label gives the same answer as before the new brands arrived.",
       ]},
       { version: "v48", date: "19 Oct 2026", changes: [
         "About 2,800 more paints the app knows by name: Warhammer Tone Pro (all 30 colours in their five tones, like Carmine Blades 1 to 5), Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World, plus every range of Citadel, Vallejo, The Army Painter, Pro Acryl and AK Interactive (Speedpaint, Model Air, AK figures and more). They're suggested as you type, matched when you paste recipes or scan a pot, and used in Colour ideas.",

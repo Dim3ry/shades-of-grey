@@ -160,8 +160,9 @@ def main():
         check("all six script tags carry the version number", len(tags) == 6 and set(tags) == {version[1:]}, tags)
         check("the comments that name the number agree", f'The "?v={version[1:]}" makes' in html and f'e.g. "app.js?v={version[1:]}"' in app)
         log = page.evaluate("CHANGELOG.find(r => r.version === 'v49')")
-        check("Updates has one plain v49 line, dated 19 Oct 2026, with no em dash",
-              log and log["date"] == "19 Oct 2026" and len(log["changes"]) == 1 and "one row" in log["changes"][0] and "—" not in log["changes"][0], log)
+        check("Updates has two plain v49 lines (one-row buttons, then label scanning), dated 19 Oct 2026, with no em dash",
+              log and log["date"] == "19 Oct 2026" and len(log["changes"]) == 2 and "one row" in log["changes"][0] and "Scanning a pot label" in log["changes"][1]
+              and not any("—" in c for c in log["changes"]), log)
         check("v49 is at the top of Updates when it is the current version", version != "v49" or page.evaluate("CHANGELOG[0].version") == "v49")
 
         # ---------- 2. The CSS ----------
