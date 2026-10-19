@@ -269,7 +269,7 @@ def main():
         check("the No matches. line never repeats what was typed (nothing typed can reach the page as text from the status)", "zzzz" not in page.inner_text("#cmp-fold-ideas-panel"))
         live = page.evaluate("() => { const s = document.getElementById('cmp-colour-ideas-base-status'); return [s.getAttribute('role'), s.getAttribute('aria-live')]; }")
         check("the status line is a polite live region, so a screen reader says the count as you type", live == ["status", "polite"], live)
-        type_into(page, BASE, "macragge")
+        type_into(page, BASE, "kantor")   # v48: "macragge" now also finds Macragge Blue Spray, so a name only one paint has
         check("one match is said in the singular", status(page, STAT) == "1 match.", status(page, STAT))
         t0 = page.evaluate("""() => { const i = document.getElementById('cmp-colour-ideas-base'); const t = performance.now(); i.value = 'a'; i.dispatchEvent(new Event('input', { bubbles: true }));
             i.value = 'bl'; i.dispatchEvent(new Event('input', { bubbles: true })); i.value = ''; i.dispatchEvent(new Event('input', { bubbles: true })); return (performance.now() - t) / 3; }""")
@@ -329,7 +329,7 @@ def main():
         # scroll and pick, down to the very last paint
         page.click(TOG)
         page.wait_for_timeout(100)
-        for _ in range(40):
+        for _ in range(120):   # v48: about 4,000 paints now (was about 1,200), so more turns of the wheel
             if page.locator(f"{LIST} [role=option]").count() >= len(texts):
                 break
             page.hover(LIST)

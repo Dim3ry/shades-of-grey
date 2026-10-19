@@ -305,7 +305,8 @@ def main():
         panel_for(page, JUST_BLUE, settings={"recipeView": "palette"})
         n_before = len(stored_paints(page))
         first = prows(page)[0]
-        known = page.evaluate("(n) => KNOWN_PAINTS.find(k => k.name === n)", first["name"])
+        # v48: several brands can share a paint name now, so look it up by the brand the row shows too.
+        known = page.evaluate("([n, b]) => KNOWN_PAINTS.find(k => k.name === n && (!b || b.includes(k.brand)))", [first["name"], first["brand"]])
         open_fold(page, 0)
         page.evaluate("() => { document.getElementById('cmp-paint-panel').__mark = 'same panel'; }")
         page.click("#cmp-paint-panel .shop-more .shop-add button")

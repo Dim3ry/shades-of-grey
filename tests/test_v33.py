@@ -216,6 +216,9 @@ def main():
         colour_words = set("red orange yellow green blue purple violet pink brown grey gray black white tan sand bone ivory cream gold golden silver copper bronze steel "
                            "dark light pale bright deep mid dull warm cool charcoal olive khaki earth earthy dusty rusty rust teal turquoise cyan mint lime "
                            "scarlet crimson maroon burgundy navy indigo magenta beige buff stone slate flesh skin leather wood metal metallic gunmetal hot tone verdigris rich "
+                           # v48: the built-in list now includes paints simply called things like "Old Copper", "Pale Dust", "Wet Mud" or
+                           # "Gloss Varnish", so these plain describing words count as colour words too.
+                           "old dust wet dry gloss matt matte satin varnish aged worn faded dirty clean fresh new "
                            "mud snow ice grass moss rock lava ash soot gravel rubble straw".split())
         paint_hits = [k[0] for k in known if len(k[0]) >= 6 and any(w not in colour_words for w in re.findall(r"[a-z']+", k[0].lower()))
                       and re.search(r"\b" + re.escape(k[0]) + r"\b", data_text, re.I)]

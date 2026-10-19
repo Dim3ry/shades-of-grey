@@ -242,7 +242,7 @@ def main():
               and page.input_value("#cmp-colour-ideas-base") == "" and page.get_attribute("#cmp-colour-ideas-base", "placeholder") == "Type or choose a paint", opts[:4])
         page.fill("#cmp-colour-ideas-base", "macragge blue")
         check("a paint in your palette is not listed twice (the built-in list leaves out paints you already have)",
-              page.evaluate("() => [...document.querySelectorAll('#cmp-colour-ideas-base-list [role=option]')].filter(o => /^Macragge Blue/.test(o.textContent)).length") == 1)
+              page.evaluate("() => [...document.querySelectorAll('#cmp-colour-ideas-base-list [role=option]')].filter(o => /^Macragge Blue(?! Spray)/.test(o.textContent)).length") == 1)   # v48: Macragge Blue Spray is a different paint
         page.keyboard.press("Escape")
         pick_base(page, BLUE)
         chips = page.evaluate("() => [...document.querySelectorAll('#compendium-body [data-role]')].map(c => [c.textContent, c.getAttribute('aria-pressed')])")
