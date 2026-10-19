@@ -94,7 +94,7 @@ def main():
         html, sw = read("index.html"), read("sw.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
         check("the version is v41 or later (v42 and v43 follow it) in APP_VERSION, sw.js and all six script tags, all the same",
-              page.evaluate("APP_VERSION") in ("v41", "v42", "v43", "v44", "v45", "v46") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("41", "42", "43", "44", "45", "46") and len(tags) == 6 and len({v for _, v in tags}) == 1 and tags[0][1] in ("41", "42", "43", "44", "45", "46"),
+              page.evaluate("APP_VERSION") in ("v41", "v42", "v43", "v44", "v45", "v46", "v47") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("41", "42", "43", "44", "45", "46", "47") and len(tags) == 6 and len({v for _, v in tags}) == 1 and tags[0][1] in ("41", "42", "43", "44", "45", "46", "47"),
               (page.evaluate("APP_VERSION"), tags))
         entry = page.evaluate("CHANGELOG.find(e => e.version === 'v41')")
         joined = " ".join(entry["changes"]) if entry else ""

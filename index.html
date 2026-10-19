@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-t="classic" data-m="dark">
 <head>
   <!-- The "head" holds settings for the page. You don't see this part on screen. -->
   <meta charset="UTF-8">
@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=46"></script>
+  <script src="early.js?v=47"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -54,7 +54,7 @@
        data-appearance="light" (Settings → Appearance), and swaps the whole set at once.
        The photo viewer and the camera always use the dark set, like a phone's own
        photo viewer, so they're listed here too. */
-    :root, .viewer, #scan-camera {
+    :root, .viewer, #scan-camera, .theme-swatch[data-t="classic"] {
       --background: #0b1220;  /* deep navy, the page colour */
       --card: #141d2f;        /* slightly lighter, for each box */
       --border: #22304a;      /* thin outlines */
@@ -83,7 +83,7 @@
       --series-added: #6366f1; --series-painted: #10a99a;   /* dashboard graph lines */
     }
     :root { --done-colour: #a7f3d0; } /* the "finished" colour, also set by JavaScript */
-    :root[data-appearance="light"] {
+    :root[data-appearance="light"], .theme-swatch[data-t="classic"][data-m="light"] {
       --background: #e9eff6;  /* pale cool blue-grey page */
       --card: #f8fafc;        /* near-white boxes */
       --border: #c4d0de;
@@ -111,6 +111,49 @@
       --series-added: #4f46e5; --series-painted: #0f766e;
       color-scheme: light;
     }
+    /* v47: the theme fonts. Our own files only (the security policy allows fonts from minifolio.app and nowhere else).
+       Latin subset, woff2. A browser downloads a font only when something on screen uses it, so Classic downloads none,
+       and sw.js keeps each one after its first use so a chosen theme works offline. Licences: fonts/LICENSES.md. */
+    @font-face { font-family: 'Barlow Condensed'; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/barlow-condensed-latin-500-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Barlow Condensed'; font-style: normal; font-weight: 600; font-display: swap; src: url(fonts/barlow-condensed-latin-600-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Barlow'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/barlow-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Barlow'; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/barlow-latin-500-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Barlow'; font-style: normal; font-weight: 600; font-display: swap; src: url(fonts/barlow-latin-600-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Barlow Semi Condensed'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/barlow-semi-condensed-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Barlow Semi Condensed'; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/barlow-semi-condensed-latin-500-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Big Shoulders Stencil'; font-style: normal; font-weight: 700; font-display: swap; src: url(fonts/big-shoulders-stencil-latin-700-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Courier Prime'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/courier-prime-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Courier Prime'; font-style: normal; font-weight: 700; font-display: swap; src: url(fonts/courier-prime-latin-700-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'DM Mono'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/dm-mono-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'DM Mono'; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/dm-mono-latin-500-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'EB Garamond'; font-style: italic; font-weight: 400; font-display: swap; src: url(fonts/eb-garamond-latin-400-italic.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'EB Garamond'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/eb-garamond-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'EB Garamond'; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/eb-garamond-latin-500-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'IBM Plex Sans Condensed'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/ibm-plex-sans-condensed-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'IBM Plex Sans Condensed'; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/ibm-plex-sans-condensed-latin-500-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'IM Fell English'; font-style: italic; font-weight: 400; font-display: swap; src: url(fonts/im-fell-english-latin-400-italic.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'IM Fell English'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/im-fell-english-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Permanent Marker'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/permanent-marker-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Share Tech Mono'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/share-tech-mono-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Special Elite'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/special-elite-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Teko'; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/teko-latin-500-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Teko'; font-style: normal; font-weight: 600; font-display: swap; src: url(fonts/teko-latin-600-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+
+    /* v47: the theme "structure" tokens. These are Classic's values (the look before themes), so Classic is unchanged.
+       The other themes set their own in the THEMES section near the end. The photo viewer and the camera always keep these. */
+    :root, [data-t="classic"], .viewer, #scan-camera {
+      --font-heading: system-ui, sans-serif; --font-body: system-ui, sans-serif; --font-num: inherit; --num-style: normal;
+      --radius-card: 12px; --radius-control: 8px; --radius-box: 10px; --radius-small: 6px; --radius-bar: 2px;
+      --border-width: 1px; --border-style: solid;
+      --heading-weight: 700; --heading-transform: none; --heading-tracking: normal;
+      --heading-size: 16px; --wordmark-size: 24px; --body-size: 16px; --card-pad: 16px;
+      --card-shadow: none; --texture: none; --texture-size: auto; --frame: 1px solid var(--border); --rule: 0 solid transparent; --rule-gap: 0px;
+    }
+    /* Classic's own extra colours (the old ones, so nothing changes). */
+    :root, .viewer, #scan-camera, .theme-swatch[data-t="classic"] {
+      --on-accent: var(--background); --track: var(--background); --heading-colour: var(--text); --wordmark-colour: var(--accent);
+      --basket-deep: #1e3a8a; --toast-ring: rgba(125, 211, 252, 0.45);
+    }
     :root, .viewer, #scan-camera { color-scheme: dark; }
     :root[data-appearance="light"] .viewer, :root[data-appearance="light"] #scan-camera { color-scheme: dark; }
 
@@ -122,26 +165,35 @@
       padding: 20px 16px calc(96px + env(safe-area-inset-bottom));
       background: var(--background);
       color: var(--text);
-      font-family: system-ui, sans-serif;
+      font-family: var(--font-body);
+      font-size: var(--body-size);
+      background-image: var(--texture);
+      background-size: var(--texture-size);
     }
 
     main { max-width: 640px; margin: 0 auto; }
 
-    h1 { margin: 0 0 16px; font-size: 24px; color: var(--accent); }
-    h2 { margin: 0 0 12px; font-size: 16px; }
+    /* v47: headings follow the theme (see THEMES below). Classic's values are the old ones: system font, bold, 24 px / 16 px, accent title. */
+    h1 { margin: 0 0 16px; padding-bottom: var(--rule-gap); border-bottom: var(--rule); font-size: var(--wordmark-size); color: var(--wordmark-colour);
+         font-family: var(--font-heading); font-weight: var(--heading-weight); text-transform: var(--heading-transform); letter-spacing: var(--heading-tracking); }
+    h1 .version-tag { font-family: var(--font-body); text-transform: none; letter-spacing: normal; }
+    h2 { margin: 0 0 12px; font-size: var(--heading-size);
+         font-family: var(--font-heading); font-weight: var(--heading-weight); text-transform: var(--heading-transform); letter-spacing: var(--heading-tracking); }
+    h3 { font-family: var(--font-heading); font-weight: var(--heading-weight); letter-spacing: var(--heading-tracking); }
 
     .card {
       background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px;
+      border: var(--border-width) var(--border-style) var(--border);
+      border-radius: var(--radius-card);
+      padding: var(--card-pad);
       margin-bottom: 14px;
+      box-shadow: var(--card-shadow);
     }
 
     .hint { color: var(--muted); font-size: 13px; margin: 0 0 10px; line-height: 1.4; }
     .empty { color: var(--muted); text-align: center; padding: 24px 0; }
 
-    button { font: inherit; border-radius: 8px; border: none; cursor: pointer; }
+    button { font: inherit; border-radius: var(--radius-control); border: none; cursor: pointer; }
     button:disabled { opacity: 0.35; cursor: default; }
 
     input, select, textarea {
@@ -149,8 +201,8 @@
       font-size: 16px;        /* 16px or bigger stops phones zooming in when you type */
       background: var(--background);
       color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 8px;
+      border: var(--border-width) var(--border-style) var(--border);
+      border-radius: var(--radius-control);
       padding: 10px;
       min-width: 0;           /* lets boxes shrink inside rows instead of overflowing */
     }
@@ -165,12 +217,12 @@
     .plain-button {
       background: transparent;
       color: var(--text);
-      border: 1px solid var(--border);
+      border: var(--border-width) var(--border-style) var(--border);
       padding: 11px 14px;
       font-size: 14px;
     }
     .plain-button:hover { border-color: var(--accent); }
-    .primary-button { background: var(--accent); color: var(--background); font-weight: 600; padding: 12px; }
+    .primary-button { background: var(--accent); color: var(--on-accent); font-weight: 600; padding: 12px; }
     .danger-button { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 11px 14px; font-size: 14px; }
     .link-button { background: transparent; color: var(--accent); padding: 10px 0; font-size: 14px; }
     .button-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -183,7 +235,7 @@
       left: 0; right: 0; bottom: 0;
       display: flex;
       background: var(--card);
-      border-top: 1px solid var(--border);
+      border-top: var(--frame);
       padding-bottom: env(safe-area-inset-bottom);  /* room for the phone's own gesture bar */
       z-index: 10;
     }
@@ -204,8 +256,8 @@
       position: absolute; top: 3px; left: calc(50% + 10px);
       flex: none; display: inline-flex; align-items: center; gap: 3px; min-width: 0; min-height: 0; height: 26px; padding: 0 8px 0 6px;
       border-radius: 13px; z-index: 2;
-      background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 72%, #1e3a8a));
-      color: var(--background); font-size: 13px; font-weight: 700; line-height: 1;
+      background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 72%, var(--basket-deep)));
+      color: var(--on-accent); font-size: 13px; font-weight: 700; line-height: 1;
       border: 2px solid var(--card);                          /* a ring in the bar's own colour, so the pill reads cleanly on any tab */
       box-shadow: 0 0 0 1px var(--accent), 0 2px 10px color-mix(in srgb, var(--accent) 45%, transparent);   /* a soft, cold glow */
     }
@@ -227,7 +279,7 @@
     .groups { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
     .group-button {
       background: var(--background);
-      border: 1px solid var(--border);
+      border: var(--border-width) var(--border-style) var(--border);
       color: var(--muted);
       padding: 12px;
       text-align: left;
@@ -256,14 +308,14 @@
        against the card colour; each line also has a legend and an end label. */
     .legend-row { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
     .legend-key { display: inline-flex; align-items: center; gap: 6px; }
-    .legend-key i { display: inline-block; width: 16px; height: 3px; border-radius: 2px; background: var(--key); }
+    .legend-key i { display: inline-block; width: 16px; height: 3px; border-radius: var(--radius-bar); background: var(--key); }
     .history-wrap { position: relative; }
     .range-chips { gap: 6px; }
     .range-chips .chip { padding: 8px 12px; min-height: 36px; }
     .history-wrap svg { display: block; touch-action: pan-y; }   /* lets a finger drag sideways to read values */
     .chart-tip {
       position: absolute; top: 4px; pointer-events: none; z-index: 2;
-      background: var(--background); border: 1px solid var(--border); border-radius: 8px;
+      background: var(--background); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-control);
       padding: 8px 10px; font-size: 13px; line-height: 1.5; white-space: nowrap;
       box-shadow: 0 4px 14px var(--shadow);
     }
@@ -279,7 +331,7 @@
     .faction-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
     .faction-button {
       background: var(--background);
-      border: 1px solid var(--border);
+      border: var(--border-width) var(--border-style) var(--border);
       color: var(--text);
       padding: 12px 8px;
       display: grid;
@@ -311,7 +363,7 @@
     .faction-colour-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
     .faction-colour-row {
       display: grid; grid-template-columns: 44px 1fr; gap: 6px 10px; align-items: center;
-      padding: 10px; background: var(--background); border: 1px solid var(--border); border-radius: 10px;
+      padding: 10px; background: var(--background); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-box);
     }
     .faction-colour-row input[type=color] { width: 44px; height: 44px; padding: 3px; cursor: pointer; }
     /* No colour chosen yet: a dashed ring, so grey doesn't look like a real choice. */
@@ -323,8 +375,8 @@
     .custom-colour-list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
     .custom-colour-row {
       display: grid; grid-template-columns: 44px 1fr; gap: 6px 10px; align-items: center;
-      padding: 10px; background: var(--background); border: 1px solid var(--border);
-      border-left: 4px solid var(--stage-colour, var(--border)); border-radius: 10px;
+      padding: 10px; background: var(--background); border: var(--border-width) var(--border-style) var(--border);
+      border-left: 4px solid var(--stage-colour, var(--border)); border-radius: var(--radius-box);
     }
     .custom-colour-row input[type=color] { width: 44px; height: 44px; padding: 3px; cursor: pointer; }
     .custom-colour-text { display: grid; min-width: 0; }
@@ -346,7 +398,7 @@
       .units-toolbar { gap: 8px; }
       .units-toolbar .plain-button { padding: 12px 12px; }
     }
-    .units-toolbar .plain-button[aria-pressed="true"] { color: var(--background); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+    .units-toolbar .plain-button[aria-pressed="true"] { color: var(--on-accent); background: var(--accent); border-color: var(--accent); font-weight: 600; }
 
     /* v21.1: SELECT MODE. A tick box on each card, and a bar at the bottom to move them all. */
     .unit-tick {
@@ -370,7 +422,7 @@
       position: fixed; left: 16px; right: 16px;
       bottom: calc(74px + env(safe-area-inset-bottom));
       max-width: 480px; margin: 0 auto;
-      background: var(--card); border: 1px solid var(--accent); border-radius: 12px;
+      background: var(--card); border: 1px solid var(--accent); border-radius: var(--radius-card);
       box-shadow: 0 6px 20px var(--shadow);
       padding: 10px 12px 12px; display: grid; gap: 8px; z-index: 15;
     }
@@ -387,32 +439,33 @@
     .chip {
       background: var(--background);
       color: var(--muted);
-      border: 1px solid var(--border);
+      border: var(--border-width) var(--border-style) var(--border);
       border-left: 4px solid var(--chip-colour, var(--border));
       padding: 11px 14px;
       font-size: 13px;
       min-height: 40px;
       border-radius: 999px;   /* pill shape */
     }
-    .chip[aria-pressed="true"] { color: var(--background); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+    .chip[aria-pressed="true"] { color: var(--on-accent); background: var(--accent); border-color: var(--accent); font-weight: 600; }
 
     /* ----- Units: the list ----- */
     ul.units { list-style: none; margin: 0; padding: 0; }
 
     li.unit {
       background: var(--card);
-      border: 1px solid var(--border);
+      border: var(--border-width) var(--border-style) var(--border);
       border-left: 4px solid var(--stage-colour);   /* coloured stripe showing the stage */
-      border-radius: 12px;
+      border-radius: var(--radius-card);
       padding: 12px;
       margin-bottom: 10px;
       display: flex;
       flex-wrap: wrap;        /* lets the details panel drop onto its own line */
       align-items: center;
       gap: 10px;
+      box-shadow: var(--card-shadow);
     }
 
-    .thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; flex-shrink: 0; background: var(--border); }
+    .thumb { width: 44px; height: 44px; border-radius: var(--radius-control); object-fit: cover; flex-shrink: 0; background: var(--border); }
 
     .info {
       flex: 1;
@@ -425,14 +478,14 @@
     .details { margin-top: 2px; font-size: 13px; color: var(--muted); }
     .stage { margin-top: 6px; font-size: 13px; font-weight: 600; color: var(--stage-colour); }
     .pips { display: flex; gap: 3px; margin-top: 6px; }
-    .pip { height: 4px; flex: 1; border-radius: 2px; background: var(--border); }
+    .pip { height: 4px; flex: 1; border-radius: var(--radius-bar); background: var(--border); }
     .pip.filled { background: var(--stage-colour); }
     .pip.part { background: var(--stage-colour); opacity: 0.35; }   /* some models are this far */
 
     /* Per-model list inside a unit's details */
     .each-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
     .each-list li { display: flex; align-items: center; gap: 8px; padding: 6px 8px;
-                    border: 1px solid var(--border); border-left: 4px solid var(--stage-colour); border-radius: 8px; }
+                    border: var(--border-width) var(--border-style) var(--border); border-left: 4px solid var(--stage-colour); border-radius: var(--radius-control); }
     .each-list .each-name { font-size: 13px; color: var(--muted); width: 64px; flex-shrink: 0; display: grid; gap: 1px; align-content: center; }
     /* v21.8: "Today", "Yesterday" or "Since 7 Oct" under the model's name (a long one wraps). */
     .each-list .each-since { font-size: 11px; overflow-wrap: anywhere; line-height: 1.25; }
@@ -474,7 +527,7 @@
       color: var(--accent);
       border: 2px solid var(--accent);
       font-size: 22px;
-      border-radius: 12px;
+      border-radius: var(--radius-card);
     }
 
     /* The details panel under a unit. */
@@ -496,7 +549,7 @@
     #counting-card .count-label { display: flex; align-items: center; gap: 10px; min-height: 44px; color: var(--text); font-size: 15px; }
     /* v39: the Shop links tick box, the same look as Counting visits */
     #shoplinks-card .shoplinks-label { display: flex; align-items: center; gap: 10px; min-height: 44px; color: var(--text); font-size: 15px; }
-    .photo { width: 100%; max-height: 320px; object-fit: cover; border-radius: 8px; }
+    .photo { width: 100%; max-height: 320px; object-fit: cover; border-radius: var(--radius-control); }
     .panel-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
     .panel-buttons .danger-button { margin-left: auto; }
     /* v23: the edit boxes (name, game, faction, nickname, models...) are folded away in one
@@ -522,7 +575,7 @@
     .photo-strip li { flex: 0 0 116px; scroll-snap-align: start; display: grid; gap: 6px; }
     .photo-tile {
       position: relative; padding: 0; width: 116px; height: 116px; overflow: hidden;
-      background: var(--border); border: 2px solid var(--stage-colour); border-radius: 10px;
+      background: var(--border); border: 2px solid var(--stage-colour); border-radius: var(--radius-box);
     }
     .photo-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
     /* v21.8: on a phone the strip opens scrolled to the newest photo, and the fixed 116 px
@@ -536,7 +589,7 @@
     }
     .cover-badge {
       position: absolute; left: 4px; top: 4px; font-size: 11px; font-weight: 600;
-      background: var(--badge-bg); color: var(--accent); border-radius: 6px; padding: 2px 6px;
+      background: var(--badge-bg); color: var(--accent); border-radius: var(--radius-small); padding: 2px 6px;
     }
     .photo-caption { display: grid; grid-template-columns: auto 1fr; column-gap: 6px; align-items: center; line-height: 1.3; }
     .photo-caption .dot, .viewer-caption .dot {
@@ -557,17 +610,17 @@
     .viewer-top { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 14px; margin-bottom: 8px; }
     .viewer-close {
       margin-left: auto; width: 44px; height: 44px; font-size: 20px;
-      background: var(--card); color: var(--text); border: 1px solid var(--border);
+      background: var(--card); color: var(--text); border: var(--border-width) var(--border-style) var(--border);
     }
     .viewer-body { width: 100%; max-width: 960px; margin: 0 auto; display: grid; gap: 12px; }
     /* The picture area: big, with ‹ › buttons on top at each side. */
     .viewer-stage { position: relative; display: flex; align-items: center; justify-content: center;
                     height: min(50vh, 640px); touch-action: pan-y; }
     @media (min-width: 700px) { .viewer-stage { height: min(62vh, 640px); } }
-    .viewer-stage img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; user-select: none; }
+    .viewer-stage img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: var(--radius-control); user-select: none; }
     .viewer-arrow {
       position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 64px; font-size: 26px;
-      background: rgba(20, 29, 47, 0.8); color: var(--text); border: 1px solid var(--border);
+      background: rgba(20, 29, 47, 0.8); color: var(--text); border: var(--border-width) var(--border-style) var(--border);
     }
     .viewer-arrow.prev { left: 0; }
     .viewer-arrow.next { right: 0; }
@@ -580,15 +633,15 @@
     @media (min-width: 640px) { .compare-pair { grid-template-columns: 1fr 1fr; } }
     .compare-side { display: grid; gap: 6px; }
     .compare-side .frame { height: min(38vh, 520px); display: flex; align-items: center; justify-content: center;
-                           background: var(--card); border-radius: 8px; overflow: hidden; }
+                           background: var(--card); border-radius: var(--radius-control); overflow: hidden; }
     @media (min-width: 640px) { .compare-side .frame { height: min(60vh, 560px); } }
     .compare-side img { max-width: 100%; max-height: 100%; object-fit: contain; }
     .compare-label { font-size: 13px; color: var(--muted); }
     /* Slider view: the "after" picture sits on top of "before", cut off at the slider. */
-    .slider-frame { position: relative; height: min(62vh, 640px); background: var(--card); border-radius: 8px; overflow: hidden; }
+    .slider-frame { position: relative; height: min(62vh, 640px); background: var(--card); border-radius: var(--radius-control); overflow: hidden; }
     .slider-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; user-select: none; }
     .slider-line { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); pointer-events: none; }
-    .slider-tag { position: absolute; top: 8px; font-size: 12px; padding: 2px 8px; border-radius: 6px;
+    .slider-tag { position: absolute; top: 8px; font-size: 12px; padding: 2px 8px; border-radius: var(--radius-small);
                   background: var(--badge-bg); color: var(--accent); }
     .viewer input[type=range] { width: 100%; accent-color: var(--accent); }
     .switch-row { display: flex; gap: 8px; }
@@ -605,7 +658,7 @@
     /* v21: 44 × 44 everywhere (was 40 × 40, and 36 × 40 on small phones). */
     .icon-button {
       width: 44px; height: 44px; flex-shrink: 0;
-      background: transparent; color: var(--muted); border: 1px solid var(--border);
+      background: transparent; color: var(--muted); border: var(--border-width) var(--border-style) var(--border);
       font-size: 15px;
     }
     @media (max-width: 400px) { .stage-row { gap: 4px; } }
@@ -625,7 +678,7 @@
       margin: 0 auto;
       background: var(--text);
       color: var(--background);
-      border-radius: 10px;
+      border-radius: var(--radius-box);
       padding: 12px 14px;
       display: flex;
       align-items: center;
@@ -636,7 +689,7 @@
     /* v21.6: notices can be long; a long word or file name wraps instead of pushing the page sideways. */
     .toast span { min-width: 0; overflow-wrap: anywhere; }
     /* v20: in light mode the toast is dark, so a faint outline keeps it clear over the (always dark) photo viewer. */
-    :root[data-appearance="light"] .toast { box-shadow: 0 0 0 1px rgba(125, 211, 252, 0.45), 0 4px 14px var(--shadow); }
+    :root[data-appearance="light"] .toast { box-shadow: 0 0 0 1px var(--toast-ring), 0 4px 14px var(--shadow); }
     .toast button { margin-left: auto; background: none; color: var(--toast-action); font-weight: 700; padding: 10px 12px; margin: -8px -8px -8px auto; min-height: 44px; }
 
     /* v21.8: while a text box has the cursor (app.js puts the class "typing" on <body>), the
@@ -662,7 +715,7 @@
     .dialog {
       width: 100%; max-width: 420px; max-height: 100%; overflow-y: auto;
       background: var(--card); color: var(--text);
-      border: 1px solid var(--border); border-radius: 12px;
+      border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card);
       padding: 18px 16px 16px;
       box-shadow: 0 8px 28px var(--shadow);
       display: grid; gap: 14px;
@@ -699,7 +752,7 @@
     .review { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); display: grid; gap: 12px; }
     .mode-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .mode-button {
-      background: var(--background); color: var(--text); border: 1px solid var(--border);
+      background: var(--background); color: var(--text); border: var(--border-width) var(--border-style) var(--border);
       padding: 12px; text-align: left; display: grid; gap: 4px; font-size: 14px;
     }
     .mode-button small { color: var(--muted); font-size: 12px; }
@@ -708,14 +761,14 @@
     .review-tools { display: flex; gap: 16px; }
     .review-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
     .review-row {
-      display: grid; gap: 6px; padding: 8px 10px; border-radius: 8px;
-      background: var(--background); border: 1px solid var(--border); font-size: 14px;
+      display: grid; gap: 6px; padding: 8px 10px; border-radius: var(--radius-control);
+      background: var(--background); border: var(--border-width) var(--border-style) var(--border); font-size: 14px;
     }
     .review-row.clash { border-color: var(--caution); }
     .review-row label { display: flex; gap: 10px; align-items: center; cursor: pointer; }
     .review-row input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--accent); flex-shrink: 0; }
     .review-row .meta { color: var(--muted); font-size: 12px; }
-    .review-row .tag { font-size: 11px; padding: 2px 6px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); margin-left: auto; white-space: nowrap; }
+    .review-row .tag { font-size: 11px; padding: 2px 6px; border-radius: 999px; border: var(--border-width) var(--border-style) var(--border); color: var(--muted); margin-left: auto; white-space: nowrap; }
     .review-row.clash .tag { color: var(--caution); border-color: var(--caution); }
     .review-row select { font-size: 14px; padding: 7px; }
     .review-row.off { opacity: 0.5; }
@@ -741,7 +794,7 @@
     ul.recipe-list { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 10px; }
     .recipe-item {
       width: 100%; text-align: left; background: var(--card); color: var(--text);
-      border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: grid; gap: 6px;
+      border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card); padding: 14px; display: grid; gap: 6px;
     }
     .recipe-item:hover { border-color: var(--accent); }
 
@@ -789,7 +842,7 @@
     /* Recipe buttons on a unit card, and linked units/recipes with an ✕ to unlink. */
     .recipe-links { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
     .recipe-chip {
-      background: var(--background); color: var(--text); border: 1px solid var(--border);
+      background: var(--background); color: var(--text); border: var(--border-width) var(--border-style) var(--border);
       border-radius: 999px; padding: 7px 12px; font-size: 13px; min-height: 36px;
       display: inline-flex; align-items: center; gap: 6px; text-align: left;
     }
@@ -800,7 +853,7 @@
     .linked { display: inline-flex; }
     .linked .recipe-chip { border-radius: 999px 0 0 999px; }
     .linked .unlink {
-      background: var(--background); color: var(--muted); border: 1px solid var(--border); border-left: none;
+      background: var(--background); color: var(--muted); border: var(--border-width) var(--border-style) var(--border); border-left: none;
       border-radius: 0 999px 999px 0; padding: 0 12px; min-height: 36px;
     }
     .linked .unlink:hover { color: var(--danger); }
@@ -809,10 +862,10 @@
     /* The Recipes | Your Palette switch at the top of the Recipes tab */
     .seg {
       display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; margin-bottom: 12px;
-      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      background: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card);
     }
     .seg button { background: none; color: var(--muted); padding: 10px; font-size: 15px; min-height: 44px; }
-    .seg button[aria-selected="true"] { background: var(--accent); color: var(--background); font-weight: 600; }
+    .seg button[aria-selected="true"] { background: var(--accent); color: var(--on-accent); font-weight: 600; }
     /* v40: the Recipes tab's switch has four parts now (Recipes, Schemes, Your Palette, Shopping), so each is a little narrower */
     #recipe-seg { grid-template-columns: repeat(4, 1fr); gap: 2px; }
     #recipe-seg button { padding: 10px 2px; font-size: 14px; }
@@ -820,7 +873,7 @@
 
     /* Your Palette */
     ul.paint-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-    .paint-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; }
+    .paint-item { background: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card); padding: 10px 12px; }
     .paint-head {
       width: 100%; background: none; color: var(--text); padding: 2px 0; text-align: left;
       display: flex; align-items: center; gap: 12px;
@@ -843,7 +896,7 @@
     .form-grid label, .step-edit label { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
     ol.step-edits { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
     .step-edit {
-      background: var(--background); border: 1px solid var(--border); border-radius: 10px;
+      background: var(--background); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-box);
       padding: 10px; display: grid; gap: 10px;
     }
     .step-edit input, .step-edit select { background: var(--card); width: 100%; }
@@ -866,17 +919,17 @@
     /* v18d-1: a step's words, with its ✕ (leave it out) on the right */
     .import-line { display: flex; align-items: flex-start; gap: 8px; }
     .import-line-body { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-    .import-remove { width: 32px; height: 32px; font-size: 13px; border-radius: 8px; margin-top: -4px; }
+    .import-remove { width: 32px; height: 32px; font-size: 13px; border-radius: var(--radius-control); margin-top: -4px; }
     @media (max-width: 400px) { .import-remove { width: 32px; height: 32px; } }
     /* v18d-2a: ✎ (change a step), ✕ on a part's name and on a part note, and the small step editor */
-    .import-edit, .import-drop-part, .import-drop-note { width: 32px; height: 32px; min-width: 32px; padding: 0; font-size: 13px; border-radius: 8px; margin-top: -4px; }
+    .import-edit, .import-drop-part, .import-drop-note { width: 32px; height: 32px; min-width: 32px; padding: 0; font-size: 13px; border-radius: var(--radius-control); margin-top: -4px; }
     .import-edit[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
     .import-part-line { display: flex; align-items: center; gap: 8px; margin: 14px 0 4px; }
     .import-part-line .import-part { flex: 1; min-width: 0; margin: 0; overflow-wrap: anywhere; }
     .import-part-line .import-drop-part { margin-top: 0; }
     .import-note-line { display: flex; align-items: flex-start; gap: 8px; margin: 4px 0 0; }
     .import-note-line .step-note { flex: 1; min-width: 0; margin: 0; overflow-wrap: anywhere; }
-    .import-step-editor { margin: 6px 0 8px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; display: grid; gap: 8px; }
+    .import-step-editor { margin: 6px 0 8px; padding: 10px; border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-box); display: grid; gap: 8px; }
     .import-step-editor label { display: grid; gap: 4px; color: var(--muted); font-size: 14px; }
     .import-step-editor select, .import-step-editor input { width: 100%; background: var(--card); }
     .import-ratio-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
@@ -888,16 +941,16 @@
     .import-swap-name { min-width: 0; overflow-wrap: anywhere; color: var(--text); font-size: 14px; }
     .import-swap-name small { color: var(--muted); }
     .import-swap, .import-swap-use, .import-swap-cancel { padding: 6px 12px; min-height: 36px; font-size: 13px; }
-    .import-swap-box { display: grid; gap: 6px; padding: 8px; border: 1px dashed var(--accent); border-radius: 8px; }
+    .import-swap-box { display: grid; gap: 6px; padding: 8px; border: 1px dashed var(--accent); border-radius: var(--radius-control); }
     .import-swap-buttons { display: flex; gap: 8px; }
     .import-paint.swapped { color: var(--accent); }
     .import-tech { color: var(--muted); margin-right: 6px; }
-    .import-paint.unsure { background: var(--note-wash); color: var(--note); border: 1px dashed var(--note); border-radius: 6px; padding: 0 5px; }
+    .import-paint.unsure { background: var(--note-wash); color: var(--note); border: 1px dashed var(--note); border-radius: var(--radius-small); padding: 0 5px; }
     .import-paint.resolved { color: var(--note); }
     .import-paint.is-new { color: var(--good); }
     .import-steps small { color: var(--muted); }
     #import-save:disabled { opacity: 0.5; }
-    .scan-result { margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; }
+    .scan-result { margin-top: 12px; padding: 12px; border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-box); }
     .backup-old { color: var(--note); }
     /* v17: paint status, have/missing badges, search and shopping list */
     .status-chip { border-color: var(--chip-colour); }
@@ -926,7 +979,7 @@
     .ideas-body .hint { margin: 0; }
     .idea-label { margin: 0; font-size: 13px; color: var(--muted); }
     .idea-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-    button.idea, button.idea-pick { display: flex; gap: 12px; align-items: flex-start; width: 100%; min-height: 44px; padding: 10px 12px; text-align: left; font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; }
+    button.idea, button.idea-pick { display: flex; gap: 12px; align-items: flex-start; width: 100%; min-height: 44px; padding: 10px 12px; text-align: left; font: inherit; color: var(--text); background: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card); cursor: pointer; }
     button.idea:hover, button.idea-pick:hover { border-color: var(--accent); }
     button.idea:focus-visible, button.idea-pick:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .idea .swatch, .idea-pick .swatch { width: 32px; height: 32px; flex: none; margin-top: 2px; }
@@ -941,7 +994,7 @@
     .idea-note { font-size: 13px; color: var(--muted); }
     .idea-add { font-size: 13px; color: var(--accent); }
     /* v35: the Compendium has no recipe to add to, so its rows are plain boxes (same look as the tappable rows, no hover or pointer) */
-    .idea-static { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; text-align: left; color: var(--text); background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+    .idea-static { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; text-align: left; color: var(--text); background: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card); }
     .idea-static .swatch { width: 32px; height: 32px; flex: none; margin-top: 2px; }
     .share-row { display: flex; flex-wrap: wrap; gap: 10px; }
     .share-row .plain-button { min-height: 44px; }
@@ -993,7 +1046,7 @@
     .idea-open::after { content: " \25BE"; }
     button.idea-link[aria-expanded="true"] { border-color: var(--accent); }
     button.idea-link[aria-expanded="true"] .idea-open::after { content: " \25B4"; }
-    .paint-panel { display: grid; gap: 10px; margin-top: 8px; padding: 12px; min-width: 0; border: 1px solid var(--accent); border-radius: 12px; background: var(--accent-wash); scroll-margin-bottom: 96px; }
+    .paint-panel { display: grid; gap: 10px; margin-top: 8px; padding: 12px; min-width: 0; border: 1px solid var(--accent); border-radius: var(--radius-card); background: var(--accent-wash); scroll-margin-bottom: 96px; }
     .paint-panel .hint { margin: 0; overflow-wrap: anywhere; }
     .paint-panel-title { margin: 0; font-size: 15px; overflow-wrap: anywhere; }
     .paint-panel-label { margin: 4px 0 0; font-size: 13px; font-weight: 600; color: var(--muted); }
@@ -1001,7 +1054,7 @@
     /* v39: the closed "Shop links" fold-out under a suggested paint you do not own. Small and quiet: the colour suggestion above it comes first.
        Plain text buttons and links only (no logos). Uses the same colour variables, so dark and light follow the theme. */
     .shop-more { margin: 4px 0 0; min-width: 0; }
-    .shop-more > summary { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; font-size: 13px; font-weight: 400; color: var(--muted); cursor: pointer; list-style: none; border-radius: 10px; }
+    .shop-more > summary { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; font-size: 13px; font-weight: 400; color: var(--muted); cursor: pointer; list-style: none; border-radius: var(--radius-box); }
     .shop-more > summary::-webkit-details-marker { display: none; }
     .shop-more > summary::after { content: "\25BE"; }
     .shop-more[open] > summary { color: var(--accent); }
@@ -1014,13 +1067,13 @@
     .shop-onlist { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; color: var(--muted); }
     .shop-onlist:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .shop-links { display: flex; flex-wrap: wrap; gap: 8px; }
-    .shop-links a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; color: var(--text); text-decoration: none; background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow-wrap: anywhere; }
+    .shop-links a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; color: var(--text); text-decoration: none; background: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-box); overflow-wrap: anywhere; }
     .shop-links a:hover { border-color: var(--accent); }
     .shop-links a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     /* v37: the folding parts of the Compendium. Each heading is a full-width button; the panel under it is empty and hidden until opened. */
     .fold { display: grid; gap: 10px; }
     .fold-head { margin: 0; font-size: 16px; }
-    .fold-button { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 48px; padding: 10px 14px; text-align: left; font: inherit; font-weight: 600; color: var(--text); background: var(--card); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; }
+    .fold-button { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 48px; padding: 10px 14px; text-align: left; font: inherit; font-weight: 600; color: var(--text); background: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card); cursor: pointer; }
     .fold-button:hover { border-color: var(--accent); }
     .fold-button[aria-expanded="true"] { border-color: var(--accent); }
     .fold-mark { flex: none; width: 10px; height: 10px; margin-right: 4px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg) translate(-2px, -2px); transition: transform .15s; }
@@ -1045,10 +1098,10 @@
     .combo-mark { width: 9px; height: 9px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg) translate(-2px, -2px); transition: transform .15s; }
     .combo-toggle[aria-expanded="true"] .combo-mark { transform: rotate(-135deg) translate(-2px, -2px); }
     .combo-list { position: relative; list-style: none; margin: 0; padding: 4px; max-height: 288px; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
-                  background: var(--card); border: 1px solid var(--border); border-radius: 10px; }
+                  background: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-box); }
     .combo-list[hidden] { display: none; }
     .combo-group { padding: 8px 10px 4px; font-size: 12px; font-weight: 600; letter-spacing: .02em; color: var(--muted); }
-    .combo-option { min-height: 44px; display: flex; align-items: center; padding: 8px 10px; border-radius: 8px; font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; cursor: pointer; }
+    .combo-option { min-height: 44px; display: flex; align-items: center; padding: 8px 10px; border-radius: var(--radius-control); font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; cursor: pointer; }
     .combo-option:hover { background: var(--accent-wash); }
     .combo-option[aria-selected="true"] { font-weight: 600; color: var(--accent); }
     .combo-option.is-active { background: var(--accent-wash); outline: 2px solid var(--accent); outline-offset: -2px; }
@@ -1080,7 +1133,7 @@
     .shop-list { margin: 0; padding-left: 20px; line-height: 1.6; }
     .shop-list small { color: var(--muted); }
     /* v19.1: the "Buy these" bar at the top of the shopping list */
-    .buy-bar { margin: 0 0 14px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px;
+    .buy-bar { margin: 0 0 14px; padding: 10px 12px; border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-box);
                background: linear-gradient(to right, var(--accent-wash), transparent 80%), var(--card); }
     .buy-bar h3 { margin: 0 0 8px; font-size: 15px; color: var(--accent); }
     .buy-shops { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -1099,15 +1152,15 @@
     /* v16.1: camera view for scanning a pot label */
     #scan-camera { position: fixed; inset: 0; z-index: 100; background: #000; display: flex; flex-direction: column;
                    padding: env(safe-area-inset-top) 16px calc(16px + env(safe-area-inset-bottom)); }
-    .cam-frame { position: relative; flex: 1; overflow: hidden; border-radius: 12px; }
+    .cam-frame { position: relative; flex: 1; overflow: hidden; border-radius: var(--radius-card); }
     .cam-frame video { width: 100%; height: 100%; object-fit: cover; display: block; }
     .cam-box { position: absolute; left: 8%; right: 8%; top: 40%; height: 20%; border: 3px solid var(--accent);
-               border-radius: 10px; box-shadow: 0 0 0 9999px rgba(11, 18, 32, 0.55); }
+               border-radius: var(--radius-box); box-shadow: 0 0 0 9999px rgba(11, 18, 32, 0.55); }
     .cam-tip { color: var(--text); font-size: 14px; text-align: center; margin: 12px 0; }
     .cam-buttons { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
     /* One paint: colour, name and ✕ on top; brand and mix % underneath. */
     .paint-edit {
-      display: grid; gap: 6px; padding: 8px; border: 1px solid var(--border); border-radius: 8px;
+      display: grid; gap: 6px; padding: 8px; border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-control);
       grid-template-columns: 44px 1fr 92px 40px;
       grid-template-areas: "swatch name name remove" "brand brand mix mix";
     }
@@ -1137,21 +1190,21 @@
       .tabs {
         position: sticky; top: 0;
         max-width: 1280px; margin: 0 auto 24px;
-        border-top: none; border-bottom: 1px solid var(--border);
+        border-top: none; border-bottom: var(--frame);
         border-radius: 0 0 14px 14px;
         padding: 6px; gap: 6px;
       }
       .tabs button {
         display: flex; justify-content: center; align-items: center; gap: 10px;
-        font-size: 17px; min-height: 56px; border-radius: 10px;
+        font-size: 17px; min-height: 56px; border-radius: var(--radius-box);
       }
       .tabs button:hover { color: var(--text); background: var(--accent-wash-hover); }
       .tabs .basket { top: 50%; margin-top: -13px; left: calc(50% + 54px); min-height: 0; }
-      .tabs .basket:hover { filter: brightness(1.12); background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 72%, #1e3a8a)); color: var(--background); }
+      .tabs .basket:hover { filter: brightness(1.12); background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 72%, var(--basket-deep))); color: var(--on-accent); }
       .tabs button[aria-current="page"] { box-shadow: inset 0 -3px 0 var(--accent); }
-      h1 { font-size: 30px; margin: 24px 0 20px; }
-      .card { padding: 22px; }
-      h2 { font-size: 18px; }
+      h1 { font-size: calc(var(--wordmark-size) + 6px); margin: 24px 0 20px; }
+      .card { padding: calc(var(--card-pad) + 6px); }
+      h2 { font-size: calc(var(--heading-size) + 2px); }
 
       /* Dashboard: the headline across the top, then stages and factions side by side. */
       #view-dashboard:not(.hidden) {
@@ -1202,6 +1255,634 @@
     #units-import #wh-panel.hidden + .review { margin-top: 0; padding-top: 0; border-top: 0; }
     .empty .button-grid { margin: 14px auto 0; max-width: 340px; text-align: left; }
 
+    /* ===== v47: THEMES (Blueprint, Parchment Codex, Grim Forge, Paint Bench, Rulebook) =====
+       Final look = theme x mode. The page carries data-t (theme) and data-m (dark or light), set by early.js
+       before the first paint and by applyTheme in app.js. The small theme buttons in Settings carry their own
+       data-t and data-m, so each one shows its own theme. Values come from minifolio-themes-spec.md; anything
+       changed for contrast is listed in the pull request for v47. */
+    [data-t="blueprint"] {
+      --font-heading: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+      --font-body: 'IBM Plex Sans Condensed', 'Arial Narrow', system-ui, sans-serif;
+      --font-num: 'Share Tech Mono', ui-monospace, monospace;
+      --num-style: normal;
+      --radius-card: 0px;
+      --radius-control: 0px;
+      --radius-box: 0px;
+      --radius-small: 0px;
+      --radius-bar: 0px;
+      --border-width: 1px;
+      --border-style: solid;
+      --heading-weight: 600;
+      --heading-transform: uppercase;
+      --heading-tracking: .16em;
+      --heading-size: 19px;
+      --wordmark-size: 32px;
+      --body-size: 16px;
+      --card-pad: 18px;
+      --button-font: var(--font-heading);
+      --button-weight: 600;
+      --button-transform: uppercase;
+      --button-tracking: .12em;
+      --texture-size: 16px 16px, 16px 16px, 80px 80px, 80px 80px;
+    }
+    [data-t="blueprint"][data-m="dark"] {
+      --background: #0c2c4f;
+      --card: #0f3560;
+      --track: #0a2444;
+      --border: #7fb2e5;
+      --text: #e8f2ff;
+      --muted: #92b8df;
+      --accent: #f4f9ff;
+      --on-accent: #0c2c4f;
+      --heading-colour: #f4f9ff;
+      --wordmark-colour: #f4f9ff;
+      --danger: #ffa3a3;
+      --shadow: rgba(0, 0, 0, 0.45);
+      --badge-bg: rgba(15, 53, 96, 0.85);
+      --accent-wash: rgba(244, 249, 255, 0.08);
+      --accent-wash-hover: rgba(244, 249, 255, 0.05);
+      --note: #8fe3ff;
+      --note-wash: rgba(143, 227, 255, 0.18);
+      --good: #6ee7b7;
+      --good-wash: rgba(110, 231, 183, 0.12);
+      --bad: #ffa3a3;
+      --bad-wash: rgba(255, 163, 163, 0.1);
+      --warn: #fde68a;
+      --caution: #fbbf24;
+      --wish: #b8dcff;
+      --grey-status: #a9bfd6;
+      --chip-on: #0c2c4f;
+      --toast-action: #1d4f91;
+      --series-added: #fbbf24;
+      --series-painted: #6ee7b7;
+      --toast-ring: rgba(244, 249, 255, 0.45);
+      --basket-deep: #000000;
+      --first-letter: #f4f9ff;
+      color-scheme: dark;
+      --inner-outline: rgba(127, 178, 229, 0.35);
+      --frame: 1px solid var(--border);
+      --rule: 1px solid var(--border);
+      --card-shadow: none;
+      --swatch-edge: #7fb2e5;
+      --texture: linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px), linear-gradient(rgba(255,255,255,.10) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.10) 1px, transparent 1px);
+    }
+    [data-t="blueprint"][data-m="light"] {
+      --background: #f1f4f8;
+      --card: #fbfcfe;
+      --track: #e3e9f1;
+      --border: #1d4f91;
+      --text: #0d2a4d;
+      --muted: #4c6a8c;
+      --accent: #1d4f91;
+      --on-accent: #ffffff;
+      --heading-colour: #0d2a4d;
+      --wordmark-colour: #0d2a4d;
+      --danger: #b42318;
+      --shadow: rgba(13, 42, 77, 0.18);
+      --badge-bg: rgba(251, 252, 254, 0.92);
+      --accent-wash: rgba(29, 79, 145, 0.09);
+      --accent-wash-hover: rgba(29, 79, 145, 0.05);
+      --note: #0b6e8a;
+      --note-wash: rgba(11, 110, 138, 0.1);
+      --good: #11704f;
+      --good-wash: rgba(17, 112, 79, 0.1);
+      --bad: #b42318;
+      --bad-wash: rgba(180, 35, 24, 0.08);
+      --warn: #7a5300;
+      --caution: #9a4a00;
+      --wish: #1d5fbf;
+      --grey-status: #55697f;
+      --chip-on: #ffffff;
+      --toast-action: #9fd0ff;
+      --series-added: #9a4a00;
+      --series-painted: #11704f;
+      --toast-ring: rgba(29, 79, 145, 0.45);
+      --basket-deep: #0d2a4d;
+      --first-letter: #1d4f91;
+      color-scheme: light;
+      --inner-outline: rgba(29, 79, 145, 0.35);
+      --frame: 1px solid var(--border);
+      --rule: 1px solid var(--border);
+      --card-shadow: none;
+      --swatch-edge: #1d4f91;
+      --texture: linear-gradient(rgba(29,79,145,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(29,79,145,.08) 1px, transparent 1px), linear-gradient(rgba(29,79,145,.15) 1px, transparent 1px), linear-gradient(90deg, rgba(29,79,145,.15) 1px, transparent 1px);
+    }
+    [data-t="parchment"] {
+      --font-heading: 'IM Fell English', 'Palatino Linotype', Georgia, serif;
+      --font-body: 'EB Garamond', Georgia, serif;
+      --font-num: 'EB Garamond', Georgia, serif;
+      --num-style: italic;
+      --radius-card: 2px;
+      --radius-control: 2px;
+      --radius-box: 2px;
+      --radius-small: 2px;
+      --radius-bar: 1px;
+      --border-width: 4px;
+      --border-style: double;
+      --heading-weight: 400;
+      --heading-transform: none;
+      --heading-tracking: .01em;
+      --heading-size: 23px;
+      --wordmark-size: 38px;
+      --body-size: 17px;
+      --card-pad: 16px;
+      --button-font: var(--font-heading);
+      --button-weight: 400;
+      --button-transform: none;
+      --button-tracking: .01em;
+      --texture-size: auto;
+    }
+    [data-t="parchment"][data-m="dark"] {
+      --background: #17120e;
+      --card: #211a14;
+      --track: #120e0b;
+      --border: #82603e;
+      --text: #e8dcc0;
+      --muted: #a79877;
+      --accent: #d65b5b;
+      --on-accent: #211a06;
+      --heading-colour: #da594d;
+      --wordmark-colour: #e8dcc0;
+      --danger: #e88070;
+      --shadow: rgba(0, 0, 0, 0.45);
+      --badge-bg: rgba(33, 26, 20, 0.85);
+      --accent-wash: rgba(214, 91, 91, 0.08);
+      --accent-wash-hover: rgba(214, 91, 91, 0.05);
+      --note: #6fb8a6;
+      --note-wash: rgba(111, 184, 166, 0.18);
+      --good: #8cbf7a;
+      --good-wash: rgba(140, 191, 122, 0.12);
+      --bad: #e88070;
+      --bad-wash: rgba(232, 128, 112, 0.1);
+      --warn: #e6cf8a;
+      --caution: #e8a050;
+      --wish: #9ab8e0;
+      --grey-status: #a79877;
+      --chip-on: #17120e;
+      --toast-action: #8a1c1c;
+      --series-added: #9ab8e0;
+      --series-painted: #8cbf7a;
+      --toast-ring: rgba(214, 91, 91, 0.45);
+      --basket-deep: #000000;
+      --first-letter: #da594d;
+      color-scheme: dark;
+      --card-shadow: inset 0 0 0 1px rgba(255,235,190,.06);
+      --frame: 4px double #6d5034;
+      --rule: 3px double #6d5034;
+      --swatch-edge: rgba(232, 220, 192, 0.3);
+      --texture: radial-gradient(circle at 16% 10%, rgba(179,45,45,.10), transparent 40%), radial-gradient(circle at 90% 80%, rgba(120,80,40,.12), transparent 45%), repeating-linear-gradient(0deg, rgba(255,235,190,.012) 0 1px, transparent 1px 4px);
+    }
+    [data-t="parchment"][data-m="light"] {
+      --background: #d8c59a;
+      --card: #e4d4ae;
+      --track: #cdb98c;
+      --border: #6f5232;
+      --text: #2a1c10;
+      --muted: #65502f;
+      --accent: #8a1c1c;
+      --on-accent: #f3e7c6;
+      --heading-colour: #8a1c1c;
+      --wordmark-colour: #2a1c10;
+      --danger: #9b2a12;
+      --shadow: rgba(42, 28, 16, 0.18);
+      --badge-bg: rgba(228, 212, 174, 0.92);
+      --accent-wash: rgba(138, 28, 28, 0.09);
+      --accent-wash-hover: rgba(138, 28, 28, 0.05);
+      --note: #285c50;
+      --note-wash: rgba(40, 92, 80, 0.1);
+      --good: #2f5a22;
+      --good-wash: rgba(47, 90, 34, 0.1);
+      --bad: #9b2a12;
+      --bad-wash: rgba(155, 42, 18, 0.08);
+      --warn: #6b4e00;
+      --caution: #844000;
+      --wish: #2a4a80;
+      --grey-status: #5e5140;
+      --chip-on: #f3e7c6;
+      --toast-action: #e9c46a;
+      --series-added: #2a4a80;
+      --series-painted: #2f5a22;
+      --toast-ring: rgba(138, 28, 28, 0.45);
+      --basket-deep: #2a1c10;
+      --first-letter: #8a1c1c;
+      color-scheme: light;
+      --card-shadow: inset 0 0 0 1px rgba(255,255,255,.25);
+      --frame: 4px double #6f5232;
+      --rule: 3px double #6f5232;
+      --swatch-edge: rgba(42, 28, 16, 0.4);
+      --texture: radial-gradient(circle at 18% 12%, rgba(120,80,30,.20), transparent 38%), radial-gradient(circle at 88% 72%, rgba(100,60,20,.18), transparent 42%), radial-gradient(circle at 60% 38%, rgba(255,255,255,.12), transparent 40%), repeating-linear-gradient(0deg, rgba(60,35,10,.03) 0 1px, transparent 1px 4px);
+    }
+    [data-t="forge"] {
+      --font-heading: 'Teko', 'Oswald', 'Arial Narrow', sans-serif;
+      --font-body: 'Barlow', system-ui, sans-serif;
+      --font-num: 'Barlow', system-ui, sans-serif;
+      --num-style: normal;
+      --radius-card: 0px;
+      --radius-control: 0px;
+      --radius-box: 0px;
+      --radius-small: 0px;
+      --radius-bar: 0px;
+      --border-width: 2px;
+      --border-style: solid;
+      --heading-weight: 600;
+      --heading-transform: uppercase;
+      --heading-tracking: .07em;
+      --heading-size: 24px;
+      --wordmark-size: 40px;
+      --body-size: 16px;
+      --card-pad: 16px;
+      --button-font: var(--font-heading);
+      --button-weight: 600;
+      --button-transform: uppercase;
+      --button-tracking: .07em;
+      --texture-size: auto;
+    }
+    [data-t="forge"][data-m="dark"] {
+      --background: #0e0e10;
+      --card: #17171a;
+      --track: #0c0c0e;
+      --border: #636370;
+      --text: #dcd8cf;
+      --muted: #8f8c84;
+      --accent: #d5583e;
+      --on-accent: #130d0b;
+      --heading-colour: #dcd8cf;
+      --wordmark-colour: #dcd8cf;
+      --danger: #f07a6a;
+      --shadow: rgba(0, 0, 0, 0.45);
+      --badge-bg: rgba(23, 23, 26, 0.85);
+      --accent-wash: rgba(213, 88, 62, 0.08);
+      --accent-wash-hover: rgba(213, 88, 62, 0.05);
+      --note: #c9a66b;
+      --note-wash: rgba(201, 166, 107, 0.18);
+      --good: #7fbf6a;
+      --good-wash: rgba(127, 191, 106, 0.12);
+      --bad: #f07a6a;
+      --bad-wash: rgba(240, 122, 106, 0.1);
+      --warn: #e8cf7a;
+      --caution: #e89a3c;
+      --wish: #8fb0d8;
+      --grey-status: #9a978f;
+      --chip-on: #130d0b;
+      --toast-action: #a8321d;
+      --series-added: #8fb0d8;
+      --series-painted: #7fbf6a;
+      --toast-ring: rgba(213, 88, 62, 0.45);
+      --basket-deep: #000000;
+      --first-letter: #d5583e;
+      color-scheme: dark;
+      --card-shadow: inset 0 0 0 1px #000, inset 0 0 0 4px #1f1f24;
+      --rule: 3px solid #2a2a30;
+      --frame: 2px solid #26262b;
+      --swatch-edge: rgba(255, 255, 255, 0.25);
+      --wordmark-shadow: 0 2px 0 #000;
+      --texture: repeating-linear-gradient(135deg, rgba(255,255,255,.02) 0 2px, transparent 2px 7px), radial-gradient(ellipse at 15% 0%, rgba(196,69,43,.10), transparent 55%);
+    }
+    [data-t="forge"][data-m="light"] {
+      --background: #cfcdc6;
+      --card: #dedcd5;
+      --track: #bdbbb3;
+      --border: #1a1a1d;
+      --text: #17171a;
+      --muted: #55534d;
+      --accent: #9f2f1b;
+      --on-accent: #f2eee6;
+      --heading-colour: #17171a;
+      --wordmark-colour: #17171a;
+      --danger: #9b1c1c;
+      --shadow: rgba(23, 23, 26, 0.18);
+      --badge-bg: rgba(222, 220, 213, 0.92);
+      --accent-wash: rgba(159, 47, 27, 0.09);
+      --accent-wash-hover: rgba(159, 47, 27, 0.05);
+      --note: #6b4f1f;
+      --note-wash: rgba(107, 79, 31, 0.1);
+      --good: #2f5f1f;
+      --good-wash: rgba(47, 95, 31, 0.1);
+      --bad: #9b1c1c;
+      --bad-wash: rgba(155, 28, 28, 0.08);
+      --warn: #6b5200;
+      --caution: #854700;
+      --wish: #24508a;
+      --grey-status: #55534d;
+      --chip-on: #f2eee6;
+      --toast-action: #e07a5f;
+      --series-added: #24508a;
+      --series-painted: #2f5f1f;
+      --toast-ring: rgba(159, 47, 27, 0.45);
+      --basket-deep: #17171a;
+      --first-letter: #9f2f1b;
+      color-scheme: light;
+      --card-shadow: inset 0 0 0 1px rgba(255,255,255,.5), inset 0 0 0 4px rgba(0,0,0,.07);
+      --rule: 3px solid #1a1a1d;
+      --frame: 2px solid #1a1a1d;
+      --swatch-edge: rgba(23, 23, 26, 0.35);
+      --wordmark-shadow: none;
+      --texture: repeating-linear-gradient(135deg, rgba(0,0,0,.03) 0 2px, transparent 2px 7px), radial-gradient(ellipse at 15% 0%, rgba(168,50,29,.10), transparent 55%);
+    }
+    [data-t="bench"] {
+      --font-heading: 'Big Shoulders Stencil', 'Allerta Stencil', 'Arial Narrow', sans-serif;
+      --font-body: 'Barlow Semi Condensed', 'Arial Narrow', system-ui, sans-serif;
+      --font-num: 'DM Mono', ui-monospace, monospace;
+      --num-style: normal;
+      --radius-card: 6px;
+      --radius-control: 6px;
+      --radius-box: 6px;
+      --radius-small: 6px;
+      --radius-bar: 6px;
+      --border-width: 1px;
+      --border-style: solid;
+      --heading-weight: 700;
+      --heading-transform: uppercase;
+      --heading-tracking: .05em;
+      --heading-size: 17px;
+      --wordmark-size: 38px;
+      --body-size: 16px;
+      --card-pad: 16px;
+      --button-font: var(--font-heading);
+      --button-weight: 700;
+      --button-transform: uppercase;
+      --button-tracking: .05em;
+      --texture-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px;
+    }
+    [data-t="bench"][data-m="dark"] {
+      --background: #111815;
+      --card: #19231f;
+      --track: #0e1411;
+      --border: #547164;
+      --text: #dfe7e2;
+      --muted: #8aa096;
+      --accent: #e4c968;
+      --on-accent: #221d0a;
+      --heading-colour: #dfe7e2;
+      --wordmark-colour: #e4c968;
+      --danger: #f2928a;
+      --shadow: rgba(0, 0, 0, 0.45);
+      --badge-bg: rgba(25, 35, 31, 0.85);
+      --accent-wash: rgba(228, 201, 104, 0.08);
+      --accent-wash-hover: rgba(228, 201, 104, 0.05);
+      --note: #7fc8d6;
+      --note-wash: rgba(127, 200, 214, 0.18);
+      --good: #7fd69a;
+      --good-wash: rgba(127, 214, 154, 0.12);
+      --bad: #f2928a;
+      --bad-wash: rgba(242, 146, 138, 0.1);
+      --warn: #f3dd8b;
+      --caution: #f0a64a;
+      --wish: #8cc4f0;
+      --grey-status: #9aaba3;
+      --chip-on: #221d0a;
+      --toast-action: #7a5c00;
+      --series-added: #8cc4f0;
+      --series-painted: #7fd69a;
+      --toast-ring: rgba(228, 201, 104, 0.45);
+      --basket-deep: #000000;
+      --first-letter: #e4c968;
+      color-scheme: dark;
+      --card-shadow: 0 3px 8px rgba(0,0,0,.4);
+      --rule: 2px dashed var(--border);
+      --frame: 1px solid #263630;
+      --swatch-edge: rgba(255, 255, 255, 0.25);
+      --texture: linear-gradient(rgba(190,225,205,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(190,225,205,.06) 1px, transparent 1px), linear-gradient(rgba(190,225,205,.11) 1px, transparent 1px), linear-gradient(90deg, rgba(190,225,205,.11) 1px, transparent 1px);
+    }
+    [data-t="bench"][data-m="light"] {
+      --background: #cfe0d4;
+      --card: #e1ece4;
+      --track: #bcd0c3;
+      --border: #62846f;
+      --text: #14231b;
+      --muted: #4a6455;
+      --accent: #7a5c00;
+      --on-accent: #fff6d6;
+      --heading-colour: #14231b;
+      --wordmark-colour: #7a5c00;
+      --danger: #a3261c;
+      --shadow: rgba(20, 35, 27, 0.18);
+      --badge-bg: rgba(225, 236, 228, 0.92);
+      --accent-wash: rgba(122, 92, 0, 0.09);
+      --accent-wash-hover: rgba(122, 92, 0, 0.05);
+      --note: #1f5f6a;
+      --note-wash: rgba(31, 95, 106, 0.1);
+      --good: #1f6a3a;
+      --good-wash: rgba(31, 106, 58, 0.1);
+      --bad: #a3261c;
+      --bad-wash: rgba(163, 38, 28, 0.08);
+      --warn: #6e5000;
+      --caution: #8a4300;
+      --wish: #24508a;
+      --grey-status: #4a6455;
+      --chip-on: #fff6d6;
+      --toast-action: #e4c968;
+      --series-added: #24508a;
+      --series-painted: #1f6a3a;
+      --toast-ring: rgba(122, 92, 0, 0.45);
+      --basket-deep: #14231b;
+      --first-letter: #7a5c00;
+      color-scheme: light;
+      --card-shadow: 0 3px 8px rgba(20,50,35,.18);
+      --rule: 2px dashed var(--border);
+      --frame: 1px solid #8fb09c;
+      --swatch-edge: rgba(20, 35, 27, 0.35);
+      --texture: linear-gradient(rgba(20,60,40,.10) 1px, transparent 1px), linear-gradient(90deg, rgba(20,60,40,.10) 1px, transparent 1px), linear-gradient(rgba(20,60,40,.18) 1px, transparent 1px), linear-gradient(90deg, rgba(20,60,40,.18) 1px, transparent 1px);
+    }
+    [data-t="rulebook"] {
+      --font-heading: 'Special Elite', 'Courier New', monospace;
+      --font-body: 'Courier Prime', 'Courier New', monospace;
+      --font-num: 'Courier Prime', 'Courier New', monospace;
+      --num-style: normal;
+      --num-weight: 700;
+      --radius-card: 3px 6px 4px 7px;
+      --radius-control: 255px 14px 225px 14px / 14px 225px 14px 255px;
+      --radius-box: 3px 6px 4px 7px;
+      --radius-small: 3px 6px 4px 7px;
+      --radius-bar: 2px;
+      --border-width: 2px;
+      --border-style: solid;
+      --heading-weight: 400;
+      --heading-transform: uppercase;
+      --heading-tracking: .04em;
+      --heading-size: 17px;
+      --wordmark-size: 30px;
+      --body-size: 16px;
+      --card-pad: 16px;
+      --button-font: var(--font-heading);
+      --button-weight: 400;
+      --button-transform: uppercase;
+      --button-tracking: .04em;
+      --texture-size: auto;
+    }
+    [data-t="rulebook"][data-m="dark"] {
+      --background: #181810;
+      --card: #20201a;
+      --track: #121209;
+      --border: #8c8a68;
+      --text: #dad4b6;
+      --muted: #9a9778;
+      --accent: #d6653d;
+      --on-accent: #1a1209;
+      --heading-colour: #d96330;
+      --wordmark-colour: #d6653d;
+      --danger: #f08a7a;
+      --shadow: rgba(0, 0, 0, 0.45);
+      --badge-bg: rgba(32, 32, 26, 0.85);
+      --accent-wash: rgba(214, 101, 61, 0.08);
+      --accent-wash-hover: rgba(214, 101, 61, 0.05);
+      --note: #9fb8c4;
+      --note-wash: rgba(159, 184, 196, 0.18);
+      --good: #8fc46a;
+      --good-wash: rgba(143, 196, 106, 0.12);
+      --bad: #f08a7a;
+      --bad-wash: rgba(240, 138, 122, 0.1);
+      --warn: #e8cf7a;
+      --caution: #f0a050;
+      --wish: #8fb5e8;
+      --grey-status: #a3a08a;
+      --chip-on: #1a1209;
+      --toast-action: #8a3412;
+      --series-added: #8fb5e8;
+      --series-painted: #8fc46a;
+      --toast-ring: rgba(214, 101, 61, 0.45);
+      --basket-deep: #000000;
+      --first-letter: #d6653d;
+      color-scheme: dark;
+      --card-shadow: 3px 3px 0 rgba(0,0,0,.5);
+      --hard-shadow: rgba(0, 0, 0, 0.5);
+      --rule: 3px solid #8c8a68;
+      --frame: 3px solid #8c8a68;
+      --swatch-edge: #8c8a68;
+      --texture: repeating-linear-gradient(45deg, rgba(255,240,200,.03) 0 1px, transparent 1px 4px), repeating-linear-gradient(-45deg, rgba(255,240,200,.025) 0 1px, transparent 1px 5px), linear-gradient(82deg, transparent 47%, rgba(255,240,200,.04) 48%, transparent 50%), radial-gradient(circle at 78% 22%, rgba(201,83,42,.10), transparent 24%);
+    }
+    [data-t="rulebook"][data-m="light"] {
+      --background: #c8c6a9;
+      --card: #d5d3b8;
+      --track: #bcba9c;
+      --border: #1f1f17;
+      --text: #1d1d16;
+      --muted: #53533e;
+      --accent: #89391a;
+      --on-accent: #efe9d0;
+      --heading-colour: #89391a;
+      --wordmark-colour: #89391a;
+      --danger: #9b1c1c;
+      --shadow: rgba(29, 29, 22, 0.18);
+      --badge-bg: rgba(213, 211, 184, 0.92);
+      --accent-wash: rgba(137, 57, 26, 0.09);
+      --accent-wash-hover: rgba(137, 57, 26, 0.05);
+      --note: #3d5566;
+      --note-wash: rgba(61, 85, 102, 0.1);
+      --good: #2f5c1f;
+      --good-wash: rgba(47, 92, 31, 0.1);
+      --bad: #9b1c1c;
+      --bad-wash: rgba(155, 28, 28, 0.08);
+      --warn: #664e00;
+      --caution: #754700;
+      --wish: #234e8a;
+      --grey-status: #525246;
+      --chip-on: #efe9d0;
+      --toast-action: #f0a070;
+      --series-added: #234e8a;
+      --series-painted: #2f5d1f;
+      --toast-ring: rgba(137, 57, 26, 0.45);
+      --basket-deep: #1d1d16;
+      --first-letter: #89391a;
+      color-scheme: light;
+      --card-shadow: 3px 3px 0 rgba(29,29,22,.25);
+      --hard-shadow: rgba(29, 29, 22, 0.35);
+      --rule: 3px solid #1f1f17;
+      --frame: 3px solid #1f1f17;
+      --swatch-edge: #1f1f17;
+      --texture: repeating-linear-gradient(45deg, rgba(0,0,0,.045) 0 1px, transparent 1px 4px), repeating-linear-gradient(-45deg, rgba(0,0,0,.035) 0 1px, transparent 1px 5px), linear-gradient(82deg, transparent 47%, rgba(0,0,0,.07) 48%, transparent 50%), radial-gradient(circle at 78% 22%, rgba(90,50,10,.14), transparent 22%);
+    }
+    /* ----- v47: what every theme except Classic adds (Classic keeps the old look exactly) ----- */
+    /* :where() keeps these as weak as the plain rules, so the app's own special cases still win. */
+    :where(:root:not([data-t="classic"])) body { background-attachment: fixed; }
+    :where(:root:not([data-t="classic"])) h2 { color: var(--heading-colour); }
+    :where(:root:not([data-t="classic"])) :is(input, select, textarea) { background-color: var(--track); }
+    :where(:root:not([data-t="classic"])) :is(.primary-button, .plain-button, .danger-button, .chip, .seg button, .tabs button) {
+      font-family: var(--button-font); font-weight: var(--button-weight);
+      text-transform: var(--button-transform); letter-spacing: var(--button-tracking); font-size-adjust: var(--button-adjust, none);
+    }
+    :where(:root:not([data-t="classic"])) :is(.big, .legend .num, .group-button strong, .qty-count, .paint-line .mix, .history-table td, .chart-tip b) {
+      font-family: var(--font-num); font-style: var(--num-style); font-weight: var(--num-weight, inherit);
+    }
+    :where(:root:not([data-t="classic"])) .swatch { border-color: var(--swatch-edge); }
+    /* Condensed and small-eyed display fonts are drawn a little larger, so their words are as easy to read as before. */
+    [data-t="blueprint"] { --button-adjust: 0.5; --rule-gap: 8px; }
+    [data-t="forge"] { --button-adjust: 0.55; --rule-gap: 8px; }
+    [data-t="bench"] { --button-adjust: 0.52; --rule-gap: 8px; }
+    [data-t="rulebook"] { --button-adjust: none; --rule-gap: 8px; }
+    [data-t="parchment"] { --button-adjust: none; --rule-gap: 8px; }
+
+    /* Blueprint: a second thin line inside each card, and dashed outlines on the plain buttons. */
+    [data-t="blueprint"] .card { outline: 1px solid var(--inner-outline); outline-offset: -6px; }
+    [data-t="blueprint"] .plain-button { border-style: dashed; }
+
+    /* Parchment Codex: an illuminated first letter, a double line on the open tab, and numbers in italic. */
+    [data-t="parchment"] h1::first-letter { font-size: 1.45em; color: var(--first-letter); }
+    [data-t="parchment"] .tabs button[aria-current="page"] { box-shadow: inset 0 1px 0 var(--accent), inset 0 3px 0 transparent, inset 0 4px 0 var(--accent); }
+    @media (min-width: 900px) {
+      [data-t="parchment"] .tabs button[aria-current="page"] { box-shadow: inset 0 -1px 0 var(--accent), inset 0 -4px 0 var(--accent); }
+    }
+
+    /* Grim Forge: the bevel (in the card shadow) and heavy borders, plus a hard shadow under the title in dark. */
+    [data-t="forge"] h1 { text-shadow: var(--wordmark-shadow, none); }
+
+    /* Paint Bench: card titles are strips of masking tape with marker writing on them (still real headings for screen
+       readers). Paint swatches are circles already. The main button sits a touch crooked. */
+    [data-t="bench"] .card h2 {
+      display: inline-block; background: #e3d6a6; color: #2b2616;
+      font-family: 'Permanent Marker', 'Comic Sans MS', cursive; font-weight: 400; font-size: 16px;
+      text-transform: none; letter-spacing: 0; padding: 3px 14px; transform: rotate(-1.2deg);
+      clip-path: polygon(0 0, 100% 0, 98% 25%, 100% 50%, 98% 75%, 100% 100%, 0 100%, 2% 75%, 0 50%, 2% 25%);
+    }
+    @media (min-width: 900px) { [data-t="bench"] .card h2 { font-size: 17px; } }
+    [data-t="bench"] .primary-button { transform: rotate(-0.6deg); }
+
+    /* Rulebook: a hard offset shadow under the main button, and thicker rings round the paint swatches. */
+    [data-t="rulebook"] .primary-button { box-shadow: 3px 3px 0 var(--hard-shadow); }
+    [data-t="rulebook"] .swatch { border-width: 2px; }
+
+    /* ----- v47: the Theme buttons in Settings -----
+       One row of squares. Each square is a tiny page in its own theme (page colour and texture, a card, a button
+       strip in the accent colour), with the theme's name in the theme's own title font. They show the current mode,
+       so in Light mode you see each theme's light look. The row scrolls sideways if the screen is too narrow. */
+    .theme-row {
+      --page-accent: var(--accent);   /* the app's accent, kept for the ring round the chosen square */
+      display: flex; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scroll-padding-inline: 7px;
+      padding: 7px 7px 9px; margin: 0 -7px; -webkit-overflow-scrolling: touch; scrollbar-width: thin;
+    }
+    .theme-swatch {
+      flex: 1 0 84px; min-width: 84px; max-width: 112px; aspect-ratio: 1 / 1; position: relative; scroll-snap-align: start;
+      display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 6px; padding: 8px 7px;
+      background-color: var(--background); background-image: var(--texture); background-size: var(--texture-size);
+      color: var(--text); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card);
+      box-shadow: var(--card-shadow); color-scheme: inherit;
+    }
+    .theme-swatch .ts-card {
+      display: flex; align-items: center; justify-content: center; flex: 1; min-height: 0; padding: 3px 4px;
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-small);
+      color: var(--heading-colour); font-family: var(--font-heading); font-weight: var(--heading-weight);
+      text-transform: var(--heading-transform); letter-spacing: var(--heading-tracking);
+      font-size: 13px; line-height: 1.05; text-align: center; overflow-wrap: normal; hyphens: manual;
+    }
+    .theme-swatch .ts-bar { display: block; height: 7px; border-radius: var(--radius-bar); background: var(--accent); flex: none; }
+    .theme-swatch[aria-pressed="true"] { outline: 3px solid var(--page-accent); outline-offset: 2px; }
+    .theme-swatch:focus-visible { outline: 3px dashed var(--page-accent); outline-offset: 2px; }
+    .theme-swatch[aria-pressed="true"]:focus-visible { outline-style: double; outline-width: 5px; }
+    /* Each square's small touches, matching its theme. */
+    .theme-swatch[data-t="classic"] .ts-card { font-weight: 700; color: var(--accent); }
+    .theme-swatch[data-t="blueprint"] .ts-card { outline: 1px solid var(--inner-outline); outline-offset: -3px; font-size: 12px; letter-spacing: .08em; }
+    .theme-swatch[data-t="parchment"] .ts-card { border-width: 3px; border-style: double; font-size: 13px; line-height: 1; }
+    .theme-swatch[data-t="parchment"] .ts-card::first-letter { color: var(--first-letter); font-size: 1.3em; }
+    .theme-swatch[data-t="forge"] .ts-card { border-width: 2px; box-shadow: inset 0 0 0 2px var(--background); font-size: 17px; letter-spacing: .05em; line-height: .95; }
+    .theme-swatch[data-t="bench"] .ts-card { background: transparent; border: 0; padding: 0; }
+    .theme-swatch[data-t="bench"] .ts-name {
+      display: inline-block; background: #e3d6a6; color: #2b2616; padding: 3px 7px; transform: rotate(-2deg);
+      font-family: 'Permanent Marker', 'Comic Sans MS', cursive; font-weight: 400; font-size: 12px; line-height: 1.1; text-transform: none; letter-spacing: 0;
+      clip-path: polygon(0 0, 100% 0, 97% 25%, 100% 50%, 97% 75%, 100% 100%, 0 100%, 3% 75%, 0 50%, 3% 25%);
+    }
+    .theme-swatch[data-t="rulebook"] .ts-card { border-width: 2px; border-color: var(--border); font-size: 12px; letter-spacing: .02em; }
+    .theme-swatch[data-t="rulebook"] .ts-bar { box-shadow: 2px 2px 0 var(--hard-shadow); }
+    @media (forced-colors: active) { .theme-swatch[aria-pressed="true"] { outline-color: Highlight; } }
     .hidden { display: none !important; }
   </style>
 </head>
@@ -1521,6 +2202,7 @@
           <summary>Appearance (light and dark) and stage colours</summary>
           <ul>
             <li>Choose how the app looks in <strong>Settings → Appearance</strong>: <strong>Dark</strong> (the usual look), <strong>Light</strong>, or <strong>Match my phone</strong>, which follows your phone's own dark mode setting and switches when your phone does.</li>
+            <li><strong>Settings → Theme</strong> changes the whole look: colours, lettering, corners and borders. Choose <strong>Classic</strong> (the usual look), <strong>Blueprint</strong>, <strong>Parchment Codex</strong>, <strong>Grim Forge</strong>, <strong>Paint Bench</strong> or <strong>Rulebook</strong>. Each square shows what its theme looks like. Every theme has a dark and a light version, chosen by Appearance.</li>
             <li><strong>Settings → Colours</strong> picks the colour set for your stages: Ice, Frost, Greyscale, Colour-blind friendly, <strong>Forge</strong> (warm: ember red through amber and gold to cream), or <strong>Custom</strong>.</li>
             <li><strong>Custom</strong> lets you pick a colour for each stage. It starts from the set you had. Tap a stage's colour square to change it; the whole app updates as you go.</li>
             <li>A colour that's too faint to read on the dark cards gets a <strong>⚠ warning</strong> under its stage. You can still keep it.</li>
@@ -1530,7 +2212,7 @@
             <li>In light mode, pale stage colours (like the pale green "finished" colour, the white end of Greyscale, or Forge's cream) are shown a little deeper, so stage names stay easy to read on white. This works for Custom colours too. The colours you chose don't change, only how they're shown.</li>
             <li id="help-dark-readable">In dark mode it works the other way round: a stage colour that's a little too dark to read as text on the dark cards (some in Ice, Frost, Greyscale and Forge) is shown a bit brighter. Colours that are already easy to read are left as they are (Greyscale's run of greys is spaced out again, so its steps stay easy to tell apart). A Custom colour shown this way says so under its stage.</li>
             <li>Photos and the camera always show on a dark background, like your phone's own photo viewer.</li>
-            <li>Your Appearance, colour set and Custom colours are saved with your other settings and in backups, so a restore brings them back.</li>
+            <li>Your Appearance, Theme, colour set and Custom colours are saved with your other settings and in backups, so a restore brings them back.</li>
           </ul>
         </details>
         <details>
@@ -1616,7 +2298,7 @@
             <li><strong>Save backup</strong> is small and quick, but leaves out photos. <strong>Save full backup with photos</strong> makes one bigger file with everything, photos included.</li>
             <li id="help-send-backup"><strong>Send backup to…</strong> opens your phone's share menu, so you can put the small backup straight into OneDrive, an email or a message. It's the same file as Save backup (no photos). If your phone can't send files from the app, or sending fails, the backup is saved to your device instead and the app says so. Closing the share menu changes nothing.</li>
             <li id="help-send-full-backup"><strong>Send full backup with photos to…</strong> does the same with the bigger file that has your photos in it. Putting the file together can take a moment, and if your phone has stopped waiting by then, the button changes to <strong>Backup ready: tap to send</strong>: tap it once more to open the share menu. If your phone can't send files from the app, or sending fails, the full backup is saved to your device instead and the app says so.</li>
-            <li><strong>Restore backup</strong> brings either kind back, including your stages, recipes, schemes, faction colours, stage colour set and Appearance (light or dark). A backup without photos keeps any photos already on this device that match.</li>
+            <li><strong>Restore backup</strong> brings either kind back, including your stages, recipes, schemes, faction colours, stage colour set, Appearance (light or dark) and Theme. A backup without photos keeps any photos already on this device that match.</li>
             <li>Photos are kept in a separate, much bigger store in your browser, so there's room for lots of them. Settings → Your data shows how many photos you have and how much space they use.</li>
             <li><strong>Clean up photo storage</strong> removes photo files no unit uses any more (for example after Delete all units) and tells you how much space it freed. Photos in the device's safety copy are left alone.</li>
             <li><strong>Export CSV</strong> saves your collection as a spreadsheet (without photos).</li>
@@ -1743,6 +2425,18 @@
           <button class="chip" data-appearance-choice="auto" aria-pressed="false">Match my phone</button>
         </div>
         <p class="hint" id="appearance-note" style="margin: 10px 0 0;"></p>
+      </div>
+      <!-- v47: Theme. One square per theme, each drawn in its own theme. Only one is pressed at a time. -->
+      <div class="card" id="theme-card">
+        <h2>Theme</h2>
+        <div class="theme-row" role="group" aria-label="Theme">
+          <button type="button" class="theme-swatch" data-theme-choice="classic" data-t="classic" data-m="dark" aria-pressed="true"><span class="ts-card"><span class="ts-name">Classic</span></span><span class="ts-bar"></span></button>
+          <button type="button" class="theme-swatch" data-theme-choice="blueprint" data-t="blueprint" data-m="dark" aria-pressed="false"><span class="ts-card"><span class="ts-name">Blueprint</span></span><span class="ts-bar"></span></button>
+          <button type="button" class="theme-swatch" data-theme-choice="parchment" data-t="parchment" data-m="dark" aria-pressed="false"><span class="ts-card"><span class="ts-name">Parchment Codex</span></span><span class="ts-bar"></span></button>
+          <button type="button" class="theme-swatch" data-theme-choice="forge" data-t="forge" data-m="dark" aria-pressed="false"><span class="ts-card"><span class="ts-name">Grim Forge</span></span><span class="ts-bar"></span></button>
+          <button type="button" class="theme-swatch" data-theme-choice="bench" data-t="bench" data-m="dark" aria-pressed="false"><span class="ts-card"><span class="ts-name">Paint Bench</span></span><span class="ts-bar"></span></button>
+          <button type="button" class="theme-swatch" data-theme-choice="rulebook" data-t="rulebook" data-m="dark" aria-pressed="false"><span class="ts-card"><span class="ts-name">Rulebook</span></span><span class="ts-bar"></span></button>
+        </div>
       </div>
 
       <!-- v27: Counting visits. One tick box; on by default. See "v27: COUNTING VISITS" in app.js. -->
@@ -1913,7 +2607,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=46" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=47" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -1922,10 +2616,10 @@
        names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks.
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=46"></script>
-  <script src="schemes.js?v=46"></script>
-  <script src="detail-recipes.js?v=46"></script>
-  <script src="basing-tips.js?v=46"></script>
-  <script src="app.js?v=46"></script>
+  <script src="colour.js?v=47"></script>
+  <script src="schemes.js?v=47"></script>
+  <script src="detail-recipes.js?v=47"></script>
+  <script src="basing-tips.js?v=47"></script>
+  <script src="app.js?v=47"></script>
 </body>
 </html>

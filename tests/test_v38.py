@@ -149,8 +149,9 @@ def main():
         check("Help says a paint in the wheel can be tapped for colours that go with it and starter schemes with a similar colour",
               "tap a paint to see colours that go with it and starter schemes with a similar colour" in help_text, help_text[-400:])
         changed = []
+        # (v47: early.js left this list; it now puts the theme on the page too.)
         for base in ("HEAD", "origin/main"):
-            out = subprocess.run(["git", "diff", "--name-only", base, "--", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js", "early.js"], cwd=ROOT, capture_output=True, text=True)
+            out = subprocess.run(["git", "diff", "--name-only", base, "--", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js"], cwd=ROOT, capture_output=True, text=True)
             if out.returncode == 0:
                 changed += out.stdout.split()
         check("the colour engine and the content data files are unchanged", changed == [], changed)

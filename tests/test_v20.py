@@ -151,9 +151,10 @@ def main():
               page.locator("#appearance-card [data-appearance-choice]").all_inner_texts() == ["Dark", "Light", "Match my phone"])
         check("Dark is pressed to start with", pressed(page) == ["dark"], pressed(page))
         # v27: the Counting visits card now sits between them, and v39 added the Shop links card after it, so the check is
-        # "before Colours, with only those two cards between".
-        check("the Appearance card sits just above Colours (v27: with the Counting visits card between; v39: and the Shop links card)", page.evaluate("""() => {
+        # "before Colours, with only those two cards between". v47 added the Theme card straight after Appearance.
+        check("the Appearance card sits just above Colours (v27: with the Counting visits card between; v39: and the Shop links card; v47: and the Theme card)", page.evaluate("""() => {
             const a = document.getElementById('appearance-card'); let next = a.nextElementSibling;
+            if (next && next.id === 'theme-card') next = next.nextElementSibling;
             if (next && next.id === 'counting-card') next = next.nextElementSibling;
             if (next && next.id === 'shoplinks-card') next = next.nextElementSibling;
             return !!next && next.contains(document.getElementById('palette-select')); }"""))

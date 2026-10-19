@@ -9,7 +9,7 @@
 //
 // WHEN YOU UPLOAD A NEW VERSION: change the number below (v1 -> v2 -> v3...).
 // That tells the phone to throw away the old saved copy and start a new one.
-const VERSION = "v46";
+const VERSION = "v47";
 const CACHE_NAME = "shades-of-grey-" + VERSION;
 // The pot-label reader's big files (the engine and its English data, about 11 MB) are kept in
 // their own store that ISN'T cleared on updates, so they're only fetched once.
@@ -20,6 +20,14 @@ const CACHE_NAME = "shades-of-grey-" + VERSION;
 const OCR_CACHE = "shades-of-grey-label-reader";
 function isOcrFile(url) {
   return url.origin === self.location.origin && /\/ocr\/(tesseract-core[^/]*|eng\.traineddata)$/.test(url.pathname);
+}
+// v47: the theme fonts (fonts/*.woff2) are kept in their own store too, also NOT cleared on updates. A font is
+// saved the first time the app uses it (when you choose a theme, or see its name on the Theme buttons), and after
+// that it comes from the saved copy, so a chosen theme looks right offline. Nothing is saved at install, so
+// people who keep Classic never download any of them.
+const FONT_CACHE = "shades-of-grey-fonts";
+function isFontFile(url) {
+  return url.origin === self.location.origin && /\/fonts\/[a-z0-9-]+\.woff2$/.test(url.pathname);
 }
 
 // The files that make up the app. Saved as soon as the app is installed.
@@ -55,7 +63,7 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys()
       .then((names) => Promise.all(
-        names.filter((name) => name !== CACHE_NAME && name !== OCR_CACHE).map((name) => caches.delete(name))))
+        names.filter((name) => name !== CACHE_NAME && name !== OCR_CACHE && name !== FONT_CACHE).map((name) => caches.delete(name))))
       .then(() => caches.open(OCR_CACHE))
       .then((cache) => cache.keys().then((requests) => Promise.all(requests
         .filter((request) => new URL(request.url).origin !== self.location.origin)
@@ -74,9 +82,11 @@ self.addEventListener("fetch", (event) => {
   if (new URL(event.request.url).hostname.endsWith(".goatcounter.com")) return;
 
   // Label-reader engine files never change, so use the saved copy first, else fetch and keep it.
-  if (isOcrFile(new URL(event.request.url))) {
+  // v47: the same for the theme fonts (a font file never changes; a new font would get a new name).
+  const fileUrl = new URL(event.request.url);
+  if (isOcrFile(fileUrl) || isFontFile(fileUrl)) {
     event.respondWith(
-      caches.open(OCR_CACHE).then((cache) => cache.match(event.request).then((saved) => saved ||
+      caches.open(isFontFile(fileUrl) ? FONT_CACHE : OCR_CACHE).then((cache) => cache.match(event.request).then((saved) => saved ||
         fetch(event.request).then((response) => {
           if (response.ok) cache.put(event.request, response.clone());
           return response;
