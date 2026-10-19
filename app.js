@@ -1611,14 +1611,31 @@
     // Every Vallejo code in a bit of text (a label can show more than one number).
     // The camera often reads 0 as the letter O and 1 as l or I ("72.O21"), so those count as digits
     // in the last three places, as long as at least one real digit is there too.
+    // v48 fix: the first two figures can be any range the list has codes for (Model Air 71, Game Air 76, Mecha 69,
+    // Xpress 72, Metal Color 77, Premium 62...), not only 70 to 73, so every listed code is read.
+    const VALLEJO_CODE_HEADS = new Set(["70", "71", "72", "73",
+      ...KNOWN_PAINTS.filter(k => k.brand === "Vallejo" && k.codes).flatMap(k => k.codes.map(c => c.slice(0, 2)))]);
     function vallejoCodes(text) {
       const out = [];
-      const re = /(?:^|[^0-9A-Za-z])(7[0-3])\s?[.,·:\-]?\s?([0-9OoIl]{3})(?![0-9A-Za-z])/g;
+      const re = /(?:^|[^0-9A-Za-z])([0-9]{2})\s?[.,·:\-]?\s?([0-9OoIl]{3})(?![0-9A-Za-z])/g;
       let m;
       while ((m = re.exec(String(text || "")))) {
         re.lastIndex = m.index + 1;
-        if (!/[0-9]/.test(m[2])) continue;
+        if (!VALLEJO_CODE_HEADS.has(m[1]) || !/[0-9]/.test(m[2])) continue;
         const c = m[1] + "." + m[2].replace(/[Oo]/g, "0").replace(/[Il]/g, "1");
+        if (!out.includes(c)) out.push(c);
+      }
+      return out;
+    }
+    // v48 fix: Tamiya code numbers (XF-1, X-20A, LP-3, TS-14, AS-12). Only looked for when the text says Tamiya, as a
+    // short code like "X-1" could be anything on another brand's pot.
+    function tamiyaCodes(text) {
+      const out = [];
+      const re = /(?:^|[^0-9A-Za-z])(XF|X|LP|TS|AS)\s?-?\s?([0-9]{1,3}[A-Z]?)(?![0-9A-Za-z])/gi;
+      let m;
+      while ((m = re.exec(String(text || "")))) {
+        re.lastIndex = m.index + 1;
+        const c = m[1].toUpperCase() + "-" + m[2].toUpperCase();
         if (!out.includes(c)) out.push(c);
       }
       return out;
@@ -1812,8 +1829,11 @@
       const everything = matchCandidates();
       const rest = splitBrand(typed);
       const codes = /^[0-9\s.,·:\-]+$/.test(rest.rest || typed) ? vallejoCodes(rest.rest || typed) : [];
-      if (codes.length === 1) {
-        const hit = everything.find(c => c.codes && c.codes.includes(codes[0]));
+      // v48 fix: "Tamiya XF-1" is that Tamiya paint.
+      const tamiya = rest.brand === "Tamiya" && /^[a-z]{1,2}\s?-?\s?[0-9]{1,3}[a-z]?$/i.test(rest.rest) ? tamiyaCodes(rest.rest) : [];
+      if (codes.length === 1 || tamiya.length === 1) {
+        const hit = codes.length === 1 ? everything.find(c => c.codes && c.codes.includes(codes[0]))
+          : everything.find(c => c.brand === "Tamiya" && c.codes && c.codes.includes(tamiya[0]));
         if (hit) return { status: "sure", typed, paint: { brand: hit.brand, name: hit.name, colour: hit.colour || DEFAULT_PAINT_COLOUR, type: hit.type }, suggestions: [] };
       }
       const first = matchPaintIn(text, hints, everything.filter(c => !c.extra));
@@ -11357,17 +11377,24 @@
     // v21.3: the brand a label names, if it names one. Its paints go first when the name could fit several brands.
     const LABEL_BRANDS = [
       [/tone\s*\|?\s*pro/, "Warhammer Tone Pro"],   // v48: first, as a Tone Pro pot may also say Games Workshop
+      // v48 fix: brands spelt out in full come before the range words (FANATIC, GAME COLOR, 3RD GEN), so "TWO THIN
+      // COATS / FANATIC ORANGE" is a Two Thin Coats pot, not an Army Painter Fanatic one.
+      [/two\s*thin\s*coats|duncan\s*rhodes/, "Two Thin Coats"], [/green\s*stuff\s*world/, "Green Stuff World"],
+      [/scale\s*75|scale\s*colou?r/, "Scale75"], [/formula\s*p3|privateer/, "Formula P3"], [/tamiya/, "Tamiya"],
       [/citadel|games\s*workshop/, "Citadel"], [/vallejo|game\s*colou?r|model\s*colou?r/, "Vallejo"],
       [/army\s*painter|warpaints|fanatic/, "The Army Painter"], [/pro\s*acryl|monument/, "Pro Acryl"],
       [/\bak\b.{0,3}interactive|ak\s*interactive|3rd\s*gen/, "AK Interactive"],
-      // v48: the new brands
-      [/scale\s*75|scale\s*colou?r/, "Scale75"], [/formula\s*p3|privateer/, "Formula P3"], [/tamiya/, "Tamiya"],
-      [/two\s*thin\s*coats|duncan\s*rhodes/, "Two Thin Coats"], [/green\s*stuff\s*world/, "Green Stuff World"],
     ];
-    function brandOnLabel(text) {
+    // v48 fix: the brand a label names, and where (so the brand's own words, like GREEN in GREEN STUFF WORLD or ARMY in
+    // THE ARMY PAINTER, aren't also read as part of the paint's name).
+    function labelBrandHit(text) {
       const t = String(text || "").toLowerCase();
-      const hit = LABEL_BRANDS.find(([re]) => re.test(t));
-      return hit ? hit[1] : "";
+      for (const [re, brand] of LABEL_BRANDS) if (re.test(t)) return { brand, re };
+      return null;
+    }
+    function brandOnLabel(text) {
+      const hit = labelBrandHit(text);
+      return hit ? hit.brand : "";
     }
     function wordLikeness(word, token) {
       const d = typoDistance(word, token, word.length);
@@ -11375,63 +11402,155 @@
       while (same < Math.min(word.length, token.length) && word[same] === token[same]) same++;
       return Math.max(1 - d / Math.max(word.length, token.length), same >= 4 ? same / Math.max(word.length, token.length) : 0);
     }
-    function suggestFromLabel(text) {
-      const tokens = [...new Set(plainQuotes(String(text)).toLowerCase().replace(/[^a-z\s]+/g, " ").split(/\s+/)
-        .filter(t => t.length >= 3 && !LABEL_NOISE.has(t)))];
+    // v48 fix: an extra paint's words as the label matcher compares them, worked out once per name. Each word once
+    // ("British Uniform / WWI British Uniform Base" counted British twice, so it beat British Khaki), and words with
+    // figures in them ("RLM70", "Dot44", "FS 34227") are kept, as they tell similar names apart. A name with no word
+    // of three letters ("XV-88") keeps its two-letter words.
+    const labelWordCache = new Map();
+    function labelWordsOf(c) {
+      let ws = labelWordCache.get(c.key);
+      if (!ws) {
+        const uniq = [...new Set(c.words)];
+        ws = uniq.filter(w => w.length >= 3 || (w.length >= 2 && /[0-9]/.test(w)));
+        if (!ws.some(w => /^[a-z]{3,}$/.test(w))) ws = uniq.filter(w => w.length >= 2);
+        labelWordCache.set(c.key, ws);
+      }
+      return ws;
+    }
+    // Bits of print on a pot that are never part of a paint's name ("17ml", "0.57 fl oz", "3rd gen").
+    const LABEL_UNITS = new Set(["ml", "cl", "fl", "oz", "rd", "st", "nd", "th", "no"]);
+    function suggestFromLabel(text, anyBrand) {
+      // v48 fix: accents taken off first, as in matchKey ("GRÜN" = grun). (Labels in plain capitals read as before.)
+      const plain = plainQuotes(String(text)).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+      const letterWords = (t) => [...new Set(t.replace(/[^a-z\s]+/g, " ").split(/\s+/).filter(w => w.length >= 3))];
       // v21.3: some extra-brand names use a word that's also label print ("Dry Rust", "Army Green", "Toxic
       // Yellow"), so those paints may use the label words too, as long as another word of the name matched.
-      const allTokens = [...new Set(plainQuotes(String(text)).toLowerCase().replace(/[^a-z\s]+/g, " ").split(/\s+/)
-        .filter(t => t.length >= 3))];
+      const allTokens = letterWords(plain);
+      const tokens = allTokens.filter(t => !LABEL_NOISE.has(t));
+      const hit = anyBrand ? null : labelBrandHit(text);
+      const brand = hit ? hit.brand : "";
+      // v48 fix: extra paints are compared with the label minus its brand words, so GREEN STUFF WORLD doesn't read as
+      // the word Green, or THE ARMY PAINTER as Army. (Citadel and your own paints are compared exactly as before.)
+      const nameText = hit ? plain.replace(new RegExp(hit.re.source, "g"), " ") : plain;
+      const xAll = letterWords(nameText), xTokens = xAll.filter(t => !LABEL_NOISE.has(t));
+      const labelWords = new Set(matchKey(nameText).split(" "));
+      const numTokens = [...labelWords].filter(t => t.length >= 2 && /[0-9]/.test(t));
+      const shortTokens = [...new Set(nameText.replace(/[^a-z\s]+/g, " ").split(/\s+/).filter(t => t.length === 2))];
+      const labelKey = " " + matchKey(nameText) + " ";
       // v21.3: Vallejo pots print a code number (72.021). A code that matches a known paint wins outright.
-      const codes = vallejoCodes(text);
-      const brand = brandOnLabel(text);
-      const labelKey = " " + matchKey(text) + " ";
-      const scored = [];
+      // v48 fix: and Tamiya pots theirs (XF-1), read only on a label that says Tamiya. Vallejo codes aren't looked for
+      // on a label naming another brand.
+      const codes = !brand || brand === "Vallejo" ? vallejoCodes(text) : [];
+      const tamiya = brand === "Tamiya" ? tamiyaCodes(text) : [];
+      const bestOf = (list, w) => { let b = 0; for (const t of list) { const x = wordLikeness(w, t); if (x > b) b = x; } return b; };
+      const coded = [], first = [], extras = [];
       for (const c of matchCandidates()) {
-        if (c.codes && codes.some(code => c.codes.includes(code))) { scored.push({ c, score: 2, got: 1e6, rank: 1e6, phrase: 0 }); continue; }
+        if (c.codes && (codes.some(code => c.codes.includes(code)) || (c.brand === "Tamiya" && tamiya.some(code => c.codes.includes(code))))) {
+          coded.push({ c, score: 2, got: 1e6, rank: 1e6, phrase: 0 }); continue;
+        }
         // A label that names its brand: the extra lists' OTHER brands are left out (your own paints never are).
         if (brand && c.extra && !sameText(c.brand, brand)) continue;
-        const words = c.words.filter(w => w.length >= 3);
+        if (!c.extra) {
+          // Your paints, Citadel and the older short lists: exactly the v21.2 rules.
+          const words = c.words.filter(w => w.length >= 3);
+          if (!words.length) continue;
+          let got = 0, letters = 0, special = false, strongWord = false;
+          for (const w of words) {
+            letters += w.length;
+            const best = bestOf(tokens, w);
+            if (best >= 0.7) { got += w.length * best; if (!VAGUE_WORDS.has(w)) special = true; }
+            // A long, unusual word read well ("STORMHO" for Stormhost) is enough on its own.
+            if (best >= 0.75 && w.length >= 6 && !VAGUE_WORDS.has(w)) strongWord = true;
+          }
+          const score = got / letters;
+          if (got > 0 && special && (score >= 0.5 || strongWord)) first.push({ c, score, got, rank: got, phrase: 0, ws: words });
+          continue;
+        }
+        const words = labelWordsOf(c);
         if (!words.length) continue;
         let got = 0, letters = 0, special = false, strongWord = false, allClear = true, realWord = false, clearGot = 0;
         for (const w of words) {
           letters += w.length;
-          const fromNoise = c.extra && LABEL_NOISE.has(w);
-          const best = Math.max(0, ...(fromNoise ? allTokens : tokens).map(t => wordLikeness(w, t)));
+          const fromNoise = LABEL_NOISE.has(w);
+          const letter = /[a-z]/.test(w);   // a word that's only figures ("1938") helps a match but can't make one
+          const best = /[0-9]/.test(w) ? bestOf(numTokens, w) : w.length < 3 ? (shortTokens.includes(w) ? 1 : 0)
+            : bestOf(fromNoise ? xAll : xTokens, w);
           if (best < 0.85) allClear = false; else clearGot += w.length * best;
-          if (best >= 0.7 && !fromNoise) realWord = true;
-          if (best >= 0.7) { got += w.length * best; if (!VAGUE_WORDS.has(w) && !fromNoise) special = true; }
-          // A long, unusual word read well ("STORMHO" for Stormhost) is enough on its own.
-          if (best >= 0.75 && w.length >= 6 && !VAGUE_WORDS.has(w)) strongWord = true;
+          if (best >= 0.7 && !fromNoise && letter) realWord = true;
+          if (best >= 0.7) { got += w.length * best; if (!VAGUE_WORDS.has(w) && !fromNoise && letter) special = true; }
+          if (best >= 0.75 && w.length >= 6 && !VAGUE_WORDS.has(w) && letter) strongWord = true;
         }
         const score = got / letters;
         if (!realWord) continue;
         // v21.3: extra-brand paints are ranked by the words read CLEARLY, plus whether the whole name is
         // on the label word for word, so "GREY GREEN" picks Grey Green over Green Grey and "GOLD" picks
         // Gold over Old Gold. (Citadel and your own paints rank exactly as before.)
-        const rank = c.extra ? clearGot : got;
-        const phrase = c.extra && labelKey.includes(" " + c.key + " ") ? c.key.length : 0;
-        if (special && (score >= 0.5 || strongWord)) scored.push({ c, score, got, rank, phrase });
+        const phrase = labelKey.includes(" " + c.key + " ") ? c.key.length : 0;
+        if (special && (score >= 0.5 || strongWord)) extras.push({ c, score, got, rank: clearGot, phrase, ws: words });
         // v21.3: many Vallejo, AK and Pro Acryl names are only everyday words ("Dark Blue", "Bone White").
         // Those extra paints count when EVERY word of the name was read clearly. (Citadel's rule is unchanged.)
-        else if (c.extra && allClear) scored.push({ c, score, got, rank, phrase });
+        else if (allClear) extras.push({ c, score, got, rank: clearGot, phrase, ws: words, everyday: true });
       }
       // Most letters matched first (so "STORMHO" picks Stormhost over Storm Blue), then closeness.
       // v21.3: a code match first, then the brand the label names. When letters matched are equal,
-      // your own paints, Citadel and the older lists go before the extra brands (so a Citadel label
-      // reads exactly as it did before).
+      // your own paints, Citadel and the older lists go before the extra brands.
       const onBrand = (c) => brand && sameText(c.brand, brand) ? 1 : 0;
-      scored.sort((a, b) => (b.got >= 1e6) - (a.got >= 1e6) || onBrand(b.c) - onBrand(a.c) || b.rank - a.rank
-        || (a.c.extra === true) - (b.c.extra === true) || b.phrase - a.phrase || b.score - a.score || (b.c.mine === true) - (a.c.mine === true));
-      const out = [];
-      for (const { c } of scored) if (!out.some(o => sameText(o.name, c.name) && sameText(o.brand, c.brand)))
-        out.push({ brand: c.brand, name: c.name, colour: c.colour || DEFAULT_PAINT_COLOUR, type: c.type, extra: c.extra === true });
-      // v21.3: the top 4 that aren't extra-brand paints always stay in (so a Citadel label offers what it
-      // did before); extra brands fill the spare places, in the same order.
-      // (Not when the label names one of the extra brands: then that brand's paints come first.)
-      const keep = new Set(!brand || brand === "Citadel" ? out.filter(o => !o.extra).slice(0, 4) : []);
-      for (const o of out) { if (keep.size >= 4) break; keep.add(o); }
-      return { tokens, suggestions: out.filter(o => keep.has(o)).map(({ extra, ...o }) => o) };
+      const order = (a, b) => onBrand(b.c) - onBrand(a.c) || b.rank - a.rank
+        || (a.c.extra === true) - (b.c.extra === true) || b.phrase - a.phrase || b.score - a.score || (b.c.mine === true) - (a.c.mine === true);
+      let picked;
+      if (brand && brand !== "Citadel") {
+        // A label naming one of the other brands: that brand's paints first, as in v21.3.
+        picked = first.concat(extras).sort(order);
+      } else {
+        // v48 fix: two passes, like matchPaint. Citadel, your paints and the older lists decide first, exactly as in
+        // v21.2; extra paints never change how a Citadel name is read (George's rule). With 2,800 more names, letting
+        // them compete put "Desert Yellow / Desert Uniform Lights" before Zamesi Desert and offered Castellax Bronze
+        // for Castellan Green.
+        first.sort(order);
+        extras.sort(order);
+        const p1 = first.slice(0, 4);
+        if (!p1.length) {
+          // Nothing from the first pass: the extra paints decide. A name of everyday words only ("Flesh", "Dark
+          // Blue") must account for every other word on the line it's printed on, so a cut-off Citadel name ("OR
+          // FLESH" for Orruk Flesh) isn't taken for Vallejo's Flesh. (Other lines may hold anything: OCR often reads
+          // bits of the pot as letters.) Not when the label names Citadel: then only Citadel's extra names are in.
+          const lines = brand ? [] : nameText.split("\n").map(l => [...new Set(l.replace(/[^a-z\s]+/g, " ").split(/\s+/)
+            .filter(t => t.length >= 2 && !LABEL_NOISE.has(t) && !LABEL_UNITS.has(t)))]).filter(l => l.length);
+          const explained = (x, t) => x.c.words.some(w => w.startsWith(t) || wordLikeness(w, t) >= 0.7);
+          picked = extras.filter(x => !x.everyday || lines.every(l => !l.some(t => x.c.words.includes(t)) || l.every(t => explained(x, t))));
+        } else {
+          // The first pass found it. The one exception: the label shows, word for word and nothing else, the whole
+          // name of an extra paint, and the first pass's best is not such a read ("PALLID FLESH" is Pallid Flesh,
+          // not Pallid Wych Flesh; "MACRAGGE BLUE SPRAY" is the spray). An exact read beats a near one.
+          // (Every word on the label counts here, even two letters, so a cut-off Citadel name like "BA MOON YELLOW"
+          // for Bad Moon Yellow is never taken for a full read of Vallejo's Moon Yellow.)
+          const onLabel = (ws) => ws.every(w => labelWords.has(w));
+          const labelAll = [...new Set(nameText.replace(/[^a-z\s]+/g, " ").split(/\s+/)
+            .filter(t => t.length >= 2 && !LABEL_NOISE.has(t) && !LABEL_UNITS.has(t)))];
+          const covers = (ws) => labelAll.every(t => ws.includes(t));
+          const top = p1[0].ws;
+          const topExact = onLabel(top) && covers(top);
+          const exact = extras.filter(x => onLabel(x.ws) && covers(x.ws)
+            && (!topExact || (x.ws.length > top.length && top.every(w => x.ws.includes(w)))));
+          picked = exact.concat(p1);
+          // Other brands' paints fill any spare places, after (not with a Citadel label, and not Citadel's own extra
+          // names, so a Citadel label offers exactly what it did before).
+          if (!brand) picked = picked.concat(extras.filter(x => x.c.brand !== "Citadel"));
+        }
+      }
+      const out = [], seen = new Set();
+      for (const { c } of coded.concat(picked)) {
+        const id = plainQuotes(String(c.brand || "")).trim().toLowerCase() + "|" + plainQuotes(String(c.name)).trim().toLowerCase();
+        if (seen.has(id)) continue;
+        seen.add(id);
+        out.push({ brand: c.brand, name: c.name, colour: c.colour || DEFAULT_PAINT_COLOUR, type: c.type });
+        if (out.length >= 4) break;
+      }
+      // v48 fix: a word that names a brand's range can also be part of another brand's paint ("FANATIC ORANGE" is Two
+      // Thin Coats, though Fanatic is an Army Painter range). If the brand the label seems to name has nothing that
+      // fits, every brand is tried. (Not for Citadel: a Citadel label reads exactly as in v21.2.)
+      if (!out.length && brand && brand !== "Citadel" && !anyBrand) return suggestFromLabel(text, true);
+      return { tokens, suggestions: out };
     }
 
     // ----- The camera, with the box to line the name up in -----
