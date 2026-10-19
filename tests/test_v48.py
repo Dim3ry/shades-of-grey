@@ -33,7 +33,12 @@ def check(name, ok, detail=""):
     print(("PASS " if ok else "FAIL ") + name + ("" if ok else f"  -> {detail}"))
 
 EXPECTED = {"Citadel": 402, "The Army Painter": 535, "Vallejo": 941, "Pro Acryl": 131, "AK Interactive": 778,
-            "Scale75": 350, "Formula P3": 130, "Two Thin Coats": 180, "Tamiya": 208, "Green Stuff World": 219}
+            "Scale75": 350, "Formula P3": 130, "Two Thin Coats": 180, "Tamiya": 208, "Green Stuff World": 219, "Warhammer Tone Pro": 150}
+TONE_PRO = ["Carmine Blades", "Bloodtoof Red", "Chotec Orange", "Ta'unar Ochre", "Khemri Sands", "Hawkshroud Yellow", "Megaboss Yellow",
+            "Plague Toad Venom", "Kruleboyz Green", "Lustria Green", "Kasrkin Green", "Hierotek Green", "Green Morkshroom", "Seraphon Blue",
+            "Craventhrone Cloak", "Stormwolf Blue", "Scinari Blue", "Blue Gorkshroom", "Ultramar Blue", "Shalaxi Violet", "Enrapturess Dusk",
+            "Hive Fleet Purple", "Magnus the Red", "Eye of Terror", "Carthalos Skin", "Celestine Skin", "Gnarlwood", "Necrolith Bone",
+            "Dataslate Grey", "Blackstone Void"]
 
 def tables(app):
     out = {}
@@ -69,11 +74,11 @@ def main():
         tags = re.findall(r'<script src="[^"]+\?v=(\d+)"', html)
         check("all six script tags carry the version number", len(tags) == 6 and set(tags) == {version[1:]}, tags)
         log = page.evaluate("CHANGELOG.find(r => r.version === 'v48')")
-        names = ["Scale 75", "Formula P3", "Two Thin Coats", "Tamiya", "Green Stuff World", "Speedpaint", "Pro Acryl", "AK Interactive", "Citadel", "Vallejo"]
+        names = ["Warhammer Tone Pro", "Carmine Blades 1 to 5", "Scale 75", "Formula P3", "Two Thin Coats", "Tamiya", "Green Stuff World", "Speedpaint", "Pro Acryl", "AK Interactive", "Citadel", "Vallejo"]
         check("Updates has a v48 line naming every new and topped-up brand, and one for Paint brands",
               log and len(log["changes"]) == 2 and all(n in log["changes"][0] for n in names) and "Settings: Paint brands" in log["changes"][1], log)
         check("Help lists all ten brands for the scanner, with the new total, and points to Settings → Paint brands",
-              "Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World (about 3,900 paints)" in html and "<strong>Settings → Paint brands</strong>" in html)
+              "Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World (about 4,000 paints)" in html and "Warhammer Tone Pro (each colour in its five tones" in html and "<strong>Settings → Paint brands</strong>" in html)
         check("Help, README and the licence note credit the list for the new brands",
               "Two Thin Coats, Tamiya and Green Stuff World paint names, colours and codes (and some Citadel ones) come from the free" in html
               and "Tamiya and Green Stuff World paint names (and some Citadel ones)" in readme and "copied 19 Oct 2026" in lic and "MIT License" in lic)
@@ -101,9 +106,31 @@ def main():
         check("every brand loads with the expected number of paints", loaded == EXPECTED, loaded)
         tam = page.evaluate("KNOWN_PAINTS.filter(k => k.brand === 'Tamiya')")
         check("every Tamiya paint carries its X or XF code number", all(k.get("codes") and all(re.fullmatch(r"(XF|X|LP|TS|AS)-\d+[A-Z]?", c) for c in k["codes"]) for k in tam), [k for k in tam if not k.get("codes")][:3])
-        check("the new paints are marked as extra (Citadel and your own paints are tried first), the Citadel ones are not",
-              page.evaluate("KNOWN_PAINTS.filter(k => ['Scale75','Formula P3','Two Thin Coats','Tamiya','Green Stuff World'].includes(k.brand)).every(k => k.extra === true)")
-              and page.evaluate("KNOWN_PAINTS.filter(k => k.brand === 'Citadel').every(k => !k.extra)"))
+        check("every paint added in v48 is 'extra' (tried after your paints and the original Citadel list), so short Citadel names match exactly as before",
+              page.evaluate("KNOWN_PAINTS.filter(k => ['Scale75','Formula P3','Two Thin Coats','Tamiya','Green Stuff World','Warhammer Tone Pro'].includes(k.brand)).every(k => k.extra === true)")
+              and page.evaluate("KNOWN_PAINTS.filter(k => k.brand === 'Citadel' && !k.extra).length") == 239
+              and page.evaluate("['XV-88', 'Agrax Earthshade Gloss', 'Nuln Oil Gloss', 'Kindleflame'].every(n => KNOWN_PAINTS.some(k => k.name === n && k.extra))"))
+        known_table = app[app.index("const KNOWN_PAINT_TABLE = {"):app.index("\n    };", app.index("const KNOWN_PAINT_TABLE = {"))]
+        check("the original list (KNOWN_PAINT_TABLE) is untouched: still its 251 rows, none added in v48", known_table.count("|#") == 251 and "v48" not in known_table)
+        short = page.evaluate("() => ['Agrax', 'nuln', 'Baal'].map(t => matchPaint(t).status)")
+        check("short names that were sure before are still sure (Agrax, nuln, Baal)", short == ["sure", "sure", "sure"], short)
+
+        # ---------- 2b. Warhammer Tone Pro ----------
+        print("\n--- 2b. Warhammer Tone Pro ---")
+        tp = page.evaluate("KNOWN_PAINTS.filter(k => k.brand === 'Warhammer Tone Pro').map(k => [k.name, k.colour])")
+        want = [f"{n} {i}" for n in TONE_PRO for i in range(1, 6)]
+        check("all 150 Tone Pro paints are there, each named colour + tone 1 to 5, in chart order", [n for n, _ in tp] == want, [n for n, _ in tp][:6])
+        lum = lambda h: t.luminance([int(h[i:i + 2], 16) for i in (1, 3, 5)])
+        cols = dict(tp)
+        lighter = [n for n in TONE_PRO if lum(cols[n + " 5"]) > lum(cols[n + " 1"])]
+        check("in every colour, tone 5 is lighter than tone 1 (the colours were sampled the right way round)", len(lighter) == 30, set(TONE_PRO) - set(lighter))
+        got = page.evaluate("(t) => { const m = matchPaint(t); return [m.status, m.paint && m.paint.brand, m.paint && m.paint.name]; }", "Carmine Blades 3")
+        check("'Carmine Blades 3' is found as Warhammer Tone Pro", got == ["sure", "Warhammer Tone Pro", "Carmine Blades 3"], got)
+        got = page.evaluate("(t) => { const m = matchPaint(t); return [m.status, m.paint && m.paint.name]; }", "Tone Pro Ta'unar Ochre 5")
+        check("'Tone Pro Ta'unar Ochre 5' (brand written first, apostrophe) is found", got == ["sure", "Ta'unar Ochre 5"], got)
+        got = page.evaluate("(t) => { const m = matchPaint(t); return [m.status, (m.suggestions || []).map(s => s.name)]; }", "Megaboss Yellow")
+        check("'Megaboss Yellow' with no tone asks which tone (never picks one silently)", got[0] != "sure" and all(n.startswith("Megaboss Yellow ") for n in got[1]) and got[1], got)
+        check("a Tone Pro pot label is read as Tone Pro, not Citadel", page.evaluate("brandOnLabel('WARHAMMER TONE | PRO Games Workshop')") == "Warhammer Tone Pro")
 
         # ---------- 3. Finding paints ----------
         print("\n--- 3. Finding paints by name ---")

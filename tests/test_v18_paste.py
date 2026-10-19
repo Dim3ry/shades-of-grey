@@ -214,8 +214,9 @@ def main():
             book.paints.pop();
             return { brand: m.paint && m.paint.brand, status: m.status, plainBrand: plain.paint && plain.paint.brand };
         }""")
+        # v48: the app now knows a Vallejo Ivory (Model Air), so it may be found ("sure") rather than "new"; either way it's Vallejo, not your AK one.
         check("'Vallejo Ivory' is a Vallejo paint, not your AK Ivory",
-              brand["brand"] == "Vallejo" and brand["status"] == "new", brand)
+              brand["brand"] == "Vallejo" and brand["status"] in ("new", "sure"), brand)
         check("plain 'Ivory' still finds your AK Ivory", brand["plainBrand"] == "AK Interactive", brand)
         accent = page.evaluate("matchKey('Marrón Écaille')")
         check("accented letters still match (Marrón = marron)", accent == "marron ecaille", accent)

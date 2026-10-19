@@ -323,7 +323,7 @@
                                 "Dry brush", "Edge highlight", "Wet blend", "Stipple", "Sponge", "Airbrush",
                                 ...V15_TECHNIQUES];
     const COMMON_BRANDS = ["Citadel", "Vallejo", "The Army Painter", "Pro Acryl", "AK Interactive",
-                           "Scale75", "Two Thin Coats", "Green Stuff World", "Monument Hobbies", "Formula P3", "Tamiya"];   // v48: P3 and Tamiya
+                           "Scale75", "Two Thin Coats", "Green Stuff World", "Monument Hobbies", "Formula P3", "Tamiya", "Warhammer Tone Pro"];   // v48: P3, Tamiya and Tone Pro
     const DEFAULT_PAINT_COLOUR = "#808080";
 
     // v15: paints the app knows before you've used them, suggested as you type.
@@ -400,54 +400,6 @@
         "Stirland Mud|#492b00", "Valhallan Blizzard|#f4f6f7", "Lustrian Undergrowth|#3a4f22", "Mourn Mountain Snow|#e8eef2",
         "Necron Compound|#9a9b9c", "Sigmarite|#caad76", "Terminatus Stone|#bdb192", "Chaos Black Spray|#231f20",
         "Corax White Spray|#f2f2f2", "Grey Seer Spray|#a2a5a7", "Leadbelcher Spray|#888d8f",
-        // v48: the rest of the current range (base, layer, shade, technical, dry, glaze, Air and sprays), from the open
-        // "miniature-paints" list (see EXTRA_PAINT_TABLE below for the credit), and (last) the discontinued Foundation
-        // paints, so older notes still match. Colours approximate: 163
-        "Balthasar Gold|#a77353", "Barak-Nar Burgundy|#451636", "Catachan Fleshtone|#442b25",
-        "Death Korps Drab|#3d4539", "Hobgrot Hide|#9c823b", "Iron Warriors|#706e6b", "Nocturne Green|#162a29",
-        "Stegadon Scale Green|#06455d", "XV-88|#6c4811", "Bloodreaver Flesh|#6a4848", "Castellax Bronze|#c68351",
-        "Deepkin Flesh|#a9b79f", "Phalanx Yellow|#ffe200", "Skullcrusher Brass|#f4cb7a",
-        "Sons of Horus Green|#00545e", "Straken Green|#597f1c", "Tau Light Ochre|#bc6b10",
-        "Agrax Earthshade Gloss|#b4aa9e", "Cassandora Yellow|#f5cc92", "Cryptek Armourshade Gloss|#856a67",
-        "Nuln Oil Gloss|#b3afae", "Reikland Fleshshade Gloss|#c2a896", "Agrellan Badland|#b39e80",
-        "Armageddon Dunes|#e8d36f", "Astrogranite Debris|#9d9d9d", "Martian Ironcrust|#cf705d",
-        "Nighthaunt Gloom|#3a686e", "Stirland Battlemire|#70490d", "Astorath Red|#a9311e", "Changeling Pink|#f3abca",
-        "Chronus Blue|#4b90cf", "Etherium Blue|#9eb5ce", "Golden Griffon|#e1ba7f", "Golgfag Brown|#8f502a",
-        "Hellion Green|#7fc1a5", "Hexos Palesun|#fff55a", "Imrik Blue|#208abf", "Kindleflame|#f69c82",
-        "Longbeard Grey|#dbdcc6", "Lucius Lilac|#b598c9", "Niblet Green|#378c35", "Praxeti White|#ffffff",
-        "Skink Blue|#54bdca", "Sylvaneth Bark|#4e483b", "Tyrant Skull|#c8c483", "Underhive Ash|#bcbb7e",
-        "Verminlord Hide|#7e3331", "Wrack White|#d3d0cf", "Guilliman Blue|#2f9ad6", "Air Caste Thinner|#f9f9f9",
-        "Angron Red Clear|#e21823", "Calth Blue Clear|#0087d1", "Chemos Purple|#4f356c", "Deathshroud Clear|#1c1c1b",
-        "Eidolon Purple Clear|#7d4d99", "Mortarion Green Clear|#00832b", "Pyroclast Orange Clear|#ed8022",
-        "Relictor Gold|#eac58f", "Sigismund Yellow Clear|#ffe32f", "Thallax Gold|#e88f47", "Typhon Ash|#e4d8c1",
-        "Valdor Gold|#ce8d51", "Death Guard Green Spray|#556229", "Macragge Blue Spray|#103e7c",
-        "Mechanicus Standard Grey Spray|#39484a", "Mephiston Red Spray|#960d0a", "Munitorum Varnish Spray|#fafafa",
-        "Retributor Armour Spray|#edc06a", "Zandri Dust Spray|#988e56",
-        // v48: everything else in the list for this brand (Foundation (discontinued), Foundation Wash (discontinued), Foundation Primer (discontinued)): 94
-        "Adeptus Battlegrey|#4a4c58", "Astronomicon Grey|#93abaf", "Asurmen Blue Wash|#273e51",
-        "Baal Red Wash|#630808", "Badab Black Wash|#000000", "Beaten Copper|#73372d", "Bestial Brown|#7b4a39",
-        "Bilious Green|#a9d171", "Black Ink|#000000", "Blazing Orange|#e65925", "Bleached Bone|#eed5ac",
-        "Blood Red|#d2223e", "Boltgun Metal|#888789", "Brazen Brass|#966747", "Bronzed Flesh|#ec9a36",
-        "Bubonic Brown|#b89142", "Burnished Gold|#e0c068", "Calthan Brown|#7a4231", "Camo Green|#878d52",
-        "Catachan Green|#455440", "Chainmail|#8e8c91", "Chaos Black|#001522", "Charadon Granite|#463f39",
-        "Codex Grey|#808285", "Commando Khaki|#9a8c7b", "Dark Flesh|#683b31", "Dark Green Ink|#108473",
-        "Desert Yellow|#9c8855", "Devlan Mud Wash|#393121", "Dheneb Stone|#b8aca0", "Dwarf Bronze|#a26840",
-        "Dwarf Flesh|#da9382", "Elf Flesh|#edae74", "Enchanted Blue|#0071b7", "Fenrys Grey|#2c4363",
-        "Fiery Orange|#f47920", "Flesh Wash|#ce8c42", "Fortress Grey|#bcbdc0", "Ghostly Grey|#c3c6cd",
-        "Goblin Green|#3d9353", "Golden Yellow|#ffc20e", "Graveyard Earth|#665238", "Gretchin Green|#7e6930",
-        "Gryphonne Sepia Wash|#843910", "Hawk Turquoise|#008194", "Hormagaunt Purple|#54496b", "Ice Blue|#81d3eb",
-        "Imperial Purple|#562f7e", "Iyanden Darksun|#ad852e", "Jade Green|#069b7d", "Khemri Brown|#73614d",
-        "Knarloc Green|#48563c", "Kommando Khaki|#9e915c", "Leprous Brown|#d88e2d", "Leviathan Purple Wash|#842994",
-        "Liche Purple|#2c2d8b", "Lightning Bolt Blue|#8bb9dd", "Macharius Solar Orange|#b94023",
-        "Magenta Ink|#de007b", "Mechrite Red|#a82014", "Midnight Blue|#002561", "Mithril Silver|#b7bec5",
-        "Nauseating Blue|#412a7a", "Necron Abyss|#1a213d", "Ogryn Flesh Wash|#ce8c42", "Orkhide Shade|#26372d",
-        "Pallid Flesh|#eec8c7", "Purple Ink|#842994", "Red Gore|#9d2b3f", "Regal Blue|#003f70",
-        "Rotting Flesh|#b8c39e", "Scab Red|#90263d", "Scaly Green|#006063", "Scorched Brown|#5a422f",
-        "Scorpion Green|#65b345", "Shadow Grey|#106993", "Shining Gold|#efb736", "Skull White|#ffffff",
-        "Smelly Primer|#ffffff", "Snot Green|#006f45", "Storm Blue|#27357e", "Sunburst Yellow|#ffd400",
-        "Tallarn Flesh|#b27b67", "Tanned Flesh|#a95c3e", "Tausept Ochre|#a06e3b", "Tentacle Pink|#dc9dc6",
-        "Terracotta|#793721", "Tin Bitz|#473f39", "Ultramarine Blue|#0066b3", "Vermin Brown|#843910",
-        "Vermin Fur|#904f2e", "Vile Green|#82c59c", "Vomit Brown|#ce8b3c", "Warlock Purple|#a43e8b",
       ],
       "The Army Painter": ["Matt Black|#1a1a1a", "Matt White|#f5f5f5", "Strong Tone|#4a3520", "Dark Tone|#1d1d1d"],
       "Vallejo": ["Black Primer|#1a1a1a", "White Primer|#f5f5f5"],
@@ -467,6 +419,56 @@
     // These are "extra" paints: Citadel and your own paints are always tried first, so they never change
     // how a Citadel name is matched.
     const EXTRA_PAINT_TABLE = {
+      // v48: the rest of the Citadel range (base, layer, shade, technical, dry, glaze, Air and sprays), then the discontinued
+      // Foundation paints so older notes still match. They sit HERE, with the extra brands, not in KNOWN_PAINT_TABLE above:
+      // the matcher tries that list first, and a new name there (like "Agrax Earthshade Gloss") would make a short name
+      // you've always typed ("Agrax") stop being sure. Colours approximate: 163
+      "Citadel": [
+        "Balthasar Gold|#a77353", "Barak-Nar Burgundy|#451636", "Catachan Fleshtone|#442b25",
+        "Death Korps Drab|#3d4539", "Hobgrot Hide|#9c823b", "Iron Warriors|#706e6b", "Nocturne Green|#162a29",
+        "Stegadon Scale Green|#06455d", "XV-88|#6c4811", "Bloodreaver Flesh|#6a4848", "Castellax Bronze|#c68351",
+        "Deepkin Flesh|#a9b79f", "Phalanx Yellow|#ffe200", "Skullcrusher Brass|#f4cb7a",
+        "Sons of Horus Green|#00545e", "Straken Green|#597f1c", "Tau Light Ochre|#bc6b10",
+        "Agrax Earthshade Gloss|#b4aa9e", "Cassandora Yellow|#f5cc92", "Cryptek Armourshade Gloss|#856a67",
+        "Nuln Oil Gloss|#b3afae", "Reikland Fleshshade Gloss|#c2a896", "Agrellan Badland|#b39e80",
+        "Armageddon Dunes|#e8d36f", "Astrogranite Debris|#9d9d9d", "Martian Ironcrust|#cf705d",
+        "Nighthaunt Gloom|#3a686e", "Stirland Battlemire|#70490d", "Astorath Red|#a9311e", "Changeling Pink|#f3abca",
+        "Chronus Blue|#4b90cf", "Etherium Blue|#9eb5ce", "Golden Griffon|#e1ba7f", "Golgfag Brown|#8f502a",
+        "Hellion Green|#7fc1a5", "Hexos Palesun|#fff55a", "Imrik Blue|#208abf", "Kindleflame|#f69c82",
+        "Longbeard Grey|#dbdcc6", "Lucius Lilac|#b598c9", "Niblet Green|#378c35", "Praxeti White|#ffffff",
+        "Skink Blue|#54bdca", "Sylvaneth Bark|#4e483b", "Tyrant Skull|#c8c483", "Underhive Ash|#bcbb7e",
+        "Verminlord Hide|#7e3331", "Wrack White|#d3d0cf", "Guilliman Blue|#2f9ad6", "Air Caste Thinner|#f9f9f9",
+        "Angron Red Clear|#e21823", "Calth Blue Clear|#0087d1", "Chemos Purple|#4f356c", "Deathshroud Clear|#1c1c1b",
+        "Eidolon Purple Clear|#7d4d99", "Mortarion Green Clear|#00832b", "Pyroclast Orange Clear|#ed8022",
+        "Relictor Gold|#eac58f", "Sigismund Yellow Clear|#ffe32f", "Thallax Gold|#e88f47", "Typhon Ash|#e4d8c1",
+        "Valdor Gold|#ce8d51", "Death Guard Green Spray|#556229", "Macragge Blue Spray|#103e7c",
+        "Mechanicus Standard Grey Spray|#39484a", "Mephiston Red Spray|#960d0a", "Munitorum Varnish Spray|#fafafa",
+        "Retributor Armour Spray|#edc06a", "Zandri Dust Spray|#988e56", "Adeptus Battlegrey|#4a4c58",
+        "Astronomicon Grey|#93abaf", "Asurmen Blue Wash|#273e51", "Baal Red Wash|#630808", "Badab Black Wash|#000000",
+        "Beaten Copper|#73372d", "Bestial Brown|#7b4a39", "Bilious Green|#a9d171", "Black Ink|#000000",
+        "Blazing Orange|#e65925", "Bleached Bone|#eed5ac", "Blood Red|#d2223e", "Boltgun Metal|#888789",
+        "Brazen Brass|#966747", "Bronzed Flesh|#ec9a36", "Bubonic Brown|#b89142", "Burnished Gold|#e0c068",
+        "Calthan Brown|#7a4231", "Camo Green|#878d52", "Catachan Green|#455440", "Chainmail|#8e8c91",
+        "Chaos Black|#001522", "Charadon Granite|#463f39", "Codex Grey|#808285", "Commando Khaki|#9a8c7b",
+        "Dark Flesh|#683b31", "Dark Green Ink|#108473", "Desert Yellow|#9c8855", "Devlan Mud Wash|#393121",
+        "Dheneb Stone|#b8aca0", "Dwarf Bronze|#a26840", "Dwarf Flesh|#da9382", "Elf Flesh|#edae74",
+        "Enchanted Blue|#0071b7", "Fenrys Grey|#2c4363", "Fiery Orange|#f47920", "Flesh Wash|#ce8c42",
+        "Fortress Grey|#bcbdc0", "Ghostly Grey|#c3c6cd", "Goblin Green|#3d9353", "Golden Yellow|#ffc20e",
+        "Graveyard Earth|#665238", "Gretchin Green|#7e6930", "Gryphonne Sepia Wash|#843910", "Hawk Turquoise|#008194",
+        "Hormagaunt Purple|#54496b", "Ice Blue|#81d3eb", "Imperial Purple|#562f7e", "Iyanden Darksun|#ad852e",
+        "Jade Green|#069b7d", "Khemri Brown|#73614d", "Knarloc Green|#48563c", "Kommando Khaki|#9e915c",
+        "Leprous Brown|#d88e2d", "Leviathan Purple Wash|#842994", "Liche Purple|#2c2d8b",
+        "Lightning Bolt Blue|#8bb9dd", "Macharius Solar Orange|#b94023", "Magenta Ink|#de007b",
+        "Mechrite Red|#a82014", "Midnight Blue|#002561", "Mithril Silver|#b7bec5", "Nauseating Blue|#412a7a",
+        "Necron Abyss|#1a213d", "Ogryn Flesh Wash|#ce8c42", "Orkhide Shade|#26372d", "Pallid Flesh|#eec8c7",
+        "Purple Ink|#842994", "Red Gore|#9d2b3f", "Regal Blue|#003f70", "Rotting Flesh|#b8c39e", "Scab Red|#90263d",
+        "Scaly Green|#006063", "Scorched Brown|#5a422f", "Scorpion Green|#65b345", "Shadow Grey|#106993",
+        "Shining Gold|#efb736", "Skull White|#ffffff", "Smelly Primer|#ffffff", "Snot Green|#006f45",
+        "Storm Blue|#27357e", "Sunburst Yellow|#ffd400", "Tallarn Flesh|#b27b67", "Tanned Flesh|#a95c3e",
+        "Tausept Ochre|#a06e3b", "Tentacle Pink|#dc9dc6", "Terracotta|#793721", "Tin Bitz|#473f39",
+        "Ultramarine Blue|#0066b3", "Vermin Brown|#843910", "Vermin Fur|#904f2e", "Vile Green|#82c59c",
+        "Vomit Brown|#ce8b3c", "Warlock Purple|#a43e8b",
+      ],
       // Vallejo Game Color (with washes and special effects), Model Color and Xpress Color, with code numbers, plus (v48) every other
       // Vallejo range in the list (Model Air, Game Air, Mecha, Panzer Aces, Premium, Metal Color, FX, Arte Deco and more): 940
       "Vallejo": [
@@ -1526,6 +1528,56 @@
         "Yellow-brown Ops|#8a5e21", "Yellow-orange|#f89d68", "Yoda Green|#557c5d", "Zima Blue|#48a3c0",
         "Zombie Dip|#373b22", "Zombie Flesh|#c9ac6a",
       ],
+      // v48: Warhammer Tone Pro (Games Workshop, 2026): 30 colours, each in five tones, 1 the darkest and 5 the lightest
+      // ("Carmine Blades 1" to "Carmine Blades 5"). GW publishes no colour values, so these were sampled from GW's own
+      // printed range chart (a scan James supplied on 19 Oct 2026): close, not exact: 150
+      "Warhammer Tone Pro": [
+        "Carmine Blades 1|#312a2b", "Carmine Blades 2|#463333", "Carmine Blades 3|#582526",
+        "Carmine Blades 4|#74272a", "Carmine Blades 5|#a84641", "Bloodtoof Red 1|#402a26", "Bloodtoof Red 2|#72272a",
+        "Bloodtoof Red 3|#8e2b30", "Bloodtoof Red 4|#ba2e2e", "Bloodtoof Red 5|#d63f38", "Chotec Orange 1|#712b27",
+        "Chotec Orange 2|#983830", "Chotec Orange 3|#c54538", "Chotec Orange 4|#d65038", "Chotec Orange 5|#da673d",
+        "Ta'unar Ochre 1|#994632", "Ta'unar Ochre 2|#b25b3f", "Ta'unar Ochre 3|#c66644", "Ta'unar Ochre 4|#ce7f5e",
+        "Ta'unar Ochre 5|#ce9160", "Khemri Sands 1|#513d2a", "Khemri Sands 2|#6c492c", "Khemri Sands 3|#8c5e34",
+        "Khemri Sands 4|#ac6630", "Khemri Sands 5|#b87831", "Hawkshroud Yellow 1|#d67238",
+        "Hawkshroud Yellow 2|#d97d36", "Hawkshroud Yellow 3|#db943a", "Hawkshroud Yellow 4|#e3a93e",
+        "Hawkshroud Yellow 5|#dfbe73", "Megaboss Yellow 1|#ce8233", "Megaboss Yellow 2|#d8a840",
+        "Megaboss Yellow 3|#e5c056", "Megaboss Yellow 4|#dac864", "Megaboss Yellow 5|#e4cf73",
+        "Plague Toad Venom 1|#4c6c34", "Plague Toad Venom 2|#557e37", "Plague Toad Venom 3|#74a23c",
+        "Plague Toad Venom 4|#8aa83d", "Plague Toad Venom 5|#afb63f", "Kruleboyz Green 1|#4a6339",
+        "Kruleboyz Green 2|#56673d", "Kruleboyz Green 3|#666740", "Kruleboyz Green 4|#7b7c4f",
+        "Kruleboyz Green 5|#979360", "Lustria Green 1|#273b29", "Lustria Green 2|#325431", "Lustria Green 3|#356338",
+        "Lustria Green 4|#519142", "Lustria Green 5|#5a9642", "Kasrkin Green 1|#212725", "Kasrkin Green 2|#2d3b31",
+        "Kasrkin Green 3|#425b3c", "Kasrkin Green 4|#5e754b", "Kasrkin Green 5|#799066", "Hierotek Green 1|#24312b",
+        "Hierotek Green 2|#2a4531", "Hierotek Green 3|#295630", "Hierotek Green 4|#357145",
+        "Hierotek Green 5|#549c6c", "Green Morkshroom 1|#29302e", "Green Morkshroom 2|#2b433b",
+        "Green Morkshroom 3|#325146", "Green Morkshroom 4|#3b6757", "Green Morkshroom 5|#51926c",
+        "Seraphon Blue 1|#253133", "Seraphon Blue 2|#283f43", "Seraphon Blue 3|#2c595b", "Seraphon Blue 4|#337a75",
+        "Seraphon Blue 5|#56a098", "Craventhrone Cloak 1|#272c30", "Craventhrone Cloak 2|#2b3436",
+        "Craventhrone Cloak 3|#2f3e45", "Craventhrone Cloak 4|#485e61", "Craventhrone Cloak 5|#59736f",
+        "Stormwolf Blue 1|#303740", "Stormwolf Blue 2|#3f454b", "Stormwolf Blue 3|#4c565e",
+        "Stormwolf Blue 4|#6b8185", "Stormwolf Blue 5|#859c9b", "Scinari Blue 1|#2c3d5e", "Scinari Blue 2|#2e4c6a",
+        "Scinari Blue 3|#355b75", "Scinari Blue 4|#437796", "Scinari Blue 5|#4b8896", "Blue Gorkshroom 1|#27293f",
+        "Blue Gorkshroom 2|#2f3c5d", "Blue Gorkshroom 3|#344a76", "Blue Gorkshroom 4|#375e84",
+        "Blue Gorkshroom 5|#416b8c", "Ultramar Blue 1|#242832", "Ultramar Blue 2|#2b3347", "Ultramar Blue 3|#344662",
+        "Ultramar Blue 4|#4c5e7b", "Ultramar Blue 5|#6f8caa", "Shalaxi Violet 1|#25232f", "Shalaxi Violet 2|#32334e",
+        "Shalaxi Violet 3|#3f486d", "Shalaxi Violet 4|#616592", "Shalaxi Violet 5|#777ca2",
+        "Enrapturess Dusk 1|#28272d", "Enrapturess Dusk 2|#3b353d", "Enrapturess Dusk 3|#46454b",
+        "Enrapturess Dusk 4|#5e575a", "Enrapturess Dusk 5|#6e686a", "Hive Fleet Purple 1|#282632",
+        "Hive Fleet Purple 2|#342b3e", "Hive Fleet Purple 3|#554a6a", "Hive Fleet Purple 4|#735c86",
+        "Hive Fleet Purple 5|#7e748e", "Magnus the Red 1|#2f292b", "Magnus the Red 2|#3a2633",
+        "Magnus the Red 3|#5d2733", "Magnus the Red 4|#7d3146", "Magnus the Red 5|#8f4357", "Eye of Terror 1|#70282f",
+        "Eye of Terror 2|#942c37", "Eye of Terror 3|#9e2c42", "Eye of Terror 4|#b4465a", "Eye of Terror 5|#c05a73",
+        "Carthalos Skin 1|#282325", "Carthalos Skin 2|#292420", "Carthalos Skin 3|#372721",
+        "Carthalos Skin 4|#49322e", "Carthalos Skin 5|#5d4239", "Celestine Skin 1|#b26857",
+        "Celestine Skin 2|#bf725c", "Celestine Skin 3|#c07962", "Celestine Skin 4|#d28a72",
+        "Celestine Skin 5|#c89880", "Gnarlwood 1|#2f2a29", "Gnarlwood 2|#433830", "Gnarlwood 3|#58483a",
+        "Gnarlwood 4|#5e5145", "Gnarlwood 5|#6e6152", "Necrolith Bone 1|#6f6051", "Necrolith Bone 2|#9a795c",
+        "Necrolith Bone 3|#a3866d", "Necrolith Bone 4|#a99172", "Necrolith Bone 5|#a8a087",
+        "Dataslate Grey 1|#2e2e2e", "Dataslate Grey 2|#373833", "Dataslate Grey 3|#484943",
+        "Dataslate Grey 4|#5f5c56", "Dataslate Grey 5|#72736c", "Blackstone Void 1|#212323",
+        "Blackstone Void 2|#454b49", "Blackstone Void 3|#5d5d5d", "Blackstone Void 4|#888883",
+        "Blackstone Void 5|#e7e7e7",
+      ],
     };
     // v48: with about 3,900 paints, checking each one against every paint before it took millions of comparisons each
     // time the app opened, so the brand + name pairs already listed are kept in a set (the same test as sameName below).
@@ -1661,7 +1713,7 @@
       ["monument hobbies", "Pro Acryl"], ["monument pro acryl", "Pro Acryl"], ["monument", "Pro Acryl"],
       ["formula p3", "Formula P3"], ["privateer press", "Formula P3"], ["p3", "Formula P3"],
       ["tamiya", "Tamiya"], ["scale color", "Scale75"], ["2 thin coats", "Two Thin Coats"], ["duncan rhodes", "Two Thin Coats"],
-      ["gsw", "Green Stuff World"],
+      ["gsw", "Green Stuff World"], ["warhammer tone pro", "Warhammer Tone Pro"], ["tone pro", "Warhammer Tone Pro"],
     ];
     // Names that always mean one paint.
     const BUILT_IN_SHORTHAND = { "gloss": "'Ardcoat", "ardcoat gloss": "'Ardcoat", "ardcoat": "'Ardcoat", "gloss varnish": "'Ardcoat" };
@@ -11226,6 +11278,7 @@
       "acrylics", "interactive", "generation", "gen", "pro", "acryl", "monument", "premium", "series", "signature"]);
     // v21.3: the brand a label names, if it names one. Its paints go first when the name could fit several brands.
     const LABEL_BRANDS = [
+      [/tone\s*\|?\s*pro/, "Warhammer Tone Pro"],   // v48: first, as a Tone Pro pot may also say Games Workshop
       [/citadel|games\s*workshop/, "Citadel"], [/vallejo|game\s*colou?r|model\s*colou?r/, "Vallejo"],
       [/army\s*painter|warpaints|fanatic/, "The Army Painter"], [/pro\s*acryl|monument/, "Pro Acryl"],
       [/\bak\b.{0,3}interactive|ak\s*interactive|3rd\s*gen/, "AK Interactive"],
@@ -13921,7 +13974,7 @@
 
     const CHANGELOG = [
       { version: "v48", date: "19 Oct 2026", changes: [
-        "About 2,700 more paints the app knows by name: Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World, plus every range of Citadel, Vallejo, The Army Painter, Pro Acryl and AK Interactive (Speedpaint, Model Air, AK figures and more). They're suggested as you type, matched when you paste recipes or scan a pot, and used in Colour ideas.",
+        "About 2,800 more paints the app knows by name: Warhammer Tone Pro (all 30 colours in their five tones, like Carmine Blades 1 to 5), Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World, plus every range of Citadel, Vallejo, The Army Painter, Pro Acryl and AK Interactive (Speedpaint, Model Air, AK figures and more). They're suggested as you type, matched when you paste recipes or scan a pot, and used in Colour ideas.",
         "New in Settings: Paint brands. Switch off the brands you don't use, and their paints stop being suggested and matched. Your own paints are always included.",
       ]},
       { version: "v47", date: "19 Oct 2026", changes: [
