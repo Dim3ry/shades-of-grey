@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=48"></script>
+  <script src="early.js?v=49"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -447,6 +447,10 @@
       border-radius: 999px;   /* pill shape */
     }
     .chip[aria-pressed="true"] { color: var(--on-accent); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+    /* v49: the Units filter groups (To do, Done, Repaint) are three equal buttons across the card; the stage chips open underneath */
+    #group-chips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    #group-chips .chip { justify-content: center; text-align: center; min-height: 44px; padding: 10px 6px; }
+    #stage-chips .more-info-button { flex-basis: 100%; }
 
     /* ----- Units: the list ----- */
     ul.units { list-style: none; margin: 0; padding: 0; }
@@ -881,6 +885,24 @@
     .paint-text { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
     .swatch.big { width: 36px; height: 36px; }
     .paint-item .panel { margin-top: 10px; }
+    /* v49: Your Palette as Swatches: small colour tiles with a status mark, and a key. */
+    .status-marker { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 18px; height: 18px; border-radius: 50%; background: var(--card); border: 1.5px solid currentColor; box-sizing: border-box; }
+    .status-marker.s-owned { color: var(--good); }
+    .status-marker.s-low { color: var(--warn); }
+    .status-marker.s-empty { color: var(--bad); }
+    .status-marker.s-wishlist { color: var(--wish); }
+    .status-marker.s-notowned { color: var(--grey-status); }
+    .status-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0 0 10px; font-size: 13px; color: var(--muted); }
+    .legend-item { display: inline-flex; align-items: center; gap: 6px; }
+    ul.paint-list.swatch-grid { grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 8px; }
+    .swatch-cell { display: grid; justify-items: center; }
+    .swatch-tile { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; padding: 0; background: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card); cursor: pointer; }
+    .swatch-tile:hover, .swatch-tile[aria-expanded="true"] { border-color: var(--accent); }
+    .swatch-tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .swatch-tile .status-marker { position: absolute; right: -4px; bottom: -4px; }
+    .swatch-grid > .swatch-detail { grid-column: 1 / -1; }
+    #palette-layout { margin-bottom: 0; }
+    .paint-options .more-info-panel { padding-top: 4px; }
     /* v18c-2: Remove and Merge into… under an open paint. */
     .merge-box { display: grid; gap: 8px; }
     .merge-pick { width: 100%; }
@@ -1080,6 +1102,29 @@
     .fold-button[aria-expanded="true"] .fold-mark { transform: rotate(-135deg) translate(-2px, -2px); }
     .fold-panel { display: grid; gap: 10px; }
     .fold-panel[hidden] { display: none; }
+    /* v49: "More info": a plain text button with the detail under it. Used wherever a page had long explanations. */
+    .more-info { display: grid; gap: 4px; min-width: 0; }
+    .more-info-button { display: inline-flex; align-items: center; gap: 6px; justify-self: start; min-height: 44px; padding: 0 4px; font: inherit; font-size: 14px; color: var(--accent); background: transparent; border: 0; cursor: pointer; }
+    .more-info-button:hover { text-decoration: underline; }
+    .more-info-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .more-info-button .fold-mark { margin-right: 0; }
+    .more-info-button[aria-expanded="true"] .fold-mark { transform: rotate(-135deg) translate(-2px, -2px); }
+    .more-info-panel { display: grid; gap: 8px; min-width: 0; }
+    .more-info-panel[hidden] { display: none; }
+    .more-info-panel > .hint { margin: 0; }
+    .idea-more .more-info-button { font-size: 13px; }
+    /* v49: the Compendium's action row: equal-width buttons across the card, and the shopping list fold-out as a full-width button */
+    .fold-panel .share-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .fold-panel .share-row .plain-button { width: 100%; }
+    .fold-panel .share-row > :only-child { grid-column: 1 / -1; }
+    .scheme-shop { margin: 0; }
+    .scheme-shop > summary { justify-content: center; border: var(--border-width) var(--border-style) var(--border); font-size: 14px; color: var(--text); }
+    .scheme-shop[open] > summary { color: var(--accent); border-color: var(--accent); }
+    /* v49: the greyed-out shopping list button, shown while nothing is picked */
+    .shop-idle { display: grid; gap: 2px; justify-items: start; }
+    .shop-idle .hint { margin: 0; font-size: 13px; }
+    .shop-idle-button { min-height: 40px; padding: 8px 14px; font-size: 13px; color: var(--muted); background: transparent; border-color: var(--border); cursor: default; }
+    .shop-idle-button:hover { border-color: var(--border); }
     .fold-panel > .faction-history, .fold-panel > .starter-schemes, .fold-panel > .detail-recipes, .fold-panel > .basing-tips { border-top: 0; padding-top: 0; }
     /* v37: the Themes | Combinations switch: two equal buttons side by side */
     .view-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
@@ -2074,7 +2119,8 @@
       <!-- Your Palette: built automatically from the paints in your recipes. -->
       <div id="palette-view" class="hidden">
         <div class="card">
-          <select id="paint-sort" aria-label="Sort paints" style="width: 100%;">
+          <div class="view-switch" id="palette-layout" role="group" aria-label="Show paints as"></div>
+          <select id="paint-sort" aria-label="Sort paints" style="width: 100%; margin-top: 10px;">
             <option value="colour">Sort by colour</option>
             <option value="name">Sort by name</option>
             <option value="brand">Sort by brand</option>
@@ -2090,6 +2136,7 @@
                  aria-label="Search or add a paint" autocomplete="off" style="width: 100%;">
           <div id="palette-search-result" style="margin-top: 8px;"></div>
         </div>
+        <div class="status-legend hidden" id="palette-legend" aria-label="Key to the marks"></div>
         <ul class="paint-list" id="paint-list"></ul>
       </div>
 
@@ -2614,7 +2661,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=48" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=49" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -2623,10 +2670,10 @@
        names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks.
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=48"></script>
-  <script src="schemes.js?v=48"></script>
-  <script src="detail-recipes.js?v=48"></script>
-  <script src="basing-tips.js?v=48"></script>
-  <script src="app.js?v=48"></script>
+  <script src="colour.js?v=49"></script>
+  <script src="schemes.js?v=49"></script>
+  <script src="detail-recipes.js?v=49"></script>
+  <script src="basing-tips.js?v=49"></script>
+  <script src="app.js?v=49"></script>
 </body>
 </html>
