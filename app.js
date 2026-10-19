@@ -401,7 +401,8 @@
         "Necron Compound|#9a9b9c", "Sigmarite|#caad76", "Terminatus Stone|#bdb192", "Chaos Black Spray|#231f20",
         "Corax White Spray|#f2f2f2", "Grey Seer Spray|#a2a5a7", "Leadbelcher Spray|#888d8f",
         // v48: the rest of the current range (base, layer, shade, technical, dry, glaze, Air and sprays), from the open
-        // "miniature-paints" list (see EXTRA_PAINT_TABLE below for the credit). Colours approximate: 69
+        // "miniature-paints" list (see EXTRA_PAINT_TABLE below for the credit), and (last) the discontinued Foundation
+        // paints, so older notes still match. Colours approximate: 163
         "Balthasar Gold|#a77353", "Barak-Nar Burgundy|#451636", "Catachan Fleshtone|#442b25",
         "Death Korps Drab|#3d4539", "Hobgrot Hide|#9c823b", "Iron Warriors|#706e6b", "Nocturne Green|#162a29",
         "Stegadon Scale Green|#06455d", "XV-88|#6c4811", "Bloodreaver Flesh|#6a4848", "Castellax Bronze|#c68351",
@@ -422,6 +423,31 @@
         "Valdor Gold|#ce8d51", "Death Guard Green Spray|#556229", "Macragge Blue Spray|#103e7c",
         "Mechanicus Standard Grey Spray|#39484a", "Mephiston Red Spray|#960d0a", "Munitorum Varnish Spray|#fafafa",
         "Retributor Armour Spray|#edc06a", "Zandri Dust Spray|#988e56",
+        // v48: everything else in the list for this brand (Foundation (discontinued), Foundation Wash (discontinued), Foundation Primer (discontinued)): 94
+        "Adeptus Battlegrey|#4a4c58", "Astronomicon Grey|#93abaf", "Asurmen Blue Wash|#273e51",
+        "Baal Red Wash|#630808", "Badab Black Wash|#000000", "Beaten Copper|#73372d", "Bestial Brown|#7b4a39",
+        "Bilious Green|#a9d171", "Black Ink|#000000", "Blazing Orange|#e65925", "Bleached Bone|#eed5ac",
+        "Blood Red|#d2223e", "Boltgun Metal|#888789", "Brazen Brass|#966747", "Bronzed Flesh|#ec9a36",
+        "Bubonic Brown|#b89142", "Burnished Gold|#e0c068", "Calthan Brown|#7a4231", "Camo Green|#878d52",
+        "Catachan Green|#455440", "Chainmail|#8e8c91", "Chaos Black|#001522", "Charadon Granite|#463f39",
+        "Codex Grey|#808285", "Commando Khaki|#9a8c7b", "Dark Flesh|#683b31", "Dark Green Ink|#108473",
+        "Desert Yellow|#9c8855", "Devlan Mud Wash|#393121", "Dheneb Stone|#b8aca0", "Dwarf Bronze|#a26840",
+        "Dwarf Flesh|#da9382", "Elf Flesh|#edae74", "Enchanted Blue|#0071b7", "Fenrys Grey|#2c4363",
+        "Fiery Orange|#f47920", "Flesh Wash|#ce8c42", "Fortress Grey|#bcbdc0", "Ghostly Grey|#c3c6cd",
+        "Goblin Green|#3d9353", "Golden Yellow|#ffc20e", "Graveyard Earth|#665238", "Gretchin Green|#7e6930",
+        "Gryphonne Sepia Wash|#843910", "Hawk Turquoise|#008194", "Hormagaunt Purple|#54496b", "Ice Blue|#81d3eb",
+        "Imperial Purple|#562f7e", "Iyanden Darksun|#ad852e", "Jade Green|#069b7d", "Khemri Brown|#73614d",
+        "Knarloc Green|#48563c", "Kommando Khaki|#9e915c", "Leprous Brown|#d88e2d", "Leviathan Purple Wash|#842994",
+        "Liche Purple|#2c2d8b", "Lightning Bolt Blue|#8bb9dd", "Macharius Solar Orange|#b94023",
+        "Magenta Ink|#de007b", "Mechrite Red|#a82014", "Midnight Blue|#002561", "Mithril Silver|#b7bec5",
+        "Nauseating Blue|#412a7a", "Necron Abyss|#1a213d", "Ogryn Flesh Wash|#ce8c42", "Orkhide Shade|#26372d",
+        "Pallid Flesh|#eec8c7", "Purple Ink|#842994", "Red Gore|#9d2b3f", "Regal Blue|#003f70",
+        "Rotting Flesh|#b8c39e", "Scab Red|#90263d", "Scaly Green|#006063", "Scorched Brown|#5a422f",
+        "Scorpion Green|#65b345", "Shadow Grey|#106993", "Shining Gold|#efb736", "Skull White|#ffffff",
+        "Smelly Primer|#ffffff", "Snot Green|#006f45", "Storm Blue|#27357e", "Sunburst Yellow|#ffd400",
+        "Tallarn Flesh|#b27b67", "Tanned Flesh|#a95c3e", "Tausept Ochre|#a06e3b", "Tentacle Pink|#dc9dc6",
+        "Terracotta|#793721", "Tin Bitz|#473f39", "Ultramarine Blue|#0066b3", "Vermin Brown|#843910",
+        "Vermin Fur|#904f2e", "Vile Green|#82c59c", "Vomit Brown|#ce8b3c", "Warlock Purple|#a43e8b",
       ],
       "The Army Painter": ["Matt Black|#1a1a1a", "Matt White|#f5f5f5", "Strong Tone|#4a3520", "Dark Tone|#1d1d1d"],
       "Vallejo": ["Black Primer|#1a1a1a", "White Primer|#f5f5f5"],
@@ -441,149 +467,334 @@
     // These are "extra" paints: Citadel and your own paints are always tried first, so they never change
     // how a Citadel name is matched.
     const EXTRA_PAINT_TABLE = {
-      // Vallejo Game Color (with washes and special effects), Model Color and Xpress Color, with code numbers: 420
+      // Vallejo Game Color (with washes and special effects), Model Color and Xpress Color, with code numbers, plus (v48) every other
+      // Vallejo range in the list (Model Air, Game Air, Mecha, Panzer Aces, Premium, Metal Color, FX, Arte Deco and more): 940
       "Vallejo": [
-        "Abyssal Turquoise|#1b3e54|72.120", "Acid|#539e5d|72.607", "Alien Purple|#7161a8|72.076",
-        "Amaranth Red|#d14e30|70.829", "Andrea Blue|#0270af|70.841", "Angel Green|#324d2c|72.123",
+        "Abyssal Turquoise|#1b3e54|72.120 76.120", "Acid|#539e5d|72.607", "Alien Purple|#7161a8|72.076 72.776 76.076 28.025",
+        "Amaranth Red|#d14e30|70.829", "Andrea Blue|#0270af|70.841", "Angel Green|#324d2c|72.123 76.123",
         "Aquamarine|#007c74|72.119", "Arctic White|#ffffff|72.002", "Armor Green|#1e462b|72.466",
-        "Athena Skin|#c85b54|72.107", "Azure|#5b6b9e|70.902", "BC Dark Brown|#76563d|70.768",
-        "Bag of Bones|#c1a16e|72.450", "Barbarian Skin|#926641|72.071", "Basalt Grey|#5c5a5d|70.869",
-        "Basic Skin Tone|#e9ac8d|70.815", "Battledress Brown|#5d4c32|72.473", "Beasty Brown|#7f5525|72.043",
-        "Beige|#dfbe6f|70.917", "Beige Brown|#816041|70.875", "Beige Red|#b06e4b|70.804", "Bile|#a4c600|72.606",
-        "Bile Green|#d5d900|72.122", "Black|#000000|72.051 72.094 70.950", "Black Glaze|#383838|70.855",
-        "Black Green|#2a342b|70.980 72.090", "Black Grey|#302722|70.862", "Black Lotus|#302627|72.423",
-        "Black Red|#552f2c|70.859", "Black Violet|#392a31|70.751", "Black Wash|#0e0d0e|73.301 73.201",
-        "Bloody Red|#d41c1c|72.010", "Blue|#00528e|72.088 70.925", "Blue Fluorescent|#0370b1|70.736",
-        "Blue Green|#007a89|70.808", "Blue Grey Pale|#808686|70.905", "Blue Violet|#59467e|70.811",
-        "Blue Wash|#1a5b9b|73.207", "Bone White|#bea374|72.034", "Brass|#643b1d|70.801",
-        "Brassy Brass|#e9d7cb|72.058", "Bright Bronze|#e7d5bf|72.057", "Bright Orange|#e05921|70.851",
-        "Bronze|#533c1d|70.998", "Bronze Brown|#b16921|72.036", "Bronze Green|#313a29|70.897", "Brown|#9a632a|72.092",
+        "Athena Skin|#c85b54|72.107 76.107", "Azure|#5b6b9e|70.902", "BC Dark Brown|#76563d|70.768",
+        "Bag of Bones|#c1a16e|72.450", "Barbarian Skin|#926641|72.071 76.071", "Basalt Grey|#5c5a5d|70.869",
+        "Basic Skin Tone|#e9ac8d|70.815", "Battledress Brown|#5d4c32|72.473", "Beasty Brown|#7f5525|72.043 76.043 72.743 28.019",
+        "Beige|#dfbe6f|70.917 71.074", "Beige Brown|#816041|70.875", "Beige Red|#b06e4b|70.804", "Bile|#a4c600|72.606",
+        "Bile Green|#d5d900|72.122 76.122", "Black|#000000|72.051 72.094 70.950 76.051 72.751 71.057 28.012 70.602 76.518 70.642 62.020 85.120", "Black Glaze|#383838|70.855",
+        "Black Green|#2a342b|70.980 72.090 71.018 85.163", "Black Grey|#302722|70.862", "Black Lotus|#302627|72.423",
+        "Black Red|#552f2c|70.859", "Black Violet|#392a31|70.751", "Black Wash|#0e0d0e|73.301 73.201 69.518",
+        "Bloody Red|#d41c1c|72.010 28.023 70.632 72.710 76.010", "Blue|#00528e|72.088 70.925 69.019 71.004", "Blue Fluorescent|#0370b1|70.736",
+        "Blue Green|#007a89|70.808 62.012", "Blue Grey Pale|#808686|70.905", "Blue Violet|#59467e|70.811",
+        "Blue Wash|#1a5b9b|73.207", "Bone White|#bea374|72.034 72.734 28.013 76.034", "Brass|#643b1d|70.801",
+        "Brassy Brass|#e9d7cb|72.058 72.758", "Bright Bronze|#e7d5bf|72.057 72.757", "Bright Orange|#e05921|70.851",
+        "Bronze|#533c1d|70.998 69.062 81.123", "Bronze Brown|#b16921|72.036 76.036", "Bronze Green|#313a29|70.897 71.250", "Brown|#9a632a|72.092 69.034 76.513",
         "Brown Glaze|#4e403d|70.854", "Brown Rose|#9c6560|70.803", "Brown Sand|#906145|70.876", "Buff|#d7af4d|70.976",
-        "Burnt Red|#763c3a|70.814", "Burnt Umber|#513b2e|70.941", "Camouflage Black Brown|#403436|70.822",
-        "Camouflage Black Green|#313129|70.741", "Camouflage Dark Green|#263025|70.979",
-        "Camouflage Green|#605d32|72.467 72.031", "Camouflage Middle Brown|#513e20|70.740",
-        "Camouflage Olive Green|#3c3d2f|70.894", "Canvas|#4d3e1f|70.763", "Cardinal Purple|#c81928|72.408",
+        "Burnt Red|#763c3a|70.814", "Burnt Umber|#513b2e|70.941 85.117 71.040", "Camouflage Black Brown|#403436|70.822",
+        "Camouflage Black Green|#313129|70.741", "Camouflage Dark Green|#263025|70.979 71.019",
+        "Camouflage Green|#605d32|72.467 72.031 76.031", "Camouflage Middle Brown|#513e20|70.740",
+        "Camouflage Olive Green|#3c3d2f|70.894", "Canvas|#4d3e1f|70.763 70.314", "Cardinal Purple|#c81928|72.408",
         "Caribbean Turquoise|#005961|72.414", "Carmine Red|#97211f|70.908", "Cavalry Brown|#84443a|70.982",
         "Cayman Green|#59542a|72.067", "Chainmail|#e4e5e9|72.053", "Chameleon Orange|#ce652e|72.455",
-        "Charcoal|#363638|72.155", "Charred Brown|#422a26|72.045", "Chestnut Brown|#603f36|70.746",
+        "Charcoal|#363638|72.155", "Charred Brown|#422a26|72.045 72.745 76.045", "Chestnut Brown|#603f36|70.746",
         "Chocolate Brown|#58443d|70.872", "Clear Orange|#cc4527|70.956", "Cold White|#f6f6f8|70.919",
-        "Commando Green|#3e4f3c|72.468", "Continental Blue|#25242a|70.754", "Copper|#803427|70.999",
+        "Commando Green|#3e4f3c|72.468", "Continental Blue|#25242a|70.754", "Copper|#803427|70.999 77.710 69.061 62.050 70.797 81.171",
         "Copper Brown|#532c25|72.421", "Cork Brown|#a16f4e|70.843", "Corrosion|#572922|72.608",
-        "Cream White|#e3d1c3|70.766", "Dark Blue|#464775|72.017 70.930", "Dark Blue Grey|#6d8589|70.904 70.867",
-        "Dark Flesh|#d3933b|70.927", "Dark Fleshtone|#603429|72.044", "Dark Green|#1f3727|72.028",
-        "Dark Grey|#312f32|70.994", "Dark Gunmetal|#dadada|72.054", "Dark Prussian Blue|#372741|70.899",
-        "Dark Purple|#452733|70.749", "Dark Red|#692f24|70.946", "Dark Rose|#805252|70.745",
-        "Dark Rust|#3b2625|70.771", "Dark Sand|#cba868|70.847", "Dark Sea Blue|#262c38|70.898",
+        "Cream White|#e3d1c3|70.766", "Dark Blue|#464775|72.017 70.930 69.021 62.011", "Dark Blue Grey|#6d8589|70.904 70.867",
+        "Dark Flesh|#d3933b|70.927", "Dark Fleshtone|#603429|72.044", "Dark Green|#1f3727|72.028 76.512 28.026 72.728 69.030 62.014 71.012",
+        "Dark Grey|#312f32|70.994 71.110 76.517", "Dark Gunmetal|#dadada|72.054", "Dark Prussian Blue|#372741|70.899",
+        "Dark Purple|#452733|70.749", "Dark Red|#692f24|70.946 69.011", "Dark Rose|#805252|70.745",
+        "Dark Rust|#3b2625|70.771 76.507 70.302", "Dark Sand|#cba868|70.847", "Dark Sea Blue|#262c38|70.898",
         "Dark Sea Green|#4b4545|70.868", "Dark Sea Grey|#6c6b69|70.991", "Dark Turquoise|#01708b|72.084",
-        "Dark Vermilion|#b52a27|70.947", "Dark Yellow|#90873a|70.978", "Dead Flesh|#c3aa4d|72.035",
-        "Dead White|#ffffff|72.001", "Deck Tan|#aba390|70.986", "Deep Green|#1b4b33|70.970",
+        "Dark Vermilion|#b52a27|70.947", "Dark Yellow|#90873a|70.978 76.503 71.025 85.009", "Dead Flesh|#c3aa4d|72.035 28.022 76.035 72.735",
+        "Dead White|#ffffff|72.001 72.701 76.001", "Deck Tan|#aba390|70.986", "Deep Green|#1b4b33|70.970 69.029",
         "Deep Magenta|#622640|72.113", "Deep Purple|#6f2b42|72.409", "Deep Sky Blue|#4d95c5|70.844",
         "Deep Yellow|#f1c701|70.915", "Demon Blood|#66477e|72.603", "Demonic Skin|#965c58|72.458",
-        "Desert Brown|#ab8556|70.767", "Desert Ochre|#9d6729|72.454", "Desert Yellow|#b6854a|70.977 72.063",
+        "Desert Brown|#ab8556|70.767", "Desert Ochre|#9d6729|72.454", "Desert Yellow|#b6854a|70.977 72.063 76.063 28.015 72.763",
         "Dirty Grey|#675f30|72.145", "Dreadnought Yellow|#d38821|72.477", "Dried Blood|#622a1d|72.133",
-        "Dry Rust|#5e332d|72.136", "Dwarf Skin|#d99169|72.041 72.402", "Earth|#775730|72.062",
-        "Electric Blue|#4399b2|72.023", "Elf Skin Tone|#ca8854|72.004", "Elfic Blue|#50617d|72.117",
-        "Elfic Flesh|#ead7b9|72.098", "Emerald|#00624b|70.838", "English Uniform|#6f532b|70.921",
+        "Dry Rust|#5e332d|72.136", "Dwarf Skin|#d99169|72.041 72.402 72.741", "Earth|#775730|72.062 76.062 72.762",
+        "Electric Blue|#4399b2|72.023 76.023 69.020 72.723", "Elf Skin Tone|#ca8854|72.004 76.004 72.704", "Elfic Blue|#50617d|72.117",
+        "Elfic Flesh|#ead7b9|72.098", "Emerald|#00624b|70.838", "English Uniform|#6f532b|70.921 28.008",
         "Evil Red|#461e26|72.112", "Extra Dark Green|#282a14|70.896", "Fairy Skin|#ca8774|72.457",
         "Fern Green|#475436|70.833", "Field Blue|#4d5256|70.964", "Filthy Brown|#e99300|72.037",
         "Flat Blue|#3f4873|70.962", "Flat Brown|#703f38|70.984", "Flat Earth|#69442a|70.983",
         "Flat Flesh|#e09959|70.955", "Flat Green|#374b2f|70.968", "Flat Red|#a12b29|70.957",
         "Flat Yellow|#f6ba36|70.953", "Flesh Blood|#f27466|72.601", "Flesh Wash|#b67c78|73.204",
-        "Fluid Pink|#c06793|72.459", "Fluorescent Blue|#0082cd|72.160", "Fluorescent Cold Green|#007074|72.161",
-        "Fluorescent Green|#74b72c|72.104", "Fluorescent Magenta|#e8348d|72.158", "Fluorescent Orange|#e84e10|72.156",
-        "Fluorescent Red|#dd2f52|72.157", "Fluorescent Violet|#6f257a|72.159", "Fluorescent Yellow|#f0e639|72.103",
-        "Forest Green|#11662d|72.465", "Foul Green|#00a27d|72.025", "French Mirage Blue|#5f6772|70.900",
+        "Fluid Pink|#c06793|72.459", "Fluorescent Blue|#0082cd|72.160 62.038", "Fluorescent Cold Green|#007074|72.161",
+        "Fluorescent Green|#74b72c|72.104 62.039", "Fluorescent Magenta|#e8348d|72.158 62.036", "Fluorescent Orange|#e84e10|72.156 62.033",
+        "Fluorescent Red|#dd2f52|72.157 71.082", "Fluorescent Violet|#6f257a|72.159 62.037", "Fluorescent Yellow|#f0e639|72.103 62.031",
+        "Forest Green|#11662d|72.465 85.089", "Foul Green|#00a27d|72.025", "French Mirage Blue|#5f6772|70.900",
         "Fresh Blood|#7e2b19|72.132", "Frost|#8ac9e3|72.604", "Galvanic Corrosion|#eeae76|72.610",
-        "German Beige WWII|#796950|70.821", "German Fieldgrey WWII|#58523c|70.830", "German Grey|#2e2e2c|70.995",
-        "German Orange|#ba6254|70.805", "German Tank Crew|#544a3e|70.759", "German Uniform|#434d42|70.920",
-        "German Yellow|#ceb65e|70.806", "Ghost Green|#83c192|72.121", "Ghost Grey|#c2cbd4|72.046",
-        "Glacier Blue|#cdd9f1|72.095", "Gloomy Violet|#402f59|72.410", "Glorious Gold|#f4e3c5|72.056",
-        "Gloss White|#f5f3f4|70.842", "Glossy Black|#241e1e|70.861", "Goblin Green|#576033|72.030",
-        "Gold|#996728|70.996", "Gold Brown|#bf873c|70.877", "Gold Yellow|#d67419|72.007",
+        "German Beige WWII|#796950|70.821", "German Fieldgrey WWII|#58523c|70.830", "German Grey|#2e2e2c|70.995 71.268",
+        "German Orange|#ba6254|70.805", "German Tank Crew|#544a3e|70.759 70.333", "German Uniform|#434d42|70.920",
+        "German Yellow|#ceb65e|70.806", "Ghost Green|#83c192|72.121 76.121", "Ghost Grey|#c2cbd4|72.046",
+        "Glacier Blue|#cdd9f1|72.095", "Gloomy Violet|#402f59|72.410", "Glorious Gold|#f4e3c5|72.056 72.756",
+        "Gloss White|#f5f3f4|70.842", "Glossy Black|#241e1e|70.861", "Goblin Green|#576033|72.030 28.027 72.730",
+        "Gold|#996728|70.996 69.059 81.122 77.725 70.791 62.049", "Gold Brown|#bf873c|70.877", "Gold Yellow|#d67419|72.007 72.707 76.007",
         "Golden Olive|#808145|70.857", "Golden Yellow|#f8a734|70.948", "Gorgon Brown|#5a2e23|72.124",
-        "Gory Red|#7d1f1f|72.011", "Greasy Black|#413736|72.476", "Green|#007133|72.089",
-        "Green Brown|#816d32|70.879", "Green Fluorescent|#a8c958|70.737", "Green Grey|#b5b6ae|70.971 70.886",
+        "Gory Red|#7d1f1f|72.011 28.029 72.711", "Greasy Black|#413736|72.476", "Green|#007133|72.089 69.026 85.088 71.329",
+        "Green Brown|#816d32|70.879 71.020", "Green Fluorescent|#a8c958|70.737 69.057", "Green Grey|#b5b6ae|70.971 70.886 71.341",
         "Green Ochre|#a17f35|70.914", "Green Rush|#8cc5b2|72.605", "Green Sky|#7a9165|70.974",
-        "Green Wash|#72b25b|73.205", "Green Yellow|#6e653c|70.881", "Grey Blue|#596d85|70.943",
-        "Grey Brown|#5b4923|70.762", "Grey Green|#41403e|70.866", "Grunge Brown|#864326|72.115",
-        "Gunmetal|#352a2e|70.863", "Gunmetal Blue|#282834|70.800", "Gunship Green|#4c5840|70.895",
+        "Green Wash|#72b25b|73.205", "Green Yellow|#6e653c|70.881", "Grey Blue|#596d85|70.943 71.005",
+        "Grey Brown|#5b4923|70.762", "Grey Green|#41403e|70.866 71.340 69.014", "Grunge Brown|#864326|72.115 76.115",
+        "Gunmetal|#352a2e|70.863 72.754 62.052 28.031 69.058", "Gunmetal Blue|#282834|70.800", "Gunship Green|#4c5840|70.895 71.014",
         "Hammered Copper|#dccfc7|72.059", "Heavy Black Green|#3e4943|72.147", "Heavy Blue|#405b78|72.143",
         "Heavy Bluegrey|#cbcac8|72.144", "Heavy Brown|#7b674e|72.153", "Heavy Gold Brown|#b68644|72.151",
         "Heavy Green|#566637|72.146", "Heavy Kakhi|#b49f50|72.149", "Heavy Ochre|#ae7727|72.150",
         "Heavy Orange|#ea5e0f|72.152", "Heavy Red|#8d363c|72.141", "Heavy Siena|#5e483b|72.154",
         "Heavy Skin Tone|#ad8468|72.140", "Heavy Violet|#484069|72.142", "Heretic Turquoise|#13514b|72.481",
-        "Hexed Lichen|#4b2753|72.015", "Hospitallier Black|#252527|72.484", "Hot Orange|#e23922|72.009",
-        "Hull Red|#5c383c|70.985", "Ice Yellow|#eecf72|70.858", "Iceberg Grey|#42576c|72.463",
-        "Imperial Blue|#262a47|72.020", "Imperial Yellow|#f59f2e|72.403", "Infantry Blue|#25212f|70.752",
-        "Intermediate Blue|#646d76|70.903", "Intermediate Green|#506544|70.891", "Iraqi Sand|#b49360|70.819",
-        "Ivory|#ebe2d1|70.918", "Jade Green|#007155|72.026", "Japanese Uniform WWII|#9f7f2a|70.923",
-        "Khaki|#9a7b4c|72.061 70.988", "Khaki Drill|#c7945b|72.451", "Khaki Grey|#7e6338|70.880",
-        "Landser Grey|#524f48|72.469", "Lavender Grey|#7f6f6f|70.774", "Leather Brown|#594335|70.871 72.040",
-        "Legacy Blue|#272961|72.480", "Lemon Yellow|#e4d202|70.952", "Light Brown|#a25b31|70.929",
-        "Light Flesh|#f3d4b8|70.928", "Light Green|#007943|70.942", "Light Green Blue|#86958e|70.972",
-        "Light Grey|#919294|70.990", "Light Mud|#7c745d|70.760", "Light Orange|#ee7228|70.911",
+        "Hexed Lichen|#4b2753|72.015 72.715", "Hospitallier Black|#252527|72.484", "Hot Orange|#e23922|72.009 72.709",
+        "Hull Red|#5c383c|70.985 71.039", "Ice Yellow|#eecf72|70.858", "Iceberg Grey|#42576c|72.463",
+        "Imperial Blue|#262a47|72.020 72.720 76.020", "Imperial Yellow|#f59f2e|72.403", "Infantry Blue|#25212f|70.752",
+        "Intermediate Blue|#646d76|70.903 71.299", "Intermediate Green|#506544|70.891", "Iraqi Sand|#b49360|70.819",
+        "Ivory|#ebe2d1|70.918 70.643 71.075", "Jade Green|#007155|72.026 85.083 76.026", "Japanese Uniform WWII|#9f7f2a|70.923",
+        "Khaki|#9a7b4c|72.061 70.988 72.761", "Khaki Drill|#c7945b|72.451", "Khaki Grey|#7e6338|70.880",
+        "Landser Grey|#524f48|72.469", "Lavender Grey|#7f6f6f|70.774", "Leather Brown|#594335|70.871 72.040 76.040 70.626 28.014",
+        "Legacy Blue|#272961|72.480", "Lemon Yellow|#e4d202|70.952 85.007", "Light Brown|#a25b31|70.929 71.027",
+        "Light Flesh|#f3d4b8|70.928 69.005", "Light Green|#007943|70.942 69.025", "Light Green Blue|#86958e|70.972",
+        "Light Grey|#919294|70.990 76.515 69.036", "Light Mud|#7c745d|70.760 70.315", "Light Orange|#ee7228|70.911",
         "Light Sea Grey|#a1b1b1|70.973", "Light Turquoise|#006989|70.840", "Light Violet|#a893bc|70.750",
         "Light Yellow|#f8d347|70.949", "Lime Green|#7f9435|70.827", "Livery Green|#9dc451|72.033",
         "Lizard Green|#223a2c|72.418", "London Grey|#696363|70.836", "Luftwaffe Green|#393f25|70.823",
-        "Luftwaffe Uniform WWII|#44404e|70.816", "Lustful Purple|#b78bbc|72.114", "Magenta|#903153|70.945 72.083",
-        "Magenta Fluorescent|#e6418d|70.735", "Magic Blue|#0069aa|72.021", "Mahogany|#5a3930|72.472",
+        "Luftwaffe Uniform WWII|#44404e|70.816", "Lustful Purple|#b78bbc|72.114 76.114", "Magenta|#903153|70.945 72.083 69.010 62.007",
+        "Magenta Fluorescent|#e6418d|70.735 69.056", "Magic Blue|#0069aa|72.021 76.021 72.721 28.030", "Mahogany|#5a3930|72.472 71.036",
         "Mahogany Brown|#79504a|70.846", "Mahogany Ink|#674641|70.828", "Martian Orange|#cd4619|72.405",
-        "Medium Blue|#16416c|70.963", "Medium Brown|#5b483a|70.826", "Medium Fleshtone|#b07940|70.860",
-        "Medium Grey|#867259|70.987", "Medium Grey Blue|#779d92|70.772", "Medium Olive|#414e32|70.850",
-        "Medium Sea Grey|#7d7b7c|70.870", "Medium Xpress|#fffbf8|72.448", "Middle Stone|#937f42|70.882",
-        "Midnight Purple|#2d1e33|72.116", "Military Green|#434434|70.975", "Military Yellow|#937626|70.764 72.453",
-        "Monastic Green|#004b37|72.482", "Moon Yellow|#eeb800|72.005", "Moss and Lichen|#dad76c|72.611",
+        "Medium Blue|#16416c|70.963 85.063", "Medium Brown|#5b483a|70.826", "Medium Fleshtone|#b07940|70.860",
+        "Medium Grey|#867259|70.987 69.038", "Medium Grey Blue|#779d92|70.772", "Medium Olive|#414e32|70.850 71.092",
+        "Medium Sea Grey|#7d7b7c|70.870", "Medium Xpress|#fffbf8|72.448", "Middle Stone|#937f42|70.882 71.031",
+        "Midnight Purple|#2d1e33|72.116 76.116", "Military Green|#434434|70.975", "Military Yellow|#937626|70.764 72.453",
+        "Monastic Green|#004b37|72.482", "Moon Yellow|#eeb800|72.005 76.005 72.705 85.006", "Moss and Lichen|#dad76c|72.611 73.827",
         "Muddy Ground|#452e28|72.475", "Mummy White|#cfb496|72.449", "Mustard Brown|#9d714a|70.769",
         "Mutation Green|#4c7650|72.105", "Mystic Blue|#004a87|72.411", "Natural Steel|#535258|70.864",
-        "Natural Wood Grain|#eaa432|70.834", "Neutral Grey|#6f6d61|72.050 70.992", "New Wood|#8a633c|70.770",
-        "Night Blue|#202430|72.019", "Nocturnal Red|#551c22|72.111", "Nuclear Yellow|#dd9213|72.404",
-        "Ochre Brown|#aa793e|70.856", "Off-White|#fef3dd|72.101 70.820", "Oily Steel|#484246|70.865",
-        "Old Gold|#55371d|70.878", "Old Rose|#bc6d70|70.944", "Olive Brown|#3f3126|70.889",
-        "Olive Green|#526138|70.967", "Olive Grey|#40422d|70.888", "Omega Blue|#3a365b|72.413",
-        "Orange Brown|#ad623a|70.981", "Orange Fire|#eb5b1e|72.008", "Orange Fluorescent|#e86016|70.733",
+        "Natural Wood Grain|#eaa432|70.834", "Neutral Grey|#6f6d61|72.050 70.992 85.100", "New Wood|#8a633c|70.770 70.311",
+        "Night Blue|#202430|72.019 76.019", "Nocturnal Red|#551c22|72.111 76.111", "Nuclear Yellow|#dd9213|72.404",
+        "Ochre Brown|#aa793e|70.856", "Off-White|#fef3dd|72.101 70.820 69.003 71.270", "Oily Steel|#484246|70.865",
+        "Old Gold|#55371d|70.878 70.792 69.060", "Old Rose|#bc6d70|70.944", "Olive Brown|#3f3126|70.889",
+        "Olive Green|#526138|70.967 76.519 85.097 69.028 71.007", "Olive Grey|#40422d|70.888 71.096", "Omega Blue|#3a365b|72.413",
+        "Orange Brown|#ad623a|70.981", "Orange Fire|#eb5b1e|72.008 72.708 76.008", "Orange Fluorescent|#e86016|70.733 69.055",
         "Orange Ochre|#ac8035|70.824", "Orange Red|#dc4319|70.910", "Orc Skin|#5e752d|72.415",
-        "Oxford Blue|#3e3a53|70.807", "Pale Blue|#90a3a9|70.906", "Pale Brown|#9f8375|70.825",
-        "Pale Flesh|#cba37f|72.003", "Pale Grey Blue|#a7b6b3|70.907", "Pale Grey Wash|#cacad2|73.202",
-        "Pale Sand|#e3c28f|70.837", "Pale Yellow|#ebce7e|72.097", "Parasite Brown|#a35c1e|72.042",
+        "Oxford Blue|#3e3a53|70.807", "Pale Blue|#90a3a9|70.906 71.008", "Pale Brown|#9f8375|70.825",
+        "Pale Flesh|#cba37f|72.003 74.015 76.003 28.024 72.703", "Pale Grey Blue|#a7b6b3|70.907", "Pale Grey Wash|#cacad2|73.202",
+        "Pale Sand|#e3c28f|70.837", "Pale Yellow|#ebce7e|72.097", "Parasite Brown|#a35c1e|72.042 76.042",
         "Park Green Flat|#21624a|70.969", "Pastel Blue|#607a93|70.901", "Pastel Green|#939870|70.885",
-        "Phoenix Orange|#b1401e|72.478", "Pink|#b04f7c|70.958", "Plague Brown|#ab7131|72.039",
-        "Plague Green|#4c4d2e|72.419", "Plasma Red|#a52822|72.406", "Polished Gold|#f8ecc2|72.055",
-        "Prussian Blue|#3c405d|70.965", "Purple|#533152|70.959", "Red|#cd1316|72.086 70.926",
+        "Phoenix Orange|#b1401e|72.478", "Pink|#b04f7c|70.958 69.006", "Plague Brown|#ab7131|72.039",
+        "Plague Green|#4c4d2e|72.419", "Plasma Red|#a52822|72.406", "Polished Gold|#f8ecc2|72.055 72.755",
+        "Prussian Blue|#3c405d|70.965", "Purple|#533152|70.959 85.045 69.012", "Red|#cd1316|72.086 70.926 71.269 71.102 69.008",
         "Red Leather|#95543e|70.818", "Red Wash|#d55e86|73.206", "Refractive Green|#474a35|70.890",
-        "Rosy Flesh|#e58a6b|72.100", "Rotten Flesh|#89763b|72.452", "Rotten White|#f0eeef|72.130",
-        "Royal Blue|#1a427d|70.809", "Royal Purple|#4d2740|70.810 72.016", "Russian Uniform WWII|#585336|70.924",
-        "Rust|#e45314|72.131 72.609", "Saddle Brown|#8c645c|70.940", "Salmon Rose|#e28f7f|70.835",
-        "Sand Yellow|#eabf56|70.916", "Scarlet|#c23d2e|70.817", "Scarlet Blood|#c22222|72.106",
-        "Scarlet Red|#761e1d|72.012", "Scorpy Green|#4f8436|72.032", "Scrofulous Brown|#a7691c|72.038",
-        "Scurvy Green|#1f4d43|72.027", "Sepia|#563d27|72.091", "Sepia Wash|#8b622c|73.200 73.300",
-        "Seraph Red|#6b1411|72.479", "Sick Green|#406037|72.029", "Silver|#ebedec|72.052 70.997",
-        "Silver Grey|#d8cdc9|70.883", "Skin|#5c2d27|72.093", "Skin Tone|#e5ab85|72.099", "Sky Blue|#74b8cf|70.961",
+        "Rosy Flesh|#e58a6b|72.100 76.100", "Rotten Flesh|#89763b|72.452", "Rotten White|#f0eeef|72.130",
+        "Royal Blue|#1a427d|70.809", "Royal Purple|#4d2740|70.810 72.016 76.016", "Russian Uniform WWII|#585336|70.924",
+        "Rust|#e45314|72.131 72.609 71.080 76.506", "Saddle Brown|#8c645c|70.940", "Salmon Rose|#e28f7f|70.835",
+        "Sand Yellow|#eabf56|70.916 71.028 69.033", "Scarlet|#c23d2e|70.817", "Scarlet Blood|#c22222|72.106",
+        "Scarlet Red|#761e1d|72.012 76.012 72.712 28.016", "Scorpy Green|#4f8436|72.032 72.732 76.032", "Scrofulous Brown|#a7691c|72.038",
+        "Scurvy Green|#1f4d43|72.027 76.027", "Sepia|#563d27|72.091 62.018", "Sepia Wash|#8b622c|73.200 73.300",
+        "Seraph Red|#6b1411|72.479", "Sick Green|#406037|72.029 72.729 28.028", "Silver|#ebedec|72.052 70.997 81.121 77.724 28.021 70.790 72.752 62.048",
+        "Silver Grey|#d8cdc9|70.883", "Skin|#5c2d27|72.093", "Skin Tone|#e5ab85|72.099 71.076", "Sky Blue|#74b8cf|70.961 71.306 69.017",
         "Sky Grey|#aaabad|70.989", "Smoke Ink|#5c4847|70.939", "Smokey Ink|#493632|72.068",
-        "Snake Green|#015a46|72.417", "Sombre Grey|#535d69|72.048", "Space Grey|#2d5a5d|72.422",
-        "Splinter Green|#456341|70.756", "Squid Pink|#c778a5|72.013", "Starship Steel|#517375|72.462",
-        "Steel Grey|#7b92a2|72.102", "Stone Grey|#8c7c63|70.884", "Stonewall Grey|#9c9384|72.049",
+        "Snake Green|#015a46|72.417", "Sombre Grey|#535d69|72.048 72.748 76.048", "Space Grey|#2d5a5d|72.422",
+        "Splinter Green|#456341|70.756", "Squid Pink|#c778a5|72.013 76.013 72.713", "Starship Steel|#517375|72.462",
+        "Steel Grey|#7b92a2|72.102 70.630", "Stone Grey|#8c7c63|70.884 69.024", "Stonewall Grey|#9c9384|72.049 76.049",
         "Storm Blue|#303a7f|72.412", "Stormy Blue|#413f57|72.018", "Succubus Skin|#933d46|72.108",
-        "Sun Yellow|#f6a300|72.006", "Sunny Skin Tone|#ed9646|70.845", "Sunrise Blue|#73c9ec|72.118",
-        "Sunset Orange|#f4973a|72.110", "Sunset Red|#c02b49|70.802", "Tan|#95604e|72.066", "Tan Earth|#997457|70.874",
+        "Sun Yellow|#f6a300|72.006 72.706 28.018 76.006", "Sunny Skin Tone|#ed9646|70.845", "Sunrise Blue|#73c9ec|72.118 76.118",
+        "Sunset Orange|#f4973a|72.110", "Sunset Red|#c02b49|70.802", "Tan|#95604e|72.066", "Tan Earth|#997457|70.874 71.079",
         "Tan Glaze|#d59335|70.831", "Tan Yellow|#c19b6e|70.912", "Tanned Skin|#81452d|72.471",
         "Templar White|#cccecd|72.401", "Terracotta|#693e38|72.065", "Thick Blood|#954e43|72.602",
-        "Tinny Tin|#d5c7c6|72.060", "Toxic Yellow|#e8d457|72.109", "Transparent Blue|#323d5d|70.938",
+        "Tinny Tin|#d5c7c6|72.060", "Toxic Yellow|#e8d457|72.109 76.109", "Transparent Blue|#323d5d|70.938",
         "Transparent Green|#007943|70.936", "Transparent Orange|#ea651a|70.935", "Transparent Red|#b62336|70.934",
-        "Transparent Yellow|#f7a501|70.937", "Troll Green|#015e32|72.416", "Turquoise|#0c425a|70.966 72.024",
-        "Twilight Rose|#774755|72.460", "US Dark Green|#494b36|70.893", "US Field Drab|#826545|70.873",
-        "US Olive Drab|#59513c|70.887", "Ultramarine|#2d559d|70.839", "Ultramarine Blue|#383967|72.022",
+        "Transparent Yellow|#f7a501|70.937", "Troll Green|#015e32|72.416", "Turquoise|#0c425a|70.966 72.024 85.079 69.023 76.024",
+        "Twilight Rose|#774755|72.460", "US Dark Green|#494b36|70.893 71.289", "US Field Drab|#826545|70.873 71.139",
+        "US Olive Drab|#59513c|70.887 71.043 28.005", "Ultramarine|#2d559d|70.839 70.625", "Ultramarine Blue|#383967|72.022 76.022 28.017 72.722",
         "Umber Wash|#766053|73.203", "Uniform Green|#4b5230|70.922", "Vampiric Purple|#492857|72.461",
         "Velvet Red|#81282e|72.407", "Verdigris|#91cbcc|72.135 72.096", "Verdigris Glaze|#99d0ca|70.832",
-        "Vermilion|#c42a28|70.909", "Viking Grey|#45515d|72.483", "Violet|#3c2c49|70.960 72.087",
+        "Vermilion|#c42a28|70.909", "Viking Grey|#45515d|72.483", "Violet|#3c2c49|70.960 72.087 62.008",
         "Violet Grey|#5a5957|70.773", "Violet Red|#64353f|70.812", "Violeta Wash|#886ca7|73.209",
-        "Vomit|#faac42|72.600 72.134", "Wagram Blue|#014461|72.464", "Warlord Purple|#862351|72.014",
-        "Warm Grey|#b29e9d|72.148", "Wasteland Brown|#684527|72.420", "White|#ffffff|70.951 72.082",
-        "White Glaze|#f4f4f6|70.853", "White Grey|#e3e2e0|70.993", "Wicked Purple|#756566|72.456",
-        "Willow Bark|#392b27|72.474", "Wolf Grey|#c3d1d1|72.047", "Yellow|#eba90c|72.085",
-        "Yellow Fluorescent|#efe641|70.730", "Yellow Green|#dede26|70.954", "Yellow Ochre|#deaa47|70.913",
-        "Yellow Olive|#1e4f39|72.064 70.892", "Yellow Wash|#e9e85c|73.208", "Zombie Flesh|#856b5a|72.470",
+        "Vomit|#faac42|72.600 72.134", "Wagram Blue|#014461|72.464", "Warlord Purple|#862351|72.014 72.714 76.014",
+        "Warm Grey|#b29e9d|72.148", "Wasteland Brown|#684527|72.420", "White|#ffffff|70.951 72.082 85.001 76.501 62.001 28.010 70.640 71.001 70.600",
+        "White Glaze|#f4f4f6|70.853", "White Grey|#e3e2e0|70.993 69.002 71.119", "Wicked Purple|#756566|72.456",
+        "Willow Bark|#392b27|72.474", "Wolf Grey|#c3d1d1|72.047 76.047 28.020 72.747", "Yellow|#eba90c|72.085 69.004 85.008",
+        "Yellow Fluorescent|#efe641|70.730 69.054", "Yellow Green|#dede26|70.954 85.087", "Yellow Ochre|#deaa47|70.913 85.014 71.033 62.015 69.032",
+        "Yellow Olive|#1e4f39|72.064 70.892 71.013", "Yellow Wash|#e9e85c|73.208", "Zombie Flesh|#856b5a|72.470",
+        // v48: everything else in the list for this brand (Model Air, Arte Deco, Panzer Aces, Premium Airbrush Color, Mecha Color, Nocturna Models, Weathering FX, Surface Primer, Metal Color, Game Air, Wash FX, Arte Deco Colores Fluoresecents, Hobby Paint, Liquid Gold): 520
+        "3B Russian Green|#474946|71.281", "6K Russian Brown|#4d4c4a|71.282", "7K Russian Tan|#787059|71.283",
+        "A-14 Steel Grey|#697271|71.336", "A-24M Camouflage Green|#575944|71.303",
+        "A-28M Greyish Blue|#719f92|71.319", "AII SV. Gol Light Blue|#7cc5d6|71.317",
+        "AMT-1 Light Grey Brown|#958b81|71.320", "AMT-11 Blue Grey|#5a616b|71.304", "AMT-12 Dark Grey|#43484c|71.308",
+        "AMT-4 Camouflage Green|#645d40|71.301", "AMT-7 Greyish Blue|#628b9f|71.318",
+        "Afrikakorps Tank Crew|#6e705b|70.336", "Afrikakorps Tank Crew Highlights|#a99d75|70.340",
+        "Aged White|#e3d3af|71.132", "Aggressor Gray|#7b7c7e|71.274", "Aluminium|#aeaeae|77.701",
+        "Aluminum (Metallic)|#acacb6|71.062", "Amethyst|#702a81|74.027", "Anthracite Grey|#4e4f54|71.052",
+        "Antique Gold|#856a3b|85.015", "Antique Ochre|#cd9d37|85.175", "Antique White|#fcfded|85.002",
+        "Apple Green|#99da84|85.082", "Arctic Blue (Metallic)|#373c4f|71.071", "Arena Sand|#fee8d9|85.012",
+        "Armour Brown|#4f4140|71.041", "Autumn Red|#833331|85.176", "BS Dark Earth|#6c5b41|71.323",
+        "BS Dark Green|#444631|71.324", "BS Medium Sea Grey|#80888b|71.307", "Baby Blue|#bcceec|85.061",
+        "Baby Pink|#fea8d6|85.046", "Barbarian Flesh|#a17c62|72.771", "Base Flesh|#846759|74.004",
+        "Basic Blue|#0198cd|62.010", "Basic Green|#006e47|62.013", "Basic Yellow|#fec303|62.003",
+        "Berry Red|#a81915|85.038", "Black (Metallic)|#625e6c|71.073", "Black Green RLM70|#444645|71.021",
+        "Black Grey RLM66|#505153|71.055", "Black Splash Mud|#27262b|73.806", "Black Thick Mud|#262626|73.812",
+        "Blue Grey|#91a2a9|76.524 69.015 71.115", "Blue Grey Mist|#6aa29f|85.072", "Blue Maze|#3b5d6a|85.073",
+        "Blueberry|#1b2e6a|85.064 74.031", "Bluegrass Green|#007b59|85.080", "Bougainvillea|#ac2d84|85.049",
+        "Boysenberry Pink|#db4584|85.024", "Brandywine|#7b1c16|85.042", "Bright Brass (Metallic)|#9f8f5b|71.067",
+        "Bright Green|#61c44e|85.091", "Bright Red|#9d2723|62.005", "British Tank Crew|#756d56|70.317",
+        "British Tank Crew Highlights|#eac284|70.321", "Bronze Flesh Tone|#ef9849|72.736",
+        "Brown Engine Soot|#584e45|73.818", "Brown Engine Soot (Matt)|#5f351f|69.818", "Brown Green|#906f4e|71.030",
+        "Brown Grey|#62615f|71.248", "Brown RLM26|#844138|71.105", "Brown Splash Mud|#342a29|73.805",
+        "Brown Thick Mud|#46413e|73.811", "Brown Violet RLM81|#635a49|71.264", "Burgundy|#c41422|85.037",
+        "Burned Flesh|#a26641|72.770 74.002", "Burnt Iron|#7d7d7b|77.721", "Burnt Orange|#d92625|85.030",
+        "Burnt Sienna|#672c28|85.116", "Buttermilk|#fffde2|85.003", "Calico Red|#e20f16|85.033",
+        "Camouflage Brown|#ae906e|71.117", "Camouflage Gray|#6a6c69|71.280", "Camouflage Grey|#867966|71.118",
+        "Camouflage Grey Green|#7a694b|71.116", "Camouflage Medium Brown|#5f4e3e|71.038",
+        "Camouflage Pale Brown|#796453|71.035", "Candy Black|#4c413f|62.079", "Candy Brown|#ceb6ac|62.078",
+        "Candy Dark Yellow|#f8b075|62.072", "Candy Magenta|#e17eaa|62.075", "Candy Orange|#f5a975|62.073",
+        "Candy Racing Blue|#7aa6d7|62.076", "Candy Racing Green|#a2d5d0|62.077", "Candy Red|#e58877|62.074",
+        "Candy Yellow|#fce37e|62.071", "Carmine|#ac2e32|62.006", "Cashmere Beige|#febdb5|85.107",
+        "Cement Grey|#91948b|71.045", "Chain Mail Silver|#aeaeae|72.753", "Chalice Red|#45384c|74.017",
+        "Charcoal Grey|#253338|85.119", "Chipping Brown|#484242|69.035", "Chrome|#afafaf|77.707",
+        "Chrome (Metallic)|#a8a8b2|71.064", "Cleaner|#ffffff|62.067", "Clear Base|#ffffff|62.068",
+        "Cobalt Blue|#34578f|62.009", "Cobra Leather|#855c26|72.740", "Cockpit Emerald Green “Faded”|#46857a|71.331",
+        "Cold Flesh|#838591|74.014", "Cold Grey|#828385|72.750", "Colonial Green|#4f8384|85.074",
+        "Concrete|#776d61|71.131", "Cool Neutral Tone|#b2a48f|85.103", "Copper (Metallic)|#8c5c48|71.068",
+        "Coral Rose|#ed7590|85.025", "Country Blue|#939ed6|85.056", "Country Red|#9f1b19|85.034",
+        "Crackle Medium|#f8f5e5|84.160", "Cranberry|#4a2828|85.043", "Crimson|#65263e|74.018",
+        "Crimson Tide|#833f58|85.039", "Crushed Grass|#8e906b|73.825", "Dark Aluminium|#949496|77.703",
+        "Dark Blue RLM24|#2e4861|71.266", "Dark Brown|#6d504a|76.514", "Dark Brown RLM61|#484745|71.042",
+        "Dark Chocolate|#522721|85.118", "Dark Earth|#5e5544|71.029", "Dark Flesh Tone|#5b4844|72.744",
+        "Dark Ghost Gray|#8a97a0|71.120", "Dark Gray RLM42|#515352|71.123", "Dark Green RLM71|#544c3f|71.015",
+        "Dark Green RLM83|#4e4e46|71.011", "Dark Grey Blue|#484d51|71.054", "Dark Grey Green|#505251|69.041",
+        "Dark Gull Gray|#828385|71.277", "Dark Khaki Green|#8c724f|76.520", "Dark Mediterranean Blue|#2a3551|71.313",
+        "Dark Mud|#685f4e|70.316", "Dark Ochre|#9c613f|62.016", "Dark Orange|#e5371c|85.028",
+        "Dark Orchid|#af1f5c|85.048", "Dark Pine|#005d40|85.084", "Dark Rosewood|#421922|85.174",
+        "Dark Rubber|#505153|70.306", "Dark Rust Wash|#e05b10|69.507", "Dark Sea Gray|#4c535d|71.053",
+        "Dark Slate Grey|#5d5e56|71.309", "Dark Steel|#737476|69.065", "Deep Blue|#0c97c2|69.018",
+        "Deep Forest Skin|#3e4a4a|74.009", "Deep Sky|#35415b|71.090", "Deep Teal|#01937e|85.075",
+        "Desert Dust|#e3cda4|76.522", "Desert Dust Wash|#d8bb81|69.522", "Desert Sand|#edebc6|85.011",
+        "Desert Tan|#d1be9e|70.613", "Desert Turquoise|#018d8c|85.078", "Devil Red|#921251|74.019",
+        "Diesel Stains|#a44c34|73.816", "Dirt|#7a6240|71.133", "Dove Grey|#ececec|85.101",
+        "Dull Aluminium|#bbbbbb|77.717", "Duraluminium|#a4a4a4|77.702", "Dusty Rose|#fc8992|85.020",
+        "Earth Green (Early)|#615837|70.611", "Eau de Nil “Duck Egg Green”|#c2c89c|71.009",
+        "Engine Gray|#555962|71.048", "Engine Grime|#605a5a|73.815", "European Dust|#8c6b4a|76.523",
+        "European Splash Mud|#563f37|73.801", "European Thick Mud|#423930|73.807", "Evergreen|#1e3930|85.090",
+        "Exhaust Manifold|#7d7d7b|77.723", "Faded P.R.U. Blue|#496570|71.109", "Fairy Flesh|#f5ac89|74.007",
+        "Ferrari Red|#af3532|71.085", "Fire Flame|#c41f3d|74.024", "Fire Red|#863e30|71.084 85.029",
+        "Flanker Blue|#91aeb4|71.337", "Flanker Light Blue|#b1c4c8|71.334", "Flanker Light Gray|#9da6a5|71.335",
+        "Flesh|#f6bd90|72.769 85.016", "Flesh Base|#a4531e|70.341", "Flesh Highlights|#fcd2a8|70.342",
+        "Flesh Shadows|#551305|70.343", "Flesh Tone no. 2|#eec3b2|85.018", "Fluorescent Golden Yellow|#fbbb35|62.032",
+        "Fluorescent Rose|#e73e8f|62.035", "Fluorescent Scarlet|#ec4f60|62.034", "Forest Skin|#867562|74.013",
+        "French Blue|#3f6a8a|85.066 71.088", "French Tank Crew|#756d56|70.320",
+        "French Tank Crew Highlights|#897c73|70.324", "Frozen Flesh|#57555b|74.010", "Fuel Stains|#8d5d39|73.814",
+        "Fuel Stains (Gloss)|#a06217|69.814", "Georgia Clay|#be3e17|85.031", "German Dark Yellow|#897461|70.604",
+        "German Field Grey|#62625a|28.006", "German Green Brown|#7c6448|70.606",
+        "German Green Tail Light|#3d5347|70.308", "German Panzer Grey|#404042|70.603",
+        "German Red Brown|#624341|70.605 71.271", "German Red Tail Light|#503428|70.307",
+        "German Tank Crew Highlights|#3c2618|70.337", "German Tank Crew Highlights I|#5b7572|70.338",
+        "German Tank Crew Highlights II|#94795e|70.339", "German Tank Crew I|#013e2c|70.334",
+        "German Tank Crew II|#473c26|70.335", "German White Tank Crew|#e0dfdb|70.344",
+        "German Yellow Brown|#846e49|71.272", "Gloss Black|#060606|77.660", "Gloss Metal Varnish|#ffffff|77.657",
+        "Gloss Varnish|#ffffff|62.064 84.154", "Glossy Sea Blue|#242b35|71.300", "Gold (Metallic)|#9e8155|71.066",
+        "Golden Brown|#876343|71.032", "Golden Ochre|#c87356|85.110", "Gooseberry Pink|#dc6888|85.023",
+        "Gray Blue RLM84|#a2a39b|71.103", "Gray Green RLM74|#535554|71.258", "Gray Violet|#646663|71.128",
+        "Green Blue|#8a9f80|69.027", "Green Gold|#e3d8c4|70.795", "Green RLM62|#595c47|71.104",
+        "Green RLM72|#474948|71.263", "Green RLM73|#444d4c|71.256", "Green Zinc Chromate|#565d3b|71.094",
+        "Grey|#555c66|71.047 62.019 69.037 70.601 70.641 28.011", "Grey RLM02|#7a7c67|71.044",
+        "Grey Sand|#ba9f72|69.031", "Grey Sky|#c5b4a8|85.102", "Grey Violet RLM75|#616362|71.259",
+        "Grey Z|#7a7b7d|69.039", "Gunmetal (Metallic)|#7a7b80|71.072", "Gunmetal Grey|#737373|77.720",
+        "Harvest Yellow|#febb39|85.013", "Hemp|#817964|71.023", "Highlight Skin|#f0d4be|74.008",
+        "Holly Green|#004a39|85.094", "Hyacinth Blue|#986bb8|85.055", "Hyacinth Rose|#d39699|85.021",
+        "IAF Sand|#c4b29a|71.327", "IDF Blue|#59758a|71.113", "IDF Israeli Sand Grey (61-73)|#796e68|70.614",
+        "IDF Sand Grey 73|#aa9f83|71.141", "IDF Sinai Grey 82|#7b726d|71.142", "IDF/IAF Green|#79866c|71.126",
+        "IJA Chrome Yellow|#f4a900|71.135", "IJA Dark Green|#52543f|71.285", "IJA Earth Brown|#78644b|71.136",
+        "IJA Grey Green|#bbb39e|71.326", "IJA Khaki Brown|#695940|71.287", "IJA Light Grey Green|#a5aa93|71.321",
+        "IJA Midouri Green|#3e483d|71.134", "IJA Olive Green|#544c3f|71.286", "IJN Ash Grey|#89816c|71.311",
+        "IJN Black Green|#3e483d|71.322", "IJN Dark Black Green|#434542|71.325", "IJN Deep Dark Green|#36504d|71.310",
+        "IJN Medium Grey|#b9b0ab|71.312", "Imperial Purple|#4e2d79|74.025", "Indian Turquoise|#9bd5d9|85.071",
+        "Industrial Splash Mud|#73746e|73.803", "Industrial Thick Mud|#53564d|73.809", "Inferno Red|#dd323a|74.022",
+        "Insignia White|#e3e3db|71.279", "Interior Green|#645d40|71.010", "Interior Grey Green|#96a28a|71.305",
+        "Italian Tank Crew|#4b461c|70.327", "Italian Tank Crew Highlights|#9eb193|70.331",
+        "Ivory RLM05|#c8b269|71.106", "JGSD Brown 3606|#70665c|71.297", "Japanese Tank Crew|#5c5632|70.328",
+        "Japanese Tank Crew Highlights|#aaa391|70.332", "Jet Exhaust|#797979|77.713", "Kelly Green|#008e4d|85.092",
+        "Khaki Brown|#917957|71.024", "Khaki Green Num.3|#615e4b|71.330", "Lavender|#7e398c|85.054",
+        "Leaf Green|#006e37|85.098", "Leather Belt|#665249|70.312", "Light Avocado|#5da97a|85.096",
+        "Light Blue|#6b8dbb|69.016 71.328", "Light Blue RLM65|#899d9c|71.255", "Light Blue RLM76|#96aba4|71.257",
+        "Light Blue RLM78|#809590|71.101", "Light Brown Mud|#818376|73.810", "Light Brown Splash Mud|#c7bbaf|73.804",
+        "Light Gray|#8c909b|71.050", "Light Green Chromate|#5f6644|71.006", "Light Green RLM25|#497868|71.267",
+        "Light Green RLM82|#4b4f3e|71.022", "Light Grey RLM63|#6b6f60|71.260", "Light Grey Wash|#c9c9c7|69.515",
+        "Light Gull Gray|#a9aaa2|71.121", "Light Livery Green|#92bd16|72.733", "Light Magenta|#fa68b8|85.047",
+        "Light Olive|#68604d|71.247", "Light Red|#e04622|71.086", "Light Rubber|#838381|70.305",
+        "Light Rust|#87431e|70.301 76.505 71.129", "Light Rust Wash|#eb7919|69.505", "Light Sea Blue|#02a4d5|71.089",
+        "Light Steel|#cdd6d3|69.064", "Lila|#ddabd9|85.051", "Lipstick|#82125a|74.029", "Loam Beige|#988864|71.245",
+        "Lt Cinnamon|#a27784|85.115", "M495 Light Gray|#9c998a|71.298", "Magenta Blood|#aa2038|74.021",
+        "Magnesium|#858585|77.711", "Malefic Flesh|#696061|74.012", "Matt Varnish|#ffffff|62.062 84.155",
+        "Mauve|#9f4f5e|85.041", "Mecha Gloss Varnish|#ffffff|69.701", "Mecha Matt Varnish|#ffffff|69.702",
+        "Mecha Satin Varnish|#ffffff|69.703", "Medium Flesh|#e98877|74.005 85.017", "Medium Gray|#687e8b|71.114",
+        "Medium Gunship Gray|#5a616b|71.097", "Medium Yellow|#f9b202|71.002", "Metallic Black|#bebabb|62.053",
+        "Metallic Blue|#d0d7e9|62.046 69.067", "Metallic Green|#1b927f|69.068 62.047",
+        "Metallic Medium|#faf7f0|62.041", "Metallic Orange|#f6deda|62.043", "Metallic Red|#cb5970|69.066 62.044",
+        "Metallic Violet|#dbd7ee|62.045", "Metallic Yellow|#fbedd3|62.042", "Midnight Blue|#012d2c|85.070",
+        "Mink Tan|#b57b69|85.108", "Mint Julep|#a6cbaa|85.077", "Mistletoe|#347645|85.093", "Mocha|#fb8a7c|85.112",
+        "Mud Brown|#8d6448|71.037", "Mud and Grass|#4c4c44|73.826", "NATO Black|#38383a|71.251",
+        "NATO Brown|#5c4e45|71.249", "NATO Green|#525a4f|71.093 70.612", "Naphthol Red|#c61819|85.032",
+        "Natural Flesh|#c0947b|74.006", "Navy Blue|#2e214f|85.069", "Neon Blue|#06266d|85.137",
+        "Neon Green|#009331|85.138", "Neon Magenta|#e60068|85.136", "Neon Pink|#e50058|85.135",
+        "Neon Red|#eb4e22|85.134", "Neon Yellow|#fff170|85.132", "Neutral Gray|#70777f|71.051",
+        "Nocturna Shadow|#434646|74.001", "Num. 41 Dark Olive Drab|#544c3f|71.316", "Ocean Gray|#6e757f|71.273",
+        "Ochre|#77693a|71.081 85.109", "Off-Grey|#656563|76.516", "Oil Stains|#6e502e|73.813",
+        "Oil Stains (Gloss)|#73531a|69.813", "Oiled Earth|#665c53|76.521", "Oiled Earth Wash|#6e5c52|69.521",
+        "Old Silver|#ccbdba|81.124", "Old Wood|#ad9c70|70.310", "Olive Green RLM80|#4c4f3a|71.265",
+        "Orange|#e9602c|69.007 62.004 71.083", "Orange Pearl|#f58841|85.133", "Orange Pink|#fbcb9d|62.002",
+        "Orange Rust|#c76832|71.130", "Orchid|#dd97cf|85.052", "Orchid Light|#9e9ccd|74.032",
+        "Pale Blue Grey|#969da5|71.046", "Pale Burnt Metal|#a9a9a9|77.704", "Pale Green|#75845b|71.095",
+        "Pale Lavender|#ca64b6|85.053", "Panzer Dark Gray|#434544|71.056", "Panzer Grey|#4b4c50|28.002",
+        "Panzer Yellow|#94854e|28.001", "Parched Grass (Late)|#716859|70.610", "Peaches|#fca6b4|85.019",
+        "Pearl Medium|#c2c2c2|84.158", "Periscopes|#3b4d5b|70.309", "Permanent Rose|#940d3b|85.173",
+        "Petrol Spills|#211f22|73.817", "Petrol Spills (Gloss)|#141c1f|69.817", "Phantom Grey|#535762|69.040",
+        "Phosphorescent|#e9eae2|62.040", "Pineapple|#deef90|85.005", "Plantation Pine|#206d2f|85.085",
+        "Plate Mail Metal|#98999e|70.628", "Pumpkin|#f64128|85.027", "Pure Black|#010101|69.042",
+        "Pure Red|#c3322d|70.624", "Pure White|#ffffff|69.001", "Purple Hex|#6a297f|74.026",
+        "Purple Shadow|#584852|74.011", "Rain Marks|#6d635a|73.819", "Raspberry|#943856|85.036",
+        "Raw Sienna|#824b44|62.017 85.113", "Red Gold|#f3e2c8|70.794", "Red Iron Oxide|#742916|85.040",
+        "Red RLM23|#c71f1c|71.003", "Red Terracotta|#79423d|72.772", "Reddish Flesh|#9e6569|74.003",
+        "Reducer|#ffffff|62.066", "Retarder|#ffffff|62.065", "Rich Gold|#e9dec2|70.793",
+        "Rookwood Red|#663330|85.044", "Rose Red|#e82b6d|85.035", "Russian AF Blue|#008eb4|71.333",
+        "Russian AF Dark Green|#4b4835|71.347", "Russian AF Grey Blue|#a3acab|71.338",
+        "Russian AF Grey N.3|#858e8d|71.339", "Russian AF Grey N.4|#aaa794|71.346",
+        "Russian AF Grey N.7|#739cb0|71.343", "Russian AF Grey N.8|#a1b5be|71.345",
+        "Russian AF Grey Protective Coat|#b3cbd7|71.344", "Russian AF Light Blue|#aac9c4|71.342",
+        "Russian Green 4BO|#4b4c44|70.609 71.017 28.003", "Russian Splash Mud|#3d3334|73.802",
+        "Russian Tank Crew Highlights I|#9babaa|70.329", "Russian Tank Crew Highlights II|#717538|70.330",
+        "Russian Tank Crew I|#4c5d67|70.325", "Russian Tank Crew II|#6a624f|70.326",
+        "Russian Thick Mud|#343434|73.808", "Russian Uniform|#6b6452|28.007", "Rust (Metallic)|#755445|71.069",
+        "Rust Texture|#463c3a|73.821", "Rust Texture (Matt)|#69322b|69.821", "Sable Brown|#915e48|85.114",
+        "Salem Blue|#5a7e9f|85.062", "Sanctuary Red|#981937|74.020", "Sand|#9e887a|71.112 70.644",
+        "Sand Beige|#b5a48a|71.244", "Sand Brown|#946b4f|71.034", "Sand Yellow RLM79|#97744e|71.278",
+        "Sapphire Blue|#244997|85.059", "Satin Varnish|#ffffff|62.063 84.169", "Sea Aqua|#85cac7|85.076",
+        "Sea Grey|#63686c|71.049", "Seaplane Gray|#555756|71.314", "Semi Matt Aluminium|#c0c1c3|77.716",
+        "Signal Blue|#383641|71.091", "Signal Red (Metallic)|#cb5970|71.070",
+        "Silver RLM01 (Metallic)|#adadb9|71.063", "Skeleton Bone|#baa789|70.627", "Sky Type S|#a2a48c|71.302",
+        "Slate Grey|#b4b3ae|85.104", "Slimy Grime Dark|#484b3a|73.822", "Snow|#ffffff|73.820",
+        "Spice Pink|#f4a5ab|85.022", "Splinter Blotches I|#01633c|70.346", "Splinter Blotches II|#3c2b24|70.347",
+        "Splinter Camouflage Base|#9d9e98|70.345", "Splinter Strips|#4f684b|70.348", "Spring Green|#def2ca|85.086",
+        "Spring Yellow|#bcd731|85.081", "Steel|#898a82|69.063 62.051 77.712", "Steel (Metallic)|#bbbbc7|71.065",
+        "Steel Blue|#195770|71.087", "Stencil|#e0e0d8|70.313", "Stone Wall Grey|#a1a2a4|72.749",
+        "Sz Red|#b33737|69.009", "Taffy Cream|#eef2cd|85.004", "Tangerine|#fb7129|85.026", "Taupe|#d37b82|85.105",
+        "Teal Green|#457e6d|85.099", "Textile Medium|#ececec|84.159", "Tire Black|#505153|71.315",
+        "Titan Blue|#4d4d6f|69.013", "Titan Dark Blue|#41454e|69.022", "Toffee|#fad1b1|85.111",
+        "Track Primer|#5b5652|70.304", "True Blue|#014c8d|85.058", "True Violet|#412b6c|85.050",
+        "Tulip Yellow|#fdda9a|85.010", "UK Azure Blue|#728cad|71.108", "UK Bronze Green|#535554|28.004 70.607",
+        "UK Light Mud|#87806e|71.284", "UK Light Stone|#b29b69|71.143", "US Army Tank Crew|#79684e|70.318",
+        "US Army Tank Crew Highlights|#a99a85|70.322", "US Desert Armour 686|#ae9b7d|71.122",
+        "US Desert Sand|#a98e79|71.140", "US Earth Brown|#65594d|71.290", "US Earth Red|#7b604f|71.293",
+        "US Earth Yellow|#ba915d|71.291", "US Flat Brown|#8e6a4a|71.026", "US Forest Green|#54544c|71.294",
+        "US Interior Yellow|#cba552|71.107", "US Khaki|#86785e|28.009", "US Light Green|#67633e|71.137",
+        "US Loam|#565751|71.292", "US Sand|#96866d|71.138", "USA Olive Drab|#645d53|70.608",
+        "USAAF Light Gray|#bcbcb4|71.296", "USAF Brown|#8a715b|71.125", "USAF Green|#4c5b58|71.124",
+        "USAF Light Blue|#526778|71.111", "USAF Light Gray|#c3c5c2|71.276", "USAF Medium Gray|#828385|71.275",
+        "USAF Olive Drab|#635b46|71.016", "USAF Tan|#be9869|71.348", "USMC Tank Crew|#1d573e|70.319",
+        "USMC Tank Crew Highlights|#a4b2a5|70.323", "USN Light Ghost Grey|#92999f|70.615",
+        "USN Sea Blue|#43484c|71.295", "Uk BSC 64 Portland Stone|#ccbd96|71.288", "Ultra Blue Deep|#2e2979|85.060",
+        "Underside Blue “Faded”|#c4d4d1|71.332", "Uniform Blue|#363153|85.068", "Victorian Blue|#35578d|85.067",
+        "Violet Vamp|#5e4d7a|74.030", "Viridian Green|#056c41|85.095", "Warm Neutral Tone|#f39c81|85.106",
+        "Wedgewood Blue|#324c65|85.065", "Wet Effects|#bdbaa7|73.828", "White Aluminium|#bab9be|77.706",
+        "White Flesh|#f5d7cc|74.016", "White Gold|#f6f6f6|70.796", "White Primer|#ffffff|62.061",
+        "Williamsburg Blue|#5f779d|85.057", "Witch Purple|#801d6d|74.028", "Wood|#ab743b|71.077",
+        "Worn Red|#c71e49|74.023", "Yellow Brown|#978674|71.246", "Yellow RLM04|#e7a221|71.078",
+        "Yellowish Rust|#be8b5e|70.303",
       ],
-      // Warpaints Fanatic (with washes), plus (v48) Speedpaint 2.0 and the colour primers and spray varnishes: 306
+      // Warpaints Fanatic (with washes), plus (v48) Speedpaint 2.0, the primers and varnishes, and every other range in the list
+      // (the earlier Warpaints and Warpaints Air, D&D Nolzur's, paint sets): 535
       "The Army Painter": [
         "Abyssal Blue|#00506c", "Aegis Aqua|#32b3d5", "Afterglow|#e4ea8d", "Agate Skin|#d7877b",
         "Alien Purple|#6154a3", "Alpha Blue|#667dc0", "Amber Skin|#c4a083", "Amulet Aqua|#68c5b6",
@@ -661,6 +872,65 @@
         "Talos Bronze|#6b3b27", "Thunderbird Blue|#66b797", "Tidal Wave|#1278b6", "Tyrian Navy|#2a414f",
         "Warrior Skin|#a37051", "Zealot Yellow|#f4d008", "Aegis Suit Satin Varnish|#f4f7f7",
         "Anti-Shine Matt Varnish|#f0f0f0", "Chaotic Red|#6c2a31", "Goblin Green|#1e8430",
+        // v48: everything else in the list for this brand (Warpaints Air, Warpaints, D&D Nolzur's Marvelous Pigments, D&D Underdark Set, D&D Undead Set, Metallic Colours Paint Set, Skin Tones Paint Set, Skin Tones Paint Set - Washes, D&D Nolzur's Marvelous Pigments Wash, Warpaints Tone, D&D Nolzur's Marvelous Pigments Primer, Speedpaint Set, Warpaints Wash): 229
+        "Abomination Gore|#a32f26", "Abyssal Black|#21201d", "Ancient Mummy|#fdeaa9", "Angelic Yellow|#f9df1c",
+        "Archangel Red|#c52822", "Arid Earth|#fdedc7", "Azure Magic|#005d78", "Babe Blonde|#fbdc04",
+        "Banshee Brown|#bfa59b", "Barren Yellow|#845b25", "Basilisk Brown|#cf8100", "Beholder Purple|#a893b3",
+        "Bleached Bone|#dfd9b7", "Bleached Skull|#f5f4f0", "Blue Flux|#008bbd", "Bogey Green|#a1bd67",
+        "Brethil Flesh|#c4915a", "Broodmother Purple|#26233b", "Brown Wash|#352a16", "Bugbear Brown|#7b561e",
+        "Bullwhack Brown|#8a6243", "Cadre Grey|#8e9999", "Cambion Crimson|#9c1a1d", "Canopy Green|#abbe55",
+        "Castle Grey|#8d887f", "Centaur Skin|#e3b1a5", "Charred Bone|#8c7757", "Chimera Red|#621723",
+        "Cold Flesh|#e7f0f9", "Combat Fatigues|#868e59", "Commando Green|#847f37", "Consul Blue|#526899",
+        "Corpse Pale|#efd0af", "Cosmic Dust|#eee47d", "Coven Purple|#7b5a85", "Crow Hue|#424b47",
+        "Crusted Sore|#843046", "Crypt Wraith|#5d5f4d", "Cultist Robe|#787164", "Cursed Blade|#7b482a",
+        "Cypress Brown|#544537", "Dark Skin Wash|#332123", "Dark Sky|#354653", "Dark Stone|#49383c",
+        "Deep Blue|#0e4e76", "Dirt Spatter|#603920", "Drab Green|#7f815c", "Dragonfire Red|#cf2529",
+        "Drake Tooth|#d5d2bd", "Drakolich Scales|#6d7fa3", "Dry Rust|#e74f35", "Duergar Metal|#582121",
+        "Dungeon Grey|#676b70", "Dungeon Stone|#666d74", "Dwarven Bronze|#cd601f", "Electric Blue|#5288b8",
+        "Elemental Bolt|#158e76", "Elf Green|#4b5212", "Elven Armor|#1b3061", "Elven Armour|#003d81",
+        "Elven Flesh|#e6ad86", "Encarmine Red|#721824", "Eternal Blue|#5a7f93", "Ethereal Specter|#c1afbb",
+        "Exile Green|#4c685b", "Faerzress Purple|#87146e", "Fair Skin|#eacdad", "Fairy Dust|#8c8c8c",
+        "Fairy Pink|#81375f", "Feral Green|#5d8758", "Fey Pink|#c384a6", "Feywild Emerald|#006e40",
+        "Feywild Glow|#f2cc9e", "Field Grey|#7d807b", "Filthy Cape|#7d785a", "Fire Lizard|#f07000",
+        "Firenewt Orange|#f6aa0d", "Flesh Wash|#4a1b0e", "Flumph Pink|#e69d63", "Fog Grey|#7a97b1",
+        "Garment Pigment Toner|#752330", "Gauss Green|#63a33c", "Gelatinous Blue|#c7cfe3", "Gemstone|#ae1c28",
+        "Ghostly Blue|#3a9dd5", "Ghostly Vapours|#a5c5c0", "Ghoul Grey|#b9bec4", "Glistening Blood|#b3082d",
+        "Glitter Green|#007b3a", "Gloss Varnish|#f7f7f7", "Gnome Cheeks|#978376", "Goblin Skin|#e0b26a",
+        "Gorgon Hide|#cfd7e7", "Green Flame|#81ac36", "Gremlin Green|#4a5a2b", "Grey Primer|#919296",
+        "Griffon Blue|#20477a", "Grimoire Purple|#724860", "Grung Green|#9dc29e", "Hardened Carapace|#44453b",
+        "Hazardous Smog|#60ab97", "Hemp Rope|#977c3a", "Hobgoblin Hue|#f3dbc0", "Hot Pink|#cb4485",
+        "Husk Brown|#562f22", "Hydra Turqoise|#1e939c", "Ice Storm|#3ba0cb", "Imp Yellow|#e3be6a",
+        "Incursion Orange|#d7752a", "Ionic Blue|#3992c5", "Iron Wolf|#354b57", "Jungle Green|#779f37",
+        "Ki-Rin Gold|#af8102", "Kobold Red|#6d1f0c", "Kobold Skin|#c79c79", "Kraken Blue|#055e8f",
+        "Kraken Skin|#71bf87", "Lawfull White|#feffff", "Leviathan Light|#b5d2ba", "Lich Blue|#094073",
+        "Lich Skin|#83827b", "Magnolia Brown|#2c2c24", "Majestic Fortress|#006856", "Malignent Green|#b2b886",
+        "Mars Red|#d33830", "Merfolk Turquoise|#019096", "Meteor Rock|#d7af2b", "Mid Brown|#925a11",
+        "Military Shader|#4c631c", "Militia Green|#273124", "Minotaur Hide|#a34521", "Mithral Silver|#808182",
+        "Molten Orange|#7d3222", "Monster Brown|#9d6a5f", "Moon Dust|#e4cb63", "Mouldy Clothes|#3a7529",
+        "Mouldy Wash|#41630c", "Mummy Robes|#efded6", "Mutant Hue|#ac8a8d", "Mythical Orange|#e22e0d",
+        "Necromancer Cloak|#413c47", "Neon Yellow|#fede40", "Night Scales|#232023", "Nomad Flesh|#b3614b",
+        "Obsidian Pigment Toner|#1f2224", "Ocean Depths|#054c5b", "Omega Blue|#1f3863", "Oozing Purple|#b29db7",
+        "Orange Magma|#c52822", "Orc Blood|#904b7a", "Otyugh Brown|#deb57d", "Owlbear Brown|#5f3d27",
+        "Pearl Pigment Toner|#ebe4e1", "Pestilent Flesh|#70733b", "Phantasmal Blue|#5cadb3", "Phoenix Flames|#f7a103",
+        "Pixiedust Pink|#d27f84", "Poisonous Cloud|#cfda2f", "Potion Green|#618a72", "Psychic Shock|#5da490",
+        "Purple Worm|#826d8d", "Putrid Slime|#c4b107", "Quickshade Wash Mixing Medium|#eeefef", "Raven Black|#2b3030",
+        "Rawhide Brown|#4f3826", "Rebel Red|#741434", "Regiment Grey|#424b4a", "Rigid Leather|#521c02",
+        "Rosy Skin|#f7bf96", "Royal Cloak|#1c9095", "Royal Purple|#701b55", "Ruddy Skin|#bb7962",
+        "Ruinous Spell|#375242", "Rust Monster|#e5581e", "Safety Orange|#de8f58", "Sapphire Gem|#1c477e",
+        "Savage Green|#164f2c", "Scaly Hide|#939f8c", "Scar Tissue|#cf8c73", "Shadow Wash|#000103",
+        "Shark White|#959f9c", "Silver Dragon|#b2b2b3", "Snake Scales|#8eae11", "Soft Skin Wash|#6b412b",
+        "Spaceship Exterior|#d6d6d6", "Stirge Tan|#c47a7b", "Stone Golem|#c3c5be", "Storm Wolf|#9daed2",
+        "Strong Skin Wash|#382a22", "Succubus Red|#aa262f", "Sulfide Ochre|#c78600", "Talisman Purple|#ce859c",
+        "Tanned Flesh|#bb6f51", "Thunder Storm|#1e2931", "Toxic Boils|#a66e7d", "Toxic Mist|#63b0b5",
+        "Traitor Red|#34251f", "Treant Green|#409b4b", "Troglodyte Blue|#2588b9", "Troll Claws|#cb883e",
+        "Troll Skin|#06381f", "Twilight Sky|#1b455f", "Underdark Grey|#7f7372", "Underdark Indigo|#205286",
+        "Undergrowth Green|#507d35", "Unforgiven Green|#242923", "Vampire Garments|#a12f24", "Vampire Red|#98172a",
+        "Venom Wyrm|#6a653e", "Viking Blue|#1c5b98", "Violet Volt|#764287", "Viper Brown|#9b5f4c",
+        "Voidshield Blue|#5bbcd7", "Warlock Purple|#c34d81", "Warpaints Mixing Medium|#eff1f0",
+        "Wasteland Soil|#844857", "Werewolf Fur|#796352", "Wet Mud|#9e3e35", "Wildling Flesh|#de937b",
+        "Witch Brew|#919634", "Witchbane Plum|#601841", "Wizards Orb|#2a6a5b", "Wraith Black|#3c3f50",
+        "Wyrmling Red|#b43646", "Xanathar Blue|#2eb5b0", "Yellow Dune|#c2994d", "Yeti White|#b7babf",
+        "Zephyr Pink|#b4406f", "Zombie Flesh|#b0c194",
       ],
       // Pro Acryl (with Signature Series), plus (v48) the primers and washes: 131
       "Pro Acryl": [
@@ -705,7 +975,8 @@
         "Brown Wash|#2c170e", "Flesh Wash|#734238", "PRIME Black|#18191b", "PRIME Black Brown|#404240",
         "PRIME Dark Camo Green|#3a3f39", "PRIME Dark Neutral Grey|#303839", "PRIME White|#e7e9e4",
       ],
-      // AK 3rd Gen (standard, metallic, intense, ink), plus (v48) figures, primers, auxiliaries and pastels: 277
+      // AK 3rd Gen (standard, metallic, intense, ink), plus (v48) every other AK range in the list (3rd Gen figures, AFV, air, primers,
+      // auxiliaries and pastels, and the earlier AFV, air, naval, figures and general ranges): 778
       "AK Interactive": [
         "Alga Green|#555e1b", "Aluminium|#afafaf", "Amaranth Red|#cf4e27", "Amethyst Blue|#332a47",
         "Anodized Violet|#9d8696", "Anthracite Grey|#1c2a2b", "Aquatic Turquoise|#006557",
@@ -776,6 +1047,181 @@
         "Splittermuster Green Spots|#303e27", "Tracks Surface Primer|#5d3b2c", "Us Olive Base Uniform|#544c1e",
         "Varnish Gloss|#fefefe", "Varnish Matt|#dadbe1", "Varnish Satin|#f5f6f8", "Waffen Brown|#634427",
         "Waffen Brown Grey|#4a392f", "Waffen Green|#323f23", "Waffen Red Brown|#4b2d25", "White Primer|#eaeaea",
+        // v48: everything else in the list for this brand (AFV, Air, Air (3rd Gen), Figures, AFV (3rd Gen), General, Naval): 501
+        "3b Au Basic Protector|#3b4039", "3b Au/zb Au|#1f2211", "4b0 Russian Green|#53573e",
+        "507a Admirality Dark Grey|#455056", "507b Admirality Medium Grey|#585e5a",
+        "507c Admirality Light Grey|#909599", "6k Russian Brown|#52493a", "7k Russian Tan|#766a44",
+        "A-14 Interior Steel Grey|#4a4a4a", "A-18f Light Grey-blue|#87a6a0", "A-19f Grass Green|#536639",
+        "A-21m Light Yellowish Brown|#83744b", "Adc Grey Fs 16473|#9faaa6", "Ae-9/aii Light Grey|#858c62",
+        "Aggressor Blue Fs 35109|#3b6c71", "Aggressor Grey Fs 36251|#818284", "Aii Green|#323d1b",
+        "Aii Light Blue|#7ba3ad", "Air Superiority Blue Fs 35450|#89afc2", "Aircraft Grey Green|#494e38",
+        "Aluminium Chipping|#d0d0d0", "American Blue -80-|#649e92", "Amt-1 Light Brown|#635b48",
+        "Amt-11 Blue Grey|#353638", "Amt-12 Dark Grey|#293436", "Amt-4 (a-24m) Green|#405021",
+        "Amt-7 (a-26m) Black|#0a0a0a", "Amt-7 (a-28m) Light Blue|#688490", "Amt-7 Light Blue|#6790a6",
+        "Ana 613 Olive Drab|#595647", "Ana613 Olive Drab|#5a564a", "Ao Midori Iro (blue -green)|#0d352c",
+        "Apc Interior Light Green (fs24533)|#c9cba3", "Australian Black|#32352e",
+        "Australian Camouflage Brown|#aa8c5a", "Australian Camouflage Green|#5f621f", "Australian Tan|#ae9463",
+        "B20 Light Grey|#80837a", "B5 Dark Blue Grey|#626d67", "Basalt Grey / Black Uniform|#41413f",
+        "Base Flesh -17-|#6e4937", "Base Green (protective)|#373622", "Basic Intense Yellow|#ffcf00",
+        "Battleship Grey|#768a89", "Beige / Splittermuster Light|#818f6c", "Beige Brown|#8f5e36",
+        "Black Grey|#2b2b2b", "Black Grey / Bla Uniform|#2b2321", "Black Rubber|#211917", "Bleached Linen|#f5e8b4",
+        "Blue Fs 35190|#5c979f", "Blue Gray|#668297", "British Dark Olive Green Pfi|#49442e",
+        "British Desert Pink Zi|#f09060", "British Khaki Brown Base|#534431", "British Light Mud|#a5915e",
+        "British Sand Yellow|#eeb041", "British Uniform / WWI British Uniform Base -21-|#5e4b2d",
+        "Bronze -89-|#b78629", "Bronze Green|#273423", "Brown Grey|#3f3128", "Brown Leather|#574531",
+        "Brown Olive Drab / US Olive Drab -39-|#41372d", "Bsc. Nº31 Light Stone|#9e8f4e", "Bsc. Nº34 Slate|#535444",
+        "Bsc. Nº49 Purple Brown|#473231", "Bsc. Nº61 Khaki Drab|#544937", "Bsc. Nº64 Portland Stone|#d5d098",
+        "Buff Dark Shade|#857748", "Buff Light Shade|#b39d52", "Bullet Metal Case|#c7910b",
+        "C2 Trainer Yellow|#e08d15", "Camouflage Grey Fs 36622|#c1bfb2", "Canvas Tone -65-|#9f8f53",
+        "Carc Tan 686a (fs33446)|#b69262", "Cha Kasshoku (tea Colour)|#685245", "Chipping Color|#362e2b",
+        "Chocolate Brown|#5e4a32", "Clear Doped Lenen Ver.2|#dcc985", "Clear Doped Linen|#c8bb8f",
+        "Cockpit Grey|#858579", "Cockpit Turqoise|#367665", "Copper -87-|#bb7956",
+        "Cork Brown / Waffen Spring/ Summer Highlight -25-|#876645", "Cremeweiss|#e8dead",
+        "D1 Deep Green Black|#181f18", "D2 Green Black|#1a2425", "Dark Blue / Blue Tank Crew Base -73-|#1f282f",
+        "Dark Blue Green / Green Uniform Shadows -41-|#2d2e1e", "Dark Ghost Grey Fs 36320|#89939c",
+        "Dark Green (fs34102)|#363d1e", "Dark Grey / Field Grey Shadows -57-|#2f2a24",
+        "Dark Gull Grey Fs 36231|#7f8386", "Dark Olive Drab 41|#524f40",
+        "Dark Olive Green / M-43 Uniform Green Olive -43-|#434b26", "Dark Olive Green Pfi Disruptive|#404234",
+        "Dark Sand / WWI British Uniform Light -11-|#826933",
+        "Dark Sea Blue / WWI French Uniform Shadow -72-|#151f20", "Dark Tracks|#3f3b2f", "Dark Violet -71-|#2c223d",
+        "Dark Wood Grain|#614635", "Deck Blue 20 B|#272f31", "Deck Tan / Grey Highlights -69-|#968f72",
+        "Deep Green -51-|#325736", "Deep Sea Blue|#36434c", "Deep Sky Blue -78-|#3398c4",
+        "Desert Yellow / Desert Uniform Lights -8-|#c49b4b", "Dry Light Mud|#ac914e",
+        "Duck Egg Blue Fs 35622|#c3cfc5", "Dull Dark Green (fs 34092) 17 Ml|#252f24",
+        "Dull Dark Green Fs 34092|#485750", "Dunkelgelb Base|#847136", "Dunkelgelb Dark Base|#695322",
+        "Dunkelgelb High Light|#d8c664", "Dunkelgelb Light Base|#a08d41", "Dunkelgelb Shadow|#373121",
+        "Dunkelgelb Shine|#f7ea8c", "Dunkelgrau Base|#454744", "Dunkelgrau Dark Base|#3b4141",
+        "Dunkelgrau High Light|#61615f", "Dunkelgrau Light Base|#4d4d4b", "Dunkelgrau Shadow|#3c3c3a",
+        "Dunkelgrau Shine|#a8a7a5", "Dust|#ab9765", "Emblem Red -30-|#9e1f0c", "Exhaust Silencer|#47392e",
+        "F-15 Dark Grey (mod Eagle) Fs 36176|#6e7881", "FS 16440 Light Gull Gray|#a6a68a",
+        "FS 16473 Adc Grey|#aebbc1", "FS 17875 White|#fbfbfb", "FS 30219 Dark Tan|#6b4c2d",
+        "FS 30279 Desert Tan|#805c38", "FS 33531 Sand|#d9c0a2", "FS 33613 Radome Tan|#edb94c",
+        "FS 34079 Dark Green|#36382a", "FS 34102 Medium Green|#484735", "FS 34227 Green|#779579",
+        "FS 34258 Green|#80915a", "FS 35164 Intermediate Blue|#364143", "FS 35237 Medium Grey|#61696b",
+        "FS 35450 Air Superiority Blue|#6e7a90", "FS 35622 Light Blue 17 Ml|#cddbce",
+        "FS 36118 Medium Gunship Grey|#4a5664", "FS 36176 F-15 Dark Grey|#6e7a90", "FS 36251 Agressor Grey|#75807c",
+        "FS 36270 Medium Grey 17 Ml|#767f86", "FS 36307 Light Sea Grey|#847e5c", "FS 36320 Dark Ghost Green|#757e7b",
+        "FS 36375 Light Ghost Grey|#a4a38f", "FS 36622 Camouflage Grey|#a19e8d", "FS 37886 Offwhite|#eee5dc",
+        "Faded White -3-|#e7e4dd", "Faded Yellow -5-|#ffaf10", "Field Drab (fs30118)|#58401e",
+        "Field Green Fs 34097|#686d2a", "Flat Black|#2b2c27", "Forest Green (fs34079)|#2a3517",
+        "French Army Desert Sand|#d0a66c", "French Army Desert Sand (sable Désert Ir)|#c39c65",
+        "French Army Green|#4b584e", "French Army Green (vert Kaki)|#4a4d44", "French Army Grey-blue|#2f4747",
+        "French Army Grey-blue (gris/bleu Moyen Clair A625)|#40484a", "French Artillery Grey|#5d6769",
+        "French Brown|#533a24", "French Green 2|#30332a", "French Green 1|#3c442f", "French Milky Coffee|#927a4a",
+        "Freshly Cut Timber|#c4b186", "Gilt Metal -85-|#b09b00", "Glaze Medium -90-|#b7b7b7", "Golden Flesh|#d59442",
+        "Golden Olive / Waffen Spring / Summer Light Green Spots -52-|#94ad48",
+        "Golden Sand / Desert Uniform Base -10-|#907131", "Granite Grey / Field Grey Base 2 -56-|#45473a",
+        "Green Black / Waffen Spring/ Summer Dark Spots -40-|#1d2a19", "Green Fs 34258|#7f815a",
+        "Green Khaki|#4d4d35", "Green Uniform Base -48-|#3e402b", "Grey (fs 36081)|#25221d",
+        "Grey Blue / Grey Blue / German Grey Uniform Light -62-|#64706e",
+        "Grey Green / Filed Grey Lights -68-|#787a53", "Grey-blue 1920s-1930s|#9ab2a4",
+        "Greyish Blue / WWI French Uniform Base -75-|#3b4f50", "Greyish Yellow|#bbb27b", "Gun Metal -88-|#7e7e7e",
+        "HairAKanshoku (grey Indigo)|#485b59", "HairAKyokushoku (grey-green)|#a7a898",
+        "Have Glass Grey Fs 36170|#6e6d6b", "Haze Grey 5 H|#767467", "Idf Early Sand Yellow|#8f7f4b",
+        "Idf Green|#524b38", "Idf Modern Grey|#6d582d", "Idf Sand Grey 1970s-1980s|#73643b",
+        "Idf Sand Grey 73|#797655", "Idf Sinai Grey 82|#4c5248", "Idf Sinai Grey Modern|#585147",
+        "Ija 1 Hairyokushoku (grey-green)|#a7a896", "Ija 21 Midori Iro (green)|#2f422c",
+        "Ija 27 Ao Midori Iro (blue-green)|#02362a", "Ija 29 Ki Midori Iro (yellow-green)|#767026",
+        "Ija 3 Hairanshoku (grey Indigo)|#495e59", "Ija 30 Karekusa Iro (dry Grass)|#867855",
+        "Ija 31 Cha Kasshoku (tea Colour)|#665043", "Ija 7 Ohryuko Nana Go Shoku (Olive Brown)|#4f4929",
+        "Ijn D1 Deep Green Black|#29352b", "Ijn D2 Green Black|#253532", "Ijn J3 Hai-iro (grey)|#919388",
+        "Ijn J3 Sp (amber Grey)|#948e74", "Ijn M3 (m) Mitsubishi Interior Green|#666232",
+        "Ijn M3 (n) Nakajima Interior Green|#4f4929", "Ijn Q1 Anti-glare Blue-black|#1b2325",
+        "Ijn/ija Aotake|#015e70", "Insignia White Fs 17875|#e5e7da", "Intense Blue -77-|#19628f",
+        "Intense Red|#e34518", "Interior Green|#41472d", "Intermediate Grey|#648c45", "Ivory -2-|#def2cd",
+        "J3 Hai-iro (grey)|#828771", "J3 Sp (amber Grey)|#807641", "Karekusa Iro (dry Grass)|#87784f",
+        "Khaki / Splittermuster Base|#59553a", "Khaki Green No.3|#4f4231",
+        "Khaki Green Nº3 (new Service Colour)|#413e2d", "Ki Midori Iro (yellow-green)|#766f27", "Laf Green|#33362d",
+        "Light Blue -79-|#7ec3e0", "Light Flesh -16-|#ad7449", "Light Ghost Grey Fs 36375|#9ca5ac",
+        "Light Green Nº5|#4a4a26", "Light Grey|#a09d8c", "Light Grey / WWI French Uniform Light -63-|#8c9576",
+        "Light Grey 5 L|#c4c7b4", "Light Grey Brown|#b4a270", "Light Grey Fs 36495|#c3c7c6",
+        "Light Gull Grey Fs 16440|#adada3", "Light Red -33-|#f65539", "Light Sand|#bb9f6d",
+        "Light Stone No.61|#d1b359", "Light Yellow Green|#6d7441", "M-485 Blue Gray|#6b7e85",
+        "M-485 Blue-grey|#70848b", "M-485 Light Gray|#959686", "M3 (m) Mitsubishi Interior Green|#545c2d",
+        "M3 (n) Kakajima Interior Green|#4a4a30", "MS3 Medium Green Grey|#6b6f60", "Medium Brown|#695032",
+        "Medium Green 42|#46523e", "Medium Grey / German Grey Uniform -58-|#2a3436", "Medium Grey Fs 36270|#84898c",
+        "Medium Gunship Grey Fs 36118|#5d616a", "Medium Red Brown / Waffen Spring/ Summer Base -18-|#574539",
+        "Merdc Sand (fs30277)|#866e48", "Middle Grey|#8b8b81", "Midori Iro (green)|#304327",
+        "Mig-25/mig-31 Grey|#bfc0bb", "Mno 2036 Smalt Khaki Avion|#868267", "Modern Spanish Green|#2c341d",
+        "Mustard Yellow|#cb982f", "Nato Black|#2f2b2c", "Nato Brown|#493325", "Nato Green|#45473a",
+        "Navy Blue 5 N|#333438", "Neutral Grey 43|#696e72", "New Iraqi Army Sand|#d8bc7d",
+        "New Iraqui Army Sand|#ccb277", "Nº1 Light Green (fs34151)|#5f621f", "Nº13 Desert Sand|#97836b",
+        "Nº13 Desert Sand (fs30279)|#a78464", "Nº5 Earth Brown|#382b1b", "Nº5 Earth Brown (fs30099)|#4f3a27",
+        "Nº6 Earth Yellow|#8a6133", "Nº6 Earth Yellow (fs30257)|#a67437", "Nº8 Earth Red|#572c1c",
+        "Nº8 Earth Red (fs30117)|#6d3d26", "Nº9 Olive Drab (fs33070)|#3d4023", "Ocean Gray|#555b67",
+        "Ocean Gray (fs35164)|#4b5b6b", "Ocean Gray 5o|#464a49",
+        "Ocher Khaki / M-44 Uniform Green Ocher Khaki -24-|#ca9c24", "Ohryuko Nana Go Shoru (olive Brown)|#4e472a",
+        "Oif & Oef – US Vehicles Base|#b8a178", "Old Rust|#4d3827", "Olive Drab Base|#555032",
+        "Olive Drab Dark Base|#4a4833", "Olive Drab High Lights|#6b6243", "Olive Drab Light Base|#615c36",
+        "Olive Drab Lustreless|#515232", "Olive Drab Nº9|#323325", "Olive Drab Shadow|#3d3c2a",
+        "Olive Drab Shine|#877a4d", "Olive Green / Green Uniform Lights -66-|#636033",
+        "Olive Grey / Field Grey Base -55-|#484534", "Olivgrün Base|#5f7537", "Olivgrün Light|#849547",
+        "Olivgrün Shadow|#4a4f39", "Orange / Strong Ochre|#fc6c16", "Pale Sand -7-|#ffe090", "Pale Tan|#f0c871",
+        "Pb20 Dark Blue|#1b1f2a", "Pc10 Early|#403d2c", "Pc10 Late|#3c412a", "Pc12|#3e352c",
+        "Periscope Shade|#282e2c", "Pla Cool Blue White|#b6d4cc", "Pla Dark Blue|#304246",
+        "Pla Intense Green|#65803b", "Pla Intermediate Blue|#285a75", "Pla Light Blue|#93dbea",
+        "Pla Sea Blue|#1d2941", "Polizei / Waffen Ss Grün|#46564c", "Portland Stone No.64|#f1dfa1",
+        "Protective Green|#43493b", "Protective Green 1920s-1930s|#24361e",
+        "Prussian Blue / Blue Tank Crew Lights -74-|#2c3d4d", "Pure Black -84-|#000000",
+        "Q1 Anti-glare Blue-blacl|#151716", "RAL 2005 Luminous Orange (leuchtorange)|#da7f0d",
+        "RAL 5008 Grey-blue (graublau)|#293a42", "RAL 6003 Olivgrün Opt.1|#46483d", "RAL 6003 Olivgrün Opt.2|#4c4d3b",
+        "RAL 6011 Resedagrün|#546038", "RAL 6011b Resedagrün|#4c5631", "RAL 6014 Yellow Olive (gelboliv)|#6e705b",
+        "RAL 7001 Silver Grey (silbergrau)|#a5b2ba", "RAL 7008 Graugrün|#5b4f37", "RAL 7008 Graugrün Opt 2|#666e3f",
+        "RAL 7012 Basalt Grey|#778c91", "RAL 7017 Dunkelbraun|#575040", "RAL 7021 Dunkelgrau|#303028",
+        "RAL 7027 Grau|#aca08a", "RAL 7028 Dg I Dunkelgelb|#9e8b50", "RAL 7028 Dg Iii Dunkelgelb|#d1b65d",
+        "RAL 7028 Dunkelgelb (initial)|#92864a", "RAL 7030 Stone (steingrau) Grey|#908d84",
+        "RAL 7037 Dunkelgrau|#5a5752", "RAL 7037 Dunkelgrau 51|#707068", "RAL 7038 Hellgrau|#bab6ab",
+        "RAL 7044 Silk Grey (seidengrau)|#b7b5a9", "RAL 7050 F7 German Sand Beige|#696a48",
+        "RAL 8000 Gelbbraun|#877c5c", "RAL 8008 Olive Brown (olivbraun)17ml|#9f7b5b", "RAL 8012 Rotbraun|#6e3d1d",
+        "RAL 8013 Schiffsbodenfarbe Iii Rot 5|#793e2e", "RAL 8017 Schokobraun|#453424", "RAL 8020 Gelbbraun|#d6af6e",
+        "RAL 8031 F9 German Sand Beige|#baac7d", "RAL 8031 F9 German Sand Brown|#c8946f", "RAL Cremeweiss|#e6db9b",
+        "RLM 02|#5a5e45", "RLM 04|#f8ac09", "RLM 61 / RLM 81|#3c3429", "RLM 62 / RLM 82|#3d472c", "RLM 63|#819071",
+        "RLM 65|#829a84", "RLM 66|#2d2e29", "RLM 70|#272924", "RLM 71|#3e4130", "RLM 72|#1f1f1d", "RLM 73|#22231b",
+        "RLM 74|#423f2e", "RLM 75|#40413c", "RLM 76|#93a58b", "RLM 78|#6a807e", "RLM 79|#694724", "RLM 80|#332f23",
+        "RLM 83|#1b1e27", "RN Hull Red|#572711", "Radome &amp; Wheel Hub Green|#2c652e", "Radome Green|#3f5232",
+        "Radome Tan Fs 33613|#e7c7a1", "Raf Azure Blue|#7c9cc3", "Raf Camouflage (barley) Grey Bs381c/626|#949c9e",
+        "Raf Camouflage Beige (hemp) Bs381c/389|#9c947f", "Raf Cockpit Grey-green|#728067",
+        "Raf Dark Camouflage Grey Bs381c/629|#72797f", "Raf Dark Earth|#4a4132", "Raf Dark Green|#2e2e26",
+        "Raf Dark Sea Grey Bs381c/638|#676a6f", "Raf Dark Slate Grey|#5e5c50",
+        "Raf Extra Dark Sea Grey Bs381c/640|#4c555c", "Raf Light Aircraft Grey Bs381c/627|#afb0aa",
+        "Raf Medium Sea Grey|#6b6b63", "Raf Medium Sea Grey Bs381c/637|#818c92", "Raf Middle Stone|#867338",
+        "Raf Ocean Grey|#5c6769", "Raf Pru Blue Bs381c/636|#526a76", "Raf Sky|#a9c29b", "Raf Sky / Fs 34424|#b3b59f",
+        "Raf Sky Grey|#a0a4a3", "Ral 1039 F9 Sandbeige|#bb9b62", "Ral 6007 Grün|#2a2d1c",
+        "Ral 6040 F9 Helloliv|#675a30", "Ral 7009 Hellgrau|#65624f", "Ral 7028 Dunkelgelb (variant)|#e3cf88",
+        "Ral 7028 Dunkelgelb Ausgabe 1944|#967b36", "Ral 8013 Rotbraun|#531812", "Ral 8017 Rotbraun|#3c251d",
+        "Ral 8020 Braun|#ac8355", "Ral 8031 F9 Sandbraun|#a37841", "Red / Vermilion Cadmium Red.|#e32a18",
+        "Red Acrylic Color|#be4331", "Red Brown / Red Brown Leather -19-|#8e311f", "Red Primer Base|#4f392e",
+        "Red Primer Dark Base|#43342f", "Red Primer High Light|#704b39", "Red Primer Light Base|#624537",
+        "Red Primer Shadow|#382d29", "Red Primer Shine|#ac724a", "Rlm 02 Rlm-grau (1938)|#979481",
+        "Rlm 02 Rlm-grau (1941)|#817c5e", "Rlm 61|#58504d", "Rlm 62|#65684b", "Rlm 65 (1938)|#85a1a4",
+        "Rlm 65 (1941)|#90a096", "Rlm 66 (1938)|#343c3e", "Rlm 66 (1941)|#51524c",
+        "Rlm 76 Late War Variation|#c1c19d", "Rlm 76 Version 1|#a8b5a4", "Rlm 76 Version 2|#aebebe",
+        "Rlm 78 (1941)|#80979f", "Rlm 78 (1942)|#889d98", "Rlm 79 (1941)|#e6a058", "Rlm 79 (1942)|#9c704d",
+        "Rlm 81 Version 1|#575644", "Rlm 81 Version 2|#464c3e", "Rlm 81 Version 3|#5a5044", "Rlm 82|#4d5b4a",
+        "Rotbraun Base|#43322a", "Rotbraun Light|#825133", "Rotbraun Shadow|#6c422c", "Rubber / Tires|#383838",
+        "Russian 4bo Base|#535b36", "Russian 4bo Dark Base|#373528", "Russian 4bo High Light|#727c48",
+        "Russian 4bo Light Base|#5e663d", "Russian 4bo Shadow|#373330", "Russian 4bo Shine|#99a76c",
+        "Russian Dark Brown 6k|#321507", "Russian Green 4bo|#4c4d25", "Russian Sand 7|#967e50",
+        "Russian Uniform Base -49-|#5d5d37", "Russian Uniform Lights -54-|#878a43",
+        "Russian Uniform Shadow -46-|#494a2b", "Rusty Tracks|#4d3b27", "S.c.c. No.15 Olive Drab|#4d4b32",
+        "S.c.c. No.1a Very Dark Brown|#371e17", "S.c.c. No.2 Brown|#855f2e", "Sand Fs 33531|#c6b49e",
+        "Satin Black|#262626", "Sea Blue|#232f3b", "Sea Blue 5 S|#363b37", "Semtex Green|#3c4725",
+        "Shadow Flesh -29-|#78342b", "Shadow Rust|#4b3d32", "Silver & Metal Midtones|#d2d2d2",
+        "Silver Grey No.28|#9f9d6a", "Sla Blue|#43605c", "Slate No.34|#4d4c2d", "Spanish Green Acrylic Color|#5a5336",
+        "Stone Grey|#53524d", "Tan / Global Light|#946e3f", "Turquoise -76-|#0f3e44", "US Field Drab -23-|#926723",
+        "Umber / British Uniform Shadow -35-|#2b2620", "Us Army Helo Drab Fs 34031|#464742",
+        "Us Interior Yellow Green|#868567", "Usmc Forest Green Nr28 (fs34079)|#3f422f", "Usmc Green Fs 34095|#585a19",
+        "Usmc Sand Fs 33711|#f8d092", "Varnished Wood|#7a5336", "Violet -70-|#543a7b",
+        "WWI Brithish Khaki Brown Base|#3b3422", "WWI Brithish Khaki Brown Highlights|#615233",
+        "WWI German Dark Green|#262a29", "WWI German Fokker Grey|#3a3f39", "WWI German Grey-green Primer|#70735e",
+        "WWI German Light Blue|#9fb0ba", "WWI German Light Green|#404d31", "WWI German Lilac|#523839",
+        "WWI German Mauve|#4d3c4c", "WWI German Red Brown|#482d1a", "Washable White Paint|#ffffff",
+        "Weathered Wood|#463d34", "Western Appoaches Blue|#c1d1c6", "Western Appoaches Green|#709369",
+        "White -1-|#f5f5f5", "White Acrylic Color|#ffffff", "Wood Base|#a59468", "Wood Grain|#503a2d",
+        "Wooden Deck|#ad9557", "Wwi British Khaki Brown Base|#52412d", "Wwi French Artillery Grey|#545d6c",
+        "Wwi French Brown|#4d2a17", "Wwi French Green 1|#373f2a", "Wwi French Green 2|#2a281c",
+        "Wwi French Milky Coffee|#9a7b4d", "Yellow Acrylic Color|#fcc834", "Yellow Green|#898555",
+        "Zinc Chromate Yellow|#e2d200",
       ],
       // v48: Scale 75, every range in the list (Scale Color, Fantasy & Games, Warfront, Instant Colors, Metal N Alchemy, Inktensity, FX, Artist, Soil Works, primers): 350
       "Scale75": [
@@ -951,39 +1397,76 @@
         "Witching Hour Blue|#326ab3", "Wizard Grey|#6d6b6c", "Wolf Grey|#627587", "Wyvern Green|#404942",
         "Yellow Flame|#f8af2b", "Yellow Glaze|#f2f075", "Zombie Rot|#b1b679",
       ],
-      // v48: Tamiya Acrylics (the X and XF mini pots), with code numbers: 102
+      // v48: Tamiya, with code numbers: acrylics (the X and XF mini pots), lacquers (LP) and sprays (TS and AS): 208
       "Tamiya": [
-        "Black|#000000|X-1", "Black green|#00260f|XF-27", "Blue|#09347b|X-4", "Bronze|#672622|X-33",
-        "Brown|#4d2207|X-9", "Brown (JGSDF)|#734c0c|XF-72", "Buff|#b8b36a|XF-57", "Chrome silver|#c2c8ca|X-11",
-        "Clear|#ffffff|X-22", "Clear blue|#34b3d1|X-23", "Clear green|#1a9641|X-25", "Clear orange|#fe8c14|X-26",
-        "Clear red|#fa0026|X-27", "Clear yellow|#ffe600|X-24", "Cockpit green (IJN)|#74925d|XF-71",
-        "Copper|#cc5c03|XF-6", "Dark copper|#995f3b|XF-28", "Dark green|#1a2d0f|XF-61",
-        "Dark green (JGSDF)|#1a4316|XF-73", "Dark green 2|#00250f|XF-70 XF-89", "Dark green 2 (RAF)|#ffffff|XF-81",
-        "Dark grey|#3e4448|XF-24", "Dark iron|#ffffff|XF-84", "Dark sea grey|#5c5d61|XF-54",
-        "Dark yellow|#c7b140|XF-60", "Dark yellow 2|#ffffff|XF-88", "Deck tan|#b7b187|XF-55",
+        "Black|#000000|X-1 LP-1 TS-14", "Black green|#00260f|XF-27", "Blue|#09347b|X-4 TS-15", "Bronze|#672622|X-33",
+        "Brown|#4d2207|X-9", "Brown (JGSDF)|#734c0c|XF-72 LP-25 TS-90", "Buff|#b8b36a|XF-57 LP-75", "Chrome silver|#c2c8ca|X-11",
+        "Clear|#ffffff|X-22 TS-13 LP-9", "Clear blue|#34b3d1|X-23 LP-68 TS-72", "Clear green|#1a9641|X-25", "Clear orange|#fe8c14|X-26 TS-73 LP-53",
+        "Clear red|#fa0026|X-27 LP-52 TS-74", "Clear yellow|#ffe600|X-24 LP-69", "Cockpit green (IJN)|#74925d|XF-71",
+        "Copper|#cc5c03|XF-6", "Dark copper|#995f3b|XF-28", "Dark green|#1a2d0f|XF-61 TS-2 AS-1 AS-9",
+        "Dark green (JGSDF)|#1a4316|XF-73 TS-91", "Dark green 2|#00250f|XF-70 XF-89 LP-56 AS-30", "Dark green 2 (RAF)|#ffffff|XF-81",
+        "Dark grey|#3e4448|XF-24", "Dark iron|#ffffff|XF-84 LP-54", "Dark sea grey|#5c5d61|XF-54",
+        "Dark yellow|#c7b140|XF-60 TS-3", "Dark yellow 2|#ffffff|XF-88 LP-55", "Deck tan|#b7b187|XF-55",
         "Deep green|#2e1f09|XF-26", "Desert yellow|#d89c42|XF-59", "Field blue|#364146|XF-50",
-        "Field grey|#67866b|XF-65", "Flat aluminum|#cccccc|XF-16", "Flat base|#ffffff|X-21",
-        "Flat black|#333333|XF-1", "Flat blue|#284c7b|XF-8", "Flat brown|#3e2a09|XF-10", "Flat clear|#ffffff|XF-86",
-        "Flat earth|#734834|XF-52", "Flat flesh|#fdcda1|XF-15", "Flat green|#244313|XF-5", "Flat red|#ff0000|XF-7",
-        "Flat white|#ffffff|XF-2", "Flat yellow|#ffcc00|XF-3", "German grey|#3e474a|XF-63", "Gold leaf|#cca208|X-12",
-        "Gray green (IJN)|#b8c3a7|XF-76", "Green|#00441b|X-5", "Gun metal|#505557|X-10", "Hull red|#3e0e02|XF-9",
-        "IJN gray (Kure Arsenal)|#828d93|XF-75", "IJN gray (Maizuru Arsenal)|#ffffff|XF-87",
+        "Field grey|#67866b|XF-65 TS-78", "Flat aluminum|#cccccc|XF-16 LP-38", "Flat base|#ffffff|X-21 LP-22",
+        "Flat black|#333333|XF-1 LP-3", "Flat blue|#284c7b|XF-8 LP-78", "Flat brown|#3e2a09|XF-10", "Flat clear|#ffffff|XF-86 LP-23 TS-80",
+        "Flat earth|#734834|XF-52 LP-74", "Flat flesh|#fdcda1|XF-15 TS-77 LP-66", "Flat green|#244313|XF-5", "Flat red|#ff0000|XF-7 LP-79",
+        "Flat white|#ffffff|XF-2 LP-4", "Flat yellow|#ffcc00|XF-3 LP-80", "German grey|#3e474a|XF-63 TS-4", "Gold leaf|#cca208|X-12",
+        "Gray green (IJN)|#b8c3a7|XF-76 LP-33 AS-29", "Green|#00441b|X-5 AS-13", "Gun metal|#505557|X-10 LP-19 TS-38", "Hull red|#3e0e02|XF-9",
+        "IJN gray (Kure Arsenal)|#828d93|XF-75 TS-66", "IJN gray (Maizuru Arsenal)|#ffffff|XF-87 TS-99",
         "IJN gray (Sasebo Arsenal)|#686d71|XF-77", "IJN gray (Yokosuka Arsenal)|#ffffff|XF-91",
         "J.A. green|#334a1f|XF-13", "J.A. grey|#b3ca8e|XF-14", "J.N. green|#26330b|XF-11", "J.N. grey|#b3cbae|XF-12",
-        "Khaki|#7e783f|XF-49", "Khaki drab|#29330e|XF-51", "Lemon yellow|#ffe600|X-8", "Light blue|#8fb5ad|XF-23",
-        "Light green|#66b821|X-15", "Light grey|#667679|XF-66", "Light sea grey|#7a8ba9|XF-25",
-        "Linoleum deck brown|#784629|XF-79", "Medium blue|#485b5f|XF-18", "Medium grey|#a3aa96|XF-20",
-        "Medium sea gray 2 (RAF)|#ffffff|XF-83", "Metallic blue|#1e7497|X-13", "Metallic brown|#993f06|X-34",
-        "Metallic grey|#5c6264|XF-56", "NATO black|#222424|XF-69", "NATO brown|#733007|XF-68",
-        "NATO green|#33601a|XF-67", "Neutral grey|#6c787b|XF-53", "Ocean gray 2 (RAF)|#ffffff|XF-82",
-        "Olive drab|#404b13|XF-62", "Olive drab (JGSDF)|#334012|XF-74", "Olive green|#1a3b14|XF-58",
-        "Orange|#ff7f00|X-6", "Park green|#33a44d|X-28", "Pink|#f881ac|X-17", "Purple|#474ba0|X-16",
-        "RLM grey|#7b8d7d|XF-22", "Red|#ff0000|X-7", "Red brown|#66370a|XF-64", "Red brown 2|#ffffff|XF-90",
-        "Royal blue|#1d2d53|X-3", "Royal light gray|#c1cac8|XF-80", "Rubber black|#ffffff|XF-85",
-        "Sea blue|#2e3b43|XF-17", "Semi gloss black|#333333|X-18", "Semi-gloss clear|#ffffff|X-35",
-        "Sky|#b8be77|XF-21", "Sky blue|#1d99c4|X-14", "Sky grey|#adb7c0|XF-19", "Smoke|#8f918c|X-19",
-        "Titanium gold|#cbbb72|X-31", "Titanium silver|#ccccb8|X-32", "White|#ffffff|X-2",
-        "Wooden deck tan|#d3b685|XF-78", "Yellow green|#b3c60f|XF-4",
+        "Khaki|#7e783f|XF-49 LP-73", "Khaki drab|#29330e|XF-51", "Lemon yellow|#ffe600|X-8", "Light blue|#8fb5ad|XF-23 TS-23 AS-5",
+        "Light green|#66b821|X-15 TS-22", "Light grey|#667679|XF-66", "Light sea grey|#7a8ba9|XF-25",
+        "Linoleum deck brown|#784629|XF-79 TS-69", "Medium blue|#485b5f|XF-18", "Medium grey|#a3aa96|XF-20",
+        "Medium sea gray 2 (RAF)|#ffffff|XF-83", "Metallic blue|#1e7497|X-13 TS-19", "Metallic brown|#993f06|X-34",
+        "Metallic grey|#5c6264|XF-56", "NATO black|#222424|XF-69 LP-60 TS-63", "NATO brown|#733007|XF-68 LP-59 TS-62",
+        "NATO green|#33601a|XF-67 LP-58 TS-61", "Neutral grey|#6c787b|XF-53", "Ocean gray 2 (RAF)|#ffffff|XF-82",
+        "Olive drab|#404b13|XF-62 LP-28 TS-5 AS-6", "Olive drab (JGSDF)|#334012|XF-74 LP-64 TS-70", "Olive green|#1a3b14|XF-58 AS-14",
+        "Orange|#ff7f00|X-6 TS-12", "Park green|#33a44d|X-28 TS-35", "Pink|#f881ac|X-17 TS-25", "Purple|#474ba0|X-16 TS-24",
+        "RLM grey|#7b8d7d|XF-22", "Red|#ff0000|X-7", "Red brown|#66370a|XF-64 TS-1", "Red brown 2|#ffffff|XF-90 LP-57",
+        "Royal blue|#1d2d53|X-3", "Royal light gray|#c1cac8|XF-80 TS-81", "Rubber black|#ffffff|XF-85 LP-65 TS-82",
+        "Sea blue|#2e3b43|XF-17", "Semi gloss black|#333333|X-18 TS-29 LP-5", "Semi-gloss clear|#ffffff|X-35 TS-79 LP-24",
+        "Sky|#b8be77|XF-21", "Sky blue|#1d99c4|X-14", "Sky grey|#adb7c0|XF-19", "Smoke|#8f918c|X-19 LP-67 TS-71",
+        "Titanium gold|#cbbb72|X-31 TS-87 LP-62", "Titanium silver|#ccccb8|X-32 TS-88 LP-63", "White|#ffffff|X-2 LP-2",
+        "Wooden deck tan|#d3b685|XF-78 LP-16 TS-68", "Yellow green|#b3c60f|XF-4",
+        // v48: everything else in the list for this brand (Tamiya Spray, Lacquer Paint, Aircraft Spray, Acrylics Mini Gloss): 106
+        "Acrylic thinner|#ffffff|X-20A", "Bare-metal silver|#c2c8ca|AS-12", "Base white|#ffffff|TS-101",
+        "Blue violet|#5172b3|TS-57", "Bright mica red|#e50012|TS-85", "Bright orange|#fe1b0e|TS-31",
+        "Bright red|#ff0000|TS-49 LP-50", "Brilliant blue|#0860a8|TS-44", "Brilliant orange|#ff7f00|TS-56",
+        "British green|#002b11|TS-9", "Camel yellow|#ffb300|TS-34", "Candy lime green|#4dac26|TS-52",
+        "Champagne gold|#d2c79a|LP-71 TS-75", "Chrome yellow|#ffcc00|TS-47", "Coral blue|#4eb8a3|TS-41",
+        "Dark blue|#02142e|TS-55", "Dark earth|#674b2b|AS-22", "Dark ghost gray|#80a1b0|LP-36",
+        "Dark ghost grey|#6c898e|AS-25", "Dark green (IJA)|#184316|AS-17", "Dark green (JGSDF).jpeg|#3d593f|LP-26",
+        "Dark green (Luftwaffe)|#18280d|AS-24", "Dark green 2 (IJN)|#002c12|AS-21 LP-31",
+        "Dark mica blue|#0a1423|TS-64", "Deep metallic blue|#112135|TS-53", "Dull red|#660000|TS-33",
+        "Dull red.jpeg|#7b4538|LP-18", "Fluorescent orange|#ffffff|TS-96", "Fluorescent red|#fc0019|TS-36",
+        "French blue|#3690c0|TS-10", "German gray|#415862|LP-27", "Gloss aluminum|#c2c8ca|TS-17 LP-70",
+        "Gold|#cca208|TS-21", "Gray green|#253a2e|AS-3", "Gray violet|#405367|AS-4", "Gunship gray 2|#3d4e59|AS-27",
+        "Gunship grey|#464a4b|TS-48", "Haze grey|#7b8e92|TS-32", "IJN gray<br>(Kure Arsenal)|#717b85|LP-12",
+        "IJN gray<br>(Maizuru Arsenal)|#7d8087|LP-14", "IJN gray<br>(Sasebo Arsenal)|#535760|LP-13",
+        "IJN gray<br>(Yokosuka Arsenal)|#646b75|LP-15", "IJN graySasebo Arsenal|#686d71|TS-67",
+        "Insignia white|#dddcd7|LP-35 AS-20", "Intermediate blue|#5b8e98|AS-19", "Italian red|#c63834|LP-21 TS-8",
+        "Lacquer thinner|#ffffff|LP-10", "Lavender|#6a2990|TS-37", "Light brown (DAK 1941)|#e5b36e|LP-77",
+        "Light ghost gray|#98b4c0|LP-37", "Light ghost grey|#85a0a3|AS-26", "Light gray|#a3aa96|AS-2 LP-34 AS-16",
+        "Light gray (IJA)|#a1b7a7|AS-18", "Light gray (IJN)|#c9d1c2|LP-32", "Light green (Luftwaffe)|#33701f|AS-23",
+        "Light gun metal|#777776|LP-20 TS-42", "Light metallic blue|#10667a|TS-54", "Light sand|#d1ab7c|LP-30 TS-46",
+        "Linoleum deck brown.jpeg|#564a3a|LP-17", "Maroon|#4d1202|TS-11", "Matt black|#333333|TS-6",
+        "Matt white|#ffffff|TS-27", "Medium gray|#727d7d|AS-28", "Medium sea gray|#8f9d87|AS-11",
+        "Medium sea gray 2|#aabeb9|AS-32", "Metallic black|#393d3e|TS-40 LP-40", "Metallic gold|#ddd29d|TS-84",
+        "Metallic gray|#ffffff|TS-94 LP-61", "Metallic green|#279e4f|TS-20", "Metallic orange|#ffffff|TS-92 LP-44",
+        "Metallic red|#e30017|TS-18", "Metallic silver|#d9dade|TS-83", "Mica blue|#01398e|LP-41 TS-50",
+        "Mica red|#c8171d|LP-42 TS-39", "Mica silver|#d4d9dc|LP-72 TS-76", "Mixing blue|#202a67|LP-81",
+        "Mixing red|#c8113d|LP-82", "Mixing yellow|#fed700|LP-83", "Navy blue|#28425e|AS-8",
+        "Neutral gray|#7e8789|AS-7", "Ocean gray|#525a5f|AS-10", "Ocean gray 2|#6c8c99|AS-31",
+        "Olive drab 2|#4d5613|TS-28 LP-29", "Pearl blue|#013b8f|LP-47 TS-89", "Pearl clear|#f7f9f8|LP-49 TS-65",
+        "Pearl green|#99ca90|TS-60", "Pearl light blue|#7396ba|TS-58", "Pearl light red|#cc86a3|TS-59",
+        "Pearl white|#ffffff|LP-43 TS-45", "Pearl yellow|#ffffff|TS-97", "Pure blue|#005bac|LP-6 TS-93",
+        "Pure metallic red|#ffffff|TS-95 LP-46", "Pure orange|#f18d01|LP-51 TS-98", "Pure red|#e70012|LP-7 TS-86",
+        "Pure white|#ffffff|TS-26", "Pure yellow|#fff001|LP-8", "Racing blue|#013b8f|LP-45 TS-51",
+        "Racing green|#184316|TS-43", "Racing white|#e6e6e6|TS-7 LP-39", "Semi-gloss bright gun metal|#ffffff|TS-100",
+        "Silver|#dfdfdf|LP-11", "Silver leaf|#cccccc|TS-30", "Sparkling silver|#dee0df|LP-48", "Tan|#a68354|AS-15",
+        "Yellow|#ffe600|TS-16", "Yellow-brown (DAK 1941)|#b18150|LP-76",
       ],
       // v48: Green Stuff World, every range in the list (acrylics, metallics, inks, dipping inks, colorshift, fluor, surfaces): 219
       "Green Stuff World": [
@@ -1044,12 +1527,32 @@
         "Zombie Dip|#373b22", "Zombie Flesh|#c9ac6a",
       ],
     };
+    // v48: with about 3,900 paints, checking each one against every paint before it took millions of comparisons each
+    // time the app opened, so the brand + name pairs already listed are kept in a set (the same test as sameName below).
+    const knownPairs = new Set(KNOWN_PAINTS.map(k => k.brand + "|" + String(k.name).replace(/[\u2018\u2019]/g, "'").toLowerCase()));
     for (const [brand, rows] of Object.entries(EXTRA_PAINT_TABLE)) for (const row of rows) {
       const [name, colour, codes] = row.split("|");
-      if (KNOWN_PAINTS.some(k => k.brand === brand && sameName(k.name, name))) continue;
+      const pair = brand + "|" + String(name).replace(/[\u2018\u2019]/g, "'").toLowerCase();
+      if (knownPairs.has(pair)) continue;
+      knownPairs.add(pair);
       const paint = { brand, name, colour, extra: true };
       if (codes) paint.codes = codes.split(" ");
       KNOWN_PAINTS.push(paint);
+    }
+
+    // ----- v48: Paint brands (Settings) -----
+    // Every brand the app knows paints for, in the order of the lists above. settings.brandsOff holds the ones you've
+    // switched off: their paints aren't suggested as you type, matched in pasted notes or on scanned labels, or offered
+    // in Colour ideas and the Compendium. Your own paints (Your Palette) are always searched, whatever their brand.
+    // It lists the ones that are OFF, so a brand added in a later version starts switched on.
+    const PAINT_BRANDS = [...new Set(KNOWN_PAINTS.map(k => k.brand))];
+    let searchedPaints = KNOWN_PAINTS;
+    function cleanBrandsOff(list) {
+      return Array.isArray(list) ? [...new Set(list.filter(b => typeof b === "string" && PAINT_BRANDS.includes(b)))] : [];
+    }
+    function updateSearchedPaints() {
+      const off = new Set(cleanBrandsOff(settings.brandsOff));
+      searchedPaints = off.size ? KNOWN_PAINTS.filter(k => !off.has(k.brand)) : KNOWN_PAINTS;
     }
     // Upper/lower case and curly quotes don't count when spotting a repeat (sameText isn't defined yet here).
     function sameName(a, b) { return String(a).replace(/[\u2018\u2019]/g, "'").toLowerCase() === String(b).replace(/[\u2018\u2019]/g, "'").toLowerCase(); }
@@ -1217,6 +1720,7 @@
     // v18: while a paste is read, the list is built once and kept (it was rebuilt on every
     // lookup, 100+ times per note). parseRecipeText fills and clears candidateCache.
     let candidateCache = null;
+    const knownKeys = new WeakMap();   // v48: each built-in paint's match key, worked out once (see matchCandidates)
     function matchCandidates() {
       if (candidateCache) return candidateCache;
       const out =book.paints.map(p => ({ brand: p.brand, name: p.name, colour: p.colour, type: p.type, mine: true }));
@@ -1226,13 +1730,17 @@
       const textKey = (t) => plainQuotes(String(t || "")).trim().toLowerCase();
       const mineNames = new Set(out.map(o => textKey(o.name)));
       const seen = new Set();
-      for (const k of KNOWN_PAINTS) {
-        const both = textKey(k.brand) + "|" + textKey(k.name);
-        if (mineNames.has(textKey(k.name)) || seen.has(both)) continue;
-        seen.add(both);
-        out.push({ ...k });
+      for (const k of searchedPaints) {
+        // v48: a built-in paint's match key never changes, so it is worked out once and kept on the paint
+        // (with about 3,900 paints, redoing it for every name looked up made pasting long notes slow).
+        // (Kept in a side table, not on the paint itself, so nothing extra can ever be saved with a paint.)
+        let keys = knownKeys.get(k);
+        if (!keys) { const key = matchKey(k.name); keys = { key, words: key.split(" "), both: textKey(k.brand) + "|" + textKey(k.name), name: textKey(k.name) }; knownKeys.set(k, keys); }
+        if (mineNames.has(keys.name) || seen.has(keys.both)) continue;
+        seen.add(keys.both);
+        out.push({ ...k, key: keys.key, words: keys.words });
       }
-      for (const c of out) { c.key = matchKey(c.name); c.words = c.key.split(" "); }
+      for (const c of out) if (c.mine) { c.key = matchKey(c.name); c.words = c.key.split(" "); }
       return out;
     }
     function shorthandFor(key) {
@@ -2446,7 +2954,7 @@
     function stepToText(step) {
       const paints = step.paints.map(sp => ({ sp, p: paintById(sp.paint) })).filter(x => x.p);
       const nameOf = (p) => {
-        const known = KNOWN_PAINTS.find(k => sameText(k.name, p.name));
+        const known = searchedPaints.find(k => sameText(k.name, p.name));
         return p.brand && !(known && sameText(known.brand, p.brand)) && !isMaterial(p) ? `${p.brand} ${p.name}` : p.name;
       };
       let body;
@@ -5863,7 +6371,7 @@
       // No brand typed? Then any paint with that name counts as the same paint.
       let paint = book.paints.find(p => sameText(p.name, name) && (!brand || sameText(p.brand, brand)));
       if (!paint) {
-        const known = KNOWN_PAINTS.find(k => sameText(k.name, name) && (!brand || sameText(k.brand, brand)));
+        const known = searchedPaints.find(k => sameText(k.name, name) && (!brand || sameText(k.brand, brand)));
         paint = { id: Math.max(0, ...book.paints.map(p => p.id)) + 1, brand: brand || (known ? known.brand : ""),
                   name, colour: known ? known.colour : DEFAULT_PAINT_COLOUR };
         if (MATERIAL_WORDS.test(name)) paint.type = "material";   // v15
@@ -6918,7 +7426,7 @@
       for (const b of uniqueSorted([...COMMON_BRANDS, ...book.paints.map(p => p.brand)])) brands.appendChild(new Option(b));
       const paintNames = document.createElement("datalist");
       paintNames.id = "paint-options";
-      const suggest = [...book.paints, ...KNOWN_PAINTS.filter(k => !book.paints.some(p => sameText(p.name, k.name)))];
+      const suggest = [...book.paints, ...searchedPaints.filter(k => !book.paints.some(p => sameText(p.name, k.name)))];
       for (const p of suggest.sort((a, b) => a.name.localeCompare(b.name))) {
         const o = document.createElement("option");
         o.value = p.name;
@@ -7191,7 +7699,7 @@
       // A paint you've used before: fill in its brand and colour for you.
       name.addEventListener("change", () => {
         const known = book.paints.find(p => sameText(p.name, paint.name) && (!paint.brand.trim() || sameText(p.brand, paint.brand)))
-                   || KNOWN_PAINTS.find(p => sameText(p.name, paint.name));
+                   || searchedPaints.find(p => sameText(p.name, paint.name));
         if (!known) return;
         if (!paint.brand.trim() && known.brand) {
           paint.brand = known.brand;
@@ -7420,7 +7928,7 @@
     // Every paint we may suggest: your palette first, then the built-in list for paints you don't have yet.
     function colourIdeaPool() {
       const have = new Set(book.paints.map(p => sameKey(p.name)));
-      return [...book.paints, ...KNOWN_PAINTS.filter(k => !have.has(sameKey(k.name)))];
+      return [...book.paints, ...searchedPaints.filter(k => !have.has(sameKey(k.name)))];
     }
 
     // The colour an idea is aiming for, before we look for the nearest paint.
@@ -8906,7 +9414,7 @@
       const byName = (a, b) => String(a.name).localeCompare(String(b.name));
       const mine = book.paints.filter(p => colourIdeaIsReal(p.colour));
       const have = new Set(book.paints.map(p => sameKey(p.name)));
-      const known = KNOWN_PAINTS.filter(k => !have.has(sameKey(k.name)) && colourIdeaIsReal(k.colour));
+      const known = searchedPaints.filter(k => !have.has(sameKey(k.name)) && colourIdeaIsReal(k.colour));
       const brands = new Map();
       for (const k of known) brands.set(k.brand, [...(brands.get(k.brand) || []), k]);
       return {
@@ -9734,7 +10242,7 @@
       const name = String(p.name || "").trim();
       if (!name || isInPalette({ brand, name })) return;
       if (list.some(o => sameText(o.name, name) && (!o.brand || !brand || sameText(o.brand, brand)))) return;
-      const known = brand ? null : KNOWN_PAINTS.find(k => sameText(k.name, name));
+      const known = brand ? null : searchedPaints.find(k => sameText(k.name, name));
       list.push({ brand, name, label: `${brand || (known && known.brand) ? (brand || known.brand) + " " : ""}${name}` });
     }
     // The paints a paste import would add to your palette (paints you've answered count too).
@@ -11453,6 +11961,33 @@
     if (!goodTheme(settings.theme)) settings.theme = "classic";
     showThemeChoice();
 
+    // v48: the Paint brands buttons in Settings, one per brand (see PAINT_BRANDS). Pressed = searched.
+    const brandToggles = document.getElementById("brand-toggles");
+    for (const brand of PAINT_BRANDS) {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chip";
+      chip.dataset.brandChoice = brand;
+      chip.textContent = brand;
+      chip.addEventListener("click", () => {
+        const off = new Set(cleanBrandsOff(settings.brandsOff));
+        if (off.has(brand)) off.delete(brand); else off.add(brand);
+        settings.brandsOff = PAINT_BRANDS.filter(b => off.has(b));
+        saveSettings();
+        updateSearchedPaints();
+        showBrandChoice();
+        render();
+      });
+      brandToggles.appendChild(chip);
+    }
+    function showBrandChoice() {
+      const off = new Set(cleanBrandsOff(settings.brandsOff));
+      for (const chip of brandToggles.querySelectorAll("[data-brand-choice]")) chip.setAttribute("aria-pressed", String(!off.has(chip.dataset.brandChoice)));
+    }
+    settings.brandsOff = cleanBrandsOff(settings.brandsOff);
+    updateSearchedPaints();
+    showBrandChoice();
+
     const paletteSelect = document.getElementById("palette-select");
     for (const [key, palette] of Object.entries(PALETTES)) paletteSelect.add(new Option(palette.label, key));
     // v20.1: the 6th choice. "custom" is never stored as settings.palette (see usingCustom).
@@ -11562,6 +12097,7 @@
       // v20: after a restore or a change in another window, show the right choices.
       showAppearanceChoice();
       showThemeChoice();      // v47
+      updateSearchedPaints(); showBrandChoice();   // v48
       showCountingChoice();   // v27
       if (usingCustom()) document.getElementById("palette-select").value = "custom";
       else if (PALETTES[settings.palette]) document.getElementById("palette-select").value = settings.palette;
@@ -11929,6 +12465,7 @@
                factionColours: settings.factionColours,
                // v20: the look travels with the backup too. Older versions ignore these.
                palette: settings.palette, appearance: settings.appearance, theme: currentTheme(),   // v47: the theme too
+               brandsOff: cleanBrandsOff(settings.brandsOff),   // v48: the paint brands you've switched off
                // v20.1: Custom stage colours (on or off, and one colour per stage).
                useCustom: usingCustom(), customColours: Array.isArray(settings.customColours) && settings.customColours.length ? customColoursFor(STAGES.length) : [] };
     }
@@ -12217,6 +12754,8 @@
               if (unitsToo && !isList && goodAppearance(parsed.appearance)) settings.appearance = parsed.appearance;
               // v47: backups from v47 onwards hold the theme. Anything that isn't a known theme is ignored.
               if (unitsToo && !isList && goodTheme(parsed.theme)) settings.theme = parsed.theme;
+              // v48: and the paint brands you'd switched off (unknown brands are dropped).
+              if (unitsToo && !isList && Array.isArray(parsed.brandsOff)) settings.brandsOff = cleanBrandsOff(parsed.brandsOff);
               // v20.1: Custom colours. Backups from before v20.1 don't have them, so yours stay.
               if (unitsToo && !isList && Array.isArray(parsed.customColours)) settings.customColours = cleanCustomColours(parsed.customColours);
               if (unitsToo && !isList && typeof parsed.useCustom === "boolean") settings.useCustom = parsed.useCustom;
@@ -13382,7 +13921,8 @@
 
     const CHANGELOG = [
       { version: "v48", date: "19 Oct 2026", changes: [
-        "About 1,200 more paints the app knows by name: Scale 75, Formula P3, Two Thin Coats, Tamiya Acrylics and Green Stuff World, plus The Army Painter's Speedpaint 2.0, Pro Acryl primers and washes, more of AK 3rd Gen and the rest of the current Citadel range. They're suggested as you type, matched when you paste recipes or scan a pot, and used in Colour ideas.",
+        "About 2,700 more paints the app knows by name: Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World, plus every range of Citadel, Vallejo, The Army Painter, Pro Acryl and AK Interactive (Speedpaint, Model Air, AK figures and more). They're suggested as you type, matched when you paste recipes or scan a pot, and used in Colour ideas.",
+        "New in Settings: Paint brands. Switch off the brands you don't use, and their paints stop being suggested and matched. Your own paints are always included.",
       ]},
       { version: "v47", date: "19 Oct 2026", changes: [
         "New in Settings: Theme. Choose Classic (the usual look), Blueprint, Parchment Codex, Grim Forge, Paint Bench or Rulebook. Each has a dark and a light version, so it works with your Appearance setting, and your choice is saved in backups.",

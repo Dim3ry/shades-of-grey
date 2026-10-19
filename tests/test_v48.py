@@ -32,8 +32,8 @@ def check(name, ok, detail=""):
     results.append(bool(ok))
     print(("PASS " if ok else "FAIL ") + name + ("" if ok else f"  -> {detail}"))
 
-EXPECTED = {"Citadel": 308, "The Army Painter": 306, "Vallejo": 422, "Pro Acryl": 131, "AK Interactive": 277,
-            "Scale75": 350, "Formula P3": 130, "Two Thin Coats": 180, "Tamiya": 102, "Green Stuff World": 219}
+EXPECTED = {"Citadel": 402, "The Army Painter": 535, "Vallejo": 941, "Pro Acryl": 131, "AK Interactive": 778,
+            "Scale75": 350, "Formula P3": 130, "Two Thin Coats": 180, "Tamiya": 208, "Green Stuff World": 219}
 
 def tables(app):
     out = {}
@@ -69,10 +69,11 @@ def main():
         tags = re.findall(r'<script src="[^"]+\?v=(\d+)"', html)
         check("all six script tags carry the version number", len(tags) == 6 and set(tags) == {version[1:]}, tags)
         log = page.evaluate("CHANGELOG.find(r => r.version === 'v48')")
-        names = ["Scale 75", "Formula P3", "Two Thin Coats", "Tamiya", "Green Stuff World", "Speedpaint", "Pro Acryl", "AK", "Citadel"]
-        check("Updates has one v48 line naming every new and topped-up range", log and len(log["changes"]) == 1 and all(n in log["changes"][0] for n in names), log)
-        check("Help lists the new brands for the scanner, with the new total",
-              all(n in html for n in ["Scale 75, Formula P3, Two Thin Coats, Tamiya Acrylics and Green Stuff World (about 2,400 paints)"]))
+        names = ["Scale 75", "Formula P3", "Two Thin Coats", "Tamiya", "Green Stuff World", "Speedpaint", "Pro Acryl", "AK Interactive", "Citadel", "Vallejo"]
+        check("Updates has a v48 line naming every new and topped-up brand, and one for Paint brands",
+              log and len(log["changes"]) == 2 and all(n in log["changes"][0] for n in names) and "Settings: Paint brands" in log["changes"][1], log)
+        check("Help lists all ten brands for the scanner, with the new total, and points to Settings → Paint brands",
+              "Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World (about 3,900 paints)" in html and "<strong>Settings → Paint brands</strong>" in html)
         check("Help, README and the licence note credit the list for the new brands",
               "Two Thin Coats, Tamiya and Green Stuff World paint names, colours and codes (and some Citadel ones) come from the free" in html
               and "Tamiya and Green Stuff World paint names (and some Citadel ones)" in readme and "copied 19 Oct 2026" in lic and "MIT License" in lic)
@@ -99,7 +100,7 @@ def main():
         loaded = page.evaluate("() => { const c = {}; for (const k of KNOWN_PAINTS) c[k.brand] = (c[k.brand] || 0) + 1; return c; }")
         check("every brand loads with the expected number of paints", loaded == EXPECTED, loaded)
         tam = page.evaluate("KNOWN_PAINTS.filter(k => k.brand === 'Tamiya')")
-        check("every Tamiya paint carries its X or XF code number", all(k.get("codes") and all(re.fullmatch(r"XF?-\d+", c) for c in k["codes"]) for k in tam), [k for k in tam if not k.get("codes")][:3])
+        check("every Tamiya paint carries its X or XF code number", all(k.get("codes") and all(re.fullmatch(r"(XF|X|LP|TS|AS)-\d+[A-Z]?", c) for c in k["codes"]) for k in tam), [k for k in tam if not k.get("codes")][:3])
         check("the new paints are marked as extra (Citadel and your own paints are tried first), the Citadel ones are not",
               page.evaluate("KNOWN_PAINTS.filter(k => ['Scale75','Formula P3','Two Thin Coats','Tamiya','Green Stuff World'].includes(k.brand)).every(k => k.extra === true)")
               and page.evaluate("KNOWN_PAINTS.filter(k => k.brand === 'Citadel').every(k => !k.extra)"))
@@ -137,13 +138,46 @@ def main():
         r = page.evaluate("(t) => { const m = matchPaint(t); return [m.status, m.paint && m.paint.brand]; }", "Scale 75 Abyssal Blue")
         check("…and with the brand written first it is sure", r == ["sure", "Scale75"], r)
 
+        # ---------- 5b. Paint brands ----------
+        print("\n--- 5b. Paint brands in Settings ---")
+        page.goto(t.BASE + "manifest.json"); page.evaluate("localStorage.clear()")
+        page.goto(URL); page.wait_for_function("() => typeof APP_VERSION === 'string'")
+        page.click('.tabs button[data-tab="settings"]')
+        chips = page.evaluate("[...document.querySelectorAll('#brand-toggles [data-brand-choice]')].map(b => [b.textContent, b.getAttribute('aria-pressed'), b.type])")
+        check("Settings has one button per brand, all pressed (searched) to start with",
+              [c[0] for c in chips] == list(EXPECTED) and all(c[1] == "true" and c[2] == "button" for c in chips), chips)
+        check("the card has a title and the buttons only (no helper text)", page.evaluate("document.querySelectorAll('#brands-card .hint').length") == 0
+              and page.evaluate("document.querySelector('#brands-card h2').textContent") == "Paint brands")
+        check("the Your Palette brand filter is untouched (still its own element)", page.evaluate("!!document.getElementById('brand-chips') && document.getElementById('brand-chips') !== document.getElementById('brand-toggles')"))
+        page.click('[data-brand-choice="Formula P3"]')
+        st = page.evaluate("""() => ({ pressed: document.querySelector('[data-brand-choice="Formula P3"]').getAttribute('aria-pressed'),
+            saved: JSON.parse(localStorage.getItem('shades-of-grey-settings')).brandsOff, n: searchedPaints.length,
+            p3: searchedPaints.some(k => k.brand === 'Formula P3'), match: matchPaint('Wurm Green').status,
+            ideas: matchCandidates().some(c => c.brand === 'Formula P3') })""")
+        check("switching Formula P3 off: unpressed, saved, and its paints are no longer searched, matched or offered",
+              st["pressed"] == "false" and st["saved"] == ["Formula P3"] and not st["p3"] and st["n"] == sum(EXPECTED.values()) - EXPECTED["Formula P3"]
+              and st["match"] != "sure" and not st["ideas"], st)
+        page.reload(); page.wait_for_function("() => typeof APP_VERSION === 'string'")
+        check("…and it stays off after a reload", page.evaluate("!searchedPaints.some(k => k.brand === 'Formula P3')")
+              and page.get_attribute('[data-brand-choice="Formula P3"]', "aria-pressed") == "false")
+        page.evaluate("""() => { book.paints.push({ id: 'mine-p3', brand: 'Formula P3', name: 'Wurm Green', colour: '#3b5a36' }); }""")
+        check("your own paint of a switched-off brand is still found", page.evaluate("matchPaint('Wurm Green').status") == "sure")
+        page.evaluate("() => { book.paints = book.paints.filter(p => p.id !== 'mine-p3'); }")
+        page.click('.tabs button[data-tab="settings"]'); page.click('[data-brand-choice="Formula P3"]')
+        check("switching it back on brings its paints back", page.evaluate("searchedPaints.length") == sum(EXPECTED.values()) and page.evaluate("matchPaint('Wurm Green').status") == "sure")
+        bad = page.evaluate("""() => [cleanBrandsOff(['Nope', 'Tamiya', 'Tamiya', 5, null, '__proto__']), cleanBrandsOff('Tamiya'), cleanBrandsOff(null)]""")
+        check("unknown, repeated and non-text brands are dropped from the setting", bad == [["Tamiya"], [], []], bad)
+        page.evaluate("settings.brandsOff = ['Scale75']")
+        check("a backup carries the switched-off brands", page.evaluate("backupData().brandsOff") == ["Scale75"])
+        page.evaluate("settings.brandsOff = []; saveSettings(); updateSearchedPaints();")
+
         # ---------- 6. Speed ----------
         print("\n--- 6. Speed ---")
         took = page.evaluate("() => { const t0 = performance.now(); for (const w of ['nuln oil','khorn red','xv88','balthasar gold','flat black','abyssal blue','wurm green','zima blue','absolution green','arctic white']) matchPaint(w); return performance.now() - t0; }")
         check("ten names match in under a second (desktop speed)", took < 1000, round(took))
         page.click('.tabs button[data-tab="recipes"]')
         t0 = time.time(); page.reload(); page.wait_for_function("() => typeof APP_VERSION === 'string'")
-        check("the app opens in under three seconds with about 2,400 built-in paints", time.time() - t0 < 3, round(time.time() - t0, 2))
+        check("the app opens in under three seconds with about 3,900 built-in paints", time.time() - t0 < 3, round(time.time() - t0, 2))
 
         # ---------- 7. Clean run ----------
         print("\n--- 7. A clean run ---")
