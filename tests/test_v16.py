@@ -226,9 +226,10 @@ with sync_playwright() as pw:
         page.fill("#scan-typed", "macrage blue")
         page.locator("#scan-typed").dispatch_event("change")
         page.wait_for_timeout(100)
+        # v48: Macragge Blue Spray is a known paint too now, so "Macragge Blue" text can appear on more than one suggestion.
         check(f"{size}: typed typo suggests, doesn't pick", page.locator("#scan-result").count() == 0
-              and page.locator("#scan-panel .chip", has_text="Macragge Blue").count() == 1)
-        page.locator("#scan-panel .chip", has_text="Macragge Blue").click()
+              and page.locator("#scan-panel .chip", has_text="Macragge Blue").count() >= 1)
+        page.locator("#scan-panel .chip", has_text="Macragge Blue").first.click()
         check(f"{size}: not owned yet", "Not in your palette yet" in page.locator("#scan-result").inner_text())
         page.screenshot(path=f"{SHOTS}/v16-{size}-scan.png", full_page=False)
         page.locator("#scan-result button", has_text="Add to my palette").click()
