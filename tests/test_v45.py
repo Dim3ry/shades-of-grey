@@ -91,7 +91,7 @@ def main():
 
         print("\n--- 4. Settings page unchanged ---")
         old = subprocess.run(["git", "show", "origin/main:index.html"], cwd=ROOT, capture_output=True, text=True).stdout
-        if old:
+        if old and version == "v45":   # v46 added a button to Settings, so this only applies while v45 is the newest
             check("the Settings page's own markup is the same as on main", settings_block(old) == settings_block(html))
         else:
             print("SKIP (no main branch here to compare with)")

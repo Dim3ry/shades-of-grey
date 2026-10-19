@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=45"></script>
+  <script src="early.js?v=46"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -469,8 +469,10 @@
       height: 52px;
       flex-shrink: 0;
       background: var(--background);
-      color: var(--stage-colour);
-      border: 2px solid var(--stage-colour);
+      /* v46: always the accent colour, not the stage's. A new unit's first stage is slate grey, which made the
+         ▲ look switched off next to the blue ones. The stripe, stage name and dots still carry the stage colour. */
+      color: var(--accent);
+      border: 2px solid var(--accent);
       font-size: 22px;
       border-radius: 12px;
     }
@@ -1613,6 +1615,7 @@
             <li>Clearing your browser's data or uninstalling the app deletes it, so <strong>Save backup</strong> regularly. The app reminds you after a week (and if you have photos, it reminds you about a backup <em>with</em> photos). Every backup shows a message when it's saved.</li>
             <li><strong>Save backup</strong> is small and quick, but leaves out photos. <strong>Save full backup with photos</strong> makes one bigger file with everything, photos included.</li>
             <li id="help-send-backup"><strong>Send backup to…</strong> opens your phone's share menu, so you can put the small backup straight into OneDrive, an email or a message. It's the same file as Save backup (no photos). If your phone can't send files from the app, or sending fails, the backup is saved to your device instead and the app says so. Closing the share menu changes nothing.</li>
+            <li id="help-send-full-backup"><strong>Send full backup with photos to…</strong> does the same with the bigger file that has your photos in it. Putting the file together can take a moment, and if your phone has stopped waiting by then, the button changes to <strong>Backup ready: tap to send</strong>: tap it once more to open the share menu. If your phone can't send files from the app, or sending fails, the full backup is saved to your device instead and the app says so.</li>
             <li><strong>Restore backup</strong> brings either kind back, including your stages, recipes, schemes, faction colours, stage colour set and Appearance (light or dark). A backup without photos keeps any photos already on this device that match.</li>
             <li>Photos are kept in a separate, much bigger store in your browser, so there's room for lots of them. Settings → Your data shows how many photos you have and how much space they use.</li>
             <li><strong>Clean up photo storage</strong> removes photo files no unit uses any more (for example after Delete all units) and tells you how much space it freed. Photos in the device's safety copy are left alone.</li>
@@ -1649,8 +1652,8 @@
           <ul>
             <li><strong>Stays on your phone:</strong> your units, photos, recipes, paints and settings. They're saved in this browser on this device only. There's no account and no cloud copy.</li>
             <li><strong>Scanning a paint pot</strong> reads the label on your phone. The photo never leaves it.</li>
-            <li><strong>What goes out:</strong> only what you choose to send. <strong>Give feedback</strong> opens a form on Tally's website, which receives what you type there plus the app's version number. Backups and exports are files you save yourself. <strong>Send backup to…</strong> only opens your phone's own share menu: the backup goes where you choose, and the app sends nothing itself. The one thing the app does send on its own is the visit count, described next.</li>
-            <li id="privacy-counting"><strong>Counting visits:</strong> to learn roughly how many people use Minifolio, each time the app opens it asks <strong>GoatCounter</strong> (goatcounter.com, a small privacy-friendly counting service run from Ireland, with its data kept in Finland and Germany) for one tiny, empty picture. That request is all that is sent. There are no cookies, nothing is saved on your device, there is no account or ID, and nothing from your units, recipes, photos or settings goes with it. It doesn't tell GoatCounter which page you came from. Like any request to a website, it carries your device's internet address and browser type. GoatCounter uses them only to add up visits and totals of countries, browsers and systems, and says it doesn't keep the address. It only counts when the app is opened from minifolio.app, and with no internet it does nothing. <strong>You can switch it off</strong> under Settings → Counting visits; the app then asks GoatCounter for nothing.</li>
+            <li><strong>What goes out:</strong> only what you choose to send. <strong>Give feedback</strong> opens a form on Tally's website, which receives what you type there plus the app's version number. Backups and exports are files you save yourself. <strong>Send backup to…</strong> and <strong>Send full backup with photos to…</strong> only open your phone's own share menu: the backup goes where you choose, and the app sends nothing itself. The one thing the app does send on its own is the visit count, described next.</li>
+            <li id="privacy-counting"><strong>Counting visits:</strong> to learn roughly how many people use Minifolio, each time the app opens it asks <strong>GoatCounter</strong> (goatcounter.com, a small privacy-friendly counting service run from Ireland, with its data kept in Finland and Germany) for one tiny, empty picture. That request is all that is sent. There are no cookies, nothing is saved on your device, there is no account or ID, and nothing from your units, recipes, photos or settings goes with it. It doesn't tell GoatCounter which page you came from. The one extra: if you opened Minifolio from a link that ends in a short tag, such as minifolio.app/?from=club, that one short word is sent along too, so visits can be counted by where the link was shared. It is never saved and never goes into your backups; a link without a tag sends nothing extra. Like any request to a website, it carries your device's internet address and browser type. GoatCounter uses them only to add up visits and totals of countries, browsers and systems, and says it doesn't keep the address. It only counts when the app is opened from minifolio.app, and with no internet it does nothing. <strong>You can switch it off</strong> under Settings → Counting visits; the app then asks GoatCounter for nothing.</li>
             <li><strong>The feedback card:</strong> to know when to ask, the app saves the date you first opened it, and your choice on the card, in your settings on this device. They are never sent anywhere.</li>
             <li id="privacy-drafts"><strong>Unfinished work:</strong> to keep a half-written recipe, a half-filled Add unit form or pasted notes through a reload, the app saves what you typed in this browser on this device. It is never sent anywhere, it is not in your backups, and it is removed when you finish it or discard it.</li>
             <li><strong>Shop links</strong> (Buy these on the shopping list, and the Shop links fold-outs under suggested paints) open the shop's website only when you tap one. They are plain links: Minifolio earns nothing from them. You can hide them all under Settings → Shop links. The link carries just the paint's name for the shop's search, and the shop isn't told it came from Minifolio. From then on you're on the shop's site, under its own privacy rules.</li>
@@ -1700,6 +1703,7 @@
           <button class="plain-button" id="export-button">Save backup</button>
           <button class="plain-button" id="share-button">Send backup to…</button>
           <button class="plain-button" id="full-export-button" style="grid-column: 1 / -1;">Save full backup with photos</button>
+          <button class="plain-button" id="full-share-button" style="grid-column: 1 / -1;">Send full backup with photos to…</button>
           <button class="plain-button" id="restore-button" style="grid-column: 1 / -1;">Restore backup</button>
         </div>
         <p class="hint" id="backup-age" style="margin: 12px 0 0;"></p>
@@ -1710,6 +1714,7 @@
         <p class="hint" id="share-hint" style="margin: 8px 0 0;">
           Send backup to… opens your phone's share menu, so you can put the backup straight into OneDrive, an email or a message.
           It sends the same small backup (no photos). If your phone can't send files from here, it saves the backup instead.
+          Send full backup with photos to… does the same with the bigger file, photos included.
         </p>
         <input type="file" id="restore-file" class="hidden" accept=".json">
       </div>
@@ -1908,7 +1913,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=45" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=46" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -1917,10 +1922,10 @@
        names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks.
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=45"></script>
-  <script src="schemes.js?v=45"></script>
-  <script src="detail-recipes.js?v=45"></script>
-  <script src="basing-tips.js?v=45"></script>
-  <script src="app.js?v=45"></script>
+  <script src="colour.js?v=46"></script>
+  <script src="schemes.js?v=46"></script>
+  <script src="detail-recipes.js?v=46"></script>
+  <script src="basing-tips.js?v=46"></script>
+  <script src="app.js?v=46"></script>
 </body>
 </html>
