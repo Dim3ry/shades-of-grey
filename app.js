@@ -10891,7 +10891,27 @@
     // read easily. (Light mode deepens pale colours by itself, so light cards are fine.)
     const DARK_CARD = "#141d2f";
     const FAINT_BELOW = 3;
-    const tooFaintOnDark = (hex) => contrastRatio(hex, DARK_CARD) < FAINT_BELOW;
+    const tooFaintOnDark = (hex) => contrastRatio(hex, darkCard()) < FAINT_BELOW;
+
+    // ----- v47: Themes (Classic, Blueprint, Parchment Codex, Grim Forge, Paint Bench, Rulebook) -----
+    // settings.theme is one of these names; "classic" (the look before themes) is the default and the fallback.
+    // Theme and Appearance are separate: the look you see is the theme in its dark or light version.
+    const THEMES = { classic: "Classic", blueprint: "Blueprint", parchment: "Parchment Codex", forge: "Grim Forge", bench: "Paint Bench", rulebook: "Rulebook" };
+    const goodTheme = (value) => typeof value === "string" && Object.prototype.hasOwnProperty.call(THEMES, value);
+    const currentTheme = () => goodTheme(settings.theme) ? settings.theme : "classic";
+    // Each theme's page and card colours in dark and light (the same as the THEMES section of index.html; a test checks).
+    // Stage colours are made readable against these, so they stay readable in every theme.
+    const THEME_SURFACES = {
+      classic: { dark: { page: "#0b1220", card: "#141d2f" }, light: { page: "#e9eff6", card: "#f8fafc" } },
+      blueprint: { dark: { page: "#0c2c4f", card: "#0f3560" }, light: { page: "#f1f4f8", card: "#fbfcfe" } },
+      parchment: { dark: { page: "#17120e", card: "#211a14" }, light: { page: "#d8c59a", card: "#e4d4ae" } },
+      forge: { dark: { page: "#0e0e10", card: "#17171a" }, light: { page: "#cfcdc6", card: "#dedcd5" } },
+      bench: { dark: { page: "#111815", card: "#19231f" }, light: { page: "#cfe0d4", card: "#e1ece4" } },
+      rulebook: { dark: { page: "#181810", card: "#20201a" }, light: { page: "#c8c6a9", card: "#d5d3b8" } }
+    };
+    const darkCard = () => THEME_SURFACES[currentTheme()].dark.card;
+    const lightCard = () => THEME_SURFACES[currentTheme()].light.card;
+    const lightPage = () => THEME_SURFACES[currentTheme()].light.page;
 
     // ----- v20: Appearance (Dark / Light / Match my phone) -----
     // settings.appearance is "dark" (the default), "light" or "auto" (follow the phone).
@@ -10907,10 +10927,17 @@
     // set at the top of the CSS. Also tells the phone what colour its top bar should be.
     function setAppearanceMark() {
       const light = isLight();
-      if (light) document.documentElement.dataset.appearance = "light";
-      else delete document.documentElement.dataset.appearance;
+      const root = document.documentElement;
+      if (light) root.dataset.appearance = "light";
+      else delete root.dataset.appearance;
+      // v47: the theme and the mode, which together choose the colours, fonts and shapes (see THEMES in index.html).
+      const mode = light ? "light" : "dark";
+      root.dataset.t = currentTheme();
+      root.dataset.m = mode;
+      // The Theme squares in Settings show each theme in the current mode.
+      for (const square of document.querySelectorAll(".theme-swatch")) square.dataset.m = mode;
       const bar = document.querySelector('meta[name="theme-color"]');
-      if (bar) bar.setAttribute("content", light ? "#e9eff6" : "#0b1220");
+      if (bar) bar.setAttribute("content", THEME_SURFACES[currentTheme()][mode].page);
       return light;
     }
     // When the phone switches its own dark mode, follow it (only if "Match my phone" is on).
@@ -10947,7 +10974,7 @@
     // straight on the page (the big ▲ button, the Custom colour rows), so stage colours
     // are made readable against this one, which also covers the cards.
     const LIGHT_PAGE = "#e9eff6";
-    function lightnessCap(h, sat, target, surface = LIGHT_CARD) {
+    function lightnessCap(h, sat, target, surface = lightCard()) {
       let low = 0, high = 1;
       for (let i = 0; i < 20; i++) {
         const mid = (low + high) / 2;
@@ -10959,7 +10986,7 @@
     // Colours that already read well are left alone. A colour that was very pale goes a
     // little DEEPER than one that was only slightly too pale, so stages stay different
     // from each other (e.g. Greyscale's light greys and white become steps of darker grey).
-    function deepenForLight(hex, target = 4.5, surface = LIGHT_CARD) {
+    function deepenForLight(hex, target = 4.5, surface = lightCard()) {
       if (contrastRatio(hex, surface) >= target) return hex;
       const { h, s: sat, l } = hexToHsl(hex);
       const cap = lightnessCap(h, sat, target, surface);
@@ -10981,12 +11008,12 @@
       let low = 0, high = 1;
       for (let i = 0; i < 20; i++) {
         const mid = (low + high) / 2;
-        if (contrastRatio(hslToHex(h, sat, mid), DARK_CARD) >= target) high = mid; else low = mid;
+        if (contrastRatio(hslToHex(h, sat, mid), darkCard()) >= target) high = mid; else low = mid;
       }
       return high;
     }
     function brightenForDark(hex, target = READABLE) {
-      if (contrastRatio(hex, DARK_CARD) >= target) return hex;
+      if (contrastRatio(hex, darkCard()) >= target) return hex;
       const { h, s: sat } = hexToHsl(hex);
       return hslToHex(h, sat, lightnessFloor(h, sat, target));
     }
@@ -11026,7 +11053,7 @@
     // v21.8: dark mode now lightens the ones that were too dark to read; light mode checks
     // against the page colour as well as the cards.
     function forShow(colours) {
-      return isLight() ? colours.map(c => deepenForLight(c, READABLE, LIGHT_PAGE)) : readableOnDark(colours);
+      return isLight() ? colours.map(c => deepenForLight(c, READABLE, lightPage())) : readableOnDark(colours);
     }
 
     // Sets --stage-0, --stage-1 ... so everything using them updates instantly.
@@ -11061,6 +11088,25 @@
     }
     if (!goodAppearance(settings.appearance)) settings.appearance = "dark";
     showAppearanceChoice();
+
+    // v47: the Theme squares in Settings. Choosing one changes the whole look at once; Appearance stays as it is.
+    function showThemeChoice() {
+      const choice = currentTheme();
+      for (const square of document.querySelectorAll("[data-theme-choice]")) square.setAttribute("aria-pressed", String(square.dataset.themeChoice === choice));
+    }
+    for (const square of document.querySelectorAll("[data-theme-choice]")) {
+      square.addEventListener("click", () => {
+        if (!goodTheme(square.dataset.themeChoice)) return;
+        settings.theme = square.dataset.themeChoice;
+        saveSettings();
+        applyPalette(settings.palette);   // sets the theme on the page, then fits the stage colours to its cards
+        render();
+        showThemeChoice();
+        renderCustomColours();
+      });
+    }
+    if (!goodTheme(settings.theme)) settings.theme = "classic";
+    showThemeChoice();
 
     const paletteSelect = document.getElementById("palette-select");
     for (const [key, palette] of Object.entries(PALETTES)) paletteSelect.add(new Option(palette.label, key));
@@ -11098,9 +11144,9 @@
       note.classList.toggle("faint", faint);
       note.textContent = faint
         ? "⚠ Too faint to read on dark cards. Try a brighter colour."
-        : isLight() && contrastRatio(hex, LIGHT_PAGE) < READABLE
+        : isLight() && contrastRatio(hex, lightPage()) < READABLE
           ? "Shown a little deeper in light mode, so it's easy to read."
-          : !isLight() && contrastRatio(hex, DARK_CARD) < READABLE
+          : !isLight() && contrastRatio(hex, darkCard()) < READABLE
             ? "Shown a little brighter in dark mode, so it's easy to read."
             : "";
       note.hidden = !note.textContent;
@@ -11170,6 +11216,7 @@
     function renderSettings() {
       // v20: after a restore or a change in another window, show the right choices.
       showAppearanceChoice();
+      showThemeChoice();      // v47
       showCountingChoice();   // v27
       if (usingCustom()) document.getElementById("palette-select").value = "custom";
       else if (PALETTES[settings.palette]) document.getElementById("palette-select").value = settings.palette;
@@ -11536,7 +11583,7 @@
       return { app: "Minifolio", version: 6, dataVersion: DATA_VERSION, stages: STAGES, doneFrom: settings.doneFrom, models, recipes: book,
                factionColours: settings.factionColours,
                // v20: the look travels with the backup too. Older versions ignore these.
-               palette: settings.palette, appearance: settings.appearance,
+               palette: settings.palette, appearance: settings.appearance, theme: currentTheme(),   // v47: the theme too
                // v20.1: Custom stage colours (on or off, and one colour per stage).
                useCustom: usingCustom(), customColours: Array.isArray(settings.customColours) && settings.customColours.length ? customColoursFor(STAGES.length) : [] };
     }
@@ -11823,6 +11870,8 @@
               // Anything unknown is ignored, so older backups leave yours as they are.
               if (unitsToo && !isList && typeof parsed.palette === "string" && Object.prototype.hasOwnProperty.call(PALETTES, parsed.palette)) settings.palette = parsed.palette;
               if (unitsToo && !isList && goodAppearance(parsed.appearance)) settings.appearance = parsed.appearance;
+              // v47: backups from v47 onwards hold the theme. Anything that isn't a known theme is ignored.
+              if (unitsToo && !isList && goodTheme(parsed.theme)) settings.theme = parsed.theme;
               // v20.1: Custom colours. Backups from before v20.1 don't have them, so yours stay.
               if (unitsToo && !isList && Array.isArray(parsed.customColours)) settings.customColours = cleanCustomColours(parsed.customColours);
               if (unitsToo && !isList && typeof parsed.useCustom === "boolean") settings.useCustom = parsed.useCustom;
@@ -12538,7 +12587,7 @@
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v46";
+    const APP_VERSION = "v47";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -12987,6 +13036,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v47", date: "19 Oct 2026", changes: [
+        "New in Settings: Theme. Choose Classic (the usual look), Blueprint, Parchment Codex, Grim Forge, Paint Bench or Rulebook. Each has a dark and a light version, so it works with your Appearance setting, and your choice is saved in backups.",
+      ]},
       { version: "v46", date: "18 Oct 2026", changes: [
         "Links can now end in a short tag, like minifolio.app/?from=club, so the visit count can tell where a visit came from. Only that one short word is sent, only when Counting visits is on, and it is never saved.",
         "The Dashboard now shows how many models are under way, so a collection that is built and primed no longer reads like nothing has happened.",
