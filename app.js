@@ -10441,9 +10441,9 @@
       fold("starter", "Starter schemes", parts.starter && (() => dropTitle(parts.starter())));
       fold("detail", "Detail recipes", parts.detail && (() => dropTitle(parts.detail())));
       fold("basing", "Basing tips", parts.basing && (() => dropTitle(parts.basing())));
-      const foot = say("Ideas use paints you own first. Colours on a screen are only a guide, so check them on your model. Nothing leaves your phone.", "foot");
-      // v49: both lines sit behind one More info at the top of the page
-      body.insertBefore(buildMoreInfo([intro, foot], { state: infoState(door, "page"), id: compendiumId("page-info-panel"), label: "the Compendium" }), body.firstChild);
+      say("Ideas use paints you own first. Colours on a screen are only a guide, so check them on your model. Nothing leaves your phone.", "foot");
+      // v49: the introduction sits behind a More info at the top of the page (the footnote stays, it is a short honest note)
+      body.insertBefore(buildMoreInfo([intro], { state: infoState(door, "page"), id: compendiumId("page-info-panel"), label: "the Compendium" }), body.firstChild);
 
       if (focusSelector) {
         const target = body.querySelector(focusSelector);
