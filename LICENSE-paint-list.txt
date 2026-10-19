@@ -1,6 +1,7 @@
 The paint names, colours and code numbers for Vallejo, The Army Painter, Pro Acryl and AK Interactive
 in index.html (EXTRA_PAINT_TABLE, added in v21.3) come from https://github.com/Arcturus5404/miniature-paints
-(copied 11 Oct 2026), used under this licence:
+(copied 11 Oct 2026), used under this licence. So do (v48, copied 19 Oct 2026) those for Scale75, Formula P3,
+Two Thin Coats, Tamiya and Green Stuff World, and the Citadel paints added in v48:
 
 MIT License
 

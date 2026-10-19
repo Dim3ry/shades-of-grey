@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=47"></script>
+  <script src="early.js?v=48"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -2253,7 +2253,7 @@
             <li>In Your Palette, sort by colour, name or brand, and tap a brand to show only its paints. Tap a paint to change its colour, name or brand: the change applies in every recipe that uses it.</li>
             <li>At the bottom of an open paint: <strong>Remove</strong> deletes a paint no recipe uses (a paint that's still in a recipe can't be removed). <strong>Merge into…</strong> joins it to another paint, handy for a typo twin like "Deep Bluee": its recipes move to the paint you pick, and that paint keeps its own name and brand. Both have Undo.</li>
             <li><strong>📷 Scan a paint pot</strong> (in Your Palette) reads the paint's name from its label with the camera and suggests matches. The reading happens on your phone; the photo is never sent anywhere. The first scan loads the label reader (about 11 MB) from Minifolio's own site, and after that scanning works with no internet. Leaving the app, or closing the scan panel, switches the camera off.</li>
-            <li id="help-scan-brands"><strong>Brands the scanner knows:</strong> Citadel, plus Vallejo Game Color, Model Color and Xpress Color, The Army Painter's Warpaints Fanatic, Pro Acryl and AK 3rd Gen (about 1,200 paints), and every paint already in Your Palette. On a Vallejo pot it also reads the <strong>code number</strong> (like 72.021), which picks the exact paint even if the name is hard to read. Other brands still work: if the scanner doesn't know the name, type it in. The same lists help when you paste recipes from your notes. Where two brands share a name (like "Black"), you're asked which one. The colours for these brands are close guesses, so tap a paint to fix its colour.</li>
+            <li id="help-scan-brands"><strong>Brands the scanner knows:</strong> Citadel, plus Vallejo Game Color, Model Color and Xpress Color, The Army Painter's Warpaints Fanatic and Speedpaint, Pro Acryl, AK 3rd Gen, Scale 75, Formula P3, Two Thin Coats, Tamiya Acrylics and Green Stuff World (about 2,400 paints), and every paint already in Your Palette. On a Vallejo pot it also reads the <strong>code number</strong> (like 72.021), which picks the exact paint even if the name is hard to read. Other brands still work: if the scanner doesn't know the name, type it in. The same lists help when you paste recipes from your notes. Where two brands share a name (like "Black"), you're asked which one. The colours for these brands are close guesses, so tap a paint to fix its colour.</li>
             <li>Typed a paint into a recipe that isn't in Your Palette yet? Above <strong>Save recipe</strong>, <strong>Do you own these?</strong> asks about the new paints: <strong>All</strong> (Owned), <strong>None</strong> (Not owned, so they go on the shopping list) or <strong>Let me pick</strong> (tap a paint to untick it).</li>
             <li id="help-shop"><strong>🛒 Shopping list</strong> (in Your Palette) lists paints that are running low, empty, on your wishlist, or used in a recipe but not owned, grouped by brand. <strong>Buy these</strong> at the top has a button for each shop that sells them (Firestorm Games, Wayland Games, Element Games, and The Army Painter for Army Painter paints). Tap a shop for one search link per paint; each opens that shop's own search in a new tab. They're plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop. The link searches for the paint's name, so the results can include other brands' paints with the same name: check you've got the right pot before you buy.</li>
             <li id="help-shop-links"><strong>Shop links on suggested paints</strong> (Pro preview): under a suggested paint you don't own, in the colour wheel's paint panel and in <strong>Colour ideas</strong> (in a recipe and in the Compendium), tap <strong>Shop links</strong> to open a small fold-out. It has <strong>Add to shopping list</strong> (Undo is offered) and a plain search link for each shop that sells the paint. Paints you own show nothing. They're plain links, the same as in Buy these: Minifolio isn't paid for them, and only the paint's name goes to the shop. To hide every shop link and shop button, including Buy these, untick <strong>Settings → Shop links</strong>. Your shopping list stays.</li>
@@ -2349,7 +2349,7 @@
           <ul>
             <li><strong>Unofficial fan-made app, not affiliated with or endorsed by Games Workshop or any paint maker.</strong> No Games Workshop artwork, rules, points or stats, and no brand logos.</li>
             <li>The app knows paint and faction names so it can recognise what you type or scan. Citadel, Warhammer and faction and paint names are trademarks of Games Workshop Ltd. Other paint names (such as Vallejo, The Army Painter and AK Interactive) belong to their makers. All are used only to identify those products.</li>
-            <li>The Vallejo, Army Painter, Pro Acryl and AK paint names, colours and codes come from the free <strong>miniature-paints</strong> list by Rick Fleuren (MIT licence). The colours are close guesses, not exact matches.</li>
+            <li>The Vallejo, Army Painter, Pro Acryl, AK, Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World paint names, colours and codes (and some Citadel ones) come from the free <strong>miniature-paints</strong> list by Rick Fleuren (MIT licence). The colours are close guesses, not exact matches.</li>
             <li>Your data stays on this device. There's no account, and nothing you add is sent anywhere, except what you choose to write in the feedback form and a paint's name when you tap a shop link.</li>
             <li><strong>Contact:</strong> use <strong>Give feedback</strong> under <strong>Settings → Updates</strong>. Every message is read.</li>
           </ul>
@@ -2607,7 +2607,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=47" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=48" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -2616,10 +2616,10 @@
        names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks.
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=47"></script>
-  <script src="schemes.js?v=47"></script>
-  <script src="detail-recipes.js?v=47"></script>
-  <script src="basing-tips.js?v=47"></script>
-  <script src="app.js?v=47"></script>
+  <script src="colour.js?v=48"></script>
+  <script src="schemes.js?v=48"></script>
+  <script src="detail-recipes.js?v=48"></script>
+  <script src="basing-tips.js?v=48"></script>
+  <script src="app.js?v=48"></script>
 </body>
 </html>
