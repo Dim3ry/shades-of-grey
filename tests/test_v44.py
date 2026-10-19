@@ -767,8 +767,10 @@ def main():
                                            "shopping list", "already had recipes", "Restore example recipes", "twice"]), help_text)
         sub_tab(page, "updates")
         updates = page.inner_text("#view-updates")
+        # v49: the Updates page shows only the newest five entries, so v44 may have moved off the page; then read it from the list
+        v44_text = updates if "v44" in updates else " ".join(page.evaluate("(CHANGELOG.find(c => c.version === 'v44') || { changes: [] }).changes"))
         check("the Updates page has the v44 entry in plain words",
-              "v44" in updates and "example schemes" in updates and "Restore example recipes" in updates and "Clear examples" in updates, updates[:500])
+              "example schemes" in v44_text and "Restore example recipes" in v44_text and "Clear examples" in v44_text, v44_text[:500])
 
         check("no real browser pop-ups at any point", not popups, popups)
         check("no page errors", not errors, errors[:3])

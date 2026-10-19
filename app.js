@@ -8314,6 +8314,64 @@
     // shown as plain text (never as HTML), because they can be anything the user typed or pasted.
 
     // One tappable idea row (swatch, name, brand, tag, reason, optional note, "+ Add as a step"). Used by every list.
+    // v49: "More info". A plain text button that opens the detail under it ("Less info" when open). It is the one way busy pages
+    // tuck their explanations away. `nodes` are moved into the panel (their ids stay, hidden until opened). o.state = { open } is kept
+    // by the caller: the Compendium keeps it in door.state.info (so a redraw does not close it), a row keeps its own.
+    function buildMoreInfo(nodes, o) {
+      o = o || {};
+      const wrap = document.createElement("div");
+      wrap.className = "more-info" + (o.className ? " " + o.className : "");
+      const state = o.state || { open: false };
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "more-info-button";
+      const text = document.createElement("span");
+      const mark = document.createElement("span");
+      mark.className = "fold-mark";
+      mark.setAttribute("aria-hidden", "true");
+      button.append(text, mark);
+      const panel = document.createElement("div");
+      panel.className = "more-info-panel";
+      if (o.id) { panel.id = o.id; button.setAttribute("aria-controls", o.id); }
+      panel.append(...nodes);
+      const show = (isOpen) => {
+        state.open = isOpen;
+        button.setAttribute("aria-expanded", String(isOpen));
+        const words = isOpen ? (o.closeText || "Less info") : (o.openText || "More info");
+        text.textContent = words;
+        if (o.label) button.setAttribute("aria-label", `${words}: ${o.label}`);
+        panel.hidden = !isOpen;
+      };
+      button.addEventListener("click", () => show(!state.open));
+      show(!!state.open);
+      wrap.append(button, panel);
+      return wrap;
+    }
+    function infoState(door, key) {
+      const all = door.state.info || (door.state.info = {});
+      return all[key] || (all[key] = { open: false });
+    }
+    // The Compendium's rows are plain boxes (no recipe to add to), so their reasons and notes sit behind More info.
+    function compactRows(door) { return !!door.short && !door.addStep && !door.addSteps; }
+    // A greyed-out shopping list button with its one-line hint, shown while nothing is picked. It does nothing; it only says it exists.
+    function buildIdleShop(door, id, hintText) {
+      const wrap = document.createElement("div");
+      wrap.className = "shop-idle";
+      const hint = document.createElement("p");
+      hint.className = "hint";
+      hint.id = door.id(id + "-hint");
+      hint.textContent = hintText;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "plain-button shop-idle-button";
+      button.id = door.id(id);
+      button.textContent = "Add to shopping list";
+      button.setAttribute("aria-disabled", "true");
+      button.setAttribute("aria-describedby", hint.id);
+      wrap.append(button, hint);
+      return wrap;
+    }
+
     // v30: rows outside the main three ideas carry the class "idea-pick" instead of "idea" (same look, see index.html).
     // v35: with no onAdd (the Compendium has no recipe to add to) the row is plain text in a box: same look, no button, no "+ Add" line.
     // v38: a door that has no recipe but does have "links" (the Compendium) can hand in a 7th argument, link = { expanded, controls, onToggle(li) }.
@@ -8359,7 +8417,7 @@
       }
       text.append(name, tagEl);
       if (compact && !onAdd && !link) {   // v49: the reason and note sit behind a small More info (Compendium rows)
-        text.appendChild(buildMoreInfo(noteEl ? [why, noteEl] : [why], { className: "idea-more", label: paint.name }));
+        text.appendChild(buildMoreInfo(noteEl ? [why, noteEl] : [why], { className: "idea-more" }));
       } else {
         text.appendChild(why);
         if (noteEl) text.appendChild(noteEl);
@@ -10253,64 +10311,6 @@
     // v37: one folding part. The heading is a button (aria-expanded, aria-controls) that opens and closes its panel. A closed panel is
     // empty and hidden, and its content is only built when it is opened, so a closed page is short and quick. make() returns what goes in
     // the panel. Which parts are open is kept in the door's state (door.state.open), so it survives redraws.
-    // v49: "More info". A plain text button that opens the detail under it ("Less info" when open). It is the one way busy pages
-    // tuck their explanations away. `nodes` are moved into the panel (their ids stay, hidden until opened). o.state = { open } is kept
-    // by the caller: the Compendium keeps it in door.state.info (so a redraw does not close it), a row keeps its own.
-    function buildMoreInfo(nodes, o) {
-      o = o || {};
-      const wrap = document.createElement("div");
-      wrap.className = "more-info" + (o.className ? " " + o.className : "");
-      const state = o.state || { open: false };
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "more-info-button";
-      const text = document.createElement("span");
-      const mark = document.createElement("span");
-      mark.className = "fold-mark";
-      mark.setAttribute("aria-hidden", "true");
-      button.append(text, mark);
-      const panel = document.createElement("div");
-      panel.className = "more-info-panel";
-      if (o.id) { panel.id = o.id; button.setAttribute("aria-controls", o.id); }
-      panel.append(...nodes);
-      const show = (isOpen) => {
-        state.open = isOpen;
-        button.setAttribute("aria-expanded", String(isOpen));
-        const words = isOpen ? (o.closeText || "Less info") : (o.openText || "More info");
-        text.textContent = words;
-        if (o.label) button.setAttribute("aria-label", `${words}: ${o.label}`);
-        panel.hidden = !isOpen;
-      };
-      button.addEventListener("click", () => show(!state.open));
-      show(!!state.open);
-      wrap.append(button, panel);
-      return wrap;
-    }
-    function infoState(door, key) {
-      const all = door.state.info || (door.state.info = {});
-      return all[key] || (all[key] = { open: false });
-    }
-    // The Compendium's rows are plain boxes (no recipe to add to), so their reasons and notes sit behind More info.
-    function compactRows(door) { return !!door.short && !door.addStep && !door.addSteps; }
-    // A greyed-out shopping list button with its one-line hint, shown while nothing is picked. It does nothing; it only says it exists.
-    function buildIdleShop(door, id, hintText) {
-      const wrap = document.createElement("div");
-      wrap.className = "shop-idle";
-      const hint = document.createElement("p");
-      hint.className = "hint";
-      hint.id = door.id(id + "-hint");
-      hint.textContent = hintText;
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "plain-button shop-idle-button";
-      button.id = door.id(id);
-      button.textContent = "Add to shopping list";
-      button.setAttribute("aria-disabled", "true");
-      button.setAttribute("aria-describedby", hint.id);
-      wrap.append(button, hint);
-      return wrap;
-    }
-
     function foldSection(door, key, label, make) {
       const open = !!door.state.open[key];
       const wrap = document.createElement("section");
