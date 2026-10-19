@@ -4344,6 +4344,84 @@
       select.value = current;
     }
 
+    // ----- v49: one-row button groups -----
+    // Every group of option buttons (.chips, and the shop buttons) is ONE row (see index.html). Each row gets one of two looks:
+    // "fit" when its buttons fit side by side with no label on more than two lines, otherwise "scroll" (one line per label,
+    // the row slides sideways, a fade shows which side has more, and your pressed button is brought into view).
+    // Long lists you browse rather than choose from are marked .chips-wrap and left to wrap.
+    const CHIP_ROWS = ".chips:not(.chips-wrap), .buy-shops";
+    function chipLines(button) {
+      const range = document.createRange();
+      range.selectNodeContents(button);
+      const tops = new Set();
+      for (const r of range.getClientRects()) if (r.width > 0.5) tops.add(Math.round(r.top));
+      return tops.size;
+    }
+    function chipRowFade(row) {
+      const over = row.classList.contains("chips-scroll") && row.scrollWidth > row.clientWidth + 1;
+      row.classList.toggle("chips-more-left", over && row.scrollLeft > 1);
+      row.classList.toggle("chips-more-right", over && row.scrollLeft + row.clientWidth < row.scrollWidth - 1);
+    }
+    function fitChipRow(row) {
+      const box = row.parentElement;
+      if (!row.isConnected || !box || row.offsetParent === null || row.getClientRects().length === 0) return;
+      const buttons = [...row.children].filter(c => c.tagName === "BUTTON");
+      // What the row looks like: if none of this changed, the look chosen last time still holds.
+      const look = [box.clientWidth, document.documentElement.dataset.t,
+        ...buttons.map(c => c.textContent + (c.getAttribute("aria-pressed") === "true" || c.getAttribute("aria-expanded") === "true" ? "*" : ""))].join("\u0001");
+      if (row.dataset.look !== look) {
+        row.dataset.look = look;
+        row.classList.remove("chips-scroll", "chips-tight", "chips-tall", "chips-more-left", "chips-more-right");
+        row.classList.add("chips-fit");
+        // Try the normal spacing, then a tighter one (less padding and gap), then give up and slide.
+        let lines = [], fits = false;
+        for (const tight of [false, true]) {
+          row.classList.toggle("chips-tight", tight);
+          lines = buttons.map(chipLines);
+          fits = row.scrollWidth <= row.clientWidth + 1 && lines.every(n => n <= 2) && buttons.every(c => c.scrollWidth <= c.clientWidth + 1);
+          if (fits) break;
+        }
+        if (!fits) row.classList.remove("chips-tight");
+        row.classList.toggle("chips-fit", fits);
+        row.classList.toggle("chips-scroll", !fits);
+        row.classList.toggle("chips-tall", fits && lines.some(n => n === 2));
+        if (!fits) {
+          // Bring the pressed button into view, unless one already is.
+          const rowBox = row.getBoundingClientRect();
+          const on = buttons.filter(c => c.getAttribute("aria-pressed") === "true" || c.getAttribute("aria-expanded") === "true");
+          const inView = (c) => { const r = c.getBoundingClientRect(); return r.left >= rowBox.left - 1 && r.right <= rowBox.right + 1; };
+          if (on.length && !on.some(inView)) {
+            const r = on[0].getBoundingClientRect();
+            row.scrollLeft = Math.max(0, row.scrollLeft + r.left - rowBox.left - (rowBox.width - r.width) / 2);
+          }
+        }
+      }
+      chipRowFade(row);
+    }
+    let chipRowsQueued = false;
+    const chipRowSizes = typeof ResizeObserver === "function" ? new ResizeObserver(() => fitChipRows()) : null;
+    function fitChipRows() {
+      if (chipRowsQueued) return;
+      chipRowsQueued = true;
+      requestAnimationFrame(() => {
+        chipRowsQueued = false;
+        for (const row of document.querySelectorAll(CHIP_ROWS)) {
+          if (chipRowSizes && !row.dataset.watched) { row.dataset.watched = "1"; chipRowSizes.observe(row); }   // shown, hidden or resized
+          fitChipRow(row);
+        }
+      });
+    }
+    // Rows are redrawn all over the app, so watch the page for new buttons rather than calling this from every render.
+    new MutationObserver(fitChipRows).observe(document.body, { childList: true, subtree: true });
+    window.addEventListener("resize", fitChipRows);
+    document.addEventListener("click", fitChipRows, true);   // a pressed button turns bold, which can change what fits
+    document.addEventListener("scroll", (event) => { const row = event.target; if (row.matches && row.matches(CHIP_ROWS)) chipRowFade(row); }, true);
+    if (document.fonts) document.fonts.addEventListener("loadingdone", () => {   // a theme's font arriving changes every width
+      for (const row of document.querySelectorAll(CHIP_ROWS)) delete row.dataset.look;
+      fitChipRows();
+    });
+    fitChipRows();
+
     function makeChip(text, pressed, onClick, colourVar) {
       const chip = document.createElement("button");
       chip.className = "chip";
@@ -8827,7 +8905,7 @@
         moods.appendChild(chip);
       }
       const chips = document.createElement("div");
-      chips.className = "chips";
+      chips.className = "chips chips-wrap";   // v49: a list to browse, so it wraps (the group buttons above are one row)
       chips.id = door.id("starter-chips");
       chips.style.marginTop = "0";
       for (const s of starterSchemesShown(st, door)) {
@@ -8950,7 +9028,7 @@
         groups.appendChild(chip);
       }
       const chips = document.createElement("div");
-      chips.className = "chips";
+      chips.className = "chips chips-wrap";   // v49: a list to browse, so it wraps (the group buttons above are one row)
       chips.id = door.id("detail-chips");
       chips.style.marginTop = "0";
       for (const r of detailRecipesShown(st, door)) {
@@ -9068,7 +9146,7 @@
         groups.appendChild(chip);
       }
       const chips = document.createElement("div");
-      chips.className = "chips";
+      chips.className = "chips chips-wrap";   // v49: a list to browse, so it wraps (the group buttons above are one row)
       chips.id = door.id("basing-chips");
       chips.style.marginTop = "0";
       for (const t of basingTipsShown(st, door)) {
@@ -10350,7 +10428,7 @@
           pickHint.style.margin = "10px 0 0";
           pickHint.textContent = "Tap the ones you don't have.";
           const list = document.createElement("div");
-          list.className = "chips";
+          list.className = "chips chips-wrap";   // v49: one button per paint, so it wraps
           for (const p of paints) {
             const owned = ownsNewPaint(choice, p);
             const chip = makeChip(`${owned ? "✓ " : ""}${p.label}`, owned, () => {
@@ -13520,11 +13598,11 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=48". v21.4 test checks.)
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=49". v21.4 test checks.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v48";
+    const APP_VERSION = "v49";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -13973,6 +14051,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v49", date: "19 Oct 2026", changes: [
+        "Groups of option buttons (paint status, the stage filters, Paint brands and the rest) now always sit on one row. When a group is too long for the screen, it scrolls sideways: a fade shows there are more, and your choice is always in view.",
+      ]},
       { version: "v48", date: "19 Oct 2026", changes: [
         "About 2,800 more paints the app knows by name: Warhammer Tone Pro (all 30 colours in their five tones, like Carmine Blades 1 to 5), Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World, plus every range of Citadel, Vallejo, The Army Painter, Pro Acryl and AK Interactive (Speedpaint, Model Air, AK figures and more). They're suggested as you type, matched when you paste recipes or scan a pot, and used in Colour ideas.",
         "New in Settings: Paint brands. Switch off the brands you don't use, and their paints stop being suggested and matched. Your own paints are always included.",

@@ -767,8 +767,11 @@ def main():
                                            "shopping list", "already had recipes", "Restore example recipes", "twice"]), help_text)
         sub_tab(page, "updates")
         updates = page.inner_text("#view-updates")
-        check("the Updates page has the v44 entry in plain words",
-              "v44" in updates and "example schemes" in updates and "Restore example recipes" in updates and "Clear examples" in updates, updates[:500])
+        if page.evaluate("CHANGELOG.slice(0, UPDATES_SHOWN).some(r => r.version === 'v44')"):
+            check("the Updates page has the v44 entry in plain words",
+                  "v44" in updates and "example schemes" in updates and "Restore example recipes" in updates and "Clear examples" in updates, updates[:500])
+        else:
+            print("SKIP (entry no longer in the public Updates list): " + 'the Updates page has the v44 entry in plain words')
 
         check("no real browser pop-ups at any point", not popups, popups)
         check("no page errors", not errors, errors[:3])

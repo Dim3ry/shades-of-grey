@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=48"></script>
+  <script src="early.js?v=49"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -311,7 +311,7 @@
     .legend-key i { display: inline-block; width: 16px; height: 3px; border-radius: var(--radius-bar); background: var(--key); }
     .history-wrap { position: relative; }
     .range-chips { gap: 6px; }
-    .range-chips .chip { padding: 8px 12px; min-height: 36px; }
+    .range-chips .chip { padding: 8px 12px; min-height: 40px; }   /* v49: 40 px like every other option button (was 36) */
     .history-wrap svg { display: block; touch-action: pan-y; }   /* lets a finger drag sideways to read values */
     .chart-tip {
       position: absolute; top: 4px; pointer-events: none; z-index: 2;
@@ -435,7 +435,45 @@
     .filter-summary .hint { margin: 0; }
     .filter-summary .link-button { flex-shrink: 0; }
     .panel .edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    /* v49: every group of option buttons sits on ONE row, never two. fitChipRows in app.js picks one of two looks per row:
+       - "fit" (most rows): the buttons share the row's width (a longer label gets a bit more) and may shrink down to their
+         longest word, so a two-word label breaks inside its button ("Running / low") instead of the group spilling onto
+         a second row. Two-line buttons get rounded corners rather than a pill, so they don't turn into eggs.
+       - "scroll" (when even that won't fit, or a label would need three lines, like the eight stages on a phone): each
+         label stays on one line and the row slides sideways, with a fade on the side that has more and the pressed
+         button brought into view.
+       Long lists you browse rather than choose from (24 starter schemes, your parts...) are marked .chips-wrap and wrap as before. */
+    /* The 4 px of padding (with the row pulled out 4 px each side to keep the buttons lined up with everything else) is
+       room for the keyboard focus ring, which a sliding row would otherwise cut off. The !important beats the inline margins. */
+    .chips, .buy-shops { display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; min-width: 0;
+                         contain: inline-size;   /* a row is as wide as the space it's given, never wider: it can't push its card out */
+                         padding: 4px; margin-left: -4px !important; margin-right: -4px !important; }
+    .chips { margin-top: 6px; }
+    .chips::-webkit-scrollbar, .buy-shops::-webkit-scrollbar { display: none; }
+    .chips > button, .buy-shops > button { flex: 1 1 auto; min-width: min-content; max-width: 16em; line-height: 1.15; text-align: center; }
+    .chips > button:only-child, .buy-shops > button:only-child { flex-grow: 0; }
+    .chips > .chip { padding-inline: 10px; border-radius: 22px; }   /* a pill at one line (40 or 44 px tall), rounded corners at two */
+    .chips.chips-scroll, .buy-shops.chips-scroll {
+      overscroll-behavior-x: contain; scroll-snap-type: x proximity; scroll-padding-inline: 24px; -webkit-overflow-scrolling: touch;
+    }
+    .chips.chips-scroll > button, .buy-shops.chips-scroll > button { flex: 0 0 auto; max-width: none; white-space: nowrap; scroll-snap-align: start; }
+    .chips.chips-scroll > .chip { padding-inline: 14px; }
+    /* the fade that says "there's more this way" */
+    .chips-more-right { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
+    .chips-more-left { -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to left, #000 calc(100% - 28px), transparent); }
+    .chips-more-left.chips-more-right { -webkit-mask-image: linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 28px), transparent); }
+    /* with a mouse there's no finger to swipe, so a sliding row shows a thin scroll bar */
+    @media (hover: hover) and (pointer: fine) {
+      .chips.chips-scroll, .buy-shops.chips-scroll { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+      .chips.chips-scroll::-webkit-scrollbar, .buy-shops.chips-scroll::-webkit-scrollbar { display: block; height: 6px; }
+      .chips.chips-scroll::-webkit-scrollbar-thumb, .buy-shops.chips-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    }
+    .chips.chips-tight { gap: 4px; }
+    .chips.chips-tight > .chip { padding-inline: 6px; }   /* the step before sliding: a little less room round each label */
+    .chips.chips-tall > .chip { border-radius: 14px; }   /* two-line buttons: rounded corners, not a stretched pill */
+    .chips.chips-wrap { flex-wrap: wrap; gap: 8px; overflow: visible; contain: none; padding: 0; margin-left: 0 !important; margin-right: 0 !important; }
+    .chips.chips-wrap > button { flex: 0 1 auto; min-width: auto; max-width: none; line-height: normal; }
+    .chips.chips-wrap > .chip { padding-inline: 14px; border-radius: 999px; }
     .chip {
       background: var(--background);
       color: var(--muted);
@@ -1083,7 +1121,7 @@
     .fold-panel > .faction-history, .fold-panel > .starter-schemes, .fold-panel > .detail-recipes, .fold-panel > .basing-tips { border-top: 0; padding-top: 0; }
     /* v37: the Themes | Combinations switch: two equal buttons side by side */
     .view-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-    .view-switch .chip { justify-content: center; min-height: 44px; }
+    .view-switch .chip { justify-content: center; min-height: 44px; max-width: none; }
     /* v37 part 2: the search boxes. A box you type in with a list under it (Start from, Faction), and a plain search box above a list of buttons. */
     .combo, .list-search { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
     .combo-label { font-size: 13px; color: var(--muted); }
@@ -1136,7 +1174,7 @@
     .buy-bar { margin: 0 0 14px; padding: 10px 12px; border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-box);
                background: linear-gradient(to right, var(--accent-wash), transparent 80%), var(--card); }
     .buy-bar h3 { margin: 0 0 8px; font-size: 15px; color: var(--accent); }
-    .buy-shops { display: flex; flex-wrap: wrap; gap: 8px; }
+    /* v49: .buy-shops is one row, like .chips (see there) */
     .buy-shops button { min-height: 44px; }
     .buy-shops button[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
     .buy-links { list-style: none; margin: 10px 0 0; padding: 0; }
@@ -1228,6 +1266,10 @@
         gap: 14px; align-items: start;
       }
       li.unit { margin-bottom: 0; padding: 16px; }
+      /* v49: the game and faction menus and To do / Done / Repaint share the top line; the stages get the line below. */
+      #filter-card:not(.hidden) { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); column-gap: 12px; align-items: center; }
+      #filter-card > #group-chips { margin-top: 0; }
+      #filter-card > #stage-chips { grid-column: 1 / -1; }
       .name { font-size: 18px; }
       .details, .stage { font-size: 14px; }
 
@@ -2110,8 +2152,8 @@
         <details class="card" id="recipe-lists">
           <summary>Parts and techniques</summary>
           <p class="hint" style="margin-top: 10px;">The choices offered when you write a recipe. You can also add new ones while writing.</p>
-          <div class="panel-field">Parts<div class="chips" id="part-chips" style="margin-top: 0;"></div></div>
-          <div class="panel-field" style="margin-top: 12px;">Techniques<div class="chips" id="technique-chips" style="margin-top: 0;"></div></div>
+          <div class="panel-field">Parts<div class="chips chips-wrap" id="part-chips" style="margin-top: 0;"></div></div>
+          <div class="panel-field" style="margin-top: 12px;">Techniques<div class="chips chips-wrap" id="technique-chips" style="margin-top: 0;"></div></div>
         </details>
       </div>
       <!-- v16: Paste recipes (text box, preview, confirm). Filled by renderImport(). -->
@@ -2614,7 +2656,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=48" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=49" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -2623,10 +2665,10 @@
        names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks.
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=48"></script>
-  <script src="schemes.js?v=48"></script>
-  <script src="detail-recipes.js?v=48"></script>
-  <script src="basing-tips.js?v=48"></script>
-  <script src="app.js?v=48"></script>
+  <script src="colour.js?v=49"></script>
+  <script src="schemes.js?v=49"></script>
+  <script src="detail-recipes.js?v=49"></script>
+  <script src="basing-tips.js?v=49"></script>
+  <script src="app.js?v=49"></script>
 </body>
 </html>
