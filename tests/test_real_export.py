@@ -7,6 +7,7 @@ The port comes from the SOG_PORT environment variable, or 8765 if it isn't set."
 import json, os, re, sys
 from collections import Counter
 from playwright.sync_api import sync_playwright
+import fold_opener   # v54: the Import card folds shut; this older test works inside it
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}"
@@ -37,6 +38,7 @@ def main():
     with sync_playwright() as p:
         browser = p.chromium.launch()
         page = browser.new_page(viewport={"width": 390, "height": 844})
+        fold_opener.open_cards_on_load(page)   # v54: open the folded Settings cards whenever the app loads
         page_errors = []
         page.on("pageerror", lambda e: page_errors.append(str(e)))
         # Start from an empty store on the same site, without running the app first.
