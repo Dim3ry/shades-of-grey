@@ -501,7 +501,7 @@ def main():
             return { inSettings: !!s && document.getElementById('view-settings').contains(s),
                      inRecipes: document.getElementById('view-recipes').contains(s),
                      heading: s.querySelector('h3').textContent, button: document.getElementById('restore-examples').textContent,
-                     cls: document.getElementById('restore-examples').className, hint: s.querySelector('.hint').textContent }; }""")
+                     cls: document.getElementById('restore-examples').className, hint: document.getElementById('restore-examples-hint').textContent }; }""")
         check("the section is in Settings, not on the Recipes page", in_settings["inSettings"] and not in_settings["inRecipes"], in_settings)
         check("it is called Restore example recipes, and the button is plain (not loud)",
               in_settings["heading"] == "Restore example recipes" and in_settings["button"] == "Restore example recipes"
@@ -742,7 +742,7 @@ def main():
                 page.evaluate("() => document.getElementById('restore-examples').scrollIntoView({ block: 'center' })")
                 page.wait_for_timeout(150)
                 info = page.evaluate("""() => { const b = document.getElementById('restore-examples').getBoundingClientRect();
-                    const h = document.querySelector('#restore-examples-section .hint'); const card = h.closest('.card');
+                    const h = document.getElementById('restore-examples-hint'); const card = h.closest('.card');
                     return { l: b.left, r: b.right, w: b.width, h: b.height, vw: window.innerWidth, fg: getComputedStyle(h).color,
                              bg: getComputedStyle(card).backgroundColor, bfg: getComputedStyle(document.getElementById('restore-examples')).color,
                              bbg: getComputedStyle(document.getElementById('restore-examples')).backgroundColor }; }""")

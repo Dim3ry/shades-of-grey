@@ -337,7 +337,7 @@ def main():
         def label(): return page.inner_text("#full-share-button").strip()
 
         setup("ok")
-        info = page.evaluate("""() => { const c = document.getElementById('backup-card'); const b = [...c.querySelectorAll('button')];
+        info = page.evaluate("""() => { const c = document.getElementById('backup-card'); const b = [...c.querySelectorAll('button:not(.more-info-button)')];
             return { ids: b.map(x => x.id), labels: b.map(x => x.textContent.trim()), full: [...c.querySelectorAll('#full-share-button')].map(x => x.style.gridColumn),
                      hint: document.getElementById('share-hint').textContent }; }""")
         check("the button sits straight after Save full backup with photos, full width, with the right words",
@@ -439,7 +439,7 @@ def main():
                       page.evaluate("() => { const e = document.getElementById('done-summary'); return e.getBoundingClientRect().right <= window.innerWidth + 1; }"))
                 shot(page, f"v46-dashboard-{appearance}-{width}.png")
                 open_more(page, "settings")
-                sizes = page.evaluate("""() => [...document.querySelectorAll('#backup-card button')].map(b => { const r = b.getBoundingClientRect();
+                sizes = page.evaluate("""() => [...document.querySelectorAll('#backup-card button:not(.more-info-button)')].map(b => { const r = b.getBoundingClientRect();
                     return { id: b.id, h: r.height, w: r.width, clipped: b.scrollWidth > b.clientWidth + 1, inside: r.left >= 0 && r.right <= window.innerWidth + 1 }; })""")
                 check(f"{tag}: all five backup buttons are at least 44 px tall, fully inside the screen, with no clipped words",
                       len(sizes) == 5 and all(s["h"] >= 44 and s["inside"] and not s["clipped"] for s in sizes), sizes)

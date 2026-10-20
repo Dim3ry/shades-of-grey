@@ -179,8 +179,8 @@ def main():
                 page.set_viewport_size({"width": width, "height": 844})
                 fresh(page, {"appearance": appearance})
                 check(f"{tag}: the dashboard shows the examples card and the three example units",
-                      page.is_visible("#examples-card-dash") and all(n in page.inner_text("#view-dashboard") for n in ["Captain", "Brutes", "Guardians"]),
-                      page.inner_text("#view-dashboard")[:200])
+                      page.is_visible("#examples-card-dash") and all(n in page.locator("#view-dashboard").text_content() for n in ["Captain", "Brutes", "Guardians"]),   # v52: the names sit behind More info
+                      page.locator("#view-dashboard").text_content()[:200])
                 check(f"{tag}: dashboard, nothing scrolls sideways", no_sideways(page))
                 shot(page, f"v34-dashboard-{appearance}-{width}.png")
                 page.click('button[data-tab="recipes"]'); page.wait_for_timeout(300)

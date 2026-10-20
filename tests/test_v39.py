@@ -197,7 +197,7 @@ def main():
         bar_code = app[app.index("function buildBuyBar("):app.index("function renderShopPanel(")]
         check("reuse, not copy: the fold-out uses shopsFor, shopLink and the same plain-links sentence as the Buy these bar, and the sentence is written once (the bar now reads it from the same place)",
               all(w in new_c for w in ["shopsFor([{ paint }])", "shopLink(shop, paint)", "SHOP_PLAIN_WORDS"]) and app_c.count('const SHOP_PLAIN_WORDS = "') == 1 and PLAIN in new_code
-              and "SHOP_PLAIN_WORDS" in bar_code and PLAIN not in bar_code)
+              and "SHOP_PLAIN_WORDS" in app[app.index("function renderShopPanel("):app.index("// v40: the small basket count")] and PLAIN not in bar_code)   # v52: the bar's note moved behind the Shopping list's More info, still read from the same place
         door_c = app[app.index("function compendiumDoor"):app.index("function startRecipeFromCompendium")]
         card = app[app.index("function buildColourIdeasCard"):]
         card_door = card[:card.index("id: doorId,")]
