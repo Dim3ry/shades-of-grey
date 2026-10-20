@@ -108,7 +108,7 @@ def main():
         tags = re.findall(r'<script src="[^"]+\?v=(\d+)"', html)
         check("all six script tags carry the version number", len(tags) == 6 and set(tags) == {version[1:]}, tags)
         entry = page.evaluate("CHANGELOG.find(c => c.version === 'v52')")
-        check("the v52 Updates entry exists and is the newest", bool(entry) and page.evaluate("CHANGELOG[0].version") == "v52")
+        check("the v52 Updates entry exists (v53 may sit above it)", bool(entry) and page.evaluate("CHANGELOG[0].version") in ("v52", "v53"))
         check("the v52 entry has no em dashes", entry and not any("—" in x for x in entry["changes"]))
         check("the v52 entry mentions More info, the Shopping list, Settings and Help",
               entry and all(any(word in x for x in entry["changes"]) for word in ("More info", "Shopping list", "Settings", "Help")))
@@ -168,6 +168,8 @@ def main():
         check("every Settings card with an explanation has one More info (" + ", ".join(keys) + ")", all(have), dict(zip(keys, have)))
         check("each is closed, says More info and carries aria-expanded false",
               page.evaluate("(ks) => ks.every(k => { const b = document.querySelector('[aria-controls=\"more-' + k + '\"]'); return b && b.getAttribute('aria-expanded') === 'false' && b.textContent.trim() === 'More info'; })", keys))
+        page.evaluate("() => document.querySelectorAll('.card-fold-button[aria-expanded=\"false\"]').forEach(b => b.click())")   # v53: Faction colours folds shut as a whole card
+        page.wait_for_timeout(100)
         check("each More info button is at least 44 px tall",
               page.evaluate("(ks) => ks.every(k => document.querySelector('[aria-controls=\"more-' + k + '\"]').getBoundingClientRect().height >= 43.5)", keys))
         check("each one's panel holds the lines it should (they moved, they were not copied)",
@@ -241,11 +243,13 @@ def main():
         check("Help still has its topics", topics >= 12, topics)
         check("every topic title carries aria-expanded",
               page.evaluate("() => [...document.querySelectorAll('#view-help .help details')].every(d => d.querySelector(':scope > summary').hasAttribute('aria-expanded'))"))
-        check("the first topic is open (aria-expanded true) and the rest are closed",
-              page.evaluate("() => [...document.querySelectorAll('#view-help .help details')].every((d, i) => d.querySelector(':scope > summary').getAttribute('aria-expanded') === String(i === 0))"))
+        check("every topic starts closed (aria-expanded false), v53 (the first used to be open)",
+              page.evaluate("() => [...document.querySelectorAll('#view-help .help details')].every(d => d.querySelector(':scope > summary').getAttribute('aria-expanded') === 'false' && !d.open)"))
+        press(page, page.locator("#view-help .help details > summary").nth(0))
         words = page.evaluate("""() => { const d = document.querySelectorAll('#view-help .help details');
             return [getComputedStyle(d[0].querySelector('summary'), '::after').content, getComputedStyle(d[1].querySelector('summary'), '::after').content]; }""")
         check("an open topic reads Less info and a closed one reads More info", words == ['"Less info"', '"More info"'], words)
+        press(page, page.locator("#view-help .help details > summary").nth(0))   # shut it again
         press(page, page.locator("#view-help .help details > summary").nth(1))
         check("tapping a topic opens it, flips the word and sets aria-expanded true",
               page.evaluate("() => { const d = document.querySelectorAll('#view-help .help details')[1]; return d.open && d.querySelector('summary').getAttribute('aria-expanded') === 'true' && getComputedStyle(d.querySelector('summary'), '::after').content === '\"Less info\"'; }"))

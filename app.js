@@ -4300,6 +4300,7 @@
     // "Faction colours" on the dashboard: open Settings at the faction colours card.
     document.getElementById("faction-colours-link").addEventListener("click", () => {
       showTab("settings");
+      openCardFold("faction-colours");   // v53: the card is shut until it is opened, so open it first
       document.getElementById("faction-colours-card").scrollIntoView({ block: "start" });
     });
 
@@ -4779,7 +4780,7 @@
       // It's a real <details>, so the keyboard and screen readers work without extra code.
       // Whether it is open is remembered per unit (editOpenIds) so a redraw doesn't shut it.
       const editSection = document.createElement("details");
-      editSection.className = "edit-details";
+      editSection.className = "edit-details help-look";   // v53: the Help look (More info / Less info)
       const editSummary = document.createElement("summary");
       editSummary.textContent = "Edit details";
       const editHint = document.createElement("span");
@@ -4791,6 +4792,7 @@
       editBody.append(...editFields);
       editSection.append(editSummary, editBody);
       editSection.open = editOpenIds.has(model.id);
+      markFold(editSection);   // v53: aria-expanded follows open and shut
       editSection.addEventListener("toggle", () => {
         if (editSection.open) editOpenIds.add(model.id); else editOpenIds.delete(model.id);
       });
@@ -6305,6 +6307,7 @@
       if (opening && draftWaiting("unit")) return;   // v26: a kept unfinished unit is offered first
       form.classList.toggle("hidden", !opening);
       toggleAdd.textContent = opening ? "Close" : "+ Add unit";
+      toggleAdd.setAttribute("aria-expanded", String(opening));   // v53
       if (opening && selectMode) closeSelect();   // v21.1: one thing at a time
       if (opening) nameInput.focus();
     });
@@ -6951,8 +6954,14 @@
       if (!book.schemes.length) {
         const empty = document.createElement("li");
         empty.className = "empty";
-        empty.textContent = "No schemes yet. A scheme groups the recipes you use for one faction " +
+        // v53: "No schemes yet." stays in view; what a scheme is sits behind More info.
+        const emptyLine = document.createElement("span");
+        emptyLine.textContent = "No schemes yet.";
+        const emptyMore = document.createElement("p");
+        emptyMore.className = "hint";
+        emptyMore.textContent = "A scheme groups the recipes you use for one faction " +
           "(armour, trim, lenses, base…). Apply it to the whole faction at once, and new units in that faction get it automatically.";
+        empty.append(emptyLine, pageMoreInfo("schemes-empty", [emptyMore], { label: "Schemes" }));
         schemeListEl.appendChild(empty);
         return;
       }
@@ -8473,6 +8482,8 @@
         ["import", "Import", ["import-explain"]],
         ["your-data", "Your data", ["data-summary", "photo-summary", "storage-note", "restore-examples-hint"]],
         ["feedback", "Tell us what you think", ["feedback-explain"]],
+        ["colours", "Colours", ["palette-light-note"]],   // v53
+        ["iphone", "Add to Home Screen", ["iphone-steps"]],   // v53: the warning and the reason stay in view; the steps fold
       ];
       for (const [key, label, ids] of groups) {
         const nodes = ids.map(id => document.getElementById(id)).filter(Boolean);
@@ -8482,17 +8493,59 @@
         for (const node of nodes) node.style.margin = "0";
         spot.replaceWith(pageMoreInfo(key, nodes, { label }));
       }
+      showLightNote();   // v53: the Colours note only shows in light mode
     }
     // v52: Help's topics are native folds (so links and the Back button still open them). The look (a "More info" / "Less info" word and a
     // chevron) is in the style sheet; this only tells screen readers whether each one is open.
     function markHelpFolds() {
-      for (const box of document.querySelectorAll("#view-help .help details")) {
-        const summary = box.querySelector(":scope > summary");
-        if (!summary) continue;
-        const sync = () => summary.setAttribute("aria-expanded", String(box.open));
-        box.addEventListener("toggle", sync);
-        sync();
-      }
+      for (const box of document.querySelectorAll("#view-help .help details")) markFold(box);
+    }
+    // v53: fold a whole Settings card shut. The card's heading becomes a 44 px button (aria-expanded, aria-controls, the same chevron as the
+    // Compendium's parts) and everything under the heading moves into a panel (the ids stay, so the code that fills them is unchanged).
+    // The card is shut every time the app opens; whether it is open is kept here, in memory, only while the app is open. Nothing is saved.
+    const openCards = new Set();
+    const cardFolds = new Map();
+    function foldCard(card, key) {
+      const heading = card && card.querySelector(":scope > h2");
+      if (!heading || cardFolds.has(key)) return;
+      const panel = document.createElement("div");
+      panel.className = "card-fold-panel";
+      panel.id = `card-fold-${key}-panel`;
+      while (heading.nextSibling) panel.appendChild(heading.nextSibling);
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "card-fold-button";
+      button.id = `card-fold-${key}-button`;
+      button.setAttribute("aria-controls", panel.id);
+      const text = document.createElement("span");
+      text.textContent = heading.textContent;
+      const mark = document.createElement("span");
+      mark.className = "fold-mark";
+      mark.setAttribute("aria-hidden", "true");
+      button.append(text, mark);
+      heading.replaceChildren(button);
+      card.classList.add("card-fold");
+      card.appendChild(panel);
+      const show = (isOpen) => {
+        if (isOpen) openCards.add(key); else openCards.delete(key);
+        button.setAttribute("aria-expanded", String(isOpen));
+        panel.hidden = !isOpen;
+      };
+      button.addEventListener("click", () => show(!openCards.has(key)));
+      cardFolds.set(key, show);
+      show(openCards.has(key));
+    }
+    function openCardFold(key) { const show = cardFolds.get(key); if (show) show(true); }
+    // v53: the same for any other native fold (Parts and techniques, Edit details, Colour ideas, Show as a table): the title tells screen
+    // readers whether the fold is open, and keeps telling them when it is opened or shut by a tap or by code. Safe to call twice.
+    const markedFolds = new WeakSet();
+    function markFold(box) {
+      const summary = box && box.querySelector(":scope > summary");
+      if (!summary || markedFolds.has(box)) return;
+      markedFolds.add(box);
+      const sync = () => summary.setAttribute("aria-expanded", String(box.open));
+      box.addEventListener("toggle", sync);
+      sync();
     }
     // The Compendium's rows are plain boxes (no recipe to add to), so their reasons and notes sit behind More info.
     function compactRows(door) { return !!door.short && !door.addStep && !door.addSteps; }
@@ -9760,7 +9813,7 @@
 
     function buildColourIdeasCard(d) {
       const card = document.createElement("details");
-      card.className = "card colour-ideas";
+      card.className = "card colour-ideas help-look";   // v53: the Help look (More info / Less info)
       card.id = "colour-ideas";
       card.open = colourIdeasState.open;
       const summary = document.createElement("summary");
@@ -9773,6 +9826,7 @@
       const body = document.createElement("div");
       body.className = "ideas-body";
       card.append(summary, body);
+      markFold(card);   // v53: aria-expanded follows open and shut
 
       let lastLook = "";
       let focusNext = "";
@@ -10583,7 +10637,7 @@
       const caption = document.createElement("p");
       caption.className = "wheel-caption";
       caption.textContent = "In the middle, clockwise from the top right: whites, greys, blacks and metallics.";
-      block.append(hint, svg, caption);
+      block.append(hint, svg, pageMoreInfo("wheel-caption", [caption], { label: "Colour wheel" }));   // v53: the caption sits behind More info
       const open = WHEEL.find(w => w.key === st.wheel);
       if (open) block.appendChild(buildWheelDetail(door, open, items.filter(x => x.at.seg === open.key), redraw));
       body.appendChild(block);
@@ -10909,10 +10963,16 @@
 
       const card = document.createElement("div");
       card.className = "card";
-      card.innerHTML = `<h2>Paste recipes</h2>
-        <p class="hint">Paste your notes (from Google Keep, Reddit, anywhere). Put each part on its own line ending in a colon,
-        like <b>Eyes:</b>, then one step per line, or several split by commas. Mixes like <b>2:1 Baal:CM</b> or <b>50/50</b> work too.
-        You'll see a preview before anything is saved.</p>`;
+      // v53: the introduction sits behind More info (built from nodes, no innerHTML; the open or shut state is kept while the app is open).
+      const importHead = document.createElement("h2");
+      importHead.textContent = "Paste recipes";
+      const importIntro = document.createElement("p");
+      importIntro.className = "hint";
+      const bold = (text) => { const b = document.createElement("b"); b.textContent = text; return b; };
+      importIntro.append("Paste your notes (from Google Keep, Reddit, anywhere). Put each part on its own line ending in a colon, like ",
+        bold("Eyes:"), ", then one step per line, or several split by commas. Mixes like ", bold("2:1 Baal:CM"), " or ", bold("50/50"),
+        " work too. You'll see a preview before anything is saved.");
+      card.append(importHead, pageMoreInfo("paste-intro", [importIntro], { label: "Paste recipes" }));
       const box = document.createElement("textarea");
       box.id = "import-text";
       box.rows = 8;
@@ -12455,7 +12515,15 @@
       document.getElementById("appearance-note").textContent = choice === "auto"
         ? `Follows your phone's own dark mode setting. Right now: ${isLight() ? "light" : "dark"}.`
         : "";
-      document.getElementById("palette-light-note").hidden = !isLight();
+      showLightNote();
+    }
+    // v53: the light-mode note (Settings, Colours) sits behind More info. In dark mode there is nothing to say, so the whole More info is hidden.
+    function showLightNote() {
+      const note = document.getElementById("palette-light-note");
+      const light = isLight();
+      note.hidden = !light;
+      const wrap = note.closest(".more-info");
+      if (wrap) wrap.hidden = !light;
     }
     for (const button of appearanceButtons) {
       button.addEventListener("click", () => {
@@ -13916,6 +13984,7 @@
     function closeAddForm() {
       form.classList.add("hidden");
       toggleAdd.textContent = "+ Add unit";
+      toggleAdd.setAttribute("aria-expanded", "false");   // v53
     }
 
     function startUnitsPaste() {
@@ -13995,11 +14064,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=52". v21.4 test checks.)
+    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=53".
+    // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v52";
+    const APP_VERSION = "v53";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -14297,6 +14367,7 @@
         showTab("units");
         form.classList.remove("hidden");
         toggleAdd.textContent = "Close";
+        toggleAdd.setAttribute("aria-expanded", "true");   // v53
         nameInput.value = kept.name;
         countInput.value = kept.count;
         hobbyInput.value = kept.game;
@@ -14448,6 +14519,15 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v53", date: "20 Oct 2026", changes: [
+        "Buttons, text boxes and menus are now all at least 44 px tall, and the small tap targets are bigger: the stage bars on the Dashboard, link buttons such as + Add part and Back, the Open recipe and Go to unit chips, Unlink, and the basket in the tab bar.",
+        "Parts and techniques, Edit details and Colour ideas now look like the Help topics, with More info and Less info. These folds, and the Add unit button, also tell screen readers whether they are open.",
+        "Help starts with every topic closed.",
+        "Four short notes moved behind More info: the Paste recipes introduction, what a scheme is on an empty Schemes page, the colour wheel caption, and the light mode note in Settings.",
+        "On iPhone, the Keep your data safe card keeps its warning and the reason in view. The Add to Home Screen steps are behind More info.",
+        "In Settings, Faction colours and Paint brands are folded shut when you open the app. Tap the heading to open one.",
+        "The red banner shown when saving fails now follows your theme colours.",
+      ]},
       { version: "v52", date: "20 Oct 2026", changes: [
         "The Shopping list is tidier. Your paints, the Copy as text button and the basket count stay in view. The explanations (what the list holds, the no-statuses warning and how the shop buttons work) are behind one More info.",
         "Settings is tidier. Each card keeps its buttons and switches in view, and its explanation sits behind a More info. Backups stay big and easy to reach.",
@@ -14542,6 +14622,10 @@
     planFeedbackPrompt();   // v25: decides whether the feedback card shows today (saved by the render below)
     foldPageText();   // v52
     markHelpFolds();   // v52
+    foldCard(document.getElementById("faction-colours-card"), "faction-colours");   // v53
+    foldCard(document.getElementById("brands-card"), "paint-brands");   // v53
+    markFold(document.getElementById("recipe-lists"));   // v53: Parts and techniques
+    markFold(document.getElementById("history-table-box"));   // v53: Show as a table
     render();
     countThisVisit();   // v27: one anonymous visit count (only from minifolio.app, and only if switched on)
     startPhotos();   // moves any old photos across, then loads thumbnails (in the background)

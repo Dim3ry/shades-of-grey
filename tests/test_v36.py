@@ -203,7 +203,7 @@ def main():
         order = page.evaluate("() => [...document.querySelectorAll('#compendium-body > *')].flatMap(e => e.classList.contains('more-info') ? [...e.querySelectorAll('.more-info-panel > *')] : [e]).map(e => e.id)")
         check("the wheel comes first in the tab (after the intro line), before the colour chooser", order[0] == "cmp-intro" and order[1] == "cmp-wheel-block" and order.index("cmp-wheel-block") < len(order) - 1, order[:5])
         inside = page.evaluate("() => [...document.getElementById('cmp-wheel-block').children].map(e => e.id || e.tagName.toLowerCase())")
-        check("inside the wheel part: the hint, the picture, then the small caption", inside[:3] == ["cmp-wheel-hint", "cmp-wheel", "p"] or inside[:3] == ["cmp-wheel-hint", "cmp-wheel", "P"], inside)
+        check("inside the wheel part: the hint, the picture, then the small caption (v53: behind More info)", inside[:3] == ["cmp-wheel-hint", "cmp-wheel", "div"] and page.evaluate("() => !!document.querySelector('#cmp-wheel-block > .more-info .wheel-caption')"), inside)   # v53: the caption sits behind More info
         check("the hint sits above the picture", page.evaluate("() => document.getElementById('cmp-wheel-hint').getBoundingClientRect().bottom <= document.getElementById('cmp-wheel').getBoundingClientRect().top + 0.5"))
         shape = page.evaluate("""() => { const s = document.getElementById('cmp-wheel');
             return { tag: s.tagName.toLowerCase(), ns: s.namespaceURI, viewBox: s.getAttribute('viewBox'), slices: [...s.querySelectorAll('path.wheel-seg')].map(e => e.dataset.wheel),

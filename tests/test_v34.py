@@ -98,9 +98,9 @@ def main():
                          ["Brutes", ["Green skin", "Glowing eyes", "Stone base"]],
                          ["Guardians", ["Gold metal", "Stone base"]]], linked)
         page.click('button[data-tab="recipes"]'); page.wait_for_timeout(300)
-        card = page.inner_text("#examples-card-recipes")
+        card = page.text_content("#examples-card-recipes")   # v53: the explanation sits behind More info (hidden), so read the text, not what shows
         check("the Recipes card counts the new examples in plain words", "5 example recipes" in card and "2 example schemes" in card and not dirty(card), card)
-        check("Clear examples is offered", page.locator("#examples-card-recipes button").count() == 2)
+        check("Clear examples is offered", page.locator("#examples-card-recipes button:not(.more-info-button)").count() == 2)   # v53: the More info button is not one of them
 
         # ---------- 3. The reworded hints and Help ----------
         print("\n--- 3. Hints and Help ---")
@@ -164,7 +164,7 @@ def main():
         fresh(page)
         page.click('button[data-tab="recipes"]'); page.wait_for_timeout(300)
         tags_in_card = page.evaluate("() => [...new Set([...document.querySelectorAll('#examples-card-recipes *, #examples-card-dash *')].map(e => e.tagName))].sort()")
-        check("the example cards contain only the usual tags", set(tags_in_card) <= {"P", "STRONG", "BUTTON", "DIV"}, tags_in_card)
+        check("the example cards contain only the usual tags", set(tags_in_card) <= {"P", "STRONG", "BUTTON", "DIV", "SPAN"}, tags_in_card)   # v53: SPAN is the More info button's own words and arrow
         check("no script ran and nothing was injected", page.evaluate("() => window.__pwned === undefined && !document.querySelector('#view-recipes img')"))
         outside = [u for u in requests if not u.startswith(t.BASE) and not u.startswith("data:") and not u.startswith("blob:")
                    and "goatcounter" not in u]

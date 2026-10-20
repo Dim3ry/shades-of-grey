@@ -319,7 +319,7 @@ def main():
         page.locator("#view-help summary", has_text="Importing").click()   # open the Importing topic
         help_text = page.inner_text("#view-help")
         check("Getting started points to Paste army list on the Units tab", "Paste army list" in help_text)
-        check("Help explains the Back button", page.locator("#help-back").count() == 1 and "Back" in page.inner_text("#help-back"))
+        check("Help explains the Back button", page.locator("#help-back").count() == 1 and "Back" in page.text_content("#help-back"))   # v53: Help starts with every topic closed, so read the text, not what shows
         check("Importing says where to find it (+ Add unit → Paste army list)", "+ Add unit → Paste army list" in help_text)
         check("Importing says the Units tab opens after an import", "Units tab opens" in help_text)
         check("no page errors", not errors, errors)
