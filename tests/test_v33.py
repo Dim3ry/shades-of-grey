@@ -216,6 +216,9 @@ def main():
         colour_words = set("red orange yellow green blue purple violet pink brown grey gray black white tan sand bone ivory cream gold golden silver copper bronze steel "
                            "dark light pale bright deep mid dull warm cool charcoal olive khaki earth earthy dusty rusty rust teal turquoise cyan mint lime "
                            "scarlet crimson maroon burgundy navy indigo magenta beige buff stone slate flesh skin leather wood metal metallic gunmetal hot tone verdigris rich "
+                           # v48: the built-in list now includes paints simply called things like "Old Copper", "Pale Dust", "Wet Mud" or
+                           # "Gloss Varnish", so these plain describing words count as colour words too.
+                           "old dust wet dry gloss matt matte satin varnish aged worn faded dirty clean fresh new "
                            "mud snow ice grass moss rock lava ash soot gravel rubble straw".split())
         paint_hits = [k[0] for k in known if len(k[0]) >= 6 and any(w not in colour_words for w in re.findall(r"[a-z']+", k[0].lower()))
                       and re.search(r"\b" + re.escape(k[0]) + r"\b", data_text, re.I)]
@@ -561,7 +564,7 @@ def main():
                 page.wait_for_timeout(150)
                 def geometry():
                     return page.evaluate("""() => { const c = document.getElementById('colour-ideas').getBoundingClientRect();
-                        const inside = (el) => { const r = el.getBoundingClientRect(); return r.left >= c.left - 0.5 && r.right <= c.right + 0.5; };
+                        const inside = (el) => { const r = (el.closest('.chips-scroll') || el).getBoundingClientRect(); return r.left >= c.left - 0.5 && r.right <= c.right + 0.5; };   // v49: a button in a sideways-scrolling row is clipped to the row
                         const grp = [...document.querySelectorAll('#basing-groups .chip')], rcp = [...document.querySelectorAll('#basing-chips .chip')];
                         const rrows = new Set(rcp.map(b => Math.round(b.getBoundingClientRect().top)));
                         const grows = new Set(grp.map(b => Math.round(b.getBoundingClientRect().top)));
@@ -570,7 +573,7 @@ def main():
                                  grpMinH: Math.min(...grp.map(b => b.getBoundingClientRect().height)), rcpRows: rrows.size, grpRows: grows.size, listH: box.height }; }""")
                 g_all = geometry()
                 shot(page, f"v33-groups-all-{appearance}-{width}.png")
-                check(f"{tag}: the card is inside the screen, and every group and tip button is inside the card",
+                check(f"{tag}: the card is inside the screen, and every group and tip button is inside the card (or in a one-line sliding row inside it)",
                       g_all["cl"] >= 0 and g_all["cr"] <= g_all["w"] + 0.5 and g_all["grpInside"] and g_all["rcpInside"], g_all)
                 check(f"{tag}: the five group buttons take one or two lines and are at least 36 px tall, and the 12 tip buttons wrap onto several lines",
                       g_all["n"] == 12 and g_all["grpRows"] <= 2 and g_all["rcpRows"] >= 2 and g_all["grpMinH"] >= 36, g_all)

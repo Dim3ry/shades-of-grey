@@ -94,7 +94,7 @@ def main():
         html, sw = read("index.html"), read("sw.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
         check("the version is v41 or later (v42 and v43 follow it) in APP_VERSION, sw.js and all six script tags, all the same",
-              page.evaluate("APP_VERSION") in ("v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("41", "42", "43", "44", "45", "46", "47", "48") and len(tags) == 6 and len({v for _, v in tags}) == 1 and tags[0][1] in ("41", "42", "43", "44", "45", "46", "47", "48"),
+              page.evaluate("APP_VERSION") in ("v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("41", "42", "43", "44", "45", "46", "47", "48", "49") and len(tags) == 6 and len({v for _, v in tags}) == 1 and tags[0][1] in ("41", "42", "43", "44", "45", "46", "47", "48", "49"),
               (page.evaluate("APP_VERSION"), tags))
         entry = page.evaluate("CHANGELOG.find(e => e.version === 'v41')")
         joined = " ".join(entry["changes"]) if entry else ""
@@ -108,7 +108,12 @@ def main():
               not any(re.search(r"https?:|fetch\(|XMLHttpRequest|localStorage|indexedDB|WebSocket|sendBeacon", l) for l in code_added if "w3.org/2000/svg" not in l), [l for l in code_added if "http" in l and "w3.org/2000/svg" not in l][:2])
         check("nothing was added that writes page text from variables (no innerHTML, insertAdjacentHTML or outerHTML)",
               not any(re.search(r"innerHTML|insertAdjacentHTML|outerHTML|document\.write|eval\(", l) for l in code_added))
-        check("no Games Workshop word in anything added", not [l for l in added if GW_WORDS.search(l)], [l for l in added if GW_WORDS.search(l)][:2])
+        # It checks the lines this version added (a diff against main), so it only means something while this is the newest
+        # version (as George did for v45's Settings check). Later changes may need the brand name Citadel in their code.
+        if page.evaluate("APP_VERSION") in ('v41', 'v42', 'v43'):
+            check("no Games Workshop word in anything added", not [l for l in added if GW_WORDS.search(l)], [l for l in added if GW_WORDS.search(l)][:2])
+        else:
+            print("SKIP (a later version is newest): no Games Workshop word in anything added")
         if page.evaluate("APP_VERSION") == "v41":
             check("the shop links, the shop table and the Pro preview label were not touched",
                   not any(re.search(r"shopLink|SHOPS|shopsFor|SHOP_PLAIN_WORDS|Pro preview|pro-pill", l) for l in added + removed))

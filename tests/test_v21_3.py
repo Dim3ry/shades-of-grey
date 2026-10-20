@@ -48,7 +48,11 @@ V21_2_CSP = ("default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-sr
 
 # What a pot of each brand prints around the paint's name.
 BRAND_WORDS = {"Vallejo": "VALLEJO GAME COLOR", "The Army Painter": "THE ARMY PAINTER WARPAINTS FANATIC",
-               "Pro Acryl": "PRO ACRYL", "AK Interactive": "AK INTERACTIVE 3RD GEN ACRYLICS"}
+               "Pro Acryl": "PRO ACRYL", "AK Interactive": "AK INTERACTIVE 3RD GEN ACRYLICS",
+               # v48: the brands added since (and Citadel, whose additions are now extra paints too), so the sweep
+               # below reads a real label for them instead of "undefined".
+               "Scale75": "SCALE 75", "Formula P3": "FORMULA P3", "Two Thin Coats": "TWO THIN COATS", "Tamiya": "TAMIYA",
+               "Green Stuff World": "GREEN STUFF WORLD", "Warhammer Tone Pro": "WARHAMMER TONE PRO", "Citadel": "CITADEL"}
 # Rough sizes of each list (a few names appear in two Vallejo ranges and are listed once).
 SIZES = {"Vallejo": 415, "The Army Painter": 205, "Pro Acryl": 115, "AK Interactive": 215}
 
@@ -121,11 +125,15 @@ with sync_playwright() as p:
       const keys = KNOWN_PAINTS.map(k => (k.brand + '|' + k.name).toLowerCase());
       return { by, total: extra.length,
         badColour: extra.filter(k => !/^#[0-9a-f]{6}$/.test(k.colour)).map(k => k.name),
-        badCode: extra.filter(k => k.codes && !k.codes.every(c => /^7[0-3]\\.[0-9]{3}$/.test(c))).map(k => k.name),
-        codesNotVallejo: extra.filter(k => k.codes && k.brand !== 'Vallejo').length,
+        // v48: Vallejo's other ranges have codes too (Model Air 71.xxx, Game Air 76.xxx, Mecha 69.xxx...), and
+        // Tamiya paints have theirs (XF-1, X-20A, LP-3, TS-14, AS-12). Still only those two brands have codes.
+        badCode: extra.filter(k => k.codes && k.brand === 'Vallejo' && !k.codes.every(c => /^[0-9]{2}\\.[0-9]{3}$/.test(c))).map(k => k.name),
+        badTamiyaCode: extra.filter(k => k.codes && k.brand === 'Tamiya' && !k.codes.every(c => /^(X|XF|LP|TS|AS)-[0-9]{1,3}[A-Z]?$/.test(c))).map(k => k.name),
+        codesNotVallejo: extra.filter(k => k.codes && k.brand !== 'Vallejo' && k.brand !== 'Tamiya').length,
         vallejoNoCode: extra.filter(k => k.brand === 'Vallejo' && !k.codes).map(k => k.name),
         twice: keys.filter((k, i) => keys.indexOf(k) !== i),
         citadel: KNOWN_PAINTS.filter(k => k.brand === 'Citadel').length,
+        citadelFirst: KNOWN_PAINTS.filter(k => k.brand === 'Citadel' && !k.extra).length,
         citadelExtra: KNOWN_PAINTS.filter(k => k.brand === 'Citadel' && k.extra).length,
         oldOnes: ['Matt Black', 'Matt White', 'Strong Tone', 'Dark Tone'].every(n => KNOWN_PAINTS.some(k => k.brand === 'The Army Painter' && k.name === n && !k.extra)),
       }; }""")
@@ -134,12 +142,16 @@ with sync_playwright() as p:
     check("about 950 new paints in all", info["total"] >= 950, info["total"])
     check("every new paint has a real colour", not info["badColour"], info["badColour"][:5])
     check("every Vallejo code is like 72.021", not info["badCode"], info["badCode"][:5])
+    check("every Tamiya code is like XF-1 (v48)", not info["badTamiyaCode"], info["badTamiyaCode"][:5])
     check("every Vallejo paint has a code", not info["vallejoNoCode"], info["vallejoNoCode"][:5])
-    check("only Vallejo paints have codes", info["codesNotVallejo"] == 0, info["codesNotVallejo"])
+    check("only Vallejo (and, since v48, Tamiya) paints have codes", info["codesNotVallejo"] == 0, info["codesNotVallejo"])
     check("no paint is listed twice (same brand and name)", not info["twice"], info["twice"][:5])
     base = json.load(open(os.path.join(HERE, "v21_2_citadel_matches.json"), encoding="utf-8"))
-    check("Citadel's list is unchanged", info["citadel"] == base["citadel_count"] and info["citadelExtra"] == 0,
-          (info["citadel"], info["citadelExtra"]))
+    # v48 added the rest of Citadel's range on purpose, but as EXTRA paints (the second-pass list), so George's
+    # first-pass Citadel list, the one that decides how a Citadel name is matched, must be exactly as before.
+    check("Citadel's first-pass list is unchanged (v48's Citadel additions are all extra paints)",
+          info["citadelFirst"] == base["citadel_count"] and info["citadel"] == info["citadelFirst"] + info["citadelExtra"],
+          (info["citadel"], info["citadelFirst"], info["citadelExtra"]))
     check("the older Army Painter entries are kept as they were", info["oldOnes"])
     lic = read("LICENSE-paint-list.txt")
     check("LICENSE-paint-list.txt has the MIT licence and the source", "MIT License" in lic and "Rick Fleuren" in lic
@@ -192,11 +204,26 @@ with sync_playwright() as p:
     # ---------- 4. Vallejo codes ----------
     print("\n--- 4. Vallejo code numbers ---")
     codes = page.evaluate("""() => {
-      const all = KNOWN_PAINTS.filter(k => k.codes).flatMap(k => k.codes.map(c => [c, k.name]));
-      const miss = all.filter(([c, n]) => { const s = suggestFromLabel("VALLEJO\\n" + c).suggestions; return !(s[0] && s[0].name === n); });
-      return { n: all.length, miss }; }""")
+      const all = KNOWN_PAINTS.filter(k => k.codes && k.brand === 'Vallejo').flatMap(k => k.codes.map(c => [c, k.name]));
+      const miss = all.filter(([c, n]) => { const s = suggestFromLabel("VALLEJO\\n" + c).suggestions; return !(s[0] && s[0].brand === 'Vallejo' && s[0].name === n); });
+      const bare = all.filter(([c, n]) => { const s = suggestFromLabel(c).suggestions; return !(s[0] && s[0].brand === 'Vallejo' && s[0].name === n); });
+      return { n: all.length, miss, bare }; }""")
     check(f"every Vallejo code on a label picks its paint first ({codes['n'] - len(codes['miss'])}/{codes['n']})",
           codes["n"] >= 380 and not codes["miss"], codes["miss"][:5])
+    check(f"…and with no brand words, just the code ({codes['n'] - len(codes['bare'])}/{codes['n']})", not codes["bare"], codes["bare"][:5])
+    # v48: Tamiya pots print a code too (XF-1). Read on a label that says Tamiya.
+    tam = page.evaluate("""() => {
+      const all = KNOWN_PAINTS.filter(k => k.codes && k.brand === 'Tamiya').flatMap(k => k.codes.map(c => [c, k.name]));
+      const miss = all.filter(([c, n]) => { const s = suggestFromLabel("TAMIYA\\n" + c).suggestions; return !(s[0] && s[0].brand === 'Tamiya' && s[0].name === n); });
+      return { n: all.length, miss }; }""")
+    check(f"every Tamiya code on a Tamiya label picks its paint first ({tam['n'] - len(tam['miss'])}/{tam['n']})",
+          tam["n"] >= 300 and not tam["miss"], tam["miss"][:5])
+    check("'TAMIYA COLOR / XF-1 / FLAT BLACK' → Tamiya Flat black first",
+          top(page, "TAMIYA COLOR\nXF-1\nFLAT BLACK")[:1] == ["Tamiya|Flat black"], top(page, "TAMIYA COLOR\nXF-1\nFLAT BLACK"))
+    check("a Tamiya-like code on another brand's label isn't read as Tamiya",
+          not any(s.startswith("Tamiya|") for s in top(page, "VALLEJO\nX-1")), top(page, "VALLEJO\nX-1"))
+    check("typing 'Tamiya XF-1' in pasted notes → Tamiya Flat black (sure)",
+          paste(page, "Tamiya XF-1") == {"status": "sure", "paint": "Tamiya|Flat black", "sug": []}, paste(page, "Tamiya XF-1"))
     check("72.021 = Magic Blue (Game Color)", top(page, "VALLEJO GAME COLOR\n72.021")[:1] == ["Vallejo|Magic Blue"])
     check("70.950 = Black (Model Color)", top(page, "70.950")[:1] == ["Vallejo|Black"])
     check("the code wins over a blurred name", top(page, "VALLEJO\n72.034\nB0NE WH")[:1] == ["Vallejo|Bone White"])
@@ -210,9 +237,17 @@ with sync_playwright() as p:
     steps = page.evaluate("""t => parseRecipeText(t).schemes[0].parts[0].steps.map(st =>
         [st.technique, st.paints.map(m => m.paint ? m.paint.brand + '|' + m.paint.name : m.typed)])""",
         "Armour:\nBase: 72.021\nWash: Nuln Oil\nAbyssal Blue\nCoal Black")
+    # v48: "Abyssal Blue" is now also a Scale75 paint, and "Coal Black" a Formula P3 one, so with no brand given
+    # they're rightly unsure (kept as typed, for you to choose); the code and Nuln Oil must still read right.
     check("a pasted note with a code and new-brand names reads right", steps == [
         ["Base coat", ["Vallejo|Magic Blue"]], ["Wash", ["Citadel|Nuln Oil"]],
-        ["", ["The Army Painter|Abyssal Blue"]], ["", ["Pro Acryl|Coal Black"]]], steps)
+        ["", ["Abyssal Blue"]], ["", ["Coal Black"]]], steps)
+    shared = page.evaluate("""() => ['Abyssal Blue', 'Coal Black'].map(t => { const r = matchPaint(t, {});
+        return [r.status, r.suggestions.map(s => s.brand + '|' + s.name)]; })""")
+    check("…and those two shared names offer both brands", shared[0][0] == "unsure" and shared[1][0] == "unsure"
+          and {"The Army Painter|Abyssal Blue", "Scale75|Abyssal Blue"} <= set(shared[0][1])
+          and {"Pro Acryl|Coal Black", "Formula P3|Coal Black"} <= set(shared[1][1]), shared)
+    check("'Pro Acryl Coal Black' is still sure", paste(page, "Pro Acryl Coal Black")["paint"] == "Pro Acryl|Coal Black")
 
     # ---------- 5. Citadel unchanged ----------
     print("\n--- 5. Citadel matching unchanged ---")
@@ -292,7 +327,10 @@ with sync_playwright() as p:
     page.click('nav button[data-tab="settings"]')   # v21.9: Help and Updates are sub-tabs of Settings
     page.click('#more-seg button[data-page="help"]')
     helps = page.locator("#help-scan-brands").text_content() or ""
-    check("Help lists the brands the scanner knows", all(w in helps for w in ["Vallejo Game Color", "Model Color", "Xpress Color", "Fanatic", "Pro Acryl", "AK 3rd Gen"]), helps[:200])
+    # v48: Help now names every brand (Vallejo's ranges are no longer listed one by one).
+    check("Help lists the brands the scanner knows", all(w in helps for w in ["Citadel", "Warhammer Tone Pro", "Vallejo",
+          "The Army Painter", "Pro Acryl", "AK Interactive", "Scale 75", "Formula P3", "Two Thin Coats", "Tamiya",
+          "Green Stuff World", "Settings → Paint brands"]), helps[:200])
     check("Help explains Vallejo code numbers", "code number" in helps and "72.021" in helps)
     check("Help says shared names ask which", "Black" in helps and "asked which" in helps)
     about = page.locator("#about").text_content() or ""

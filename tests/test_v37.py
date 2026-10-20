@@ -515,14 +515,14 @@ def main():
             page.click('#cmp-starter-view [data-view="combos"]')
             page.wait_for_timeout(100)
             combo_geo = page.evaluate("""() => { const c = document.querySelector('#view-compendium .card').getBoundingClientRect();
-                return [...document.querySelectorAll('#cmp-starter-combos .chip')].map(b => { const r = b.getBoundingClientRect(); return { h: r.height, in: r.left >= c.left - 0.5 && r.right <= c.right + 0.5, text: b.scrollWidth <= b.clientWidth + 1 }; }); }""")
-            check(f"at {width} px the eight pairing group buttons are all inside the card, at least 36 px tall, with their words fully inside, and nothing scrolls sideways",
+                return [...document.querySelectorAll('#cmp-starter-combos .chip')].map(b => { const r = b.getBoundingClientRect(), o = (b.closest('.chips-scroll') || b).getBoundingClientRect(); return { h: r.height, in: o.left >= c.left - 0.5 && o.right <= c.right + 0.5, text: b.scrollWidth <= b.clientWidth + 1 }; }); }""")
+            check(f"at {width} px the eight pairing group buttons are all inside the card (or in a one-line row that slides sideways inside it), at least 36 px tall, with their words fully inside, and nothing scrolls sideways",
                   len(combo_geo) == 8 and all(g["h"] >= 36 and g["in"] and g["text"] for g in combo_geo) and no_sideways(page), combo_geo)
             page.click('#cmp-starter-combos [data-combo="all"]')
             page.click('#cmp-starter-chips [data-scheme="red-grey"]')
             page.wait_for_timeout(120)
             outside = page.evaluate("""() => { const c = document.querySelector('#view-compendium .card').getBoundingClientRect();
-                return [...document.querySelectorAll('#compendium-body *')].filter(e => { const r = e.getBoundingClientRect();
+                return [...document.querySelectorAll('#compendium-body *')].filter(e => { const r = (e.closest('.chips-scroll') || e).getBoundingClientRect();   // v49: judged by the sliding row it's clipped to
                     return r.width > 0 && (r.right > c.right + 0.5 || r.left < c.left - 0.5); }).map(e => e.id || e.className.baseVal || e.className || e.tagName); }""")
             check(f"at {width} px everything in the Compendium is inside the card with Combinations, All and a scheme open", not outside and no_sideways(page), outside[:5])
             if width in (360, 400):

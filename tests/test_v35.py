@@ -242,7 +242,7 @@ def main():
               and page.input_value("#cmp-colour-ideas-base") == "" and page.get_attribute("#cmp-colour-ideas-base", "placeholder") == "Type or choose a paint", opts[:4])
         page.fill("#cmp-colour-ideas-base", "macragge blue")
         check("a paint in your palette is not listed twice (the built-in list leaves out paints you already have)",
-              page.evaluate("() => [...document.querySelectorAll('#cmp-colour-ideas-base-list [role=option]')].filter(o => /^Macragge Blue/.test(o.textContent)).length") == 1)
+              page.evaluate("() => [...document.querySelectorAll('#cmp-colour-ideas-base-list [role=option]')].filter(o => /^Macragge Blue(?! Spray)/.test(o.textContent)).length") == 1)   # v48: Macragge Blue Spray is a different paint
         page.keyboard.press("Escape")
         pick_base(page, BLUE)
         chips = page.evaluate("() => [...document.querySelectorAll('#compendium-body [data-role]')].map(c => [c.textContent, c.getAttribute('aria-pressed')])")
@@ -685,9 +685,9 @@ def main():
                 tag = f"{appearance} {width}px"
                 check(f"{tag}: nothing scrolls sideways with every part open", no_sideways(page))
                 outside = page.evaluate("""() => { const c = document.querySelector('#view-compendium .card').getBoundingClientRect();
-                    return [...document.querySelectorAll('#compendium-body *')].filter(e => { const r = e.getBoundingClientRect();
+                    return [...document.querySelectorAll('#compendium-body *')].filter(e => { const r = (e.closest('.chips-scroll') || e).getBoundingClientRect();   // v49: judged by the sliding row it's clipped to
                         return r.width > 0 && (r.right > c.right + 0.5 || r.left < c.left - 0.5); }).map(e => e.id || e.className || e.tagName); }""")
-                check(f"{tag}: everything is inside the Compendium card (and the card is inside the screen)", not outside and page.evaluate("() => document.querySelector('#view-compendium .card').getBoundingClientRect().right") <= width + 0.5, outside[:5])
+                check(f"{tag}: everything is inside the Compendium card, or in a one-line row that slides inside it (and the card is inside the screen)", not outside and page.evaluate("() => document.querySelector('#view-compendium .card').getBoundingClientRect().right") <= width + 0.5, outside[:5])
                 col = page.evaluate("""() => { const bg = (el) => { let e = el; while (e) { const v = getComputedStyle(e).backgroundColor;
                         const m = v.match(/rgba\\(.*,\\s*([\\d.]+)\\)/);
                         if (v && v !== 'transparent' && !(m && parseFloat(m[1]) < 0.9)) return v; e = e.parentElement; } return 'rgb(0,0,0)'; };
