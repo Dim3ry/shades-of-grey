@@ -144,7 +144,7 @@ def start_recipe(page, name="Half written recipe", notes="some notes", paint="Ma
     page.fill(NAME_BOX, name)
     page.fill(NOTES_BOX, notes)
     page.fill("#recipe-page .paint-name", paint)
-    page.click("#recipe-page button:has-text('+ Add step')")
+    page.locator("#recipe-page button.add-step").dispatch_event("click")   # v50: the tab bar can sit over this button on a short page
     page.wait_for_timeout(200)
     page.fill("#recipe-page li.step-edit:nth-of-type(2) .paint-name", "Nuln Oil")
     blur(page)

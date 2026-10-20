@@ -577,9 +577,11 @@ def main():
             page.click(f'nav button[data-tab="{tab}"]')
             page.wait_for_timeout(120)
             check(f"the {tab} tab opens its own page and hides the others", page.is_visible(f"#{view}") and sum(page.is_visible(f"#{v}") for v in ["view-dashboard", "view-units", "view-recipes", "view-settings", "view-compendium"]) == 1)
-        order = page.evaluate("() => [...document.querySelectorAll('#compendium-body > *')].map(e => e.id).filter(Boolean)")
+        order = page.evaluate("() => [...document.querySelectorAll('#compendium-body > *')].flatMap(e => e.classList.contains('more-info') ? [...e.querySelectorAll('.more-info-panel > *')] : [e]).map(e => e.id).filter(Boolean)")
         check("the Compendium is: the intro, the wheel, the five folding parts, then the footnote",
               order == ["cmp-intro", "cmp-wheel-block", "cmp-fold-ideas", "cmp-fold-history", "cmp-fold-starter", "cmp-fold-detail", "cmp-fold-basing", "cmp-foot"], order)
+        if page.get_attribute("#compendium-body > .more-info .more-info-button", "aria-expanded") == "false":   # v49: the intro sits behind More info
+            page.click("#compendium-body > .more-info .more-info-button")
         check("the intro line says to tap a heading", "Tap a heading to open it" in page.inner_text("#cmp-intro"), page.inner_text("#cmp-intro"))
         check("no real browser pop-ups appeared", not [d for d in dialogs if "Do you own" in d], dialogs[:3])
         check("no page errors", not errors, errors[:3])

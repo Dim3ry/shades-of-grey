@@ -1932,6 +1932,9 @@
     ];
     const PAINT_STATUS_KEYS = PAINT_STATUSES.map(s => s.key);
     let recipeCanPaint = false;   // the "What can I paint now?" filter (kept while the app is open)
+    // v50: open or closed state for the Recipes tab. Kept only while the app is open, never saved.
+    const recipeFold = new WeakMap();      // a step -> { open, options: { open } } (recipe editor and recipe view)
+    const recipeInfoDoor = { state: {} };  // infoState() keeps each recipe card's More info (and the other hints on this tab) here
     let importReviewIds = null;   // v17.1: the paints a paste import just added, while you check them
 
     // A paint's status now: its own status, or Owned if the scan added it. "" = not set.
@@ -2039,13 +2042,16 @@
       return pill;
     }
 
-    // Have / Missing next to each paint in a recipe. Hidden until a status is set.
-    function haveBadge(paint) {
+    // Have / Missing next to each paint in a recipe: the small status marks (a tick or a cross), not words. Hidden until a status is set.
+    function haveMark(paint) {
       if (!anyStatusSet()) return null;
-      const badge = document.createElement("span");
-      badge.className = "have-badge " + (haveIt(paint) ? "have" : "missing");
-      badge.textContent = haveIt(paint) ? "✓ Have" : "✗ Missing";
-      return badge;
+      const have = haveIt(paint);
+      const span = document.createElement("span");
+      span.className = "have-mark " + (have ? "have" : "missing");
+      span.setAttribute("role", "img");
+      span.setAttribute("aria-label", have ? "Have" : "Missing");
+      span.appendChild(statusMarker(have ? "owned" : "notowned"));
+      return span;
     }
 
     // True if you have every paint a recipe uses.
@@ -2056,7 +2062,7 @@
       return [...ids].every(id => { const p = paintById(id); return !!p && haveIt(p); });
     }
 
-    // The "What can I paint now?" button above the recipe list.
+    // The "What can I paint now?" button above the recipe list. v50: its hint sits behind More info.
     function renderCanPaintBox() {
       const box = document.getElementById("can-paint-box");
       box.innerHTML = "";
@@ -2064,8 +2070,14 @@
         recipeCanPaint = !recipeCanPaint;
         renderRecipeList();
       }));
-      document.getElementById("can-paint-hint").textContent =
-        recipeCanPaint && !anyStatusSet() ? "Mark the paints you own on Your Palette first, then this list is useful." : "";
+      const hintBox = document.getElementById("can-paint-hint");
+      hintBox.replaceChildren();
+      if (recipeCanPaint && !anyStatusSet()) {
+        const hint = document.createElement("p");
+        hint.className = "hint";
+        hint.textContent = "Mark the paints you own on Your Palette first, then this list is useful.";
+        hintBox.appendChild(buildMoreInfo([hint], { state: infoState(recipeInfoDoor, "can-paint-hint"), id: "can-paint-hint-panel", label: "What can I paint now?" }));
+      }
     }
 
     // ----- Shopping list -----
@@ -2220,10 +2232,11 @@
         el.className = "idea-tag " + t.cls;
         el.textContent = t.text;
       }
+      for (const el of document.querySelectorAll(".pick-set")) if (el.refreshPicks) el.refreshPicks();   // v51: the tick boxes follow the list too
     }
-    // ----- v42: "Add paints to shopping list" on the Compendium's schemes (Starter schemes and Your schemes) -----
-    // One small, closed fold-out under a scheme's paints (it looks like the "Shop links" fold-outs: same classes, no new styles). Inside, one
-    // button puts every paint of the scheme that you do NOT have on the one shared shopping list, remembering "Scheme: <name>".
+    // ----- v42: adding a scheme's paints to the shopping list (v51: from the tick boxes in the Compendium) -----
+    // One button puts the paints you picked on the one shared shopping list, remembering "Scheme: <name>". Since v51 the paints come from the
+    // tick boxes under Starter schemes, Your schemes and Detail recipes (see buildPick); the closed "Shopping list" fold-out of v42 is gone.
     // It uses the single-paint pieces (findOrAddPaint, applyPaintStatus, noteShopSource), so there is still one list, one entry per paint
     // and one place for the sources. Paints you own (or have running low) are skipped; paints already on the list are not added twice;
     // a paint that is only in the built-in list is added to your palette as Wishlist, exactly as the single Add does.
@@ -2270,43 +2283,18 @@
       } else showNotSaved();
       return added;
     }
-    function buildSchemeShopFoldout(paints, source) {
-      if (!paints || !paints.length) return null;
-      const box = document.createElement("details");
-      box.className = "shop-more scheme-shop";
-      const summary = document.createElement("summary");
-      summary.textContent = "Shopping list";
-      summary.setAttribute("aria-label", "Shopping list for this scheme");
-      const body = document.createElement("div");
-      body.className = "shop-body";
-      const slot = document.createElement("div");
-      slot.className = "shop-add";
-      box.redrawAdd = () => {   // run again by updateShopFoldouts after every add and Undo, so the words and the button stay right
-        slot.replaceChildren();
-        const n = schemePaintsToAdd(paints).length;
-        const say = document.createElement("p");
-        say.className = "hint";
-        say.tabIndex = -1;
-        say.textContent = n
-          ? `${plural(n, "paint")} in this scheme ${n === 1 ? "is" : "are"} not on your shopping list yet. Paints you own are left out.`
-          : "Nothing to add: you own these paints, or they are already on your shopping list.";
-        slot.appendChild(say);
-        if (n) {
-          const add = document.createElement("button");
-          add.type = "button";
-          add.className = "plain-button";
-          add.textContent = "Add paints to shopping list";
-          add.setAttribute("aria-label", `Add ${plural(n, "paint")} from this scheme to your shopping list`);
-          add.addEventListener("click", () => { if (addSchemePaintsToShoppingList(paints, source)) { const s = slot.querySelector(".hint"); if (s) s.focus(); } });
-          slot.appendChild(add);
-        }
-      };
-      box.redrawAdd();
-      body.appendChild(slot);
-      box.append(summary, body);
-      return box;
+    // v55: one screen-reader-only line the shop links point at (aria-describedby), so a link says it opens another website without a long label.
+    function opensSiteId() {
+      let el = document.getElementById("opens-site");
+      if (!el) {
+        el = document.createElement("span");
+        el.id = "opens-site";
+        el.className = "sr-only";
+        el.textContent = "Opens the shop's website";
+        document.body.appendChild(el);
+      }
+      return el.id;
     }
-
     // The fold-out for one paint. Returns null when there is nothing to show (you own it, switched off, or no shop sells it).
     function buildShopFoldout(paint, owned, source) {
       if (owned || !shopLinksOn() || !paint || !String(paint.name || "").trim()) return null;
@@ -2316,7 +2304,8 @@
       box.className = "shop-more";
       const summary = document.createElement("summary");
       summary.textContent = "Shop links";
-      summary.setAttribute("aria-label", `Shop links for ${paint.name}`);
+      const who = hiddenName(paint.name);   // v55: the fold-out has no visible name of its own, so the paint's name is kept here for screen readers
+      labelWithName(summary, "Shop links for", who);
       const body = document.createElement("div");
       body.className = "shop-body";
       const addSlot = document.createElement("div");
@@ -2335,7 +2324,7 @@
         add.type = "button";
         add.className = "plain-button";
         add.textContent = "Add to shopping list";
-        add.setAttribute("aria-label", `Add ${paint.name} to your shopping list`);
+        labelWithName(add, "", who);   // v55: "Add to shopping list" (its own words) then the paint's name
         add.addEventListener("click", () => { if (addToShoppingList(paint, source)) { const done = addSlot.querySelector(".shop-onlist"); if (done) done.focus(); } });
         addSlot.appendChild(add);
         return add;
@@ -2349,13 +2338,14 @@
         a.target = "_blank";
         a.rel = "noopener noreferrer";   // the shop isn't told which page sent you
         a.textContent = `${shop.name} ↗`;
-        a.setAttribute("aria-label", `Search ${shop.name} for ${paint.name} (opens the shop's website)`);
+        labelWithName(a, `Search ${shop.name} for`, who);   // v55
+        a.setAttribute("aria-describedby", opensSiteId());
         links.appendChild(a);
       }
       const note = document.createElement("p");
       note.className = "hint";
       note.textContent = SHOP_PLAIN_WORDS;
-      body.append(addSlot, links, note);
+      body.append(addSlot, links, note, who);
       box.append(summary, body);
       return box;
     }
@@ -2395,18 +2385,13 @@
           const go = document.createElement("span");
           go.textContent = "Search ↗";
           a.append(name, go);
-          a.setAttribute("aria-label", `Search ${shop.name} for ${p.name} (opens the shop's website)`);
+          labelWithName(a, `Search ${shop.name} for`, name);   // v55: the link's own visible paint name
+          a.setAttribute("aria-describedby", opensSiteId());
           li.appendChild(a);
           list.appendChild(li);
         }
         bar.appendChild(list);
       }
-      const note = document.createElement("p");
-      note.className = "hint";
-      note.textContent = shopLinksOpen
-        ? "Each link opens the shop's own search for that paint. " + SHOP_PLAIN_WORDS
-        : "Tap a shop to see a search link for each paint it sells.";
-      bar.appendChild(note);
       return bar;
     }
 
@@ -2421,18 +2406,35 @@
       const title = document.createElement("h2");
       title.textContent = "Shopping list";
       title.style.fontSize = "18px";
-      const sub = document.createElement("p");
-      sub.className = "hint";
-      sub.style.margin = "0 0 10px";
-      sub.textContent = !items.length ? "Nothing to buy. Paints you add from your recipes and from colour suggestions land here, once each, and you can mark paints on Your Palette too."
-        : `${plural(items.length, "paint")} to get: running low, empty, wishlist, and paints your recipes use that you don't have. Each paint is listed once, with where it came from.`;
-      card.append(title, sub);
-      if (items.length && !anyStatusSet()) {
-        const warn = document.createElement("p");
-        warn.className = "hint";
-        warn.style.margin = "0 0 10px";
-        warn.textContent = "No statuses set yet, so every paint your recipes use is listed as missing. Mark what you own to make it accurate.";
-        card.appendChild(warn);
+      card.append(title);
+      if (!items.length) {
+        const empty = document.createElement("p");
+        empty.className = "hint";
+        empty.style.margin = "0 0 10px";
+        empty.textContent = "Nothing to buy. Paints you add from your recipes and from colour suggestions land here, once each, and you can mark paints on Your Palette too.";
+        card.append(empty);
+      } else {
+        // v52: the explanations sit behind one More info: what the list holds, the no-statuses warning, how the shop bar works.
+        const notes = [];
+        const sub = document.createElement("p");
+        sub.className = "hint";
+        sub.textContent = `${plural(items.length, "paint")} to get: running low, empty, wishlist, and paints your recipes use that you don't have. Each paint is listed once, with where it came from.`;
+        notes.push(sub);
+        if (!anyStatusSet()) {
+          const warn = document.createElement("p");
+          warn.className = "hint";
+          warn.textContent = "No statuses set yet, so every paint your recipes use is listed as missing. Mark what you own to make it accurate.";
+          notes.push(warn);
+        }
+        if (shopLinksOn()) {
+          const shops = document.createElement("p");
+          shops.className = "hint";
+          shops.textContent = "Tap a shop under Buy these to see a search link for each paint it sells. Each link opens the shop's own search for that paint. " + SHOP_PLAIN_WORDS;
+          notes.push(shops);
+        }
+        const more = pageMoreInfo("shopping", notes, { label: "Shopping list" });
+        more.classList.add("shop-more-info");
+        card.append(more);
       }
       if (items.length) {
         if (shopLinksOn()) card.appendChild(buildBuyBar(items));   // v19.1: shop links at the top (v39: unless Settings -> Shop links is off)
@@ -4333,6 +4335,7 @@
     // "Faction colours" on the dashboard: open Settings at the faction colours card.
     document.getElementById("faction-colours-link").addEventListener("click", () => {
       showTab("settings");
+      openCardFold("faction-colours");   // v53: the card is shut until it is opened, so open it first
       document.getElementById("faction-colours-card").scrollIntoView({ block: "start" });
     });
 
@@ -4408,7 +4411,8 @@
         if (!fits) {
           // Bring the pressed button into view, unless one already is.
           const rowBox = row.getBoundingClientRect();
-          const on = buttons.filter(c => c.getAttribute("aria-pressed") === "true" || c.getAttribute("aria-expanded") === "true");
+          // (the Pick by stage / Hide stages opener sits in the row but is not a choice, so it is never scrolled to)
+          const on = buttons.filter(c => c.id !== "stage-chips-toggle" && (c.getAttribute("aria-pressed") === "true" || c.getAttribute("aria-expanded") === "true"));
           const inView = (c) => { const r = c.getBoundingClientRect(); return r.left >= rowBox.left - 1 && r.right <= rowBox.right + 1; };
           if (on.length && !on.some(inView)) {
             const r = on[0].getBoundingClientRect();
@@ -4452,6 +4456,7 @@
       return chip;
     }
 
+    let unitStagesOpen = false;   // v49: "Pick by stage" on the Units filters (kept while the app is open)
     function renderUnits() {
       // Dropdowns: the faction list only shows factions from the chosen game.
       const games = uniqueSorted(models.map(m => m.hobby));
@@ -4482,15 +4487,35 @@
         }),
       );
 
-      // Stage chips: tap several to combine them.
+      // Stage chips: tap several to combine them. v49: they open underneath only once a group or a stage is picked (or "Pick by stage"
+      // is tapped), so the filter card starts as three equal buttons.
       stageChips.innerHTML = "";
-      STAGES.forEach((stageName, index) => {
-        stageChips.appendChild(makeChip(stageName, filters.stages.has(index), () => {
-          if (filters.stages.has(index)) filters.stages.delete(index);
-          else filters.stages.add(index);
-          render();
-        }, `var(--stage-${index})`));
-      });
+      const stagesShown = filters.stages.size > 0 || unitStagesOpen;
+      if (stagesShown) {
+        STAGES.forEach((stageName, index) => {
+          stageChips.appendChild(makeChip(stageName, filters.stages.has(index), () => {
+            if (filters.stages.has(index)) filters.stages.delete(index);
+            else filters.stages.add(index);
+            render();
+          }, `var(--stage-${index})`));
+        });
+      }
+      if (!filters.stages.size) {
+        const opener = document.createElement("button");
+        opener.type = "button";
+        opener.className = "more-info-button";
+        opener.id = "stage-chips-toggle";
+        opener.setAttribute("aria-expanded", String(unitStagesOpen));
+        opener.setAttribute("aria-controls", "stage-chips");
+        const text = document.createElement("span");
+        text.textContent = unitStagesOpen ? "Hide stages" : "Pick by stage";
+        const mark = document.createElement("span");
+        mark.className = "fold-mark";
+        mark.setAttribute("aria-hidden", "true");
+        opener.append(text, mark);
+        opener.addEventListener("click", () => { unitStagesOpen = !unitStagesOpen; render(); });
+        stageChips.appendChild(opener);
+      }
 
       const visible = models.filter(isVisible);
       const activeCount = (filters.hobby ? 1 : 0) + (filters.faction ? 1 : 0) +
@@ -4869,7 +4894,7 @@
       // It's a real <details>, so the keyboard and screen readers work without extra code.
       // Whether it is open is remembered per unit (editOpenIds) so a redraw doesn't shut it.
       const editSection = document.createElement("details");
-      editSection.className = "edit-details";
+      editSection.className = "edit-details help-look";   // v53: the Help look (More info / Less info)
       const editSummary = document.createElement("summary");
       editSummary.textContent = "Edit details";
       const editHint = document.createElement("span");
@@ -4881,6 +4906,7 @@
       editBody.append(...editFields);
       editSection.append(editSummary, editBody);
       editSection.open = editOpenIds.has(model.id);
+      markFold(editSection);   // v53: aria-expanded follows open and shut
       editSection.addEventListener("toggle", () => {
         if (editSection.open) editOpenIds.add(model.id); else editOpenIds.delete(model.id);
       });
@@ -5122,8 +5148,11 @@
         const strong = document.createElement("strong");
         strong.textContent = examples.length === 1 ? "This is an example." : "These are examples.";
         const names = examples.map(m => displayName(m)).join(", ");
-        text.append(strong, ` The app starts with ${examples.length === 1 ? "an example unit" : plural(examples.length, "example unit")} ` +
-          `(${names}) so you can try things out. Clear ${examples.length === 1 ? "it" : "them"} when you're ready to add your own.`);
+        const why = document.createElement("p");
+        why.className = "hint";
+        why.textContent = `The app starts with ${examples.length === 1 ? "an example unit" : plural(examples.length, "example unit")} ` +
+          `(${names}) so you can try things out. Clear ${examples.length === 1 ? "it" : "them"} when you're ready to add your own.`;
+        text.append(strong);   // v52: the explanation sits behind More info
         const buttons = document.createElement("div");
         buttons.className = "button-grid";
         const clear = document.createElement("button");
@@ -5137,7 +5166,7 @@
         keep.textContent = examples.length === 1 ? "Keep it" : "Keep them";
         keep.addEventListener("click", keepExamples);
         buttons.append(clear, keep);
-        card.append(text, buttons);
+        card.append(text, pageMoreInfo(id, [why], { label: "Examples" }), buttons);
       }
     }
     function clearExamples() {
@@ -5315,9 +5344,14 @@
       const strong = document.createElement("strong");
       const many = recipes.length + schemes.length + paints.length > 1;
       strong.textContent = many ? "These are examples." : "This is an example.";
-      text.append(strong, ` You have ${exampleRecipeWords(recipes.length, paints.length, schemes.length)}. ` +
+      text.appendChild(strong);
+      // v50: the longer explanation sits behind More info; the two buttons stay in view.
+      const detail = document.createElement("p");
+      detail.className = "hint";
+      detail.textContent = `You have ${exampleRecipeWords(recipes.length, paints.length, schemes.length)}. ` +
         `Clear ${many ? "them" : "it"} when you're ready to add your own. ` +
-        `Anything you edit, and any paint you use in your own recipe or give a status, stays yours.`);
+        `Anything you edit, and any paint you use in your own recipe or give a status, stays yours.`;
+      const more = buildMoreInfo([detail], { state: infoState(recipeInfoDoor, "examples-card"), id: "examples-card-recipes-info", label: "the examples" });
       const buttons = document.createElement("div");
       buttons.className = "button-grid";
       const clear = document.createElement("button");
@@ -5331,7 +5365,7 @@
       keep.textContent = many ? "Keep them" : "Keep it";
       keep.addEventListener("click", keepRecipeExamples);
       buttons.append(clear, keep);
-      card.append(text, buttons);
+      card.append(text, more, buttons);
     }
     function clearRecipeExamples() {
       const goneRecipes = exampleRecipes();
@@ -6387,6 +6421,7 @@
       if (opening && draftWaiting("unit")) return;   // v26: a kept unfinished unit is offered first
       form.classList.toggle("hidden", !opening);
       toggleAdd.textContent = opening ? "Close" : "+ Add unit";
+      toggleAdd.setAttribute("aria-expanded", String(opening));   // v53
       if (opening && selectMode) closeSelect();   // v21.1: one thing at a time
       if (opening) nameInput.focus();
     });
@@ -6640,6 +6675,71 @@
       if (card) card.scrollIntoView({ block: "center" });
     }
 
+    // ----- v50: the Recipes tab, decluttered -----
+    // A step's open or closed state (and its More options) while the app is open. A step nobody has filled in yet starts open.
+    function stepFold(step, openByDefault) {
+      let fold = recipeFold.get(step);
+      if (!fold) { fold = { open: !!openByDefault, options: { open: false } }; recipeFold.set(step, fold); }
+      return fold;
+    }
+    // A step folded to one line: number, technique and its paints as small swatches. The line is a real button that opens the step
+    // (o.body). o.technique(), o.colours() and o.missing() are asked again each time, so the line is right after the step was edited.
+    function foldStep(o) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "step-line";
+      button.setAttribute("aria-controls", o.body.id);
+      const draw = () => {
+        const text = document.createElement("span");
+        text.className = "step-line-text";
+        text.textContent = `${o.number}. ${o.technique()}`;
+        const dots = document.createElement("span");
+        dots.className = "step-line-swatches";
+        dots.setAttribute("aria-hidden", "true");
+        o.colours().slice(0, 8).forEach(c => dots.appendChild(makeSwatch(c)));
+        const mark = document.createElement("span");
+        mark.className = "fold-mark";
+        mark.setAttribute("aria-hidden", "true");
+        const parts = [text, dots];
+        if (o.missing && o.missing()) {
+          const gap = document.createElement("span");
+          gap.className = "have-mark missing";
+          gap.setAttribute("role", "img");
+          gap.setAttribute("aria-label", "Missing a paint");
+          gap.appendChild(statusMarker("notowned"));
+          parts.push(gap);
+        }
+        parts.push(mark);
+        button.replaceChildren(...parts);
+        button.setAttribute("aria-expanded", String(o.fold.open));
+        o.body.hidden = !o.fold.open;
+      };
+      button.addEventListener("click", () => { o.fold.open = !o.fold.open; draw(); });
+      draw();
+      return button;
+    }
+    // The one-line key for the Have / Missing marks.
+    function buildHaveKey() {
+      const key = document.createElement("div");
+      key.className = "status-legend have-key";
+      for (const [mark, word] of [["owned", "Have"], ["notowned", "Missing"]]) {
+        const item = document.createElement("span");
+        item.className = "legend-item";
+        item.append(statusMarker(mark), word);
+        key.appendChild(item);
+      }
+      return key;
+    }
+    // How many of a recipe's paints you don't have. null when it has no paints.
+    function recipeMissing(recipe) {
+      const ids = new Set();
+      for (const st of recipe.steps) for (const sp of st.paints) ids.add(sp.paint);
+      if (!ids.size) return null;
+      let missing = 0;
+      for (const id of ids) { const p = paintById(id); if (!p || !haveIt(p)) missing++; }
+      return missing;
+    }
+
     // ----- The list of recipes -----
     function renderRecipeList() {
       const partsUsed = uniqueSorted(book.recipes.map(r => r.part));
@@ -6656,28 +6756,48 @@
         .filter(r => (!recipePartFilter || r.part === recipePartFilter) && (!recipeCanPaint || canPaintNow(r)))
         .sort((a, b) => a.name.localeCompare(b.name));
       for (const recipe of shown) {
+        // v50: a card is the name, the colour dots and (once you have marked paints) a short Have / Missing line. The rest is behind More info.
         const item = document.createElement("li");
+        item.className = "recipe-card";
         const button = document.createElement("button");
+        button.type = "button";
         button.className = "recipe-item";
         const name = document.createElement("div");
         name.className = "name";
+        name.id = `recipe-name-${recipe.id}`;
         name.textContent = recipe.name;
-        const users = unitsUsing(recipe.id).length;
-        const meta = document.createElement("div");
-        meta.className = "meta";
-        meta.textContent = [recipe.part, plural(recipe.steps.length, "step"),
-                            users ? `used on ${plural(users, "unit")}` : ""].filter(Boolean).join(" · ");
         const swatches = document.createElement("div");
         swatches.className = "swatches";
         recipeColours(recipe).slice(0, 12).forEach(c => swatches.appendChild(makeSwatch(c)));
-        button.append(name, meta, swatches);
+        button.append(name, swatches);
+        const missing = anyStatusSet() ? recipeMissing(recipe) : null;
+        if (missing !== null) {
+          const status = document.createElement("div");
+          status.className = "recipe-status";
+          status.append(statusMarker(missing ? "notowned" : "owned"), missing ? `Missing ${missing}` : "Have all");
+          button.appendChild(status);
+        }
         button.addEventListener("click", () => { openRecipeId = recipe.id; renderRecipes(); window.scrollTo(0, 0); });
-        item.appendChild(button);
+        const users = unitsUsing(recipe.id).length;
+        const meta = document.createElement("p");
+        meta.className = "meta";
+        meta.textContent = [recipe.part, plural(recipe.steps.length, "step"),
+                            users ? `used on ${plural(users, "unit")}` : ""].filter(Boolean).join(" · ");
+        const more = buildMoreInfo([meta], { state: infoState(recipeInfoDoor, `recipe-${recipe.id}`), id: `recipe-${recipe.id}-info` });
+        more.querySelector(".more-info-button").setAttribute("aria-describedby", name.id);
+        item.append(button, more);
         recipeList.appendChild(item);
       }
 
       if (recipeCanPaint && !shown.length) {
         recipeList.insertAdjacentHTML("beforeend", '<li class="empty">No recipe where you own every paint yet. Mark your paints on Your Palette to see what you can paint now.</li>');
+      }
+      const listsInfo = document.getElementById("recipe-lists-info");
+      if (listsInfo) {
+        const note = document.createElement("p");
+        note.className = "hint";
+        note.textContent = "The choices offered when you write a recipe. You can also add new ones while writing.";
+        listsInfo.replaceChildren(buildMoreInfo([note], { state: infoState(recipeInfoDoor, "recipe-lists"), id: "recipe-lists-info-panel", label: "parts and techniques" }));
       }
       renderListChips("part-chips", "parts", "part");
       renderListChips("technique-chips", "techniques", "technique");
@@ -6741,26 +6861,20 @@
       }
       recipePage.appendChild(top);
 
-      // The steps, in order.
+      // The steps, in order. v50: each step is one line (number, technique, paints as small swatches); tap it to open the step.
+      // The coats, mix ratio, optional and note sit behind More options inside the open step.
       const stepsCard = document.createElement("div");
       stepsCard.className = "card";
       stepsCard.innerHTML = "<h2>Steps</h2>";
+      if (recipe.steps.length && anyStatusSet()) stepsCard.appendChild(buildHaveKey());
       if (!recipe.steps.length) stepsCard.insertAdjacentHTML("beforeend", '<p class="hint" style="margin: 0;">No steps yet. Press Edit to add some.</p>');
       const steps = document.createElement("ol");
       steps.className = "recipe-steps";
       recipe.steps.forEach((step, i) => {
         const li = document.createElement("li");
-        const head = document.createElement("div");
-        head.className = "step-title";
-        // v15: a blank technique shows the app's guess from the paints.
-        const technique = step.technique || guessTechnique(step.paints.map(sp => paintById(sp.paint))) || "Step";
-        head.textContent = `${i + 1}. ${technique} `;
-        const coats = document.createElement("small");
-        coats.textContent = `· ${coatsText(step.coats)}` + (step.ratio ? ` · mix ${step.ratio}` : "") +
-                            (step.optional ? " · (optional)" : "");
-        head.appendChild(coats);
-        if (step.optional) li.classList.add("optional-step");
-        li.appendChild(head);
+        const body = document.createElement("div");
+        body.className = "step-body";
+        body.id = `rstep-${i}`;
         const mixed = step.paints.length > 1;
         for (const sp of step.paints) {
           const paint = paintById(sp.paint);
@@ -6771,8 +6885,8 @@
           brand.className = "brand";
           brand.textContent = paint.brand;
           line.append(makeSwatch(paint.colour), paint.name, brand);
-          const badge = haveBadge(paint);   // v17
-          if (badge) line.appendChild(badge);
+          const mark = haveMark(paint);   // v17, v50: a tick or a cross
+          if (mark) line.appendChild(mark);
           // Show the mix % when paints are mixed, or a single paint isn't 100% (e.g. thinned).
           if (sp.mix !== null && (mixed || sp.mix !== 100)) {
             const mix = document.createElement("span");
@@ -6780,14 +6894,29 @@
             mix.textContent = `${sp.mix}%`;
             line.appendChild(mix);
           }
-          li.appendChild(line);
+          body.appendChild(line);
         }
+        const options = [];
+        const facts = document.createElement("p");
+        facts.className = "step-facts";
+        facts.textContent = [coatsText(step.coats), step.ratio ? `mix ${step.ratio}` : "", step.optional ? "optional" : ""].filter(Boolean).join(" · ");
+        options.push(facts);
         if (step.note) {
           const note = document.createElement("p");
           note.className = "step-note";
           note.textContent = step.note;
-          li.appendChild(note);
+          options.push(note);
         }
+        const fold = stepFold(step, false);
+        body.appendChild(buildMoreInfo(options, { state: fold.options, id: `rstep-${i}-more`, openText: "More options", closeText: "Fewer options", className: "step-options" }));
+        if (step.optional) li.classList.add("optional-step");
+        li.append(foldStep({
+          number: i + 1, body, fold,
+          // v15: a blank technique shows the app's guess from the paints.
+          technique: () => step.technique || guessTechnique(step.paints.map(sp => paintById(sp.paint))) || "Step",
+          colours: () => step.paints.map(sp => paintById(sp.paint)).filter(Boolean).map(pt => pt.colour),
+          missing: () => anyStatusSet() && step.paints.some(sp => { const pt = paintById(sp.paint); return pt && !haveIt(pt); }),
+        }), body);
         steps.appendChild(li);
       });
       stepsCard.appendChild(steps);
@@ -6939,8 +7068,14 @@
       if (!book.schemes.length) {
         const empty = document.createElement("li");
         empty.className = "empty";
-        empty.textContent = "No schemes yet. A scheme groups the recipes you use for one faction " +
+        // v53: "No schemes yet." stays in view; what a scheme is sits behind More info.
+        const emptyLine = document.createElement("span");
+        emptyLine.textContent = "No schemes yet.";
+        const emptyMore = document.createElement("p");
+        emptyMore.className = "hint";
+        emptyMore.textContent = "A scheme groups the recipes you use for one faction " +
           "(armour, trim, lenses, base…). Apply it to the whole faction at once, and new units in that faction get it automatically.";
+        empty.append(emptyLine, pageMoreInfo("schemes-empty", [emptyMore], { label: "Schemes" }));
         schemeListEl.appendChild(empty);
         return;
       }
@@ -7242,12 +7377,66 @@
       return book.recipes.filter(r => r.steps.some(s => s.paints.some(sp => sp.paint === paintId)));
     }
 
+    // v49: the status marks. One small round badge per status, each a different SHAPE (so colour is never the only clue):
+    // a tick, a half-filled circle, an empty ring, a star and a cross. Used on the swatch tiles and in the key.
+    const STATUS_MARKS = {
+      owned: [["path", { d: "M6 12.5l4 4L18 8" }]],
+      low: [["circle", { cx: 12, cy: 12, r: 6.5 }], ["path", { d: "M12 5.5a6.5 6.5 0 0 1 0 13z", fill: "currentColor" }]],
+      empty: [["circle", { cx: 12, cy: 12, r: 6.5 }]],
+      wishlist: [["path", { d: "M12 4.8l2.1 4.4 4.8.6-3.5 3.3.9 4.8-4.3-2.3-4.3 2.3.9-4.8-3.5-3.3 4.8-.6z" }]],
+      notowned: [["path", { d: "M7.5 7.5l9 9M16.5 7.5l-9 9" }]],
+    };
+    function statusMarker(key) {
+      const span = document.createElement("span");
+      span.className = "status-marker s-" + key;
+      span.setAttribute("aria-hidden", "true");
+      const NS = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(NS, "svg");
+      for (const [k, v] of Object.entries({ viewBox: "0 0 24 24", width: "12", height: "12", fill: "none", stroke: "currentColor", "stroke-width": "2.6", "stroke-linecap": "round", "stroke-linejoin": "round" })) svg.setAttribute(k, v);
+      for (const [tag, attrs] of STATUS_MARKS[key] || []) {
+        const part = document.createElementNS(NS, tag);
+        for (const [k, v] of Object.entries(attrs)) part.setAttribute(k, String(v));
+        svg.appendChild(part);
+      }
+      span.appendChild(svg);
+      return span;
+    }
+    let paletteLayout = "list";   // "list" or "swatches" (kept while the app is open)
+    let swatchPickId = null;      // the paint opened in the Swatches view
+    const paintOptionsOpen = new Map();   // paint id -> { open } for each paint's "More options"
+
+    function renderPaletteLayoutSwitch() {
+      const box = document.getElementById("palette-layout");
+      if (!box) return;
+      box.replaceChildren();
+      for (const [key, label] of [["list", "List"], ["swatches", "Swatches"]]) {
+        const chip = makeChip(label, paletteLayout === key, () => { paletteLayout = key; renderPalette(); });
+        chip.dataset.layout = key;
+        box.appendChild(chip);
+      }
+    }
+    function renderPaletteLegend() {
+      const box = document.getElementById("palette-legend");
+      if (!box) return;
+      box.replaceChildren();
+      box.classList.toggle("hidden", paletteLayout !== "swatches" || !book.paints.length);
+      if (paletteLayout !== "swatches") return;
+      for (const st of PAINT_STATUSES) {
+        const item = document.createElement("span");
+        item.className = "legend-item";
+        item.append(statusMarker(st.key), st.label);
+        box.appendChild(item);
+      }
+    }
+
     function renderPalette() {
       const paints = book.paints;
       paintSort.value = settings.paintSort;
       renderPaletteSearch();   // v17
       renderImportReview();    // v17.1
       renderShopPanel();
+      renderPaletteLayoutSwitch();   // v49
+      renderPaletteLegend();
 
       // Brand chips: one for each brand, tap again to show all.
       const brands = uniqueSorted(paints.map(p => p.brand));
@@ -7278,17 +7467,59 @@
         : "";
 
       paintListEl.innerHTML = "";
+      const swatches = paletteLayout === "swatches" && !importReviewIds;   // a paste import's check list stays a list
+      paintListEl.classList.toggle("swatch-grid", swatches);
       if (!paints.length) {
         paintListEl.innerHTML = '<li class="empty">Your palette fills itself in from your recipes. Add paints to a recipe and they appear here.</li>';
         return;
       }
-      for (const paint of shown) paintListEl.appendChild(buildPaintItem(paint));
+      if (!swatches) {
+        for (const paint of shown) paintListEl.appendChild(buildPaintItem(paint));
+        return;
+      }
+      // v49 Swatches: one small colour tile per paint with its status mark. Tap a tile to open that paint in a full-width box
+      // that sits under the tile's row.
+      if (swatchPickId !== null && !shown.some(p => p.id === swatchPickId)) swatchPickId = null;
+      let pickTile = null;
+      for (const paint of shown) {
+        const li = document.createElement("li");
+        li.className = "swatch-cell";
+        const tile = document.createElement("button");
+        tile.type = "button";
+        tile.className = "swatch-tile";
+        tile.dataset.paint = String(paint.id);
+        const key = paintStatus(paint);
+        // v55: no title and no aria-label (they held the paint name). The tile has no visible name, so it carries one that only a screen
+        // reader reads (name, brand, status), and aria-labelledby points at it. Opening the tile shows the name in the box under the row.
+        const tileName = hiddenName([paint.name, paint.brand, key ? statusLabel(key) : ""].filter(Boolean).join(", "));
+        tile.setAttribute("aria-labelledby", tileName.id);
+        tile.setAttribute("aria-expanded", String(swatchPickId === paint.id));
+        const sw = makeSwatch(paint.colour);
+        sw.classList.add("big");
+        tile.appendChild(sw);
+        if (key) tile.appendChild(statusMarker(key));
+        tile.appendChild(tileName);
+        tile.addEventListener("click", () => { swatchPickId = swatchPickId === paint.id ? null : paint.id; renderPalette(); });
+        li.appendChild(tile);
+        paintListEl.appendChild(li);
+        if (swatchPickId === paint.id) pickTile = li;
+      }
+      if (pickTile) {
+        const paint = shown.find(p => p.id === swatchPickId);
+        const detail = buildPaintItem(paint, true);
+        detail.classList.add("swatch-detail");
+        // under the last tile of the picked tile's row (when the page is showing, so the rows can be measured)
+        let after = pickTile;
+        const top = pickTile.offsetTop;
+        if (top) for (let n = pickTile.nextElementSibling; n && n.offsetTop === top; n = n.nextElementSibling) after = n;
+        after.after(detail);
+      }
     }
 
-    function buildPaintItem(paint) {
+    function buildPaintItem(paint, fromSwatch) {
       const item = document.createElement("li");
       item.className = "paint-item";
-      const isOpen = openPaintIds.has(paint.id);
+      const isOpen = fromSwatch || openPaintIds.has(paint.id);
       const usedIn = recipesUsingPaint(paint.id);
 
       const head = document.createElement("button");
@@ -7312,6 +7543,7 @@
       if (pill) text.appendChild(pill);
       head.append(swatch, text);
       head.addEventListener("click", () => {
+        if (fromSwatch) { swatchPickId = null; renderPalette(); return; }   // v49: a paint opened from the Swatches view closes
         if (openPaintIds.has(paint.id)) openPaintIds.delete(paint.id); else openPaintIds.add(paint.id);
         renderPalette();
       });
@@ -7326,7 +7558,7 @@
       const colour = document.createElement("input");
       colour.type = "color";
       colour.value = paint.colour;
-      colour.setAttribute("aria-label", `Colour of ${paint.name}`);
+      labelWithName(colour, "Colour of", name);   // v55: the paint's visible name in its row, no paint name in an aria-label
       colour.addEventListener("input", () => swatch.style.setProperty("--swatch", colour.value));
       colour.addEventListener("change", () => { paint.colour = colour.value.toLowerCase(); render(); });
       const nameBox = document.createElement("input");
@@ -7343,8 +7575,11 @@
       brandList.id = "palette-brand-options";
       for (const b of uniqueSorted([...COMMON_BRANDS, ...book.paints.map(p => p.brand)])) brandList.appendChild(new Option(b));
       row.append(colour, nameBox, brandBox, brandList);
-      panel.appendChild(row);
-      panel.insertAdjacentHTML("beforeend", '<p class="hint" style="margin: 0;">Changes here apply in every recipe that uses this paint.</p>');
+      const changeHint = document.createElement("p");
+      changeHint.className = "hint";
+      changeHint.style.margin = "0";
+      changeHint.textContent = "Changes here apply in every recipe that uses this paint.";
+      // v49: the status comes first and the rest (name, brand, colour, Merge, Remove) sits behind "More options"
       panel.appendChild(buildStatusRow(paint));   // v17
 
       const field = document.createElement("div");
@@ -7355,7 +7590,11 @@
       for (const r of usedIn) chips.appendChild(recipeChip(r, () => openRecipe(r.id)));
       field.appendChild(chips);
       panel.appendChild(field);
-      panel.appendChild(buildPaintActions(paint, usedIn));   // v18c-2
+      if (!paintOptionsOpen.has(paint.id)) paintOptionsOpen.set(paint.id, { open: false });
+      panel.appendChild(buildMoreInfo([row, changeHint, buildPaintActions(paint, usedIn, name)], {   // v18c-2 (v55: the visible name is passed in for the Remove button's name)
+        className: "paint-options", state: paintOptionsOpen.get(paint.id), openText: "More options", closeText: "Fewer options",
+        id: `paint-options-${paint.id}`, nameEl: name,   // v55: More options / Fewer options, then the visible paint name
+      }));
       item.appendChild(panel);
       return item;
     }
@@ -7436,7 +7675,7 @@
     }
 
     // The Remove and Merge into… buttons at the bottom of an open paint.
-    function buildPaintActions(paint, usedIn) {
+    function buildPaintActions(paint, usedIn, paintNameEl) {
       const wrap = document.createElement("div");
       wrap.className = "panel-field paint-actions";
       const buttons = document.createElement("div");
@@ -7456,7 +7695,7 @@
         label.textContent = `A misspelt copy? Pick the right paint. Recipes using ${paint.name} will use that one instead.`;
         const pick = document.createElement("select");
         pick.className = "merge-pick";
-        pick.setAttribute("aria-label", `Merge ${paint.name} into`);
+        // v55: no aria-label (it held the paint name): the label this box sits in is its name, and that sentence already names the paint
         pick.appendChild(new Option("Choose a paint…", ""));
         label.appendChild(pick);
         // The list of paints is only built when you tap Merge into… (a paste import opens
@@ -7481,7 +7720,7 @@
         const remove = document.createElement("button");
         remove.className = "danger-button";
         remove.textContent = "Remove";
-        remove.setAttribute("aria-label", `Remove ${paint.name} from your palette`);
+        if (paintNameEl) labelWithName(remove, "", paintNameEl);   // v55: "Remove" then the visible paint name, no paint name in an aria-label
         remove.addEventListener("click", () => removePaint(paint));
         buttons.appendChild(remove);
       }
@@ -7629,7 +7868,8 @@
       d.steps.forEach((step, si) => stepList.appendChild(buildStepEditor(d, step, si)));
       stepsCard.appendChild(stepList);
       const addStep = document.createElement("button");
-      addStep.className = "plain-button";
+      addStep.type = "button";
+      addStep.className = "plain-button add-step";
       addStep.textContent = "+ Add step";
       addStep.addEventListener("click", () => {
         d.steps.push(blankStep());
@@ -7678,12 +7918,19 @@
       }
     }
 
+    // v50: a step is folded to one line (number, technique, paints as small swatches). Open it to edit the paints. The technique, coats,
+    // mix ratio, note and "optional" sit behind More options inside the open step. A step nobody has filled in yet starts open.
     function buildStepEditor(d, step, si) {
       const li = document.createElement("li");
       li.className = "step-edit";
+      const fold = stepFold(step, !step.paints.some(p => p.name.trim()) && !step.technique);
+      const body = document.createElement("div");
+      body.className = "step-body";
+      body.id = `rstep-${si}`;
 
       const iconButton = (text, label, disabled, onClick, extraClass) => {
         const b = document.createElement("button");
+        b.type = "button";
         b.className = "icon-button" + (extraClass ? " " + extraClass : "");
         b.textContent = text;
         b.setAttribute("aria-label", label);
@@ -7697,9 +7944,7 @@
       };
       const head = document.createElement("div");
       head.className = "step-head";
-      const label = document.createElement("strong");
-      label.textContent = `Step ${si + 1}`;
-      head.append(label,
+      head.append(
         iconButton("↑", `Move step ${si + 1} up`, si === 0, () => move(-1)),
         iconButton("↓", `Move step ${si + 1} down`, si === d.steps.length - 1, () => move(+1)),
         iconButton("✕", `Remove step ${si + 1}`, false, () => {
@@ -7708,9 +7953,8 @@
           if (hasPaints) askYesNo(`Remove step ${si + 1}?`, remove, { danger: true });
           else remove();
         }, "remove"));
-      li.appendChild(head);
 
-      // Technique and number of coats.
+      // Technique and number of coats (shown under More options).
       const row = document.createElement("div");
       row.className = "row";
       const techLabel = document.createElement("label");
@@ -7727,9 +7971,8 @@
       coats.addEventListener("input", () => { step.coats = cleanCount(coats.value); });
       coatsLabel.append("Coats", coats);
       row.append(techLabel, coatsLabel);
-      li.appendChild(row);
 
-      // v15: a short note on how to do the step, and an "optional" tick.
+      // v15: a short note on how to do the step, and an "optional" tick (also under More options).
       const extra = document.createElement("div");
       extra.className = "row step-extra";
       const noteLabel = document.createElement("label");
@@ -7746,7 +7989,6 @@
       opt.addEventListener("change", () => { step.optional = opt.checked; });
       optLabel.append(opt, "Optional");
       extra.append(noteLabel, optLabel);
-      li.appendChild(extra);
 
       // The paints in this step.
       const warning = document.createElement("p");
@@ -7763,11 +8005,12 @@
       const mixInputs = [];
       let ratioBox = null;
       const mixTyped = () => { step.ratio = ""; if (ratioBox) ratioBox.value = ""; };
-      step.paints.forEach((paint, pi) => li.appendChild(buildPaintEditor(step, paint, si, pi, updateWarning, mixInputs, mixTyped)));
+      const paintBoxes = step.paints.map((paint, pi) => buildPaintEditor(step, paint, si, pi, updateWarning, mixInputs, mixTyped));
 
       // v15: mixing? Type a ratio like 2:1 and the %s are worked out for you.
+      let ratioLabel = null;
       if (step.paints.length > 1) {
-        const ratioLabel = document.createElement("label");
+        ratioLabel = document.createElement("label");
         ratioBox = document.createElement("input");
         ratioBox.placeholder = `e.g. ${step.paints.length === 2 ? "2:1" : "1:1:2"}`;
         ratioBox.setAttribute("aria-label", "Mix ratio");
@@ -7779,12 +8022,11 @@
           updateWarning();
         });
         ratioLabel.append("Mix ratio, paints in the order above (or set each %)", ratioBox);
-        li.appendChild(ratioLabel);
       }
       updateWarning();
-      li.appendChild(warning);
 
       const addPaint = document.createElement("button");
+      addPaint.type = "button";
       addPaint.className = "link-button";
       addPaint.style.justifySelf = "start";
       addPaint.style.padding = "4px 0";
@@ -7795,9 +8037,18 @@
         step.paints.push(blankPaint(null));
         if (even) resplit(step.paints);
         focusAfterRender = `step-${si}-paint-${step.paints.length - 1}`;
+        fold.open = true;
         renderRecipeEditor();
       });
-      li.appendChild(addPaint);
+
+      const options = buildMoreInfo([row, ...(ratioLabel ? [ratioLabel] : []), extra],
+        { state: fold.options, id: `rstep-${si}-more`, openText: "More options", closeText: "Fewer options", className: "step-options" });
+      body.append(head, ...paintBoxes, addPaint, warning, options);
+      li.append(foldStep({
+        number: si + 1, body, fold,
+        technique: () => step.technique || guessTechnique(step.paints) || "Step",
+        colours: () => step.paints.filter(p => p.name.trim()).map(p => p.colour),
+      }), body);
       return li;
     }
 
@@ -7877,7 +8128,7 @@
       const remove = document.createElement("button");
       remove.className = "icon-button remove";
       remove.textContent = "✕";
-      remove.setAttribute("aria-label", `Remove ${paint.name || "this paint"}`);
+      labelWithName(remove, "Remove", name);   // v55: the paint name box beside it is the name (no paint name in an aria-label)
       remove.addEventListener("click", () => {
         const even = isEvenSplit(step.paints);
         step.paints.splice(pi, 1);
@@ -7950,6 +8201,7 @@
     let compendiumState = { base: "", role: "glow", scheme: "", mood: "", detail: "", detailGroup: "", basing: "", basingGroup: "", faction: "", wheel: "", wheelOthers: {},
                             open: {}, view: "themes", combo: "", wheelMore: {}, search: { starter: "", detail: "", basing: "" },
                             paintOpen: "",   // v38: paintOpen = the key of the wheel paint whose "matching colours" panel is open ("" = none)
+                            ticks: {},   // v51: the paints ticked in each list (a Set per list), kept only while the app is open
                             wheelZoom: "", wheelGroup: "" };   // v43: wheelZoom = the hue colour the picture is drilled into ("" = the whole wheel), wheelGroup = its open group ("" = none)
 
     // v35: ONE set of building blocks, TWO doors. The parts of the Colour ideas card (the ideas, Your schemes, Starter schemes,
@@ -8289,19 +8541,301 @@
     // Everything runs on the phone, works offline and sends nothing anywhere. Faction, paint and recipe names are always
     // shown as plain text (never as HTML), because they can be anything the user typed or pasted.
 
+    // v55: names for buttons, links and boxes that act on a paint. The name is the row's own visible name (aria-labelledby), plus a short
+    // action word kept in the element's own aria-label ("Remove"). The element lists itself first, so a screen reader says "Remove <name>".
+    // No paint name is ever written into an aria-label or a title. Leave `action` out when the element's own visible words are the action.
+    // hiddenName(text) makes a screen-reader-only name for the few places that have no visible one (a swatch tile, a shop fold-out).
+    function idOf(el) { if (!el.id) { idOf.n = (idOf.n || 0) + 1; el.id = "nm-" + idOf.n; } return el.id; }
+    function labelWithName(el, action, ...nameEls) {
+      if (action) el.setAttribute("aria-label", action);
+      el.setAttribute("aria-labelledby", [el, ...nameEls].map(idOf).join(" "));
+    }
+    function hiddenName(text) {
+      const span = document.createElement("span");
+      span.className = "sr-only";
+      span.textContent = text;
+      idOf(span);
+      return span;
+    }
+
     // One tappable idea row (swatch, name, brand, tag, reason, optional note, "+ Add as a step"). Used by every list.
+    // v49: "More info". A plain text button that opens the detail under it ("Less info" when open). It is the one way busy pages
+    // tuck their explanations away. `nodes` are moved into the panel (their ids stay, hidden until opened). o.state = { open } is kept
+    // by the caller: the Compendium keeps it in door.state.info (so a redraw does not close it), a row keeps its own.
+    function buildMoreInfo(nodes, o) {
+      o = o || {};
+      const wrap = document.createElement("div");
+      wrap.className = "more-info" + (o.className ? " " + o.className : "");
+      const state = o.state || { open: false };
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "more-info-button";
+      const text = document.createElement("span");
+      const mark = document.createElement("span");
+      mark.className = "fold-mark";
+      mark.setAttribute("aria-hidden", "true");
+      button.append(text, mark);
+      const panel = document.createElement("div");
+      panel.className = "more-info-panel";
+      if (o.id) { panel.id = o.id; button.setAttribute("aria-controls", o.id); }
+      panel.append(...nodes);
+      const show = (isOpen) => {
+        state.open = isOpen;
+        button.setAttribute("aria-expanded", String(isOpen));
+        const words = isOpen ? (o.closeText || "Less info") : (o.openText || "More info");
+        text.textContent = words;
+        if (o.nameEl) labelWithName(button, words, o.nameEl);   // v55: the visible name of a paint, no paint name in an aria-label
+        else if (o.label) button.setAttribute("aria-label", `${words}: ${o.label}`);
+        panel.hidden = !isOpen;
+      };
+      button.addEventListener("click", () => show(!state.open));
+      show(!!state.open);
+      wrap.append(button, panel);
+      return wrap;
+    }
+    function infoState(door, key) {
+      const all = door.state.info || (door.state.info = {});
+      return all[key] || (all[key] = { open: false });
+    }
+    // v52: the pages outside the Compendium (Shopping list, Settings, Dashboard, Units) keep each More info's open or closed state here, one
+    // entry per key, only while the app is open. Nothing is saved. (The door is made on first use, so it is safe to call from anywhere.)
+    function pageMoreInfo(key, nodes, o) {
+      pageMoreInfo.door = pageMoreInfo.door || { state: { info: {} } };
+      return buildMoreInfo(nodes, Object.assign({ state: infoState(pageMoreInfo.door, key), id: "more-" + key }, o || {}));
+    }
+    // v52: tuck the explanations on Settings and Updates behind one More info per card. The controls stay where they are (Backups stay at 44 px
+    // and in view); only the text moves. The nodes keep their ids, so the code that writes into them (appearance-note, counting-note...) is
+    // unchanged. Run once at start-up. The More info goes where the first moved line was.
+    function foldPageText() {
+      const groups = [
+        ["backups", "Backups", ["backup-explain", "share-hint"]],
+        ["stages", "Stages", ["stages-explain"]],
+        ["appearance", "Appearance", ["appearance-note"]],
+        ["counting", "Counting visits", ["counting-note", "counting-effect"]],
+        ["shoplinks", "Shop links", ["shoplinks-note"]],
+        ["faction-colours", "Faction colours", ["faction-colour-hint"]],
+        ["import", "Import", ["import-explain"]],
+        ["your-data", "Your data", ["data-summary", "photo-summary", "storage-note", "restore-examples-hint"]],
+        ["feedback", "Tell us what you think", ["feedback-explain"]],
+        ["colours", "Colours", ["palette-light-note"]],   // v53
+        ["iphone", "Add to Home Screen", ["iphone-steps"]],   // v53: the warning and the reason stay in view; the steps fold
+      ];
+      for (const [key, label, ids] of groups) {
+        const nodes = ids.map(id => document.getElementById(id)).filter(Boolean);
+        if (!nodes.length || document.getElementById("more-" + key)) continue;
+        const spot = document.createComment("more-info");
+        nodes[0].before(spot);
+        for (const node of nodes) node.style.margin = "0";
+        spot.replaceWith(pageMoreInfo(key, nodes, { label }));
+      }
+      showLightNote();   // v53: the Colours note only shows in light mode
+    }
+    // v52: Help's topics are native folds (so links and the Back button still open them). The look (a "More info" / "Less info" word and a
+    // chevron) is in the style sheet; this only tells screen readers whether each one is open.
+    function markHelpFolds() {
+      for (const box of document.querySelectorAll("#view-help .help details")) markFold(box);
+    }
+    // v53: fold a whole Settings card shut. The card's heading becomes a 44 px button (aria-expanded, aria-controls, the same chevron as the
+    // Compendium's parts) and everything under the heading moves into a panel (the ids stay, so the code that fills them is unchanged).
+    // The card is shut every time the app opens; whether it is open is kept here, in memory, only while the app is open. Nothing is saved.
+    const openCards = new Set();
+    const cardFolds = new Map();
+    function foldCard(card, key) {
+      const heading = card && card.querySelector(":scope > h2");
+      if (!heading || cardFolds.has(key)) return;
+      const panel = document.createElement("div");
+      panel.className = "card-fold-panel";
+      panel.id = `card-fold-${key}-panel`;
+      while (heading.nextSibling) panel.appendChild(heading.nextSibling);
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "card-fold-button";
+      button.id = `card-fold-${key}-button`;
+      button.setAttribute("aria-controls", panel.id);
+      const text = document.createElement("span");
+      text.textContent = heading.textContent;
+      const mark = document.createElement("span");
+      mark.className = "fold-mark";
+      mark.setAttribute("aria-hidden", "true");
+      button.append(text, mark);
+      heading.replaceChildren(button);
+      card.classList.add("card-fold");
+      card.appendChild(panel);
+      const show = (isOpen) => {
+        if (isOpen) openCards.add(key); else openCards.delete(key);
+        button.setAttribute("aria-expanded", String(isOpen));
+        panel.hidden = !isOpen;
+      };
+      button.addEventListener("click", () => show(!openCards.has(key)));
+      cardFolds.set(key, show);
+      show(openCards.has(key));
+    }
+    function openCardFold(key) { const show = cardFolds.get(key); if (show) show(true); }
+    // v53: the same for any other native fold (Parts and techniques, Edit details, Colour ideas, Show as a table): the title tells screen
+    // readers whether the fold is open, and keeps telling them when it is opened or shut by a tap or by code. Safe to call twice.
+    const markedFolds = new WeakSet();
+    function markFold(box) {
+      const summary = box && box.querySelector(":scope > summary");
+      if (!summary || markedFolds.has(box)) return;
+      markedFolds.add(box);
+      const sync = () => summary.setAttribute("aria-expanded", String(box.open));
+      box.addEventListener("toggle", sync);
+      sync();
+    }
+    // The Compendium's rows are plain boxes (no recipe to add to), so their reasons and notes sit behind More info.
+    function compactRows(door) { return !!door.short && !door.addStep && !door.addSteps; }
+    // A greyed-out shopping list button with its one-line hint, shown while nothing is picked. It does nothing; it only says it exists.
+    function buildIdleShop(door, id, hintText) {
+      const wrap = document.createElement("div");
+      wrap.className = "shop-idle";
+      const hint = document.createElement("p");
+      hint.className = "hint";
+      hint.id = door.id(id + "-hint");
+      hint.textContent = hintText;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "plain-button shop-idle-button";
+      button.id = door.id(id);
+      button.textContent = "Add to shopping list";
+      button.setAttribute("aria-disabled", "true");
+      button.setAttribute("aria-describedby", hint.id);
+      wrap.append(button, hint);
+      return wrap;
+    }
+
+    // v51: tick boxes for the Compendium's paint lists (Starter schemes, Your schemes, Detail recipes). Each paint row gets a 44 px tick box at
+    // the left, the list gets a "Select all" row above it, and under it sits the one "Add to shopping list" button: small and grey while
+    // nothing is ticked (buildIdleShop), a full-width primary button with the count once something is. It adds only the ticked paints, through
+    // addSchemePaintsToShoppingList (one message, one Undo). Copy as text and Save into a new recipe use the ticked paints, or all of them
+    // when none is ticked. A paint you own (running low counts) or that is already on the list shows its status mark (statusMarker) where the
+    // tick box would be, and its row's More info says why. Ticks are kept only while the app is open (door.state.ticks); nothing is saved.
+    let pickSeq = 0;
+    const pickKey = (paint) => sameKey(tidyBrand(paint.brand)) + "|" + sameKey(paint.name);
+    function pickable(door) { return !!door.schemeShop && compactRows(door); }
+    // Why a paint cannot be ticked, or null when it can: { status, text }.
+    function pickBlocked(paint) {
+      const mine = palettePaintFor(paint);
+      if (mine && haveIt(mine)) {
+        const low = paintStatus(mine) === "low";
+        return { status: paintStatus(mine), text: low ? "You have this paint, running low, so it is left off the shopping list." : "You own this paint, so it is left off the shopping list." };
+      }
+      if (onShoppingList(paint)) return { status: paintStatus(mine), text: "This paint is already on your shopping list." };
+      return null;
+    }
+    // o = { id, source, head, foot }. Call pick.row(paint, line, step) for each row in order, then pick.finish().
+    // pick.all = the Select all row, pick.actions = the Add button, pick.shareLines / pick.shareSteps = what Copy and Save use.
+    function buildPick(door, o) {
+      const allTicks = door.state.ticks || (door.state.ticks = {});
+      const ticked = allTicks[o.id] || (allTicks[o.id] = new Set());
+      const dom = String(o.id).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "list";   // a safe page id (a faction name can hold spaces or anything)
+      const entries = [], rows = [];
+      const live = () => new Set(entries.filter(e => !pickBlocked(e.paint)).map(e => pickKey(e.paint)));
+
+      const selectAll = document.createElement("button");
+      selectAll.type = "button";
+      selectAll.className = "pick-all";
+      selectAll.id = door.id(dom + "-all");
+      selectAll.setAttribute("role", "checkbox");
+      const allBox = document.createElement("span");
+      allBox.className = "pick-box";
+      allBox.setAttribute("aria-hidden", "true");
+      const allText = document.createElement("span");
+      allText.textContent = "Select all";
+      selectAll.append(allBox, allText);
+
+      const actions = document.createElement("div");
+      actions.className = "pick-actions pick-set";
+      const add = document.createElement("button");
+      add.type = "button";
+      add.className = "primary-button pick-add";
+      add.id = door.id(dom + "-add");
+
+      const picked = () => entries.filter(e => ticked.has(pickKey(e.paint)) && !pickBlocked(e.paint));
+      const chosen = () => { const some = picked(); return some.length ? some : entries; };
+
+      const refresh = () => {
+        const ok = live();
+        for (const k of [...ticked]) if (!ok.has(k)) ticked.delete(k);
+        for (const r of rows) {
+          const blocked = pickBlocked(r.paint);
+          const state = blocked ? "b:" + blocked.status : "t";
+          if (r.state !== state) {   // only swap when the paint changed; a tick box that has focus must stay put
+            r.state = state;
+            r.slot.replaceChildren(blocked ? statusMarker(blocked.status || "notowned") : r.tick);
+          }
+          r.note.textContent = blocked ? blocked.text : "";
+          r.note.hidden = !blocked;
+          r.tick.setAttribute("aria-checked", String(ticked.has(r.key)));
+        }
+        const n = ticked.size;
+        selectAll.setAttribute("aria-checked", !n || !ok.size ? "false" : n === ok.size ? "true" : "mixed");
+        selectAll.setAttribute("aria-disabled", String(!ok.size));
+        const mode = n ? "add" : "idle";
+        if (actions.dataset.mode !== mode) {
+          actions.dataset.mode = mode;
+          actions.replaceChildren(n ? add : buildIdleShop(door, dom + "-idle", "Select paints to generate a shopping list"));
+        }
+        add.textContent = `Add to shopping list (${n})`;
+      };
+      actions.refreshPicks = refresh;
+
+      selectAll.addEventListener("click", () => {
+        const ok = live();
+        if (!ok.size) return;
+        if ([...ok].every(k => ticked.has(k))) ticked.clear(); else for (const k of ok) ticked.add(k);
+        refresh();
+      });
+      add.addEventListener("click", () => {
+        const seen = new Set(), paints = [];
+        for (const e of picked()) { const k = pickKey(e.paint); if (!seen.has(k)) { seen.add(k); paints.push(e.paint); } }
+        if (addSchemePaintsToShoppingList(paints, o.source)) selectAll.focus();   // the button has gone, so focus moves to Select all
+      });
+
+      return {
+        all: selectAll,
+        actions,
+        row(paint, line, step) {
+          const key = pickKey(paint);
+          entries.push({ paint, line, step });
+          const nameId = door.id("pick-name-" + (++pickSeq));
+          const slot = document.createElement("span");
+          slot.className = "pick-slot";
+          const tick = document.createElement("button");
+          tick.type = "button";
+          tick.className = "pick-tick";
+          tick.setAttribute("role", "checkbox");
+          tick.setAttribute("aria-labelledby", nameId);   // the row's own name is the label, so no paint name sits in an aria-label
+          const box = document.createElement("span");
+          box.className = "pick-box";
+          box.setAttribute("aria-hidden", "true");
+          tick.appendChild(box);
+          tick.addEventListener("click", () => { if (ticked.has(key)) ticked.delete(key); else ticked.add(key); refresh(); });
+          const note = document.createElement("p");
+          note.className = "hint";
+          note.hidden = true;
+          const r = { key, paint, slot, tick, note, state: "" };
+          rows.push(r);
+          return { slot, note, nameId };
+        },
+        finish: refresh,
+        shareLines: () => [...(o.head || []), ...chosen().map(e => e.line), ...(o.foot || [])],
+        shareSteps: () => chosen().map(e => e.step),
+      };
+    }
+
     // v30: rows outside the main three ideas carry the class "idea-pick" instead of "idea" (same look, see index.html).
     // v35: with no onAdd (the Compendium has no recipe to add to) the row is plain text in a box: same look, no button, no "+ Add" line.
     // v38: a door that has no recipe but does have "links" (the Compendium) can hand in a 7th argument, link = { expanded, controls, onToggle(li) }.
     // The row is then a button (still the same look and the same classes as the plain row, so nothing else about it changes) that opens
     // and closes a short panel for that paint. It says whether the panel is open (aria-expanded) and, while it is open, which panel it controls.
-    function buildIdeaItem(paint, tag, reason, note, onAdd, extraClass, link) {
+    // v51: a 9th argument, pick = { slot, note, nameId } from buildPick: the tick box goes at the left of the row, the name carries the id the
+    // tick box is labelled by, and the "why can't I tick this" line goes inside the row's More info.
+    function buildIdeaItem(paint, tag, reason, note, onAdd, extraClass, link, compact, pick) {
       const li = document.createElement("li");
       const button = document.createElement(onAdd || link ? "button" : "div");
       if (onAdd) {
         button.type = "button";
         button.className = extraClass || "idea";
-        button.setAttribute("aria-label", `Add ${paint.name} as a new step. ${tag.text}. ${reason}`);
       } else if (link) {
         button.type = "button";
         button.className = (extraClass || "idea") + " idea-static idea-link";
@@ -8316,6 +8850,7 @@
       const name = document.createElement("span");
       name.className = "idea-name";
       name.append(paint.name);
+      if (pick) name.id = pick.nameId;
       if (paint.brand) {
         const brand = document.createElement("small");
         brand.textContent = paint.brand;
@@ -8327,12 +8862,21 @@
       const why = document.createElement("span");
       why.className = "idea-why";
       why.textContent = reason;
-      text.append(name, tagEl, why);
+      if (onAdd) labelWithName(button, "Add as a new step", name, tagEl, why);   // v55: the row's visible name, tag and reason, no paint name in an aria-label
+      let noteEl = null;
       if (note) {
-        const noteEl = document.createElement("span");
+        noteEl = document.createElement("span");
         noteEl.className = "idea-note";
         noteEl.textContent = note;
-        text.appendChild(noteEl);
+      }
+      text.append(name, tagEl);
+      if (compact && !onAdd && !link) {   // v49: the reason and note sit behind a small More info (Compendium rows)
+        const more = noteEl ? [why, noteEl] : [why];
+        if (pick) more.push(pick.note);
+        text.appendChild(buildMoreInfo(more, { className: "idea-more" }));
+      } else {
+        text.appendChild(why);
+        if (noteEl) text.appendChild(noteEl);
       }
       if (onAdd) {
         const add = document.createElement("span");
@@ -8345,6 +8889,7 @@
         open.textContent = "Matching colours";
         text.appendChild(open);
       }
+      if (pick) button.append(pick.slot);
       button.append(makeSwatch(paint.colour), text);
       if (onAdd) button.addEventListener("click", onAdd);
       else if (link && link.onToggle) button.addEventListener("click", () => link.onToggle(li));
@@ -8359,20 +8904,22 @@
       if (!door.share) return null;
       const row = document.createElement("div");
       row.className = "share-row";
+      // v51: lines and steps may be functions, worked out when the button is tapped (the Compendium uses the ticked paints, or all of them)
+      const get = (v) => (typeof v === "function" ? v() : v);
       const copy = document.createElement("button");
       copy.type = "button";
       copy.className = "plain-button";
       copy.textContent = "Copy as text";
       copy.setAttribute("aria-label", `Copy ${what} as text`);
-      copy.addEventListener("click", () => door.share.copy(lines.join("\n"), what));
+      copy.addEventListener("click", () => door.share.copy(get(lines).join("\n"), what));
       row.appendChild(copy);
-      if (steps && steps.length) {
+      if (steps && (typeof steps === "function" || steps.length)) {
         const start = document.createElement("button");
         start.type = "button";
         start.className = "plain-button";
         start.textContent = "Save into a new recipe…";
         start.setAttribute("aria-label", `Save ${what} into a new recipe`);
-        start.addEventListener("click", () => door.share.startRecipe(steps));
+        start.addEventListener("click", () => door.share.startRecipe(get(steps)));
         row.appendChild(start);
       }
       return row;
@@ -8488,22 +9035,23 @@
       list.id = door.id("faction-history-list");
       const shown = history.list.slice(0, FACTION_HISTORY_SHOWN);
       const lines = [`Colours used on this faction before: ${colourWordList(names)}`], steps = [];
+      // v51: tick boxes, Select all and the Add to shopping list button (Compendium only)
+      const pick = pickable(door) ? buildPick(door, { id: `history-${[...factions.keys()].join("+")}`, source: `Scheme: ${names.join(", ")} colours`, head: lines.slice(), foot: [COMPENDIUM_TEXT_FOOT] }) : null;
       for (const entry of shown) {
         const paint = entry.paint;
         const reason = `Used on ${plural(entry.units, "unit")} in this faction, in ${plural(entry.recipes, "recipe")}.`;
         const note = colourIdeaIsReal(paint.colour) ? "" : "This paint has no colour set, so the swatch is grey.";
         const tag = colourHistoryTag(paint);
+        const line = ideaTextLine(paint, tag, reason, note);
+        const step = { paint, technique: "", coats: 1, mix: 100, note: "Used before on this faction" };
         list.appendChild(buildIdeaItem(paint, tag, reason, note,
-          door.addStep ? () => door.addStep(paint, "Used before on this faction") : null, "idea-pick"));
-        lines.push(ideaTextLine(paint, tag, reason, note));
-        steps.push({ paint, technique: "", coats: 1, mix: 100, note: "Used before on this faction" });
+          door.addStep ? () => door.addStep(paint, "Used before on this faction") : null, "idea-pick", undefined, compactRows(door), pick && pick.row(paint, line, step)));
+        lines.push(line);
+        steps.push(step);
       }
-      box.appendChild(list);
-      // v42: Your schemes (the colours used on the faction) get the same closed "Shopping list" fold-out, for the paints shown (Compendium only)
-      const schemeShop = door.schemeShop ? buildSchemeShopFoldout(shown.map(x => x.paint), `Scheme: ${names.join(", ")} colours`) : null;
-      if (schemeShop) box.appendChild(schemeShop);
+      if (pick) { pick.finish(); box.append(pick.all, list, pick.actions); } else box.appendChild(list);
       if (history.list.length > FACTION_HISTORY_SHOWN) say(`Showing the ${FACTION_HISTORY_SHOWN} most used of ${history.list.length}.`);
-      const share = buildShareRow(door, "Your faction colours", [...lines, COMPENDIUM_TEXT_FOOT], steps);
+      const share = buildShareRow(door, "Your faction colours", pick ? pick.shareLines : [...lines, COMPENDIUM_TEXT_FOOT], pick ? pick.shareSteps : steps);
       if (share) box.appendChild(share);
       return box;
     }
@@ -8933,7 +9481,7 @@
         chip.dataset.scheme = s.key;
         chips.appendChild(chip);
       }
-      box.append(title, hint);
+      box.append(title, compactRows(door) ? buildMoreInfo([hint], { state: infoState(door, "starter-hint"), id: door.id("starter-hint-panel"), label: "starter schemes" }) : hint);
       if (door.switcher) box.appendChild(buildSchemeSwitch(door, combos ? "combos" : "themes", onView));
       const q = door.search ? searchQuery(st, "starter") : "";
       if (door.search) {   // v37 part 2: the search box (only what comes after it is rebuilt while you type)
@@ -8947,7 +9495,10 @@
       if (door.short && !value && !q) box.appendChild(groupNone(door, "starter-none", "schemes"));
       else if (!q || chips.childElementCount) box.appendChild(chips);
       const scheme = starterSchemesShown(st, door).find(s => s.key === st.scheme);
-      if (!scheme) return box;
+      if (!scheme) {
+        if (door.schemeShop) box.appendChild(buildIdleShop(door, "starter-shop-idle", "Select a scheme to generate a shopping list"));
+        return box;
+      }
 
       const summary = document.createElement("p");
       summary.className = "starter-summary";
@@ -8962,19 +9513,21 @@
       list.id = door.id("starter-list");
       const lines = [`Starter scheme: ${scheme.name}`, scheme.summary, scheme.reason], steps = [];
       const schemeHits = starterSchemePaints(scheme);
+      // v51: tick boxes, Select all and the Add to shopping list button (Compendium only)
+      const pick = pickable(door) ? buildPick(door, { id: `starter-${scheme.key}`, source: `Scheme: ${scheme.name}`, head: lines.slice(), foot: [COMPENDIUM_TEXT_FOOT] }) : null;
       for (const { colour, hit } of schemeHits) {
         const paint = hit.paint;
         const tag = colourIdeaTag(hit), reason = `${colour.part}: ${colour.look}.`, note = colourIdeaNote(hit);
         const stepNote = `Starter scheme (${scheme.name}): ${colour.part.toLowerCase()}`;
-        list.appendChild(buildIdeaItem(paint, tag, reason, note, door.addStep ? () => door.addStep(paint, stepNote) : null, "idea-pick"));
-        lines.push(ideaTextLine(paint, tag, reason, note));
-        steps.push({ paint, technique: "", coats: 1, mix: 100, note: stepNote });
+        const line = ideaTextLine(paint, tag, reason, note);
+        const step = { paint, technique: "", coats: 1, mix: 100, note: stepNote };
+        list.appendChild(buildIdeaItem(paint, tag, reason, note, door.addStep ? () => door.addStep(paint, stepNote) : null, "idea-pick", undefined, compactRows(door), pick && pick.row(paint, line, step)));
+        lines.push(line);
+        steps.push(step);
       }
-      box.append(summary, why, list);
-      // v42: a closed "Shopping list" fold-out with the Add paints button (Compendium only)
-      const schemeShop = door.schemeShop ? buildSchemeShopFoldout(schemeHits.map(x => x.hit.paint), `Scheme: ${scheme.name}`) : null;
-      if (schemeShop) box.appendChild(schemeShop);
-      const share = buildShareRow(door, scheme.name, [...lines, COMPENDIUM_TEXT_FOOT], steps);
+      box.append(summary, compactRows(door) ? buildMoreInfo([why], { state: infoState(door, "starter-why"), id: door.id("starter-why-panel"), label: `why ${scheme.name} works` }) : why);
+      if (pick) { pick.finish(); box.append(pick.all, list, pick.actions); } else box.appendChild(list);
+      const share = buildShareRow(door, scheme.name, pick ? pick.shareLines : [...lines, COMPENDIUM_TEXT_FOOT], pick ? pick.shareSteps : steps);
       if (share) box.appendChild(share);
       return box;
     }
@@ -9056,7 +9609,7 @@
         chip.dataset.detail = r.key;
         chips.appendChild(chip);
       }
-      box.append(title, hint);
+      box.append(title, compactRows(door) ? buildMoreInfo([hint], { state: infoState(door, "detail-hint"), id: door.id("detail-hint-panel"), label: "detail recipes" }) : hint);
       const q = door.search ? searchQuery(st, "detail") : "";
       if (door.search) {   // v37 part 2: the search box
         const groupName = (DETAIL_GROUPS.find(g => g.key === activeGroup && activeGroup !== "all") || {}).name || "";
@@ -9089,12 +9642,16 @@
       list.className = "idea-list";
       list.id = door.id("detail-list");
       const lines = [`Detail recipe: ${recipe.name}`, recipe.summary], steps = [];
+      // v51: tick boxes, Select all and the Add to shopping list button (Compendium only)
+      const pick = pickable(door) ? buildPick(door, { id: `detail-${recipe.key}`, source: `Detail recipe: ${recipe.name}`, head: lines.slice(), foot: [COMPENDIUM_TEXT_FOOT] }) : null;
       items.forEach(({ step, hit }, i) => {
         const paint = hit.paint;
         const tag = colourIdeaTag(hit), reason = detailStepReason("Step", i, step), note = colourIdeaNote(hit);
-        list.appendChild(buildIdeaItem(paint, tag, reason, note, door.addSteps ? () => door.addSteps([{ step, hit }]) : null, "idea-pick"));
-        lines.push(ideaTextLine(paint, tag, reason, note));
-        steps.push({ paint, technique: step.technique, coats: step.coats, mix: step.mix, note: step.note });
+        const line = ideaTextLine(paint, tag, reason, note);
+        const recipeStep = { paint, technique: step.technique, coats: step.coats, mix: step.mix, note: step.note };
+        list.appendChild(buildIdeaItem(paint, tag, reason, note, door.addSteps ? () => door.addSteps([{ step, hit }]) : null, "idea-pick", undefined, compactRows(door), pick && pick.row(paint, line, recipeStep)));
+        lines.push(line);
+        steps.push(recipeStep);
       });
       if (door.addSteps) {
         const all = document.createElement("button");
@@ -9105,10 +9662,13 @@
         all.setAttribute("aria-label", `Add all ${items.length} steps of ${recipe.name} to this recipe`);
         all.addEventListener("click", () => door.addSteps(items));
         box.append(all, list);
+      } else if (pick) {
+        pick.finish();
+        box.append(pick.all, list, pick.actions);
       } else {
         box.appendChild(list);
       }
-      const share = buildShareRow(door, recipe.name, [...lines, COMPENDIUM_TEXT_FOOT], steps);
+      const share = buildShareRow(door, recipe.name, pick ? pick.shareLines : [...lines, COMPENDIUM_TEXT_FOOT], pick ? pick.shareSteps : steps);
       if (share) box.appendChild(share);
       return box;
     }
@@ -9174,7 +9734,7 @@
         chip.dataset.basing = t.key;
         chips.appendChild(chip);
       }
-      box.append(title, hint);
+      box.append(title, compactRows(door) ? buildMoreInfo([hint], { state: infoState(door, "basing-hint"), id: door.id("basing-hint-panel"), label: "basing tips" }) : hint);
       const q = door.search ? searchQuery(st, "basing") : "";
       if (door.search) {   // v37 part 2: the search box
         const groupName = (BASING_GROUPS.find(g => g.key === activeGroup && activeGroup !== "all") || {}).name || "";
@@ -9238,7 +9798,7 @@
       items.forEach(({ step, hit }, i) => {
         const paint = hit.paint;
         const tag = colourIdeaTag(hit), reason = detailStepReason("Paint step", i, step), note = colourIdeaNote(hit);
-        list.appendChild(buildIdeaItem(paint, tag, reason, note, door.addSteps ? () => door.addSteps([{ step, hit }]) : null, "idea-pick"));
+        list.appendChild(buildIdeaItem(paint, tag, reason, note, door.addSteps ? () => door.addSteps([{ step, hit }]) : null, "idea-pick", undefined, compactRows(door)));
         lines.push(ideaTextLine(paint, tag, reason, note));
         steps.push({ paint, technique: step.technique, coats: step.coats, mix: step.mix, note: step.note });
       });
@@ -9374,7 +9934,7 @@
         const reason = colourIdeaReason(idea.relation, idea.wanted, baseHex, role);
         const note = colourIdeaNote(idea.hit);
         const stepNote = `Colour idea for ${role.note}`;
-        const row = buildIdeaItem(paint, tag, reason, note, door.addStep ? () => door.addStep(paint, stepNote) : null);
+        const row = buildIdeaItem(paint, tag, reason, note, door.addStep ? () => door.addStep(paint, stepNote) : null, undefined, undefined, compactRows(door));
         if (door.listMarks && !idea.hit.owned) watchShopTag(row, paint, baseTag);
         // v39: a paint you do not own gets the small closed "Shop links" fold-out under its row (door.shops; the row itself is unchanged)
         const shops = door.shops ? buildShopFoldout(paint, idea.hit.owned, door.shopSource ? door.shopSource() : "") : null;
@@ -9388,7 +9948,7 @@
 
     function buildColourIdeasCard(d) {
       const card = document.createElement("details");
-      card.className = "card colour-ideas";
+      card.className = "card colour-ideas help-look";   // v53: the Help look (More info / Less info)
       card.id = "colour-ideas";
       card.open = colourIdeasState.open;
       const summary = document.createElement("summary");
@@ -9401,6 +9961,7 @@
       const body = document.createElement("div");
       body.className = "ideas-body";
       card.append(summary, body);
+      markFold(card);   // v53: aria-expanded follows open and shut
 
       let lastLook = "";
       let focusNext = "";
@@ -9590,7 +10151,7 @@
         shops: true,   // v39: paints you do not own, in that panel and in Colour ideas, get a closed "Shop links" fold-out (plain links)
         shopSource: () => "Compendium: Colour ideas",   // v41: what the shopping list remembers for Add buttons in the Compendium's Colour ideas
         listMarks: true,   // v41: a paint already on the shopping list says "On your shopping list" on its row
-        schemeShop: true,  // v42: Starter schemes and Your schemes get a closed "Shopping list" fold-out with "Add paints to shopping list"
+        schemeShop: true,  // v42, v51: Starter schemes, Your schemes and Detail recipes get tick boxes, Select all and "Add to shopping list" (buildPick)
         share: { copy: (text, what) => copyText(text, what, "Paste it anywhere."), startRecipe: startRecipeFromCompendium },
         factions: () => new Map(chosen ? [[factionKey(chosen), chosen]] : []),
         factionPick: { names, onChange: (key, focus) => { st.faction = key; renderCompendium(focus || `#${compendiumId("faction-history-pick")}`); } },
@@ -10211,7 +10772,7 @@
       const caption = document.createElement("p");
       caption.className = "wheel-caption";
       caption.textContent = "In the middle, clockwise from the top right: whites, greys, blacks and metallics.";
-      block.append(hint, svg, caption);
+      block.append(hint, svg, pageMoreInfo("wheel-caption", [caption], { label: "Colour wheel" }));   // v53: the caption sits behind More info
       const open = WHEEL.find(w => w.key === st.wheel);
       if (open) block.appendChild(buildWheelDetail(door, open, items.filter(x => x.at.seg === open.key), redraw));
       body.appendChild(block);
@@ -10336,7 +10897,7 @@
       const door = compendiumDoor();
       const redraw = (selector) => renderCompendium(selector);
 
-      say("A colour wheel (tap a colour to open its groups), colour ideas, starter schemes, detail recipes and basing tips, without needing a recipe. Tap a heading to open it, and type in a search box to find things fast. Use Copy as text to keep anything, or Save into a new recipe\u2026 to start a recipe from colour ideas, schemes, detail recipes and basing tips.", "intro");
+      const intro = say("A colour wheel (tap a colour to open its groups), colour ideas, starter schemes, detail recipes and basing tips, without needing a recipe. Tap a heading to open it, and type in a search box to find things fast. Use Copy as text to keep anything, or Save into a new recipe\u2026 to start a recipe from colour ideas, schemes, detail recipes and basing tips.", "intro");
 
       // v36: the colour wheel comes first
       appendColourWheel(body, door, redraw);
@@ -10351,6 +10912,8 @@
       fold("detail", "Detail recipes", parts.detail && (() => dropTitle(parts.detail())));
       fold("basing", "Basing tips", parts.basing && (() => dropTitle(parts.basing())));
       say("Ideas use paints you own first. Colours on a screen are only a guide, so check them on your model. Nothing leaves your phone.", "foot");
+      // v49: the introduction sits behind a More info at the top of the page (the footnote stays, it is a short honest note)
+      body.insertBefore(buildMoreInfo([intro], { state: infoState(door, "page"), id: compendiumId("page-info-panel"), label: "the Compendium" }), body.firstChild);
 
       if (focusSelector) {
         const target = body.querySelector(focusSelector);
@@ -10416,6 +10979,7 @@
       if (recipeOwnCard && recipeOwnCard.isConnected) recipeOwnCard.refresh();
       if (recipeIdeasCard && recipeIdeasCard.isConnected) recipeIdeasCard.refresh();   // v28
     }
+    let ownInfoSeq = 0;   // v50: gives each redrawn "Do you own these?" More info its own id
     function buildOwnCard(choice, getPaints) {
       const card = document.createElement("div");
       card.className = "card own-check";
@@ -10430,10 +10994,12 @@
         if (!paints.length) return;
         const head = document.createElement("h2");
         head.textContent = "Do you own these?";
-        const hint = document.createElement("p");
-        hint.className = "hint";
-        hint.textContent = `${plural(paints.length, "paint")} will be new to your palette. Ones you own stay off the shopping list; `
+        const detail = document.createElement("p");
+        detail.className = "hint";
+        detail.textContent = `${plural(paints.length, "paint")} will be new to your palette. Ones you own stay off the shopping list; `
           + "ones you don't go on it. You can change any of them later on Your Palette.";
+        // v50: the explanation sits behind More info (its open state is kept while the app is open).
+        const hint = buildMoreInfo([detail], { state: infoState(recipeInfoDoor, "own-card"), id: `own-card-info-${++ownInfoSeq}`, label: "owning these paints" });
         const modes = document.createElement("div");
         modes.className = "chips";
         for (const [key, label] of [["all", "All"], ["none", "None"], ["pick", "Let me pick"]]) {
@@ -10532,10 +11098,16 @@
 
       const card = document.createElement("div");
       card.className = "card";
-      card.innerHTML = `<h2>Paste recipes</h2>
-        <p class="hint">Paste your notes (from Google Keep, Reddit, anywhere). Put each part on its own line ending in a colon,
-        like <b>Eyes:</b>, then one step per line, or several split by commas. Mixes like <b>2:1 Baal:CM</b> or <b>50/50</b> work too.
-        You'll see a preview before anything is saved.</p>`;
+      // v53: the introduction sits behind More info (built from nodes, no innerHTML; the open or shut state is kept while the app is open).
+      const importHead = document.createElement("h2");
+      importHead.textContent = "Paste recipes";
+      const importIntro = document.createElement("p");
+      importIntro.className = "hint";
+      const bold = (text) => { const b = document.createElement("b"); b.textContent = text; return b; };
+      importIntro.append("Paste your notes (from Google Keep, Reddit, anywhere). Put each part on its own line ending in a colon, like ",
+        bold("Eyes:"), ", then one step per line, or several split by commas. Mixes like ", bold("2:1 Baal:CM"), " or ", bold("50/50"),
+        " work too. You'll see a preview before anything is saved.");
+      card.append(importHead, pageMoreInfo("paste-intro", [importIntro], { label: "Paste recipes" }));
       const box = document.createElement("textarea");
       box.id = "import-text";
       box.rows = 8;
@@ -12177,7 +12749,15 @@
       document.getElementById("appearance-note").textContent = choice === "auto"
         ? `Follows your phone's own dark mode setting. Right now: ${isLight() ? "light" : "dark"}.`
         : "";
-      document.getElementById("palette-light-note").hidden = !isLight();
+      showLightNote();
+    }
+    // v53: the light-mode note (Settings, Colours) sits behind More info. In dark mode there is nothing to say, so the whole More info is hidden.
+    function showLightNote() {
+      const note = document.getElementById("palette-light-note");
+      const light = isLight();
+      note.hidden = !light;
+      const wrap = note.closest(".more-info");
+      if (wrap) wrap.hidden = !light;
     }
     for (const button of appearanceButtons) {
       button.addEventListener("click", () => {
@@ -13638,6 +14218,7 @@
     function closeAddForm() {
       form.classList.add("hidden");
       toggleAdd.textContent = "+ Add unit";
+      toggleAdd.setAttribute("aria-expanded", "false");   // v53
     }
 
     function startUnitsPaste() {
@@ -13717,11 +14298,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=49". v21.4 test checks.)
+    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=55".
+    // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v49";
+    const APP_VERSION = "v55";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -14019,6 +14601,7 @@
         showTab("units");
         form.classList.remove("hidden");
         toggleAdd.textContent = "Close";
+        toggleAdd.setAttribute("aria-expanded", "true");   // v53
         nameInput.value = kept.name;
         countInput.value = kept.count;
         hobbyInput.value = kept.game;
@@ -14170,7 +14753,46 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v55", date: "20 Oct 2026", changes: [
+        "The small labels on recipes, Colour ideas and the Compendium are now plain text instead of rounded pills: the part name on a recipe, Fine, Look at this and Suggestion, and Pro preview. The words are the same.",
+        "Screen readers now read a paint's own name on the buttons and boxes that act on it, such as Remove, More options, the colour box, Merge, Shop links and the swatch tiles, instead of a longer label that repeated the name.",
+      ]},
+      { version: "v54", date: "20 Oct 2026", changes: [
+        "On the Updates page, each entry shows its version and date, and its lines are behind More info. The newest entry starts open and the rest start shut.",
+        "In Settings, Stages, Import and Your data now fold shut when you open the app, like Faction colours and Paint brands. Tap the heading to open one. Delete all units is still inside Your data.",
+        "Buttons that are switched off, such as the reorder arrows at the ends of the stage list and Clean up photo storage when there is nothing to clean, are easier to read.",
+      ]},
+      { version: "v53", date: "20 Oct 2026", changes: [
+        "Buttons, text boxes and menus are now all at least 44 px tall, and the small tap targets are bigger: the stage bars on the Dashboard, link buttons such as + Add part and Back, the Open recipe and Go to unit chips, Unlink, and the basket in the tab bar.",
+        "Parts and techniques, Edit details and Colour ideas now look like the Help topics, with More info and Less info. These folds, and the Add unit button, also tell screen readers whether they are open.",
+        "Help starts with every topic closed.",
+        "Four short notes moved behind More info: the Paste recipes introduction, what a scheme is on an empty Schemes page, the colour wheel caption, and the light mode note in Settings.",
+        "On iPhone, the Keep your data safe card keeps its warning and the reason in view. The Add to Home Screen steps are behind More info.",
+        "In Settings, Faction colours and Paint brands are folded shut when you open the app. Tap the heading to open one.",
+        "The red banner shown when saving fails now follows your theme colours.",
+      ]},
+      { version: "v52", date: "20 Oct 2026", changes: [
+        "The Shopping list is tidier. Your paints, the Copy as text button and the basket count stay in view. The explanations (what the list holds, the no-statuses warning and how the shop buttons work) are behind one More info.",
+        "Settings is tidier. Each card keeps its buttons and switches in view, and its explanation sits behind a More info. Backups stay big and easy to reach.",
+        "On the Dashboard and Units, the note about the example units is behind More info.",
+        "Help topics use the same More info and Less info words and the same arrow. Help also has new lines for the Swatches switch and More options, the folded steps in recipes, and the Compendium tick boxes with Select all and Add to shopping list.",
+      ]},
+      { version: "v51", date: "20 Oct 2026", changes: [
+        "In the Compendium, the paints in Starter schemes, Your schemes and Detail recipes now have a tick box on the left, and a Select all row above each list.",
+        "Add to shopping list sits under the list. It is small and grey until you tick something, then it turns into a full-width button that shows how many paints it will add. It adds only the ticked paints, and one Undo takes them all off again.",
+        "Copy as text and Save into a new recipe use the paints you ticked. If nothing is ticked they use all of them.",
+        "Paints you own, or that are already on your shopping list, show their status mark where the tick box would be. Open More info on the row to see why.",
+        "The small Shopping list heading under each scheme is gone, because the tick boxes do the same job.",
+      ]},
+      { version: "v50", date: "20 Oct 2026", changes: [
+        "Recipes are less busy. A recipe card shows its name and colour dots, plus a short Have all or Missing line once you have marked your paints. The part, step count and units are behind More info.",
+        "Each step in a recipe is one line: its number, technique and small colour dots. Tap it to open the step. Coats, mix ratio, note and optional are under More options inside the open step. Add step and Save recipe stay in view.",
+        "Have and Missing now use the same small tick and cross marks as Your Palette, with a one-line key. The What can I paint now? hint, the Parts and techniques note and the other long explanations on the Recipes tab are behind More info.",
+      ]},
       { version: "v49", date: "19 Oct 2026", changes: [
+        "Less busy: long explanations now sit behind a small More info button. In the Compendium, each paint row has its own, and so does each page's introduction.",
+        "Your Palette has a List | Swatches switch. Swatches shows every paint as a small colour tile with a mark for its status (tick, half circle, ring, star, cross) and a key above. Tap a tile to open that paint. Name, brand, Merge and Remove are now under More options.",
+        "On Units, To do, Done and Repaint are three equal buttons, and the stages open underneath once you pick one (or tap Pick by stage). In the Compendium, the shopping list and Copy buttons stretch across the card, and the shopping list button is greyed out until you pick a scheme.",
         "Groups of option buttons (paint status, the stage filters, Paint brands and the rest) now always sit on one row. When a group is too long for the screen, it scrolls sideways: a fade shows there are more, and your choice is always in view.",
         "Scanning a pot label works properly with all the new paints: every Vallejo code number is read (Model Air, Game Air, Mecha and the rest), Tamiya codes like XF-1 are read on Tamiya pots, and a Citadel label gives the same answer as before the new brands arrived.",
       ]},
@@ -14234,7 +14856,12 @@
           li.textContent = change;
           ul.appendChild(li);
         }
-        div.append(h3, ul);
+        // v54: the version and date stay in view; the lines sit behind More info. The newest entry starts open, the rest shut. Whether each
+        // is open is kept (in memory only) while the app is open, so drawing the page again does not close one. Nothing is saved.
+        const key = "release-" + release.version.replace(/[^a-z0-9]+/gi, "-");
+        pageMoreInfo.door = pageMoreInfo.door || { state: { info: {} } };
+        if (release === CHANGELOG[0] && !(key in pageMoreInfo.door.state.info)) infoState(pageMoreInfo.door, key).open = true;
+        div.append(h3, pageMoreInfo(key, [ul], { label: release.version }));
         box.appendChild(div);
       }
     }
@@ -14243,6 +14870,15 @@
     applyPalette(settings.palette);
     seedExampleRecipes();   // v24: only on a brand-new start
     planFeedbackPrompt();   // v25: decides whether the feedback card shows today (saved by the render below)
+    foldPageText();   // v52
+    markHelpFolds();   // v52
+    foldCard(document.getElementById("faction-colours-card"), "faction-colours");   // v53
+    foldCard(document.getElementById("brands-card"), "paint-brands");   // v53
+    foldCard(document.getElementById("stages-card"), "stages");   // v54
+    foldCard(document.getElementById("import-card"), "import");   // v54
+    foldCard(document.getElementById("your-data-card"), "your-data");   // v54: Delete all units stays inside, unchanged
+    markFold(document.getElementById("recipe-lists"));   // v53: Parts and techniques
+    markFold(document.getElementById("history-table-box"));   // v53: Show as a table
     render();
     countThisVisit();   // v27: one anonymous visit count (only from minifolio.app, and only if switched on)
     startPhotos();   // moves any old photos across, then loads thumbnails (in the background)

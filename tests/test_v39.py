@@ -66,14 +66,17 @@ JUST_BLUE = [BLUE]   # every match then comes from the built-in list
 
 STARTER_LABEL = "Starter schemes with a similar colour"
 ROWS_JS = """() => [...document.querySelectorAll('#cmp-wheel-detail button.idea-link')].map(b => b.querySelector('.idea-name').childNodes[0].textContent)"""
-PANEL_ROWS_JS = """() => [...document.querySelectorAll('#cmp-paint-panel ul.idea-list > li')].map(li => {
+SPOKEN_JS = """const spoken = (el) => { const ids = (el.getAttribute('aria-labelledby') || '').split(/\\s+/).filter(Boolean);
+      if (!ids.length) return el.getAttribute('aria-label') || el.textContent.replace(/\\s+/g, ' ').trim();
+      return ids.map(i => document.getElementById(i)).filter(Boolean).map(n => (n === el && n.getAttribute('aria-label')) ? n.getAttribute('aria-label') : n.textContent.replace(/\\s+/g, ' ').trim()).join(' '); };"""   # v55: what a screen reader says
+PANEL_ROWS_JS = """() => { """ + SPOKEN_JS + """ return [...document.querySelectorAll('#cmp-paint-panel ul.idea-list > li')].map(li => {
     const f = li.querySelector(':scope > .shop-more'), sum = f ? f.querySelector('summary') : null, sec = li.parentElement.previousElementSibling;
     return { name: li.querySelector('.idea-name').childNodes[0].textContent, brand: (li.querySelector('.idea-name small') || {}).textContent || '', tag: li.querySelector('.idea-tag').textContent,
-        section: sec ? sec.textContent : '', hasFold: !!f, open: f ? f.open : null, sum: sum ? sum.textContent : null, sumLabel: sum ? sum.getAttribute('aria-label') : null,
+        section: sec ? sec.textContent : '', hasFold: !!f, open: f ? f.open : null, sum: sum ? sum.textContent : null, sumLabel: sum ? spoken(sum) : null,
         sumH: sum ? sum.getBoundingClientRect().height : 0, kids: li.children.length,
-        links: f ? [...f.querySelectorAll('.shop-links a')].map(a => ({ text: a.textContent, href: a.getAttribute('href'), target: a.target, rel: a.rel, label: a.getAttribute('aria-label') })) : [],
+        links: f ? [...f.querySelectorAll('.shop-links a')].map(a => ({ text: a.textContent, href: a.getAttribute('href'), target: a.target, rel: a.rel, label: spoken(a), described: (document.getElementById(a.getAttribute('aria-describedby')) || {}).textContent })) : [],
         add: f ? [...f.querySelectorAll('.shop-add button')].map(x => x.textContent) : [], onlist: f ? [...f.querySelectorAll('.shop-onlist')].map(x => x.textContent) : [],
-        note: f ? (f.querySelector('.shop-body > .hint') || {}).textContent : null }; })"""
+        note: f ? (f.querySelector('.shop-body > .hint') || {}).textContent : null }; }); }"""
 SHOP_WORDS = ["Firestorm Games", "Wayland Games", "Element Games"]
 PLAIN = "Plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop."
 
@@ -154,8 +157,8 @@ def main():
         html, sw, app = read("index.html"), read("sw.js"), read("app.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
         check("the version is v39 everywhere: APP_VERSION, sw.js, the six script tags, and the two comments that name it",
-              page.evaluate("APP_VERSION") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49") and len(tags) == 6 and len({v for _, v in tags}) == 1
-              and re.search(r'The "\?v=(39|40|41|42|43|44|45|46|47|48|49)"', html) and re.search(r'"app\.js\?v=(39|40|41|42|43|44|45|46|47|48|49)"', app), (page.evaluate("APP_VERSION"), tags))
+              page.evaluate("APP_VERSION") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55") and len(tags) == 6 and len({v for _, v in tags}) == 1
+              and re.search(r'The "\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55)"', html) and re.search(r'"app\.js\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55)"', app), (page.evaluate("APP_VERSION"), tags))
         files = re.search(r"const APP_FILES = \[(.*?)\];", sw, re.S).group(1)
         cached = re.findall(r'"\./([^"?]*)', files)
         root_js = sorted(f for f in os.listdir(ROOT) if f.endswith(".js") and f != "sw.js")
@@ -166,7 +169,7 @@ def main():
         joined = " ".join(entry["changes"]) if entry else ""
         if page.evaluate("!!CHANGELOG.find(r => r.version === 'v39')"):
             check("the v39 Updates entry exists once, is the newest, and tells about the Shop links fold-out, plain links, Add to shopping list, the Settings switch, the Buy these bar, and (one plain line) that restoring a backup now only accepts ordinary photo files",
-                  entry and page.evaluate("CHANGELOG.filter(r => r.version === 'v39').length") == 1 and page.evaluate("CHANGELOG[0].version") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49")
+                  entry and page.evaluate("CHANGELOG.filter(r => r.version === 'v39').length") == 1 and page.evaluate("CHANGELOG[0].version") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55")
                   and all(w in joined for w in ["Shop links", "plain", "Add to shopping list", "Settings", "Buy these"]) and "Restoring a backup now only accepts ordinary photo files" in joined, joined[:300])
         else:
             print("SKIP: "+'the v39 Updates entry exists once, is the newest, and tells about the Shop links')
@@ -197,7 +200,7 @@ def main():
         bar_code = app[app.index("function buildBuyBar("):app.index("function renderShopPanel(")]
         check("reuse, not copy: the fold-out uses shopsFor, shopLink and the same plain-links sentence as the Buy these bar, and the sentence is written once (the bar now reads it from the same place)",
               all(w in new_c for w in ["shopsFor([{ paint }])", "shopLink(shop, paint)", "SHOP_PLAIN_WORDS"]) and app_c.count('const SHOP_PLAIN_WORDS = "') == 1 and PLAIN in new_code
-              and "SHOP_PLAIN_WORDS" in bar_code and PLAIN not in bar_code)
+              and "SHOP_PLAIN_WORDS" in app[app.index("function renderShopPanel("):app.index("// v40: the small basket count")] and PLAIN not in bar_code)   # v52: the bar's note moved behind the Shopping list's More info, still read from the same place
         door_c = app[app.index("function compendiumDoor"):app.index("function startRecipeFromCompendium")]
         card = app[app.index("function buildColourIdeasCard"):]
         card_door = card[:card.index("id: doorId,")]
@@ -259,7 +262,7 @@ def main():
             names = [l["text"].replace(" ↗", "") for l in r["links"]]
             sells.append((r["brand"] == "The Army Painter") == ("The Army Painter" in names) and names[:3] == SHOP_WORDS)
         check("The Army Painter's link shows only for The Army Painter's own paints, and the other three shops show for every paint (as in the Buy these bar)", all(sells) and len(sells) == 5, sells)
-        ok_links = all(l["target"] == "_blank" and "noopener" in l["rel"] and "noreferrer" in l["rel"] and l["label"].startswith("Search ") and l["label"].endswith("(opens the shop's website)")
+        ok_links = all(l["target"] == "_blank" and "noopener" in l["rel"] and "noreferrer" in l["rel"] and l["label"].startswith("Search ") and l["described"] == "Opens the shop's website"
                        for r in colour_rows for l in r["links"])
         check("each link opens in a new tab without telling the shop which page sent you, and says in its spoken name that it opens the shop's website", ok_links)
         def link_ok(r):
@@ -467,7 +470,7 @@ def main():
         injected = page.evaluate("""() => ({ pwned: window.__pwned, bad: document.querySelectorAll('#cmp-paint-panel img, #cmp-paint-panel script, #cmp-paint-panel svg, #cmp-paint-panel b, #cmp-paint-panel i').length,
             handlers: [...document.querySelectorAll('#cmp-paint-panel *')].filter(e => [...e.attributes].some(a => /^on/i.test(a.name))).length })""")
         check("hostile paint names and brands (markup, a script, an event attribute, a javascript: address) show only as plain text: nothing runs, no tag appears, no on-attribute is set", injected["pwned"] is None and injected["bad"] == 0 and injected["handlers"] == 0, injected)
-        links = page.evaluate("() => [...document.querySelectorAll('#cmp-paint-panel .shop-links a')].map(a => [a.getAttribute('href'), a.getAttribute('aria-label'), a.href])")
+        links = page.evaluate("() => { " + SPOKEN_JS + " return [...document.querySelectorAll('#cmp-paint-panel .shop-links a')].map(a => [a.getAttribute('href'), spoken(a), a.href]); }")
         shop_hosts = {"www.firestormgames.co.uk", "www.waylandgames.co.uk", "elementgames.co.uk", "thearmypainter.com"}
         from urllib.parse import urlparse
         check("every link on a hostile paint is still an https link to one of the four shop search pages, with the name safely encoded (no quote, angle bracket or space in the address), and no brand in it",
@@ -493,7 +496,7 @@ def main():
         tap(page, "blue")
         open_row(page, "Probe Blue")
         open_fold(page, 0)
-        fold_text = page.evaluate("""() => { const f = document.querySelector('#cmp-paint-panel .shop-more'); const c = f.cloneNode(true); return c.innerText + ' ' + [...c.querySelectorAll('[aria-label]')].map(e => e.getAttribute('aria-label')).join(' '); }""")
+        fold_text = page.evaluate("""() => { const f = document.querySelector('#cmp-paint-panel .shop-more'); const c = f.cloneNode(true); c.querySelectorAll('.sr-only').forEach(e => e.remove()); return c.innerText + ' ' + [...c.querySelectorAll('[aria-label]')].map(e => e.getAttribute('aria-label')).join(' '); }""")
         fold_text = re.sub(r"Shop links for [^.]*?(?= Shop|$)", "Shop links", fold_text)
         settings_text = page.evaluate("() => document.getElementById('shoplinks-card').innerText")
         factions = page.evaluate("() => Object.keys(USUAL_FACTION_COLOURS)")

@@ -176,6 +176,7 @@ def main():
         check("the card has a title and the buttons only (no helper text)", page.evaluate("document.querySelectorAll('#brands-card .hint').length") == 0
               and page.evaluate("document.querySelector('#brands-card h2').textContent") == "Paint brands")
         check("the Your Palette brand filter is untouched (still its own element)", page.evaluate("!!document.getElementById('brand-chips') && document.getElementById('brand-chips') !== document.getElementById('brand-toggles')"))
+        page.click('#brands-card .card-fold-button')   # v53: Paint brands folds shut as a whole card
         page.click('[data-brand-choice="Formula P3"]')
         st = page.evaluate("""() => ({ pressed: document.querySelector('[data-brand-choice="Formula P3"]').getAttribute('aria-pressed'),
             saved: JSON.parse(localStorage.getItem('shades-of-grey-settings')).brandsOff, n: searchedPaints.length,
@@ -190,7 +191,7 @@ def main():
         page.evaluate("""() => { book.paints.push({ id: 'mine-p3', brand: 'Formula P3', name: 'Wurm Green', colour: '#3b5a36' }); }""")
         check("your own paint of a switched-off brand is still found", page.evaluate("matchPaint('Wurm Green').status") == "sure")
         page.evaluate("() => { book.paints = book.paints.filter(p => p.id !== 'mine-p3'); }")
-        page.click('.tabs button[data-tab="settings"]'); page.click('[data-brand-choice="Formula P3"]')
+        page.click('.tabs button[data-tab="settings"]'); page.click('#brands-card .card-fold-button'); page.click('[data-brand-choice="Formula P3"]')   # v53: the card is shut again after the reload
         check("switching it back on brings its paints back", page.evaluate("searchedPaints.length") == sum(EXPECTED.values()) and page.evaluate("matchPaint('Wurm Green').status") == "sure")
         bad = page.evaluate("""() => [cleanBrandsOff(['Nope', 'Tamiya', 'Tamiya', 5, null, '__proto__']), cleanBrandsOff('Tamiya'), cleanBrandsOff(null)]""")
         check("unknown, repeated and non-text brands are dropped from the setting", bad == [["Tamiya"], [], []], bad)

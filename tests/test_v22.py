@@ -20,6 +20,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}/"
@@ -119,6 +120,7 @@ def main():
         browser = p.chromium.launch()
         context = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block", accept_downloads=True)
         page = context.new_page()
+        fold_opener.open_cards_on_load(page)   # v54: open the folded Settings cards whenever the app loads
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.on("console", lambda m: csp.append(m.text) if "Content Security Policy" in m.text else None)
         page.on("dialog", lambda d: (popups.append(d.message), d.dismiss()))
@@ -175,16 +177,16 @@ def main():
               all(titles.index("Backups") < titles.index(t) for t in ["Stages", "Appearance", "Colours"]), titles)
         check("the old 'Import and backup' heading is gone and Import has its own card", "Import and backup" not in titles and "Import" in titles, titles)
         inside = page.evaluate("""() => { const c = document.getElementById('backup-card');
-            return { ids: [...c.querySelectorAll('button, input')].map(b => b.id),
-                     labels: [...c.querySelectorAll('button')].map(b => b.textContent.trim()),
+            return { ids: [...c.querySelectorAll('button:not(.more-info-button), input')].map(b => b.id),
+                     labels: [...c.querySelectorAll('button:not(.more-info-button)')].map(b => b.textContent.trim()),
                      age: !!c.querySelector('#backup-age'), hint: !!c.querySelector('#share-hint') }; }""")
         # v46 added "Send full backup with photos to…" straight after Save full backup, so the card now holds five buttons.
-        check("the Backups card holds the five buttons, the restore file box, the last-backed-up line and the hint",
+        check("the Backups card holds the five buttons, the restore file box, the last-backed-up line and the hint (v52: the hint sits behind its More info)",
               inside["ids"] == ["export-button", "share-button", "full-export-button", "full-share-button", "restore-button", "restore-file"] and inside["age"] and inside["hint"], inside)
         check("button words: Save backup, Send backup to…, Save full backup with photos, Send full backup with photos to…, Restore backup",
               inside["labels"] == ["Save backup", "Send backup to…", "Save full backup with photos", "Send full backup with photos to…", "Restore backup"], inside["labels"])
         in_import = page.evaluate("""() => { const h = [...document.querySelectorAll('#view-settings > .card h2')].find(x => x.textContent === 'Import').parentElement;
-            return { ids: [...h.querySelectorAll('button')].filter(b => b.id).map(b => b.id).slice(0, 4), slot: !!h.querySelector('#settings-import-slot') }; }""")
+            return { ids: [...h.querySelectorAll('button')].filter(b => b.id && !b.id.startsWith('card-fold-')).map(b => b.id).slice(0, 4), slot: !!h.querySelector('#settings-import-slot')   /* v54: the heading is now a fold button, left out */ }; }""")
         check("Import CSV, CSV template, Export CSV and Paste an army list are still together in Import",
               in_import["ids"] == ["csv-button", "template-button", "csv-export-button", "wh-button"] and in_import["slot"], in_import)
         page.click("#wh-button")
@@ -301,7 +303,7 @@ def main():
                 seed(page, settings=full_settings(appearance=appearance))
                 tag = f"{appearance}-{width}"
                 st = page.evaluate("""() => { const c = document.getElementById('backup-card').getBoundingClientRect();
-                    const bs = [...document.querySelectorAll('#backup-card button')].map(b => { const r = b.getBoundingClientRect(); return { h: r.height, l: r.left, r: r.right, w: r.width }; });
+                    const bs = [...document.querySelectorAll('#backup-card button:not(.more-info-button)')].map(b => { const r = b.getBoundingClientRect(); return { h: r.height, l: r.left, r: r.right, w: r.width }; });
                     return { top: c.top, bottom: c.bottom, left: c.left, right: c.right, bs, vh: window.innerHeight, vw: window.innerWidth }; }""")
                 check(f"{tag}: the Backups card is at the top of the page and on screen", 0 <= st["top"] < 200 and st["left"] >= 0 and st["right"] <= st["vw"] + 0.5, st)
                 check(f"{tag}: every backup button is at least 44 px tall", all(b["h"] >= 43.5 for b in st["bs"]), [b["h"] for b in st["bs"]])

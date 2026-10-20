@@ -19,6 +19,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}/"
@@ -148,6 +149,7 @@ def main():
         browser = p.chromium.launch()
         context = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
         page = context.new_page()
+        fold_opener.open_cards_on_load(page)   # v54: open the folded Settings cards whenever the app loads
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.on("console", lambda m: csp.append(m.text) if "Content Security Policy" in m.text else None)
         def on_native(d):
@@ -407,6 +409,7 @@ def main():
         start(page); tab(page, "recipes")
         page.evaluate("() => openRecipe(1)"); page.wait_for_timeout(100)
         page.locator("#recipe-page button", has_text="Edit").first.click(); page.wait_for_timeout(150)
+        page.locator("#recipe-page li.step-edit .step-line").first.click()   # v50: a step is one line until you open it
         page.click('button[aria-label="Remove step 1"]'); page.wait_for_timeout(150)
         check("remove step: asks the same thing", asks(page, "Remove step 1?"), box_text(page))
         no(page)
@@ -531,6 +534,7 @@ def main():
 
         # 4.17 Rename a faction (type a name)
         start(page); tab(page, "settings")
+        page.evaluate("() => { const b = document.querySelector('#faction-colours-card .card-fold-button'); if (b && b.getAttribute('aria-expanded') !== 'true') b.click(); }"); page.wait_for_timeout(100)   # v53: Faction colours folds shut as a whole card (v54: open it only if it is shut, the cards now open when the app loads)
         page.locator('button[aria-label="Rename Ultramarines"]').click(); page.wait_for_timeout(150)
         check("rename faction: asks the same thing, with the old name in the box",
               asks(page, 'Rename "Ultramarines" on all 1 unit to:') and box_kind(page) == "text" and page.input_value("#dialog-input") == "Ultramarines", box_text(page))
@@ -558,6 +562,7 @@ def main():
         # 4.19 "＋ Add a new technique…" in the recipe editor (type a name)
         start(page); tab(page, "recipes")
         page.evaluate("() => startNewRecipe(null)"); page.wait_for_timeout(150)
+        page.locator("#recipe-page .step-edit .more-info-button").first.click()   # v50: the technique is under More options
         sel = page.locator("#recipe-page .step-edit select").first
         sel.select_option(value="\u0000new"); page.wait_for_timeout(150)
         check("recipe editor ＋ Add a new technique…: asks the same thing", asks(page, "Name of the new technique:") and box_kind(page) == "text", box_text(page))

@@ -13,6 +13,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import datetime, json, os, re, sys
 from playwright.sync_api import sync_playwright
+import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 from dialog_watch import DialogAnswers
 from notice_watch import attach_notices
 
@@ -72,6 +73,7 @@ def main():
         print("--- 1. Versions and paperwork ---")
         context = browser.new_context(viewport={"width": 390, "height": 844})
         page = context.new_page()
+        fold_opener.open_cards_on_load(page)   # v54: open the folded Settings cards whenever the app loads
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
         dialogs = []
@@ -178,6 +180,7 @@ def main():
         print("\n--- 3. Dates ---")
         context = browser.new_context(viewport={"width": 390, "height": 844}, timezone_id="Europe/London", accept_downloads=True)
         page = context.new_page()
+        fold_opener.open_cards_on_load(page)   # v54: open the folded Settings cards whenever the app loads
         page.on("pageerror", lambda e: errors.append(str(e)))
         # 23:30 world time on 15 July = 00:30 on 16 July in UK summer time.
         page.clock.install(time=datetime.datetime(2026, 7, 15, 23, 30, tzinfo=datetime.timezone.utc))
@@ -199,6 +202,7 @@ def main():
         print("\n--- 4. Recipes-only restore ---")
         context = browser.new_context(viewport={"width": 390, "height": 844})
         page = context.new_page()
+        fold_opener.open_cards_on_load(page)   # v54: open the folded Settings cards whenever the app loads
         page.on("pageerror", lambda e: errors.append(str(e)))
         dialogs = []
         DialogAnswers(page, dialogs.append)
@@ -251,6 +255,7 @@ def main():
         print("\n--- 5. Data version number ---")
         context = browser.new_context(viewport={"width": 390, "height": 844})
         page = context.new_page()
+        fold_opener.open_cards_on_load(page)   # v54: open the folded Settings cards whenever the app loads
         page.on("pageerror", lambda e: errors.append(str(e)))
         dialogs = []
         DialogAnswers(page, dialogs.append)
@@ -320,6 +325,7 @@ def main():
             check(f"ocr/{f} is in the repo", os.path.exists(os.path.join(ROOT, "ocr", f)))
         context = browser.new_context(viewport={"width": 390, "height": 844})
         page = context.new_page()
+        fold_opener.open_cards_on_load(page)   # v54: open the folded Settings cards whenever the app loads
         page.on("pageerror", lambda e: errors.append(str(e)))
         outside = []
         context.on("request", lambda r: outside.append(r.url) if not r.url.startswith(BASE) and not r.url.startswith("data:") and not r.url.startswith("blob:") else None)

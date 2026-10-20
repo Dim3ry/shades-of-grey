@@ -71,6 +71,9 @@ def open_comp(page):
     blur(page)
     page.click('nav button[data-tab="compendium"]')
     page.wait_for_timeout(200)
+    # v49: the page introduction sits behind a More info button; open it so the text can be read
+    if page.get_attribute("#compendium-body > .more-info .more-info-button", "aria-expanded") == "false":
+        page.click("#compendium-body > .more-info .more-info-button")
     # v37: the five parts fold and start closed, and the lists start short (no group chosen). This test is about what is INSIDE them, so
     # open every part and choose "All" in each group row first (what v35 looked like). The new layout has its own test (test_v37).
     for key in ["ideas", "history", "starter", "detail", "basing"]:
@@ -227,7 +230,7 @@ def main():
         open_comp(page)
         # v37: the parts sit under folding headings (open_comp has opened them), so read the ids at the top level and inside the panels
         order = page.evaluate("""() => { const want = ['cmp-intro', 'cmp-colour-ideas-none', 'cmp-faction-history', 'cmp-starter-schemes', 'cmp-detail-recipes', 'cmp-basing-tips', 'cmp-foot'];
-            const seen = [...document.querySelectorAll('#compendium-body > *, #compendium-body .fold-panel > *')].map(e => e.id);
+            const seen = [...document.querySelectorAll('#compendium-body > *, #compendium-body > .more-info .more-info-panel > *, #compendium-body .fold-panel > *')].map(e => e.id);
             return want.map(i => seen.indexOf(i)); }""")
         check("with no colour chosen: the intro, the choose-a-colour line, then Your schemes, Starter schemes, Detail recipes, Basing tips, then the footnote, in the card's order",
               order == sorted(order) and -1 not in order, order)

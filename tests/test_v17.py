@@ -92,7 +92,7 @@ with sync_playwright() as pw:
             check("prune: scanned paint kept, unused blank paint tidied", "Nuln Oil" in names and "Old Paint" not in names, names)
             page.evaluate("book.paints.push({id: 7, brand: 'Citadel', name: 'Old Paint', colour: '#333333', status: 'wishlist'}); pruneUnusedPaints();")
             check("prune: unused paint with a status is kept", "Old Paint" in page.evaluate("book.paints.map(p => p.name)"))
-            check("no status shown on Recipes when nothing set", page.locator(".have-badge").count() == 0)
+            check("no status shown on Recipes when nothing set", page.locator(".have-mark").count() == 0)
 
         # ---- Each status, set by tapping ----
         load(page, V17_BOOK)
@@ -153,8 +153,10 @@ with sync_playwright() as pw:
         page.evaluate("showTab('recipes')")
         page.click("#recipe-seg button[data-view='recipes']")
         page.locator(".recipe-item", has_text="Black trim").click()
-        badges = page.locator(".have-badge").all_text_contents()
-        check(f"{size}: recipe shows Have and Missing badges", "✓ Have" in badges and "✗ Missing" in badges, badges)
+        # v50: the word badges became the small status marks. Open every step to see the marks.
+        page.evaluate("() => document.querySelectorAll('#recipe-page .step-line').forEach(b => b.click())")
+        badges = page.locator("#recipe-page .have-mark").evaluate_all("els => els.map(e => e.getAttribute('aria-label'))")
+        check(f"{size}: recipe shows Have and Missing marks", "Have" in badges and "Missing" in badges, badges)
         page.screenshot(path=f"{SHOTS}/v17-{size}-recipe-badges.png", full_page=False)
         page.click("text=← All recipes")
         page.locator("#can-paint-box .chip", has_text="What can I paint now?").click()

@@ -2,6 +2,7 @@
 `python3 -m http.server 8765`, then run: python3 tests/test_v14.py <folder for screenshots>."""
 import json, sys, time, base64, datetime
 from playwright.sync_api import sync_playwright
+import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 from dialog_watch import DialogAnswers
 from notice_watch import attach_notices
 import os as _os
@@ -51,6 +52,7 @@ def run(viewport, label):
 
         def new_page():
             page = ctx.new_page()
+            fold_opener.open_cards_on_load(page)   # v54: open the folded Settings cards whenever the app loads
             DialogAnswers(page, dialogs.append)
             attach_notices(page, lambda text: dialogs.append(text))
             page.on("pageerror", lambda e: errors.append(f"{label} pageerror: {e}"))

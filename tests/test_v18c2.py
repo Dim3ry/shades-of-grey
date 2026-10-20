@@ -26,6 +26,11 @@ BASE = f"http://localhost:{PORT}"
 GREY = "#808080"
 
 results = []
+def item_for(page, name):
+    """The palette item whose visible name is exactly this (v55: Remove and the Merge menu no longer carry the paint name in an aria-label)."""
+    import re as _re
+    return page.locator(".paint-item", has=page.locator(".name", has_text=_re.compile("^" + _re.escape(name) + "$")))
+
 def check(name, ok, detail=""):
     results.append(bool(ok))
     print(("PASS " if ok else "FAIL ") + name + ("" if ok else f"  -> {detail}"))
@@ -63,6 +68,7 @@ def open_paint(page, pid):
     """Your Palette, with this paint opened."""
     page.evaluate("""pid => { settings.recipeView = 'palette'; showTab('recipes');
                      openPaintIds.clear(); openPaintIds.add(pid); render(); }""", pid)
+    page.evaluate("() => document.querySelectorAll('.paint-options .more-info-button[aria-expanded=false]').forEach(b => b.click())")   # v49: More options
     page.wait_for_timeout(50)
 
 def by_id(book, pid):
@@ -82,7 +88,7 @@ def main():
         # ---------- 1. Remove ----------
         start(page)
         open_paint(page, 3)
-        remove = page.locator("button[aria-label='Remove Old Junk from your palette']")
+        remove = item_for(page, "Old Junk").locator("button.danger-button")
         check("Remove: a paint in no recipes has a Remove button", remove.count() == 1 and remove.is_visible())
         remove.click()
         page.wait_for_timeout(100)
@@ -103,7 +109,7 @@ def main():
         # ---------- 2. Merge into… ----------
         start(page)
         open_paint(page, 2)
-        pick = page.locator("select[aria-label='Merge Macrage Blue into']")
+        pick = item_for(page, "Macrage Blue").locator("select.merge-pick")
         check("Merge: the picker is hidden until you tap Merge into…", pick.count() == 1 and not pick.is_visible())
         page.click("#paint-list button:has-text('Merge into…')")
         check("Merge: tapping Merge into… shows the picker", pick.is_visible())
@@ -141,7 +147,7 @@ def main():
         start(page)
         open_paint(page, 6)
         page.click("#paint-list button:has-text('Merge into…')")
-        page.select_option("select[aria-label='Merge Retributer Armour into']", "5")
+        item_for(page, "Retributer Armour").locator("select.merge-pick").select_option("5")
         page.click("#paint-list button.merge-go")
         page.wait_for_timeout(100)
         kept = by_id(saved_book(page), 5)
@@ -158,7 +164,7 @@ def main():
         start(page)
         open_paint(page, 2)
         page.click("#paint-list button:has-text('Merge into…')")
-        page.select_option("select[aria-label='Merge Macrage Blue into']", "1")
+        item_for(page, "Macrage Blue").locator("select.merge-pick").select_option("1")
         page.click("#paint-list button.merge-go")
         page.wait_for_timeout(100)
         page.evaluate("startImport()")

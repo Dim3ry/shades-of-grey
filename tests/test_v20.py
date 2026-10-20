@@ -173,7 +173,7 @@ def main():
         check("Light is saved with the other settings", saved(page).get("appearance") == "light" and saved(page).get("stages") == STAGES)
         check("the phone's top-bar colour follows (light)",
               page.get_attribute('meta[name="theme-color"]', "content") == "#e9eff6")
-        check("Colours card explains the deeper stage colours in light mode", page.is_visible("#palette-light-note"))
+        check("Colours card explains the deeper stage colours in light mode", page.is_visible('button[aria-controls="more-colours"]') and "deeper" in page.text_content("#palette-light-note"))   # v53: the note sits behind More info
         for choice, want in [("light", "light"), ("dark", ""), ("auto", "")]:
             seed(page, full_settings())
             page.emulate_media(color_scheme="dark")

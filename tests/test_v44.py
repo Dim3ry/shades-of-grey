@@ -20,6 +20,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t   # shared helpers and the Games Workshop word lists
@@ -116,7 +117,7 @@ def card_shown(page):
     return page.locator("#examples-card-recipes").is_visible()
 
 def card_text(page):
-    return page.inner_text("#examples-card-recipes") if card_shown(page) else ""
+    return page.text_content("#examples-card-recipes") if card_shown(page) else ""   # v50: the explanation sits behind More info
 
 def toast(page):
     return page.evaluate("""() => ({ text: document.getElementById('toast-text').textContent,
@@ -178,6 +179,7 @@ def main():
         browser = p.chromium.launch()
         context = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
         page = context.new_page()
+        fold_opener.open_cards_on_load(page)   # v54: open the folded Settings cards whenever the app loads
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.on("console", lambda m: csp.append(m.text) if "Content Security Policy" in m.text else None)
         page.on("dialog", lambda d: (popups.append(d.message), d.dismiss()))
@@ -501,7 +503,7 @@ def main():
             return { inSettings: !!s && document.getElementById('view-settings').contains(s),
                      inRecipes: document.getElementById('view-recipes').contains(s),
                      heading: s.querySelector('h3').textContent, button: document.getElementById('restore-examples').textContent,
-                     cls: document.getElementById('restore-examples').className, hint: s.querySelector('.hint').textContent }; }""")
+                     cls: document.getElementById('restore-examples').className, hint: document.getElementById('restore-examples-hint').textContent }; }""")
         check("the section is in Settings, not on the Recipes page", in_settings["inSettings"] and not in_settings["inRecipes"], in_settings)
         check("it is called Restore example recipes, and the button is plain (not loud)",
               in_settings["heading"] == "Restore example recipes" and in_settings["button"] == "Restore example recipes"
@@ -627,7 +629,7 @@ def main():
               saved_settings(page).get("recipeExamplesChecked") is True)
         main_tab(page, "recipes")
         check("the Recipes card shows for them too, with Clear and Keep",
-              card_shown(page) and page.locator("#examples-card-recipes button").count() == 2)
+              card_shown(page) and page.locator("#examples-card-recipes button:not(.more-info-button)").count() == 2)
         reload(page)
         check("after a reload they still have the examples once (nothing doubled)",
               len(names(page, "recipes")) == 6 and len(names(page, "schemes")) == 3)
@@ -722,7 +724,7 @@ def main():
                 box = page.evaluate("""() => { const r = document.getElementById('examples-card-recipes').getBoundingClientRect();
                     return { l: r.left, r: r.right, w: window.innerWidth }; }""")
                 check(f"{tag} Recipes: the card is inside the screen", box["l"] >= 0 and box["r"] <= box["w"] + 0.5, box)
-                sizes = page.evaluate("""() => [...document.querySelectorAll('#examples-card-recipes button')]
+                sizes = page.evaluate("""() => [...document.querySelectorAll('#examples-card-recipes button:not(.more-info-button)')]
                     .map(b => { const r = b.getBoundingClientRect(); return [r.width, r.height]; })""")
                 check(f"{tag} Recipes: both buttons are at least 44 px tall and wide", len(sizes) == 2 and all(w >= 44 and h >= 44 for w, h in sizes), sizes)
                 col = page.evaluate("""() => { const el = document.querySelector('#examples-card-recipes p');
@@ -742,7 +744,7 @@ def main():
                 page.evaluate("() => document.getElementById('restore-examples').scrollIntoView({ block: 'center' })")
                 page.wait_for_timeout(150)
                 info = page.evaluate("""() => { const b = document.getElementById('restore-examples').getBoundingClientRect();
-                    const h = document.querySelector('#restore-examples-section .hint'); const card = h.closest('.card');
+                    const h = document.getElementById('restore-examples-hint'); const card = h.closest('.card');
                     return { l: b.left, r: b.right, w: b.width, h: b.height, vw: window.innerWidth, fg: getComputedStyle(h).color,
                              bg: getComputedStyle(card).backgroundColor, bfg: getComputedStyle(document.getElementById('restore-examples')).color,
                              bbg: getComputedStyle(document.getElementById('restore-examples')).backgroundColor }; }""")
@@ -767,11 +769,10 @@ def main():
                                            "shopping list", "already had recipes", "Restore example recipes", "twice"]), help_text)
         sub_tab(page, "updates")
         updates = page.inner_text("#view-updates")
-        if page.evaluate("CHANGELOG.slice(0, UPDATES_SHOWN).some(r => r.version === 'v44')"):
-            check("the Updates page has the v44 entry in plain words",
-                  "v44" in updates and "example schemes" in updates and "Restore example recipes" in updates and "Clear examples" in updates, updates[:500])
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'the Updates page has the v44 entry in plain words')
+        # v49: the Updates page shows only the newest five entries, so v44 may have moved off the page; then read it from the list
+        v44_text = updates if "v44" in updates else " ".join(page.evaluate("(CHANGELOG.find(c => c.version === 'v44') || { changes: [] }).changes"))
+        check("the Updates page has the v44 entry in plain words",
+              "example schemes" in v44_text and "Restore example recipes" in v44_text and "Clear examples" in v44_text, v44_text[:500])
 
         check("no real browser pop-ups at any point", not popups, popups)
         check("no page errors", not errors, errors[:3])

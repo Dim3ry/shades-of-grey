@@ -14,6 +14,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 from dialog_watch import DialogAnswers
 
 PORT = os.environ.get("SOG_PORT", "8765")
@@ -86,6 +87,7 @@ def main():
         browser = p.chromium.launch()
         context = browser.new_context(viewport={"width": 390, "height": 844})
         page = context.new_page()
+        fold_opener.open_cards_on_load(page)   # v54: open the folded Settings cards whenever the app loads
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
         dialogs = []
@@ -319,7 +321,7 @@ def main():
         page.locator("#view-help summary", has_text="Importing").click()   # open the Importing topic
         help_text = page.inner_text("#view-help")
         check("Getting started points to Paste army list on the Units tab", "Paste army list" in help_text)
-        check("Help explains the Back button", page.locator("#help-back").count() == 1 and "Back" in page.inner_text("#help-back"))
+        check("Help explains the Back button", page.locator("#help-back").count() == 1 and "Back" in page.text_content("#help-back"))   # v53: Help starts with every topic closed, so read the text, not what shows
         check("Importing says where to find it (+ Add unit → Paste army list)", "+ Add unit → Paste army list" in help_text)
         check("Importing says the Units tab opens after an import", "Units tab opens" in help_text)
         check("no page errors", not errors, errors)

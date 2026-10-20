@@ -16,6 +16,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 from dialog_watch import DialogAnswers
 
 PORT = os.environ.get("SOG_PORT", "8765")
@@ -119,6 +120,7 @@ def main():
         browser = p.chromium.launch()
         context = browser.new_context(viewport={"width": 390, "height": 844})
         page = context.new_page()
+        fold_opener.open_cards_on_load(page)   # v54: open the folded Settings cards whenever the app loads
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
         DialogAnswers(page)
@@ -156,7 +158,7 @@ def main():
         check("a first visit saves the 3 example units, each marked as an example",
               [u["name"] for u in saved] == ["Captain", "Brutes", "Guardians"] and all(u.get("example") is True for u in saved), saved)
         check("the examples card shows on the Dashboard", page.is_visible("#examples-card-dash"))
-        dash_text = page.inner_text("#examples-card-dash")
+        dash_text = page.locator("#examples-card-dash").text_content()   # v52: the names sit behind More info
         check("…saying they're examples and naming them", "These are examples" in dash_text and
               all(n in dash_text for n in ["Captain", "Brutes", "Guardians"]), dash_text)
         check("…with Clear examples and Keep them", page.is_visible("#examples-card-dash .clear-examples")
@@ -241,7 +243,7 @@ def main():
         saved = {u["id"]: u for u in units(page)}
         check("renaming an example makes it yours (unmarked); the others stay examples",
               "example" not in saved[1] and saved[2].get("example") and saved[3].get("example"))
-        check("…and the card now lists 2", "2 example units" in page.inner_text("#examples-card"), page.inner_text("#examples-card"))
+        check("…and the card now lists 2", "2 example units" in page.locator("#examples-card").text_content(), page.locator("#examples-card").text_content())
 
         # ---------- 3. Jump to stage ----------
         print("--- 3. Jump to stage ---")
@@ -366,7 +368,7 @@ def main():
             check(f"[{width}px] no sideways scroll in Help", no_sideways(page))
             if width == 360: shot(page, "v21-tap-targets-help-360.png", full=False)
             seed(page, fresh=True)
-            card_buttons = sizes(page, "#examples-card-dash button")
+            card_buttons = sizes(page, "#examples-card-dash button:not(.more-info-button)")   # v52: More info is checked in test_v52
             check(f"[{width}px] the examples card's buttons are at least 44 tall", len(card_buttons) == 2 and all_big(card_buttons), card_buttons)
             check(f"[{width}px] no sideways scroll on the Dashboard with the examples card", no_sideways(page))
         page.set_viewport_size({"width": 390, "height": 844})
