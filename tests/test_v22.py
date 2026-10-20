@@ -20,6 +20,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}/"
@@ -119,6 +120,7 @@ def main():
         browser = p.chromium.launch()
         context = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block", accept_downloads=True)
         page = context.new_page()
+        fold_opener.open_cards_on_load(page)   # v54: open the folded Settings cards whenever the app loads
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.on("console", lambda m: csp.append(m.text) if "Content Security Policy" in m.text else None)
         page.on("dialog", lambda d: (popups.append(d.message), d.dismiss()))
@@ -184,7 +186,7 @@ def main():
         check("button words: Save backup, Send backup to…, Save full backup with photos, Send full backup with photos to…, Restore backup",
               inside["labels"] == ["Save backup", "Send backup to…", "Save full backup with photos", "Send full backup with photos to…", "Restore backup"], inside["labels"])
         in_import = page.evaluate("""() => { const h = [...document.querySelectorAll('#view-settings > .card h2')].find(x => x.textContent === 'Import').parentElement;
-            return { ids: [...h.querySelectorAll('button')].filter(b => b.id).map(b => b.id).slice(0, 4), slot: !!h.querySelector('#settings-import-slot') }; }""")
+            return { ids: [...h.querySelectorAll('button')].filter(b => b.id && !b.id.startsWith('card-fold-')).map(b => b.id).slice(0, 4), slot: !!h.querySelector('#settings-import-slot')   /* v54: the heading is now a fold button, left out */ }; }""")
         check("Import CSV, CSV template, Export CSV and Paste an army list are still together in Import",
               in_import["ids"] == ["csv-button", "template-button", "csv-export-button", "wh-button"] and in_import["slot"], in_import)
         page.click("#wh-button")

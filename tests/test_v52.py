@@ -22,6 +22,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, re, sys
 from playwright.sync_api import sync_playwright
+import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
@@ -94,6 +95,7 @@ def main():
         browser = p.chromium.launch()
         ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
         page = ctx.new_page()
+        fold_opener.open_cards_on_load(page)   # v54: open the folded Settings cards whenever the app loads
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.on("dialog", lambda d: (dialogs.append(d.message), d.dismiss()))
         attach_notices(page, dialogs.append)
@@ -108,7 +110,7 @@ def main():
         tags = re.findall(r'<script src="[^"]+\?v=(\d+)"', html)
         check("all six script tags carry the version number", len(tags) == 6 and set(tags) == {version[1:]}, tags)
         entry = page.evaluate("CHANGELOG.find(c => c.version === 'v52')")
-        check("the v52 Updates entry exists (v53 may sit above it)", bool(entry) and page.evaluate("CHANGELOG[0].version") in ("v52", "v53"))
+        check("the v52 Updates entry exists (v53 and v54 may sit above it)", bool(entry) and page.evaluate("CHANGELOG[0].version") in ("v52", "v53", "v54"))
         check("the v52 entry has no em dashes", entry and not any("—" in x for x in entry["changes"]))
         check("the v52 entry mentions More info, the Shopping list, Settings and Help",
               entry and all(any(word in x for x in entry["changes"]) for word in ("More info", "Shopping list", "Settings", "Help")))

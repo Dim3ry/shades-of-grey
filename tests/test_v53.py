@@ -149,7 +149,7 @@ def main():
         tags = re.findall(r'<script src="[^"]+\?v=(\d+)"', html)
         check("all six script tags carry the version number", len(tags) == 6 and set(tags) == {version[1:]}, tags)
         entry = page.evaluate("CHANGELOG.find(c => c.version === 'v53')")
-        check("the v53 Updates entry exists and is the newest", bool(entry) and page.evaluate("CHANGELOG[0].version") == "v53")
+        check("the v53 Updates entry exists (v54 may sit above it)", bool(entry) and page.evaluate("CHANGELOG[0].version") in ("v53", "v54"))
         check("the v53 entry has no em dashes", entry and not any("—" in x for x in entry["changes"]))
         check("the v53 entry mentions 44 px, More info, Help, Settings and the banner",
               entry and all(any(word in x for x in entry["changes"]) for word in ("44 px", "More info", "Help", "Settings", "banner")))
@@ -437,7 +437,7 @@ def main():
               page.locator("#faction-colours-card .card-fold-button").get_attribute("aria-expanded") == "true" and page.locator("#faction-colour-list").is_visible()
               and page.evaluate("() => { const r = document.getElementById('faction-colours-card').getBoundingClientRect(); return r.top < innerHeight; }"))
         folded = page.evaluate("() => [...document.querySelectorAll('#view-settings .card-fold')].map(c => c.id)")
-        check("only those two cards fold (Backups, Stages, Appearance, Theme and the rest are untouched)", folded == ["faction-colours-card", "brands-card"], folded)
+        check("Faction colours and Paint brands fold, and Backups stays open (v54 later folds Stages, Import and Your data too)", [c for c in folded if c in ("faction-colours-card", "brands-card")] == ["faction-colours-card", "brands-card"] and "backup-card" not in folded, folded)
         check("the Backups buttons are still in view and 44 px (the five big buttons)",
               page.evaluate("() => [...document.querySelectorAll('#backup-card .plain-button')].filter(b => b.getClientRects().length).every(b => b.getBoundingClientRect().height >= 43.5)"))
 

@@ -315,8 +315,8 @@ def main():
             check(f"{appearance}: the new unit's ▲ is enabled, full strength and readable (contrast at least 4.5)",
                   z["text"] == "▲" and not z["disabled"] and float(z["opacity"]) == 1 and contrast(rgb(z["colour"]), rgb(z["bg"])) >= 4.5,
                   (z, contrast(rgb(z["colour"]), rgb(z["bg"]))))
-            check(f"{appearance}: a finished unit still shows a faded tick that is switched off",
-                  fin["text"] == "✓" and fin["disabled"] and float(fin["opacity"]) < 0.5, fin)
+            check(f"{appearance}: a finished unit still shows a faded tick that is switched off (v54: disabled buttons are at 0.55, were 0.35)",
+                  fin["text"] == "✓" and fin["disabled"] and float(fin["opacity"]) < 0.6, fin)
             check(f"{appearance}: the stage name keeps the stage's own colour (the slate grey of the first stage is not the arrow's colour)",
                   rgb(z["stage"]) != accent and rgb(z["stage"]) != rgb(mid["stage"]), (z["stage"], mid["stage"]))
             check(f"{appearance}: pressing the new unit's ▲ still moves it up a stage",

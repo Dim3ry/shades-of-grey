@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=53"></script>
+  <script src="early.js?v=54"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -201,7 +201,7 @@
     .empty { color: var(--muted); text-align: center; padding: 24px 0; }
 
     button { font: inherit; border-radius: var(--radius-control); border: none; cursor: pointer; }
-    button:disabled { opacity: 0.35; cursor: default; }
+    button:disabled { opacity: 0.55; cursor: default; }   /* v54: was 0.35, which was too faint to read; still clearly dimmer than a live button */
 
     input, select, textarea {
       font: inherit;
@@ -2390,7 +2390,7 @@
           <summary>Faction colours</summary>
           <ul>
             <li>Give each faction its own colour in <strong>Settings → Faction colours</strong> (or tap <strong>Faction colours</strong> on the dashboard). Tap the colour circle to pick one.</li>
-            <li id="help-card-folds">In Settings, the <strong>Faction colours</strong> and <strong>Paint brands</strong> cards are shut each time you open the app. Tap the heading to open one. Tapping <strong>Faction colours</strong> on the dashboard opens it for you.</li>
+            <li id="help-card-folds">In Settings, the <strong>Faction colours</strong> and <strong>Paint brands</strong> cards are shut each time you open the app. Tap the heading to open one. Tapping <strong>Faction colours</strong> on the dashboard opens it for you. <strong>Stages</strong>, <strong>Import</strong> and <strong>Your data</strong> fold shut the same way.</li>
             <li><strong>Suggest</strong> offers a colour. If the faction's units have recipes linked, it uses those (armour recipes first, each recipe's first paint, usually the base coat). Otherwise it uses the colour the faction is usually painted, for well-known factions.</li>
             <li><strong>Use suggested colours</strong> colours every faction that hasn't got one yet, in one tap. Press Undo on the message if you change your mind.</li>
             <li>The colour shows as a bar on the dashboard's faction cards, a soft tint and a dot on unit cards, and a stripe on the faction filter.</li>
@@ -2576,7 +2576,7 @@
         <input type="file" id="restore-file" class="hidden" accept=".json">
       </div>
 
-      <div class="card">
+      <div class="card" id="stages-card">
         <h2>Stages</h2>
         <p class="hint" id="stages-explain">Rename, reorder (↑ ↓), add or remove stages. Units move with their stage when you reorder. Changes apply when you press Save.</p>
         <ol class="stage-list" id="stage-list"></ol>
@@ -2656,7 +2656,7 @@
         <div class="chips" id="brand-toggles" role="group" aria-label="Paint brands" style="margin-top: 0;"></div>
       </div>
 
-      <div class="card">
+      <div class="card" id="import-card">
         <h2>Import</h2>
         <div class="button-grid">
           <button class="plain-button" id="csv-button">Import CSV</button>
@@ -2731,7 +2731,7 @@
         <input type="file" id="csv-file" class="hidden" accept=".csv,text/csv">
       </div>
 
-      <div class="card">
+      <div class="card" id="your-data-card">
         <h2>Your data</h2>
         <p class="hint" id="data-summary"></p>
         <p class="hint" id="photo-summary"></p>
@@ -2789,7 +2789,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=53" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=54" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -2798,10 +2798,10 @@
        names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks.
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=53"></script>
-  <script src="schemes.js?v=53"></script>
-  <script src="detail-recipes.js?v=53"></script>
-  <script src="basing-tips.js?v=53"></script>
-  <script src="app.js?v=53"></script>
+  <script src="colour.js?v=54"></script>
+  <script src="schemes.js?v=54"></script>
+  <script src="detail-recipes.js?v=54"></script>
+  <script src="basing-tips.js?v=54"></script>
+  <script src="app.js?v=54"></script>
 </body>
 </html>

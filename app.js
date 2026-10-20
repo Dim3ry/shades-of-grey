@@ -14262,12 +14262,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=53".
+    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=54".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v53";
+    const APP_VERSION = "v54";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -14717,6 +14717,11 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v54", date: "20 Oct 2026", changes: [
+        "On the Updates page, each entry shows its version and date, and its lines are behind More info. The newest entry starts open and the rest start shut.",
+        "In Settings, Stages, Import and Your data now fold shut when you open the app, like Faction colours and Paint brands. Tap the heading to open one. Delete all units is still inside Your data.",
+        "Buttons that are switched off, such as the reorder arrows at the ends of the stage list and Clean up photo storage when there is nothing to clean, are easier to read.",
+      ]},
       { version: "v53", date: "20 Oct 2026", changes: [
         "Buttons, text boxes and menus are now all at least 44 px tall, and the small tap targets are bigger: the stage bars on the Dashboard, link buttons such as + Add part and Back, the Open recipe and Go to unit chips, Unlink, and the basket in the tab bar.",
         "Parts and techniques, Edit details and Colour ideas now look like the Help topics, with More info and Less info. These folds, and the Add unit button, also tell screen readers whether they are open.",
@@ -14811,7 +14816,12 @@
           li.textContent = change;
           ul.appendChild(li);
         }
-        div.append(h3, ul);
+        // v54: the version and date stay in view; the lines sit behind More info. The newest entry starts open, the rest shut. Whether each
+        // is open is kept (in memory only) while the app is open, so drawing the page again does not close one. Nothing is saved.
+        const key = "release-" + release.version.replace(/[^a-z0-9]+/gi, "-");
+        pageMoreInfo.door = pageMoreInfo.door || { state: { info: {} } };
+        if (release === CHANGELOG[0] && !(key in pageMoreInfo.door.state.info)) infoState(pageMoreInfo.door, key).open = true;
+        div.append(h3, pageMoreInfo(key, [ul], { label: release.version }));
         box.appendChild(div);
       }
     }
@@ -14824,6 +14834,9 @@
     markHelpFolds();   // v52
     foldCard(document.getElementById("faction-colours-card"), "faction-colours");   // v53
     foldCard(document.getElementById("brands-card"), "paint-brands");   // v53
+    foldCard(document.getElementById("stages-card"), "stages");   // v54
+    foldCard(document.getElementById("import-card"), "import");   // v54
+    foldCard(document.getElementById("your-data-card"), "your-data");   // v54: Delete all units stays inside, unchanged
     markFold(document.getElementById("recipe-lists"));   // v53: Parts and techniques
     markFold(document.getElementById("history-table-box"));   // v53: Show as a table
     render();
