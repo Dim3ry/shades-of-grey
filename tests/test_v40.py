@@ -80,7 +80,7 @@ def main():
         html, sw, app = read("index.html"), read("sw.js"), read("app.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
         check("the version is v40 in APP_VERSION, sw.js and all six script tags",
-              page.evaluate("APP_VERSION") in ("v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54") and len(tags) == 6 and len({v for _, v in tags}) == 1,
+              page.evaluate("APP_VERSION") in ("v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55") and len(tags) == 6 and len({v for _, v in tags}) == 1,
               (page.evaluate("APP_VERSION"), tags))
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v40')")
         joined = " ".join(entry["changes"]) if entry else ""

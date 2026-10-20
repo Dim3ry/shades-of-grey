@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=54"></script>
+  <script src="early.js?v=55"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -889,10 +889,8 @@
       display: inline-block; width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
       background: var(--swatch); border: 1px solid var(--swatch-edge);
     }
-    .part-tag {
-      display: inline-block; font-size: 12px; padding: 3px 10px; border-radius: 999px;
-      border: 1px solid var(--accent); color: var(--accent);
-    }
+    /* v55: plain text, no fill and no round border (the part name on a recipe) */
+    .part-tag { display: block; margin-top: 2px; font-size: 13px; color: var(--muted); }
     .recipe-notes { white-space: pre-wrap; margin: 12px 0 0; line-height: 1.5; font-size: 15px; }
     ol.recipe-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
     ol.recipe-steps > li { border-left: 3px solid var(--accent); padding: 2px 0 2px 12px; }
@@ -1071,7 +1069,7 @@
     .colour-ideas > summary h2 { margin: 0; }
     .colour-ideas > summary::after { content: "\25BE"; margin-left: auto; color: var(--muted); }
     .colour-ideas[open] > summary::after { content: "\25B4"; }
-    .pro-pill { padding: 0 8px; border-radius: 999px; font-size: 12px; border: 1px solid var(--accent); color: var(--accent); background: var(--accent-wash); white-space: nowrap; }
+    .pro-pill { font-size: 13px; color: var(--muted); white-space: nowrap; }   /* v55: plain text, was a pill */
     .ideas-body { display: grid; gap: 12px; margin-top: 10px; }
     .ideas-body .hint { margin: 0; }
     .idea-label { margin: 0; font-size: 13px; color: var(--muted); }
@@ -1083,10 +1081,11 @@
     .idea-text { display: grid; gap: 4px; min-width: 0; flex: 1; }
     .idea-name { font-weight: 600; overflow-wrap: anywhere; }
     .idea-name small { margin-left: 6px; font-weight: 400; color: var(--muted); }
-    .idea-tag { justify-self: start; padding: 0 8px; border-radius: 999px; font-size: 12px; border: 1px solid; white-space: nowrap; }
-    .idea-tag.own { color: var(--good); border-color: var(--good); background: var(--good-wash); }
-    .idea-tag.near { color: var(--warn); border-color: var(--warn); }
-    .idea-tag.none { color: var(--grey-status); border-color: var(--grey-status); }
+    /* v55: the status is the word itself, in plain text (no fill, no round border). The colour only adds to the word. */
+    .idea-tag { justify-self: start; font-size: 13px; font-weight: 600; white-space: nowrap; }
+    .idea-tag.own { color: var(--good); }
+    .idea-tag.near { color: var(--warn); }
+    .idea-tag.none { color: var(--grey-status); }
     .idea-why { font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
     .idea-note { font-size: 13px; color: var(--muted); }
     .idea-add { font-size: 13px; color: var(--accent); }
@@ -2789,7 +2788,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=54" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=55" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -2798,10 +2797,10 @@
        names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks.
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=54"></script>
-  <script src="schemes.js?v=54"></script>
-  <script src="detail-recipes.js?v=54"></script>
-  <script src="basing-tips.js?v=54"></script>
-  <script src="app.js?v=54"></script>
+  <script src="colour.js?v=55"></script>
+  <script src="schemes.js?v=55"></script>
+  <script src="detail-recipes.js?v=55"></script>
+  <script src="basing-tips.js?v=55"></script>
+  <script src="app.js?v=55"></script>
 </body>
 </html>

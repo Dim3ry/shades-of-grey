@@ -125,7 +125,7 @@ def main():
         check("Swatches shows one tile for each paint", tiles.count() == n, (tiles.count(), n))
         check("the key shows five marks", page.locator("#palette-legend .legend-item").count() == 5)
         check("the paint with a status has a mark", page.locator(".swatch-tile .status-marker").count() >= 1)
-        check("a tile's name says its status", "Owned" in tiles.first.get_attribute("aria-label"), tiles.first.get_attribute("aria-label"))
+        check("a tile's name says its status", "Owned" in tiles.first.locator(".sr-only").text_content(), tiles.first.locator(".sr-only").text_content())   # v55: named by a hidden name, no aria-label
         tb = box(tiles.first)
         check("tiles are at least 44 px", tb["width"] >= 43.5 and tb["height"] >= 43.5, tb)
         tiles.first.click()

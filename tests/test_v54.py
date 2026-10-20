@@ -134,7 +134,7 @@ def main():
               == [f"{'Less' if i == 0 else 'More'} info: {v}" for i, (v, d) in enumerate(versions)])
         check("the newest entry is open, the other four are shut", release_states(page) == ["true", "false", "false", "false", "false"], release_states(page))
         newest_lines = page.locator("#changelog .release").nth(0).locator("li")
-        check("the newest entry's lines are in view", newest_lines.count() == len(entry["changes"]) and newest_lines.first.is_visible())
+        check("the newest entry's lines are in view", newest_lines.count() == page.evaluate("CHANGELOG[0].changes.length") and newest_lines.first.is_visible())
         older = page.locator("#changelog .release").nth(1)
         check("an older entry's lines are not in view", not older.locator("li").first.is_visible())
         check("an older entry still holds all its lines in the page (read with text_content)",

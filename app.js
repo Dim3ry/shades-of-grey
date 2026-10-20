@@ -2283,6 +2283,18 @@
       } else showNotSaved();
       return added;
     }
+    // v55: one screen-reader-only line the shop links point at (aria-describedby), so a link says it opens another website without a long label.
+    function opensSiteId() {
+      let el = document.getElementById("opens-site");
+      if (!el) {
+        el = document.createElement("span");
+        el.id = "opens-site";
+        el.className = "sr-only";
+        el.textContent = "Opens the shop's website";
+        document.body.appendChild(el);
+      }
+      return el.id;
+    }
     // The fold-out for one paint. Returns null when there is nothing to show (you own it, switched off, or no shop sells it).
     function buildShopFoldout(paint, owned, source) {
       if (owned || !shopLinksOn() || !paint || !String(paint.name || "").trim()) return null;
@@ -2292,7 +2304,8 @@
       box.className = "shop-more";
       const summary = document.createElement("summary");
       summary.textContent = "Shop links";
-      summary.setAttribute("aria-label", `Shop links for ${paint.name}`);
+      const who = hiddenName(paint.name);   // v55: the fold-out has no visible name of its own, so the paint's name is kept here for screen readers
+      labelWithName(summary, "Shop links for", who);
       const body = document.createElement("div");
       body.className = "shop-body";
       const addSlot = document.createElement("div");
@@ -2311,7 +2324,7 @@
         add.type = "button";
         add.className = "plain-button";
         add.textContent = "Add to shopping list";
-        add.setAttribute("aria-label", `Add ${paint.name} to your shopping list`);
+        labelWithName(add, "", who);   // v55: "Add to shopping list" (its own words) then the paint's name
         add.addEventListener("click", () => { if (addToShoppingList(paint, source)) { const done = addSlot.querySelector(".shop-onlist"); if (done) done.focus(); } });
         addSlot.appendChild(add);
         return add;
@@ -2325,13 +2338,14 @@
         a.target = "_blank";
         a.rel = "noopener noreferrer";   // the shop isn't told which page sent you
         a.textContent = `${shop.name} ↗`;
-        a.setAttribute("aria-label", `Search ${shop.name} for ${paint.name} (opens the shop's website)`);
+        labelWithName(a, `Search ${shop.name} for`, who);   // v55
+        a.setAttribute("aria-describedby", opensSiteId());
         links.appendChild(a);
       }
       const note = document.createElement("p");
       note.className = "hint";
       note.textContent = SHOP_PLAIN_WORDS;
-      body.append(addSlot, links, note);
+      body.append(addSlot, links, note, who);
       box.append(summary, body);
       return box;
     }
@@ -2371,7 +2385,8 @@
           const go = document.createElement("span");
           go.textContent = "Search ↗";
           a.append(name, go);
-          a.setAttribute("aria-label", `Search ${shop.name} for ${p.name} (opens the shop's website)`);
+          labelWithName(a, `Search ${shop.name} for`, name);   // v55: the link's own visible paint name
+          a.setAttribute("aria-describedby", opensSiteId());
           li.appendChild(a);
           list.appendChild(li);
         }
@@ -7474,13 +7489,16 @@
         tile.className = "swatch-tile";
         tile.dataset.paint = String(paint.id);
         const key = paintStatus(paint);
-        tile.title = paint.name;
-        tile.setAttribute("aria-label", [paint.name, paint.brand, key ? statusLabel(key) : ""].filter(Boolean).join(", "));
+        // v55: no title and no aria-label (they held the paint name). The tile has no visible name, so it carries one that only a screen
+        // reader reads (name, brand, status), and aria-labelledby points at it. Opening the tile shows the name in the box under the row.
+        const tileName = hiddenName([paint.name, paint.brand, key ? statusLabel(key) : ""].filter(Boolean).join(", "));
+        tile.setAttribute("aria-labelledby", tileName.id);
         tile.setAttribute("aria-expanded", String(swatchPickId === paint.id));
         const sw = makeSwatch(paint.colour);
         sw.classList.add("big");
         tile.appendChild(sw);
         if (key) tile.appendChild(statusMarker(key));
+        tile.appendChild(tileName);
         tile.addEventListener("click", () => { swatchPickId = swatchPickId === paint.id ? null : paint.id; renderPalette(); });
         li.appendChild(tile);
         paintListEl.appendChild(li);
@@ -7540,7 +7558,7 @@
       const colour = document.createElement("input");
       colour.type = "color";
       colour.value = paint.colour;
-      colour.setAttribute("aria-label", `Colour of ${paint.name}`);
+      labelWithName(colour, "Colour of", name);   // v55: the paint's visible name in its row, no paint name in an aria-label
       colour.addEventListener("input", () => swatch.style.setProperty("--swatch", colour.value));
       colour.addEventListener("change", () => { paint.colour = colour.value.toLowerCase(); render(); });
       const nameBox = document.createElement("input");
@@ -7573,9 +7591,9 @@
       field.appendChild(chips);
       panel.appendChild(field);
       if (!paintOptionsOpen.has(paint.id)) paintOptionsOpen.set(paint.id, { open: false });
-      panel.appendChild(buildMoreInfo([row, changeHint, buildPaintActions(paint, usedIn)], {   // v18c-2
+      panel.appendChild(buildMoreInfo([row, changeHint, buildPaintActions(paint, usedIn, name)], {   // v18c-2 (v55: the visible name is passed in for the Remove button's name)
         className: "paint-options", state: paintOptionsOpen.get(paint.id), openText: "More options", closeText: "Fewer options",
-        id: `paint-options-${paint.id}`, label: paint.name,
+        id: `paint-options-${paint.id}`, nameEl: name,   // v55: More options / Fewer options, then the visible paint name
       }));
       item.appendChild(panel);
       return item;
@@ -7657,7 +7675,7 @@
     }
 
     // The Remove and Merge into… buttons at the bottom of an open paint.
-    function buildPaintActions(paint, usedIn) {
+    function buildPaintActions(paint, usedIn, paintNameEl) {
       const wrap = document.createElement("div");
       wrap.className = "panel-field paint-actions";
       const buttons = document.createElement("div");
@@ -7677,7 +7695,7 @@
         label.textContent = `A misspelt copy? Pick the right paint. Recipes using ${paint.name} will use that one instead.`;
         const pick = document.createElement("select");
         pick.className = "merge-pick";
-        pick.setAttribute("aria-label", `Merge ${paint.name} into`);
+        // v55: no aria-label (it held the paint name): the label this box sits in is its name, and that sentence already names the paint
         pick.appendChild(new Option("Choose a paint…", ""));
         label.appendChild(pick);
         // The list of paints is only built when you tap Merge into… (a paste import opens
@@ -7702,7 +7720,7 @@
         const remove = document.createElement("button");
         remove.className = "danger-button";
         remove.textContent = "Remove";
-        remove.setAttribute("aria-label", `Remove ${paint.name} from your palette`);
+        if (paintNameEl) labelWithName(remove, "", paintNameEl);   // v55: "Remove" then the visible paint name, no paint name in an aria-label
         remove.addEventListener("click", () => removePaint(paint));
         buttons.appendChild(remove);
       }
@@ -8110,7 +8128,7 @@
       const remove = document.createElement("button");
       remove.className = "icon-button remove";
       remove.textContent = "✕";
-      remove.setAttribute("aria-label", `Remove ${paint.name || "this paint"}`);
+      labelWithName(remove, "Remove", name);   // v55: the paint name box beside it is the name (no paint name in an aria-label)
       remove.addEventListener("click", () => {
         const even = isEvenSplit(step.paints);
         step.paints.splice(pi, 1);
@@ -8523,6 +8541,23 @@
     // Everything runs on the phone, works offline and sends nothing anywhere. Faction, paint and recipe names are always
     // shown as plain text (never as HTML), because they can be anything the user typed or pasted.
 
+    // v55: names for buttons, links and boxes that act on a paint. The name is the row's own visible name (aria-labelledby), plus a short
+    // action word kept in the element's own aria-label ("Remove"). The element lists itself first, so a screen reader says "Remove <name>".
+    // No paint name is ever written into an aria-label or a title. Leave `action` out when the element's own visible words are the action.
+    // hiddenName(text) makes a screen-reader-only name for the few places that have no visible one (a swatch tile, a shop fold-out).
+    function idOf(el) { if (!el.id) { idOf.n = (idOf.n || 0) + 1; el.id = "nm-" + idOf.n; } return el.id; }
+    function labelWithName(el, action, ...nameEls) {
+      if (action) el.setAttribute("aria-label", action);
+      el.setAttribute("aria-labelledby", [el, ...nameEls].map(idOf).join(" "));
+    }
+    function hiddenName(text) {
+      const span = document.createElement("span");
+      span.className = "sr-only";
+      span.textContent = text;
+      idOf(span);
+      return span;
+    }
+
     // One tappable idea row (swatch, name, brand, tag, reason, optional note, "+ Add as a step"). Used by every list.
     // v49: "More info". A plain text button that opens the detail under it ("Less info" when open). It is the one way busy pages
     // tuck their explanations away. `nodes` are moved into the panel (their ids stay, hidden until opened). o.state = { open } is kept
@@ -8549,7 +8584,8 @@
         button.setAttribute("aria-expanded", String(isOpen));
         const words = isOpen ? (o.closeText || "Less info") : (o.openText || "More info");
         text.textContent = words;
-        if (o.label) button.setAttribute("aria-label", `${words}: ${o.label}`);
+        if (o.nameEl) labelWithName(button, words, o.nameEl);   // v55: the visible name of a paint, no paint name in an aria-label
+        else if (o.label) button.setAttribute("aria-label", `${words}: ${o.label}`);
         panel.hidden = !isOpen;
       };
       button.addEventListener("click", () => show(!state.open));
@@ -8800,7 +8836,6 @@
       if (onAdd) {
         button.type = "button";
         button.className = extraClass || "idea";
-        button.setAttribute("aria-label", `Add ${paint.name} as a new step. ${tag.text}. ${reason}`);
       } else if (link) {
         button.type = "button";
         button.className = (extraClass || "idea") + " idea-static idea-link";
@@ -8827,6 +8862,7 @@
       const why = document.createElement("span");
       why.className = "idea-why";
       why.textContent = reason;
+      if (onAdd) labelWithName(button, "Add as a new step", name, tagEl, why);   // v55: the row's visible name, tag and reason, no paint name in an aria-label
       let noteEl = null;
       if (note) {
         noteEl = document.createElement("span");
@@ -14262,12 +14298,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=54".
+    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=55".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v54";
+    const APP_VERSION = "v55";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -14717,6 +14753,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v55", date: "20 Oct 2026", changes: [
+        "The small labels on recipes, Colour ideas and the Compendium are now plain text instead of rounded pills: the part name on a recipe, Fine, Look at this and Suggestion, and Pro preview. The words are the same.",
+        "Screen readers now read a paint's own name on the buttons and boxes that act on it, such as Remove, More options, the colour box, Merge, Shop links and the swatch tiles, instead of a longer label that repeated the name.",
+      ]},
       { version: "v54", date: "20 Oct 2026", changes: [
         "On the Updates page, each entry shows its version and date, and its lines are behind More info. The newest entry starts open and the rest start shut.",
         "In Settings, Stages, Import and Your data now fold shut when you open the app, like Faction colours and Paint brands. Tap the heading to open one. Delete all units is still inside Your data.",
