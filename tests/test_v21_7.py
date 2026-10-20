@@ -407,6 +407,7 @@ def main():
         start(page); tab(page, "recipes")
         page.evaluate("() => openRecipe(1)"); page.wait_for_timeout(100)
         page.locator("#recipe-page button", has_text="Edit").first.click(); page.wait_for_timeout(150)
+        page.locator("#recipe-page li.step-edit .step-line").first.click()   # v50: a step is one line until you open it
         page.click('button[aria-label="Remove step 1"]'); page.wait_for_timeout(150)
         check("remove step: asks the same thing", asks(page, "Remove step 1?"), box_text(page))
         no(page)
@@ -558,6 +559,7 @@ def main():
         # 4.19 "＋ Add a new technique…" in the recipe editor (type a name)
         start(page); tab(page, "recipes")
         page.evaluate("() => startNewRecipe(null)"); page.wait_for_timeout(150)
+        page.locator("#recipe-page .step-edit .more-info-button").first.click()   # v50: the technique is under More options
         sel = page.locator("#recipe-page .step-edit select").first
         sel.select_option(value="\u0000new"); page.wait_for_timeout(150)
         check("recipe editor ＋ Add a new technique…: asks the same thing", asks(page, "Name of the new technique:") and box_kind(page) == "text", box_text(page))

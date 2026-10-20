@@ -116,7 +116,7 @@ def card_shown(page):
     return page.locator("#examples-card-recipes").is_visible()
 
 def card_text(page):
-    return page.inner_text("#examples-card-recipes") if card_shown(page) else ""
+    return page.text_content("#examples-card-recipes") if card_shown(page) else ""   # v50: the explanation sits behind More info
 
 def toast(page):
     return page.evaluate("""() => ({ text: document.getElementById('toast-text').textContent,
@@ -627,7 +627,7 @@ def main():
               saved_settings(page).get("recipeExamplesChecked") is True)
         main_tab(page, "recipes")
         check("the Recipes card shows for them too, with Clear and Keep",
-              card_shown(page) and page.locator("#examples-card-recipes button").count() == 2)
+              card_shown(page) and page.locator("#examples-card-recipes button:not(.more-info-button)").count() == 2)
         reload(page)
         check("after a reload they still have the examples once (nothing doubled)",
               len(names(page, "recipes")) == 6 and len(names(page, "schemes")) == 3)
@@ -722,7 +722,7 @@ def main():
                 box = page.evaluate("""() => { const r = document.getElementById('examples-card-recipes').getBoundingClientRect();
                     return { l: r.left, r: r.right, w: window.innerWidth }; }""")
                 check(f"{tag} Recipes: the card is inside the screen", box["l"] >= 0 and box["r"] <= box["w"] + 0.5, box)
-                sizes = page.evaluate("""() => [...document.querySelectorAll('#examples-card-recipes button')]
+                sizes = page.evaluate("""() => [...document.querySelectorAll('#examples-card-recipes button:not(.more-info-button)')]
                     .map(b => { const r = b.getBoundingClientRect(); return [r.width, r.height]; })""")
                 check(f"{tag} Recipes: both buttons are at least 44 px tall and wide", len(sizes) == 2 and all(w >= 44 and h >= 44 for w, h in sizes), sizes)
                 col = page.evaluate("""() => { const el = document.querySelector('#examples-card-recipes p');

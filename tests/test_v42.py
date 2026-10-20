@@ -133,7 +133,7 @@ def main():
         check("the version is v42 or v43 in APP_VERSION, sw.js and all six script tags",
               page.evaluate("APP_VERSION") in ("v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("42", "43", "44", "45", "46", "47", "48", "49", "50") and len(tags) == 6 and len({v for _, v in tags}) == 1 and tags[0][1] in ("42", "43", "44", "45", "46", "47", "48", "49", "50"),
               (page.evaluate("APP_VERSION"), tags))
-        check("the two comments that name the number (in index.html and app.js) carry the same 42, 43 or 44", re.search(r'The "\?v=(42|43|44|45|46|47|48|49)" makes', html) and re.search(r'e\.g\. "app\.js\?v=(42|43|44|45|46|47|48|49)"', read("app.js")))
+        check("the two comments that name the number (in index.html and app.js) carry the same 42, 43 or 44", re.search(r'The "\?v=(42|43|44|45|46|47|48|49|50)" makes', html) and re.search(r'e\.g\. "app\.js\?v=(42|43|44|45|46|47|48|49|50)"', read("app.js")))
         entry = page.evaluate("CHANGELOG.find(e => e.version === 'v42')")
         joined = " ".join(entry["changes"]) if entry else ""
         check("the v42 Updates entry (newest, or second newest once v43 is out) tells about the Add paints button, Undo, the same list and Shop links",

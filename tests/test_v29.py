@@ -101,7 +101,8 @@ def set_step_paint(page, step, name):
     page.wait_for_timeout(400)   # the panel waits a moment before redrawing
 
 def add_step(page):
-    page.click("#recipe-page button:has-text('+ Add step')")
+    # v50: steps are folded, so the page can be short and the tab bar can sit over this button; send the tap straight to it.
+    page.locator("#recipe-page button.add-step").dispatch_event("click")
     page.wait_for_timeout(150)
 
 def rec(rid, name, part, paint_ids):

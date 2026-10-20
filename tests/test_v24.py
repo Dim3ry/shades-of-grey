@@ -202,7 +202,7 @@ def main():
         main_tab(page, "recipes")
         check("the Recipes tab lists all five recipes", page.locator("#recipe-list li").count() == 5, page.locator("#recipe-list li").count())
         check("the card shows on the Recipes sub-page", card_visible(page))
-        card_text = page.inner_text("#examples-card-recipes")
+        card_text = page.text_content("#examples-card-recipes")
         check("the card says these are examples and counts the recipes, schemes and paints",
               "These are examples" in card_text and "5 example recipes" in card_text
               and "2 example schemes" in card_text and "16 example paints" in card_text, card_text)
@@ -353,7 +353,7 @@ def main():
         page.evaluate("() => { applyPaintStatus(book.paints.find(p => p.name === 'Example mid blue'), 'owned'); render(); }")
         main_tab(page, "recipes")
         check("the card counts 15 paints once one has a status",
-              "5 example recipes, 2 example schemes and 15 example paints" in page.inner_text("#examples-card-recipes"), page.inner_text("#examples-card-recipes"))
+              "5 example recipes, 2 example schemes and 15 example paints" in page.text_content("#examples-card-recipes"), page.text_content("#examples-card-recipes"))
         page.click("#examples-card-recipes .clear-recipe-examples")
         page.wait_for_timeout(300)
         check("Clear says 5 recipes, 2 schemes and 15 paints", toast(page)["text"] == "Cleared 5 example recipes, 2 example schemes and 15 example paints", toast(page))
@@ -367,7 +367,7 @@ def main():
               paints: [{ paint: p.id, mix: null }], ratio: '', note: '', optional: false }] }); render(); }""")
         main_tab(page, "recipes")
         check("a paint your own recipe uses is no longer counted as an example",
-              "5 example recipes, 2 example schemes and 15 example paints" in page.inner_text("#examples-card-recipes"), page.inner_text("#examples-card-recipes"))
+              "5 example recipes, 2 example schemes and 15 example paints" in page.text_content("#examples-card-recipes"), page.text_content("#examples-card-recipes"))
         page.click("#examples-card-recipes .clear-recipe-examples")
         page.wait_for_timeout(300)
         check("Clear leaves your recipe and the paint it uses",
@@ -451,7 +451,7 @@ def main():
                     box = page.evaluate("""() => { const r = document.getElementById('examples-card-recipes').getBoundingClientRect();
                         return { l: r.left, r: r.right, w: window.innerWidth }; }""")
                     check(f"{tag} {view}: the card is inside the screen", box["l"] >= 0 and box["r"] <= box["w"] + 0.5, box)
-                    heights = page.evaluate("""() => [...document.querySelectorAll('#examples-card-recipes button')]
+                    heights = page.evaluate("""() => [...document.querySelectorAll('#examples-card-recipes button:not(.more-info-button)')]
                         .map(b => { const r = b.getBoundingClientRect(); return [r.width, r.height]; })""")
                     check(f"{tag} {view}: both buttons are at least 44 px tall and wide", len(heights) == 2 and all(w >= 44 and h >= 44 for w, h in heights), heights)
                     check(f"{tag} {view}: nothing scrolls sideways", no_sideways(page))

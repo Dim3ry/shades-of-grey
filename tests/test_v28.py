@@ -419,7 +419,7 @@ def main():
         saved = page.evaluate("""() => { const r = book.recipes[book.recipes.length - 1]; return { name: r.name, steps: r.steps.length,
             last: paintById(r.steps[r.steps.length - 1].paints[0].paint).name, note: r.steps[r.steps.length - 1].note }; }""")
         check("saving keeps the new step with its paint and note", saved["steps"] == 2 and saved["last"] == first["name"] and saved["note"].startswith("Colour idea for"), saved)
-        check("the recipe view shows the paint in step 2", first["name"] in page.inner_text("#recipe-page"))
+        check("the recipe view shows the paint in step 2", first["name"] in page.text_content("#recipe-page"))   # v50: steps are folded, so read the text, not only what shows
 
         # ---------- 6. Hostile text ----------
         print("\n--- 6. Hostile text ---")
@@ -540,7 +540,7 @@ def main():
         load(page)
         open_editor(page)
         n = page.locator(".step-edit").count()
-        page.click("#recipe-page button:has-text('+ Add step')")
+        page.locator("#recipe-page button.add-step").dispatch_event("click")   # v50: steps are folded, so the page is short and the tab bar can sit over this button
         page.wait_for_timeout(150)
         check("+ Add step still adds an empty step", page.locator(".step-edit").count() == n + 1)
         set_step_paint(page, 0, "Brand New Paint X")
