@@ -149,7 +149,7 @@ def main():
               own.inner_text() if own.count() else "no card")
         check("paste: All is picked to start with", pressed(page, "#import-own [data-own=all]")
               and not pressed(page, "#import-own [data-own=none]") and not pressed(page, "#import-own [data-own=pick]"))
-        check("paste: it counts the 2 new paints", "2 paints will be new" in own.inner_text(), own.inner_text())
+        check("paste: it counts the 2 new paints", "2 paints will be new" in own.text_content(), own.text_content())   # v50: the sentence is behind More info
         page.click("#import-save")
         page.wait_for_timeout(150)
         st = statuses(page)
@@ -188,7 +188,7 @@ def main():
         # Paints already in your palette aren't asked about, and keep their status.
         start(page, {"paints": [paint(1, "Mephiston Red", status="wishlist")], "recipes": [], "schemes": [], "v15": True})
         paste(page, NOTE)
-        text = page.locator("#import-own").inner_text()
+        text = page.locator("#import-own").text_content()   # v50: the sentence is behind More info
         check("paste: a paint you already have isn't listed", "1 paint will be new" in text, text)
         page.click("#import-own [data-own=none]")
         page.click("#import-save")
@@ -217,7 +217,7 @@ def main():
         page.fill("#recipe-page input.paint-name", "Mephiston Red")
         own = page.locator("#recipe-own")
         check("recipe editor: the card appears as you type a new paint",
-              own.is_visible() and "1 paint will be new" in own.inner_text(),
+              own.is_visible() and "1 paint will be new" in own.text_content(),
               own.inner_text() if own.count() else "no card")
         check("recipe editor: typing keeps your place in the paint box",
               page.evaluate("document.activeElement && document.activeElement.classList.contains('paint-name')"))

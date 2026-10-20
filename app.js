@@ -1912,6 +1912,9 @@
     ];
     const PAINT_STATUS_KEYS = PAINT_STATUSES.map(s => s.key);
     let recipeCanPaint = false;   // the "What can I paint now?" filter (kept while the app is open)
+    // v50: open or closed state for the Recipes tab. Kept only while the app is open, never saved.
+    const recipeFold = new WeakMap();      // a step -> { open, options: { open } } (recipe editor and recipe view)
+    const recipeInfoDoor = { state: {} };  // infoState() keeps each recipe card's More info (and the other hints on this tab) here
     let importReviewIds = null;   // v17.1: the paints a paste import just added, while you check them
 
     // A paint's status now: its own status, or Owned if the scan added it. "" = not set.
@@ -2019,13 +2022,16 @@
       return pill;
     }
 
-    // Have / Missing next to each paint in a recipe. Hidden until a status is set.
-    function haveBadge(paint) {
+    // Have / Missing next to each paint in a recipe: the small status marks (a tick or a cross), not words. Hidden until a status is set.
+    function haveMark(paint) {
       if (!anyStatusSet()) return null;
-      const badge = document.createElement("span");
-      badge.className = "have-badge " + (haveIt(paint) ? "have" : "missing");
-      badge.textContent = haveIt(paint) ? "✓ Have" : "✗ Missing";
-      return badge;
+      const have = haveIt(paint);
+      const span = document.createElement("span");
+      span.className = "have-mark " + (have ? "have" : "missing");
+      span.setAttribute("role", "img");
+      span.setAttribute("aria-label", have ? "Have" : "Missing");
+      span.appendChild(statusMarker(have ? "owned" : "notowned"));
+      return span;
     }
 
     // True if you have every paint a recipe uses.
@@ -2036,7 +2042,7 @@
       return [...ids].every(id => { const p = paintById(id); return !!p && haveIt(p); });
     }
 
-    // The "What can I paint now?" button above the recipe list.
+    // The "What can I paint now?" button above the recipe list. v50: its hint sits behind More info.
     function renderCanPaintBox() {
       const box = document.getElementById("can-paint-box");
       box.innerHTML = "";
@@ -2044,8 +2050,14 @@
         recipeCanPaint = !recipeCanPaint;
         renderRecipeList();
       }));
-      document.getElementById("can-paint-hint").textContent =
-        recipeCanPaint && !anyStatusSet() ? "Mark the paints you own on Your Palette first, then this list is useful." : "";
+      const hintBox = document.getElementById("can-paint-hint");
+      hintBox.replaceChildren();
+      if (recipeCanPaint && !anyStatusSet()) {
+        const hint = document.createElement("p");
+        hint.className = "hint";
+        hint.textContent = "Mark the paints you own on Your Palette first, then this list is useful.";
+        hintBox.appendChild(buildMoreInfo([hint], { state: infoState(recipeInfoDoor, "can-paint-hint"), id: "can-paint-hint-panel", label: "What can I paint now?" }));
+      }
     }
 
     // ----- Shopping list -----
@@ -5238,9 +5250,14 @@
       const strong = document.createElement("strong");
       const many = recipes.length + schemes.length + paints.length > 1;
       strong.textContent = many ? "These are examples." : "This is an example.";
-      text.append(strong, ` You have ${exampleRecipeWords(recipes.length, paints.length, schemes.length)}. ` +
+      text.appendChild(strong);
+      // v50: the longer explanation sits behind More info; the two buttons stay in view.
+      const detail = document.createElement("p");
+      detail.className = "hint";
+      detail.textContent = `You have ${exampleRecipeWords(recipes.length, paints.length, schemes.length)}. ` +
         `Clear ${many ? "them" : "it"} when you're ready to add your own. ` +
-        `Anything you edit, and any paint you use in your own recipe or give a status, stays yours.`);
+        `Anything you edit, and any paint you use in your own recipe or give a status, stays yours.`;
+      const more = buildMoreInfo([detail], { state: infoState(recipeInfoDoor, "examples-card"), id: "examples-card-recipes-info", label: "the examples" });
       const buttons = document.createElement("div");
       buttons.className = "button-grid";
       const clear = document.createElement("button");
@@ -5254,7 +5271,7 @@
       keep.textContent = many ? "Keep them" : "Keep it";
       keep.addEventListener("click", keepRecipeExamples);
       buttons.append(clear, keep);
-      card.append(text, buttons);
+      card.append(text, more, buttons);
     }
     function clearRecipeExamples() {
       const goneRecipes = exampleRecipes();
@@ -6563,6 +6580,71 @@
       if (card) card.scrollIntoView({ block: "center" });
     }
 
+    // ----- v50: the Recipes tab, decluttered -----
+    // A step's open or closed state (and its More options) while the app is open. A step nobody has filled in yet starts open.
+    function stepFold(step, openByDefault) {
+      let fold = recipeFold.get(step);
+      if (!fold) { fold = { open: !!openByDefault, options: { open: false } }; recipeFold.set(step, fold); }
+      return fold;
+    }
+    // A step folded to one line: number, technique and its paints as small swatches. The line is a real button that opens the step
+    // (o.body). o.technique(), o.colours() and o.missing() are asked again each time, so the line is right after the step was edited.
+    function foldStep(o) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "step-line";
+      button.setAttribute("aria-controls", o.body.id);
+      const draw = () => {
+        const text = document.createElement("span");
+        text.className = "step-line-text";
+        text.textContent = `${o.number}. ${o.technique()}`;
+        const dots = document.createElement("span");
+        dots.className = "step-line-swatches";
+        dots.setAttribute("aria-hidden", "true");
+        o.colours().slice(0, 8).forEach(c => dots.appendChild(makeSwatch(c)));
+        const mark = document.createElement("span");
+        mark.className = "fold-mark";
+        mark.setAttribute("aria-hidden", "true");
+        const parts = [text, dots];
+        if (o.missing && o.missing()) {
+          const gap = document.createElement("span");
+          gap.className = "have-mark missing";
+          gap.setAttribute("role", "img");
+          gap.setAttribute("aria-label", "Missing a paint");
+          gap.appendChild(statusMarker("notowned"));
+          parts.push(gap);
+        }
+        parts.push(mark);
+        button.replaceChildren(...parts);
+        button.setAttribute("aria-expanded", String(o.fold.open));
+        o.body.hidden = !o.fold.open;
+      };
+      button.addEventListener("click", () => { o.fold.open = !o.fold.open; draw(); });
+      draw();
+      return button;
+    }
+    // The one-line key for the Have / Missing marks.
+    function buildHaveKey() {
+      const key = document.createElement("div");
+      key.className = "status-legend have-key";
+      for (const [mark, word] of [["owned", "Have"], ["notowned", "Missing"]]) {
+        const item = document.createElement("span");
+        item.className = "legend-item";
+        item.append(statusMarker(mark), word);
+        key.appendChild(item);
+      }
+      return key;
+    }
+    // How many of a recipe's paints you don't have. null when it has no paints.
+    function recipeMissing(recipe) {
+      const ids = new Set();
+      for (const st of recipe.steps) for (const sp of st.paints) ids.add(sp.paint);
+      if (!ids.size) return null;
+      let missing = 0;
+      for (const id of ids) { const p = paintById(id); if (!p || !haveIt(p)) missing++; }
+      return missing;
+    }
+
     // ----- The list of recipes -----
     function renderRecipeList() {
       const partsUsed = uniqueSorted(book.recipes.map(r => r.part));
@@ -6579,28 +6661,48 @@
         .filter(r => (!recipePartFilter || r.part === recipePartFilter) && (!recipeCanPaint || canPaintNow(r)))
         .sort((a, b) => a.name.localeCompare(b.name));
       for (const recipe of shown) {
+        // v50: a card is the name, the colour dots and (once you have marked paints) a short Have / Missing line. The rest is behind More info.
         const item = document.createElement("li");
+        item.className = "recipe-card";
         const button = document.createElement("button");
+        button.type = "button";
         button.className = "recipe-item";
         const name = document.createElement("div");
         name.className = "name";
+        name.id = `recipe-name-${recipe.id}`;
         name.textContent = recipe.name;
-        const users = unitsUsing(recipe.id).length;
-        const meta = document.createElement("div");
-        meta.className = "meta";
-        meta.textContent = [recipe.part, plural(recipe.steps.length, "step"),
-                            users ? `used on ${plural(users, "unit")}` : ""].filter(Boolean).join(" · ");
         const swatches = document.createElement("div");
         swatches.className = "swatches";
         recipeColours(recipe).slice(0, 12).forEach(c => swatches.appendChild(makeSwatch(c)));
-        button.append(name, meta, swatches);
+        button.append(name, swatches);
+        const missing = anyStatusSet() ? recipeMissing(recipe) : null;
+        if (missing !== null) {
+          const status = document.createElement("div");
+          status.className = "recipe-status";
+          status.append(statusMarker(missing ? "notowned" : "owned"), missing ? `Missing ${missing}` : "Have all");
+          button.appendChild(status);
+        }
         button.addEventListener("click", () => { openRecipeId = recipe.id; renderRecipes(); window.scrollTo(0, 0); });
-        item.appendChild(button);
+        const users = unitsUsing(recipe.id).length;
+        const meta = document.createElement("p");
+        meta.className = "meta";
+        meta.textContent = [recipe.part, plural(recipe.steps.length, "step"),
+                            users ? `used on ${plural(users, "unit")}` : ""].filter(Boolean).join(" · ");
+        const more = buildMoreInfo([meta], { state: infoState(recipeInfoDoor, `recipe-${recipe.id}`), id: `recipe-${recipe.id}-info` });
+        more.querySelector(".more-info-button").setAttribute("aria-describedby", name.id);
+        item.append(button, more);
         recipeList.appendChild(item);
       }
 
       if (recipeCanPaint && !shown.length) {
         recipeList.insertAdjacentHTML("beforeend", '<li class="empty">No recipe where you own every paint yet. Mark your paints on Your Palette to see what you can paint now.</li>');
+      }
+      const listsInfo = document.getElementById("recipe-lists-info");
+      if (listsInfo) {
+        const note = document.createElement("p");
+        note.className = "hint";
+        note.textContent = "The choices offered when you write a recipe. You can also add new ones while writing.";
+        listsInfo.replaceChildren(buildMoreInfo([note], { state: infoState(recipeInfoDoor, "recipe-lists"), id: "recipe-lists-info-panel", label: "parts and techniques" }));
       }
       renderListChips("part-chips", "parts", "part");
       renderListChips("technique-chips", "techniques", "technique");
@@ -6664,26 +6766,20 @@
       }
       recipePage.appendChild(top);
 
-      // The steps, in order.
+      // The steps, in order. v50: each step is one line (number, technique, paints as small swatches); tap it to open the step.
+      // The coats, mix ratio, optional and note sit behind More options inside the open step.
       const stepsCard = document.createElement("div");
       stepsCard.className = "card";
       stepsCard.innerHTML = "<h2>Steps</h2>";
+      if (recipe.steps.length && anyStatusSet()) stepsCard.appendChild(buildHaveKey());
       if (!recipe.steps.length) stepsCard.insertAdjacentHTML("beforeend", '<p class="hint" style="margin: 0;">No steps yet. Press Edit to add some.</p>');
       const steps = document.createElement("ol");
       steps.className = "recipe-steps";
       recipe.steps.forEach((step, i) => {
         const li = document.createElement("li");
-        const head = document.createElement("div");
-        head.className = "step-title";
-        // v15: a blank technique shows the app's guess from the paints.
-        const technique = step.technique || guessTechnique(step.paints.map(sp => paintById(sp.paint))) || "Step";
-        head.textContent = `${i + 1}. ${technique} `;
-        const coats = document.createElement("small");
-        coats.textContent = `· ${coatsText(step.coats)}` + (step.ratio ? ` · mix ${step.ratio}` : "") +
-                            (step.optional ? " · (optional)" : "");
-        head.appendChild(coats);
-        if (step.optional) li.classList.add("optional-step");
-        li.appendChild(head);
+        const body = document.createElement("div");
+        body.className = "step-body";
+        body.id = `rstep-${i}`;
         const mixed = step.paints.length > 1;
         for (const sp of step.paints) {
           const paint = paintById(sp.paint);
@@ -6694,8 +6790,8 @@
           brand.className = "brand";
           brand.textContent = paint.brand;
           line.append(makeSwatch(paint.colour), paint.name, brand);
-          const badge = haveBadge(paint);   // v17
-          if (badge) line.appendChild(badge);
+          const mark = haveMark(paint);   // v17, v50: a tick or a cross
+          if (mark) line.appendChild(mark);
           // Show the mix % when paints are mixed, or a single paint isn't 100% (e.g. thinned).
           if (sp.mix !== null && (mixed || sp.mix !== 100)) {
             const mix = document.createElement("span");
@@ -6703,14 +6799,29 @@
             mix.textContent = `${sp.mix}%`;
             line.appendChild(mix);
           }
-          li.appendChild(line);
+          body.appendChild(line);
         }
+        const options = [];
+        const facts = document.createElement("p");
+        facts.className = "step-facts";
+        facts.textContent = [coatsText(step.coats), step.ratio ? `mix ${step.ratio}` : "", step.optional ? "optional" : ""].filter(Boolean).join(" · ");
+        options.push(facts);
         if (step.note) {
           const note = document.createElement("p");
           note.className = "step-note";
           note.textContent = step.note;
-          li.appendChild(note);
+          options.push(note);
         }
+        const fold = stepFold(step, false);
+        body.appendChild(buildMoreInfo(options, { state: fold.options, id: `rstep-${i}-more`, openText: "More options", closeText: "Fewer options", className: "step-options" }));
+        if (step.optional) li.classList.add("optional-step");
+        li.append(foldStep({
+          number: i + 1, body, fold,
+          // v15: a blank technique shows the app's guess from the paints.
+          technique: () => step.technique || guessTechnique(step.paints.map(sp => paintById(sp.paint))) || "Step",
+          colours: () => step.paints.map(sp => paintById(sp.paint)).filter(Boolean).map(pt => pt.colour),
+          missing: () => anyStatusSet() && step.paints.some(sp => { const pt = paintById(sp.paint); return pt && !haveIt(pt); }),
+        }), body);
         steps.appendChild(li);
       });
       stepsCard.appendChild(steps);
@@ -7653,7 +7764,8 @@
       d.steps.forEach((step, si) => stepList.appendChild(buildStepEditor(d, step, si)));
       stepsCard.appendChild(stepList);
       const addStep = document.createElement("button");
-      addStep.className = "plain-button";
+      addStep.type = "button";
+      addStep.className = "plain-button add-step";
       addStep.textContent = "+ Add step";
       addStep.addEventListener("click", () => {
         d.steps.push(blankStep());
@@ -7702,12 +7814,19 @@
       }
     }
 
+    // v50: a step is folded to one line (number, technique, paints as small swatches). Open it to edit the paints. The technique, coats,
+    // mix ratio, note and "optional" sit behind More options inside the open step. A step nobody has filled in yet starts open.
     function buildStepEditor(d, step, si) {
       const li = document.createElement("li");
       li.className = "step-edit";
+      const fold = stepFold(step, !step.paints.some(p => p.name.trim()) && !step.technique);
+      const body = document.createElement("div");
+      body.className = "step-body";
+      body.id = `rstep-${si}`;
 
       const iconButton = (text, label, disabled, onClick, extraClass) => {
         const b = document.createElement("button");
+        b.type = "button";
         b.className = "icon-button" + (extraClass ? " " + extraClass : "");
         b.textContent = text;
         b.setAttribute("aria-label", label);
@@ -7721,9 +7840,7 @@
       };
       const head = document.createElement("div");
       head.className = "step-head";
-      const label = document.createElement("strong");
-      label.textContent = `Step ${si + 1}`;
-      head.append(label,
+      head.append(
         iconButton("↑", `Move step ${si + 1} up`, si === 0, () => move(-1)),
         iconButton("↓", `Move step ${si + 1} down`, si === d.steps.length - 1, () => move(+1)),
         iconButton("✕", `Remove step ${si + 1}`, false, () => {
@@ -7732,9 +7849,8 @@
           if (hasPaints) askYesNo(`Remove step ${si + 1}?`, remove, { danger: true });
           else remove();
         }, "remove"));
-      li.appendChild(head);
 
-      // Technique and number of coats.
+      // Technique and number of coats (shown under More options).
       const row = document.createElement("div");
       row.className = "row";
       const techLabel = document.createElement("label");
@@ -7751,9 +7867,8 @@
       coats.addEventListener("input", () => { step.coats = cleanCount(coats.value); });
       coatsLabel.append("Coats", coats);
       row.append(techLabel, coatsLabel);
-      li.appendChild(row);
 
-      // v15: a short note on how to do the step, and an "optional" tick.
+      // v15: a short note on how to do the step, and an "optional" tick (also under More options).
       const extra = document.createElement("div");
       extra.className = "row step-extra";
       const noteLabel = document.createElement("label");
@@ -7770,7 +7885,6 @@
       opt.addEventListener("change", () => { step.optional = opt.checked; });
       optLabel.append(opt, "Optional");
       extra.append(noteLabel, optLabel);
-      li.appendChild(extra);
 
       // The paints in this step.
       const warning = document.createElement("p");
@@ -7787,11 +7901,12 @@
       const mixInputs = [];
       let ratioBox = null;
       const mixTyped = () => { step.ratio = ""; if (ratioBox) ratioBox.value = ""; };
-      step.paints.forEach((paint, pi) => li.appendChild(buildPaintEditor(step, paint, si, pi, updateWarning, mixInputs, mixTyped)));
+      const paintBoxes = step.paints.map((paint, pi) => buildPaintEditor(step, paint, si, pi, updateWarning, mixInputs, mixTyped));
 
       // v15: mixing? Type a ratio like 2:1 and the %s are worked out for you.
+      let ratioLabel = null;
       if (step.paints.length > 1) {
-        const ratioLabel = document.createElement("label");
+        ratioLabel = document.createElement("label");
         ratioBox = document.createElement("input");
         ratioBox.placeholder = `e.g. ${step.paints.length === 2 ? "2:1" : "1:1:2"}`;
         ratioBox.setAttribute("aria-label", "Mix ratio");
@@ -7803,12 +7918,11 @@
           updateWarning();
         });
         ratioLabel.append("Mix ratio, paints in the order above (or set each %)", ratioBox);
-        li.appendChild(ratioLabel);
       }
       updateWarning();
-      li.appendChild(warning);
 
       const addPaint = document.createElement("button");
+      addPaint.type = "button";
       addPaint.className = "link-button";
       addPaint.style.justifySelf = "start";
       addPaint.style.padding = "4px 0";
@@ -7819,9 +7933,18 @@
         step.paints.push(blankPaint(null));
         if (even) resplit(step.paints);
         focusAfterRender = `step-${si}-paint-${step.paints.length - 1}`;
+        fold.open = true;
         renderRecipeEditor();
       });
-      li.appendChild(addPaint);
+
+      const options = buildMoreInfo([row, ...(ratioLabel ? [ratioLabel] : []), extra],
+        { state: fold.options, id: `rstep-${si}-more`, openText: "More options", closeText: "Fewer options", className: "step-options" });
+      body.append(head, ...paintBoxes, addPaint, warning, options);
+      li.append(foldStep({
+        number: si + 1, body, fold,
+        technique: () => step.technique || guessTechnique(step.paints) || "Step",
+        colours: () => step.paints.filter(p => p.name.trim()).map(p => p.colour),
+      }), body);
       return li;
     }
 
@@ -10509,6 +10632,7 @@
       if (recipeOwnCard && recipeOwnCard.isConnected) recipeOwnCard.refresh();
       if (recipeIdeasCard && recipeIdeasCard.isConnected) recipeIdeasCard.refresh();   // v28
     }
+    let ownInfoSeq = 0;   // v50: gives each redrawn "Do you own these?" More info its own id
     function buildOwnCard(choice, getPaints) {
       const card = document.createElement("div");
       card.className = "card own-check";
@@ -10523,10 +10647,12 @@
         if (!paints.length) return;
         const head = document.createElement("h2");
         head.textContent = "Do you own these?";
-        const hint = document.createElement("p");
-        hint.className = "hint";
-        hint.textContent = `${plural(paints.length, "paint")} will be new to your palette. Ones you own stay off the shopping list; `
+        const detail = document.createElement("p");
+        detail.className = "hint";
+        detail.textContent = `${plural(paints.length, "paint")} will be new to your palette. Ones you own stay off the shopping list; `
           + "ones you don't go on it. You can change any of them later on Your Palette.";
+        // v50: the explanation sits behind More info (its open state is kept while the app is open).
+        const hint = buildMoreInfo([detail], { state: infoState(recipeInfoDoor, "own-card"), id: `own-card-info-${++ownInfoSeq}`, label: "owning these paints" });
         const modes = document.createElement("div");
         modes.className = "chips";
         for (const [key, label] of [["all", "All"], ["none", "None"], ["pick", "Let me pick"]]) {
@@ -13711,11 +13837,11 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=49". v21.4 test checks.)
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=50". v21.4 test checks.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v49";
+    const APP_VERSION = "v50";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -14164,6 +14290,11 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v50", date: "20 Oct 2026", changes: [
+        "Recipes are less busy. A recipe card shows its name and colour dots, plus a short Have all or Missing line once you have marked your paints. The part, step count and units are behind More info.",
+        "Each step in a recipe is one line: its number, technique and small colour dots. Tap it to open the step. Coats, mix ratio, note and optional are under More options inside the open step. Add step and Save recipe stay in view.",
+        "Have and Missing now use the same small tick and cross marks as Your Palette, with a one-line key. The What can I paint now? hint, the Parts and techniques note and the other long explanations on the Recipes tab are behind More info.",
+      ]},
       { version: "v49", date: "19 Oct 2026", changes: [
         "Less busy: long explanations now sit behind a small More info button. In the Compendium, each paint row has its own, and so does each page's introduction.",
         "Your Palette has a List | Swatches switch. Swatches shows every paint as a small colour tile with a mark for its status (tick, half circle, ring, star, cross) and a key above. Tap a tile to open that paint. Name, brand, Merge and Remove are now under More options.",

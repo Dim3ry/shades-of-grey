@@ -104,7 +104,9 @@ with sync_playwright() as pw:
         check(f"{size}: editor guesses Contrast for step 2", auto2 == "Auto: Contrast", auto2)
         check(f"{size}: ratio box shown for mixed step", page.locator(".step-edit").nth(1).locator("input[aria-label='Mix ratio']").count() == 1)
         check(f"{size}: no ratio box for single paint", page.locator(".step-edit").nth(0).locator("input[aria-label='Mix ratio']").count() == 0)
-        # Typing a ratio fills in the %s.
+        # Typing a ratio fills in the %s. (v50: a step is one line until you open it, and the ratio is under More options.)
+        page.locator(".step-edit").nth(1).locator(".step-line").click()
+        page.locator(".step-edit").nth(1).locator(".more-info-button").click()
         box = page.locator(".step-edit").nth(1).locator("input[aria-label='Mix ratio']")
         box.fill("2:1")
         mixes = page.locator(".step-edit").nth(1).locator("input[aria-label='Mix %']").evaluate_all("els => els.map(e => e.value)")
@@ -129,11 +131,12 @@ with sync_playwright() as pw:
         check(f"{size}: Rocks saved as a material", rocks.get("type") == "material", rocks)
         check(f"{size}: saved book marked v15", saved.get("v15") is True)
 
-        # The recipe page.
+        # The recipe page. (v50: open every step and its More options to read the coats, mix, note and optional.)
+        page.evaluate("() => { document.querySelectorAll('#recipe-page .step-line').forEach(b => b.click()); document.querySelectorAll('#recipe-page .step-options .more-info-button').forEach(b => b.click()); }")
         text = page.locator("#recipe-page").inner_text() if page.locator("#recipe-page").count() else page.inner_text("body")
         check(f"{size}: view shows guessed Layer", "1. Layer" in text, text[:300])
         check(f"{size}: view shows Contrast and mix ratio", "2. Contrast" in text and "mix 2:1" in text)
-        check(f"{size}: view shows Varnish (optional)", "3. Varnish" in text and "(optional)" in text)
+        check(f"{size}: view shows Varnish (optional)", "3. Varnish" in text and "optional" in text)
         check(f"{size}: view shows Texture for rocks", "4. Texture" in text)
         check(f"{size}: view shows note", "heavier on the top" in text)
         check(f"{size}: optional step faded", page.locator("li.optional-step").count() == 1)

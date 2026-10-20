@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=49"></script>
+  <script src="early.js?v=50"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -801,6 +801,14 @@
       border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card); padding: 14px; display: grid; gap: 6px;
     }
     .recipe-item:hover { border-color: var(--accent); }
+    /* v50: a recipe card is the open button (name, colour dots, Have / Missing) with More info under it. */
+    li.recipe-card { background: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card); padding: 0 14px 0 0; display: grid; }
+    li.recipe-card:hover, li.recipe-card:focus-within { border-color: var(--accent); }
+    li.recipe-card > .recipe-item { border: 0; border-radius: var(--radius-card); background: transparent; padding: 14px 0 6px 14px; min-height: 44px; }
+    li.recipe-card > .more-info { padding-left: 10px; }
+    li.recipe-card .more-info-panel { padding: 0 0 8px 4px; }
+    li.recipe-card .meta { margin: 0; font-size: 13px; color: var(--muted); }
+    .recipe-status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
 
     /* Painting schemes (v9). A scheme card isn't one big button (it has buttons inside),
        so it doesn't light up on hover. Its faction colour shows as a top bar and tint. */
@@ -922,14 +930,31 @@
       padding: 10px; display: grid; gap: 10px;
     }
     .step-edit input, .step-edit select { background: var(--card); width: 100%; }
-    .step-head { display: flex; align-items: center; gap: 6px; }
-    .step-head strong { flex: 1; }
+    .step-head { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
     .step-edit .row { grid-template-columns: 1fr 88px; }
     /* v15: a step's note and "optional" tick, and the mix ratio box. */
     .step-edit .row.step-extra { grid-template-columns: 1fr auto; }
     .step-edit .check-label { display: flex; align-items: center; gap: 8px; align-self: end; min-height: 46px; color: var(--text); font-size: 15px; }
     .step-edit .check-label input { width: 22px; height: 22px; }
-    .recipe-steps li.optional-step { opacity: 0.6; }
+    /* v50: an optional step is shown by a dashed bar (the text keeps its full contrast). */
+    ol.recipe-steps > li.optional-step { border-left-style: dashed; }
+    /* v50: a step folded to one line: number, technique, small swatches, chevron. A real 44 px button. */
+    .step-line { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 0 4px; font: inherit; font-weight: 600; color: var(--text); background: transparent; border: 0; text-align: left; cursor: pointer; }
+    .step-line:hover { color: var(--accent); }
+    .step-line:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .step-line-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .step-line-swatches { display: inline-flex; gap: 3px; flex: none; }
+    .step-line .swatch { width: 14px; height: 14px; }
+    .step-line .have-mark { margin-left: 0; }
+    .step-line .fold-mark { margin-right: 4px; }
+    .step-line[aria-expanded="true"] .fold-mark { transform: rotate(-135deg) translate(-2px, -2px); }
+    .step-body { display: grid; gap: 10px; min-width: 0; padding: 4px 0 8px; }
+    .step-body[hidden] { display: none; }
+    .step-body .paint-line { margin-top: 0; }
+    .step-options .more-info-panel { padding-top: 4px; }
+    .step-facts { margin: 0; color: var(--muted); font-size: 14px; }
+    .have-key { margin: 0 0 10px; }
+    .add-step { width: 100%; min-height: 44px; border-color: var(--accent); color: var(--accent); font-weight: 600; }
     .step-note { margin: 4px 0 0; color: var(--muted); font-size: 14px; font-style: italic; }
     /* v16: Paste recipes preview and pot scan */
     .import-ask { padding: 10px 0; border-top: 1px solid var(--border); }
@@ -987,9 +1012,8 @@
     /* v21.1: on Your Palette the pill sits in a stacked grid, which stretched it across the
        whole row. "start" keeps it only as wide as its words. */
     .paint-text .status-pill { justify-self: start; margin-left: 0; }
-    .have-badge { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 999px; font-size: 12px; border: 1px solid; white-space: nowrap; }
-    .have-badge.have { color: var(--good); border-color: var(--good); background: var(--good-wash); }
-    .have-badge.missing { color: var(--bad); border-color: var(--bad); background: var(--bad-wash); }
+    /* v50: Have / Missing in a recipe are the small status marks (a tick or a cross), never a word badge. */
+    .have-mark { display: inline-flex; align-items: center; flex: none; margin-left: 6px; }
     /* v28: Colour ideas (Pro preview) in the recipe editor */
     .colour-ideas > summary { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-height: 44px; cursor: pointer; list-style: none; }
     .colour-ideas > summary::-webkit-details-marker { display: none; }
@@ -2152,11 +2176,11 @@
         </div>
         <button class="plain-button" id="paste-recipes" style="width: 100%; margin-bottom: 12px;">Paste recipes from your notes</button>
         <div class="chips" id="can-paint-box" style="margin: 0 0 6px;"></div>
-        <p class="hint" id="can-paint-hint" style="margin: 0 0 12px;"></p>
+        <div id="can-paint-hint" style="margin: 0 0 12px;"></div>
         <ul class="recipe-list" id="recipe-list"></ul>
         <details class="card" id="recipe-lists">
           <summary>Parts and techniques</summary>
-          <p class="hint" style="margin-top: 10px;">The choices offered when you write a recipe. You can also add new ones while writing.</p>
+          <div id="recipe-lists-info" style="margin-top: 6px;"></div>
           <div class="panel-field">Parts<div class="chips" id="part-chips" style="margin-top: 0;"></div></div>
           <div class="panel-field" style="margin-top: 12px;">Techniques<div class="chips" id="technique-chips" style="margin-top: 0;"></div></div>
         </details>
@@ -2661,7 +2685,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=49" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=50" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -2670,10 +2694,10 @@
        names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks.
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=49"></script>
-  <script src="schemes.js?v=49"></script>
-  <script src="detail-recipes.js?v=49"></script>
-  <script src="basing-tips.js?v=49"></script>
-  <script src="app.js?v=49"></script>
+  <script src="colour.js?v=50"></script>
+  <script src="schemes.js?v=50"></script>
+  <script src="detail-recipes.js?v=50"></script>
+  <script src="basing-tips.js?v=50"></script>
+  <script src="app.js?v=50"></script>
 </body>
 </html>
