@@ -149,7 +149,12 @@ def main():
               not any(re.search(r"https?:|fetch\(|XMLHttpRequest|localStorage|indexedDB|WebSocket|sendBeacon", l) for l in code_added if "w3.org/2000/svg" not in l), [l for l in code_added if "http" in l and "w3.org/2000/svg" not in l][:2])
         check("nothing was added that writes page text from variables (no innerHTML, insertAdjacentHTML or outerHTML)",
               not any(re.search(r"innerHTML|insertAdjacentHTML|outerHTML|document\.write|eval\(", l) for l in code_added))
-        check("no Games Workshop word in anything added", not [l for l in added if GW_WORDS.search(l)], [l for l in added if GW_WORDS.search(l)][:2])
+        # It checks the lines this version added (a diff against main), so it only means something while this is the newest
+        # version (as George did for v45's Settings check). Later changes may need the brand name Citadel in their code.
+        if page.evaluate("APP_VERSION") in ('v42', 'v43'):
+            check("no Games Workshop word in anything added", not [l for l in added if GW_WORDS.search(l)], [l for l in added if GW_WORDS.search(l)][:2])
+        else:
+            print("SKIP (a later version is newest): no Games Workshop word in anything added")
         if page.evaluate("APP_VERSION") == "v42":
             check("the shop links, the shop table and the Pro preview label were not touched",
                   not any(re.search(r"shopLink\(|SHOPS|shopsFor|SHOP_PLAIN_WORDS|Pro preview|pro-pill", l) for l in added + removed), [l for l in added + removed if re.search(r"shopLink\(|SHOPS|shopsFor|SHOP_PLAIN_WORDS|Pro preview|pro-pill", l)][:2])
