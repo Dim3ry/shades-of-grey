@@ -534,7 +534,7 @@ def main():
 
         # 4.17 Rename a faction (type a name)
         start(page); tab(page, "settings")
-        page.locator("#faction-colours-card .card-fold-button").click(); page.wait_for_timeout(100)   # v53: Faction colours folds shut as a whole card
+        page.evaluate("() => { const b = document.querySelector('#faction-colours-card .card-fold-button'); if (b && b.getAttribute('aria-expanded') !== 'true') b.click(); }"); page.wait_for_timeout(100)   # v53: Faction colours folds shut as a whole card (v54: open it only if it is shut, the cards now open when the app loads)
         page.locator('button[aria-label="Rename Ultramarines"]').click(); page.wait_for_timeout(150)
         check("rename faction: asks the same thing, with the old name in the box",
               asks(page, 'Rename "Ultramarines" on all 1 unit to:') and box_kind(page) == "text" and page.input_value("#dialog-input") == "Ultramarines", box_text(page))
