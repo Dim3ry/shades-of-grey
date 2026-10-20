@@ -190,7 +190,7 @@ def main():
               all("noopener" in g["rel"] and "noreferrer" in g["rel"] for g in got), got)
         check("the open shop's button is marked as open",
               page.get_attribute("#buy-bar button[data-shop='firestorm']", "aria-expanded") == "true")
-        check("the note says they're plain links", "Plain links" in page.inner_text("#buy-bar"))
+        check("the note says they're plain links (v52: in the Shopping list's More info)", "Plain links" in (page.locator("#shop-panel .more-info-panel").first.text_content() or ""))
         link_h = page.locator("#buy-links a").first.bounding_box()["height"]
         check("links are big enough to tap (44 px)", link_h >= 44, link_h)
         page.screenshot(path=f"{SHOTS}/v19_1-buy-links.png")

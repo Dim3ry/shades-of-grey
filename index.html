@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=51"></script>
+  <script src="early.js?v=52"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -1136,6 +1136,15 @@
     .more-info-panel { display: grid; gap: 8px; min-width: 0; }
     .more-info-panel[hidden] { display: none; }
     .more-info-panel > .hint { margin: 0; }
+    /* v52: More info on the Shopping list, Settings, Dashboard and Units (same button as the Compendium), and Help's topics in the same look. */
+    .card > .more-info { margin: 0 0 4px; }
+    .help summary { display: flex; align-items: center; gap: 10px; list-style: none; color: var(--text); }
+    .help summary::-webkit-details-marker { display: none; }
+    .help summary::after { content: "More info"; order: 1; margin-left: auto; font-size: 14px; font-weight: 400; color: var(--accent); }
+    .help details[open] > summary::after { content: "Less info"; }
+    .help summary::before { content: ""; order: 2; flex: none; width: 10px; height: 10px; border-right: 2px solid var(--accent); border-bottom: 2px solid var(--accent); transform: rotate(45deg) translate(-2px, -2px); transition: transform .15s; }
+    .help details[open] > summary::before { transform: rotate(-135deg) translate(-2px, -2px); }
+    .help summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .idea-more .more-info-button { font-size: 13px; }
     /* v49: the Compendium's action row: equal-width buttons across the card, and the shopping list fold-out as a full-width button */
     .fold-panel .share-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -2333,9 +2342,11 @@
             <li>Basing materials like rocks, sand, snow and static grass can go in a step too. They're listed in Your Palette as basing materials and kept out of the colour sort.</li>
             <li>For each paint, type its name and brand and tap the colour circle to pick roughly what it looks like. Paints you've used before are suggested as you type.</li>
             <li>Mixing paints? Add more than one paint to a step and type a <strong>mix ratio</strong> like 2:1, 1:1:2 or 50/50 (in the same order as the paints). The %s are worked out for you, or you can set each one's <strong>mix %</strong> yourself. Contrast Medium and Lahmian Medium are suggested as you type.</li>
+            <li id="help-recipe-steps">Each step is folded to one line. Tap it to open it. Inside, <strong>More options</strong> holds the technique, coats, mix ratio, note and the <strong>Optional</strong> tick.</li>
             <li>Reorder steps with <strong>↑ ↓</strong>. Nothing is saved until you press <strong>Save recipe</strong>.</li>
             <li>Link a recipe to units from the recipe (<strong>Used on</strong>) or from a unit's details. Linked recipes show as buttons on the unit's card: tap one to open it.</li>
             <li><strong>Your Palette</strong> (top of the Recipes tab) lists every paint in your recipes, once each. It fills itself in: add a paint to a recipe and it appears.</li>
+            <li id="help-palette-swatches"><strong>List or Swatches</strong> (top of Your Palette): Swatches shows each paint as a small colour tile with a mark for its status. Tap a tile to open that paint. In an open paint, <strong>More options</strong> holds its name, brand, colour, Merge and Remove.</li>
             <li>In Your Palette, sort by colour, name or brand, and tap a brand to show only its paints. Tap a paint to change its colour, name or brand: the change applies in every recipe that uses it.</li>
             <li>At the bottom of an open paint: <strong>Remove</strong> deletes a paint no recipe uses (a paint that's still in a recipe can't be removed). <strong>Merge into…</strong> joins it to another paint, handy for a typo twin like "Deep Bluee": its recipes move to the paint you pick, and that paint keeps its own name and brand. Both have Undo.</li>
             <li><strong>📷 Scan a paint pot</strong> (in Your Palette) reads the paint's name from its label with the camera and suggests matches. The reading happens on your phone; the photo is never sent anywhere. The first scan loads the label reader (about 11 MB) from Minifolio's own site, and after that scanning works with no internet. Leaving the app, or closing the scan panel, switches the camera off.</li>
@@ -2343,6 +2354,7 @@
             <li>Typed a paint into a recipe that isn't in Your Palette yet? Above <strong>Save recipe</strong>, <strong>Do you own these?</strong> asks about the new paints: <strong>All</strong> (Owned), <strong>None</strong> (Not owned, so they go on the shopping list) or <strong>Let me pick</strong> (tap a paint to untick it).</li>
             <li id="help-shop"><strong>🛒 Shopping list</strong> (in Your Palette) lists paints that are running low, empty, on your wishlist, or used in a recipe but not owned, grouped by brand. <strong>Buy these</strong> at the top has a button for each shop that sells them (Firestorm Games, Wayland Games, Element Games, and The Army Painter for Army Painter paints). Tap a shop for one search link per paint; each opens that shop's own search in a new tab. They're plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop. The link searches for the paint's name, so the results can include other brands' paints with the same name: check you've got the right pot before you buy.</li>
             <li id="help-shop-links"><strong>Shop links on suggested paints</strong> (Pro preview): under a suggested paint you don't own, in the colour wheel's paint panel and in <strong>Colour ideas</strong> (in a recipe and in the Compendium), tap <strong>Shop links</strong> to open a small fold-out. It has <strong>Add to shopping list</strong> (Undo is offered) and a plain search link for each shop that sells the paint. Paints you own show nothing. They're plain links, the same as in Buy these: Minifolio isn't paid for them, and only the paint's name goes to the shop. To hide every shop link and shop button, including Buy these, untick <strong>Settings → Shop links</strong>. Your shopping list stays.</li>
+            <li id="help-compendium-ticks">In the <strong>Compendium</strong>, tick the paints you want from a scheme or detail recipe, or press <strong>Select all</strong>. <strong>Add to shopping list</strong> is grey until you tick something, then adds only the ticked paints. A paint you own, or that is already on the list, shows a mark instead of a tick box. <strong>Copy as text</strong> and <strong>Save into a new recipe</strong> use the ticked paints, or all of them if none is ticked.</li>
             <li><strong>Schemes</strong> (top of the Recipes tab) group the recipes you use for one faction, e.g. "My Blue Army" = armour, trim, lenses and base. Press <strong>+ New scheme</strong>, name it, type the faction and tick its recipes.</li>
             <li><strong>Apply to … units</strong> links a scheme's recipes to every unit in its faction that doesn't have them all yet. Recipes a unit already has stay linked.</li>
             <li>With <strong>New units … get these recipes automatically</strong> ticked, any unit you add to that faction later (by hand or by import) gets the scheme straight away.</li>
@@ -2447,7 +2459,7 @@
     <section id="view-updates" class="hidden">
       <div class="card">
         <h2>Tell us what you think</h2>
-        <p class="hint">Found a bug, or wish the app did something? A short form, about 2 minutes. Every reply is read.</p>
+        <p class="hint" id="feedback-explain">Found a bug, or wish the app did something? A short form, about 2 minutes. Every reply is read.</p>
         <a class="primary-button" id="feedback-link" target="_blank" rel="noopener noreferrer"
            style="display: block; text-align: center; text-decoration: none;">Give feedback</a>
         <p class="hint hidden" id="feedback-soon" style="margin: 0;">The feedback form is coming very soon. Until then, please send your thoughts to the person who shared the app with you.</p>
@@ -2475,7 +2487,7 @@
           <button class="plain-button" id="restore-button" style="grid-column: 1 / -1;">Restore backup</button>
         </div>
         <p class="hint" id="backup-age" style="margin: 12px 0 0;"></p>
-        <p class="hint" style="margin: 8px 0 0;">
+        <p class="hint" id="backup-explain" style="margin: 8px 0 0;">
           Save backup is small and quick but leaves out photos. Save full backup with photos
           makes one bigger file with everything. Restore backup reads either kind.
         </p>
@@ -2489,7 +2501,7 @@
 
       <div class="card">
         <h2>Stages</h2>
-        <p class="hint">Rename, reorder (↑ ↓), add or remove stages. Units move with their stage when you reorder. Changes apply when you press Save.</p>
+        <p class="hint" id="stages-explain">Rename, reorder (↑ ↓), add or remove stages. Units move with their stage when you reorder. Changes apply when you press Save.</p>
         <ol class="stage-list" id="stage-list"></ol>
         <button class="link-button" id="add-stage">+ Add stage</button>
         <label class="hint" style="display: grid; gap: 6px; margin: 8px 0 0;">
@@ -2530,7 +2542,7 @@
         <h2>Counting visits</h2>
         <label class="check-label count-label"><input type="checkbox" id="count-visits"> Count my visits (anonymous)</label>
         <p class="hint" id="counting-note" style="margin: 6px 0 0;"></p>
-        <p class="hint" style="margin: 6px 0 0;">Takes effect the next time the app opens. Details: Help → Privacy.</p>
+        <p class="hint" id="counting-effect" style="margin: 6px 0 0;">Takes effect the next time the app opens. Details: Help → Privacy.</p>
       </div>
 
       <!-- v39: Shop links. One tick box; on by default; not in backups. See "v39: THE SHOP LINKS SWITCH" in app.js. -->
@@ -2633,7 +2645,7 @@
         </div>
         </div></div>
 
-        <p class="hint" style="margin: 12px 0 0;">
+        <p class="hint" id="import-explain" style="margin: 12px 0 0;">
           Export CSV gives you a spreadsheet of your collection (no photos), which Import CSV can read back.
           CSV columns: name, game, faction, stage, nickname, count, repaint, notes.
           Only name is needed. Stage should match one of your stages. Repeat a row for
@@ -2653,7 +2665,7 @@
         <!-- v44: bring the example recipes, schemes and paints back (for anyone). -->
         <div id="restore-examples-section" style="margin: 0 0 12px;">
           <h3 style="margin: 4px 0 0;">Restore example recipes</h3>
-          <p class="hint" style="margin: 4px 0 8px;">Adds the example recipes, schemes and paints back if you cleared them. Your own recipes, schemes and paints are never changed, and nothing is added twice. Examples you kept as your own count as already here.</p>
+          <p class="hint" id="restore-examples-hint" style="margin: 4px 0 8px;">Adds the example recipes, schemes and paints back if you cleared them. Your own recipes, schemes and paints are never changed, and nothing is added twice. Examples you kept as your own count as already here.</p>
           <button class="plain-button" id="restore-examples" type="button">Restore example recipes</button>
         </div>
         <!-- v14: safety copies kept by Delete all, Replace and Restore, for 30 days. -->
@@ -2700,7 +2712,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=51" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=52" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -2709,10 +2721,10 @@
        names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks.
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=51"></script>
-  <script src="schemes.js?v=51"></script>
-  <script src="detail-recipes.js?v=51"></script>
-  <script src="basing-tips.js?v=51"></script>
-  <script src="app.js?v=51"></script>
+  <script src="colour.js?v=52"></script>
+  <script src="schemes.js?v=52"></script>
+  <script src="detail-recipes.js?v=52"></script>
+  <script src="basing-tips.js?v=52"></script>
+  <script src="app.js?v=52"></script>
 </body>
 </html>

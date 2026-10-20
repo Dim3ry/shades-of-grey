@@ -175,11 +175,11 @@ def main():
               all(titles.index("Backups") < titles.index(t) for t in ["Stages", "Appearance", "Colours"]), titles)
         check("the old 'Import and backup' heading is gone and Import has its own card", "Import and backup" not in titles and "Import" in titles, titles)
         inside = page.evaluate("""() => { const c = document.getElementById('backup-card');
-            return { ids: [...c.querySelectorAll('button, input')].map(b => b.id),
-                     labels: [...c.querySelectorAll('button')].map(b => b.textContent.trim()),
+            return { ids: [...c.querySelectorAll('button:not(.more-info-button), input')].map(b => b.id),
+                     labels: [...c.querySelectorAll('button:not(.more-info-button)')].map(b => b.textContent.trim()),
                      age: !!c.querySelector('#backup-age'), hint: !!c.querySelector('#share-hint') }; }""")
         # v46 added "Send full backup with photos to…" straight after Save full backup, so the card now holds five buttons.
-        check("the Backups card holds the five buttons, the restore file box, the last-backed-up line and the hint",
+        check("the Backups card holds the five buttons, the restore file box, the last-backed-up line and the hint (v52: the hint sits behind its More info)",
               inside["ids"] == ["export-button", "share-button", "full-export-button", "full-share-button", "restore-button", "restore-file"] and inside["age"] and inside["hint"], inside)
         check("button words: Save backup, Send backup to…, Save full backup with photos, Send full backup with photos to…, Restore backup",
               inside["labels"] == ["Save backup", "Send backup to…", "Save full backup with photos", "Send full backup with photos to…", "Restore backup"], inside["labels"])
@@ -301,7 +301,7 @@ def main():
                 seed(page, settings=full_settings(appearance=appearance))
                 tag = f"{appearance}-{width}"
                 st = page.evaluate("""() => { const c = document.getElementById('backup-card').getBoundingClientRect();
-                    const bs = [...document.querySelectorAll('#backup-card button')].map(b => { const r = b.getBoundingClientRect(); return { h: r.height, l: r.left, r: r.right, w: r.width }; });
+                    const bs = [...document.querySelectorAll('#backup-card button:not(.more-info-button)')].map(b => { const r = b.getBoundingClientRect(); return { h: r.height, l: r.left, r: r.right, w: r.width }; });
                     return { top: c.top, bottom: c.bottom, left: c.left, right: c.right, bs, vh: window.innerHeight, vw: window.innerWidth }; }""")
                 check(f"{tag}: the Backups card is at the top of the page and on screen", 0 <= st["top"] < 200 and st["left"] >= 0 and st["right"] <= st["vw"] + 0.5, st)
                 check(f"{tag}: every backup button is at least 44 px tall", all(b["h"] >= 43.5 for b in st["bs"]), [b["h"] for b in st["bs"]])

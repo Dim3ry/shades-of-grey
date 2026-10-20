@@ -2357,12 +2357,6 @@
         }
         bar.appendChild(list);
       }
-      const note = document.createElement("p");
-      note.className = "hint";
-      note.textContent = shopLinksOpen
-        ? "Each link opens the shop's own search for that paint. " + SHOP_PLAIN_WORDS
-        : "Tap a shop to see a search link for each paint it sells.";
-      bar.appendChild(note);
       return bar;
     }
 
@@ -2377,18 +2371,35 @@
       const title = document.createElement("h2");
       title.textContent = "Shopping list";
       title.style.fontSize = "18px";
-      const sub = document.createElement("p");
-      sub.className = "hint";
-      sub.style.margin = "0 0 10px";
-      sub.textContent = !items.length ? "Nothing to buy. Paints you add from your recipes and from colour suggestions land here, once each, and you can mark paints on Your Palette too."
-        : `${plural(items.length, "paint")} to get: running low, empty, wishlist, and paints your recipes use that you don't have. Each paint is listed once, with where it came from.`;
-      card.append(title, sub);
-      if (items.length && !anyStatusSet()) {
-        const warn = document.createElement("p");
-        warn.className = "hint";
-        warn.style.margin = "0 0 10px";
-        warn.textContent = "No statuses set yet, so every paint your recipes use is listed as missing. Mark what you own to make it accurate.";
-        card.appendChild(warn);
+      card.append(title);
+      if (!items.length) {
+        const empty = document.createElement("p");
+        empty.className = "hint";
+        empty.style.margin = "0 0 10px";
+        empty.textContent = "Nothing to buy. Paints you add from your recipes and from colour suggestions land here, once each, and you can mark paints on Your Palette too.";
+        card.append(empty);
+      } else {
+        // v52: the explanations sit behind one More info: what the list holds, the no-statuses warning, how the shop bar works.
+        const notes = [];
+        const sub = document.createElement("p");
+        sub.className = "hint";
+        sub.textContent = `${plural(items.length, "paint")} to get: running low, empty, wishlist, and paints your recipes use that you don't have. Each paint is listed once, with where it came from.`;
+        notes.push(sub);
+        if (!anyStatusSet()) {
+          const warn = document.createElement("p");
+          warn.className = "hint";
+          warn.textContent = "No statuses set yet, so every paint your recipes use is listed as missing. Mark what you own to make it accurate.";
+          notes.push(warn);
+        }
+        if (shopLinksOn()) {
+          const shops = document.createElement("p");
+          shops.className = "hint";
+          shops.textContent = "Tap a shop under Buy these to see a search link for each paint it sells. Each link opens the shop's own search for that paint. " + SHOP_PLAIN_WORDS;
+          notes.push(shops);
+        }
+        const more = pageMoreInfo("shopping", notes, { label: "Shopping list" });
+        more.classList.add("shop-more-info");
+        card.append(more);
       }
       if (items.length) {
         if (shopLinksOn()) card.appendChild(buildBuyBar(items));   // v19.1: shop links at the top (v39: unless Settings -> Shop links is off)
@@ -5021,8 +5032,11 @@
         const strong = document.createElement("strong");
         strong.textContent = examples.length === 1 ? "This is an example." : "These are examples.";
         const names = examples.map(m => displayName(m)).join(", ");
-        text.append(strong, ` The app starts with ${examples.length === 1 ? "an example unit" : plural(examples.length, "example unit")} ` +
-          `(${names}) so you can try things out. Clear ${examples.length === 1 ? "it" : "them"} when you're ready to add your own.`);
+        const why = document.createElement("p");
+        why.className = "hint";
+        why.textContent = `The app starts with ${examples.length === 1 ? "an example unit" : plural(examples.length, "example unit")} ` +
+          `(${names}) so you can try things out. Clear ${examples.length === 1 ? "it" : "them"} when you're ready to add your own.`;
+        text.append(strong);   // v52: the explanation sits behind More info
         const buttons = document.createElement("div");
         buttons.className = "button-grid";
         const clear = document.createElement("button");
@@ -5036,7 +5050,7 @@
         keep.textContent = examples.length === 1 ? "Keep it" : "Keep them";
         keep.addEventListener("click", keepExamples);
         buttons.append(clear, keep);
-        card.append(text, buttons);
+        card.append(text, pageMoreInfo(id, [why], { label: "Examples" }), buttons);
       }
     }
     function clearExamples() {
@@ -8438,6 +8452,47 @@
     function infoState(door, key) {
       const all = door.state.info || (door.state.info = {});
       return all[key] || (all[key] = { open: false });
+    }
+    // v52: the pages outside the Compendium (Shopping list, Settings, Dashboard, Units) keep each More info's open or closed state here, one
+    // entry per key, only while the app is open. Nothing is saved. (The door is made on first use, so it is safe to call from anywhere.)
+    function pageMoreInfo(key, nodes, o) {
+      pageMoreInfo.door = pageMoreInfo.door || { state: { info: {} } };
+      return buildMoreInfo(nodes, Object.assign({ state: infoState(pageMoreInfo.door, key), id: "more-" + key }, o || {}));
+    }
+    // v52: tuck the explanations on Settings and Updates behind one More info per card. The controls stay where they are (Backups stay at 44 px
+    // and in view); only the text moves. The nodes keep their ids, so the code that writes into them (appearance-note, counting-note...) is
+    // unchanged. Run once at start-up. The More info goes where the first moved line was.
+    function foldPageText() {
+      const groups = [
+        ["backups", "Backups", ["backup-explain", "share-hint"]],
+        ["stages", "Stages", ["stages-explain"]],
+        ["appearance", "Appearance", ["appearance-note"]],
+        ["counting", "Counting visits", ["counting-note", "counting-effect"]],
+        ["shoplinks", "Shop links", ["shoplinks-note"]],
+        ["faction-colours", "Faction colours", ["faction-colour-hint"]],
+        ["import", "Import", ["import-explain"]],
+        ["your-data", "Your data", ["data-summary", "photo-summary", "storage-note", "restore-examples-hint"]],
+        ["feedback", "Tell us what you think", ["feedback-explain"]],
+      ];
+      for (const [key, label, ids] of groups) {
+        const nodes = ids.map(id => document.getElementById(id)).filter(Boolean);
+        if (!nodes.length || document.getElementById("more-" + key)) continue;
+        const spot = document.createComment("more-info");
+        nodes[0].before(spot);
+        for (const node of nodes) node.style.margin = "0";
+        spot.replaceWith(pageMoreInfo(key, nodes, { label }));
+      }
+    }
+    // v52: Help's topics are native folds (so links and the Back button still open them). The look (a "More info" / "Less info" word and a
+    // chevron) is in the style sheet; this only tells screen readers whether each one is open.
+    function markHelpFolds() {
+      for (const box of document.querySelectorAll("#view-help .help details")) {
+        const summary = box.querySelector(":scope > summary");
+        if (!summary) continue;
+        const sync = () => summary.setAttribute("aria-expanded", String(box.open));
+        box.addEventListener("toggle", sync);
+        sync();
+      }
     }
     // The Compendium's rows are plain boxes (no recipe to add to), so their reasons and notes sit behind More info.
     function compactRows(door) { return !!door.short && !door.addStep && !door.addSteps; }
@@ -13940,11 +13995,11 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=51". v21.4 test checks.)
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=52". v21.4 test checks.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v51";
+    const APP_VERSION = "v52";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -14393,6 +14448,12 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v52", date: "20 Oct 2026", changes: [
+        "The Shopping list is tidier. Your paints, the Copy as text button and the basket count stay in view. The explanations (what the list holds, the no-statuses warning and how the shop buttons work) are behind one More info.",
+        "Settings is tidier. Each card keeps its buttons and switches in view, and its explanation sits behind a More info. Backups stay big and easy to reach.",
+        "On the Dashboard and Units, the note about the example units is behind More info.",
+        "Help topics use the same More info and Less info words and the same arrow. Help also has new lines for the Swatches switch and More options, the folded steps in recipes, and the Compendium tick boxes with Select all and Add to shopping list.",
+      ]},
       { version: "v51", date: "20 Oct 2026", changes: [
         "In the Compendium, the paints in Starter schemes, Your schemes and Detail recipes now have a tick box on the left, and a Select all row above each list.",
         "Add to shopping list sits under the list. It is small and grey until you tick something, then it turns into a full-width button that shows how many paints it will add. It adds only the ticked paints, and one Undo takes them all off again.",
@@ -14479,6 +14540,8 @@
     applyPalette(settings.palette);
     seedExampleRecipes();   // v24: only on a brand-new start
     planFeedbackPrompt();   // v25: decides whether the feedback card shows today (saved by the render below)
+    foldPageText();   // v52
+    markHelpFolds();   // v52
     render();
     countThisVisit();   // v27: one anonymous visit count (only from minifolio.app, and only if switched on)
     startPhotos();   // moves any old photos across, then loads thumbnails (in the background)
