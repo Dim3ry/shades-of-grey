@@ -2212,10 +2212,11 @@
         el.className = "idea-tag " + t.cls;
         el.textContent = t.text;
       }
+      for (const el of document.querySelectorAll(".pick-set")) if (el.refreshPicks) el.refreshPicks();   // v51: the tick boxes follow the list too
     }
-    // ----- v42: "Add paints to shopping list" on the Compendium's schemes (Starter schemes and Your schemes) -----
-    // One small, closed fold-out under a scheme's paints (it looks like the "Shop links" fold-outs: same classes, no new styles). Inside, one
-    // button puts every paint of the scheme that you do NOT have on the one shared shopping list, remembering "Scheme: <name>".
+    // ----- v42: adding a scheme's paints to the shopping list (v51: from the tick boxes in the Compendium) -----
+    // One button puts the paints you picked on the one shared shopping list, remembering "Scheme: <name>". Since v51 the paints come from the
+    // tick boxes under Starter schemes, Your schemes and Detail recipes (see buildPick); the closed "Shopping list" fold-out of v42 is gone.
     // It uses the single-paint pieces (findOrAddPaint, applyPaintStatus, noteShopSource), so there is still one list, one entry per paint
     // and one place for the sources. Paints you own (or have running low) are skipped; paints already on the list are not added twice;
     // a paint that is only in the built-in list is added to your palette as Wishlist, exactly as the single Add does.
@@ -2262,43 +2263,6 @@
       } else showNotSaved();
       return added;
     }
-    function buildSchemeShopFoldout(paints, source) {
-      if (!paints || !paints.length) return null;
-      const box = document.createElement("details");
-      box.className = "shop-more scheme-shop";
-      const summary = document.createElement("summary");
-      summary.textContent = "Shopping list";
-      summary.setAttribute("aria-label", "Shopping list for this scheme");
-      const body = document.createElement("div");
-      body.className = "shop-body";
-      const slot = document.createElement("div");
-      slot.className = "shop-add";
-      box.redrawAdd = () => {   // run again by updateShopFoldouts after every add and Undo, so the words and the button stay right
-        slot.replaceChildren();
-        const n = schemePaintsToAdd(paints).length;
-        const say = document.createElement("p");
-        say.className = "hint";
-        say.tabIndex = -1;
-        say.textContent = n
-          ? `${plural(n, "paint")} in this scheme ${n === 1 ? "is" : "are"} not on your shopping list yet. Paints you own are left out.`
-          : "Nothing to add: you own these paints, or they are already on your shopping list.";
-        slot.appendChild(say);
-        if (n) {
-          const add = document.createElement("button");
-          add.type = "button";
-          add.className = "plain-button";
-          add.textContent = "Add paints to shopping list";
-          add.setAttribute("aria-label", `Add ${plural(n, "paint")} from this scheme to your shopping list`);
-          add.addEventListener("click", () => { if (addSchemePaintsToShoppingList(paints, source)) { const s = slot.querySelector(".hint"); if (s) s.focus(); } });
-          slot.appendChild(add);
-        }
-      };
-      box.redrawAdd();
-      body.appendChild(slot);
-      box.append(summary, body);
-      return box;
-    }
-
     // The fold-out for one paint. Returns null when there is nothing to show (you own it, switched off, or no shop sells it).
     function buildShopFoldout(paint, owned, source) {
       if (owned || !shopLinksOn() || !paint || !String(paint.name || "").trim()) return null;
@@ -8097,6 +8061,7 @@
     let compendiumState = { base: "", role: "glow", scheme: "", mood: "", detail: "", detailGroup: "", basing: "", basingGroup: "", faction: "", wheel: "", wheelOthers: {},
                             open: {}, view: "themes", combo: "", wheelMore: {}, search: { starter: "", detail: "", basing: "" },
                             paintOpen: "",   // v38: paintOpen = the key of the wheel paint whose "matching colours" panel is open ("" = none)
+                            ticks: {},   // v51: the paints ticked in each list (a Set per list), kept only while the app is open
                             wheelZoom: "", wheelGroup: "" };   // v43: wheelZoom = the hue colour the picture is drilled into ("" = the whole wheel), wheelGroup = its open group ("" = none)
 
     // v35: ONE set of building blocks, TWO doors. The parts of the Colour ideas card (the ideas, Your schemes, Starter schemes,
@@ -8495,12 +8460,134 @@
       return wrap;
     }
 
+    // v51: tick boxes for the Compendium's paint lists (Starter schemes, Your schemes, Detail recipes). Each paint row gets a 44 px tick box at
+    // the left, the list gets a "Select all" row above it, and under it sits the one "Add to shopping list" button: small and grey while
+    // nothing is ticked (buildIdleShop), a full-width primary button with the count once something is. It adds only the ticked paints, through
+    // addSchemePaintsToShoppingList (one message, one Undo). Copy as text and Save into a new recipe use the ticked paints, or all of them
+    // when none is ticked. A paint you own (running low counts) or that is already on the list shows its status mark (statusMarker) where the
+    // tick box would be, and its row's More info says why. Ticks are kept only while the app is open (door.state.ticks); nothing is saved.
+    let pickSeq = 0;
+    const pickKey = (paint) => sameKey(tidyBrand(paint.brand)) + "|" + sameKey(paint.name);
+    function pickable(door) { return !!door.schemeShop && compactRows(door); }
+    // Why a paint cannot be ticked, or null when it can: { status, text }.
+    function pickBlocked(paint) {
+      const mine = palettePaintFor(paint);
+      if (mine && haveIt(mine)) {
+        const low = paintStatus(mine) === "low";
+        return { status: paintStatus(mine), text: low ? "You have this paint, running low, so it is left off the shopping list." : "You own this paint, so it is left off the shopping list." };
+      }
+      if (onShoppingList(paint)) return { status: paintStatus(mine), text: "This paint is already on your shopping list." };
+      return null;
+    }
+    // o = { id, source, head, foot }. Call pick.row(paint, line, step) for each row in order, then pick.finish().
+    // pick.all = the Select all row, pick.actions = the Add button, pick.shareLines / pick.shareSteps = what Copy and Save use.
+    function buildPick(door, o) {
+      const allTicks = door.state.ticks || (door.state.ticks = {});
+      const ticked = allTicks[o.id] || (allTicks[o.id] = new Set());
+      const dom = String(o.id).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "list";   // a safe page id (a faction name can hold spaces or anything)
+      const entries = [], rows = [];
+      const live = () => new Set(entries.filter(e => !pickBlocked(e.paint)).map(e => pickKey(e.paint)));
+
+      const selectAll = document.createElement("button");
+      selectAll.type = "button";
+      selectAll.className = "pick-all";
+      selectAll.id = door.id(dom + "-all");
+      selectAll.setAttribute("role", "checkbox");
+      const allBox = document.createElement("span");
+      allBox.className = "pick-box";
+      allBox.setAttribute("aria-hidden", "true");
+      const allText = document.createElement("span");
+      allText.textContent = "Select all";
+      selectAll.append(allBox, allText);
+
+      const actions = document.createElement("div");
+      actions.className = "pick-actions pick-set";
+      const add = document.createElement("button");
+      add.type = "button";
+      add.className = "primary-button pick-add";
+      add.id = door.id(dom + "-add");
+
+      const picked = () => entries.filter(e => ticked.has(pickKey(e.paint)) && !pickBlocked(e.paint));
+      const chosen = () => { const some = picked(); return some.length ? some : entries; };
+
+      const refresh = () => {
+        const ok = live();
+        for (const k of [...ticked]) if (!ok.has(k)) ticked.delete(k);
+        for (const r of rows) {
+          const blocked = pickBlocked(r.paint);
+          const state = blocked ? "b:" + blocked.status : "t";
+          if (r.state !== state) {   // only swap when the paint changed; a tick box that has focus must stay put
+            r.state = state;
+            r.slot.replaceChildren(blocked ? statusMarker(blocked.status || "notowned") : r.tick);
+          }
+          r.note.textContent = blocked ? blocked.text : "";
+          r.note.hidden = !blocked;
+          r.tick.setAttribute("aria-checked", String(ticked.has(r.key)));
+        }
+        const n = ticked.size;
+        selectAll.setAttribute("aria-checked", !n || !ok.size ? "false" : n === ok.size ? "true" : "mixed");
+        selectAll.setAttribute("aria-disabled", String(!ok.size));
+        const mode = n ? "add" : "idle";
+        if (actions.dataset.mode !== mode) {
+          actions.dataset.mode = mode;
+          actions.replaceChildren(n ? add : buildIdleShop(door, dom + "-idle", "Select paints to generate a shopping list"));
+        }
+        add.textContent = `Add to shopping list (${n})`;
+      };
+      actions.refreshPicks = refresh;
+
+      selectAll.addEventListener("click", () => {
+        const ok = live();
+        if (!ok.size) return;
+        if ([...ok].every(k => ticked.has(k))) ticked.clear(); else for (const k of ok) ticked.add(k);
+        refresh();
+      });
+      add.addEventListener("click", () => {
+        const seen = new Set(), paints = [];
+        for (const e of picked()) { const k = pickKey(e.paint); if (!seen.has(k)) { seen.add(k); paints.push(e.paint); } }
+        if (addSchemePaintsToShoppingList(paints, o.source)) selectAll.focus();   // the button has gone, so focus moves to Select all
+      });
+
+      return {
+        all: selectAll,
+        actions,
+        row(paint, line, step) {
+          const key = pickKey(paint);
+          entries.push({ paint, line, step });
+          const nameId = door.id("pick-name-" + (++pickSeq));
+          const slot = document.createElement("span");
+          slot.className = "pick-slot";
+          const tick = document.createElement("button");
+          tick.type = "button";
+          tick.className = "pick-tick";
+          tick.setAttribute("role", "checkbox");
+          tick.setAttribute("aria-labelledby", nameId);   // the row's own name is the label, so no paint name sits in an aria-label
+          const box = document.createElement("span");
+          box.className = "pick-box";
+          box.setAttribute("aria-hidden", "true");
+          tick.appendChild(box);
+          tick.addEventListener("click", () => { if (ticked.has(key)) ticked.delete(key); else ticked.add(key); refresh(); });
+          const note = document.createElement("p");
+          note.className = "hint";
+          note.hidden = true;
+          const r = { key, paint, slot, tick, note, state: "" };
+          rows.push(r);
+          return { slot, note, nameId };
+        },
+        finish: refresh,
+        shareLines: () => [...(o.head || []), ...chosen().map(e => e.line), ...(o.foot || [])],
+        shareSteps: () => chosen().map(e => e.step),
+      };
+    }
+
     // v30: rows outside the main three ideas carry the class "idea-pick" instead of "idea" (same look, see index.html).
     // v35: with no onAdd (the Compendium has no recipe to add to) the row is plain text in a box: same look, no button, no "+ Add" line.
     // v38: a door that has no recipe but does have "links" (the Compendium) can hand in a 7th argument, link = { expanded, controls, onToggle(li) }.
     // The row is then a button (still the same look and the same classes as the plain row, so nothing else about it changes) that opens
     // and closes a short panel for that paint. It says whether the panel is open (aria-expanded) and, while it is open, which panel it controls.
-    function buildIdeaItem(paint, tag, reason, note, onAdd, extraClass, link, compact) {
+    // v51: a 9th argument, pick = { slot, note, nameId } from buildPick: the tick box goes at the left of the row, the name carries the id the
+    // tick box is labelled by, and the "why can't I tick this" line goes inside the row's More info.
+    function buildIdeaItem(paint, tag, reason, note, onAdd, extraClass, link, compact, pick) {
       const li = document.createElement("li");
       const button = document.createElement(onAdd || link ? "button" : "div");
       if (onAdd) {
@@ -8521,6 +8608,7 @@
       const name = document.createElement("span");
       name.className = "idea-name";
       name.append(paint.name);
+      if (pick) name.id = pick.nameId;
       if (paint.brand) {
         const brand = document.createElement("small");
         brand.textContent = paint.brand;
@@ -8540,7 +8628,9 @@
       }
       text.append(name, tagEl);
       if (compact && !onAdd && !link) {   // v49: the reason and note sit behind a small More info (Compendium rows)
-        text.appendChild(buildMoreInfo(noteEl ? [why, noteEl] : [why], { className: "idea-more" }));
+        const more = noteEl ? [why, noteEl] : [why];
+        if (pick) more.push(pick.note);
+        text.appendChild(buildMoreInfo(more, { className: "idea-more" }));
       } else {
         text.appendChild(why);
         if (noteEl) text.appendChild(noteEl);
@@ -8556,6 +8646,7 @@
         open.textContent = "Matching colours";
         text.appendChild(open);
       }
+      if (pick) button.append(pick.slot);
       button.append(makeSwatch(paint.colour), text);
       if (onAdd) button.addEventListener("click", onAdd);
       else if (link && link.onToggle) button.addEventListener("click", () => link.onToggle(li));
@@ -8570,20 +8661,22 @@
       if (!door.share) return null;
       const row = document.createElement("div");
       row.className = "share-row";
+      // v51: lines and steps may be functions, worked out when the button is tapped (the Compendium uses the ticked paints, or all of them)
+      const get = (v) => (typeof v === "function" ? v() : v);
       const copy = document.createElement("button");
       copy.type = "button";
       copy.className = "plain-button";
       copy.textContent = "Copy as text";
       copy.setAttribute("aria-label", `Copy ${what} as text`);
-      copy.addEventListener("click", () => door.share.copy(lines.join("\n"), what));
+      copy.addEventListener("click", () => door.share.copy(get(lines).join("\n"), what));
       row.appendChild(copy);
-      if (steps && steps.length) {
+      if (steps && (typeof steps === "function" || steps.length)) {
         const start = document.createElement("button");
         start.type = "button";
         start.className = "plain-button";
         start.textContent = "Save into a new recipe…";
         start.setAttribute("aria-label", `Save ${what} into a new recipe`);
-        start.addEventListener("click", () => door.share.startRecipe(steps));
+        start.addEventListener("click", () => door.share.startRecipe(get(steps)));
         row.appendChild(start);
       }
       return row;
@@ -8699,22 +8792,23 @@
       list.id = door.id("faction-history-list");
       const shown = history.list.slice(0, FACTION_HISTORY_SHOWN);
       const lines = [`Colours used on this faction before: ${colourWordList(names)}`], steps = [];
+      // v51: tick boxes, Select all and the Add to shopping list button (Compendium only)
+      const pick = pickable(door) ? buildPick(door, { id: `history-${[...factions.keys()].join("+")}`, source: `Scheme: ${names.join(", ")} colours`, head: lines.slice(), foot: [COMPENDIUM_TEXT_FOOT] }) : null;
       for (const entry of shown) {
         const paint = entry.paint;
         const reason = `Used on ${plural(entry.units, "unit")} in this faction, in ${plural(entry.recipes, "recipe")}.`;
         const note = colourIdeaIsReal(paint.colour) ? "" : "This paint has no colour set, so the swatch is grey.";
         const tag = colourHistoryTag(paint);
+        const line = ideaTextLine(paint, tag, reason, note);
+        const step = { paint, technique: "", coats: 1, mix: 100, note: "Used before on this faction" };
         list.appendChild(buildIdeaItem(paint, tag, reason, note,
-          door.addStep ? () => door.addStep(paint, "Used before on this faction") : null, "idea-pick", undefined, compactRows(door)));
-        lines.push(ideaTextLine(paint, tag, reason, note));
-        steps.push({ paint, technique: "", coats: 1, mix: 100, note: "Used before on this faction" });
+          door.addStep ? () => door.addStep(paint, "Used before on this faction") : null, "idea-pick", undefined, compactRows(door), pick && pick.row(paint, line, step)));
+        lines.push(line);
+        steps.push(step);
       }
-      box.appendChild(list);
-      // v42: Your schemes (the colours used on the faction) get the same closed "Shopping list" fold-out, for the paints shown (Compendium only)
-      const schemeShop = door.schemeShop ? buildSchemeShopFoldout(shown.map(x => x.paint), `Scheme: ${names.join(", ")} colours`) : null;
-      if (schemeShop) box.appendChild(schemeShop);
+      if (pick) { pick.finish(); box.append(pick.all, list, pick.actions); } else box.appendChild(list);
       if (history.list.length > FACTION_HISTORY_SHOWN) say(`Showing the ${FACTION_HISTORY_SHOWN} most used of ${history.list.length}.`);
-      const share = buildShareRow(door, "Your faction colours", [...lines, COMPENDIUM_TEXT_FOOT], steps);
+      const share = buildShareRow(door, "Your faction colours", pick ? pick.shareLines : [...lines, COMPENDIUM_TEXT_FOOT], pick ? pick.shareSteps : steps);
       if (share) box.appendChild(share);
       return box;
     }
@@ -9176,19 +9270,21 @@
       list.id = door.id("starter-list");
       const lines = [`Starter scheme: ${scheme.name}`, scheme.summary, scheme.reason], steps = [];
       const schemeHits = starterSchemePaints(scheme);
+      // v51: tick boxes, Select all and the Add to shopping list button (Compendium only)
+      const pick = pickable(door) ? buildPick(door, { id: `starter-${scheme.key}`, source: `Scheme: ${scheme.name}`, head: lines.slice(), foot: [COMPENDIUM_TEXT_FOOT] }) : null;
       for (const { colour, hit } of schemeHits) {
         const paint = hit.paint;
         const tag = colourIdeaTag(hit), reason = `${colour.part}: ${colour.look}.`, note = colourIdeaNote(hit);
         const stepNote = `Starter scheme (${scheme.name}): ${colour.part.toLowerCase()}`;
-        list.appendChild(buildIdeaItem(paint, tag, reason, note, door.addStep ? () => door.addStep(paint, stepNote) : null, "idea-pick", undefined, compactRows(door)));
-        lines.push(ideaTextLine(paint, tag, reason, note));
-        steps.push({ paint, technique: "", coats: 1, mix: 100, note: stepNote });
+        const line = ideaTextLine(paint, tag, reason, note);
+        const step = { paint, technique: "", coats: 1, mix: 100, note: stepNote };
+        list.appendChild(buildIdeaItem(paint, tag, reason, note, door.addStep ? () => door.addStep(paint, stepNote) : null, "idea-pick", undefined, compactRows(door), pick && pick.row(paint, line, step)));
+        lines.push(line);
+        steps.push(step);
       }
-      box.append(summary, compactRows(door) ? buildMoreInfo([why], { state: infoState(door, "starter-why"), id: door.id("starter-why-panel"), label: `why ${scheme.name} works` }) : why, list);
-      // v42: a closed "Shopping list" fold-out with the Add paints button (Compendium only)
-      const schemeShop = door.schemeShop ? buildSchemeShopFoldout(schemeHits.map(x => x.hit.paint), `Scheme: ${scheme.name}`) : null;
-      if (schemeShop) box.appendChild(schemeShop);
-      const share = buildShareRow(door, scheme.name, [...lines, COMPENDIUM_TEXT_FOOT], steps);
+      box.append(summary, compactRows(door) ? buildMoreInfo([why], { state: infoState(door, "starter-why"), id: door.id("starter-why-panel"), label: `why ${scheme.name} works` }) : why);
+      if (pick) { pick.finish(); box.append(pick.all, list, pick.actions); } else box.appendChild(list);
+      const share = buildShareRow(door, scheme.name, pick ? pick.shareLines : [...lines, COMPENDIUM_TEXT_FOOT], pick ? pick.shareSteps : steps);
       if (share) box.appendChild(share);
       return box;
     }
@@ -9303,12 +9399,16 @@
       list.className = "idea-list";
       list.id = door.id("detail-list");
       const lines = [`Detail recipe: ${recipe.name}`, recipe.summary], steps = [];
+      // v51: tick boxes, Select all and the Add to shopping list button (Compendium only)
+      const pick = pickable(door) ? buildPick(door, { id: `detail-${recipe.key}`, source: `Detail recipe: ${recipe.name}`, head: lines.slice(), foot: [COMPENDIUM_TEXT_FOOT] }) : null;
       items.forEach(({ step, hit }, i) => {
         const paint = hit.paint;
         const tag = colourIdeaTag(hit), reason = detailStepReason("Step", i, step), note = colourIdeaNote(hit);
-        list.appendChild(buildIdeaItem(paint, tag, reason, note, door.addSteps ? () => door.addSteps([{ step, hit }]) : null, "idea-pick", undefined, compactRows(door)));
-        lines.push(ideaTextLine(paint, tag, reason, note));
-        steps.push({ paint, technique: step.technique, coats: step.coats, mix: step.mix, note: step.note });
+        const line = ideaTextLine(paint, tag, reason, note);
+        const recipeStep = { paint, technique: step.technique, coats: step.coats, mix: step.mix, note: step.note };
+        list.appendChild(buildIdeaItem(paint, tag, reason, note, door.addSteps ? () => door.addSteps([{ step, hit }]) : null, "idea-pick", undefined, compactRows(door), pick && pick.row(paint, line, recipeStep)));
+        lines.push(line);
+        steps.push(recipeStep);
       });
       if (door.addSteps) {
         const all = document.createElement("button");
@@ -9319,10 +9419,13 @@
         all.setAttribute("aria-label", `Add all ${items.length} steps of ${recipe.name} to this recipe`);
         all.addEventListener("click", () => door.addSteps(items));
         box.append(all, list);
+      } else if (pick) {
+        pick.finish();
+        box.append(pick.all, list, pick.actions);
       } else {
         box.appendChild(list);
       }
-      const share = buildShareRow(door, recipe.name, [...lines, COMPENDIUM_TEXT_FOOT], steps);
+      const share = buildShareRow(door, recipe.name, pick ? pick.shareLines : [...lines, COMPENDIUM_TEXT_FOOT], pick ? pick.shareSteps : steps);
       if (share) box.appendChild(share);
       return box;
     }
@@ -9804,7 +9907,7 @@
         shops: true,   // v39: paints you do not own, in that panel and in Colour ideas, get a closed "Shop links" fold-out (plain links)
         shopSource: () => "Compendium: Colour ideas",   // v41: what the shopping list remembers for Add buttons in the Compendium's Colour ideas
         listMarks: true,   // v41: a paint already on the shopping list says "On your shopping list" on its row
-        schemeShop: true,  // v42: Starter schemes and Your schemes get a closed "Shopping list" fold-out with "Add paints to shopping list"
+        schemeShop: true,  // v42, v51: Starter schemes, Your schemes and Detail recipes get tick boxes, Select all and "Add to shopping list" (buildPick)
         share: { copy: (text, what) => copyText(text, what, "Paste it anywhere."), startRecipe: startRecipeFromCompendium },
         factions: () => new Map(chosen ? [[factionKey(chosen), chosen]] : []),
         factionPick: { names, onChange: (key, focus) => { st.faction = key; renderCompendium(focus || `#${compendiumId("faction-history-pick")}`); } },
@@ -13837,11 +13940,11 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=50". v21.4 test checks.)
+    // "?v=" number on app.js and early.js in index.html, e.g. "app.js?v=51". v21.4 test checks.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v50";
+    const APP_VERSION = "v51";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -14290,6 +14393,13 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v51", date: "20 Oct 2026", changes: [
+        "In the Compendium, the paints in Starter schemes, Your schemes and Detail recipes now have a tick box on the left, and a Select all row above each list.",
+        "Add to shopping list sits under the list. It is small and grey until you tick something, then it turns into a full-width button that shows how many paints it will add. It adds only the ticked paints, and one Undo takes them all off again.",
+        "Copy as text and Save into a new recipe use the paints you ticked. If nothing is ticked they use all of them.",
+        "Paints you own, or that are already on your shopping list, show their status mark where the tick box would be. Open More info on the row to see why.",
+        "The small Shopping list heading under each scheme is gone, because the tick boxes do the same job.",
+      ]},
       { version: "v50", date: "20 Oct 2026", changes: [
         "Recipes are less busy. A recipe card shows its name and colour dots, plus a short Have all or Missing line once you have marked your paints. The part, step count and units are behind More info.",
         "Each step in a recipe is one line: its number, technique and small colour dots. Tap it to open the step. Coats, mix ratio, note and optional are under More options inside the open step. Add step and Save recipe stay in view.",

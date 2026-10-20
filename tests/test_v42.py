@@ -71,26 +71,29 @@ def open_scheme(page, key=SCHEME_KEY, **kw):
     page.wait_for_timeout(100)
 
 def fold(page, scope="#cmp-starter-schemes"):
-    return page.evaluate("""(s) => { const d = document.querySelector(s + ' details.scheme-shop');
-        if (!d) return null;
-        const b = d.querySelector('button');
-        return { open: d.open, summary: d.querySelector('summary').textContent, say: d.querySelector('.shop-add .hint').textContent, button: b ? b.textContent : '' }; }""", scope)
+    """v51: the closed 'Shopping list' fold-out is gone. This reports what the tick boxes and the Add button show now."""
+    return page.evaluate("""(s) => { const box = document.querySelector(s); if (!box) return null;
+        const all = box.querySelector('.pick-all'), act = box.querySelector('.pick-actions');
+        if (!all || !act) return null;
+        const b = act.querySelector('button.pick-add'), idle = act.querySelector('.shop-idle-button');
+        return { all: all.getAttribute('aria-checked'), allOff: all.getAttribute('aria-disabled') === 'true', ticks: box.querySelectorAll('.pick-tick').length, button: b ? b.textContent : '', idle: !!idle }; }""", scope)
 
 def centre(page, selector):
     """Scroll the thing to the middle of the screen first, so the fixed tab bar at the bottom is never over it."""
     page.evaluate("(s) => document.querySelector(s).scrollIntoView({ block: 'center' })", selector)
     page.wait_for_timeout(80)
 
-def open_fold(page, scope="#cmp-starter-schemes"):
-    if not page.evaluate("(s) => document.querySelector(s + ' details.scheme-shop').open", scope):
-        centre(page, f"{scope} details.scheme-shop > summary")
-        page.click(f"{scope} details.scheme-shop > summary")
-        page.wait_for_timeout(100)
+def select_all(page, scope="#cmp-starter-schemes"):
+    centre(page, f"{scope} .pick-all")
+    if page.get_attribute(f"{scope} .pick-all", "aria-checked") != "true":
+        page.click(f"{scope} .pick-all")
+        page.wait_for_timeout(80)
 
 def press_add(page, scope="#cmp-starter-schemes"):
-    open_fold(page, scope)
-    centre(page, f"{scope} details.scheme-shop button")
-    page.click(f"{scope} details.scheme-shop button")
+    """v51: Select all, then the Add to shopping list button (what the v42 fold-out button used to do in one step)."""
+    select_all(page, scope)
+    centre(page, f"{scope} .pick-add")
+    page.click(f"{scope} .pick-add")
     page.wait_for_timeout(250)
 
 def undo(page):
@@ -131,9 +134,9 @@ def main():
         html, sw = read("index.html"), read("sw.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
         check("the version is v42 or v43 in APP_VERSION, sw.js and all six script tags",
-              page.evaluate("APP_VERSION") in ("v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("42", "43", "44", "45", "46", "47", "48", "49", "50") and len(tags) == 6 and len({v for _, v in tags}) == 1 and tags[0][1] in ("42", "43", "44", "45", "46", "47", "48", "49", "50"),
+              page.evaluate("APP_VERSION") in ("v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("42", "43", "44", "45", "46", "47", "48", "49", "50", "51") and len(tags) == 6 and len({v for _, v in tags}) == 1 and tags[0][1] in ("42", "43", "44", "45", "46", "47", "48", "49", "50", "51"),
               (page.evaluate("APP_VERSION"), tags))
-        check("the two comments that name the number (in index.html and app.js) carry the same 42, 43 or 44", re.search(r'The "\?v=(42|43|44|45|46|47|48|49|50)" makes', html) and re.search(r'e\.g\. "app\.js\?v=(42|43|44|45|46|47|48|49|50)"', read("app.js")))
+        check("the two comments that name the number (in index.html and app.js) carry the same 42, 43 or 44", re.search(r'The "\?v=(42|43|44|45|46|47|48|49|50|51)" makes', html) and re.search(r'e\.g\. "app\.js\?v=(42|43|44|45|46|47|48|49|50|51)"', read("app.js")))
         entry = page.evaluate("CHANGELOG.find(e => e.version === 'v42')")
         joined = " ".join(entry["changes"]) if entry else ""
         check("the v42 Updates entry (newest, or second newest once v43 is out) tells about the Add paints button, Undo, the same list and Shop links",
@@ -170,12 +173,13 @@ def main():
         sp = scheme_paints(page)
         scheme_name = page.evaluate("(k) => STARTER_SCHEMES.find(s => s.key === k).name", SCHEME_KEY)
         f = fold(page)
-        check("the scheme has a closed 'Shopping list' fold-out under its paints (quiet by default)", f and f["open"] is False and f["summary"] == "Shopping list", f)
-        check("the fold-out sits under the paint list and above Copy as text",
+        check("the scheme has tick boxes and a greyed Add to shopping list button under its paints (quiet by default; v51 replaced the v42 fold-out)", f and f["ticks"] == len(sp) and f["idle"] and f["button"] == "", f)
+        check("the Add button sits under the paint list and above Copy as text",
               page.evaluate("""() => { const b = document.getElementById('cmp-starter-schemes'); const kids = [...b.children];
-                const i = kids.findIndex(k => k.id === 'cmp-starter-list'), j = kids.findIndex(k => k.classList.contains('scheme-shop')); return j === i + 1; }"""))
-        check("closed: its button is not visible until you open it", not page.locator("#cmp-starter-schemes details.scheme-shop button").is_visible())
-        check("it says how many paints are not on the list yet", f and f["say"].startswith(f"{len(sp)} paints in this scheme are not on your shopping list yet"), f)
+                const i = kids.findIndex(k => k.id === 'cmp-starter-list'), j = kids.findIndex(k => k.classList.contains('pick-actions')); return j === i + 1; }"""))
+        check("nothing ticked: no primary Add button is shown", page.locator("#cmp-starter-schemes .pick-add").count() == 0)
+        select_all(page)
+        check("Select all shows how many paints will be added", fold(page)["button"] == f"Add to shopping list ({len(sp)})", fold(page))
         check("the rows themselves look as before (no extra button or line on a row)",
               page.evaluate("() => [...document.querySelectorAll('#cmp-starter-list > li')].every(li => !li.querySelector('.scheme-shop'))"))
         before_json = stored_json(page)
@@ -191,9 +195,9 @@ def main():
         check("one entry per paint (no duplicates in the palette)", len({(p_["brand"], p_["name"]) for p_ in st}) == len(st) == len(sp), len(st))
         check("the basket count is right", basket(page) == str(len(sp)), basket(page))
         f2 = fold(page)
-        check("the fold-out now says there is nothing to add and the button has gone, still in the same place",
-              f2 and f2["open"] is True and f2["button"] == "" and f2["say"].startswith("Nothing to add"), f2)
-        check("focus moved to the message (the button it was on is gone)", page.evaluate("() => document.activeElement && document.activeElement.classList.contains('hint') && !!document.activeElement.closest('.scheme-shop')"))
+        check("the list now has nothing left to tick: Select all is disabled, the primary button has gone and the greyed one is back",
+              f2 and f2["allOff"] and f2["button"] == "" and f2["idle"], f2)
+        check("focus moved to Select all (the button it was on is gone)", page.evaluate("() => document.activeElement && document.activeElement.classList.contains('pick-all')"))
         tags = wheel_tags(page)
         listed = [x["name"] for x in sp if x["name"] in tags]
         check("the wheel's lists say On your shopping list for those paints (markers stay right)", listed and all(tags[n_] == LISTED for n_ in listed), {n_: tags.get(n_) for n_ in listed})
@@ -218,7 +222,7 @@ def main():
         check("a short message says how many came off, with no second Undo", tt["text"] == f"Took {len(sp)} paints off your shopping list again." and tt["undo"] is False, tt)
         check("the basket is gone again", basket(page) == "", basket(page))
         f3 = fold(page)
-        check("after Undo the fold-out offers the button again with the right count", f3 and f3["button"] == "Add paints to shopping list" and f3["say"].startswith(f"{len(sp)} paints"), f3)
+        check("after Undo every paint can be ticked again, none ticked", f3 and f3["ticks"] == len(sp) and f3["all"] == "false" and f3["idle"], f3)
         tags = wheel_tags(page)
         check("after Undo the wheel's markers are gone too", all(tags.get(x["name"]) != LISTED for x in sp if x["name"] in tags), {n_: tags.get(n_) for n_ in tags if tags[n_] == LISTED})
         # a second press (add, then add again): nothing twice
@@ -245,8 +249,9 @@ def main():
         open_scheme(page)
         sp2 = scheme_paints(page)
         check("(set-up) the scheme still lists the same four paints, with yours first", [x["name"] for x in sp2] == [x["name"] for x in sp], [x["name"] for x in sp2])
+        select_all(page)
         f = fold(page)
-        check("only the one paint that is neither owned, running low nor listed is counted", f and f["say"].startswith("1 paint in this scheme is not on your shopping list yet"), f)
+        check("only the one paint that is neither owned, running low nor listed can be ticked and counted", f and f["ticks"] == 1 and f["button"] == "Add to shopping list (1)", f)
         press_add(page)
         tt = toast(page)
         st = stored(page)
@@ -266,7 +271,7 @@ def main():
         load(page, paints=pal_all)
         open_scheme(page)
         f = fold(page)
-        check("when you own every paint, the fold-out says nothing to add and has no button", f and f["button"] == "" and f["say"].startswith("Nothing to add"), f)
+        check("when you own every paint, no row has a tick box, Select all is disabled and there is no primary button", f and f["ticks"] == 0 and f["allOff"] and f["button"] == "" and f["idle"], f)
         before_json = stored_json(page)
         res = page.evaluate("""(k) => addSchemePaintsToShoppingList(starterSchemePaints(STARTER_SCHEMES.find(s => s.key === k)).map(x => x.hit.paint), 'Scheme: x')""", SCHEME_KEY)
         tt = toast(page)
@@ -285,11 +290,12 @@ def main():
         page.wait_for_timeout(150)
         hist = page.evaluate("() => [...document.querySelectorAll('#cmp-faction-history-list .idea-static')].map(li => [li.querySelector('.idea-name').childNodes[0].textContent, li.querySelector('.idea-tag').textContent])")
         f = fold(page, "#cmp-faction-history")
-        check("Your schemes has the same closed 'Shopping list' fold-out", f and f["open"] is False and f["summary"] == "Shopping list", f)
+        check("Your schemes has tick boxes and the greyed Add button too", f and f["ticks"] >= 1 and f["idle"], f)
         names_h = [x[0] for x in hist]
         todo = [n_ for n_ in names_h if (by_name(pals, n_) or {}).get("status") not in ("owned", "low", "wishlist")]
         check("(set-up) the faction list has paints you do not own", len(todo) >= 2, hist)
-        check("it counts only those paints", f and f["say"].startswith(f"{len(todo)} paint"), (f, todo))
+        select_all(page, "#cmp-faction-history")
+        check("Select all counts only those paints", fold(page, "#cmp-faction-history")["button"] == f"Add to shopping list ({len(todo)})", (fold(page, "#cmp-faction-history"), todo))
         before_json_h = stored_json(page)
         press_add(page, "#cmp-faction-history")
         tt = toast(page)
@@ -310,7 +316,7 @@ def main():
         load(page, paints=[], settings={"hideShopLinks": True})
         open_scheme(page)
         f = fold(page)
-        check("with Shop links off the button's fold-out is still there (it only adds to your own list)", f and f["summary"] == "Shopping list" and f["button"] == "Add paints to shopping list", f)
+        check("with Shop links off the tick boxes and the Add button are still there (it only adds to your own list)", f and f["ticks"] == len(sp) and f["idle"], f)
         check("and the 'Shop links' fold-outs on single paints are gone as before", page.locator("#compendium-body .shop-more:not(.scheme-shop)").count() == 0)
         press_add(page)
         check("it still adds, and the basket and list stay", toast(page)["text"] == f"Added {len(sp)} paints to your shopping list" and basket(page) == str(len(sp)), (toast(page), basket(page)))
@@ -343,7 +349,7 @@ def main():
         c.cmp_pick(page, "starter-chips", "hostile-test")
         page.wait_for_timeout(150)
         check("(set-up) the made-up hostile scheme lists the hostile paints",
-              page.evaluate("() => document.querySelectorAll('#cmp-starter-list > li').length") == 4 and page.locator("#cmp-starter-schemes details.scheme-shop").count() == 1)
+              page.evaluate("() => document.querySelectorAll('#cmp-starter-list > li').length") == 4 and page.locator("#cmp-starter-schemes .pick-all").count() == 1)
         bad = page.evaluate("() => ({ pwned: window.__pwned || 0, bad: document.querySelectorAll('#compendium-body img, #compendium-body script, #compendium-body b').length })")
         check("scheme, paint and brand names in the Compendium and the fold-out are plain text: no picture, script or bold appears and nothing runs", bad["pwned"] == 0 and bad["bad"] == 0, bad)
         press_add(page)
@@ -367,7 +373,7 @@ def main():
         page.wait_for_timeout(200)
         c.open_comp(page)
         f = fold(page, "#cmp-faction-history")
-        check("(set-up) a hostile faction gives Your schemes a fold-out", f is not None, f)
+        check("(set-up) a hostile faction gives Your schemes tick boxes", f is not None, f)
         if f:
             press_add(page, "#cmp-faction-history")
             src = [r.get("shopFrom") for r in stored(page) if r.get("status") == "wishlist"]
@@ -383,11 +389,11 @@ def main():
                 page.set_viewport_size({"width": width, "height": 844})
                 load(page, paints=[], settings={"theme": scheme})
                 open_scheme(page)
-                open_fold(page)
+                select_all(page)
                 page.wait_for_timeout(100)
-                ok = no_sideways(page) and page.evaluate("""() => { const d = document.querySelector('#cmp-starter-schemes details.scheme-shop'); const r = d.getBoundingClientRect();
+                ok = no_sideways(page) and page.evaluate("""() => { const d = document.querySelector('#cmp-starter-schemes .pick-actions'); const r = d.getBoundingClientRect();
                     const b = d.querySelector('button').getBoundingClientRect(); return r.right <= window.innerWidth + 1 && b.height >= 44 && b.right <= window.innerWidth + 1; }""")
-                check(f"{width}px, {scheme}: the open fold-out fits, the button is at least 44px tall, nothing slides sideways", ok)
+                check(f"{width}px, {scheme}: the Add button fits, is at least 44px tall, nothing slides sideways", ok)
                 shot(page, f"v42-scheme-{width}-{scheme}.png")
         page.set_viewport_size({"width": 390, "height": 844})
         other = [d for d in dialogs if not d.startswith(("Took ", "Nothing added"))]   # the app's own plain notices from this test are expected

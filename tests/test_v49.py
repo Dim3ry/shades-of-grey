@@ -83,7 +83,8 @@ def main():
         check("its hint says what to do", "Select a scheme" in page.locator(".shop-idle .hint").inner_text())
         page.locator('[data-mood="cold"]').first.click()
         page.get_by_role("button", name="Cold blue and gold").click()
-        check("picking a scheme removes the greyed button", page.locator(".shop-idle-button").count() == 0)
+        # v51: the greyed button stays under the scheme's paints (until something is ticked) and its hint now says paints
+        check("picking a scheme keeps one greyed button, now saying paints", page.locator(".shop-idle-button").count() == 1 and "Select paints" in page.locator(".shop-idle .hint").inner_text())
         rows = page.locator("#compendium-body .idea-static")
         check("the scheme shows its paint rows", rows.count() >= 3, rows.count())
         row_more = rows.first.locator(".more-info-button")
@@ -98,8 +99,9 @@ def main():
             check("Copy as text and Save into a new recipe are equal width", abs(a["width"] - b["width"]) <= 2, (a["width"], b["width"]))
         else:
             check("two action buttons are shown", False, copy.count())
-        shop = page.locator(".scheme-shop > summary")
-        check("the Shopping list fold-out stretches across the card", shop.count() == 1 and box(shop)["width"] > 300, box(shop) if shop.count() else None)
+        page.locator("#compendium-body .pick-tick").first.dispatch_event("click")   # v51: the fold-out is gone; ticking a paint shows the full-width button
+        shop = page.locator("#compendium-body .pick-add")
+        check("ticking a paint shows the Add to shopping list button, stretched across the card", shop.count() == 1 and box(shop)["width"] > 300, box(shop) if shop.count() else None)
         check("no sideways scrolling in the Compendium", no_sideways(page))
 
         # ---------- 3. Palette ----------
