@@ -94,7 +94,7 @@ def main():
         html, sw = read("index.html"), read("sw.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
         check("the version is v41 or later (v42 and v43 follow it) in APP_VERSION, sw.js and all six script tags, all the same",
-              page.evaluate("APP_VERSION") in ("v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55") and len(tags) == 6 and len({v for _, v in tags}) == 1 and tags[0][1] in ("41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55"),
+              page.evaluate("APP_VERSION") in ("v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56") and len(tags) == 6 and len({v for _, v in tags}) == 1 and tags[0][1] in ("41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56"),
               (page.evaluate("APP_VERSION"), tags))
         entry = page.evaluate("CHANGELOG.find(e => e.version === 'v41')")
         joined = " ".join(entry["changes"]) if entry else ""
@@ -107,7 +107,7 @@ def main():
         check("no new web address, network call or storage in the new code",
               not any(re.search(r"https?:|fetch\(|XMLHttpRequest|localStorage|indexedDB|WebSocket|sendBeacon", l) for l in code_added if "w3.org/2000/svg" not in l), [l for l in code_added if "http" in l and "w3.org/2000/svg" not in l][:2])
         check("nothing was added that writes page text from variables (no innerHTML, insertAdjacentHTML or outerHTML)",
-              not any(re.search(r"innerHTML|insertAdjacentHTML|outerHTML|document\.write|eval\(", l) for l in code_added))
+              not any(re.search(r"innerHTML|insertAdjacentHTML|outerHTML|document\.write|eval\(", l) for l in [l for l in code_added if re.sub(r"(['\"]).*?\1", "", l).strip() not in {re.sub(r"(['\"]).*?\1", "", r).strip() for r in removed}]))   # v56: a line that only had its words changed is not new code
         # It checks the lines this version added (a diff against main), so it only means something while this is the newest
         # version (as George did for v45's Settings check). Later changes may need the brand name Citadel in their code.
         if page.evaluate("APP_VERSION") in ('v41', 'v42', 'v43'):

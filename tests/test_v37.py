@@ -559,7 +559,7 @@ def main():
                     return out; }""")
                 bad = {k: round(contrast(rgb(v[0]), rgb(v[1])), 2) for k, v in col.items() if contrast(rgb(v[0]), rgb(v[1])) < 4.5}
                 tag = f"{appearance} {width}px"
-                check(f"{tag}: the headings, the switch, the group and scheme buttons, the plain line and the text all have contrast of at least 4.5", not bad and len(col) >= 11, (bad, len(col)))
+                check(f"{tag}: the headings, the switch, the group and scheme buttons, the plain line and the text all have contrast of at least 4.5", not bad and len(col) >= 10, (bad, len(col)))   # v56: the plain line under the group buttons is gone, so one fewer
                 edge = page.evaluate("""() => { const open = getComputedStyle(document.getElementById('cmp-fold-starter-button')), card = getComputedStyle(document.querySelector('#view-compendium .card')).backgroundColor;
                     return { border: open.borderTopColor, card }; }""")
                 check(f"{tag}: an open heading has an outline you can see (contrast 3 or more against the card)", contrast(rgb(edge["border"]), rgb(edge["card"])) >= 3, edge)

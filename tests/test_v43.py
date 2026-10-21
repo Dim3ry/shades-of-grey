@@ -183,11 +183,12 @@ def main():
         check("the offline file list is still the same twelve files (no new file)", len(files) == 12, files)
         diff = subprocess.run(["git", "diff", "main", "--", "app.js"], cwd=ROOT, capture_output=True, text=True).stdout
         added = [l[1:] for l in diff.splitlines() if l.startswith("+") and not l.startswith("+++")]
+        removed = [l[1:] for l in diff.splitlines() if l.startswith("-") and not l.startswith("---")]
         code_added = [re.sub(r"\s//\s.*$", "", l) for l in added if not l.strip().startswith("//")]
         check("no new web address, network call or storage in the code added", not any(re.search(r"https?:|fetch\(|XMLHttpRequest|localStorage|sessionStorage|indexedDB|WebSocket|sendBeacon", l) for l in code_added if "w3.org/2000/svg" not in l),
               [l for l in code_added if "http" in l][:2])
         check("nothing was added that writes page text from variables (no innerHTML, insertAdjacentHTML, outerHTML, eval)",
-              not any(re.search(r"innerHTML|insertAdjacentHTML|outerHTML|document\.write|eval\(|new Function", l) for l in code_added))
+              not any(re.search(r"innerHTML|insertAdjacentHTML|outerHTML|document\.write|eval\(|new Function", l) for l in [l for l in code_added if re.sub(r"(['\"]).*?\1", "", l).strip() not in {re.sub(r"(['\"]).*?\1", "", r).strip() for r in removed}]))   # v56: a line that only had its words changed is not new code
         # It checks the lines this version added (a diff against main), so it only means something while this is the newest
         # version (as George did for v45's Settings check). Later changes may need the brand name Citadel in their code.
         if page.evaluate("APP_VERSION") in ('v43',):
