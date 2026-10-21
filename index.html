@@ -2159,7 +2159,6 @@
         </label>
         <button class="primary-button" type="submit">Add</button>
         <!-- v19: bringing in a whole army is offered right here, not only in Settings. -->
-        <p class="hint" style="margin: 4px 0 0;">Adding a whole army?</p>
         <div class="button-grid" id="add-import-buttons">
           <button type="button" class="plain-button" id="add-wh">Paste army list</button>
           <button type="button" class="plain-button" id="add-csv">Import CSV</button>
@@ -2250,7 +2249,7 @@
           </select>
           <div class="chips" id="brand-chips"></div>
           <p class="hint" id="palette-summary" style="margin: 12px 0 0;"></p>
-          <button class="plain-button" id="scan-button" style="width: 100%; margin-top: 12px;">📷 Scan a paint pot (or check if you own it)</button>
+          <button class="plain-button" id="scan-button" style="width: 100%; margin-top: 12px;">Scan a paint pot (or check if you own it)</button>
           <div id="scan-panel" class="hidden" style="margin-top: 12px;"></div>
         </div>
         <div class="card hidden" id="import-review"></div>
@@ -2312,7 +2311,6 @@
     <section id="view-help" class="hidden">
       <div class="card help-intro">
         <h2>How to use Minifolio</h2>
-        <p class="hint" style="margin: 0;">Tap a topic to open it. New here? Start with <strong>Getting started</strong>.</p>
       </div>
       <div class="card help">
         <details>
@@ -2428,7 +2426,7 @@
             <li><strong>📷 Scan a paint pot</strong> (in Your Palette) reads the paint's name from its label with the camera and suggests matches. The reading happens on your phone; the photo is never sent anywhere. The first scan loads the label reader (about 11 MB) from Minifolio's own site, and after that scanning works with no internet. Leaving the app, or closing the scan panel, switches the camera off.</li>
             <li id="help-scan-brands"><strong>Brands the scanner knows:</strong> Citadel, Warhammer Tone Pro (each colour in its five tones, like Carmine Blades 1 to 5), Vallejo, The Army Painter, Pro Acryl, AK Interactive, Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World (about 4,000 paints), and every paint already in Your Palette. <strong>Settings → Paint brands</strong> switches brands on or off: a brand that's off isn't suggested, matched or used in Colour ideas. Your own paints always are. On a Vallejo pot it also reads the <strong>code number</strong> (like 72.021), which picks the exact paint even if the name is hard to read. Other brands still work: if the scanner doesn't know the name, type it in. The same lists help when you paste recipes from your notes. Where two brands share a name (like "Black"), you're asked which one. The colours for these brands are close guesses, so tap a paint to fix its colour.</li>
             <li>Typed a paint into a recipe that isn't in Your Palette yet? Above <strong>Save recipe</strong>, <strong>Do you own these?</strong> asks about the new paints: <strong>All</strong> (Owned), <strong>None</strong> (Not owned, so they go on the shopping list) or <strong>Let me pick</strong> (tap a paint to untick it).</li>
-            <li id="help-shop"><strong>🛒 Shopping list</strong> (in Your Palette) lists paints that are running low, empty, on your wishlist, or used in a recipe but not owned, grouped by brand. <strong>Buy these</strong> at the top has a button for each shop that sells them (Firestorm Games, Wayland Games, Element Games, and The Army Painter for Army Painter paints). Tap a shop for one search link per paint; each opens that shop's own search in a new tab. They're plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop. The link searches for the paint's name, so the results can include other brands' paints with the same name: check you've got the right pot before you buy.</li>
+            <li id="help-shop"><strong>Shopping list</strong> (in Your Palette) lists paints that are running low, empty, on your wishlist, or used in a recipe but not owned, grouped by brand. <strong>Buy these</strong> at the top has a button for each shop that sells them (Firestorm Games, Wayland Games, Element Games, and The Army Painter for Army Painter paints). Tap a shop for one search link per paint; each opens that shop's own search in a new tab. They're plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop. The link searches for the paint's name, so the results can include other brands' paints with the same name: check you've got the right pot before you buy.</li>
             <li id="help-shop-links"><strong>Shop links on suggested paints</strong> (Pro preview): under a suggested paint you don't own, in the colour wheel's paint panel and in <strong>Colour ideas</strong> (in a recipe and in the Compendium), tap <strong>Shop links</strong> to open a small fold-out. It has <strong>Add to shopping list</strong> (Undo is offered) and a plain search link for each shop that sells the paint. Paints you own show nothing. They're plain links, the same as in Buy these: Minifolio isn't paid for them, and only the paint's name goes to the shop. To hide every shop link and shop button, including Buy these, untick <strong>Settings → Shop links</strong>. Your shopping list stays.</li>
             <li id="help-compendium-ticks">In the <strong>Compendium</strong>, tick the paints you want from a scheme or detail recipe, or press <strong>Select all</strong>. <strong>Add to shopping list</strong> is grey until you tick something, then adds only the ticked paints. A paint you own, or that is already on the list, shows a mark instead of a tick box. <strong>Copy as text</strong> and <strong>Save into a new recipe</strong> use the ticked paints, or all of them if none is ticked.</li>
             <li><strong>Schemes</strong> (top of the Recipes tab) group the recipes you use for one faction, e.g. "My Blue Army" = armour, trim, lenses and base. Press <strong>+ New scheme</strong>, name it, type the faction and tick its recipes.</li>
@@ -2535,10 +2533,10 @@
     <section id="view-updates" class="hidden">
       <div class="card">
         <h2>Tell us what you think</h2>
-        <p class="hint" id="feedback-explain">Found a bug, or wish the app did something? A short form, about 2 minutes. Every reply is read.</p>
+        <p class="hint" id="feedback-explain">About 2 minutes.</p>
         <a class="primary-button" id="feedback-link" target="_blank" rel="noopener noreferrer"
            style="display: block; text-align: center; text-decoration: none;">Give feedback</a>
-        <p class="hint hidden" id="feedback-soon" style="margin: 0;">The feedback form is coming very soon. Until then, please send your thoughts to the person who shared the app with you.</p>
+        <p class="hint hidden" id="feedback-soon" style="margin: 0;">Feedback form not available yet.</p>
       </div>
       <div class="card">
         <h2>What's new</h2>
@@ -2740,8 +2738,7 @@
         </div>
         <!-- v44: bring the example recipes, schemes and paints back (for anyone). -->
         <div id="restore-examples-section" style="margin: 0 0 12px;">
-          <h3 style="margin: 4px 0 0;">Restore example recipes</h3>
-          <p class="hint" id="restore-examples-hint" style="margin: 4px 0 8px;">Adds the example recipes, schemes and paints back if you cleared them. Your own recipes, schemes and paints are never changed, and nothing is added twice. Examples you kept as your own count as already here.</p>
+          <p class="hint" id="restore-examples-hint" style="margin: 4px 0 8px;">Adds the example recipes, schemes and paints back if you cleared them; your own are never changed.</p>
           <button class="plain-button" id="restore-examples" type="button">Restore example recipes</button>
         </div>
         <!-- v14: safety copies kept by Delete all, Replace and Restore, for 30 days. -->
