@@ -149,7 +149,7 @@ def main():
         tags = re.findall(r'<script src="[^"]+\?v=(\d+)"', html)
         check("all six script tags carry the version number", len(tags) == 6 and set(tags) == {version[1:]}, tags)
         entry = page.evaluate("CHANGELOG.find(c => c.version === 'v53')")
-        check("the v53 Updates entry exists (v54 and v55 may sit above it)", bool(entry) and page.evaluate("CHANGELOG[0].version") in ("v53", "v54", "v55"))
+        check("the v53 Updates entry exists (v54 and v55 may sit above it)", bool(entry) and page.evaluate("CHANGELOG[0].version") in ("v53", "v54", "v55", "v56"))
         check("the v53 entry has no em dashes", entry and not any("—" in x for x in entry["changes"]))
         check("the v53 entry mentions 44 px, More info, Help, Settings and the banner",
               entry and all(any(word in x for x in entry["changes"]) for word in ("44 px", "More info", "Help", "Settings", "banner")))
@@ -256,7 +256,7 @@ def main():
         more_page(page, "help")
         state = page.evaluate("() => [...document.querySelectorAll('#view-help .help details')].map(d => [d.open, d.querySelector(':scope > summary').getAttribute('aria-expanded')])")
         check("every Help topic starts closed (including Getting started)", len(state) >= 12 and all(o is False and e == "false" for o, e in state), state[:3])
-        check("the hint above still points people at Getting started", "Getting started" in page.inner_text("#view-help .hint"))
+        check("Getting started is still a Help topic (v56: the line above the topics is gone)", "Getting started" in page.inner_text("#view-help"))
         tab(page, "dashboard")
         more_page(page, "help")
         check("still closed after going to another tab and back", page.evaluate("() => document.querySelectorAll('#view-help .help details[open]').length") == 0)

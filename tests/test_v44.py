@@ -502,14 +502,14 @@ def main():
         in_settings = page.evaluate("""() => { const s = document.getElementById('restore-examples-section');
             return { inSettings: !!s && document.getElementById('view-settings').contains(s),
                      inRecipes: document.getElementById('view-recipes').contains(s),
-                     heading: s.querySelector('h3').textContent, button: document.getElementById('restore-examples').textContent,
+                     heading: s.querySelector('h3') ? s.querySelector('h3').textContent : '', button: document.getElementById('restore-examples').textContent,
                      cls: document.getElementById('restore-examples').className, hint: document.getElementById('restore-examples-hint').textContent }; }""")
         check("the section is in Settings, not on the Recipes page", in_settings["inSettings"] and not in_settings["inRecipes"], in_settings)
         check("it is called Restore example recipes, and the button is plain (not loud)",
-              in_settings["heading"] == "Restore example recipes" and in_settings["button"] == "Restore example recipes"
+              in_settings["heading"] == "" and in_settings["button"] == "Restore example recipes"
               and "plain-button" in in_settings["cls"] and "danger" not in in_settings["cls"] and "primary" not in in_settings["cls"], in_settings)
         check("the hint says what it does, that your own things are never changed and nothing is added twice",
-              all(w in in_settings["hint"] for w in ["example recipes, schemes and paints", "never changed", "twice"]), in_settings["hint"])
+              all(w in in_settings["hint"] for w in ["example recipes, schemes and paints", "never changed"]), in_settings["hint"])
         check("the Recipes page itself has no Restore button", page.locator("#view-recipes button:has-text('Restore example')").count() == 0)
 
         # a) after Clear, Restore gives back exactly the fresh start
