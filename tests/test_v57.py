@@ -224,7 +224,7 @@ def main():
         check("Help describes the card, Not now and the Settings line",
               all(w in help_text for w in ("Save a backup?", "Not now", "two weeks", "30 days", "Never")) and "reminds you after a week" not in help_text, help_text)
         snippet = app[app.index("function renderBackupNudge("):app.index("// ----- iPhone warning (v14) -----")]
-        check("the card is built from text, not HTML", "textContent" in snippet and not re.search(r"innerHTML\s*=\s*[^\"\s]", snippet) and 'innerHTML = ""' in snippet)
+        check("the card is built from text, not HTML (no innerHTML at all)", "textContent" in snippet and "innerHTML" not in snippet and "insertAdjacentHTML" not in snippet)
         check("Save backup on the card presses the Settings button (one backup code path)", 'getElementById("export-button").click()' in snippet)
 
         # ---------- 10. No errors ----------

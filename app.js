@@ -14283,7 +14283,7 @@
       if (!card) return;
       const show = backupNudgeWanted() && !feedbackCardWanted() && !iphoneWarningWanted();
       card.classList.toggle("hidden", !show);
-      card.innerHTML = "";
+      card.replaceChildren();
       if (!show) return;
       const text = document.createElement("p");
       const strong = document.createElement("strong");
