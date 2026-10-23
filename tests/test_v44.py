@@ -342,12 +342,11 @@ def main():
         before = snap(page)
         clear_on_card(page)
         tt = toast(page)
-        check("a message says exactly what was cleared, with Undo",
-              tt["shown"] and tt["undo"] and tt["text"] == "Cleared " + ALL_WORDS, tt)
+        check("a message says exactly what was cleared, with Undo (v56: the example units go too)",
+              tt["shown"] and tt["undo"] and tt["text"] == "Cleared 3 example units, " + ALL_WORDS, tt)
         check("no recipes, schemes or paints are left", page.evaluate("() => book.recipes.length + book.schemes.length + book.paints.length") == 0)
         check("the card is gone", not card_shown(page))
-        check("the example units are untouched except that the recipe links are gone",
-              [u["name"] for u in saved_units(page)] == ["Captain", "Brutes", "Guardians"] and all("recipes" not in u for u in saved_units(page)))
+        check("v56: the example units are cleared in the same tap", saved_units(page) == [], saved_units(page))
         recipe_view(page, "schemes")
         check("the Schemes page no longer lists the examples", "Blue army colours" not in page.inner_text("#scheme-list"))
         saved = saved_book(page)
@@ -378,7 +377,7 @@ def main():
         before = snap(page)
         page.click("#examples-card-recipes .clear-recipe-examples")
         page.wait_for_timeout(300)
-        check("Clear says 4 recipes, 1 scheme and 10 paints", toast(page)["text"] == "Cleared 4 example recipes, 1 example scheme and 10 example paints", toast(page))
+        check("Clear says 3 units, 4 recipes, 1 scheme and 10 paints", toast(page)["text"] == "Cleared 3 example units, 4 example recipes, 1 example scheme and 10 example paints", toast(page))
         check("what is yours stays: the edited recipe and your own recipe",
               names(page, "recipes") == ["Gold metal (mine)", "My green"], names(page, "recipes"))
         check("what is yours stays: the edited scheme and your own scheme",
@@ -426,7 +425,7 @@ def main():
         check("with only example schemes left, the card still shows and says so", card_shown(page) and "2 example schemes" in card_text(page), card_text(page))
         page.click("#examples-card-recipes .clear-recipe-examples")
         page.wait_for_timeout(300)
-        check("Clear then says only that", toast(page)["text"] == "Cleared 2 example schemes", toast(page))
+        check("Clear then says only that (and the example units, v56)", toast(page)["text"] == "Cleared 3 example units and 2 example schemes", toast(page))
 
         # ---------- 6. Keep them ----------
         print("\n--- 6. Keep them ---")
@@ -521,7 +520,7 @@ def main():
         check("Restore after Clear: a message says what was added",
               tt["shown"] and tt["text"] == "Added " + ALL_WORDS + ". You'll find them on the Recipes tab.", tt)
         check("the recipe book is exactly the fresh start's again", snap(page)[0] == before[0])
-        check("the example units are linked exactly as at the start", snap(page)[1] == before[1])
+        check("v56: Clear took the example units too, and Restore (recipes only) does not bring them back", saved_units(page) == [], saved_units(page))
         main_tab(page, "recipes")
         check("the Recipes card is back with Clear and Keep",
               card_shown(page) and page.locator("#examples-card-recipes .clear-recipe-examples").count() == 1
@@ -661,7 +660,7 @@ def main():
         check("a paint you put on your wishlist does appear (it is yours then)",
               page.evaluate("() => shoppingItems().map(i => i.paint.name)") == ["Example mid blue"])
         fresh(page)
-        page.evaluate("() => keepRecipeExamples()")
+        page.evaluate("() => keepExamples()")
         page.wait_for_timeout(200)
         check("after Keep them all sixteen count like any paint", page.evaluate("() => shoppingItems().length") == 16)
 
