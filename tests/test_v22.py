@@ -194,7 +194,7 @@ def main():
         check("Paste an army list still opens its box in the Import card", page.is_visible("#wh-text"))
         page.click("#wh-button")
         age = page.inner_text("#backup-age")
-        check("it says 'Last backed up: never' before any backup", age.startswith("Last backed up: never"), age)
+        check("it says 'Last backup: Never' before any backup (v57 wording)", age.startswith("Last backup: Never"), age)
         hint = page.inner_text("#share-hint")
         check("the hint explains the share menu, no photos and the fallback in plain words",
               "share menu" in hint and "no photos" in hint and "saves the backup instead" in hint, hint)
@@ -237,7 +237,7 @@ def main():
         check("the share menu was opened", len(shared(page)) == 1)
         check("closing it downloads nothing", not downloads, len(downloads))
         check("closing it shows no message", toast_text(page) in ("", None) or page.evaluate("() => document.getElementById('toast').classList.contains('hidden') || getComputedStyle(document.getElementById('toast')).display === 'none' || !document.getElementById('toast-text').textContent.trim()"), toast_text(page))
-        check("closing it does not count as a backup", saved_settings(page).get("lastBackup") == before.get("lastBackup") and "never" in page.inner_text("#backup-age"), saved_settings(page).get("lastBackup"))
+        check("closing it does not count as a backup", saved_settings(page).get("lastBackup") == before.get("lastBackup") and "Never" in page.inner_text("#backup-age"), saved_settings(page).get("lastBackup"))
         check("the button works again afterwards (not stuck)", page.is_enabled("#share-button"))
 
         # ---------- 4. When it can't share ----------

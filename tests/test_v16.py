@@ -247,7 +247,7 @@ with sync_playwright() as pw:
         page.evaluate("showTab('settings')")
         page.wait_for_timeout(100)
         age = page.locator("#backup-age").text_content()
-        check(f"{size}: backup age says never", "never" in age, age)
+        check(f"{size}: backup age says never", "Never" in age, age)
         page.evaluate("settings.lastBackup = new Date(Date.now() - 10 * 864e5).toISOString().slice(0, 10); renderSettings()")
         age = page.locator("#backup-age").text_content()
         check(f"{size}: backup age in days, flagged", "10 days ago" in age and "backup-old" in page.locator("#backup-age").get_attribute("class"), age)
