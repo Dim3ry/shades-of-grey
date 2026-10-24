@@ -110,7 +110,7 @@ def main():
         tags = re.findall(r'<script src="[^"]+\?v=(\d+)"', html)
         check("all six script tags carry the version number", len(tags) == 6 and set(tags) == {version[1:]}, tags)
         entry = page.evaluate("CHANGELOG.find(c => c.version === 'v52')")
-        check("the v52 Updates entry exists (v53 to v60 may sit above it)", bool(entry) and page.evaluate("CHANGELOG[0].version") in ("v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60"))
+        check("the v52 Updates entry exists (v53 to v61 may sit above it)", bool(entry) and page.evaluate("CHANGELOG[0].version") in ("v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61"))
         check("the v52 entry has no em dashes", entry and not any("—" in x for x in entry["changes"]))
         check("the v52 entry mentions More info, the Shopping list, Settings and Help",
               entry and all(any(word in x for x in entry["changes"]) for word in ("More info", "Shopping list", "Settings", "Help")))

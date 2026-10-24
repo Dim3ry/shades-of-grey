@@ -48,8 +48,9 @@ UNITS = [
 V21_4_CSP = ("default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; "
              "img-src 'self' blob: data: https://dim3ry.goatcounter.com/count; media-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; "
              "manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'")
-FOLDED = ["Unit name", "Game", "Faction", "Nickname (optional)", "Models in unit", "Repaint project",
-          "Track each model separately (for painting one at a time)"]
+# v61: the "Track each model separately" tick left the fold. It is now a button under the stage
+# (Track models separately / Track as one batch), so the fold has one label fewer.
+FOLDED = ["Unit name", "Game", "Faction", "Nickname (optional)", "Models in unit", "Repaint project"]
 
 def full_settings(**extra):
     s = {"palette": "ice", "tab": "units", "stages": STAGES, "doneFrom": 5, "examplesChecked": True}
@@ -128,6 +129,7 @@ def order(page, uid):
         : c.classList.contains('panel-field') ? 'recipes'
         : c.matches('label') && c.querySelector('textarea') ? 'notes'
         : c.matches('details.edit-details') ? 'edit'
+        : c.classList.contains('track-each') ? 'track'
         : c.classList.contains('panel-buttons') ? 'buttons' : '?')""", f"{card(uid)} .panel")
 
 def folded_labels(page, uid):
@@ -193,14 +195,14 @@ def main():
         seed(page)
         open_unit(page, 1)
         check("batch unit: stage, photos, recipes, paint notes, Edit details, then the buttons",
-              order(page, 1) == ["stage", "photos", "recipes", "notes", "edit", "buttons"], order(page, 1))
+              order(page, 1) == ["stage", "track", "photos", "recipes", "notes", "edit", "buttons"], order(page, 1))
         open_unit(page, 2)
         check("model-by-model unit: stage, each model's stage, photos, recipes, notes, Edit details, buttons",
-              order(page, 2) == ["stage", "each", "photos", "recipes", "notes", "edit", "buttons"], order(page, 2))
+              order(page, 2) == ["stage", "track", "each", "photos", "recipes", "notes", "edit", "buttons"], order(page, 2))
         open_unit(page, 3)
-        check("a one-model unit has the same order as a batch unit",
+        check("a one-model unit has the same order as a batch unit, without the v61 Track button",
               order(page, 3) == ["stage", "photos", "recipes", "notes", "edit", "buttons"], order(page, 3))
-        check("a one-model unit has no 'Track each model' box in the fold", folded_labels(page, 3) == FOLDED[:-1], folded_labels(page, 3))
+        check("the fold holds the same boxes for a one-model unit (v61: no Track tick in it)", folded_labels(page, 3) == FOLDED, folded_labels(page, 3))
         top = page.evaluate("""(sel) => { const p = document.querySelector(sel);
             const y = (q) => p.querySelector(q).getBoundingClientRect().top;
             return [y('select.jump-stage'), y('.gallery'), y('.panel-field:not(.gallery)'), y('textarea'), y('details.edit-details')]; }""",
@@ -303,20 +305,18 @@ def main():
         check("a single model's own stage menu still works", saved_unit(page, 2)["stages"][0] == 6, saved_unit(page, 2)["stages"])
         check("the recipe menu is on show (no fold to open)",
               page.locator(f'{card(2)} .panel select[aria-label^="Link a recipe"]').is_visible())
-        # Track each model on and off, through the fold, with real taps.
+        # Track each model on and off with real taps (v61: the button under the stage, not a tick in the fold).
         open_unit(page, 1)
-        open_fold(page, 1)
-        page.locator(f'{fold(1)} label:has-text("Track each model") input').click()
+        page.locator(f'{card(1)} .panel button.track-each').click()
         page.wait_for_timeout(300)
         open_unit(page, 1)
         check("Track each model separately switches on (each-list appears right under the stage)",
-              saved_unit(page, 1).get("each") is True and order(page, 1)[:2] == ["stage", "each"], order(page, 1))
+              saved_unit(page, 1).get("each") is True and order(page, 1)[:3] == ["stage", "track", "each"], order(page, 1))
         # The question only comes when the models are at different stages, so move one model up first.
         page.locator(f'{card(1)} .each-list button:has-text("▲")').first.click()
         page.wait_for_timeout(300)
         open_unit(page, 1)
-        open_fold(page, 1)
-        page.locator(f'{fold(1)} label:has-text("Track each model") input').click()
+        page.locator(f'{card(1)} .panel button.track-each').click()
         page.wait_for_timeout(300)
         check("switching it off asks first (the app's own box)", page.is_visible("#dialog-backdrop:not(.hidden)") or page.locator("#dialog-yes").is_visible())
         page.click("#dialog-yes")
@@ -411,7 +411,7 @@ def main():
         page.wait_for_timeout(150)
         help_edit = page.inner_text("#help-edit-details")
         check("Help explains Edit details (what's in it, where it is, that it stays open while you edit)",
-              all(w in help_edit for w in ["Edit details", "name", "faction", "nickname", "Track each model separately", "stays open"]), help_edit)
+              all(w in help_edit for w in ["Edit details", "name", "faction", "nickname", "stays open"]), help_edit)   # v61: the Track tick left Edit details
         topic = page.evaluate("() => document.getElementById('help-edit-details').parentElement.textContent")
         check("the old Help line no longer says the details open with nickname and model count first",
               "its details: nickname, model count" not in topic and "its stage" in topic, topic[:300])
