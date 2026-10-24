@@ -416,6 +416,9 @@ def main():
         open_comp(page)
         copy_spy(page)
         pick_base(page, BLUE)
+        # v62: each colour idea now has two small buttons, so the page is longer and Copy as text sits lower. While the colour box has focus the
+        # bottom tab bar is hidden; pressing the button blurs the box, the bar comes back and covers the button before the click lands. Blur first.
+        page.evaluate("() => document.activeElement && document.activeElement.blur()")
         page.click("#cmp-fold-ideas-panel > .share-row button:has-text('Copy as text')")
         text = copied(page)
         check("Copy as text on the colour ideas copies a heading, three lines and the footnote",
@@ -511,6 +514,7 @@ def main():
         load(page, recipes=RECIPES, units=UNITS)
         open_comp(page)
         pick_base(page, BLUE)
+        page.evaluate("() => document.activeElement && document.activeElement.blur()")   # v62: see the note at the Copy as text click above
         page.click("#cmp-fold-ideas-panel > .share-row button:has-text('Save into a new recipe')")
         page.wait_for_timeout(350)
         steps = draft_steps(page)

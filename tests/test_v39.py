@@ -157,8 +157,8 @@ def main():
         html, sw, app = read("index.html"), read("sw.js"), read("app.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
         check("the version is v39 everywhere: APP_VERSION, sw.js, the six script tags, and the two comments that name it",
-              page.evaluate("APP_VERSION") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61") and len(tags) == 6 and len({v for _, v in tags}) == 1
-              and re.search(r'The "\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61)"', html) and re.search(r'"app\.js\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61)"', app), (page.evaluate("APP_VERSION"), tags))
+              page.evaluate("APP_VERSION") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62") and len(tags) == 6 and len({v for _, v in tags}) == 1
+              and re.search(r'The "\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62)"', html) and re.search(r'"app\.js\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62)"', app), (page.evaluate("APP_VERSION"), tags))
         files = re.search(r"const APP_FILES = \[(.*?)\];", sw, re.S).group(1)
         cached = re.findall(r'"\./([^"?]*)', files)
         root_js = sorted(f for f in os.listdir(ROOT) if f.endswith(".js") and f != "sw.js")
@@ -169,7 +169,7 @@ def main():
         joined = " ".join(entry["changes"]) if entry else ""
         if page.evaluate("!!CHANGELOG.find(r => r.version === 'v39')"):
             check("the v39 Updates entry exists once, is the newest, and tells about the Shop links fold-out, plain links, Add to shopping list, the Settings switch, the Buy these bar, and (one plain line) that restoring a backup now only accepts ordinary photo files",
-                  entry and page.evaluate("CHANGELOG.filter(r => r.version === 'v39').length") == 1 and page.evaluate("CHANGELOG[0].version") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61")
+                  entry and page.evaluate("CHANGELOG.filter(r => r.version === 'v39').length") == 1 and page.evaluate("CHANGELOG[0].version") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62")
                   and all(w in joined for w in ["Shop links", "plain", "Add to shopping list", "Settings", "Buy these"]) and "Restoring a backup now only accepts ordinary photo files" in joined, joined[:300])
         else:
             print("SKIP: "+'the v39 Updates entry exists once, is the newest, and tells about the Shop links')
@@ -246,8 +246,9 @@ def main():
         colour_rows = [r for r in rows if r["section"] != STARTER_LABEL]
         scheme_rows = [r for r in rows if r["section"] == STARTER_LABEL]
         check("every colour match for a paint you do not own has a fold-out under its row, and it starts closed", len(colour_rows) == 5 and all(r["hasFold"] and r["open"] is False for r in colour_rows), colour_rows[:2])
+        # v62: a row now has a third child, the Use in a recipe / Add to a recipe buttons, after the fold-out (so kids is 3, the fold-out is still second)
         check("the fold-out is the second thing in the row, after the colour suggestion, and the suggestion's own words are the same as before (tag Not in your palette, a reason)",
-              all(r["kids"] == 2 and r["tag"] == "Not in your palette" for r in colour_rows), [(r["kids"], r["tag"]) for r in colour_rows])
+              all(r["kids"] == 3 and r["tag"] == "Not in your palette" for r in colour_rows), [(r["kids"], r["tag"]) for r in colour_rows])
         check("it is called Shop links (with the paint's name for a screen reader) and is 44 px tall to tap", all(r["sum"] == "Shop links" and r["sumLabel"] == f"Shop links for {r['name']}" and r["sumH"] >= 44 for r in colour_rows), colour_rows[:1])
         check("the starter scheme rows in the panel have no shop links (they are colours, not paints)", len(scheme_rows) >= 1 and not any(r["hasFold"] for r in scheme_rows), scheme_rows[:1])
         check("the paint you tapped, and the wheel's own lists, have no shop links (the only fold-outs on the page are inside the paint panel)",
