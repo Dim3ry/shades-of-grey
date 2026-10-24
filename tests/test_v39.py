@@ -158,7 +158,7 @@ def main():
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
         check("the version is v39 everywhere: APP_VERSION, sw.js, the six script tags, and the two comments that name it",
               page.evaluate("APP_VERSION") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62") and len(tags) == 6 and len({v for _, v in tags}) == 1
-              and re.search(r'The "\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61)"', html) and re.search(r'"app\.js\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61)"', app), (page.evaluate("APP_VERSION"), tags))
+              and re.search(r'The "\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62)"', html) and re.search(r'"app\.js\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62)"', app), (page.evaluate("APP_VERSION"), tags))
         files = re.search(r"const APP_FILES = \[(.*?)\];", sw, re.S).group(1)
         cached = re.findall(r'"\./([^"?]*)', files)
         root_js = sorted(f for f in os.listdir(ROOT) if f.endswith(".js") and f != "sw.js")
