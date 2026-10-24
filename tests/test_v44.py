@@ -656,13 +656,18 @@ def main():
         page.click("#recipe-seg button[data-view='shopping']")
         page.wait_for_timeout(200)
         check("the shopping page says there is nothing to buy", "Nothing to buy" in page.inner_text("#shop-panel"), page.inner_text("#shop-panel"))
+        # v58 (chunk 1.3) changed this decision. v44 let a kept example paint (or one given a status) count like any paint, so after
+        # Keep them all sixteen made-up paints showed on the shopping list as missing. AI testers then tried to buy "Example deep blue",
+        # which no shop sells, and the list looked broken. Now a paint that started as an example stays off the list either way;
+        # tests/test_v58.py checks real paints still work as before and that Swap for a real paint makes a recipe real.
         page.evaluate("() => { applyPaintStatus(book.paints.find(p => p.name === 'Example mid blue'), 'wishlist'); render(); }")
-        check("a paint you put on your wishlist does appear (it is yours then)",
-              page.evaluate("() => shoppingItems().map(i => i.paint.name)") == ["Example mid blue"])
+        check("a made-up paint you put on your wishlist still stays off the list (v58: no shop sells it)",
+              page.evaluate("() => shoppingItems().length") == 0)
         fresh(page)
         page.evaluate("() => keepExamples()")
         page.wait_for_timeout(200)
-        check("after Keep them all sixteen count like any paint", page.evaluate("() => shoppingItems().length") == 16)
+        check("after Keep them none of the sixteen made-up paints is on the list (v58; v44 expected all 16)",
+              page.evaluate("() => shoppingItems().length") == 0)
 
         # ---------- 9. Saved data's shape ----------
         print("\n--- 9. Saved data's shape ---")

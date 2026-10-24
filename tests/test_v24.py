@@ -11,7 +11,7 @@ Checks:
 4. Clear examples (real taps): removes only the examples; Undo puts everything back exactly; it sticks after
    a reload. Keep them: marks go, nothing is removed; Undo puts the marks back.
 5. What Clear keeps: an example paint you gave a status, edited, or used in your own recipe is kept.
-6. Example paints stay off the shopping list; after Keep they count like any other paint.
+6. Example paints stay off the shopping list (v58: also after Keep them, or with a status, see test_v58.py).
 7. Saved data's shape (DATA_VERSION stays 1): unknown fields survive cleaning, only a real true counts as
    an example mark, the book's keys are unchanged, a backup carries the marks.
 8. Dark and light at 390 and 360 px: the card is on screen, buttons are 44 px targets, text is readable,
@@ -412,14 +412,17 @@ def main():
         check("the shopping list says there is nothing to buy",
               "Nothing to buy" in page.inner_text("#shop-panel"), page.inner_text("#shop-panel"))
         check("no shop buttons show", page.locator("#buy-bar").count() == 0)
+        # v58 (chunk 1.3) changed this decision: after Keep them the made-up paints showed on the list as missing, and AI testers
+        # tried to buy "Example deep blue", which no shop sells. A paint that started as an example now stays off the list, kept or
+        # given a status (test_v58.py checks real paints still work as before).
         page.evaluate("() => { applyPaintStatus(book.paints.find(p => p.name === 'Example mid blue'), 'wishlist'); render(); }")
-        check("a paint you put on your wishlist does appear",
-              page.evaluate("() => shoppingItems().map(i => i.paint.name)") == ["Example mid blue"])
+        check("a made-up paint you put on your wishlist stays off the list (v58)",
+              page.evaluate("() => shoppingItems().length") == 0)
         fresh(page)
         page.evaluate("() => keepExamples()")
         page.wait_for_timeout(200)
-        check("after Keep them the paints count like any other (missing, used in a recipe)",
-              page.evaluate("() => shoppingItems().length") == 16)
+        check("after Keep them the made-up paints still stay off the list (v58; before, all 16 showed as missing)",
+              page.evaluate("() => shoppingItems().length") == 0)
 
         # ---------- 7. Saved data's shape ----------
         print("\n--- 7. Saved data's shape ---")

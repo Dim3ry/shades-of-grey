@@ -2045,6 +2045,7 @@
     // Have / Missing next to each paint in a recipe: the small status marks (a tick or a cross), not words. Hidden until a status is set.
     function haveMark(paint) {
       if (!anyStatusSet()) return null;
+      if (isMadeUpPaint(paint)) return null;   // v58: a made-up example paint is neither had nor missing (no shop sells it)
       const have = haveIt(paint);
       const span = document.createElement("span");
       span.className = "have-mark " + (have ? "have" : "missing");
@@ -2096,7 +2097,8 @@
       }
       const items = [];
       for (const p of book.paints) {
-        if (isExamplePaint(p)) continue;   // v24: example paints never go on the shopping list
+        // v24: example paints never go on the shopping list. v58: nor do kept ones (or ones given a status): no shop sells a made-up paint.
+        if (isExamplePaint(p) || isMadeUpPaint(p)) continue;
         const key = paintStatus(p);
         const used = recipeCount.get(p.id) || 0;
         let reason = "";
@@ -5355,6 +5357,16 @@
       return paint.example === true && paintStatus(paint) === "" && !usedByYourRecipe(paint.id);
     }
     function examplePaints() { return book.paints.filter(isExamplePaint); }
+    // v58: a paint that STARTED as an example: one of the made-up names above, with no brand. It stays made-up after Keep them
+    // (which only removes the "example" mark) and after you give it a status, because no shop sells it. So it never goes on the
+    // shopping list, a recipe that only needs made-up paints says "Uses example paints", and its More options offers
+    // "Swap for a real paint". Renaming it or giving it a brand makes it an ordinary paint.
+    let madeUpNames = null;
+    function isMadeUpPaint(paint) {
+      if (!paint || String(paint.brand || "").trim()) return false;
+      if (!madeUpNames) madeUpNames = new Set(EXAMPLE_RECIPES.flatMap(r => r.steps.flatMap(s => s.paints.map(([, name]) => sameKey(name)))));
+      return madeUpNames.has(sameKey(paint.name));
+    }
     // v56: "3 example units, 5 example recipes, 2 example schemes and 16 example paints" (only the kinds there are).
     function exampleWords({ units = 0, recipes = 0, schemes = 0, paints = 0 }) {
       const parts = [];
@@ -6723,13 +6735,24 @@
       return key;
     }
     // How many of a recipe's paints you don't have. null when it has no paints.
+    // v58: made-up example paints are not counted as missing (no shop sells them); madeUp says how many it uses.
     function recipeMissing(recipe) {
       const ids = new Set();
       for (const st of recipe.steps) for (const sp of st.paints) ids.add(sp.paint);
       if (!ids.size) return null;
-      let missing = 0;
-      for (const id of ids) { const p = paintById(id); if (!p || !haveIt(p)) missing++; }
-      return missing;
+      let missing = 0, madeUp = 0;
+      for (const id of ids) {
+        const p = paintById(id);
+        if (p && isMadeUpPaint(p)) madeUp++;
+        else if (!p || !haveIt(p)) missing++;
+      }
+      return { missing, madeUp };
+    }
+    // v58: the short line on a recipe card: "Missing 2", "Uses example paints" (nothing real missing, some made-up) or "Have all".
+    function recipeStatusWords(count) {
+      if (count.missing) return { mark: "notowned", text: `Missing ${count.missing}` };
+      if (count.madeUp) return { mark: "", text: "Uses example paints" };
+      return { mark: "owned", text: "Have all" };
     }
 
     // ----- The list of recipes -----
@@ -6762,11 +6785,13 @@
         swatches.className = "swatches";
         recipeColours(recipe).slice(0, 12).forEach(c => swatches.appendChild(makeSwatch(c)));
         button.append(name, swatches);
-        const missing = anyStatusSet() ? recipeMissing(recipe) : null;
-        if (missing !== null) {
+        const count = anyStatusSet() ? recipeMissing(recipe) : null;
+        if (count !== null) {
+          const words = recipeStatusWords(count);
           const status = document.createElement("div");
           status.className = "recipe-status";
-          status.append(statusMarker(missing ? "notowned" : "owned"), missing ? `Missing ${missing}` : "Have all");
+          if (words.mark) status.appendChild(statusMarker(words.mark));
+          status.append(words.text);
           button.appendChild(status);
         }
         button.addEventListener("click", () => { openRecipeId = recipe.id; renderRecipes(); window.scrollTo(0, 0); });
@@ -6907,7 +6932,7 @@
           // v15: a blank technique shows the app's guess from the paints.
           technique: () => step.technique || guessTechnique(step.paints.map(sp => paintById(sp.paint))) || "Step",
           colours: () => step.paints.map(sp => paintById(sp.paint)).filter(Boolean).map(pt => pt.colour),
-          missing: () => anyStatusSet() && step.paints.some(sp => { const pt = paintById(sp.paint); return pt && !haveIt(pt); }),
+          missing: () => anyStatusSet() && step.paints.some(sp => { const pt = paintById(sp.paint); return pt && !isMadeUpPaint(pt) && !haveIt(pt); }),   // v58: made-up paints don't count
         }), body);
         steps.appendChild(li);
       });
@@ -7655,6 +7680,34 @@
       commit(`Merged ${from.name} into ${into.name}`, () => { book = cleanRecipeBook(JSON.parse(before)); render(); });   // v18c-3
     }
 
+    // v58: "Swap for a real paint": a made-up example paint is replaced by a real one in every recipe, and leaves your palette.
+    // "real" is a paint from your palette or the built-in list (added to your palette first). It is the same fold as Merge into…
+    // (joinPaints), so the status you gave the example moves to the real paint if that has none. Undo puts everything back.
+    function swapForRealPaint(from, real) {
+      if (!from || !real || !isMadeUpPaint(from)) return;
+      const before = JSON.stringify(book);
+      const into = book.paints.includes(real) ? real : findOrAddPaint(real.brand, real.name, real.colour || "");
+      if (into === from) return;
+      delete into.example;
+      joinPaints(from, into);
+      commit(`Swapped ${from.name} for ${into.name}`, () => { book = cleanRecipeBook(JSON.parse(before)); render(); });
+    }
+    // The real paints you can swap to: your own palette (made-up ones left out) and then every brand in the built-in list,
+    // the same groups as the Compendium's "Start from" box.
+    function realPaintChoices() {
+      const choices = compendiumBaseChoices();
+      const groups = [], byKey = new Map();
+      const addGroup = (label, list) => {
+        list = list.filter(p => !isMadeUpPaint(p));
+        for (const p of list) if (!byKey.has(choices.key(p))) byKey.set(choices.key(p), p);
+        if (list.length) groups.push({ label, options: list.map(p => ({ value: choices.key(p), text: p.brand ? `${p.name} (${p.brand})` : p.name })) });
+      };
+      addGroup("Paints you own", choices.own);
+      addGroup("Other paints in your palette", choices.other);
+      for (const b of choices.brands) addGroup(`More ${b.brand} paints`, b.list);
+      return { groups, byKey };
+    }
+
     // "Remove": only for a paint no recipe uses. Undo puts it back.
     function removePaint(paint) {
       if (!paint || recipesUsingPaint(paint.id).length) return;
@@ -7708,6 +7761,35 @@
         mergeBox.append(label, go);
       }
 
+      // v58: a made-up example paint can be swapped for a real one (the picker is only built when you tap the button)
+      const swapBox = document.createElement("div");
+      swapBox.className = "swap-box hidden";
+      if (isMadeUpPaint(paint)) {
+        const swap = document.createElement("button");
+        swap.type = "button";
+        swap.className = "plain-button swap-real";
+        swap.textContent = "Swap for a real paint";
+        buttons.appendChild(swap);
+        swap.addEventListener("click", () => {
+          if (!swapBox.childElementCount) {
+            const hint = document.createElement("p");
+            hint.className = "hint";
+            hint.textContent = `${paint.name} is a made-up example, so no shop sells it. Pick a real paint and every recipe using it will use that one instead.`;
+            const choices = realPaintChoices();
+            const door = { state: {}, id: (name) => `swap-${paint.id}-${name}` };
+            swapBox.append(hint, buildSearchPicker(door, {
+              id: "pick", label: "Real paint", one: "paint", placeholder: "Type or choose a paint", emptyPlaceholder: "No real paints to choose from",
+              groups: choices.groups, value: "",
+              onPick: (value) => swapForRealPaint(paint, choices.byKey.get(value)),
+            }));
+          }
+          swapBox.classList.toggle("hidden");
+          swap.setAttribute("aria-expanded", String(!swapBox.classList.contains("hidden")));
+          if (!swapBox.classList.contains("hidden")) { const box = swapBox.querySelector("input"); if (box) box.focus(); }
+        });
+        swap.setAttribute("aria-expanded", "false");
+      }
+
       if (!usedIn.length) {
         const remove = document.createElement("button");
         remove.className = "danger-button";
@@ -7725,6 +7807,7 @@
         wrap.appendChild(hint);
       }
       wrap.appendChild(mergeBox);
+      wrap.appendChild(swapBox);
       return wrap;
     }
 
@@ -14343,12 +14426,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=57".
+    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=58".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v57";
+    const APP_VERSION = "v58";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -14799,6 +14882,11 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v58", date: "24 Oct 2026", changes: [
+        "The made-up example paints, such as Example deep blue, no longer show on the shopping list or in Copy as text, even after Keep them. No shop sells them.",
+        "A recipe that only uses example paints now says Uses example paints instead of Missing.",
+        "An example paint's More options on Your Palette has Swap for a real paint: pick a real paint and every recipe using the example uses it instead. Undo puts it back.",
+      ]},
       { version: "v57", date: "23 Oct 2026", changes: [
         "Once you have a few units or a recipe of your own, the Dashboard asks, once, whether you'd like to save a backup. Save backup saves the same file as in Settings, and Not now hides the card for two weeks. It asks again when your last backup is a month old and you've changed things since.",
         "Settings \u2192 Backups says when your last backup was, right under Save backup, or Never.",
