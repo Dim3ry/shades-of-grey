@@ -219,11 +219,8 @@
     }
     // v62: "Painted with issues" becomes "Needs touch-ups" for anyone on the v3 to v61 default stages.
     // DATA_VERSION went up to 2 for this, so an older copy of the app left open stops saving
-    // instead of writing the old name back.
-    if (renamedStageList(STAGES) !== STAGES) {
-      settings.stages = STAGES = DEFAULT_STAGES.slice();
-      try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (ignored) {}
-    }
+    // instead of writing the old name back. The saveSettings() a little further down saves it.
+    if (renamedStageList(STAGES) !== STAGES) settings.stages = STAGES = DEFAULT_STAGES.slice();
     // Settings saved before the Done marker existed: use the matching default if the
     // stages are one of the built-in sets, otherwise just the last stage.
     if (settings.doneFrom === undefined) {
