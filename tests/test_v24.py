@@ -284,15 +284,13 @@ def main():
         page.click("#examples-card-recipes .clear-recipe-examples")
         page.wait_for_timeout(300)
         t = toast(page)
-        check("a message says exactly what was cleared, with Undo",
-              t["shown"] and t["undo"] and t["text"] == "Cleared 5 example recipes, 2 example schemes and 16 example paints", t)
+        check("a message says exactly what was cleared, with Undo (v56: the example units go too)",
+              t["shown"] and t["undo"] and t["text"] == "Cleared 3 example units, 5 example recipes, 2 example schemes and 16 example paints", t)
         check("no recipes and no paints are left", page.evaluate("() => book.recipes.length + book.paints.length") == 0)
         check("the card is gone", not card_visible(page))
         check("the recipe list no longer shows the examples", "Blue armour" not in page.inner_text("#recipe-list")
               and "Green skin" not in page.inner_text("#recipe-list"), page.inner_text("#recipe-list"))
-        check("the example units are untouched except that the recipe links are gone",
-              [u["name"] for u in saved_units(page)] == ["Captain", "Brutes", "Guardians"]
-              and all("recipes" not in u for u in saved_units(page)), saved_units(page))
+        check("v56: the example units are cleared in the same tap", saved_units(page) == [], saved_units(page))
         check("saved: the book is empty", saved_book(page)["recipes"] == [] and saved_book(page)["paints"] == [])
         page.click("#toast-undo")
         page.wait_for_timeout(300)
@@ -356,7 +354,7 @@ def main():
               "5 example recipes, 2 example schemes and 15 example paints" in page.text_content("#examples-card-recipes"), page.text_content("#examples-card-recipes"))
         page.click("#examples-card-recipes .clear-recipe-examples")
         page.wait_for_timeout(300)
-        check("Clear says 5 recipes, 2 schemes and 15 paints", toast(page)["text"] == "Cleared 5 example recipes, 2 example schemes and 15 example paints", toast(page))
+        check("Clear says 3 units, 5 recipes, 2 schemes and 15 paints", toast(page)["text"] == "Cleared 3 example units, 5 example recipes, 2 example schemes and 15 example paints", toast(page))
         check("the paint with a status is kept (and nothing else is)", palette_names(page) == ["Example mid blue"], palette_names(page))
         check("it keeps its status", page.evaluate("() => paintStatus(book.paints[0])") == "owned")
         check("the kept paint is saved without an example claim on the card (card gone)", not card_visible(page))
@@ -418,7 +416,7 @@ def main():
         check("a paint you put on your wishlist does appear",
               page.evaluate("() => shoppingItems().map(i => i.paint.name)") == ["Example mid blue"])
         fresh(page)
-        page.evaluate("() => keepRecipeExamples()")
+        page.evaluate("() => keepExamples()")
         page.wait_for_timeout(200)
         check("after Keep them the paints count like any other (missing, used in a recipe)",
               page.evaluate("() => shoppingItems().length") == 16)

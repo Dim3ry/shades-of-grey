@@ -5130,68 +5130,98 @@
       });
     }
 
-    // ----- v21: "THESE ARE EXAMPLES" -----
-    // The app starts with 3 example units so there's something to look at. While any of
-    // them are still there, a card on the Dashboard and the Units tab says so, with
-    // "Clear examples" (removes ONLY those units, with Undo) and "Keep them" (they become
-    // ordinary units and the card goes away). Renaming an example, or changing its game or
-    // faction, also makes it yours (see editUnit).
+    // ----- v21: "THESE ARE EXAMPLES" (v56: one card, one Clear and one Keep for every kind of example) -----
+    // The app starts with 3 example units so there's something to look at (and a brand-new start also
+    // gets example recipes, schemes and paints, see below). While any example of any kind is still there,
+    // the same card shows on the Dashboard, the Units tab and the Recipes tab (Your Palette too).
+    // v56: "Clear examples" removes ALL of them at once (units, recipes, schemes and paints, with one Undo
+    // that brings all of it back) and "Keep them" makes all of them yours, so the card goes away on every
+    // tab. Before v56 each card only cleared or kept its own kind, so the card came back on another tab.
+    // Renaming an example, or changing its game or faction, also makes it yours (see editUnit).
     function exampleUnits() { return models.filter(m => m.example === true); }
     function renderExamplesCards() {
-      const examples = exampleUnits();
       for (const id of ["examples-card-dash", "examples-card"]) {
         const card = document.getElementById(id);
-        card.classList.toggle("hidden", !examples.length);
+        const parts = examplesCardParts("clear-examples", "keep-examples");
+        card.classList.toggle("hidden", !parts);
         card.innerHTML = "";
-        if (!examples.length) continue;
-        const text = document.createElement("p");
-        const strong = document.createElement("strong");
-        strong.textContent = examples.length === 1 ? "This is an example." : "These are examples.";
-        const names = examples.map(m => displayName(m)).join(", ");
-        const why = document.createElement("p");
-        why.className = "hint";
-        why.textContent = `The app starts with ${examples.length === 1 ? "an example unit" : plural(examples.length, "example unit")} ` +
-          `(${names}) so you can try things out. Clear ${examples.length === 1 ? "it" : "them"} when you're ready to add your own.`;
-        text.append(strong);   // v52: the explanation sits behind More info
-        const buttons = document.createElement("div");
-        buttons.className = "button-grid";
-        const clear = document.createElement("button");
-        clear.type = "button";
-        clear.className = "danger-button clear-examples";
-        clear.textContent = "Clear examples";
-        clear.addEventListener("click", clearExamples);
-        const keep = document.createElement("button");
-        keep.type = "button";
-        keep.className = "plain-button keep-examples";
-        keep.textContent = examples.length === 1 ? "Keep it" : "Keep them";
-        keep.addEventListener("click", keepExamples);
-        buttons.append(clear, keep);
-        card.append(text, pageMoreInfo(id, [why], { label: "Examples" }), buttons);
+        // v52: the explanation sits behind More info
+        if (parts) card.append(parts.text, pageMoreInfo(id, [parts.why], { label: "Examples" }), parts.buttons);
       }
     }
+    // v56: what every examples card holds: the heading line, the explanation (for More info) and the two
+    // buttons. Null when nothing is an example any more. The class names stay as they were on each card.
+    function examplesCardParts(clearClass, keepClass) {
+      const units = exampleUnits(), recipes = exampleRecipes(), schemes = exampleSchemes(), paints = examplePaints();
+      const total = units.length + recipes.length + schemes.length + paints.length;
+      if (!total) return null;
+      const many = total > 1;
+      const text = document.createElement("p");
+      const strong = document.createElement("strong");
+      strong.textContent = many ? "These are examples." : "This is an example.";
+      text.append(strong);
+      const why = document.createElement("p");
+      why.className = "hint";
+      const counts = { units: units.length, recipes: recipes.length, schemes: schemes.length, paints: paints.length };
+      const names = units.length ? ` (the ${units.length === 1 ? "unit is" : "units are"} ${units.map(m => displayName(m)).join(", ")})` : "";
+      why.textContent = `You have ${exampleWords(counts)}${names} so you can try things out. ` +
+        `Clear ${many ? "them" : "it"} when you're ready to add your own. ` +
+        `Anything you edit, and any paint you use in your own recipe or give a status, stays yours.`;
+      const buttons = document.createElement("div");
+      buttons.className = "button-grid";
+      const clear = document.createElement("button");
+      clear.type = "button";
+      clear.className = "danger-button " + clearClass;
+      clear.textContent = "Clear examples";
+      clear.addEventListener("click", clearExamples);
+      const keep = document.createElement("button");
+      keep.type = "button";
+      keep.className = "plain-button " + keepClass;
+      keep.textContent = many ? "Keep them" : "Keep it";
+      keep.addEventListener("click", keepExamples);
+      buttons.append(clear, keep);
+      return { text, why, buttons };
+    }
+    // v56: clears every example at once and says what went. Undo puts all of it back.
     function clearExamples() {
-      const gone = exampleUnits();
-      if (!gone.length) return;
-      // Remember where each one was, so Undo puts it back in the same place.
-      const spots = gone.map(m => [models.indexOf(m), m]);
-      models = models.filter(m => m.example !== true);
-      for (const m of gone) openIds.delete(m.id);
+      const goneUnits = exampleUnits(), goneRecipes = exampleRecipes(), goneSchemes = exampleSchemes(), gonePaints = examplePaints();
+      if (!goneUnits.length && !goneRecipes.length && !goneSchemes.length && !gonePaints.length) return;
+      const message = `Cleared ${exampleWords({ units: goneUnits.length, recipes: goneRecipes.length,
+                                                schemes: goneSchemes.length, paints: gonePaints.length })}`;
+      // The recipes first: that also unlinks them from the example units, and remembers the links for Undo.
+      const putRecipesBack = takeOutRecipeExamples(goneRecipes, goneSchemes, gonePaints);
+      // Remember where each unit was, so Undo puts it back in the same place.
+      const spots = goneUnits.map(m => [models.indexOf(m), m]);
+      models = models.filter(m => !goneUnits.includes(m));
+      for (const m of goneUnits) openIds.delete(m.id);
       // Their photo files (if you added any) are left in the photo store, so Undo brings
       // them back too. "Clean up photo storage" in Settings removes them later.
-      commit(`Cleared ${plural(gone.length, "example unit")}`, () => {
+      commit(message, () => {
         for (const [spot, m] of spots) {
           if (models.some(x => x.id === m.id)) continue;   // that id is in use again: skip
           models.splice(Math.min(spot, models.length), 0, m);
         }
+        putRecipesBack();   // after the units, so their links to the example recipes come back too
         render();
       }, "Undo", 8);
     }
+    // v56: keeps every example at once (units, recipes, schemes and paints), so no card is left on any tab.
     function keepExamples() {
-      const kept = exampleUnits();
-      if (!kept.length) return;
-      for (const m of kept) delete m.example;
-      commit(`Kept ${kept.length === 1 ? "the example as your own unit" : "the examples as your own units"}`, () => {
-        for (const m of kept) if (models.includes(m)) m.example = true;
+      const units = exampleUnits();
+      const recipes = book.recipes.filter(r => r.example === true);
+      const schemes = book.schemes.filter(s => s.example === true);
+      const paints = book.paints.filter(p => p.example === true);
+      if (!units.length && !recipes.length && !schemes.length && !paints.length) return;
+      for (const m of units) delete m.example;
+      for (const r of recipes) delete r.example;
+      for (const s of schemes) delete s.example;
+      for (const p of paints) delete p.example;
+      const words = exampleWords({ units: units.length, recipes: recipes.length, schemes: schemes.length, paints: paints.length });
+      commit(`Kept ${words} as your own`, () => {
+        for (const m of units) if (models.includes(m)) m.example = true;
+        for (const r of recipes) if (book.recipes.includes(r)) r.example = true;
+        for (const s of schemes) if (book.schemes.includes(s)) s.example = true;
+        for (const p of paints) if (book.paints.includes(p)) p.example = true;
         render();
       });
     }
@@ -5200,7 +5230,7 @@
     // A brand-new start (no units saved yet, an empty recipe book) also gets example recipes and
     // example schemes, and the (made-up, plain-named) example paints they use appear in Your
     // Palette. A card on the Recipes tab says so, with "Clear examples" (Undo for 8 seconds) and
-    // "Keep them". Anyone who already had data is left alone by the automatic start-up seeding
+    // "Keep them" (v56: the same card as on the Dashboard, so both act on the example units too). Anyone who already had data is left alone by the automatic start-up seeding
     // (but v44's Settings → Restore example recipes can bring the examples back for anyone, on
     // purpose, with a click). The marks are "example: true" on a recipe, a scheme or a paint;
     // older versions keep unknown fields (cleanRecipeBook copies recipes, schemes and paints with
@@ -5324,8 +5354,10 @@
       return paint.example === true && paintStatus(paint) === "" && !usedByYourRecipe(paint.id);
     }
     function examplePaints() { return book.paints.filter(isExamplePaint); }
-    function exampleRecipeWords(recipes, paints, schemes) {
+    // v56: "3 example units, 5 example recipes, 2 example schemes and 16 example paints" (only the kinds there are).
+    function exampleWords({ units = 0, recipes = 0, schemes = 0, paints = 0 }) {
       const parts = [];
+      if (units) parts.push(plural(units, "example unit"));
       if (recipes) parts.push(plural(recipes, "example recipe"));
       if (schemes) parts.push(plural(schemes, "example scheme"));
       if (paints) parts.push(plural(paints, "example paint"));
@@ -5333,45 +5365,21 @@
     }
     // The card shows only while something is still an example, so once everything is cleared or kept
     // it is gone (it is redrawn by every render(), also after a reload or a change in another window).
+    // v56: the same card as on the Dashboard and Units tab (examplesCardParts), so its Clear and Keep act on
+    // every example, units too.
     function renderRecipeExamplesCard(show) {
       const card = document.getElementById("examples-card-recipes");
-      const recipes = exampleRecipes(), schemes = exampleSchemes(), paints = examplePaints();
-      const any = show && (recipes.length || schemes.length || paints.length);
-      card.classList.toggle("hidden", !any);
+      const parts = show ? examplesCardParts("clear-recipe-examples", "keep-recipe-examples") : null;
+      card.classList.toggle("hidden", !parts);
       card.innerHTML = "";
-      if (!any) return;
-      const text = document.createElement("p");
-      const strong = document.createElement("strong");
-      const many = recipes.length + schemes.length + paints.length > 1;
-      strong.textContent = many ? "These are examples." : "This is an example.";
-      text.appendChild(strong);
+      if (!parts) return;
       // v50: the longer explanation sits behind More info; the two buttons stay in view.
-      const detail = document.createElement("p");
-      detail.className = "hint";
-      detail.textContent = `You have ${exampleRecipeWords(recipes.length, paints.length, schemes.length)}. ` +
-        `Clear ${many ? "them" : "it"} when you're ready to add your own. ` +
-        `Anything you edit, and any paint you use in your own recipe or give a status, stays yours.`;
-      const more = buildMoreInfo([detail], { state: infoState(recipeInfoDoor, "examples-card"), id: "examples-card-recipes-info", label: "the examples" });
-      const buttons = document.createElement("div");
-      buttons.className = "button-grid";
-      const clear = document.createElement("button");
-      clear.type = "button";
-      clear.className = "danger-button clear-recipe-examples";
-      clear.textContent = "Clear examples";
-      clear.addEventListener("click", clearRecipeExamples);
-      const keep = document.createElement("button");
-      keep.type = "button";
-      keep.className = "plain-button keep-recipe-examples";
-      keep.textContent = many ? "Keep them" : "Keep it";
-      keep.addEventListener("click", keepRecipeExamples);
-      buttons.append(clear, keep);
-      card.append(text, more, buttons);
+      const more = buildMoreInfo([parts.why], { state: infoState(recipeInfoDoor, "examples-card"), id: "examples-card-recipes-info", label: "the examples" });
+      card.append(parts.text, more, parts.buttons);
     }
-    function clearRecipeExamples() {
-      const goneRecipes = exampleRecipes();
-      const goneSchemes = exampleSchemes();
-      const gonePaints = examplePaints();
-      if (!goneRecipes.length && !goneSchemes.length && !gonePaints.length) return;
+    // v56: takes the example recipes, schemes and paints out (no render, no message) and returns what puts them
+    // back, so clearExamples can clear them together with the example units under one Undo.
+    function takeOutRecipeExamples(goneRecipes, goneSchemes, gonePaints) {
       // Remember where everything was, and what was linked to what, so Undo can put it all back.
       const goneIds = new Set(goneRecipes.map(r => r.id));
       const recipeSpots = goneRecipes.map(r => [book.recipes.indexOf(r), r]);
@@ -5387,8 +5395,7 @@
       book.recipes = book.recipes.filter(r => !goneRecipes.includes(r));
       book.schemes = book.schemes.filter(s => !goneSchemes.includes(s));
       book.paints = book.paints.filter(p => !gonePaints.includes(p));
-      const message = `Cleared ${exampleRecipeWords(goneRecipes.length, gonePaints.length, goneSchemes.length)}`;
-      commit(message, () => {
+      return () => {
         // Put each back in its old place. If its number has been taken since, it gets a new one
         // (and the steps, schemes and links that point at it follow).
         const paintIdMap = new Map();
@@ -5423,23 +5430,7 @@
           m.recipes = [...back, ...extra];
           if (!m.recipes.length) delete m.recipes;
         }
-        render();
-      }, "Undo", 8);
-    }
-    function keepRecipeExamples() {
-      const recipes = book.recipes.filter(r => r.example === true);
-      const schemes = book.schemes.filter(s => s.example === true);
-      const paints = book.paints.filter(p => p.example === true);
-      if (!recipes.length && !schemes.length && !paints.length) return;
-      for (const r of recipes) delete r.example;
-      for (const s of schemes) delete s.example;
-      for (const p of paints) delete p.example;
-      commit(`Kept the examples as your own`, () => {
-        for (const r of recipes) if (book.recipes.includes(r)) r.example = true;
-        for (const s of schemes) if (book.schemes.includes(s)) s.example = true;
-        for (const p of paints) if (book.paints.includes(p)) p.example = true;
-        render();
-      });
+      };
     }
     // v44: Settings → Your data → Restore example recipes. A deliberate click, available to everyone
     // (also people who started before the examples existed). It adds back only what is missing
@@ -5452,7 +5443,7 @@
         notify("The examples are already here (or you kept them as your own), so nothing was added.");
         return;
       }
-      commit(`Added ${exampleRecipeWords(added.recipes, added.paints, added.schemes)}. You'll find them on the Recipes tab.`);
+      commit(`Added ${exampleWords(added)}. You'll find them on the Recipes tab.`);
     }
     document.getElementById("restore-examples").addEventListener("click", restoreExampleRecipes);
 
@@ -14298,12 +14289,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=55".
+    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=56".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v55";
+    const APP_VERSION = "v56";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -14753,6 +14744,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v56", date: "23 Oct 2026", changes: [
+        "Clear examples now clears all the examples in one go: the example units, recipes, schemes and paints. The message says what was cleared, and Undo brings all of it back.",
+        "Keep them now keeps all the examples as your own, so the These are examples card goes away on the Dashboard, Units, Recipes and Your Palette.",
+      ]},
       { version: "v55", date: "20 Oct 2026", changes: [
         "The small labels on recipes, Colour ideas and the Compendium are now plain text instead of rounded pills: the part name on a recipe, Fine, Look at this and Suggestion, and Pro preview. The words are the same.",
         "Screen readers now read a paint's own name on the buttons and boxes that act on it, such as Remove, More options, the colour box, Merge, Shop links and the swatch tiles, instead of a longer label that repeated the name.",
