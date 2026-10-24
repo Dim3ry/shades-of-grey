@@ -128,13 +128,14 @@ def main():
         names = " | ".join(got)
         check("each recipe's button adds the paints it uses that you don't have, and not the paint you own (v62)",
               all(n in names for n in ("Wish One", "Missing One", "Missing Two")) and not any(n in names for n in ("Owned One", "Plain One", "Low One", "Empty One")), got)
-        check("Missing One, used by two recipes, is listed once and names both recipes",
-              sum("Missing One" in g for g in got) == 1 and any("Missing One" in g and "Recipe: Moss Armour" in g and "Recipe: Dusty Cloak" in g for g in got), got)
+        # v62: the second recipe's button skips a paint already on the list, so it names the recipe that added it.
+        check("Missing One, used by two recipes, is listed once and names the recipe that added it",
+              sum("Missing One" in g for g in got) == 1 and any("Missing One" in g and "Recipe: Moss Armour" in g for g in got), got)
         check("grouped by brand", page.locator("#shop-panel .shop-brand").count() == 2, page.locator("#shop-panel .shop-brand").all_inner_texts())
         check("the Buy these bar and Copy as text are still there", page.locator("#shop-panel .shop-buy, #shop-panel [class*=buy]").count() >= 1
               and page.locator("#shop-panel button:has-text('Copy as text')").count() == 1)
         text = page.evaluate("() => shoppingText(shoppingItems())")
-        check("Copy as text carries where each paint came from", "Missing One" in text and "(from Recipe: Moss Armour, Recipe: Dusty Cloak)" in text, text[:200])
+        check("Copy as text carries where each paint came from", "Missing One" in text and "Missing One (from Recipe: Moss Armour)" in text and "Missing Two (from Recipe: Dusty Cloak)" in text, text[:200])
         page.evaluate("() => { book.paints.push({ id: 90, brand: 'Test Paints', name: 'Example Paint', colour: '#112233', example: true }); book.recipes.push({ id: 91, name: 'Example Recipe', part: 'Armour', notes: '', example: true, steps: [{ technique: 'Base coat', coats: 1, paints: [{ paint: 90, mix: null }], ratio: '', note: '', optional: false }] }); render(); }")
         check("example paints still never go on the list", not any("Example Paint" in g for g in items(page)))
 
@@ -177,7 +178,7 @@ def main():
         for name in ("dashboard", "units", "recipes", "compendium", "settings"):
             tab(page, name)
             seen[name] = (count_text(page), page.is_visible("#basket-button"))
-        check("the basket shows the same count on all five tabs", all(v == (str(n), True) for v in seen.values()) and n >= 4, seen)
+        check("the basket shows the same count on all five tabs", all(v == (str(n), True) for v in seen.values()) and n >= 3, seen)   # v62: 3 (was 4 or more with running low and empty)
         shot(page, "v40-basket-390.png")
         load(page, paints=[P(1, "Owned One")], recipes=[])
         check("with nothing to buy the basket is hidden", count_text(page) == "" and not page.is_visible("#basket-button"))
