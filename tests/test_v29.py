@@ -376,7 +376,7 @@ def main():
             edit_recipe(page, rid)
             open_panel(page)
             text_all.append(result_text(page))
-        check("every answer says plainly that it is only a guide", all("This is only a guide, not a rule." in t for t in text_all), text_all)
+        check("every answer says plainly that it is only a guide", all("Colours on a screen are only a guide" in t for t in text_all), text_all)   # v59: the guide line is shorter and shared with the Compendium copy text
         check("no answer names a paint or recipe, or leaves a placeholder",
               not any(re.search(r"Macragge|Troll Slayer|Forest Green|Deep Purple|Mid Blue|Burnt|Violet|Scarlet|Ink Sky|Eshin|Good scheme|Too many colours|Flat blues|Both problems|undefined|NaN|\{|\}", t) for t in text_all), text_all)
         check("every row is short: under 190 characters, one or two sentences",

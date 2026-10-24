@@ -255,8 +255,8 @@ def main():
         check("the data is what the tests expect: 24 schemes, 18 detail recipes, 12 basing tips", (info["s"], info["d"], info["b"]) == (24, 18, 12), info)
         for part, chipsId, noneId, what, attr, total in [("starter", "starter-chips", "starter-none", "schemes", "mood", 24), ("detail", "detail-chips", "detail-none-group", "recipes", "detail-group", 18),
                                                           ("basing", "basing-chips", "basing-none-group", "tips", "basing-group", 12)]:
-            check(f"{part}: at the start no list is shown, and a plain line says to pick a group or tap All",
-                  page.locator(f"#cmp-{chipsId}").count() == 0 and page.inner_text(f"#cmp-{noneId}") == NONE_LINE.format(what), page.inner_text(f"#cmp-{noneId}") if page.locator(f"#cmp-{noneId}").count() else "missing")
+            check(f"{part}: at the start no list is shown, and (v59) there is no plain line either",
+                  page.locator(f"#cmp-{chipsId}").count() == 0 and page.locator(f"#cmp-{noneId}").count() == 0)
             groups_id = {"starter": "starter-moods", "detail": "detail-groups", "basing": "basing-groups"}[part]
             row = chips(page, f"#cmp-{groups_id} .chip")
             check(f"{part}: the group buttons are there, All first, and none is on", row[0][0] == "All" and all(r[1] == "false" for r in row), row)
@@ -265,7 +265,7 @@ def main():
             check(f"{part}: All shows all {total}", page.locator(f"#cmp-{chipsId} .chip").count() == total and page.get_attribute(f'#cmp-{groups_id} [data-{attr}="all"]', "aria-pressed") == "true")
             page.click(f'#cmp-{groups_id} [data-{attr}="all"]')
             page.wait_for_timeout(100)
-            check(f"{part}: tapping All again puts the list away", page.locator(f"#cmp-{chipsId}").count() == 0 and page.locator(f"#cmp-{noneId}").count() == 1)
+            check(f"{part}: tapping All again puts the list away", page.locator(f"#cmp-{chipsId}").count() == 0 and page.locator(f"#cmp-{noneId}").count() == 0)
         counts = {}
         for key, n in info["moods"].items():
             page.click(f'#cmp-starter-moods [data-mood="{key}"]')
@@ -274,7 +274,7 @@ def main():
         check("every theme group shows exactly its own schemes (Cold, Warm, Dark, Bright)", counts == info["moods"], counts)
         page.click('#cmp-starter-moods [data-mood="bright"]')
         page.wait_for_timeout(80)
-        check("tapping the group that is on puts it away", page.locator("#cmp-starter-chips").count() == 0 and page.locator("#cmp-starter-none").count() == 1)
+        check("tapping the group that is on puts it away", page.locator("#cmp-starter-chips").count() == 0 and page.locator("#cmp-starter-none").count() == 0)
         dcounts, bcounts = {}, {}
         for key in info["dgroups"]:
             page.click(f'#cmp-detail-groups [data-detail-group="{key}"]')
@@ -314,7 +314,7 @@ def main():
         check("tapping Combinations turns it on and Themes off, and shows the pairing groups", [r[1] for r in chips(page, "#cmp-starter-view .chip")] == ["false", "true"]
               and [r[0] for r in chips(page, "#cmp-starter-combos .chip")] == COMBOS and page.locator("#cmp-starter-moods").count() == 0, chips(page, "#cmp-starter-combos .chip"))
         check("the switch keeps the focus on the button just tapped", page.evaluate("() => document.activeElement.dataset.view") == "combos")
-        check("no list until a pairing group is chosen, and the plain line says so", page.locator("#cmp-starter-chips").count() == 0 and page.inner_text("#cmp-starter-none") == NONE_LINE.format("schemes"))
+        check("no list until a pairing group is chosen (v59: and no plain line)", page.locator("#cmp-starter-chips").count() == 0 and page.locator("#cmp-starter-none").count() == 0)
         all_keys = page.evaluate("STARTER_SCHEMES.map(s => s.key)")
         seen, per = [], {}
         for ck in COMBO_KEYS:
@@ -559,7 +559,7 @@ def main():
                     return out; }""")
                 bad = {k: round(contrast(rgb(v[0]), rgb(v[1])), 2) for k, v in col.items() if contrast(rgb(v[0]), rgb(v[1])) < 4.5}
                 tag = f"{appearance} {width}px"
-                check(f"{tag}: the headings, the switch, the group and scheme buttons, the plain line and the text all have contrast of at least 4.5", not bad and len(col) >= 11, (bad, len(col)))
+                check(f"{tag}: the headings, the switch, the group and scheme buttons, the plain line and the text all have contrast of at least 4.5", not bad and len(col) >= 10, (bad, len(col)))   # v59: the plain line under the group buttons is gone, so one fewer
                 edge = page.evaluate("""() => { const open = getComputedStyle(document.getElementById('cmp-fold-starter-button')), card = getComputedStyle(document.querySelector('#view-compendium .card')).backgroundColor;
                     return { border: open.borderTopColor, card }; }""")
                 check(f"{tag}: an open heading has an outline you can see (contrast 3 or more against the card)", contrast(rgb(edge["border"]), rgb(edge["card"])) >= 3, edge)
