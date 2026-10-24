@@ -73,7 +73,7 @@ def main():
         entry = page.evaluate("CHANGELOG.find(c => c.version === 'v63')")
         check("the v63 Updates entry exists and is the newest while v63 is current", bool(entry) and (version != "v63" or page.evaluate("CHANGELOG[0].version") == "v63"))
         joined = " ".join(entry["changes"]) if entry else ""
-        check("the entry says 12 and names the popular ranges", "12" in joined and all(b in joined for b in POPULAR), joined)
+        check("the entry says 12 and popular ranges, and names no brand (no Games Workshop names in our words)", "12" in joined and "popular ranges" in joined and not any(b in joined for b in POPULAR), joined)
         check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
 
         # ---------- 2. The settings ----------
@@ -118,7 +118,7 @@ def main():
         # ---------- 5. Help and wording ----------
         print("\n--- 5. Help ---")
         help_li = page.evaluate("() => { const e = document.getElementById('help-wheel-order'); return e ? e.textContent : ''; }")
-        check("Help has a line on the wheel's order that names 12 and the popular ranges", "12" in help_li and all(b in help_li for b in POPULAR) and "Show all" in help_li, help_li)
+        check("Help has a line on the wheel's order: 12, popular ranges, Show all, and no brand names", "12" in help_li and "popular ranges" in help_li and "Show all" in help_li and not any(b in help_li for b in POPULAR), help_li)
         check("no em dash in the Help line or the v63 Updates entry", "—" not in help_li and "—" not in app[app.index('{ version: "v63"'):app.index('{ version: "v62"')])
         check("the wheel's group sentence says popular ranges come next", "yours first, then popular ranges" in app)
 

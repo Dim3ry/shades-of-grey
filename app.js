@@ -1598,6 +1598,10 @@
     // in Colour ideas and the Compendium. Your own paints (Your Palette) are always searched, whatever their brand.
     // It lists the ones that are OFF, so a brand added in a later version starts switched on.
     const PAINT_BRANDS = [...new Set(KNOWN_PAINTS.map(k => k.brand))];
+    // v63: the paint ranges most painters already know. In a colour wheel group, the built-in paints from these come before the other
+    // brands, so the short list is not filled with brands nobody has heard of. Chosen by George (chunk 3.3); the paint data has no
+    // "popular" mark of its own. The screen never names them (it says "popular ranges").
+    const POPULAR_BRANDS = ["Citadel", "The Army Painter", "Vallejo"];
     let searchedPaints = KNOWN_PAINTS;
     function cleanBrandsOff(list) {
       return Array.isArray(list) ? [...new Set(list.filter(b => typeof b === "string" && PAINT_BRANDS.includes(b)))] : [];
@@ -10493,10 +10497,7 @@
     }
     const WHEEL_ROUGH_NOTE = "The colour shown is only a guide for this kind of paint.";
     const WHEEL_GROUP_SHOWN = 12;   // v37 part 2: how many paints a group shows before "Show all" (your own paints are never hidden); v63: 8 -> 12
-    // v63: the paint ranges most painters know and can find in a shop. In a wheel group, the built-in paints from these come before the
-    // rest, so the short list is not filled with brands nobody has heard of. Chosen by George (chunk 3.3); there is no "popular" in the data.
-    const POPULAR_BRANDS = ["Citadel", "The Army Painter", "Vallejo"];
-    function wheelPopular(item) { return POPULAR_BRANDS.includes(tidyBrand(item.paint.brand)) ? 0 : 1; }
+    function wheelPopular(item) { return POPULAR_BRANDS.includes(tidyBrand(item.paint.brand)) ? 0 : 1; }   // v63: 0 for a popular range (see POPULAR_BRANDS)
 
     // ---- v43: DRILL-DOWN (the six hue colours open into their three groups) ----
     // Tap red, orange, yellow, green, blue or purple and the picture is redrawn as that colour's three groups from WHEEL (the same groups and
@@ -15133,7 +15134,7 @@
     const CHANGELOG = [
       { version: "v63", date: "24 Oct 2026", changes: [
         "In the Compendium colour wheel, each group now shows 12 paints before Show all (it was 8).",
-        "After your own paints, paints from popular ranges (Citadel, The Army Painter and Vallejo) come first, so the short list is not filled with brands you may not know. The rest are still there under Show all.",
+        "After your own paints, paints from popular ranges come first, so the short list is not filled with brands you may not know. The rest are still there under Show all.",
       ]},
       { version: "v62", date: "24 Oct 2026", changes: [
         "A paint in the Compendium (a colour idea, or a colour wheel paint once you open it) has two buttons. Use in a recipe starts a new recipe with that paint in step 1. Add to a recipe lets you pick a recipe, then one of its steps or a new step. Both have an Undo.",
