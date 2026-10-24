@@ -13753,6 +13753,8 @@
           hobby: cell(cells, "game"),
           faction: plainQuotes(cell(cells, "faction")),
           stage: stageFromText(stageText),
+          // v60: only a stage the app knows counts as given; otherwise the row starts at the set-all stage.
+          stageGiven: stageText !== "" && !unknownStages.has(stageText),
           nickname: cell(cells, "nickname"),
           count: cleanCount(cell(cells, "count")),
           repaint: ["yes", "y", "true", "1"].includes(cell(cells, "repaint").toLowerCase()),
@@ -13834,6 +13836,53 @@
       return text.replace(/[‘’ʼ]/g, "'").replace(/[“”]/g, '"');
     }
 
+    // v60: a model count written on the unit's own line. Gives back the name without it,
+    // and the count (null if the line has none). These all read as 10 Boyz:
+    //   "10x Boyz", "10 x Boyz", "Boyz x10", "Boyz ×10", "Boyz (10)", "Boyz [10x]",
+    //   "Boyz (10 models)", "Boyz - 10 models", "10 Boyz"
+    // Testers' units landed as 1 model because these were never read.
+    function countInName(text) {
+      const name = String(text || "").trim();
+      const patterns = [
+        /^(\d{1,4})\s*[x×]\s+(.+)$/i,                                                        // 10x Boyz
+        /^(.+?)\s*[x×]\s*(\d{1,4})$/i,                                                       // Boyz x10
+        /^(.+?)\s*[([]\s*(\d{1,4})\s*(?:[x×]|models?|minis?|miniatures?)?\s*[)\]]$/i,         // Boyz (10), Boyz [10x], Boyz (10 models)
+        /^(.+?)[\s,:–-]+(\d{1,4})\s*(?:models?|minis?|miniatures?)$/i,                        // Boyz - 10 models
+        /^(\d{1,4})\s+([A-Za-z].*)$/,                                                         // 10 Boyz
+      ];
+      for (const [i, pattern] of patterns.entries()) {
+        const found = name.match(pattern);
+        if (!found) continue;
+        const numberFirst = i === 0 || i === 4;
+        const rest = (numberFirst ? found[2] : found[1]).trim().replace(/[\s,:–-]+$/, "");
+        const n = Number(numberFirst ? found[1] : found[2]);
+        // "Squad 0" or a name that is only a number isn't a count.
+        if (n >= 1 && /[A-Za-z]/.test(rest)) return { name: rest, count: Math.min(n, MAX_MODELS) };
+      }
+      return { name, count: null };
+    }
+
+    // v60: a list with no "(N points)" lines, typed or copied from elsewhere, such as
+    //   My Orks
+    //   10x Boyz
+    //   Warboss
+    //   - 5x Nobz
+    // Each line not indented under another becomes a unit (bullets and dashes in front are fine).
+    // Only used when at least one line has a count, so a random paste isn't turned into units.
+    // A first line with no count, followed by lines that have one, is taken as the list's name.
+    function parsePlainList(lines) {
+      const cleaned = lines
+        .filter(l => l.trim() !== "" && !/^\s{2,}|^\t/.test(l))      // indented lines are wargear
+        .map(l => l.trim().replace(/^[•*·–-]\s*/, "").trim())
+        .filter(l => l && !/^exported with/i.test(l) && !/\((\d+)\s*(?:points?|pts)\)\s*$/i.test(l)
+          && !(/^[A-Z\s]+$/.test(l) && l.length > 3));                // "CHARACTERS" is a heading, not a unit
+      const read = cleaned.map(countInName);
+      if (!read.some(r => r.count)) return null;
+      let listName = "Pasted list";
+      if (read.length > 1 && !read[0].count) listName = read.shift().name;
+      return { listName, faction: "", units: read.map(r => ({ name: r.name, count: r.count || 1 })) };
+    }
+
     function parseWarhammerList(text) {
       const lines = plainQuotes(text).replace(/\r/g, "").split("\n");
       const unitPattern = /^\s*(.+?)\s*\((\d+)\s*(?:points?|pts)\)\s*$/i;
@@ -13857,10 +13906,13 @@
         // A real unit always has bullet lines under it. This skips lines like
         // "Strike Force (2000 points)", which also end in points.
         const followedByBullet = n + 1 < nonEmpty.length && bulletPattern.test(lines[nonEmpty[n + 1]]);
-        if (unitMatch && !bulletPattern.test(line) && followedByBullet) {
+        // v60: "10x Boyz (170 points)" or "Boyz x10 (170 points)" says the count itself,
+        // so it is a unit even with no bullet lines under it.
+        const stated = unitMatch ? countInName(unitMatch[1]) : null;
+        if (unitMatch && !bulletPattern.test(line) && (followedByBullet || stated.count)) {
           // Only the NAME is kept. The points are deliberately thrown away (v14): the app
           // never stores points, as they're Games Workshop's data.
-          current = { name: unitMatch[1].trim(), models: 0 };
+          current = { name: stated.name, models: 0, stated: stated.count };
           units.push(current);
           continue;
         }
@@ -13873,8 +13925,10 @@
         const nextBullet = nextLine.match(bulletPattern);
         if (nextBullet && nextBullet[1].length > bullet[1].length) current.models += Number(countMatch[1]);
       }
-      for (const u of units) u.count = u.models || 1;
-      return units.length ? { listName, faction, units } : null;
+      // v60: a count on the unit's own line wins over the model lines, as the person wrote it.
+      for (const u of units) { u.count = Math.min(u.stated || u.models || 1, MAX_MODELS); delete u.stated; }
+      if (units.length) return { listName, faction, units };
+      return parsePlainList(lines);
     }
 
     // Names compared loosely: capitals, hyphens, quotes and spaces don't matter,
@@ -13917,7 +13971,7 @@
     const reviewModeBox = document.getElementById("review-mode");
     const modeButtons = reviewBox.querySelectorAll(".mode-button");
     const reviewWhFields = document.getElementById("review-wh-fields");
-    const reviewStageLabel = document.getElementById("review-stage-label");
+    const reviewStageSlot = document.getElementById("review-stage-slot");
     const reviewClashNote = document.getElementById("review-clash-note");
     const reviewList = document.getElementById("review-list");
     const reviewGo = document.getElementById("review-go");
@@ -13925,11 +13979,11 @@
     const whText = document.getElementById("wh-text");
     const whGame = document.getElementById("wh-game");
     const whFaction = document.getElementById("wh-faction");
-    const whStage = document.getElementById("wh-stage");
 
     let incoming = null;     // { source: "csv" or "wh", title, rows: [...], unknownStages: [...] }
     let reviewMode = "add";  // "add" or "replace"
-    let choices = [];        // one per row: { tick: true/false, keep: "theirs" or "yours" }
+    let choices = [];        // one per row: { tick: true/false, keep: "theirs" or "yours", stage, count }
+    let setAllStage = 0;     // v60: the last stage picked in "Set every row to"; new rows start there
 
     // The incoming rows with game/faction filled in (Warhammer lists take them from the boxes).
     function incomingRows() {
@@ -13967,15 +14021,19 @@
     // What each row will do by default.
     //   keep: "theirs" = use the incoming name, "yours" = keep your name,
     //         "different" = not the same unit after all, so add it as new.
-    function defaultChoice(m) {
+    // v60: each row also has its own stage and model count. "old" is the row's earlier choice:
+    // its stage and count are kept, so switching Add/Replace doesn't throw your edits away.
+    function defaultChoice(m, old) {
       const fromApp = incoming.source === "wh";
-      if (reviewMode === "replace") return { tick: true, keep: "theirs" };
-      if (!m.match) return { tick: true, keep: "theirs" };
-      return { tick: false, keep: m.kind === "exact" ? "yours" : (fromApp ? "theirs" : "yours") };
+      const edits = old ? { stage: old.stage, count: old.count }
+        : { stage: m.row.stageGiven ? m.row.stage : setAllStage, count: cleanCount(m.row.count) };
+      if (reviewMode === "replace") return { tick: true, keep: "theirs", ...edits };
+      if (!m.match) return { tick: true, keep: "theirs", ...edits };
+      return { tick: false, keep: m.kind === "exact" ? "yours" : (fromApp ? "theirs" : "yours"), ...edits };
     }
 
-    function setDefaultChoices() {
-      choices = matchRows().map(defaultChoice);
+    function setDefaultChoices(keepEdits) {
+      choices = matchRows().map((m, i) => defaultChoice(m, keepEdits ? choices[i] : null));
     }
 
     // After the faction box changes, only reset rows whose match actually changed,
@@ -13985,7 +14043,7 @@
       choices = matchRows().map((m, i) => {
         const old = before && before[i];
         const same = old && old.kind === m.kind && (old.match && old.match.id) === (m.match && m.match.id);
-        return same && choices[i] ? choices[i] : defaultChoice(m);
+        return same && choices[i] ? choices[i] : defaultChoice(m, choices[i]);
       });
     }
     let lastMatches = null;
@@ -13996,10 +14054,8 @@
       const isWh = data.source === "wh";
       reviewTitle.textContent = isWh ? "Check your army list" : "Check your CSV import";
       reviewWhFields.classList.toggle("hidden", !isWh);
-      reviewStageLabel.classList.toggle("hidden", !isWh);
-      whStage.innerHTML = "";
-      STAGES.forEach((s, i) => whStage.add(new Option(s, i)));
-      setDefaultChoices();
+      setAllStage = 0;
+      setDefaultChoices(false);
       renderReview();
       reviewBox.classList.remove("hidden");
       refreshUnitsImport();
@@ -14032,7 +14088,7 @@
       reviewModeBox.classList.toggle("hidden", models.length === 0);
       modeButtons.forEach(b => b.setAttribute("aria-checked", String(b.dataset.mode === reviewMode)));
 
-      let summary = `${incoming.title}: ${plural(rows.length, "unit")}, ${plural(modelCount(rows), "model")}.`;
+      let summary = `${incoming.title}: ${plural(rows.length, "unit")}, ${plural(modelCount(choices), "model")}.`;
       if (incoming.unknownStages && incoming.unknownStages.length) {
         summary += ` These stages don't match yours, so those units will start at "${STAGES[0]}": ` +
           incoming.unknownStages.join(", ") + ".";
@@ -14041,6 +14097,7 @@
         summary += ` Your current ${plural(models.length, "unit")} will be removed first. You can Undo straight after.`;
       }
       reviewSummary.textContent = summary;
+      renderSetAll();
 
       const have = matched.filter(m => m.match && m.kind !== "close").length;
       const possible = matched.filter(m => m.kind === "close").length;
@@ -14070,11 +14127,12 @@
         box.addEventListener("change", () => { c.tick = box.checked; renderReview(); });
         const text = document.createElement("span");
         text.append(m.row.name);
-        const meta = document.createElement("div");
-        meta.className = "meta";
-        const stageText = fromApp ? "" : ` · ${STAGES[m.row.stage]}`;
-        meta.textContent = plural(m.row.count || 1, "model") + stageText + (m.row.faction ? ` · ${m.row.faction}` : "");
-        text.appendChild(meta);
+        if (m.row.faction) {
+          const meta = document.createElement("div");
+          meta.className = "meta";
+          meta.textContent = m.row.faction;
+          text.appendChild(meta);
+        }
         if (adding && m.match && m.kind !== "exact") {
           const yours = document.createElement("div");
           yours.className = "meta";
@@ -14087,6 +14145,7 @@
         label.append(box, text);
         if (tag.textContent) label.appendChild(tag);
         li.appendChild(label);
+        li.appendChild(reviewRowEdits(m.row, c));
 
         if (isClose) {
           const pick = document.createElement("select");
@@ -14119,6 +14178,61 @@
       }
     }
 
+    // v60: the model count and stage for one row of the import check. Changes are kept in
+    // the row's choice and don't redraw the list, so the box you're typing in keeps its place.
+    function reviewRowEdits(row, c) {
+      const edits = document.createElement("div");
+      edits.className = "review-row-edit";
+      const countLabel = document.createElement("label");
+      countLabel.className = "review-count";
+      const countBox = document.createElement("input");
+      countBox.type = "number";
+      countBox.min = "1";
+      countBox.max = String(MAX_MODELS);
+      countBox.inputMode = "numeric";
+      countBox.value = String(c.count);
+      countBox.setAttribute("aria-label", `Models in ${row.name}`);
+      const word = document.createElement("span");
+      word.textContent = c.count === 1 ? "model" : "models";
+      countBox.addEventListener("input", () => {
+        if (countBox.value.trim() === "") return;
+        c.count = cleanCount(countBox.value);
+        word.textContent = c.count === 1 ? "model" : "models";
+        renderReviewSummaryOnly();
+      });
+      countBox.addEventListener("change", () => { c.count = cleanCount(countBox.value); countBox.value = String(c.count); renderReviewSummaryOnly(); });
+      countLabel.append(countBox, word);
+      const stageMenu = stagePicker(c.stage, `Stage for ${row.name}`, (stage) => {
+        c.stage = stage;
+        stageMenu.style.setProperty("--stage-colour", `var(--stage-${stage})`);
+        renderSetAll();
+      });
+      edits.append(countLabel, stageMenu);
+      return edits;
+    }
+
+    // The models total in the summary line, after a count box changes.
+    function renderReviewSummaryOnly() {
+      reviewSummary.textContent = reviewSummary.textContent.replace(/, \d+ models?\./, `, ${plural(modelCount(choices), "model")}.`);
+    }
+
+    // v60: "Set every row to" (it was "Put new units at stage", for army lists only). Picking a
+    // stage fills every row's menu; it shows "Mixed" when the rows differ. Sits in a bar that
+    // stays in view while you scroll a long list.
+    function renderSetAll() {
+      const stages = choices.map(c => c.stage);
+      const same = stages.length && stages.every(s => s === stages[0]);
+      const menu = stagePicker(same ? stages[0] : null, "Set every row to stage", (stage) => {
+        setAllStage = stage;
+        choices.forEach(c => { c.stage = stage; });
+        renderReview();
+        const again = document.getElementById("wh-stage");
+        if (again) again.focus();
+      }, "Mixed");
+      menu.id = "wh-stage";
+      reviewStageSlot.replaceChildren(menu);
+    }
+
     // Copy numbers ("Lictor 1", "Lictor 2") for one name in one faction: keeps numbers
     // that are already fine, and only gives new numbers where needed.
     function fixCopies(name, faction) {
@@ -14141,7 +14255,7 @@
 
     modeButtons.forEach(b => b.addEventListener("click", () => {
       reviewMode = b.dataset.mode;
-      setDefaultChoices();
+      setDefaultChoices(true);   // v60: same rows, same stages and counts
       renderReview();
     }));
     document.getElementById("review-all").addEventListener("click", () => { choices.forEach(c => { c.tick = true; }); renderReview(); });
@@ -14179,16 +14293,17 @@
           }
           for (const r of renames) { fixCopies(r.from, r.faction); fixCopies(r.to, r.faction); }
         }
-        const whStageNumber = Number(whStage.value) || 0;
         matched.forEach((m, i) => {
           const c = choices[i];
           if (!c.tick) return;
           // Extra copies of a unit you have, where you chose to keep your name, use your name.
           const useYours = reviewMode === "add" && m.match && c.keep === "yours";
+          const { stageGiven, ...row } = m.row;   // stageGiven is only for the check, never saved
           addModel({
-            ...m.row,
+            ...row,
             name: useYours ? m.match.name : m.row.name,
-            stage: incoming.source === "wh" ? whStageNumber : m.row.stage,
+            stage: c.stage,     // v60: each row's own stage and count
+            count: c.count,
           });
         });
 
@@ -14231,7 +14346,7 @@
     document.getElementById("wh-read").addEventListener("click", () => {
       const list = parseWarhammerList(whText.value);
       if (!list) {
-        notify("That doesn't look like a list exported from the Warhammer app. Each unit should be a name followed by its points, e.g. \"Lictor (60 points)\".");
+        notify("That doesn't look like a list exported from the Warhammer app. Each unit should be a name followed by its points, e.g. \"Lictor (60 points)\", or a count, e.g. \"10x Boyz\".");
         return;
       }
       // Use the spelling of a faction you already have, and its game.
@@ -14402,12 +14517,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=59".
+    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=60".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v59";
+    const APP_VERSION = "v60";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -14858,6 +14973,11 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v60", date: "24 Oct 2026", changes: [
+        "Importing an army list now reads the model count written on a unit's line, such as 10x Boyz, Boyz x10 or Boyz (10 models), so units no longer land as 1 model. A list typed by hand, one unit per line, works too.",
+        "In the import check, every unit has its own model count and stage. Set every row to puts them all at one stage in one go, and stays in view on a long list. This works for Import CSV as well as army lists.",
+        "A CSV file's stage column is used when it matches one of your stages.",
+      ]},
       { version: "v59", date: "24 Oct 2026", changes: [
         "Shorter wording on empty screens, the feedback card and a few hints. Nothing else changed.",
       ]},
