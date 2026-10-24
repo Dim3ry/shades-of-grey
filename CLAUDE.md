@@ -6,7 +6,7 @@ Mobile-first miniature-painting tracker. Plain JavaScript web app, no accounts, 
 - Branch every chunk from main. Open a pull request. Never merge, push to main or deploy unless George says yes.
 - One chunk per session. If the work is clearly bigger than the prompt, stop and say so before building.
 - Before building, give a cost estimate as a % of a session and warn George if it is over 10%. Chunks have run at about double their estimate.
-- Never invent a chunk. The only source of next steps is chunk-prompts.local.md in the repo root (a local file, never committed).
+- Never invent a chunk. The only source of next steps is chunk-prompts.md in George's private repo Dim3ry/minifolio-plans. Read it with add_repo (read access is enough). Do not copy anything from that repo into this public one.
 - Never change recipe, scheme or paint content files (schemes.js, detail-recipes.js, basing-tips.js and the paint catalogue) unless the prompt says to.
 - On Windows, Python is py.
 
@@ -42,7 +42,6 @@ Docs-only changes need no bump.
 
 ## Finishing a chunk
 1. Give a summary in plain language: what changed, what was tested, anything left over, anything you chose to leave out. Put the full description in the pull request.
-2. Then paste the next chunk's prompt in full in a code block, word for word, copied from chunk-prompts.local.md. The next chunk is the one that follows the chunk you just did in that file.
-3. A prompt line saying "Do not write the next prompt" means do not compose one yourself. Pasting the existing next prompt from the file is still expected.
-4. If the file is missing, or you cannot tell which chunk is next, say so and stop. Never write a prompt from your own guess.
-5. Leave any placeholder in the pasted prompt (such as the one in chunk 2.2) as it is. I fill those in.
+2. Then attach Dim3ry/minifolio-plans with add_repo (read access), read chunk-prompts.md, and paste the next chunk's prompt in full in a code block, word for word. The next chunk is the one named by the "Next chunk:" line at the end of the prompt you just did. Also say which model and effort level suit it, as given in that file.
+3. Never compose a prompt yourself. If the repo or the file cannot be reached, or you cannot tell which chunk is next, say so and stop.
+4. Leave any placeholder in the pasted prompt (such as the one in chunk 2.2) as it is. George fills those in.
