@@ -2073,12 +2073,6 @@
       }));
       const hintBox = document.getElementById("can-paint-hint");
       hintBox.replaceChildren();
-      if (recipeCanPaint && !anyStatusSet()) {
-        const hint = document.createElement("p");
-        hint.className = "hint";
-        hint.textContent = "Mark the paints you own on Your Palette first, then this list is useful.";
-        hintBox.appendChild(buildMoreInfo([hint], { state: infoState(recipeInfoDoor, "can-paint-hint"), id: "can-paint-hint-panel", label: "What can I paint now?" }));
-      }
     }
 
     // ----- Shopping list -----
@@ -2413,7 +2407,7 @@
         const empty = document.createElement("p");
         empty.className = "hint";
         empty.style.margin = "0 0 10px";
-        empty.textContent = "Nothing to buy. Paints you add from your recipes and from colour suggestions land here, once each, and you can mark paints on Your Palette too.";
+        empty.textContent = "Nothing to buy.";
         card.append(empty);
       } else {
         // v52: the explanations sit behind one More info: what the list holds, the no-statuses warning, how the shop bar works.
@@ -3862,7 +3856,7 @@
       factionColourList.innerHTML = "";
       const factions = uniqueSorted(models.map(m => m.faction));
       document.getElementById("faction-colour-hint").textContent = factions.length
-        ? "Tap a colour circle to pick a faction's colour. Suggest offers one: from the recipes linked to that faction's units if it can, otherwise the colour the faction is usually painted."
+        ? "Tap a circle to pick a colour. Suggest offers one."
         : "Add some units with a faction first, then give each faction a colour here.";
       // One tap for every faction that hasn't got a colour yet.
       const waiting = factions.filter(f => !factionColour(f) && suggestFactionColour(f));
@@ -4217,8 +4211,8 @@
       box.innerHTML = "";
       if (!ready) {
         note.textContent = models.length
-          ? "Your graph starts today. Come back after a few days of adding and painting to watch it grow."
-          : "Add some units and your progress will show here over time.";
+          ? "Graph starts today."
+          : "No units yet.";
         return;
       }
       note.textContent = data.undated
@@ -4557,8 +4551,7 @@
       list.innerHTML = "";
       if (models.length === 0) {
         // v19: a brand-new collection gets the import buttons right here.
-        list.innerHTML = '<li class="empty" id="units-empty">No units yet. Press <strong>+ Add unit</strong> to add one, ' +
-          'or bring in a whole army at once:<div class="button-grid">' +
+        list.innerHTML = '<li class="empty" id="units-empty">No units yet.<div class="button-grid">' +
           '<button type="button" class="plain-button" id="empty-wh">Paste army list</button>' +
           '<button type="button" class="plain-button" id="empty-csv">Import CSV</button></div></li>';
         document.getElementById("empty-wh").addEventListener("click", startUnitsPaste);
@@ -5005,7 +4998,7 @@
       } else if (!model.photo) {
         const none = document.createElement("p");
         none.className = "hint";
-        none.textContent = "No photos yet. Add one at each stage to build up a progress timeline.";
+        none.textContent = "No photos yet.";
         box.appendChild(none);
       }
 
@@ -6765,7 +6758,7 @@
       renderCanPaintBox();
       recipeList.innerHTML = "";
       if (!book.recipes.length) {
-        recipeList.innerHTML = '<li class="empty">No recipes yet. Press + New recipe to write down how you paint something, step by step.</li>';
+        recipeList.innerHTML = '<li class="empty">No recipes yet.</li>';
       }
       const shown = book.recipes
         .filter(r => (!recipePartFilter || r.part === recipePartFilter) && (!recipeCanPaint || canPaintNow(r)))
@@ -6807,14 +6800,7 @@
       }
 
       if (recipeCanPaint && !shown.length) {
-        recipeList.insertAdjacentHTML("beforeend", '<li class="empty">No recipe where you own every paint yet. Mark your paints on Your Palette to see what you can paint now.</li>');
-      }
-      const listsInfo = document.getElementById("recipe-lists-info");
-      if (listsInfo) {
-        const note = document.createElement("p");
-        note.className = "hint";
-        note.textContent = "The choices offered when you write a recipe. You can also add new ones while writing.";
-        listsInfo.replaceChildren(buildMoreInfo([note], { state: infoState(recipeInfoDoor, "recipe-lists"), id: "recipe-lists-info-panel", label: "parts and techniques" }));
+        recipeList.insertAdjacentHTML("beforeend", '<li class="empty">None yet. Mark paints you own on Your Palette.</li>');
       }
       renderListChips("part-chips", "parts", "part");
       renderListChips("technique-chips", "techniques", "technique");
@@ -6884,7 +6870,7 @@
       stepsCard.className = "card";
       stepsCard.innerHTML = "<h2>Steps</h2>";
       if (recipe.steps.length && anyStatusSet()) stepsCard.appendChild(buildHaveKey());
-      if (!recipe.steps.length) stepsCard.insertAdjacentHTML("beforeend", '<p class="hint" style="margin: 0;">No steps yet. Press Edit to add some.</p>');
+      if (!recipe.steps.length) stepsCard.insertAdjacentHTML("beforeend", '<p class="hint" style="margin: 0;">No steps.</p>');
       const steps = document.createElement("ol");
       steps.className = "recipe-steps";
       recipe.steps.forEach((step, i) => {
@@ -7246,7 +7232,7 @@
       if (!book.recipes.length) {
         const none = document.createElement("p");
         none.className = "hint";
-        none.textContent = "You haven't written any recipes yet. Save this scheme, write some recipes, then come back and tick them.";
+        none.textContent = "No recipes yet.";
         pick.appendChild(none);
       } else {
         const listEl = document.createElement("ul");
@@ -7487,7 +7473,7 @@
       const swatches = paletteLayout === "swatches" && !importReviewIds;   // a paste import's check list stays a list
       paintListEl.classList.toggle("swatch-grid", swatches);
       if (!paints.length) {
-        paintListEl.innerHTML = '<li class="empty">Your palette fills itself in from your recipes. Add paints to a recipe and they appear here.</li>';
+        paintListEl.innerHTML = '<li class="empty">No paints yet.</li>';
         return;
       }
       if (!swatches) {
@@ -8508,7 +8494,7 @@
       return words.length < 2 ? (words[0] || "") : words.slice(0, -1).join(", ") + " and " + words[words.length - 1];
     }
     const SCHEME_NEEDS_TWO = "Add at least two paints with different colours set (the round colour button in a step), then this check can run.";
-    const SCHEME_ONLY_A_GUIDE = "This is only a guide, not a rule. Plenty of good schemes break these tips, and colours on a screen look different from real paint.";
+    const SCHEME_ONLY_A_GUIDE = "Colours on a screen are only a guide, so check them on your model.";   // v59: one shared line (the Compendium copy text uses it too)
 
     // The answer as { verdict, rows: [{ cls, tag, label, text }] }. cls matches the idea tags: own (fine), near (look at this), none (suggestion).
     function schemeCheckWords(r) {
@@ -9001,7 +8987,7 @@
     }
 
     // v35: the words for "Copy as text". Plain text only (paint names and brands go in as typed; it is a clipboard, never markup).
-    const COMPENDIUM_TEXT_FOOT = "Colours on a screen are only a guide, so check them on your model.";
+    const COMPENDIUM_TEXT_FOOT = SCHEME_ONLY_A_GUIDE;
     function paintLabel(paint) { return paint.brand ? `${paint.name} (${paint.brand})` : String(paint.name || ""); }
     function ideaTextLine(paint, tag, reason, note) {
       return `- ${paintLabel(paint)}: ${tag.text}. ${reason}${note ? " " + note : ""}`;
@@ -9168,13 +9154,6 @@
     }
     function groupButtons(door, groups) { return [{ key: door.short ? "all" : "", name: "All" }, ...groups]; }
     function groupNext(door, key, active) { return door.short && key === active ? "" : key; }
-    function groupNone(door, id, what) {   // the plain line shown while no group is chosen (Compendium only)
-      const p = document.createElement("p");
-      p.className = "hint";
-      p.id = door.id(id);
-      p.textContent = `Pick a group above to see its ${what}, or tap All.`;
-      return p;
-    }
 
     // ---- v37 part 2: SEARCH ----
     // Switched on by the door flag door.search (Compendium only; the recipe card has no search and works exactly as before). Two shared builders:
@@ -9567,8 +9546,7 @@
         }));
       }
       box.append(moods);
-      if (door.short && !value && !q) box.appendChild(groupNone(door, "starter-none", "schemes"));
-      else if (!q || chips.childElementCount) box.appendChild(chips);
+      if (!(door.short && !value && !q) && (!q || chips.childElementCount)) box.appendChild(chips);
       const scheme = starterSchemesShown(st, door).find(s => s.key === st.scheme);
       if (!scheme) {
         if (door.schemeShop) box.appendChild(buildIdleShop(door, "starter-shop-idle", "Select a scheme to generate a shopping list"));
@@ -9694,8 +9672,7 @@
         }));
       }
       box.appendChild(groups);
-      if (door.short && !activeGroup && !q) box.appendChild(groupNone(door, "detail-none-group", "recipes"));
-      else if (!q || chips.childElementCount) box.appendChild(chips);
+      if (!(door.short && !activeGroup && !q) && (!q || chips.childElementCount)) box.appendChild(chips);
       const recipe = detailRecipesShown(st, door).find(r => r.key === st.detail);
       if (!recipe) return box;
 
@@ -9819,8 +9796,7 @@
         }));
       }
       box.appendChild(groups);
-      if (door.short && !activeGroup && !q) box.appendChild(groupNone(door, "basing-none-group", "tips"));
-      else if (!q || chips.childElementCount) box.appendChild(chips);
+      if (!(door.short && !activeGroup && !q) && (!q || chips.childElementCount)) box.appendChild(chips);
       const tip = basingTipsShown(st, door).find(t => t.key === st.basing);
       if (!tip) return box;
 
@@ -14426,12 +14402,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=58".
+    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=59".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v58";
+    const APP_VERSION = "v59";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -14503,7 +14479,7 @@
       const text = document.createElement("p");
       const strong = document.createElement("strong");
       strong.textContent = "Enjoying Minifolio?";
-      text.append(strong, " Would you like to tell us what you think? It's a short form, about 2 minutes, and every reply is read.");
+      text.append(strong);
       const give = document.createElement("a");
       give.className = "primary-button feedback-give";
       give.href = feedbackAddress();
@@ -14882,6 +14858,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v59", date: "24 Oct 2026", changes: [
+        "Shorter wording on empty screens, the feedback card and a few hints. Nothing else changed.",
+      ]},
       { version: "v58", date: "24 Oct 2026", changes: [
         "The made-up example paints, such as Example deep blue, no longer show on the shopping list or in Copy as text, even after Keep them. No shop sells them.",
         "A recipe that only uses example paints now says Uses example paints instead of Missing.",

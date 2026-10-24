@@ -145,11 +145,7 @@ def main():
         check("no status line on the cards until a paint has a status", page.locator("#recipe-list .recipe-status").count() == 0)
         page.locator("#can-paint-box .chip", has_text="What can I paint now?").click()
         page.wait_for_timeout(150)
-        hint_btn = page.locator("#can-paint-hint .more-info-button")
-        check("the hint is behind a More info button", hint_btn.count() == 1 and hint_btn.get_attribute("aria-expanded") == "false")
-        check("the hint is hidden until opened", not page.locator("#can-paint-hint .hint").is_visible())
-        hint_btn.click()
-        check("opening it shows the hint", "Your Palette" in page.locator("#can-paint-hint .hint").inner_text())
+        check("v59: no More info hint is added any more (the empty state says it)", page.locator("#can-paint-hint .more-info-button").count() == 0)
         check("What can I paint now? still filters", page.locator("#recipe-list li.recipe-card").count() == 0
               or page.locator("#recipe-list li.empty").count() == 1)
         t.load(page, paints=PAINTS, recipes=RECIPES, units=UNITS)
@@ -162,10 +158,7 @@ def main():
         page.locator("#can-paint-box .chip", has_text="What can I paint now?").click()
         lists = page.locator("#recipe-lists")
         lists.locator("summary").click()
-        lm = lists.locator(".more-info-button")
-        check("Parts and techniques: the note is behind More info", lm.count() == 1 and not lists.locator(".hint").first.is_visible())
-        lm.click()
-        check("Parts and techniques: opening shows the note", "choices offered" in lists.locator(".hint").first.inner_text())
+        check("v59: Parts and techniques has no note or More info inside it", lists.locator(".more-info-button").count() == 0)
 
         # ---------- 3. Reading a recipe ----------
         print("\n--- 3. Reading a recipe ---")

@@ -449,8 +449,8 @@ def main():
                   info["type"] == "search" and info["label"] == label and info["desc"] == f"cmp-{key}-search-status" and info["role"] == "status" and info["live"] == "polite" and info["tab"] == 0 and info["value"] == "" and info["ph"] == "Type to search", info)
             order = page.evaluate("""([k, g]) => { const s = document.getElementById('cmp-' + k + '-search-box').getBoundingClientRect(), b = document.getElementById('cmp-' + g).getBoundingClientRect(); return [s.bottom, b.top]; }""", [key, groups_id])
             check(f"{key}: the search box sits above the group buttons (so above every choice button)", order[0] <= order[1] + 0.5, order)
-            check(f"{key}: before typing, the short-by-default rule from part 1 still holds: no list, and the plain line says to pick a group or tap All",
-                  page.locator(f"#cmp-{chips_id}").count() == 0 and page.inner_text(f"#cmp-{none_id}") == f"Pick a group above to see its {what}, or tap All." and status(page, ST) == "")
+            check(f"{key}: before typing, the short-by-default rule from part 1 still holds: no list (v59: and no plain line under the group buttons any more)",
+                  page.locator(f"#cmp-{chips_id}").count() == 0 and page.locator(f"#cmp-{none_id}").count() == 0 and status(page, ST) == "")
             items = data[key]
             bad = []
             for q in ["blue", "red", "grey", "GOLD", "stone", "a", "zzzzz", "water", "two", "steel blue"]:
@@ -467,8 +467,8 @@ def main():
             check(f"{key}: when nothing fits it says No matches. and shows no buttons (and no empty box)", status(page, ST) == "No matches." and page.locator(f"#cmp-{chips_id}").count() == 0 and page.locator(f"#cmp-{none_id}").count() == 0)
             page.fill(S, "")
             page.dispatch_event(S, "input")
-            check(f"{key}: clearing the text puts the short rule back (no list, the plain line returns) and empties the status",
-                  page.locator(f"#cmp-{chips_id}").count() == 0 and page.locator(f"#cmp-{none_id}").count() == 1 and status(page, ST) == "")
+            check(f"{key}: clearing the text puts the short rule back (no list; v59: no plain line either) and empties the status",
+                  page.locator(f"#cmp-{chips_id}").count() == 0 and page.locator(f"#cmp-{none_id}").count() == 0 and status(page, ST) == "")
             # the box keeps the focus and is the very same element while typing
             page.evaluate("() => { document.getElementById('cmp-%s-search').__same = 7; }" % key)
             page.click(S)
