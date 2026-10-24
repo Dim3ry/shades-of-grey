@@ -2076,38 +2076,19 @@
     }
 
     // ----- Shopping list -----
-    // Running low, empty and wishlist paints, plus paints a recipe uses that you don't have.
+    // v62: only the paints you put there: Wishlist ones (every "Add to shopping list" button marks a paint Wishlist).
+    // Nothing goes on by itself any more: not a paint a recipe uses that you don't have, and not running low or empty.
     function shoppingItems() {
-      const recipeCount = new Map();
-      const recipeNames = new Map();   // v40: paint id -> the names of the recipes that use it
-      for (const r of book.recipes) {
-        const ids = new Set();
-        for (const s of r.steps) for (const sp of s.paints) ids.add(sp.paint);
-        for (const id of ids) {
-          recipeCount.set(id, (recipeCount.get(id) || 0) + 1);
-          if (!recipeNames.has(id)) recipeNames.set(id, []);
-          if (!r.example) recipeNames.get(id).push(String(r.name || ""));
-        }
-      }
       const items = [];
       for (const p of book.paints) {
         // v24: example paints never go on the shopping list. v58: nor do kept ones (or ones given a status): no shop sells a made-up paint.
         if (isExamplePaint(p) || isMadeUpPaint(p)) continue;
-        const key = paintStatus(p);
-        const used = recipeCount.get(p.id) || 0;
-        let reason = "";
-        if (key === "low") reason = "running low" + (p.spare ? " (spare in stock)" : "");
-        else if (key === "empty") reason = "empty";
-        else if (key === "wishlist") reason = "wishlist";
-        else if (key !== "owned" && used) reason = `missing, used in ${plural(used, "recipe")}`;
-        if (!reason) continue;
-        // v40: where it came from. The notes saved with the paint (a colour suggestion, a recipe, later a scheme), plus the recipes
-        // that use it when it is on the list only because you don't have it. One paint is one entry, however many places added it.
+        if (paintStatus(p) !== "wishlist") continue;
+        // v40: where it came from: the notes saved with the paint (a colour suggestion, a recipe, a scheme). One paint is one entry.
         const from = [];
         const addFrom = (t) => { t = String(t || "").trim(); if (t && !from.some(o => sameText(o, t))) from.push(t); };
         for (const f of Array.isArray(p.shopFrom) ? p.shopFrom : []) addFrom(f);
-        if (reason.startsWith("missing")) for (const n of recipeNames.get(p.id) || []) addFrom(`Recipe: ${n}`);
-        items.push({ paint: p, reason, from });
+        items.push({ paint: p, reason: "wishlist", from });
       }
       return items.sort((a, b) => (a.paint.brand || "￿").localeCompare(b.paint.brand || "￿") || a.paint.name.localeCompare(b.paint.name));
     }
@@ -2124,7 +2105,7 @@
       const lines = ["Shopping list", ""];
       for (const brand of names) {
         lines.push(brand);
-        for (const i of groups.get(brand)) lines.push(`- ${i.paint.name}: ${i.reason}${i.from && i.from.length ? ` (from ${i.from.join(", ")})` : ""}`);
+        for (const i of groups.get(brand)) lines.push(`- ${i.paint.name}${i.from && i.from.length ? ` (from ${i.from.join(", ")})` : ""}`);
         lines.push("");
       }
       if (!items.length) lines.push("Nothing to buy.");
@@ -2182,11 +2163,10 @@
     function palettePaintFor(paint) {
       return book.paints.find(p => sameText(p.name, paint.name) && (!paint.brand || sameText(p.brand, paint.brand))) || null;
     }
-    // On the shopping list = wishlist or empty (see shoppingItems). Owned and running low paints never get a shop fold-out at all.
+    // On the shopping list = wishlist (see shoppingItems, v62). Owned and running low paints never get a shop fold-out at all.
     function onShoppingList(paint) {
       const mine = palettePaintFor(paint);
-      const status = mine ? paintStatus(mine) : "";
-      return status === "wishlist" || status === "empty";
+      return !!mine && paintStatus(mine) === "wishlist";
     }
     // v41: the Compendium says so on a paint's row when it is already on the list. The words replace the usual tag ("Not in your palette")
     // and are kept in step after Add and Undo (updateShopFoldouts), so the row, the fold-out and the basket always agree.
@@ -2414,14 +2394,8 @@
         const notes = [];
         const sub = document.createElement("p");
         sub.className = "hint";
-        sub.textContent = `${plural(items.length, "paint")} to get: running low, empty, wishlist, and paints your recipes use that you don't have. Each paint is listed once, with where it came from.`;
+        sub.textContent = `${plural(items.length, "paint")} to get: the paints you added and your Wishlist paints. Nothing is added by itself. Each paint is listed once, with where it came from.`;
         notes.push(sub);
-        if (!anyStatusSet()) {
-          const warn = document.createElement("p");
-          warn.className = "hint";
-          warn.textContent = "No statuses set yet, so every paint your recipes use is listed as missing. Mark what you own to make it accurate.";
-          notes.push(warn);
-        }
         if (shopLinksOn()) {
           const shops = document.createElement("p");
           shops.className = "hint";
@@ -2449,10 +2423,7 @@
           list.className = "shop-list";
           for (const i of groups.get(brand)) {
             const li = document.createElement("li");
-            li.textContent = i.paint.name + " ";
-            const why = document.createElement("small");
-            why.textContent = "· " + i.reason;
-            li.appendChild(why);
+            li.textContent = i.paint.name + " ";   // v62: every paint here is one you added, so no "· wishlist" after each name
             if (i.from && i.from.length) {   // v40: where it came from (first three, then a count)
               const src = document.createElement("small");
               src.className = "shop-from";
@@ -6709,6 +6680,12 @@
         mark.className = "fold-mark";
         mark.setAttribute("aria-hidden", "true");
         const parts = [text, dots];
+        if (o.noPaint && o.noPaint()) {   // v62: words, not just an empty space where the dots go
+          const none = document.createElement("span");
+          none.className = "step-no-paint";
+          none.textContent = "No paint";
+          parts.push(none);
+        }
         if (o.missing && o.missing()) {
           const gap = document.createElement("span");
           gap.className = "have-mark missing";
@@ -6751,6 +6728,15 @@
         else if (!p || !haveIt(p)) missing++;
       }
       return { missing, madeUp };
+    }
+    // v62: the paints of a recipe that could go on the shopping list: real ones only (no made-up or example paints).
+    function recipeShopPaints(recipe) {
+      const out = [];
+      for (const st of recipe.steps) for (const sp of st.paints) {
+        const p = paintById(sp.paint);
+        if (p && !isMadeUpPaint(p) && !isExamplePaint(p) && !out.includes(p)) out.push(p);
+      }
+      return out;
     }
     // v58: the short line on a recipe card: "Missing 2", "Uses example paints" (nothing real missing, some made-up) or "Have all".
     function recipeStatusWords(count) {
@@ -6930,10 +6916,22 @@
           technique: () => step.technique || guessTechnique(step.paints.map(sp => paintById(sp.paint))) || "Step",
           colours: () => step.paints.map(sp => paintById(sp.paint)).filter(Boolean).map(pt => pt.colour),
           missing: () => anyStatusSet() && step.paints.some(sp => { const pt = paintById(sp.paint); return pt && !isMadeUpPaint(pt) && !haveIt(pt); }),   // v58: made-up paints don't count
+          noPaint: () => !step.paints.some(sp => paintById(sp.paint)),   // v62
         }), body);
         steps.appendChild(li);
       });
       stepsCard.appendChild(steps);
+      // v62: missing paints no longer go on the shopping list by themselves. One button adds this recipe's real paints you don't
+      // own (made-up example paints never), says how many, and has one Undo (addSchemePaintsToShoppingList). Hidden when none are left.
+      const toShop = schemePaintsToAdd(recipeShopPaints(recipe));
+      if (toShop.length) {
+        const add = document.createElement("button");
+        add.type = "button";
+        add.className = "plain-button recipe-shop-add";
+        add.textContent = `Add missing paints to shopping list (${toShop.length})`;
+        add.addEventListener("click", () => addSchemePaintsToShoppingList(recipeShopPaints(recipe), `Recipe: ${recipe.name}`));
+        stepsCard.appendChild(add);
+      }
       recipePage.appendChild(stepsCard);
 
       // Used on: linked units, plus a menu to link more.
@@ -8137,7 +8135,7 @@
 
       const name = document.createElement("input");
       name.className = "paint-name";
-      name.placeholder = "Paint, e.g. Macragge Blue";
+      name.placeholder = "Paint name";   // v62: was "Paint, e.g. Macragge Blue", which looked like a typed value
       name.setAttribute("aria-label", "Paint name");
       name.setAttribute("list", "paint-options");
       name.dataset.key = `step-${si}-paint-${pi}`;
@@ -8168,9 +8166,11 @@
         if (tidy !== brand.value) { brand.value = tidy; paint.brand = tidy; updateWarning(); refreshRecipeOwn(); }
       });
 
-      name.addEventListener("input", () => { paint.name = name.value; updateWarning(); refreshRecipeOwn(); });
+      name.addEventListener("input", () => { paint.name = name.value; typingPaints.add(paint); updateWarning(); refreshRecipeOwn(); });   // v62
       // A paint you've used before: fill in its brand and colour for you.
       name.addEventListener("change", () => {
+        typingPaints.delete(paint);   // v62: left the box (or picked a suggestion), so the name counts now
+        refreshRecipeOwn();
         const known = book.paints.find(p => sameText(p.name, paint.name) && (!paint.brand.trim() || sameText(p.brand, paint.brand)))
                    || searchedPaints.find(p => sameText(p.name, paint.name));
         if (!known) return;
@@ -8216,6 +8216,17 @@
       const d = recipeDraft;
       const name = d.name.trim();
       if (!name) { notify("Give the recipe a name first."); return; }
+      // v62: a paint with a brand but no name used to vanish without a word. Now Save stops and says which step.
+      const gap = d.steps.findIndex(s => s.paints.some(p => !p.name.trim() && String(p.brand || "").trim()));
+      if (gap >= 0) {
+        const pi = d.steps[gap].paints.findIndex(p => !p.name.trim() && String(p.brand || "").trim());
+        stepFold(d.steps[gap], true).open = true;
+        renderRecipeEditor();
+        const box = recipePage.querySelector(`[data-key="step-${gap}-paint-${pi}"]`);
+        if (box) box.focus();
+        notify(`Step ${gap + 1} has no paint name.`);
+        return;
+      }
       // Paints with no name are skipped. Each named paint is found (or added) in the paint list.
       // v18c: a paint new to your palette gets your "Do you own these?" answer (Owned to start with).
       const steps = d.steps.map(s => {
@@ -11028,9 +11039,18 @@
       return list;
     }
     // The paints a recipe you're writing would add to your palette.
+    // v62: a name still being typed only counts once it matches a known paint or you leave the box, so a half-typed
+    // "Macragge Blu" no longer brings up the card and then makes it vanish when you finish the name.
+    const typingPaints = new WeakSet();   // the draft paints whose name box you are typing in now
+    function knownPaintName(name) {
+      return book.paints.some(p => sameText(p.name, name)) || searchedPaints.some(p => sameText(p.name, name));
+    }
     function draftNewPaints(d) {
       const list = [];
-      for (const s of d.steps) for (const p of s.paints) addNewPaint(list, p);
+      for (const s of d.steps) for (const p of s.paints) {
+        if (typingPaints.has(p) && !knownPaintName(String(p.name || "").trim())) continue;
+        addNewPaint(list, p);
+      }
       return list;
     }
 
@@ -11045,31 +11065,40 @@
     function buildOwnCard(choice, getPaints) {
       const card = document.createElement("div");
       card.className = "card own-check";
+      // v62: the heading, the paint names and the All / None / Let me pick chips are made once and only updated, so a tap on a chip
+      // still lands when leaving a paint box changes the list at that moment. The names always show, so "these" is never a guess.
+      const head = document.createElement("h2");
+      head.textContent = "Do you own these?";
+      const names = document.createElement("p");
+      names.className = "own-names";
+      const detail = document.createElement("p");
+      detail.className = "hint";
+      // v50: the explanation sits behind More info (its open state is kept while the app is open).
+      const hint = buildMoreInfo([detail], { state: infoState(recipeInfoDoor, "own-card"), id: `own-card-info-${++ownInfoSeq}`, label: "owning these paints" });
+      const modes = document.createElement("div");
+      modes.className = "chips";
+      const modeChips = [];
+      for (const [key, label] of [["all", "All"], ["none", "None"], ["pick", "Let me pick"]]) {
+        const chip = makeChip(label, choice.mode === key, () => { choice.mode = key; draw(); });
+        chip.dataset.own = key;
+        modeChips.push(chip);
+        modes.appendChild(chip);
+      }
+      const pickArea = document.createElement("div");
+      card.append(head, names, hint, modes, pickArea);
       const draw = () => {
         const paints = getPaints();
         // Nothing changed? Leave it alone. (Redrawing as you tap a chip would lose the tap.)
         const look = JSON.stringify([choice.mode, paints.map(p => [p.label, ownsNewPaint(choice, p)])]);
         if (look === card.dataset.look) return;
         card.dataset.look = look;
-        card.innerHTML = "";
         card.hidden = !paints.length;
         if (!paints.length) return;
-        const head = document.createElement("h2");
-        head.textContent = "Do you own these?";
-        const detail = document.createElement("p");
-        detail.className = "hint";
-        detail.textContent = `${plural(paints.length, "paint")} will be new to your palette. Ones you own stay off the shopping list; `
-          + "ones you don't go on it. You can change any of them later on Your Palette.";
-        // v50: the explanation sits behind More info (its open state is kept while the app is open).
-        const hint = buildMoreInfo([detail], { state: infoState(recipeInfoDoor, "own-card"), id: `own-card-info-${++ownInfoSeq}`, label: "owning these paints" });
-        const modes = document.createElement("div");
-        modes.className = "chips";
-        for (const [key, label] of [["all", "All"], ["none", "None"], ["pick", "Let me pick"]]) {
-          const chip = makeChip(label, choice.mode === key, () => { choice.mode = key; draw(); });
-          chip.dataset.own = key;
-          modes.appendChild(chip);
-        }
-        card.append(head, hint, modes);
+        names.textContent = paints.map(p => p.label).join(", ");
+        detail.textContent = `${plural(paints.length, "paint")} will be new to your palette. Owned ones are marked Owned; the others are marked `
+          + "Not owned, and you can add them to the shopping list from the recipe. You can change any of them later on Your Palette.";
+        for (const chip of modeChips) chip.setAttribute("aria-pressed", String(choice.mode === chip.dataset.own));
+        pickArea.replaceChildren();
         if (choice.mode === "pick") {
           const pickHint = document.createElement("p");
           pickHint.className = "hint";
@@ -11088,7 +11117,7 @@
             chip.setAttribute("aria-label", `${p.label}: ${owned ? "owned" : "not owned"}`);
             list.appendChild(chip);
           }
-          card.append(pickHint, list);
+          pickArea.append(pickHint, list);
         }
       };
       card.refresh = draw;
@@ -14528,12 +14557,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=61".
+    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=62".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v61";
+    const APP_VERSION = "v62";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -14984,6 +15013,13 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v62", date: "24 Oct 2026", changes: [
+        "The shopping list only holds paints you put there: Wishlist paints and anything you add with an Add to shopping list button. Paints a recipe uses that you don't own, and paints that are empty or running low, are no longer added by themselves. They still show as Missing on the recipe.",
+        "A recipe with missing paints has an Add missing paints to shopping list button under its steps. It adds only real paints you don't own, says how many, and has an Undo.",
+        "Do you own these? now names the paints it means, and a half-typed paint name no longer brings it up.",
+        "Save stops and says which step has a brand but no paint name, instead of dropping it. A step with no paint says No paint on its line.",
+        "The empty paint box now just says Paint name.",
+      ]},
       { version: "v61", date: "24 Oct 2026", changes: [
         "A unit with more than one model has a Track models separately button in its details, under the stage. One tap shows every model with its own stage. Track as one batch goes back. Both have an Undo.",
         "The old tick for this in Edit details has gone, as the button does the same job.",

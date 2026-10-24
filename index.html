@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=61"></script>
+  <script src="early.js?v=62"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -1010,6 +1010,11 @@
     .step-line-swatches { display: inline-flex; gap: 3px; flex: none; }
     .step-line .swatch { width: 14px; height: 14px; }
     .step-line .have-mark { margin-left: 0; }
+    /* v62: a step with no paint says "No paint" on its line, and the recipe's one button for its missing paints */
+    .step-no-paint { flex: none; font-size: 13px; font-weight: 400; color: var(--muted); }
+    .recipe-shop-add { width: 100%; margin-top: 12px; }
+    /* v62: "Do you own these?" names the paints it means */
+    .own-check .own-names { margin: 0 0 8px; overflow-wrap: anywhere; }
     .step-line .fold-mark { margin-right: 4px; }
     .step-line[aria-expanded="true"] .fold-mark { transform: rotate(-135deg) translate(-2px, -2px); }
     .step-body { display: grid; gap: 10px; min-width: 0; padding: 4px 0 8px; }
@@ -2445,8 +2450,9 @@
             <li>At the bottom of an open paint: <strong>Remove</strong> deletes a paint no recipe uses (a paint that's still in a recipe can't be removed). <strong>Merge into…</strong> joins it to another paint, handy for a typo twin like "Deep Bluee": its recipes move to the paint you pick, and that paint keeps its own name and brand. Both have Undo.</li>
             <li><strong>Scan a paint pot</strong> (in Your Palette) reads the paint's name from its label with the camera and suggests matches. The reading happens on your phone; the photo is never sent anywhere. The first scan loads the label reader (about 11 MB) from Minifolio's own site, and after that scanning works with no internet. Leaving the app, or closing the scan panel, switches the camera off.</li>
             <li id="help-scan-brands"><strong>Brands the scanner knows:</strong> Citadel, Warhammer Tone Pro (each colour in its five tones, like Carmine Blades 1 to 5), Vallejo, The Army Painter, Pro Acryl, AK Interactive, Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World (about 4,000 paints), and every paint already in Your Palette. <strong>Settings → Paint brands</strong> switches brands on or off: a brand that's off isn't suggested, matched or used in Colour ideas. Your own paints always are. On a Vallejo pot it also reads the <strong>code number</strong> (like 72.021), which picks the exact paint even if the name is hard to read. Other brands still work: if the scanner doesn't know the name, type it in. The same lists help when you paste recipes from your notes. Where two brands share a name (like "Black"), you're asked which one. The colours for these brands are close guesses, so tap a paint to fix its colour.</li>
-            <li>Typed a paint into a recipe that isn't in Your Palette yet? Above <strong>Save recipe</strong>, <strong>Do you own these?</strong> asks about the new paints: <strong>All</strong> (Owned), <strong>None</strong> (Not owned, so they go on the shopping list) or <strong>Let me pick</strong> (tap a paint to untick it).</li>
-            <li id="help-shop"><strong>Shopping list</strong> (in Your Palette) lists paints that are running low, empty, on your wishlist, or used in a recipe but not owned, grouped by brand. <strong>Buy these</strong> at the top has a button for each shop that sells them (Firestorm Games, Wayland Games, Element Games, and The Army Painter for Army Painter paints). Tap a shop for one search link per paint; each opens that shop's own search in a new tab. They're plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop. The link searches for the paint's name, so the results can include other brands' paints with the same name: check you've got the right pot before you buy.</li>
+            <li>Typed a paint into a recipe that isn't in Your Palette yet? Above <strong>Save recipe</strong>, <strong>Do you own these?</strong> asks about the new paints: <strong>All</strong> (Owned), <strong>None</strong> (Not owned) or <strong>Let me pick</strong> (tap a paint to untick it). The card names the paints it means. A paint name only counts once it matches a known paint or you leave the box. Save stops and says so if a step has a brand but no paint name, and a step with no paint says <strong>No paint</strong> on its line.</li>
+            <li id="help-recipe-shop">Missing paints are not put on the shopping list by themselves. On a recipe with missing paints, <strong>Add missing paints to shopping list</strong> under its steps adds the real paints you don't own (never the made-up example paints) and says how many. Undo takes them off again.</li>
+            <li id="help-shop"><strong>Shopping list</strong> (in Your Palette) lists only the paints you put there: your Wishlist paints and anything added with an <strong>Add to shopping list</strong> button, grouped by brand. Nothing is added by itself, not even a paint a recipe needs or one that is empty or running low. <strong>Buy these</strong> at the top has a button for each shop that sells them (Firestorm Games, Wayland Games, Element Games, and The Army Painter for Army Painter paints). Tap a shop for one search link per paint; each opens that shop's own search in a new tab. They're plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop. The link searches for the paint's name, so the results can include other brands' paints with the same name: check you've got the right pot before you buy.</li>
             <li id="help-shop-links"><strong>Shop links on suggested paints</strong> (Pro preview): under a suggested paint you don't own, in the colour wheel's paint panel and in <strong>Colour ideas</strong> (in a recipe and in the Compendium), tap <strong>Shop links</strong> to open a small fold-out. It has <strong>Add to shopping list</strong> (Undo is offered) and a plain search link for each shop that sells the paint. Paints you own show nothing. They're plain links, the same as in Buy these: Minifolio isn't paid for them, and only the paint's name goes to the shop. To hide every shop link and shop button, including Buy these, untick <strong>Settings → Shop links</strong>. Your shopping list stays.</li>
             <li id="help-compendium-ticks">In the <strong>Compendium</strong>, tick the paints you want from a scheme or detail recipe, or press <strong>Select all</strong>. <strong>Add to shopping list</strong> is grey until you tick something, then adds only the ticked paints. A paint you own, or that is already on the list, shows a mark instead of a tick box. <strong>Copy as text</strong> and <strong>Save into a new recipe</strong> use the ticked paints, or all of them if none is ticked.</li>
             <li><strong>Schemes</strong> (top of the Recipes tab) group the recipes you use for one faction, e.g. "My Blue Army" = armour, trim, lenses and base. Press <strong>+ New scheme</strong>, name it, type the faction and tick its recipes.</li>
@@ -2467,7 +2473,7 @@
             <li>Not sure about a paint (like "CM")? <strong>Check … paints</strong> asks what you meant. The app remembers your answer for next time.</li>
             <li><strong>✕</strong> next to a step, a part's name or a note leaves it out of the paste. Each has Undo. This only changes the preview, not your notes, so <strong>Read again</strong> brings everything back.</li>
             <li><strong>✎</strong> on a step lets you change it before saving: its <strong>technique</strong>, its <strong>mix ratio</strong> (<strong>Clear</strong> makes it an even mix), or <strong>Change…</strong> any of its <strong>paints</strong> to a different one. Only that step changes, and each change has Undo.</li>
-            <li>If the paste has paints that aren't in Your Palette yet, <strong>Do you own these?</strong> sits above Save: <strong>All</strong> (Owned), <strong>None</strong> (Not owned, so they go on the shopping list) or <strong>Let me pick</strong>.</li>
+            <li>If the paste has paints that aren't in Your Palette yet, <strong>Do you own these?</strong> sits above Save: <strong>All</strong> (Owned), <strong>None</strong> (Not owned) or <strong>Let me pick</strong>.</li>
             <li><strong>Copy as text</strong> on a recipe writes it out in the same style, so you can share it or paste it back. Mixes are copied with their ratio (an even mix is written <strong>1:1</strong>), so they come back the same.</li>
           </ul>
         </details>
@@ -2806,7 +2812,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=61" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=62" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -2815,10 +2821,10 @@
        names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks.
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=61"></script>
-  <script src="schemes.js?v=61"></script>
-  <script src="detail-recipes.js?v=61"></script>
-  <script src="basing-tips.js?v=61"></script>
-  <script src="app.js?v=61"></script>
+  <script src="colour.js?v=62"></script>
+  <script src="schemes.js?v=62"></script>
+  <script src="detail-recipes.js?v=62"></script>
+  <script src="basing-tips.js?v=62"></script>
+  <script src="app.js?v=62"></script>
 </body>
 </html>
