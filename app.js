@@ -10325,21 +10325,22 @@
       const wrap = document.createElement("div");
       wrap.className = "paint-recipe";
       const row = document.createElement("div");
-      row.className = "share-row";
+      row.className = "paint-recipe-buttons";   // not "share-row": that name means the Copy as text row
       const use = document.createElement("button");
       use.type = "button";
       use.className = "plain-button";
       use.textContent = "Use in a recipe";
-      use.setAttribute("aria-label", `Use ${paint.name} in a new recipe`);
+      const who = hiddenName(paint.name);   // v55: the paint's name is read from a hidden line, never built into an aria-label
+      labelWithName(use, "Use in a recipe", who);
       use.addEventListener("click", () => useCompendiumPaintInNewRecipe(paint));
       const add = document.createElement("button");
       add.type = "button";
       add.className = "plain-button";
       add.textContent = "Add to a recipe";
-      add.setAttribute("aria-label", `Add ${paint.name} to a recipe`);
+      labelWithName(add, "Add to a recipe", who);
       add.setAttribute("aria-expanded", "false");
       row.append(use, add);
-      wrap.appendChild(row);
+      wrap.append(who, row);
       let picker = null;
       add.addEventListener("click", () => {
         if (picker) { picker.remove(); picker = null; add.setAttribute("aria-expanded", "false"); return; }

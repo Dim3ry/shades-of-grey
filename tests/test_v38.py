@@ -257,7 +257,8 @@ def main():
         text = copied(page)
         check("Copy as text in the panel copies the title, the group names, the rows and the footer, as plain text", text and text.startswith("Matching colours for Probe gold metal (Test Paints)") and "Starter schemes with a similar colour" in text
               and "Colours on a screen are only a guide" in text and "<" not in text and text.count("\n- ") >= 4, (text or "")[:200])
-        check("and the panel has that one button only (no Save into a new recipe, no tap targets inside)", page.locator("#cmp-paint-panel button").count() == 1 and page.locator("#cmp-paint-panel a, #cmp-paint-panel [href], #cmp-paint-panel [role=link]").count() == 0)
+        # v62: the panel's paint now has Use in a recipe and Add to a recipe at the top, so the panel has those two plus Copy as text (still no Save into a new recipe)
+        check("and the panel has Copy as text plus the two v62 paint buttons only (no Save into a new recipe, no links inside)", page.locator("#cmp-paint-panel .share-row button").count() == 1 and page.locator("#cmp-paint-panel > .paint-recipe .paint-recipe-buttons button").count() == 2 and page.locator("#cmp-paint-panel a, #cmp-paint-panel [href], #cmp-paint-panel [role=link]").count() == 0)
 
         # ---------- 4. Keyboard and screen reader ----------
         print("\n--- 4. Keyboard and screen reader ---")
@@ -280,7 +281,8 @@ def main():
         check("Space opens it too", page.locator(".paint-panel").count() == 1)
         page.keyboard.press("Tab")
         a = active(page)
-        check("Tab goes from the paint into the panel (to Copy as text), not past it", a["text"] == "Copy as text" and page.evaluate("() => !!document.activeElement.closest('#cmp-paint-panel')"), a)
+        # v62: the first tap target in the panel is now Use in a recipe (Copy as text is still in the panel, after the two v62 buttons)
+        check("Tab goes from the paint into the panel (to its first button), not past it", a["text"] == "Use in a recipe" and page.evaluate("() => !!document.activeElement.closest('#cmp-paint-panel')"), a)
         page.keyboard.press("Escape")
         page.wait_for_timeout(100)
         a = active(page)

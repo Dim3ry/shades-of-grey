@@ -246,8 +246,9 @@ def main():
         colour_rows = [r for r in rows if r["section"] != STARTER_LABEL]
         scheme_rows = [r for r in rows if r["section"] == STARTER_LABEL]
         check("every colour match for a paint you do not own has a fold-out under its row, and it starts closed", len(colour_rows) == 5 and all(r["hasFold"] and r["open"] is False for r in colour_rows), colour_rows[:2])
+        # v62: a row now has a third child, the Use in a recipe / Add to a recipe buttons, after the fold-out (so kids is 3, the fold-out is still second)
         check("the fold-out is the second thing in the row, after the colour suggestion, and the suggestion's own words are the same as before (tag Not in your palette, a reason)",
-              all(r["kids"] == 2 and r["tag"] == "Not in your palette" for r in colour_rows), [(r["kids"], r["tag"]) for r in colour_rows])
+              all(r["kids"] == 3 and r["tag"] == "Not in your palette" for r in colour_rows), [(r["kids"], r["tag"]) for r in colour_rows])
         check("it is called Shop links (with the paint's name for a screen reader) and is 44 px tall to tap", all(r["sum"] == "Shop links" and r["sumLabel"] == f"Shop links for {r['name']}" and r["sumH"] >= 44 for r in colour_rows), colour_rows[:1])
         check("the starter scheme rows in the panel have no shop links (they are colours, not paints)", len(scheme_rows) >= 1 and not any(r["hasFold"] for r in scheme_rows), scheme_rows[:1])
         check("the paint you tapped, and the wheel's own lists, have no shop links (the only fold-outs on the page are inside the paint panel)",
