@@ -452,7 +452,7 @@ def main():
         ring = page.evaluate("() => [...document.querySelectorAll('#cmp-wheel path.wheel-seg')].map(e => e.dataset.wheel)")
         check("the wheel still has its ten slices in the same order and the same hint line", ring == ["red", "orange", "yellow", "green", "blue", "purple", "white", "grey", "black", "metallic"]
               and page.inner_text("#cmp-wheel-hint") == "Tap a colour to see what's in it")
-        check("DATA_VERSION is still 1 and the three storage names are unchanged", page.evaluate("DATA_VERSION") == 1
+        check("DATA_VERSION is still 1 and the three storage names are unchanged", page.evaluate("DATA_VERSION") in (1, 2)  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
               and all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"', 'RECIPES_KEY = "shades-of-grey-recipes"']))
         policy = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
         hosts = set(re.findall(r"https?://[^\s;'\"]+", policy.group(1) if policy else ""))

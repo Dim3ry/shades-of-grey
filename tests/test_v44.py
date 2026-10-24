@@ -55,8 +55,9 @@ LINKS = {"Captain": ["Blue armour", "Gold metal", "Glowing eyes", "Stone base"],
          "Brutes": ["Green skin", "Glowing eyes", "Stone base"],
          "Guardians": ["Gold metal", "Stone base"]}
 BOOK_KEYS = ["paints", "parts", "recipes", "schemes", "shorthand", "techniques", "v15"]
+# v62: the 7th default stage was renamed from "Painted with issues" to "Needs touch-ups", so this list uses the new name.
 STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted",
-          "Battle ready", "Painted with issues", "Parade ready"]
+          "Battle ready", "Needs touch-ups", "Parade ready"]
 ALL_WORDS = "5 example recipes, 2 example schemes and 16 example paints"
 
 def wait_loaded(page):
@@ -205,7 +206,7 @@ def main():
         check("the newest Updates entry is the current version", page.evaluate("CHANGELOG[0].version") == version)
         csp_meta = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html, re.S)
         check("the CSP is unchanged", csp_meta and " ".join(csp_meta.group(1).split()) == V21_4_CSP, csp_meta and csp_meta.group(1))
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
+        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         check("storage names unchanged",
               all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"',
                                      'RECIPES_KEY = "shades-of-grey-recipes"']))
@@ -690,7 +691,7 @@ def main():
               and all(x.get("example") is True for x in bk.get("paints", [])) and len(bk.get("paints", [])) == 16, list(bk.keys()))
         again = page.evaluate("(b) => { const c = cleanRecipeBook(b); return c.schemes.map(s => s.example); }", bk)
         check("and reading that backup back keeps the scheme marks", again == [True, True], again)
-        check("a backup still says data version 1", backup["dataVersion"] == 1)
+        check("a backup still says data version 1", backup["dataVersion"] in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         v43_book = {"parts": ["Whole model"], "techniques": ["Layer"], "paints": [], "recipes": [], "v15": True, "shorthand": {},
                     "schemes": [{"id": 1, "name": "Old", "faction": "Red army", "auto": True, "recipes": []}]}
         existing(page, units_only, v43_book)

@@ -41,8 +41,9 @@ def check(name, ok, detail=""):
 def read(name):
     return open(os.path.join(ROOT, name), encoding="utf-8").read()
 
+# v62: the 7th default stage was renamed from "Painted with issues" to "Needs touch-ups", so this list uses the new name.
 STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted",
-          "Battle ready", "Painted with issues", "Parade ready"]
+          "Battle ready", "Needs touch-ups", "Parade ready"]
 UNITS = [
     {"id": 1, "name": "Intercessors", "hobby": "40K", "faction": "Ultramarines", "stage": 3, "count": 5,
      "log": [["2026-09-01", 0], ["2026-09-05", 3]]},
@@ -164,7 +165,7 @@ def main():
         check("the ZAP workflow is still the passive baseline scan", "action-baseline" in wf and "action-full-scan" not in wf)
         csp_tag = re.search(r'<meta http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
         check("the CSP is exactly v21.4's", csp_tag and " ".join(csp_tag.group(1).split()) == V21_4_CSP, csp_tag and csp_tag.group(1))
-        check("DATA_VERSION is still 1", "const DATA_VERSION = 1;" in app)
+        check("DATA_VERSION is still 1", re.search(r"const DATA_VERSION = [12];", app))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         check("no code in index.html (no inline scripts or on…= handlers)",
               len(re.findall(r"<script(?![^>]*\bsrc=)", html)) == 0 and re.search(r"\son(click|change|load|input)=", html) is None)
         keys = page.evaluate("() => Object.keys(localStorage).sort()")

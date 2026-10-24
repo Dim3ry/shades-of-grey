@@ -59,7 +59,7 @@ def main():
         v56 = page.evaluate("CHANGELOG.filter(c => c.version === 'v56')")
         check("there is one v56 entry, and it is only chunk 1.1 (Clear examples), not the wording change",
               len(v56) == 1 and "Clear examples" in " ".join(v56[0]["changes"]) and "Shorter wording" not in " ".join(v56[0]["changes"]), v56)
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
+        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
 
         # ---------- 2. The words ----------
         print("\n--- 2. The shorter words ---")

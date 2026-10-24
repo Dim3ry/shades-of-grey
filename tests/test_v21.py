@@ -38,8 +38,9 @@ def read(name):
         return "\n".join(open(os.path.join(ROOT, n), encoding="utf-8").read() for n in ("index.html", "early.js", "app.js"))
     return open(os.path.join(ROOT, name), encoding="utf-8").read()
 
+# v62: the 7th default stage was renamed from "Painted with issues" to "Needs touch-ups", so this list uses the new name.
 STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted",
-          "Battle ready", "Painted with issues", "Parade ready"]
+          "Battle ready", "Needs touch-ups", "Parade ready"]
 OLD_EXAMPLES = [  # how the 3 example units were saved before v21 (no "example" mark)
     {"id": 1, "name": "Captain", "hobby": "40K", "faction": "Ultramarines", "stage": 3, "count": 1},
     {"id": 2, "name": "Boyz", "hobby": "40K", "faction": "Orks", "stage": 0, "count": 10},
@@ -147,7 +148,7 @@ def main():
         check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
         check("the ocr folder is kept", all(os.path.exists(os.path.join(ROOT, "ocr", f)) for f in
               ["ocr-worker.js", "eng.traineddata", "tesseract-core-simd-lstm.wasm", "README.md"]))
-        check("the data version is still 1", page.evaluate("DATA_VERSION") == 1)
+        check("the data version is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         check("storage names unchanged", all(k in html for k in
               ["mini-tracker-models", "shades-of-grey-settings", "shades-of-grey-recipes", "shades-of-grey-photos"]))
 
@@ -288,7 +289,7 @@ def main():
         u = units(page)[1]
         check("one model jumps on its own; the unit's stage is still the furthest behind",
               u["stages"] == [1, 6, 2, 3] and u["stage"] == 1, u)
-        check("…message names the model", "model 2 → Painted with issues" in toast(page), toast(page))
+        check("…message names the model", "model 2 → Needs touch-ups" in toast(page), toast(page))
         undo(page)
         check("…Undo puts that model back", units(page)[1]["stages"] == [1, 1, 2, 3])
         page.select_option(f"{card(page, 2)} select.jump-stage", "4")

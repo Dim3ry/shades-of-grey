@@ -100,7 +100,7 @@ def main():
         check("the entry names the shopping list, Copy as text, Uses example paints and Swap for a real paint",
               all(w in joined for w in ("shopping list", "Copy as text", "Uses example paints", "Swap for a real paint")), joined)
         check("no em dash in the v58 Updates entry", "—" not in app[app.index('{ version: "v58"'):app.index('{ version: "v57"')])
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
+        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         help_text = page.text_content("#help-example-recipes") or ""
         check("Help says made-up paints stay off the list after Keep them, and how to swap one",
               all(w in help_text for w in ("even after Keep them", "Uses example paints", "Swap for a real paint")), help_text[-300:])

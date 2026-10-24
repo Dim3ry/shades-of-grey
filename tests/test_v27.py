@@ -195,7 +195,7 @@ def main():
         outside_words = [w for v in rules.values() for w in v if w.startswith("http") or "*" in w]
         check("the only outside address in the whole policy is the counter's picture", outside_words == [COUNTER], outside_words)
         check("the policy comment in index.html explains the new address", "dim3ry.goatcounter.com/count" in html.split("-->")[0] or "ONE address" in html)
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
+        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         check("the three storage names are unchanged",
               all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"',
                                      'RECIPES_KEY = "shades-of-grey-recipes"']))
@@ -274,7 +274,7 @@ def main():
         page.click("#counting-card .count-label")
         page.wait_for_timeout(300)
         check("other saved settings are kept when the switch changes", saved_settings(page).get("someFutureThing") == {"a": 1}, saved_settings(page))
-        check("DATA_VERSION stays 1 and the saved data version is unchanged", page.evaluate("DATA_VERSION") == 1 and saved_settings(page).get("dataVersion") == 1, saved_settings(page))
+        check("DATA_VERSION stays 1 and the saved data version is unchanged", page.evaluate("DATA_VERSION") in (1, 2) and saved_settings(page).get("dataVersion") in (1, 2), saved_settings(page))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         check("a backup does not carry the choice (like the feedback card's dates)",
               "countVisits" not in page.evaluate("() => JSON.stringify(backupData())"))
         # odd saved values count as on and are removed

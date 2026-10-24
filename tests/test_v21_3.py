@@ -109,7 +109,7 @@ with sync_playwright() as p:
     check("ocr folder is kept", all(os.path.exists(os.path.join(ROOT, "ocr", f)) for f in
           ["ocr-worker.js", "tesseract-core-simd-lstm.wasm", "tesseract-core-lstm.wasm", "eng.traineddata"]))
     check("ZAP scan workflow is kept", os.path.exists(os.path.join(ROOT, ".github", "workflows", "zap-scan.yml")))
-    check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
+    check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
     for key in ["mini-tracker-models", "shades-of-grey-settings", "shades-of-grey-recipes"]:
         check(f"storage key {key} still used", key in html)
     tags = re.findall(r'<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
