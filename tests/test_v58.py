@@ -133,14 +133,18 @@ def main():
         page.evaluate("""() => { const p = book.paints.find(x => x.name === 'Real Blue'); p.brand = 'Test Paints';
             const w = findOrAddPaint('Test Paints', 'Wish Green', '#22aa44'); applyPaintStatus(w, 'wishlist');
             const l = findOrAddPaint('Test Paints', 'Low Red', '#aa2222'); applyPaintStatus(l, 'low'); render(); }""")
+        # v62 (chunk 2.2): nothing goes on the list by itself any more. Only Wishlist paints are listed; a recipe's missing
+        # paints go on with its "Add missing paints to shopping list" button. This used to expect Real Blue and Low Red straight away.
         got = list_names(page)
-        check("a real paint your recipe needs, a wishlist paint and a running low paint are on the list, and nothing made-up",
-              sorted(got) == ["Low Red", "Real Blue", "Wish Green"], got)
-        reasons = page.evaluate("() => Object.fromEntries(shoppingItems().map(i => [i.paint.name, i.reason]))")
-        check("with the same reasons as before", reasons == {"Real Blue": "missing, used in 1 recipe", "Wish Green": "wishlist", "Low Red": "running low"}, reasons)
+        check("only the wishlist paint is on the list to start with (v62), and nothing made-up", sorted(got) == ["Wish Green"], got)
+        page.evaluate("() => { const r = book.recipes.find(x => x.name === 'My armour'); addSchemePaintsToShoppingList(recipeShopPaints(r), 'Recipe: My armour'); }")
+        page.wait_for_timeout(200)
+        got = list_names(page)
+        check("the recipe's button adds the real paint it needs, not the running low one, and nothing made-up",
+              sorted(got) == ["Real Blue", "Wish Green"], got)
         text = copied(page)
-        check("Copy as text lists the real ones, under their brand", "Test Paints" in text and all(n in text for n in ("Real Blue", "Wish Green", "Low Red"))
-              and "Example" not in text, text)
+        check("Copy as text lists the real ones, under their brand", "Test Paints" in text and all(n in text for n in ("Real Blue", "Wish Green"))
+              and "Low Red" not in text and "Example" not in text, text)
 
         # ---------- 4. The recipe card line ----------
         print("\n--- 4. Have / Missing on a recipe ---")
@@ -192,7 +196,10 @@ def main():
         check("Example deep blue has left your palette", now["gone"], now)
         check("the message says what was swapped, with Undo", e.toast(page)["shown"] and e.toast(page)["undo"]
               and e.toast(page)["text"] == f"Swapped Example deep blue for {real['name']}", e.toast(page))
-        check("the real paint can go on the shopping list now (you don't have it)", list_names(page) == [real["name"]], list_names(page))
+        # v62 (chunk 2.2): it is no longer put on the list by itself, so this checks that Blue armour's button now offers it.
+        check("the real paint can go on the shopping list now (you don't have it)",
+              page.evaluate("() => schemePaintsToAdd(recipeShopPaints(book.recipes.find(r => r.name === 'Blue armour'))).map(p => p.name)") == [real["name"]],
+              page.evaluate("() => schemePaintsToAdd(recipeShopPaints(book.recipes.find(r => r.name === 'Blue armour'))).map(p => p.name)"))
         page.click("#toast-undo")
         page.wait_for_timeout(200)
         check("Undo puts everything back", page.evaluate("() => JSON.stringify(book)") == before)

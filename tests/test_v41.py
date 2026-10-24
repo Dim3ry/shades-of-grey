@@ -169,7 +169,7 @@ def main():
         print("\n--- 3. Markers ---")
         h.panel_for(page, h.UNOWNED)
         tags = panel_tags(page)
-        check("in the matching colours, paints on your wishlist or marked empty say On your shopping list", tags.get("Probe Left") == LISTED and tags.get("Probe Right") == LISTED, tags)
+        check("in the matching colours, paints on your wishlist say On your shopping list (v62: Probe Right is Wishlist now, it was empty)", tags.get("Probe Left") == LISTED and tags.get("Probe Right") == LISTED, tags)
         check("a paint in your palette that is not on the list, and one that is not in your palette, keep their usual words",
               tags.get("Probe Opposite") in ("Not in your palette", "In your palette, not owned") and LISTED not in (tags.get("Probe Opposite"), tags.get("Probe Triad A")), tags)
         check("the basket already counts the two paints on the list", count_text(page) == "2", count_text(page))

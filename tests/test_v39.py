@@ -58,7 +58,8 @@ _h, _l, _s = colorsys.rgb_to_hls(*[int(BASE_HEX[i:i + 2], 16) / 255 for i in (1,
 def at(deg):
     return hx(_h * 360 + deg, _s, _l)
 BLUE = P(1, "Probe Blue", BASE_HEX)
-UNOWNED = [BLUE, P(2, "Probe Opposite", at(180), status="notowned"), P(3, "Probe Left", at(-30), status="wishlist"), P(4, "Probe Right", at(30), status="empty"),
+# v62 (chunk 2.2): only Wishlist paints are on the shopping list now, so Probe Right (on the list in these checks) was "empty" before.
+UNOWNED = [BLUE, P(2, "Probe Opposite", at(180), status="notowned"), P(3, "Probe Left", at(-30), status="wishlist"), P(4, "Probe Right", at(30), status="wishlist"),
            P(5, "Probe Triad A", at(120), status="notowned"), P(6, "Probe Triad B", at(240), status="notowned")]
 ALL_OWNED = [BLUE, P(2, "Probe Opposite", at(180)), P(3, "Probe Left", at(-30)), P(4, "Probe Right", at(30), status="low"),
              P(5, "Probe Triad A", at(120)), P(6, "Probe Triad B", at(240))]
@@ -293,7 +294,7 @@ def main():
         panel_for(page, UNOWNED)
         r_mix = [r for r in prows(page) if r["section"] != STARTER_LABEL]
         by_name = {r["name"]: r for r in r_mix}
-        check("a paint on your wishlist or marked empty is already on the shopping list: it says On your shopping list and has no Add button, and the others have the button",
+        check("a paint on your wishlist (v62: an empty one no longer is) is already on the shopping list: it says On your shopping list and has no Add button, and the others have the button",
               by_name["Probe Left"]["hasFold"] and by_name["Probe Right"]["hasFold"] and not by_name["Probe Left"]["add"] and not by_name["Probe Right"]["add"], by_name)
         open_fold(page, [r["name"] for r in r_mix].index("Probe Left"))
         open_fold(page, [r["name"] for r in r_mix].index("Probe Right"))
@@ -408,7 +409,7 @@ def main():
 
         # ---------- 6. The hide switch ----------
         print("\n--- 6. The Settings switch: Show shop links ---")
-        keep = [BLUE, P(2, "Probe Opposite", at(180), status="wishlist"), P(3, "Probe Empty", at(30), status="empty")]
+        keep = [BLUE, P(2, "Probe Opposite", at(180), status="wishlist"), P(3, "Probe Empty", at(30), status="wishlist")]   # v62: was "empty" (only Wishlist is listed now)
         load(page, paints=keep, recipes=[rec(101, "Armour blue", "Whole model", [1])])
         go_settings(page)
         box_state = page.evaluate("() => ({ checked: document.getElementById('show-shop-links').checked, note: document.getElementById('shoplinks-note').textContent, h: document.querySelector('#shoplinks-card h2').textContent })")

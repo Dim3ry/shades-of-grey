@@ -115,11 +115,19 @@ def main():
 
         # ---------- 3. What is on the list ----------
         print("\n--- 3. What is on the list ---")
+        # v62 (chunk 2.2): George asked that nothing goes on the list by itself. Only Wishlist paints are listed; the paints a
+        # recipe needs go on with the recipe's "Add missing paints to shopping list" button. These checks used to expect the
+        # running low, empty and missing paints on the list straight away.
         got = items(page)
         names = " | ".join(got)
-        check("it lists running low, empty, wishlist and the paints recipes use that you don't have, and not the paint you own or an unused one",
-              all(n in names for n in ("Low One", "Empty One", "Wish One", "Missing One", "Missing Two"))
-              and "Owned One" not in names and "Plain One" not in names, got)
+        check("only the Wishlist paint is listed to start with (not running low, empty or missing ones) (v62)",
+              "Wish One" in names and not any(n in names for n in ("Low One", "Empty One", "Missing One", "Missing Two", "Owned One", "Plain One")), got)
+        page.evaluate("() => { for (const r of book.recipes) addSchemePaintsToShoppingList(recipeShopPaints(r), `Recipe: ${r.name}`); renderRecipes(); }")
+        page.wait_for_timeout(200)
+        got = items(page)
+        names = " | ".join(got)
+        check("each recipe's button adds the paints it uses that you don't have, and not the paint you own (v62)",
+              all(n in names for n in ("Wish One", "Missing One", "Missing Two")) and not any(n in names for n in ("Owned One", "Plain One", "Low One", "Empty One")), got)
         check("Missing One, used by two recipes, is listed once and names both recipes",
               sum("Missing One" in g for g in got) == 1 and any("Missing One" in g and "Recipe: Moss Armour" in g and "Recipe: Dusty Cloak" in g for g in got), got)
         check("grouped by brand", page.locator("#shop-panel .shop-brand").count() == 2, page.locator("#shop-panel .shop-brand").all_inner_texts())
@@ -163,6 +171,7 @@ def main():
         # ---------- 5. The basket ----------
         print("\n--- 5. The basket ---")
         load(page, paints=PAINTS, recipes=RECIPES)
+        page.evaluate("() => { for (const r of book.recipes) addSchemePaintsToShoppingList(recipeShopPaints(r), `Recipe: ${r.name}`); }")   # v62: fill the list
         n = page.evaluate("() => shoppingItems().length")
         seen = {}
         for name in ("dashboard", "units", "recipes", "compendium", "settings"):

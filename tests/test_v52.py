@@ -129,10 +129,11 @@ def main():
               page.locator("#shop-panel .more-info-button").count() == 1 and page.get_attribute("#shop-panel .more-info-button", "aria-expanded") == "false")
         check("it says More info and is at least 44 px tall", text(page, "#shop-panel .more-info-button") == "More info" and height(page, "#shop-panel .more-info-button") >= 43.5)
         check("while closed, the sentence, the warning and the shop note are all hidden",
-              not any(page.get_by_text(x).first.is_visible() for x in ("to get: running low", "No statuses set yet", "Tap a shop under Buy these", "Plain links")))
+              not any(page.get_by_text(x).first.is_visible() for x in ("to get: the paints you added", "No statuses set yet", "Tap a shop under Buy these", "Plain links")))
         panel = text(page, "#shop-panel .more-info-panel")
         check("the panel holds the sentence, the shop note and the shop links words",
-              panel and "to get: running low" in panel and "Tap a shop under Buy these" in panel and "Plain links" in panel, panel)
+              # v62 (chunk 2.2): the sentence now reads "to get: the paints you added and your Wishlist paints" (was "to get: running low, ...").
+              panel and "to get: the paints you added" in panel and "Tap a shop under Buy these" in panel and "Plain links" in panel, panel)
         check("the buy bar itself no longer has a note line", page.locator("#buy-bar > .hint").count() == 0 and page.locator("#buy-bar p").count() == 0)
         before = v51.all_local(page)
         press(page, page.locator("#shop-panel .more-info-button").first)

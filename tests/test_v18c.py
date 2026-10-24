@@ -8,7 +8,7 @@
 
 2. "Do you own these? All / None / Let me pick" (item 4). Paints new to your palette, from a
    paste import OR typed by hand in a recipe, get this choice. All is picked to start with
-   (they're saved as Owned). None saves them as Not owned, so they go on the shopping list.
+   (they're saved as Owned). None saves them as Not owned (since v62 they no longer go on the shopping list by themselves).
    Let me pick lets you untap the ones you don't have.
 
 Serve the repo folder first (run_all.py does this for you), then run:
@@ -167,7 +167,8 @@ def main():
         check("paste, None: both new paints are saved as Not owned",
               st.get("Mephiston Red") == "notowned" and st.get("Agrax Earthshade") == "notowned", st)
         shop = page.evaluate("shoppingItems().map(i => i.paint.name).sort()")
-        check("paste, None: both paints are on the shopping list", shop == ["Agrax Earthshade", "Mephiston Red"], shop)
+        # v62 (chunk 2.2): nothing goes on the shopping list by itself any more, so Not owned paints wait for you to add them.
+        check("paste, None: Not owned paints are not put on the shopping list by themselves (v62)", shop == [], shop)
 
         start(page)
         paste(page, NOTE)
