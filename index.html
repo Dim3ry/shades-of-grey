@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=56"></script>
+  <script src="early.js?v=57"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -565,6 +565,10 @@
       min-height: 44px; text-decoration: none; text-align: center; box-sizing: border-box; }
     .feedback-card .button-grid { margin-top: 8px; }
     .feedback-card .button-grid button { min-height: 44px; }
+    /* v57: the "Save a backup?" card (same look as the feedback card). Buttons are 44 px tall. */
+    .backup-nudge p { margin: 0 0 10px; }
+    .backup-nudge .button-grid { margin-top: 8px; }
+    .backup-nudge .button-grid button { min-height: 44px; }
     /* v26: the "We kept your unfinished ..." cards (same look as the examples cards). */
     .draft-card { margin-bottom: 12px; }
     .draft-card p { margin: 0 0 10px; }
@@ -2087,6 +2091,8 @@
       <div class="card notice-card examples-card hidden" id="examples-card-dash" role="note"></div>
       <!-- v25: one gentle "send feedback?" card, about a week after first use. Filled by renderFeedbackCard(). -->
       <div class="card notice-card feedback-card hidden" id="feedback-card" role="note"></div>
+      <!-- v57: one gentle "Save a backup?" card, once there is something worth keeping. Filled by renderBackupNudge(). -->
+      <div class="card notice-card backup-nudge hidden" id="backup-nudge" role="note"></div>
       <div class="card">
         <div class="headline">
           <span class="big" id="done-percent">–</span>
@@ -2468,7 +2474,7 @@
           <summary>Your data and backups</summary>
           <ul>
             <li>Everything is saved <strong>on this device only</strong>, in your browser. Nobody else can see it, and it isn't sent anywhere.</li>
-            <li>Clearing your browser's data or uninstalling the app deletes it, so <strong>Save backup</strong> regularly. The app reminds you after a week (and if you have photos, it reminds you about a backup <em>with</em> photos). Every backup shows a message when it's saved.</li>
+            <li id="help-backup-nudge">Clearing your browser's data or uninstalling the app deletes it, so <strong>Save backup</strong> regularly. Once you have 5 units or a recipe of your own (examples don't count), a <strong>Save a backup?</strong> card on the Dashboard asks once. <strong>Save backup</strong> on it saves the same file as in Settings, and <strong>Not now</strong> hides it for two weeks. It asks again when your last backup is 30 days old and you've changed things since. It never shows at the same time as the iPhone card or the feedback card. <strong>Settings → Backups</strong> shows the date of your last backup (or Never) under Save backup. Every backup shows a message when it's saved.</li>
             <li><strong>Save backup</strong> is small and quick, but leaves out photos. <strong>Save full backup with photos</strong> makes one bigger file with everything, photos included.</li>
             <li id="help-send-backup"><strong>Send backup to…</strong> opens your phone's share menu, so you can put the small backup straight into OneDrive, an email or a message. It's the same file as Save backup (no photos). If your phone can't send files from the app, or sending fails, the backup is saved to your device instead and the app says so. Closing the share menu changes nothing.</li>
             <li id="help-send-full-backup"><strong>Send full backup with photos to…</strong> does the same with the bigger file that has your photos in it. Putting the file together can take a moment, and if your phone has stopped waiting by then, the button changes to <strong>Backup ready: tap to send</strong>: tap it once more to open the share menu. If your phone can't send files from the app, or sending fails, the full backup is saved to your device instead and the app says so.</li>
@@ -2788,7 +2794,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=56" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=57" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -2797,10 +2803,10 @@
        names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks.
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=56"></script>
-  <script src="schemes.js?v=56"></script>
-  <script src="detail-recipes.js?v=56"></script>
-  <script src="basing-tips.js?v=56"></script>
-  <script src="app.js?v=56"></script>
+  <script src="colour.js?v=57"></script>
+  <script src="schemes.js?v=57"></script>
+  <script src="detail-recipes.js?v=57"></script>
+  <script src="basing-tips.js?v=57"></script>
+  <script src="app.js?v=57"></script>
 </body>
 </html>

@@ -4540,6 +4540,7 @@
       fillStartStage();
       renderExamplesCards();
       renderFeedbackCard();   // v25
+      renderBackupNudge();   // v57
       fillDraftCard("unit", true);   // v26: a kept unfinished unit
 
       // v21.1: only units you can see can stay ticked (a filter change unticks the rest,
@@ -11797,8 +11798,9 @@
       if (!el) return;
       const last = settings.lastBackup;
       const days = last ? daysSince(last) : Infinity;
-      el.textContent = !last ? "Last backed up: never. Save a backup now and then, in case your phone clears the app's data."
-        : `Last backed up: ${days < 1 ? "today" : days < 2 ? "yesterday" : `${Math.floor(days)} days ago`} (${shortDate(last)}).`;
+      // v57: "Last backup: 13 Oct 2026 (10 days ago)" or "Last backup: Never", right under Save backup
+      el.textContent = !last ? "Last backup: Never. Save one now and then, in case your phone clears the app's data."
+        : `Last backup: ${shortDate(last)} (${days < 1 ? "today" : days < 2 ? "yesterday" : `${Math.floor(days)} days ago`}).`;
       el.classList.toggle("backup-old", days >= 7);
     }
 
@@ -13310,8 +13312,10 @@
       const today = todayISO();
       settings.lastBackup = today;
       settings.lastFullBackup = today;   // v14: photo backups are tracked separately
+      settings.lastBackupPrint = dataPrint();   // v57
       saveSettings();
       renderSettings();
+      renderBackupNudge();
     }
     function fullBackupWords(made) {
       return `${plural(made.count, "photo")}` + (made.missing ? ` (${made.missing} couldn't be read)` : "");
@@ -13432,9 +13436,11 @@
     function smallBackupName(today) { return `minifolio-backup-${today}.json`; }
     function smallBackupText() { return JSON.stringify(backupData(), null, 2); }
     function noteBackupDone() {
-      settings.lastBackup = todayISO();   // remembered so the app knows when to remind you
+      settings.lastBackup = todayISO();   // remembered so the app knows when to ask (v57: the Save a backup? card)
+      settings.lastBackupPrint = dataPrint();   // v57: and what was in it, so it asks again only after a change
       saveSettings();
       renderSettings();
+      renderBackupNudge();
     }
 
     // Save backup (a download). `note` replaces the usual message (v22: Send backup to… uses
@@ -14231,9 +14237,18 @@
     document.getElementById("add-csv").addEventListener("click", startUnitsCsv);
     document.getElementById("units-import-close").addEventListener("click", closeUnitsImport);
 
-    // ================= "TIME TO BACK UP" REMINDER =================
-    // Your data only lives on this device, so a backup is the safety net.
-    // If you have real units and no backup in 14 days, the app nudges you, at most every 3 days.
+    // ================= v57: ONE GENTLE "SAVE A BACKUP?" CARD =================
+    // Your data only lives on this device, so a backup is the safety net. Testers added units, recipes and photos and never
+    // found Save backup, so the Dashboard asks, calmly, once there is something worth keeping. It replaces the v14 toast.
+    // The card shows when ALL of these are true:
+    //   - you have at least BACKUP_NUDGE_UNITS of your own units, or BACKUP_NUDGE_RECIPES of your own recipes (examples don't count)
+    //   - you have never saved a backup, or the last one is BACKUP_NUDGE_AGE_DAYS old and your units or recipes changed since
+    //   - you didn't tap Not now in the last BACKUP_NUDGE_WAIT_DAYS days
+    //   - neither the iPhone warning nor the feedback card is up (only one notice at a time; see planFeedbackPrompt)
+    // Saved on this device only, in the settings (so DATA_VERSION stays 1):
+    //   settings.lastBackup            "2026-10-23"  the day the last backup was saved or sent (since v14)
+    //   settings.lastBackupPrint       "k1a2b3c"     a short fingerprint of the units and recipes in that backup
+    //   settings.backupNudgeNextAfter  "2026-11-06"  after Not now: not before this day
     // v18.3: a plain "2026-10-10" date is read as midnight in YOUR time zone (not world time),
     // so "a day since" and "a week since" line up with the dates the app writes.
     function daysSince(isoDate) {
@@ -14241,25 +14256,62 @@
       const when = /^\d{4}-\d{2}-\d{2}$/.test(isoDate) ? new Date(isoDate + "T00:00:00") : new Date(isoDate);
       return (Date.now() - when.getTime()) / 86400000;
     }
-    function maybeRemindToBackUp() {
-      const onlyExamples = models.length <= EXAMPLES.length &&
-        models.every(m => EXAMPLES.concat(LEGACY_EXAMPLES).some(e => e.name === m.name && e.faction === m.faction));
-      if (!models.length || onlyExamples) return;
-      // Don't nag brand-new users: wait for 10+ units and a day since first real use.
-      if (!settings.firstRealUse) { settings.firstRealUse = todayISO(); saveSettings(); }
-      if (models.length < 10 || daysSince(settings.firstRealUse) < 1) return;
-      // v14: after a WEEK, not two (an iPhone can clear a website's data after 7 days
-      // unused). If you have photos, the reminder is about a backup WITH photos, and its
-      // button makes one, because a plain backup leaves them out.
-      const withPhotos = models.some(hasPhoto);
-      const last = withPhotos ? settings.lastFullBackup : settings.lastBackup;
-      if (daysSince(last) < 7 || daysSince(settings.lastReminder) < 3) return;
-      settings.lastReminder = todayISO();
-      saveSettings();
-      const message = !last
-        ? (withPhotos ? "Your photos haven't been backed up yet" : "You haven't saved a backup yet")
-        : `It's been over a week since your last backup${withPhotos ? " with photos" : ""}`;
-      showToast(message, () => document.getElementById(withPhotos ? "full-export-button" : "export-button").click(), "Back up", 10);
+    const BACKUP_NUDGE_UNITS = 5;
+    const BACKUP_NUDGE_RECIPES = 1;
+    const BACKUP_NUDGE_AGE_DAYS = 30;
+    const BACKUP_NUDGE_WAIT_DAYS = 14;
+    // A short fingerprint of the units and recipes (FNV-1a over the saved text). Equal fingerprints = nothing changed.
+    function dataPrint() {
+      const text = JSON.stringify(models) + "\n" + JSON.stringify(book);
+      let h = 0x811c9dc5;
+      for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+      return "k" + (h >>> 0).toString(36) + text.length.toString(36);
+    }
+    function worthBackingUp() {
+      return models.filter(m => m.example !== true).length >= BACKUP_NUDGE_UNITS ||
+        book.recipes.filter(r => r.example !== true).length >= BACKUP_NUDGE_RECIPES;
+    }
+    function backupNudgeWanted() {
+      if (!worthBackingUp()) return false;
+      const next = settings.backupNudgeNextAfter;
+      if (ISO_DAY.test(next || "") && todayISO() < next) return false;   // Not now
+      if (!settings.lastBackup) return true;
+      return daysSince(settings.lastBackup) >= BACKUP_NUDGE_AGE_DAYS && settings.lastBackupPrint !== dataPrint();
+    }
+    function renderBackupNudge() {
+      const card = document.getElementById("backup-nudge");
+      if (!card) return;
+      const show = backupNudgeWanted() && !feedbackCardWanted() && !iphoneWarningWanted();
+      card.classList.toggle("hidden", !show);
+      card.replaceChildren();
+      if (!show) return;
+      const text = document.createElement("p");
+      const strong = document.createElement("strong");
+      strong.textContent = "Save a backup?";
+      text.append(strong, settings.lastBackup ? ` Your last one was on ${shortDate(settings.lastBackup)}.` : "");
+      const why = document.createElement("p");
+      why.className = "hint";
+      why.textContent = "Your units, recipes and photos are only kept on this device. Clearing the browser's data, or losing the phone, " +
+        "loses them, and on an iPhone Safari can delete them after 7 days unused. A backup is one small file you can keep somewhere " +
+        "safe, like OneDrive or email, and load again with Restore backup. Photos need Save full backup with photos, in Settings \u2192 Backups.";
+      const buttons = document.createElement("div");
+      buttons.className = "button-grid";
+      const save = document.createElement("button");
+      save.type = "button";
+      save.className = "primary-button backup-nudge-save";
+      save.textContent = "Save backup";
+      save.addEventListener("click", () => document.getElementById("export-button").click());   // the same backup as Settings
+      const later = document.createElement("button");
+      later.type = "button";
+      later.className = "plain-button backup-nudge-later";
+      later.textContent = "Not now";
+      later.addEventListener("click", () => {
+        settings.backupNudgeNextAfter = dayFromToday(BACKUP_NUDGE_WAIT_DAYS);
+        saveSettings();
+        renderBackupNudge();
+      });
+      buttons.append(save, later);
+      card.append(text, pageMoreInfo("backup-nudge", [why], { label: "Save a backup" }), buttons);
     }
 
     // ----- iPhone warning (v14) -----
@@ -14274,10 +14326,12 @@
     function openedFromHomeScreen() {
       return navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
     }
+    function iphoneWarningWanted() {
+      return isAppleMobile() && !openedFromHomeScreen() && daysSince(settings.iphoneWarningHidden) > 30;
+    }
     function showIphoneWarning() {
-      const card = document.getElementById("iphone-warning");
-      const show = isAppleMobile() && !openedFromHomeScreen() && daysSince(settings.iphoneWarningHidden) > 30;
-      card.classList.toggle("hidden", !show);
+      document.getElementById("iphone-warning").classList.toggle("hidden", !iphoneWarningWanted());
+      renderBackupNudge();   // v57: the backup card waits while the iPhone warning is up
     }
     document.getElementById("iphone-warning-ok").addEventListener("click", () => {
       settings.iphoneWarningHidden = todayISO();
@@ -14289,12 +14343,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=56".
+    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=57".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v56";
+    const APP_VERSION = "v57";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -14339,6 +14393,7 @@
       if (daysSince(settings.feedbackFirstSeen) < FEEDBACK_AFTER_DAYS) return;
       const next = settings.feedbackNextAfter;
       if (ISO_DAY.test(next || "") && today < next) return;
+      if (backupNudgeWanted() && !iphoneWarningWanted()) return;   // v57: the Save a backup? card goes first; ask another day
       settings.feedbackShownOn = today;
     }
     function feedbackCardWanted() {
@@ -14352,7 +14407,7 @@
       saveSettings();
       // Redraw after the tap has finished, so the Give feedback link isn't taken off the page
       // before the browser has opened it.
-      setTimeout(renderFeedbackCard, 0);
+      setTimeout(() => { renderFeedbackCard(); renderBackupNudge(); }, 0);
       if (choice === "never") notify("OK, we won't ask again. You can still give feedback under Settings \u2192 Updates.");
     }
     function renderFeedbackCard() {
@@ -14744,6 +14799,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v57", date: "23 Oct 2026", changes: [
+        "Once you have a few units or a recipe of your own, the Dashboard asks, once, whether you'd like to save a backup. Save backup saves the same file as in Settings, and Not now hides the card for two weeks. It asks again when your last backup is a month old and you've changed things since.",
+        "Settings \u2192 Backups says when your last backup was, right under Save backup, or Never.",
+      ]},
       { version: "v56", date: "23 Oct 2026", changes: [
         "Clear examples now clears all the examples in one go: the example units, recipes, schemes and paints. The message says what was cleared, and Undo brings all of it back.",
         "Keep them now keeps all the examples as your own, so the These are examples card goes away on the Dashboard, Units, Recipes and Your Palette.",
@@ -14886,7 +14945,6 @@
     showTab(settings.tab);
     if (upgradedStages) showToast("Stages updated: Parade ready added as the final stage", null, null, 8);
     else if (settingsUnreadable) showToast("Your settings couldn't be read, so they were reset. Your units kept their stages, and a copy of the old settings was kept.", null, null, 10);
-    else maybeRemindToBackUp();
 
     // ================= TWO WINDOWS AT ONCE (v14) =================
     // The installed app and a browser tab share the same storage. Before v14 each kept its
