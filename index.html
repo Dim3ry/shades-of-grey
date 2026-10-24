@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=59"></script>
+  <script src="early.js?v=60"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -831,6 +831,15 @@
     .review-row.clash .tag { color: var(--caution); border-color: var(--caution); }
     .review-row select { font-size: 14px; padding: 7px; }
     .review-row.off { opacity: 0.5; }
+    /* v60: each row's own model count and stage. */
+    .review-row-edit { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center; }
+    .review-count { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; }
+    .review-count input { width: 72px; min-height: 44px; font-size: 16px; padding: 6px 8px; }
+    .review-row .stage-pick { font-size: 16px; padding: 7px; min-width: 0; }
+    .review-set-all {
+      position: sticky; top: 0; z-index: 3; display: grid; gap: 8px;
+      padding: 8px 0; background: var(--card); border-bottom: 1px solid var(--border);
+    }
 
     /* ----- Help tab ----- */
     /* v21: each Help topic's tappable title is at least 44 px tall (was 28). */
@@ -1351,6 +1360,8 @@
     @media (min-width: 900px) {
       body { padding: 0 32px 40px; }
       main { max-width: 1280px; }
+      /* v60: the import check's "Set every row to" bar stays in view below the tab bar (69 px). */
+      .review-set-all { top: 69px; }
 
       /* The tabs move to the top as a bar of large buttons. "sticky" keeps them in
          view as you scroll down. */
@@ -2461,9 +2472,11 @@
           <summary>Importing (CSV and army lists)</summary>
           <ul>
             <li><strong>From the Warhammer app:</strong> open a list, tap Export, copy it as text, then on the Units tab tap <strong>+ Add unit → Paste army list</strong> (it's also in Settings), paste it and press Read list. Only unit names and model counts are kept: points, wargear and rules text are thrown away.</li>
+            <li id="help-typed-list">A list typed by hand works too: one unit per line with its count, such as <strong>10x Boyz</strong>, <strong>Boyz x10</strong> or <strong>Boyz (10 models)</strong>. A unit with no count comes in as 1 model.</li>
             <li><strong>From a spreadsheet:</strong> save it as CSV with the columns name, game, faction, stage, nickname, count, repaint, notes, then use <strong>Import CSV</strong> (under + Add unit, or in Settings). <strong>CSV template</strong> in Settings gives you an example file.</li>
             <li id="help-csv-checks">The first line of the CSV must be the column titles, and one must be <strong>name</strong>. The other columns are found by their titles, so they can be in any order or left out. A file without a name column, a picture, an Excel file that isn't saved as CSV, or a file over 2 MB is refused with a message, and nothing changes.</li>
             <li>Before anything changes, you choose <strong>Add to my collection</strong> or <strong>Replace my collection</strong>, and can untick any units you don't want.</li>
+            <li id="help-row-stage">Each unit in the check has its own <strong>model count</strong> and <strong>stage</strong>. <strong>Set every row to</strong> puts every unit at one stage in one go, then you can change single units. The tick only decides whether a unit comes in. A CSV stage that matches one of your stages is used; otherwise the unit starts at the Set every row to stage.</li>
             <li>Units you already have start unticked. If one has a different name in the import, it's highlighted so you can pick which name to keep. The Warhammer app's name is the default.</li>
             <li>After an import, the <strong>Units</strong> tab opens so you can see what came in. Changed your mind? Press <strong>Undo</strong> straight after.</li>
           </ul>
@@ -2706,15 +2719,14 @@
               <label class="hint" style="margin: 0; display: grid; gap: 4px;">Faction<input id="wh-faction" placeholder="e.g. Green army"></label>
             </div>
           </div>
-          <label id="review-stage-label" class="hint" style="margin: 0; display: grid; gap: 6px;">
-            Put new units at stage:
-            <select id="wh-stage"></select>
-          </label>
-
           <p class="hint" id="review-clash-note" style="margin: 0;"></p>
-          <div class="review-tools">
-            <button class="link-button" id="review-all">Tick all</button>
-            <button class="link-button" id="review-none">Untick all</button>
+          <!-- v60: stays in view while a long list scrolls. The menu fills every row's stage. -->
+          <div class="review-set-all" id="review-set-all">
+            <div id="review-stage-label" class="stage-pick-label">Set every row to<span id="review-stage-slot"></span></div>
+            <div class="review-tools">
+              <button class="link-button" id="review-all">Tick all</button>
+              <button class="link-button" id="review-none">Untick all</button>
+            </div>
           </div>
           <ul class="review-list" id="review-list"></ul>
 
@@ -2791,7 +2803,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=59" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=60" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -2800,10 +2812,10 @@
        names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks.
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=59"></script>
-  <script src="schemes.js?v=59"></script>
-  <script src="detail-recipes.js?v=59"></script>
-  <script src="basing-tips.js?v=59"></script>
-  <script src="app.js?v=59"></script>
+  <script src="colour.js?v=60"></script>
+  <script src="schemes.js?v=60"></script>
+  <script src="detail-recipes.js?v=60"></script>
+  <script src="basing-tips.js?v=60"></script>
+  <script src="app.js?v=60"></script>
 </body>
 </html>
