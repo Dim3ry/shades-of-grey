@@ -10001,6 +10001,8 @@
         // v39: a paint you do not own gets the small closed "Shop links" fold-out under its row (door.shops; the row itself is unchanged)
         const shops = door.shops ? buildShopFoldout(paint, idea.hit.owned, door.shopSource ? door.shopSource() : "") : null;
         if (shops) row.appendChild(shops);
+        const toRecipe = buildPaintToRecipeRow(door, paint);   // v62
+        if (toRecipe) row.appendChild(toRecipe);
         list.appendChild(row);
         lines.push(ideaTextLine(paint, tag, reason, note));
         steps.push({ paint, technique: "", coats: 1, mix: 100, note: stepNote });
@@ -10226,7 +10228,9 @@
 
     // "Save into a new recipe…": opens the recipe editor with a new recipe that already has these steps. Nothing is saved until you
     // press Save recipe, and Cancel asks first (the steps are not saved anywhere yet).
-    function startRecipeFromCompendium(steps) {
+    // v62: after = optional. When given, it runs once the new recipe has opened (with the draft) instead of the usual notice,
+    // so "Use in a recipe" on a single paint can say its own line and offer Undo. Everything else is shared with Save into a new recipe.
+    function startRecipeFromCompendium(steps, after) {
       if (!steps || !steps.length) return;
       whenOkToLeaveDraft(() => {
         openRecipeId = null;
@@ -10238,8 +10242,142 @@
         startRecipeDraft(draft);
         if (recipeDraft !== draft) return;   // a kept unfinished recipe was offered first instead
         showTab("recipes");
-        notify(`Started a new recipe with ${plural(steps.length, "step")}. Give it a name and press Save recipe.`);
+        if (after) after(draft);
+        else notify(`Started a new recipe with ${plural(steps.length, "step")}. Give it a name and press Save recipe.`);
       });
+    }
+
+    // ---- v62: "Use in a recipe" and "Add to a recipe" on a Compendium paint ----
+    // Both buttons sit on a paint in the Compendium (the colour ideas rows, and the open panel of a colour wheel paint). The recipe editor
+    // has no such buttons (its rows already add steps), and made-up example paints are never offered (no shop sells them).
+    function paintToRecipeOffered(door, paint) {
+      if (!door || !door.share || !paint || !String(paint.name || "").trim()) return false;
+      const mine = palettePaintFor(paint);
+      return !(mine && (isExamplePaint(mine) || isMadeUpPaint(mine)));
+    }
+    // The paint as it is in Your Palette. A paint that is not there yet is added as Not owned, so it reaches the shopping list once a
+    // recipe uses it. added says whether that happened (the confirmation line then says so). The caller keeps the Undo snapshot.
+    function paintForRecipe(paint) {
+      const known = isInPalette(paint);
+      const mine = findOrAddPaint(paint.brand, paint.name, paint.colour);
+      if (!known && paintStatus(mine) === "") applyPaintStatus(mine, "notowned");
+      return { mine, added: !known };
+    }
+    const NOT_OWNED_NOTE = " Added to Your Palette as Not owned.";
+    function refreshAfterPaintChange() { render(); updateBasket(); updateShopFoldouts(); }
+
+    // "Use in a recipe": a new recipe with this paint in step 1. Nothing is saved until Save recipe; Undo closes it again.
+    function useCompendiumPaintInNewRecipe(paint) {
+      startRecipeFromCompendium([{ paint, technique: "", coats: 1, mix: 100, note: "" }], (draft) => {
+        const before = JSON.stringify(book);
+        const { added } = paintForRecipe(paint);
+        if (added && !save()) { showNotSaved(); return; }
+        if (added) { updateBasket(); updateShopFoldouts(); }
+        showToast(`Started a new recipe with ${paint.name}.${added ? NOT_OWNED_NOTE : ""}`, () => {
+          if (recipeDraft !== draft) { notify("Too late to undo: that recipe has moved on."); return; }
+          recipeDraft = null;
+          if (added) book = cleanRecipeBook(JSON.parse(before));
+          refreshAfterPaintChange();
+          notify("Took that back.");
+        }, "Undo", 8);
+      });
+    }
+
+    // "Add to a recipe": puts the paint into step stepIndex of a saved recipe, or into a new last step (stepIndex -1). Saved at once; Undo
+    // puts the recipe and Your Palette back as they were.
+    function addCompendiumPaintToRecipe(paint, recipeId, stepIndex) {
+      const recipe = recipeById(recipeId);
+      if (!recipe) return;
+      if (recipeDraft && recipeDraft.id === recipe.id) { notify("Finish or cancel your changes to that recipe first."); return; }
+      const step = stepIndex >= 0 ? recipe.steps[stepIndex] : null;
+      if (stepIndex >= 0 && !step) return;
+      const there = palettePaintFor(paint);
+      if (step && there && step.paints.some(sp => sp.paint === there.id)) { notify("That paint is already in that step."); return; }
+      const before = JSON.stringify(book);
+      const { mine, added } = paintForRecipe(paint);
+      if (step) {
+        const even = isEvenSplit(step.paints);   // an automatic even split stays even; a mix you typed is left alone
+        step.paints.push({ paint: mine.id, mix: null });
+        if (even) evenSplit(step.paints.length).forEach((m, i) => { step.paints[i].mix = m; });
+        step.ratio = "";   // an old ratio no longer fits the number of paints
+      } else {
+        recipe.steps.push({ technique: "", coats: 1, paints: [{ paint: mine.id, mix: 100 }], ratio: "", note: "", optional: false });
+      }
+      delete recipe.example;   // you have changed it, so it is yours now (same as saving an edit)
+      const where = step ? `step ${stepIndex + 1}` : `a new step ${recipe.steps.length}`;
+      commit(`Added ${paint.name} to ${recipe.name}, ${where}.${added ? NOT_OWNED_NOTE : ""}`, () => {
+        book = cleanRecipeBook(JSON.parse(before));
+        refreshAfterPaintChange();
+        notify("Took that back.");
+      }, "Undo", 8);
+      updateBasket(); updateShopFoldouts();
+    }
+
+    function stepChoiceLabel(step, i) {
+      const names = step.paints.map(sp => { const p = paintById(sp.paint); return p ? p.name : ""; }).filter(Boolean).join(" + ");
+      const text = String(step.technique || "").trim() || names || "empty step";
+      return `Step ${i + 1}: ${text.length > 40 ? text.slice(0, 39) + "…" : text}`;
+    }
+
+    // The two buttons for one paint, with a small picker (recipe, then step) under them when you tap Add to a recipe.
+    function buildPaintToRecipeRow(door, paint) {
+      if (!paintToRecipeOffered(door, paint)) return null;
+      const wrap = document.createElement("div");
+      wrap.className = "paint-recipe";
+      const row = document.createElement("div");
+      row.className = "share-row";
+      const use = document.createElement("button");
+      use.type = "button";
+      use.className = "plain-button";
+      use.textContent = "Use in a recipe";
+      use.setAttribute("aria-label", `Use ${paint.name} in a new recipe`);
+      use.addEventListener("click", () => useCompendiumPaintInNewRecipe(paint));
+      const add = document.createElement("button");
+      add.type = "button";
+      add.className = "plain-button";
+      add.textContent = "Add to a recipe";
+      add.setAttribute("aria-label", `Add ${paint.name} to a recipe`);
+      add.setAttribute("aria-expanded", "false");
+      row.append(use, add);
+      wrap.appendChild(row);
+      let picker = null;
+      add.addEventListener("click", () => {
+        if (picker) { picker.remove(); picker = null; add.setAttribute("aria-expanded", "false"); return; }
+        if (!book.recipes.length) { notify("You have no recipes yet. Use in a recipe starts one."); return; }
+        picker = document.createElement("div");
+        picker.className = "paint-recipe-picker";
+        const recipeSel = document.createElement("select");
+        recipeSel.setAttribute("aria-label", "Recipe");
+        recipeSel.add(new Option("Choose a recipe", ""));
+        for (const r of book.recipes) recipeSel.add(new Option(r.name || "Untitled recipe", String(r.id)));
+        const stepSel = document.createElement("select");
+        stepSel.setAttribute("aria-label", "Step");
+        stepSel.classList.add("hidden");
+        const go = document.createElement("button");
+        go.type = "button";
+        go.className = "primary-button";
+        go.textContent = "Add";
+        go.disabled = true;
+        recipeSel.addEventListener("change", () => {
+          const r = recipeById(Number(recipeSel.value));
+          stepSel.replaceChildren();
+          stepSel.classList.toggle("hidden", !r);
+          go.disabled = !r;
+          if (!r) return;
+          stepSel.add(new Option("A new step", "-1"));
+          r.steps.forEach((s, i) => stepSel.add(new Option(stepChoiceLabel(s, i), String(i))));
+        });
+        go.addEventListener("click", () => {
+          const id = Number(recipeSel.value);
+          if (!recipeById(id)) return;
+          addCompendiumPaintToRecipe(paint, id, Number(stepSel.value));
+        });
+        picker.append(recipeSel, stepSel, go);
+        wrap.appendChild(picker);
+        add.setAttribute("aria-expanded", "true");
+        recipeSel.focus();
+      });
+      return wrap;
     }
 
     // ---- v36: THE COLOUR WHEEL (the top of the Compendium) ----
@@ -10442,6 +10580,8 @@
       title.textContent = `Matching colours for ${paintLabel(paint)}`;
       box.setAttribute("aria-labelledby", title.id);
       box.appendChild(title);
+      const toRecipe = buildPaintToRecipeRow(door, paint);   // v62: Use in a recipe / Add to a recipe, for the wheel paint itself
+      if (toRecipe) box.appendChild(toRecipe);
       const lines = [title.textContent];
       const say = (text) => {
         const p = document.createElement("p");
@@ -10497,6 +10637,8 @@
           if (door.listMarks && !hit.owned) watchShopTag(row, hit.paint, baseTag);
           const shops = door.shops ? buildShopFoldout(hit.paint, hit.owned, panelSource) : null;   // v39: only for paints you do not own; v41: says which wheel part you were in
           if (shops) row.appendChild(shops);
+          const toRecipe = buildPaintToRecipeRow(door, hit.paint);   // v62
+          if (toRecipe) row.appendChild(toRecipe);
           list.appendChild(row);
           lines.push(ideaTextLine(hit.paint, tag, reason, note));
         }
@@ -14528,12 +14670,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=61".
+    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=62".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v61";
+    const APP_VERSION = "v62";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -14984,6 +15126,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v62", date: "24 Oct 2026", changes: [
+        "A paint in the Compendium (a colour idea, or a colour wheel paint once you open it) has two buttons. Use in a recipe starts a new recipe with that paint in step 1. Add to a recipe lets you pick a recipe, then one of its steps or a new step. Both have an Undo.",
+        "If the paint is not in Your Palette yet, it is added as Not owned, so it reaches your shopping list once a recipe uses it, and the message says so. Made-up example paints are not offered.",
+      ]},
       { version: "v61", date: "24 Oct 2026", changes: [
         "A unit with more than one model has a Track models separately button in its details, under the stage. One tap shows every model with its own stage. Track as one batch goes back. Both have an Undo.",
         "The old tick for this in Edit details has gone, as the button does the same job.",
