@@ -3524,6 +3524,7 @@
         openRecipeId = null;
         renderRecipes();
       }
+      if (b.dataset.tab === "compendium") compendiumState.focus = null;   // v62: the tab itself opens the whole Compendium
       showTab(b.dataset.tab);
     }));
 
@@ -6909,6 +6910,8 @@
             line.appendChild(mix);
           }
           body.appendChild(line);
+          const ideas = buildIdeasForButton(paint, { kind: "recipe", recipeId: recipe.id, step: i });   // v62
+          if (ideas) body.appendChild(ideas);
         }
         const options = [];
         const facts = document.createElement("p");
@@ -7604,6 +7607,8 @@
       for (const r of usedIn) chips.appendChild(recipeChip(r, () => openRecipe(r.id)));
       field.appendChild(chips);
       panel.appendChild(field);
+      const ideas = buildIdeasForButton(paint, { kind: "palette" });   // v62: no colour set, no button (the line above says "colour not set")
+      if (ideas) panel.appendChild(ideas);
       if (!paintOptionsOpen.has(paint.id)) paintOptionsOpen.set(paint.id, { open: false });
       panel.appendChild(buildMoreInfo([row, changeHint, buildPaintActions(paint, usedIn, name)], {   // v18c-2 (v55: the visible name is passed in for the Remove button's name)
         className: "paint-options", state: paintOptionsOpen.get(paint.id), openText: "More options", closeText: "Fewer options",
@@ -8274,7 +8279,8 @@
                             open: {}, view: "themes", combo: "", wheelMore: {}, search: { starter: "", detail: "", basing: "" },
                             paintOpen: "",   // v38: paintOpen = the key of the wheel paint whose "matching colours" panel is open ("" = none)
                             ticks: {},   // v51: the paints ticked in each list (a Set per list), kept only while the app is open
-                            wheelZoom: "", wheelGroup: "" };   // v43: wheelZoom = the hue colour the picture is drilled into ("" = the whole wheel), wheelGroup = its open group ("" = none)
+                            wheelZoom: "", wheelGroup: "",
+                            focus: null };   // v62: focus = { paintId, from } while the Compendium shows one paint's ideas (Ideas for this), else null   // v43: wheelZoom = the hue colour the picture is drilled into ("" = the whole wheel), wheelGroup = its open group ("" = none)
 
     // v35: ONE set of building blocks, TWO doors. The parts of the Colour ideas card (the ideas, Your schemes, Starter schemes,
     // Detail recipes and Basing tips) are built by the functions below, and BOTH the recipe editor and the Compendium tab use them.
@@ -10547,6 +10553,140 @@
       if (panel.scrollIntoView) panel.scrollIntoView({ block: "nearest" });
     }
 
+    // ---- v62: IDEAS FOR THIS (a paint in a recipe step or in Your Palette opens the Compendium scoped to it) ----
+    // One button, "Ideas for this", under a paint in an open recipe step and in an open paint on Your Palette. It opens the Compendium with
+    // that paint's ideas at the top: the same paint panel the colour wheel opens (buildPaintPanel: colours that go with it, yours first, and
+    // starter schemes with a similar colour), then detail recipes and basing tips with a step of a similar colour. Nothing new is worked out:
+    // the matches use the same colour engine and the same "close enough" test as the starter schemes. Each recipe or tip has a button that
+    // opens it in its own part below. The Back button (or the phone's Back) goes to the same recipe step or palette paint. Which paint is
+    // shown is kept in compendiumState.focus = { paintId, from }, where from = { kind: "recipe", recipeId, step } or { kind: "palette" }.
+    // A paint with no colour set (or a basing material) gets no button: there is nothing to match.
+    const IDEAS_FOR_SHOWN = 3;   // the closest few detail recipes and basing tips, like the starter schemes in the panel
+    function canShowIdeasFor(paint) { return !!paint && !isMaterial(paint) && colourIdeaIsReal(paint.colour) && !!wheelPlace(paint); }
+    function buildIdeasForButton(paint, from) {
+      if (!canShowIdeasFor(paint)) return null;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "plain-button ideas-for";
+      button.dataset.ideasFor = String(paint.id);
+      button.append("Ideas for this", hiddenName(`: ${paint.name}`));   // the name is only read out (v55: no paint names in aria-labels)
+      button.addEventListener("click", () => openIdeasFor(paint, from));
+      return button;
+    }
+    function openIdeasFor(paint, from) {
+      compendiumState.focus = { paintId: paint.id, from };
+      compendiumState.paintOpen = "";
+      showTab("compendium");
+      const back = document.getElementById(compendiumId("focus-back"));
+      if (back) back.focus({ preventScroll: true });
+    }
+    // Back to where the button was: the same recipe (its step stays open) or Your Palette (the paint stays open).
+    function leaveIdeasFor() {
+      const focus = compendiumState.focus;
+      compendiumState.focus = null;
+      if (!focus) return;
+      const from = focus.from || {};
+      whenOkToLeaveDraft(() => {
+        recipeDraft = null;
+        let where = "";
+        if (from.kind === "recipe" && book.recipes.some(r => r.id === from.recipeId)) {
+          openRecipeId = from.recipeId;
+          where = `#rstep-${from.step} `;
+        } else {
+          openRecipeId = null;
+          settings.recipeView = "palette";
+        }
+        renderRecipes();
+        showTab("recipes");
+        const button = document.querySelector(`${where}[data-ideas-for="${focus.paintId}"]`);
+        if (button) {
+          if (button.scrollIntoView) button.scrollIntoView({ block: "center" });
+          button.focus({ preventScroll: true });
+        }
+      });
+    }
+    // The detail recipes or basing tips with a step close in colour to this paint, closest first: [{ item, step, distance, quality }].
+    function libraryLike(paint, list, stepsOf) {
+      const C = MinifolioColour;
+      if (!paint || !colourIdeaIsReal(paint.colour) || !Array.isArray(list)) return [];
+      const rough = C.isRoughColour(paint);
+      const out = [];
+      for (const item of list) {
+        let best = null;
+        for (const step of stepsOf(item) || []) {
+          const distance = C.colourDistance(paint.colour, step.hex);
+          if (distance !== null && (!best || distance < best.distance)) best = { step, distance };
+        }
+        if (!best) continue;
+        const judged = C.judgeMatch(best.distance, rough);
+        if (judged.quality !== "poor") out.push({ item, step: best.step, distance: best.distance, quality: judged.quality });
+      }
+      return out.sort((a, b) => a.distance - b.distance || String(a.item.name).localeCompare(String(b.item.name)));
+    }
+    function appendIdeasFocus(body, door, redraw) {
+      const st = door.state;
+      const focus = st.focus;
+      if (!focus) return;
+      const paint = paintById(focus.paintId);
+      if (!canShowIdeasFor(paint)) { st.focus = null; return; }
+      const block = document.createElement("div");
+      block.className = "ideas-focus";
+      block.id = door.id("focus");
+      const back = document.createElement("button");
+      back.type = "button";
+      back.className = "link-button";
+      back.id = door.id("focus-back");
+      back.textContent = focus.from && focus.from.kind === "recipe" ? "← Back to recipe" : "← Back to Your Palette";
+      back.addEventListener("click", leaveIdeasFor);
+      const x = { paint, at: wheelPlace(paint), origin: MinifolioColour.haveIt(paint) ? 0 : 1, key: compendiumBaseChoices().key(paint) };
+      const panel = buildPaintPanel(door, x);
+      panel.id = door.id("focus-panel");   // its own ids, so a wheel panel open further down never shares them
+      const title = panel.querySelector(".paint-panel-title");
+      title.id = door.id("focus-title");
+      title.textContent = `Ideas for ${paintLabel(paint)}`;
+      panel.setAttribute("aria-labelledby", title.id);
+      const share = panel.querySelector(":scope > .share-row");
+      const part = (label, found, kind, open) => {
+        const p = document.createElement("p");
+        p.className = "paint-panel-label";
+        p.textContent = label;
+        panel.insertBefore(p, share);
+        if (!found.length) {
+          const none = document.createElement("p");
+          none.className = "hint";
+          none.textContent = "None with a close colour.";
+          panel.insertBefore(none, share);
+          return;
+        }
+        const list = document.createElement("ul");
+        list.className = "idea-list";
+        for (const m of found.slice(0, IDEAS_FOR_SHOWN)) {
+          const stand = { name: m.item.name, brand: "", colour: m.step.hex };   // the step's own colour, shown as a swatch
+          const tag = { cls: "none", text: m.quality === "good" ? "Very close colour" : "Similar colour" };
+          const row = buildIdeaItem(stand, tag, `${m.step.technique}: ${m.step.look}.`, m.item.summary, null, "idea-pick");
+          const show = document.createElement("button");
+          show.type = "button";
+          show.className = "plain-button ideas-open";
+          show.dataset[kind] = m.item.key;
+          show.append(kind === "detail" ? "Show steps" : "Show tip", hiddenName(`: ${m.item.name}`));
+          show.addEventListener("click", () => open(m.item));
+          row.appendChild(show);
+          list.appendChild(row);
+        }
+        panel.insertBefore(list, share);
+      };
+      if (typeof DETAIL_RECIPES !== "undefined") part("Detail recipes with a similar colour", libraryLike(paint, DETAIL_RECIPES, r => r.steps), "detail", (r) => {
+        st.open.detail = true; st.detailGroup = r.group; st.detail = r.key; st.search.detail = "";
+        redraw(`#${door.id("fold-detail")} [data-detail="${r.key}"]`);
+      });
+      if (typeof BASING_TIPS !== "undefined") part("Basing tips with a similar colour", libraryLike(paint, BASING_TIPS, t => t.paintSteps), "basing", (t) => {
+        st.open.basing = true; st.basingGroup = t.group; st.basing = t.key; st.search.basing = "";
+        redraw(`#${door.id("fold-basing")} [data-basing="${t.key}"]`);
+      });
+      block.append(back, panel);
+      body.appendChild(block);
+    }
+
     // The words under the wheel part that is open: its name, what it is, how many you own, then the paints (grouped where the wheel
     // part has groups), and Copy as text. Paints you do not have yet stay behind one button so the list stays short on a phone.
     // v43: with `only` (a group's key) the same detail is built for that one group of the part: items is then just that group's paints.
@@ -10961,6 +11101,7 @@
 
       const intro = say("A colour wheel (tap a colour to open its groups), colour ideas, starter schemes, detail recipes and basing tips, without needing a recipe. Tap a heading to open it, and type in a search box to find things fast. Use Copy as text to keep anything, or Save into a new recipe\u2026 to start a recipe from colour ideas, schemes, detail recipes and basing tips.", "intro");
 
+      appendIdeasFocus(body, door, redraw);   // v62: a paint's ideas, when the Compendium was opened from its Ideas for this button
       // v36: the colour wheel comes first
       appendColourWheel(body, door, redraw);
 
@@ -14528,12 +14669,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=61".
+    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=62".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v61";
+    const APP_VERSION = "v62";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -14984,6 +15125,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v62", date: "24 Oct 2026", changes: [
+        "Ideas for this: open a recipe step or a paint in Your Palette and tap Ideas for this. The Compendium opens with that paint's ideas at the top: colours that go with it, starter schemes, detail recipes and basing tips with a similar colour, using your paints first.",
+        "Show steps or Show tip opens that detail recipe or basing tip in full. Back to recipe or Back to Your Palette takes you to the same place. A paint with no colour set has no button.",
+      ]},
       { version: "v61", date: "24 Oct 2026", changes: [
         "A unit with more than one model has a Track models separately button in its details, under the stage. One tap shows every model with its own stage. Track as one batch goes back. Both have an Undo.",
         "The old tick for this in Edit details has gone, as the button does the same job.",
@@ -15251,6 +15396,7 @@
         if (openRecipeId !== null) return () => { openRecipeId = null; renderRecipes(); window.scrollTo(0, 0); };
         if (schemeDraft && settings.recipeView === "schemes") return () => closeScheme(true);
       }
+      if (tab === "compendium" && compendiumState.focus) return leaveIdeasFor;   // v62: back to the recipe step or palette paint
       if (tab === "units" && !unitsImport.classList.contains("hidden")) return closeUnitsImport;
       if (tab === "units" && selectMode) return closeSelect;   // v21.1: select mode's tick boxes
       if (tab && tab !== "dashboard") return () => showTab("dashboard");
