@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=60"></script>
+  <script src="early.js?v=61"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -598,6 +598,8 @@
       gap: 12px;
     }
     .panel label { font-size: 13px; color: var(--muted); display: grid; gap: 6px; }
+    /* v61: Track models separately / Track as one batch, under the stage. */
+    .panel .track-each { justify-self: start; }
     .panel .check-label {
       display: flex; align-items: center; gap: 10px;
       align-self: end; min-height: 46px; color: var(--text); font-size: 15px;
@@ -2351,13 +2353,14 @@
             <li><strong>Starting stage</strong> in the Add form puts a new unit straight at the stage it's really at (it stays picked for the next unit you add).</li>
             <li id="help-new-unit-shown">Each new unit is <strong>scrolled into view</strong> and outlined for a moment, so you can see where it went in the list.</li>
             <li>Press <strong>▲</strong> to move a unit up a stage. Made a mistake? Press <strong>Undo</strong> on the message that pops up.</li>
+            <li id="help-track-each"><strong>Track models separately:</strong> for painting a unit one model at a time. Tap a unit with more than one model to open its details, then press <strong>Track models separately</strong> under its stage. Each model gets its own row with its own stage menu and ◀ ▲ buttons, and when they differ, the card shows how many are at each stage. <strong>Track as one batch</strong> goes back: if the models are at different stages, the app asks first, then puts them all at the stage of the furthest-behind model. Both have an <strong>Undo</strong>. It works for units of up to 100 models, and one-model units don't have the button.</li>
             <li id="help-jump-stage"><strong>Jump to a stage:</strong> tap a unit's name and pick from its <strong>Stage</strong> menu, to go straight to any stage (forwards or back). If you track each model separately, each model has its own stage menu, and <strong>Move all models to stage</strong> moves them all at once. Every jump has an <strong>Undo</strong>.</li>
             <li id="help-model-dates"><strong>When did it get there?</strong> If you track each model separately, each model says under its name when it reached its stage: <strong>Today</strong>, <strong>Yesterday</strong>, or <strong>Since 7 Oct</strong> (with the year added for an earlier year). Hold or long-press the date to see it in full. A model with no date shown has no record of when it moved.</li>
             <li id="help-unfinished-work"><strong>Unfinished work is kept:</strong> if the page reloads or the app closes while you are part-way through adding a unit (the name box has something in it), writing a recipe, or pasting notes into Paste recipes, the app keeps what you had. Next time you open the Units or Recipes tab, a card says <strong>We kept your unfinished…</strong>. <strong>Keep going</strong> puts it all back. <strong>Discard</strong> asks first, then throws it away for good (there is no Undo). Nothing opens by itself, and a kept draft is never replaced by accident: if you try to start a new one first, the app asks. It goes when you press Add or Save, or Cancel and say yes. It stays on this device and is not in your backups.</li>
             <li id="help-typing"><strong>Typing:</strong> while the cursor is in a text box, the tab bar at the bottom hides so it can't sit on your keyboard. Tap somewhere else and it comes back.</li>
             <li id="help-move-many"><strong>Move several units at once:</strong> on the Units tab press <strong>Select</strong>. Each unit gets a tick box (tapping a unit ticks it). Tick the ones you want, or press <strong>Select all shown</strong> to tick every unit your filters are showing. Then pick a stage from <strong>Move … to stage</strong> in the bar at the bottom. Units tracked model by model have all their models moved. One <strong>Undo</strong> puts every unit back as it was, diary included. <strong>Cancel</strong>, the phone's Back button or leaving the tab stops selecting without changing anything.</li>
             <li>Tap a unit's name to open its details: its <strong>stage</strong>, photos, paint recipes and paint notes, then <strong>back a stage</strong> and delete.</li>
-            <li id="help-edit-details"><strong>Changing a unit:</strong> the boxes for its name, game, faction, nickname, number of models, repaint flag and <strong>Track each model separately</strong> are folded away under <strong>Edit details</strong>, near the bottom of its details. Tap it to open them. It stays open while you make changes, and shuts when you open the unit again later.</li>
+            <li id="help-edit-details"><strong>Changing a unit:</strong> the boxes for its name, game, faction, nickname, number of models and repaint flag are folded away under <strong>Edit details</strong>, near the bottom of its details. Tap it to open them. It stays open while you make changes, and shuts when you open the unit again later.</li>
             <li id="help-questions"><strong>Questions:</strong> when the app needs to check before doing something (deleting, replacing, leaving a recipe you haven't saved) or needs a name from you, it asks in its own small box over the page. Tap <strong>Yes</strong> or <strong>No</strong>, or type the name and tap <strong>OK</strong>. <strong>No</strong>, <strong>Cancel</strong>, the <strong>Escape</strong> key and the phone's <strong>Back</strong> button all mean no, and nothing changes. On a keyboard, <strong>Enter</strong> means yes.</li>
             <li id="help-delete-unit"><strong>Deleting a unit:</strong> press <strong>Delete</strong> in its details and say yes. Changed your mind? Press <strong>Undo</strong> on the message that appears (it stays about 8 seconds): the unit comes back exactly as it was, photos, recipes and diary included.</li>
             <li>Use the game and faction menus and the stage chips to filter the list. Tap several stage chips to combine them.</li>
@@ -2803,7 +2806,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=60" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=61" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -2812,10 +2815,10 @@
        names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks.
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=60"></script>
-  <script src="schemes.js?v=60"></script>
-  <script src="detail-recipes.js?v=60"></script>
-  <script src="basing-tips.js?v=60"></script>
-  <script src="app.js?v=60"></script>
+  <script src="colour.js?v=61"></script>
+  <script src="schemes.js?v=61"></script>
+  <script src="detail-recipes.js?v=61"></script>
+  <script src="basing-tips.js?v=61"></script>
+  <script src="app.js?v=61"></script>
 </body>
 </html>

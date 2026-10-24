@@ -3399,16 +3399,28 @@
     }
 
     // Switch "track each model" on or off.
+    // v61: both ways offer Undo, which puts the unit back exactly as it was, diary included.
     function setEach(model, on) {
       if (on && model.count > MAX_EACH) {
         notify(`Tracking each model works for units of up to ${MAX_EACH} models.`);
         render();
         return;
       }
+      const id = model.id;
+      const before = JSON.stringify({ each: model.each, stage: model.stage, stages: model.stages, log: model.log });
+      const undo = () => {
+        const unit = models.find(m => m.id === id);
+        if (!unit) return;
+        const was = JSON.parse(before);
+        if (was.each) { unit.each = true; unit.stages = was.stages; } else { delete unit.each; delete unit.stages; }
+        unit.stage = was.stage;
+        unit.log = was.log;
+        render();
+      };
       if (on) {
         model.each = true;
         model.stages = new Array(model.count || 1).fill(model.stage);
-        render();
+        commit(`${displayName(model)}: each model tracked`, undo);
         return;
       }
       const spread = new Set(model.stages).size > 1;
@@ -3416,7 +3428,7 @@
         delete model.each;
         delete model.stages;
         if (spread) logStage(model, model.stage);
-        render();
+        commit(`${displayName(model)}: tracked as one batch`, undo);
       };
       // v21.7: asks in the app's own box, then carries on when you answer. "No" just redraws.
       if (spread) {
@@ -4739,6 +4751,17 @@
       panel.append(stageLabel);
       const editFields = [nameEdit, editRow];
 
+      // v61: TRACK MODELS SEPARATELY. A button right under the stage (it used to be a tick
+      // folded away in Edit details, where testers didn't find it). Only for 2 or more models.
+      if ((model.count || 1) > 1) {
+        const track = document.createElement("button");
+        track.type = "button";
+        track.className = "plain-button track-each";
+        track.textContent = model.each ? "Track as one batch" : "Track models separately";
+        track.addEventListener("click", () => setEach(model, !model.each));
+        panel.appendChild(track);
+      }
+
       // Nickname: saves as you type ("input"), redraws when you leave the box ("change").
       const nicknameLabel = document.createElement("label");
       nicknameLabel.textContent = "Nickname (optional)";
@@ -4787,18 +4810,6 @@
       noteLabel.appendChild(note);
 
       editFields.push(nicknameLabel, extras);
-
-      // Track each model separately (only makes sense with 2 or more models).
-      if ((model.count || 1) > 1) {
-        const eachLabel = document.createElement("label");
-        eachLabel.className = "check-label";
-        const eachBox = document.createElement("input");
-        eachBox.type = "checkbox";
-        eachBox.checked = !!model.each;
-        eachBox.addEventListener("change", () => setEach(model, eachBox.checked));
-        eachLabel.append(eachBox, "Track each model separately (for painting one at a time)");
-        editFields.push(eachLabel);
-      }
 
       if (model.each) {
         const list = document.createElement("ol");
@@ -14517,12 +14528,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=60".
+    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=61".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v60";
+    const APP_VERSION = "v61";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -14973,6 +14984,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v61", date: "24 Oct 2026", changes: [
+        "A unit with more than one model has a Track models separately button in its details, under the stage. One tap shows every model with its own stage. Track as one batch goes back. Both have an Undo.",
+        "The old tick for this in Edit details has gone, as the button does the same job.",
+      ]},
       { version: "v60", date: "24 Oct 2026", changes: [
         "Importing an army list now reads the model count written on a unit's line, such as 10x Boyz, Boyz x10 or Boyz (10 models), so units no longer land as 1 model. A list typed by hand, one unit per line, works too.",
         "In the import check, every unit has its own model count and stage. Set every row to puts them all at one stage in one go, and stays in view on a long list. This works for Import CSV as well as army lists.",
