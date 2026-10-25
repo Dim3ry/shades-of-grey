@@ -9640,7 +9640,7 @@
         list.appendChild(item);
         lines.push(line);
         steps.push(step);
-        if (hit.alsoOwned) item.appendChild(alsoOwnedLine(hit, door.addStep ? () => door.addStep(hit.alsoOwned.paint, stepNote) : null, lines, reason));
+        if (hit.alsoOwned) item.firstElementChild.after(alsoOwnedLine(hit, door.addStep ? () => door.addStep(hit.alsoOwned.paint, stepNote) : null, lines, reason));
       }
       box.append(summary, compactRows(door) ? buildMoreInfo([why], { state: infoState(door, "starter-why"), id: door.id("starter-why-panel"), label: `why ${scheme.name} works` }) : why);
       if (pick) { pick.finish(); box.append(pick.all, list, pick.actions); } else box.appendChild(list);
@@ -9769,7 +9769,7 @@
         list.appendChild(item);
         lines.push(line);
         steps.push(recipeStep);
-        if (hit.alsoOwned) item.appendChild(alsoOwnedLine(hit, door.addSteps ? () => door.addSteps([{ step, hit: hit.alsoOwned }]) : null, lines, reason));
+        if (hit.alsoOwned) item.firstElementChild.after(alsoOwnedLine(hit, door.addSteps ? () => door.addSteps([{ step, hit: hit.alsoOwned }]) : null, lines, reason));
       });
       if (door.addSteps) {
         const all = document.createElement("button");
@@ -9919,7 +9919,7 @@
         list.appendChild(item);
         lines.push(ideaTextLine(paint, tag, reason, ""));
         steps.push({ paint, technique: step.technique, coats: step.coats, mix: step.mix, note: step.note });
-        if (hit.alsoOwned) item.appendChild(alsoOwnedLine(hit, door.addSteps ? () => door.addSteps([{ step, hit: hit.alsoOwned }]) : null, lines, reason));
+        if (hit.alsoOwned) item.firstElementChild.after(alsoOwnedLine(hit, door.addSteps ? () => door.addSteps([{ step, hit: hit.alsoOwned }]) : null, lines, reason));
       });
       if (door.addSteps) {
         const all = document.createElement("button");
@@ -10059,7 +10059,7 @@
         if (shops) row.appendChild(shops);
         const toRecipe = buildPaintToRecipeRow(door, paint);   // v62
         if (toRecipe) row.appendChild(toRecipe);
-        if (idea.hit.alsoOwned) row.appendChild(alsoOwnedLine(idea.hit, door.addStep ? () => door.addStep(idea.hit.alsoOwned.paint, stepNote) : null, null, reason));   // v64: your best paint is a poor fit, so it comes second
+        if (idea.hit.alsoOwned) row.firstElementChild.after(alsoOwnedLine(idea.hit, door.addStep ? () => door.addStep(idea.hit.alsoOwned.paint, stepNote) : null, null, reason));   // v64: your best paint is a poor fit, so it comes second
         list.appendChild(row);
         lines.push(ideaTextLine(paint, tag, reason, ""));
         if (idea.hit.alsoOwned) lines.push(ideaTextLine(idea.hit.alsoOwned.paint, colourIdeaTag(idea.hit.alsoOwned), reason, ""));
@@ -10702,7 +10702,7 @@
           if (toRecipe) row.appendChild(toRecipe);
           list.appendChild(row);
           lines.push(ideaTextLine(hit.paint, tag, reason, ""));
-          if (hit.alsoOwned) row.appendChild(alsoOwnedLine(hit, null, lines, reason));   // v64: your best paint is a poor fit, so it comes second
+          if (hit.alsoOwned) row.firstElementChild.after(alsoOwnedLine(hit, null, lines, reason));   // v64: your best paint is a poor fit, so it comes second
         }
         box.appendChild(list);
       }
