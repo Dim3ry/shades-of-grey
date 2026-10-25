@@ -158,10 +158,10 @@ def main():
               len(hosts) == 1 and "goatcounter" in list(hosts)[0], (hosts, policy[:200]))
         changed = []
         for base in ("HEAD", "origin/main"):
-            out = subprocess.run(["git", "diff", "--name-only", base, "--", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js"],
+            out = subprocess.run(["git", "diff", "--name-only", base, "--", "schemes.js", "detail-recipes.js", "basing-tips.js"],   # v64: colour.js is left out on purpose (chunk 3.4c changed the fit rule there); the content data files stay guarded
                                  cwd=ROOT, capture_output=True, text=True)
             if out.returncode == 0: changed += out.stdout.split()
-        check("the content data files and colour.js are unchanged (schemes.js, detail-recipes.js, basing-tips.js, colour.js)", changed == [], changed)
+        check("the content data files are unchanged (schemes.js, detail-recipes.js, basing-tips.js; colour.js changed in v64 on purpose)", changed == [], changed)
         new_code = app[app.index("v37: the group buttons"):app.index("v35: door = where this is shown")] + app[app.index("v37: one folding part"):app.index("function renderCompendium(")]
         check("the new code has no network code, no storage, no innerHTML, no links and no shop wording",
               not re.search(r"\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage|sessionStorage|\beval\s*\(|new Function|insertAdjacentHTML|outerHTML|innerHTML|createElement\('a'\)|createElement\(\"a\"\)|href|affiliate|\bshop\b", new_code),

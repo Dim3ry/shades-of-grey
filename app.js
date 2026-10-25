@@ -8409,6 +8409,9 @@
       return [...book.paints, ...searchedPaints.filter(k => !have.has(sameKey(k.name)))];
     }
 
+    // v64: the Opposite of a colour darker than this lightness (0 to 1) is lifted to it, with at least this much saturation (colour wheel panel only).
+    const OPPOSITE_DARK_LIFT = { l: 0.45, s: 0.55 };
+
     // The colour an idea is aiming for, before we look for the nearest paint.
     function colourIdeaWanted(harmony, role, pick, hueSlot) {
       const C = MinifolioColour;
@@ -8426,8 +8429,10 @@
         relation = pick.replace(/\d$/, "");
       }
       const hsl = C.hexToHsl(hex);
-      const s = Math.max(hsl.s, role.boost.s);
-      const l = Math.min(role.boost.l[1], Math.max(role.boost.l[0], hsl.l));
+      let s = Math.max(hsl.s, role.boost.s);
+      let l = Math.min(role.boost.l[1], Math.max(role.boost.l[0], hsl.l));
+      // v64: a dark colour's opposite is lifted so it does not match a muddy brown (role.opposite only, and only the straight opposite)
+      if (pick === "complementary" && role.opposite && l < role.opposite.l) { l = role.opposite.l; s = Math.max(s, role.opposite.s); }
       return { hex: C.hslToHex(hsl.h, s, l), relation };
     }
 
@@ -8466,23 +8471,56 @@
       for (const pick of role.picks) {
         const wanted = colourIdeaWanted(harmony, role, pick, slot);
         if (!["dark", "mid", "light"].includes(pick)) slot++;
-        // Paints you own come first, and the same paint is never suggested twice.
-        const hit = C.nearestPaints(wanted.hex, pool, { limit: 1, ownedFirst: true, exclude: [...skip, ...out.map(o => o.hit.paint.colour)] })[0];
+        // Paints you own come first when they fit (not Poor; see suggestPaint), and the same paint is never suggested twice.
+        const hit = C.suggestPaint(wanted.hex, pool, { exclude: [...skip, ...out.flatMap(o => fitRows(o.hit).map(h => h.paint.colour))] });
         if (hit) out.push({ wanted: wanted.hex, relation: wanted.relation, hit });
       }
       return out;
     }
 
     // The words under a suggestion that say how far to trust the match.
+    // v64: labels only. The ownership tag ("You own this" / "Not in your palette") plus the fit label from the colour engine
+    // (Good fit / Okay fit / Poor fit). A poor paint you own has the one label "Yours, poor fit" instead (it already says you own it).
     function colourIdeaTag(hit) {
-      if (!hit.owned) return { cls: "none", text: "Not in your palette" };
-      return hit.quality === "good" ? { cls: "own", text: "You own this" } : { cls: "near", text: "Closest you own" };
+      const fit = MinifolioColour.fitLabel(hit);
+      if (hit.owned && hit.quality === "poor") return { cls: "near", text: fit };
+      return { cls: hit.owned ? "own" : "none", text: hit.owned ? "You own this" : "Not in your palette", fit };
     }
-    function colourIdeaNote(hit) {
-      if (hit.quality === "poor") return "Not very close. It is the nearest we found.";
-      if (hit.quality === "close") return "Similar, not exact.";
-      if (hit.approximate) return "Close enough. This kind of paint looks different on the model than in the pot.";
-      return "";
+    // v64: one suggestion can be two rows: the best paint overall, then (when your best owned paint is a poor fit) that owned paint.
+    function fitRows(hit) { return hit.alsoOwned ? [hit, hit.alsoOwned] : [hit]; }
+    // The second paint of a suggestion: your own best paint (the label says "Yours, poor fit"). It is a small line inside the same list
+    // item, so a colour is still one row. It can be added as one step (when onAdd is given), but it is not part of "Add all" or the tick
+    // boxes, which take the first paint only. Its text line is pushed on lines (when given).
+    function alsoOwnedLine(hit, onAdd, lines, reason) {
+      const own = hit.alsoOwned, tag = colourIdeaTag(own);
+      if (lines) lines.push(ideaTextLine(own.paint, tag, reason, ""));
+      const box = document.createElement("div");
+      box.className = "idea-also";
+      const name = document.createElement("span");
+      name.className = "idea-name";
+      name.append(own.paint.name);
+      if (own.paint.brand) {
+        const brand = document.createElement("small");
+        brand.textContent = own.paint.brand;
+        name.appendChild(brand);
+      }
+      const tagEl = document.createElement("span");
+      tagEl.className = "idea-tag " + tag.cls;
+      tagEl.textContent = tag.text;
+      const text = document.createElement("span");
+      text.className = "idea-text";
+      text.append(name, tagEl);
+      box.append(makeSwatch(own.paint.colour), text);
+      if (onAdd) {
+        const add = document.createElement("button");
+        add.type = "button";
+        add.className = "idea-also-add";
+        add.textContent = "+ Add as a step";
+        labelWithName(add, "Add as a new step", name, tagEl);
+        add.addEventListener("click", onAdd);
+        box.appendChild(add);
+      }
+      return box;
     }
 
     // Adds the idea to the recipe being edited as a new last step. (v30: the step's note is passed in, so the same
@@ -8935,17 +8973,26 @@
       const tagEl = document.createElement("span");
       tagEl.className = "idea-tag " + tag.cls;
       tagEl.textContent = tag.text;
+      let statusEl = tagEl;
+      if (tag.fit) {   // v64: the fit label sits beside the ownership tag, on the same line
+        const fitEl = document.createElement("span");
+        fitEl.className = "idea-fit";
+        fitEl.textContent = tag.fit;
+        statusEl = document.createElement("span");
+        statusEl.className = "idea-status";
+        statusEl.append(tagEl, fitEl);
+      }
       const why = document.createElement("span");
       why.className = "idea-why";
       why.textContent = reason;
-      if (onAdd) labelWithName(button, "Add as a new step", name, tagEl, why);   // v55: the row's visible name, tag and reason, no paint name in an aria-label
+      if (onAdd) labelWithName(button, "Add as a new step", name, statusEl, why);   // v55: the row's visible name, tag and reason, no paint name in an aria-label
       let noteEl = null;
       if (note) {
         noteEl = document.createElement("span");
         noteEl.className = "idea-note";
         noteEl.textContent = note;
       }
-      text.append(name, tagEl);
+      text.append(name, statusEl);
       if (compact && !onAdd && !link) {   // v49: the reason and note sit behind a small More info (Compendium rows)
         const more = noteEl ? [why, noteEl] : [why];
         if (pick) more.push(pick.note);
@@ -9005,7 +9052,7 @@
     const COMPENDIUM_TEXT_FOOT = SCHEME_ONLY_A_GUIDE;
     function paintLabel(paint) { return paint.brand ? `${paint.name} (${paint.brand})` : String(paint.name || ""); }
     function ideaTextLine(paint, tag, reason, note) {
-      return `- ${paintLabel(paint)}: ${tag.text}. ${reason}${note ? " " + note : ""}`;
+      return `- ${paintLabel(paint)}: ${tag.text}${tag.fit ? ". " + tag.fit : ""}. ${reason}${note ? " " + note : ""}`;
     }
 
     // ---- (1) Colours you've used on this faction before ----
@@ -9145,7 +9192,7 @@
       const pool = colourIdeaPool();
       const out = [];
       for (const colour of scheme.colours) {
-        const hit = MinifolioColour.nearestPaints(colour.hex, pool, { limit: 1, ownedFirst: true, exclude: out.map(o => o.hit.paint.colour) })[0];
+        const hit = MinifolioColour.suggestPaint(colour.hex, pool, { exclude: out.flatMap(o => fitRows(o.hit).map(h => h.paint.colour)) });
         if (hit) out.push({ colour, hit });
       }
       return out;
@@ -9585,13 +9632,15 @@
       const pick = pickable(door) ? buildPick(door, { id: `starter-${scheme.key}`, source: `Scheme: ${scheme.name}`, head: lines.slice(), foot: [COMPENDIUM_TEXT_FOOT] }) : null;
       for (const { colour, hit } of schemeHits) {
         const paint = hit.paint;
-        const tag = colourIdeaTag(hit), reason = `${colour.part}: ${colour.look}.`, note = colourIdeaNote(hit);
+        const tag = colourIdeaTag(hit), reason = `${colour.part}: ${colour.look}.`;
         const stepNote = `Starter scheme (${scheme.name}): ${colour.part.toLowerCase()}`;
-        const line = ideaTextLine(paint, tag, reason, note);
+        const line = ideaTextLine(paint, tag, reason, "");
         const step = { paint, technique: "", coats: 1, mix: 100, note: stepNote };
-        list.appendChild(buildIdeaItem(paint, tag, reason, note, door.addStep ? () => door.addStep(paint, stepNote) : null, "idea-pick", undefined, compactRows(door), pick && pick.row(paint, line, step)));
+        const item = buildIdeaItem(paint, tag, reason, "", door.addStep ? () => door.addStep(paint, stepNote) : null, "idea-pick", undefined, compactRows(door), pick && pick.row(paint, line, step));
+        list.appendChild(item);
         lines.push(line);
         steps.push(step);
+        if (hit.alsoOwned) item.firstElementChild.after(alsoOwnedLine(hit, door.addStep ? () => door.addStep(hit.alsoOwned.paint, stepNote) : null, lines, reason));
       }
       box.append(summary, compactRows(door) ? buildMoreInfo([why], { state: infoState(door, "starter-why"), id: door.id("starter-why-panel"), label: `why ${scheme.name} works` }) : why);
       if (pick) { pick.finish(); box.append(pick.all, list, pick.actions); } else box.appendChild(list);
@@ -9613,7 +9662,7 @@
       const pool = colourIdeaPool();
       const out = [];
       for (const step of recipe.steps) {
-        const hit = MinifolioColour.nearestPaints(step.hex, pool, { limit: 1, ownedFirst: true })[0];
+        const hit = MinifolioColour.suggestPaint(step.hex, pool);
         if (hit) out.push({ step, hit });
       }
       return out;
@@ -9713,12 +9762,14 @@
       const pick = pickable(door) ? buildPick(door, { id: `detail-${recipe.key}`, source: `Detail recipe: ${recipe.name}`, head: lines.slice(), foot: [COMPENDIUM_TEXT_FOOT] }) : null;
       items.forEach(({ step, hit }, i) => {
         const paint = hit.paint;
-        const tag = colourIdeaTag(hit), reason = detailStepReason("Step", i, step), note = colourIdeaNote(hit);
-        const line = ideaTextLine(paint, tag, reason, note);
+        const tag = colourIdeaTag(hit), reason = detailStepReason("Step", i, step);
+        const line = ideaTextLine(paint, tag, reason, "");
         const recipeStep = { paint, technique: step.technique, coats: step.coats, mix: step.mix, note: step.note };
-        list.appendChild(buildIdeaItem(paint, tag, reason, note, door.addSteps ? () => door.addSteps([{ step, hit }]) : null, "idea-pick", undefined, compactRows(door), pick && pick.row(paint, line, recipeStep)));
+        const item = buildIdeaItem(paint, tag, reason, "", door.addSteps ? () => door.addSteps([{ step, hit }]) : null, "idea-pick", undefined, compactRows(door), pick && pick.row(paint, line, recipeStep));
+        list.appendChild(item);
         lines.push(line);
         steps.push(recipeStep);
+        if (hit.alsoOwned) item.firstElementChild.after(alsoOwnedLine(hit, door.addSteps ? () => door.addSteps([{ step, hit: hit.alsoOwned }]) : null, lines, reason));
       });
       if (door.addSteps) {
         const all = document.createElement("button");
@@ -9863,10 +9914,12 @@
       const steps = [];
       items.forEach(({ step, hit }, i) => {
         const paint = hit.paint;
-        const tag = colourIdeaTag(hit), reason = detailStepReason("Paint step", i, step), note = colourIdeaNote(hit);
-        list.appendChild(buildIdeaItem(paint, tag, reason, note, door.addSteps ? () => door.addSteps([{ step, hit }]) : null, "idea-pick", undefined, compactRows(door)));
-        lines.push(ideaTextLine(paint, tag, reason, note));
+        const tag = colourIdeaTag(hit), reason = detailStepReason("Paint step", i, step);
+        const item = buildIdeaItem(paint, tag, reason, "", door.addSteps ? () => door.addSteps([{ step, hit }]) : null, "idea-pick", undefined, compactRows(door));
+        list.appendChild(item);
+        lines.push(ideaTextLine(paint, tag, reason, ""));
         steps.push({ paint, technique: step.technique, coats: step.coats, mix: step.mix, note: step.note });
+        if (hit.alsoOwned) item.firstElementChild.after(alsoOwnedLine(hit, door.addSteps ? () => door.addSteps([{ step, hit: hit.alsoOwned }]) : null, lines, reason));
       });
       if (door.addSteps) {
         const all = document.createElement("button");
@@ -9998,17 +10051,18 @@
         const baseTag = colourIdeaTag(idea.hit);
         const tag = door.listMarks && !idea.hit.owned ? shopListTag(paint, baseTag) : baseTag;   // v41: Compendium only
         const reason = colourIdeaReason(idea.relation, idea.wanted, baseHex, role);
-        const note = colourIdeaNote(idea.hit);
         const stepNote = `Colour idea for ${role.note}`;
-        const row = buildIdeaItem(paint, tag, reason, note, door.addStep ? () => door.addStep(paint, stepNote) : null, undefined, undefined, compactRows(door));
+        const row = buildIdeaItem(paint, tag, reason, "", door.addStep ? () => door.addStep(paint, stepNote) : null, undefined, undefined, compactRows(door));
         if (door.listMarks && !idea.hit.owned) watchShopTag(row, paint, baseTag);
         // v39: a paint you do not own gets the small closed "Shop links" fold-out under its row (door.shops; the row itself is unchanged)
         const shops = door.shops ? buildShopFoldout(paint, idea.hit.owned, door.shopSource ? door.shopSource() : "") : null;
         if (shops) row.appendChild(shops);
         const toRecipe = buildPaintToRecipeRow(door, paint);   // v62
         if (toRecipe) row.appendChild(toRecipe);
+        if (idea.hit.alsoOwned) row.firstElementChild.after(alsoOwnedLine(idea.hit, door.addStep ? () => door.addStep(idea.hit.alsoOwned.paint, stepNote) : null, null, reason));   // v64: your best paint is a poor fit, so it comes second
         list.appendChild(row);
-        lines.push(ideaTextLine(paint, tag, reason, note));
+        lines.push(ideaTextLine(paint, tag, reason, ""));
+        if (idea.hit.alsoOwned) lines.push(ideaTextLine(idea.hit.alsoOwned.paint, colourIdeaTag(idea.hit.alsoOwned), reason, ""));
         steps.push({ paint, technique: "", coats: 1, mix: 100, note: stepNote });
       }
       return { list, lines, steps };
@@ -10493,7 +10547,7 @@
     }
     function wheelTag(item) {
       if (item.origin === 1) return { cls: "none", text: item.paint.status === "wishlist" ? "On your wishlist" : "In your palette, not owned" };
-      return colourIdeaTag({ owned: item.origin === 0, quality: "good" });   // the same two tags the colour ideas use: You own this / Not in your palette
+      return item.origin === 0 ? { cls: "own", text: "You own this" } : { cls: "none", text: "Not in your palette" };   // the same two tags the colour ideas use
     }
     const WHEEL_ROUGH_NOTE = "The colour shown is only a guide for this kind of paint.";
     const WHEEL_GROUP_SHOWN = 12;   // v37 part 2: how many paints a group shows before "Show all" (your own paints are never hidden); v63: 8 -> 12
@@ -10542,7 +10596,7 @@
     // The panel is plain text built from the same shared rows, with nothing to tap inside it except Copy as text, and no web links of any
     // kind. It is switched on by the door flag door.links (the Compendium only; the recipe card has no panels). One panel is open at a time;
     // which one is kept in door.state.paintOpen. Paint names only ever go in as text; the sentences use colour words, never names.
-    const PAINT_PANEL_ROLE = { boost: { s: 0, l: [0, 1] } };   // no lift: the matches aim at the exact spot on the colour wheel
+    const PAINT_PANEL_ROLE = { boost: { s: 0, l: [0, 1] }, opposite: OPPOSITE_DARK_LIFT };   // no lift, except the Opposite of a dark colour (v64): the matches aim at the exact spot on the colour wheel
     const PAINT_PANEL_GROUPS = [
       { label: "Opposite", picks: ["complementary"] },
       { label: "Neighbours", picks: ["analogous0", "analogous1"] },
@@ -10623,9 +10677,9 @@
         const rows = [];
         for (const pick of group.picks) {
           const wanted = colourIdeaWanted(harmony, PAINT_PANEL_ROLE, pick, slot++);
-          const hit = C.nearestPaints(wanted.hex, pool, { limit: 1, ownedFirst: true, exclude: used })[0];
+          const hit = C.suggestPaint(wanted.hex, pool, { exclude: used });
           if (!hit) continue;
-          used.push(hit.paint.colour);
+          used.push(...fitRows(hit).map(h => h.paint.colour));
           const reason = harmony.hueMeaningful
             ? colourIdeaReason(wanted.relation, wanted.hex, paint.colour, null)
             : `${cap(C.colourFamily(wanted.hex) || "this colour")} is an accent that stands out without clashing.`;
@@ -10636,17 +10690,19 @@
         label(group.label);
         const list = document.createElement("ul");
         list.className = "idea-list";
-        for (const { hit, reason } of rows) {
-          const baseTag = colourIdeaTag(hit), note = colourIdeaNote(hit);
+        for (const { hit: first, reason } of rows) {
+          const hit = first;
+          const baseTag = colourIdeaTag(hit);
           const tag = door.listMarks && !hit.owned ? shopListTag(hit.paint, baseTag) : baseTag;   // v41
-          const row = buildIdeaItem(hit.paint, tag, reason, note, null, "idea-pick");
+          const row = buildIdeaItem(hit.paint, tag, reason, "", null, "idea-pick");
           if (door.listMarks && !hit.owned) watchShopTag(row, hit.paint, baseTag);
           const shops = door.shops ? buildShopFoldout(hit.paint, hit.owned, panelSource) : null;   // v39: only for paints you do not own; v41: says which wheel part you were in
           if (shops) row.appendChild(shops);
           const toRecipe = buildPaintToRecipeRow(door, hit.paint);   // v62
           if (toRecipe) row.appendChild(toRecipe);
           list.appendChild(row);
-          lines.push(ideaTextLine(hit.paint, tag, reason, note));
+          lines.push(ideaTextLine(hit.paint, tag, reason, ""));
+          if (hit.alsoOwned) row.firstElementChild.after(alsoOwnedLine(hit, null, lines, reason));   // v64: your best paint is a poor fit, so it comes second
         }
         box.appendChild(list);
       }
@@ -14676,12 +14732,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=63".
+    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=64".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v63";
+    const APP_VERSION = "v64";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -15132,6 +15188,12 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v64", date: "25 Oct 2026", changes: [
+        "Suggested paints now show how well they fit: Good fit, Okay fit or Poor fit. The same rule is used in Colour ideas, starter schemes, detail recipes, basing and the colour wheel panel.",
+        "A paint you own comes first only when it is a Good or Okay fit. If your best paint is a poor fit, the closest paint overall comes first and your own paint is second, marked Yours, poor fit.",
+        "The Opposite of a dark colour in the colour wheel panel is now a clear orange or gold instead of a brown.",
+        "The sentences under suggested paints, such as Closest you own and Similar, not exact, have gone. Only the labels are left.",
+      ]},
       { version: "v63", date: "24 Oct 2026", changes: [
         "In the Compendium colour wheel, each group now shows 12 paints before Show all (it was 8).",
         "After your own paints, paints from popular ranges come first, so the short list is not filled with brands you may not know. The rest are still there under Show all.",

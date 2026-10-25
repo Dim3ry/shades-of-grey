@@ -56,6 +56,9 @@ def P(pid, name, colour, status="owned", brand="Test Paints", **extra):
 BASE_HEX = "#2244aa"
 _h, _l, _s = colorsys.rgb_to_hls(*[int(BASE_HEX[i:i + 2], 16) / 255 for i in (1, 3, 5)])
 def at(deg):
+    # v64: the Opposite of a colour darker than 0.45 lightness is lifted to 0.45 (saturation at least 0.55), so the paint planted exactly opposite is lifted the same way
+    if deg == 180:
+        return hx(_h * 360 + 180, max(_s, 0.55), max(_l, 0.45))
     return hx(_h * 360 + deg, _s, _l)
 BLUE = P(1, "Probe Blue", BASE_HEX)
 UNOWNED = [BLUE, P(2, "Probe Opposite", at(180), status="notowned"), P(3, "Probe Left", at(-30), status="wishlist"), P(4, "Probe Right", at(30), status="empty"),
@@ -157,8 +160,8 @@ def main():
         html, sw, app = read("index.html"), read("sw.js"), read("app.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
         check("the version is v39 everywhere: APP_VERSION, sw.js, the six script tags, and the two comments that name it",
-              page.evaluate("APP_VERSION") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62", "v63") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63") and len(tags) == 6 and len({v for _, v in tags}) == 1
-              and re.search(r'The "\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63)"', html) and re.search(r'"app\.js\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63)"', app), (page.evaluate("APP_VERSION"), tags))
+              page.evaluate("APP_VERSION") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62", "v63", "v64") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64") and len(tags) == 6 and len({v for _, v in tags}) == 1
+              and re.search(r'The "\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63|64)"', html) and re.search(r'"app\.js\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63|64)"', app), (page.evaluate("APP_VERSION"), tags))
         files = re.search(r"const APP_FILES = \[(.*?)\];", sw, re.S).group(1)
         cached = re.findall(r'"\./([^"?]*)', files)
         root_js = sorted(f for f in os.listdir(ROOT) if f.endswith(".js") and f != "sw.js")
@@ -169,7 +172,7 @@ def main():
         joined = " ".join(entry["changes"]) if entry else ""
         if page.evaluate("!!CHANGELOG.find(r => r.version === 'v39')"):
             check("the v39 Updates entry exists once, is the newest, and tells about the Shop links fold-out, plain links, Add to shopping list, the Settings switch, the Buy these bar, and (one plain line) that restoring a backup now only accepts ordinary photo files",
-                  entry and page.evaluate("CHANGELOG.filter(r => r.version === 'v39').length") == 1 and page.evaluate("CHANGELOG[0].version") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62", "v63")
+                  entry and page.evaluate("CHANGELOG.filter(r => r.version === 'v39').length") == 1 and page.evaluate("CHANGELOG[0].version") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62", "v63", "v64")
                   and all(w in joined for w in ["Shop links", "plain", "Add to shopping list", "Settings", "Buy these"]) and "Restoring a backup now only accepts ordinary photo files" in joined, joined[:300])
         else:
             print("SKIP: "+'the v39 Updates entry exists once, is the newest, and tells about the Shop links')
@@ -184,10 +187,10 @@ def main():
         changed = []
         # (v47: early.js left this list; it now puts the theme on the page too.)
         for base in ("HEAD", "origin/main"):
-            out = subprocess.run(["git", "diff", "--name-only", base, "--", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js"], cwd=ROOT, capture_output=True, text=True)
+            out = subprocess.run(["git", "diff", "--name-only", base, "--", "schemes.js", "detail-recipes.js", "basing-tips.js"], cwd=ROOT, capture_output=True, text=True)   # v64: colour.js is left out on purpose (chunk 3.4c changed the fit rule there); the content data files stay guarded
             if out.returncode == 0:
                 changed += out.stdout.split()
-        check("the colour engine and the content data files are unchanged", changed == [], changed)
+        check("the content data files are unchanged (the colour engine changed in v64 on purpose)", changed == [], changed)
         new_code = app[app.index("v39: plain shop links on suggested paints"):app.index("function buildBuyBar(")]
         switch_code = app[app.index("v39: THE SHOP LINKS SWITCH"):app.index("const CHANGELOG = [")]
         check("the new code has no network code, no storage of its own, no eval, no innerHTML or other page-writing from text, and builds with createElement and textContent",
@@ -290,7 +293,7 @@ def main():
         panel_for(page, [BLUE, P(2, "Probe Far Owned", "#aa2222"), P(3, "Probe Near", at(180), status="notowned")])
         rr = prows(page)
         check("a paint that is the closest you own (owned but not very close) shows no shop link, while a paint you do not own does",
-              any(r["tag"] == "Closest you own" and not r["hasFold"] for r in rr) or not any(r["tag"] == "Closest you own" and r["hasFold"] for r in rr), rr[:3])
+              any(r["tag"] == "Yours, poor fit" and not r["hasFold"] for r in rr) or not any(r["tag"] == "Yours, poor fit" and r["hasFold"] for r in rr), rr[:3])
         panel_for(page, UNOWNED)
         r_mix = [r for r in prows(page) if r["section"] != STARTER_LABEL]
         by_name = {r["name"]: r for r in r_mix}

@@ -189,11 +189,11 @@ def main():
               all(w in help_text for w in ["Start from and Faction are boxes you can type in", "search box", "split into groups"]), help_text[-300:])
         changed = []
         for base in ("HEAD", "origin/main"):
-            out = subprocess.run(["git", "diff", "--name-only", base, "--", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js", "sw.js"],
+            out = subprocess.run(["git", "diff", "--name-only", base, "--", "schemes.js", "detail-recipes.js", "basing-tips.js", "sw.js"],   # v64: colour.js is left out on purpose (chunk 3.4c changed the fit rule there); the content data files stay guarded
                                  cwd=ROOT, capture_output=True, text=True)
             if out.returncode == 0:
                 changed += [f for f in out.stdout.split() if f != "sw.js"]
-        check("the content data files and colour.js are unchanged", changed == [], changed)
+        check("the content data files are unchanged (colour.js changed in v64 on purpose)", changed == [], changed)
         mark_a, mark_b = app.index("v37 part 2: SEARCH"), app.index("v37: the other way to browse the starter schemes")
         new_code = app[mark_a:mark_b] + app[app.index("const WHEEL_TINT_C"):app.index("function wheelTone(")]
         check("the new code has no network code, no storage, no innerHTML, no links and no shop wording",

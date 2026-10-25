@@ -61,7 +61,7 @@ ROWS_JS = """(sel) => [...document.querySelectorAll(sel)].map(b => ({
     note: (b.querySelector('.idea-note') || {}).textContent || '' }))"""
 # Everything WE wrote on the Compendium (paint names, brands, faction names and the pickers are the user's or built-in names, so they are left out).
 SHOWN_JS = """() => { const c = document.getElementById('compendium-body').cloneNode(true);
-    c.querySelectorAll('.idea-name, select, #cmp-faction-history-for').forEach(e => e.remove());
+    c.querySelectorAll('.idea-name, select, #cmp-faction-history-for, .shop-more').forEach(e => e.remove());
     return c.innerText; }"""
 
 def rows(page, sel):
@@ -174,9 +174,9 @@ def main():
         hosts = set(re.findall(r"https?://[^\s;'\"]+", policy))
         check("the security policy is untouched: the only outside address is still the one GoatCounter picture address",
               len(hosts) == 1 and "goatcounter" in list(hosts)[0], (hosts, policy[:200]))
-        changed = subprocess.run(["git", "diff", "--name-only", "HEAD", "--", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js"],
+        changed = subprocess.run(["git", "diff", "--name-only", "HEAD", "--", "schemes.js", "detail-recipes.js", "basing-tips.js"],   # v64: colour.js is left out on purpose (chunk 3.4c changed the fit rule there); the content data files stay guarded
                                  cwd=ROOT, capture_output=True, text=True).stdout.split()
-        check("the content data files and colour.js are unchanged (schemes.js, detail-recipes.js, basing-tips.js, colour.js)", changed == [], changed)
+        check("the content data files are unchanged (schemes.js, detail-recipes.js, basing-tips.js; colour.js changed in v64 on purpose)", changed == [], changed)
         panel_code = app[app.index("v28: \"COLOUR IDEAS\""):app.index('v18c: TIDY BRANDS')]
         comp_code = panel_code[panel_code.index("v35: THE COMPENDIUM TAB"):]
         new_code = panel_code[panel_code.index("v35: ONE set of building blocks"):panel_code.index("let colourIdeasPressing")] + comp_code
@@ -422,10 +422,10 @@ def main():
         page.click("#cmp-fold-ideas-panel > .share-row button:has-text('Copy as text')")
         text = copied(page)
         check("Copy as text on the colour ideas copies a heading, three lines and the footnote",
-              text and text.splitlines()[0] == "Colour ideas for eyes or glow with Macragge Blue (Citadel)" and len(text.splitlines()) == 5
+              text and text.splitlines()[0] == "Colour ideas for eyes or glow with Macragge Blue (Citadel)" and len(text.splitlines()) == 5 + text.count("Yours, poor fit")   # v64: your own poor-fit paint adds a line under its suggestion
               and text.splitlines()[-1] == "Colours on a screen are only a guide, so check them on your model.", text)
         check("each line has the paint (and brand), the tag and the reason, as the row shows",
-              all(re.match(r"- .+: (You own this|Closest you own|Not in your palette)\. .+", l) for l in text.splitlines()[1:4]), text)
+              all(re.match(r"- .+: (You own this|Yours, poor fit|Not in your palette)\. .+", l) for l in text.splitlines()[1:4]), text)
         check("the message says what was copied and does not mention Paste recipes", toast(page) == "Colour ideas copied. Paste it anywhere.", toast(page))
         cmp_pick(page, "starter-chips", "blue-gold")
         page.click("#cmp-starter-schemes .share-row button:has-text('Copy as text')")
@@ -542,7 +542,7 @@ def main():
         open_comp(page)
         cmp_pick(page, "starter-chips", "blue-gold")
         tags = {r["name"]: r["tag"] for r in rows(page, "#cmp-starter-list .idea-static")}
-        check("every tag is one of the three honest tags", set(tags.values()) <= {"You own this", "Closest you own", "Not in your palette"}, tags)
+        check("every tag is one of the three honest tags", set(tags.values()) <= {"You own this", "Yours, poor fit", "Not in your palette"}, tags)
         wish = [{"id": 1, "brand": "Vallejo", "name": "Pure Blue", "colour": "#1f4287", "status": "wishlist"}]
         load(page, paints=wish, recipes=RECIPES, units=UNITS)
         open_comp(page)
@@ -624,7 +624,7 @@ def main():
         own = "\n".join([joined, help_text, app[app.index("v35: THE COMPENDIUM TAB"):app.index('v18c: TIDY BRANDS')]])
         own_hits = GW_WORDS.findall(own) + GW_MORE.findall(own)
         check("the new Updates entry, the Help line and the new code's words are clean too", not own_hits, own_hits[:10])
-        check("the Compendium has no links at all (no shop links, those come later)", page.locator("#view-compendium a").count() == 0)
+        check("the Compendium has no links at all (no shop links, those come later)", page.locator("#view-compendium a:not(.shop-more a)").count() == 0)   # v64: a paint you do not own can now come first, with the v39 Shop links fold-out
 
         # ---------- 10. Hostile text ----------
         print("\n--- 10. Hostile text ---")
