@@ -1597,6 +1597,27 @@
     // switched off: their paints aren't suggested as you type, matched in pasted notes or on scanned labels, or offered
     // in Colour ideas and the Compendium. Your own paints (Your Palette) are always searched, whatever their brand.
     // It lists the ones that are OFF, so a brand added in a later version starts switched on.
+    // v65: paints that are not colours, kept with the paint data on purpose (it is data about paints, like the lists above).
+    // Varnishes, mediums, thinners, cleaners, reducers, retarders and clear bases are stored as white or grey, so they must never be
+    // offered as a match. So are 15 Tamiya paints stored as pure white. Found by the data check (3.4a); matched by brand and name.
+    const NOT_A_COLOUR_TABLE = {
+      "Citadel": ["Lahmian Medium", "Contrast Medium", "Air Caste Thinner", "Munitorum Varnish Spray"],
+      "Vallejo": ["Medium Xpress", "Cleaner", "Clear Base", "Crackle Medium", "Gloss Metal Varnish", "Gloss Varnish", "Matt Varnish",
+        "Mecha Gloss Varnish", "Mecha Matt Varnish", "Mecha Satin Varnish", "Metallic Medium", "Pearl Medium", "Reducer", "Retarder",
+        "Satin Varnish", "Textile Medium"],
+      "The Army Painter": ["Wash Medium", "Speedpaint Medium", "Aegis Suit Satin Varnish", "Anti-Shine Matt Varnish", "Gloss Varnish",
+        "Quickshade Wash Mixing Medium", "Warpaints Mixing Medium"],
+      "Pro Acryl": ["Metallic Medium"],
+      "AK Interactive": ["Crackle Medium", "Glaze Medium", "Glaze Medium -90-", "Gloss Medium", "Matte Medium", "Metal Medium", "Retarder",
+        "Varnish Gloss", "Varnish Matt", "Varnish Satin"],
+      "Scale75": ["Medium Wet", "Odorless Thinner"],
+      "Two Thin Coats": ["Gloss Varnish", "Matt Varnish"],
+      "Tamiya": ["Clear", "Flat base", "Flat clear", "Semi-gloss clear", "Acrylic thinner", "Lacquer thinner", "Pearl clear",
+        "Dark green 2 (RAF)", "Dark iron", "Dark yellow 2", "IJN gray (Maizuru Arsenal)", "IJN gray (Yokosuka Arsenal)",
+        "Medium sea gray 2 (RAF)", "Ocean gray 2 (RAF)", "Red brown 2", "Rubber black", "Fluorescent orange", "Metallic gray",
+        "Metallic orange", "Pearl yellow", "Pure metallic red", "Semi-gloss bright gun metal"],
+    };
+    const NOT_A_COLOUR = new Set(Object.entries(NOT_A_COLOUR_TABLE).flatMap(([brand, names]) => names.map(n => sameKey(`${brand}|${n}`))));
     const PAINT_BRANDS = [...new Set(KNOWN_PAINTS.map(k => k.brand))];
     // v63: the paint ranges most painters already know. In a colour wheel group, the built-in paints from these come before the other
     // brands, so the short list is not filled with brands nobody has heard of. Chosen by George (chunk 3.3); the paint data has no
@@ -2224,7 +2245,9 @@
       else showNotSaved();
       return true;
     }
+    let similarState = null;   // v65: null, or the open Similar paints pop-up (see openSimilarPaints)
     function updateShopFoldouts() {
+      if (similarState) similarState.refresh();   // v65: the pop-up's buttons follow the list too (after Add and after Undo)
       for (const el of document.querySelectorAll(".shop-more")) if (el.redrawAdd) el.redrawAdd();
       for (const el of document.querySelectorAll(".idea-tag")) {   // v41: the row tags the Compendium watches
         if (!el.shopPaint) continue;
@@ -10398,6 +10421,8 @@
       labelWithName(add, "Add to a recipe", who);
       add.setAttribute("aria-expanded", "false");
       row.append(use, add);
+      const similar = buildSimilarButton(door, paint, who);   // v65
+      if (similar) row.append(similar);
       wrap.append(who, row);
       let picker = null;
       add.addEventListener("click", () => {
@@ -10437,6 +10462,230 @@
         recipeSel.focus();
       });
       return wrap;
+    }
+
+    // ================= v65: SIMILAR PAINTS (chunk 3.5a) =================
+    // A "Similar paints" button on a paint in the Compendium opens a pop-up with one card, Best match: up to 3 paints from different
+    // brands where possible, closest first, whether or not you own them. Lighter / Close / Darker moves the colour being matched.
+    // Each paint can go on the shopping list (with Undo). The next part (chunk 3.5b) adds Your closest and swapping into a recipe step.
+    // It uses the colour engine and its fit rule (colour.js), nothing new. No paint file is changed: the paints that are not colours
+    // are skipped here, by name.
+    const SIMILAR_SHOWN = 3;
+    const SIMILAR_SHIFT = { lighter: 0.12, close: 0, darker: -0.12 };   // added to the colour's lightness (0 to 1) before looking
+    const paintKey = (p) => sameKey(`${p.brand || ""}|${p.name || ""}`);
+
+    // The pop-up is only offered in the Compendium, on a paint with a real colour that is not an example or made-up paint.
+    function similarOffered(door, paint) {
+      return !!door && !!door.share && MinifolioColour.canMatch(paint) && !NOT_A_COLOUR.has(paintKey(paint))
+        && !isExamplePaint(paint) && !isMadeUpPaint(paint);
+    }
+    // Every paint that may be offered: your palette and the built-in list (hidden brands left out), minus anything that is not a colour
+    // and any example or made-up paint. The same paint in both places counts once (the engine keeps your copy).
+    function similarPool() {
+      return [...book.paints.filter(p => !isExamplePaint(p) && !isMadeUpPaint(p)), ...searchedPaints].filter(p => !NOT_A_COLOUR.has(paintKey(p)));
+    }
+    // The colour being looked for: the paint's own colour, moved lighter or darker by the choice.
+    function similarTarget(hex, shift) {
+      const C = MinifolioColour, hsl = C.hexToHsl(hex);
+      if (!hsl) return null;
+      if (!shift) return hex.toLowerCase();
+      return C.hslToHex(hsl.h, hsl.s, Math.min(0.97, Math.max(0.03, hsl.l + shift)));
+    }
+    // Best match: the closest paint of each brand first (up to 3 brands), then the next closest if there are fewer than 3 brands.
+    // Each result is a nearestPaints result ({ paint, distance, owned, quality, ... }), closest first. The paint itself is never one.
+    function similarBestMatches(paint, shift) {
+      const target = similarTarget(paint.colour, shift);
+      if (!target) return [];
+      const self = paintKey(paint);
+      const all = MinifolioColour.nearestPaints(target, similarPool().filter(p => paintKey(p) !== self), { limit: 1000000, ownedFirst: false });
+      const picked = [], brands = new Set();
+      for (const hit of all) {
+        const brand = sameKey(hit.paint.brand);
+        if (brands.has(brand)) continue;
+        brands.add(brand);
+        picked.push(hit);
+        if (picked.length === SIMILAR_SHOWN) break;
+      }
+      for (const hit of all) {
+        if (picked.length >= SIMILAR_SHOWN) break;
+        if (!picked.includes(hit)) picked.push(hit);
+      }
+      return picked.sort((a, b) => a.distance - b.distance);
+    }
+
+    // The "Similar paints" button on a Compendium paint (next to Use in a recipe and Add to a recipe).
+    function buildSimilarButton(door, paint, who) {
+      if (!similarOffered(door, paint)) return null;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "plain-button";
+      button.textContent = "Similar paints";
+      labelWithName(button, "Similar paints", who);
+      button.addEventListener("click", () => openSimilarPaints(paint, button));
+      return button;
+    }
+
+    // The pop-up. One at a time. Escape, Back, the close button and a tap on the dimmed area all close it, and focus goes back to the
+    // button that opened it. Colours come from the theme's own variables, so it follows every theme and Light/Dark.
+    function openSimilarPaints(paint, opener) {
+      closeSimilar();
+      const backdrop = document.createElement("div");
+      backdrop.className = "dialog-backdrop similar-backdrop";
+      const box = document.createElement("div");
+      box.className = "dialog similar";
+      box.setAttribute("role", "dialog");
+      box.setAttribute("aria-modal", "true");
+
+      const head = document.createElement("div");
+      head.className = "similar-head";
+      const heading = document.createElement("div");
+      heading.className = "similar-heading";
+      const label = document.createElement("p");
+      label.className = "similar-label";
+      label.textContent = "Similar paints";
+      const title = document.createElement("h2");
+      title.className = "similar-title";
+      title.append(makeSwatch(paint.colour), paint.name);
+      box.setAttribute("aria-labelledby", idOf(title));
+      heading.append(label, title);
+      const close = document.createElement("button");
+      close.type = "button";
+      close.className = "icon-button";
+      close.textContent = "✕";
+      close.setAttribute("aria-label", "Close");
+      close.addEventListener("click", () => closeSimilar());
+      head.append(heading, close);
+
+      const shiftRow = document.createElement("div");
+      shiftRow.className = "similar-shift";
+      shiftRow.setAttribute("role", "group");
+      shiftRow.setAttribute("aria-label", "Lighter, close or darker");
+      const shiftButtons = {};
+      for (const [key, text] of [["lighter", "Lighter"], ["close", "Close"], ["darker", "Darker"]]) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = text;
+        b.addEventListener("click", () => { state.shift = key; draw(); });
+        shiftButtons[key] = b;
+        shiftRow.appendChild(b);
+      }
+
+      const card = document.createElement("section");
+      card.className = "similar-card";
+      const cardTitle = document.createElement("h3");
+      cardTitle.textContent = "Best match";
+      card.setAttribute("aria-labelledby", idOf(cardTitle));
+      const list = document.createElement("ul");
+      list.className = "similar-list";
+      list.setAttribute("aria-live", "polite");
+      const none = document.createElement("p");
+      none.className = "similar-none";
+      none.textContent = "No similar paints found.";
+      card.append(cardTitle, list, none);
+
+      const note = document.createElement("p");
+      note.className = "similar-note";
+      note.textContent = MinifolioColour.isRoughColour(paint) ? WHEEL_ROUGH_NOTE : SCHEME_ONLY_A_GUIDE;
+
+      box.append(head, shiftRow, card, note);
+      backdrop.appendChild(box);
+      document.body.appendChild(backdrop);
+      document.body.classList.add("similar-open");   // lifts the Undo message above the pop-up
+      document.body.style.overflow = "hidden";       // the page behind does not scroll
+
+      const state = {
+        paint, shift: "close", opener, backdrop, rows: [],
+        refresh: () => { for (const row of state.rows) row.sync(); },
+      };
+      similarState = state;
+
+      // One paint in the card. The button is for a paint you do not own; a paint you own just says so. Once on the list the button stays
+      // (so focus is not lost) and says so too.
+      const buildRow = (hit) => {
+        const p = hit.paint;
+        const li = document.createElement("li");
+        li.className = "similar-row";
+        const name = document.createElement("span");
+        name.className = "similar-name";
+        name.append(p.name);
+        if (p.brand) {
+          const brand = document.createElement("small");
+          brand.textContent = p.brand;
+          name.appendChild(brand);
+        }
+        const fit = document.createElement("span");
+        fit.className = "similar-fit";
+        fit.textContent = MinifolioColour.fitLabel(hit);
+        const text = document.createElement("span");
+        text.className = "similar-text";
+        text.append(name, fit);
+        li.append(makeSwatch(p.colour), text);
+        let action = null;
+        const sync = () => {
+          if (!action) return;
+          const listed = onShoppingList(p);
+          action.textContent = listed ? LISTED_TAG.text : "Add to shopping list";
+          action.setAttribute("aria-label", listed ? LISTED_TAG.text : "Add to shopping list");
+          action.setAttribute("aria-disabled", String(listed));
+        };
+        if (hit.owned) {
+          const own = document.createElement("span");
+          own.className = "similar-own";
+          own.textContent = "You own this";
+          li.appendChild(own);
+        } else {
+          action = document.createElement("button");
+          action.type = "button";
+          action.className = "plain-button similar-add";
+          labelWithName(action, "Add to shopping list", name);
+          action.addEventListener("click", () => {
+            if (action.getAttribute("aria-disabled") === "true") return;
+            addToShoppingList(p, `Similar to ${paint.name}`);
+          });
+          li.appendChild(action);
+        }
+        state.rows.push({ sync });
+        sync();
+        return li;
+      };
+
+      function draw() {
+        for (const [key, b] of Object.entries(shiftButtons)) b.setAttribute("aria-pressed", String(key === state.shift));
+        const hits = similarBestMatches(paint, SIMILAR_SHIFT[state.shift]);
+        state.rows = [];
+        list.replaceChildren(...hits.map(buildRow));
+        none.classList.toggle("hidden", hits.length > 0);
+      }
+      draw();
+
+      backdrop.addEventListener("click", (event) => { if (event.target === backdrop) closeSimilar(); });
+      state.onKey = (event) => {
+        if (event.key === "Escape") {
+          event.preventDefault(); event.stopPropagation();
+          closeSimilar();
+        } else if (event.key === "Tab") {
+          const stops = [...box.querySelectorAll("button")];
+          const at = stops.indexOf(document.activeElement);
+          const next = event.shiftKey ? (at <= 0 ? stops.length - 1 : at - 1) : (at < 0 || at === stops.length - 1 ? 0 : at + 1);
+          event.preventDefault();
+          stops[next].focus();
+        }
+      };
+      document.addEventListener("keydown", state.onKey, true);
+      shiftButtons.close.focus();
+    }
+
+    function closeSimilar() {
+      const state = similarState;
+      if (!state) return;
+      similarState = null;
+      document.removeEventListener("keydown", state.onKey, true);
+      state.backdrop.remove();
+      document.body.classList.remove("similar-open");
+      document.body.style.overflow = "";
+      const opener = state.opener;
+      if (opener && opener.isConnected) { try { opener.focus({ preventScroll: true }); } catch (ignored) {} }
+      queueBackCheck();
     }
 
     // ---- v36: THE COLOUR WHEEL (the top of the Compendium) ----
@@ -14732,12 +14981,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=64".
+    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=65".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v64";
+    const APP_VERSION = "v65";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -15188,6 +15437,11 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v65", date: "25 Oct 2026", changes: [
+        "New Similar paints button on a paint in the Compendium. It opens a pop-up with Best match: up to three paints from different brands, closest first, whether or not you own them, each with its fit.",
+        "Lighter, Close and Darker at the top of the pop-up look for a lighter or darker colour. Close is the default.",
+        "A paint you do not own can go on your shopping list from the pop-up, with an Undo. Paints that are not colours, such as varnishes, mediums and thinners, are never offered.",
+      ]},
       { version: "v64", date: "25 Oct 2026", changes: [
         "Suggested paints now show how well they fit: Good fit, Okay fit or Poor fit. The same rule is used in Colour ideas, starter schemes, detail recipes, basing and the colour wheel panel.",
         "A paint you own comes first only when it is a Good or Okay fit. If your best paint is a poor fit, the closest paint overall comes first and your own paint is second, marked Yours, poor fit.",
@@ -15449,6 +15703,7 @@
     // What Back would close right now, as a function that closes it, or null if nothing.
     function backTarget() {
       if (dialogState) return cancelDialog;   // v21.7: a question box sits over everything; Back = No / Cancel
+      if (similarState) return closeSimilar;  // v65: the Similar paints pop-up; Back closes it
       if (viewer) return closeViewer;
       const tab = settings.tab;
       if (tab === "recipes") {
