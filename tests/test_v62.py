@@ -101,7 +101,7 @@ def main():
         open_ideas(page, h.JUST_BLUE, RECIPES)
         row = first_row(page)
         name = row_name(row)
-        labels = row.locator(".paint-recipe .paint-recipe-buttons button").all_inner_texts()
+        labels = [x for x in row.locator(".paint-recipe .paint-recipe-buttons button").all_inner_texts() if x != "Similar paints"]   # v65: Similar paints sits in the same row (test_v65 covers it)
         check("a colour idea row has Use in a recipe and Add to a recipe", labels == ["Use in a recipe", "Add to a recipe"], labels)
         check("that paint is not in Your Palette yet", palette_entry(page, name) is None, name)
         check("the recipe editor's own colour ideas have no such buttons (door has no share)",
@@ -192,7 +192,7 @@ def main():
         h.tap(page, "blue")
         h.open_row(page, "Probe Blue")
         panel = page.locator("#cmp-paint-panel")
-        wheel_labels = panel.locator(":scope > .paint-recipe .paint-recipe-buttons button").all_inner_texts()
+        wheel_labels = [x for x in panel.locator(":scope > .paint-recipe .paint-recipe-buttons button").all_inner_texts() if x != "Similar paints"]   # v65: Similar paints sits in the same row (test_v65 covers it)
         check("the open panel has both buttons for the wheel paint", wheel_labels == ["Use in a recipe", "Add to a recipe"], wheel_labels)
         panel.locator(":scope > .paint-recipe button", has_text="Add to a recipe").click()
         check("with no recipes yet, Add to a recipe says so and opens no picker", panel.locator(".paint-recipe-picker").count() == 0)

@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=64"></script>
+  <script src="early.js?v=65"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -1115,6 +1115,24 @@
     .idea-static .swatch { width: 32px; height: 32px; flex: none; margin-top: 2px; }
     .share-row { display: flex; flex-wrap: wrap; gap: 10px; }
     .share-row .plain-button { min-height: 44px; }
+    /* v65: Similar paints (the button, and the pop-up with the Best match card) */
+    .similar-open { min-height: 44px; }
+    .paint-line.with-similar { flex-wrap: wrap; }
+    .paint-line .similar-open { padding: 0 8px; }
+    .similar-dialog { max-width: 520px; }
+    .similar-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .similar-head h2 { margin: 0; font-size: 18px; }
+    .similar-close { min-width: 44px; min-height: 44px; }
+    .similar-target { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .similar-target .swatch { width: 32px; height: 32px; flex: none; }
+    .similar-shift { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; background: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card); }
+    .similar-shift button { background: none; color: var(--muted); padding: 10px; font-size: 15px; min-height: 44px; }
+    .similar-shift button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); font-weight: 600; }
+    .similar-cards { display: grid; gap: 12px; }
+    .similar-card { display: grid; gap: 10px; min-width: 0; }
+    .similar-card h3 { margin: 0; font-size: 16px; }
+    .similar-note { margin: 0; }
+    @media (min-width: 700px) { .similar-dialog { max-width: 720px; } .similar-cards { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); } }
     .paint-recipe-buttons { display: flex; flex-wrap: wrap; gap: 10px; }
     .paint-recipe-buttons .plain-button { min-height: 44px; }
     .paint-recipe { display: grid; gap: 8px; margin-top: 8px; min-width: 0; }
@@ -2462,6 +2480,7 @@
             <li id="help-wheel-order">In the <strong>Compendium</strong> colour wheel, each group shows 12 paints first: yours, then the rest of Your Palette, then paints from popular ranges, then other brands. Each part runs from dark to light. <strong>Show all</strong> lists the rest.</li>
             <li id="help-fit">Suggested paints (Colour ideas, schemes, detail recipes, basing, and the colour wheel's paint panel) show a fit: <strong>Good fit</strong>, <strong>Okay fit</strong> or <strong>Poor fit</strong>, judged by how different the two colours look. A paint you own comes first when it is a Good or Okay fit. If your best paint is a poor fit, the closest paint overall comes first and your own is second, marked <strong>Yours, poor fit</strong>. Metallic, Contrast, wash and similar paints are allowed a little more room.</li>
             <li id="help-paint-to-recipe">In the <strong>Compendium</strong>, a colour idea, and a colour wheel paint once you open it, has <strong>Use in a recipe</strong> and <strong>Add to a recipe</strong>. Use in a recipe starts a new recipe with that paint in step 1. Add to a recipe lets you choose a recipe, then one of its steps or a new step, and saves it straight away. Both have an <strong>Undo</strong>. A paint that is not in Your Palette is added as <strong>Not owned</strong>, so it reaches your shopping list once a recipe uses it.</li>
+            <li id="help-similar-paints">A <strong>Similar paints</strong> button on a paint in a saved recipe step, or in the Compendium, opens a pop-up with the <strong>Best match</strong>: up to 3 close paints from different brands where possible, whether or not you own them, each with a fit label (Good fit, Okay fit or Poor fit). <strong>Lighter</strong>, <strong>Close</strong> and <strong>Darker</strong> move the colour it aims at. Varnishes, mediums and thinners are never matched. Colours are only a guide.</li>
             <li id="help-compendium-ticks">In the <strong>Compendium</strong>, tick the paints you want from a scheme or detail recipe, or press <strong>Select all</strong>. <strong>Add to shopping list</strong> is grey until you tick something, then adds only the ticked paints. A paint you own, or that is already on the list, shows a mark instead of a tick box. <strong>Copy as text</strong> and <strong>Save into a new recipe</strong> use the ticked paints, or all of them if none is ticked.</li>
             <li><strong>Schemes</strong> (top of the Recipes tab) group the recipes you use for one faction, e.g. "My Blue Army" = armour, trim, lenses and base. Press <strong>+ New scheme</strong>, name it, type the faction and tick its recipes.</li>
             <li><strong>Apply to … units</strong> links a scheme's recipes to every unit in its faction that doesn't have them all yet. Recipes a unit already has stay linked.</li>
@@ -2820,7 +2839,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=64" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=65" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -2829,10 +2848,10 @@
        names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks.
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=64"></script>
-  <script src="schemes.js?v=64"></script>
-  <script src="detail-recipes.js?v=64"></script>
-  <script src="basing-tips.js?v=64"></script>
-  <script src="app.js?v=64"></script>
+  <script src="colour.js?v=65"></script>
+  <script src="schemes.js?v=65"></script>
+  <script src="detail-recipes.js?v=65"></script>
+  <script src="basing-tips.js?v=65"></script>
+  <script src="app.js?v=65"></script>
 </body>
 </html>
