@@ -234,6 +234,13 @@ def main():
 
         # ---------- 8. Errors ----------
         print("\n--- 8. Errors ---")
+        import subprocess
+        changed = []
+        for base in ("HEAD", "origin/main"):
+            out = subprocess.run(["git", "diff", "--name-only", base, "--", "schemes.js", "detail-recipes.js", "basing-tips.js"], cwd=t.ROOT, capture_output=True, text=True)
+            if out.returncode == 0:
+                changed += out.stdout.split()
+        check("no recipe, scheme or tip content file changed (schemes.js, detail-recipes.js, basing-tips.js)", changed == [], changed)
         check("no outside network requests (works offline)", not requests, requests[:3])
         check("no page errors", not errors, errors)
         check("no browser pop-ups", not dialogs, dialogs)

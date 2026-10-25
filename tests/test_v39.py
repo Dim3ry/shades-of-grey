@@ -53,9 +53,12 @@ def P(pid, name, colour, status="owned", brand="Test Paints", **extra):
     return dict({"id": pid, "brand": brand, "name": name, "colour": colour, "status": status}, **extra)
 
 # Made-up paints (nothing here names a real paint). Only "Probe Blue" is owned, so every match for it is a paint you do NOT own.
-BASE_HEX = "#3355cc"   # v64: lightness 0.5; a blue darker than 0.45 has its Opposite lifted, which would move the exact-opposite paint these tests plant
+BASE_HEX = "#2244aa"
 _h, _l, _s = colorsys.rgb_to_hls(*[int(BASE_HEX[i:i + 2], 16) / 255 for i in (1, 3, 5)])
 def at(deg):
+    # v64: the Opposite of a colour darker than 0.45 lightness is lifted to 0.45 (saturation at least 0.55), so the paint planted exactly opposite is lifted the same way
+    if deg == 180:
+        return hx(_h * 360 + 180, max(_s, 0.55), max(_l, 0.45))
     return hx(_h * 360 + deg, _s, _l)
 BLUE = P(1, "Probe Blue", BASE_HEX)
 UNOWNED = [BLUE, P(2, "Probe Opposite", at(180), status="notowned"), P(3, "Probe Left", at(-30), status="wishlist"), P(4, "Probe Right", at(30), status="empty"),
@@ -184,10 +187,10 @@ def main():
         changed = []
         # (v47: early.js left this list; it now puts the theme on the page too.)
         for base in ("HEAD", "origin/main"):
-            out = subprocess.run(["git", "diff", "--name-only", base, "--", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js"], cwd=ROOT, capture_output=True, text=True)
+            out = subprocess.run(["git", "diff", "--name-only", base, "--", "schemes.js", "detail-recipes.js", "basing-tips.js"], cwd=ROOT, capture_output=True, text=True)   # v64: colour.js is left out on purpose (chunk 3.4c changed the fit rule there); the content data files stay guarded
             if out.returncode == 0:
                 changed += out.stdout.split()
-        check("the colour engine and the content data files are unchanged", changed == [], changed)
+        check("the content data files are unchanged (the colour engine changed in v64 on purpose)", changed == [], changed)
         new_code = app[app.index("v39: plain shop links on suggested paints"):app.index("function buildBuyBar(")]
         switch_code = app[app.index("v39: THE SHOP LINKS SWITCH"):app.index("const CHANGELOG = [")]
         check("the new code has no network code, no storage of its own, no eval, no innerHTML or other page-writing from text, and builds with createElement and textContent",

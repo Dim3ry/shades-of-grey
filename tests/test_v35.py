@@ -174,9 +174,9 @@ def main():
         hosts = set(re.findall(r"https?://[^\s;'\"]+", policy))
         check("the security policy is untouched: the only outside address is still the one GoatCounter picture address",
               len(hosts) == 1 and "goatcounter" in list(hosts)[0], (hosts, policy[:200]))
-        changed = subprocess.run(["git", "diff", "--name-only", "HEAD", "--", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js"],
+        changed = subprocess.run(["git", "diff", "--name-only", "HEAD", "--", "schemes.js", "detail-recipes.js", "basing-tips.js"],   # v64: colour.js is left out on purpose (chunk 3.4c changed the fit rule there); the content data files stay guarded
                                  cwd=ROOT, capture_output=True, text=True).stdout.split()
-        check("the content data files and colour.js are unchanged (schemes.js, detail-recipes.js, basing-tips.js, colour.js)", changed == [], changed)
+        check("the content data files are unchanged (schemes.js, detail-recipes.js, basing-tips.js; colour.js changed in v64 on purpose)", changed == [], changed)
         panel_code = app[app.index("v28: \"COLOUR IDEAS\""):app.index('v18c: TIDY BRANDS')]
         comp_code = panel_code[panel_code.index("v35: THE COMPENDIUM TAB"):]
         new_code = panel_code[panel_code.index("v35: ONE set of building blocks"):panel_code.index("let colourIdeasPressing")] + comp_code

@@ -64,8 +64,9 @@ def main():
         }""")
         check("blue's opposite is yellow, a mid blue's is orange", out["comp"] == "#ffff00" and out["family"] == "orange", out)
         check("published CIEDE2000 pair gives 27.1492", abs(out["dist"] - 27.1492) < 0.0002, out["dist"])
-        check("nearest paint: owned first, then by closeness; the untouched grey is skipped",
-              out["best"] == [["Fire Orange", True, "poor"], ["Navy", True, "poor"], ["Sky", False, "good"]], out["best"])
+        # v64: an owned paint goes first only when it is not a poor fit, so the exact paint you do not own now leads the two poor owned ones
+        check("nearest paint: owned first only if not a poor fit, then by closeness; the untouched grey is skipped",
+              out["best"] == [["Sky", False, "good"], ["Fire Orange", True, "poor"], ["Navy", True, "poor"]], out["best"])
         check("closestAny finds the exact paint", out["any"] == "Sky", out["any"])
         check("green is hue 120 in the browser too", abs(out["hsl"]["h"] - 120) < 0.5, out["hsl"])
         check("no page errors", not errors, errors[:3])

@@ -154,10 +154,17 @@ check("bad limit falls back to 3", C.nearestPaints("#58c1cd", paints, { limit: -
 // Owned first
 const ownedFirst = C.nearestPaints("#58c1cd", paints, { limit: 8 });
 const flags = ownedFirst.map((e) => e.owned);
-check("owned paints come before unowned ones", flags.indexOf(false) === -1 || !flags.slice(flags.indexOf(false)).includes(true), flags);
-check("Sky (not owned) is not first when ownedFirst is on", ownedFirst[0].owned === true && ownedFirst[0].paint.name !== "Sky", ownedFirst[0].paint.name);
-check("within the owned group, nearer comes first",
-  ownedFirst.filter((e) => e.owned).every((e, i, a) => i === 0 || a[i - 1].distance <= e.distance));
+// v64: an owned paint goes first only if its fit is not poor
+const leaders = (e) => e.owned && e.quality !== "poor";
+const lead = ownedFirst.map(leaders);
+check("owned paints that fit (not poor) come before everything else", lead.indexOf(false) === -1 || !lead.slice(lead.indexOf(false)).includes(true), lead);
+check("Sky (not owned, a good fit) comes first because every owned paint here is a poor fit for it", ownedFirst[0].paint.name === "Sky", ownedFirst[0].paint.name);
+check("within the owned group that fits, nearer comes first",
+  ownedFirst.filter(leaders).every((e, i, a) => i === 0 || a[i - 1].distance <= e.distance));
+check("a poor owned paint is ranked by closeness with the rest, not pushed to the front",
+  ownedFirst.filter((e) => !leaders(e)).every((e, i, a) => i === 0 || a[i - 1].distance <= e.distance));
+const okayTarget = C.nearestPaints("#1e3a8a", [P("Near Navy", "#2a4a96", { status: "owned" }), P("Exact Navy", "#1e3a8a")], { limit: 2 });
+check("an owned paint that is a good fit goes first even when a closer paint is not owned", okayTarget[0].paint.name === "Near Navy" && okayTarget[0].quality === "good", okayTarget.map((e) => e.paint.name));
 check("Owned, Running low and old owned:true all count; wishlist/empty don't",
   C.haveIt(paints[0]) && C.haveIt(paints[5]) && C.haveIt(paints[2]) && !C.haveIt(paints[4]) && !C.haveIt(paints[7]) && !C.haveIt(paints[1]));
 check("status beats the old owned flag", C.haveIt({ status: "empty", owned: true }) === false);

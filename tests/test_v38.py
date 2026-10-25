@@ -49,9 +49,12 @@ def P(pid, name, colour, status="owned", brand="Test Paints", **extra):
     return dict({"id": pid, "brand": brand, "name": name, "colour": colour, "status": status}, **extra)
 
 # A made-up palette where every colour match for "Probe Blue" is an exact, owned paint (nothing here names a real paint).
-BASE_HEX = "#3355cc"   # v64: lightness 0.5; a blue darker than 0.45 has its Opposite lifted, which would move the exact-opposite paint these tests plant
+BASE_HEX = "#2244aa"
 _h, _l, _s = colorsys.rgb_to_hls(*[int(BASE_HEX[i:i + 2], 16) / 255 for i in (1, 3, 5)])
 def at(deg):
+    # v64: the Opposite of a colour darker than 0.45 lightness is lifted to 0.45 (saturation at least 0.55), so the paint planted exactly opposite is lifted the same way
+    if deg == 180:
+        return hx(_h * 360 + 180, max(_s, 0.55), max(_l, 0.45))
     return hx(_h * 360 + deg, _s, _l)
 PAL = [P(1, "Probe Blue", BASE_HEX), P(2, "Probe Opposite", at(180)), P(3, "Probe Left", at(-30)), P(4, "Probe Right", at(30)),
        P(5, "Probe Triad A", at(120)), P(6, "Probe Triad B", at(240)), P(7, "Probe Grey", "#7f7f7f"), P(8, "Probe gold metal", "#c9a227")]
@@ -151,10 +154,10 @@ def main():
         changed = []
         # (v47: early.js left this list; it now puts the theme on the page too.)
         for base in ("HEAD", "origin/main"):
-            out = subprocess.run(["git", "diff", "--name-only", base, "--", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js"], cwd=ROOT, capture_output=True, text=True)
+            out = subprocess.run(["git", "diff", "--name-only", base, "--", "schemes.js", "detail-recipes.js", "basing-tips.js"], cwd=ROOT, capture_output=True, text=True)   # v64: colour.js is left out on purpose (chunk 3.4c changed the fit rule there); the content data files stay guarded
             if out.returncode == 0:
                 changed += out.stdout.split()
-        check("the colour engine and the content data files are unchanged", changed == [], changed)
+        check("the content data files are unchanged (the colour engine changed in v64 on purpose)", changed == [], changed)
         new_code = app[app.index("v38: PAINT LINKS"):app.index("function buildWheelDetail(")] + app[app.index("v38: a door that has no recipe"):app.index("v35: how a door that has no recipe")]
         check("the new code has no network code, no storage, no innerHTML, no links and no shop wording",
               len(new_code) > 5000 and not re.search(r"\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage|sessionStorage|\beval\s*\(|new Function|insertAdjacentHTML|outerHTML|innerHTML|createElement\('a'\)|createElement\(\"a\"\)|href|affiliate|\bshop\b", new_code),
@@ -258,7 +261,7 @@ def main():
         check("Copy as text in the panel copies the title, the group names, the rows and the footer, as plain text", text and text.startswith("Matching colours for Probe gold metal (Test Paints)") and "Starter schemes with a similar colour" in text
               and "Colours on a screen are only a guide" in text and "<" not in text and text.count("\n- ") >= 4, (text or "")[:200])
         # v62: the panel's paint now has Use in a recipe and Add to a recipe at the top, so the panel has those two plus Copy as text (still no Save into a new recipe)
-        check("and the panel has Copy as text plus the two v62 paint buttons only (no Save into a new recipe, no links inside)", page.locator("#cmp-paint-panel .share-row button").count() == 1 and page.locator("#cmp-paint-panel > .paint-recipe .paint-recipe-buttons button").count() == 2 and page.locator("#cmp-paint-panel a, #cmp-paint-panel [href], #cmp-paint-panel [role=link]").count() == 0)
+        check("and the panel has Copy as text plus the two v62 paint buttons only (no Save into a new recipe, no links inside)", page.locator("#cmp-paint-panel .share-row button").count() == 1 and page.locator("#cmp-paint-panel > .paint-recipe .paint-recipe-buttons button").count() == 2 and page.locator("#cmp-paint-panel a:not(.shop-more a), #cmp-paint-panel [href]:not(.shop-more *), #cmp-paint-panel [role=link]:not(.shop-more *)").count() == 0)   # v64: a paint you do not own can sit in the panel (a poor owned match no longer goes first), and it has the v39 Shop links fold-out
 
         # ---------- 4. Keyboard and screen reader ----------
         print("\n--- 4. Keyboard and screen reader ---")
@@ -407,7 +410,7 @@ def main():
         shown = []
         def grab():
             shown.append(page.evaluate("""() => { const p = document.getElementById('cmp-paint-panel'); if (!p) return '';
-                const c = p.cloneNode(true); c.querySelectorAll('.idea-name, .paint-panel-title').forEach(e => e.remove());
+                const c = p.cloneNode(true); c.querySelectorAll('.idea-name, .paint-panel-title, .shop-more').forEach(e => e.remove());   // v64: .shop-more is the v39 Shop links fold-out on a paint you do not own (test_v39 covers its words)
                 return c.innerText + ' ' + [...c.querySelectorAll('[aria-label], title')].map(e => e.getAttribute('aria-label') || e.textContent).join(' '); }"""))
         for key, name in [("blue", "Probe Blue"), ("grey", "Probe Grey"), ("metallic", "Probe gold metal")]:
             tap(page, key)
