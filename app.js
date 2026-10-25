@@ -1598,6 +1598,10 @@
     // in Colour ideas and the Compendium. Your own paints (Your Palette) are always searched, whatever their brand.
     // It lists the ones that are OFF, so a brand added in a later version starts switched on.
     const PAINT_BRANDS = [...new Set(KNOWN_PAINTS.map(k => k.brand))];
+    // v63: the paint ranges most painters already know. In a colour wheel group, the built-in paints from these come before the other
+    // brands, so the short list is not filled with brands nobody has heard of. Chosen by George (chunk 3.3); the paint data has no
+    // "popular" mark of its own. The screen never names them (it says "popular ranges").
+    const POPULAR_BRANDS = ["Citadel", "The Army Painter", "Vallejo"];
     let searchedPaints = KNOWN_PAINTS;
     function cleanBrandsOff(list) {
       return Array.isArray(list) ? [...new Set(list.filter(b => typeof b === "string" && PAINT_BRANDS.includes(b)))] : [];
@@ -10492,7 +10496,8 @@
       return colourIdeaTag({ owned: item.origin === 0, quality: "good" });   // the same two tags the colour ideas use: You own this / Not in your palette
     }
     const WHEEL_ROUGH_NOTE = "The colour shown is only a guide for this kind of paint.";
-    const WHEEL_GROUP_SHOWN = 8;   // v37 part 2: how many paints a group shows before "Show all" (your own paints are never hidden)
+    const WHEEL_GROUP_SHOWN = 12;   // v37 part 2: how many paints a group shows before "Show all" (your own paints are never hidden); v63: 8 -> 12
+    function wheelPopular(item) { return POPULAR_BRANDS.includes(tidyBrand(item.paint.brand)) ? 0 : 1; }   // v63: 0 for a popular range (see POPULAR_BRANDS)
 
     // ---- v43: DRILL-DOWN (the six hue colours open into their three groups) ----
     // Tap red, orange, yellow, green, blue or purple and the picture is redrawn as that colour's three groups from WHEEL (the same groups and
@@ -10715,7 +10720,7 @@
       const split = document.createElement("p");   // v37 part 2: the groups, so you know what the headings below are
       split.className = "hint";
       split.id = door.id("wheel-groups");
-      split.textContent = `Split into ${colourWordList(seg.subs.map(s => s.label.toLowerCase()))}. Each group runs from dark to light, yours first.`;
+      split.textContent = `Split into ${colourWordList(seg.subs.map(s => s.label.toLowerCase()))}. Each group runs from dark to light: yours first, then popular ranges.`;   // v63: popular ranges
       if (onlySub) box.append(title, about, count); else box.append(title, about, split, count);
       if (door.links && items.length) {   // v38: say that a paint can be tapped
         const tapHint = document.createElement("p");
@@ -10748,7 +10753,7 @@
       }
       for (const sub of onlySub ? [onlySub] : seg.subs) {
         const group = shown.filter(x => x.at.sub === sub.key)
-          .sort((a, b) => a.origin - b.origin || a.at.L - b.at.L || String(a.paint.name).localeCompare(String(b.paint.name)));
+          .sort((a, b) => a.origin - b.origin || wheelPopular(a) - wheelPopular(b) || a.at.L - b.at.L || String(a.paint.name).localeCompare(String(b.paint.name)));   // v63: popular ranges first
         if (!group.length) continue;
         // v37 part 2: a group shows its first few paints (yours are always all shown) and one button for the rest, so a long group stays short
         const mine = group.filter(x => x.origin < 2).length;
@@ -14671,12 +14676,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=62".
+    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=63".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v62";
+    const APP_VERSION = "v63";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -15127,6 +15132,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v63", date: "24 Oct 2026", changes: [
+        "In the Compendium colour wheel, each group now shows 12 paints before Show all (it was 8).",
+        "After your own paints, paints from popular ranges come first, so the short list is not filled with brands you may not know. The rest are still there under Show all.",
+      ]},
       { version: "v62", date: "24 Oct 2026", changes: [
         "A paint in the Compendium (a colour idea, or a colour wheel paint once you open it) has two buttons. Use in a recipe starts a new recipe with that paint in step 1. Add to a recipe lets you pick a recipe, then one of its steps or a new step. Both have an Undo.",
         "If the paint is not in Your Palette yet, it is added as Not owned, so it reaches your shopping list once a recipe uses it, and the message says so. Made-up example paints are not offered.",

@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=62"></script>
+  <script src="early.js?v=63"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -2453,6 +2453,7 @@
             <li>Typed a paint into a recipe that isn't in Your Palette yet? Above <strong>Save recipe</strong>, <strong>Do you own these?</strong> asks about the new paints: <strong>All</strong> (Owned), <strong>None</strong> (Not owned, so they go on the shopping list) or <strong>Let me pick</strong> (tap a paint to untick it).</li>
             <li id="help-shop"><strong>Shopping list</strong> (in Your Palette) lists paints that are running low, empty, on your wishlist, or used in a recipe but not owned, grouped by brand. <strong>Buy these</strong> at the top has a button for each shop that sells them (Firestorm Games, Wayland Games, Element Games, and The Army Painter for Army Painter paints). Tap a shop for one search link per paint; each opens that shop's own search in a new tab. They're plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop. The link searches for the paint's name, so the results can include other brands' paints with the same name: check you've got the right pot before you buy.</li>
             <li id="help-shop-links"><strong>Shop links on suggested paints</strong> (Pro preview): under a suggested paint you don't own, in the colour wheel's paint panel and in <strong>Colour ideas</strong> (in a recipe and in the Compendium), tap <strong>Shop links</strong> to open a small fold-out. It has <strong>Add to shopping list</strong> (Undo is offered) and a plain search link for each shop that sells the paint. Paints you own show nothing. They're plain links, the same as in Buy these: Minifolio isn't paid for them, and only the paint's name goes to the shop. To hide every shop link and shop button, including Buy these, untick <strong>Settings → Shop links</strong>. Your shopping list stays.</li>
+            <li id="help-wheel-order">In the <strong>Compendium</strong> colour wheel, each group shows 12 paints first: yours, then the rest of Your Palette, then paints from popular ranges, then other brands. Each part runs from dark to light. <strong>Show all</strong> lists the rest.</li>
             <li id="help-paint-to-recipe">In the <strong>Compendium</strong>, a colour idea, and a colour wheel paint once you open it, has <strong>Use in a recipe</strong> and <strong>Add to a recipe</strong>. Use in a recipe starts a new recipe with that paint in step 1. Add to a recipe lets you choose a recipe, then one of its steps or a new step, and saves it straight away. Both have an <strong>Undo</strong>. A paint that is not in Your Palette is added as <strong>Not owned</strong>, so it reaches your shopping list once a recipe uses it.</li>
             <li id="help-compendium-ticks">In the <strong>Compendium</strong>, tick the paints you want from a scheme or detail recipe, or press <strong>Select all</strong>. <strong>Add to shopping list</strong> is grey until you tick something, then adds only the ticked paints. A paint you own, or that is already on the list, shows a mark instead of a tick box. <strong>Copy as text</strong> and <strong>Save into a new recipe</strong> use the ticked paints, or all of them if none is ticked.</li>
             <li><strong>Schemes</strong> (top of the Recipes tab) group the recipes you use for one faction, e.g. "My Blue Army" = armour, trim, lenses and base. Press <strong>+ New scheme</strong>, name it, type the faction and tick its recipes.</li>
@@ -2812,7 +2813,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=62" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=63" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -2821,10 +2822,10 @@
        names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks.
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=62"></script>
-  <script src="schemes.js?v=62"></script>
-  <script src="detail-recipes.js?v=62"></script>
-  <script src="basing-tips.js?v=62"></script>
-  <script src="app.js?v=62"></script>
+  <script src="colour.js?v=63"></script>
+  <script src="schemes.js?v=63"></script>
+  <script src="detail-recipes.js?v=63"></script>
+  <script src="basing-tips.js?v=63"></script>
+  <script src="app.js?v=63"></script>
 </body>
 </html>
