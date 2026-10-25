@@ -49,7 +49,7 @@ def P(pid, name, colour, status="owned", brand="Test Paints", **extra):
     return dict({"id": pid, "brand": brand, "name": name, "colour": colour, "status": status}, **extra)
 
 # A made-up palette where every colour match for "Probe Blue" is an exact, owned paint (nothing here names a real paint).
-BASE_HEX = "#2244aa"
+BASE_HEX = "#3355cc"   # v64: lightness 0.5; a blue darker than 0.45 has its Opposite lifted, which would move the exact-opposite paint these tests plant
 _h, _l, _s = colorsys.rgb_to_hls(*[int(BASE_HEX[i:i + 2], 16) / 255 for i in (1, 3, 5)])
 def at(deg):
     return hx(_h * 360 + deg, _s, _l)
@@ -160,7 +160,7 @@ def main():
               len(new_code) > 5000 and not re.search(r"\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage|sessionStorage|\beval\s*\(|new Function|insertAdjacentHTML|outerHTML|innerHTML|createElement\('a'\)|createElement\(\"a\"\)|href|affiliate|\bshop\b", new_code),
               [m.group(0) for m in re.finditer(r"(fetch|innerHTML|href|affiliate)[^\n]*", new_code)][:3])
         check("reuse, not copy: the panel is made from the shared row, the shared Copy as text, the shared colour helpers and the same nearest-paint search, and each is still defined once",
-              all(w in new_code for w in ["buildIdeaItem(", "buildShareRow(", "colourIdeaWanted(", "colourIdeaReason(", "colourIdeaTag(", "colourIdeaNote(", "colourIdeaPool(", "ideaTextLine(", "C.nearestPaints(", "C.harmonies(", "colourDistance("])
+              all(w in new_code for w in ["buildIdeaItem(", "buildShareRow(", "colourIdeaWanted(", "colourIdeaReason(", "colourIdeaTag(", "colourIdeaPool(", "ideaTextLine(", "C.suggestPaint(", "C.harmonies(", "colourDistance("])
               and all(app.count(f"function {n}(") == 1 for n in ["buildIdeaItem", "buildShareRow", "colourIdeaWanted", "colourIdeaReason", "buildPaintPanel", "togglePaintPanel", "starterSchemesLike", "buildWheelDetail"]))
         door_c = app[app.index("function compendiumDoor"):app.index("function startRecipeFromCompendium")]
         card_door = app[app.index("function buildColourIdeasCard"):]
@@ -226,7 +226,7 @@ def main():
         open_row(page, "Probe Blue")
         names2 = panel_names(page)
         check("yours first: an owned paint a little off beats a closer paint that is only on the wishlist (Closest you own)", names2["Opposite"] == ["Own Near Opposite"] and
-              panel(page)["sections"][0]["rows"][0]["tag"] in ("You own this", "Closest you own"), names2)
+              panel(page)["sections"][0]["rows"][0]["tag"] in ("You own this", "Yours, poor fit"), names2)
         load(page, paints=[P(1, "Probe Blue", BASE_HEX)])
         open_tab(page)
         tap(page, "blue")

@@ -63,7 +63,9 @@ def detail_rows(page):
     return page.evaluate("""() => [...document.querySelectorAll('#detail-list button.idea-pick')].map(b => ({
         name: b.querySelector('.idea-name').childNodes[0].textContent, brand: (b.querySelector('.idea-name small') || {}).textContent || '',
         tag: b.querySelector('.idea-tag').textContent, why: b.querySelector('.idea-why').textContent,
-        note: (b.querySelector('.idea-note') || {}).textContent || '' }))""")
+        note: (b.querySelector('.idea-note') || {}).textContent || '',
+        fit: (b.querySelector('.idea-fit') || {}).textContent || '',   // v64: the fit label, and your own paint's line when it is a poor fit
+        also: (b.closest('li').querySelector('.idea-also .idea-tag') || {}).textContent || '' }))""")
 
 def group_chips(page):
     return page.evaluate("() => [...document.querySelectorAll('#detail-groups .chip')].map(c => [c.textContent, c.getAttribute('aria-pressed'), c.dataset.detailGroup])")
@@ -297,7 +299,7 @@ def main():
             rows = detail_rows(page)
             ok = (page.inner_text("#detail-summary") == r["summary"] and len(rows) == len(r["steps"])
                   and [x["why"] for x in rows] == [why_line(i + 1, s) for i, s in enumerate(r["steps"])]
-                  and all(x["tag"] in ("You own this", "Closest you own", "Not in your palette") for x in rows) and page.locator("#detail-add-all").count() == 1)
+                  and all(x["tag"] in ("You own this", "Yours, poor fit", "Not in your palette") for x in rows) and page.locator("#detail-add-all").count() == 1)
             check(f"{r['name']} ({r['group']}): summary, {len(r['steps'])} rows with technique, coats, mix % and note, honest tags, one Add all steps button", ok, (rows[:2], page.inner_text("#detail-summary")))
             pick_recipe(page, r["key"])
         # Yours first: for every recipe, own an exact paint for every step; each row must find it.
@@ -389,11 +391,13 @@ def main():
         pick_recipe(page, "gems")
         rows = detail_rows(page)
         check("an owned paint that is exactly the wanted colour says You own this (step 1)", rows[0]["name"] == "Exact Deep Blue" and rows[0]["tag"] == "You own this" and rows[0]["note"] == "", rows)
+        # v64: the wishlist paint is the closest paint overall, so it is shown first; it still never says You own this
         check("a wishlist paint that is exactly right never says You own this (step 3 is a pale blue and the only exact paint for it is on the wishlist)",
-              rows[2]["name"] != "Exact Pale Blue" and rows[2]["tag"] != "You own this", rows[2])
-        check("every row has one of the three honest tags", all(x["tag"] in ("You own this", "Closest you own", "Not in your palette") for x in rows) and len(rows) == 4, rows)
-        check("when the nearest paint you own is far from the colour wanted, the row says Closest you own and says it is not very close or similar, not exact (never You own this)",
-              all(x["tag"] == "Closest you own" and ("Not very close" in x["note"] or "Similar, not exact" in x["note"]) for x in rows[1:]), rows[1:])
+              rows[2]["tag"] != "You own this" and rows[2]["fit"] == "Good fit", rows[2])
+        check("every row has one of the three honest tags and a fit label", all(x["tag"] in ("You own this", "Yours, poor fit", "Not in your palette") for x in rows) and len(rows) == 4
+              and all(x["fit"] or x["tag"] == "Yours, poor fit" for x in rows), rows)
+        check("when the nearest paint you own is far from the colour wanted, the best paint overall comes first and yours sits under it as Yours, poor fit (no note sentences, never You own this)",
+              all(x["tag"] != "You own this" and x["note"] == "" and (x["also"] == "Yours, poor fit" or x["tag"] == "Yours, poor fit") for x in rows[1:]), rows[1:])
         load(page, paints=[], recipes=[], units=[])
         open_editor(page)
         open_panel(page)

@@ -80,7 +80,7 @@ def main():
         html, sw, app = read("index.html"), read("sw.js"), read("app.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
         check("the version is v40 in APP_VERSION, sw.js and all six script tags",
-              page.evaluate("APP_VERSION") in ("v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62", "v63") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63") and len(tags) == 6 and len({v for _, v in tags}) == 1,
+              page.evaluate("APP_VERSION") in ("v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62", "v63", "v64") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64") and len(tags) == 6 and len({v for _, v in tags}) == 1,
               (page.evaluate("APP_VERSION"), tags))
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v40')")
         joined = " ".join(entry["changes"]) if entry else ""

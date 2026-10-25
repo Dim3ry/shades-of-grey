@@ -432,7 +432,7 @@ def main():
             r = starter_rows(page)
             ok = (page.inner_text("#starter-summary") == s["summary"] and page.inner_text("#starter-reason") == s["reason"] and len(r) == 4
                   and [x["why"] for x in r] == [f"{c['part']}: {c['look']}." for c in s["colours"]] and len({x["name"] for x in r}) == 4
-                  and all(x["tag"] in ("You own this", "Closest you own", "Not in your palette") for x in r))
+                  and all(x["tag"] in ("You own this", "Yours, poor fit", "Not in your palette") for x in r))
             check(f"{s['name']} ({s['mood']}): summary, reason, four rows with part and colour word, four different paints, honest tags", ok, (r, page.inner_text("#starter-summary")))
             pick_scheme(page, s["key"])
         n0 = len(draft_steps(page))
@@ -460,7 +460,7 @@ def main():
         r = {x["name"]: x["tag"] for x in starter_rows(page)}
         check("an owned paint that is exactly the wanted colour says You own this", r.get("Exact Navy") == "You own this", r)
         check("a wishlist paint that is exactly right never says You own this", r.get("Exact Pale Yellow") != "You own this", r)
-        check("every row still has one of the three honest tags", all(v in ("You own this", "Closest you own", "Not in your palette") for v in r.values()) and len(r) == 4, r)
+        check("every row still has one of the three honest tags", all(v in ("You own this", "Yours, poor fit", "Not in your palette") for v in r.values()) and len(r) == 4, r)
         load(page, paints=[], recipes=[], units=[])
         open_editor(page)
         open_panel(page)
