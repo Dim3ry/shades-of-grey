@@ -61,7 +61,7 @@ ROWS_JS = """(sel) => [...document.querySelectorAll(sel)].map(b => ({
     note: (b.querySelector('.idea-note') || {}).textContent || '' }))"""
 # Everything WE wrote on the Compendium (paint names, brands, faction names and the pickers are the user's or built-in names, so they are left out).
 SHOWN_JS = """() => { const c = document.getElementById('compendium-body').cloneNode(true);
-    c.querySelectorAll('.idea-name, select, #cmp-faction-history-for').forEach(e => e.remove());
+    c.querySelectorAll('.idea-name, select, #cmp-faction-history-for, .shop-more').forEach(e => e.remove());
     return c.innerText; }"""
 
 def rows(page, sel):
@@ -422,7 +422,7 @@ def main():
         page.click("#cmp-fold-ideas-panel > .share-row button:has-text('Copy as text')")
         text = copied(page)
         check("Copy as text on the colour ideas copies a heading, three lines and the footnote",
-              text and text.splitlines()[0] == "Colour ideas for eyes or glow with Macragge Blue (Citadel)" and len(text.splitlines()) == 5
+              text and text.splitlines()[0] == "Colour ideas for eyes or glow with Macragge Blue (Citadel)" and len(text.splitlines()) == 5 + text.count("Yours, poor fit")   # v64: your own poor-fit paint adds a line under its suggestion
               and text.splitlines()[-1] == "Colours on a screen are only a guide, so check them on your model.", text)
         check("each line has the paint (and brand), the tag and the reason, as the row shows",
               all(re.match(r"- .+: (You own this|Yours, poor fit|Not in your palette)\. .+", l) for l in text.splitlines()[1:4]), text)
@@ -624,7 +624,7 @@ def main():
         own = "\n".join([joined, help_text, app[app.index("v35: THE COMPENDIUM TAB"):app.index('v18c: TIDY BRANDS')]])
         own_hits = GW_WORDS.findall(own) + GW_MORE.findall(own)
         check("the new Updates entry, the Help line and the new code's words are clean too", not own_hits, own_hits[:10])
-        check("the Compendium has no links at all (no shop links, those come later)", page.locator("#view-compendium a").count() == 0)
+        check("the Compendium has no links at all (no shop links, those come later)", page.locator("#view-compendium a:not(.shop-more a)").count() == 0)   # v64: a paint you do not own can now come first, with the v39 Shop links fold-out
 
         # ---------- 10. Hostile text ----------
         print("\n--- 10. Hostile text ---")

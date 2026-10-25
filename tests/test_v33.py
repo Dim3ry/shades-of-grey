@@ -669,7 +669,7 @@ def main():
         check("order in the card: tip, faction history, starter schemes, Detail recipes, Basing tips (new), then the check", order == sorted(order) and -1 not in order, order)
         check("the card is still labelled Pro preview and still ends with the footnote", page.inner_text("#colour-ideas .pro-pill") == "Pro preview"
               and page.evaluate("() => document.querySelector('#colour-ideas .ideas-body').lastElementChild.textContent.includes('Nothing leaves your phone')"))
-        check("the whole Colour ideas card has no links at all (no shop links, Coach 5 is not merged)", page.locator("#colour-ideas a").count() == 0)
+        check("the whole Colour ideas card has no links at all (no shop links, Coach 5 is not merged)", page.locator("#colour-ideas a:not(.shop-more a)").count() == 0)   # v64: a paint you do not own can now come first, with the v39 Shop links fold-out
         check("the Colour ideas card starts closed in a fresh editor", (lambda: (load(page), open_editor(page), page.evaluate("() => document.getElementById('colour-ideas').open"))[-1])() is False)
         n = page.locator(".step-edit").count()
         t.add_step(page)
