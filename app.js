@@ -1597,6 +1597,27 @@
     // switched off: their paints aren't suggested as you type, matched in pasted notes or on scanned labels, or offered
     // in Colour ideas and the Compendium. Your own paints (Your Palette) are always searched, whatever their brand.
     // It lists the ones that are OFF, so a brand added in a later version starts switched on.
+    // v65: paints that are not colours, kept with the paint data on purpose (it is data about paints, like the lists above).
+    // Varnishes, mediums, thinners, cleaners, reducers, retarders and clear bases are stored as white or grey, so they must never be
+    // offered as a match. So are 15 Tamiya paints stored as pure white. Found by the data check (3.4a); matched by brand and name.
+    const NOT_A_COLOUR_TABLE = {
+      "Citadel": ["Lahmian Medium", "Contrast Medium", "Air Caste Thinner", "Munitorum Varnish Spray"],
+      "Vallejo": ["Medium Xpress", "Cleaner", "Clear Base", "Crackle Medium", "Gloss Metal Varnish", "Gloss Varnish", "Matt Varnish",
+        "Mecha Gloss Varnish", "Mecha Matt Varnish", "Mecha Satin Varnish", "Metallic Medium", "Pearl Medium", "Reducer", "Retarder",
+        "Satin Varnish", "Textile Medium"],
+      "The Army Painter": ["Wash Medium", "Speedpaint Medium", "Aegis Suit Satin Varnish", "Anti-Shine Matt Varnish", "Gloss Varnish",
+        "Quickshade Wash Mixing Medium", "Warpaints Mixing Medium"],
+      "Pro Acryl": ["Metallic Medium"],
+      "AK Interactive": ["Crackle Medium", "Glaze Medium", "Glaze Medium -90-", "Gloss Medium", "Matte Medium", "Metal Medium", "Retarder",
+        "Varnish Gloss", "Varnish Matt", "Varnish Satin"],
+      "Scale75": ["Medium Wet", "Odorless Thinner"],
+      "Two Thin Coats": ["Gloss Varnish", "Matt Varnish"],
+      "Tamiya": ["Clear", "Flat base", "Flat clear", "Semi-gloss clear", "Acrylic thinner", "Lacquer thinner", "Pearl clear",
+        "Dark green 2 (RAF)", "Dark iron", "Dark yellow 2", "IJN gray (Maizuru Arsenal)", "IJN gray (Yokosuka Arsenal)",
+        "Medium sea gray 2 (RAF)", "Ocean gray 2 (RAF)", "Red brown 2", "Rubber black", "Fluorescent orange", "Metallic gray",
+        "Metallic orange", "Pearl yellow", "Pure metallic red", "Semi-gloss bright gun metal"],
+    };
+    const NOT_A_COLOUR = new Set(Object.entries(NOT_A_COLOUR_TABLE).flatMap(([brand, names]) => names.map(n => sameKey(`${brand}|${n}`))));
     const PAINT_BRANDS = [...new Set(KNOWN_PAINTS.map(k => k.brand))];
     // v63: the paint ranges most painters already know. In a colour wheel group, the built-in paints from these come before the other
     // brands, so the short list is not filled with brands nobody has heard of. Chosen by George (chunk 3.3); the paint data has no
@@ -10451,27 +10472,7 @@
     // are skipped here, by name.
     const SIMILAR_SHOWN = 3;
     const SIMILAR_SHIFT = { lighter: 0.12, close: 0, darker: -0.12 };   // added to the colour's lightness (0 to 1) before looking
-    // Varnishes, mediums, thinners, cleaners, reducers, retarders and clear bases are stored as white or grey, so they must never be
-    // offered as a match. So are 15 Tamiya paints stored as pure white. Found by the data check (3.4a); matched by brand and name.
-    const NOT_A_COLOUR_TABLE = {
-      "Citadel": ["Lahmian Medium", "Contrast Medium", "Air Caste Thinner", "Munitorum Varnish Spray"],
-      "Vallejo": ["Medium Xpress", "Cleaner", "Clear Base", "Crackle Medium", "Gloss Metal Varnish", "Gloss Varnish", "Matt Varnish",
-        "Mecha Gloss Varnish", "Mecha Matt Varnish", "Mecha Satin Varnish", "Metallic Medium", "Pearl Medium", "Reducer", "Retarder",
-        "Satin Varnish", "Textile Medium"],
-      "The Army Painter": ["Wash Medium", "Speedpaint Medium", "Aegis Suit Satin Varnish", "Anti-Shine Matt Varnish", "Gloss Varnish",
-        "Quickshade Wash Mixing Medium", "Warpaints Mixing Medium"],
-      "Pro Acryl": ["Metallic Medium"],
-      "AK Interactive": ["Crackle Medium", "Glaze Medium", "Glaze Medium -90-", "Gloss Medium", "Matte Medium", "Metal Medium", "Retarder",
-        "Varnish Gloss", "Varnish Matt", "Varnish Satin"],
-      "Scale75": ["Medium Wet", "Odorless Thinner"],
-      "Two Thin Coats": ["Gloss Varnish", "Matt Varnish"],
-      "Tamiya": ["Clear", "Flat base", "Flat clear", "Semi-gloss clear", "Acrylic thinner", "Lacquer thinner", "Pearl clear",
-        "Dark green 2 (RAF)", "Dark iron", "Dark yellow 2", "IJN gray (Maizuru Arsenal)", "IJN gray (Yokosuka Arsenal)",
-        "Medium sea gray 2 (RAF)", "Ocean gray 2 (RAF)", "Red brown 2", "Rubber black", "Fluorescent orange", "Metallic gray",
-        "Metallic orange", "Pearl yellow", "Pure metallic red", "Semi-gloss bright gun metal"],
-    };
     const paintKey = (p) => sameKey(`${p.brand || ""}|${p.name || ""}`);
-    const NOT_A_COLOUR = new Set(Object.entries(NOT_A_COLOUR_TABLE).flatMap(([brand, names]) => names.map(n => sameKey(`${brand}|${n}`))));
 
     // The pop-up is only offered in the Compendium, on a paint with a real colour that is not an example or made-up paint.
     function similarOffered(door, paint) {
