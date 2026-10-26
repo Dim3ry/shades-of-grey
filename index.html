@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=68"></script>
+  <script src="early.js?v=69"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -1221,6 +1221,11 @@
     .paint-panel { display: grid; gap: 10px; margin-top: 8px; padding: 12px; min-width: 0; border: 1px solid var(--accent); border-radius: var(--radius-card); background: var(--accent-wash); scroll-margin-bottom: 96px; }
     .paint-panel .hint { margin: 0; overflow-wrap: anywhere; }
     .paint-panel-title { margin: 0; font-size: 15px; overflow-wrap: anywhere; }
+    /* v62: Ideas for this (under a paint in a recipe step and in Your Palette) and the paint's ideas at the top of the Compendium */
+    .plain-button.ideas-for { display: block; width: fit-content; max-width: 100%; margin: 6px 0 8px; }
+    .ideas-focus { margin-bottom: 14px; }
+    .ideas-focus .paint-panel { margin-top: 0; }
+    .ideas-open { display: block; margin-top: 8px; }
     .paint-panel-label { margin: 4px 0 0; font-size: 13px; font-weight: 600; color: var(--muted); }
     .paint-panel .share-row .plain-button { min-height: 44px; }
     /* v39: the closed "Shop links" fold-out under a suggested paint you do not own. Small and quiet: the colour suggestion above it comes first.
@@ -2511,6 +2516,7 @@
             <li id="help-recipe-shop">Missing paints are not put on the shopping list by themselves. On a recipe with missing paints, <strong>Add missing paints to shopping list</strong> under its steps adds the real paints you don't own (never the made-up example paints) and says how many. Undo takes them off again.</li>
             <li id="help-shop"><strong>Shopping list</strong> (in Your Palette) lists only the paints you put there: your Wishlist paints and anything added with an <strong>Add to shopping list</strong> button, grouped by brand. Nothing is added by itself, not even a paint a recipe needs or one that is empty or running low. <strong>Buy these</strong> at the top has a button for each shop that sells them (Firestorm Games, Wayland Games, Element Games, and The Army Painter for Army Painter paints). Tap a shop for one search link per paint; each opens that shop's own search in a new tab. They're plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop. The link searches for the paint's name, so the results can include other brands' paints with the same name: check you've got the right pot before you buy.</li>
             <li id="help-shop-links"><strong>Shop links on suggested paints</strong> (Pro preview): under a suggested paint you don't own, in the colour wheel's paint panel and in <strong>Colour ideas</strong> (in a recipe and in the Compendium), tap <strong>Shop links</strong> to open a small fold-out. It has <strong>Add to shopping list</strong> (Undo is offered) and a plain search link for each shop that sells the paint. Paints you own show nothing. They're plain links, the same as in Buy these: Minifolio isn't paid for them, and only the paint's name goes to the shop. To hide every shop link and shop button, including Buy these, untick <strong>Settings → Shop links</strong>. Your shopping list stays.</li>
+            <li id="help-ideas-for"><strong>Ideas for this</strong> (Pro preview): open a step in a recipe, or a paint in <strong>Your Palette</strong>, and tap <strong>Ideas for this</strong> under the paint. The <strong>Compendium</strong> opens with that paint's ideas at the top: colours that go with it, starter schemes with a similar colour, and detail recipes and basing tips with a step of a similar colour. Your own paints come first. <strong>Show steps</strong> or <strong>Show tip</strong> opens that recipe or tip in full further down. <strong>Back to recipe</strong> or <strong>Back to Your Palette</strong> (or the phone's Back button) takes you to the same step or paint. A paint with no colour set, or a basing material, has no button, as there is nothing to match. Tapping the Compendium tab itself shows the whole Compendium again.</li>
             <li id="help-wheel-order">In the <strong>Compendium</strong> colour wheel, each group shows 12 paints first: yours, then the rest of Your Palette, then paints from popular ranges, then other brands. Each part runs from dark to light. <strong>Show all</strong> lists the rest.</li>
             <li id="help-fit">Suggested paints (Colour ideas, schemes, detail recipes, basing, and the colour wheel's paint panel) show a fit: <strong>Good fit</strong>, <strong>Okay fit</strong> or <strong>Poor fit</strong>, judged by how different the two colours look. A paint you own comes first when it is a Good or Okay fit. If your best paint is a poor fit, the closest paint overall comes first and your own is second, marked <strong>Yours, poor fit</strong>. Metallic, Contrast, wash and similar paints are allowed a little more room.</li>
             <li id="help-paint-to-recipe">In the <strong>Compendium</strong>, a colour idea, and a colour wheel paint once you open it, has <strong>Use in a recipe</strong> and <strong>Add to a recipe</strong>. Use in a recipe starts a new recipe with that paint in step 1. Add to a recipe lets you choose a recipe, then one of its steps or a new step, and saves it straight away. Both have an <strong>Undo</strong>. A paint that is not in Your Palette is added as <strong>Not owned</strong>, so it reaches your shopping list once a recipe uses it.</li>
@@ -2873,7 +2879,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=68" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=69" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -2882,10 +2888,10 @@
        names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks.
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=68"></script>
-  <script src="schemes.js?v=68"></script>
-  <script src="detail-recipes.js?v=68"></script>
-  <script src="basing-tips.js?v=68"></script>
-  <script src="app.js?v=68"></script>
+  <script src="colour.js?v=69"></script>
+  <script src="schemes.js?v=69"></script>
+  <script src="detail-recipes.js?v=69"></script>
+  <script src="basing-tips.js?v=69"></script>
+  <script src="app.js?v=69"></script>
 </body>
 </html>
