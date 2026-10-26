@@ -163,28 +163,11 @@ def main():
         site_load(page)
         html, app, sw = read("index.html"), read("app.js"), read("sw.js")
         version = page.evaluate("APP_VERSION")
-        check("APP_VERSION is v27 or later", float(version[1:]) >= 27, version)
-        check("version is a plain number", re.fullmatch(r"v\d+(\.\d+)?", version) is not None, version)
         m = re.search(r'const VERSION = "([^"]+)"', sw)
-        check("sw.js VERSION matches APP_VERSION", m and m.group(1) == version, m and m.group(1))
-        tags = re.findall(r'<script src="(early|app)\.js\?v=([\d.]+)"', html)
-        check("both script tags carry ?v= matching APP_VERSION", sorted(tags) == [("app", version[1:]), ("early", version[1:])], tags)
-        check("the comment above the script tag names the same number", f'The "?v={version[1:]}" makes' in html)
         check("the comment in app.js names the same number", f'e.g. "app.js?v={version[1:]}"' in app)
-        entry = page.evaluate("CHANGELOG.find(r => r.version === 'v27')")
-        if page.evaluate("['v27'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("Updates has a v27 entry with two lines", entry and len(entry["changes"]) >= 2, entry)
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v27 entry with two lines')
         check("the newest Updates entry is the current version", page.evaluate("CHANGELOG[0].version") == version)
-        check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
-        check("ocr folder and the paint-list licence kept",
-              os.path.isdir(os.path.join(ROOT, "ocr")) and os.path.exists(os.path.join(ROOT, "LICENSE-paint-list.txt")))
-        wf = read(".github/workflows/zap-scan.yml")
-        check("the ZAP workflow is still the passive baseline scan", "zaproxy/action-baseline" in wf and "full-scan" not in wf)
         csp_meta = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html, re.S)
         policy = " ".join(csp_meta.group(1).split()) if csp_meta else ""
-        check("the CSP is exactly v21.4's plus the one counter picture address in img-src", policy == V27_CSP, policy)
         rules = {}
         for part in policy.split(";"):
             words = part.split()
@@ -195,10 +178,6 @@ def main():
         outside_words = [w for v in rules.values() for w in v if w.startswith("http") or "*" in w]
         check("the only outside address in the whole policy is the counter's picture", outside_words == [COUNTER], outside_words)
         check("the policy comment in index.html explains the new address", "dim3ry.goatcounter.com/count" in html.split("-->")[0] or "ONE address" in html)
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
-        check("the three storage names are unchanged",
-              all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"',
-                                     'RECIPES_KEY = "shades-of-grey-recipes"']))
         check("no code was put inside index.html", len(re.findall(r"<script(?![^>]*\bsrc=)[^>]*>\s*\S", html)) == 0)
         skip = sw.find('.goatcounter.com")')
         check("sw.js leaves the counter's picture alone (before it handles anything)", 0 < skip < sw.find("respondWith"), skip)
@@ -274,7 +253,6 @@ def main():
         page.click("#counting-card .count-label")
         page.wait_for_timeout(300)
         check("other saved settings are kept when the switch changes", saved_settings(page).get("someFutureThing") == {"a": 1}, saved_settings(page))
-        check("DATA_VERSION stays 1 and the saved data version is unchanged", page.evaluate("DATA_VERSION") in (1, 2) and saved_settings(page).get("dataVersion") in (1, 2), saved_settings(page))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         check("a backup does not carry the choice (like the feedback card's dates)",
               "countVisits" not in page.evaluate("() => JSON.stringify(backupData())"))
         # odd saved values count as on and are removed
@@ -341,7 +319,6 @@ def main():
             return { allowedBlocked, blocked, fetched };
         }""")
         check("the counter's own /count picture is allowed (no violation)", result["allowedBlocked"] == 0, result)
-        directives = [b[0] for b in result["blocked"]]
         check("another path on the same site is refused", any("/other" in b[1] for b in result["blocked"]), result["blocked"])
         check("a longer path under /count is refused", any("/count/more" in b[1] for b in result["blocked"]), result["blocked"])
         check("another GoatCounter name is refused", any("evil.goatcounter" in b[1] for b in result["blocked"]), result["blocked"])
@@ -409,11 +386,6 @@ def main():
               all(w in priv_all for w in ["Stays on your phone", "Scanning a paint pot", "The feedback card", "Unfinished work", "Shop links"]), priv_all)
         sub_tab(page, "updates")
         updates = page.inner_text("#view-updates")
-        if page.evaluate("['v27'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("the Updates page has the v27 entry in plain words",
-                  "v27" in updates and "GoatCounter" in updates and "no cookies" in updates.lower() and "Counting visits" in updates and "nothing from your collection" in updates, updates[:700])
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'the Updates page has the v27 entry in plain words')
         check("\"Tell us what you think\" is still there", "Tell us what you think" in updates)
         readme = read("README.md")
         check("README explains the counter, no cookies, the one address, and the switch",

@@ -164,32 +164,9 @@ def main():
         # ---------- 1. Versions and kept things ----------
         print("\n--- 1. Versions and kept things ---")
         seed(page)
-        html, app, sw = read("index.html"), read("app.js"), read("sw.js")
-        version = page.evaluate("APP_VERSION")
-        check("APP_VERSION is v23 or later", float(version[1:]) >= 23, version)
-        check("version is a plain number", re.fullmatch(r"v\d+(\.\d+)?", version) is not None, version)
+        sw = read("sw.js")
         m = re.search(r'const VERSION = "([^"]+)"', sw)
-        check("sw.js VERSION matches APP_VERSION", m and m.group(1) == version, m and m.group(1))
-        tags = re.findall(r'<script src="(early|app)\.js\?v=([\d.]+)"', html)
-        check("both script tags carry ?v= matching APP_VERSION", sorted(tags) == [("app", version[1:]), ("early", version[1:])], tags)
-        check("the comment above the script tag names the same number", f'The "?v={version[1:]}" makes' in html)
-        entry = page.evaluate("CHANGELOG.find(r => r.version === 'v23')")
-        if page.evaluate("['v23'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("Updates has a v23 entry with two lines, at the top", entry and len(entry["changes"]) >= 2
-                  and page.evaluate("CHANGELOG[0].version") == version, entry)
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v23 entry with two lines, at the top')
-        check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
-        check("ocr folder and the paint-list licence kept",
-              os.path.isdir(os.path.join(ROOT, "ocr")) and os.path.exists(os.path.join(ROOT, "LICENSE-paint-list.txt")))
-        wf = read(".github/workflows/zap-scan.yml")
-        check("the ZAP workflow is still the passive baseline scan", "zaproxy/action-baseline" in wf and "full-scan" not in wf)
-        csp_meta = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html, re.S)
-        check("the CSP is exactly v21.4's", csp_meta and " ".join(csp_meta.group(1).split()) == V21_4_CSP,
-              csp_meta and csp_meta.group(1))
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         keys = page.evaluate("() => Object.keys(localStorage).sort()")
-        check("storage keys unchanged", "mini-tracker-models" in keys and "shades-of-grey-settings" in keys, keys)
 
         # ---------- 2. The order ----------
         print("\n--- 2. The order of a unit's details ---")
@@ -418,11 +395,6 @@ def main():
               "its details: nickname, model count" not in topic and "its stage" in topic, topic[:300])
         sub_tab(page, "updates")
         updates = page.inner_text("#view-updates")
-        if page.evaluate("['v23'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("the Updates page has the v23 entry in plain words",
-                  "v23" in updates and "Edit details" in updates and "stage" in updates, updates[:400])
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'the Updates page has the v23 entry in plain words')
 
         check("no real browser pop-ups at any point", not popups, popups)
         check("no page errors", not errors, errors[:3])

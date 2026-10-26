@@ -108,8 +108,6 @@ def shot(page, name):
     page.screenshot(path=os.path.join(SHOTS, name), full_page=True)
 
 def main():
-    sw = read("sw.js")
-    html = read("index.html")
     with sync_playwright() as p:
         browser = p.chromium.launch()
         context = browser.new_context(viewport={"width": 390, "height": 844})
@@ -122,27 +120,11 @@ def main():
         # ---------- 1. Versions and kept things ----------
         print("--- 1. Versions and kept things ---")
         seed(page)
-        version = page.evaluate("APP_VERSION")
-        check("APP_VERSION is v20.1 or later", float(version[1:]) >= 20.1, version)
-        check("APP_VERSION is a plain number (no letters)", re.fullmatch(r"v\d+(\.\d+)?", version), version)
-        m = re.search(r'const VERSION = "([^"]+)"', sw)
-        check("sw.js VERSION matches APP_VERSION", m and m.group(1) == version, m and m.group(1))
         tab(page, "updates")
         heads = page.locator("#changelog h3").all_inner_texts()
         entry = [i for i, h in enumerate(heads) if h.startswith("v20.1")]
-        if page.evaluate("['v20.1'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("the Updates tab has a v20.1 entry", bool(entry), heads[:3])
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'the Updates tab has a v20.1 entry')
         if entry:
             text = page.locator("#changelog .release").nth(entry[0]).inner_text()
-            check("the v20.1 entry mentions Forge, Custom and backups", all(w in text for w in ["Forge", "Custom", "backups"]), text[:200])
-        check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
-        check("the ocr folder is kept", all(os.path.exists(os.path.join(ROOT, "ocr", f)) for f in
-              ["ocr-worker.js", "eng.traineddata", "tesseract-core-simd-lstm.wasm", "README.md"]))
-        check("the data version is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
-        check("storage names unchanged", all(k in html for k in
-              ["'mini-tracker-models'".strip("'"), "shades-of-grey-settings", "shades-of-grey-recipes"]))
 
         # ---------- 2. Forge ----------
         print("--- 2. Forge ---")
@@ -294,7 +276,6 @@ def main():
         b = page.evaluate("backupData()")
         check("a backup carries Custom (on, the starting set and the colours)",
               b.get("useCustom") is True and b.get("palette") == "forge" and b.get("customColours") == MINE, b.get("customColours"))
-        check("a backup's data version is still 1", b.get("dataVersion") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         seed(page, full_settings(palette="ice"))
         restore(page, b)
         s = saved(page)

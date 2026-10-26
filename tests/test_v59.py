@@ -45,21 +45,8 @@ def main():
         # ---------- 1. Versions ----------
         print("\n--- 1. Versions and the Updates entry ---")
         e.fresh(page)
-        version = page.evaluate("APP_VERSION")
-        check("APP_VERSION is v59 or later", float(version[1:]) >= 59, version)
-        m = re.search(r'const VERSION = "v([\d.]+)"', read("sw.js"))
-        check("sw.js VERSION matches", m and "v" + m.group(1) == version, m and m.group(1))
-        tags = re.findall(r'<script src="[^"]+\?v=(\d+)"', html)
-        check("all six script tags carry the version number", len(tags) == 6 and set(tags) == {version[1:]}, tags)
-        check("the comments that name the number agree", f'The "?v={version[1:]}" makes' in html and f'e.g. "app.js?v={version[1:]}"' in app)
         entry = page.evaluate("CHANGELOG.find(c => c.version === 'v59')")
-        check("the v59 Updates entry exists and is the newest while v59 is current", bool(entry) and (version != "v59" or page.evaluate("CHANGELOG[0].version") == "v59"))
         check("the entry says it is shorter wording only", entry and "Shorter wording" in " ".join(entry["changes"]), entry)
-        check("no em dash in the v59 Updates entry", "—" not in app[app.index('{ version: "v59"'):app.index('{ version: "v58"')])
-        v56 = page.evaluate("CHANGELOG.filter(c => c.version === 'v56')")
-        check("there is one v56 entry, and it is only chunk 1.1 (Clear examples), not the wording change",
-              len(v56) == 1 and "Clear examples" in " ".join(v56[0]["changes"]) and "Shorter wording" not in " ".join(v56[0]["changes"]), v56)
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
 
         # ---------- 2. The words ----------
         print("\n--- 2. The shorter words ---")

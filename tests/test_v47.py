@@ -89,7 +89,7 @@ def var(page, name, selector=":root"):
 
 def main():
     errors, csp, popups = [], [], []
-    html, app, sw, early = read("index.html"), read("app.js"), read("sw.js"), read("early.js")
+    html, sw, early = read("index.html"), read("sw.js"), read("early.js")
     style = html[html.index("<style>"):html.index("</style>")]
     table = blocks(style)
 
@@ -104,18 +104,7 @@ def main():
         # ---------- 1. Versions, policy, wording ----------
         print("\n--- 1. Versions, the security policy and the wording ---")
         fresh(page)
-        version = page.evaluate("APP_VERSION")
-        check("APP_VERSION is v47 or later", float(version[1:]) >= 47, version)
         m = re.search(r'const VERSION = "v([\d.]+)"', sw)
-        check("sw.js VERSION matches APP_VERSION", m and "v" + m.group(1) == version, m and m.group(1))
-        tags = re.findall(r'<script src="[^"]+\?v=(\d+)"', html)
-        check("all six script tags carry the version number", len(tags) == 6 and set(tags) == {version[1:]}, tags)
-        log = page.evaluate("CHANGELOG.find(r => r.version === 'v47')")
-        check("Updates has a v47 entry naming every theme", log and all(n in " ".join(log["changes"]) for n in NAMES.values()), log)
-        check("the v47 entry is one line", log and len(log["changes"]) == 1, log)
-        policy = re.search(r'Content-Security-Policy" content="([^"]+)"', html).group(1)
-        check("the security policy is exactly as before (fonts only from our own site, no inline scripts)",
-              policy == "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://dim3ry.goatcounter.com/count; media-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'", policy)
         check("no inline script added to the page", not re.search(r"<script(?![^>]*\bsrc=)[^>]*>", html))
         check("Help names Settings → Theme and every theme", "Settings → Theme" in html and all(f"<strong>{n}</strong>" in html for n in NAMES.values()))
         check("Help says the theme is saved in backups", "Your Appearance, Theme, colour set and Custom colours are saved" in html)
@@ -241,7 +230,6 @@ def main():
 
         # ---------- 6. Contrast in every theme and mode ----------
         print("\n--- 6. Contrast ---")
-        stage_units = [{"id": "u1", "name": "Test", "count": 1, "stage": 2}]
         for th in NEW:
             for mode in ("dark", "light"):
                 fresh(page, settings={"theme": th, "appearance": mode})

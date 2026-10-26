@@ -39,7 +39,6 @@ def no_sideways(page):
 
 def main():
     errors, csp, popups = [], [], []
-    app, html = read("app.js"), read("index.html")
     with sync_playwright() as p:
         browser = p.chromium.launch()
         ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
@@ -52,15 +51,7 @@ def main():
 
         # ---------- 1. Versions ----------
         print("\n--- 1. Versions and wording ---")
-        version = page.evaluate("APP_VERSION")
-        check("APP_VERSION is v49 or later", float(version[1:]) >= 49, version)
         m = re.search(r'const VERSION = "v([\d.]+)"', read("sw.js"))
-        check("sw.js VERSION matches", m and "v" + m.group(1) == version)
-        tags = re.findall(r'<script src="[^"]+\?v=(\d+)"', html)
-        check("all six script tags carry the version number", len(tags) == 6 and set(tags) == {version[1:]}, tags)
-        entry = page.evaluate("CHANGELOG.find(c => c.version === 'v49')")
-        check("the v49 Updates entry exists", bool(entry))
-        check("the v49 entry has no em dashes", entry and not any("—" in c for c in entry["changes"]))
 
         # ---------- 2. Compendium ----------
         print("\n--- 2. Compendium ---")

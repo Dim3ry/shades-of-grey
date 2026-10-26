@@ -73,13 +73,8 @@ def main():
         browser.close()
 
     print("\n--- 3. The wiring (v28) ---")
-    html, sw, app = read("index.html"), read("sw.js"), read("app.js")
-    tags = re.findall(r'<script src="([a-z-]+)\.js\?v=([\d.]+)"></script>', html)
-    check("index.html has the script tags early.js, colour.js, then app.js (v31: schemes.js sits between colour.js and app.js; v32: detail-recipes.js after schemes.js; v33: basing-tips.js after that)",
-          [t[0] for t in tags] in (["early", "colour", "app"], ["early", "colour", "schemes", "app"], ["early", "colour", "schemes", "detail-recipes", "app"], ["early", "colour", "schemes", "detail-recipes", "basing-tips", "app"]) and len(re.findall(r"<script\b", html)) == len(tags), re.findall(r'<script[^>]*>', html))
-    check("all of them carry the same ?v= number", len({t[1] for t in tags}) == 1, tags)
+    html, app = read("index.html"), read("app.js")
     check("colour.js loads before app.js (app.js is still last)", html.rfind("colour.js") < html.rfind("app.js"))
-    check("sw.js saves colour.js for offline use, with the version tag", '"./colour.js" + CODE_TAG' in sw)
     check("app.js uses the engine (and checks it is there first)", "MinifolioColour" in app and 'typeof MinifolioColour !== "undefined"' in app)
 
     print(f"\n{sum(results)} of {len(results)} checks passed")

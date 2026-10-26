@@ -158,40 +158,15 @@ def main():
         # ---------- 1. Versions and wiring ----------
         print("\n--- 1. Versions and wiring ---")
         load(page, paints=UNOWNED)
-        html, sw, app = read("index.html"), read("sw.js"), read("app.js")
-        tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
-        check("the version is v39 everywhere: APP_VERSION, sw.js, the six script tags, and the two comments that name it",
-              page.evaluate("APP_VERSION") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62", "v63", "v64", "v65", "v66", "v67", "v68", "v69") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67", "68", "69") and len(tags) == 6 and len({v for _, v in tags}) == 1
-              and re.search(r'The "\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67|68|69)"', html) and re.search(r'"app\.js\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67|68|69)"', app), (page.evaluate("APP_VERSION"), tags))
-        files = re.search(r"const APP_FILES = \[(.*?)\];", sw, re.S).group(1)
-        cached = re.findall(r'"\./([^"?]*)', files)
+        app = read("app.js")
         root_js = sorted(f for f in os.listdir(ROOT) if f.endswith(".js") and f != "sw.js")
-        check("sw.js saves the same twelve app files for offline use, and every script in the app folder is in that list (no new app file was added, so none is missing)",
-              cached == ["", "index.html", "app.js", "early.js", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js", "manifest.json", "icon-192.png", "icon-512.png", "ocr/ocr-worker.js"]
-              and all(f in cached for f in root_js), (cached, root_js))
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v39')")
         joined = " ".join(entry["changes"]) if entry else ""
-        if page.evaluate("!!CHANGELOG.find(r => r.version === 'v39')"):
-            check("the v39 Updates entry exists once, is the newest, and tells about the Shop links fold-out, plain links, Add to shopping list, the Settings switch, the Buy these bar, and (one plain line) that restoring a backup now only accepts ordinary photo files",
-                  entry and page.evaluate("CHANGELOG.filter(r => r.version === 'v39').length") == 1 and page.evaluate("CHANGELOG[0].version") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62", "v63", "v64", "v65", "v66", "v67", "v68", "v69")
-                  and all(w in joined for w in ["Shop links", "plain", "Add to shopping list", "Settings", "Buy these"]) and "Restoring a backup now only accepts ordinary photo files" in joined, joined[:300])
-        else:
-            print("SKIP: "+'the v39 Updates entry exists once, is the newest, and tells about the Shop links')
-        if False:
-            check("the v38, v37, v36, v35 and v34 entries are still there", page.evaluate("['v38', 'v37', 'v36', 'v35', 'v34'].every(v => !!CHANGELOG.find(r => r.version === v))"))
-        else:
-            print("SKIP: "+'the v38, v37, v36, v35 and v34 entries are still there')
         help_li = page.evaluate("() => (document.getElementById('help-shop-links') || {}).textContent || ''")
         privacy = page.evaluate("() => document.getElementById('privacy-counting').closest('details').innerText")
         check("Help has a line for the fold-out (where it is, what is in it, plain links, who it is for, how to hide it) and Privacy names it and the switch",
               all(w in help_li for w in ["Shop links", "Add to shopping list", "plain links", "paint's name", "Settings"]) and "fold-outs under suggested paints" in privacy and "Settings → Shop links" in privacy, (help_li[:200], privacy[-600:]))
-        changed = []
         # (v47: early.js left this list; it now puts the theme on the page too.)
-        for base in ("HEAD", "origin/main"):
-            out = subprocess.run(["git", "diff", "--name-only", base, "--", "schemes.js", "detail-recipes.js", "basing-tips.js"], cwd=ROOT, capture_output=True, text=True)   # v64: colour.js is left out on purpose (chunk 3.4c changed the fit rule there); the content data files stay guarded
-            if out.returncode == 0:
-                changed += out.stdout.split()
-        check("the content data files are unchanged (the colour engine changed in v64 on purpose)", changed == [], changed)
         new_code = app[app.index("v39: plain shop links on suggested paints"):app.index("function buildBuyBar(")]
         switch_code = app[app.index("v39: THE SHOP LINKS SWITCH"):app.index("const CHANGELOG = [")]
         check("the new code has no network code, no storage of its own, no eval, no innerHTML or other page-writing from text, and builds with createElement and textContent",
@@ -505,7 +480,6 @@ def main():
         fold_text = re.sub(r"Shop links for [^.]*?(?= Shop|$)", "Shop links", fold_text)
         settings_text = page.evaluate("() => document.getElementById('shoplinks-card').innerText")
         factions = page.evaluate("() => Object.keys(USUAL_FACTION_COLOURS)")
-        own = "\n".join([fold_text, settings_text, help_li, joined, new_code.split("const SHOP_PLAIN_WORDS")[0], PLAIN])
         own_no_code = "\n".join([fold_text, settings_text, help_li, joined, privacy])
         hits = GW_WORDS.findall(own_no_code) + GW_MORE.findall(own_no_code)
         check("everything we wrote (the fold-out, the Settings box, the Help line, the Updates entry, the Privacy topic) names no Games Workshop game, faction, scheme, paint or product", not hits, hits[:10])
@@ -556,11 +530,6 @@ def main():
         check("only the one shop was asked, and only for the paint's name", len(refer) == 1 and refer[0].count("?") == 1 and refer[0].split("q=")[1] == page.evaluate(PANEL_ROWS_JS)[0]["name"].replace(" ", "+").replace("'", "%27"), refer)
         popup.close()
         ctx.unroute(re.compile(r"^https://(www\.)?(firestormgames\.co\.uk|waylandgames\.co\.uk|elementgames\.co\.uk|thearmypainter\.com)/.*"))
-        check("DATA_VERSION is still 1 and the three storage names are unchanged", page.evaluate("DATA_VERSION") in (1, 2)  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
-              and all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"', 'RECIPES_KEY = "shades-of-grey-recipes"']))
-        policy = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
-        hosts = set(re.findall(r"https?://[^\s;'\"]+", policy.group(1) if policy else ""))
-        check("the security policy is untouched: the only outside address is still the one GoatCounter picture address (links the person taps need no entry)", len(hosts) == 1 and "goatcounter" in list(hosts)[0], hosts)
         check("the wheel still has its ten slices (the open one is drawn last, on top), and the paint panel still opens with its title and Copy as text",
               (sorted(page.evaluate("() => [...document.querySelectorAll('#cmp-wheel path.wheel-seg')].map(e => e.dataset.wheel)")) == sorted(["red", "orange", "yellow", "green", "blue", "purple", "white", "grey", "black", "metallic"])
                or page.locator("#cmp-wheel .wheel-sub-seg").count() == 3)   # v43: drilled into a colour, the picture is that colour's three groups

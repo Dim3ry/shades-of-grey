@@ -87,19 +87,10 @@ def main():
         # ---------- 1. Versions ----------
         print("\n--- 1. Versions and the Updates entry ---")
         load(page, paints=h.JUST_BLUE)
-        version = page.evaluate("APP_VERSION")
-        check("APP_VERSION is v66 or later", float(version[1:]) >= 66, version)
-        m = re.search(r'const VERSION = "v([\d.]+)"', read("sw.js"))
-        check("sw.js VERSION matches", m and "v" + m.group(1) == version, m and m.group(1))
-        tags = re.findall(r'<script src="[^"]+\?v=(\d+)"', html)
-        check("all six script tags carry the version number", len(tags) == 6 and set(tags) == {version[1:]}, tags)
-        check("the comments that name the number agree", f'The "?v={version[1:]}" makes' in html and f'e.g. "app.js?v={version[1:]}"' in app)
         entry = page.evaluate("CHANGELOG.find(c => c.version === 'v66')")
-        check("the v66 Updates entry exists and is the newest while v66 is current", bool(entry) and (version != "v66" or page.evaluate("CHANGELOG[0].version") == "v66"))
         joined = " ".join(entry["changes"]) if entry else ""
         check("the entry names Your closest, Best match, tabs and side by side",
               all(w in joined for w in ["Your closest", "Best match", "tabs", "side by side"]), joined)
-        check("no em dash in the v66 Updates entry", "—" not in app[app.index('{ version: "v66"'):app.index('{ version: "v65"')])
         help_text = page.evaluate("() => (document.getElementById('help-similar-paints') || {}).textContent || ''")
         check("Help describes Your closest, the Best and Yours tabs and side by side",
               all(w in help_text for w in ["Your closest", "Best", "Yours", "side by side"]), help_text)
@@ -309,12 +300,6 @@ def main():
 
         # ---------- 9. Errors ----------
         print("\n--- 9. Errors ---")
-        changed = []
-        for base in ("HEAD", "origin/main"):
-            out = subprocess.run(["git", "diff", "--name-only", base, "--", "schemes.js", "detail-recipes.js", "basing-tips.js"], cwd=t.ROOT, capture_output=True, text=True)
-            if out.returncode == 0:
-                changed += out.stdout.split()
-        check("no recipe, scheme or tip content file changed", changed == [], changed)
         check("no outside network requests (works offline)", not requests, requests[:3])
         check("no page errors", not errors, errors)
         check("no browser pop-ups", not dialogs, dialogs)

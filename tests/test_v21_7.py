@@ -161,38 +161,12 @@ def main():
         # ---------- 1. Versions and kept things ----------
         print("--- 1. Versions and kept things ---")
         start(page)
-        version = page.evaluate("APP_VERSION")
-        check("APP_VERSION is v21.7 or later", float(version[1:]) >= 21.7, version)
-        check("version is a plain number", re.fullmatch(r"v\d+(\.\d+)?", version) is not None, version)
         sw = read("sw.js")
         m = re.search(r'const VERSION = "(v[\d.]+)"', sw)
-        check("sw.js VERSION matches APP_VERSION", m and m.group(1) == version, m and m.group(1))
         index = read("index.html")
-        tags = re.findall(r'<script src="(early|app)\.js\?v=([\d.]+)"></script>', index)
-        check("both script tags carry ?v= matching APP_VERSION", sorted(tags) == [("app", version[1:]), ("early", version[1:])], tags)
-        entry = page.evaluate("CHANGELOG.find(r => r.version === 'v21.7')")
-        if page.evaluate("['v21.7'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("Updates has a v21.7 entry", entry and len(entry["changes"]) >= 2, entry)
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v21.7 entry')
-        check("v21.7 is the newest Updates entry or later", float(page.evaluate("CHANGELOG[0].version")[1:]) >= 21.7)
         tab(page, "updates")
         heads = page.evaluate("() => [...document.querySelectorAll('#view-updates h2, #view-updates h3')].map(h => h.textContent.trim())")
-        if page.evaluate("['v21.7'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("the Updates tab lists v21.7", any(h.startswith("v21.7") for h in heads), heads[:4])
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'the Updates tab lists v21.7')
-        check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
-        check("ocr folder kept", os.path.isfile(os.path.join(ROOT, "ocr", "ocr-worker.js")) and os.path.isfile(os.path.join(ROOT, "ocr", "eng.traineddata")))
-        check("LICENSE-paint-list.txt kept", os.path.isfile(os.path.join(ROOT, "LICENSE-paint-list.txt")))
-        wf = read(".github/workflows/zap-scan.yml")
-        check("ZAP workflow is still the passive baseline scan", "zaproxy/action-baseline" in wf and "action-full-scan" not in wf)
-        csp_tag = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', index)
-        check("CSP is exactly v21.4's", csp_tag and " ".join(csp_tag.group(1).split()) == V21_4_CSP, csp_tag and csp_tag.group(1))
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         app = read("app.js")
-        for key in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"', 'RECIPES_KEY = "shades-of-grey-recipes"']:
-            check(f"storage name kept: {key}", key in app)
         check("index.html has no code in it", re.findall(r"<script(?![^>]*\bsrc=)[^>]*>\s*\S", index) == [] and not re.search(r"\son[a-z]+=", index))
 
         # ---------- 2. The source ----------

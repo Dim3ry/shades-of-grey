@@ -4,6 +4,7 @@ How to run it (from the repo folder):
     python3 tests/run_all.py              # everything, 4 test files at a time (this is the full run before a merge)
     python3 tests/run_all.py --jobs 1     # one at a time, the old way
     python3 tests/run_all.py --quick      # only the newest three versions plus a short always-run list
+    python3 tests/run_all.py --update-budget   # after a clean full run: rewrite tests/time_budget.json on purpose
 
 What it does:
 1. Finds a free port on this computer, so it never clashes with another server.
@@ -15,26 +16,32 @@ What it does:
    (0 if all passed). The times are also kept in tests/screenshots/timings.json (git-ignored).
 5. (v21.2) Watches every test's browser for Content Security Policy errors (see csp_watch/), and
    counts any as a failure, even if that test's own checks all passed.
+6. The growth guard (full runs only): compares each test file's time, and the whole run, with tests/time_budget.json.
+   A warning prints a "TIME WARNINGS" block and still exits 0; a failure exits 1 and names the file. See check_budget().
+7. A cheap source lint: a test file that is not in the budget's "version_words_ok" list may not mention APP_VERSION,
+   sw.js, ?v=, CHANGELOG, DATA_VERSION or git diff. Those checks live only in tests/test_version_plumbing.py (which uses
+   tests/version_helpers.py).
 """
-import argparse, json, os, re, socket, subprocess, sys, time, glob
+import argparse, json, math, os, re, socket, subprocess, sys, time, glob
 from concurrent.futures import ThreadPoolExecutor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
 SCREENSHOTS = os.path.join(HERE, "screenshots")  # the tests save pictures here; it is git-ignored
 TIMINGS = os.path.join(SCREENSHOTS, "timings.json")
+BUDGET = os.path.join(HERE, "time_budget.json")  # kept in the repo; only --update-budget rewrites it
+PLUMBING_FILES = ("test_version_plumbing.py", "version_helpers.py")  # the only files allowed to check the version
+VERSION_WORDS = re.compile(r"APP_VERSION|sw\.js|\?v=|CHANGELOG|DATA_VERSION|git diff")
 
 # Test files that cannot share the machine with others. They run one at a time after the parallel ones.
 # (None found: tests only use their own browser, their own port-less files and their own screenshots folder.)
 RUN_ALONE = []
 
 # --quick always runs these, besides the newest three versions:
-#  - the tests whose version lists must be extended on every version bump (test_v39 to v42, v51 to v53, v49), so a
-#    forgotten bump is caught
-#  - test_v54, which reads the newest Updates entry itself
+#  - test_version_plumbing, the one test that checks the version number, the script tags, sw.js and the Updates entry,
+#    so a forgotten part of a version bump is caught
 #  - test_html_safety, a fast scan of every source file for unsafe HTML
-ALWAYS = ["test_html_safety", "test_v39", "test_v40", "test_v41", "test_v42", "test_v49", "test_v51", "test_v52",
-          "test_v53", "test_v54"]
+ALWAYS = ["test_html_safety", "test_version_plumbing"]
 
 SERVER = ("import sys; from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler as H; "
           "ThreadingHTTPServer(('127.0.0.1', int(sys.argv[1])), H).serve_forever()")
@@ -57,6 +64,69 @@ def pick_quick(paths):
     names = [os.path.basename(p)[:-3] for p in paths]
     keys = sorted({version_key(n) for n in names if version_key(n)}, reverse=True)[:3]
     return [p for p, n in zip(paths, names) if version_key(n) in keys or n in ALWAYS]
+
+
+def load_budget():
+    try:
+        with open(BUDGET, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {"files": {}, "total_warn_minutes": 15, "total_fail_minutes": 20, "version_words_ok": []}
+
+
+def lint_sources(budget):
+    """Fail a test file that is new (not in version_words_ok) and checks the version, sw.js, script tags, the Updates
+    list, DATA_VERSION or a git diff itself. Returns a list of failure lines."""
+    ok = set(budget.get("version_words_ok", [])) | set(PLUMBING_FILES)
+    bad = []
+    for path in sorted(glob.glob(os.path.join(HERE, "test_*.py"))):
+        name = os.path.basename(path)
+        if name in ok:
+            continue
+        with open(path, encoding="utf-8") as f:
+            hits = sorted(set(VERSION_WORDS.findall(f.read())))
+        if hits:
+            bad.append(f"{name} (SOURCE LINT: mentions {', '.join(hits)}; version checks belong in test_version_plumbing.py "
+                       f"and tests/version_helpers.py only)")
+    return bad
+
+
+def check_budget(budget, times, checks, total_seconds, jobs):
+    """The growth guard. Returns (warnings, failures), two lists of plain sentences."""
+    warns, fails = [], []
+    known = budget.get("files", {})
+    for name in sorted(times):
+        took = times[name]
+        if name in known:
+            was = known[name]
+            limit = budget.get("fail_overrides", {}).get(name, 180)   # a temporary exception, named in the budget file, until the file is trimmed
+            if took > limit:
+                fails.append(f"{name} took {took:.0f} s, over the {limit} s limit (recorded {was:.0f} s)")
+            elif took > was * 1.25 or took > 120:
+                why = f"over its recorded {was:.0f} s plus 25%" if took > was * 1.25 else "over 120 s"
+                warns.append(f"{name} took {took:.0f} s, {why}")
+        else:
+            if took > 45:
+                fails.append(f"{name} is a new test file and took {took:.0f} s, over the 45 s limit")
+            elif took > 30:
+                warns.append(f"{name} is a new test file and took {took:.0f} s, over 30 s")
+            if checks.get(name, 0) > 60:
+                warns.append(f"{name} is a new test file with {checks[name]} checks, over 60")
+    if jobs == 4:  # the total limits were set with 4 files at a time, so they mean nothing for other settings
+        minutes = total_seconds / 60
+        if minutes > budget.get("total_fail_minutes", 20):
+            fails.append(f"the whole run took {minutes:.1f} minutes, over the {budget.get('total_fail_minutes', 20)} minute limit")
+        elif minutes > budget.get("total_warn_minutes", 15):
+            warns.append(f"the whole run took {minutes:.1f} minutes, over {budget.get('total_warn_minutes', 15)}")
+    return warns, fails
+
+
+def update_budget(budget, times):
+    budget["files"] = {n: math.ceil(t) for n, t in sorted(times.items())}
+    with open(BUDGET, "w", encoding="utf-8") as f:
+        json.dump(budget, f, indent=1)
+        f.write("\n")
+    print(f"Wrote {BUDGET} ({len(times)} files).")
 
 
 def run_one(path, port):
@@ -87,9 +157,10 @@ def run_one(path, port):
             out += "  " + line[:300] + "\n"
         problems.append(f"{name} (Content Security Policy errors)")
     took = time.time() - started
+    checks = len(re.findall(r"^(?:PASS|FAIL) ", out, re.M))
     # one block per test, printed in one piece so parallel tests never interleave
-    print(f"\n===== {name} (port {port}, {took:.0f}s) =====\n{out}", flush=True)
-    return name, took, problems
+    print(f"\n===== {name} (port {port}, {took:.0f}s, {checks} checks) =====\n{out}", flush=True)
+    return name, took, problems, checks
 
 
 def main():
@@ -97,7 +168,13 @@ def main():
     ap.add_argument("--jobs", type=int, default=4, help="how many test files to run at once (default 4)")
     ap.add_argument("--quick", action="store_true",
                     help="only the newest three versions plus the always-run list (not for before a merge)")
+    ap.add_argument("--update-budget", action="store_true",
+                    help="after a clean full run, rewrite tests/time_budget.json with this run's times (on purpose, never automatic)")
     args = ap.parse_args()
+    if args.update_budget and args.quick:
+        sys.exit("--update-budget needs a full run, not --quick.")
+    budget = load_budget()
+    lint = lint_sources(budget)
 
     port = free_port()
     os.makedirs(SCREENSHOTS, exist_ok=True)
@@ -110,7 +187,7 @@ def main():
         print("QUICK MODE: " + str(len(paths)) + " test files. Run without --quick before any merge.", flush=True)
     together = [p for p in paths if os.path.basename(p)[:-3] not in RUN_ALONE]
     alone = [p for p in paths if os.path.basename(p)[:-3] in RUN_ALONE]
-    failed, times = [], {}
+    failed, times, checks = list(lint), {}, {}
     started = time.time()
     try:
         with ThreadPoolExecutor(max_workers=max(1, args.jobs)) as pool:
@@ -118,17 +195,31 @@ def main():
         results += [run_one(p, port) for p in alone]
     finally:
         server.terminate()
-    for name, took, problems in results:
+    for name, took, problems, count in results:
         times[name] = round(took, 1)
+        checks[name] = count
         failed += problems
     total = time.time() - started
     with open(TIMINGS, "w", encoding="utf-8") as f:
-        json.dump({"jobs": args.jobs, "quick": args.quick, "total_seconds": round(total, 1), "tests": times}, f, indent=1)
+        json.dump({"jobs": args.jobs, "quick": args.quick, "total_seconds": round(total, 1), "tests": times, "checks": checks}, f, indent=1)
 
     print("\n===== SLOWEST 15 TEST FILES =====")
     for name, took in sorted(times.items(), key=lambda kv: -kv[1])[:15]:
         print(f"  {took:7.1f}s  {name}")
-    print(f"Total: {total / 60:.1f} minutes for {len(times)} test files ({args.jobs} at a time).")
+    print(f"Total: {total / 60:.1f} minutes for {len(times)} test files, {sum(checks.values())} checks ({args.jobs} at a time).")
+
+    warns, fails = ([], []) if args.quick else check_budget(budget, times, checks, total, args.jobs)
+    failed += [f"TIME: {x}" for x in fails]
+    if warns:
+        print("\n===== TIME WARNINGS =====")
+        for w in warns:
+            print("  - " + w)
+        print("These do not fail the run. Look for a slow loop that can be sampled (see CLAUDE.md).")
+    if args.update_budget:
+        if failed:
+            print("\nNot updating the budget: the run had failures.")
+        else:
+            update_budget(budget, times)
 
     print("\n===== SUMMARY =====")
     if failed:

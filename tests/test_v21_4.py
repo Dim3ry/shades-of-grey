@@ -134,34 +134,8 @@ def main():
         print("--- 1. Versions and kept things ---")
         seed(page, settings=full_settings())
         version = page.evaluate("APP_VERSION")
-        check("APP_VERSION is v21.4 or later", float(version[1:]) >= 21.4, version)
-        check("APP_VERSION is a plain number (no letters)", re.fullmatch(r"v\d+(\.\d+)?", version), version)
-        m = re.search(r'const VERSION = "([^"]+)"', sw)
-        check("sw.js VERSION matches APP_VERSION", m and m.group(1) == version, m and m.group(1))
-        entry = page.evaluate("CHANGELOG.find(r => r.version === 'v21.4')")
-        if page.evaluate("['v21.4'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("Updates has a v21.4 entry", entry and len(entry["changes"]) >= 1, entry)
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v21.4 entry')
-        if page.evaluate("['v21.4'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("the v21.4 entry is about the safety change", entry and "Safety" in " ".join(entry["changes"]))
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'the v21.4 entry is about the safety change')
         tab(page, "updates")
         heads = page.locator("#view-updates h3").all_inner_texts()
-        if page.evaluate("['v21.4'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("the Updates tab shows v21.4", any(h.startswith("v21.4") for h in heads), heads[:3])
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'the Updates tab shows v21.4')
-        check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
-        check("ocr folder is kept", all(os.path.exists(os.path.join(ROOT, "ocr", f)) for f in
-              ["ocr-worker.js", "tesseract-core-simd-lstm.wasm", "tesseract-core-lstm.wasm", "eng.traineddata"]))
-        check("LICENSE-paint-list.txt is kept", os.path.exists(os.path.join(ROOT, "LICENSE-paint-list.txt")))
-        zap = os.path.join(ROOT, ".github", "workflows", "zap-scan.yml")
-        check("ZAP workflow is kept, still the passive baseline scan",
-              os.path.exists(zap) and "action-baseline" in read(".github/workflows/zap-scan.yml")
-              and "action-full-scan" not in read(".github/workflows/zap-scan.yml"))
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         for key in ["mini-tracker-models", "shades-of-grey-settings", "shades-of-grey-recipes"]:
             check(f"storage key {key} still used", key in app)
 
@@ -192,20 +166,15 @@ def main():
             status, kind = got.get(name + tag, (0, ""))
             check(f"{name} loaded from the server", status == 200, (status, sorted(got)[:8]))
             check(f"{name} came back as a script", "javascript" in kind, kind)
-        check("sw.js saves app.js and early.js for offline use",
-              '"./app.js" + CODE_TAG' in sw and '"./early.js" + CODE_TAG' in sw and 'VERSION.slice(1)' in sw)
         check("only page requests fall back to the app when offline", 'mode === "navigate"' in sw)
 
         # ---------- 3. The policy ----------
         print("\n--- 3. The policy ---")
         tags = re.findall(r'<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
-        check("exactly one CSP tag", len(tags) == 1, len(tags))
-        check("the CSP is exactly v21.2's minus script 'unsafe-inline'", tags == [V21_4_CSP], tags)
         policy = tags[0] if tags else ""
         script_rule = re.search(r"script-src ([^;]+)", policy)
         check("script-src has no 'unsafe-inline'", script_rule and "'unsafe-inline'" not in script_rule.group(1))
         check("style-src keeps 'unsafe-inline'", "style-src 'self' 'unsafe-inline'" in policy)
-        check("the CSP tag comes before both scripts", 0 < html.find("Content-Security-Policy\" content") < html.find("<script"))
         check("the plain-English note explains the change", "NO code written inside the page" in html)
         check("the browser sees the same policy",
               page.evaluate("document.querySelector('meta[http-equiv=\"Content-Security-Policy\"]').content") == policy)

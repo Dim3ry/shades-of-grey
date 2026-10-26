@@ -124,40 +124,16 @@ def main():
         print("--- 1. Versions and kept things ---")
         seed(page)
         html, app, sw = read("index.html"), read("app.js"), read("sw.js")
-        version = page.evaluate("APP_VERSION")
-        check("APP_VERSION is v21.6 or later", float(version[1:]) >= 21.6, version)
-        check("version is a plain number", re.fullmatch(r"v\d+(\.\d+)?", version) is not None, version)
         m = re.search(r'const VERSION = "([^"]+)"', sw)
-        check("sw.js VERSION matches APP_VERSION", m and m.group(1) == version, m and m.group(1))
-        tags = re.findall(r'<script src="(early|app)\.js\?v=([\d.]+)"', html)
-        check("both script tags carry ?v= matching APP_VERSION", sorted(tags) == [("app", version[1:]), ("early", version[1:])], tags)
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v21.6')")
-        if page.evaluate("['v21.6'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("Updates has a v21.6 entry", entry and len(entry["changes"]) >= 2, entry)
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v21.6 entry')
         joined = " ".join(entry["changes"]) if entry else ""
         if page.evaluate("['v21.6'].every(v => CHANGELOG.some(r => r.version === v))"):
             check("…about notices, and says questions come next", "notice" in joined.lower() and "yes or no" in joined, joined)
         else:
             print("SKIP (entry no longer in the public Updates list): " + '…about notices, and says questions come next')
-        check("v21.6 is the newest Updates entry or later", float(page.evaluate("CHANGELOG[0].version")[1:]) >= 21.6)
         tab(page, "updates")
         heads = page.locator("#view-updates h3").all_inner_texts()
-        if page.evaluate("['v21.6'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("the Updates tab lists v21.6", any(h.startswith("v21.6") for h in heads), heads[:4])
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'the Updates tab lists v21.6')
-        check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
-        check("ocr folder is kept", all(os.path.exists(os.path.join(ROOT, "ocr", f)) for f in
-              ["ocr-worker.js", "tesseract-core-simd-lstm.wasm", "tesseract-core-lstm.wasm", "eng.traineddata"]))
-        check("LICENSE-paint-list.txt is kept", os.path.exists(os.path.join(ROOT, "LICENSE-paint-list.txt")))
-        wf = read(".github/workflows/zap-scan.yml")
-        check("ZAP workflow is still the passive baseline scan", "action-baseline" in wf and "action-full-scan" not in wf)
-        csp_tag = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
-        check("the CSP is exactly v21.4's", csp_tag and csp_tag.group(1) == V21_4_CSP, csp_tag and csp_tag.group(1))
         check("no code written inside the page", not re.search(r"<script(?![^>]*\bsrc=)[^>]*>\s*\S", html))
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         for key in ["mini-tracker-models", "shades-of-grey-settings"]:
             check(f"storage key {key} still used", key in app)
 

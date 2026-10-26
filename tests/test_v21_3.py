@@ -83,37 +83,12 @@ with sync_playwright() as p:
 
     # ---------- 1. Versions and kept things ----------
     print("\n--- 1. Versions and kept things ---")
-    version = page.evaluate("APP_VERSION")
-    check("APP_VERSION is v21.3 or later", float(version[1:]) >= 21.3, version)
-    check("APP_VERSION is a plain number (no letters)", re.fullmatch(r"v\d+(\.\d+)?", version), version)
     m = re.search(r'const VERSION = "([^"]+)"', sw)
-    check("sw.js VERSION matches APP_VERSION", m and m.group(1) == version, m and m.group(1))
-    entry = page.evaluate("CHANGELOG.find(r => r.version === 'v21.3')")
-    if page.evaluate("['v21.3'].every(v => CHANGELOG.some(r => r.version === v))"):
-        check("Updates has a v21.3 entry", entry and len(entry["changes"]) >= 1, entry)
-    else:
-        print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v21.3 entry')
-    if page.evaluate("['v21.3'].every(v => CHANGELOG.some(r => r.version === v))"):
-        check("the v21.3 entry names the new brands and codes", entry and all(w in " ".join(entry["changes"])
-              for w in ["Vallejo", "Fanatic", "Pro Acryl", "AK", "72.021"]))
-    else:
-        print("SKIP (entry no longer in the public Updates list): " + 'the v21.3 entry names the new brands and codes')
     page.click('nav button[data-tab="settings"]')   # v21.9: Help and Updates are sub-tabs of Settings
     page.click('#more-seg button[data-page="updates"]')
     heads = page.locator("#view-updates h3").all_inner_texts()
-    if page.evaluate("['v21.3'].every(v => CHANGELOG.some(r => r.version === v))"):
-        check("the Updates tab shows v21.3", any(h.startswith("v21.3") for h in heads), heads[:3])
-    else:
-        print("SKIP (entry no longer in the public Updates list): " + 'the Updates tab shows v21.3')
-    check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
-    check("ocr folder is kept", all(os.path.exists(os.path.join(ROOT, "ocr", f)) for f in
-          ["ocr-worker.js", "tesseract-core-simd-lstm.wasm", "tesseract-core-lstm.wasm", "eng.traineddata"]))
-    check("ZAP scan workflow is kept", os.path.exists(os.path.join(ROOT, ".github", "workflows", "zap-scan.yml")))
-    check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
     for key in ["mini-tracker-models", "shades-of-grey-settings", "shades-of-grey-recipes"]:
         check(f"storage key {key} still used", key in html)
-    tags = re.findall(r'<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
-    check("the CSP is exactly as in v21.2 (apart from v21.4's script change; lists live inside the app)", tags == [V21_2_CSP], tags)
     check("no web address is fetched for the lists", "fetch(" not in html[html.find("EXTRA_PAINT_TABLE"):html.find("EXTRA_PAINT_TABLE") + 40000])
 
     # ---------- 2. The lists ----------

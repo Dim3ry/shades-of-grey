@@ -79,8 +79,6 @@ with sync_playwright() as pw:
         # ---- Old data: a v16 book with a scanned paint (owned: true) ----
         load(page, V16_OWNED_BOOK)
         if size == "phone":
-            check("version is v17 or later", float(page.evaluate("APP_VERSION")[1:]) >= 17)
-            check("sw.js is v17 or later", float(re.search(r'const VERSION = "v([\d.]+)"', open(os.path.join(os.path.dirname(__file__), "..", "sw.js")).read()).group(1)) >= 17)
             check("v16 book: scanned paint shows as Owned", page.evaluate("paintStatus(book.paints.find(p => p.id === 1))") == "owned")
             check("v16 book: owned field kept", page.evaluate("book.paints.find(p => p.id === 1).owned") is True)
             check("v16 book: no status set on old paints", page.evaluate("book.paints.find(p => p.id === 1).status") is None)

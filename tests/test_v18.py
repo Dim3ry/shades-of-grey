@@ -98,7 +98,6 @@ def help_text(page):
     return page.inner_text("#view-help")
 
 def main():
-    sw = open(os.path.join(HERE, "..", "sw.js"), encoding="utf-8").read()
     with sync_playwright() as p:
         browser = p.chromium.launch()
         page = browser.new_page(viewport={"width": 390, "height": 844})
@@ -107,27 +106,10 @@ def main():
         start(page)
 
         print("--- Version numbers ---")
-        check("APP_VERSION is v18 or later", float(page.evaluate("APP_VERSION")[1:]) >= 18, page.evaluate("APP_VERSION"))
-        m = re.search(r'const VERSION = "([^"]+)"', sw)
-        check("sw.js VERSION is v18 or later (so phones fetch the new copy)", m and float(m.group(1)[1:]) >= 18, m and m.group(1))
-        check("the version next to the title matches APP_VERSION",
-              page.inner_text("#version-tag").strip() == page.evaluate("APP_VERSION"), page.inner_text("#version-tag"))
 
         print("\n--- Updates tab ---")
         v18_at = page.evaluate("CHANGELOG.findIndex(e => e.version === 'v18')")
         first = page.evaluate(f"CHANGELOG[{max(v18_at, 0)}]")
-        if page.evaluate("['v18'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("Updates lists v18, dated 10 Oct 2026",
-                  first["version"] == "v18" and first["date"] == "10 Oct 2026", first["version"] + " " + first["date"])
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'Updates lists v18, dated 10 Oct 2026')
-        if page.evaluate("['v18'].every(v => CHANGELOG.some(r => r.version === v))"):
-            text = " ".join(first["changes"])
-            for word in ["Paste recipes", "✕", "✎", "Do you own these?", "Remove", "Merge into…", "1:1",
-                         "Saved", "20,000", "Ushabti Bone and Wraithbone", "Help"]:
-                check(f"v18 entry mentions {word!r}", word in text)
-        else:
-            print("SKIP (entry no longer in the public Updates list): entry wording checks for v18")
         if page.evaluate("['v17.1'].every(v => CHANGELOG.some(r => r.version === v))"):
             check("v17.1 is still listed, straight below v18", page.evaluate(f"CHANGELOG[{v18_at + 1}].version") == "v17.1")
         else:
@@ -135,13 +117,6 @@ def main():
         page.click('nav button[data-tab="settings"]')   # v21.9: Help and Updates are sub-tabs of Settings
         page.click('#more-seg button[data-page="updates"]')
         page.wait_for_timeout(150)
-        if page.evaluate("['v18'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("Updates tab shows the v18 entry",
-                  any(h.startswith("v18") and not h.startswith("v18.")
-                      for h in page.locator("#changelog .release h3").all_inner_texts()),
-                  page.locator("#changelog .release h3").all_inner_texts())
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'Updates tab shows the v18 entry')
 
         print("\n--- Help ---")
         body = help_text(page)

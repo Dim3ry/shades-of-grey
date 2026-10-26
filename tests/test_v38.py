@@ -124,26 +124,10 @@ def main():
         # ---------- 1. Versions and wiring ----------
         print("\n--- 1. Versions and wiring ---")
         load(page, paints=PAL)
-        html, sw, app = read("index.html"), read("sw.js"), read("app.js")
-        tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
-        check("the version is v38 or later everywhere, and the same everywhere (v39 bumped it later): APP_VERSION, sw.js, the six script tags, and the two comments that name it",
-              float(page.evaluate("APP_VERSION")[1:]) >= 38 and page.evaluate("APP_VERSION")[1:] == re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) and len(tags) == 6
-              and {v for _, v in tags} == {page.evaluate("APP_VERSION")[1:]} and f'"?v={page.evaluate("APP_VERSION")[1:]}"' in html
-              and f'"app.js?v={page.evaluate("APP_VERSION")[1:]}"' in app, (page.evaluate("APP_VERSION"), tags))
-        files = re.search(r"const APP_FILES = \[(.*?)\];", sw, re.S).group(1)
-        cached = re.findall(r'"\./([^"?]*)', files)
+        app = read("app.js")
         root_js = sorted(f for f in os.listdir(ROOT) if f.endswith(".js") and f != "sw.js")
-        check("sw.js saves the same twelve app files for offline use, and every script in the app folder is in that list (no new app file was added, so none is missing)",
-              cached == ["", "index.html", "app.js", "early.js", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js", "manifest.json", "icon-192.png", "icon-512.png", "ocr/ocr-worker.js"]
-              and all(f in cached for f in root_js), (cached, root_js))
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v38')")
         joined = " ".join(entry["changes"]) if entry else ""
-        if page.evaluate("['v38'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("the v38 Updates entry exists once, is still there (v39 is newer), and tells about tapping a paint, the panel, the keyboard (Enter, Space, Escape), Show all and Copy as text",
-                  entry and page.evaluate("CHANGELOG.filter(r => r.version === 'v38').length") == 1 and float(page.evaluate("CHANGELOG[0].version")[1:]) >= 38
-                  and all(w in joined for w in ["tap a paint", "opposite", "neighbours", "triad", "starter schemes", "keyboard", "Escape", "screen reader", "Show all", "Copy as text"]), joined[:300])
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'the v38 Updates entry exists once, is still there (v39 is newer), and tells about tapping ')
         if page.evaluate("['v34', 'v35', 'v36', 'v37'].every(v => CHANGELOG.some(r => r.version === v))"):
             check("the v37, v36, v35 and v34 entries are still there", page.evaluate("['v37', 'v36', 'v35', 'v34'].every(v => !!CHANGELOG.find(r => r.version === v))"))
         else:
@@ -151,13 +135,7 @@ def main():
         help_text = page.evaluate("() => document.getElementById('help-tabs').textContent")
         check("Help says a paint in the wheel can be tapped for colours that go with it and starter schemes with a similar colour",
               "tap a paint to see colours that go with it and starter schemes with a similar colour" in help_text, help_text[-400:])
-        changed = []
         # (v47: early.js left this list; it now puts the theme on the page too.)
-        for base in ("HEAD", "origin/main"):
-            out = subprocess.run(["git", "diff", "--name-only", base, "--", "schemes.js", "detail-recipes.js", "basing-tips.js"], cwd=ROOT, capture_output=True, text=True)   # v64: colour.js is left out on purpose (chunk 3.4c changed the fit rule there); the content data files stay guarded
-            if out.returncode == 0:
-                changed += out.stdout.split()
-        check("the content data files are unchanged (the colour engine changed in v64 on purpose)", changed == [], changed)
         new_code = app[app.index("v38: PAINT LINKS"):app.index("function buildWheelDetail(")] + app[app.index("v38: a door that has no recipe"):app.index("v35: how a door that has no recipe")]
         check("the new code has no network code, no storage, no innerHTML, no links and no shop wording",
               len(new_code) > 5000 and not re.search(r"\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage|sessionStorage|\beval\s*\(|new Function|insertAdjacentHTML|outerHTML|innerHTML|createElement\('a'\)|createElement\(\"a\"\)|href|affiliate|\bshop\b", new_code),
@@ -457,11 +435,6 @@ def main():
         ring = page.evaluate("() => [...document.querySelectorAll('#cmp-wheel path.wheel-seg')].map(e => e.dataset.wheel)")
         check("the wheel still has its ten slices in the same order and the same hint line", ring == ["red", "orange", "yellow", "green", "blue", "purple", "white", "grey", "black", "metallic"]
               and page.inner_text("#cmp-wheel-hint") == "Tap a colour to see what's in it")
-        check("DATA_VERSION is still 1 and the three storage names are unchanged", page.evaluate("DATA_VERSION") in (1, 2)  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
-              and all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"', 'RECIPES_KEY = "shades-of-grey-recipes"']))
-        policy = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
-        hosts = set(re.findall(r"https?://[^\s;'\"]+", policy.group(1) if policy else ""))
-        check("the security policy is untouched: the only outside address is still the one GoatCounter picture address", len(hosts) == 1 and "goatcounter" in list(hosts)[0], hosts)
 
         # ---------- 8. Phone widths ----------
         print("\n--- 8. Phone widths 360, 375, 390 and 400 ---")

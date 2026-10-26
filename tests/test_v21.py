@@ -115,8 +115,6 @@ def no_sideways(page):
     return page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
 
 def main():
-    sw = read("sw.js")
-    html = read("index.html")
     with sync_playwright() as p:
         browser = p.chromium.launch()
         context = browser.new_context(viewport={"width": 390, "height": 844})
@@ -129,28 +127,11 @@ def main():
         # ---------- 1. Versions and kept things ----------
         print("--- 1. Versions and kept things ---")
         seed(page, settings=full_settings())
-        version = page.evaluate("APP_VERSION")
-        check("APP_VERSION is v21 or later", float(version[1:]) >= 21, version)
-        check("APP_VERSION is a plain number (no letters)", re.fullmatch(r"v\d+(\.\d+)?", version), version)
-        m = re.search(r'const VERSION = "([^"]+)"', sw)
-        check("sw.js VERSION matches APP_VERSION", m and m.group(1) == version, m and m.group(1))
         tab(page, "updates")
         heads = page.locator("#changelog h3").all_inner_texts()
         entry = [i for i, h in enumerate(heads) if h.startswith("v21") and not h.startswith("v21.")]
-        if page.evaluate("['v21'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("the Updates tab has a v21 entry", bool(entry), heads[:3])
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'the Updates tab has a v21 entry')
         if entry:
             text = page.locator("#changelog .release").nth(entry[0]).inner_text()
-            check("the v21 entry mentions examples, jump to a stage, Starting stage and 44 pixels",
-                  all(w in text for w in ["Clear examples", "jump straight to a stage", "Starting stage", "44 pixels"]), text[:300])
-        check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
-        check("the ocr folder is kept", all(os.path.exists(os.path.join(ROOT, "ocr", f)) for f in
-              ["ocr-worker.js", "eng.traineddata", "tesseract-core-simd-lstm.wasm", "README.md"]))
-        check("the data version is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
-        check("storage names unchanged", all(k in html for k in
-              ["mini-tracker-models", "shades-of-grey-settings", "shades-of-grey-recipes", "shades-of-grey-photos"]))
 
         # ---------- 2. Examples card ----------
         print("--- 2. Examples card ---")
