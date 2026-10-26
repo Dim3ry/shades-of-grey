@@ -553,10 +553,10 @@ def main():
             check(f"the {tab} tab still opens", page.locator(f"#{view}").is_visible())
         open_comp(page)
         parts = page.evaluate("() => [...document.querySelectorAll('#compendium-body > .fold > h3 button span:first-child')].map(e => e.textContent)")
-        check("the five folding parts under the wheel are all still there", parts == ["Colour ideas", "Your schemes", "Starter schemes", "Detail recipes", "Basing tips"], parts)
+        check("the six folding parts under the wheel are all still there (v71: Ask the Mentor first)", parts == ["Ask the Mentor", "Colour ideas", "Your schemes", "Starter schemes", "Detail recipes", "Basing tips"], parts)
         zoom(page, "red")
-        check("the five folding parts still work while the wheel is drilled into a colour",
-              page.evaluate("() => [...document.querySelectorAll('#compendium-body > .fold')].length") == 5 and page.locator("#cmp-fold-starter-button").count() == 1)
+        check("the six folding parts still work while the wheel is drilled into a colour",
+              page.evaluate("() => [...document.querySelectorAll('#compendium-body > .fold')].length") == 6 and page.locator("#cmp-fold-starter-button").count() == 1)
         page.click("#cmp-wheel-back")
         wait(page)
         check("no network requests were made (offline app)", not [u for u in requests if not u.startswith(("http://127.0.0.1", "http://localhost", "data:", "blob:"))], [u for u in requests if not u.startswith(("http://127.0.0.1", "http://localhost"))][:3])
