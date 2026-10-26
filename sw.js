@@ -9,7 +9,7 @@
 //
 // WHEN YOU UPLOAD A NEW VERSION: change the number below (v1 -> v2 -> v3...).
 // That tells the phone to throw away the old saved copy and start a new one.
-const VERSION = "v69";
+const VERSION = "v70";
 const CACHE_NAME = "shades-of-grey-" + VERSION;
 // The pot-label reader's big files (the engine and its English data, about 11 MB) are kept in
 // their own store that ISN'T cleared on updates, so they're only fetched once.
@@ -45,6 +45,7 @@ const APP_FILES = [
   "./schemes.js" + CODE_TAG,  // v31: the starter colour schemes for Colour ideas
   "./detail-recipes.js" + CODE_TAG,  // v32: the detail recipes for Colour ideas
   "./basing-tips.js" + CODE_TAG,  // v33: the basing tips for Colour ideas
+  "./mentor-tips.js" + CODE_TAG,  // v70: the Mentor tips library
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png",
