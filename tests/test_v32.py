@@ -35,6 +35,7 @@ from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
+from settle import frames
 import test_v31 as t   # the helpers (loading the app, opening the editor, colours) and the Games Workshop word lists
 
 SHOTS, ROOT = t.SHOTS, t.ROOT
@@ -503,7 +504,7 @@ def main():
                 edit_recipe(page, 106)
                 open_panel(page)
                 page.locator("#detail-recipes").scroll_into_view_if_needed()
-                page.wait_for_timeout(150)
+                frames(page)
                 def geometry():
                     return page.evaluate("""() => { const c = document.getElementById('colour-ideas').getBoundingClientRect();
                         const inside = (el) => { const r = el.getBoundingClientRect(); return r.left >= c.left - 0.5 && r.right <= c.right + 0.5; };
@@ -528,7 +529,7 @@ def main():
                 pick_group(page, "metal")
                 pick_recipe(page, "rust")
                 page.locator("#detail-add-all").scroll_into_view_if_needed()
-                page.wait_for_timeout(150)
+                frames(page)
                 rowsg = page.evaluate("""() => { const c = document.getElementById('colour-ideas').getBoundingClientRect();
                     const b = [...document.querySelectorAll('#detail-list button.idea-pick')], a = document.getElementById('detail-add-all').getBoundingClientRect();
                     return { n: b.length, minH: Math.min(...b.map(x => x.getBoundingClientRect().height)), addH: a.height, addInside: a.left >= c.left - 0.5 && a.right <= c.right + 0.5,
