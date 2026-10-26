@@ -118,19 +118,10 @@ def main():
         # ---------- 1. Versions ----------
         print("\n--- 1. Versions and the Updates entry ---")
         load(page, paints=h.JUST_BLUE)
-        version = page.evaluate("APP_VERSION")
-        check("APP_VERSION is v65 or later", float(version[1:]) >= 65, version)
-        m = re.search(r'const VERSION = "v([\d.]+)"', read("sw.js"))
-        check("sw.js VERSION matches", m and "v" + m.group(1) == version, m and m.group(1))
-        tags = re.findall(r'<script src="[^"]+\?v=(\d+)"', html)
-        check("all six script tags carry the version number", len(tags) == 6 and set(tags) == {version[1:]}, tags)
-        check("the comments that name the number agree", f'The "?v={version[1:]}" makes' in html and f'e.g. "app.js?v={version[1:]}"' in app)
         entry = page.evaluate("CHANGELOG.find(c => c.version === 'v65')")
-        check("the v65 Updates entry exists and is the newest while v65 is current", bool(entry) and (version != "v65" or page.evaluate("CHANGELOG[0].version") == "v65"))
         joined = " ".join(entry["changes"]) if entry else ""
         check("the entry names Similar paints, Best match, Lighter, Darker and the shopping list",
               all(w in joined for w in ["Similar paints", "Best match", "Lighter", "Darker", "shopping list"]), joined)
-        check("no em dash in the v65 Updates entry", "—" not in app[app.index('{ version: "v65"'):app.index('{ version: "v64"')])
         help_text = page.evaluate("() => (document.getElementById('help-similar-paints') || {}).textContent || ''")
         check("Help describes Similar paints, Best match, Lighter, Darker, Undo and the skipped paints",
               all(w in help_text for w in ["Similar paints", "Best match", "Lighter", "Darker", "Undo", "not colours"]), help_text)

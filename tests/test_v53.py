@@ -142,15 +142,7 @@ def main():
         # ---------- 1. Versions ----------
         print("\n--- 1. Versions and wording ---")
         w.load(page, paints=[])
-        version = page.evaluate("APP_VERSION")
-        check("APP_VERSION is v53 or later", float(version[1:]) >= 53, version)
-        m = re.search(r'const VERSION = "v([\d.]+)"', read("sw.js"))
-        check("sw.js VERSION matches", m and "v" + m.group(1) == version)
-        tags = re.findall(r'<script src="[^"]+\?v=(\d+)"', html)
-        check("all six script tags carry the version number", len(tags) == 6 and set(tags) == {version[1:]}, tags)
         entry = page.evaluate("CHANGELOG.find(c => c.version === 'v53')")
-        check("the v53 Updates entry exists (v54 to v69 may sit above it)", bool(entry) and page.evaluate("CHANGELOG[0].version") in ("v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62", "v63", "v64", "v65", "v66", "v67", "v68", "v69"))
-        check("the v53 entry has no em dashes", entry and not any("—" in x for x in entry["changes"]))
         check("the v53 entry mentions 44 px, More info, Help, Settings and the banner",
               entry and all(any(word in x for x in entry["changes"]) for word in ("44 px", "More info", "Help", "Settings", "banner")))
         check("the new Help line about the folded cards is there and has no em dash",

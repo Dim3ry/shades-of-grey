@@ -123,17 +123,6 @@ def main():
         # ---------- 1. Versions ----------
         print("\n--- 1. Versions and the Updates entry ---")
         w.load(page, paints=[])
-        version = page.evaluate("APP_VERSION")
-        check("APP_VERSION is v55 or later", float(version[1:]) >= 55, version)
-        sw = read("sw.js")
-        m = re.search(r'const VERSION = "v([\d.]+)"', sw)
-        check("sw.js VERSION matches", m and "v" + m.group(1) == version, m and m.group(1))
-        tags = re.findall(r'<script src="[^"]+\?v=(\d+)"', html)
-        check("all six script tags carry the version number", len(tags) == 6 and set(tags) == {version[1:]}, tags)
-        check("the comments that name the number agree", f'The "?v={version[1:]}" makes' in html and f'e.g. "app.js?v={version[1:]}"' in app)
-        entry = page.evaluate("CHANGELOG.find(c => c.version === 'v55')")
-        check("the v55 Updates entry exists and is the newest while v55 is current", bool(entry) and (version != "v55" or page.evaluate("CHANGELOG[0].version") == "v55"))
-        check("the v55 entry is dated 20 Oct 2026 and has no em dash", entry and entry["date"] == "20 Oct 2026" and not any("—" in x for x in entry["changes"]))
 
         # ---------- 2. F11: plain text, not pills ----------
         print("\n--- 2. F11: plain text, not pills ---")
@@ -282,7 +271,6 @@ def main():
         check("no aria-label or title in app.js is built from paint.name or p.name any more", not names_in_labels, names_in_labels[:3])
         check("the Colour ideas rows, palette items, swatch tiles and shop fold-outs use labelWithName or hiddenName",
               all(app.count(s) >= 1 for s in ('labelWithName(button, "Add as a new step", name, statusEl, why)', 'labelWithName(remove, "Remove", name)', "hiddenName([paint.name", 'labelWithName(summary, "Shop links for", who)')))
-        check("no em dash in the v55 Updates entry", "—" not in app[app.index('{ version: "v55"'):app.index('{ version: "v54"')])
 
         # ---------- 6. No errors ----------
         print("\n--- 6. No errors ---")

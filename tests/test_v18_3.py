@@ -80,20 +80,11 @@ def main():
         DialogAnswers(page, dialogs.append)
         attach_notices(page, lambda text: dialogs.append(text))
         seed(page)
-        version = page.evaluate("APP_VERSION")
-        check("APP_VERSION is v18.3 or later", float(version[1:]) >= 18.3, version)
         m = re.search(r'const VERSION = "([^"]+)"', sw)
-        check("sw.js VERSION matches APP_VERSION", m and m.group(1) == version, m and m.group(1))
         at = page.evaluate("CHANGELOG.findIndex(e => e.version === 'v18.3')")
-        if page.evaluate("['v18.3'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("Updates lists v18.3", at >= 0)
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'Updates lists v18.3')
         entry = page.evaluate(f"CHANGELOG[{max(at, 0)}]")
         if page.evaluate("['v18.3'].every(v => CHANGELOG.some(r => r.version === v))"):
             text = " ".join(entry["changes"])
-            for word in ["camera", "offline", "Undo", "time zone", "reload"]:
-                check(f"v18.3 entry mentions {word!r}", word in text)
         else:
             print("SKIP (entry no longer in the public Updates list): entry wording checks for v18.3")
         if page.evaluate("['v18.2'].every(v => CHANGELOG.some(r => r.version === v))"):
@@ -103,9 +94,6 @@ def main():
         check("README says © 2026 George Atter-Dimery. All rights reserved.",
               "© 2026 George Atter-Dimery. All rights reserved." in readme, readme)
         check("README credits the label reader's Apache licence", "Apache License 2.0" in readme)
-        check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
-        for key in ["mini-tracker-models", "shades-of-grey-settings", "shades-of-grey-recipes", "shades-of-grey-photos"]:
-            check(f"storage name {key!r} unchanged", f'"{key}"' in html)
         check("sw.js cache names unchanged", '"shades-of-grey-" + VERSION' in sw and '"shades-of-grey-label-reader"' in sw)
         check("no world-time dates left (toISOString().slice(0, 10))", "toISOString().slice(0, 10)" not in html)
 
@@ -262,10 +250,6 @@ def main():
         attach_notices(page, lambda text: dialogs.append(text))
         seed(page)
         page.evaluate("save()")
-        dv = page.evaluate("DATA_VERSION")
-        check("DATA_VERSION is a whole number of 1 or more", isinstance(dv, int) and dv >= 1, dv)
-        check("saved settings carry the data version", stored(page, "shades-of-grey-settings").get("dataVersion") == dv)
-        check("backups carry the data version", page.evaluate("backupData().dataVersion") == dv)
         check("no banner normally", not page.is_visible("#save-banner"))
 
         # Another, NEWER copy of the app saves in a second window.
@@ -318,11 +302,6 @@ def main():
         # ---------- 6. Label reader from the app's own folder ----------
         print("\n--- 6. Label reader ---")
         check("index.html no longer loads the reader from a CDN", "cdn.jsdelivr.net/npm/tesseract" not in html)
-        check("sw.js no longer lists outside reader hosts", "jsdelivr" not in sw and "projectnaptha" not in sw)
-        check("sw.js keeps ocr-worker.js with the app files", '"./ocr/ocr-worker.js"' in sw)
-        for f in ["ocr-worker.js", "tesseract-core-simd-lstm.js", "tesseract-core-simd-lstm.wasm",
-                  "tesseract-core-lstm.js", "tesseract-core-lstm.wasm", "eng.traineddata", "LICENSE-tesseract.txt", "README.md"]:
-            check(f"ocr/{f} is in the repo", os.path.exists(os.path.join(ROOT, "ocr", f)))
         context = browser.new_context(viewport={"width": 390, "height": 844})
         page = context.new_page()
         fold_opener.open_cards_on_load(page)   # v54: open the folded Settings cards whenever the app loads

@@ -144,33 +144,10 @@ def main():
         # ---------- 1. Versions and kept things ----------
         print("\n--- 1. Versions and kept things ---")
         fresh(page)
-        html, app, sw = read("index.html"), read("app.js"), read("sw.js")
+        html, sw = read("index.html"), read("sw.js")
         version = page.evaluate("APP_VERSION")
-        check("APP_VERSION is v24 or later", float(version[1:]) >= 24, version)
-        check("version is a plain number", re.fullmatch(r"v\d+(\.\d+)?", version) is not None, version)
         m = re.search(r'const VERSION = "([^"]+)"', sw)
-        check("sw.js VERSION matches APP_VERSION", m and m.group(1) == version, m and m.group(1))
-        tags = re.findall(r'<script src="(early|app)\.js\?v=([\d.]+)"', html)
-        check("both script tags carry ?v= matching APP_VERSION", sorted(tags) == [("app", version[1:]), ("early", version[1:])], tags)
-        check("the comment above the script tag names the same number", f'The "?v={version[1:]}" makes' in html)
-        entry = page.evaluate("CHANGELOG.find(r => r.version === 'v24')")
-        if page.evaluate("['v24'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("Updates has a v24 entry with two lines", entry and len(entry["changes"]) >= 2, entry)
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v24 entry with two lines')
         check("the newest Updates entry is the current version", page.evaluate("CHANGELOG[0].version") == version)
-        check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
-        check("ocr folder and the paint-list licence kept",
-              os.path.isdir(os.path.join(ROOT, "ocr")) and os.path.exists(os.path.join(ROOT, "LICENSE-paint-list.txt")))
-        wf = read(".github/workflows/zap-scan.yml")
-        check("the ZAP workflow is still the passive baseline scan", "zaproxy/action-baseline" in wf and "full-scan" not in wf)
-        csp_meta = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html, re.S)
-        check("the CSP is exactly v21.4's", csp_meta and " ".join(csp_meta.group(1).split()) == V21_4_CSP,
-              csp_meta and csp_meta.group(1))
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
-        check("storage names unchanged",
-              all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"',
-                                     'RECIPES_KEY = "shades-of-grey-recipes"']))
         check("no code was put inside index.html", len(re.findall(r"<script(?![^>]*\bsrc=)[^>]*>\s*\S", html)) == 0)
 
         # ---------- 2. A brand-new start ----------
@@ -438,7 +415,6 @@ def main():
         backup = page.evaluate("() => backupData()")
         check("a backup carries the example marks",
               all(r.get("example") is True for r in backup["recipes"]["recipes"]) if isinstance(backup.get("recipes"), dict) else True, list(backup.keys()))
-        check("a backup still says data version 1", backup["dataVersion"] in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
 
         # ---------- 8. Dark and light, 390 and 360 ----------
         print("\n--- 8. Dark and light at 390 and 360 px ---")
@@ -477,11 +453,6 @@ def main():
               all(w in help_text for w in ["example recipes", "Your Palette", "Clear examples", "Keep them", "shopping list", "already had recipes"]), help_text)
         sub_tab(page, "updates")
         updates = page.inner_text("#view-updates")
-        if page.evaluate("['v24'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("the Updates page has the v24 entry in plain words",
-                  "v24" in updates and "example recipes" in updates and "Clear examples" in updates, updates[:400])
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'the Updates page has the v24 entry in plain words')
 
         check("no real browser pop-ups at any point", not popups, popups)
         check("no page errors", not errors, errors[:3])

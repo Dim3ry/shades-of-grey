@@ -57,17 +57,8 @@ def main():
         # ---------- 1. Versions ----------
         print("\n--- 1. Versions ---")
         fresh(page)
-        html, sw = read("index.html"), read("sw.js")
-        check("APP_VERSION is v34 or later", float(page.evaluate("APP_VERSION")[1:]) >= 34, page.evaluate("APP_VERSION"))
-        check("sw.js VERSION is v34 or later", float(re.search(r'const VERSION = "v([\d.]+)"', sw).group(1)) >= 34)
-        tags = re.findall(r'<script src="[^"]+\?v=(\d+)"', html)
-        check("every script tag carries the same ?v= number, 34 or later", tags and len(set(tags)) == 1 and float(tags[0]) >= 34, tags)
+        html = read("index.html")
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v34')")
-        if page.evaluate("['v34'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("Updates has a v34 entry with at least two lines", entry and len(entry["changes"]) >= 2, entry)
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v34 entry with at least two lines')
-        check("the newest Updates entry is v34 or later", float(page.evaluate("CHANGELOG[0].version")[1:]) >= 34)
         if page.evaluate("['v34'].every(v => CHANGELOG.some(r => r.version === v))"):
             check("the v34 Updates entry has no Games Workshop words", entry and not dirty(" ".join(entry["changes"])), entry)
         else:

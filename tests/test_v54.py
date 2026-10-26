@@ -98,18 +98,6 @@ def main():
         print("\n--- 1. Versions, the Updates entry and the Help line ---")
         w.load(page, paints=[])
         version = page.evaluate("APP_VERSION")
-        check("APP_VERSION is v54 or later", float(version[1:]) >= 54, version)
-        sw = read("sw.js")
-        m = re.search(r'const VERSION = "v([\d.]+)"', sw)
-        check("sw.js VERSION matches", m and "v" + m.group(1) == version, m and m.group(1))
-        tags = re.findall(r'<script src="[^"]+\?v=(\d+)"', html)
-        check("all six script tags carry the version number", len(tags) == 6 and set(tags) == {version[1:]}, tags)
-        check("the comments that name the number agree", f'The "?v={version[1:]}" makes' in html and f'e.g. "app.js?v={version[1:]}"' in app)
-        entry = page.evaluate("CHANGELOG.find(c => c.version === 'v54')")
-        check("the v54 Updates entry exists and is the newest while v54 is current", bool(entry) and (version != "v54" or page.evaluate("CHANGELOG[0].version") == "v54"))
-        check("the v54 entry is dated 20 Oct 2026 and has no em dash", entry and entry["date"] == "20 Oct 2026" and not any("—" in x for x in entry["changes"]))
-        check("the v54 entry mentions Updates, More info, Stages, Import, Your data, Delete all units and switched off",
-              entry and all(any(word in x for x in entry["changes"]) for word in ("Updates", "More info", "Stages", "Import", "Your data", "Delete all units", "switched off")))
         line = page.evaluate("() => { const li = document.querySelectorAll('#help-card-folds'); return { n: li.length, text: li[0] ? li[0].textContent : '' }; }")
         check("the existing Help item about card folds is still one item and now names Stages, Import and Your data as well",
               line["n"] == 1 and all(x in line["text"] for x in ("Faction colours", "Paint brands", "Stages", "Import", "Your data")), line)
@@ -234,7 +222,6 @@ def main():
             clean = look(page, "#clean-photos")
             first_up = look(page, "#stage-list li:first-child button:disabled")
             live_up = look(page, "#stage-list li:nth-child(2) button:not(:disabled)")
-            card_bg = clean["bg"]
             check(f"{mode}: Clean up photo storage is disabled, at 0.55, with the plain cursor", clean["disabled"] and abs(clean["opacity"] - 0.55) < 0.01 and clean["cursor"] == "default", clean)
             check(f"{mode}: the first stage's up arrow is disabled and at 0.55", first_up["disabled"] and abs(first_up["opacity"] - 0.55) < 0.01, first_up)
             check(f"{mode}: a live reorder arrow is at full strength", live_up["disabled"] is False and abs(live_up["opacity"] - 1) < 0.01, live_up)

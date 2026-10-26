@@ -83,15 +83,7 @@ def main():
 
         # ---------- 1. Versions and code ----------
         print("\n--- 1. Versions and code ---")
-        version = page.evaluate("APP_VERSION")
-        check("APP_VERSION is v50 or later", float(version[1:]) >= 50, version)
         m = re.search(r'const VERSION = "v([\d.]+)"', read("sw.js"))
-        check("sw.js VERSION matches", m and "v" + m.group(1) == version)
-        tags = re.findall(r'<script src="[^"]+\?v=(\d+)"', html)
-        check("all six script tags carry the version number", len(tags) == 6 and set(tags) == {version[1:]}, tags)
-        entry = page.evaluate("CHANGELOG.find(c => c.version === 'v50')")
-        check("the v50 Updates entry exists", bool(entry))
-        check("the v50 entry has no em dashes", entry and not any("—" in c for c in entry["changes"]))
         new_code = app[app.index("v50: the Recipes tab, decluttered"):app.index("function renderRecipeList(")]
         new_code += app[app.index("function buildStepEditor("):app.index("function buildPaintEditor(")]
         check("the new code builds nothing with innerHTML or insertAdjacentHTML", not re.search(r"innerHTML|insertAdjacentHTML", new_code))

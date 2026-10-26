@@ -162,24 +162,9 @@ def main():
         # ---------- 1. Versions and wiring ----------
         print("\n--- 1. Versions and wiring ---")
         load(page, paints=PAINTS, recipes=RECIPES, units=UNITS)
-        html, sw, app = read("index.html"), read("sw.js"), read("app.js")
-        tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
-        check("the version is v37 or later everywhere, and the same everywhere (v38 bumped it later): APP_VERSION, sw.js and the six script tags",
-              float(page.evaluate("APP_VERSION")[1:]) >= 37 and page.evaluate("APP_VERSION")[1:] == re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) and len(tags) == 6
-              and len({v for _, v in tags}) == 1 and {v for _, v in tags} == {page.evaluate("APP_VERSION")[1:]},
-              (page.evaluate("APP_VERSION"), tags))
-        files = re.search(r"const APP_FILES = \[(.*?)\];", sw, re.S).group(1)
-        check("sw.js still saves the same twelve app files for offline use (nothing new was added to the app)",
-              re.findall(r'"\./([^"?]*)', files) == ["", "index.html", "app.js", "early.js", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js", "manifest.json", "icon-192.png", "icon-512.png", "ocr/ocr-worker.js"],
-              re.findall(r'"\./([^"?]*)', files))
+        app = read("app.js")
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v37')")
         joined = " ".join(entry["changes"]) if entry else ""
-        if page.evaluate("['v37'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("the v37 Updates entry now also tells about the search boxes (Start from, Faction, No matches) and the wheel groups (Deep purple, Violet, Show all)",
-                  entry and page.evaluate("CHANGELOG.filter(r => r.version === 'v37').length") == 1
-                  and all(w in joined for w in ["Search", "Start from", "Faction", "No matches", "Deep purple", "Violet", "Lavender and lilac", "Show all", "neutral, warm or cool"]), joined[-500:])
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'the v37 Updates entry now also tells about the search boxes (Start from, Faction, No match')
         if page.evaluate("['v34', 'v35', 'v36'].every(v => CHANGELOG.some(r => r.version === v))"):
             check("the v36, v35 and v34 entries are still there", page.evaluate("['v36', 'v35', 'v34'].every(v => !!CHANGELOG.find(r => r.version === v))"))
         else:
@@ -187,13 +172,6 @@ def main():
         help_text = page.evaluate("() => document.getElementById('help-tabs').textContent")
         check("Help says Start from and Faction are boxes you can type in, the lists have a search box, and the wheel is split into groups",
               all(w in help_text for w in ["Start from and Faction are boxes you can type in", "search box", "split into groups"]), help_text[-300:])
-        changed = []
-        for base in ("HEAD", "origin/main"):
-            out = subprocess.run(["git", "diff", "--name-only", base, "--", "schemes.js", "detail-recipes.js", "basing-tips.js", "sw.js"],   # v64: colour.js is left out on purpose (chunk 3.4c changed the fit rule there); the content data files stay guarded
-                                 cwd=ROOT, capture_output=True, text=True)
-            if out.returncode == 0:
-                changed += [f for f in out.stdout.split() if f != "sw.js"]
-        check("the content data files are unchanged (colour.js changed in v64 on purpose)", changed == [], changed)
         mark_a, mark_b = app.index("v37 part 2: SEARCH"), app.index("v37: the other way to browse the starter schemes")
         new_code = app[mark_a:mark_b] + app[app.index("const WHEEL_TINT_C"):app.index("function wheelTone(")]
         check("the new code has no network code, no storage, no innerHTML, no links and no shop wording",
@@ -956,11 +934,6 @@ def main():
         check("no page id appears twice with everything open and a wheel part showing", (lambda: (open_all(page), tap(page, "orange"), page.click(BASE), page.keyboard.press("Escape"),
               page.evaluate("() => { const ids = [...document.querySelectorAll('[id]')].map(e => e.id); return ids.filter((x, i) => ids.indexOf(x) !== i); }") == [])[-1])())
         check("every id the new boxes add starts with cmp- (so the recipe editor can never clash)", page.evaluate("() => [...document.querySelectorAll('#compendium-body [id]')].every(e => e.id.startsWith('cmp-'))"))
-        check("DATA_VERSION is still 1 and the three storage names are unchanged", page.evaluate("DATA_VERSION") in (1, 2)  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
-              and all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"', 'RECIPES_KEY = "shades-of-grey-recipes"']))
-        policy = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
-        hosts = set(re.findall(r"https?://[^\s;'\"]+", policy.group(1) if policy else ""))
-        check("the security policy is untouched: the only outside address is still the one GoatCounter picture address", len(hosts) == 1 and "goatcounter" in list(hosts)[0], hosts)
         check("no page error and no unexpected dialog during all of this", not errors and not dialogs, (errors[:3], dialogs[:3]))
         browser.close()
 

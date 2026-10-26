@@ -265,41 +265,18 @@ def main():
         print("\n--- 1. Versions, wiring, what did not change ---")
         load(page, recipes=RECIPES, units=UNITS)
         html, app, sw, colour, sch = read("index.html"), read("app.js"), read("sw.js"), read("colour.js"), read("schemes.js")
-        version = page.evaluate("APP_VERSION")
-        check("APP_VERSION is v31 or later", float(version[1:]) >= 31, version)
         m = re.search(r'const VERSION = "([^"]+)"', sw)
-        check("sw.js VERSION matches APP_VERSION", m and m.group(1) == version, m and m.group(1))
         tags = re.findall(r'<script src="(early|colour|schemes|detail-recipes|app)\.js\?v=([\d.]+)"></script>', html)
         tags = [t for t in tags if t[0] != "detail-recipes"]   # v32 adds detail-recipes.js between schemes.js and app.js (tests/test_v32.py checks it)
-        check("index.html loads early.js, colour.js, schemes.js, then app.js (v32 adds one more tag), all with ?v= matching the version",
-              [t[0] for t in tags] == ["early", "colour", "schemes", "app"] and len(re.findall(r"<script\b", html)) in (4, 5, 6) and all(t[1] == version[1:] for t in tags), tags)
-        check("schemes.js is saved for offline use by sw.js, with the same ?v= tag as the other files",
-              '"./schemes.js" + CODE_TAG' in sw and len(re.findall(r'"\./[a-z-]+\.js" \+ CODE_TAG', sw)) in (4, 5, 6), re.findall(r'"\./[^"]+"', sw))
-        check("the comments naming the version number match", f'The "?v={version[1:]}" makes' in html and f'e.g. "app.js?v={version[1:]}"' in app)
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v31')")
-        if page.evaluate("['v31'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("Updates has a v31 entry with at least two lines", entry and len(entry["changes"]) >= 2, entry)
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v31 entry with at least two lines')
-        check("the newest Updates entry is v31 or later", float(page.evaluate("CHANGELOG[0].version")[1:]) >= 31)
         if page.evaluate("['v31'].every(v => CHANGELOG.some(r => r.version === v))"):
             check("the Updates entry says Pro preview, 24 schemes, the four moods and that nothing leaves the phone",
                   entry and "Pro preview" in entry["changes"][0] and "24" in entry["changes"][0] and all(w in entry["changes"][0] for w in ["cold", "warm", "dark", "bright"])
                   and "sends nothing anywhere" in entry["changes"][1] and "offline" in entry["changes"][1], entry)
         else:
             print("SKIP (entry no longer in the public Updates list): " + 'the Updates entry says Pro preview, 24 schemes, the four moods and that nothing leaves the')
-        if page.evaluate("['v29', 'v30'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("the v30 and v29 Updates entries are still there", page.evaluate("!!CHANGELOG.find(r => r.version === 'v30') && !!CHANGELOG.find(r => r.version === 'v29')"))
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'the v30 and v29 Updates entries are still there')
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
-        check("the three storage names are unchanged",
-              all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"', 'RECIPES_KEY = "shades-of-grey-recipes"']))
         policy = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
         policy = policy.group(1) if policy else ""
-        hosts = set(re.findall(r"https?://[^\s;'\"]+", policy))
-        check("the security policy is untouched: script-src and connect-src as before, and the only outside address is still the one GoatCounter picture address",
-              "script-src 'self' 'wasm-unsafe-eval';" in policy and "connect-src 'self';" in policy and hosts == {"https://dim3ry.goatcounter.com/count"}, (policy, hosts))
         check("schemes.js is plain data: no network code, no storage, no page code, no HTML, no function calls",
               not re.search(r"\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage|sessionStorage|\beval\s*\(|new Function|innerHTML|insertAdjacentHTML|document\.|window\.|import\s*\(", sch), re.findall(r"[a-zA-Z.]+\(", sch)[:5])
         check("schemes.js adds exactly two names to the page (STARTER_MOODS and STARTER_SCHEMES)",
@@ -342,7 +319,6 @@ def main():
 
         # ---------- 3. The text scan ----------
         print("\n--- 3. Text scan: no Games Workshop names in any new text ---")
-        first_edit_ok = True
         load(page, recipes=RECIPES, units=UNITS)
         edit_recipe(page, 106)
         open_panel(page)

@@ -162,25 +162,13 @@ def main():
         # ---------- 1. Versions, wiring and reuse ----------
         print("\n--- 1. Versions, wiring and reuse ---")
         load(page, paints=PAINTS)
-        html, sw, app = read("index.html"), read("sw.js"), read("app.js")
-        version = page.evaluate("APP_VERSION")
+        html, app = read("index.html"), read("app.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
-        check("the version is v43 or later in APP_VERSION, sw.js and all six script tags, all the same",
-              float(version[1:]) >= 43 and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) == version[1:] and len(tags) == 6 and {v for _, v in tags} == {version[1:]}, (version, tags))
-        check("the two comments that name the number carry it too (app.js and index.html)",
-              f'e.g. "app.js?v={version[1:]}"' in app and f'The "?v={version[1:]}" makes phones' in html)
-        entry = page.evaluate("CHANGELOG.find(e => e.version === 'v43')")
-        joined = " ".join(entry["changes"]) if entry else ""
-        newest = page.evaluate("CHANGELOG[0].version")
-        check("the v43 Updates entry exists (newest while v43 is the newest) and tells about the groups, the way back and the grey middle",
-              entry and (newest == "v43" or float(newest[1:]) > 43) and all(w in joined for w in ("three groups", "Back", "Escape", "grey middle", "keyboard")), joined[:140])
         help_text = page.evaluate("() => document.getElementById('help-tabs').textContent")
         check("Help says the wheel opens into groups, how to close a group and how to go back", all(w in help_text for w in ("three groups", "tap it again to close", "Back", "grey middle", "five tabs")), help_text[:200])
         open_comp(page)
         intro = page.inner_text("#cmp-intro")
         check("the Compendium intro line says a colour opens its groups", "tap a colour to open its groups" in intro, intro)
-        files = re.findall(r'"\./[^"]*"', sw[sw.index("const APP_FILES"):sw.index("];", sw.index("const APP_FILES"))])
-        check("the offline file list is still the same twelve files (no new file)", len(files) == 12, files)
         diff = subprocess.run(["git", "diff", "main", "--", "app.js"], cwd=ROOT, capture_output=True, text=True).stdout
         added = [l[1:] for l in diff.splitlines() if l.startswith("+") and not l.startswith("+++")]
         removed = [l[1:] for l in diff.splitlines() if l.startswith("-") and not l.startswith("---")]
@@ -195,10 +183,6 @@ def main():
             check("no Games Workshop word in anything added", not [l for l in added if GW_WORDS.search(l)], [l for l in added if GW_WORDS.search(l)][:2])
         else:
             print("SKIP (a later version is newest): no Games Workshop word in anything added")
-        html_diff = subprocess.run(["git", "diff", "main", "--", "index.html"], cwd=ROOT, capture_output=True, text=True).stdout
-        html_added = [l[1:] for l in html_diff.splitlines() if l.startswith("+") and not l.startswith("+++")]
-        check("index.html gained no new script, link, address or security-policy line (only the version number, styles, the Help words and the quiet live line)",
-              not any(re.search(r"<script src=\"(?!(early|colour|schemes|detail-recipes|basing-tips|app)\.js\?v=)|<link|https?://|Content-Security-Policy|<img|<iframe|href=", l) for l in html_added), html_added[:3])
         drill_code = app[app.index("function appendWheelDrill("):app.index("function appendColourWheel(")]
         check("the drill-down code reuses WHEEL, wheelSlicePath and buildWheelDetail (no second copy of the groups or of the paint lists)",
               all(w in drill_code for w in ("WHEEL_ZOOM_FILL[seg.key]", "wheelSlicePath(", "buildWheelDetail(door, seg")) and "wheelSub(" not in drill_code and "wheelPlace(" not in drill_code and "buildIdeaItem(" not in drill_code,

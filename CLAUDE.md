@@ -17,14 +17,22 @@ One version bump per chunk that changes the app. A bump means:
 - APP_VERSION in app.js
 - one new entry at the top of CHANGELOG in app.js, in plain words
 - update Help when behaviour or names change
-- add tests/test_vNN.py and extend the version lists in tests v39 to v42 and v51 to v53 (check test_v49 as well; test_v54 reads the newest Updates entry itself)
-- if you add a script file, every place that lists the six script tags changes too
+- add tests/test_vNN.py for the new behaviour only (see Tests below)
+- if you add a script file, index.html and sw.js change and the shared test follows them; no test file is edited
+A bump does not touch old tests. tests/test_version_plumbing.py checks the version, sw.js, script tags and Updates entry once, for every version.
 Docs-only changes need no bump.
 
 ## Tests
-- Windows: PYTHONIOENCODING=utf-8 py tests/run_all.py. Elsewhere: python3 tests/run_all.py. It takes 25 to 40 minutes, so run it in the background.
+- Windows: PYTHONIOENCODING=utf-8 py tests/run_all.py. Elsewhere: python3 tests/run_all.py. It runs 4 test files at a time and takes about 15 minutes (longer on a slow machine), so run it in the background.
+- Quick mode: python3 tests/run_all.py --quick runs only the newest three versions, the version plumbing test and the HTML safety scan. Use it while building. Never merge on a quick run: do the full run first.
+- Growth guard (full runs): tests/time_budget.json holds each file's recorded time. A file over its recorded time plus 25% or over 120 s, a new file over 30 s or 60 checks, or a whole run over 15 minutes prints a TIME WARNINGS block and still passes. A file over 180 s, a new file over 45 s or a whole run over 20 minutes fails. Rewrite the budget only on purpose, after a clean full run: python3 tests/run_all.py --update-budget. A new test file that mentions APP_VERSION, sw.js, ?v=, CHANGELOG, DATA_VERSION or git diff also fails (source lint).
+- Changing recipe, scheme or tip content on purpose (the prompt says to): run with CONTENT_CHANGE_OK=1. Changing the security policy on purpose: update tests/csp_baseline.txt in the same chunk.
 - Known failures that also happen on main: test_colour_engine (needs Node.js) and test_v21_7 (select_option timeout). Report any other failure plainly. Never skip or weaken a test to get green.
 - When a test checked old wording, update it and say why in the test.
+- A chunk's new test covers only its new behaviour. It never checks the app version, sw.js VERSION, script tags, the Updates entry, DATA_VERSION, file lists, storage names, the security policy or "content files unchanged". tests/test_version_plumbing.py does that once, using tests/version_helpers.py (current(), at_least("vN"), newer_than("vN"), changelog_versions(page), has_entry(page, "vN"), data_version()).
+- Do not copy a "still works" check from an older test. If older behaviour changes, update the older test in the same chunk and say so.
+- Keep a new test file under 45 s and 60 checks. The runner warns above 30 s and fails above 45 s. A loop over every paint, recipe or tip needs a reason; sample 3 unless the point is the whole list.
+- Some test files are imported by other tests as helper libraries (v27, v31, v35, v37b, v38, v39, v41, v42, v44, v51, v52, v53, v54). Never delete them; if their checks go, keep the helper functions or move them to tests/common.py first.
 - The Cloudflare "Workers Builds" check fails on every pull request. Ignore it. Check main's build after each merge.
 - Check on a 390 px and a 360 px wide phone screen, dark and light. No sideways scroll. Tap targets 44 px or more.
 

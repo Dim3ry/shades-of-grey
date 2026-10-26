@@ -156,18 +156,7 @@ def main():
 
         # ---------- 1. Versions ----------
         print("\n--- 1. Versions and wording ---")
-        version = page.evaluate("APP_VERSION")
-        check("APP_VERSION is v49 or later", float(version[1:]) >= 49, version)
         m = re.search(r'const VERSION = "v([\d.]+)"', sw)
-        check("sw.js VERSION matches", m and "v" + m.group(1) == version, m and m.group(1))
-        tags = re.findall(r'<script src="[^"]+\?v=(\d+)"', html)
-        check("all six script tags carry the version number", len(tags) == 6 and set(tags) == {version[1:]}, tags)
-        check("the comments that name the number agree", f'The "?v={version[1:]}" makes' in html and f'e.g. "app.js?v={version[1:]}"' in app)
-        log = page.evaluate("CHANGELOG.find(r => r.version === 'v49')")
-        check("The v49 Updates entry holds the one-row buttons line and the label scanning line (with the declutter lines), dated 19 Oct 2026, with no em dash",
-              log and log["date"] == "19 Oct 2026" and any("one row" in c for c in log["changes"]) and any("Scanning a pot label" in c for c in log["changes"])
-              and not any("—" in c for c in log["changes"]), log)
-        check("v49 is at the top of Updates when it is the current version", version != "v49" or page.evaluate("CHANGELOG[0].version") == "v49")
 
         # ---------- 2. The CSS ----------
         print("\n--- 2. The CSS ---")

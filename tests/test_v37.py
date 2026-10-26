@@ -118,50 +118,19 @@ def main():
         # ---------- 1. Versions and wiring ----------
         print("\n--- 1. Versions and wiring ---")
         load(page, paints=PAINTS, recipes=RECIPES, units=UNITS)
-        html, sw, app = read("index.html"), read("sw.js"), read("app.js")
-        check("APP_VERSION is v37 or later", float(page.evaluate("APP_VERSION")[1:]) >= 37, page.evaluate("APP_VERSION"))
-        check("sw.js VERSION is v37 or later", float(re.search(r'const VERSION = "v([\d.]+)"', sw).group(1)) >= 37)
+        html, app = read("index.html"), read("app.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
-        check("every script tag carries the same ?v= number (37 or later), and there are exactly six script files",
-              len(tags) == 6 and len({v for _, v in tags}) == 1 and float(tags[0][1]) >= 37, tags)
-        check("APP_VERSION, sw.js and the six script tags all carry the same number",
-              {page.evaluate("APP_VERSION")[1:]} == {re.search(r'const VERSION = "v([\d.]+)"', sw).group(1)} == {v for _, v in tags})
-        check("the two comments that name the number carry it too (the one in index.html and the one in app.js)",
-              f'The "?v={tags[0][1]}" makes' in html and f'e.g. "app.js?v={tags[0][1]}"' in app, tags[0])
         check("the script files are the same six as before, in the same order",
               [n for n, _ in tags] == ["early.js", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js", "app.js"], tags)
-        files = re.search(r"const APP_FILES = \[(.*?)\];", sw, re.S).group(1)
-        check("sw.js saves exactly the same twelve app files for offline use (nothing new was added to the app, so nothing new to cache)",
-              re.findall(r'"\./([^"?]*)', files) == ["", "index.html", "app.js", "early.js", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js", "manifest.json", "icon-192.png", "icon-512.png", "ocr/ocr-worker.js"],
-              re.findall(r'"\./([^"?]*)', files))
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v37')")
-        if page.evaluate("['v37'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("Updates has a v37 entry, and the newest entry is v37 or later", entry and float(page.evaluate("CHANGELOG[0].version")[1:]) >= 37, entry)
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v37 entry, and the newest entry is v37 or later')
         joined = " ".join(entry["changes"]) if entry else ""
         if page.evaluate("['v37'].every(v => CHANGELOG.some(r => r.version === v))"):
             check("the Updates entry says Compendium, Pro preview, heading, Themes, Combinations, all 24 schemes, group and short",
                   all(w in joined for w in ["Compendium", "Pro preview", "heading", "Themes", "Combinations", "scheme", "group", "short"]), joined[:300])
         else:
             print("SKIP (entry no longer in the public Updates list): " + 'the Updates entry says Compendium, Pro preview, heading, Themes, Combinations, all 24 sche')
-        if page.evaluate("['v34', 'v35', 'v36'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("the v36, v35 and v34 Updates entries are still there", page.evaluate("['v36', 'v35', 'v34'].every(v => !!CHANGELOG.find(r => r.version === v))"))
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'the v36, v35 and v34 Updates entries are still there')
-        check("DATA_VERSION is still 1 and the three storage names are unchanged", page.evaluate("DATA_VERSION") in (1, 2)  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
-              and all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"', 'RECIPES_KEY = "shades-of-grey-recipes"']))
         policy = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
         policy = policy.group(1) if policy else ""
-        hosts = set(re.findall(r"https?://[^\s;'\"]+", policy))
-        check("the security policy is untouched: the only outside address is still the one GoatCounter picture address",
-              len(hosts) == 1 and "goatcounter" in list(hosts)[0], (hosts, policy[:200]))
-        changed = []
-        for base in ("HEAD", "origin/main"):
-            out = subprocess.run(["git", "diff", "--name-only", base, "--", "schemes.js", "detail-recipes.js", "basing-tips.js"],   # v64: colour.js is left out on purpose (chunk 3.4c changed the fit rule there); the content data files stay guarded
-                                 cwd=ROOT, capture_output=True, text=True)
-            if out.returncode == 0: changed += out.stdout.split()
-        check("the content data files are unchanged (schemes.js, detail-recipes.js, basing-tips.js; colour.js changed in v64 on purpose)", changed == [], changed)
         new_code = app[app.index("v37: the group buttons"):app.index("v35: door = where this is shown")] + app[app.index("v37: one folding part"):app.index("function renderCompendium(")]
         check("the new code has no network code, no storage, no innerHTML, no links and no shop wording",
               not re.search(r"\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage|sessionStorage|\beval\s*\(|new Function|insertAdjacentHTML|outerHTML|innerHTML|createElement\('a'\)|createElement\(\"a\"\)|href|affiliate|\bshop\b", new_code),

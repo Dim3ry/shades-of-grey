@@ -144,50 +144,19 @@ def main():
         # ---------- 1. Versions and wiring ----------
         print("\n--- 1. Versions and wiring ---")
         load(page, paints=WPAINTS)
-        html, sw, app = read("index.html"), read("sw.js"), read("app.js")
-        check("APP_VERSION is v36 or later", float(page.evaluate("APP_VERSION")[1:]) >= 36, page.evaluate("APP_VERSION"))
-        check("sw.js VERSION is v36 or later", float(re.search(r'const VERSION = "v([\d.]+)"', sw).group(1)) >= 36)
+        html, app = read("index.html"), read("app.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
-        check("every script tag carries the same ?v= number (36 or later), and there are still exactly six script files (no new file)",
-              len(tags) == 6 and len({v for _, v in tags}) == 1 and float(tags[0][1]) >= 36, tags)
-        check("APP_VERSION, sw.js and the six script tags all carry the same number",
-              {page.evaluate("APP_VERSION")[1:]} == {re.search(r'const VERSION = "v([\d.]+)"', sw).group(1)} == {v for _, v in tags})
-        check("the two comments that name the number carry it too (the one in index.html and the one in app.js)",
-              f'The "?v={tags[0][1]}" makes' in html and f'e.g. "app.js?v={tags[0][1]}"' in app, tags[0])
         check("the script files are the same six as before, in the same order",
               [n for n, _ in tags] == ["early.js", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js", "app.js"], tags)
-        files = re.search(r"const APP_FILES = \[(.*?)\];", sw, re.S).group(1)
-        check("sw.js still saves exactly the same twelve app files for offline use (the wheel is in app.js and index.html, nothing new to add)",
-              re.findall(r'"\./([^"?]*)', files) == ["", "index.html", "app.js", "early.js", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js", "manifest.json", "icon-192.png", "icon-512.png", "ocr/ocr-worker.js"],
-              re.findall(r'"\./([^"?]*)', files))
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v36')")
-        if page.evaluate("['v36'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("Updates has a v36 entry, and the newest entry is v36 or later", entry and float(page.evaluate("CHANGELOG[0].version")[1:]) >= 36, entry)
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v36 entry, and the newest entry is v36 or later')
         joined = " ".join(entry["changes"]) if entry else ""
         if page.evaluate("['v36'].every(v => CHANGELOG.some(r => r.version === v))"):
             check("the Updates entry says colour wheel, Compendium, Pro preview, You own this, Show other paints, gold, silver and bronze, offline and sends nothing anywhere",
                   all(w in joined for w in ["colour wheel", "Compendium", "Pro preview", "You own this", "Show other paints", "gold, silver and bronze", "offline", "sends nothing anywhere"]), joined[:300])
         else:
             print("SKIP (entry no longer in the public Updates list): " + 'the Updates entry says colour wheel, Compendium, Pro preview, You own this, Show other pai')
-        if page.evaluate("['v33', 'v34', 'v35'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("the v35, v34 and v33 Updates entries are still there", page.evaluate("['v35', 'v34', 'v33'].every(v => !!CHANGELOG.find(r => r.version === v))"))
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'the v35, v34 and v33 Updates entries are still there')
-        check("DATA_VERSION is still 1 and the three storage names are unchanged", page.evaluate("DATA_VERSION") in (1, 2)  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
-              and all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"', 'RECIPES_KEY = "shades-of-grey-recipes"']))
         policy = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
         policy = policy.group(1) if policy else ""
-        hosts = set(re.findall(r"https?://[^\s;'\"]+", policy))
-        check("the security policy is untouched: the only outside address is still the one GoatCounter picture address",
-              len(hosts) == 1 and "goatcounter" in list(hosts)[0], (hosts, policy[:200]))
-        changed = []
-        for base in ("HEAD", "origin/main"):
-            out = subprocess.run(["git", "diff", "--name-only", base, "--", "schemes.js", "detail-recipes.js", "basing-tips.js"],   # v64: colour.js is left out on purpose (chunk 3.4c changed the fit rule there); the content data files stay guarded
-                                 cwd=ROOT, capture_output=True, text=True)
-            if out.returncode == 0: changed += out.stdout.split()
-        check("the content data files are unchanged (schemes.js, detail-recipes.js, basing-tips.js; colour.js changed in v64 on purpose)", changed == [], changed)
         wheel_code = app[app.index("v36: THE COLOUR WHEEL"):app.index("function renderCompendium(")]
         check("the wheel code has no network code, no storage, no innerHTML, no links and no shop wording",
               not re.search(r"\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage|sessionStorage|\beval\s*\(|new Function|insertAdjacentHTML|outerHTML|innerHTML|createElement\('a'\)|createElement\(\"a\"\)|href|affiliate|\bshop\b", wheel_code),

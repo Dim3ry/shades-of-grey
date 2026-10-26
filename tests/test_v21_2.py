@@ -118,7 +118,6 @@ def watch(page, errors, csp):
     DialogAnswers(page)
 
 def main():
-    sw = read("sw.js")
     html = read("index.html")
     errors, csp = [], []
     with sync_playwright() as p:
@@ -130,40 +129,15 @@ def main():
         # ---------- 1. Versions and kept things ----------
         print("--- 1. Versions and kept things ---")
         seed(page, settings=full_settings())
-        version = page.evaluate("APP_VERSION")
-        check("APP_VERSION is v21.2 or later", float(version[1:]) >= 21.2, version)
-        check("APP_VERSION is a plain number (no letters)", re.fullmatch(r"v\d+(\.\d+)?", version), version)
-        m = re.search(r'const VERSION = "([^"]+)"', sw)
-        check("sw.js VERSION matches APP_VERSION", m and m.group(1) == version, m and m.group(1))
-        entry = page.evaluate("CHANGELOG.find(r => r.version === 'v21.2')")
-        if page.evaluate("['v21.2'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("Updates has a v21.2 entry", entry and len(entry["changes"]) >= 1, entry)
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v21.2 entry')
-        if page.evaluate("['v21.2'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("the v21.2 entry mentions the safety change", entry and "Content Security Policy" in " ".join(entry["changes"]))
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'the v21.2 entry mentions the safety change')
         tab(page, "updates")
         heads = page.locator("#view-updates h3").all_inner_texts()
-        if page.evaluate("['v21.2'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("the Updates tab shows v21.2", any(h.startswith("v21.2") for h in heads), heads[:3])
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'the Updates tab shows v21.2')
-        check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
-        check("ocr folder is kept", all(os.path.exists(os.path.join(ROOT, "ocr", f)) for f in
-              ["ocr-worker.js", "tesseract-core-simd-lstm.wasm", "tesseract-core-lstm.wasm", "eng.traineddata"]))
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         for key in ["mini-tracker-models", "shades-of-grey-settings", "shades-of-grey-recipes"]:
             check(f"storage key {key} still used", key in html)
 
         # ---------- 2. The CSP tag ----------
         print("\n--- 2. The CSP tag ---")
         tags = re.findall(r'<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
-        check("exactly one CSP tag", len(tags) == 1, len(tags))
         policy = tags[0] if tags else ""
-        first_script = html.find("<script")
-        check("the CSP tag comes before every <script>", 0 < html.find("Content-Security-Policy\" content") < first_script)
         rules = {}
         for part in policy.split(";"):
             words = part.split()

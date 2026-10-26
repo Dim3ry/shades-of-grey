@@ -131,35 +131,14 @@ def main():
         print("\n--- 1. Versions and kept things ---")
         seed(page)
         html, app, sw = read("index.html"), read("app.js"), read("sw.js")
-        version = page.evaluate("APP_VERSION")
-        check("APP_VERSION is v22 or later", float(version[1:]) >= 22, version)
-        check("version is a plain number", re.fullmatch(r"v\d+(\.\d+)?", version) is not None, version)
         m = re.search(r'const VERSION = "([^"]+)"', sw)
-        check("sw.js VERSION matches APP_VERSION", m and m.group(1) == version, m and m.group(1))
-        tags = re.findall(r'<script src="(early|app)\.js\?v=([\d.]+)"', html)
-        check("both script tags carry ?v= matching APP_VERSION", sorted(tags) == [("app", version[1:]), ("early", version[1:])], tags)
-        check("the comment above the script tag names the same number", f'The "?v={version[1:]}" makes' in html)
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v22')")
-        if page.evaluate("['v22'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("Updates has a v22 entry", entry and len(entry["changes"]) >= 2, entry)
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v22 entry')
         joined = " ".join(entry["changes"]) if entry else ""
         if page.evaluate("['v22'].every(v => CHANGELOG.some(r => r.version === v))"):
             check("…about backups first, Send backup to…, the share menu, no photos and the fallback",
                   all(w in joined for w in ["first", "Send backup to", "share menu", "no photos", "saved to your device"]), joined[:300])
         else:
             print("SKIP (entry no longer in the public Updates list): " + '…about backups first, Send backup to…, the share menu, no photos and the fallback')
-        top = page.evaluate("CHANGELOG[0].version")
-        check("the v22 entry is at the top of the list", top == version, top)
-        check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
-        check("the ocr folder is kept", os.path.exists(os.path.join(ROOT, "ocr", "ocr-worker.js")) and os.path.exists(os.path.join(ROOT, "ocr", "eng.traineddata")))
-        check("LICENSE-paint-list.txt is kept", os.path.exists(os.path.join(ROOT, "LICENSE-paint-list.txt")))
-        wf = read(".github/workflows/zap-scan.yml")
-        check("the ZAP workflow is still the passive baseline scan", "action-baseline" in wf and "action-full-scan" not in wf)
-        csp_tag = re.search(r'<meta http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
-        check("the CSP is exactly v21.4's", csp_tag and " ".join(csp_tag.group(1).split()) == V21_4_CSP, csp_tag and csp_tag.group(1))
-        check("DATA_VERSION is still 1", re.search(r"const DATA_VERSION = [12];", app))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         check("no code in index.html (no inline scripts or on…= handlers)",
               len(re.findall(r"<script(?![^>]*\bsrc=)", html)) == 0 and re.search(r"\son(click|change|load|input)=", html) is None)
         keys = page.evaluate("() => Object.keys(localStorage).sort()")

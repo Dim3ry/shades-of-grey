@@ -62,7 +62,7 @@ def tap(page, selector):
 
 def main():
     errors, dialogs = [], []
-    app, html = read("app.js"), read("index.html")
+    app = read("app.js")
     with sync_playwright() as p:
         browser = p.chromium.launch()
         ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block", accept_downloads=True)
@@ -75,20 +75,10 @@ def main():
         # ---------- 1. Versions ----------
         print("\n--- 1. Versions and the Updates entry ---")
         e.fresh(page)
-        version = page.evaluate("APP_VERSION")
-        check("APP_VERSION is v57 or later", float(version[1:]) >= 57, version)
-        m = re.search(r'const VERSION = "v([\d.]+)"', read("sw.js"))
-        check("sw.js VERSION matches", m and "v" + m.group(1) == version, m and m.group(1))
-        tags = re.findall(r'<script src="[^"]+\?v=(\d+)"', html)
-        check("all six script tags carry the version number", len(tags) == 6 and set(tags) == {version[1:]}, tags)
-        check("the comments that name the number agree", f'The "?v={version[1:]}" makes' in html and f'e.g. "app.js?v={version[1:]}"' in app)
         entry = page.evaluate("CHANGELOG.find(c => c.version === 'v57')")
-        check("the v57 Updates entry exists and is the newest while v57 is current", bool(entry) and (version != "v57" or page.evaluate("CHANGELOG[0].version") == "v57"))
         joined = " ".join(entry["changes"]) if entry else ""
         check("the entry names the card, Save backup, Not now and the Settings line",
               all(w in joined for w in ("save a backup", "Save backup", "Not now", "last backup", "Never")), joined)
-        check("no em dash in the v57 Updates entry", "—" not in app[app.index('{ version: "v57"'):app.index('{ version: "v56"')])
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
 
         # ---------- 2. When it shows ----------
         print("\n--- 2. When it shows ---")

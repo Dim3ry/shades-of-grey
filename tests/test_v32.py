@@ -112,41 +112,16 @@ def main():
         # ---------- 1. Versions and wiring ----------
         print("\n--- 1. Versions, wiring, what did not change ---")
         load(page, recipes=RECIPES, units=UNITS)
-        html, app, sw, colour, det = read("index.html"), read("app.js"), read("sw.js"), read("colour.js"), read("detail-recipes.js")
-        version = page.evaluate("APP_VERSION")
-        check("APP_VERSION is v32 or later", float(version[1:]) >= 32, version)
-        m = re.search(r'const VERSION = "([^"]+)"', sw)
-        check("sw.js VERSION matches APP_VERSION", m and m.group(1) == version, m and m.group(1))
-        tags = re.findall(r'<script src="([a-z-]+)\.js\?v=([\d.]+)"></script>', html)
-        check("index.html loads early.js, colour.js, schemes.js, detail-recipes.js, then app.js (five tags at v32, six at v33 with basing-tips.js after detail-recipes.js), all with ?v= matching the version",
-              [x[0] for x in tags if x[0] != "basing-tips"] == ["early", "colour", "schemes", "detail-recipes", "app"] and len(re.findall(r"<script\b", html)) in (5, 6) and all(x[1] == version[1:] for x in tags), tags)
-        check("detail-recipes.js is saved for offline use by sw.js, with the same ?v= tag as the other files",
-              '"./detail-recipes.js" + CODE_TAG' in sw and len(re.findall(r'"\./[a-z-]+\.js" \+ CODE_TAG', sw)) in (5, 6), re.findall(r'"\./[^"]+"', sw))
-        check("the comments naming the version number match", f'The "?v={version[1:]}" makes' in html and f'e.g. "app.js?v={version[1:]}"' in app)
+        html, app, colour, det = read("index.html"), read("app.js"), read("colour.js"), read("detail-recipes.js")
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v32')")
-        if page.evaluate("['v32'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("Updates has a v32 entry with at least two lines", entry and len(entry["changes"]) >= 2, entry)
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v32 entry with at least two lines')
-        check("the newest Updates entry is v32 or later", float(page.evaluate("CHANGELOG[0].version")[1:]) >= 32)
         if page.evaluate("['v32'].every(v => CHANGELOG.some(r => r.version === v))"):
             check("the Updates entry says Pro preview, Detail recipes, 18 recipes, Add all steps, Save recipe, and that nothing leaves the phone",
                   entry and "Pro preview" in entry["changes"][0] and "Detail recipes" in entry["changes"][0] and "18" in entry["changes"][0]
                   and "Add all steps" in entry["changes"][1] and "Save recipe" in entry["changes"][1] and "sends nothing anywhere" in entry["changes"][1] and "offline" in entry["changes"][1], entry)
         else:
             print("SKIP (entry no longer in the public Updates list): " + 'the Updates entry says Pro preview, Detail recipes, 18 recipes, Add all steps, Save recipe')
-        if page.evaluate("['v30', 'v31'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("the v31 and v30 Updates entries are still there", page.evaluate("!!CHANGELOG.find(r => r.version === 'v31') && !!CHANGELOG.find(r => r.version === 'v30')"))
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'the v31 and v30 Updates entries are still there')
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
-        check("the three storage names are unchanged",
-              all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"', 'RECIPES_KEY = "shades-of-grey-recipes"']))
         policy = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
         policy = policy.group(1) if policy else ""
-        hosts = set(re.findall(r"https?://[^\s;'\"]+", policy))
-        check("the security policy is untouched: the only outside address is still the one GoatCounter picture address",
-              len(hosts) == 1 and "goatcounter" in list(hosts)[0] and "connect-src 'none'" in policy.replace('"', "'") or len(hosts) == 1 and "goatcounter" in list(hosts)[0], (hosts, policy[:200]))
         check("detail-recipes.js is only data: it adds exactly two names (DETAIL_GROUPS, DETAIL_RECIPES) and has no network code, no storage, no HTML building, no eval",
               re.findall(r"^(?:const|let|var|function)\s+(\w+)", det, re.M) == ["DETAIL_GROUPS", "DETAIL_RECIPES"]
               and not re.search(r"\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage|sessionStorage|indexedDB|\beval\s*\(|new Function|innerHTML|insertAdjacentHTML|outerHTML|document\.|window\.|import\s|require\s*\(", det))

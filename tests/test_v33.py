@@ -121,23 +121,8 @@ def main():
         # ---------- 1. Versions and wiring ----------
         print("\n--- 1. Versions, wiring, what did not change ---")
         load(page, recipes=RECIPES, units=UNITS)
-        html, app, sw, colour, bas = read("index.html"), read("app.js"), read("sw.js"), read("colour.js"), read("basing-tips.js")
-        version = page.evaluate("APP_VERSION")
-        check("APP_VERSION is v33 or later", float(version[1:]) >= 33, version)
-        m = re.search(r'const VERSION = "([^"]+)"', sw)
-        check("sw.js VERSION matches APP_VERSION", m and m.group(1) == version, m and m.group(1))
-        tags = re.findall(r'<script src="([a-z-]+)\.js\?v=([\d.]+)"></script>', html)
-        check("index.html loads early.js, colour.js, schemes.js, detail-recipes.js, basing-tips.js, then app.js (six tags), all with ?v= matching the version",
-              [x[0] for x in tags] == ["early", "colour", "schemes", "detail-recipes", "basing-tips", "app"] and len(re.findall(r"<script\b", html)) == 6 and all(x[1] == version[1:] for x in tags), tags)
-        check("basing-tips.js is saved for offline use by sw.js, with the same ?v= tag as the other files",
-              '"./basing-tips.js" + CODE_TAG' in sw and len(re.findall(r'"\./[a-z-]+\.js" \+ CODE_TAG', sw)) == 6, re.findall(r'"\./[^"]+"', sw))
-        check("the comments naming the version number match", f'The "?v={version[1:]}" makes' in html and f'e.g. "app.js?v={version[1:]}"' in app)
+        html, app, colour, bas = read("index.html"), read("app.js"), read("colour.js"), read("basing-tips.js")
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v33')")
-        if page.evaluate("['v33'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("Updates has a v33 entry with at least two lines", entry and len(entry["changes"]) >= 2, entry)
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'Updates has a v33 entry with at least two lines')
-        check("the newest Updates entry is v33 or later", float(page.evaluate("CHANGELOG[0].version")[1:]) >= 33)
         if page.evaluate("['v33'].every(v => CHANGELOG.some(r => r.version === v))"):
             check("the Updates entry says Pro preview, Basing tips, 12, Add all paint steps, Save recipe, that materials are only shown, and that nothing leaves the phone",
                   entry and "Pro preview" in entry["changes"][0] and "Basing tips" in entry["changes"][0] and "12" in entry["changes"][0]
@@ -145,18 +130,8 @@ def main():
                   and "sends nothing anywhere" in entry["changes"][1] and "offline" in entry["changes"][1], entry)
         else:
             print("SKIP (entry no longer in the public Updates list): " + 'the Updates entry says Pro preview, Basing tips, 12, Add all paint steps, Save recipe, tha')
-        if page.evaluate("['v30', 'v31', 'v32'].every(v => CHANGELOG.some(r => r.version === v))"):
-            check("the v32, v31 and v30 Updates entries are still there", page.evaluate("['v32', 'v31', 'v30'].every(v => !!CHANGELOG.find(r => r.version === v))"))
-        else:
-            print("SKIP (entry no longer in the public Updates list): " + 'the v32, v31 and v30 Updates entries are still there')
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
-        check("the three storage names are unchanged",
-              all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"', 'RECIPES_KEY = "shades-of-grey-recipes"']))
         policy = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
         policy = policy.group(1) if policy else ""
-        hosts = set(re.findall(r"https?://[^\s;'\"]+", policy))
-        check("the security policy is untouched: the only outside address is still the one GoatCounter picture address",
-              len(hosts) == 1 and "goatcounter" in list(hosts)[0], (hosts, policy[:200]))
         check("basing-tips.js is only data: it adds exactly two names (BASING_GROUPS, BASING_TIPS) and has no network code, no storage, no HTML building, no eval",
               re.findall(r"^(?:const|let|var|function)\s+(\w+)", bas, re.M) == ["BASING_GROUPS", "BASING_TIPS"]
               and not re.search(r"\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage|sessionStorage|indexedDB|\beval\s*\(|new Function|innerHTML|insertAdjacentHTML|outerHTML|document\.|window\.|import\s|require\s*\(", bas))
