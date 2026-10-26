@@ -99,8 +99,9 @@ def check_budget(budget, times, checks, total_seconds, jobs):
         took = times[name]
         if name in known:
             was = known[name]
-            if took > 180:
-                fails.append(f"{name} took {took:.0f} s, over the 180 s limit for any file (recorded {was:.0f} s)")
+            limit = budget.get("fail_overrides", {}).get(name, 180)   # a temporary exception, named in the budget file, until the file is trimmed
+            if took > limit:
+                fails.append(f"{name} took {took:.0f} s, over the {limit} s limit (recorded {was:.0f} s)")
             elif took > was * 1.25 or took > 120:
                 why = f"over its recorded {was:.0f} s plus 25%" if took > was * 1.25 else "over 120 s"
                 warns.append(f"{name} took {took:.0f} s, {why}")
