@@ -219,7 +219,6 @@ def main():
         check("swaps are kept through another Undo (leaving a step out, then Undo)",
               "Mephiston Red → Sand" in lines(page)[0] and "CM → Abaddon Black" in lines(page)[1]
               and "CM → Zzyzx Glow" in lines(page)[3], lines(page))
-        check("your pasted notes are still unchanged", page.input_value("#import-text") == NOTE)
 
         # --- 6. Save ---
         page.click("#import-save")

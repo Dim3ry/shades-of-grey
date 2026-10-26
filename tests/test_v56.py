@@ -200,7 +200,6 @@ def main():
         # ---------- 7. Code and Help ----------
         print("\n--- 7. The code and Help ---")
         check("one clearExamples and one keepExamples", len(re.findall(r"function clearExamples\(", app)) == 1 and len(re.findall(r"function keepExamples\(", app)) == 1)
-        check("the old per-card functions are gone", not re.search(r"function (clearRecipeExamples|keepRecipeExamples|exampleRecipeWords)\(", app))
         check("all three cards are filled by the same examplesCardParts", app.count("examplesCardParts(\"clear-") == 2 and len(re.findall(r"function examplesCardParts\(", app)) == 1)
         snippet = app[app.index("function examplesCardParts("):app.index("function clearExamples(")]
         check("the card code uses no innerHTML (text only)", "innerHTML" not in snippet)

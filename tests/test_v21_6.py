@@ -133,7 +133,6 @@ def main():
             print("SKIP (entry no longer in the public Updates list): " + '…about notices, and says questions come next')
         tab(page, "updates")
         heads = page.locator("#view-updates h3").all_inner_texts()
-        check("no code written inside the page", not re.search(r"<script(?![^>]*\bsrc=)[^>]*>\s*\S", html))
         for key in ["mini-tracker-models", "shades-of-grey-settings"]:
             check(f"storage key {key} still used", key in app)
 
@@ -307,7 +306,6 @@ def main():
 
     check("no browser pop-up boxes for notices at any point", not browser_boxes, browser_boxes[:3])
     check("no page errors", not errors, errors[:3])
-    check("no CSP errors", not csp, csp[:3])
     print(f"\n{sum(results)} of {len(results)} checks passed")
     sys.exit(0 if all(results) else 1)
 

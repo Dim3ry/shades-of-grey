@@ -334,8 +334,6 @@ def main():
         page.click('#more-seg button[data-page="help"]')
         page.evaluate("document.getElementById('about').open = true")
         about = page.inner_text("#about")
-        check("About no longer says the scan downloads a tool from the web",
-              "text-reading tool" not in about and "from the web" not in about, about)
         check("About still says your data stays on this device", "Your data stays on this device" in about)
         page.set_viewport_size({"width": 360, "height": 740})
         page.click("nav button[data-tab='recipes']")

@@ -23,9 +23,9 @@ A bump does not touch old tests. tests/test_version_plumbing.py checks the versi
 Docs-only changes need no bump.
 
 ## Tests
-- Windows: PYTHONIOENCODING=utf-8 py tests/run_all.py. Elsewhere: python3 tests/run_all.py. It runs 4 test files at a time and takes about 15 minutes (longer on a slow machine), so run it in the background.
+- Windows: PYTHONIOENCODING=utf-8 py tests/run_all.py. Elsewhere: python3 tests/run_all.py. It runs 4 test files at a time and takes about 13 minutes (longer on a slow machine), so run it in the background.
 - Quick mode: python3 tests/run_all.py --quick runs only the newest three versions, the version plumbing test and the HTML safety scan. Use it while building. Never merge on a quick run: do the full run first.
-- Growth guard (full runs): tests/time_budget.json holds each file's recorded time. A file over its recorded time plus 25% or over 120 s, a new file over 30 s or 60 checks, or a whole run over 15 minutes prints a TIME WARNINGS block and still passes. A file over 180 s, a new file over 45 s or a whole run over 20 minutes fails. Rewrite the budget only on purpose, after a clean full run: python3 tests/run_all.py --update-budget. A new test file that mentions APP_VERSION, sw.js, ?v=, CHANGELOG, DATA_VERSION or git diff also fails (source lint).
+- Growth guard (full runs): tests/time_budget.json holds each file's recorded time. A file over its recorded time plus 25% or over 120 s, a new file over 30 s or 60 checks, or a whole run over 12 minutes prints a TIME WARNINGS block and still passes. A file over 180 s, a new file over 45 s or a whole run over 16 minutes fails. Rewrite the budget only on purpose, after a clean full run: python3 tests/run_all.py --update-budget. A new test file that mentions APP_VERSION, sw.js, ?v=, CHANGELOG, DATA_VERSION or git diff also fails (source lint).
 - Changing recipe, scheme or tip content on purpose (the prompt says to): run with CONTENT_CHANGE_OK=1. Changing the security policy on purpose: update tests/csp_baseline.txt in the same chunk.
 - Known failures that also happen on main: test_colour_engine (needs Node.js) and test_v21_7 (select_option timeout). Report any other failure plainly. Never skip or weaken a test to get green.
 - When a test checked old wording, update it and say why in the test.

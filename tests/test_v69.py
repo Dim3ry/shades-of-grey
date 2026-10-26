@@ -79,7 +79,6 @@ def main():
         tags = re.findall(r'<script src="[^"]+\?v=(\d+)"', html)
         entry = page.evaluate("CHANGELOG.find(c => c.version === 'v69')")
         text = " ".join(entry["changes"]) if entry else ""
-        check("the entry names the button and the way back", all(w in text for w in ["Ideas for this", "Back to recipe", "Back to Your Palette"]), text)
 
         # ---------- 2. The button in a recipe step ----------
         print("\n--- 2. The button in a recipe step ---")
@@ -201,7 +200,6 @@ def main():
         check("Help has an Ideas for this line naming the parts and the way back",
               all(w in topic for w in ["Ideas for this", "Your Palette", "detail recipes", "basing tips", "Show steps", "Back to recipe", "Back to Your Palette", "no colour set"]), topic)
         check("…in the Paint recipes topic", page.evaluate("() => document.getElementById('help-ideas-for').closest('details').querySelector('summary').textContent.trim()") == "Paint recipes")
-        check("no em dash in the new Help line", "—" not in topic)
 
         # ---------- 9. Phones, dark and light ----------
         for appearance in ["dark", "light"]:

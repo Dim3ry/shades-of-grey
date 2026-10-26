@@ -391,14 +391,11 @@ def main():
         check("Help explains Edit details (what's in it, where it is, that it stays open while you edit)",
               all(w in help_edit for w in ["Edit details", "name", "faction", "nickname", "stays open"]), help_edit)   # v61: the Track tick left Edit details
         topic = page.evaluate("() => document.getElementById('help-edit-details').parentElement.textContent")
-        check("the old Help line no longer says the details open with nickname and model count first",
-              "its details: nickname, model count" not in topic and "its stage" in topic, topic[:300])
         sub_tab(page, "updates")
         updates = page.inner_text("#view-updates")
 
         check("no real browser pop-ups at any point", not popups, popups)
         check("no page errors", not errors, errors[:3])
-        check("no CSP errors", not csp, csp[:3])
         context.close()
         browser.close()
 

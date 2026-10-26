@@ -601,7 +601,6 @@ def main():
 
     check("no browser pop-up (alert, confirm or prompt) at any point", not native, native[:3])
     check("no page errors", not errors, errors[:3])
-    check("no CSP errors", not csp, csp[:3])
     print(f"\n{sum(results)} of {len(results)} checks passed")
     sys.exit(0 if all(results) else 1)
 

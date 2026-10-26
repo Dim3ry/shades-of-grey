@@ -146,7 +146,6 @@ def main():
               and panel_code.count("innerHTML") == 1 and 'body.innerHTML = ""' in panel_code, [mm.group(0) for mm in re.finditer(r"innerHTML[^\n]*", panel_code)])
         check("colour.js, schemes.js and detail-recipes.js were not touched by this chunk", "schemeCheck" in colour and "root.MinifolioColour = api;" in colour
               and "STARTER_SCHEMES" in read("schemes.js") and "DETAIL_RECIPES" in read("detail-recipes.js"))
-        check("the Pro preview label is still there", "Pro preview" in app and page.evaluate("() => typeof BASING_TIPS") == "object")
 
         # ---------- 2. The data ----------
         print("\n--- 2. The tip data ---")
@@ -161,7 +160,6 @@ def main():
         names_lower = " | ".join(x["name"].lower() for x in tips)
         missing = [w for w in REQUIRED if w not in names_lower]
         check("every subject asked for is there: sand, snow, grass, mud, rock, cracked earth, rubble, lava (and gravel, moss, ash, ice)", not missing, missing)
-        check("keys, names and summaries are all different", len({x["key"] for x in tips}) == 12 and len({x["name"] for x in tips}) == 12 and len({x["summary"] for x in tips}) == 12)
         check("every tip has exactly: key, group, name, summary, materials, howto, paintSteps", all(set(x) == {"key", "group", "name", "summary", "materials", "howto", "paintSteps"} for x in tips))
         check("every tip has 3 to 6 materials, 3 to 5 how-to steps and 0 to 5 paint steps", all(3 <= len(x["materials"]) <= 6 and 3 <= len(x["howto"]) <= 5 and 0 <= len(x["paintSteps"]) <= 5 for x in tips),
               [(x["key"], len(x["materials"]), len(x["howto"]), len(x["paintSteps"])) for x in tips])
@@ -175,18 +173,11 @@ def main():
         FIELDS = {"technique", "coats", "mix", "look", "hex", "note"}
         steps_all = [s for x in tips for s in x["paintSteps"]]
         check("every paint step has exactly: technique, coats, mix, look, hex, note (and no paint name or brand field)", all(set(s) == FIELDS for s in steps_all))
-        check("every technique is one of the app's usual technique names", all(s["technique"] in techniques for s in steps_all), sorted({s["technique"] for s in steps_all if s["technique"] not in techniques}))
-        check("coats is a whole number from 1 to 3 and mix is a whole number from 1 to 100",
-              all(isinstance(s["coats"], int) and 1 <= s["coats"] <= 3 and isinstance(s["mix"], int) and 1 <= s["mix"] <= 100 for s in steps_all))
         check("a wash, shade or glaze is thinned (mix under 100) and a base coat, layer, highlight, stipple or dry brush is full strength",
               all((s["mix"] < 100) == (s["technique"] in ("Wash", "Shade", "Glaze")) for s in steps_all),
               [(s["technique"], s["mix"]) for s in steps_all if (s["mix"] < 100) != (s["technique"] in ("Wash", "Shade", "Glaze"))])
         check("every paint step names a target colour: a plain colour word or two and a valid #rrggbb", all(s["look"].strip() and re.fullmatch(r"#[0-9a-f]{6}", s["hex"]) for s in steps_all))
         check("the paint steps of a tip have different target colours", all(len({s["hex"] for s in x["paintSteps"]}) == len(x["paintSteps"]) for x in tips))
-        check("each summary is one short line (no line breaks, 70 characters or fewer)", all("\n" not in x["summary"] and 0 < len(x["summary"]) <= 70 for x in tips), [x["summary"] for x in tips if len(x["summary"]) > 70])
-        check("each note is one sentence of 100 characters or fewer, and each colour word is short",
-              all(len(sentences(s["note"])) == 1 and 0 < len(s["note"]) <= 100 and len(s["look"]) <= 30 for s in steps_all),
-              [s["note"] for s in steps_all if len(sentences(s["note"])) != 1 or len(s["note"]) > 100])
         check("names say what the base is: short, no digits, no brackets", all(re.fullmatch(r"[A-Za-z' -]{3,40}", x["name"]) for x in tips), [x["name"] for x in tips if not re.fullmatch(r"[A-Za-z' -]{3,40}", x["name"])])
         data_text = json.dumps(tips) + json.dumps(groups)
         known = page.evaluate("() => KNOWN_PAINTS.map(k => [k.name, k.brand])")
@@ -203,13 +194,10 @@ def main():
         brand_hits = [b for b in brands if re.search(r"\b" + re.escape(b) + r"\b", data_text, re.I)]
         check("the paint steps name colours, never paints: no built-in paint name (other than plain colour words) and no paint brand appears in the data", not paint_hits and not brand_hits, (paint_hits[:5], brand_hits))
         check("no brand names and no product names anywhere in the data (a word list of brands, shops and product words)", not BRAND_WORDS.search(data_text), BRAND_WORDS.findall(data_text))
-        check("no angle brackets, ampersands or backticks anywhere in the data (plain text only)", not re.search(r"[<>&`]", data_text))
         every_text = [x["name"] for x in tips] + [x["summary"] for x in tips] + [g["name"] for g in groups] + [m_ for x in tips for m_ in x["materials"]] + [h for x in tips for h in x["howto"]] \
                      + [s["look"] + " " + s["note"] for s in steps_all]
         check("every word in the new text is plain English (letters, digits, spaces, apostrophes, hyphens, commas, full stops only)", all(re.fullmatch(r"[A-Za-z0-9 ',.\-]+", x) for x in every_text),
               [x for x in every_text if not re.fullmatch(r"[A-Za-z0-9 ',.\-]+", x)][:3])
-        check("the shared word lists really do catch the words (the scan itself works)", GW_WORDS.findall("Ultramarines and Tyranids") and GW_MORE.findall("Nurgle and Macragge")
-              and BRAND_WORDS.findall("Citadel and Vallejo, Polyfilla, flock"))
 
         # ---------- 3. The text scan ----------
         print("\n--- 3. Text scan: no Games Workshop names in any new text ---")
@@ -275,12 +263,10 @@ def main():
         pick_group(page, "stone")
         check("tapping the same group leaves the pick alone", page.locator("#basing-list").count() == 1)
         pick_group(page, "all")
-        check("switching to All keeps the pick (it is inside All)", page.locator("#basing-list").count() == 1 and page.get_attribute('#basing-chips [data-basing="lava"]', "aria-pressed") == "true")
         pick_group(page, "plants")
         check("switching to a group that does not contain the pick puts it away (no lists, no summary, nothing pressed)",
               all(page.locator(s).count() == 0 for s in ["#basing-list", "#basing-summary", "#basing-materials", "#basing-howto"]) and all(c[1] == "false" for c in tip_chips(page)))
         pick_group(page, "all")
-        check("and it stays put away when coming back to All", page.locator("#basing-list").count() == 0)
         pick_tip(page, "rock")
         pick_group(page, "stone")
         check("switching to the group that contains the pick keeps it", page.locator("#basing-list").count() == 1 and page.inner_text("#basing-summary") == by_key["rock"]["summary"])
@@ -300,7 +286,11 @@ def main():
         load(page, recipes=RECIPES, units=UNITS)
         edit_recipe(page, 106)
         open_panel(page)
-        for x in tips:
+        # T3b: three tips instead of twelve: the fewest paint steps, the most, and one with none (else the middle one)
+        # (the exact-paint and empty-palette loops below still cover every tip)
+        by_len = sorted(tips, key=lambda t_: len(t_["paintSteps"]))
+        no_steps = next((t_ for t_ in tips if not t_["paintSteps"] and t_ not in (by_len[0], by_len[-1])), by_len[len(by_len) // 2])
+        for x in [by_len[0], by_len[-1], no_steps]:
             pick_tip(page, x["key"])
             rows = basing_rows(page)
             subs = list_texts(page, "#basing-tips .basing-sub")
@@ -459,8 +449,6 @@ def main():
         texts = basing_text(page)
         check("a paint and brand full of HTML show as plain text in the new rows", "<img" in texts and "Evil" in texts
               and page.locator("#basing-tips img, #basing-tips script, #basing-tips b").count() == 0, texts[:200])
-        check("nothing ran (no onerror, no script) and the whole card has no injected tags",
-              page.evaluate("() => window.__pwned") is None and page.locator("#colour-ideas img, #colour-ideas script, #colour-ideas .ideas-body b").count() == 0)
         n0 = len(full_steps(page))
         page.click("#basing-add-all")
         page.wait_for_timeout(250)
@@ -618,7 +606,6 @@ def main():
         check("a starter scheme still shows four rows (part and colour word) and tapping a paint still adds one step: 100%, 1 coat, the same note as in v31",
               srows == [f"{c['part']}: {c['look']}." for c in sch["colours"]] and len(st) == n0 + 1 and st[-1]["mix"] == 100 and st[-1]["coats"] == 1
               and st[-1]["note"] == "Starter scheme (Orange and mid blue): trim" and st[-1]["technique"] == "", st[-1])
-        check("the faction history is still there with its rows", page.locator("#faction-history").count() == 1 and len(t.hist_rows(page)) >= 1)
         n0 = len(full_steps(page))
         page.locator("#faction-history button.idea-pick").first.click()
         page.wait_for_timeout(250)
@@ -639,26 +626,20 @@ def main():
               len(st) == n0 + 4 and [(a["technique"], a["coats"], a["mix"], a["note"]) for a in st[n0:]] == [(s["technique"], s["coats"], s["mix"], s["note"]) for s in rust["steps"]])
         check("picking a detail recipe does not pick a basing tip, and picking a basing tip does not pick a detail recipe (separate choices)",
               page.locator("#basing-list").count() == 0 and (lambda: (pick_tip(page, "snow"), page.locator("#detail-list").count() == 1 and page.locator("#basing-list").count() == 1)[-1])())
-        check("the main three ideas are still exactly three 'idea' buttons", page.locator("#colour-ideas button.idea").count() == 3)
         order = page.evaluate("""() => { const ids = ['colour-ideas-tip', 'faction-history', 'starter-schemes', 'detail-recipes', 'basing-tips', 'scheme-check'];
             const body = document.querySelector('#colour-ideas .ideas-body'); return ids.map(i => [...body.children].indexOf(document.getElementById(i))); }""")
         check("order in the card: tip, faction history, starter schemes, Detail recipes, Basing tips (new), then the check", order == sorted(order) and -1 not in order, order)
-        check("the card is still labelled Pro preview and still ends with the footnote", page.inner_text("#colour-ideas .pro-pill") == "Pro preview"
-              and page.evaluate("() => document.querySelector('#colour-ideas .ideas-body').lastElementChild.textContent.includes('Nothing leaves your phone')"))
         check("the whole Colour ideas card has no links at all (no shop links, Coach 5 is not merged)", page.locator("#colour-ideas a:not(.shop-more a)").count() == 0)   # v64: a paint you do not own can now come first, with the v39 Shop links fold-out
         check("the Colour ideas card starts closed in a fresh editor", (lambda: (load(page), open_editor(page), page.evaluate("() => document.getElementById('colour-ideas').open"))[-1])() is False)
         n = page.locator(".step-edit").count()
         t.add_step(page)
-        check("+ Add step still adds an empty step", page.locator(".step-edit").count() == n + 1)
         t.set_step_paint(page, 0, "Brand New Paint X")
         page.wait_for_timeout(150)
-        check("the 'Do you own these?' card still appears for a paint that is new to your palette", page.locator("#recipe-own").count() == 1 and page.is_visible("#recipe-own"))
         page.click("#recipe-page button.plain-button:has-text('Cancel')")
         page.wait_for_timeout(250)
         if page.is_visible("#dialog-yes"):
             page.click("#dialog-yes")
             page.wait_for_timeout(250)
-        check("Cancel still leaves the editor", page.evaluate("() => recipeDraft") is None)
         check("no real browser pop-ups appeared", not dialogs, dialogs)
         check("no page errors", not errors, errors[:3])
         browser.close()

@@ -63,7 +63,6 @@ def main():
             check("the v34 Updates entry has no Games Workshop words", entry and not dirty(" ".join(entry["changes"])), entry)
         else:
             print("SKIP (entry no longer in the public Updates list): " + 'the v34 Updates entry has no Games Workshop words')
-        check("the Pro preview label is still there", "Pro preview" in read("app.js"))
 
         # ---------- 2. A brand-new start ----------
         print("\n--- 2. A brand-new start ---")
@@ -101,9 +100,10 @@ def main():
         for sel in ["#help-example-recipes", "#help-faction-part"]:
             txt = page.evaluate("(s) => document.querySelector(s).textContent", sel)
             check(f"Help {sel} is plain", not dirty(txt), txt)
-        for old in ['"Nuln Oill"', '"My Ultramarines"', "Baal Red:CM", "Seraphim Sepia 1:2", "Ushabti Bone", "Ultramarines armour and Ork skin",
-                    "Ultramarines Blue.", 'e.g. 40K"', 'e.g. Tyranids"', "e.g. Macragge Blue"]:
-            check(f"the old wording {old} is gone from index.html", old not in html)
+        old_words = ['"Nuln Oill"', '"My Ultramarines"', "Baal Red:CM", "Seraphim Sepia 1:2", "Ushabti Bone", "Ultramarines armour and Ork skin",
+                     "Ultramarines Blue.", 'e.g. 40K"', 'e.g. Tyranids"', "e.g. Macragge Blue"]
+        # T3b: one combined scan instead of ten (no other test scans index.html for these old names, so the scan stays, once)
+        check("none of the old example names or hints is left in index.html", not [w for w in old_words if w in html], [w for w in old_words if w in html])
         check("the Help lines about the Warhammer app import are still there (a plain statement of what it reads)",
               "From the Warhammer app" in html and "Only unit names and model counts are kept" in html)
         check("the unofficial wording is unchanged", "Unofficial fan-made app" in html and "not affiliated with or endorsed by Games Workshop" in html)

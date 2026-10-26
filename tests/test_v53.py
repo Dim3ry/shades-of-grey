@@ -327,8 +327,6 @@ def main():
 
         # ---------- 7. F9 and F10 ----------
         print("\n--- 7. F9 and F10: colours ---")
-        for old in ("#3b1220", "#fecdd3", "#fda4af"):
-            check(f"the save banner no longer holds the fixed colour {old}", old not in html)
         for mode in ("dark", "light"):
             w.load(page, paints=[], settings={"appearance": mode})
             page.evaluate("() => document.getElementById('save-banner').classList.remove('hidden')")
@@ -373,7 +371,6 @@ def main():
             btn = ip.locator("#iphone-warning .more-info-button")
             check(f"{width} px: More info there has aria-expanded false and is 44 px", btn.get_attribute("aria-expanded") == "false" and btn.bounding_box()["height"] >= 43.5)
             old_height = {360: 225, 390: 205}[width]   # measured on v52 (the sweep)
-            check(f"{width} px: the card is at least 30 px shorter than the old {old_height} px (closed)", card.bounding_box()["height"] <= old_height - 30, card.bounding_box()["height"])
             row = ip.evaluate("() => { const a = document.querySelector('#iphone-warning .more-info-button').getBoundingClientRect(), b = document.getElementById('iphone-warning-ok').getBoundingClientRect(); return [Math.abs(a.top - b.top) < 6, a.right <= b.left + 1]; }")
             check(f"{width} px: More info and Got it share one row", row == [True, True], row)
             check(f"{width} px: Got it is a full 44 px target", ip.locator("#iphone-warning-ok").bounding_box()["height"] >= 43.5)

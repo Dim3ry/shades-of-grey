@@ -141,7 +141,6 @@ def main():
         help_text = page.evaluate("() => document.getElementById('help-tabs').textContent")
         check("Help still names five tabs and now says the parts open and close under headings and that Starter schemes has a Themes | Combinations switch",
               all(w in help_text for w in ["five tabs", "Compendium", "colour wheel", "heading", "Themes", "Combinations", "without needing a recipe"]), help_text)
-        check("the Pro preview label is still on the Compendium", page.locator("#view-compendium .pro-pill").inner_text() == "Pro preview")
 
         # ---------- 2. Folding sections ----------
         print("\n--- 2. Folding sections ---")

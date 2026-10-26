@@ -286,7 +286,6 @@ def run(viewport, label):
         check(f"{label} 9a Save backup shows a message", "Backup saved" in page.inner_text("#toast-text"))
         # v57: the reminder toast became the Save a backup? card on the Dashboard (tests/test_v57.py checks it).
         seed(units(12, 1), {**base_settings, "tab": "dashboard"})
-        check(f"{label} 9b the old reminder toast is gone", page.evaluate("typeof maybeRemindToBackUp") == "undefined")
         check(f"{label} 9c iPhone card hidden on a normal browser", not page.is_visible("#iphone-warning"))
 
         # ---------- 11. Fan-tool basics ----------

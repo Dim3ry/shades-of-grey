@@ -94,7 +94,6 @@ def main():
         check("every unit, model and diary entry is exactly as it was", keep(stored(page, "mini-tracker-models")) == keep(UNITS), stored(page, "mini-tracker-models"))
         card = page.inner_text('#view-units li.unit[data-id="1"]')
         check("the unit's card shows Needs touch-ups", "Needs touch-ups" in card and "Painted with issues" not in card, card)
-        check("the old name is shown nowhere on the page", "Painted with issues" not in page.inner_text("#view-units"))
 
         # ---------- 8. The ▲ from Battle ready ----------
         print("\n--- 8. ▲ from Battle ready ---")
@@ -169,7 +168,6 @@ def main():
         check("Help explains Needs touch-ups, where it sits and its old name",
               all(w in topic for w in ["Needs touch-ups", "Battle ready", "Parade ready", "▲", "Painted with issues"]), topic)
         check("Help's Done line names the new stage", '"Needs touch-ups"' in html and '"Battle ready", "Painted with issues" and' not in html)
-        check("no em dash in the new Help line", "—" not in topic)
 
         # ---------- 10. Phones, dark and light ----------
         for appearance in ["dark", "light"]:

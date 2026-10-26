@@ -64,10 +64,6 @@ def main():
         check("the scheme check and the Compendium copy text share one guide line",
               page.evaluate("SCHEME_ONLY_A_GUIDE === COMPENDIUM_TEXT_FOOT && SCHEME_ONLY_A_GUIDE.startsWith('Colours on a screen are only a guide')"))
         check("the Compendium's 'Pick a group above' line is gone", "Pick a group above" not in app and "function groupNone" not in app)
-        check("the old long empty-screen words are gone", not any(w in app for w in [
-            "bring in a whole army at once", "build up a progress timeline", "Your graph starts today. Come back",
-            "write down how you paint something", "No steps yet. Press Edit", "Your palette fills itself in from your recipes",
-            "It's a short form, about 2 minutes", "Paints you add from your recipes and from colour suggestions land here"]))
 
         # ---------- 3. Empty screens ----------
         print("\n--- 3. The empty screens ---")

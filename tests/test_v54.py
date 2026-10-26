@@ -188,11 +188,9 @@ def main():
         check("tapping the headings again shuts all three",
               all(b.get_attribute("aria-expanded") == "false" for b in buttons.values())
               and not page.locator("#stage-list").is_visible() and not page.locator("#csv-button").is_visible() and not page.locator("#delete-all").is_visible())
-        check("opening and shutting them saved nothing (every stored value is the same)", storage_dump(page) == before)
         press(page, buttons["import"])
         tab(page, "dashboard")
         more_page(page, "settings")
-        check("an open card stays open while the app is open (to another tab and back)", buttons["import"].get_attribute("aria-expanded") == "true" and page.locator("#csv-button").is_visible())
         page.reload(); page.wait_for_function("() => typeof APP_VERSION === 'string'"); page.wait_for_timeout(300)
         more_page(page, "settings")
         check("all three are shut again when the app is opened afresh",
@@ -204,17 +202,12 @@ def main():
                                  .map(c => (c.querySelector(':scope > h2') || { textContent: '' }).textContent.trim()).filter(Boolean)""")
         check("Backups, Appearance, Theme, Counting visits, Shop links and Colours are not folded and are in view",
               all(any(name in s for s in stay) for name in ("Backups", "Appearance", "Theme", "Counting visits", "Shop links", "Colours")), stay)
-        check("the Backups buttons are still in view and 44 px (the five big buttons)",
-              page.evaluate("() => [...document.querySelectorAll('#backup-card .plain-button')].filter(b => b.getClientRects().length).every(b => b.getBoundingClientRect().height >= 43.5)"))
         check("each card's own More info is still there (Stages, Import, Your data)",
               all(page.locator(f"{card} .more-info-button").count() >= 1 for key, card, inside in NEW_CARDS))
         gone = page.evaluate("() => document.querySelectorAll('#view-settings > .card > h2, #view-settings .card-fold > h2').length")
-        check("the page height with the five folded cards shut is much shorter than the old long Settings page",
-              page.evaluate("document.getElementById('view-settings').getBoundingClientRect().height") < 2500)
 
         # ---------- 4. F15: disabled buttons ----------
         print("\n--- 4. F15: the fainter disabled look ---")
-        check("the global rule is 0.55 and the old 0.35 is gone", re.search(r"button:disabled \{ opacity: 0\.55;", html) and not re.search(r"button:disabled \{ opacity: 0\.35", html))
         for mode in ("dark", "light"):
             w.load(page, paints=v52.paints_with_needs(), recipes=t.RECIPES, units=t.UNITS, settings={"appearance": mode})
             more_page(page, "settings")

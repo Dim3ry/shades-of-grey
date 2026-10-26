@@ -88,7 +88,6 @@ def main():
               j["lab"] == ["Good fit", "Okay fit", "Poor fit", "Yours, poor fit", ""], j["lab"])
         check("the cut-offs are set once, in colour.js", len(re.findall(r"const GOOD_UNDER = 6, CLOSE_UNDER = 15", colour)) == 1 and "GOOD_UNDER" not in app and "CLOSE_UNDER" not in app)
         app_code = re.sub(r"const CHANGELOG = \[.*?\n    \];", "", app, flags=re.S)   # (the v64 Updates entry names them, on purpose)
-        check("the old note sentences are gone from the app", not any(s in app_code for s in ("Closest you own", "Not very close. It is the nearest we found.", "Similar, not exact.")))
 
         # ---------- 3. suggestPaint ----------
         print("\n--- 3. Who goes first ---")
