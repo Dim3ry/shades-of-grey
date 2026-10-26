@@ -109,7 +109,7 @@
     // Stages from settings.doneFrom onwards count as "Done"; earlier ones are "To do".
     const DEFAULT_STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed",
                             "Part painted", "Battle ready", "Needs touch-ups", "Parade ready"];
-    // v62: the defaults from v3 to v61, when the 7th stage was called "Painted with issues".
+    // v68: the defaults from v3 to v61, when the 7th stage was called "Painted with issues".
     // Anyone still on exactly this list (on the device, in a backup or in a safety copy) gets it
     // renamed to "Needs touch-ups" (see renamedStageList). Units save a stage NUMBER, so none of
     // them move. Custom stage lists are left alone.
@@ -217,7 +217,7 @@
         try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (ignored) {}
       }
     }
-    // v62: "Painted with issues" becomes "Needs touch-ups" for anyone on the v3 to v61 default stages.
+    // v68: "Painted with issues" becomes "Needs touch-ups" for anyone on the v3 to v61 default stages.
     // DATA_VERSION went up to 2 for this, so an older copy of the app left open stops saving
     // instead of writing the old name back. The saveSettings() a little further down saves it.
     if (renamedStageList(STAGES) !== STAGES) settings.stages = STAGES = DEFAULT_STAGES.slice();

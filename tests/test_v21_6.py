@@ -48,7 +48,7 @@ def png(width=64, height=48, rgb=(40, 90, 160)):
     return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
             + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
 
-# v62: the 7th default stage was renamed from "Painted with issues" to "Needs touch-ups", so this list uses the new name.
+# v68: the 7th default stage was renamed from "Painted with issues" to "Needs touch-ups", so this list uses the new name.
 STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted",
           "Battle ready", "Needs touch-ups", "Parade ready"]
 UNITS = [

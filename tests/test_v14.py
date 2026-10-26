@@ -10,7 +10,7 @@ PORT = _os.environ.get("SOG_PORT", "8765")
 
 URL = f"http://localhost:{PORT}/index.html"
 SHOTS = sys.argv[1] if len(sys.argv) > 1 else "."
-# v62: the 7th default stage was renamed from "Painted with issues" to "Needs touch-ups", so this list uses the new name.
+# v68: the 7th default stage was renamed from "Painted with issues" to "Needs touch-ups", so this list uses the new name.
 DEFAULT = ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted",
            "Battle ready", "Needs touch-ups", "Parade ready"]
 

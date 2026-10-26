@@ -37,7 +37,7 @@ def check(name, ok, detail=""):
 def read(name):
     return open(os.path.join(ROOT, name), encoding="utf-8").read()
 
-# v62: the 7th default stage was renamed from "Painted with issues" to "Needs touch-ups", so this list uses the new name.
+# v68: the 7th default stage was renamed from "Painted with issues" to "Needs touch-ups", so this list uses the new name.
 STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted",
           "Battle ready", "Needs touch-ups", "Parade ready"]
 V21_4_CSP = ("default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; "

@@ -52,7 +52,7 @@ def png(width=64, height=48, rgb=(40, 90, 160)):
 
 TINY_DATA_URL = "data:image/png;base64," + __import__("base64").b64encode(png(8, 8, (200, 60, 60))).decode()
 
-# v62: the 7th default stage was renamed from "Painted with issues" to "Needs touch-ups", so this list uses the new name.
+# v68: the 7th default stage was renamed from "Painted with issues" to "Needs touch-ups", so this list uses the new name.
 STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted",
           "Battle ready", "Needs touch-ups", "Parade ready"]
 UNITS = [
