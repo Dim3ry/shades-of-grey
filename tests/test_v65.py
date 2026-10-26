@@ -6,7 +6,7 @@ What changed:
  and one card, Best match: up to 3 paints from different brands where possible, closest first, whether or not you own them, each with its
  fit word. A paint you do not own can go on the shopping list (with Undo); a paint you own says so. Varnishes, mediums, thinners and the
  15 Tamiya paints stored as white are never offered; nor are example or made-up paints, nor the paint itself.
- Your closest, the Best / Yours tabs and swapping into a recipe step come in chunk 3.5b. No paint content file changed.
+ Your closest and the Best / Yours tabs came in v66 (chunk 3.5b-1, see test_v66); swapping into a recipe step comes after. No paint content file changed.
 
 Checks:
 1. Versions, the v65 Updates entry, Help line, no em dash.
@@ -175,8 +175,9 @@ def main():
               1 <= len(got) <= 3 and all(r["name"] and r["brand"] and r["fit"] in ("Good fit", "Okay fit", "Poor fit", "Yours, poor fit") for r in got), got)
         check("the one-line note says colours are only a guide", "only a guide" in page.inner_text(".similar-note"), page.inner_text(".similar-note"))
         text = page.inner_text(".similar")
-        check("no Your closest card yet (chunk 3.5b), no Sample label, no previous or next arrows",
-              "Your closest" not in text and "Sample" not in text and page.locator(".similar button", has_text=re.compile("^[‹›←→]$")).count() == 0, text)
+        # v66 (chunk 3.5b-1): this used to say there was no Your closest card yet. It now exists (see test_v66), so only the other two parts stay here.
+        check("no Sample label, no previous or next arrows",
+              "Sample" not in text and page.locator(".similar button", has_text=re.compile("^[‹›←→]$")).count() == 0, text)
         check("the close button says Close in its aria-label", page.locator(".similar-head button").get_attribute("aria-label") == "Close")
         check("the question box and the pop-up are separate (the question box stays hidden)", page.evaluate("() => document.getElementById('dialog-backdrop').classList.contains('hidden')"))
         check("the page behind does not scroll while it is open", page.evaluate("() => document.body.style.overflow") == "hidden")

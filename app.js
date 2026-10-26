@@ -10467,7 +10467,8 @@
     // ================= v65: SIMILAR PAINTS (chunk 3.5a) =================
     // A "Similar paints" button on a paint in the Compendium opens a pop-up with one card, Best match: up to 3 paints from different
     // brands where possible, closest first, whether or not you own them. Lighter / Close / Darker moves the colour being matched.
-    // Each paint can go on the shopping list (with Undo). The next part (chunk 3.5b) adds Your closest and swapping into a recipe step.
+    // Each paint can go on the shopping list (with Undo). v66 (chunk 3.5b-1): a second card, Your closest (the nearest paints you own),
+    // with Best / Yours tabs on a phone and the two cards side by side from 700 px. (Swapping into a recipe step is the next part.)
     // It uses the colour engine and its fit rule (colour.js), nothing new. No paint file is changed: the paints that are not colours
     // are skipped here, by name.
     const SIMILAR_SHOWN = 3;
@@ -10511,6 +10512,27 @@
         if (!picked.includes(hit)) picked.push(hit);
       }
       return picked.sort((a, b) => a.distance - b.distance);
+    }
+
+    // v66: Your closest. The nearest paints you own, for the same target, with the same fit words. The paint itself, example and made-up
+    // paints and the not-a-colour list are left out (similarPool does that). Closest first. Each is a nearestPaints result.
+    function similarYourClosest(paint, shift) {
+      const target = similarTarget(paint.colour, shift);
+      if (!target) return { owned: 0, hits: [] };
+      const self = paintKey(paint);
+      const mine = similarPool().filter(p => paintKey(p) !== self && MinifolioColour.haveIt(p) && MinifolioColour.canMatch(p));
+      const all = MinifolioColour.nearestPaints(target, mine, { limit: SIMILAR_SHOWN, ownedFirst: false });
+      return { owned: mine.length, hits: all };
+    }
+    // Which cards to show: Best match always. Your closest only when you own paints and the top Best match is not already one of yours.
+    // Returns { best, yours: null | { hits } } where hits is empty when none of your paints is a Good or Okay fit.
+    function similarCards(paint, shift) {
+      const best = similarBestMatches(paint, shift);
+      if (best.length && best[0].owned) return { best, yours: null };
+      const mine = similarYourClosest(paint, shift);
+      if (!mine.owned) return { best, yours: null };
+      const close = mine.hits.length && mine.hits[0].quality !== "poor";
+      return { best, yours: { hits: close ? mine.hits : [] } };
     }
 
     // The "Similar paints" button on a Compendium paint (next to Use in a recipe and Add to a recipe).
@@ -10570,38 +10592,75 @@
         shiftRow.appendChild(b);
       }
 
-      const card = document.createElement("section");
-      card.className = "similar-card";
-      const cardTitle = document.createElement("h3");
-      cardTitle.textContent = "Best match";
-      card.setAttribute("aria-labelledby", idOf(cardTitle));
-      const list = document.createElement("ul");
-      list.className = "similar-list";
-      list.setAttribute("aria-live", "polite");
-      const none = document.createElement("p");
-      none.className = "similar-none";
-      none.textContent = "No similar paints found.";
-      card.append(cardTitle, list, none);
+      // Two cards: Best match, and Your closest when it applies. On a phone (below 700 px) they are tabs, one at a time; from 700 px they
+      // sit side by side and the tabs go. The tab list is a proper one: arrow keys, Home and End, aria-selected, one tab stop.
+      const makeCard = (title, noneText) => {
+        const section = document.createElement("section");
+        section.className = "similar-card";
+        const h = document.createElement("h3");
+        h.textContent = title;
+        const ul = document.createElement("ul");
+        ul.className = "similar-list";
+        ul.setAttribute("aria-live", "polite");
+        const empty = document.createElement("p");
+        empty.className = "similar-none";
+        empty.textContent = noneText;
+        section.append(h, ul, empty);
+        return { section, h, ul, empty };
+      };
+      const best = makeCard("Best match", "No similar paints found.");
+      const mine = makeCard("Your closest", "Nothing close in your paints.");
+      const tabList = document.createElement("div");
+      tabList.className = "similar-tabs";
+      tabList.setAttribute("role", "tablist");
+      tabList.setAttribute("aria-label", "Best match or your closest");
+      const tabs = {};
+      for (const [key, text, card] of [["best", "Best", best], ["yours", "Yours", mine]]) {
+        const tab = document.createElement("button");
+        tab.type = "button";
+        tab.setAttribute("role", "tab");
+        tab.textContent = text;
+        tab.id = `similar-tab-${key}`;
+        card.section.id = `similar-card-${key}`;
+        tab.setAttribute("aria-controls", card.section.id);
+        tab.addEventListener("click", () => { state.tab = key; place(); });
+        tabs[key] = tab;
+        tabList.appendChild(tab);
+      }
+      tabList.addEventListener("keydown", (event) => {
+        const keys = ["best", "yours"], at = keys.indexOf(state.tab);
+        const to = event.key === "ArrowRight" || event.key === "ArrowDown" ? keys[(at + 1) % 2]
+                 : event.key === "ArrowLeft" || event.key === "ArrowUp" ? keys[(at + 1) % 2]
+                 : event.key === "Home" ? "best" : event.key === "End" ? "yours" : null;
+        if (!to) return;
+        event.preventDefault();
+        state.tab = to;
+        place();
+        tabs[to].focus();
+      });
+      const cards = document.createElement("div");
+      cards.className = "similar-cards";
+      cards.append(best.section, mine.section);
 
       const note = document.createElement("p");
       note.className = "similar-note";
       note.textContent = MinifolioColour.isRoughColour(paint) ? WHEEL_ROUGH_NOTE : SCHEME_ONLY_A_GUIDE;
 
-      box.append(head, shiftRow, card, note);
+      box.append(head, shiftRow, tabList, cards, note);
       backdrop.appendChild(box);
       document.body.appendChild(backdrop);
       document.body.classList.add("similar-open");   // lifts the Undo message above the pop-up
       document.body.style.overflow = "hidden";       // the page behind does not scroll
 
       const state = {
-        paint, shift: "close", opener, backdrop, rows: [],
+        paint, shift: "close", tab: "best", opener, backdrop, rows: [],
         refresh: () => { for (const row of state.rows) row.sync(); },
       };
       similarState = state;
 
       // One paint in the card. The button is for a paint you do not own; a paint you own just says so. Once on the list the button stays
       // (so focus is not lost) and says so too.
-      const buildRow = (hit) => {
+      const buildRow = (hit, inYours) => {
         const p = hit.paint;
         const li = document.createElement("li");
         li.className = "similar-row";
@@ -10628,7 +10687,9 @@
           action.setAttribute("aria-label", listed ? LISTED_TAG.text : "Add to shopping list");
           action.setAttribute("aria-disabled", String(listed));
         };
-        if (hit.owned) {
+        if (hit.owned && inYours) {
+          // every paint in Your closest is yours: nothing to add, and no line saying so
+        } else if (hit.owned) {
           const own = document.createElement("span");
           own.className = "similar-own";
           own.textContent = "You own this";
@@ -10649,12 +10710,48 @@
         return li;
       };
 
+      // Tabs on a phone, side by side from 700 px (the same width the styles use). Only when there are two cards.
+      const wide = window.matchMedia("(min-width: 700px)");
+      function place() {
+        const two = !!state.cards.yours;
+        const tabbed = two && !wide.matches;
+        if (!two) state.tab = "best";
+        box.classList.toggle("two", two);
+        box.classList.toggle("tabbed", tabbed);
+        tabList.classList.toggle("hidden", !tabbed);
+        mine.section.classList.toggle("hidden", !two);
+        for (const [key, card] of [["best", best], ["yours", mine]]) {
+          const on = state.tab === key;
+          card.section.classList.toggle("is-off", tabbed && !on);
+          tabs[key].setAttribute("aria-selected", String(on));
+          tabs[key].tabIndex = on ? 0 : -1;
+          if (tabbed) {
+            card.section.setAttribute("role", "tabpanel");
+            card.section.setAttribute("aria-labelledby", tabs[key].id);
+          } else {
+            card.section.removeAttribute("role");
+            card.section.setAttribute("aria-labelledby", idOf(card.h));
+          }
+          card.h.classList.toggle("sr-only", tabbed);
+        }
+      }
+      state.place = place;
+      if (wide.addEventListener) wide.addEventListener("change", place);
+      state.unwatch = () => { if (wide.removeEventListener) wide.removeEventListener("change", place); };
+
       function draw() {
         for (const [key, b] of Object.entries(shiftButtons)) b.setAttribute("aria-pressed", String(key === state.shift));
-        const hits = similarBestMatches(paint, SIMILAR_SHIFT[state.shift]);
+        state.cards = similarCards(paint, SIMILAR_SHIFT[state.shift]);
         state.rows = [];
-        list.replaceChildren(...hits.map(buildRow));
-        none.classList.toggle("hidden", hits.length > 0);
+        best.ul.replaceChildren(...state.cards.best.map(hit => buildRow(hit, false)));
+        best.empty.classList.toggle("hidden", state.cards.best.length > 0);
+        if (state.cards.yours) {
+          mine.ul.replaceChildren(...state.cards.yours.hits.map(hit => buildRow(hit, true)));
+          mine.empty.classList.toggle("hidden", state.cards.yours.hits.length > 0);
+        } else {
+          mine.ul.replaceChildren();
+        }
+        place();
       }
       draw();
 
@@ -10664,7 +10761,7 @@
           event.preventDefault(); event.stopPropagation();
           closeSimilar();
         } else if (event.key === "Tab") {
-          const stops = [...box.querySelectorAll("button")];
+          const stops = [...box.querySelectorAll("button")].filter(b => b.tabIndex >= 0 && b.offsetParent !== null);   // v66: the tab not in use is skipped (arrow keys reach it)
           const at = stops.indexOf(document.activeElement);
           const next = event.shiftKey ? (at <= 0 ? stops.length - 1 : at - 1) : (at < 0 || at === stops.length - 1 ? 0 : at + 1);
           event.preventDefault();
@@ -10679,6 +10776,7 @@
       const state = similarState;
       if (!state) return;
       similarState = null;
+      if (state.unwatch) state.unwatch();
       document.removeEventListener("keydown", state.onKey, true);
       state.backdrop.remove();
       document.body.classList.remove("similar-open");
@@ -14981,12 +15079,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=65".
+    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=66".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v65";
+    const APP_VERSION = "v66";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -15437,6 +15535,11 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v66", date: "25 Oct 2026", changes: [
+        "Similar paints now has a second card, Your closest: the nearest paints you own, with the same fit words. It follows Lighter, Close and Darker too.",
+        "If your closest paint is already the best match, only Best match shows. If none of your paints is close, Your closest says so. With no paints of your own, only Best match shows.",
+        "On a phone the two cards are tabs, Best and Yours. On a wider screen they sit side by side and the pop-up is wider.",
+      ]},
       { version: "v65", date: "25 Oct 2026", changes: [
         "New Similar paints button on a paint in the Compendium. It opens a pop-up with Best match: up to three paints from different brands, closest first, whether or not you own them, each with its fit.",
         "Lighter, Close and Darker at the top of the pop-up look for a lighter or darker colour. Close is the default.",
