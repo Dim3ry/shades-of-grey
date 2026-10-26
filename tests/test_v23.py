@@ -35,8 +35,9 @@ def check(name, ok, detail=""):
 def read(name):
     return open(os.path.join(ROOT, name), encoding="utf-8").read()
 
+# v68: the 7th default stage was renamed from "Painted with issues" to "Needs touch-ups", so this list uses the new name.
 STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted",
-          "Battle ready", "Painted with issues", "Parade ready"]
+          "Battle ready", "Needs touch-ups", "Parade ready"]
 UNITS = [
     {"id": 1, "name": "Intercessors", "hobby": "40K", "faction": "Ultramarines", "stage": 3, "count": 5,
      "note": "blue armour", "log": [["2026-09-01", 0], ["2026-09-05", 3]]},
@@ -186,7 +187,7 @@ def main():
         csp_meta = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html, re.S)
         check("the CSP is exactly v21.4's", csp_meta and " ".join(csp_meta.group(1).split()) == V21_4_CSP,
               csp_meta and csp_meta.group(1))
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
+        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         keys = page.evaluate("() => Object.keys(localStorage).sort()")
         check("storage keys unchanged", "mini-tracker-models" in keys and "shades-of-grey-settings" in keys, keys)
 

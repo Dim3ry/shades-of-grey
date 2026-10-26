@@ -257,7 +257,7 @@ def main():
             check("the v29 Updates entry is still there", page.evaluate("!!CHANGELOG.find(r => r.version === 'v29')"))
         else:
             print("SKIP (entry no longer in the public Updates list): " + 'the v29 Updates entry is still there')
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
+        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         check("the three storage names are unchanged",
               all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"', 'RECIPES_KEY = "shades-of-grey-recipes"']))
         csp = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html, re.S)
@@ -401,7 +401,7 @@ def main():
               [r["why"] for r in rows_s] == ["Armour: a deep blue.", "Armour highlight: a lighter blue.", "Trim: gold.", "Eyes: a bright red."], [r["why"] for r in rows_s])
         check("the four paints are four different paints", len({r["name"] for r in rows_s}) == 4, rows_s)
         check("every row has one of the three honest tags",
-              all(r["tag"] in ("You own this", "Closest you own", "Not in your palette") for r in rows_s), [r["tag"] for r in rows_s])
+              all(r["tag"] in ("You own this", "Yours, poor fit", "Not in your palette") for r in rows_s), [r["tag"] for r in rows_s])
         n0 = len(draft_steps(page))
         page.locator("#starter-list button.idea-pick").first.click()
         page.wait_for_timeout(250)
@@ -424,7 +424,7 @@ def main():
             pick_scheme(page, s["key"])
             r = starter_rows(page)
             check(f"{s['name']}: one row per colour, all different paints, honest tags", len(r) == len(s["colours"]) and len({x["name"] for x in r}) == len(r)
-                  and all(x["tag"] in ("You own this", "Closest you own", "Not in your palette") for x in r), r)
+                  and all(x["tag"] in ("You own this", "Yours, poor fit", "Not in your palette") for x in r), r)
             pick_scheme(page, s["key"])
 
         # ---------- 5. Honesty ----------
@@ -458,9 +458,10 @@ def main():
         edit_recipe(page, 106)
         open_panel(page)
         pick_scheme(page, "blue-gold")
-        notes_text = page.evaluate("() => [...document.querySelectorAll('#starter-list .idea-pick')].map(b => [b.querySelector('.idea-tag').textContent, (b.querySelector('.idea-note') || {}).textContent || ''])")
-        check("an owned paint that is only close says Closest you own and 'Similar, not exact' or 'Not very close'",
-              any(t == "Closest you own" and n in ("Similar, not exact.", "Not very close. It is the nearest we found.") for t, n in notes_text), notes_text)
+        # v64: no note sentences. An owned paint that is only a poor fit sits under the best paint overall, labelled "Yours, poor fit".
+        notes_text = page.evaluate("() => [[...document.querySelectorAll('#starter-list .idea-also .idea-tag')].map(e => e.textContent), document.querySelectorAll('#starter-list .idea-note').length]")
+        check("an owned paint that is only a poor fit says Yours, poor fit under the best paint, and there are no note sentences",
+              "Yours, poor fit" in notes_text[0] and notes_text[1] == 0, notes_text)
 
         # ---------- 6. Where it sits ----------
         print("\n--- 6. Where it sits, other things unchanged ---")

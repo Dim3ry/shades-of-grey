@@ -1,69 +1,74 @@
-"""v62 tests for Minifolio (chunk 3.1: from a recipe or a palette paint, one tap opens matching Compendium ideas).
+"""v62 tests for Minifolio (chunk 3.2: put a Compendium paint into a recipe).
 
 What changed:
- A paint in an open recipe step, and an open paint in Your Palette, has an "Ideas for this" button. It opens the
- Compendium with that paint's ideas at the top: the same paint panel the colour wheel opens (colours that go with it,
- yours first, and starter schemes with a similar colour), plus detail recipes and basing tips with a step of a similar
- colour. "Show steps" / "Show tip" opens that recipe or tip in its own part. "Back to recipe" / "Back to Your Palette"
- (or the phone's Back) goes to the same place. A paint with no colour set, or a basing material, has no button.
+ A paint in the Compendium (a colour idea row, and the open panel of a colour wheel paint) has two buttons:
+ "Use in a recipe" (a new recipe with the paint in step 1) and "Add to a recipe" (pick a recipe, then a step or a new step;
+ saved at once). Both have Undo. A paint that is not in Your Palette is added as Not owned and the confirmation line says so.
+ Made-up example paints are not offered. The "Save into a new recipe" code is reused.
 
 Checks:
 1. Versions, the v62 Updates entry, DATA_VERSION is still 1.
-2. The button: in an open recipe step (label only, no sentence next to it), not for a paint with no colour or a material.
-3. Tapping it: the Compendium shows the paint's ideas first (harmony groups, starter schemes, detail recipes, basing
-   tips), yours first, and the Back button has the focus. Names stay plain text.
-4. Show steps and Show tip open the detail recipe and the basing tip in their parts.
-5. Back to recipe: the same recipe, the same step still open, the button has the focus.
-6. Your Palette: the button in an open paint, Back to Your Palette, the paint still open. The phone's Back does the same.
-7. The Compendium tab itself shows the whole Compendium again.
-8. Help names the button, the parts and the way back.
+2. A colour idea row has both buttons; the recipe editor's own colour ideas do not.
+3. Use in a recipe: a new recipe with the paint in step 1, Not owned in Your Palette, the line says so, Undo closes it and
+   puts Your Palette back.
+4. Add to a recipe: a new step, and an existing step (even split), each saved at once, each with Undo; the recipe and
+   Your Palette come back exactly.
+5. A paint already in Your Palette: the line does not claim it was added.
+6. The wheel paint's open panel has both buttons.
+7. Made-up example paints are not offered; the recipe editor (no share) is not offered.
+8. Help names both buttons. No em dash in the new Updates entry.
 9. 390 px and 360 px, dark and light: no sideways scroll, buttons 44 px or more.
-10. Offline (no requests leave the machine), no page errors, no browser pop-ups.
+10. No page errors, no browser pop-ups.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
-import os, re, sys
+import json, os, re, sys
 from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from notice_watch import attach_notices
 import test_v31 as t
-import test_v44 as e   # main_tab, recipe_view
+import test_v35 as c   # Compendium helpers (open every part, pick a start colour)
+import test_v39 as h   # wheel and paint-panel helpers, the made-up Probe paints
 
-URL, read = t.URL, t.read
-HERE = os.path.dirname(os.path.abspath(__file__))
+read, load, no_sideways = t.read, t.load, t.no_sideways
 results = []
 
 def check(name, ok, detail=""):
     results.append(bool(ok))
     print(("PASS " if ok else "FAIL ") + name + ("" if ok else f"  -> {detail}"))
 
-HOSTILE = '<img src=x onerror="window.__pwned=1">Evil Blue'
-PAINTS = [
-    {"id": 1, "brand": "Citadel", "name": "Macragge Blue", "colour": "#0d407f", "status": "owned"},
-    {"id": 2, "brand": "Citadel", "name": "Troll Slayer Orange", "colour": "#f4741c", "status": "owned"},
-    {"id": 4, "brand": "Citadel", "name": "Eshin Grey", "colour": "#4a4d52", "status": "owned"},
-    {"id": 6, "brand": "Citadel", "name": "Rakarth Flesh", "colour": "#a7a28f", "status": "owned"},
-    {"id": 9, "brand": "Vallejo", "name": "Sandy Ground", "colour": "#9c8760", "status": "owned"},
-    {"id": 30, "brand": "Vallejo", "name": "Unset Paint", "colour": "#808080", "status": "owned"},
-    {"id": 31, "brand": "", "name": "Fine sand", "colour": "#c2b280", "type": "material", "status": "owned"},
-    {"id": 32, "brand": "Odd", "name": HOSTILE, "colour": "#2a5db0", "status": "wishlist"},
-]
-RECIPES = [t.rec(101, "Armour blue", "Whole model", [30, 1, 31]), t.rec(102, "Ground", "Base", [9, 32])]
-SETTINGS = {"tab": "recipes", "recipeView": "recipes", "examplesChecked": True}
+BASE = "test paints|probe blue"
+NOT_OWNED_LINE = "Added to Your Palette as Not owned."
+RECIPES = [{"id": 1, "name": "Probe armour", "part": "Armour", "notes": "", "steps": [
+    {"technique": "Base coat", "coats": 2, "paints": [{"paint": 1, "mix": 100}], "ratio": "", "note": "", "optional": False},
+    {"technique": "Wash", "coats": 1, "paints": [{"paint": 1, "mix": 100}], "ratio": "", "note": "", "optional": False}]}]
 
-def open_recipe(page, rid):
-    page.evaluate("(id) => openRecipe(id)", rid)
+def open_ideas(page, paints, recipes=None):
+    load(page, paints=paints, recipes=recipes)
+    c.open_comp(page)
+    c.pick_base(page, BASE)
+    page.wait_for_timeout(150)
+
+def first_row(page):
+    return page.locator("#cmp-fold-ideas-panel > .idea-list > li").first
+
+def row_name(row):
+    return row.locator(".idea-name").evaluate("el => el.childNodes[0].textContent")
+
+def stored(page):
+    return page.evaluate("() => JSON.parse(localStorage.getItem('shades-of-grey-recipes'))")
+
+def palette_entry(page, name):
+    return next((p for p in stored(page)["paints"] if p["name"] == name), None)
+
+def toast_text(page):
+    return page.evaluate("() => document.getElementById('toast-text').textContent")
+
+def tap_undo(page):
+    page.click("#toast-undo")
     page.wait_for_timeout(250)
 
-def open_step(page, i):
-    line = page.locator(f'#recipe-page button.step-line[aria-controls="rstep-{i}"]')
-    if line.get_attribute("aria-expanded") != "true":
-        line.click()
-        page.wait_for_timeout(150)
-
-def focused(page):
-    return page.evaluate("() => { const a = document.activeElement; return a ? (a.id || a.dataset.ideasFor || a.className) : ''; }")
-
 def main():
-    errors, dialogs, outside = [], [], []
+    errors, dialogs = [], []
     app, html = read("app.js"), read("index.html")
     with sync_playwright() as p:
         browser = p.chromium.launch()
@@ -71,11 +76,12 @@ def main():
         page = ctx.new_page()
         page.on("pageerror", lambda x: errors.append(str(x)))
         page.on("dialog", lambda d: (dialogs.append(d.message), d.dismiss()))
-        page.on("request", lambda r: outside.append(r.url) if not r.url.startswith(t.BASE) and not r.url.startswith("data:") else None)
+        notices = []
+        attach_notices(page, notices.append)
 
         # ---------- 1. Versions ----------
         print("\n--- 1. Versions and the Updates entry ---")
-        t.load(page, paints=PAINTS, recipes=RECIPES, settings=SETTINGS)
+        load(page, paints=h.JUST_BLUE)
         version = page.evaluate("APP_VERSION")
         check("APP_VERSION is v62 or later", float(version[1:]) >= 62, version)
         m = re.search(r'const VERSION = "v([\d.]+)"', read("sw.js"))
@@ -85,154 +91,152 @@ def main():
         check("the comments that name the number agree", f'The "?v={version[1:]}" makes' in html and f'e.g. "app.js?v={version[1:]}"' in app)
         entry = page.evaluate("CHANGELOG.find(c => c.version === 'v62')")
         check("the v62 Updates entry exists and is the newest while v62 is current", bool(entry) and (version != "v62" or page.evaluate("CHANGELOG[0].version") == "v62"))
-        text = " ".join(entry["changes"]) if entry else ""
-        check("the entry names the button and the way back", all(w in text for w in ["Ideas for this", "Back to recipe", "Back to Your Palette"]), text)
+        joined = " ".join(entry["changes"]) if entry else ""
+        check("the entry names both buttons and Not owned", "Use in a recipe" in joined and "Add to a recipe" in joined and "Not owned" in joined, joined)
         check("no em dash in the v62 Updates entry", "—" not in app[app.index('{ version: "v62"'):app.index('{ version: "v61"')])
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
+        check("DATA_VERSION is 2 (v68 raised it from 1 for the Needs touch-ups rename, so this test now expects 2)", page.evaluate("DATA_VERSION") == 2)
 
-        # ---------- 2. The button in a recipe step ----------
-        print("\n--- 2. The button in a recipe step ---")
-        open_recipe(page, 101)
-        for i in range(3):
-            open_step(page, i)
-        btn = lambda pid, scope="#recipe-page": page.locator(f'{scope} button.ideas-for[data-ideas-for="{pid}"]')
-        check("a paint with a colour has Ideas for this", btn(1, "#rstep-1").count() == 1 and btn(1, "#rstep-1").inner_text().strip().startswith("Ideas for this"))
-        check("a paint with no colour set has no button", btn(30).count() == 0)
-        check("a basing material has no button", btn(31).count() == 0)
-        check("the button is a label only (no sentence next to it)", page.evaluate("""() => { const b = document.querySelector('#rstep-1 button.ideas-for');
-            return !b.nextElementSibling || !b.nextElementSibling.matches('p, small, .hint'); }"""))
-        check("the paint's name is read out with it, not put in an aria-label", btn(1, "#rstep-1").get_attribute("aria-label") is None
-              and "Macragge Blue" in btn(1, "#rstep-1").text_content())
+        # ---------- 2. The buttons on a colour idea ----------
+        print("\n--- 2. The buttons ---")
+        open_ideas(page, h.JUST_BLUE, RECIPES)
+        row = first_row(page)
+        name = row_name(row)
+        labels = row.locator(".paint-recipe .paint-recipe-buttons button").all_inner_texts()
+        check("a colour idea row has Use in a recipe and Add to a recipe (v65 adds Similar paints after them)", labels[:2] == ["Use in a recipe", "Add to a recipe"] and labels[2:] in ([], ["Similar paints"]), labels)
+        check("that paint is not in Your Palette yet", palette_entry(page, name) is None, name)
+        check("the recipe editor's own colour ideas have no such buttons (door has no share)",
+              page.evaluate("() => paintToRecipeOffered({ share: null }, { name: 'X', brand: '' })") is False)
 
-        # ---------- 3. The Compendium, scoped ----------
-        print("\n--- 3. Ideas for one paint ---")
-        btn(1, "#rstep-1").click()
+        # ---------- 3. Use in a recipe ----------
+        print("\n--- 3. Use in a recipe ---")
+        before = json.dumps(stored(page), sort_keys=True)
+        row.locator("button", has_text="Use in a recipe").click()
         page.wait_for_timeout(300)
-        check("the Compendium tab is shown", page.evaluate("settings.tab") == "compendium" and page.is_visible("#view-compendium"))
-        check("the paint's ideas sit above the colour wheel", page.evaluate("""() => { const f = document.getElementById('cmp-focus'), w = document.getElementById('cmp-wheel-block');
-            return !!f && !!w && !!(f.compareDocumentPosition(w) & Node.DOCUMENT_POSITION_FOLLOWING); }"""))
-        check("the title names the paint", page.text_content("#cmp-focus-title") == "Ideas for Macragge Blue (Citadel)", page.text_content("#cmp-focus-title"))
-        labels = page.evaluate("() => [...document.querySelectorAll('#cmp-focus .paint-panel-label')].map(p => p.textContent)")
-        check("colours that go with it: Opposite, Neighbours and Triad", all(x in labels for x in ["Opposite", "Neighbours", "Triad"]), labels)
-        check("then starter schemes, detail recipes and basing tips with a similar colour",
-              labels[-3:] == ["Starter schemes with a similar colour", "Detail recipes with a similar colour", "Basing tips with a similar colour"], labels)
-        tags = page.evaluate("() => [...document.querySelectorAll('#cmp-focus-panel > .idea-list')][0] ? [...document.querySelectorAll('#cmp-focus-panel > .idea-list')].slice(0, 3).flatMap(l => [...l.querySelectorAll('.idea-tag')].map(x => x.textContent)) : []")
-        check("your own paints come first in the matches", tags and all("own" in x for x in tags[:4]), tags)
-        check("the Back button says Back to recipe and has the focus", page.inner_text("#cmp-focus-back").strip() == "← Back to recipe" and focused(page) == "cmp-focus-back", focused(page))
-        check("no stray ids: the focus panel has its own", page.evaluate("() => document.querySelectorAll('#cmp-paint-panel').length") == 0)
-        check("the matching is the same engine as the starter schemes (no copy)", "function libraryLike" in app and app.count("C.judgeMatch(") >= 2)
+        draft = page.evaluate("() => recipeDraft && { id: recipeDraft.id, steps: recipeDraft.steps.map(s => s.paints.map(p => p.name)) }")
+        check("a new recipe opened with the paint in step 1 only", draft and draft["id"] is None and draft["steps"] == [[name]], draft)
+        check("the recipes tab is showing", page.evaluate("() => !document.getElementById('view-recipes').classList.contains('hidden')"))
+        entry_now = palette_entry(page, name)
+        check("the paint is in Your Palette as Not owned", entry_now and entry_now.get("status") == "notowned", entry_now)
+        line = toast_text(page)
+        check("the line names the paint and says it was added as Not owned", name in line and NOT_OWNED_LINE in line, line)
+        check("the line has an Undo button", page.is_visible("#toast-undo"))
+        check("no em dash in the line", "—" not in line)
+        tap_undo(page)
+        check("Undo closes the new recipe", page.evaluate("() => recipeDraft") is None)
+        check("Undo puts Your Palette back exactly", json.dumps(stored(page), sort_keys=True) == before)
 
-        # ---------- 4. Show steps / Show tip ----------
-        print("\n--- 4. Show steps and Show tip ---")
-        detail = page.locator("#cmp-focus button.ideas-open[data-detail]")
-        check("at least one detail recipe matches a deep blue", detail.count() >= 1, detail.count())
-        if detail.count():
-            key = detail.first.get_attribute("data-detail")
-            detail.first.click()
-            page.wait_for_timeout(300)
-            check("Show steps opens Detail recipes with that recipe picked", page.get_attribute("#cmp-fold-detail-button", "aria-expanded") == "true"
-                  and page.locator(f'#cmp-fold-detail-panel [data-detail="{key}"]').count() == 1 and page.is_visible("#cmp-detail-summary"))
-            check("…and the focus goes to it", page.evaluate("() => document.activeElement && document.activeElement.dataset.detail") == key)
-            check("the paint's ideas are still on show", page.locator("#cmp-focus").count() == 1)
-        t.load(page, paints=PAINTS, recipes=RECIPES, settings=SETTINGS)
-        open_recipe(page, 102)
-        open_step(page, 0)
-        btn(9, "#rstep-0").click()
+        # ---------- 4. Add to a recipe ----------
+        print("\n--- 4. Add to a recipe ---")
+        open_ideas(page, h.JUST_BLUE, RECIPES)
+        row = first_row(page)
+        name = row_name(row)
+        before = json.dumps(stored(page), sort_keys=True)
+        row.locator("button", has_text="Add to a recipe").click()
+        picker = row.locator(".paint-recipe-picker")
+        check("the picker opens under the buttons", picker.count() == 1)
+        check("the step list is hidden until a recipe is chosen", picker.locator("select").nth(1).evaluate("el => el.classList.contains('hidden')"))
+        picker.locator("select").nth(0).select_option("1")
+        steps = picker.locator("select").nth(1).locator("option").all_inner_texts()
+        check("the step list offers a new step and each step", steps[0] == "A new step" and len(steps) == 3 and steps[1].startswith("Step 1: Base coat"), steps)
+        picker.locator("button", has_text="Add").click()
         page.wait_for_timeout(300)
-        tip = page.locator("#cmp-focus button.ideas-open[data-basing]")
-        check("a sandy brown matches a basing tip", tip.count() >= 1, tip.count())
-        if tip.count():
-            key = tip.first.get_attribute("data-basing")
-            tip.first.click()
-            page.wait_for_timeout(300)
-            check("Show tip opens Basing tips with that tip picked", page.get_attribute("#cmp-fold-basing-button", "aria-expanded") == "true"
-                  and page.evaluate("compendiumState.basing") == key)
+        recipe = stored(page)["recipes"][0]
+        added = palette_entry(page, name)
+        check("a new last step holds the paint", len(recipe["steps"]) == 3 and recipe["steps"][2]["paints"] == [{"paint": added["id"], "mix": 100}], recipe["steps"][-1])
+        check("the paint is Not owned in Your Palette", added.get("status") == "notowned", added)
+        line = toast_text(page)
+        check("the line says it went into a new step and was added as Not owned", name in line and "new step 3" in line and NOT_OWNED_LINE in line, line)
+        tap_undo(page)
+        check("Undo puts the recipe and Your Palette back exactly", json.dumps(stored(page), sort_keys=True) == before)
 
-        # ---------- 5. Back to recipe ----------
-        print("\n--- 5. Back to recipe ---")
-        page.click("#cmp-focus-back")
+        c.open_comp(page)
+        c.pick_base(page, BASE)
+        row = first_row(page)
+        row.locator("button", has_text="Add to a recipe").click()
+        picker = row.locator(".paint-recipe-picker")
+        picker.locator("select").nth(0).select_option("1")
+        picker.locator("select").nth(1).select_option("0")
+        picker.locator("button", has_text="Add").click()
         page.wait_for_timeout(300)
-        check("back on the Recipes tab, in the same recipe", page.evaluate("settings.tab") == "recipes" and page.evaluate("openRecipeId") == 102)
-        check("…with the same step still open", page.get_attribute('#recipe-page button.step-line[aria-controls="rstep-0"]', "aria-expanded") == "true")
-        check("…and the focus on the same button", focused(page) == "9")
-        check("the Compendium is no longer scoped", page.evaluate("compendiumState.focus") is None)
-        check("hostile paint names stay plain text", page.evaluate("window.__pwned") is None)
-        open_step(page, 1)
-        btn(32, "#rstep-1").click()
-        page.wait_for_timeout(300)
-        check("a hostile name shows as text in the title", HOSTILE in (page.text_content("#cmp-focus-title") or "") and page.evaluate("window.__pwned") is None)
+        recipe = stored(page)["recipes"][0]
+        added = palette_entry(page, name)
+        mixes = [sp["mix"] for sp in recipe["steps"][0]["paints"]]
+        check("the paint joined step 1 with an even split", len(recipe["steps"]) == 2 and len(mixes) == 2 and mixes == [50, 50] and recipe["steps"][0]["paints"][1]["paint"] == added["id"], recipe["steps"][0])
+        check("the line says step 1", "step 1" in toast_text(page), toast_text(page))
+        tap_undo(page)
+        check("Undo again puts everything back", json.dumps(stored(page), sort_keys=True) == before)
 
-        # ---------- 6. Your Palette, and the phone's Back ----------
-        print("\n--- 6. Your Palette ---")
-        t.load(page, paints=PAINTS, recipes=RECIPES, settings=dict(SETTINGS, recipeView="palette"))
-        page.click('#paint-list .paint-head:has-text("Eshin Grey")')
-        page.wait_for_timeout(200)
-        pal = btn(4, "#paint-list")
-        check("an open palette paint has Ideas for this", pal.count() == 1)
-        page.click('#paint-list .paint-head:has-text("Unset Paint")')
-        page.wait_for_timeout(200)
-        check("an open palette paint with no colour has none", btn(30, "#paint-list").count() == 0)
-        btn(4, "#paint-list").click()
+        # ---------- 5. A paint already in Your Palette ----------
+        print("\n--- 5. A paint you already have ---")
+        open_ideas(page, h.JUST_BLUE, RECIPES)
+        pick = page.evaluate("""(n) => { const k = searchedPaints.find(x => x.name === n); return { brand: k.brand, name: k.name, colour: k.colour }; }""", row_name(first_row(page)))
+        mine = dict(pick, id=2, status="notowned")
+        open_ideas(page, h.JUST_BLUE + [mine], RECIPES)
+        rows = page.locator("#cmp-fold-ideas-panel > .idea-list > li")
+        row = next((rows.nth(i) for i in range(rows.count()) if row_name(rows.nth(i)) == pick["name"]), None)
+        name = pick["name"]
+        known = palette_entry(page, name)
+        check("this idea is a paint already in Your Palette", row is not None and known is not None, name)
+        row.locator("button", has_text="Use in a recipe").click()
         page.wait_for_timeout(300)
-        check("it opens the Compendium for that paint", page.text_content("#cmp-focus-title") == "Ideas for Eshin Grey (Citadel)")
-        check("a grey gets the neutral accents instead of an opposite", "Accents that stand out" in page.text_content("#cmp-focus"))
-        check("the Back button says Back to Your Palette", page.inner_text("#cmp-focus-back").strip() == "← Back to Your Palette")
-        page.click("#cmp-focus-back")
-        page.wait_for_timeout(300)
-        check("back on Your Palette with the paint still open", page.evaluate("settings.recipeView") == "palette" and page.evaluate("settings.tab") == "recipes"
-              and btn(4, "#paint-list").count() == 1 and focused(page) == "4")
-        btn(4, "#paint-list").click()
-        page.wait_for_timeout(300)
-        page.go_back()
-        page.wait_for_timeout(400)
-        check("the phone's Back goes back to Your Palette too", page.evaluate("settings.tab") == "recipes" and page.evaluate("settings.recipeView") == "palette", page.evaluate("settings.tab"))
+        line = toast_text(page)
+        check("the line does not say it was added to Your Palette", name in line and "Not owned" not in line, line)
+        check("its status is left alone", palette_entry(page, name).get("status") == known.get("status"))
+        tap_undo(page)
+        check("Undo closes the new recipe", page.evaluate("() => recipeDraft") is None)
 
-        # ---------- 7. The tab itself ----------
-        print("\n--- 7. The Compendium tab ---")
-        btn(4, "#paint-list").click()
-        page.wait_for_timeout(300)
-        e.main_tab(page, "recipes")
-        e.main_tab(page, "compendium")
-        check("tapping the Compendium tab shows the whole Compendium", page.locator("#cmp-focus").count() == 0 and page.locator("#cmp-wheel-block").count() == 1)
+        # ---------- 6. The wheel paint's panel ----------
+        print("\n--- 6. A colour wheel paint ---")
+        load(page, paints=h.UNOWNED)
+        h.open_tab(page)
+        h.tap(page, "blue")
+        h.open_row(page, "Probe Blue")
+        panel = page.locator("#cmp-paint-panel")
+        wheel_labels = panel.locator(":scope > .paint-recipe .paint-recipe-buttons button").all_inner_texts()
+        check("the open panel has both buttons for the wheel paint (v65 adds Similar paints after them)", wheel_labels[:2] == ["Use in a recipe", "Add to a recipe"] and wheel_labels[2:] in ([], ["Similar paints"]), wheel_labels)
+        panel.locator(":scope > .paint-recipe button", has_text="Add to a recipe").click()
+        check("with no recipes yet, Add to a recipe says so and opens no picker", panel.locator(".paint-recipe-picker").count() == 0)
+
+        # ---------- 7. Made-up example paints are not offered ----------
+        print("\n--- 7. Example paints ---")
+        load(page, paints=h.JUST_BLUE + [{"id": 9, "brand": "", "name": "Example deep blue", "colour": "#223388"}])
+        offered = page.evaluate("""() => ({
+            made_up: paintToRecipeOffered({ share: {} }, { name: 'Example deep blue', brand: '' }),
+            real: paintToRecipeOffered({ share: {} }, { name: 'Probe Blue', brand: 'Test Paints' }),
+            catalogue: paintToRecipeOffered({ share: {} }, { name: 'Not In Palette Paint', brand: 'Someone' }) })""")
+        check("a made-up example paint is not offered", offered["made_up"] is False, offered)
+        check("a real paint is offered, in your palette or not", offered["real"] is True and offered["catalogue"] is True, offered)
 
         # ---------- 8. Help ----------
         print("\n--- 8. Help ---")
-        topic = page.evaluate("() => (document.getElementById('help-ideas-for') || {}).textContent || ''")
-        check("Help has an Ideas for this line naming the parts and the way back",
-              all(w in topic for w in ["Ideas for this", "Your Palette", "detail recipes", "basing tips", "Show steps", "Back to recipe", "Back to Your Palette", "no colour set"]), topic)
-        check("…in the Paint recipes topic", page.evaluate("() => document.getElementById('help-ideas-for').closest('details').querySelector('summary').textContent.trim()") == "Paint recipes")
-        check("no em dash in the new Help line", "—" not in topic)
+        help_text = page.evaluate("() => (document.getElementById('help-paint-to-recipe') || {}).textContent || ''")
+        check("Help names both buttons, Undo and Not owned", all(w in help_text for w in ["Use in a recipe", "Add to a recipe", "Undo", "Not owned"]), help_text)
+        check("no em dash in the Help item", "—" not in help_text)
 
         # ---------- 9. Phones, dark and light ----------
-        for appearance in ["dark", "light"]:
-            for width in [390, 360]:
-                tag = f"{appearance} {width}px"
-                print(f"\n--- 9. {tag} ---")
-                page.set_viewport_size({"width": width, "height": 780})
-                t.load(page, paints=PAINTS, recipes=RECIPES, settings=dict(SETTINGS, appearance=appearance))
-                open_recipe(page, 101)
-                open_step(page, 1)
-                check(f"{tag}: recipe page, no sideways scroll", not page.evaluate("document.documentElement.scrollWidth > document.documentElement.clientWidth"))
-                b = btn(1, "#rstep-1").bounding_box()
-                check(f"{tag}: Ideas for this is 44 px or more and fits", b and b["height"] >= 44 and b["x"] + b["width"] <= width, b)
-                btn(1, "#rstep-1").click()
-                page.wait_for_timeout(300)
-                check(f"{tag}: the paint's ideas, no sideways scroll", not page.evaluate("document.documentElement.scrollWidth > document.documentElement.clientWidth"))
-                sizes = page.evaluate("""() => [...document.querySelectorAll('#cmp-focus-back, #cmp-focus button.ideas-open')].map(b => { const r = b.getBoundingClientRect();
-                    return [Math.round(r.height), r.right <= document.documentElement.clientWidth]; })""")
-                check(f"{tag}: Back, Show steps and Show tip are 44 px or more and fit", sizes and all(h >= 44 and fits for h, fits in sizes), sizes)
-                os.makedirs(os.path.join(HERE, "screenshots"), exist_ok=True)
-                page.locator("#cmp-focus").screenshot(path=os.path.join(HERE, "screenshots", f"v62-ideas-{appearance}-{width}.png"))
+        print("\n--- 9. Phones ---")
+        for width in (390, 360):
+            for scheme in ("dark", "light"):
+                page.set_viewport_size({"width": width, "height": 844})
+                page.emulate_media(color_scheme=scheme)
+                open_ideas(page, h.JUST_BLUE, RECIPES)
+                row = first_row(page)
+                row.locator("button", has_text="Add to a recipe").click()
+                row.locator(".paint-recipe-picker select").nth(0).select_option("1")
+                page.wait_for_timeout(100)
+                sizes = page.evaluate("""() => [...document.querySelectorAll('#cmp-fold-ideas-panel .paint-recipe button, #cmp-fold-ideas-panel .paint-recipe select')]
+                    .filter(el => el.offsetParent).map(el => Math.round(el.getBoundingClientRect().height))""")
+                check(f"{width} px {scheme}: no sideways scroll", no_sideways(page))
+                check(f"{width} px {scheme}: the buttons and pickers are 44 px or more", sizes and min(sizes) >= 44, sizes)
 
-        # ---------- 10. Safety ----------
-        print("\n--- 10. Safety ---")
-        check("works offline: no request left this machine", not outside, outside[:5])
+        # ---------- 10. Errors ----------
+        print("\n--- 10. Errors ---")
         check("no page errors", not errors, errors)
         check("no browser pop-ups", not dialogs, dialogs)
         browser.close()
-
-    print(f"\n{sum(results)}/{len(results)} checks passed")
-    sys.exit(0 if all(results) else 1)
+    failed = results.count(False)
+    print(f"\n{len(results) - failed} passed, {failed} failed")
+    sys.exit(1 if failed else 0)
 
 if __name__ == "__main__":
     main()

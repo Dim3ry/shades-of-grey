@@ -91,7 +91,7 @@ def main():
         check("the v61 Updates entry exists and is the newest while v61 is current", bool(entry) and (version != "v61" or page.evaluate("CHANGELOG[0].version") == "v61"))
         check("the entry names the button and the way back", entry and "Track models separately" in " ".join(entry["changes"]) and "Track as one batch" in " ".join(entry["changes"]), entry)
         check("no em dash in the v61 Updates entry", "—" not in app[app.index('{ version: "v61"'):app.index('{ version: "v60"')])
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
+        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
 
         # ---------- 2. Where the button is ----------
         print("\n--- 2. The button ---")

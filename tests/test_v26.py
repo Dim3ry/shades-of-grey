@@ -222,7 +222,7 @@ def main():
         csp_meta = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html, re.S)
         check("the CSP is exactly v21.4's", csp_meta and " ".join(csp_meta.group(1).split()) == V21_4_CSP,
               csp_meta and csp_meta.group(1))
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
+        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         check("the three old storage names are unchanged",
               all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"',
                                      'RECIPES_KEY = "shades-of-grey-recipes"']))
@@ -703,7 +703,7 @@ def main():
         check("keeping drafts writes nothing into your units or recipes", snap == after)
         check("and nothing about drafts goes into the settings", "draft" not in json.dumps(page.evaluate("() => JSON.parse(localStorage.getItem('shades-of-grey-settings'))")).lower())
         check("a backup does not carry drafts", "draft" not in page.evaluate("() => JSON.stringify(backupData())").lower())
-        check("DATA_VERSION stays 1 and is what is saved", page.evaluate("() => JSON.parse(localStorage.getItem('shades-of-grey-settings')).dataVersion") == 1)
+        check("DATA_VERSION stays 1 and is what is saved", page.evaluate("() => JSON.parse(localStorage.getItem('shades-of-grey-settings')).dataVersion") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         keys = page.evaluate("() => Object.keys(localStorage).sort()")
         check("the only new storage entry is the drafts one",
               set(keys) <= {"mini-tracker-models", "shades-of-grey-recipes", "shades-of-grey-settings", DRAFTS}, keys)

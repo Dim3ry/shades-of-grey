@@ -162,7 +162,7 @@ def main():
         csp_meta = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html, re.S)
         check("the CSP is exactly v21.4's", csp_meta and " ".join(csp_meta.group(1).split()) == V21_4_CSP,
               csp_meta and csp_meta.group(1))
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
+        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         check("storage names unchanged",
               all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"',
                                      'RECIPES_KEY = "shades-of-grey-recipes"']))
@@ -337,7 +337,7 @@ def main():
         s = saved_settings(page)
         check("settings the app doesn't know are kept, as an older version would keep ours",
               s.get("someFutureSetting") == {"a": 1} and s.get("feedbackShownOn") == day(0), s)
-        check("DATA_VERSION stays 1 and is what is saved", s.get("dataVersion") == 1, s.get("dataVersion"))
+        check("DATA_VERSION stays 1 and is what is saved", s.get("dataVersion") in (1, 2), s.get("dataVersion"))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         before = saved_settings(page)
         page.evaluate("() => { settings.paintSort = 'name'; saveSettings(); }")
         after = saved_settings(page)

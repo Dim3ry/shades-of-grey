@@ -69,7 +69,9 @@ def basing_rows(page):
     return page.evaluate("""() => [...document.querySelectorAll('#basing-list button.idea-pick')].map(b => ({
         name: b.querySelector('.idea-name').childNodes[0].textContent, brand: (b.querySelector('.idea-name small') || {}).textContent || '',
         tag: b.querySelector('.idea-tag').textContent, why: b.querySelector('.idea-why').textContent,
-        note: (b.querySelector('.idea-note') || {}).textContent || '' }))""")
+        note: (b.querySelector('.idea-note') || {}).textContent || '',
+        fit: (b.querySelector('.idea-fit') || {}).textContent || '',   // v64: the fit label, and your own paint's line when it is a poor fit
+        also: (b.closest('li').querySelector('.idea-also .idea-tag') || {}).textContent || '' }))""")
 
 def group_chips(page):
     return page.evaluate("() => [...document.querySelectorAll('#basing-groups .chip')].map(c => [c.textContent, c.getAttribute('aria-pressed'), c.dataset.basingGroup])")
@@ -146,7 +148,7 @@ def main():
             check("the v32, v31 and v30 Updates entries are still there", page.evaluate("['v32', 'v31', 'v30'].every(v => !!CHANGELOG.find(r => r.version === v))"))
         else:
             print("SKIP (entry no longer in the public Updates list): " + 'the v32, v31 and v30 Updates entries are still there')
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
+        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         check("the three storage names are unchanged",
               all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"', 'RECIPES_KEY = "shades-of-grey-recipes"']))
         policy = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
@@ -331,7 +333,7 @@ def main():
                   and list_texts(page, "#basing-materials li") == x["materials"] and list_texts(page, "#basing-howto li") == x["howto"] and kinds == ["UL", "OL"]
                   and subs[:2] == ["What you need", "How to build it"] and (subs[2:] == ["Paint steps (optional)"] if x["paintSteps"] else subs[2:] == [])
                   and len(rows) == len(x["paintSteps"]) and [r["why"] for r in rows] == [why_line(i + 1, s) for i, s in enumerate(x["paintSteps"])]
-                  and all(r["tag"] in ("You own this", "Closest you own", "Not in your palette") for r in rows)
+                  and all(r["tag"] in ("You own this", "Yours, poor fit", "Not in your palette") for r in rows)
                   and page.locator("#basing-add-all").count() == (1 if x["paintSteps"] else 0))
             check(f"{x['name']} ({x['group']}): summary, {len(x['materials'])} materials, {len(x['howto'])} how-to steps as plain text, {len(x['paintSteps'])} paint rows with technique, coats, mix % and note, honest tags, one Add all paint steps button",
                   ok, (rows[:2], subs, page.inner_text("#basing-summary")))
@@ -440,11 +442,13 @@ def main():
         pick_tip(page, "ice")
         rows = basing_rows(page)
         check("an owned paint that is exactly the wanted colour says You own this (paint step 1)", rows[0]["name"] == "Exact Deep Blue" and rows[0]["tag"] == "You own this" and rows[0]["note"] == "", rows)
+        # v64: the wishlist paint is the closest paint overall, so it is shown first; it still never says You own this
         check("a wishlist paint that is exactly right never says You own this (paint step 2 is a pale blue and the only exact paint for it is on the wishlist)",
-              rows[1]["name"] != "Exact Pale Blue" and rows[1]["tag"] != "You own this", rows[1])
-        check("every row has one of the three honest tags", all(r["tag"] in ("You own this", "Closest you own", "Not in your palette") for r in rows) and len(rows) == 3, rows)
-        check("when the nearest paint you own is far from the colour wanted, the row says Closest you own and says it is not very close or similar, not exact (never You own this)",
-              all(r["tag"] == "Closest you own" and ("Not very close" in r["note"] or "Similar, not exact" in r["note"]) for r in rows[1:]), rows[1:])
+              rows[1]["tag"] != "You own this" and rows[1]["fit"] == "Good fit", rows[1])
+        check("every row has one of the three honest tags and a fit label", all(r["tag"] in ("You own this", "Yours, poor fit", "Not in your palette") for r in rows) and len(rows) == 3
+              and all(r["fit"] or r["tag"] == "Yours, poor fit" for r in rows), rows)
+        check("when the nearest paint you own is far from the colour wanted, the best paint overall comes first and yours sits under it as Yours, poor fit (no note sentences, never You own this)",
+              all(r["tag"] != "You own this" and r["note"] == "" and (r["also"] == "Yours, poor fit" or r["tag"] == "Yours, poor fit") for r in rows[1:]), rows[1:])
         load(page, paints=[], recipes=[], units=[])
         open_editor(page)
         open_panel(page)
@@ -665,7 +669,7 @@ def main():
         check("order in the card: tip, faction history, starter schemes, Detail recipes, Basing tips (new), then the check", order == sorted(order) and -1 not in order, order)
         check("the card is still labelled Pro preview and still ends with the footnote", page.inner_text("#colour-ideas .pro-pill") == "Pro preview"
               and page.evaluate("() => document.querySelector('#colour-ideas .ideas-body').lastElementChild.textContent.includes('Nothing leaves your phone')"))
-        check("the whole Colour ideas card has no links at all (no shop links, Coach 5 is not merged)", page.locator("#colour-ideas a").count() == 0)
+        check("the whole Colour ideas card has no links at all (no shop links, Coach 5 is not merged)", page.locator("#colour-ideas a:not(.shop-more a)").count() == 0)   # v64: a paint you do not own can now come first, with the v39 Shop links fold-out
         check("the Colour ideas card starts closed in a fresh editor", (lambda: (load(page), open_editor(page), page.evaluate("() => document.getElementById('colour-ideas').open"))[-1])() is False)
         n = page.locator(".step-edit").count()
         t.add_step(page)

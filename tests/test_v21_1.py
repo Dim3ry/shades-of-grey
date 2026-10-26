@@ -41,8 +41,9 @@ def read(name):
         return "\n".join(open(os.path.join(ROOT, n), encoding="utf-8").read() for n in ("index.html", "early.js", "app.js"))
     return open(os.path.join(ROOT, name), encoding="utf-8").read()
 
+# v68: the 7th default stage was renamed from "Painted with issues" to "Needs touch-ups", so this list uses the new name.
 STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted",
-          "Battle ready", "Painted with issues", "Parade ready"]
+          "Battle ready", "Needs touch-ups", "Parade ready"]
 UNITS = [
     {"id": 1, "name": "Intercessors", "hobby": "40K", "faction": "Ultramarines", "stage": 0, "count": 5,
      "log": [["2026-09-01", 0]]},
@@ -162,7 +163,7 @@ def main():
         check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
         check("the ocr folder is kept", all(os.path.exists(os.path.join(ROOT, "ocr", f)) for f in
               ["ocr-worker.js", "eng.traineddata", "tesseract-core-simd-lstm.wasm", "README.md"]))
-        check("the data version is still 1", page.evaluate("DATA_VERSION") == 1)
+        check("the data version is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         check("storage names unchanged", all(k in html for k in
               ["mini-tracker-models", "shades-of-grey-settings", "shades-of-grey-recipes", "shades-of-grey-photos"]))
 

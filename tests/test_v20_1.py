@@ -39,8 +39,9 @@ def read(name):
         return "\n".join(open(os.path.join(ROOT, n), encoding="utf-8").read() for n in ("index.html", "early.js", "app.js"))
     return open(os.path.join(ROOT, name), encoding="utf-8").read()
 
+# v68: the 7th default stage was renamed from "Painted with issues" to "Needs touch-ups", so this list uses the new name.
 STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted",
-          "Battle ready", "Painted with issues", "Parade ready"]
+          "Battle ready", "Needs touch-ups", "Parade ready"]
 UNITS = [{"id": i + 1, "name": n, "hobby": "40K", "faction": f, "stage": st, "count": c, "notes": "",
           "log": [["2026-09-01", 0], ["2026-10-0" + str(i + 1), st]]}
          for i, (n, f, st, c) in enumerate([("Intercessors", "Ultramarines", 7, 10), ("Hive Tyrant", "Tyranids", 5, 1),
@@ -139,7 +140,7 @@ def main():
         check("CNAME, if there, says minifolio.app (it belonged to the old GitHub Pages address; hosting moved to Cloudflare)", not os.path.exists(os.path.join(ROOT, "CNAME")) or read("CNAME").strip() == "minifolio.app")
         check("the ocr folder is kept", all(os.path.exists(os.path.join(ROOT, "ocr", f)) for f in
               ["ocr-worker.js", "eng.traineddata", "tesseract-core-simd-lstm.wasm", "README.md"]))
-        check("the data version is still 1", page.evaluate("DATA_VERSION") == 1)
+        check("the data version is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         check("storage names unchanged", all(k in html for k in
               ["'mini-tracker-models'".strip("'"), "shades-of-grey-settings", "shades-of-grey-recipes"]))
 
@@ -293,7 +294,7 @@ def main():
         b = page.evaluate("backupData()")
         check("a backup carries Custom (on, the starting set and the colours)",
               b.get("useCustom") is True and b.get("palette") == "forge" and b.get("customColours") == MINE, b.get("customColours"))
-        check("a backup's data version is still 1", b.get("dataVersion") == 1)
+        check("a backup's data version is still 1", b.get("dataVersion") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         seed(page, full_settings(palette="ice"))
         restore(page, b)
         s = saved(page)

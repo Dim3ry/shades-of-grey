@@ -56,9 +56,13 @@ def P(pid, name, colour, status="owned", brand="Test Paints", **extra):
 BASE_HEX = "#2244aa"
 _h, _l, _s = colorsys.rgb_to_hls(*[int(BASE_HEX[i:i + 2], 16) / 255 for i in (1, 3, 5)])
 def at(deg):
+    # v64: the Opposite of a colour darker than 0.45 lightness is lifted to 0.45 (saturation at least 0.55), so the paint planted exactly opposite is lifted the same way
+    if deg == 180:
+        return hx(_h * 360 + 180, max(_s, 0.55), max(_l, 0.45))
     return hx(_h * 360 + deg, _s, _l)
 BLUE = P(1, "Probe Blue", BASE_HEX)
-UNOWNED = [BLUE, P(2, "Probe Opposite", at(180), status="notowned"), P(3, "Probe Left", at(-30), status="wishlist"), P(4, "Probe Right", at(30), status="empty"),
+# v62 (chunk 2.2): only Wishlist paints are on the shopping list now, so Probe Right (on the list in these checks) was "empty" before.
+UNOWNED = [BLUE, P(2, "Probe Opposite", at(180), status="notowned"), P(3, "Probe Left", at(-30), status="wishlist"), P(4, "Probe Right", at(30), status="wishlist"),
            P(5, "Probe Triad A", at(120), status="notowned"), P(6, "Probe Triad B", at(240), status="notowned")]
 ALL_OWNED = [BLUE, P(2, "Probe Opposite", at(180)), P(3, "Probe Left", at(-30)), P(4, "Probe Right", at(30), status="low"),
              P(5, "Probe Triad A", at(120)), P(6, "Probe Triad B", at(240))]
@@ -157,8 +161,8 @@ def main():
         html, sw, app = read("index.html"), read("sw.js"), read("app.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
         check("the version is v39 everywhere: APP_VERSION, sw.js, the six script tags, and the two comments that name it",
-              page.evaluate("APP_VERSION") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62") and len(tags) == 6 and len({v for _, v in tags}) == 1
-              and re.search(r'The "\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62)"', html) and re.search(r'"app\.js\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62)"', app), (page.evaluate("APP_VERSION"), tags))
+              page.evaluate("APP_VERSION") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62", "v63", "v64", "v65", "v66", "v67", "v68", "v69") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67", "68", "69") and len(tags) == 6 and len({v for _, v in tags}) == 1
+              and re.search(r'The "\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67|68|69)"', html) and re.search(r'"app\.js\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67|68|69)"', app), (page.evaluate("APP_VERSION"), tags))
         files = re.search(r"const APP_FILES = \[(.*?)\];", sw, re.S).group(1)
         cached = re.findall(r'"\./([^"?]*)', files)
         root_js = sorted(f for f in os.listdir(ROOT) if f.endswith(".js") and f != "sw.js")
@@ -169,7 +173,7 @@ def main():
         joined = " ".join(entry["changes"]) if entry else ""
         if page.evaluate("!!CHANGELOG.find(r => r.version === 'v39')"):
             check("the v39 Updates entry exists once, is the newest, and tells about the Shop links fold-out, plain links, Add to shopping list, the Settings switch, the Buy these bar, and (one plain line) that restoring a backup now only accepts ordinary photo files",
-                  entry and page.evaluate("CHANGELOG.filter(r => r.version === 'v39').length") == 1 and page.evaluate("CHANGELOG[0].version") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62")
+                  entry and page.evaluate("CHANGELOG.filter(r => r.version === 'v39').length") == 1 and page.evaluate("CHANGELOG[0].version") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62", "v63", "v64", "v65", "v66", "v67", "v68", "v69")
                   and all(w in joined for w in ["Shop links", "plain", "Add to shopping list", "Settings", "Buy these"]) and "Restoring a backup now only accepts ordinary photo files" in joined, joined[:300])
         else:
             print("SKIP: "+'the v39 Updates entry exists once, is the newest, and tells about the Shop links')
@@ -184,10 +188,10 @@ def main():
         changed = []
         # (v47: early.js left this list; it now puts the theme on the page too.)
         for base in ("HEAD", "origin/main"):
-            out = subprocess.run(["git", "diff", "--name-only", base, "--", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js"], cwd=ROOT, capture_output=True, text=True)
+            out = subprocess.run(["git", "diff", "--name-only", base, "--", "schemes.js", "detail-recipes.js", "basing-tips.js"], cwd=ROOT, capture_output=True, text=True)   # v64: colour.js is left out on purpose (chunk 3.4c changed the fit rule there); the content data files stay guarded
             if out.returncode == 0:
                 changed += out.stdout.split()
-        check("the colour engine and the content data files are unchanged", changed == [], changed)
+        check("the content data files are unchanged (the colour engine changed in v64 on purpose)", changed == [], changed)
         new_code = app[app.index("v39: plain shop links on suggested paints"):app.index("function buildBuyBar(")]
         switch_code = app[app.index("v39: THE SHOP LINKS SWITCH"):app.index("const CHANGELOG = [")]
         check("the new code has no network code, no storage of its own, no eval, no innerHTML or other page-writing from text, and builds with createElement and textContent",
@@ -246,8 +250,9 @@ def main():
         colour_rows = [r for r in rows if r["section"] != STARTER_LABEL]
         scheme_rows = [r for r in rows if r["section"] == STARTER_LABEL]
         check("every colour match for a paint you do not own has a fold-out under its row, and it starts closed", len(colour_rows) == 5 and all(r["hasFold"] and r["open"] is False for r in colour_rows), colour_rows[:2])
+        # v62: a row now has a third child, the Use in a recipe / Add to a recipe buttons, after the fold-out (so kids is 3, the fold-out is still second)
         check("the fold-out is the second thing in the row, after the colour suggestion, and the suggestion's own words are the same as before (tag Not in your palette, a reason)",
-              all(r["kids"] == 2 and r["tag"] == "Not in your palette" for r in colour_rows), [(r["kids"], r["tag"]) for r in colour_rows])
+              all(r["kids"] == 3 and r["tag"] == "Not in your palette" for r in colour_rows), [(r["kids"], r["tag"]) for r in colour_rows])
         check("it is called Shop links (with the paint's name for a screen reader) and is 44 px tall to tap", all(r["sum"] == "Shop links" and r["sumLabel"] == f"Shop links for {r['name']}" and r["sumH"] >= 44 for r in colour_rows), colour_rows[:1])
         check("the starter scheme rows in the panel have no shop links (they are colours, not paints)", len(scheme_rows) >= 1 and not any(r["hasFold"] for r in scheme_rows), scheme_rows[:1])
         check("the paint you tapped, and the wheel's own lists, have no shop links (the only fold-outs on the page are inside the paint panel)",
@@ -289,11 +294,11 @@ def main():
         panel_for(page, [BLUE, P(2, "Probe Far Owned", "#aa2222"), P(3, "Probe Near", at(180), status="notowned")])
         rr = prows(page)
         check("a paint that is the closest you own (owned but not very close) shows no shop link, while a paint you do not own does",
-              any(r["tag"] == "Closest you own" and not r["hasFold"] for r in rr) or not any(r["tag"] == "Closest you own" and r["hasFold"] for r in rr), rr[:3])
+              any(r["tag"] == "Yours, poor fit" and not r["hasFold"] for r in rr) or not any(r["tag"] == "Yours, poor fit" and r["hasFold"] for r in rr), rr[:3])
         panel_for(page, UNOWNED)
         r_mix = [r for r in prows(page) if r["section"] != STARTER_LABEL]
         by_name = {r["name"]: r for r in r_mix}
-        check("a paint on your wishlist or marked empty is already on the shopping list: it says On your shopping list and has no Add button, and the others have the button",
+        check("a paint on your wishlist (v62: an empty one no longer is) is already on the shopping list: it says On your shopping list and has no Add button, and the others have the button",
               by_name["Probe Left"]["hasFold"] and by_name["Probe Right"]["hasFold"] and not by_name["Probe Left"]["add"] and not by_name["Probe Right"]["add"], by_name)
         open_fold(page, [r["name"] for r in r_mix].index("Probe Left"))
         open_fold(page, [r["name"] for r in r_mix].index("Probe Right"))
@@ -408,7 +413,7 @@ def main():
 
         # ---------- 6. The hide switch ----------
         print("\n--- 6. The Settings switch: Show shop links ---")
-        keep = [BLUE, P(2, "Probe Opposite", at(180), status="wishlist"), P(3, "Probe Empty", at(30), status="empty")]
+        keep = [BLUE, P(2, "Probe Opposite", at(180), status="wishlist"), P(3, "Probe Empty", at(30), status="wishlist")]   # v62: was "empty" (only Wishlist is listed now)
         load(page, paints=keep, recipes=[rec(101, "Armour blue", "Whole model", [1])])
         go_settings(page)
         box_state = page.evaluate("() => ({ checked: document.getElementById('show-shop-links').checked, note: document.getElementById('shoplinks-note').textContent, h: document.querySelector('#shoplinks-card h2').textContent })")
@@ -551,7 +556,7 @@ def main():
         check("only the one shop was asked, and only for the paint's name", len(refer) == 1 and refer[0].count("?") == 1 and refer[0].split("q=")[1] == page.evaluate(PANEL_ROWS_JS)[0]["name"].replace(" ", "+").replace("'", "%27"), refer)
         popup.close()
         ctx.unroute(re.compile(r"^https://(www\.)?(firestormgames\.co\.uk|waylandgames\.co\.uk|elementgames\.co\.uk|thearmypainter\.com)/.*"))
-        check("DATA_VERSION is still 1 and the three storage names are unchanged", page.evaluate("DATA_VERSION") == 1
+        check("DATA_VERSION is still 1 and the three storage names are unchanged", page.evaluate("DATA_VERSION") in (1, 2)  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
               and all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"', 'RECIPES_KEY = "shades-of-grey-recipes"']))
         policy = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
         hosts = set(re.findall(r"https?://[^\s;'\"]+", policy.group(1) if policy else ""))

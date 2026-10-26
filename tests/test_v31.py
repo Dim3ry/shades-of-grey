@@ -292,7 +292,7 @@ def main():
             check("the v30 and v29 Updates entries are still there", page.evaluate("!!CHANGELOG.find(r => r.version === 'v30') && !!CHANGELOG.find(r => r.version === 'v29')"))
         else:
             print("SKIP (entry no longer in the public Updates list): " + 'the v30 and v29 Updates entries are still there')
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
+        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         check("the three storage names are unchanged",
               all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"', 'RECIPES_KEY = "shades-of-grey-recipes"']))
         policy = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
@@ -432,7 +432,7 @@ def main():
             r = starter_rows(page)
             ok = (page.inner_text("#starter-summary") == s["summary"] and page.inner_text("#starter-reason") == s["reason"] and len(r) == 4
                   and [x["why"] for x in r] == [f"{c['part']}: {c['look']}." for c in s["colours"]] and len({x["name"] for x in r}) == 4
-                  and all(x["tag"] in ("You own this", "Closest you own", "Not in your palette") for x in r))
+                  and all(x["tag"] in ("You own this", "Yours, poor fit", "Not in your palette") for x in r))
             check(f"{s['name']} ({s['mood']}): summary, reason, four rows with part and colour word, four different paints, honest tags", ok, (r, page.inner_text("#starter-summary")))
             pick_scheme(page, s["key"])
         n0 = len(draft_steps(page))
@@ -460,7 +460,7 @@ def main():
         r = {x["name"]: x["tag"] for x in starter_rows(page)}
         check("an owned paint that is exactly the wanted colour says You own this", r.get("Exact Navy") == "You own this", r)
         check("a wishlist paint that is exactly right never says You own this", r.get("Exact Pale Yellow") != "You own this", r)
-        check("every row still has one of the three honest tags", all(v in ("You own this", "Closest you own", "Not in your palette") for v in r.values()) and len(r) == 4, r)
+        check("every row still has one of the three honest tags", all(v in ("You own this", "Yours, poor fit", "Not in your palette") for v in r.values()) and len(r) == 4, r)
         load(page, paints=[], recipes=[], units=[])
         open_editor(page)
         open_panel(page)

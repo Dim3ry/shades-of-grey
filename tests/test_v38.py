@@ -52,6 +52,9 @@ def P(pid, name, colour, status="owned", brand="Test Paints", **extra):
 BASE_HEX = "#2244aa"
 _h, _l, _s = colorsys.rgb_to_hls(*[int(BASE_HEX[i:i + 2], 16) / 255 for i in (1, 3, 5)])
 def at(deg):
+    # v64: the Opposite of a colour darker than 0.45 lightness is lifted to 0.45 (saturation at least 0.55), so the paint planted exactly opposite is lifted the same way
+    if deg == 180:
+        return hx(_h * 360 + 180, max(_s, 0.55), max(_l, 0.45))
     return hx(_h * 360 + deg, _s, _l)
 PAL = [P(1, "Probe Blue", BASE_HEX), P(2, "Probe Opposite", at(180)), P(3, "Probe Left", at(-30)), P(4, "Probe Right", at(30)),
        P(5, "Probe Triad A", at(120)), P(6, "Probe Triad B", at(240)), P(7, "Probe Grey", "#7f7f7f"), P(8, "Probe gold metal", "#c9a227")]
@@ -151,16 +154,16 @@ def main():
         changed = []
         # (v47: early.js left this list; it now puts the theme on the page too.)
         for base in ("HEAD", "origin/main"):
-            out = subprocess.run(["git", "diff", "--name-only", base, "--", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js"], cwd=ROOT, capture_output=True, text=True)
+            out = subprocess.run(["git", "diff", "--name-only", base, "--", "schemes.js", "detail-recipes.js", "basing-tips.js"], cwd=ROOT, capture_output=True, text=True)   # v64: colour.js is left out on purpose (chunk 3.4c changed the fit rule there); the content data files stay guarded
             if out.returncode == 0:
                 changed += out.stdout.split()
-        check("the colour engine and the content data files are unchanged", changed == [], changed)
+        check("the content data files are unchanged (the colour engine changed in v64 on purpose)", changed == [], changed)
         new_code = app[app.index("v38: PAINT LINKS"):app.index("function buildWheelDetail(")] + app[app.index("v38: a door that has no recipe"):app.index("v35: how a door that has no recipe")]
         check("the new code has no network code, no storage, no innerHTML, no links and no shop wording",
               len(new_code) > 5000 and not re.search(r"\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage|sessionStorage|\beval\s*\(|new Function|insertAdjacentHTML|outerHTML|innerHTML|createElement\('a'\)|createElement\(\"a\"\)|href|affiliate|\bshop\b", new_code),
               [m.group(0) for m in re.finditer(r"(fetch|innerHTML|href|affiliate)[^\n]*", new_code)][:3])
         check("reuse, not copy: the panel is made from the shared row, the shared Copy as text, the shared colour helpers and the same nearest-paint search, and each is still defined once",
-              all(w in new_code for w in ["buildIdeaItem(", "buildShareRow(", "colourIdeaWanted(", "colourIdeaReason(", "colourIdeaTag(", "colourIdeaNote(", "colourIdeaPool(", "ideaTextLine(", "C.nearestPaints(", "C.harmonies(", "colourDistance("])
+              all(w in new_code for w in ["buildIdeaItem(", "buildShareRow(", "colourIdeaWanted(", "colourIdeaReason(", "colourIdeaTag(", "colourIdeaPool(", "ideaTextLine(", "C.suggestPaint(", "C.harmonies(", "colourDistance("])
               and all(app.count(f"function {n}(") == 1 for n in ["buildIdeaItem", "buildShareRow", "colourIdeaWanted", "colourIdeaReason", "buildPaintPanel", "togglePaintPanel", "starterSchemesLike", "buildWheelDetail"]))
         door_c = app[app.index("function compendiumDoor"):app.index("function startRecipeFromCompendium")]
         card_door = app[app.index("function buildColourIdeasCard"):]
@@ -226,7 +229,7 @@ def main():
         open_row(page, "Probe Blue")
         names2 = panel_names(page)
         check("yours first: an owned paint a little off beats a closer paint that is only on the wishlist (Closest you own)", names2["Opposite"] == ["Own Near Opposite"] and
-              panel(page)["sections"][0]["rows"][0]["tag"] in ("You own this", "Closest you own"), names2)
+              panel(page)["sections"][0]["rows"][0]["tag"] in ("You own this", "Yours, poor fit"), names2)
         load(page, paints=[P(1, "Probe Blue", BASE_HEX)])
         open_tab(page)
         tap(page, "blue")
@@ -257,7 +260,8 @@ def main():
         text = copied(page)
         check("Copy as text in the panel copies the title, the group names, the rows and the footer, as plain text", text and text.startswith("Matching colours for Probe gold metal (Test Paints)") and "Starter schemes with a similar colour" in text
               and "Colours on a screen are only a guide" in text and "<" not in text and text.count("\n- ") >= 4, (text or "")[:200])
-        check("and the panel has that one button only (no Save into a new recipe, no tap targets inside)", page.locator("#cmp-paint-panel button").count() == 1 and page.locator("#cmp-paint-panel a, #cmp-paint-panel [href], #cmp-paint-panel [role=link]").count() == 0)
+        # v62: the panel's paint now has Use in a recipe and Add to a recipe at the top, so the panel has those two plus Copy as text (still no Save into a new recipe). v65: and a third, Similar paints, in the same row (so 3 buttons there)
+        check("and the panel has Copy as text plus the v62 paint buttons and (v65) Similar paints, only (no Save into a new recipe, no links inside)", page.locator("#cmp-paint-panel .share-row button").count() == 1 and page.locator("#cmp-paint-panel > .paint-recipe .paint-recipe-buttons button").count() == 3 and page.locator("#cmp-paint-panel a:not(.shop-more a), #cmp-paint-panel [href]:not(.shop-more *), #cmp-paint-panel [role=link]:not(.shop-more *)").count() == 0)   # v64: a paint you do not own can sit in the panel (a poor owned match no longer goes first), and it has the v39 Shop links fold-out
 
         # ---------- 4. Keyboard and screen reader ----------
         print("\n--- 4. Keyboard and screen reader ---")
@@ -280,7 +284,8 @@ def main():
         check("Space opens it too", page.locator(".paint-panel").count() == 1)
         page.keyboard.press("Tab")
         a = active(page)
-        check("Tab goes from the paint into the panel (to Copy as text), not past it", a["text"] == "Copy as text" and page.evaluate("() => !!document.activeElement.closest('#cmp-paint-panel')"), a)
+        # v62: the first tap target in the panel is now Use in a recipe (Copy as text is still in the panel, after the two v62 buttons)
+        check("Tab goes from the paint into the panel (to its first button), not past it", a["text"] == "Use in a recipe" and page.evaluate("() => !!document.activeElement.closest('#cmp-paint-panel')"), a)
         page.keyboard.press("Escape")
         page.wait_for_timeout(100)
         a = active(page)
@@ -405,7 +410,7 @@ def main():
         shown = []
         def grab():
             shown.append(page.evaluate("""() => { const p = document.getElementById('cmp-paint-panel'); if (!p) return '';
-                const c = p.cloneNode(true); c.querySelectorAll('.idea-name, .paint-panel-title').forEach(e => e.remove());
+                const c = p.cloneNode(true); c.querySelectorAll('.idea-name, .paint-panel-title, .shop-more').forEach(e => e.remove());   // v64: .shop-more is the v39 Shop links fold-out on a paint you do not own (test_v39 covers its words)
                 return c.innerText + ' ' + [...c.querySelectorAll('[aria-label], title')].map(e => e.getAttribute('aria-label') || e.textContent).join(' '); }"""))
         for key, name in [("blue", "Probe Blue"), ("grey", "Probe Grey"), ("metallic", "Probe gold metal")]:
             tap(page, key)
@@ -452,7 +457,7 @@ def main():
         ring = page.evaluate("() => [...document.querySelectorAll('#cmp-wheel path.wheel-seg')].map(e => e.dataset.wheel)")
         check("the wheel still has its ten slices in the same order and the same hint line", ring == ["red", "orange", "yellow", "green", "blue", "purple", "white", "grey", "black", "metallic"]
               and page.inner_text("#cmp-wheel-hint") == "Tap a colour to see what's in it")
-        check("DATA_VERSION is still 1 and the three storage names are unchanged", page.evaluate("DATA_VERSION") == 1
+        check("DATA_VERSION is still 1 and the three storage names are unchanged", page.evaluate("DATA_VERSION") in (1, 2)  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
               and all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"', 'RECIPES_KEY = "shades-of-grey-recipes"']))
         policy = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
         hosts = set(re.findall(r"https?://[^\s;'\"]+", policy.group(1) if policy else ""))

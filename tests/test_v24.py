@@ -37,8 +37,9 @@ def check(name, ok, detail=""):
 def read(name):
     return open(os.path.join(ROOT, name), encoding="utf-8").read()
 
+# v68: the 7th default stage was renamed from "Painted with issues" to "Needs touch-ups", so this list uses the new name.
 STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted",
-          "Battle ready", "Painted with issues", "Parade ready"]
+          "Battle ready", "Needs touch-ups", "Parade ready"]
 V21_4_CSP = ("default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; "
              "img-src 'self' blob: data: https://dim3ry.goatcounter.com/count; media-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; "
              "manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'")
@@ -166,7 +167,7 @@ def main():
         csp_meta = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html, re.S)
         check("the CSP is exactly v21.4's", csp_meta and " ".join(csp_meta.group(1).split()) == V21_4_CSP,
               csp_meta and csp_meta.group(1))
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
+        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         check("storage names unchanged",
               all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"',
                                      'RECIPES_KEY = "shades-of-grey-recipes"']))
@@ -437,7 +438,7 @@ def main():
         backup = page.evaluate("() => backupData()")
         check("a backup carries the example marks",
               all(r.get("example") is True for r in backup["recipes"]["recipes"]) if isinstance(backup.get("recipes"), dict) else True, list(backup.keys()))
-        check("a backup still says data version 1", backup["dataVersion"] == 1)
+        check("a backup still says data version 1", backup["dataVersion"] in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
 
         # ---------- 8. Dark and light, 390 and 360 ----------
         print("\n--- 8. Dark and light at 390 and 360 px ---")

@@ -34,7 +34,7 @@
     // in a way older copies wouldn't understand. If an OLDER copy of the app (say an installed
     // app that hasn't updated yet, open next to a newer browser tab) finds data saved by a
     // NEWER one, it stops saving and asks you to reload, so it can't damage that newer data.
-    const DATA_VERSION = 1;
+    const DATA_VERSION = 2;   // v68: 2, for the "Needs touch-ups" rename (see V61_DEFAULT_STAGES)
     let dataTooNew = false;  // true once this copy has seen data from a newer version
     function storedDataVersion() {
       try {
@@ -108,7 +108,18 @@
     // Each unit stores a NUMBER pointing at a position in the stage list (0 = first).
     // Stages from settings.doneFrom onwards count as "Done"; earlier ones are "To do".
     const DEFAULT_STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed",
-                            "Part painted", "Battle ready", "Painted with issues", "Parade ready"];
+                            "Part painted", "Battle ready", "Needs touch-ups", "Parade ready"];
+    // v68: the defaults from v3 to v61, when the 7th stage was called "Painted with issues".
+    // Anyone still on exactly this list (on the device, in a backup or in a safety copy) gets it
+    // renamed to "Needs touch-ups" (see renamedStageList). Units save a stage NUMBER, so none of
+    // them move. Custom stage lists are left alone.
+    const V61_DEFAULT_STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed",
+                                "Part painted", "Battle ready", "Painted with issues", "Parade ready"];
+    function renamedStageList(list) {
+      const same = Array.isArray(list) && list.length === V61_DEFAULT_STAGES.length &&
+        list.every((x, i) => x === V61_DEFAULT_STAGES[i]);
+      return same ? DEFAULT_STAGES.slice() : list;
+    }
     // The defaults before v3, so testers on them can be moved to the new set (see below).
     const OLD_DEFAULT_STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed",
                                 "Part painted", "Painted with issues", "Battle ready"];
@@ -186,7 +197,7 @@
 
     let STAGES = settings.stages.map(String);
     // v3 upgrade: anyone still on the old default stages gets the new set.
-    // Units keep their stage BY NAME: "Battle ready" and "Painted with issues" swap
+    // Units keep their stage BY NAME: "Battle ready" and "Painted with issues" (now "Needs touch-ups") swap
     // positions, and "Parade ready" is added at the end. Custom stage lists are left alone.
     let upgradedStages = false;
     {
@@ -206,6 +217,10 @@
         try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (ignored) {}
       }
     }
+    // v68: "Painted with issues" becomes "Needs touch-ups" for anyone on the v3 to v61 default stages.
+    // DATA_VERSION went up to 2 for this, so an older copy of the app left open stops saving
+    // instead of writing the old name back. The saveSettings() a little further down saves it.
+    if (renamedStageList(STAGES) !== STAGES) settings.stages = STAGES = DEFAULT_STAGES.slice();
     // Settings saved before the Done marker existed: use the matching default if the
     // stages are one of the built-in sets, otherwise just the last stage.
     if (settings.doneFrom === undefined) {
@@ -1597,7 +1612,32 @@
     // switched off: their paints aren't suggested as you type, matched in pasted notes or on scanned labels, or offered
     // in Colour ideas and the Compendium. Your own paints (Your Palette) are always searched, whatever their brand.
     // It lists the ones that are OFF, so a brand added in a later version starts switched on.
+    // v65: paints that are not colours, kept with the paint data on purpose (it is data about paints, like the lists above).
+    // Varnishes, mediums, thinners, cleaners, reducers, retarders and clear bases are stored as white or grey, so they must never be
+    // offered as a match. So are 15 Tamiya paints stored as pure white. Found by the data check (3.4a); matched by brand and name.
+    const NOT_A_COLOUR_TABLE = {
+      "Citadel": ["Lahmian Medium", "Contrast Medium", "Air Caste Thinner", "Munitorum Varnish Spray"],
+      "Vallejo": ["Medium Xpress", "Cleaner", "Clear Base", "Crackle Medium", "Gloss Metal Varnish", "Gloss Varnish", "Matt Varnish",
+        "Mecha Gloss Varnish", "Mecha Matt Varnish", "Mecha Satin Varnish", "Metallic Medium", "Pearl Medium", "Reducer", "Retarder",
+        "Satin Varnish", "Textile Medium"],
+      "The Army Painter": ["Wash Medium", "Speedpaint Medium", "Aegis Suit Satin Varnish", "Anti-Shine Matt Varnish", "Gloss Varnish",
+        "Quickshade Wash Mixing Medium", "Warpaints Mixing Medium"],
+      "Pro Acryl": ["Metallic Medium"],
+      "AK Interactive": ["Crackle Medium", "Glaze Medium", "Glaze Medium -90-", "Gloss Medium", "Matte Medium", "Metal Medium", "Retarder",
+        "Varnish Gloss", "Varnish Matt", "Varnish Satin"],
+      "Scale75": ["Medium Wet", "Odorless Thinner"],
+      "Two Thin Coats": ["Gloss Varnish", "Matt Varnish"],
+      "Tamiya": ["Clear", "Flat base", "Flat clear", "Semi-gloss clear", "Acrylic thinner", "Lacquer thinner", "Pearl clear",
+        "Dark green 2 (RAF)", "Dark iron", "Dark yellow 2", "IJN gray (Maizuru Arsenal)", "IJN gray (Yokosuka Arsenal)",
+        "Medium sea gray 2 (RAF)", "Ocean gray 2 (RAF)", "Red brown 2", "Rubber black", "Fluorescent orange", "Metallic gray",
+        "Metallic orange", "Pearl yellow", "Pure metallic red", "Semi-gloss bright gun metal"],
+    };
+    const NOT_A_COLOUR = new Set(Object.entries(NOT_A_COLOUR_TABLE).flatMap(([brand, names]) => names.map(n => sameKey(`${brand}|${n}`))));
     const PAINT_BRANDS = [...new Set(KNOWN_PAINTS.map(k => k.brand))];
+    // v63: the paint ranges most painters already know. In a colour wheel group, the built-in paints from these come before the other
+    // brands, so the short list is not filled with brands nobody has heard of. Chosen by George (chunk 3.3); the paint data has no
+    // "popular" mark of its own. The screen never names them (it says "popular ranges").
+    const POPULAR_BRANDS = ["Citadel", "The Army Painter", "Vallejo"];
     let searchedPaints = KNOWN_PAINTS;
     function cleanBrandsOff(list) {
       return Array.isArray(list) ? [...new Set(list.filter(b => typeof b === "string" && PAINT_BRANDS.includes(b)))] : [];
@@ -2076,38 +2116,19 @@
     }
 
     // ----- Shopping list -----
-    // Running low, empty and wishlist paints, plus paints a recipe uses that you don't have.
+    // v62: only the paints you put there: Wishlist ones (every "Add to shopping list" button marks a paint Wishlist).
+    // Nothing goes on by itself any more: not a paint a recipe uses that you don't have, and not running low or empty.
     function shoppingItems() {
-      const recipeCount = new Map();
-      const recipeNames = new Map();   // v40: paint id -> the names of the recipes that use it
-      for (const r of book.recipes) {
-        const ids = new Set();
-        for (const s of r.steps) for (const sp of s.paints) ids.add(sp.paint);
-        for (const id of ids) {
-          recipeCount.set(id, (recipeCount.get(id) || 0) + 1);
-          if (!recipeNames.has(id)) recipeNames.set(id, []);
-          if (!r.example) recipeNames.get(id).push(String(r.name || ""));
-        }
-      }
       const items = [];
       for (const p of book.paints) {
         // v24: example paints never go on the shopping list. v58: nor do kept ones (or ones given a status): no shop sells a made-up paint.
         if (isExamplePaint(p) || isMadeUpPaint(p)) continue;
-        const key = paintStatus(p);
-        const used = recipeCount.get(p.id) || 0;
-        let reason = "";
-        if (key === "low") reason = "running low" + (p.spare ? " (spare in stock)" : "");
-        else if (key === "empty") reason = "empty";
-        else if (key === "wishlist") reason = "wishlist";
-        else if (key !== "owned" && used) reason = `missing, used in ${plural(used, "recipe")}`;
-        if (!reason) continue;
-        // v40: where it came from. The notes saved with the paint (a colour suggestion, a recipe, later a scheme), plus the recipes
-        // that use it when it is on the list only because you don't have it. One paint is one entry, however many places added it.
+        if (paintStatus(p) !== "wishlist") continue;
+        // v40: where it came from: the notes saved with the paint (a colour suggestion, a recipe, a scheme). One paint is one entry.
         const from = [];
         const addFrom = (t) => { t = String(t || "").trim(); if (t && !from.some(o => sameText(o, t))) from.push(t); };
         for (const f of Array.isArray(p.shopFrom) ? p.shopFrom : []) addFrom(f);
-        if (reason.startsWith("missing")) for (const n of recipeNames.get(p.id) || []) addFrom(`Recipe: ${n}`);
-        items.push({ paint: p, reason, from });
+        items.push({ paint: p, reason: "wishlist", from });
       }
       return items.sort((a, b) => (a.paint.brand || "￿").localeCompare(b.paint.brand || "￿") || a.paint.name.localeCompare(b.paint.name));
     }
@@ -2124,7 +2145,7 @@
       const lines = ["Shopping list", ""];
       for (const brand of names) {
         lines.push(brand);
-        for (const i of groups.get(brand)) lines.push(`- ${i.paint.name}: ${i.reason}${i.from && i.from.length ? ` (from ${i.from.join(", ")})` : ""}`);
+        for (const i of groups.get(brand)) lines.push(`- ${i.paint.name}${i.from && i.from.length ? ` (from ${i.from.join(", ")})` : ""}`);
         lines.push("");
       }
       if (!items.length) lines.push("Nothing to buy.");
@@ -2182,11 +2203,10 @@
     function palettePaintFor(paint) {
       return book.paints.find(p => sameText(p.name, paint.name) && (!paint.brand || sameText(p.brand, paint.brand))) || null;
     }
-    // On the shopping list = wishlist or empty (see shoppingItems). Owned and running low paints never get a shop fold-out at all.
+    // On the shopping list = wishlist (see shoppingItems, v62). Owned and running low paints never get a shop fold-out at all.
     function onShoppingList(paint) {
       const mine = palettePaintFor(paint);
-      const status = mine ? paintStatus(mine) : "";
-      return status === "wishlist" || status === "empty";
+      return !!mine && paintStatus(mine) === "wishlist";
     }
     // v41: the Compendium says so on a paint's row when it is already on the list. The words replace the usual tag ("Not in your palette")
     // and are kept in step after Add and Undo (updateShopFoldouts), so the row, the fold-out and the basket always agree.
@@ -2220,7 +2240,9 @@
       else showNotSaved();
       return true;
     }
+    let similarState = null;   // v65: null, or the open Similar paints pop-up (see openSimilarPaints)
     function updateShopFoldouts() {
+      if (similarState) similarState.refresh();   // v65: the pop-up's buttons follow the list too (after Add and after Undo)
       for (const el of document.querySelectorAll(".shop-more")) if (el.redrawAdd) el.redrawAdd();
       for (const el of document.querySelectorAll(".idea-tag")) {   // v41: the row tags the Compendium watches
         if (!el.shopPaint) continue;
@@ -2414,14 +2436,8 @@
         const notes = [];
         const sub = document.createElement("p");
         sub.className = "hint";
-        sub.textContent = `${plural(items.length, "paint")} to get: running low, empty, wishlist, and paints your recipes use that you don't have. Each paint is listed once, with where it came from.`;
+        sub.textContent = `${plural(items.length, "paint")} to get: the paints you added and your Wishlist paints. Nothing is added by itself. Each paint is listed once, with where it came from.`;
         notes.push(sub);
-        if (!anyStatusSet()) {
-          const warn = document.createElement("p");
-          warn.className = "hint";
-          warn.textContent = "No statuses set yet, so every paint your recipes use is listed as missing. Mark what you own to make it accurate.";
-          notes.push(warn);
-        }
         if (shopLinksOn()) {
           const shops = document.createElement("p");
           shops.className = "hint";
@@ -2449,10 +2465,7 @@
           list.className = "shop-list";
           for (const i of groups.get(brand)) {
             const li = document.createElement("li");
-            li.textContent = i.paint.name + " ";
-            const why = document.createElement("small");
-            why.textContent = "· " + i.reason;
-            li.appendChild(why);
+            li.textContent = i.paint.name + " ";   // v62: every paint here is one you added, so no "· wishlist" after each name
             if (i.from && i.from.length) {   // v40: where it came from (first three, then a count)
               const src = document.createElement("small");
               src.className = "shop-from";
@@ -3524,7 +3537,7 @@
         openRecipeId = null;
         renderRecipes();
       }
-      if (b.dataset.tab === "compendium") compendiumState.focus = null;   // v62: the tab itself opens the whole Compendium
+      if (b.dataset.tab === "compendium") compendiumState.focus = null;   // v69: the tab itself opens the whole Compendium
       showTab(b.dataset.tab);
     }));
 
@@ -6710,6 +6723,12 @@
         mark.className = "fold-mark";
         mark.setAttribute("aria-hidden", "true");
         const parts = [text, dots];
+        if (o.noPaint && o.noPaint()) {   // v62: words, not just an empty space where the dots go
+          const none = document.createElement("span");
+          none.className = "step-no-paint";
+          none.textContent = "No paint";
+          parts.push(none);
+        }
         if (o.missing && o.missing()) {
           const gap = document.createElement("span");
           gap.className = "have-mark missing";
@@ -6752,6 +6771,15 @@
         else if (!p || !haveIt(p)) missing++;
       }
       return { missing, madeUp };
+    }
+    // v62: the paints of a recipe that could go on the shopping list: real ones only (no made-up or example paints).
+    function recipeShopPaints(recipe) {
+      const out = [];
+      for (const st of recipe.steps) for (const sp of st.paints) {
+        const p = paintById(sp.paint);
+        if (p && !isMadeUpPaint(p) && !isExamplePaint(p) && !out.includes(p)) out.push(p);
+      }
+      return out;
     }
     // v58: the short line on a recipe card: "Missing 2", "Uses example paints" (nothing real missing, some made-up) or "Have all".
     function recipeStatusWords(count) {
@@ -6910,7 +6938,7 @@
             line.appendChild(mix);
           }
           body.appendChild(line);
-          const ideas = buildIdeasForButton(paint, { kind: "recipe", recipeId: recipe.id, step: i });   // v62
+          const ideas = buildIdeasForButton(paint, { kind: "recipe", recipeId: recipe.id, step: i });   // v69
           if (ideas) body.appendChild(ideas);
         }
         const options = [];
@@ -6933,10 +6961,22 @@
           technique: () => step.technique || guessTechnique(step.paints.map(sp => paintById(sp.paint))) || "Step",
           colours: () => step.paints.map(sp => paintById(sp.paint)).filter(Boolean).map(pt => pt.colour),
           missing: () => anyStatusSet() && step.paints.some(sp => { const pt = paintById(sp.paint); return pt && !isMadeUpPaint(pt) && !haveIt(pt); }),   // v58: made-up paints don't count
+          noPaint: () => !step.paints.some(sp => paintById(sp.paint)),   // v62
         }), body);
         steps.appendChild(li);
       });
       stepsCard.appendChild(steps);
+      // v62: missing paints no longer go on the shopping list by themselves. One button adds this recipe's real paints you don't
+      // own (made-up example paints never), says how many, and has one Undo (addSchemePaintsToShoppingList). Hidden when none are left.
+      const toShop = schemePaintsToAdd(recipeShopPaints(recipe));
+      if (toShop.length) {
+        const add = document.createElement("button");
+        add.type = "button";
+        add.className = "plain-button recipe-shop-add";
+        add.textContent = `Add missing paints to shopping list (${toShop.length})`;
+        add.addEventListener("click", () => addSchemePaintsToShoppingList(recipeShopPaints(recipe), `Recipe: ${recipe.name}`));
+        stepsCard.appendChild(add);
+      }
       recipePage.appendChild(stepsCard);
 
       // Used on: linked units, plus a menu to link more.
@@ -7607,7 +7647,7 @@
       for (const r of usedIn) chips.appendChild(recipeChip(r, () => openRecipe(r.id)));
       field.appendChild(chips);
       panel.appendChild(field);
-      const ideas = buildIdeasForButton(paint, { kind: "palette" });   // v62: no colour set, no button (the line above says "colour not set")
+      const ideas = buildIdeasForButton(paint, { kind: "palette" });   // v69: no colour set, no button (the line above says "colour not set")
       if (ideas) panel.appendChild(ideas);
       if (!paintOptionsOpen.has(paint.id)) paintOptionsOpen.set(paint.id, { open: false });
       panel.appendChild(buildMoreInfo([row, changeHint, buildPaintActions(paint, usedIn, name)], {   // v18c-2 (v55: the visible name is passed in for the Remove button's name)
@@ -8142,7 +8182,7 @@
 
       const name = document.createElement("input");
       name.className = "paint-name";
-      name.placeholder = "Paint, e.g. Macragge Blue";
+      name.placeholder = "Paint name";   // v62: was "Paint, e.g. Macragge Blue", which looked like a typed value
       name.setAttribute("aria-label", "Paint name");
       name.setAttribute("list", "paint-options");
       name.dataset.key = `step-${si}-paint-${pi}`;
@@ -8173,9 +8213,11 @@
         if (tidy !== brand.value) { brand.value = tidy; paint.brand = tidy; updateWarning(); refreshRecipeOwn(); }
       });
 
-      name.addEventListener("input", () => { paint.name = name.value; updateWarning(); refreshRecipeOwn(); });
+      name.addEventListener("input", () => { paint.name = name.value; typingPaints.add(paint); updateWarning(); refreshRecipeOwn(); });   // v62
       // A paint you've used before: fill in its brand and colour for you.
       name.addEventListener("change", () => {
+        typingPaints.delete(paint);   // v62: left the box (or picked a suggestion), so the name counts now
+        refreshRecipeOwn();
         const known = book.paints.find(p => sameText(p.name, paint.name) && (!paint.brand.trim() || sameText(p.brand, paint.brand)))
                    || searchedPaints.find(p => sameText(p.name, paint.name));
         if (!known) return;
@@ -8221,6 +8263,17 @@
       const d = recipeDraft;
       const name = d.name.trim();
       if (!name) { notify("Give the recipe a name first."); return; }
+      // v62: a paint with a brand but no name used to vanish without a word. Now Save stops and says which step.
+      const gap = d.steps.findIndex(s => s.paints.some(p => !p.name.trim() && String(p.brand || "").trim()));
+      if (gap >= 0) {
+        const pi = d.steps[gap].paints.findIndex(p => !p.name.trim() && String(p.brand || "").trim());
+        stepFold(d.steps[gap], true).open = true;
+        renderRecipeEditor();
+        const box = recipePage.querySelector(`[data-key="step-${gap}-paint-${pi}"]`);
+        if (box) box.focus();
+        notify(`Step ${gap + 1} has no paint name.`);
+        return;
+      }
       // Paints with no name are skipped. Each named paint is found (or added) in the paint list.
       // v18c: a paint new to your palette gets your "Do you own these?" answer (Owned to start with).
       const steps = d.steps.map(s => {
@@ -8280,7 +8333,7 @@
                             paintOpen: "",   // v38: paintOpen = the key of the wheel paint whose "matching colours" panel is open ("" = none)
                             ticks: {},   // v51: the paints ticked in each list (a Set per list), kept only while the app is open
                             wheelZoom: "", wheelGroup: "",
-                            focus: null };   // v62: focus = { paintId, from } while the Compendium shows one paint's ideas (Ideas for this), else null   // v43: wheelZoom = the hue colour the picture is drilled into ("" = the whole wheel), wheelGroup = its open group ("" = none)
+                            focus: null };   // v69: focus = { paintId, from } while the Compendium shows one paint's ideas (Ideas for this), else null   // v43: wheelZoom = the hue colour the picture is drilled into ("" = the whole wheel), wheelGroup = its open group ("" = none)
 
     // v35: ONE set of building blocks, TWO doors. The parts of the Colour ideas card (the ideas, Your schemes, Starter schemes,
     // Detail recipes and Basing tips) are built by the functions below, and BOTH the recipe editor and the Compendium tab use them.
@@ -8411,6 +8464,9 @@
       return [...book.paints, ...searchedPaints.filter(k => !have.has(sameKey(k.name)))];
     }
 
+    // v64: the Opposite of a colour darker than this lightness (0 to 1) is lifted to it, with at least this much saturation (colour wheel panel only).
+    const OPPOSITE_DARK_LIFT = { l: 0.45, s: 0.55 };
+
     // The colour an idea is aiming for, before we look for the nearest paint.
     function colourIdeaWanted(harmony, role, pick, hueSlot) {
       const C = MinifolioColour;
@@ -8428,8 +8484,10 @@
         relation = pick.replace(/\d$/, "");
       }
       const hsl = C.hexToHsl(hex);
-      const s = Math.max(hsl.s, role.boost.s);
-      const l = Math.min(role.boost.l[1], Math.max(role.boost.l[0], hsl.l));
+      let s = Math.max(hsl.s, role.boost.s);
+      let l = Math.min(role.boost.l[1], Math.max(role.boost.l[0], hsl.l));
+      // v64: a dark colour's opposite is lifted so it does not match a muddy brown (role.opposite only, and only the straight opposite)
+      if (pick === "complementary" && role.opposite && l < role.opposite.l) { l = role.opposite.l; s = Math.max(s, role.opposite.s); }
       return { hex: C.hslToHex(hsl.h, s, l), relation };
     }
 
@@ -8468,23 +8526,56 @@
       for (const pick of role.picks) {
         const wanted = colourIdeaWanted(harmony, role, pick, slot);
         if (!["dark", "mid", "light"].includes(pick)) slot++;
-        // Paints you own come first, and the same paint is never suggested twice.
-        const hit = C.nearestPaints(wanted.hex, pool, { limit: 1, ownedFirst: true, exclude: [...skip, ...out.map(o => o.hit.paint.colour)] })[0];
+        // Paints you own come first when they fit (not Poor; see suggestPaint), and the same paint is never suggested twice.
+        const hit = C.suggestPaint(wanted.hex, pool, { exclude: [...skip, ...out.flatMap(o => fitRows(o.hit).map(h => h.paint.colour))] });
         if (hit) out.push({ wanted: wanted.hex, relation: wanted.relation, hit });
       }
       return out;
     }
 
     // The words under a suggestion that say how far to trust the match.
+    // v64: labels only. The ownership tag ("You own this" / "Not in your palette") plus the fit label from the colour engine
+    // (Good fit / Okay fit / Poor fit). A poor paint you own has the one label "Yours, poor fit" instead (it already says you own it).
     function colourIdeaTag(hit) {
-      if (!hit.owned) return { cls: "none", text: "Not in your palette" };
-      return hit.quality === "good" ? { cls: "own", text: "You own this" } : { cls: "near", text: "Closest you own" };
+      const fit = MinifolioColour.fitLabel(hit);
+      if (hit.owned && hit.quality === "poor") return { cls: "near", text: fit };
+      return { cls: hit.owned ? "own" : "none", text: hit.owned ? "You own this" : "Not in your palette", fit };
     }
-    function colourIdeaNote(hit) {
-      if (hit.quality === "poor") return "Not very close. It is the nearest we found.";
-      if (hit.quality === "close") return "Similar, not exact.";
-      if (hit.approximate) return "Close enough. This kind of paint looks different on the model than in the pot.";
-      return "";
+    // v64: one suggestion can be two rows: the best paint overall, then (when your best owned paint is a poor fit) that owned paint.
+    function fitRows(hit) { return hit.alsoOwned ? [hit, hit.alsoOwned] : [hit]; }
+    // The second paint of a suggestion: your own best paint (the label says "Yours, poor fit"). It is a small line inside the same list
+    // item, so a colour is still one row. It can be added as one step (when onAdd is given), but it is not part of "Add all" or the tick
+    // boxes, which take the first paint only. Its text line is pushed on lines (when given).
+    function alsoOwnedLine(hit, onAdd, lines, reason) {
+      const own = hit.alsoOwned, tag = colourIdeaTag(own);
+      if (lines) lines.push(ideaTextLine(own.paint, tag, reason, ""));
+      const box = document.createElement("div");
+      box.className = "idea-also";
+      const name = document.createElement("span");
+      name.className = "idea-name";
+      name.append(own.paint.name);
+      if (own.paint.brand) {
+        const brand = document.createElement("small");
+        brand.textContent = own.paint.brand;
+        name.appendChild(brand);
+      }
+      const tagEl = document.createElement("span");
+      tagEl.className = "idea-tag " + tag.cls;
+      tagEl.textContent = tag.text;
+      const text = document.createElement("span");
+      text.className = "idea-text";
+      text.append(name, tagEl);
+      box.append(makeSwatch(own.paint.colour), text);
+      if (onAdd) {
+        const add = document.createElement("button");
+        add.type = "button";
+        add.className = "idea-also-add";
+        add.textContent = "+ Add as a step";
+        labelWithName(add, "Add as a new step", name, tagEl);
+        add.addEventListener("click", onAdd);
+        box.appendChild(add);
+      }
+      return box;
     }
 
     // Adds the idea to the recipe being edited as a new last step. (v30: the step's note is passed in, so the same
@@ -8937,17 +9028,26 @@
       const tagEl = document.createElement("span");
       tagEl.className = "idea-tag " + tag.cls;
       tagEl.textContent = tag.text;
+      let statusEl = tagEl;
+      if (tag.fit) {   // v64: the fit label sits beside the ownership tag, on the same line
+        const fitEl = document.createElement("span");
+        fitEl.className = "idea-fit";
+        fitEl.textContent = tag.fit;
+        statusEl = document.createElement("span");
+        statusEl.className = "idea-status";
+        statusEl.append(tagEl, fitEl);
+      }
       const why = document.createElement("span");
       why.className = "idea-why";
       why.textContent = reason;
-      if (onAdd) labelWithName(button, "Add as a new step", name, tagEl, why);   // v55: the row's visible name, tag and reason, no paint name in an aria-label
+      if (onAdd) labelWithName(button, "Add as a new step", name, statusEl, why);   // v55: the row's visible name, tag and reason, no paint name in an aria-label
       let noteEl = null;
       if (note) {
         noteEl = document.createElement("span");
         noteEl.className = "idea-note";
         noteEl.textContent = note;
       }
-      text.append(name, tagEl);
+      text.append(name, statusEl);
       if (compact && !onAdd && !link) {   // v49: the reason and note sit behind a small More info (Compendium rows)
         const more = noteEl ? [why, noteEl] : [why];
         if (pick) more.push(pick.note);
@@ -9007,7 +9107,7 @@
     const COMPENDIUM_TEXT_FOOT = SCHEME_ONLY_A_GUIDE;
     function paintLabel(paint) { return paint.brand ? `${paint.name} (${paint.brand})` : String(paint.name || ""); }
     function ideaTextLine(paint, tag, reason, note) {
-      return `- ${paintLabel(paint)}: ${tag.text}. ${reason}${note ? " " + note : ""}`;
+      return `- ${paintLabel(paint)}: ${tag.text}${tag.fit ? ". " + tag.fit : ""}. ${reason}${note ? " " + note : ""}`;
     }
 
     // ---- (1) Colours you've used on this faction before ----
@@ -9147,7 +9247,7 @@
       const pool = colourIdeaPool();
       const out = [];
       for (const colour of scheme.colours) {
-        const hit = MinifolioColour.nearestPaints(colour.hex, pool, { limit: 1, ownedFirst: true, exclude: out.map(o => o.hit.paint.colour) })[0];
+        const hit = MinifolioColour.suggestPaint(colour.hex, pool, { exclude: out.flatMap(o => fitRows(o.hit).map(h => h.paint.colour)) });
         if (hit) out.push({ colour, hit });
       }
       return out;
@@ -9587,13 +9687,15 @@
       const pick = pickable(door) ? buildPick(door, { id: `starter-${scheme.key}`, source: `Scheme: ${scheme.name}`, head: lines.slice(), foot: [COMPENDIUM_TEXT_FOOT] }) : null;
       for (const { colour, hit } of schemeHits) {
         const paint = hit.paint;
-        const tag = colourIdeaTag(hit), reason = `${colour.part}: ${colour.look}.`, note = colourIdeaNote(hit);
+        const tag = colourIdeaTag(hit), reason = `${colour.part}: ${colour.look}.`;
         const stepNote = `Starter scheme (${scheme.name}): ${colour.part.toLowerCase()}`;
-        const line = ideaTextLine(paint, tag, reason, note);
+        const line = ideaTextLine(paint, tag, reason, "");
         const step = { paint, technique: "", coats: 1, mix: 100, note: stepNote };
-        list.appendChild(buildIdeaItem(paint, tag, reason, note, door.addStep ? () => door.addStep(paint, stepNote) : null, "idea-pick", undefined, compactRows(door), pick && pick.row(paint, line, step)));
+        const item = buildIdeaItem(paint, tag, reason, "", door.addStep ? () => door.addStep(paint, stepNote) : null, "idea-pick", undefined, compactRows(door), pick && pick.row(paint, line, step));
+        list.appendChild(item);
         lines.push(line);
         steps.push(step);
+        if (hit.alsoOwned) item.firstElementChild.after(alsoOwnedLine(hit, door.addStep ? () => door.addStep(hit.alsoOwned.paint, stepNote) : null, lines, reason));
       }
       box.append(summary, compactRows(door) ? buildMoreInfo([why], { state: infoState(door, "starter-why"), id: door.id("starter-why-panel"), label: `why ${scheme.name} works` }) : why);
       if (pick) { pick.finish(); box.append(pick.all, list, pick.actions); } else box.appendChild(list);
@@ -9615,7 +9717,7 @@
       const pool = colourIdeaPool();
       const out = [];
       for (const step of recipe.steps) {
-        const hit = MinifolioColour.nearestPaints(step.hex, pool, { limit: 1, ownedFirst: true })[0];
+        const hit = MinifolioColour.suggestPaint(step.hex, pool);
         if (hit) out.push({ step, hit });
       }
       return out;
@@ -9715,12 +9817,14 @@
       const pick = pickable(door) ? buildPick(door, { id: `detail-${recipe.key}`, source: `Detail recipe: ${recipe.name}`, head: lines.slice(), foot: [COMPENDIUM_TEXT_FOOT] }) : null;
       items.forEach(({ step, hit }, i) => {
         const paint = hit.paint;
-        const tag = colourIdeaTag(hit), reason = detailStepReason("Step", i, step), note = colourIdeaNote(hit);
-        const line = ideaTextLine(paint, tag, reason, note);
+        const tag = colourIdeaTag(hit), reason = detailStepReason("Step", i, step);
+        const line = ideaTextLine(paint, tag, reason, "");
         const recipeStep = { paint, technique: step.technique, coats: step.coats, mix: step.mix, note: step.note };
-        list.appendChild(buildIdeaItem(paint, tag, reason, note, door.addSteps ? () => door.addSteps([{ step, hit }]) : null, "idea-pick", undefined, compactRows(door), pick && pick.row(paint, line, recipeStep)));
+        const item = buildIdeaItem(paint, tag, reason, "", door.addSteps ? () => door.addSteps([{ step, hit }]) : null, "idea-pick", undefined, compactRows(door), pick && pick.row(paint, line, recipeStep));
+        list.appendChild(item);
         lines.push(line);
         steps.push(recipeStep);
+        if (hit.alsoOwned) item.firstElementChild.after(alsoOwnedLine(hit, door.addSteps ? () => door.addSteps([{ step, hit: hit.alsoOwned }]) : null, lines, reason));
       });
       if (door.addSteps) {
         const all = document.createElement("button");
@@ -9865,10 +9969,12 @@
       const steps = [];
       items.forEach(({ step, hit }, i) => {
         const paint = hit.paint;
-        const tag = colourIdeaTag(hit), reason = detailStepReason("Paint step", i, step), note = colourIdeaNote(hit);
-        list.appendChild(buildIdeaItem(paint, tag, reason, note, door.addSteps ? () => door.addSteps([{ step, hit }]) : null, "idea-pick", undefined, compactRows(door)));
-        lines.push(ideaTextLine(paint, tag, reason, note));
+        const tag = colourIdeaTag(hit), reason = detailStepReason("Paint step", i, step);
+        const item = buildIdeaItem(paint, tag, reason, "", door.addSteps ? () => door.addSteps([{ step, hit }]) : null, "idea-pick", undefined, compactRows(door));
+        list.appendChild(item);
+        lines.push(ideaTextLine(paint, tag, reason, ""));
         steps.push({ paint, technique: step.technique, coats: step.coats, mix: step.mix, note: step.note });
+        if (hit.alsoOwned) item.firstElementChild.after(alsoOwnedLine(hit, door.addSteps ? () => door.addSteps([{ step, hit: hit.alsoOwned }]) : null, lines, reason));
       });
       if (door.addSteps) {
         const all = document.createElement("button");
@@ -10000,15 +10106,18 @@
         const baseTag = colourIdeaTag(idea.hit);
         const tag = door.listMarks && !idea.hit.owned ? shopListTag(paint, baseTag) : baseTag;   // v41: Compendium only
         const reason = colourIdeaReason(idea.relation, idea.wanted, baseHex, role);
-        const note = colourIdeaNote(idea.hit);
         const stepNote = `Colour idea for ${role.note}`;
-        const row = buildIdeaItem(paint, tag, reason, note, door.addStep ? () => door.addStep(paint, stepNote) : null, undefined, undefined, compactRows(door));
+        const row = buildIdeaItem(paint, tag, reason, "", door.addStep ? () => door.addStep(paint, stepNote) : null, undefined, undefined, compactRows(door));
         if (door.listMarks && !idea.hit.owned) watchShopTag(row, paint, baseTag);
         // v39: a paint you do not own gets the small closed "Shop links" fold-out under its row (door.shops; the row itself is unchanged)
         const shops = door.shops ? buildShopFoldout(paint, idea.hit.owned, door.shopSource ? door.shopSource() : "") : null;
         if (shops) row.appendChild(shops);
+        const toRecipe = buildPaintToRecipeRow(door, paint);   // v62
+        if (toRecipe) row.appendChild(toRecipe);
+        if (idea.hit.alsoOwned) row.firstElementChild.after(alsoOwnedLine(idea.hit, door.addStep ? () => door.addStep(idea.hit.alsoOwned.paint, stepNote) : null, null, reason));   // v64: your best paint is a poor fit, so it comes second
         list.appendChild(row);
-        lines.push(ideaTextLine(paint, tag, reason, note));
+        lines.push(ideaTextLine(paint, tag, reason, ""));
+        if (idea.hit.alsoOwned) lines.push(ideaTextLine(idea.hit.alsoOwned.paint, colourIdeaTag(idea.hit.alsoOwned), reason, ""));
         steps.push({ paint, technique: "", coats: 1, mix: 100, note: stepNote });
       }
       return { list, lines, steps };
@@ -10232,7 +10341,9 @@
 
     // "Save into a new recipe…": opens the recipe editor with a new recipe that already has these steps. Nothing is saved until you
     // press Save recipe, and Cancel asks first (the steps are not saved anywhere yet).
-    function startRecipeFromCompendium(steps) {
+    // v62: after = optional. When given, it runs once the new recipe has opened (with the draft) instead of the usual notice,
+    // so "Use in a recipe" on a single paint can say its own line and offer Undo. Everything else is shared with Save into a new recipe.
+    function startRecipeFromCompendium(steps, after) {
       if (!steps || !steps.length) return;
       whenOkToLeaveDraft(() => {
         openRecipeId = null;
@@ -10244,8 +10355,467 @@
         startRecipeDraft(draft);
         if (recipeDraft !== draft) return;   // a kept unfinished recipe was offered first instead
         showTab("recipes");
-        notify(`Started a new recipe with ${plural(steps.length, "step")}. Give it a name and press Save recipe.`);
+        if (after) after(draft);
+        else notify(`Started a new recipe with ${plural(steps.length, "step")}. Give it a name and press Save recipe.`);
       });
+    }
+
+    // ---- v62: "Use in a recipe" and "Add to a recipe" on a Compendium paint ----
+    // Both buttons sit on a paint in the Compendium (the colour ideas rows, and the open panel of a colour wheel paint). The recipe editor
+    // has no such buttons (its rows already add steps), and made-up example paints are never offered (no shop sells them).
+    function paintToRecipeOffered(door, paint) {
+      if (!door || !door.share || !paint || !String(paint.name || "").trim()) return false;
+      const mine = palettePaintFor(paint);
+      return !(mine && (isExamplePaint(mine) || isMadeUpPaint(mine)));
+    }
+    // The paint as it is in Your Palette. A paint that is not there yet is added as Not owned, so it reaches the shopping list once a
+    // recipe uses it. added says whether that happened (the confirmation line then says so). The caller keeps the Undo snapshot.
+    function paintForRecipe(paint) {
+      const known = isInPalette(paint);
+      const mine = findOrAddPaint(paint.brand, paint.name, paint.colour);
+      if (!known && paintStatus(mine) === "") applyPaintStatus(mine, "notowned");
+      return { mine, added: !known };
+    }
+    const NOT_OWNED_NOTE = " Added to Your Palette as Not owned.";
+    function refreshAfterPaintChange() { render(); updateBasket(); updateShopFoldouts(); }
+
+    // "Use in a recipe": a new recipe with this paint in step 1. Nothing is saved until Save recipe; Undo closes it again.
+    function useCompendiumPaintInNewRecipe(paint) {
+      startRecipeFromCompendium([{ paint, technique: "", coats: 1, mix: 100, note: "" }], (draft) => {
+        const before = JSON.stringify(book);
+        const { added } = paintForRecipe(paint);
+        if (added && !save()) { showNotSaved(); return; }
+        if (added) { updateBasket(); updateShopFoldouts(); }
+        showToast(`Started a new recipe with ${paint.name}.${added ? NOT_OWNED_NOTE : ""}`, () => {
+          if (recipeDraft !== draft) { notify("Too late to undo: that recipe has moved on."); return; }
+          recipeDraft = null;
+          if (added) book = cleanRecipeBook(JSON.parse(before));
+          refreshAfterPaintChange();
+          notify("Took that back.");
+        }, "Undo", 8);
+      });
+    }
+
+    // "Add to a recipe": puts the paint into step stepIndex of a saved recipe, or into a new last step (stepIndex -1). Saved at once; Undo
+    // puts the recipe and Your Palette back as they were.
+    function addCompendiumPaintToRecipe(paint, recipeId, stepIndex) {
+      const recipe = recipeById(recipeId);
+      if (!recipe) return;
+      if (recipeDraft && recipeDraft.id === recipe.id) { notify("Finish or cancel your changes to that recipe first."); return; }
+      const step = stepIndex >= 0 ? recipe.steps[stepIndex] : null;
+      if (stepIndex >= 0 && !step) return;
+      const there = palettePaintFor(paint);
+      if (step && there && step.paints.some(sp => sp.paint === there.id)) { notify("That paint is already in that step."); return; }
+      const before = JSON.stringify(book);
+      const { mine, added } = paintForRecipe(paint);
+      if (step) {
+        const even = isEvenSplit(step.paints);   // an automatic even split stays even; a mix you typed is left alone
+        step.paints.push({ paint: mine.id, mix: null });
+        if (even) evenSplit(step.paints.length).forEach((m, i) => { step.paints[i].mix = m; });
+        step.ratio = "";   // an old ratio no longer fits the number of paints
+      } else {
+        recipe.steps.push({ technique: "", coats: 1, paints: [{ paint: mine.id, mix: 100 }], ratio: "", note: "", optional: false });
+      }
+      delete recipe.example;   // you have changed it, so it is yours now (same as saving an edit)
+      const where = step ? `step ${stepIndex + 1}` : `a new step ${recipe.steps.length}`;
+      commit(`Added ${paint.name} to ${recipe.name}, ${where}.${added ? NOT_OWNED_NOTE : ""}`, () => {
+        book = cleanRecipeBook(JSON.parse(before));
+        refreshAfterPaintChange();
+        notify("Took that back.");
+      }, "Undo", 8);
+      updateBasket(); updateShopFoldouts();
+    }
+
+    function stepChoiceLabel(step, i) {
+      const names = step.paints.map(sp => { const p = paintById(sp.paint); return p ? p.name : ""; }).filter(Boolean).join(" + ");
+      const text = String(step.technique || "").trim() || names || "empty step";
+      return `Step ${i + 1}: ${text.length > 40 ? text.slice(0, 39) + "…" : text}`;
+    }
+
+    // The two buttons for one paint, with a small picker (recipe, then step) under them when you tap Add to a recipe.
+    function buildPaintToRecipeRow(door, paint) {
+      if (!paintToRecipeOffered(door, paint)) return null;
+      const wrap = document.createElement("div");
+      wrap.className = "paint-recipe";
+      const row = document.createElement("div");
+      row.className = "paint-recipe-buttons";   // not "share-row": that name means the Copy as text row
+      const use = document.createElement("button");
+      use.type = "button";
+      use.className = "plain-button";
+      use.textContent = "Use in a recipe";
+      const who = hiddenName(paint.name);   // v55: the paint's name is read from a hidden line, never built into an aria-label
+      labelWithName(use, "Use in a recipe", who);
+      use.addEventListener("click", () => useCompendiumPaintInNewRecipe(paint));
+      const add = document.createElement("button");
+      add.type = "button";
+      add.className = "plain-button";
+      add.textContent = "Add to a recipe";
+      labelWithName(add, "Add to a recipe", who);
+      add.setAttribute("aria-expanded", "false");
+      row.append(use, add);
+      const similar = buildSimilarButton(door, paint, who);   // v65
+      if (similar) row.append(similar);
+      wrap.append(who, row);
+      let picker = null;
+      add.addEventListener("click", () => {
+        if (picker) { picker.remove(); picker = null; add.setAttribute("aria-expanded", "false"); return; }
+        if (!book.recipes.length) { notify("You have no recipes yet. Use in a recipe starts one."); return; }
+        picker = document.createElement("div");
+        picker.className = "paint-recipe-picker";
+        const recipeSel = document.createElement("select");
+        recipeSel.setAttribute("aria-label", "Recipe");
+        recipeSel.add(new Option("Choose a recipe", ""));
+        for (const r of book.recipes) recipeSel.add(new Option(r.name || "Untitled recipe", String(r.id)));
+        const stepSel = document.createElement("select");
+        stepSel.setAttribute("aria-label", "Step");
+        stepSel.classList.add("hidden");
+        const go = document.createElement("button");
+        go.type = "button";
+        go.className = "primary-button";
+        go.textContent = "Add";
+        go.disabled = true;
+        recipeSel.addEventListener("change", () => {
+          const r = recipeById(Number(recipeSel.value));
+          stepSel.replaceChildren();
+          stepSel.classList.toggle("hidden", !r);
+          go.disabled = !r;
+          if (!r) return;
+          stepSel.add(new Option("A new step", "-1"));
+          r.steps.forEach((s, i) => stepSel.add(new Option(stepChoiceLabel(s, i), String(i))));
+        });
+        go.addEventListener("click", () => {
+          const id = Number(recipeSel.value);
+          if (!recipeById(id)) return;
+          addCompendiumPaintToRecipe(paint, id, Number(stepSel.value));
+        });
+        picker.append(recipeSel, stepSel, go);
+        wrap.appendChild(picker);
+        add.setAttribute("aria-expanded", "true");
+        recipeSel.focus();
+      });
+      return wrap;
+    }
+
+    // ================= v65: SIMILAR PAINTS (chunk 3.5a) =================
+    // A "Similar paints" button on a paint in the Compendium opens a pop-up with one card, Best match: up to 3 paints from different
+    // brands where possible, closest first, whether or not you own them. Lighter / Close / Darker moves the colour being matched.
+    // Each paint can go on the shopping list (with Undo). v66 (chunk 3.5b-1): a second card, Your closest (the nearest paints you own),
+    // with Best / Yours tabs on a phone and the two cards side by side from 700 px. (Swapping into a recipe step is the next part.)
+    // It uses the colour engine and its fit rule (colour.js), nothing new. No paint file is changed: the paints that are not colours
+    // are skipped here, by name.
+    const SIMILAR_SHOWN = 3;
+    const SIMILAR_SHIFT = { lighter: 0.12, close: 0, darker: -0.12 };   // added to the colour's lightness (0 to 1) before looking
+    const paintKey = (p) => sameKey(`${p.brand || ""}|${p.name || ""}`);
+
+    // The pop-up is only offered in the Compendium, on a paint with a real colour that is not an example or made-up paint.
+    function similarOffered(door, paint) {
+      return !!door && !!door.share && MinifolioColour.canMatch(paint) && !NOT_A_COLOUR.has(paintKey(paint))
+        && !isExamplePaint(paint) && !isMadeUpPaint(paint);
+    }
+    // Every paint that may be offered: your palette and the built-in list (hidden brands left out), minus anything that is not a colour
+    // and any example or made-up paint. The same paint in both places counts once (the engine keeps your copy).
+    function similarPool() {
+      return [...book.paints.filter(p => !isExamplePaint(p) && !isMadeUpPaint(p)), ...searchedPaints].filter(p => !NOT_A_COLOUR.has(paintKey(p)));
+    }
+    // The colour being looked for: the paint's own colour, moved lighter or darker by the choice.
+    function similarTarget(hex, shift) {
+      const C = MinifolioColour, hsl = C.hexToHsl(hex);
+      if (!hsl) return null;
+      if (!shift) return hex.toLowerCase();
+      return C.hslToHex(hsl.h, hsl.s, Math.min(0.97, Math.max(0.03, hsl.l + shift)));
+    }
+    // Best match: the closest paint of each brand first (up to 3 brands), then the next closest if there are fewer than 3 brands.
+    // Each result is a nearestPaints result ({ paint, distance, owned, quality, ... }), closest first. The paint itself is never one.
+    function similarBestMatches(paint, shift) {
+      const target = similarTarget(paint.colour, shift);
+      if (!target) return [];
+      const self = paintKey(paint);
+      const all = MinifolioColour.nearestPaints(target, similarPool().filter(p => paintKey(p) !== self), { limit: 1000000, ownedFirst: false });
+      const picked = [], brands = new Set();
+      for (const hit of all) {
+        const brand = sameKey(hit.paint.brand);
+        if (brands.has(brand)) continue;
+        brands.add(brand);
+        picked.push(hit);
+        if (picked.length === SIMILAR_SHOWN) break;
+      }
+      for (const hit of all) {
+        if (picked.length >= SIMILAR_SHOWN) break;
+        if (!picked.includes(hit)) picked.push(hit);
+      }
+      return picked.sort((a, b) => a.distance - b.distance);
+    }
+
+    // v66: Your closest. The nearest paints you own, for the same target, with the same fit words. The paint itself, example and made-up
+    // paints and the not-a-colour list are left out (similarPool does that). Closest first. Each is a nearestPaints result.
+    function similarYourClosest(paint, shift) {
+      const target = similarTarget(paint.colour, shift);
+      if (!target) return { owned: 0, hits: [] };
+      const self = paintKey(paint);
+      const mine = similarPool().filter(p => paintKey(p) !== self && MinifolioColour.haveIt(p) && MinifolioColour.canMatch(p));
+      const all = MinifolioColour.nearestPaints(target, mine, { limit: SIMILAR_SHOWN, ownedFirst: false });
+      return { owned: mine.length, hits: all };
+    }
+    // Which cards to show: Best match always. Your closest only when you own paints and the top Best match is not already one of yours.
+    // Returns { best, yours: null | { hits } } where hits is empty when none of your paints is a Good or Okay fit.
+    function similarCards(paint, shift) {
+      const best = similarBestMatches(paint, shift);
+      if (best.length && best[0].owned) return { best, yours: null };
+      const mine = similarYourClosest(paint, shift);
+      if (!mine.owned) return { best, yours: null };
+      const close = mine.hits.length && mine.hits[0].quality !== "poor";
+      return { best, yours: { hits: close ? mine.hits : [] } };
+    }
+
+    // The "Similar paints" button on a Compendium paint (next to Use in a recipe and Add to a recipe).
+    function buildSimilarButton(door, paint, who) {
+      if (!similarOffered(door, paint)) return null;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "plain-button";
+      button.textContent = "Similar paints";
+      labelWithName(button, "Similar paints", who);
+      button.addEventListener("click", () => openSimilarPaints(paint, button));
+      return button;
+    }
+
+    // The pop-up. One at a time. Escape, Back, the close button and a tap on the dimmed area all close it, and focus goes back to the
+    // button that opened it. Colours come from the theme's own variables, so it follows every theme and Light/Dark.
+    function openSimilarPaints(paint, opener) {
+      closeSimilar();
+      const backdrop = document.createElement("div");
+      backdrop.className = "dialog-backdrop similar-backdrop";
+      const box = document.createElement("div");
+      box.className = "dialog similar";
+      box.setAttribute("role", "dialog");
+      box.setAttribute("aria-modal", "true");
+
+      const head = document.createElement("div");
+      head.className = "similar-head";
+      const heading = document.createElement("div");
+      heading.className = "similar-heading";
+      const label = document.createElement("p");
+      label.className = "similar-label";
+      label.textContent = "Similar paints";
+      const title = document.createElement("h2");
+      title.className = "similar-title";
+      title.append(makeSwatch(paint.colour), paint.name);
+      box.setAttribute("aria-labelledby", idOf(title));
+      heading.append(label, title);
+      const close = document.createElement("button");
+      close.type = "button";
+      close.className = "icon-button";
+      close.textContent = "✕";
+      close.setAttribute("aria-label", "Close");
+      close.addEventListener("click", () => closeSimilar());
+      head.append(heading, close);
+
+      const shiftRow = document.createElement("div");
+      shiftRow.className = "similar-shift";
+      shiftRow.setAttribute("role", "group");
+      shiftRow.setAttribute("aria-label", "Lighter, close or darker");
+      const shiftButtons = {};
+      for (const [key, text] of [["lighter", "Lighter"], ["close", "Close"], ["darker", "Darker"]]) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = text;
+        b.addEventListener("click", () => { state.shift = key; draw(); });
+        shiftButtons[key] = b;
+        shiftRow.appendChild(b);
+      }
+
+      // Two cards: Best match, and Your closest when it applies. On a phone (below 700 px) they are tabs, one at a time; from 700 px they
+      // sit side by side and the tabs go. The tab list is a proper one: arrow keys, Home and End, aria-selected, one tab stop.
+      const makeCard = (title, noneText) => {
+        const section = document.createElement("section");
+        section.className = "similar-card";
+        const h = document.createElement("h3");
+        h.textContent = title;
+        const ul = document.createElement("ul");
+        ul.className = "similar-list";
+        ul.setAttribute("aria-live", "polite");
+        const empty = document.createElement("p");
+        empty.className = "similar-none";
+        empty.textContent = noneText;
+        section.append(h, ul, empty);
+        return { section, h, ul, empty };
+      };
+      const best = makeCard("Best match", "No similar paints found.");
+      const mine = makeCard("Your closest", "Nothing close in your paints.");
+      const tabList = document.createElement("div");
+      tabList.className = "similar-tabs";
+      tabList.setAttribute("role", "tablist");
+      tabList.setAttribute("aria-label", "Best match or your closest");
+      const tabs = {};
+      for (const [key, text, card] of [["best", "Best", best], ["yours", "Yours", mine]]) {
+        const tab = document.createElement("button");
+        tab.type = "button";
+        tab.setAttribute("role", "tab");
+        tab.textContent = text;
+        tab.id = `similar-tab-${key}`;
+        card.section.id = `similar-card-${key}`;
+        tab.setAttribute("aria-controls", card.section.id);
+        tab.addEventListener("click", () => { state.tab = key; place(); });
+        tabs[key] = tab;
+        tabList.appendChild(tab);
+      }
+      tabList.addEventListener("keydown", (event) => {
+        const keys = ["best", "yours"], at = keys.indexOf(state.tab);
+        const to = event.key === "ArrowRight" || event.key === "ArrowDown" ? keys[(at + 1) % 2]
+                 : event.key === "ArrowLeft" || event.key === "ArrowUp" ? keys[(at + 1) % 2]
+                 : event.key === "Home" ? "best" : event.key === "End" ? "yours" : null;
+        if (!to) return;
+        event.preventDefault();
+        state.tab = to;
+        place();
+        tabs[to].focus();
+      });
+      const cards = document.createElement("div");
+      cards.className = "similar-cards";
+      cards.append(best.section, mine.section);
+
+      const note = document.createElement("p");
+      note.className = "similar-note";
+      note.textContent = MinifolioColour.isRoughColour(paint) ? WHEEL_ROUGH_NOTE : SCHEME_ONLY_A_GUIDE;
+
+      box.append(head, shiftRow, tabList, cards, note);
+      backdrop.appendChild(box);
+      document.body.appendChild(backdrop);
+      document.body.classList.add("similar-open");   // lifts the Undo message above the pop-up
+      document.body.style.overflow = "hidden";       // the page behind does not scroll
+
+      const state = {
+        paint, shift: "close", tab: "best", opener, backdrop, rows: [],
+        refresh: () => { for (const row of state.rows) row.sync(); },
+      };
+      similarState = state;
+
+      // One paint in the card. The button is for a paint you do not own; a paint you own just says so. Once on the list the button stays
+      // (so focus is not lost) and says so too.
+      const buildRow = (hit, inYours) => {
+        const p = hit.paint;
+        const li = document.createElement("li");
+        li.className = "similar-row";
+        const name = document.createElement("span");
+        name.className = "similar-name";
+        name.append(p.name);
+        if (p.brand) {
+          const brand = document.createElement("small");
+          brand.textContent = p.brand;
+          name.appendChild(brand);
+        }
+        const fit = document.createElement("span");
+        fit.className = "similar-fit";
+        fit.textContent = MinifolioColour.fitLabel(hit);
+        const text = document.createElement("span");
+        text.className = "similar-text";
+        text.append(name, fit);
+        li.append(makeSwatch(p.colour), text);
+        let action = null;
+        const sync = () => {
+          if (!action) return;
+          const listed = onShoppingList(p);
+          action.textContent = listed ? LISTED_TAG.text : "Add to shopping list";
+          action.setAttribute("aria-label", listed ? LISTED_TAG.text : "Add to shopping list");
+          action.setAttribute("aria-disabled", String(listed));
+        };
+        if (hit.owned && inYours) {
+          // every paint in Your closest is yours: nothing to add, and no line saying so
+        } else if (hit.owned) {
+          const own = document.createElement("span");
+          own.className = "similar-own";
+          own.textContent = "You own this";
+          li.appendChild(own);
+        } else {
+          action = document.createElement("button");
+          action.type = "button";
+          action.className = "plain-button similar-add";
+          labelWithName(action, "Add to shopping list", name);
+          action.addEventListener("click", () => {
+            if (action.getAttribute("aria-disabled") === "true") return;
+            addToShoppingList(p, `Similar to ${paint.name}`);
+          });
+          li.appendChild(action);
+        }
+        state.rows.push({ sync });
+        sync();
+        return li;
+      };
+
+      // Tabs on a phone, side by side from 700 px (the same width the styles use). Only when there are two cards.
+      const wide = window.matchMedia("(min-width: 700px)");
+      function place() {
+        const two = !!state.cards.yours;
+        const tabbed = two && !wide.matches;
+        if (!two) state.tab = "best";
+        box.classList.toggle("two", two);
+        box.classList.toggle("tabbed", tabbed);
+        tabList.classList.toggle("hidden", !tabbed);
+        mine.section.classList.toggle("hidden", !two);
+        for (const [key, card] of [["best", best], ["yours", mine]]) {
+          const on = state.tab === key;
+          card.section.classList.toggle("is-off", tabbed && !on);
+          tabs[key].setAttribute("aria-selected", String(on));
+          tabs[key].tabIndex = on ? 0 : -1;
+          if (tabbed) {
+            card.section.setAttribute("role", "tabpanel");
+            card.section.setAttribute("aria-labelledby", tabs[key].id);
+          } else {
+            card.section.removeAttribute("role");
+            card.section.setAttribute("aria-labelledby", idOf(card.h));
+          }
+          card.h.classList.toggle("sr-only", tabbed);
+        }
+      }
+      state.place = place;
+      if (wide.addEventListener) wide.addEventListener("change", place);
+      state.unwatch = () => { if (wide.removeEventListener) wide.removeEventListener("change", place); };
+
+      function draw() {
+        for (const [key, b] of Object.entries(shiftButtons)) b.setAttribute("aria-pressed", String(key === state.shift));
+        state.cards = similarCards(paint, SIMILAR_SHIFT[state.shift]);
+        state.rows = [];
+        best.ul.replaceChildren(...state.cards.best.map(hit => buildRow(hit, false)));
+        best.empty.classList.toggle("hidden", state.cards.best.length > 0);
+        if (state.cards.yours) {
+          mine.ul.replaceChildren(...state.cards.yours.hits.map(hit => buildRow(hit, true)));
+          mine.empty.classList.toggle("hidden", state.cards.yours.hits.length > 0);
+        } else {
+          mine.ul.replaceChildren();
+        }
+        place();
+      }
+      draw();
+
+      backdrop.addEventListener("click", (event) => { if (event.target === backdrop) closeSimilar(); });
+      state.onKey = (event) => {
+        if (event.key === "Escape") {
+          event.preventDefault(); event.stopPropagation();
+          closeSimilar();
+        } else if (event.key === "Tab") {
+          const stops = [...box.querySelectorAll("button")].filter(b => b.tabIndex >= 0 && b.offsetParent !== null);   // v66: the tab not in use is skipped (arrow keys reach it)
+          const at = stops.indexOf(document.activeElement);
+          const next = event.shiftKey ? (at <= 0 ? stops.length - 1 : at - 1) : (at < 0 || at === stops.length - 1 ? 0 : at + 1);
+          event.preventDefault();
+          stops[next].focus();
+        }
+      };
+      document.addEventListener("keydown", state.onKey, true);
+      shiftButtons.close.focus();
+    }
+
+    function closeSimilar() {
+      const state = similarState;
+      if (!state) return;
+      similarState = null;
+      if (state.unwatch) state.unwatch();
+      document.removeEventListener("keydown", state.onKey, true);
+      state.backdrop.remove();
+      document.body.classList.remove("similar-open");
+      document.body.style.overflow = "";
+      const opener = state.opener;
+      if (opener && opener.isConnected) { try { opener.focus({ preventScroll: true }); } catch (ignored) {} }
+      queueBackCheck();
     }
 
     // ---- v36: THE COLOUR WHEEL (the top of the Compendium) ----
@@ -10356,10 +10926,11 @@
     }
     function wheelTag(item) {
       if (item.origin === 1) return { cls: "none", text: item.paint.status === "wishlist" ? "On your wishlist" : "In your palette, not owned" };
-      return colourIdeaTag({ owned: item.origin === 0, quality: "good" });   // the same two tags the colour ideas use: You own this / Not in your palette
+      return item.origin === 0 ? { cls: "own", text: "You own this" } : { cls: "none", text: "Not in your palette" };   // the same two tags the colour ideas use
     }
     const WHEEL_ROUGH_NOTE = "The colour shown is only a guide for this kind of paint.";
-    const WHEEL_GROUP_SHOWN = 8;   // v37 part 2: how many paints a group shows before "Show all" (your own paints are never hidden)
+    const WHEEL_GROUP_SHOWN = 12;   // v37 part 2: how many paints a group shows before "Show all" (your own paints are never hidden); v63: 8 -> 12
+    function wheelPopular(item) { return POPULAR_BRANDS.includes(tidyBrand(item.paint.brand)) ? 0 : 1; }   // v63: 0 for a popular range (see POPULAR_BRANDS)
 
     // ---- v43: DRILL-DOWN (the six hue colours open into their three groups) ----
     // Tap red, orange, yellow, green, blue or purple and the picture is redrawn as that colour's three groups from WHEEL (the same groups and
@@ -10404,7 +10975,7 @@
     // The panel is plain text built from the same shared rows, with nothing to tap inside it except Copy as text, and no web links of any
     // kind. It is switched on by the door flag door.links (the Compendium only; the recipe card has no panels). One panel is open at a time;
     // which one is kept in door.state.paintOpen. Paint names only ever go in as text; the sentences use colour words, never names.
-    const PAINT_PANEL_ROLE = { boost: { s: 0, l: [0, 1] } };   // no lift: the matches aim at the exact spot on the colour wheel
+    const PAINT_PANEL_ROLE = { boost: { s: 0, l: [0, 1] }, opposite: OPPOSITE_DARK_LIFT };   // no lift, except the Opposite of a dark colour (v64): the matches aim at the exact spot on the colour wheel
     const PAINT_PANEL_GROUPS = [
       { label: "Opposite", picks: ["complementary"] },
       { label: "Neighbours", picks: ["analogous0", "analogous1"] },
@@ -10448,6 +11019,8 @@
       title.textContent = `Matching colours for ${paintLabel(paint)}`;
       box.setAttribute("aria-labelledby", title.id);
       box.appendChild(title);
+      const toRecipe = buildPaintToRecipeRow(door, paint);   // v62: Use in a recipe / Add to a recipe, for the wheel paint itself
+      if (toRecipe) box.appendChild(toRecipe);
       const lines = [title.textContent];
       const say = (text) => {
         const p = document.createElement("p");
@@ -10483,9 +11056,9 @@
         const rows = [];
         for (const pick of group.picks) {
           const wanted = colourIdeaWanted(harmony, PAINT_PANEL_ROLE, pick, slot++);
-          const hit = C.nearestPaints(wanted.hex, pool, { limit: 1, ownedFirst: true, exclude: used })[0];
+          const hit = C.suggestPaint(wanted.hex, pool, { exclude: used });
           if (!hit) continue;
-          used.push(hit.paint.colour);
+          used.push(...fitRows(hit).map(h => h.paint.colour));
           const reason = harmony.hueMeaningful
             ? colourIdeaReason(wanted.relation, wanted.hex, paint.colour, null)
             : `${cap(C.colourFamily(wanted.hex) || "this colour")} is an accent that stands out without clashing.`;
@@ -10496,15 +11069,19 @@
         label(group.label);
         const list = document.createElement("ul");
         list.className = "idea-list";
-        for (const { hit, reason } of rows) {
-          const baseTag = colourIdeaTag(hit), note = colourIdeaNote(hit);
+        for (const { hit: first, reason } of rows) {
+          const hit = first;
+          const baseTag = colourIdeaTag(hit);
           const tag = door.listMarks && !hit.owned ? shopListTag(hit.paint, baseTag) : baseTag;   // v41
-          const row = buildIdeaItem(hit.paint, tag, reason, note, null, "idea-pick");
+          const row = buildIdeaItem(hit.paint, tag, reason, "", null, "idea-pick");
           if (door.listMarks && !hit.owned) watchShopTag(row, hit.paint, baseTag);
           const shops = door.shops ? buildShopFoldout(hit.paint, hit.owned, panelSource) : null;   // v39: only for paints you do not own; v41: says which wheel part you were in
           if (shops) row.appendChild(shops);
+          const toRecipe = buildPaintToRecipeRow(door, hit.paint);   // v62
+          if (toRecipe) row.appendChild(toRecipe);
           list.appendChild(row);
-          lines.push(ideaTextLine(hit.paint, tag, reason, note));
+          lines.push(ideaTextLine(hit.paint, tag, reason, ""));
+          if (hit.alsoOwned) row.firstElementChild.after(alsoOwnedLine(hit, null, lines, reason));   // v64: your best paint is a poor fit, so it comes second
         }
         box.appendChild(list);
       }
@@ -10553,7 +11130,7 @@
       if (panel.scrollIntoView) panel.scrollIntoView({ block: "nearest" });
     }
 
-    // ---- v62: IDEAS FOR THIS (a paint in a recipe step or in Your Palette opens the Compendium scoped to it) ----
+    // ---- v69: IDEAS FOR THIS (a paint in a recipe step or in Your Palette opens the Compendium scoped to it) ----
     // One button, "Ideas for this", under a paint in an open recipe step and in an open paint on Your Palette. It opens the Compendium with
     // that paint's ideas at the top: the same paint panel the colour wheel opens (buildPaintPanel: colours that go with it, yours first, and
     // starter schemes with a similar colour), then detail recipes and basing tips with a step of a similar colour. Nothing new is worked out:
@@ -10712,7 +11289,7 @@
       const split = document.createElement("p");   // v37 part 2: the groups, so you know what the headings below are
       split.className = "hint";
       split.id = door.id("wheel-groups");
-      split.textContent = `Split into ${colourWordList(seg.subs.map(s => s.label.toLowerCase()))}. Each group runs from dark to light, yours first.`;
+      split.textContent = `Split into ${colourWordList(seg.subs.map(s => s.label.toLowerCase()))}. Each group runs from dark to light: yours first, then popular ranges.`;   // v63: popular ranges
       if (onlySub) box.append(title, about, count); else box.append(title, about, split, count);
       if (door.links && items.length) {   // v38: say that a paint can be tapped
         const tapHint = document.createElement("p");
@@ -10745,7 +11322,7 @@
       }
       for (const sub of onlySub ? [onlySub] : seg.subs) {
         const group = shown.filter(x => x.at.sub === sub.key)
-          .sort((a, b) => a.origin - b.origin || a.at.L - b.at.L || String(a.paint.name).localeCompare(String(b.paint.name)));
+          .sort((a, b) => a.origin - b.origin || wheelPopular(a) - wheelPopular(b) || a.at.L - b.at.L || String(a.paint.name).localeCompare(String(b.paint.name)));   // v63: popular ranges first
         if (!group.length) continue;
         // v37 part 2: a group shows its first few paints (yours are always all shown) and one button for the rest, so a long group stays short
         const mine = group.filter(x => x.origin < 2).length;
@@ -11101,7 +11678,7 @@
 
       const intro = say("A colour wheel (tap a colour to open its groups), colour ideas, starter schemes, detail recipes and basing tips, without needing a recipe. Tap a heading to open it, and type in a search box to find things fast. Use Copy as text to keep anything, or Save into a new recipe\u2026 to start a recipe from colour ideas, schemes, detail recipes and basing tips.", "intro");
 
-      appendIdeasFocus(body, door, redraw);   // v62: a paint's ideas, when the Compendium was opened from its Ideas for this button
+      appendIdeasFocus(body, door, redraw);   // v69: a paint's ideas, when the Compendium was opened from its Ideas for this button
       // v36: the colour wheel comes first
       appendColourWheel(body, door, redraw);
 
@@ -11169,9 +11746,18 @@
       return list;
     }
     // The paints a recipe you're writing would add to your palette.
+    // v62: a name still being typed only counts once it matches a known paint or you leave the box, so a half-typed
+    // "Macragge Blu" no longer brings up the card and then makes it vanish when you finish the name.
+    const typingPaints = new WeakSet();   // the draft paints whose name box you are typing in now
+    function knownPaintName(name) {
+      return book.paints.some(p => sameText(p.name, name)) || searchedPaints.some(p => sameText(p.name, name));
+    }
     function draftNewPaints(d) {
       const list = [];
-      for (const s of d.steps) for (const p of s.paints) addNewPaint(list, p);
+      for (const s of d.steps) for (const p of s.paints) {
+        if (typingPaints.has(p) && !knownPaintName(String(p.name || "").trim())) continue;
+        addNewPaint(list, p);
+      }
       return list;
     }
 
@@ -11186,31 +11772,40 @@
     function buildOwnCard(choice, getPaints) {
       const card = document.createElement("div");
       card.className = "card own-check";
+      // v62: the heading, the paint names and the All / None / Let me pick chips are made once and only updated, so a tap on a chip
+      // still lands when leaving a paint box changes the list at that moment. The names always show, so "these" is never a guess.
+      const head = document.createElement("h2");
+      head.textContent = "Do you own these?";
+      const names = document.createElement("p");
+      names.className = "own-names";
+      const detail = document.createElement("p");
+      detail.className = "hint";
+      // v50: the explanation sits behind More info (its open state is kept while the app is open).
+      const hint = buildMoreInfo([detail], { state: infoState(recipeInfoDoor, "own-card"), id: `own-card-info-${++ownInfoSeq}`, label: "owning these paints" });
+      const modes = document.createElement("div");
+      modes.className = "chips";
+      const modeChips = [];
+      for (const [key, label] of [["all", "All"], ["none", "None"], ["pick", "Let me pick"]]) {
+        const chip = makeChip(label, choice.mode === key, () => { choice.mode = key; draw(); });
+        chip.dataset.own = key;
+        modeChips.push(chip);
+        modes.appendChild(chip);
+      }
+      const pickArea = document.createElement("div");
+      card.append(head, names, hint, modes, pickArea);
       const draw = () => {
         const paints = getPaints();
         // Nothing changed? Leave it alone. (Redrawing as you tap a chip would lose the tap.)
         const look = JSON.stringify([choice.mode, paints.map(p => [p.label, ownsNewPaint(choice, p)])]);
         if (look === card.dataset.look) return;
         card.dataset.look = look;
-        card.innerHTML = "";
         card.hidden = !paints.length;
         if (!paints.length) return;
-        const head = document.createElement("h2");
-        head.textContent = "Do you own these?";
-        const detail = document.createElement("p");
-        detail.className = "hint";
-        detail.textContent = `${plural(paints.length, "paint")} will be new to your palette. Ones you own stay off the shopping list; `
-          + "ones you don't go on it. You can change any of them later on Your Palette.";
-        // v50: the explanation sits behind More info (its open state is kept while the app is open).
-        const hint = buildMoreInfo([detail], { state: infoState(recipeInfoDoor, "own-card"), id: `own-card-info-${++ownInfoSeq}`, label: "owning these paints" });
-        const modes = document.createElement("div");
-        modes.className = "chips";
-        for (const [key, label] of [["all", "All"], ["none", "None"], ["pick", "Let me pick"]]) {
-          const chip = makeChip(label, choice.mode === key, () => { choice.mode = key; draw(); });
-          chip.dataset.own = key;
-          modes.appendChild(chip);
-        }
-        card.append(head, hint, modes);
+        names.textContent = paints.map(p => p.label).join(", ");
+        detail.textContent = `${plural(paints.length, "paint")} will be new to your palette. Owned ones are marked Owned; the others are marked `
+          + "Not owned, and you can add them to the shopping list from the recipe. You can change any of them later on Your Palette.";
+        for (const chip of modeChips) chip.setAttribute("aria-pressed", String(choice.mode === chip.dataset.own));
+        pickArea.replaceChildren();
         if (choice.mode === "pick") {
           const pickHint = document.createElement("p");
           pickHint.className = "hint";
@@ -11229,7 +11824,7 @@
             chip.setAttribute("aria-label", `${p.label}: ${owned ? "owned" : "not owned"}`);
             list.appendChild(chip);
           }
-          card.append(pickHint, list);
+          pickArea.append(pickHint, list);
         }
       };
       card.refresh = draw;
@@ -13311,7 +13906,7 @@
     function recoverSafetyCopy(suffix) {
       const copy = readSafetyCopy(suffix);
       if (!copy) { renderRecover(); return; }
-      const copyStages = goodStageList(copy.stages) ? copy.stages.map(String) : null;
+      const copyStages = goodStageList(copy.stages) ? renamedStageList(copy.stages.map(String)) : null;   // v62: renamed as on start-up
       // Clean the copy's units against its own stages, like a backup.
       const currentStages = STAGES;
       if (copyStages) STAGES = copyStages;
@@ -13738,7 +14333,7 @@
           notify("This backup's list of stages is damaged (blank or repeated names, or more than 10), so it can't be restored safely. Nothing has changed.");
           return;
         }
-        const backupStages = !isList && parsed.stages ? parsed.stages.map(String) : null;
+        const backupStages = !isList && parsed.stages ? renamedStageList(parsed.stages.map(String)) : null;   // v62: renamed as on start-up
         const backupModels = isList ? parsed : (Array.isArray(parsed.models) ? parsed.models : []);
 
         // Clean the units against the backup's own stages, BEFORE touching your data.
@@ -14669,12 +15264,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=62".
+    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=69".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v62";
+    const APP_VERSION = "v69";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -15125,9 +15720,45 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
-      { version: "v62", date: "24 Oct 2026", changes: [
+      { version: "v69", date: "26 Oct 2026", changes: [
         "Ideas for this: open a recipe step or a paint in Your Palette and tap Ideas for this. The Compendium opens with that paint's ideas at the top: colours that go with it, starter schemes, detail recipes and basing tips with a similar colour, using your paints first.",
         "Show steps or Show tip opens that detail recipe or basing tip in full. Back to recipe or Back to Your Palette takes you to the same place. A paint with no colour set has no button.",
+      ]},
+      { version: "v68", date: "26 Oct 2026", changes: [
+        "The stage Painted with issues is now called Needs touch-ups: painted and on the table, with a few bits to fix before Parade ready. Your units stay where they were.",
+        "This happens if you hadn't changed your stages, and also when you restore an older backup with the old list. If you had changed them, your names stay as you set them.",
+        "Help explains the stage, under Stages and Done.",
+      ]},
+      { version: "v67", date: "26 Oct 2026", changes: [
+        "The shopping list only holds paints you put there: Wishlist paints and anything you add with an Add to shopping list button. Paints a recipe uses that you don't own, and paints that are empty or running low, are no longer added by themselves. They still show as Missing on the recipe.",
+        "A recipe with missing paints has an Add missing paints to shopping list button under its steps. It adds only real paints you don't own, says how many, and has an Undo.",
+        "Do you own these? now names the paints it means, and a half-typed paint name no longer brings it up.",
+        "Save stops and says which step has a brand but no paint name, instead of dropping it. A step with no paint says No paint on its line.",
+        "The empty paint box now just says Paint name.",
+      ]},
+      { version: "v66", date: "25 Oct 2026", changes: [
+        "Similar paints now has a second card, Your closest: the nearest paints you own, with the same fit words. It follows Lighter, Close and Darker too.",
+        "If your closest paint is already the best match, only Best match shows. If none of your paints is close, Your closest says so. With no paints of your own, only Best match shows.",
+        "On a phone the two cards are tabs, Best and Yours. On a wider screen they sit side by side and the pop-up is wider.",
+      ]},
+      { version: "v65", date: "25 Oct 2026", changes: [
+        "New Similar paints button on a paint in the Compendium. It opens a pop-up with Best match: up to three paints from different brands, closest first, whether or not you own them, each with its fit.",
+        "Lighter, Close and Darker at the top of the pop-up look for a lighter or darker colour. Close is the default.",
+        "A paint you do not own can go on your shopping list from the pop-up, with an Undo. Paints that are not colours, such as varnishes, mediums and thinners, are never offered.",
+      ]},
+      { version: "v64", date: "25 Oct 2026", changes: [
+        "Suggested paints now show how well they fit: Good fit, Okay fit or Poor fit. The same rule is used in Colour ideas, starter schemes, detail recipes, basing and the colour wheel panel.",
+        "A paint you own comes first only when it is a Good or Okay fit. If your best paint is a poor fit, the closest paint overall comes first and your own paint is second, marked Yours, poor fit.",
+        "The Opposite of a dark colour in the colour wheel panel is now a clear orange or gold instead of a brown.",
+        "The sentences under suggested paints, such as Closest you own and Similar, not exact, have gone. Only the labels are left.",
+      ]},
+      { version: "v63", date: "24 Oct 2026", changes: [
+        "In the Compendium colour wheel, each group now shows 12 paints before Show all (it was 8).",
+        "After your own paints, paints from popular ranges come first, so the short list is not filled with brands you may not know. The rest are still there under Show all.",
+      ]},
+      { version: "v62", date: "24 Oct 2026", changes: [
+        "A paint in the Compendium (a colour idea, or a colour wheel paint once you open it) has two buttons. Use in a recipe starts a new recipe with that paint in step 1. Add to a recipe lets you pick a recipe, then one of its steps or a new step. Both have an Undo.",
+        "If the paint is not in Your Palette yet, it is added as Not owned, so it reaches your shopping list once a recipe uses it, and the message says so. Made-up example paints are not offered.",
       ]},
       { version: "v61", date: "24 Oct 2026", changes: [
         "A unit with more than one model has a Track models separately button in its details, under the stage. One tap shows every model with its own stage. Track as one batch goes back. Both have an Undo.",
@@ -15376,6 +16007,7 @@
     // What Back would close right now, as a function that closes it, or null if nothing.
     function backTarget() {
       if (dialogState) return cancelDialog;   // v21.7: a question box sits over everything; Back = No / Cancel
+      if (similarState) return closeSimilar;  // v65: the Similar paints pop-up; Back closes it
       if (viewer) return closeViewer;
       const tab = settings.tab;
       if (tab === "recipes") {
@@ -15396,7 +16028,7 @@
         if (openRecipeId !== null) return () => { openRecipeId = null; renderRecipes(); window.scrollTo(0, 0); };
         if (schemeDraft && settings.recipeView === "schemes") return () => closeScheme(true);
       }
-      if (tab === "compendium" && compendiumState.focus) return leaveIdeasFor;   // v62: back to the recipe step or palette paint
+      if (tab === "compendium" && compendiumState.focus) return leaveIdeasFor;   // v69: back to the recipe step or palette paint
       if (tab === "units" && !unitsImport.classList.contains("hidden")) return closeUnitsImport;
       if (tab === "units" && selectMode) return closeSelect;   // v21.1: select mode's tick boxes
       if (tab && tab !== "dashboard") return () => showTab("dashboard");

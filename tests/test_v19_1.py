@@ -43,8 +43,9 @@ EVIL = "<img src=x onerror=alert(1)>"
 BOOK = {
     "paints": [
         {"id": 1, "brand": "Citadel", "name": "Macragge Blue", "colour": "#1f3a8a", "status": "wishlist"},
-        {"id": 2, "brand": "The Army Painter", "name": "Matt White", "colour": "#f5f5f5", "status": "empty"},
-        {"id": 3, "brand": "Vallejo", "name": "Ivory", "colour": "#efe6cf", "status": "low"},
+        # v62 (chunk 2.2): only Wishlist paints are on the shopping list now, so these two were "empty" and "low" before.
+        {"id": 2, "brand": "The Army Painter", "name": "Matt White", "colour": "#f5f5f5", "status": "wishlist"},
+        {"id": 3, "brand": "Vallejo", "name": "Ivory", "colour": "#efe6cf", "status": "wishlist"},
         {"id": 4, "brand": "Citadel", "name": "Nuln Oil", "colour": "#222222", "status": "owned"},
     ],
     "recipes": [], "schemes": [],
@@ -128,7 +129,7 @@ def main():
         for key in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"',
                     'RECIPES_KEY = "shades-of-grey-recipes"', "shades-of-grey-recipes-before-recipes-restore"]:
             check(f"storage name kept: {key}", key in html)
-        check("DATA_VERSION unchanged (saved data didn't change shape)", page.evaluate("DATA_VERSION") == 1)
+        check("DATA_VERSION unchanged (saved data didn't change shape)", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
 
         # ---------- 2. The shop list ----------
         print("--- 2. The shop list ---")

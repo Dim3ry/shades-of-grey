@@ -324,16 +324,17 @@ def main():
         tap_group(page, "blue", "blue")
         det = page.evaluate(DETAIL_JS)
         mine = [r for r in det["rows"]]
-        check("Blues: yours first, then your wishlist and empty paints (marked On your shopping list), never the built-in ones until asked",
-              [r["name"] for r in mine][:1] == ["Mid Test Blue"] and {r["name"]: r["tag"] for r in mine}.get("Wish Blue") == "On your shopping list" and {r["name"]: r["tag"] for r in mine}.get("Empty Blue") == "On your shopping list",
+        check("Blues: yours first, then your wishlist paint (marked On your shopping list; v62: the empty one no longer is), never the built-in ones until asked",
+              [r["name"] for r in mine][:1] == ["Mid Test Blue"] and {r["name"]: r["tag"] for r in mine}.get("Wish Blue") == "On your shopping list" and {r["name"]: r["tag"] for r in mine}.get("Empty Blue") == "In your palette, not owned",   # v62: only Wishlist is on the list now
               {r["name"]: r["tag"] for r in mine})
         others = page.locator("#cmp-wheel-others")
         check("a Show other paints button counts only this group's built-in paints", others.count() == 1 and re.match(r"Show other paints \(\d+\)$", others.inner_text()) is not None
               and int(re.search(r"\((\d+)\)", others.inner_text()).group(1)) == sum(1 for e in expected_group(page, "blue", "blue") if e["origin"] == 2), others.inner_text())
         others.click()
         wait(page)
-        order = page.evaluate("() => wheelItems().filter(x => x.at.seg === 'blue' && x.at.sub === 'blue').map(x => [x.origin, x.at.L, x.paint.name])")
-        want = [n for _, _, n in sorted(order, key=lambda x: (x[0], x[1], x[2].lower()))]
+        # v63: within the built-in paints, popular ranges come before other brands (chunk 3.3), so the sort key has that step too
+        order = page.evaluate("() => wheelItems().filter(x => x.at.seg === 'blue' && x.at.sub === 'blue').map(x => [x.origin, wheelPopular(x), x.at.L, x.paint.name])")
+        want = [n for _, _, _, n in sorted(order, key=lambda x: (x[0], x[1], x[2], x[3].lower()))]
         shown8 = [r["name"] for r in page.evaluate(DETAIL_JS)["rows"]]
         check("with the others shown, the first paints run owned first, then dark to light", shown8 == want[:len(shown8)] and len(shown8) >= 8, (shown8[:5], want[:5]))
         more = page.locator("#cmp-wheel-more-blue")
@@ -458,8 +459,9 @@ def main():
         zoom(page, "blue")
         tap_group(page, "blue", "blue")
         tags = {r["name"]: r["tag"] for r in page.evaluate(DETAIL_JS)["rows"]}
-        check("inside a group list: wishlist and empty paints say On your shopping list, owned paints still say You own this",
-              tags.get("Wish Blue") == "On your shopping list" and tags.get("Empty Blue") == "On your shopping list" and tags.get("Mid Test Blue") == "You own this", tags)
+        check("inside a group list: wishlist paints say On your shopping list (v62: empty ones no longer do), owned paints still say You own this",
+              tags.get("Wish Blue") == "On your shopping list" and tags.get("Empty Blue") == "In your palette, not owned" and   # v62: only Wishlist is on the list now
+               tags.get("Mid Test Blue") == "You own this", tags)
         page.click("#cmp-wheel-back")
         wait(page)
         h.tap(page, "orange")

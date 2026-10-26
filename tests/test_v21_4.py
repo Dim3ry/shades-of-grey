@@ -41,8 +41,9 @@ def check(name, ok, detail=""):
 def read(name):
     return open(os.path.join(ROOT, name), encoding="utf-8").read()
 
+# v68: the 7th default stage was renamed from "Painted with issues" to "Needs touch-ups", so this list uses the new name.
 STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted",
-          "Battle ready", "Painted with issues", "Parade ready"]
+          "Battle ready", "Needs touch-ups", "Parade ready"]
 UNITS = [
     {"id": 1, "name": "Intercessors", "hobby": "40K", "faction": "Ultramarines", "stage": 3, "count": 5,
      "log": [["2026-09-01", 3]]},
@@ -160,7 +161,7 @@ def main():
         check("ZAP workflow is kept, still the passive baseline scan",
               os.path.exists(zap) and "action-baseline" in read(".github/workflows/zap-scan.yml")
               and "action-full-scan" not in read(".github/workflows/zap-scan.yml"))
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
+        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         for key in ["mini-tracker-models", "shades-of-grey-settings", "shades-of-grey-recipes"]:
             check(f"storage key {key} still used", key in app)
 

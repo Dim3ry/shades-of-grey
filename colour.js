@@ -211,19 +211,25 @@
       && paint.type !== "material";
   }
 
-  // How good is a match? From the CIEDE2000 distance (see above):
+  // How good is a match? From the CIEDE2000 distance (see above). ALL the cut-offs are here, in one place:
   //   "good"  - hard to tell apart (up to 6)
-  //   "close" - same colour family, slightly different shade (up to 15)
-  //   "poor"  - a different colour; show it with a warning, or say there is nothing close
+  //   "close" - an okay fit: same colour family, slightly different shade (up to 15)
+  //   "poor"  - a different colour
   // For rough paints (see above) each step is looser by a third, and the match is flagged
-  // "approximate" so the screen can say "close enough" rather than "exact".
+  // "approximate". The words shown on screen are in FIT_WORDS (the key "close" is the "Okay fit").
   // confidence is a number from 0 (hopeless) to 1 (identical) the screen can turn into words.
-  const GOOD_UNDER = 6, CLOSE_UNDER = 15, FAR_AT = 40;
+  const GOOD_UNDER = 6, CLOSE_UNDER = 15, FAR_AT = 40, ROUGH_STRETCH = 4 / 3;
+  const FIT_WORDS = { good: "Good fit", close: "Okay fit", poor: "Poor fit", ownedPoor: "Yours, poor fit" };
   function judgeMatch(distance, rough) {
-    const stretch = rough ? 4 / 3 : 1;
+    const stretch = rough ? ROUGH_STRETCH : 1;
     const quality = distance <= GOOD_UNDER * stretch ? "good" : distance <= CLOSE_UNDER * stretch ? "close" : "poor";
     const confidence = Math.max(0, 1 - distance / (FAR_AT * stretch));
     return { quality, approximate: !!rough, confidence: Math.round(confidence * 100) / 100 };
+  }
+  // The words for a result (needs quality and owned): "Good fit", "Okay fit", "Poor fit", or "Yours, poor fit" for a poor paint you own.
+  function fitLabel(hit) {
+    if (!hit || !FIT_WORDS[hit.quality]) return "";
+    return hit.owned && hit.quality === "poor" ? FIT_WORDS.ownedPoor : FIT_WORDS[hit.quality];
   }
 
   // Finds the paints closest to a wanted colour.
@@ -261,11 +267,28 @@
       seen.add(key);
       scored.push(entry);
     }
+    // An owned paint goes first only if it is not a poor fit; a poor owned paint is ranked by closeness like any other.
+    const leads = (e) => ownedFirst && e.owned && e.quality !== "poor";
     scored.sort((x, y) => {
-      if (ownedFirst && x.owned !== y.owned) return x.owned ? -1 : 1;
+      if (leads(x) !== leads(y)) return leads(x) ? -1 : 1;
       return x.distance - y.distance || String(x.paint.name).localeCompare(String(y.paint.name));
     });
     return scored.slice(0, limit);
+  }
+
+  // The suggestion for one wanted colour: the one result (or two) a screen should show. Same options as nearestPaints
+  // (limit is ignored). Returns a nearestPaints result, or null when nothing can be matched.
+  //   - your best paint is Good or Okay: that paint (yours goes first, even if a paint you do not own is closer)
+  //   - you own nothing, or your best is Poor and also the best overall: the best paint overall
+  //   - your best is Poor and a paint closer than it exists: the best paint overall, with your best owned paint in .alsoOwned
+  function suggestPaint(wanted, paints, options) {
+    const all = nearestPaints(wanted, paints, Object.assign({}, options, { limit: 1000000, ownedFirst: false }));
+    const best = all[0];
+    if (!best) return null;
+    const mine = all.find((e) => e.owned);
+    if (!mine || mine === best) return best;
+    if (mine.quality !== "poor") return mine;
+    return Object.assign({}, best, { alsoOwned: mine });
   }
 
   // Convenience: the single closest paint the user owns (or null), and the closest of all.
@@ -362,8 +385,8 @@
   const api = {
     isHex, hexToRgb, rgbToHex, hexToHsl, hslToHex, hexToLab,
     labDistance, colourDistance, harmonies, colourFamily,
-    haveIt, isRoughColour, canMatch, judgeMatch,
-    nearestPaints, closestOwned, closestAny,
+    haveIt, isRoughColour, canMatch, judgeMatch, fitLabel, FIT_WORDS,
+    nearestPaints, suggestPaint, closestOwned, closestAny,
     isStrongColour, schemeCheck,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
