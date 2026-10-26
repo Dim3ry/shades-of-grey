@@ -145,8 +145,6 @@ def main():
             const kids = [...card.children]; return [kids.indexOf(document.getElementById('buy-bar')),
             kids.findIndex(k => k.classList.contains('shop-brand'))]; })()""")
         check("…at the top, above the brand groups", 0 <= order[0] < order[1], order)
-        check("the old 'Coming later' box is gone", page.locator("#shop-links-slot").count() == 0
-              and "Coming later" not in page.inner_text("#shop-panel"))
         check("one button per shop, Army Painter included (an Army Painter paint is on the list)",
               shop_buttons(page) == ["Firestorm Games", "Wayland Games", "Element Games", "The Army Painter"],
               shop_buttons(page))

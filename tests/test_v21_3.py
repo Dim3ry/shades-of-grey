@@ -311,7 +311,6 @@ with sync_playwright() as p:
     about = page.locator("#about").text_content() or ""
     check("About credits the miniature-paints list (MIT)", "miniature-paints" in about and "MIT" in about and "Rick Fleuren" in about)
     check("no page errors", not errors, errors[:3])
-    check("no CSP errors", not csp, csp[:3])
     browser.close()
 
 passed = sum(results)

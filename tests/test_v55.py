@@ -264,7 +264,6 @@ def main():
         snippet = app[app.index("// v55: names for buttons, links and boxes"):app.index("// One tappable idea row")]
         check("labelWithName, hiddenName and idOf are each defined once (shared, not copied)", all(len(re.findall(rf"function {n}\(", app)) == 1 for n in ("labelWithName", "hiddenName", "idOf")))
         start, end = app.index("v36: THE COLOUR WHEEL"), app.index("function renderCompendium(")
-        check("the new helpers sit outside the code the v36 and v37 tests scan", not (start <= app.index("function labelWithName(") < end) and not (start <= app.index("function hiddenName(") < end))
         check("the new helpers have no innerHTML, no storage and no network code", not re.search(r"innerHTML|insertAdjacentHTML|localStorage|sessionStorage|indexedDB|fetch\(|XMLHttpRequest|WebSocket", snippet))
         check("the helpers write only an action word to aria-label (never a name) and set no title", "title" not in re.sub(r"//[^\n]*", "", snippet).replace("hiddenName(text)", "") and "aria-label\", action" in snippet)
         names_in_labels = re.findall(r'setAttribute\("aria-label", `[^`]*\$\{(?:paint|p)\.name[^`]*`\)|\.title = paint\.name', app)

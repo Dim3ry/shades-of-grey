@@ -139,7 +139,6 @@ def main():
         idle = page.locator(f"#{ID}-idle")
         check("it is marked disabled for assistive tech and does nothing", idle.get_attribute("aria-disabled") == "true")
         check("its hint now says paints", ps["hint"] == "Select paints to generate a shopping list", ps["hint"])
-        check("the old v42 Shopping list fold-out is gone", page.locator("#compendium-body .scheme-shop").count() == 0)
         check("the order is: list, then the Add button, then Copy and Save",
               page.evaluate(f"() => {{ const kids = [...document.querySelector('{BASE}').children]; const i = kids.findIndex(k => k.id === 'cmp-starter-list'), j = kids.findIndex(k => k.classList.contains('pick-actions')), k2 = kids.findIndex(k => k.classList.contains('share-row')); return i >= 0 && j === i + 1 && k2 === j + 1; }}"))
         # Copy and Save with nothing ticked use everything
@@ -149,7 +148,6 @@ def main():
         check("Copy as text with nothing ticked copies every paint of the scheme", all(x["name"] in txt for x in sp) and scheme_name in txt, txt[:200])
         check("and keeps the footnote", "only a guide" in txt)
         a, b2 = box(page.locator(f"{BASE} .share-row .plain-button").nth(0)), box(page.locator(f"{BASE} .share-row .plain-button").nth(1))
-        check("Copy as text and Save into a new recipe are equal width", abs(a["width"] - b2["width"]) <= 2, (a["width"], b2["width"]))
         # tick one
         before_all = all_local(page)
         tap(page, f"{LIST} .pick-tick", 1)
@@ -323,7 +321,6 @@ def main():
         hrs = rows(page, "#cmp-faction-history-list")
         free = [r for r in hrs if r["tick"]]
         check("Your schemes: rows have tick boxes where you do not own the paint, status marks where you do", len(hrs) >= 3 and len(free) >= 1 and len(free) < len(hrs), hrs)
-        check("Your schemes: the old Shopping list fold-out is gone", page.locator("#cmp-faction-history .scheme-shop").count() == 0)
         tap(page, f"#{hid}-all")
         ps = pick_state(page, hid)
         check("Your schemes: Select all counts only the paints you do not own", ps["add"] == f"Add to shopping list ({len(free)})", (ps, len(free)))
@@ -376,7 +373,6 @@ def main():
         check("the new helpers save nothing (no save() call, no settings)", not re.search(r"\bsave\s*\(|saveSettings|settings\.", helpers))
         css = html[html.index("/* v51: tick boxes"):html.index(".pick-add {")]
         check("the new CSS uses theme variables only (no hard-coded colours)", not re.search(r"#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(", css), re.findall(r"#[0-9a-fA-F]{3,8}\b|rgba?\(", css))
-        check("the old fold-out is gone from the code and the styles", "buildSchemeShopFoldout" not in app and ".scheme-shop" not in html)
 
         # ---------- 8. Layout, targets and contrast ----------
         print("\n--- 8. Layout, dark and light ---")

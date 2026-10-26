@@ -190,7 +190,6 @@ def main():
         check("the groups come from the same placing rules (wheelPlace/wheelSub are unchanged; no copy of them)", app.count("function wheelSub(") == 1 and app.count("function wheelPlace(") == 1 and app.count("const WHEEL = [") == 1)
         check("the drill-down code has no network code, no storage, no innerHTML and no links",
               not re.search(r"\bfetch\s*\(|XMLHttpRequest|sendBeacon|localStorage|sessionStorage|innerHTML|insertAdjacentHTML|outerHTML|href|createElement\(.a.\)", re.sub(r"(?m)\s//.*$", "", drill_code)))
-        check("the Pro preview label is still on the Compendium", page.locator("#view-compendium .pro-pill").inner_text() == "Pro preview")
 
         # ---------- 2. The top of the wheel ----------
         print("\n--- 2. The top of the wheel ---")

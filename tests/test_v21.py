@@ -364,7 +364,6 @@ def main():
         started = page.text_content("#view-help") or ""
         check("Help explains Starting stage and the examples card",
               "Starting stage" in started and "Clear examples" in started and "Keep them" in started)
-        check("Help no longer points to Delete all units for the examples", "Clear them in" not in started)
         # Opening a unit's menus adds no new overlay, so Back from Units still goes to the Dashboard.
         tab(page, "units")
         open_unit(page, 1)

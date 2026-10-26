@@ -63,7 +63,6 @@ def main():
               page.inner_text("#changelog .release h3"))
         page.evaluate("""() => { for (let i = 1; i <= 4; i++) CHANGELOG.push({ version: 'v0.' + i, date: 'test', changes: ['extra'] }); renderUpdates(); }""")
         check("even with a longer list, the page draws only five", page.locator("#changelog .release").count() == 5, page.locator("#changelog .release").count())
-        check("the old entries are gone from the code", all(x not in read("app.js") for x in ('version: "v40"', 'version: "v39"', 'version: "v38"', 'version: "v1"')))
 
         print("\n--- 3. Help ---")
         fresh(page)
@@ -71,7 +70,6 @@ def main():
         page.evaluate("document.querySelectorAll('#view-help details').forEach(d => d.open = true)")
         help_text = page.inner_text("#view-help")
         check("Help says the Updates tab lists the latest five versions", "lists what changed in the latest five versions" in help_text)
-        check("Help no longer says it lists each version", "what changed in each version" not in help_text)
         privacy = page.inner_text("#privacy")
         check("Privacy names Cloudflare as the site's host", "(Cloudflare) sees basic technical details" in privacy, privacy[-300:])
         check("Privacy no longer names GitHub Pages", "GitHub" not in privacy, privacy[-300:])

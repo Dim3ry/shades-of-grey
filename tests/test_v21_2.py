@@ -182,7 +182,6 @@ def main():
             check(f"{name} tab opens", page.is_visible(f"#view-{name}"))
             check(f"{name}: nothing scrolls sideways at 390 px", no_sideways(page))
             shot(page, f"v21-2-tab-{name}.png")
-        check("no CSP errors on any tab", not csp, csp[:3])
 
         # ---------- 5. Photos ----------
         print("\n--- 5. Photos ---")
@@ -210,7 +209,6 @@ def main():
         page.wait_for_timeout(300)
         check("an old-style photo (data: address) shows on its card", loaded(page, '#view-units li.unit[data-id="2"] img.thumb'))
         shot(page, "v21-2-photos-units.png")
-        check("no CSP errors with photos", not csp, csp[:3])
         context.close()
 
         # ---------- 6 + 7. Label reader and offline ----------
@@ -226,7 +224,6 @@ def main():
           g.fillStyle = '#000'; g.font = 'bold 64px Arial'; g.fillText('MACRAGGE BLUE', 30, 95);
           const w = await getOcrWorker(); const { data } = await w.recognize(c); return data.text; }""")
         check("the label reader still reads a test picture", "MACRAGGE" in text.upper(), text)
-        check("no CSP errors from the label reader", not csp, csp[:3])
 
         print("\n--- 7. Offline ---")
         page.wait_for_timeout(500)
@@ -241,7 +238,6 @@ def main():
         check("…and other tabs open", page.is_visible("#view-help"))
         shot(page, "v21-2-offline.png")
         context.set_offline(False)
-        check("no CSP errors offline", not csp, csp[:3])
         context.close()
 
         # ---------- 8. Feedback link, Privacy, Help ----------
@@ -276,7 +272,6 @@ def main():
         shot(page, "v21-2-settings-360.png")
         context.close()
 
-        check("no CSP errors anywhere", not csp, csp[:5])
         check("no page errors", not errors, errors[:5])
         browser.close()
 

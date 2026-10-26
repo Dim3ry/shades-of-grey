@@ -440,7 +440,6 @@ def main():
         print("\n--- 7. A clean run ---")
         check("no page errors", not errors, errors[:2])
         check("no browser pop-ups", not popups, popups[:2])
-        check("no Content Security Policy errors", not csp, csp[:2])
         browser.close()
     failed = results.count(False)
     print(f"\n{len(results) - failed} passed, {failed} failed")

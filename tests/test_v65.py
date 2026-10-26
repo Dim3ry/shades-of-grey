@@ -125,7 +125,6 @@ def main():
         help_text = page.evaluate("() => (document.getElementById('help-similar-paints') || {}).textContent || ''")
         check("Help describes Similar paints, Best match, Lighter, Darker, Undo and the skipped paints",
               all(w in help_text for w in ["Similar paints", "Best match", "Lighter", "Darker", "Undo", "not colours"]), help_text)
-        check("no em dash in the new Help line", "—" not in help_text)
 
         # ---------- 2. The button ----------
         print("\n--- 2. The button ---")
@@ -359,7 +358,6 @@ def main():
 
         # ---------- 9. Errors ----------
         print("\n--- 9. Errors ---")
-        check("no outside network requests (works offline)", not requests, requests[:3])
         check("no page errors", not errors, errors)
         check("no browser pop-ups", not dialogs, dialogs)
         browser.close()

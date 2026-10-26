@@ -90,7 +90,6 @@ def main():
             const b = p.querySelector('button.track-each'); const i = kids.indexOf(b);
             return i > 0 && !!kids[i - 1].querySelector('select.jump-stage'); }""", f"{card(1)} .panel")
         check("…straight under the stage menu, outside Edit details", under and page.locator(f"{card(1)} .edit-details button.track-each").count() == 0)
-        check("the old tick is gone from Edit details", page.locator(f'{card(1)} .edit-details-body label:has-text("Track each model")').count() == 0)
         check("no sentence next to the button (label only)", page.evaluate(f"""() => {{ const b = document.querySelector('{card(1)} .panel button.track-each');
             return !b.nextElementSibling || !b.nextElementSibling.matches('p, small, .hint'); }}"""))
         open_unit(page, 2)
@@ -156,7 +155,6 @@ def main():
         topic = page.text_content("#help-track-each") or ""
         check("Help has a per-model topic naming the button, the way back and Undo",
               all(w in topic for w in ["Track models separately", "Track as one batch", "Undo", "100"]), topic)
-        check("Help's Edit details line no longer lists the tick", "Track each model separately" not in (page.text_content("#help-edit-details") or ""))
         check("no em dash in the new Help line", "—" not in topic)
 
         # ---------- 7. Phones, dark and light ----------

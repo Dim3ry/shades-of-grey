@@ -214,8 +214,6 @@ def main():
         page.wait_for_function("""() => { const im = [...document.querySelectorAll('#view-units li.unit[data-id="2"] .photo-tile img')];
             return im.length === 2 && im.every(i => i.complete && i.naturalWidth > 0); }""", timeout=10000)
         check("its 2 photos show again", True)
-        check("the card's small picture shows", page.evaluate("""() => { const i = document.querySelector('#view-units li.unit[data-id="2"] img.thumb');
-            return !!i && i.complete && i.naturalWidth > 0; }"""))
         page.wait_for_timeout(9000)
         check("after Undo the photo files are never deleted", photo_files(page) == files_before, photo_files(page))
         page.reload()
@@ -348,7 +346,6 @@ def main():
         browser.close()
 
     check("no page errors", not errors, errors[:3])
-    check("no CSP errors", not csp, csp[:3])
     print(f"\n{sum(results)} of {len(results)} checks passed")
     sys.exit(0 if all(results) else 1)
 

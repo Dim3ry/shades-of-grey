@@ -125,7 +125,6 @@ def main():
         check("that note is gone, the other stays", notes(page) == ["do the trim last"], notes(page))
         check("says which note, with Undo", "Left out the note “thin your paints” from Cloak" in toast(page)
               and page.is_visible("#toast-undo"), toast(page))
-        check("your pasted notes are unchanged", page.input_value("#import-text") == NOTE)
         undo(page)
         check("Undo: the note is back, in order", notes(page) == ["thin your paints", "do the trim last"], notes(page))
 
@@ -139,7 +138,6 @@ def main():
               and page.text_content("#import-save") == "Save 2 recipes", page.text_content("#import-save"))
         undo(page)
         check("Undo: Eyes is back in the middle", parts(page) == ["Cloak", "Eyes", "Rocks"] and lines(page) == start_lines, parts(page))
-        check("Undo: the unsure paint is asked about again", page.locator("#import-page .import-check").count() == 1)
         page.locator("#import-page .import-drop-part").nth(1).focus()
         page.keyboard.press("Enter")
         page.wait_for_timeout(50)

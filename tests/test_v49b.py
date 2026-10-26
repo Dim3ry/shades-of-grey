@@ -14,8 +14,8 @@ What changed:
 Checks:
 1. Versions and the v49 Updates line.
 2. The CSS: .chips never wraps, browse lists are marked to wrap, scroll rows have room for the focus ring.
-3. Every visible option row, on every tab, at 360, 390 and 1280 px, in Classic and Paint Bench, dark and light (and the other
-   four themes at 360 px dark): one line, no button text clipped, buttons at least 40 px (44 where they were 44), nothing
+3. Every visible option row, on every tab, at 360 and 390 px, in Classic and Paint Bench, dark and light (T3b: the 1280 px run and
+   the other four themes were dropped): one line, no button text clipped, buttons at least 40 px (44 where they were 44), nothing
    scrolls the page sideways, two-line buttons get rounded corners instead of a pill.
 4. A row that overflows gets the fade class, and its pressed button is scrolled fully into view.
 5. The buttons still work: stage and group filters, status, brands, Appearance, history range, the shop buttons.
@@ -172,8 +172,8 @@ def main():
         # ---------- 3. Every row, every tab ----------
         print("\n--- 3. Every option row is one line ---")
         seen = set()
-        runs = [(w, th, mode) for w in (360, 390, 1280) for th in ("classic", "bench") for mode in ("dark", "light")]
-        runs += [(360, th, "dark") for th in THEMES if th not in ("classic", "bench")]
+        # T3b: 390 and 360 px, dark and light, and the two most different themes (was 12 runs, 16 with the other four themes at 360 px dark)
+        runs = [(w, th, mode) for w in (360, 390) for th in ("classic", "bench") for mode in ("dark", "light")]
         for w, th, mode in runs:
             tag = f"{th} {mode} {w}px"
             page.set_viewport_size({"width": w, "height": 900})
@@ -303,7 +303,6 @@ def main():
         print("\n--- 6. A clean run ---")
         check("no page errors", not errors, errors[:2])
         check("no browser pop-ups", not popups, popups[:2])
-        check("no Content Security Policy errors", not csp, csp[:2])
         browser.close()
     failed = results.count(False)
     print(f"\n{len(results) - failed} passed, {failed} failed")

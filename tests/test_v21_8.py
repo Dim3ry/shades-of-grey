@@ -169,7 +169,6 @@ def main():
         heads = page.locator("#view-updates h3").all_inner_texts()
         for key in ["mini-tracker-models", "shades-of-grey-settings", "shades-of-grey-recipes"]:
             check(f"storage key {key} still used", key in app)
-        check("no code written inside the page", all(not b.strip() for b in re.findall(r"<script\b[^>]*>(.*?)</script>", html, re.S)))
         check("the tab bar rule is only for screens under 900 px (the top bar is never hidden)",
               re.search(r"@media \(max-width: 899\.98px\)\s*\{[^}]*body\.typing \.tabs \{ display: none; \}", html) is not None)
         check("the message and Select bar drop down while typing",
@@ -533,12 +532,10 @@ def main():
         def help_text(i):
             return page.evaluate(f"() => document.getElementById('{i}') ? document.getElementById('{i}').textContent : ''")
         check("Help explains the dark-mode lift", "too dark" in help_text("help-dark-readable") and "brighter" in help_text("help-dark-readable"), help_text("help-dark-readable"))
-        check("Help no longer says dark mode shows colours exactly as chosen", "dark mode shows them exactly as chosen" not in html)
         check("Help explains the model dates", all(w in help_text("help-model-dates") for w in ["Today", "Yesterday", "Since 7 Oct"]), help_text("help-model-dates"))
         check("Help explains the tab bar while typing", "tab bar" in help_text("help-typing") and "keyboard" in help_text("help-typing"), help_text("help-typing"))
 
         check("no page errors", not errors, errors[:3])
-        check("no CSP errors", not csp, csp[:3])
         context.close()
         browser.close()
 

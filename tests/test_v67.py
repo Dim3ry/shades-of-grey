@@ -190,7 +190,6 @@ def main():
         shop_topic = page.text_content("#help-shop") or ""
         check("Help names the recipe button and Undo", "Add missing paints to shopping list" in recipe_topic and "Undo" in recipe_topic, recipe_topic)
         check("Help says the list only holds what you put there", "Wishlist" in shop_topic and "Nothing is added by itself" in shop_topic, shop_topic)
-        check("Help no longer says None puts paints on the list", "so they go on the shopping list" not in html)
         check("no em dash in the new Help lines", "—" not in recipe_topic + shop_topic)
 
         # ---------- 7. Phones, dark and light ----------

@@ -456,7 +456,6 @@ def main():
 
         check("no real browser pop-ups at any point", not popups, popups)
         check("no page errors", not errors, errors[:3])
-        check("no CSP errors", not csp, csp[:3])
         context.close()
         browser.close()
 

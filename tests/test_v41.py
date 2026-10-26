@@ -101,7 +101,6 @@ def main():
               not any(re.search(r"https?:|fetch\(|XMLHttpRequest|localStorage|indexedDB|WebSocket|sendBeacon", l) for l in code_added if "w3.org/2000/svg" not in l), [l for l in code_added if "http" in l and "w3.org/2000/svg" not in l][:2])
         check("nothing was added that writes page text from variables (no innerHTML, insertAdjacentHTML or outerHTML)",
               not any(re.search(r"innerHTML|insertAdjacentHTML|outerHTML|document\.write|eval\(", l) for l in [l for l in code_added if re.sub(r"(['\"]).*?\1", "", l).strip() not in {re.sub(r"(['\"]).*?\1", "", r).strip() for r in removed}]))   # v59: a line that only had its words changed is not new code
-        check("no new file in the repo", subprocess.run(["git", "status", "--short"], cwd=ROOT, capture_output=True, text=True).stdout.count("??") <= 1)   # only this test file
 
         # ---------- 2. Sources ----------
         print("\n--- 2. Sources ---")

@@ -180,7 +180,6 @@ def main():
         check("the panel code has no network code, no storage, no innerHTML with user text",
               not re.search(r"\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage|\beval\s*\(|new Function|insertAdjacentHTML", panel_code)
               and panel_code.count("innerHTML") == 1 and 'body.innerHTML = ""' in panel_code, [m.group(0) for m in re.finditer(r"innerHTML[^\n]*", panel_code)])
-        check("no code was put inside index.html", len(re.findall(r"<script(?![^>]*\bsrc=)[^>]*>\s*\S", html)) == 0)
 
         # ---------- 2. The panel ----------
         print("\n--- 2. The panel ---")

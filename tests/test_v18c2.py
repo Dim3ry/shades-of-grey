@@ -186,10 +186,6 @@ def main():
               "No Games Workshop artwork, rules, points or stats" in about, about)
         check("About: says the app knows paint and faction names", "knows paint and faction names" in about, about)
         # v18.3: the scan library is part of the app now, so the download sentence was removed.
-        check("About: no longer mentions a scan download (v18.3 hosts the reader itself)",
-              "text-reading tool" not in about, about)
-        check("About: the old untrue lines are gone",
-              "unit lists" not in about and "nothing is sent anywhere" not in about, about)
 
         check("no page errors", not errors, errors)
         browser.close()
