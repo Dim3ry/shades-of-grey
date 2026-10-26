@@ -134,9 +134,9 @@ def main():
         html, sw = read("index.html"), read("sw.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
         check("the version is v42 or v43 in APP_VERSION, sw.js and all six script tags",
-              page.evaluate("APP_VERSION") in ("v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62", "v63", "v64", "v65", "v66") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66") and len(tags) == 6 and len({v for _, v in tags}) == 1 and tags[0][1] in ("42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66"),
+              page.evaluate("APP_VERSION") in ("v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62", "v63", "v64", "v65", "v66", "v67") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67") and len(tags) == 6 and len({v for _, v in tags}) == 1 and tags[0][1] in ("42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67"),
               (page.evaluate("APP_VERSION"), tags))
-        check("the two comments that name the number (in index.html and app.js) carry the same 42, 43 or 44", re.search(r'The "\?v=(42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63|64|65|66)" makes', html) and re.search(r'e\.g\. "app\.js\?v=(42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63|64|65|66)"', read("app.js")))
+        check("the two comments that name the number (in index.html and app.js) carry the same 42, 43 or 44", re.search(r'The "\?v=(42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67)" makes', html) and re.search(r'e\.g\. "app\.js\?v=(42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67)"', read("app.js")))
         entry = page.evaluate("CHANGELOG.find(e => e.version === 'v42')")
         joined = " ".join(entry["changes"]) if entry else ""
         check("the v42 Updates entry (newest, or second newest once v43 is out) tells about the Add paints button, Undo, the same list and Shop links",
@@ -267,10 +267,11 @@ def main():
               by_name(st, base[2]["name"])["status"] == "wishlist" and by_name(st, base[2]["name"])["shopFrom"] == ["Recipe: Earlier"] and sum(1 for p_ in st if p_["name"] == base[2]["name"]) == 1)
         new = by_name(st, base[3]["name"])
         check("the fourth paint (only in the built-in list) joined the palette as Wishlist with the scheme as its source", new and new["status"] == "wishlist" and new["shopFrom"] == [f"Scheme: {scheme_name}"], new)
-        check("the basket counts the three list paints (the running-low one, the old wishlist one and the new one)", basket(page) == "3", basket(page))
+        # v62 (chunk 2.2): only Wishlist paints are on the list now, so the running-low one no longer counts (this said 3, then 2).
+        check("the basket counts the two list paints (the old wishlist one and the new one)", basket(page) == "2", basket(page))
         undo(page)
-        check("Undo removes only what this button added (the old wishlist paint stays, the basket says 2)",
-              by_name(stored(page), base[3]["name"]) is None and by_name(stored(page), base[2]["name"])["status"] == "wishlist" and basket(page) == "2", basket(page))
+        check("Undo removes only what this button added (the old wishlist paint stays, the basket says 1)",
+              by_name(stored(page), base[3]["name"]) is None and by_name(stored(page), base[2]["name"])["status"] == "wishlist" and basket(page) == "1", basket(page))
         # nothing to add at all: everything owned
         pal_all = [P(i + 1, x["name"], x["colour"], "owned", brand=x["brand"]) for i, x in enumerate(base)]
         load(page, paints=pal_all)
@@ -309,7 +310,7 @@ def main():
         check("they are on the list as Wishlist with the faction's name as the source",
               all(by_name(st, n_)["status"] == "wishlist" and by_name(st, n_)["shopFrom"] == ["Scheme: Gloom Legion colours"] for n_ in todo), [by_name(st, n_) for n_ in todo])
         check("owned paints of the faction were left alone", all(by_name(st, n_)["status"] == "owned" and "shopFrom" not in by_name(st, n_) for n_ in names_h if n_ not in todo and (by_name(pals, n_) or {}).get("status") == "owned"))
-        check("the basket count is right", basket(page) == str(len([p_ for p_ in st if p_.get("status") in ("wishlist", "empty")])), basket(page))
+        check("the basket count is right", basket(page) == str(len([p_ for p_ in st if p_.get("status") == "wishlist"])), basket(page))   # v62: was wishlist or empty
         check("the faction's paints in Your schemes still read as before (rows unchanged)",
               page.evaluate("() => [...document.querySelectorAll('#cmp-faction-history-list > li')].every(li => !li.querySelector('.scheme-shop'))"))
         undo(page)

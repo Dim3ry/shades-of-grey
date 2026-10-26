@@ -324,8 +324,8 @@ def main():
         tap_group(page, "blue", "blue")
         det = page.evaluate(DETAIL_JS)
         mine = [r for r in det["rows"]]
-        check("Blues: yours first, then your wishlist and empty paints (marked On your shopping list), never the built-in ones until asked",
-              [r["name"] for r in mine][:1] == ["Mid Test Blue"] and {r["name"]: r["tag"] for r in mine}.get("Wish Blue") == "On your shopping list" and {r["name"]: r["tag"] for r in mine}.get("Empty Blue") == "On your shopping list",
+        check("Blues: yours first, then your wishlist paint (marked On your shopping list; v62: the empty one no longer is), never the built-in ones until asked",
+              [r["name"] for r in mine][:1] == ["Mid Test Blue"] and {r["name"]: r["tag"] for r in mine}.get("Wish Blue") == "On your shopping list" and {r["name"]: r["tag"] for r in mine}.get("Empty Blue") == "In your palette, not owned",   # v62: only Wishlist is on the list now
               {r["name"]: r["tag"] for r in mine})
         others = page.locator("#cmp-wheel-others")
         check("a Show other paints button counts only this group's built-in paints", others.count() == 1 and re.match(r"Show other paints \(\d+\)$", others.inner_text()) is not None
@@ -459,8 +459,9 @@ def main():
         zoom(page, "blue")
         tap_group(page, "blue", "blue")
         tags = {r["name"]: r["tag"] for r in page.evaluate(DETAIL_JS)["rows"]}
-        check("inside a group list: wishlist and empty paints say On your shopping list, owned paints still say You own this",
-              tags.get("Wish Blue") == "On your shopping list" and tags.get("Empty Blue") == "On your shopping list" and tags.get("Mid Test Blue") == "You own this", tags)
+        check("inside a group list: wishlist paints say On your shopping list (v62: empty ones no longer do), owned paints still say You own this",
+              tags.get("Wish Blue") == "On your shopping list" and tags.get("Empty Blue") == "In your palette, not owned" and   # v62: only Wishlist is on the list now
+               tags.get("Mid Test Blue") == "You own this", tags)
         page.click("#cmp-wheel-back")
         wait(page)
         h.tap(page, "orange")

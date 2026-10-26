@@ -47,16 +47,13 @@ V17_BOOK = {
     ],
     "schemes": [],
 }
+# v62 (chunk 2.2): George asked that nothing goes on the shopping list by itself, so only the Wishlist paint is listed
+# now (missing recipe paints, the empty one and the running low one are left for you to add), and with every row a
+# Wishlist paint the ": wishlist" after each name is gone. This used to expect all five paints with their reasons.
 EXPECTED_SHOPPING = """Shopping list
 
-Citadel
-- Abaddon Black: missing, used in 1 recipe (from Recipe: Black trim)
-- Leadbelcher: missing, used in 1 recipe (from Recipe: Chainmail)
-- Mephiston Red: empty
-- Nuln Oil: running low (spare in stock)
-
 Vallejo
-- Mystic Blue: wishlist"""
+- Mystic Blue"""
 
 # How George answers the questions the Keep note raises (same as v16).
 ANSWERS = {"Bleck Templar": "Black Templar", "CM": "Contrast Medium", "Ice": "Basing material", "SS": "Screaming Skull",

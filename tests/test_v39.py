@@ -61,7 +61,8 @@ def at(deg):
         return hx(_h * 360 + 180, max(_s, 0.55), max(_l, 0.45))
     return hx(_h * 360 + deg, _s, _l)
 BLUE = P(1, "Probe Blue", BASE_HEX)
-UNOWNED = [BLUE, P(2, "Probe Opposite", at(180), status="notowned"), P(3, "Probe Left", at(-30), status="wishlist"), P(4, "Probe Right", at(30), status="empty"),
+# v62 (chunk 2.2): only Wishlist paints are on the shopping list now, so Probe Right (on the list in these checks) was "empty" before.
+UNOWNED = [BLUE, P(2, "Probe Opposite", at(180), status="notowned"), P(3, "Probe Left", at(-30), status="wishlist"), P(4, "Probe Right", at(30), status="wishlist"),
            P(5, "Probe Triad A", at(120), status="notowned"), P(6, "Probe Triad B", at(240), status="notowned")]
 ALL_OWNED = [BLUE, P(2, "Probe Opposite", at(180)), P(3, "Probe Left", at(-30)), P(4, "Probe Right", at(30), status="low"),
              P(5, "Probe Triad A", at(120)), P(6, "Probe Triad B", at(240))]
@@ -160,8 +161,8 @@ def main():
         html, sw, app = read("index.html"), read("sw.js"), read("app.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
         check("the version is v39 everywhere: APP_VERSION, sw.js, the six script tags, and the two comments that name it",
-              page.evaluate("APP_VERSION") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62", "v63", "v64", "v65", "v66") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66") and len(tags) == 6 and len({v for _, v in tags}) == 1
-              and re.search(r'The "\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63|64|65|66)"', html) and re.search(r'"app\.js\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63|64|65|66)"', app), (page.evaluate("APP_VERSION"), tags))
+              page.evaluate("APP_VERSION") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62", "v63", "v64", "v65", "v66", "v67") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67") and len(tags) == 6 and len({v for _, v in tags}) == 1
+              and re.search(r'The "\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67)"', html) and re.search(r'"app\.js\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67)"', app), (page.evaluate("APP_VERSION"), tags))
         files = re.search(r"const APP_FILES = \[(.*?)\];", sw, re.S).group(1)
         cached = re.findall(r'"\./([^"?]*)', files)
         root_js = sorted(f for f in os.listdir(ROOT) if f.endswith(".js") and f != "sw.js")
@@ -172,7 +173,7 @@ def main():
         joined = " ".join(entry["changes"]) if entry else ""
         if page.evaluate("!!CHANGELOG.find(r => r.version === 'v39')"):
             check("the v39 Updates entry exists once, is the newest, and tells about the Shop links fold-out, plain links, Add to shopping list, the Settings switch, the Buy these bar, and (one plain line) that restoring a backup now only accepts ordinary photo files",
-                  entry and page.evaluate("CHANGELOG.filter(r => r.version === 'v39').length") == 1 and page.evaluate("CHANGELOG[0].version") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62", "v63", "v64", "v65", "v66")
+                  entry and page.evaluate("CHANGELOG.filter(r => r.version === 'v39').length") == 1 and page.evaluate("CHANGELOG[0].version") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62", "v63", "v64", "v65", "v66", "v67")
                   and all(w in joined for w in ["Shop links", "plain", "Add to shopping list", "Settings", "Buy these"]) and "Restoring a backup now only accepts ordinary photo files" in joined, joined[:300])
         else:
             print("SKIP: "+'the v39 Updates entry exists once, is the newest, and tells about the Shop links')
@@ -297,7 +298,7 @@ def main():
         panel_for(page, UNOWNED)
         r_mix = [r for r in prows(page) if r["section"] != STARTER_LABEL]
         by_name = {r["name"]: r for r in r_mix}
-        check("a paint on your wishlist or marked empty is already on the shopping list: it says On your shopping list and has no Add button, and the others have the button",
+        check("a paint on your wishlist (v62: an empty one no longer is) is already on the shopping list: it says On your shopping list and has no Add button, and the others have the button",
               by_name["Probe Left"]["hasFold"] and by_name["Probe Right"]["hasFold"] and not by_name["Probe Left"]["add"] and not by_name["Probe Right"]["add"], by_name)
         open_fold(page, [r["name"] for r in r_mix].index("Probe Left"))
         open_fold(page, [r["name"] for r in r_mix].index("Probe Right"))
@@ -412,7 +413,7 @@ def main():
 
         # ---------- 6. The hide switch ----------
         print("\n--- 6. The Settings switch: Show shop links ---")
-        keep = [BLUE, P(2, "Probe Opposite", at(180), status="wishlist"), P(3, "Probe Empty", at(30), status="empty")]
+        keep = [BLUE, P(2, "Probe Opposite", at(180), status="wishlist"), P(3, "Probe Empty", at(30), status="wishlist")]   # v62: was "empty" (only Wishlist is listed now)
         load(page, paints=keep, recipes=[rec(101, "Armour blue", "Whole model", [1])])
         go_settings(page)
         box_state = page.evaluate("() => ({ checked: document.getElementById('show-shop-links').checked, note: document.getElementById('shoplinks-note').textContent, h: document.querySelector('#shoplinks-card h2').textContent })")
