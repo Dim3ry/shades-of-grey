@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=70"></script>
+  <script src="early.js?v=71"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -2408,7 +2408,7 @@
             <li>Check the <strong>Dashboard</strong> to see how far you've got.</li>
             <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
           </ol>
-          <p id="help-tabs" style="margin: 8px 0 0;">There are five tabs along the bottom: <strong>Dashboard</strong>, <strong>Units</strong>, <strong>Recipes</strong>, <strong>Compendium</strong> and <strong>Settings</strong>. Compendium (a Pro preview) has a colour wheel, split into groups (tap red, orange, yellow, green, blue or purple and the wheel opens into that colour's three groups; tap a group to see its paints, and tap it again to close it; tap the middle or Back to go back up; the grey middle opens its paints as before; tap a paint to see colours that go with it and starter schemes with a similar colour), then colour ideas, your schemes, starter schemes, detail recipes and basing tips, each under a heading you tap to open and close, all without needing a recipe. Starter schemes has a Themes | Combinations switch. Start from and Faction are boxes you can type in, and the lists of schemes, recipes and tips have a search box. Help and Updates live inside Settings: open it and use the <strong>Settings / Help / Updates</strong> switch at the top. The app remembers which page you were on.</p>
+          <p id="help-tabs" style="margin: 8px 0 0;">There are five tabs along the bottom: <strong>Dashboard</strong>, <strong>Units</strong>, <strong>Recipes</strong>, <strong>Compendium</strong> and <strong>Settings</strong>. Compendium (a Pro preview) has a colour wheel, split into groups (tap red, orange, yellow, green, blue or purple and the wheel opens into that colour's three groups; tap a group to see its paints, and tap it again to close it; tap the middle or Back to go back up; the grey middle opens its paints as before; tap a paint to see colours that go with it and starter schemes with a similar colour), then Ask the Mentor, colour ideas, your schemes, starter schemes, detail recipes and basing tips, each under a heading you tap to open and close, all without needing a recipe. Starter schemes has a Themes | Combinations switch. Start from and Faction are boxes you can type in, and the lists of schemes, recipes and tips have a search box. Help and Updates live inside Settings: open it and use the <strong>Settings / Help / Updates</strong> switch at the top. The app remembers which page you were on.</p>
           <p id="help-back" style="margin: 8px 0 0;">The phone's <strong>Back</strong> button closes what's open first, one thing per press: a question box (it counts as No), a photo, the camera, a recipe, the paste box. Then it goes to the Dashboard. On the Dashboard, with nothing open, it leaves the app.</p>
         </details>
         <details>
@@ -2521,6 +2521,7 @@
             <li id="help-fit">Suggested paints (Colour ideas, schemes, detail recipes, basing, and the colour wheel's paint panel) show a fit: <strong>Good fit</strong>, <strong>Okay fit</strong> or <strong>Poor fit</strong>, judged by how different the two colours look. A paint you own comes first when it is a Good or Okay fit. If your best paint is a poor fit, the closest paint overall comes first and your own is second, marked <strong>Yours, poor fit</strong>. Metallic, Contrast, wash and similar paints are allowed a little more room.</li>
             <li id="help-paint-to-recipe">In the <strong>Compendium</strong>, a colour idea, and a colour wheel paint once you open it, has <strong>Use in a recipe</strong> and <strong>Add to a recipe</strong>. Use in a recipe starts a new recipe with that paint in step 1. Add to a recipe lets you choose a recipe, then one of its steps or a new step, and saves it straight away. Both have an <strong>Undo</strong>. A paint that is not in Your Palette is added as <strong>Not owned</strong>, so it reaches your shopping list once a recipe uses it.</li>
             <li id="help-similar-paints">In the <strong>Compendium</strong>, those same paints also have <strong>Similar paints</strong>. It opens a pop-up with <strong>Best match</strong>: up to three paints from different brands, closest first, whether or not you own them, each with its fit. <strong>Lighter</strong> and <strong>Darker</strong> look for a lighter or darker colour. <strong>Your closest</strong> shows the nearest paints you own, with the same fit; it is left out when your closest paint is already the best match, and says so when none of your paints is close. On a phone the two cards are tabs (<strong>Best</strong> and <strong>Yours</strong>, with the arrow keys); on a wider screen they sit side by side. A paint you do not own can go on your shopping list, with an <strong>Undo</strong>. Varnishes, mediums, thinners and other paints that are not colours are never offered.</li>
+            <li id="help-ask-mentor"><strong>Ask the Mentor</strong> (Pro preview): in the <strong>Compendium</strong>, open <strong>Ask the Mentor</strong>, choose a <strong>Base colour</strong>, a <strong>Second colour</strong> if you like, and a <strong>Part</strong> (Armour, Eyes, Weapon or Base). Under each colour you get up to three paints that go with it for that part, with the reason, and your own paints come first. A paint of yours that is a poor match says <strong>Yours, poor fit</strong>. It uses the same colour rules as Colour ideas, and the picks are kept only while the app is open.</li>
             <li id="help-compendium-ticks">In the <strong>Compendium</strong>, tick the paints you want from a scheme or detail recipe, or press <strong>Select all</strong>. <strong>Add to shopping list</strong> is grey until you tick something, then adds only the ticked paints. A paint you own, or that is already on the list, shows a mark instead of a tick box. <strong>Copy as text</strong> and <strong>Save into a new recipe</strong> use the ticked paints, or all of them if none is ticked.</li>
             <li><strong>Schemes</strong> (top of the Recipes tab) group the recipes you use for one faction, e.g. "My Blue Army" = armour, trim, lenses and base. Press <strong>+ New scheme</strong>, name it, type the faction and tick its recipes.</li>
             <li><strong>Apply to … units</strong> links a scheme's recipes to every unit in its faction that doesn't have them all yet. Recipes a unit already has stay linked.</li>
@@ -2879,7 +2880,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=70" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=71" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -2890,11 +2891,11 @@
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks.
        v70: mentor-tips.js (the Mentor tips, plain data) loads between basing-tips.js and app.js. It only adds three
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=70"></script>
-  <script src="schemes.js?v=70"></script>
-  <script src="detail-recipes.js?v=70"></script>
-  <script src="basing-tips.js?v=70"></script>
-  <script src="mentor-tips.js?v=70"></script>
-  <script src="app.js?v=70"></script>
+  <script src="colour.js?v=71"></script>
+  <script src="schemes.js?v=71"></script>
+  <script src="detail-recipes.js?v=71"></script>
+  <script src="basing-tips.js?v=71"></script>
+  <script src="mentor-tips.js?v=71"></script>
+  <script src="app.js?v=71"></script>
 </body>
 </html>

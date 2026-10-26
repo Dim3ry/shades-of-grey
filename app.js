@@ -8328,7 +8328,8 @@
     // combo = the chosen group in the Combinations view. In the Compendium a group of schemes, detail recipes or tips is chosen before
     // its list shows ("" = none yet, "all" = everything), so the page stays short.
     // v37 part 2: wheelMore = which wheel groups show all their paints; search = what is typed in the search box of each button list.
-    let compendiumState = { base: "", role: "glow", scheme: "", mood: "", detail: "", detailGroup: "", basing: "", basingGroup: "", faction: "", wheel: "", wheelOthers: {},
+    let compendiumState = { base: "", role: "glow", mentorBase: "", mentorSecond: "", mentorPart: "armour",   // v71: the three picks of Ask the Mentor
+                             scheme: "", mood: "", detail: "", detailGroup: "", basing: "", basingGroup: "", faction: "", wheel: "", wheelOthers: {},
                             open: {}, view: "themes", combo: "", wheelMore: {}, search: { starter: "", detail: "", basing: "" },
                             paintOpen: "",   // v38: paintOpen = the key of the wheel paint whose "matching colours" panel is open ("" = none)
                             ticks: {},   // v51: the paints ticked in each list (a Set per list), kept only while the app is open
@@ -11638,13 +11639,7 @@
       const base = all.find(p => choices.key(p) === st.base) || null;
       if (!base) st.base = "";
       // v37 part 2: a box you type in, with the paints in a list under it that narrows as you type (and can still be scrolled)
-      const pickGroups = [];
-      const addGroup = (label, list) => {
-        if (list.length) pickGroups.push({ label, options: list.map(p => ({ value: choices.key(p), text: p.brand ? `${p.name} (${p.brand})` : p.name })) });
-      };
-      addGroup("Paints you own", choices.own);
-      addGroup("Other paints in your palette", choices.other);
-      for (const b of choices.brands) addGroup(`More ${b.brand} paints`, b.list);
+      const pickGroups = compendiumPickGroups(choices);
       body.appendChild(buildSearchPicker(door, {
         id: "colour-ideas-base", label: "Start from", one: "paint", placeholder: "Type or choose a paint",
         emptyPlaceholder: "No paints with a colour yet",
@@ -11668,6 +11663,88 @@
       }
     }
 
+    // v71: the paints in a "Start from" style box, grouped: yours first, then the rest of your palette, then the built-in brands.
+    function compendiumPickGroups(choices) {
+      const groups = [];
+      const addGroup = (label, list) => {
+        if (list.length) groups.push({ label, options: list.map(p => ({ value: choices.key(p), text: p.brand ? `${p.name} (${p.brand})` : p.name })) });
+      };
+      addGroup("Paints you own", choices.own);
+      addGroup("Other paints in your palette", choices.other);
+      for (const b of choices.brands) addGroup(`More ${b.brand} paints`, b.list);
+      return groups;
+    }
+
+    // ---- v71: ASK THE MENTOR (Compendium, Pro preview) ----
+    // Pick a base colour, a second colour and a part (armour, eyes, weapon or base) and get paint picks for that part, each with its reason.
+    // It reuses the colour ideas above: colourIdeas() finds paints that go with a colour for a part (your own paints first, a poor fit
+    // you own labelled "Yours, poor fit"), and buildIdeasList() draws them with the same rows, reasons and tags. Nothing new is stored
+    // (the picks are kept only while the app is open) and nothing is sent anywhere. The tips (mentor-tips.js) join in later.
+    const MENTOR_PART_FALLBACK = [{ key: "armour", name: "Armour" }, { key: "eyes", name: "Eyes" }, { key: "weapon", name: "Weapon" }, { key: "base", name: "Base" }];
+    const MENTOR_ARMOUR_ROLE = { key: "armour", label: "Armour", note: "armour", boost: { s: 0.35, l: [0.3, 0.65] }, picks: ["analogous0", "analogous1", "light"], tip: "", why: {} };
+    function mentorRole(part) {
+      if (part === "armour") return MENTOR_ARMOUR_ROLE;
+      const key = { eyes: "glow", weapon: "weapon", base: "base" }[part];
+      return COLOUR_ROLES.find(r => r.key === key) || MENTOR_ARMOUR_ROLE;
+    }
+    function buildMentor(door, redraw) {
+      const st = door.state;
+      const out = document.createDocumentFragment();
+      const parts = typeof MENTOR_PARTS === "undefined" ? MENTOR_PART_FALLBACK : MENTOR_PARTS;
+      if (!parts.some(x => x.key === st.mentorPart)) st.mentorPart = parts[0].key;
+      const choices = compendiumBaseChoices();
+      const all = [...choices.own, ...choices.other, ...choices.brands.flatMap(b => b.list)];
+      const find = (key) => all.find(p => choices.key(p) === key) || null;
+      const base = find(st.mentorBase), second = find(st.mentorSecond);
+      if (!base) st.mentorBase = "";
+      if (!second) st.mentorSecond = "";
+      const groups = compendiumPickGroups(choices);
+      const picker = (id, label, field) => out.appendChild(buildSearchPicker(door, {
+        id, label, one: "paint", placeholder: "Type or choose a paint", emptyPlaceholder: "No paints with a colour yet",
+        groups, value: st[field], onPick: (value, focus) => { st[field] = value; redraw(focus); },
+      }));
+      picker("mentor-base", "Base colour", "mentorBase");
+      picker("mentor-second", "Second colour", "mentorSecond");
+      const partLabel = document.createElement("p");
+      partLabel.className = "idea-label";
+      partLabel.textContent = "Part";
+      const chips = document.createElement("div");
+      chips.className = "chips";
+      chips.style.marginTop = "0";
+      for (const x of parts) {
+        const chip = makeChip(x.name, x.key === st.mentorPart, () => { st.mentorPart = x.key; redraw(`[data-mentor-part="${x.key}"]`); });
+        chip.dataset.mentorPart = x.key;
+        chips.appendChild(chip);
+      }
+      out.append(partLabel, chips);
+      const chosen = [base, second].filter((p, i, list) => p && list.findIndex(q => q && choices.key(q) === choices.key(p)) === i);
+      if (!chosen.length) {
+        const none = document.createElement("p");
+        none.className = "hint";
+        none.id = door.id("mentor-none");
+        none.textContent = "Choose a colour above.";
+        out.appendChild(none);
+        return out;
+      }
+      const role = mentorRole(st.mentorPart);
+      for (const paint of chosen) {
+        const label = document.createElement("p");
+        label.className = "idea-label";
+        label.textContent = `With ${paint.name}`;
+        out.appendChild(label);
+        const ideas = colourIdeas(null, paint.colour, role);
+        if (!ideas.length) {
+          const none = document.createElement("p");
+          none.className = "hint";
+          none.textContent = "No paints with a known colour to suggest yet.";
+          out.appendChild(none);
+        } else {
+          out.appendChild(buildIdeasList(door, ideas, paint.colour, role).list);
+        }
+      }
+      return out;
+    }
+
     function renderCompendium(focusSelector) {
       const body = document.getElementById("compendium-body");
       if (!body) return;
@@ -11687,7 +11764,7 @@
       const door = compendiumDoor();
       const redraw = (selector) => renderCompendium(selector);
 
-      const intro = say("A colour wheel (tap a colour to open its groups), colour ideas, starter schemes, detail recipes and basing tips, without needing a recipe. Tap a heading to open it, and type in a search box to find things fast. Use Copy as text to keep anything, or Save into a new recipe\u2026 to start a recipe from colour ideas, schemes, detail recipes and basing tips.", "intro");
+      const intro = say("A colour wheel (tap a colour to open its groups), Ask the Mentor, colour ideas, starter schemes, detail recipes and basing tips, without needing a recipe. Tap a heading to open it, and type in a search box to find things fast. Use Copy as text to keep anything, or Save into a new recipe\u2026 to start a recipe from colour ideas, schemes, detail recipes and basing tips.", "intro");
 
       appendIdeasFocus(body, door, redraw);   // v69: a paint's ideas, when the Compendium was opened from its Ideas for this button
       // v36: the colour wheel comes first
@@ -11697,6 +11774,7 @@
       // st.open while the app is open, like the other Compendium picks. The wheel above stays open.
       const parts = libraryParts(door, redraw);
       const fold = (key, label, make) => { if (make) body.appendChild(foldSection(door, key, label, make)); };
+      fold("mentor", "Ask the Mentor", () => buildMentor(door, redraw));   // v71
       fold("ideas", "Colour ideas", () => { const out = document.createDocumentFragment(); buildCompendiumIdeas(out, door, redraw); return out; });
       fold("history", "Your schemes", parts.history && (() => dropTitle(parts.history(), "Colours you've used on this faction before.")));
       fold("starter", "Starter schemes", parts.starter && (() => dropTitle(parts.starter())));
@@ -15275,12 +15353,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=70".
+    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=71".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v70";
+    const APP_VERSION = "v71";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -15731,6 +15809,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v71", date: "27 Oct 2026", changes: [
+        "Ask the Mentor (Pro preview): in the Compendium, choose a base colour, a second colour and a part (armour, eyes, weapon or base). You get paints that go with each colour for that part, with the reason. Your own paints come first, and a poor match you own says Yours, poor fit.",
+        "Mentor tips will join these picks in the next update.",
+      ]},
       { version: "v70", date: "26 Oct 2026", changes: [
         "Behind the scenes: a place for Mentor tips is ready, with three sample tips that only show the format. Nothing new to see yet.",
       ]},
