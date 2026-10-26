@@ -38,6 +38,7 @@ from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
+from settle import frames
 import test_v31 as t   # the helpers (loading the app, opening the editor, colours) and the Games Workshop word lists
 
 SHOTS, ROOT = t.SHOTS, t.ROOT
@@ -565,7 +566,7 @@ def main():
                 edit_recipe(page, 106)
                 open_panel(page)
                 page.locator("#basing-tips").scroll_into_view_if_needed()
-                page.wait_for_timeout(150)
+                frames(page)
                 def geometry():
                     return page.evaluate("""() => { const c = document.getElementById('colour-ideas').getBoundingClientRect();
                         const inside = (el) => { const r = (el.closest('.chips-scroll') || el).getBoundingClientRect(); return r.left >= c.left - 0.5 && r.right <= c.right + 0.5; };   // v49: a button in a sideways-scrolling row is clipped to the row
@@ -590,7 +591,7 @@ def main():
                 pick_group(page, "stone")
                 pick_tip(page, "lava")
                 page.locator("#basing-summary").scroll_into_view_if_needed()
-                page.wait_for_timeout(150)
+                frames(page)
                 shot(page, f"v33-tip-top-{appearance}-{width}.png")
                 lists = page.evaluate("""() => { const c = document.getElementById('colour-ideas').getBoundingClientRect();
                     const li = [...document.querySelectorAll('#basing-materials li, #basing-howto li')];
@@ -600,7 +601,7 @@ def main():
                 check(f"{tag}: the materials and how-to lines are all inside the card, wrap instead of running off, and the page does not scroll sideways",
                       lists["n"] == len(by_key["lava"]["materials"]) + len(by_key["lava"]["howto"]) and lists["inside"] and lists["listsInside"] and not lists["sideways"], lists)
                 page.locator("#basing-add-all").scroll_into_view_if_needed()
-                page.wait_for_timeout(150)
+                frames(page)
                 rowsg = page.evaluate("""() => { const c = document.getElementById('colour-ideas').getBoundingClientRect();
                     const b = [...document.querySelectorAll('#basing-list button.idea-pick')], a = document.getElementById('basing-add-all').getBoundingClientRect();
                     return { n: b.length, minH: Math.min(...b.map(x => x.getBoundingClientRect().height)), addH: a.height, addInside: a.left >= c.left - 0.5 && a.right <= c.right + 0.5,

@@ -30,7 +30,22 @@ import test_v31 as t
 import test_v35 as c   # Compendium helpers (open every part, pick a start colour)
 import test_v39 as h   # the Probe Blue paint
 
-read, load, no_sideways = t.read, t.load, t.no_sideways
+read, no_sideways = t.read, t.no_sideways
+
+def load(page, **kw):
+    # T1: closing the pop-up (Escape) removes the app's spare Back step with history.back(), which finishes a moment
+    # later. A page.goto sent right after could be cut off (net::ERR_ABORTED). So wait for that step to be gone first,
+    # and if the browser still cuts the page load off, load once more. No check is touched.
+    try:
+        page.wait_for_function("() => !(history.state && history.state.minifolio === 'back')", timeout=2000)
+    except Exception:
+        pass
+    try:
+        return t.load(page, **kw)
+    except Exception as e:
+        if "ERR_ABORTED" not in str(e):
+            raise
+        return t.load(page, **kw)
 results = []
 
 def check(name, ok, detail=""):

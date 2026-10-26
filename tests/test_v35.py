@@ -28,6 +28,7 @@ from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
+from settle import frames
 import test_v31 as t   # the helpers (loading the app, the palette, the colours) and the Games Workshop word lists
 from combo_helpers import pick_combo   # v37 part 2: "Start from" and "Faction" are search boxes now, not drop-downs
 
@@ -198,7 +199,7 @@ def main():
         check("the label is Compendium in full", label == "Compendium", label)
         for width in (360, 375, 390, 400):
             page.set_viewport_size({"width": width, "height": 800})
-            page.wait_for_timeout(100)
+            frames(page)
             m = page.evaluate("""() => { const out = []; for (const b of document.querySelectorAll('nav.tabs button[data-tab]')) {
                 const n = [...b.childNodes].find(x => x.nodeType === 3), r = document.createRange(); r.selectNodeContents(n);
                 const tr = r.getBoundingClientRect(), br = b.getBoundingClientRect();
@@ -219,7 +220,7 @@ def main():
         check("reloading the app on the Compendium opens it again (the page you were on is remembered)", page.is_visible("#view-compendium"))
         check("Back from the Compendium goes to the Dashboard", page.evaluate("() => typeof backTarget() === 'function'"))
         page.set_viewport_size({"width": 1100, "height": 800})
-        page.wait_for_timeout(100)
+        frames(page)
         names_top = page.evaluate("() => [...document.querySelectorAll('nav.tabs button[data-tab]')].map(b => b.dataset.tab)")
         check("on a wide screen the top bar has all five tabs and the Compendium page is still there", names_top == names and page.is_visible("#view-compendium") and no_sideways(page))
         page.set_viewport_size({"width": 390, "height": 844})
