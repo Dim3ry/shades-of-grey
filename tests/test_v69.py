@@ -116,8 +116,17 @@ def main():
         check("colours that go with it: Opposite, Neighbours and Triad", all(x in labels for x in ["Opposite", "Neighbours", "Triad"]), labels)
         check("then starter schemes, detail recipes and basing tips with a similar colour",
               labels[-3:] == ["Starter schemes with a similar colour", "Detail recipes with a similar colour", "Basing tips with a similar colour"], labels)
-        tags = page.evaluate("() => [...document.querySelectorAll('#cmp-focus-panel > .idea-list')][0] ? [...document.querySelectorAll('#cmp-focus-panel > .idea-list')].slice(0, 3).flatMap(l => [...l.querySelectorAll('.idea-tag')].map(x => x.textContent)) : []")
-        check("your own paints come first in the matches", tags and all("own" in x for x in tags[:4]), tags)
+        lists = page.evaluate("() => [...document.querySelectorAll('#cmp-focus-panel > .idea-list')].slice(0, 3).map(l => [...l.querySelectorAll('.idea-tag')].map(x => x.textContent))")
+        tags = [t for l in lists for t in l]
+        # v69: since v64 a paint you own comes first only when it is a Good or Okay fit; a poor fit ("Yours, poor fit") comes after the closest paint overall.
+        # So the rule checked here is: in each list, no paint you own with a good or okay fit comes after a paint you don't own.
+        def own_first(l):
+            seen_not_owned = False
+            for t in l:
+                if t == "Not in your palette": seen_not_owned = True
+                elif "poor fit" not in t and seen_not_owned: return False
+            return True
+        check("your own paints with a good or okay fit come before paints you don't own", bool(tags) and all(own_first(l) for l in lists), lists)
         check("the Back button says Back to recipe and has the focus", page.inner_text("#cmp-focus-back").strip() == "← Back to recipe" and focused(page) == "cmp-focus-back", focused(page))
         check("no stray ids: the focus panel has its own", page.evaluate("() => document.querySelectorAll('#cmp-paint-panel').length") == 0)
         check("the matching is the same engine as the starter schemes (no copy)", "function libraryLike" in app and app.count("C.judgeMatch(") >= 2)
