@@ -88,7 +88,7 @@ def main():
         check("the entry names the card, Save backup, Not now and the Settings line",
               all(w in joined for w in ("save a backup", "Save backup", "Not now", "last backup", "Never")), joined)
         check("no em dash in the v57 Updates entry", "—" not in app[app.index('{ version: "v57"'):app.index('{ version: "v56"')])
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
+        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
 
         # ---------- 2. When it shows ----------
         print("\n--- 2. When it shows ---")

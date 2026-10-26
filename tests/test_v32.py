@@ -138,7 +138,7 @@ def main():
             check("the v31 and v30 Updates entries are still there", page.evaluate("!!CHANGELOG.find(r => r.version === 'v31') && !!CHANGELOG.find(r => r.version === 'v30')"))
         else:
             print("SKIP (entry no longer in the public Updates list): " + 'the v31 and v30 Updates entries are still there')
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
+        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
         check("the three storage names are unchanged",
               all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"', 'RECIPES_KEY = "shades-of-grey-recipes"']))
         policy = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)

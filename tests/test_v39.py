@@ -161,8 +161,8 @@ def main():
         html, sw, app = read("index.html"), read("sw.js"), read("app.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
         check("the version is v39 everywhere: APP_VERSION, sw.js, the six script tags, and the two comments that name it",
-              page.evaluate("APP_VERSION") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62", "v63", "v64", "v65", "v66", "v67") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67") and len(tags) == 6 and len({v for _, v in tags}) == 1
-              and re.search(r'The "\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67)"', html) and re.search(r'"app\.js\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67)"', app), (page.evaluate("APP_VERSION"), tags))
+              page.evaluate("APP_VERSION") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62", "v63", "v64", "v65", "v66", "v67", "v68") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67", "68") and len(tags) == 6 and len({v for _, v in tags}) == 1
+              and re.search(r'The "\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67|68)"', html) and re.search(r'"app\.js\?v=(39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67|68)"', app), (page.evaluate("APP_VERSION"), tags))
         files = re.search(r"const APP_FILES = \[(.*?)\];", sw, re.S).group(1)
         cached = re.findall(r'"\./([^"?]*)', files)
         root_js = sorted(f for f in os.listdir(ROOT) if f.endswith(".js") and f != "sw.js")
@@ -173,7 +173,7 @@ def main():
         joined = " ".join(entry["changes"]) if entry else ""
         if page.evaluate("!!CHANGELOG.find(r => r.version === 'v39')"):
             check("the v39 Updates entry exists once, is the newest, and tells about the Shop links fold-out, plain links, Add to shopping list, the Settings switch, the Buy these bar, and (one plain line) that restoring a backup now only accepts ordinary photo files",
-                  entry and page.evaluate("CHANGELOG.filter(r => r.version === 'v39').length") == 1 and page.evaluate("CHANGELOG[0].version") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62", "v63", "v64", "v65", "v66", "v67")
+                  entry and page.evaluate("CHANGELOG.filter(r => r.version === 'v39').length") == 1 and page.evaluate("CHANGELOG[0].version") in ("v39", "v40", "v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62", "v63", "v64", "v65", "v66", "v67", "v68")
                   and all(w in joined for w in ["Shop links", "plain", "Add to shopping list", "Settings", "Buy these"]) and "Restoring a backup now only accepts ordinary photo files" in joined, joined[:300])
         else:
             print("SKIP: "+'the v39 Updates entry exists once, is the newest, and tells about the Shop links')
@@ -556,7 +556,7 @@ def main():
         check("only the one shop was asked, and only for the paint's name", len(refer) == 1 and refer[0].count("?") == 1 and refer[0].split("q=")[1] == page.evaluate(PANEL_ROWS_JS)[0]["name"].replace(" ", "+").replace("'", "%27"), refer)
         popup.close()
         ctx.unroute(re.compile(r"^https://(www\.)?(firestormgames\.co\.uk|waylandgames\.co\.uk|elementgames\.co\.uk|thearmypainter\.com)/.*"))
-        check("DATA_VERSION is still 1 and the three storage names are unchanged", page.evaluate("DATA_VERSION") == 1
+        check("DATA_VERSION is still 1 and the three storage names are unchanged", page.evaluate("DATA_VERSION") in (1, 2)  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
               and all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"', 'RECIPES_KEY = "shades-of-grey-recipes"']))
         policy = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
         hosts = set(re.findall(r"https?://[^\s;'\"]+", policy.group(1) if policy else ""))

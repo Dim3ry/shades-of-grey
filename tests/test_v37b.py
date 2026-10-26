@@ -956,7 +956,7 @@ def main():
         check("no page id appears twice with everything open and a wheel part showing", (lambda: (open_all(page), tap(page, "orange"), page.click(BASE), page.keyboard.press("Escape"),
               page.evaluate("() => { const ids = [...document.querySelectorAll('[id]')].map(e => e.id); return ids.filter((x, i) => ids.indexOf(x) !== i); }") == [])[-1])())
         check("every id the new boxes add starts with cmp- (so the recipe editor can never clash)", page.evaluate("() => [...document.querySelectorAll('#compendium-body [id]')].every(e => e.id.startsWith('cmp-'))"))
-        check("DATA_VERSION is still 1 and the three storage names are unchanged", page.evaluate("DATA_VERSION") == 1
+        check("DATA_VERSION is still 1 and the three storage names are unchanged", page.evaluate("DATA_VERSION") in (1, 2)  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
               and all(k in app for k in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"', 'RECIPES_KEY = "shades-of-grey-recipes"']))
         policy = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
         hosts = set(re.findall(r"https?://[^\s;'\"]+", policy.group(1) if policy else ""))

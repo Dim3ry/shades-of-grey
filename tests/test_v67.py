@@ -101,7 +101,7 @@ def main():
         words = " ".join(entry["changes"]) if entry else ""
         check("the entry names the recipe button and the Wishlist-only list", "Add missing paints to shopping list" in words and "Wishlist" in words, words)
         check("no em dash in the v67 Updates entry", "—" not in app[app.index('{ version: "v67"'):app.index('{ version: "v66"')])
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
+        check("DATA_VERSION is 2 (v68 raised it from 1 for the Needs touch-ups rename, so this test now expects 2)", page.evaluate("DATA_VERSION") == 2)
 
         # ---------- 2. Only Wishlist paints on the list ----------
         print("\n--- 2. The shopping list ---")

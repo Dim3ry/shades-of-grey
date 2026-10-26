@@ -129,7 +129,7 @@ def main():
         for key in ['STORAGE_KEY = "mini-tracker-models"', 'SETTINGS_KEY = "shades-of-grey-settings"',
                     'RECIPES_KEY = "shades-of-grey-recipes"', "shades-of-grey-recipes-before-recipes-restore"]:
             check(f"storage name kept: {key}", key in html)
-        check("DATA_VERSION unchanged (saved data didn't change shape)", page.evaluate("DATA_VERSION") == 1)
+        check("DATA_VERSION unchanged (saved data didn't change shape)", page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
 
         # ---------- 2. The shop list ----------
         print("--- 2. The shop list ---")

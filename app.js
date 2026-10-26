@@ -34,7 +34,7 @@
     // in a way older copies wouldn't understand. If an OLDER copy of the app (say an installed
     // app that hasn't updated yet, open next to a newer browser tab) finds data saved by a
     // NEWER one, it stops saving and asks you to reload, so it can't damage that newer data.
-    const DATA_VERSION = 1;
+    const DATA_VERSION = 2;   // v68: 2, for the "Needs touch-ups" rename (see V61_DEFAULT_STAGES)
     let dataTooNew = false;  // true once this copy has seen data from a newer version
     function storedDataVersion() {
       try {
@@ -108,7 +108,18 @@
     // Each unit stores a NUMBER pointing at a position in the stage list (0 = first).
     // Stages from settings.doneFrom onwards count as "Done"; earlier ones are "To do".
     const DEFAULT_STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed",
-                            "Part painted", "Battle ready", "Painted with issues", "Parade ready"];
+                            "Part painted", "Battle ready", "Needs touch-ups", "Parade ready"];
+    // v68: the defaults from v3 to v61, when the 7th stage was called "Painted with issues".
+    // Anyone still on exactly this list (on the device, in a backup or in a safety copy) gets it
+    // renamed to "Needs touch-ups" (see renamedStageList). Units save a stage NUMBER, so none of
+    // them move. Custom stage lists are left alone.
+    const V61_DEFAULT_STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed",
+                                "Part painted", "Battle ready", "Painted with issues", "Parade ready"];
+    function renamedStageList(list) {
+      const same = Array.isArray(list) && list.length === V61_DEFAULT_STAGES.length &&
+        list.every((x, i) => x === V61_DEFAULT_STAGES[i]);
+      return same ? DEFAULT_STAGES.slice() : list;
+    }
     // The defaults before v3, so testers on them can be moved to the new set (see below).
     const OLD_DEFAULT_STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed",
                                 "Part painted", "Painted with issues", "Battle ready"];
@@ -186,7 +197,7 @@
 
     let STAGES = settings.stages.map(String);
     // v3 upgrade: anyone still on the old default stages gets the new set.
-    // Units keep their stage BY NAME: "Battle ready" and "Painted with issues" swap
+    // Units keep their stage BY NAME: "Battle ready" and "Painted with issues" (now "Needs touch-ups") swap
     // positions, and "Parade ready" is added at the end. Custom stage lists are left alone.
     let upgradedStages = false;
     {
@@ -206,6 +217,10 @@
         try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (ignored) {}
       }
     }
+    // v68: "Painted with issues" becomes "Needs touch-ups" for anyone on the v3 to v61 default stages.
+    // DATA_VERSION went up to 2 for this, so an older copy of the app left open stops saving
+    // instead of writing the old name back. The saveSettings() a little further down saves it.
+    if (renamedStageList(STAGES) !== STAGES) settings.stages = STAGES = DEFAULT_STAGES.slice();
     // Settings saved before the Done marker existed: use the matching default if the
     // stages are one of the built-in sets, otherwise just the last stage.
     if (settings.doneFrom === undefined) {
@@ -13750,7 +13765,7 @@
     function recoverSafetyCopy(suffix) {
       const copy = readSafetyCopy(suffix);
       if (!copy) { renderRecover(); return; }
-      const copyStages = goodStageList(copy.stages) ? copy.stages.map(String) : null;
+      const copyStages = goodStageList(copy.stages) ? renamedStageList(copy.stages.map(String)) : null;   // v62: renamed as on start-up
       // Clean the copy's units against its own stages, like a backup.
       const currentStages = STAGES;
       if (copyStages) STAGES = copyStages;
@@ -14177,7 +14192,7 @@
           notify("This backup's list of stages is damaged (blank or repeated names, or more than 10), so it can't be restored safely. Nothing has changed.");
           return;
         }
-        const backupStages = !isList && parsed.stages ? parsed.stages.map(String) : null;
+        const backupStages = !isList && parsed.stages ? renamedStageList(parsed.stages.map(String)) : null;   // v62: renamed as on start-up
         const backupModels = isList ? parsed : (Array.isArray(parsed.models) ? parsed.models : []);
 
         // Clean the units against the backup's own stages, BEFORE touching your data.
@@ -15108,12 +15123,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=67".
+    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=68".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v67";
+    const APP_VERSION = "v68";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -15564,6 +15579,11 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v68", date: "26 Oct 2026", changes: [
+        "The stage Painted with issues is now called Needs touch-ups: painted and on the table, with a few bits to fix before Parade ready. Your units stay where they were.",
+        "This happens if you hadn't changed your stages, and also when you restore an older backup with the old list. If you had changed them, your names stay as you set them.",
+        "Help explains the stage, under Stages and Done.",
+      ]},
       { version: "v67", date: "26 Oct 2026", changes: [
         "The shopping list only holds paints you put there: Wishlist paints and anything you add with an Add to shopping list button. Paints a recipe uses that you don't own, and paints that are empty or running low, are no longer added by themselves. They still show as Missing on the recipe.",
         "A recipe with missing paints has an Add missing paints to shopping list button under its steps. It adds only real paints you don't own, says how many, and has an Undo.",
