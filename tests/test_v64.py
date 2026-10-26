@@ -83,7 +83,7 @@ def main():
         help_li = page.evaluate("() => { const e = document.getElementById('help-fit'); return e ? e.textContent : ''; }")
         check("Help has a line on the fit labels", all(w in help_li for w in ("Good fit", "Okay fit", "Poor fit", "Yours, poor fit")), help_li)
         check("no em dash in the new Help line or Updates entry", "—" not in help_li and "—" not in joined)
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
+        check("DATA_VERSION is 2 (v68 raised it from 1 for the Needs touch-ups rename, so this test now expects 2)", page.evaluate("DATA_VERSION") == 2)
 
         # ---------- 2. The rule ----------
         print("\n--- 2. The fit rule ---")

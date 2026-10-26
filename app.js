@@ -34,7 +34,7 @@
     // in a way older copies wouldn't understand. If an OLDER copy of the app (say an installed
     // app that hasn't updated yet, open next to a newer browser tab) finds data saved by a
     // NEWER one, it stops saving and asks you to reload, so it can't damage that newer data.
-    const DATA_VERSION = 2;   // v62: 2, for the "Needs touch-ups" rename (see V61_DEFAULT_STAGES)
+    const DATA_VERSION = 2;   // v68: 2, for the "Needs touch-ups" rename (see V61_DEFAULT_STAGES)
     let dataTooNew = false;  // true once this copy has seen data from a newer version
     function storedDataVersion() {
       try {

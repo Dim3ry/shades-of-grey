@@ -74,7 +74,7 @@ def main():
         check("the v63 Updates entry exists and is the newest while v63 is current", bool(entry) and (version != "v63" or page.evaluate("CHANGELOG[0].version") == "v63"))
         joined = " ".join(entry["changes"]) if entry else ""
         check("the entry says 12 and popular ranges, and names no brand (no Games Workshop names in our words)", "12" in joined and "popular ranges" in joined and not any(b in joined for b in POPULAR), joined)
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
+        check("DATA_VERSION is 2 (v68 raised it from 1 for the Needs touch-ups rename, so this test now expects 2)", page.evaluate("DATA_VERSION") == 2)
 
         # ---------- 2. The settings ----------
         print("\n--- 2. Popular ranges and group size ---")

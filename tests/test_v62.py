@@ -94,7 +94,7 @@ def main():
         joined = " ".join(entry["changes"]) if entry else ""
         check("the entry names both buttons and Not owned", "Use in a recipe" in joined and "Add to a recipe" in joined and "Not owned" in joined, joined)
         check("no em dash in the v62 Updates entry", "—" not in app[app.index('{ version: "v62"'):app.index('{ version: "v61"')])
-        check("DATA_VERSION is still 1", page.evaluate("DATA_VERSION") == 1)
+        check("DATA_VERSION is 2 (v68 raised it from 1 for the Needs touch-ups rename, so this test now expects 2)", page.evaluate("DATA_VERSION") == 2)
 
         # ---------- 2. The buttons on a colour idea ----------
         print("\n--- 2. The buttons ---")
