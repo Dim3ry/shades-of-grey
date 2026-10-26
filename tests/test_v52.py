@@ -110,7 +110,7 @@ def main():
         tags = re.findall(r'<script src="[^"]+\?v=(\d+)"', html)
         check("all six script tags carry the version number", len(tags) == 6 and set(tags) == {version[1:]}, tags)
         entry = page.evaluate("CHANGELOG.find(c => c.version === 'v52')")
-        check("the v52 Updates entry exists (v53 to v62 may sit above it)", bool(entry) and page.evaluate("CHANGELOG[0].version") in ("v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62"))
+        check("the v52 Updates entry exists (v53 to v68 may sit above it)", bool(entry) and page.evaluate("CHANGELOG[0].version") in ("v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62", "v63", "v64", "v65", "v66", "v67", "v68"))
         check("the v52 entry has no em dashes", entry and not any("—" in x for x in entry["changes"]))
         check("the v52 entry mentions More info, the Shopping list, Settings and Help",
               entry and all(any(word in x for x in entry["changes"]) for word in ("More info", "Shopping list", "Settings", "Help")))
@@ -129,10 +129,11 @@ def main():
               page.locator("#shop-panel .more-info-button").count() == 1 and page.get_attribute("#shop-panel .more-info-button", "aria-expanded") == "false")
         check("it says More info and is at least 44 px tall", text(page, "#shop-panel .more-info-button") == "More info" and height(page, "#shop-panel .more-info-button") >= 43.5)
         check("while closed, the sentence, the warning and the shop note are all hidden",
-              not any(page.get_by_text(x).first.is_visible() for x in ("to get: running low", "No statuses set yet", "Tap a shop under Buy these", "Plain links")))
+              not any(page.get_by_text(x).first.is_visible() for x in ("to get: the paints you added", "No statuses set yet", "Tap a shop under Buy these", "Plain links")))
         panel = text(page, "#shop-panel .more-info-panel")
         check("the panel holds the sentence, the shop note and the shop links words",
-              panel and "to get: running low" in panel and "Tap a shop under Buy these" in panel and "Plain links" in panel, panel)
+              # v62 (chunk 2.2): the sentence now reads "to get: the paints you added and your Wishlist paints" (was "to get: running low, ...").
+              panel and "to get: the paints you added" in panel and "Tap a shop under Buy these" in panel and "Plain links" in panel, panel)
         check("the buy bar itself no longer has a note line", page.locator("#buy-bar > .hint").count() == 0 and page.locator("#buy-bar p").count() == 0)
         before = v51.all_local(page)
         press(page, page.locator("#shop-panel .more-info-button").first)

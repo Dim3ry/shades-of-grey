@@ -94,7 +94,7 @@ def main():
         html, sw = read("index.html"), read("sw.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
         check("the version is v41 or later (v42 and v43 follow it) in APP_VERSION, sw.js and all six script tags, all the same",
-              page.evaluate("APP_VERSION") in ("v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62") and len(tags) == 6 and len({v for _, v in tags}) == 1 and tags[0][1] in ("41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62"),
+              page.evaluate("APP_VERSION") in ("v41", "v42", "v43", "v44", "v45", "v46", "v47", "v48", "v49", "v50", "v51", "v52", "v53", "v54", "v55", "v56", "v57", "v58", "v59", "v60", "v61", "v62", "v63", "v64", "v65", "v66", "v67", "v68") and re.search(r'const VERSION = "v([\d.]+)"', sw).group(1) in ("41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67", "68") and len(tags) == 6 and len({v for _, v in tags}) == 1 and tags[0][1] in ("41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67", "68"),
               (page.evaluate("APP_VERSION"), tags))
         entry = page.evaluate("CHANGELOG.find(e => e.version === 'v41')")
         joined = " ".join(entry["changes"]) if entry else ""
@@ -169,7 +169,7 @@ def main():
         print("\n--- 3. Markers ---")
         h.panel_for(page, h.UNOWNED)
         tags = panel_tags(page)
-        check("in the matching colours, paints on your wishlist or marked empty say On your shopping list", tags.get("Probe Left") == LISTED and tags.get("Probe Right") == LISTED, tags)
+        check("in the matching colours, paints on your wishlist say On your shopping list (v62: Probe Right is Wishlist now, it was empty)", tags.get("Probe Left") == LISTED and tags.get("Probe Right") == LISTED, tags)
         check("a paint in your palette that is not on the list, and one that is not in your palette, keep their usual words",
               tags.get("Probe Opposite") in ("Not in your palette", "In your palette, not owned") and LISTED not in (tags.get("Probe Opposite"), tags.get("Probe Triad A")), tags)
         check("the basket already counts the two paints on the list", count_text(page) == "2", count_text(page))

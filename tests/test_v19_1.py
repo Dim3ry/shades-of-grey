@@ -43,8 +43,9 @@ EVIL = "<img src=x onerror=alert(1)>"
 BOOK = {
     "paints": [
         {"id": 1, "brand": "Citadel", "name": "Macragge Blue", "colour": "#1f3a8a", "status": "wishlist"},
-        {"id": 2, "brand": "The Army Painter", "name": "Matt White", "colour": "#f5f5f5", "status": "empty"},
-        {"id": 3, "brand": "Vallejo", "name": "Ivory", "colour": "#efe6cf", "status": "low"},
+        # v62 (chunk 2.2): only Wishlist paints are on the shopping list now, so these two were "empty" and "low" before.
+        {"id": 2, "brand": "The Army Painter", "name": "Matt White", "colour": "#f5f5f5", "status": "wishlist"},
+        {"id": 3, "brand": "Vallejo", "name": "Ivory", "colour": "#efe6cf", "status": "wishlist"},
         {"id": 4, "brand": "Citadel", "name": "Nuln Oil", "colour": "#222222", "status": "owned"},
     ],
     "recipes": [], "schemes": [],

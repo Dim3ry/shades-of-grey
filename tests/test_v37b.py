@@ -189,11 +189,11 @@ def main():
               all(w in help_text for w in ["Start from and Faction are boxes you can type in", "search box", "split into groups"]), help_text[-300:])
         changed = []
         for base in ("HEAD", "origin/main"):
-            out = subprocess.run(["git", "diff", "--name-only", base, "--", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js", "sw.js"],
+            out = subprocess.run(["git", "diff", "--name-only", base, "--", "schemes.js", "detail-recipes.js", "basing-tips.js", "sw.js"],   # v64: colour.js is left out on purpose (chunk 3.4c changed the fit rule there); the content data files stay guarded
                                  cwd=ROOT, capture_output=True, text=True)
             if out.returncode == 0:
                 changed += [f for f in out.stdout.split() if f != "sw.js"]
-        check("the content data files and colour.js are unchanged", changed == [], changed)
+        check("the content data files are unchanged (colour.js changed in v64 on purpose)", changed == [], changed)
         mark_a, mark_b = app.index("v37 part 2: SEARCH"), app.index("v37: the other way to browse the starter schemes")
         new_code = app[mark_a:mark_b] + app[app.index("const WHEEL_TINT_C"):app.index("function wheelTone(")]
         check("the new code has no network code, no storage, no innerHTML, no links and no shop wording",
@@ -628,8 +628,9 @@ def main():
                                                                           for part in PART_ORDER if part not in ("white", "black")), cover["out"])
         # the description says what the groups are (the grey middle still lists all its groups at once)
         tap(page, "grey")
-        check("the grey middle says what its groups are and how they run (Split into ... Each group runs from dark to light, yours first.)",
-              page.inner_text("#cmp-wheel-groups").startswith("Split into ") and page.inner_text("#cmp-wheel-groups").endswith("Each group runs from dark to light, yours first."), page.inner_text("#cmp-wheel-groups"))
+        # v63: the sentence now also says popular ranges come next (chunk 3.3), so the ending changed
+        check("the grey middle says what its groups are and how they run (Split into ... Each group runs from dark to light: yours first, then popular ranges.)",
+              page.inner_text("#cmp-wheel-groups").startswith("Split into ") and page.inner_text("#cmp-wheel-groups").endswith("Each group runs from dark to light: yours first, then popular ranges."), page.inner_text("#cmp-wheel-groups"))
         check("the neutral parts explain warm and cool in their description", "Warm greys lean brown or yellow, cool greys lean blue or green" in page.inner_text("#cmp-wheel-detail"))
         tap(page, "grey")
         # dark to light, yours first, marked, and short by default (a colour's paints are listed one group at a time since v43)
@@ -641,7 +642,8 @@ def main():
         by = dict(zip(["navy", "blue", "light"], wh.open_each_group(page, "blue", lambda p: p.evaluate(ROWS_JS))))
         blues = by["blue"]
         check("Blues shows all 14 of your own paints in the group (the short limit never hides yours): 12 owned, then the wishlist, then the one that is not owned",
-              len(blues) == 14 and [r["tag"] for r in blues] == ["You own this"] * 12 + ["On your shopping list", "On your shopping list"], [r["tag"] for r in blues])
+              len(blues) == 14 and [r["tag"] for r in blues] == ["You own this"] * 12 + ["On your shopping list", "In your palette, not owned"], [r["tag"] for r in blues])
+        # v62 (chunk 2.2): only Wishlist paints are on the shopping list now, so the empty one says In your palette, not owned.
         labs = page.evaluate("(cs) => cs.map(c => MinifolioColour.hexToLab(c).L)", [r["colour"] for r in blues[:12]])
         check("yours run dark to light inside the group (the names were made to run the other way, so this is the colour, not the name)", labs == sorted(labs) and [r["name"] for r in blues[:12]] == [f"Own Blue {i:02d}" for i in range(11, -1, -1)], [r["name"] for r in blues[:3]])
         check("the other groups hold their own: Navy has Own Navy and Sky has Own Sky", [r["name"] for r in by["navy"]] == ["Own Navy"] and [r["name"] for r in by["light"]] == ["Own Sky"])
@@ -656,7 +658,8 @@ def main():
             info[sub] = {"rows": page.evaluate(ROWS_JS), "btns": page.evaluate("""() => [...document.querySelectorAll('#cmp-wheel-detail button[id^="cmp-wheel-more-"]')].map(b => ({ id: b.id, text: b.textContent, label: b.getAttribute('aria-label'), exp: b.getAttribute('aria-expanded'), h: b.getBoundingClientRect().height }))""")}
             wh.open_group(page, "blue", sub) if sub != "light" else None
         shown_counts = {k: len(v["rows"]) for k, v in info.items()}
-        check("with the other paints on, each group shows only its first few: 8 or all of yours, whichever is more (Navy 8, Blues 14, Sky 8)", shown_counts == {"navy": 8, "blue": 14, "light": 8}, shown_counts)
+        # v63: a group now shows 12 before Show all (was 8), so Navy and Sky show 12
+        check("with the other paints on, each group shows only its first few: 12 or all of yours, whichever is more (Navy 12, Blues 14, Sky 12)", shown_counts == {"navy": 12, "blue": 14, "light": 12}, shown_counts)
         btns = [b for v in info.values() for b in v["btns"]]
         check("each group with more has one button under its list: Show all N (with a longer spoken name), not expanded, 44 px tall",
               [b["id"] for b in btns] == ["cmp-wheel-more-navy", "cmp-wheel-more-blue", "cmp-wheel-more-light"]
@@ -669,8 +672,11 @@ def main():
         check("Show all opens that group fully, the button now says Show fewer, is expanded, and keeps the focus",
               len(rows_blue) == per["blue"] + 14 and page.inner_text("#cmp-wheel-more-blue") == "Show fewer" and page.get_attribute("#cmp-wheel-more-blue", "aria-expanded") == "true"
               and page.evaluate("() => document.activeElement.id") == "cmp-wheel-more-blue", len(rows_blue))
-        lights_built = page.evaluate("(cs) => cs.map(c => MinifolioColour.hexToLab(c).L)", [r["colour"] for r in rows_blue[14:]])
-        check("the built-in paints in the group run dark to light too", lights_built == sorted(lights_built) and len(lights_built) == per["blue"], lights_built[:4])
+        # v63: the built-in paints are now in two runs, popular ranges first (Citadel, The Army Painter, Vallejo), then the rest; each runs dark to light
+        built = page.evaluate("""(cs) => cs.map(c => ({ L: MinifolioColour.hexToLab(c).L }))""", [r["colour"] for r in rows_blue[14:]])
+        pop = page.evaluate("""() => wheelItems().filter(i => i.at.seg === 'blue' && i.at.sub === 'blue' && i.origin === 2 && POPULAR_BRANDS.includes(i.paint.brand)).length""")
+        runs = [[b["L"] for b in built[:pop]], [b["L"] for b in built[pop:]]]
+        check("the built-in paints in the group run dark to light too, popular ranges first and then the rest", len(built) == per["blue"] and pop > 0 and all(r == sorted(r) for r in runs), (pop, len(built)))
         copy_spy(page)
         page.click("#cmp-wheel-detail .share-row button")
         text = copied(page)
@@ -680,11 +686,11 @@ def main():
         page.wait_for_timeout(100)
         check("Show fewer puts the rest away again", len(page.evaluate(ROWS_JS)) == 14)
         shot(page, "v37b-wheel-blue-390.png")
-        # a group with few paints has no button; a group at exactly 8 has none
-        load(page, paints=[P(400 + i, f"Eight {i}", hx(220, .6, .35 + i * .01)) for i in range(8)])
+        # a group with few paints has no button; a group at exactly 12 has none (v63: was 8)
+        load(page, paints=[P(400 + i, f"Twelve {i}", hx(220, .6, .35 + i * .01)) for i in range(12)])
         open_tab(page)
         tap(page, "blue")
-        check("a group of eight or fewer has no Show all button", page.locator('#cmp-wheel-detail button[id^="cmp-wheel-more-"]').count() == 0 and len(page.evaluate(ROWS_JS)) == 8)
+        check("a group of twelve or fewer has no Show all button", page.locator('#cmp-wheel-detail button[id^="cmp-wheel-more-"]').count() == 0 and len(page.evaluate(ROWS_JS)) == 12)
         load(page, paints=[])
         open_tab(page)
         tap(page, "purple")
@@ -699,8 +705,8 @@ def main():
         for part in PART_ORDER:
             if part in wh.HUES:
                 rows3 = wh.open_each_group(page, part, lambda p: (p.click("#cmp-wheel-others") if p.locator("#cmp-wheel-others").count() and p.get_attribute("#cmp-wheel-others", "aria-expanded") != "true" else None, p.wait_for_timeout(80), len(p.evaluate(ROWS_JS)))[2])
-                want3 = page.evaluate("(p) => { const o = {}; for (const x of wheelItems().filter(i => i.at.seg === p)) o[x.at.sub] = (o[x.at.sub] || 0) + 1; return WHEEL.find(w => w.key === p).subs.map(s => Math.min(8, o[s.key] || 0)); }", part)
-                counts_ok.append((part, rows3 == want3, max(rows3) <= 8, rows3, want3) if rows3 != want3 else (part, True, max(rows3) <= 8))
+                want3 = page.evaluate("(p) => { const o = {}; for (const x of wheelItems().filter(i => i.at.seg === p)) o[x.at.sub] = (o[x.at.sub] || 0) + 1; return WHEEL.find(w => w.key === p).subs.map(s => Math.min(12, o[s.key] || 0)); }", part)   # v63: 12 shown (was 8)
+                counts_ok.append((part, rows3 == want3, max(rows3) <= 12, rows3, want3) if rows3 != want3 else (part, True, max(rows3) <= 12))
                 continue
             tap(page, part)
             if page.locator("#cmp-wheel-others").get_attribute("aria-expanded") != "true":
@@ -708,9 +714,9 @@ def main():
                 page.wait_for_timeout(100)
             gs = page.evaluate(GROUPS_JS)
             want = page.evaluate("(p) => { const o = {}; for (const x of wheelItems().filter(i => i.at.seg === p)) o[x.at.sub] = (o[x.at.sub] || 0) + 1; return WHEEL.find(w => w.key === p).subs.filter(s => o[s.key]).map(s => s.label + ' (' + o[s.key] + ')'); }", part)
-            counts_ok.append((part, [g["heading"] for g in gs] == want, max(len(g["rows"]) for g in gs) <= 8))
+            counts_ok.append((part, [g["heading"] for g in gs] == want, max(len(g["rows"]) for g in gs) <= 12))
             tap(page, part)
-        check("for all ten parts, with the other paints on, the groups have the right counts, and no group lists more than 8 until Show all", all(c[1] and c[2] for c in counts_ok), counts_ok)
+        check("for all ten parts, with the other paints on, the groups have the right counts, and no group lists more than 12 until Show all (v63: was 8)", all(c[1] and c[2] for c in counts_ok), counts_ok)
 
         # ---------- 6. Hostile text and the text scan ----------
         print("\n--- 6. Hostile text and the text scan ---")
