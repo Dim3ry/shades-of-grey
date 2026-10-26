@@ -184,10 +184,10 @@ def main():
               len(hosts) == 1 and "goatcounter" in list(hosts)[0], (hosts, policy[:200]))
         changed = []
         for base in ("HEAD", "origin/main"):
-            out = subprocess.run(["git", "diff", "--name-only", base, "--", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js"],
+            out = subprocess.run(["git", "diff", "--name-only", base, "--", "schemes.js", "detail-recipes.js", "basing-tips.js"],   # v64: colour.js is left out on purpose (chunk 3.4c changed the fit rule there); the content data files stay guarded
                                  cwd=ROOT, capture_output=True, text=True)
             if out.returncode == 0: changed += out.stdout.split()
-        check("the content data files and colour.js are unchanged (schemes.js, detail-recipes.js, basing-tips.js, colour.js)", changed == [], changed)
+        check("the content data files are unchanged (schemes.js, detail-recipes.js, basing-tips.js; colour.js changed in v64 on purpose)", changed == [], changed)
         wheel_code = app[app.index("v36: THE COLOUR WHEEL"):app.index("function renderCompendium(")]
         check("the wheel code has no network code, no storage, no innerHTML, no links and no shop wording",
               not re.search(r"\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage|sessionStorage|\beval\s*\(|new Function|insertAdjacentHTML|outerHTML|innerHTML|createElement\('a'\)|createElement\(\"a\"\)|href|affiliate|\bshop\b", wheel_code),
@@ -341,7 +341,11 @@ def main():
             if (el.tagName === 'H4') { cur = []; out.push(cur); continue; }
             for (const b of el.querySelectorAll('.idea-static')) if (b.querySelector('.idea-tag').textContent === 'Not in your palette') cur.push(MinifolioColour.hexToLab(b.querySelector('.swatch').style.getPropertyValue('--swatch')).L); }
             return out; }""")
-        check("the built-in paints also run dark to light inside the group", all(g == sorted(g) for g in per_group_lights) and sum(len(g) for g in per_group_lights) == built_in_blue, [g[:4] for g in per_group_lights])
+        # v63: the built-in paints now come in two runs, popular ranges first and then the other brands (chunk 3.3); each run is dark to light,
+        # so the shown order is compared with that rule rather than with one dark-to-light run
+        want_lights = page.evaluate("""() => wheelItems().filter(x => x.at.seg === 'blue' && x.at.sub === 'blue' && x.origin === 2)
+            .sort((a, b) => wheelPopular(a) - wheelPopular(b) || a.at.L - b.at.L || String(a.paint.name).localeCompare(String(b.paint.name))).map(x => x.at.L)""")
+        check("the built-in paints run popular ranges first, then the rest, each dark to light inside the group", [L for g in per_group_lights for L in g] == want_lights and sum(len(g) for g in per_group_lights) == built_in_blue, [g[:4] for g in per_group_lights])
         page.click("#cmp-wheel-others")
         page.wait_for_timeout(150)
         check("the focus stays on the button after it is pressed", page.evaluate("() => document.activeElement.id") == "cmp-wheel-others")

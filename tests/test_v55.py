@@ -281,7 +281,7 @@ def main():
         names_in_labels = re.findall(r'setAttribute\("aria-label", `[^`]*\$\{(?:paint|p)\.name[^`]*`\)|\.title = paint\.name', app)
         check("no aria-label or title in app.js is built from paint.name or p.name any more", not names_in_labels, names_in_labels[:3])
         check("the Colour ideas rows, palette items, swatch tiles and shop fold-outs use labelWithName or hiddenName",
-              all(app.count(s) >= 1 for s in ('labelWithName(button, "Add as a new step", name, tagEl, why)', 'labelWithName(remove, "Remove", name)', "hiddenName([paint.name", 'labelWithName(summary, "Shop links for", who)')))
+              all(app.count(s) >= 1 for s in ('labelWithName(button, "Add as a new step", name, statusEl, why)', 'labelWithName(remove, "Remove", name)', "hiddenName([paint.name", 'labelWithName(summary, "Shop links for", who)')))
         check("no em dash in the v55 Updates entry", "—" not in app[app.index('{ version: "v55"'):app.index('{ version: "v54"')])
 
         # ---------- 6. No errors ----------

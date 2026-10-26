@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=62"></script>
+  <script src="early.js?v=67"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -787,6 +787,51 @@
     .dialog-buttons.single { grid-template-columns: 1fr; }
     .dialog-buttons button { min-height: 44px; padding: 10px 12px; font-size: 16px; overflow-wrap: anywhere; }
 
+    /* ----- v65: the Similar paints pop-up (chunk 3.5a) -----
+       The same box as the question box above, so it follows the theme and Light/Dark. Only the paint swatches have fixed colours.
+       It sits under the question box (200) and over the photo viewer; the Undo message is lifted above it while it is open. */
+    .similar-backdrop { z-index: 150; }
+    body.similar-open .toast { z-index: 160; }
+    .similar { max-width: 480px; }
+    .similar-head { display: flex; align-items: flex-start; gap: 10px; }
+    .similar-heading { flex: 1; min-width: 0; }
+    .similar-label { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    .similar-title { margin: 4px 0 0; font-size: 18px; line-height: 1.3; display: flex; align-items: center; gap: 8px; overflow-wrap: anywhere; }
+    .similar-shift { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .similar-shift button {
+      min-height: 44px; padding: 10px 6px; font-size: 15px;
+      background: var(--background); color: var(--text); border: var(--border-width) var(--border-style) var(--border);
+    }
+    .similar-shift button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); font-weight: 700; }
+    .similar-card { display: grid; gap: 10px; min-width: 0; }
+    .similar-card h3 { margin: 0; font-size: 15px; }
+    .similar-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    .similar-row {
+      display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 10px; min-width: 0;
+      background: var(--background); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-box); padding: 10px;
+    }
+    .similar-text { display: grid; gap: 2px; min-width: 0; }
+    .similar-name { overflow-wrap: anywhere; line-height: 1.3; }
+    .similar-name small { display: block; color: var(--muted); font-size: 12px; }
+    .similar-fit { font-size: 13px; color: var(--muted); }
+    .similar-add { grid-column: 2; justify-self: start; min-height: 44px; max-width: 100%; }
+    .similar-add[aria-disabled="true"] { opacity: .75; cursor: default; }
+    .similar-own { grid-column: 2; font-size: 13px; color: var(--muted); }
+    /* v66 (chunk 3.5b-1): Best match and Your closest. Tabs below 700 px, side by side from 700 px (the script uses the same width). */
+    .similar-cards { display: grid; gap: 14px; min-width: 0; }
+    .similar-card.is-off { display: none; }
+    .similar-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .similar-tabs button {
+      min-height: 44px; padding: 10px 6px; font-size: 15px;
+      background: var(--background); color: var(--text); border: var(--border-width) var(--border-style) var(--border);
+    }
+    .similar-tabs button[aria-selected="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); font-weight: 700; }
+    @media (min-width: 700px) {
+      .similar.two { max-width: 760px; }
+      .similar.two .similar-cards { grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+    }
+    .similar-none, .similar-note { margin: 0; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+
     /* ----- v14: banners at the top of the screen ----- */
     /* Red "not saving" banner: fixed to the top so you see it on every tab and while
        scrolling. It stays until a save works again. */
@@ -1106,6 +1151,12 @@
     .idea-tag.own { color: var(--good); }
     .idea-tag.near { color: var(--warn); }
     .idea-tag.none { color: var(--grey-status); }
+    .idea-status { display: flex; flex-wrap: wrap; gap: 4px 10px; }   /* v64: the ownership tag and the fit label on one line */
+    .idea-fit { font-size: 13px; font-weight: 600; white-space: nowrap; color: var(--text); }
+    .idea-also { color: var(--text); display: flex; gap: 12px; align-items: center; margin: 6px 0 0 12px; padding-top: 6px; border-top: 1px dashed var(--border); }
+    .idea-also .swatch { width: 24px; height: 24px; flex: none; }
+    .idea-also .idea-text { flex: 1; }
+    .idea-also-add { min-height: 44px; padding: 0 8px; font: inherit; font-size: 13px; color: var(--accent); background: none; border: 0; cursor: pointer; }
     .idea-why { font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
     .idea-note { font-size: 13px; color: var(--muted); }
     .idea-add { font-size: 13px; color: var(--accent); }
@@ -1114,6 +1165,11 @@
     .idea-static .swatch { width: 32px; height: 32px; flex: none; margin-top: 2px; }
     .share-row { display: flex; flex-wrap: wrap; gap: 10px; }
     .share-row .plain-button { min-height: 44px; }
+    .paint-recipe-buttons { display: flex; flex-wrap: wrap; gap: 10px; }
+    .paint-recipe-buttons .plain-button { min-height: 44px; }
+    .paint-recipe { display: grid; gap: 8px; margin-top: 8px; min-width: 0; }
+    .paint-recipe-picker { display: grid; gap: 8px; min-width: 0; }
+    .paint-recipe-picker select, .paint-recipe-picker .primary-button { min-height: 44px; max-width: 100%; }
     /* v36: the colour wheel at the top of the Compendium. Slices are plain SVG paths: a ring of six colours and four slices in the middle.
        Cool, slightly deep colours so it sits well on the dark theme; the open slice gets the accent outline. */
     .wheel-block { display: grid; gap: 10px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
@@ -2454,6 +2510,10 @@
             <li id="help-recipe-shop">Missing paints are not put on the shopping list by themselves. On a recipe with missing paints, <strong>Add missing paints to shopping list</strong> under its steps adds the real paints you don't own (never the made-up example paints) and says how many. Undo takes them off again.</li>
             <li id="help-shop"><strong>Shopping list</strong> (in Your Palette) lists only the paints you put there: your Wishlist paints and anything added with an <strong>Add to shopping list</strong> button, grouped by brand. Nothing is added by itself, not even a paint a recipe needs or one that is empty or running low. <strong>Buy these</strong> at the top has a button for each shop that sells them (Firestorm Games, Wayland Games, Element Games, and The Army Painter for Army Painter paints). Tap a shop for one search link per paint; each opens that shop's own search in a new tab. They're plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop. The link searches for the paint's name, so the results can include other brands' paints with the same name: check you've got the right pot before you buy.</li>
             <li id="help-shop-links"><strong>Shop links on suggested paints</strong> (Pro preview): under a suggested paint you don't own, in the colour wheel's paint panel and in <strong>Colour ideas</strong> (in a recipe and in the Compendium), tap <strong>Shop links</strong> to open a small fold-out. It has <strong>Add to shopping list</strong> (Undo is offered) and a plain search link for each shop that sells the paint. Paints you own show nothing. They're plain links, the same as in Buy these: Minifolio isn't paid for them, and only the paint's name goes to the shop. To hide every shop link and shop button, including Buy these, untick <strong>Settings → Shop links</strong>. Your shopping list stays.</li>
+            <li id="help-wheel-order">In the <strong>Compendium</strong> colour wheel, each group shows 12 paints first: yours, then the rest of Your Palette, then paints from popular ranges, then other brands. Each part runs from dark to light. <strong>Show all</strong> lists the rest.</li>
+            <li id="help-fit">Suggested paints (Colour ideas, schemes, detail recipes, basing, and the colour wheel's paint panel) show a fit: <strong>Good fit</strong>, <strong>Okay fit</strong> or <strong>Poor fit</strong>, judged by how different the two colours look. A paint you own comes first when it is a Good or Okay fit. If your best paint is a poor fit, the closest paint overall comes first and your own is second, marked <strong>Yours, poor fit</strong>. Metallic, Contrast, wash and similar paints are allowed a little more room.</li>
+            <li id="help-paint-to-recipe">In the <strong>Compendium</strong>, a colour idea, and a colour wheel paint once you open it, has <strong>Use in a recipe</strong> and <strong>Add to a recipe</strong>. Use in a recipe starts a new recipe with that paint in step 1. Add to a recipe lets you choose a recipe, then one of its steps or a new step, and saves it straight away. Both have an <strong>Undo</strong>. A paint that is not in Your Palette is added as <strong>Not owned</strong>, so it reaches your shopping list once a recipe uses it.</li>
+            <li id="help-similar-paints">In the <strong>Compendium</strong>, those same paints also have <strong>Similar paints</strong>. It opens a pop-up with <strong>Best match</strong>: up to three paints from different brands, closest first, whether or not you own them, each with its fit. <strong>Lighter</strong> and <strong>Darker</strong> look for a lighter or darker colour. <strong>Your closest</strong> shows the nearest paints you own, with the same fit; it is left out when your closest paint is already the best match, and says so when none of your paints is close. On a phone the two cards are tabs (<strong>Best</strong> and <strong>Yours</strong>, with the arrow keys); on a wider screen they sit side by side. A paint you do not own can go on your shopping list, with an <strong>Undo</strong>. Varnishes, mediums, thinners and other paints that are not colours are never offered.</li>
             <li id="help-compendium-ticks">In the <strong>Compendium</strong>, tick the paints you want from a scheme or detail recipe, or press <strong>Select all</strong>. <strong>Add to shopping list</strong> is grey until you tick something, then adds only the ticked paints. A paint you own, or that is already on the list, shows a mark instead of a tick box. <strong>Copy as text</strong> and <strong>Save into a new recipe</strong> use the ticked paints, or all of them if none is ticked.</li>
             <li><strong>Schemes</strong> (top of the Recipes tab) group the recipes you use for one faction, e.g. "My Blue Army" = armour, trim, lenses and base. Press <strong>+ New scheme</strong>, name it, type the faction and tick its recipes.</li>
             <li><strong>Apply to … units</strong> links a scheme's recipes to every unit in its faction that doesn't have them all yet. Recipes a unit already has stay linked.</li>
@@ -2812,7 +2872,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=62" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=67" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -2821,10 +2881,10 @@
        names, DETAIL_GROUPS and DETAIL_RECIPES, and does nothing until app.js asks.
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=62"></script>
-  <script src="schemes.js?v=62"></script>
-  <script src="detail-recipes.js?v=62"></script>
-  <script src="basing-tips.js?v=62"></script>
-  <script src="app.js?v=62"></script>
+  <script src="colour.js?v=67"></script>
+  <script src="schemes.js?v=67"></script>
+  <script src="detail-recipes.js?v=67"></script>
+  <script src="basing-tips.js?v=67"></script>
+  <script src="app.js?v=67"></script>
 </body>
 </html>

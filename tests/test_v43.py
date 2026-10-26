@@ -332,8 +332,9 @@ def main():
               and int(re.search(r"\((\d+)\)", others.inner_text()).group(1)) == sum(1 for e in expected_group(page, "blue", "blue") if e["origin"] == 2), others.inner_text())
         others.click()
         wait(page)
-        order = page.evaluate("() => wheelItems().filter(x => x.at.seg === 'blue' && x.at.sub === 'blue').map(x => [x.origin, x.at.L, x.paint.name])")
-        want = [n for _, _, n in sorted(order, key=lambda x: (x[0], x[1], x[2].lower()))]
+        # v63: within the built-in paints, popular ranges come before other brands (chunk 3.3), so the sort key has that step too
+        order = page.evaluate("() => wheelItems().filter(x => x.at.seg === 'blue' && x.at.sub === 'blue').map(x => [x.origin, wheelPopular(x), x.at.L, x.paint.name])")
+        want = [n for _, _, _, n in sorted(order, key=lambda x: (x[0], x[1], x[2], x[3].lower()))]
         shown8 = [r["name"] for r in page.evaluate(DETAIL_JS)["rows"]]
         check("with the others shown, the first paints run owned first, then dark to light", shown8 == want[:len(shown8)] and len(shown8) >= 8, (shown8[:5], want[:5]))
         more = page.locator("#cmp-wheel-more-blue")
