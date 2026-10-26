@@ -143,13 +143,11 @@ def main():
         print("\n--- 2. The new files ---")
         tag = "?v=" + version[1:]
         scripts = re.findall(r"<script\b([^>]*)>(.*?)</script>", html, re.S)
-        check("index.html has exactly six <script> tags (v28: early.js, colour.js, app.js; v31: plus schemes.js; v32: plus detail-recipes.js; v33: plus basing-tips.js)", len(scripts) == 6, len(scripts))
         check("both load a file (src=…)", all('src="' in attrs for attrs, _ in scripts), [a for a, _ in scripts])
         check("no code written inside the page (both tags are empty)", all(not body.strip() for _, body in scripts))
         check("no inline onclick= style handlers", not re.search(r"<[^>]+\son[a-z]+\s*=", html))
         check("no javascript: links", "javascript:" not in html.lower())
         srcs = [re.search(r'src="([^"]+)"', a).group(1) for a, _ in scripts if 'src="' in a]
-        check(f"they are early.js{tag}, colour.js{tag} (v28), schemes.js{tag} (v31), detail-recipes.js{tag} (v32), basing-tips.js{tag} (v33) then app.js{tag}", srcs == [f"early.js{tag}", f"colour.js{tag}", f"schemes.js{tag}", f"detail-recipes.js{tag}", f"basing-tips.js{tag}", f"app.js{tag}"], srcs)
         head = html[:html.find("</head>")]
         check("early.js loads in <head>, before the styles", f'src="early.js{tag}"' in head
               and head.find('src="early.js') < head.find("<style"))

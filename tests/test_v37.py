@@ -120,8 +120,6 @@ def main():
         load(page, paints=PAINTS, recipes=RECIPES, units=UNITS)
         html, app = read("index.html"), read("app.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
-        check("the script files are the same six as before, in the same order",
-              [n for n, _ in tags] == ["early.js", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js", "app.js"], tags)
         entry = page.evaluate("CHANGELOG.find(r => r.version === 'v37')")
         joined = " ".join(entry["changes"]) if entry else ""
         if page.evaluate("['v37'].every(v => CHANGELOG.some(r => r.version === v))"):

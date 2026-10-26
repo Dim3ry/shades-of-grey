@@ -9846,6 +9846,17 @@
       return box;
     }
 
+    // ---- v70: MENTOR TIPS (the library, no screen yet) ----
+    // The tips (MENTOR_TIPS, with MENTOR_PARTS and MENTOR_TECHNIQUES) live in mentor-tips.js, which loads between basing-tips.js and
+    // this file. mentorTipsFor() hands back the tips that fit what is asked: part (exactly one of the four parts), technique and
+    // colour (each matches when the tip's own words contain it, ignoring capitals). Anything left out matches every tip. With no
+    // mentor-tips.js there are simply no tips. Nothing is drawn or stored here.
+    function mentorTipsFor(ask = {}) {
+      const tips = typeof MENTOR_TIPS === "undefined" ? [] : MENTOR_TIPS;
+      const has = (own, wanted) => !wanted || String(own || "").toLowerCase().includes(String(wanted).trim().toLowerCase());
+      return tips.filter(t => (!ask.part || t.part === ask.part) && has(t.technique, ask.technique) && has(t.colour, ask.colour));
+    }
+
     // ---- (4) v33: Basing tips ----
     // The tips (BASING_TIPS, grouped by BASING_GROUPS) live in basing-tips.js, which loads between detail-recipes.js and this file.
     // Each has a plain list of materials, a few how-to steps and optional paint steps. The materials and how-to steps are only
@@ -15264,12 +15275,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SIX script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, app), e.g. "app.js?v=69".
+    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=70".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v69";
+    const APP_VERSION = "v70";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -15720,6 +15731,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v70", date: "26 Oct 2026", changes: [
+        "Behind the scenes: a place for Mentor tips is ready, with three sample tips that only show the format. Nothing new to see yet.",
+      ]},
       { version: "v69", date: "26 Oct 2026", changes: [
         "Ideas for this: open a recipe step or a paint in Your Palette and tap Ideas for this. The Compendium opens with that paint's ideas at the top: colours that go with it, starter schemes, detail recipes and basing tips with a similar colour, using your paints first.",
         "Show steps or Show tip opens that detail recipe or basing tip in full. Back to recipe or Back to Your Palette takes you to the same place. A paint with no colour set has no button.",

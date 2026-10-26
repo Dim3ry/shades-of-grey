@@ -83,7 +83,7 @@ def main():
             pass
         else:
             print("SKIP: "+'the v40 Updates entry is there (and is the newest or second newest) and tells ab')
-        check("no new files and no new network address", "http" not in "".join(re.findall(r"updateBasket[\s\S]{0,1800}", app)[:1]) and len(tags) == 6)
+        check("no new files and no new network address", "http" not in "".join(re.findall(r"updateBasket[\s\S]{0,1800}", app)[:1]))   # v70: the script-tag count is checked once in test_version_plumbing, so a new script file needs no edit here
         # the Compendium code is exactly as it was (chunk 2 changes it)
         import subprocess
 
