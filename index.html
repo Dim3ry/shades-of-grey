@@ -1527,6 +1527,13 @@
       }
       #view-dashboard .card { margin-bottom: 0; }
       #view-dashboard .card:first-child, #history-card { grid-column: 1 / -1; }
+      /* R3b-1: the headline fills the row (the first-child rule above lands on a hidden notice card). With 4 or more factions the
+         faction card is tall, so it and the stage card each take a full row instead of leaving a gap beside the stage card. */
+      #headline-card, #view-dashboard > .notice-card { grid-column: 1 / -1; }
+      #history-table-box > summary { display: flex; align-items: center; min-height: 44px; }
+      #view-dashboard:has(#faction-grid > :nth-child(4)) :is(#stage-card, #faction-card) { grid-column: 1 / -1; }
+      #view-dashboard:has(#faction-grid > :nth-child(4)) #stage-card .chart-row { justify-content: center; gap: 48px; }
+      #view-dashboard:has(#faction-grid > :nth-child(4)) #stage-card .legend { flex: 0 1 420px; }
       .big { font-size: 56px; }
       .of { font-size: 16px; }
       .group-button { padding: 16px 18px; font-size: 15px; }
@@ -2259,7 +2266,7 @@
       <div class="card notice-card feedback-card hidden" id="feedback-card" role="note"></div>
       <!-- v57: one gentle "Save a backup?" card, once there is something worth keeping. Filled by renderBackupNudge(). -->
       <div class="card notice-card backup-nudge hidden" id="backup-nudge" role="note"></div>
-      <div class="card">
+      <div class="card" id="headline-card">
         <div class="headline">
           <span class="big" id="done-percent">–</span>
           <span class="of" id="done-summary"></span>
@@ -2287,7 +2294,7 @@
         </details>
       </div>
 
-      <div class="card">
+      <div class="card" id="stage-card">
         <h2>By stage</h2>
         <div class="chart-row">
           <div id="overall-chart"></div>
@@ -2295,7 +2302,7 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" id="faction-card">
         <div class="card-head">
           <h2>By faction</h2>
           <button class="link-button" id="faction-colours-link">Faction colours</button>
