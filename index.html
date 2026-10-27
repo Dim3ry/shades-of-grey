@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=80"></script>
+  <script src="early.js?v=81"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -1158,6 +1158,8 @@
     .pro-pill { font-size: 13px; color: var(--muted); white-space: nowrap; }   /* v55: plain text, was a pill */
     .ideas-body { display: grid; gap: 12px; margin-top: 10px; }
     .ideas-body .hint { margin: 0; }
+    .shop-head { margin-bottom: 4px; }   /* v81: what More info's own bottom margin gave before the heading and More info were wrapped */
+    .compendium-split, .compendium-folds { display: grid; gap: 12px; }   /* v81: same spacing as before the two parts were wrapped */
     .idea-label { margin: 0; font-size: 13px; color: var(--muted); }
     /* v72: Mentor tips under the Ask the Mentor picks */
     .mentor-tips { display: grid; gap: 6px; }
@@ -1474,6 +1476,19 @@
       .layout-split > .card { margin-bottom: 0; }
       /* v78: layout-detail-wide = a narrow list on the left and a wide detail on the right (list is layout-main, detail is layout-side). */
       .layout-split.layout-detail-wide { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+      /* v81: Shopping (one card: heading, buy bar and Copy as text on the right, brand lists on the left) and Compendium (colour wheel on
+         the left, fold-outs on the right). The right column of Shopping is two stacked parts, so it names its own rows. */
+      #shop-panel .shop-split.layout-split {
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); column-gap: 18px;
+        grid-template-areas: "head head" "main buy" "main copy" "main .";
+        grid-template-rows: auto auto auto 1fr;
+      }
+      #shop-panel .shop-split > .shop-head { grid-area: head; }
+      #shop-panel .shop-split > .shop-lists { grid-area: main; }
+      #shop-panel .shop-split > .shop-side-buy { grid-area: buy; }
+      #shop-panel .shop-split > .shop-side-copy { grid-area: copy; margin-top: 0 !important; }
+      #shop-panel .shop-lists > .shop-brand:first-child { margin-top: 0; }
+      .compendium-split .wheel-block { border-bottom: 0; padding-bottom: 0; }
     }
 
     /* ----- Wide screens (laptops and desktops) -----
@@ -1541,7 +1556,7 @@
       /* v77: Updates now uses the shared layout-split class (above) instead of its own two-column rule. */
       #view-help .help:not(.hidden) { columns: 2; column-gap: 40px; }
       ul.recipe-list { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
-      #recipe-page, #scheme-page, #view-compendium { max-width: 780px; }
+      #recipe-page, #scheme-page { max-width: 780px; }   /* v81: the Compendium now uses the full width (two columns) */
       /* v78: beside the list the recipe fills its column; the open recipe in the list gets an outline (and aria-current). */
       #recipe-split.layout-split #recipe-page { max-width: none; }
       #recipe-split.layout-split ul.recipe-list { grid-template-columns: 1fr; }
@@ -2599,6 +2614,7 @@
             <li>Typed a paint into a recipe that isn't in Your Palette yet? Above <strong>Save recipe</strong>, <strong>Do you own these?</strong> asks about the new paints: <strong>All</strong> (Owned), <strong>None</strong> (Not owned) or <strong>Let me pick</strong> (tap a paint to untick it). The card names the paints it means. A paint name only counts once it matches a known paint or you leave the box. Save stops and says so if a step has a brand but no paint name, and a step with no paint says <strong>No paint</strong> on its line.</li>
             <li id="help-recipe-shop">Missing paints are not put on the shopping list by themselves. On a recipe with missing paints, <strong>Add missing paints to shopping list</strong> under its steps adds the real paints you don't own (never the made-up example paints) and says how many. Undo takes them off again.</li>
             <li id="help-shop"><strong>Shopping list</strong> (in Your Palette) lists only the paints you put there: your Wishlist paints and anything added with an <strong>Add to shopping list</strong> button, grouped by brand. Nothing is added by itself, not even a paint a recipe needs or one that is empty or running low. <strong>Buy these</strong> at the top has a button for each shop that sells them (Firestorm Games, Wayland Games, Element Games, and The Army Painter for Army Painter paints). Tap a shop for one search link per paint; each opens that shop's own search in a new tab. They're plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop. The link searches for the paint's name, so the results can include other brands' paints with the same name: check you've got the right pot before you buy.</li>
+            <li id="help-wide-shop">On a wide screen, the shop links and <strong>Copy as text</strong> sit beside the paints on the Shopping list, and in the Compendium the colour wheel sits beside the sections.</li>
             <li id="help-shop-links"><strong>Shop links on suggested paints</strong> (Pro preview): under a suggested paint you don't own, in the colour wheel's paint panel and in <strong>Colour ideas</strong> (in a recipe and in the Compendium), tap <strong>Shop links</strong> to open a small fold-out. It has <strong>Add to shopping list</strong> (Undo is offered) and a plain search link for each shop that sells the paint. Paints you own show nothing. They're plain links, the same as in Buy these: Minifolio isn't paid for them, and only the paint's name goes to the shop. To hide every shop link and shop button, including Buy these, untick <strong>Settings → Shop links</strong>. Your shopping list stays.</li>
             <li id="help-ideas-for"><strong>Ideas for this</strong> (Pro preview): open a step in a recipe, or a paint in <strong>Your Palette</strong>, and tap <strong>Ideas for this</strong> under the paint. The <strong>Compendium</strong> opens with that paint's ideas at the top: colours that go with it, starter schemes with a similar colour, and detail recipes and basing tips with a step of a similar colour. Your own paints come first. <strong>Show steps</strong> or <strong>Show tip</strong> opens that recipe or tip in full further down. <strong>Back to recipe</strong> or <strong>Back to Your Palette</strong> (or the phone's Back button) takes you to the same step or paint. A paint with no colour set, or a basing material, has no button, as there is nothing to match. Tapping the Compendium tab itself shows the whole Compendium again.</li>
             <li id="help-wheel-order">In the <strong>Compendium</strong> colour wheel, each group shows 12 paints first: yours, then the rest of Your Palette, then paints from popular ranges, then other brands. Each part runs from dark to light. <strong>Show all</strong> lists the rest.</li>
@@ -2958,7 +2974,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=80" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=81" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -2969,11 +2985,11 @@
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks.
        v70: mentor-tips.js (the Mentor tips, plain data) loads between basing-tips.js and app.js. It only adds three
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=80"></script>
-  <script src="schemes.js?v=80"></script>
-  <script src="detail-recipes.js?v=80"></script>
-  <script src="basing-tips.js?v=80"></script>
-  <script src="mentor-tips.js?v=80"></script>
-  <script src="app.js?v=80"></script>
+  <script src="colour.js?v=81"></script>
+  <script src="schemes.js?v=81"></script>
+  <script src="detail-recipes.js?v=81"></script>
+  <script src="basing-tips.js?v=81"></script>
+  <script src="mentor-tips.js?v=81"></script>
+  <script src="app.js?v=81"></script>
 </body>
 </html>

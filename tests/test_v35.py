@@ -203,9 +203,10 @@ def main():
         print("\n--- 3. Same content in both doors ---")
         load(page, recipes=RECIPES, units=UNITS)
         open_comp(page)
+        # v81: the wheel, the sections and the footnote now sit inside two parts (compendium-split), so the list also looks one level down.
         # v37: the parts sit under folding headings (open_comp has opened them), so read the ids at the top level and inside the panels
         order = page.evaluate("""() => { const want = ['cmp-intro', 'cmp-colour-ideas-none', 'cmp-faction-history', 'cmp-starter-schemes', 'cmp-detail-recipes', 'cmp-basing-tips', 'cmp-foot'];
-            const seen = [...document.querySelectorAll('#compendium-body > *, #compendium-body > .more-info .more-info-panel > *, #compendium-body .fold-panel > *')].map(e => e.id);
+            const seen = [...document.querySelectorAll('#compendium-body > *, #compendium-body .compendium-split > * > *, #compendium-body > .more-info .more-info-panel > *, #compendium-body .fold-panel > *')].map(e => e.id);
             return want.map(i => seen.indexOf(i)); }""")
         check("with no colour chosen: the intro, the choose-a-colour line, then Your schemes, Starter schemes, Detail recipes, Basing tips, then the footnote, in the card's order",
               order == sorted(order) and -1 not in order, order)

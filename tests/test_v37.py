@@ -145,7 +145,7 @@ def main():
         # ---------- 2. Folding sections ----------
         print("\n--- 2. Folding sections ---")
         open_tab(page)
-        heads = page.evaluate("""() => [...document.querySelectorAll('#compendium-body > section.fold')].map(s => { const h = s.querySelector(':scope > h3.fold-head'), b = h && h.querySelector('button.fold-button'),
+        heads = page.evaluate("""() => [...document.querySelectorAll('#compendium-body .compendium-folds > section.fold')].map(s => { const h = s.querySelector(':scope > h3.fold-head'), b = h && h.querySelector('button.fold-button'),
             p = s.querySelector(':scope > .fold-panel'); return { label: b && b.firstElementChild.textContent, name: b && b.textContent, exp: b && b.getAttribute('aria-expanded'),
             controls: b && b.getAttribute('aria-controls'), panelId: p && p.id, hidden: p && p.hidden, empty: p && p.childElementCount === 0, type: b && b.type }; })""")
         check("there are six headings in order (v71: Ask the Mentor first): Ask the Mentor, Colour ideas, Your schemes, Starter schemes, Detail recipes, Basing tips", [h["label"] for h in heads] == LABELS, heads)
@@ -153,9 +153,10 @@ def main():
         check("they all start closed (aria-expanded false), and each button points at its own panel (aria-controls)",
               all(h["exp"] == "false" and h["controls"] == h["panelId"] for h in heads), heads)
         check("a closed panel is hidden and empty (nothing is built until it is opened)", all(h["hidden"] and h["empty"] for h in heads), heads)
+        # v81: the wheel now sits in the left part of the Compendium (not a direct child of the body), so check it is not inside a fold-out instead
         check("the wheel is not inside a heading: it stays open at the top, before the five parts",
               page.evaluate("""() => { const b = document.getElementById('compendium-body'), w = document.getElementById('cmp-wheel-block'), f = document.getElementById('cmp-fold-ideas');
-                return w.parentElement === b && b.contains(f) && !!(w.compareDocumentPosition(f) & Node.DOCUMENT_POSITION_FOLLOWING) && w.getBoundingClientRect().height > 250; }"""))
+                return b.contains(w) && !w.closest('.fold') && b.contains(f) && !!(w.compareDocumentPosition(f) & Node.DOCUMENT_POSITION_FOLLOWING) && w.getBoundingClientRect().height > 250; }"""))
         check("none of the five parts' content is on the page while they are closed",
               all(page.locator(f"#{i}").count() == 0 for i in ["cmp-colour-ideas-base", "cmp-faction-history", "cmp-starter-schemes", "cmp-detail-recipes", "cmp-basing-tips"]))
         closed_height = page.evaluate("() => document.getElementById('compendium-body').offsetHeight")
@@ -545,7 +546,7 @@ def main():
             page.click(f'nav button[data-tab="{tab}"]')
             page.wait_for_timeout(120)
             check(f"the {tab} tab opens its own page and hides the others", page.is_visible(f"#{view}") and sum(page.is_visible(f"#{v}") for v in ["view-dashboard", "view-units", "view-recipes", "view-settings", "view-compendium"]) == 1)
-        order = page.evaluate("() => [...document.querySelectorAll('#compendium-body > *')].flatMap(e => e.classList.contains('more-info') ? [...e.querySelectorAll('.more-info-panel > *')] : [e]).map(e => e.id).filter(Boolean)")
+        order = page.evaluate("() => [...document.querySelectorAll('#compendium-body > :not(.compendium-split), #compendium-body .compendium-split > * > *')].flatMap(e => e.classList.contains('more-info') ? [...e.querySelectorAll('.more-info-panel > *')] : [e]).map(e => e.id).filter(Boolean)")
         check("the Compendium is: the intro, the wheel, the six folding parts (v71: Ask the Mentor first), then the footnote",
               order == ["cmp-intro", "cmp-wheel-block", "cmp-fold-mentor", "cmp-fold-ideas", "cmp-fold-history", "cmp-fold-starter", "cmp-fold-detail", "cmp-fold-basing", "cmp-foot"], order)
         if page.get_attribute("#compendium-body > .more-info .more-info-button", "aria-expanded") == "false":   # v49: the intro sits behind More info

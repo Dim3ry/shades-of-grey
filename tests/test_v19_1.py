@@ -143,7 +143,7 @@ def main():
         check("…headed 'Buy these'", page.inner_text("#buy-bar h3") == "Buy these")
         order = page.evaluate("""(() => { const card = document.querySelector('#shop-panel .card');
             const kids = [...card.children]; return [kids.indexOf(document.getElementById('buy-bar')),
-            kids.findIndex(k => k.classList.contains('shop-brand'))]; })()""")
+            kids.findIndex(k => k.classList.contains('shop-lists'))]; })()""")   # v81: the brand groups now sit inside one .shop-lists part
         check("…at the top, above the brand groups", 0 <= order[0] < order[1], order)
         check("one button per shop, Army Painter included (an Army Painter paint is on the list)",
               shop_buttons(page) == ["Firestorm Games", "Wayland Games", "Element Games", "The Army Painter"],
