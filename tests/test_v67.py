@@ -106,7 +106,7 @@ def main():
         print("\n--- 3. Add missing paints to shopping list ---")
         open_recipe(page)
         check("the recipe shows the button with the count of real missing paints (not the made-up one)",
-              shop_button(page).count() == 1 and shop_button(page).inner_text() == "Add missing paints to shopping list (2)",
+              shop_button(page).count() == 1 and shop_button(page).inner_text() == "Add to shopping list (2)",   # A1: renamed to the app's one wording
               shop_button(page).all_inner_texts())
         lines = page.locator("#recipe-page .step-line").all_inner_texts()
         check("the step with no paint says No paint on its line", "No paint" in lines[5] and all("No paint" not in l for l in lines[:5]), lines)
@@ -188,7 +188,8 @@ def main():
         e.sub_tab(page, "help")
         recipe_topic = page.text_content("#help-recipe-shop") or ""
         shop_topic = page.text_content("#help-shop") or ""
-        check("Help names the recipe button and Undo", "Add missing paints to shopping list" in recipe_topic and "Undo" in recipe_topic, recipe_topic)
+        # A1: the button is now called Add to shopping list (the app's one wording)
+        check("Help names the recipe button and Undo", "Add to shopping list" in recipe_topic and "Undo" in recipe_topic, recipe_topic)
         check("Help says the list only holds what you put there", "Wishlist" in shop_topic and "Nothing is added by itself" in shop_topic, shop_topic)
         check("no em dash in the new Help lines", "—" not in recipe_topic + shop_topic)
 
