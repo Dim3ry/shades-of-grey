@@ -3051,13 +3051,46 @@
       }
       // Group labels with nothing under them ("Misc:", "Slapchops:") are dropped.
       for (const s of schemes) s.parts = s.parts.filter(p => p.steps.length || p.notes.length);
+      for (const s of schemes) for (const p of s.parts) guessSectionHeadings(p);
       return { schemes: schemes.filter(s => s.parts.length) };
+    }
+
+    // A1/A2: a line in the preview is a paint step (the default), a section heading (the paints under it belong to it),
+    // or something to ignore. step.role holds "heading" or "ignore"; no role means a paint step.
+    const stepRole = (step) => step.role === "heading" || step.role === "ignore" ? step.role : "paint";
+    const isPaintStep = (step) => stepRole(step) === "paint";
+    // The words of a heading line, as a section name.
+    const headingName = (step) => tidyName(String(step.source || "").replace(/^[\s\-•*\d.)]+/, "").replace(/[\s:;=\-]+$/, ""));
+    // The guess: a short bare line the app can't match to a paint, followed by two or more lines that do match,
+    // is probably a section heading ("Heraldry", then its paints). It is only preselected; the preview lets you change it.
+    function guessSectionHeadings(part) {
+      const sure = (st) => st && st.paints.length && st.paints.every(m => m.status === "sure" || m.status === "material");
+      part.steps.forEach((st, i) => {
+        if (st.paints.length !== 1 || !["new", "unsure"].includes(st.paints[0].status)) return;
+        if (st.technique || st.ratio || st.note || st.optional || st.coats > 1 || String(st.source || "").split(/\s+/).length > 4) return;
+        if (/\d/.test(st.source || "") || !headingName(st)) return;
+        if (sure(part.steps[i + 1]) && sure(part.steps[i + 2])) st.role = "heading";
+      });
+    }
+    // A part split at its section headings: [{ name, steps }]. Steps before the first heading keep the part's own name;
+    // a heading's paints go under "Part – Heading" (just "Heading" when the part is the unnamed whole model).
+    // Ignored lines and headings with no paints under them are left out.
+    function importSections(part) {
+      const out = [{ name: part.name, steps: [] }];
+      for (const step of part.steps) {
+        const role = stepRole(step);
+        if (role === "heading") {
+          const h = headingName(step);
+          out.push({ name: part.name === WHOLE_MODEL ? h : `${part.name} – ${h}`, steps: [] });
+        } else if (role === "paint") out[out.length - 1].steps.push(step);
+      }
+      return out.filter((sec, i) => sec.steps.length || (i === 0 && part.notes.length));
     }
 
     // Every paint mention that needs your answer, grouped by what was typed ("CM" once, not 3 times).
     function unsureMentions(parsed) {
       const groups = new Map();
-      for (const s of parsed.schemes) for (const p of s.parts) for (const step of p.steps) for (const m of step.paints) {
+      for (const s of parsed.schemes) for (const p of s.parts) for (const step of p.steps.filter(isPaintStep)) for (const m of step.paints) {
         if (m.status !== "unsure") continue;
         const key = matchKey(m.typed);
         if (!groups.has(key)) groups.set(key, { key, typed: m.typed, suggestions: m.suggestions.slice(), count: 0, choice: null });
@@ -12099,7 +12132,7 @@
     // The paints a paste import would add to your palette (paints you've answered count too).
     function importNewPaints(d) {
       const list = [];
-      if (d && d.parsed) for (const s of d.parsed.schemes) for (const part of s.parts) for (const step of part.steps)
+      if (d && d.parsed) for (const s of d.parsed.schemes) for (const part of s.parts) for (const step of part.steps.filter(isPaintStep))
         for (const m of step.paints) { const p = importPaintFor(m); if (p) addNewPaint(list, p); }
       return list;
     }
@@ -12241,7 +12274,7 @@
       const g = importDraft.groups.find(x => x.key === matchKey(mention.typed));
       return g && g.choice ? g.choice.paint : null;
     }
-    const importCount = (d) => d.parsed ? d.parsed.schemes.reduce((n, s) => n + s.parts.length, 0) : 0;
+    const importCount = (d) => d.parsed ? d.parsed.schemes.reduce((n, s) => n + s.parts.reduce((m, p) => m + importSections(p).length, 0), 0) : 0;
 
     function renderImport() {
       const d = importDraft;
@@ -12382,8 +12415,11 @@
           }
           const ol = document.createElement("ol");
           ol.className = "import-steps";
+          let number = 0;   // A2: numbering starts again under each section heading
           for (const [ti, step] of part.steps.entries()) {
             const li = document.createElement("li");
+            const role = stepRole(step);
+            if (role === "paint") li.value = ++number; else { li.classList.add("import-nonstep", `import-${role}`); if (role === "heading") number = 0; }
             if (step.optional) li.classList.add("optional-step");
             // v18d-1: the step's words on the left, a ✕ to leave it out on the right.
             const line = document.createElement("div");
@@ -12407,6 +12443,18 @@
             line.append(body, edit, remove);
             li.appendChild(line);
             if (editing) li.appendChild(buildImportStepEditor(step, part));
+            if (role !== "paint") {
+              // A2: a section heading or an ignored line shows just its words (plain text), no paints or technique.
+              const word = document.createElement("span");
+              word.className = "import-role";
+              word.textContent = role === "heading" ? "Section" : "Ignored";
+              const nm = document.createElement("span");
+              nm.className = "import-role-name";
+              nm.textContent = role === "heading" ? headingName(step) : String(step.source || "").trim();
+              body.append(word, nm);
+              ol.appendChild(li);
+              continue;
+            }
             const paints = step.paints.map(importPaintFor);
             const tech = document.createElement("span");
             tech.className = "import-tech";
@@ -12602,7 +12650,7 @@
       const at = findImportStep(step);
       if (!at) return;
       // Focus goes into the editor when it opens, and back to the ✎ when it closes.
-      const el = d.editing ? at.li.querySelector(".import-step-editor select") : at.li.querySelector(".import-edit");
+      const el = d.editing ? at.li.querySelector(".import-step-editor select, .import-step-editor .import-role-chip") : at.li.querySelector(".import-edit");
       if (el) el.focus();
     }
     // The <li> on screen for a step object.
@@ -12666,6 +12714,28 @@
       return { status, typed, paint, suggestions: [], fromTyped: old.fromTyped !== undefined ? old.fromTyped : old.typed };
     }
 
+    // A2: sets what a line is (paint step, section heading, ignore). Paints in a line that is not a paint step no longer
+    // hold up Save or count as new, so "Check N paints" and "Do you own these?" are rebuilt. Undo puts the old role back.
+    function setImportRole(step, role) {
+      const d = importDraft;
+      const old = stepRole(step);
+      if (!d || role === old) return;
+      const groupsBefore = d.groups;
+      const apply = (value) => { if (value === "paint") delete step.role; else step.role = value; };
+      apply(role);
+      regroupImport(d, groupsBefore);
+      renderImport();
+      focusImportEditor(step, `role-${role}`);
+      const text = role === "heading" ? "a section heading" : role === "ignore" ? "ignored" : "a paint step";
+      showToast(`${importStepLabel(step)} is now ${text}`, () => {
+        if (importDraft !== d) return;
+        const now = d.groups;
+        apply(old);
+        regroupImport(d, now, groupsBefore);
+        renderImport();
+      });
+    }
+
     // Swaps paint number i of a step for what you typed. quiet = don't move focus (Done does that).
     function swapImportPaint(step, i, typed, quiet) {
       const d = importDraft;
@@ -12706,6 +12776,34 @@
       box.className = "import-step-editor";
       const label = importStepLabel(step);
       const paints = step.paints.map(importPaintFor).filter(Boolean);
+
+      // A2: what the line is. A section heading groups the paints under it; Ignore leaves the line out.
+      // Three chips (not a list), so the technique list stays the first list in a paint step's editor.
+      const roleBox = document.createElement("div");
+      const roleTitle = document.createElement("div");
+      roleTitle.className = "import-swap-title";
+      roleTitle.textContent = "This line is";
+      const roleChips = document.createElement("div");
+      roleChips.className = "chips";
+      roleChips.style.marginTop = "4px";
+      for (const [value, text] of [["paint", "Paint step"], ["heading", "Section heading"], ["ignore", "Ignore"]]) {
+        const chip = makeChip(text, stepRole(step) === value, () => setImportRole(step, value));
+        chip.classList.add("import-role-chip");
+        chip.dataset.importFocus = `role-${value}`;
+        roleChips.appendChild(chip);
+      }
+      roleBox.append(roleTitle, roleChips);
+      if (stepRole(step) !== "paint") {
+        box.appendChild(roleBox);
+        const closeEditor = document.createElement("button");
+        closeEditor.type = "button";
+        closeEditor.className = "plain-button import-edit-done";
+        closeEditor.textContent = "Done";
+        closeEditor.addEventListener("click", () => { if (importDraft && importDraft.editing === step) toggleImportEdit(step); });
+        box.appendChild(closeEditor);
+        box.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.preventDefault(); toggleImportEdit(step); } });
+        return box;
+      }
 
       // Technique: "Auto" (guess from the paints) or one from your list.
       const techLabel = document.createElement("label");
@@ -12858,6 +12956,7 @@
         box.append(row, warning);
       }
 
+      box.appendChild(roleBox);
       const done = document.createElement("button");
       done.type = "button";
       done.className = "plain-button import-edit-done";
@@ -12893,7 +12992,7 @@
         d.parsed.schemes.forEach((s, si) => {
           const schemeName = (d.names[si] || "").trim() || "Imported recipes";
           const ids = [];
-          for (const part of s.parts) {
+          for (const [pi, whole] of s.parts.entries()) for (const [si2, part] of importSections(whole).entries()) {
             const steps = part.steps.map(step => {
               const paints = step.paints.map(importPaintFor).filter(Boolean).map(p => {
                 // v17.1: a paint new to your palette comes in as Owned (you're bringing your own list).
@@ -12914,7 +13013,7 @@
             let name = part.name;
             if (book.recipes.some(r => sameText(r.name, name))) name = `${part.name} (${schemeName})`;
             const recipe = { id: Math.max(0, ...book.recipes.map(r => r.id)) + 1, name, part: existingPart || part.name,
-                             notes: part.notes.join("\n"), steps };
+                             notes: si2 ? "" : whole.notes.join("\n"), steps };
             book.recipes.push(recipe);
             ids.push(recipe.id);
             recipeCount++;

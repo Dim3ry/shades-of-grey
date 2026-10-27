@@ -1133,6 +1133,12 @@
     .import-paint.is-new { color: var(--good); }
     .import-steps small { color: var(--muted); }
     #import-save:disabled { opacity: 0.5; }
+    /* A2: a section heading or ignored line inside the paste preview */
+    .import-steps li.import-nonstep { list-style: none; margin-left: -22px; }
+    .import-steps li.import-heading { margin-top: 10px; padding-top: 6px; border-top: 1px solid var(--border); }
+    .import-heading .import-role-name { font-weight: 600; color: var(--accent); }
+    .import-ignore .import-role-name { text-decoration: line-through; color: var(--muted); }
+    .import-role { color: var(--muted); margin-right: 6px; }
     .scan-result { margin-top: 12px; padding: 12px; border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-box); }
     .backup-old { color: var(--note); }
     /* v17: paint status, have/missing badges, search and shopping list */
@@ -2659,6 +2665,7 @@
             <li>Up to <strong>20,000 characters</strong> are read at once (a few pages of notes). If yours is longer, the preview says so: paste the rest separately.</li>
             <li>Not sure about a paint (like "CM")? <strong>Check … paints</strong> asks what you meant. The app remembers your answer for next time.</li>
             <li><strong>✕</strong> next to a step, a part's name or a note leaves it out of the paste. Each has Undo. This only changes the preview, not your notes, so <strong>Read again</strong> brings everything back.</li>
+            <li>A short line the app can't match to a paint, with paints under it (like <strong>Heraldry</strong>), is guessed to be a <strong>section heading</strong>. The paints under it become their own recipe named after it. Tap <strong>✎</strong> and set <strong>This line is</strong> to a paint step, a section heading or Ignore.</li>
             <li><strong>✎</strong> on a step lets you change it before saving: its <strong>technique</strong>, its <strong>mix ratio</strong> (<strong>Clear</strong> makes it an even mix), or <strong>Change…</strong> any of its <strong>paints</strong> to a different one. Only that step changes, and each change has Undo.</li>
             <li>If the paste has paints that aren't in Your Palette yet, <strong>Do you own these?</strong> sits above Save: <strong>All</strong> (Owned), <strong>None</strong> (Not owned) or <strong>Let me pick</strong>.</li>
             <li><strong>Copy as text</strong> on a recipe writes it out in the same style, so you can share it or paste it back. Mixes are copied with their ratio (an even mix is written <strong>1:1</strong>), so they come back the same.</li>
