@@ -2448,7 +2448,12 @@
       const title = document.createElement("h2");
       title.textContent = "Shopping list";
       title.style.fontSize = "18px";
-      card.append(title);
+      // v81: from 900 px the shop bar and Copy as text sit in a side column and the brand lists in the main one (shop-split, layout-split).
+      // Written in the phone order, so under 900 px nothing moves. head = heading + More info.
+      const head = document.createElement("div");
+      head.className = "shop-head";
+      head.append(title);
+      card.append(head);
       if (!items.length) {
         const empty = document.createElement("p");
         empty.className = "hint";
@@ -2470,10 +2475,18 @@
         }
         const more = pageMoreInfo("shopping", notes, { label: "Shopping list" });
         more.classList.add("shop-more-info");
-        card.append(more);
+        head.append(more);
       }
       if (items.length) {
-        if (shopLinksOn()) card.appendChild(buildBuyBar(items));   // v19.1: shop links at the top (v39: unless Settings -> Shop links is off)
+        card.classList.add("shop-split", "layout-split");
+        if (shopLinksOn()) {
+          const bar = buildBuyBar(items);   // v19.1: shop links at the top (v39: unless Settings -> Shop links is off)
+          bar.classList.add("shop-side-buy", "layout-side");
+          card.appendChild(bar);
+        }
+        const lists = document.createElement("div");
+        lists.className = "shop-lists layout-main";
+        card.appendChild(lists);
         const groups = new Map();
         for (const i of items) {
           const brand = i.paint.brand || "No brand";
@@ -2482,9 +2495,9 @@
         }
         const names = [...groups.keys()].sort((a, b) => (a === "No brand") - (b === "No brand") || a.localeCompare(b));
         for (const brand of names) {
-          const head = document.createElement("div");
-          head.className = "shop-brand";
-          head.textContent = brand;
+          const brandHead = document.createElement("div");
+          brandHead.className = "shop-brand";
+          brandHead.textContent = brand;
           const list = document.createElement("ul");
           list.className = "shop-list";
           for (const i of groups.get(brand)) {
@@ -2498,10 +2511,10 @@
             }
             list.appendChild(li);
           }
-          card.append(head, list);
+          lists.append(brandHead, list);
         }
         const copy = document.createElement("button");
-        copy.className = "primary-button";
+        copy.className = "primary-button layout-side shop-side-copy";
         copy.style.width = "100%";
         copy.style.marginTop = "12px";
         copy.textContent = "Copy as text";
@@ -11995,20 +12008,30 @@
       const intro = say("A colour wheel (tap a colour to open its groups), Ask the Mentor, colour ideas, starter schemes, detail recipes and basing tips, without needing a recipe. Tap a heading to open it, and type in a search box to find things fast. Use Copy as text to keep anything, or Save into a new recipe\u2026 to start a recipe from colour ideas, schemes, detail recipes and basing tips.", "intro");
 
       appendIdeasFocus(body, door, redraw);   // v69: a paint's ideas, when the Compendium was opened from its Ideas for this button
+      // v81: from 900 px the colour wheel sits on the left and the fold-outs on the right (layout-split). Written in the phone order, so
+      // under 900 px nothing moves.
+      const split = document.createElement("div");
+      split.className = "compendium-split layout-split layout-detail-wide";
+      const left = document.createElement("div");
+      left.className = "layout-main";
+      const right = document.createElement("div");
+      right.className = "layout-side compendium-folds";
+      split.append(left, right);
+      body.appendChild(split);
       // v36: the colour wheel comes first
-      appendColourWheel(body, door, redraw);
+      appendColourWheel(left, door, redraw);
 
       // v37: the five parts each sit under a heading you tap to open and close. They all start closed; which are open is kept in
       // st.open while the app is open, like the other Compendium picks. The wheel above stays open.
       const parts = libraryParts(door, redraw);
-      const fold = (key, label, make) => { if (make) body.appendChild(foldSection(door, key, label, make)); };
+      const fold = (key, label, make) => { if (make) right.appendChild(foldSection(door, key, label, make)); };
       fold("mentor", "Ask the Mentor", () => buildMentor(door, redraw));   // v71
       fold("ideas", "Colour ideas", () => { const out = document.createDocumentFragment(); buildCompendiumIdeas(out, door, redraw); return out; });
       fold("history", "Your schemes", parts.history && (() => dropTitle(parts.history(), "Colours you've used on this faction before.")));
       fold("starter", "Starter schemes", parts.starter && (() => dropTitle(parts.starter())));
       fold("detail", "Detail recipes", parts.detail && (() => dropTitle(parts.detail())));
       fold("basing", "Basing tips", parts.basing && (() => dropTitle(parts.basing())));
-      say("Ideas use paints you own first. Colours on screen are a guide.", "foot");
+      right.appendChild(say("Ideas use paints you own first. Colours on screen are a guide.", "foot"));
       // v49: the introduction sits behind a More info at the top of the page (the footnote stays, it is a short honest note)
       body.insertBefore(buildMoreInfo([intro], { state: infoState(door, "page"), id: compendiumId("page-info-panel"), label: "the Compendium" }), body.firstChild);
 
@@ -15595,7 +15618,7 @@
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v80";
+    const APP_VERSION = "v81";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -16046,6 +16069,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v81", date: "27 Oct 2026", changes: [
+        "On a wide screen, the Shopping list now has the shop links and Copy as text on one side and the paints on the other, and the Compendium has the colour wheel on the left and its sections on the right. Phones are unchanged.",
+      ]},
       { version: "v80", date: "27 Oct 2026", changes: [
         "On a wide screen, Your Palette now opens a paint's details in a pane beside the list. You can keep several open at once and close each one. Phones are unchanged.",
       ]},

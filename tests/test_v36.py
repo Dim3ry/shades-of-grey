@@ -168,7 +168,7 @@ def main():
         print("\n--- 2. The shape of the wheel ---")
         open_comp(page)
         check("the hint line is exactly: Tap a colour to see what's in it", page.inner_text("#cmp-wheel-hint") == "Tap a colour to see what's in it", page.inner_text("#cmp-wheel-hint"))
-        order = page.evaluate("() => [...document.querySelectorAll('#compendium-body > *')].flatMap(e => e.classList.contains('more-info') ? [...e.querySelectorAll('.more-info-panel > *')] : [e]).map(e => e.id)")
+        order = page.evaluate("() => [...document.querySelectorAll('#compendium-body > :not(.compendium-split), #compendium-body .compendium-split > * > *')].flatMap(e => e.classList.contains('more-info') ? [...e.querySelectorAll('.more-info-panel > *')] : [e]).map(e => e.id)")
         check("the wheel comes first in the tab (after the intro line), before the colour chooser", order[0] == "cmp-intro" and order[1] == "cmp-wheel-block" and order.index("cmp-wheel-block") < len(order) - 1, order[:5])
         inside = page.evaluate("() => [...document.getElementById('cmp-wheel-block').children].map(e => e.id || e.tagName.toLowerCase())")
         check("inside the wheel part: the hint, the picture, then the small caption (v53: behind More info)", inside[:3] == ["cmp-wheel-hint", "cmp-wheel", "div"] and page.evaluate("() => !!document.querySelector('#cmp-wheel-block > .more-info .wheel-caption')"), inside)   # v53: the caption sits behind More info
@@ -563,7 +563,8 @@ def main():
             check(f"the {tab} tab opens its own page and hides the others", page.is_visible(f"#{view}") and sum(page.is_visible(f"#{v}") for v in ["view-dashboard", "view-units", "view-recipes", "view-settings", "view-compendium"]) == 1)
         open_comp(page)
         # v37: the five parts now sit under folding headings (each opened by open_comp), so look inside them as well as at the top level
-        ids = page.evaluate("() => [...document.querySelectorAll('#compendium-body > *, #compendium-body > .more-info .more-info-panel > *, #compendium-body .fold-panel > *')].map(e => e.id).filter(Boolean)")
+        # v81: the wheel, the sections and the footnote now sit inside two parts (compendium-split), so the lists also look one level down.
+        ids = page.evaluate("() => [...document.querySelectorAll('#compendium-body > *, #compendium-body .compendium-split > * > *, #compendium-body > .more-info .more-info-panel > *, #compendium-body .fold-panel > *')].map(e => e.id).filter(Boolean)")
         want = ["cmp-intro", "cmp-wheel-block", "cmp-colour-ideas-none", "cmp-faction-history", "cmp-starter-schemes", "cmp-detail-recipes", "cmp-basing-tips", "cmp-foot"]
         check("the rest of the Compendium is all still there, in the same order, after the wheel", [i for i in ids if i in want] == want, ids)
         check("the card in a recipe has no wheel and still starts closed", (lambda: (load(page, paints=WPAINTS, recipes=[rec(1, "R", "Armour", [1])]), t.open_editor(page), page.evaluate("() => [document.getElementById('colour-ideas').open, document.querySelectorAll('#view-recipes .wheel-svg').length]"))[-1])() == [False, 0])
