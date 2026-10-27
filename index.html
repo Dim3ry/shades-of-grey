@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=73"></script>
+  <script src="early.js?v=74"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -587,6 +587,24 @@
       font-size: 22px;
       border-radius: var(--radius-card);
     }
+
+    /* v74: the stage button beside the ▲ on a unit card. The real menu is see-through and fills the button. */
+    .stage-jump {
+      position: relative;
+      width: 48px;
+      height: 52px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-card);
+      background: var(--background);
+      color: var(--accent);
+      font-size: 22px;
+    }
+    .stage-jump-menu { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; }
+    .stage-jump:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
 
     /* The details panel under a unit. */
     .panel {
@@ -2430,7 +2448,7 @@
             <li id="help-new-unit-shown">Each new unit is <strong>scrolled into view</strong> and outlined for a moment, so you can see where it went in the list.</li>
             <li>Press <strong>▲</strong> to move a unit up a stage. Made a mistake? Press <strong>Undo</strong> on the message that pops up.</li>
             <li id="help-track-each"><strong>Track models separately:</strong> for painting a unit one model at a time. Tap a unit with more than one model to open its details, then press <strong>Track models separately</strong> under its stage. Each model gets its own row with its own stage menu and ◀ ▲ buttons, and when they differ, the card shows how many are at each stage. <strong>Track as one batch</strong> goes back: if the models are at different stages, the app asks first, then puts them all at the stage of the furthest-behind model. Both have an <strong>Undo</strong>. It works for units of up to 100 models, and one-model units don't have the button.</li>
-            <li id="help-jump-stage"><strong>Jump to a stage:</strong> tap a unit's name and pick from its <strong>Stage</strong> menu, to go straight to any stage (forwards or back). If you track each model separately, each model has its own stage menu, and <strong>Move all models to stage</strong> moves them all at once. Every jump has an <strong>Undo</strong>.</li>
+            <li id="help-jump-stage"><strong>Jump to a stage:</strong> press the <strong>⇅</strong> button beside the ▲ on a unit and pick a stage, to go straight to any stage (forwards or back). The <strong>▲</strong> moves the whole unit up one stage, and it does the same on every unit, even one tracked model by model (each model moves up one). You can also tap a unit's name and pick from its <strong>Stage</strong> menu. If you track each model separately, each model has its own stage menu, and <strong>Move all models to stage</strong> moves them all at once. Every jump has an <strong>Undo</strong>.</li>
             <li id="help-model-dates"><strong>When did it get there?</strong> If you track each model separately, each model says under its name when it reached its stage: <strong>Today</strong>, <strong>Yesterday</strong>, or <strong>Since 7 Oct</strong> (with the year added for an earlier year). Hold or long-press the date to see it in full. A model with no date shown has no record of when it moved.</li>
             <li id="help-unfinished-work"><strong>Unfinished work is kept:</strong> if the page reloads or the app closes while you are part-way through adding a unit (the name box has something in it), writing a recipe, or pasting notes into Paste recipes, the app keeps what you had. Next time you open the Units or Recipes tab, a card says <strong>We kept your unfinished…</strong>. <strong>Keep going</strong> puts it all back. <strong>Discard</strong> asks first, then throws it away for good (there is no Undo). Nothing opens by itself, and a kept draft is never replaced by accident: if you try to start a new one first, the app asks. It goes when you press Add or Save, or Cancel and say yes. It stays on this device and is not in your backups.</li>
             <li id="help-typing"><strong>Typing:</strong> while the cursor is in a text box, the tab bar at the bottom hides so it can't sit on your keyboard. Tap somewhere else and it comes back.</li>
@@ -2890,7 +2908,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=73" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=74" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -2901,11 +2919,11 @@
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks.
        v70: mentor-tips.js (the Mentor tips, plain data) loads between basing-tips.js and app.js. It only adds three
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=73"></script>
-  <script src="schemes.js?v=73"></script>
-  <script src="detail-recipes.js?v=73"></script>
-  <script src="basing-tips.js?v=73"></script>
-  <script src="mentor-tips.js?v=73"></script>
-  <script src="app.js?v=73"></script>
+  <script src="colour.js?v=74"></script>
+  <script src="schemes.js?v=74"></script>
+  <script src="detail-recipes.js?v=74"></script>
+  <script src="basing-tips.js?v=74"></script>
+  <script src="mentor-tips.js?v=74"></script>
+  <script src="app.js?v=74"></script>
 </body>
 </html>

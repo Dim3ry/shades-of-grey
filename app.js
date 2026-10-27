@@ -4718,23 +4718,24 @@
         if (event.key === "Enter" || event.key === " ") { event.preventDefault(); toggle(); }
       });
 
-      // The big ▲ button: the ONLY way to move up a stage from the list.
+      // The big ▲ button moves the whole unit up one stage (v74: the same on every unit, batch or
+      // model by model). The stage button beside it jumps straight to any stage (see stageJump).
       const up = document.createElement("button");
       up.className = "up-button";
-      const atTop = model.stage >= STAGES.length - 1;
+      const atTop = model.each ? model.stages.every(s => s >= STAGES.length - 1) : model.stage >= STAGES.length - 1;
       up.textContent = atTop ? "✓" : "▲";
       up.disabled = atTop;
       up.setAttribute("aria-label", atTop
         ? `${displayName(model)} is ${STAGES[model.stage]}`
         : model.each
-          ? `Move one model of ${displayName(model)} up to ${STAGES[model.stage + 1]}`
+          ? `Move all models of ${displayName(model)} up one stage`
           : `Move ${displayName(model)} up to ${STAGES[model.stage + 1]}`);
       up.addEventListener("click", () => changeStage(model.id, +1));
 
       // v21.1: while selecting, the ▲ and the recipe buttons step aside so a tap can't
       // change a stage or open something by accident.
       if (selectMode) { item.append(info); return item; }
-      item.append(info, up);
+      item.append(info, stageJump(model), up);
 
       // Its recipes, as buttons that open them.
       const linked = recipesOf(model);
@@ -4747,6 +4748,24 @@
 
       if (isOpen) item.appendChild(buildPanel(model));
       return item;
+    }
+
+    // v74: the stage button on a unit card. A native menu sits invisibly over the button, so a tap opens the
+    // phone's own stage list; picking a stage moves the whole unit there (every model, if tracked one by one)
+    // with the same Undo as the Stage menu in the details.
+    function stageJump(model) {
+      const wrap = document.createElement("span");
+      wrap.className = "stage-jump";
+      const glyph = document.createElement("span");
+      glyph.className = "stage-jump-glyph";
+      glyph.setAttribute("aria-hidden", "true");
+      glyph.textContent = "⇅";
+      const menu = stagePicker(null, `Jump ${displayName(model)} to a stage`,
+        (to) => jumpToStage(model.id, to), "Jump to stage");
+      menu.classList.remove("stage-pick");
+      menu.classList.add("stage-jump-menu");
+      wrap.append(glyph, menu);
+      return wrap;
     }
 
     // ----- The details panel -----
@@ -5151,8 +5170,24 @@
       const model = models.find(m => m.id === id);
       if (!model) return;
       if (model.each && index === undefined) {
+        // v74: the card's ▲ moves the WHOLE unit up one stage, whether it is a batch or tracked model by model:
+        // every model moves up one (a model already at the top stays), each noted in the diary.
         if (direction < 0) return;
-        index = model.stages.indexOf(model.stage);
+        const top = STAGES.length - 1;
+        if (model.stages.every(s => s >= top)) return;
+        const kept = JSON.stringify({ stage: model.stage, stages: model.stages, log: model.log });
+        model.stages.forEach((s, i) => { if (s < top) setStage(model, s + 1, i); });
+        render();
+        showToast(`All of ${displayName(model)} up one stage`, () => {
+          const unit = models.find(m => m.id === id);
+          if (!unit) return;
+          const was = JSON.parse(kept);
+          unit.stage = was.stage;
+          unit.stages = was.stages;
+          unit.log = was.log;
+          render();
+        });
+        return;
       }
       const before = model.each ? model.stages[index] : model.stage;
       const after = before + direction;
@@ -15454,12 +15489,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=73".
+    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=74".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v73";
+    const APP_VERSION = "v74";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -15910,6 +15945,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v74", date: "27 Oct 2026", changes: [
+        "Each unit card has a new stage button (⇅) beside the ▲. Press it and pick a stage to go straight there, for example Parade ready, instead of tapping ▲ again and again.",
+        "The ▲ now does the same on every unit: it moves the whole unit up one stage. On a unit tracked model by model, every model moves up one. Both have an Undo.",
+      ]},
       { version: "v73", date: "27 Oct 2026", changes: [
         "Each paint pick in Ask the Mentor now has Add to shopping list in plain view, next to Use in a recipe, Add to a recipe and Similar paints. Each one says what it did and has an Undo.",
         "Add to shopping list stays there even if you switch Shop links off in Settings. Paints you own and made-up example paints don't get it.",
