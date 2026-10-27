@@ -119,7 +119,8 @@ def main():
         page.click("#recipe-page >> text=All recipes")
         page.click('#recipe-seg [data-view="palette"]')
         page.click("#paint-list .paint-head:has-text('Macragge Blue')")
-        page.locator("#paint-list").get_by_text("Blue armour").first.click()
+        # v80: from 900 px an open paint's details (with its recipe links) are in the Palette side pane, not under the paint in the list.
+        page.locator("#palette-side").get_by_text("Blue armour").first.click()
         s = state(page)
         check("recipe opened from Your Palette fills the screen", s["pageShown"] and not s["homeShown"] and "Your Palette" in page.inner_text("#recipe-page"), s)
         check("no sideways scroll there", no_sideways(page))

@@ -4621,29 +4621,46 @@
     // v79: from 900 px every open unit (in list order) gets a card in the side pane, with a Close button. Select mode shows none.
     function renderUnitSide(visible) {
       const open = unitWide.matches && !selectMode ? visible.filter(m => openIds.has(m.id)) : [];
-      const scrolled = unitSide.scrollTop;
-      unitSide.replaceChildren();
-      unitSplit.classList.toggle("layout-split", open.length > 0);
-      unitSide.classList.toggle("hidden", open.length === 0);
-      for (const model of open) {
+      fillSidePane(unitSplit, unitSide, open.map(model => ({
+        id: model.id,
+        title: displayName(model),
+        closeLabel: `Close ${displayName(model)}`,
+        onClose: () => { openIds.delete(model.id); editOpenIds.delete(model.id); render(); },
+        body: () => buildPanel(model),
+      })));
+    }
+
+    // v80: the side pane Units and Your Palette share. split = the layout-split wrapper, side = its pane. Each entry is
+    // { id, title (text, or an element such as a paint's heading), closeLabel, onClose, body: () => element }. No entries hides the pane
+    // and gives the list the full width back. A redraw after an edit keeps your place in the pane.
+    function fillSidePane(split, side, entries) {
+      const scrolled = side.scrollTop;
+      side.replaceChildren();
+      split.classList.toggle("layout-split", entries.length > 0);
+      side.classList.toggle("hidden", entries.length === 0);
+      for (const entry of entries) {
         const card = document.createElement("section");
         card.className = "card unit-side-card";
-        card.dataset.id = model.id;
+        card.dataset.id = entry.id;
         const head = document.createElement("div");
         head.className = "card-head";
-        const title = document.createElement("h2");
-        title.textContent = displayName(model);
+        let title = entry.title;
+        if (typeof title === "string") {
+          const h = document.createElement("h2");
+          h.textContent = title;
+          title = h;
+        }
         const close = document.createElement("button");
         close.type = "button";
         close.className = "plain-button";
         close.textContent = "Close";
-        close.setAttribute("aria-label", `Close ${displayName(model)}`);
-        close.addEventListener("click", () => { openIds.delete(model.id); editOpenIds.delete(model.id); render(); });
+        close.setAttribute("aria-label", entry.closeLabel);
+        close.addEventListener("click", entry.onClose);
         head.append(title, close);
-        card.append(head, buildPanel(model));
-        unitSide.appendChild(card);
+        card.append(head, entry.body());
+        side.appendChild(card);
       }
-      unitSide.scrollTop = scrolled;   // a redraw after an edit keeps your place in the pane
+      side.scrollTop = scrolled;
     }
 
     function buildCard(model) {
@@ -6714,6 +6731,7 @@
     const recipeSplit = document.getElementById("recipe-split");   // v78
     const recipeWide = window.matchMedia("(min-width: " + WIDE_MIN_PX + "px)");   // v78
     const unitWide = window.matchMedia("(min-width: " + WIDE_MIN_PX + "px)");   // v79
+    const paintWide = window.matchMedia("(min-width: " + WIDE_MIN_PX + "px)");   // v80
     // v79: crossing 900 px moves the open units' details between the cards and the side pane.
     unitWide.addEventListener("change", () => { if (openIds.size) renderUnits(); });
     const partFilter = document.getElementById("part-filter");
@@ -6767,6 +6785,11 @@
     // v78: crossing 900 px with a recipe open moves it beside the list or back to full screen.
     recipeWide.addEventListener("change", () => {
       if (settings.tab === "recipes" && (openRecipeId !== null || recipeDraft)) renderRecipes();
+    });
+
+    // v80: crossing 900 px with Your Palette showing moves the open paints between the list and the side pane.
+    paintWide.addEventListener("change", () => {
+      if (settings.tab === "recipes" && settings.recipeView === "palette" && openRecipeId === null && !recipeDraft) renderRecipes();
     });
 
     const recipeSeg = document.getElementById("recipe-seg");
@@ -7510,6 +7533,8 @@
     const paletteSummary = document.getElementById("palette-summary");
     let paletteBrand = null;           // null = all brands, "" = paints with no brand
     const openPaintIds = new Set();    // paints with their details open
+    const paletteSplit = document.getElementById("palette-split");   // v80
+    const paletteSide = document.getElementById("palette-side");
     if (!["colour", "name", "brand"].includes(settings.paintSort)) settings.paintSort = "colour";
 
     // Turns "#1e3a8a" into hue (0-360, round the colour wheel), saturation and lightness (0-1).
@@ -7632,8 +7657,9 @@
           (unset ? ` · ${unset} still need${unset === 1 ? "s" : ""} a colour (tap to set it)` : "")
         : "";
 
-      paintListEl.innerHTML = "";
       const swatches = paletteLayout === "swatches" && !importReviewIds;   // a paste import's check list stays a list
+      renderPaintSide(shown, swatches);   // v80
+      paintListEl.innerHTML = "";
       paintListEl.classList.toggle("swatch-grid", swatches);
       if (!paints.length) {
         paintListEl.innerHTML = '<li class="empty">No paints yet.</li>';
@@ -7660,6 +7686,7 @@
         const tileName = hiddenName([paint.name, paint.brand, key ? statusLabel(key) : ""].filter(Boolean).join(", "));
         tile.setAttribute("aria-labelledby", tileName.id);
         tile.setAttribute("aria-expanded", String(swatchPickId === paint.id));
+        if (swatchPickId === paint.id && paintWide.matches) tile.setAttribute("aria-current", "true");   // v80
         const sw = makeSwatch(paint.colour);
         sw.classList.add("big");
         tile.appendChild(sw);
@@ -7670,7 +7697,7 @@
         paintListEl.appendChild(li);
         if (swatchPickId === paint.id) pickTile = li;
       }
-      if (pickTile) {
+      if (pickTile && !paintWide.matches) {   // v80: from 900 px the picked tile's details show in the side pane instead
         const paint = shown.find(p => p.id === swatchPickId);
         const detail = buildPaintItem(paint, true);
         detail.classList.add("swatch-detail");
@@ -7682,15 +7709,33 @@
       }
     }
 
-    function buildPaintItem(paint, fromSwatch) {
+    // v80: from 900 px the open paints (or the picked swatch) get a card each in the side pane, in list order, with a Close button.
+    function renderPaintSide(shown, swatches) {
+      const open = !paintWide.matches ? []
+        : swatches ? shown.filter(p => p.id === swatchPickId)
+        : shown.filter(p => openPaintIds.has(p.id));
+      fillSidePane(paletteSplit, paletteSide, open.map(paint => {
+        const item = buildPaintItem(paint, false, true);
+        return {
+          id: paint.id,
+          title: item.querySelector(".paint-head"),
+          closeLabel: `Close ${paint.name}`,
+          onClose: () => { if (swatches) swatchPickId = null; else openPaintIds.delete(paint.id); renderPalette(); },
+          body: () => item.querySelector(".panel"),
+        };
+      }));
+    }
+
+    // inSide: build it for the side pane. The heading is then plain (not a button) and the details always show.
+    function buildPaintItem(paint, fromSwatch, inSide) {
       const item = document.createElement("li");
       item.className = "paint-item";
-      const isOpen = fromSwatch || openPaintIds.has(paint.id);
+      const isOpen = fromSwatch || inSide || openPaintIds.has(paint.id);
       const usedIn = recipesUsingPaint(paint.id);
 
-      const head = document.createElement("button");
+      const head = document.createElement(inSide ? "div" : "button");
       head.className = "paint-head";
-      head.setAttribute("aria-expanded", isOpen);
+      if (!inSide) head.setAttribute("aria-expanded", isOpen);
       const swatch = makeSwatch(paint.colour);
       swatch.classList.add("big");
       const text = document.createElement("span");
@@ -7709,12 +7754,14 @@
       if (pill) text.appendChild(pill);
       head.append(swatch, text);
       head.addEventListener("click", () => {
+        if (inSide) return;
         if (fromSwatch) { swatchPickId = null; renderPalette(); return; }   // v49: a paint opened from the Swatches view closes
         if (openPaintIds.has(paint.id)) openPaintIds.delete(paint.id); else openPaintIds.add(paint.id);
         renderPalette();
       });
       item.appendChild(head);
       if (!isOpen) return item;
+      if (paintWide.matches && !fromSwatch && !inSide) { item.setAttribute("aria-current", "true"); return item; }   // v80: its details are in the side pane
 
       // Details: change the colour, name or brand (everywhere), and the recipes it's in.
       const panel = document.createElement("div");
@@ -15543,12 +15590,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=79".
+    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=80".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v79";
+    const APP_VERSION = "v80";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -15999,6 +16046,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v80", date: "27 Oct 2026", changes: [
+        "On a wide screen, Your Palette now opens a paint's details in a pane beside the list. You can keep several open at once and close each one. Phones are unchanged.",
+      ]},
       { version: "v79", date: "27 Oct 2026", changes: [
         "On a wide screen, a unit's details now open in a pane beside the list. You can keep several open at once and close each one. Phones are unchanged.",
       ]},
