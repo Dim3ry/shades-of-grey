@@ -7021,6 +7021,7 @@
     // ----- Reading one recipe -----
     function renderRecipeView(recipe) {
       recipePage.innerHTML = "";
+      recipePage.classList.remove("editing");   // R3b-2: only the editor keeps the narrow form width
       const back = document.createElement("button");
       back.className = "link-button";
       back.textContent = settings.recipeView === "palette" ? "← Your Palette"
@@ -8094,6 +8095,7 @@
     function renderRecipeEditor() {
       const d = recipeDraft;
       recipePage.innerHTML = "";
+      recipePage.classList.add("editing");
 
       // Suggestions for the brand and paint boxes.
       const brands = document.createElement("datalist");
