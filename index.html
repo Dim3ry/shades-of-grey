@@ -1489,6 +1489,9 @@
       #shop-panel .shop-split > .shop-side-copy { grid-area: copy; margin-top: 0 !important; }
       #shop-panel .shop-lists > .shop-brand:first-child { margin-top: 0; }
       .compendium-split .wheel-block { border-bottom: 0; padding-bottom: 0; }
+      /* R3b-3: the wheel stays in view beside the long fold-outs (same idea as the side panes above); the Add to shopping list button reaches 44 px. */
+      .compendium-split > .layout-main { align-self: start; position: sticky; top: 84px; max-height: calc(100vh - 100px); overflow-y: auto; }
+      #compendium-body .shop-idle-button { min-height: 44px; }
     }
 
     /* ----- Wide screens (laptops and desktops) -----
