@@ -298,14 +298,15 @@ def main():
                     return { text: b.textContent, colour: cs.color, border: cs.borderTopColor, bg: cs.backgroundColor, opacity: cs.opacity,
                              disabled: b.disabled, stage: st.color }; }""", [name])
             z, mid, fin = rows["Zero stage"], rows["Middle stage"], rows["Finished stage"]
-            check(f"{appearance}: a new unit's ▲ and a middle unit's ▲ are the same accent colour (arrow and border)",
-                  rgb(z["colour"]) == accent == rgb(mid["colour"]) and rgb(z["border"]) == accent == rgb(mid["border"]), (z, mid, accent))
+            # A3: the up button is now filled with the stage's own colour (it used to be the accent colour, outlined).
+            check(f"{appearance}: a new unit's up button and a middle unit's up button are filled with their own stage colour",
+                  rgb(z["bg"]) == rgb(z["stage"]) and rgb(mid["bg"]) == rgb(mid["stage"]) and rgb(z["bg"]) != rgb(mid["bg"]), (z, mid))
             check(f"{appearance}: the new unit's ▲ is enabled, full strength and readable (contrast at least 4.5)",
-                  z["text"] == "▲" and not z["disabled"] and float(z["opacity"]) == 1 and contrast(rgb(z["colour"]), rgb(z["bg"])) >= 4.5,
+                  not z["disabled"] and float(z["opacity"]) == 1 and contrast(rgb(z["colour"]), rgb(z["bg"])) >= 4.5,
                   (z, contrast(rgb(z["colour"]), rgb(z["bg"]))))
-            check(f"{appearance}: a finished unit still shows a faded tick that is switched off (v54: disabled buttons are at 0.55, were 0.35)",
-                  fin["text"] == "✓" and fin["disabled"] and float(fin["opacity"]) < 0.6, fin)
-            check(f"{appearance}: the stage name keeps the stage's own colour (the slate grey of the first stage is not the arrow's colour)",
+            check(f"{appearance}: a finished unit's up button is faded and switched off (v54: disabled buttons are at 0.55, were 0.35)",
+                  fin["disabled"] and float(fin["opacity"]) < 0.6, fin)
+            check(f"{appearance}: the stage name keeps the stage's own colour (different for each stage, not the accent)",
                   rgb(z["stage"]) != accent and rgb(z["stage"]) != rgb(mid["stage"]), (z["stage"], mid["stage"]))
             check(f"{appearance}: pressing the new unit's ▲ still moves it up a stage",
                   page.evaluate("() => { const li = [...document.querySelectorAll('li.unit')].find(x => x.textContent.includes('Zero stage')); li.querySelector('.up-button').click(); return models.find(m => m.name === 'Zero stage').stage; }") == 1)

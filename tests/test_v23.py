@@ -107,7 +107,8 @@ def card(uid):
 
 def open_unit(page, uid):
     info = f'{card(uid)} .info'
-    if page.get_attribute(info, "aria-expanded") != "true":
+    # A3: open or shut now shows on the Details button (the name area is no longer a button with aria-expanded).
+    if page.get_attribute(info.replace(" .info", " .details-toggle"), "aria-expanded") != "true":
         page.click(info)
         page.wait_for_timeout(250)
 
@@ -266,10 +267,11 @@ def main():
         page.wait_for_timeout(250)
         check("jump to stage still works from the new top spot", saved_unit(page, 1)["stage"] == 5, saved_unit(page, 1)["stage"])
         open_unit(page, 1)
-        page.click(f'{card(1)} .panel-buttons button:has-text("Back a stage")')
+        # A3: the old "Back a stage" button at the bottom of the details is gone; the stepper's back arrow does this.
+        page.click(f'{card(1)} .step-back')
         page.wait_for_timeout(250)
         open_unit(page, 1)
-        check("◀ Back a stage still works", saved_unit(page, 1)["stage"] == 4, saved_unit(page, 1)["stage"])
+        check("the stepper's back arrow still moves a unit back a stage", saved_unit(page, 1)["stage"] == 4, saved_unit(page, 1)["stage"])
         note = page.locator(f"{card(1)} .panel textarea")
         check("the paint notes show what was saved", note.input_value() == "blue armour")
         note.fill("blue armour, gold trim")

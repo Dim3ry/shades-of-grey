@@ -11,7 +11,7 @@ Checks:
 3. The up arrow on a model-by-model unit moves every model up one (a model already at the top stays); Undo restores it exactly.
 4. When every model is at the top stage the arrow is switched off.
 5. Picking a stage on a model-by-model unit moves all its models.
-6. 390 px and 360 px, dark and light: no sideways scroll, both buttons 44 px or more.
+6. 390 px and 360 px, dark and light: no sideways scroll, back and up buttons 44 px or more.
 7. No page errors, no browser pop-ups.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, sys
@@ -60,7 +60,9 @@ def main():
         start()
         last = page.evaluate("STAGES.length - 1")
         before = unit(page, 1)
-        card(page, 1).locator(".stage-jump-menu").select_option(str(last))
+        # A3: the stage button (the arrows icon) is gone; Jump to stage is the menu in the unit's Details.
+        card(page, 1).locator(".details-toggle").click()
+        card(page, 1).locator("select.jump-stage").select_option(str(last))
         page.wait_for_timeout(250)
         check("one pick takes a one-model unit to the last stage", unit(page, 1)["stage"] == last, unit(page, 1))
         check("the line says where it went", "Parade ready" in page.evaluate("() => document.getElementById('toast-text').textContent"))
@@ -87,7 +89,8 @@ def main():
 
         print("\n--- 5. Jump on a model-by-model unit ---")
         start()
-        card(page, 3).locator(".stage-jump-menu").select_option("3")
+        card(page, 3).locator(".details-toggle").click()
+        card(page, 3).locator("select.jump-stage").select_option("3")
         page.wait_for_timeout(250)
         check("all its models go to that stage", unit(page, 3)["stages"] == [3, 3, 3], unit(page, 3))
 
@@ -96,9 +99,9 @@ def main():
             for w in [390, 360]:
                 page.set_viewport_size({"width": w, "height": 780})
                 start(settings={"appearance": scheme})
-                sizes = page.evaluate("""() => [...document.querySelectorAll('li.unit .stage-jump, li.unit .up-button')]
+                sizes = page.evaluate("""() => [...document.querySelectorAll('li.unit .step-back, li.unit .up-button')]
                     .map(e => { const r = e.getBoundingClientRect(); return [r.width, r.height]; })""")
-                check(f"{w} px {scheme}: no sideways scroll, both buttons 44 px or more",
+                check(f"{w} px {scheme}: no sideways scroll, back and up buttons 44 px or more",
                       no_sideways(page) and sizes and all(a >= 44 and b >= 44 for a, b in sizes), sizes)
 
         check("no page errors", not errors, errors)

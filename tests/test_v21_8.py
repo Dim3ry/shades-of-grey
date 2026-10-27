@@ -109,7 +109,8 @@ def toast(page):
 def open_unit(page, uid):
     """Make sure unit `uid`'s details are open (a tap on a name toggles, so only tap if it's shut)."""
     info = f'#view-units li.unit[data-id="{uid}"] .info'
-    if page.get_attribute(info, "aria-expanded") != "true":
+    # A3: open or shut now shows on the Details button (the name area is no longer a button with aria-expanded).
+    if page.get_attribute(info.replace(" .info", " .details-toggle"), "aria-expanded") != "true":
         page.click(info)
         page.wait_for_timeout(250)
 

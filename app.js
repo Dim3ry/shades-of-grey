@@ -4606,6 +4606,7 @@
     // v23: units whose folded "Edit details" section is open. Not saved: only for this visit.
     // Every change redraws the panel, so without this the section would shut after each edit.
     const editOpenIds = new Set();
+    const paintsOpenIds = new Set();   // A3: units whose full Paints grid is showing in Details
 
     function fillSelect(select, label, values, current) {
       select.innerHTML = "";
@@ -4897,6 +4898,9 @@
         item.classList.toggle("ticked", tick.checked);
       }
 
+      // A3: the header row (photo, name, Details button); the stage stepper sits under it.
+      const head = document.createElement("div");
+      head.className = "unit-head";
       if (hasPhoto(model)) {
         // The small picture: an old-style photo, or the thumbnail from the photo store
         // (a blank box for a moment while it loads).
@@ -4905,20 +4909,17 @@
         const src = model.photo || thumbUrls.get(mainPhoto(model).id);
         if (src) thumb.src = src;
         thumb.alt = "";
-        item.appendChild(thumb);
+        head.appendChild(thumb);
       }
 
       // The text area. Tapping it now OPENS THE DETAILS (it no longer changes the stage).
       const info = document.createElement("div");
       info.className = "info";
-      info.setAttribute("role", "button");
-      info.tabIndex = 0;
       if (selectMode) {
+        info.setAttribute("role", "button");
+        info.tabIndex = 0;
         info.setAttribute("aria-pressed", ticked.has(model.id));
         info.setAttribute("aria-label", `${displayName(model)}, ${STAGES[model.stage]}. ${ticked.has(model.id) ? "Ticked" : "Tap to tick"}.`);
-      } else {
-        info.setAttribute("aria-expanded", isOpen);
-        info.setAttribute("aria-label", `${displayName(model)}, ${STAGES[model.stage]}. Show details.`);
       }
 
       const name = document.createElement("div");
@@ -4945,57 +4946,37 @@
         details.append(model.faction);
       }
 
-      const stage = document.createElement("div");
-      stage.className = "stage";
-      // Batch: just the stage. Each model: how many are at each stage, furthest first.
-      let stageText = STAGES[model.stage];
-      if (model.each && new Set(model.stages).size > 1) {
-        const counts = stageCounts([model]);
-        stageText = counts.map((c, i) => [c, i]).filter(([c]) => c > 0).reverse()
-          .map(([c, i]) => `${c} ${STAGES[i]}`).join(" · ");
-      }
-      stage.textContent = stageText + (model.repaint ? "  ·  ↻ repaint" : "");
-
-      // Pips: solid up to the furthest-behind model, faint up to the furthest-ahead one.
-      const furthest = Math.max(...stagesOf(model));
-      const pips = document.createElement("div");
-      pips.className = "pips";
-      for (let i = 0; i < STAGES.length; i++) {
-        const pip = document.createElement("div");
-        pip.className = i <= model.stage ? "pip filled" : i <= furthest ? "pip part" : "pip";
-        pips.appendChild(pip);
-      }
-
-      info.append(name, details, stage, pips);
+      // A3: the stage and its 7 bars live in the stepper under the header (see buildStepper); in select mode,
+      // where there is no stepper, the card shows them here as before.
+      const part = stageParts(model);
+      if (selectMode) info.append(name, details, part.stage, part.pips);
+      else info.append(name, details);
       const toggle = () => {
         if (selectMode) { toggleTick(model.id); return; }   // v21.1: in select mode a tap ticks
         // v23: closing a unit also puts its "Edit details" section away again.
-        if (openIds.has(model.id)) { openIds.delete(model.id); editOpenIds.delete(model.id); } else openIds.add(model.id);
+        if (openIds.has(model.id)) { openIds.delete(model.id); editOpenIds.delete(model.id); paintsOpenIds.delete(model.id); } else openIds.add(model.id);
         render();
       };
       info.addEventListener("click", toggle);
       info.addEventListener("keydown", (event) => {
         if (event.key === "Enter" || event.key === " ") { event.preventDefault(); toggle(); }
       });
+      head.appendChild(info);
 
-      // The big ▲ button moves the whole unit up one stage (v74: the same on every unit, batch or
-      // model by model). The stage button beside it jumps straight to any stage (see stageJump).
-      const up = document.createElement("button");
-      up.className = "up-button";
-      const atTop = model.each ? model.stages.every(s => s >= STAGES.length - 1) : model.stage >= STAGES.length - 1;
-      up.textContent = atTop ? "✓" : "▲";
-      up.disabled = atTop;
-      up.setAttribute("aria-label", atTop
-        ? `${displayName(model)} is ${STAGES[model.stage]}`
-        : model.each
-          ? `Move all models of ${displayName(model)} up one stage`
-          : `Move ${displayName(model)} up to ${STAGES[model.stage + 1]}`);
-      up.addEventListener("click", () => changeStage(model.id, +1));
-
-      // v21.1: while selecting, the ▲ and the recipe buttons step aside so a tap can't
+      // v21.1: while selecting, the stepper and the recipe buttons step aside so a tap can't
       // change a stage or open something by accident.
-      if (selectMode) { item.append(info); return item; }
-      item.append(info, stageJump(model), up);
+      if (selectMode) { item.append(head); return item; }
+
+      // A3: "Details" (or "Hide") with a chevron: the one clear way to open and shut the details.
+      const more = document.createElement("button");
+      more.type = "button";
+      more.className = "plain-button details-toggle";
+      more.setAttribute("aria-expanded", isOpen);
+      more.setAttribute("aria-label", `${isOpen ? "Hide details" : "Details"}: ${displayName(model)}`);
+      more.append(isOpen ? "Hide" : "Details", chevron(isOpen ? "up" : "down"));
+      more.addEventListener("click", toggle);
+      head.appendChild(more);
+      item.append(head, buildStepper(model, part));
 
       // Its recipes, as buttons that open them.
       const linked = recipesOf(model);
@@ -5012,22 +4993,137 @@
       return item;
     }
 
-    // v74: the stage button on a unit card. A native menu sits invisibly over the button, so a tap opens the
-    // phone's own stage list; picking a stage moves the whole unit there (every model, if tracked one by one)
-    // with the same Undo as the Stage menu in the details.
-    function stageJump(model) {
-      const wrap = document.createElement("span");
-      wrap.className = "stage-jump";
-      const glyph = document.createElement("span");
-      glyph.className = "stage-jump-glyph";
-      glyph.setAttribute("aria-hidden", "true");
-      glyph.textContent = "⇅";
-      const menu = stagePicker(null, `Jump ${displayName(model)} to a stage`,
-        (to) => jumpToStage(model.id, to), "Jump to stage");
-      menu.classList.remove("stage-pick");
-      menu.classList.add("stage-jump-menu");
-      wrap.append(glyph, menu);
-      return wrap;
+    // A3: a small chevron drawn in the text colour (so it follows every theme). dir: "left", "right", "down", "up".
+    function chevron(dir) {
+      const NS = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(NS, "svg");
+      svg.setAttribute("viewBox", "0 0 24 24");
+      svg.setAttribute("width", "20");
+      svg.setAttribute("height", "20");
+      svg.setAttribute("aria-hidden", "true");
+      svg.setAttribute("class", "chev");
+      const path = document.createElementNS(NS, "path");
+      path.setAttribute("d", { left: "M15 5l-7 7 7 7", right: "M9 5l7 7-7 7", down: "M5 9l7 7 7-7", up: "M5 15l7-7 7 7" }[dir]);
+      path.setAttribute("fill", "none");
+      path.setAttribute("stroke", "currentColor");
+      path.setAttribute("stroke-width", "2.5");
+      path.setAttribute("stroke-linecap", "round");
+      path.setAttribute("stroke-linejoin", "round");
+      svg.appendChild(path);
+      return svg;
+    }
+
+    // The stage name and the 7 bars for a unit. A unit tracked model by model shows how many are at each stage,
+    // furthest first; the bars are solid up to the furthest-behind model and faint up to the furthest-ahead one.
+    function stageParts(model) {
+      const stage = document.createElement("div");
+      stage.className = "stage";
+      let stageText = STAGES[model.stage];
+      if (model.each && new Set(model.stages).size > 1) {
+        const counts = stageCounts([model]);
+        stageText = counts.map((c, i) => [c, i]).filter(([c]) => c > 0).reverse()
+          .map(([c, i]) => `${c} ${STAGES[i]}`).join(" · ");
+      }
+      stage.textContent = stageText + (model.repaint ? "  ·  ↻ repaint" : "");
+      const furthest = Math.max(...stagesOf(model));
+      const pips = document.createElement("div");
+      pips.className = "pips";
+      for (let i = 0; i < STAGES.length; i++) {
+        const pip = document.createElement("div");
+        pip.className = i <= model.stage ? "pip filled" : i <= furthest ? "pip part" : "pip";
+        pips.appendChild(pip);
+      }
+      return { stage, pips };
+    }
+
+    // A3: the stage stepper under a unit's header. Back (outlined) on the left, the stage with its 7 bars in the
+    // middle, Up (filled with the stage colour) on the right. Both move the whole unit one stage with an Undo;
+    // a unit tracked model by model moves every model. Jump to any stage is in the Details.
+    function buildStepper(model, part) {
+      const top = STAGES.length - 1;
+      const stages = model.each ? model.stages : [model.stage];
+      const atStart = stages.every(s => s <= 0);
+      const atTop = stages.every(s => s >= top);
+      const name = displayName(model);
+      const same = new Set(stages).size === 1;
+      const row = document.createElement("div");
+      row.className = "stepper";
+
+      const back = document.createElement("button");
+      back.type = "button";
+      back.className = "step-back";
+      back.disabled = atStart;
+      back.setAttribute("aria-label", atStart ? `${name} is at the first stage`
+        : same ? `Back to ${STAGES[stages[0] - 1]}` : `Back one stage: all models of ${name}`);
+      back.appendChild(chevron("left"));
+      back.addEventListener("click", () => changeStage(model.id, -1));
+
+      const mid = document.createElement("div");
+      mid.className = "step-mid";
+      mid.append(part.stage, part.pips);
+
+      const up = document.createElement("button");
+      up.type = "button";
+      up.className = "up-button";
+      up.disabled = atTop;
+      up.setAttribute("aria-label", atTop ? `${name} is ${STAGES[top]}`
+        : same ? `Up to ${STAGES[stages[0] + 1]}` : `Up one stage: all models of ${name}`);
+      up.appendChild(chevron("right"));
+      up.addEventListener("click", () => changeStage(model.id, +1));
+
+      row.append(back, mid, up);
+      return row;
+    }
+
+    // A3: every paint a unit's linked recipes use, each once, in recipe order.
+    function unitPaints(model) {
+      const paints = [];
+      for (const recipe of recipesOf(model)) for (const step of recipe.steps) for (const sp of step.paints) {
+        const paint = paintById(sp.paint);
+        if (paint && !paints.includes(paint)) paints.push(paint);
+      }
+      return paints;
+    }
+
+    // A3: the Paints row in Details: up to 6 swatches, "Paints · N" and a chevron; it opens the full swatch grid
+    // underneath. No row for a unit that has no paints yet.
+    function buildPaintsRow(model) {
+      const paints = unitPaints(model);
+      if (!paints.length) return null;
+      const open = paintsOpenIds.has(model.id);
+      const box = document.createElement("div");
+      box.className = "unit-paints";
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = "paints-row";
+      row.setAttribute("aria-expanded", open);
+      const preview = document.createElement("span");
+      preview.className = "paints-preview";
+      for (const paint of paints.slice(0, 6)) preview.appendChild(makeSwatch(paint.colour));
+      const label = document.createElement("span");
+      label.className = "paints-label";
+      label.textContent = `Paints · ${paints.length}`;
+      row.append(preview, label, chevron(open ? "up" : "down"));
+      row.addEventListener("click", () => {
+        if (paintsOpenIds.has(model.id)) paintsOpenIds.delete(model.id); else paintsOpenIds.add(model.id);
+        render();
+      });
+      box.appendChild(row);
+      if (open) {
+        const grid = document.createElement("ul");
+        grid.className = "paints-grid";
+        grid.setAttribute("aria-label", `Paints of ${displayName(model)}`);
+        for (const paint of paints) {
+          const li = document.createElement("li");
+          li.title = [paint.brand, paint.name].filter(Boolean).join(" ");
+          li.setAttribute("aria-label", li.title);
+          li.setAttribute("role", "img");
+          li.appendChild(makeSwatch(paint.colour));
+          grid.appendChild(li);
+        }
+        box.appendChild(grid);
+      }
+      return box;
     }
 
     // ----- The details panel -----
@@ -5058,7 +5154,7 @@
       // says "Mixed stages".
       const spread = model.each && new Set(model.stages).size > 1;
       const stageLabel = document.createElement("label");
-      stageLabel.textContent = model.each ? "Move all models to stage" : "Stage";
+      stageLabel.textContent = model.each ? "Move all models to stage" : "Jump to stage";
       const stageMenu = stagePicker(spread ? null : model.stage,
         model.each ? `Move all models of ${displayName(model)} to stage` : `Stage of ${displayName(model)}`,
         (to) => jumpToStage(model.id, to), spread ? "Mixed stages" : "");
@@ -5171,6 +5267,10 @@
         panel.appendChild(list);
       }
 
+      // A3: the unit's paints sit behind one row (6 swatches and a count) that opens the full grid.
+      const paintsRow = buildPaintsRow(model);
+      if (paintsRow) panel.appendChild(paintsRow);
+
       // Photos come straight after the stage (v23), then recipes, then the scheme notes.
       panel.appendChild(buildGallery(model));
 
@@ -5240,13 +5340,6 @@
 
       const buttons = document.createElement("div");
       buttons.className = "panel-buttons";
-
-      const back = document.createElement("button");
-      back.className = "plain-button";
-      back.textContent = "◀ Back a stage";
-      back.disabled = model.stage === 0;
-      back.addEventListener("click", () => changeStage(model.id, -1));
-      if (!model.each) buttons.append(back);   // each model has its own ◀ above
 
       const del = document.createElement("button");
       del.className = "danger-button";
@@ -5426,21 +5519,21 @@
     }
 
     // Move a unit up (+1) or back (-1) a stage, then show a message with Undo.
-    // index: which model, for units tracked model-by-model. The big ▲ on a card doesn't
-    // say, so it moves up the first model that's furthest behind.
+    // index: which model, for units tracked model-by-model. Without one, the card's stepper
+    // moves every model.
     function changeStage(id, direction, index) {
       const model = models.find(m => m.id === id);
       if (!model) return;
       if (model.each && index === undefined) {
-        // v74: the card's ▲ moves the WHOLE unit up one stage, whether it is a batch or tracked model by model:
-        // every model moves up one (a model already at the top stays), each noted in the diary.
-        if (direction < 0) return;
+        // v74: the card's stepper moves the WHOLE unit one stage, whether it is a batch or tracked model by model:
+        // every model moves (a model already at the end stays), each noted in the diary. A3: Back works the same way.
         const top = STAGES.length - 1;
-        if (model.stages.every(s => s >= top)) return;
+        const movable = (s) => direction > 0 ? s < top : s > 0;
+        if (!model.stages.some(movable)) return;
         const kept = JSON.stringify({ stage: model.stage, stages: model.stages, log: model.log });
-        model.stages.forEach((s, i) => { if (s < top) setStage(model, s + 1, i); });
+        model.stages.forEach((s, i) => { if (movable(s)) setStage(model, s + (direction > 0 ? 1 : -1), i); });
         render();
-        showToast(`All of ${displayName(model)} up one stage`, () => {
+        showToast(`All of ${displayName(model)} ${direction > 0 ? "up" : "back"} one stage`, () => {
           const unit = models.find(m => m.id === id);
           if (!unit) return;
           const was = JSON.parse(kept);
