@@ -4402,6 +4402,8 @@
 
     // Which units have their details panel open. Not saved.
     const openIds = new Set();
+    const unitSplit = document.getElementById("unit-split");   // v79
+    const unitSide = document.getElementById("unit-side");
     // v23: units whose folded "Edit details" section is open. Not saved: only for this visit.
     // Every change redraws the panel, so without this the section would shut after each edit.
     const editOpenIds = new Set();
@@ -4598,6 +4600,7 @@
       selectButton.classList.toggle("hidden", models.length === 0);
       refreshSelectBar(visible);
 
+      renderUnitSide(visible);   // v79
       list.innerHTML = "";
       if (models.length === 0) {
         // v19: a brand-new collection gets the import buttons right here.
@@ -4613,6 +4616,34 @@
         return;
       }
       for (const model of visible) list.appendChild(buildCard(model));
+    }
+
+    // v79: from 900 px every open unit (in list order) gets a card in the side pane, with a Close button. Select mode shows none.
+    function renderUnitSide(visible) {
+      const open = unitWide.matches && !selectMode ? visible.filter(m => openIds.has(m.id)) : [];
+      const scrolled = unitSide.scrollTop;
+      unitSide.replaceChildren();
+      unitSplit.classList.toggle("layout-split", open.length > 0);
+      unitSide.classList.toggle("hidden", open.length === 0);
+      for (const model of open) {
+        const card = document.createElement("section");
+        card.className = "card unit-side-card";
+        card.dataset.id = model.id;
+        const head = document.createElement("div");
+        head.className = "card-head";
+        const title = document.createElement("h2");
+        title.textContent = displayName(model);
+        const close = document.createElement("button");
+        close.type = "button";
+        close.className = "plain-button";
+        close.textContent = "Close";
+        close.setAttribute("aria-label", `Close ${displayName(model)}`);
+        close.addEventListener("click", () => { openIds.delete(model.id); editOpenIds.delete(model.id); render(); });
+        head.append(title, close);
+        card.append(head, buildPanel(model));
+        unitSide.appendChild(card);
+      }
+      unitSide.scrollTop = scrolled;   // a redraw after an edit keeps your place in the pane
     }
 
     function buildCard(model) {
@@ -4746,7 +4777,9 @@
         item.appendChild(row);
       }
 
-      if (isOpen) item.appendChild(buildPanel(model));
+      // v79: on a wide screen the details show in the side pane (renderUnitSide) and the card is just marked as open.
+      if (isOpen && unitWide.matches) item.setAttribute("aria-current", "true");
+      else if (isOpen) item.appendChild(buildPanel(model));
       return item;
     }
 
@@ -6680,6 +6713,9 @@
     const recipeList = document.getElementById("recipe-list");
     const recipeSplit = document.getElementById("recipe-split");   // v78
     const recipeWide = window.matchMedia("(min-width: " + WIDE_MIN_PX + "px)");   // v78
+    const unitWide = window.matchMedia("(min-width: " + WIDE_MIN_PX + "px)");   // v79
+    // v79: crossing 900 px moves the open units' details between the cards and the side pane.
+    unitWide.addEventListener("change", () => { if (openIds.size) renderUnits(); });
     const partFilter = document.getElementById("part-filter");
     let recipePartFilter = "";
     let openRecipeId = null;   // the recipe being read, or null for the list
@@ -15507,12 +15543,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=78".
+    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=79".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v78";
+    const APP_VERSION = "v79";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -15963,6 +15999,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v79", date: "27 Oct 2026", changes: [
+        "On a wide screen, a unit's details now open in a pane beside the list. You can keep several open at once and close each one. Phones are unchanged.",
+      ]},
       { version: "v78", date: "27 Oct 2026", changes: [
         "On a wide screen, opening a recipe now shows it beside the list, so you can pick another without going back. Phones are unchanged.",
       ]},
