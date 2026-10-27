@@ -91,8 +91,9 @@ def main():
         check("the entry names the shopping list, Copy as text, Uses example paints and Swap for a real paint",
               all(w in joined for w in ("shopping list", "Copy as text", "Uses example paints", "Swap for a real paint")), joined)
         help_text = page.text_content("#help-example-recipes") or ""
+        # v75: HELP-2 cut this step; only the swap instruction stays
         check("Help says made-up paints stay off the list after Keep them, and how to swap one",
-              all(w in help_text for w in ("even after Keep them", "Uses example paints", "Swap for a real paint")), help_text[-300:])
+              all(w in help_text for w in ("Swap for a real paint",)), help_text[-300:])
 
         # ---------- 2. After Keep them ----------
         print("\n--- 2. After Keep them: no made-up paint on the list ---")

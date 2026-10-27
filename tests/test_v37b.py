@@ -170,8 +170,7 @@ def main():
         else:
             print("SKIP (entry no longer in the public Updates list): " + 'the v36, v35 and v34 entries are still there')
         help_text = page.evaluate("() => document.getElementById('help-tabs').textContent")
-        check("Help says Start from and Faction are boxes you can type in, the lists have a search box, and the wheel is split into groups",
-              all(w in help_text for w in ["Start from and Faction are boxes you can type in", "search box", "split into groups"]), help_text[-300:])
+        # v75: removed check "Help says Start from and Faction": Help's tab line is now one short sentence (v75, HELP-3), so it no longer describes the Compendium
         mark_a, mark_b = app.index("v37 part 2: SEARCH"), app.index("v37: the other way to browse the starter schemes")
         new_code = app[mark_a:mark_b] + app[app.index("const WHEEL_TINT_C"):app.index("function wheelTone(")]
         check("each shared builder is defined once and used by every box: buildSearchPicker (Start from, Faction), buildListSearch (three lists), wheelSub",
@@ -604,8 +603,7 @@ def main():
         # the description says what the groups are (the grey middle still lists all its groups at once)
         tap(page, "grey")
         # v63: the sentence now also says popular ranges come next (chunk 3.3), so the ending changed
-        check("the grey middle says what its groups are and how they run (Split into ... Each group runs from dark to light: yours first, then popular ranges.)",
-              page.inner_text("#cmp-wheel-groups").startswith("Split into ") and page.inner_text("#cmp-wheel-groups").endswith("Each group runs from dark to light: yours first, then popular ranges."), page.inner_text("#cmp-wheel-groups"))
+        # v75: removed check "the grey middle says what its groups are": the 'Split into' line was removed (COMP-9)
         check("the neutral parts explain warm and cool in their description", "Warm greys lean brown or yellow, cool greys lean blue or green" in page.inner_text("#cmp-wheel-detail"))
         tap(page, "grey")
         # dark to light, yours first, marked, and short by default (a colour's paints are listed one group at a time since v43)
@@ -763,7 +761,7 @@ def main():
         everything = "\n".join(shown)
         hits = GW_WORDS.findall(everything) + GW_MORE.findall(everything)
         check("everything we wrote for the search boxes and wheel groups (labels, placeholders, status lines, headings, descriptions, buttons) names no Games Workshop game, faction, scheme, paint or product",
-              not hits and all(w in everything for w in ["Search starter schemes", "Search detail recipes", "Search basing tips", "Type or choose a paint", "Type or choose a faction", "No matches.", "Split into", "Warm blacks", "Lavender and lilac"]), (hits[:10], [w for w in ["Search starter schemes", "Search detail recipes", "Search basing tips", "Type or choose a paint", "Type or choose a faction", "No matches.", "Split into", "Warm blacks", "Lavender and lilac"] if w not in everything]))
+              not hits and all(w in everything for w in ["Search starter schemes", "Search detail recipes", "Search basing tips", "Type or choose a paint", "Type or choose a faction", "No matches.", "Warm blacks", "Lavender and lilac"]), (hits[:10], [w for w in ["Search starter schemes", "Search detail recipes", "Search basing tips", "Type or choose a paint", "Type or choose a faction", "No matches.", "Warm blacks", "Lavender and lilac"] if w not in everything]))
         own = "\n".join([joined, help_text, new_code])
         own_hits = GW_WORDS.findall(own) + GW_MORE.findall(own)
         check("the Updates entry, the Help line and the new code's own words are clean too", not own_hits and not BRAND_WORDS.findall(joined + help_text), own_hits[:10])
@@ -909,10 +907,10 @@ def main():
                 tap(page, "grey")
                 col2 = page.evaluate("""() => { const bg = (el) => { let e = el; while (e) { const v = getComputedStyle(e).backgroundColor; const m = v.match(/rgba\\(.*,\\s*([\\d.]+)\\)/);
                         if (v && v !== 'transparent' && !(m && parseFloat(m[1]) < 0.9)) return v; e = e.parentElement; } return 'rgb(0,0,0)'; };
-                    const out = {}; for (const [k, s] of [['group heading', '#cmp-wheel-detail .wheel-sub'], ['groups line', '#cmp-wheel-groups'], ['row why', '#cmp-wheel-detail .idea-why'], ['tag', '#cmp-wheel-detail .idea-tag']]) {
+                    const out = {}; for (const [k, s] of [['group heading', '#cmp-wheel-detail .wheel-sub'], ['row why', '#cmp-wheel-detail .idea-why'], ['tag', '#cmp-wheel-detail .idea-tag']]) {
                         const el = document.querySelector(s); if (el) out[k] = [getComputedStyle(el).color, bg(el)]; } return out; }""")
                 bad2 = {k: round(contrast(rgb(v[0]), rgb(v[1])), 2) for k, v in col2.items() if contrast(rgb(v[0]), rgb(v[1])) < 4.5}
-                check(f"{tag}: the wheel group headings, the groups line and the rows have contrast of at least 4.5", not bad2 and len(col2) >= 4, (bad2, len(col2)))
+                check(f"{tag}: the wheel group headings and the rows have contrast of at least 4.5", not bad2 and len(col2) >= 3, (bad2, len(col2)))
                 shot(page, f"v37b-wheel-{appearance}-{width}.png")
         page.set_viewport_size({"width": 390, "height": 844})
 

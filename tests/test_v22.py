@@ -156,7 +156,7 @@ def main():
         inside = page.evaluate("""() => { const c = document.getElementById('backup-card');
             return { ids: [...c.querySelectorAll('button:not(.more-info-button), input')].map(b => b.id),
                      labels: [...c.querySelectorAll('button:not(.more-info-button)')].map(b => b.textContent.trim()),
-                     age: !!c.querySelector('#backup-age'), hint: !!c.querySelector('#share-hint') }; }""")
+                     age: !!c.querySelector('#backup-age'), hint: !!c.querySelector('#backup-explain') }; }""")
         # v46 added "Send full backup with photos to…" straight after Save full backup, so the card now holds five buttons.
         check("the Backups card holds the five buttons, the restore file box, the last-backed-up line and the hint (v52: the hint sits behind its More info)",
               inside["ids"] == ["export-button", "share-button", "full-export-button", "full-share-button", "restore-button", "restore-file"] and inside["age"] and inside["hint"], inside)
@@ -172,9 +172,9 @@ def main():
         page.click("#wh-button")
         age = page.inner_text("#backup-age")
         check("it says 'Last backup: Never' before any backup (v57 wording)", age.startswith("Last backup: Never"), age)
-        hint = page.inner_text("#share-hint")
-        check("the hint explains the share menu, no photos and the fallback in plain words",
-              "share menu" in hint and "no photos" in hint and "saves the backup instead" in hint, hint)
+        hint = page.text_content("#backup-explain")
+        check("the hint says which backup leaves out photos",   # v75: the share-hint paragraph is gone (SET-4); this is the one-line hint
+              "leaves out photos" in hint and "includes them" in hint, hint)
         shot(page, "v22-settings-top.png")
 
         # ---------- 3. Send backup to… when the phone can share files ----------

@@ -40,12 +40,8 @@ REVIEWED = {
     "c5c7bd411009": "graph tooltip: two counts and a percentage",
     # Dashboard history table: rows built from counts and dates the app works out itself.
     "c996b8dc0922": "history table: counts, percentages and dates",
-    # Paste recipes: the fixed number 20,000 (PASTE_LIMIT) inside a fixed sentence.
-    "451f31ea7d5a": "paste limit note: the fixed number PASTE_LIMIT",
     # Paste recipes: a choice between two fixed sentences.
     "3ba0f487a0f3": "paste notice: one of two fixed sentences",
-    # Paste recipes check step: plural() gives a count and a fixed word ("3 paints").
-    "5bc8676ffe9b": "check heading: a count and the fixed word 'paint'",
 }
 
 

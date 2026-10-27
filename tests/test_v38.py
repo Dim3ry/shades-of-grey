@@ -133,8 +133,7 @@ def main():
         else:
             print("SKIP (entry no longer in the public Updates list): " + 'the v37, v36, v35 and v34 entries are still there')
         help_text = page.evaluate("() => document.getElementById('help-tabs').textContent")
-        check("Help says a paint in the wheel can be tapped for colours that go with it and starter schemes with a similar colour",
-              "tap a paint to see colours that go with it and starter schemes with a similar colour" in help_text, help_text[-400:])
+        # v75: removed check "Help says a paint in the wheel can be tapped": Help's tab line is now one short sentence (v75, HELP-3), so it no longer describes the Compendium
         # (v47: early.js left this list; it now puts the theme on the page too.)
         new_code = app[app.index("v38: PAINT LINKS"):app.index("function buildWheelDetail(")] + app[app.index("v38: a door that has no recipe"):app.index("v35: how a door that has no recipe")]
         check("reuse, not copy: the panel is made from the shared row, the shared Copy as text, the shared colour helpers and the same nearest-paint search, and each is still defined once",
@@ -152,7 +151,8 @@ def main():
         open_tab(page)
         tap(page, "blue")
         hint = page.inner_text("#cmp-wheel-links-hint")
-        check("the open wheel part says a paint can be tapped (one plain line)", hint == "Tap a paint to see colours that go with it, and starter schemes with a similar colour.", hint)
+        # v75: COMP-9 shortened this line
+        check("the open wheel part says a paint can be tapped (one plain line)", hint == "Tap a paint for colours that go with it.", hint)
         info = page.evaluate("""() => [...document.querySelectorAll('#cmp-wheel-detail ul.idea-list > li')].map(li => { const b = li.firstElementChild; const r = b.getBoundingClientRect();
             return { tag: b.tagName, type: b.type, exp: b.getAttribute('aria-expanded'), ctl: b.getAttribute('aria-controls'), label: b.getAttribute('aria-label'), h: r.height, kids: li.children.length,
                      open: (b.querySelector('.idea-open') || {}).textContent, cls: b.className }; })""")

@@ -228,7 +228,8 @@ def main():
         page.wait_for_timeout(200)
         body = page.inner_text("#import-page")
         check("a paste over 20,000 characters is cut, and it says so",
-              "only the first" in body and page.locator("#import-save").count() == 1, body[:200])
+              "only the first" in body.lower() and   # v75: the sentence now starts with a capital
+              page.locator("#import-save").count() == 1, body[:200])
 
         print("\n--- tests/keep_note.txt (a real Google Keep note) ---")
         schemes = page.evaluate(SUMMARY_JS, keep)

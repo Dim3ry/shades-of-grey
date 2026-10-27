@@ -204,8 +204,9 @@ def main():
         snippet = app[app.index("function examplesCardParts("):app.index("function clearExamples(")]
         check("the card code uses no innerHTML (text only)", "innerHTML" not in snippet)
         help_text = page.evaluate("() => document.getElementById('help-example-recipes').textContent")
+        # v75: HELP-2 reworded this step
         check("Help says Clear removes all the examples at once and Keep makes all of them yours",
-              all(w in help_text for w in ("removes all the examples at once", "one Undo", "goes away on every tab")), help_text)
+              all(w in help_text for w in ("Clear examples", "removes them", "one Undo", "Keep them")), help_text)
 
         # ---------- 8. No errors ----------
         print("\n--- 8. No errors ---")

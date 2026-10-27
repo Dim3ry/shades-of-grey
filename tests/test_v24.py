@@ -449,8 +449,9 @@ def main():
         main_tab(page, "settings")
         sub_tab(page, "help")
         help_text = page.evaluate("() => document.getElementById('help-example-recipes').textContent")
+        # v75: HELP-2 cut this step to a few lines
         check("Help explains the example recipes (what, where, Clear, Keep, what is kept, shopping list, existing users)",
-              all(w in help_text for w in ["example recipes", "Your Palette", "Clear examples", "Keep them", "shopping list", "already had recipes"]), help_text)
+              all(w in help_text for w in ["example recipes", "Clear examples", "Keep them", "Restore example recipes"]), help_text)
         sub_tab(page, "updates")
         updates = page.inner_text("#view-updates")
 

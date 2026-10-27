@@ -2460,12 +2460,12 @@
         const notes = [];
         const sub = document.createElement("p");
         sub.className = "hint";
-        sub.textContent = `${plural(items.length, "paint")} to get: the paints you added and your Wishlist paints. Nothing is added by itself. Each paint is listed once, with where it came from.`;
+        sub.textContent = `${plural(items.length, "paint")} to get.`;
         notes.push(sub);
         if (shopLinksOn()) {
           const shops = document.createElement("p");
           shops.className = "hint";
-          shops.textContent = "Tap a shop under Buy these to see a search link for each paint it sells. Each link opens the shop's own search for that paint. " + SHOP_PLAIN_WORDS;
+          shops.textContent = SHOP_PLAIN_WORDS;
           notes.push(shops);
         }
         const more = pageMoreInfo("shopping", notes, { label: "Shopping list" });
@@ -2572,7 +2572,7 @@
       const hint = document.createElement("p");
       hint.className = "hint";
       hint.style.margin = "0 0 10px";
-      hint.textContent = `${plural(ids.length, "paint")} came in as Owned. Change the status or how many you have on any of them below, then press Done.`;
+      hint.textContent = `${plural(ids.length, "paint")} added as Owned.`;
       const done = document.createElement("button");
       done.className = "primary-button";
       done.style.width = "100%";
@@ -4137,7 +4137,7 @@
       const factions = uniqueSorted(models.map(m => m.faction));
       if (models.some(m => !m.faction)) factions.push(""); // units with no faction
       if (factions.length === 0) {
-        factionGrid.innerHTML = '<p class="hint">Factions appear here once you add units.</p>';
+        factionGrid.innerHTML = "";
       }
       for (const faction of factions) {
         const group = models.filter(m => m.faction === faction);
@@ -4266,7 +4266,7 @@
         return;
       }
       note.textContent = data.undated
-        ? `${plural(data.undated, "unit")} added before dates were recorded (v4) ${data.undated === 1 ? "counts" : "count"} from the start of the graph.`
+        ? `${plural(data.undated, "unit")} with no date, counted from the start.`
         : "";
 
       // The points: the start of the chosen range, then every day something changed.
@@ -5244,9 +5244,9 @@
       why.className = "hint";
       const counts = { units: units.length, recipes: recipes.length, schemes: schemes.length, paints: paints.length };
       const names = units.length ? ` (the ${units.length === 1 ? "unit is" : "units are"} ${units.map(m => displayName(m)).join(", ")})` : "";
-      why.textContent = `You have ${exampleWords(counts)}${names} so you can try things out. ` +
-        `Clear ${many ? "them" : "it"} when you're ready to add your own. ` +
-        `Anything you edit, and any paint you use in your own recipe or give a status, stays yours.`;
+      why.textContent = `${exampleWords(counts)[0].toUpperCase()}${exampleWords(counts).slice(1)}${names}. ` +
+        `Clear ${many ? "them" : "it"} to start your own. ` +
+        `Anything you edit or use stays yours.`;
       const buttons = document.createElement("div");
       buttons.className = "button-grid";
       const clear = document.createElement("button");
@@ -7319,7 +7319,7 @@
       const updateNote = () => {
         const n = d.faction.trim() ? models.filter(m => sameText(m.faction, d.faction)).length : 0;
         factionNote.textContent = !d.faction.trim() ? "Which faction is this scheme for?"
-          : n ? `${plural(n, "unit")} in this faction.` : "No units in this faction yet. New ones can get this scheme.";
+          : n ? `${plural(n, "unit")}.` : "No units yet.";
       };
       factionBox.addEventListener("input", () => { d.faction = factionBox.value; updateNote(); });
       updateNote();
@@ -8661,7 +8661,7 @@
     function colourWordList(words) {
       return words.length < 2 ? (words[0] || "") : words.slice(0, -1).join(", ") + " and " + words[words.length - 1];
     }
-    const SCHEME_NEEDS_TWO = "Add at least two paints with different colours set (the round colour button in a step), then this check can run.";
+    const SCHEME_NEEDS_TWO = "Needs two paints with colours set.";
     const SCHEME_ONLY_A_GUIDE = "Colours on a screen are only a guide, so check them on your model.";   // v59: one shared line (the Compendium copy text uses it too)
 
     // The answer as { verdict, rows: [{ cls, tag, label, text }] }. cls matches the idea tags: own (fine), near (look at this), none (suggestion).
@@ -8837,7 +8837,7 @@
     // unchanged. Run once at start-up. The More info goes where the first moved line was.
     function foldPageText() {
       const groups = [
-        ["backups", "Backups", ["backup-explain", "share-hint"]],
+        ["backups", "Backups", ["backup-explain"]],
         ["stages", "Stages", ["stages-explain"]],
         ["appearance", "Appearance", ["appearance-note"]],
         ["counting", "Counting visits", ["counting-note", "counting-effect"]],
@@ -9685,10 +9685,10 @@
       const hint = document.createElement("p");
       hint.className = "hint";
       hint.textContent = door.switcher
-        ? "Plain colour schemes to start from. Choose Themes (cold, warm, dark, bright) or Combinations (by main colour), pick a group, then pick a scheme to see matching paints, yours first."
+        ? "Pick a group, then a scheme."
         : door.addStep
-        ? "Plain colour schemes to start from. Pick a mood to shorten the list, then pick a scheme to see matching paints, yours first. Tap a paint to add it as a step."
-        : "Plain colour schemes to start from. Pick a mood to shorten the list, then pick a scheme to see matching paints, yours first.";
+        ? "Pick a group, then a scheme. Tap a paint to add it as a step."
+        : "Pick a group, then a scheme.";
       const combos = !!door.switcher && st.view === "combos";
       const groups = combos ? STARTER_COMBOS : STARTER_MOODS;
       const value = groupValue(door, groups, combos ? st.combo : st.mood);
@@ -9818,8 +9818,8 @@
       const hint = document.createElement("p");
       hint.className = "hint";
       hint.textContent = door.addSteps
-        ? "Plain step-by-step recipes for small details. Pick a group to shorten the list, then pick a recipe to see its steps with matching paints, yours first. Add all steps, or tap one paint to add just that step."
-        : "Plain step-by-step recipes for small details. Pick a group to shorten the list, then pick a recipe to see its steps with matching paints, yours first.";
+        ? "Pick a group, then a recipe. Add all steps, or tap one paint to add just that step."
+        : "Pick a group, then a recipe.";
       const groups = document.createElement("div");
       groups.className = "chips mood-chips";
       groups.id = door.id("detail-groups");
@@ -10022,8 +10022,7 @@
       const hint = document.createElement("p");
       hint.className = "hint";
       hint.textContent = door.addSteps
-        ? "Plain how-tos for the base of a model. Pick a group to shorten the list, then pick a tip to see what you need, how to build it and some optional paint steps with matching paints, yours first. Only the paint steps can be added to your recipe."
-        : "Plain how-tos for the base of a model. Pick a group to shorten the list, then pick a tip to see what you need, how to build it and some optional paint steps with matching paints, yours first. Only the paint steps can go into a recipe.";
+        ? "Pick a group, then a tip. Only the paint steps can be added to your recipe." : "Pick a group, then a tip. Only the paint steps can go into a recipe.";
       const groups = document.createElement("div");
       groups.className = "chips mood-chips";
       groups.id = door.id("basing-groups");
@@ -10328,7 +10327,7 @@
 
         const hint = document.createElement("p");
         hint.className = "hint";
-        hint.textContent = "Pick a colour from this recipe and what you are painting. You get 3 paints that go with it. Tap one to add it as a new step.";
+        hint.textContent = "Tap a paint to add it as a step.";
         body.appendChild(hint);
 
         if (!base) {
@@ -10403,7 +10402,7 @@
 
         const foot = document.createElement("p");
         foot.className = "hint";
-        foot.textContent = "Ideas use paints you own first. Colours on a screen are only a guide, so check them on your model. Nothing leaves your phone.";
+        foot.textContent = "Ideas use paints you own first. Colours on screen are a guide.";
         body.appendChild(foot);
 
         if (focusNext) {
@@ -11428,19 +11427,15 @@
       count.textContent = items.length
         ? `You own ${owned} of ${items.length} ${items.length === 1 ? "paint" : "paints"} in this ${where}.`
         : `There are no paints in this ${where} to show yet.`;
-      const split = document.createElement("p");   // v37 part 2: the groups, so you know what the headings below are
-      split.className = "hint";
-      split.id = door.id("wheel-groups");
-      split.textContent = `Split into ${colourWordList(seg.subs.map(s => s.label.toLowerCase()))}. Each group runs from dark to light: yours first, then popular ranges.`;   // v63: popular ranges
-      if (onlySub) box.append(title, about, count); else box.append(title, about, split, count);
+      if (onlySub) box.append(title, about, count); else box.append(title, about, count);   // v75: the "Split into" line is gone
       if (door.links && items.length) {   // v38: say that a paint can be tapped
         const tapHint = document.createElement("p");
         tapHint.className = "hint";
         tapHint.id = door.id("wheel-links-hint");
-        tapHint.textContent = "Tap a paint to see colours that go with it, and starter schemes with a similar colour.";
+        tapHint.textContent = "Tap a paint for colours that go with it.";
         box.appendChild(tapHint);
       }
-      const lines = onlySub ? [title.textContent, seg.text, count.textContent] : [seg.label, seg.text, split.textContent, count.textContent];
+      const lines = onlySub ? [title.textContent, seg.text, count.textContent] : [seg.label, seg.text, count.textContent];
       let openShown = false;   // v38: is the paint whose panel is open still on show? (Show fewer, or Hide other paints, can put it away)
 
       const others = items.filter(x => x.origin === 2);
@@ -11916,7 +11911,7 @@
       fold("starter", "Starter schemes", parts.starter && (() => dropTitle(parts.starter())));
       fold("detail", "Detail recipes", parts.detail && (() => dropTitle(parts.detail())));
       fold("basing", "Basing tips", parts.basing && (() => dropTitle(parts.basing())));
-      say("Ideas use paints you own first. Colours on a screen are only a guide, so check them on your model. Nothing leaves your phone.", "foot");
+      say("Ideas use paints you own first. Colours on screen are a guide.", "foot");
       // v49: the introduction sits behind a More info at the top of the page (the footnote stays, it is a short honest note)
       body.insertBefore(buildMoreInfo([intro], { state: infoState(door, "page"), id: compendiumId("page-info-panel"), label: "the Compendium" }), body.firstChild);
 
@@ -12149,8 +12144,11 @@
       importPage.appendChild(card);
       if (!d.parsed) return;
       if (d.cut) {
-        card.insertAdjacentHTML("beforeend", `<p class="hint" style="margin: 12px 0 0;">That's a very long note, so only the first
-          ${PASTE_LIMIT.toLocaleString("en-GB")} characters were read. Paste the rest separately.</p>`);
+        const cutNote = document.createElement("p");   // v75: built with textContent, not innerHTML
+        cutNote.className = "hint";
+        cutNote.style.margin = "12px 0 0";
+        cutNote.textContent = `Only the first ${PASTE_LIMIT.toLocaleString("en-GB")} characters were read. Paste the rest separately.`;
+        card.appendChild(cutNote);
       }
       if (!d.parsed.schemes.length) {
         card.insertAdjacentHTML("beforeend", d.trimmed
@@ -12160,18 +12158,20 @@
       }
       // v18d-1
       // v18d-2a: ✎ to change a step, ✕ on a part's name or a note too.
-      card.insertAdjacentHTML("beforeend", '<p class="hint import-remove-hint" style="margin: 12px 0 0;">Something read wrong? ' +
-        'Tap ✎ on a step to change its technique, mix ratio or paints. Tap ✕ on a step to leave it out, or ✕ on a part\'s name ' +
-        'or a note to leave that out. This only changes the preview, not your notes, so Read again brings everything back as pasted.</p>');
+      card.insertAdjacentHTML("beforeend", '<p class="hint import-remove-hint" style="margin: 12px 0 0;">' +
+        'Tap ✎ to change a step, ✕ to leave something out. Read again brings everything back.</p>');
 
       // 1. The paints it wasn't sure about. Nothing is picked for you.
       const left = d.groups.filter(g => !g.choice).length;
       if (d.groups.length) {
         const check = document.createElement("div");
         check.className = "card import-check";
-        check.innerHTML = `<h2>Check ${plural(d.groups.length, "paint")}</h2>
-          <p class="hint">Not sure what these are, so it's asking rather than guessing. Pick one each.
-          Your answers are remembered, so next time they're matched straight away.</p>`;
+        const checkTitle = document.createElement("h2");   // v75: built with textContent, not innerHTML
+        checkTitle.textContent = `Check ${plural(d.groups.length, "paint")}`;
+        const checkHint = document.createElement("p");
+        checkHint.className = "hint";
+        checkHint.textContent = "Pick one each. Your answers are remembered.";
+        check.append(checkTitle, checkHint);
         for (const g of d.groups) {
           const row = document.createElement("div");
           row.className = "import-ask" + (g.choice ? " answered" : "");
@@ -12257,12 +12257,14 @@
             remove.className = "icon-button remove import-remove";
             remove.textContent = "✕";
             remove.title = "Leave this step out";
-            remove.setAttribute("aria-label", `Leave out ${importStepLabel(step)} from ${part.name}`);
+            // v75: labelled from the step's own text (labelWithName, below)
             remove.addEventListener("click", () => removeImportStep(si, pi, ti));
             // v18d-2a: ✎ opens a small editor under the line (technique and mix ratio).
             const editing = d.editing === step;
             const edit = importIconButton("✎", "icon-button import-edit", editing ? "Close" : "Change this step",
-              `Change ${importStepLabel(step)} in ${part.name}`, () => toggleImportEdit(step));
+              "Change", () => toggleImportEdit(step));
+            labelWithName(edit, "Change", body);
+            labelWithName(remove, "Leave out", body);
             edit.setAttribute("aria-expanded", editing ? "true" : "false");
             line.append(body, edit, remove);
             li.appendChild(line);
@@ -12615,7 +12617,7 @@
           change.className = "plain-button import-swap";
           change.textContent = "Change…";
           change.dataset.importFocus = `swap-${i}`;
-          change.setAttribute("aria-label", `Change ${name} to a different paint`);
+          labelWithName(change, "Change", nameEl);
           change.setAttribute("aria-expanded", d.swapAt === i ? "true" : "false");
           // Don't take the ratio box out of focus first (that redraws the editor and loses the tap).
           change.addEventListener("mousedown", (e) => e.preventDefault());
@@ -12638,7 +12640,7 @@
           input.dataset.importFocus = "swap-input";
           input.placeholder = "Type the paint's name";
           input.autocomplete = "off";
-          input.setAttribute("aria-label", `New paint instead of ${name}`);
+          // v75: no aria-label; the visible "Change <paint> to:" label around the box names it
           swapLabel.appendChild(input);
           const buttons = document.createElement("div");
           buttons.className = "import-swap-buttons";
@@ -12682,7 +12684,7 @@
         input.inputMode = "decimal";
         input.placeholder = Array(n).fill(1).join(":");
         input.value = step.ratio || "";
-        input.setAttribute("aria-label", `Mix ratio for ${label}`);
+        { const nm = hiddenName(label); ratioLabel.appendChild(nm); input.setAttribute("aria-labelledby", idOf(ratioLabel) + " " + nm.id); }
         const warning = document.createElement("p");
         warning.className = "import-ratio-warning";
         warning.hidden = true;
@@ -13244,7 +13246,7 @@
       const st = scanState;
       const intro = document.createElement("p");
       intro.className = "hint";
-      intro.textContent = "Point the camera at the pot and line the paint's name up in the box. The app suggests a paint and you pick it. You can also just type the name.";
+      intro.textContent = "Line the name up in the box, or type it.";
       const photo = document.createElement("input");
       photo.type = "file";
       photo.accept = "image/*";
@@ -13253,7 +13255,7 @@
       const take = document.createElement("button");
       take.className = "primary-button";
       take.style.width = "100%";
-      take.textContent = "📷 Scan a label";
+      take.textContent = "Scan a label";
       take.addEventListener("click", openCamera);
       const fromPhoto = document.createElement("button");
       fromPhoto.className = "link-button";
@@ -15489,12 +15491,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=74".
+    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=75".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v74";
+    const APP_VERSION = "v75";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -15911,8 +15913,8 @@
     function showCountingChoice() {
       countingBox.checked = countingIsOn();
       document.getElementById("counting-note").textContent = countingIsOn()
-        ? "On. When the app opens, it asks GoatCounter for one tiny picture so we can count visits. It sets no cookies, stores nothing on your device and sends nothing from your collection."
-        : "Off. The app won't ask GoatCounter for anything, so you aren't counted.";
+        ? "On."
+        : "Off.";
     }
     countingBox.addEventListener("change", () => {
       settings.countVisits = countingBox.checked;
@@ -15931,8 +15933,8 @@
     function showShopLinksChoice() {
       shopLinksBox.checked = shopLinksOn();
       document.getElementById("shoplinks-note").textContent = shopLinksOn()
-        ? "On. Plain shop links show under suggested paints you don't own, and in the Buy these bar on the shopping list. Tapping one opens the shop's own search, and only the paint's name goes to the shop. Minifolio earns nothing from them."
-        : "Off. All shop links and shop buttons are hidden. Your shopping list is still there.";
+        ? "On."
+        : "Off.";
     }
     shopLinksBox.addEventListener("change", () => {
       settings.hideShopLinks = !shopLinksBox.checked;
@@ -15945,6 +15947,12 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v75", date: "27 Oct 2026", changes: [
+        "Less small print. Many hints are shorter or gone: on the Dashboard, shopping list, Colour ideas, the Compendium, the paint scanner, the paste-recipes preview, Settings (Backups, Import, Counting visits, Shop links) and Help. Nothing you can do has changed.",
+        "The notes on Counting visits and Shop links in Settings now just say On or Off. The full explanation is in Help, Privacy, which is split into three shorter points.",
+        "The note under the Dashboard graph about units added before dates were recorded is shorter.",
+        "The ✕ and ✎ buttons in the paste-recipes preview are now 44 px, big enough to tap easily, and screen readers read them with the step they belong to.",
+      ]},
       { version: "v74", date: "27 Oct 2026", changes: [
         "Each unit card has a new stage button (⇅) beside the ▲. Press it and pick a stage to go straight there, for example Parade ready, instead of tapping ▲ again and again.",
         "The ▲ now does the same on every unit: it moves the whole unit up one stage. On a unit tracked model by model, every model moves up one. Both have an Undo.",

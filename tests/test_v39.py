@@ -392,7 +392,8 @@ def main():
         load(page, paints=keep, recipes=[rec(101, "Armour blue", "Whole model", [1])])
         go_settings(page)
         box_state = page.evaluate("() => ({ checked: document.getElementById('show-shop-links').checked, note: document.getElementById('shoplinks-note').textContent, h: document.querySelector('#shoplinks-card h2').textContent })")
-        check("Settings has a Shop links box: ticked by default, with a plain note saying what it does", box_state["checked"] and box_state["h"] == "Shop links" and box_state["note"].startswith("On.") and "earns nothing" in box_state["note"], box_state)
+        # v75: the note says just On (the detail is in Help)
+        check("Settings has a Shop links box: ticked by default, with a plain note saying what it does", box_state["checked"] and box_state["h"] == "Shop links" and box_state["note"] == "On.", box_state)
         look = page.evaluate("""() => { const a = getComputedStyle(document.querySelector('#counting-card .count-label')), b = getComputedStyle(document.querySelector('#shoplinks-card .shoplinks-label'));
             const ia = document.querySelector('#count-visits').getBoundingClientRect(), ib = document.querySelector('#show-shop-links').getBoundingClientRect();
             return { same: ['display', 'alignItems', 'columnGap', 'minHeight', 'fontSize', 'color'].every(k => a[k] === b[k]), box: [ia.width, ia.height, ib.width, ib.height], tall: document.querySelector('#shoplinks-card .shoplinks-label').getBoundingClientRect().height }; }""")
@@ -489,7 +490,7 @@ def main():
               and page.locator("#cmp-paint-panel .shop-more img, #cmp-paint-panel .shop-more svg").count() == 0)
         check("the plain-links sentence is the same words as the Buy these bar uses, the \"Ad\" label is not used anywhere new, and the new words do not call the links adverts or affiliate links",
               PLAIN in fold_text and not re.search(r"\bAd\b|\badverts?\b|\bsponsor\w*|\baffiliate\b|\bcommission\b", fold_text + settings_text + help_li + joined))
-        check("the Settings note and the Help line say Minifolio earns nothing and only the paint's name goes to the shop", "earns nothing" in settings_text and "isn't paid for them" in help_li and "only the paint's name goes to the shop" in help_li)
+        check("the Help line says Minifolio is not paid for the links and only the paint's name goes to the shop", "isn't paid for them" in help_li and "only the paint's name goes to the shop" in help_li)
         known_hit = page.evaluate("""(text) => KNOWN_PAINTS.filter(k => k.name.length >= 9 && text.toLowerCase().includes(k.name.toLowerCase())).map(k => k.name)""", own_no_code)
         check("no real paint name is in any of the new example or hint text", not known_hit, known_hit[:5])
 
