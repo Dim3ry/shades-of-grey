@@ -15995,12 +15995,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=82".
+    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=83".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v82";
+    const APP_VERSION = "v83";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -16451,6 +16451,17 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v83", date: "28 Oct 2026", changes: [
+        "Each unit card now has a clear Details button, and a stage bar under the name with a back arrow on the left and an up arrow on the right. Both move the unit one stage and both have an Undo. The old stage button and the small Back a stage button are gone: open Details and use Jump to stage. Details also has a Paints row that opens the unit's full set.",
+        "Every paint on the Shopping list now has a Remove button, with Undo. It takes only that paint off the list.",
+        "Every recipe now has an Add to shopping list button under its steps. On a recipe with only made-up example paints it is greyed out and says why.",
+        "Tick a paint on the Shopping list when you have bought it. It turns grey, then moves to Bought at the bottom, and Your Palette marks it Owned in every recipe. Open Bought to put a paint back with Add back, or tap Clear bought to forget the list. Bought paints are included in backups.",
+        "Turning a paint brand on or off no longer sends you back to the start of the row or the top of the page. This is in Your Palette and in Settings, and in other rows of buttons too.",
+        "Pasted recipe notes can now have sections. A short line like Heraldry with paints under it is guessed to be a section heading, and its paints become their own recipe. Tap the pencil on any line and choose Paint step, Section heading or Ignore to change the guess.",
+        "The progress graph now shows dates like Mar 2025 and leaves out dates that would crowd each other.",
+        "Add unit remembers the last game and faction you used.",
+        "Settings, Your data says Works offline once the app is ready without internet.",
+      ]},
       { version: "v82", date: "28 Oct 2026", changes: [
         "Wide screens: the Dashboard, the recipe page opened from Schemes, Paste recipes, the scheme editor and the Compendium wheel now use the space better. Show as a table is now an easy-to-tap size on phones too.",
       ]},
