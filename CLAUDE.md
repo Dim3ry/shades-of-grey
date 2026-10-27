@@ -10,6 +10,14 @@ Mobile-first miniature-painting tracker. Plain JavaScript web app, no accounts, 
 - Never change recipe, scheme or paint content files (schemes.js, detail-recipes.js, basing-tips.js and the paint catalogue) unless the prompt says to.
 - On Windows, Python is py.
 
+## Running chunks in parallel
+Use it when a chunk splits cleanly by page (for example "check every page at 1280 px and 1920 px"). Do not use it for work that changes shared code in one place, or when one part needs another's result.
+- George says yes to the split first. The parent session (the one he is talking to) splits the work, launches one code session per group of pages, and does the merging and the single version bump. Sonnet is the default model for page checks.
+- Each child session: branches from main, makes no version bump (no APP_VERSION, sw.js, ?v= or CHANGELOG change), puts its CSS next to its own pages under one comment line starting with its chunk label (such as "R3b-1:"), puts its tests in a new file named for its group (tests/test_vNN_<group>.py), runs only its own tests and the quick run, opens a pull request and does not merge. If nothing needs fixing it opens no pull request and says so.
+- Child sessions are told that George has approved the parallel run, so they give a one-line cost estimate and carry on. They do not paste a next-chunk prompt.
+- The parent merges the pull requests one at a time, fixes any clash, then does one version bump, one full test run and one pull request for the bump. It reports to George in plain language what each session found, fixed and left alone.
+- Measure a tap target by its real tap area. A button with an enlarged ::after hit area (the basket in the tab bar) counts at the size of that area.
+
 ## Versions
 One version bump per chunk that changes the app. A bump means:
 - the ?v= number on all six script tags in index.html, and the comments that name it
