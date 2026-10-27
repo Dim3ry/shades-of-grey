@@ -290,11 +290,13 @@ def main():
         shown_text = page.inner_text("#scheme-list")
         check("Schemes with none yet: \"No schemes yet.\" stays in view and the explanation does not",
               "No schemes yet." in shown_text and "A scheme groups" not in shown_text, shown_text)
-        check("...the explanation is in the page behind More info", "A scheme groups the recipes you use for one faction" in page.text_content("#more-schemes-empty"))
+        # U3: the line now starts "A scheme is a colour plan or idea...", so the check looks for the part that stayed
+        check("...the explanation is in the page behind More info", "groups the recipes you use for one faction" in page.text_content("#more-schemes-empty"))
         btn = page.locator("#scheme-list .more-info-button").first
         check("...More info there: aria-expanded false and 44 px", btn.get_attribute("aria-expanded") == "false" and btn.bounding_box()["height"] >= 43.5)
         press(page, btn)
-        check("...tapping it shows what a scheme is", "A scheme groups the recipes" in page.inner_text("#scheme-list"))
+        # U3: wording now starts "A scheme is a colour plan or idea..."
+        check("...tapping it shows what a scheme is", "groups the recipes you use for one faction" in page.inner_text("#scheme-list"))
 
         tab(page, "compendium")
         check("Compendium: the colour wheel caption is not on show", not page.locator(".wheel-caption").is_visible())

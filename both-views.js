@@ -4,7 +4,7 @@
 (function () {
   "use strict";
   var PAGES = [
-    ["dashboard", "Dashboard"], ["units", "Units"], ["recipes", "Recipes"], ["compendium", "Compendium"],
+    ["dashboard", "Dashboard"], ["units", "Units"], ["recipes", "Painting"], ["compendium", "Compendium"],
     ["settings", "Settings"], ["help", "Help"], ["updates", "Updates"]
   ];
   var MORE = ["help", "updates"];   // these two sit under the Settings tab

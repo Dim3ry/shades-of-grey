@@ -168,7 +168,7 @@ def main():
                 check(f"{appearance} {width}px: every tab button is at least 44 px tall and wide", min(heights) >= 44 and min(widths) >= 44, [heights, widths])
                 labels = page.evaluate("""() => [...document.querySelectorAll('nav.tabs button[data-tab]')].map(b =>
                     [...b.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim())""")
-                check(f"{appearance} {width}px: the labels read Dashboard, Units, Recipes, Compendium, Settings", labels == ["Dashboard", "Units", "Recipes", "Compendium", "Settings"], labels)
+                check(f"{appearance} {width}px: the labels read Dashboard, Units, Painting, Compendium, Settings", labels == ["Dashboard", "Units", "Painting", "Compendium", "Settings"], labels) # U3: the group is now called Painting
                 fits = page.evaluate("""() => [...document.querySelectorAll('nav.tabs button[data-tab]')].every(b => b.scrollWidth <= b.clientWidth + 1)""")
                 check(f"{appearance} {width}px: no label is cut off", fits)
                 check(f"{appearance} {width}px: nothing scrolls sideways", no_sideways(page))
@@ -345,7 +345,7 @@ def main():
             return page.evaluate(f"() => document.getElementById('{i}') ? document.getElementById('{i}').textContent : ''")
         tabs_text = help_text("help-tabs")
         # v75: HELP-3 made this one short sentence
-        check("Help explains the five tabs and the switch", all(w in tabs_text for w in ["Five tabs", "Dashboard", "Units", "Recipes", "Compendium", "Settings", "Help and Updates are in Settings"]), tabs_text)
+        check("Help explains the five tabs and the switch", all(w in tabs_text for w in ["Five tabs", "Dashboard", "Units", "Painting", "Compendium", "Settings", "Help and Updates are in Settings"]), tabs_text)
         feedback_lines = [t for t in page.eval_on_selector_all("#view-help li", "els => els.map(e => e.textContent)") if "Give feedback" in t]
         check("the Help lines that tell you where to find Give feedback say Settings → Updates",
               sum("Settings → Updates" in t for t in feedback_lines) >= 2 and not any("Updates tab" in t for t in feedback_lines), feedback_lines)

@@ -5888,7 +5888,7 @@
         notify("The examples are already here (or you kept them as your own), so nothing was added.");
         return;
       }
-      commit(`Added ${exampleWords(added)}. You'll find them on the Recipes tab.`);
+      commit(`Added ${exampleWords(added)}. You'll find them on the Painting tab.`);
     }
     document.getElementById("restore-examples").addEventListener("click", restoreExampleRecipes);
 
@@ -7245,7 +7245,16 @@
       renderCanPaintBox();
       recipeList.innerHTML = "";
       if (!book.recipes.length) {
-        recipeList.innerHTML = '<li class="empty">No recipes yet.</li>';
+        // B1: what a recipe is sits behind More info, like the Schemes empty state.
+        const emptyRecipes = document.createElement("li");
+        emptyRecipes.className = "empty";
+        const emptyRecipesLine = document.createElement("span");
+        emptyRecipesLine.textContent = "No recipes yet.";
+        const emptyRecipesMore = document.createElement("p");
+        emptyRecipesMore.className = "hint";
+        emptyRecipesMore.textContent = "A recipe is your own step-by-step for a model.";
+        emptyRecipes.append(emptyRecipesLine, pageMoreInfo("recipes-empty", [emptyRecipesMore], { label: "Recipes" }));
+        recipeList.appendChild(emptyRecipes);
       }
       const shown = book.recipes
         .filter(r => (!recipePartFilter || r.part === recipePartFilter) && (!recipeCanPaint || canPaintNow(r)))
@@ -7586,7 +7595,7 @@
         emptyLine.textContent = "No schemes yet.";
         const emptyMore = document.createElement("p");
         emptyMore.className = "hint";
-        emptyMore.textContent = "A scheme groups the recipes you use for one faction " +
+        emptyMore.textContent = "A scheme is a colour plan or idea you can save into a recipe. Here it groups the recipes you use for one faction " +
           "(armour, trim, lenses, base…). Apply it to the whole faction at once, and new units in that faction get it automatically.";
         empty.append(emptyLine, pageMoreInfo("schemes-empty", [emptyMore], { label: "Schemes" }));
         schemeListEl.appendChild(empty);

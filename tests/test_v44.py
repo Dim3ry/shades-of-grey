@@ -491,10 +491,11 @@ def main():
         fresh(page)
         before = snap(page)
         clear_on_card(page)
+        # U3: the top-level group is now called Painting, so the message says "the Painting tab"
         restore_in_settings(page)
         tt = toast(page)
         check("Restore after Clear: a message says what was added",
-              tt["shown"] and tt["text"] == "Added " + ALL_WORDS + ". You'll find them on the Recipes tab.", tt)
+              tt["shown"] and tt["text"] == "Added " + ALL_WORDS + ". You'll find them on the Painting tab.", tt)
         check("the recipe book is exactly the fresh start's again", snap(page)[0] == before[0])
         check("v56: Clear took the example units too, and Restore (recipes only) does not bring them back", saved_units(page) == [], saved_units(page))
         main_tab(page, "recipes")
@@ -523,7 +524,7 @@ def main():
         restore_in_settings(page)
         tt = toast(page)
         check("Restore adds only what is missing (1 recipe, 1 scheme and the 3 gold paints)",
-              tt["text"] == "Added 1 example recipe, 1 example scheme and 3 example paints. You'll find them on the Recipes tab.", tt)
+              tt["text"] == "Added 1 example recipe, 1 example scheme and 3 example paints. You'll find them on the Painting tab.", tt)
         rn = names(page, "recipes")
         check("every example is there once", sorted(rn) == sorted(RECIPES), rn)
         check("no recipe, scheme or paint name appears twice",
@@ -542,7 +543,7 @@ def main():
         restore_in_settings(page)
         tt = toast(page)
         check("a recipe of yours named like an example counts as already there (4 recipes added, not 5; its two own paints not made)",
-              tt["text"] == "Added 4 example recipes, 2 example schemes and 14 example paints. You'll find them on the Recipes tab.", tt)
+              tt["text"] == "Added 4 example recipes, 2 example schemes and 14 example paints. You'll find them on the Painting tab.", tt)
         rn = names(page, "recipes")
         check("there is no second Blue armour", [x.lower() for x in rn].count("blue armour") == 1 and "BLUE ARMOUR" in rn, rn)
         check("your recipe is exactly as it was", page.evaluate("() => JSON.stringify(book.recipes.find(r => r.name === 'BLUE ARMOUR'))") == own_before)
@@ -563,7 +564,7 @@ def main():
         restore_in_settings(page)
         tt = toast(page)
         check("Restore reuses a paint you already have by that name (15 new paints, not 16)",
-              tt["text"] == "Added 5 example recipes, 2 example schemes and 15 example paints. You'll find them on the Recipes tab.", tt)
+              tt["text"] == "Added 5 example recipes, 2 example schemes and 15 example paints. You'll find them on the Painting tab.", tt)
         check("that paint keeps its colour and is not turned into an example",
               page.evaluate("() => JSON.stringify(book.paints.find(p => p.name === 'Example deep blue'))") == mine)
         check("only one paint has that name, and the restored recipe uses it",
@@ -596,7 +597,7 @@ def main():
         restore_in_settings(page)
         tt = toast(page)
         check("Restore works for an existing user",
-              tt["text"] == "Added " + ALL_WORDS + ". You'll find them on the Recipes tab.", tt)
+              tt["text"] == "Added " + ALL_WORDS + ". You'll find them on the Painting tab.", tt)
         check("their own recipes, schemes and paints are exactly as they were",
               page.evaluate("() => JSON.stringify({ r: book.recipes.filter(x => !x.example), s: book.schemes.filter(x => !x.example), p: book.paints.filter(x => !x.example) })") == own_before)
         check("their units are untouched (there are no example units, so nothing is linked)", json.dumps(saved_units(page), sort_keys=True) == units_before)
