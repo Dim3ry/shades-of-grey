@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=77"></script>
+  <script src="early.js?v=78"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -1472,6 +1472,8 @@
       .layout-split > .layout-main { grid-area: main; min-width: 0; }
       .layout-split > .layout-side { grid-area: side; min-width: 0; }
       .layout-split > .card { margin-bottom: 0; }
+      /* v78: layout-detail-wide = a narrow list on the left and a wide detail on the right (list is layout-main, detail is layout-side). */
+      .layout-split.layout-detail-wide { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
     }
 
     /* ----- Wide screens (laptops and desktops) -----
@@ -1540,6 +1542,10 @@
       #view-help .help:not(.hidden) { columns: 2; column-gap: 40px; }
       ul.recipe-list { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
       #recipe-page, #scheme-page, #view-compendium { max-width: 780px; }
+      /* v78: beside the list the recipe fills its column; the open recipe in the list gets an outline (and aria-current). */
+      #recipe-split.layout-split #recipe-page { max-width: none; }
+      #recipe-split.layout-split ul.recipe-list { grid-template-columns: 1fr; }
+      #recipe-split.layout-split .recipe-item[aria-current="true"] { outline: 2px solid var(--accent); outline-offset: -2px; }
       .seg { max-width: 480px; }
       ul.paint-list { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; align-items: start; }
       .help details { break-inside: avoid; }
@@ -2403,7 +2409,9 @@
         <div id="shop-panel"></div>
       </div>
 
-      <div id="recipe-home">
+      <!-- v78: on wide screens an open recipe shows beside the list (layout-split is switched on by renderRecipes() only then). -->
+      <div id="recipe-split" class="layout-detail-wide">
+      <div id="recipe-home" class="layout-main">
         <div class="units-toolbar">
           <button class="primary-button" id="new-recipe">+ New recipe</button>
           <select id="part-filter" aria-label="Filter by part"></select>
@@ -2419,10 +2427,11 @@
           <div class="panel-field" style="margin-top: 12px;">Techniques<div class="chips chips-wrap" id="technique-chips" style="margin-top: 0;"></div></div>
         </details>
       </div>
+      <!-- One recipe, either to read or to edit. Filled in by JavaScript. -->
+      <div id="recipe-page" class="layout-side hidden"></div>
+      </div>
       <!-- v16: Paste recipes (text box, preview, confirm). Filled by renderImport(). -->
       <div id="import-page" class="hidden"></div>
-      <!-- One recipe, either to read or to edit. Filled in by JavaScript. -->
-      <div id="recipe-page" class="hidden"></div>
     </section>
 
     <!-- v21.9: Settings, Help and Updates share ONE main tab (Settings). This switch (same style as
@@ -2554,6 +2563,7 @@
             <li>For each paint, type its name and brand and tap the colour circle to pick roughly what it looks like. Paints you've used before are suggested as you type.</li>
             <li>Mixing paints? Add more than one paint to a step and type a <strong>mix ratio</strong> like 2:1, 1:1:2 or 50/50 (in the same order as the paints). The %s are worked out for you, or you can set each one's <strong>mix %</strong> yourself. Contrast Medium and Lahmian Medium are suggested as you type.</li>
             <li id="help-recipe-steps">Each step is folded to one line. Tap it to open it. Inside, <strong>More options</strong> holds the technique, coats, mix ratio, note and the <strong>Optional</strong> tick.</li>
+            <li>On a wide screen an open recipe sits beside the list, so you can open another without going back.</li>
             <li>Reorder steps with <strong>↑ ↓</strong>. Nothing is saved until you press <strong>Save recipe</strong>.</li>
             <li>Link a recipe to units from the recipe (<strong>Used on</strong>) or from a unit's details. Linked recipes show as buttons on the unit's card: tap one to open it.</li>
             <li><strong>Your Palette</strong> (top of the Recipes tab) lists every paint in your recipes, once each. It fills itself in: add a paint to a recipe and it appears.</li>
@@ -2924,7 +2934,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=77" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=78" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -2935,11 +2945,11 @@
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks.
        v70: mentor-tips.js (the Mentor tips, plain data) loads between basing-tips.js and app.js. It only adds three
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=77"></script>
-  <script src="schemes.js?v=77"></script>
-  <script src="detail-recipes.js?v=77"></script>
-  <script src="basing-tips.js?v=77"></script>
-  <script src="mentor-tips.js?v=77"></script>
-  <script src="app.js?v=77"></script>
+  <script src="colour.js?v=78"></script>
+  <script src="schemes.js?v=78"></script>
+  <script src="detail-recipes.js?v=78"></script>
+  <script src="basing-tips.js?v=78"></script>
+  <script src="mentor-tips.js?v=78"></script>
+  <script src="app.js?v=78"></script>
 </body>
 </html>
