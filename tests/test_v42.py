@@ -137,8 +137,10 @@ def main():
         added = [l[1:] for l in diff.splitlines() if l.startswith("+") and not l.startswith("+++")]
         removed = [l[1:] for l in diff.splitlines() if l.startswith("-") and not l.startswith("---")]
         code_added = [re.sub(r"\s//\s.*$", "", l) for l in added if not l.strip().startswith("//")]
-        check("buildShopFoldout and addToShoppingList (the single Add) were not changed",
-              not any(re.search(r"function buildShopFoldout|function addToShoppingList|add\.addEventListener\(\"click\", \(\) => \{ if \(addToShoppingList", l) for l in removed))
+        # v73 (chunk 4.3): buildShopFoldout gained one option and its Add button moved into a shared helper (buildShopAddSlot), so only
+        # the single Add itself (addToShoppingList) is still checked here. The fold-out's Add button is covered by v39 and v41.
+        check("addToShoppingList (the single Add) was not changed",
+              not any(re.search(r"function addToShoppingList", l) for l in removed))
 
         # ---------- 2. Starter schemes ----------
         print("\n--- 2. Starter schemes ---")

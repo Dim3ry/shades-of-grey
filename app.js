@@ -2243,7 +2243,7 @@
     let similarState = null;   // v65: null, or the open Similar paints pop-up (see openSimilarPaints)
     function updateShopFoldouts() {
       if (similarState) similarState.refresh();   // v65: the pop-up's buttons follow the list too (after Add and after Undo)
-      for (const el of document.querySelectorAll(".shop-more")) if (el.redrawAdd) el.redrawAdd();
+      for (const el of document.querySelectorAll(".shop-more, .shop-add-row")) if (el.redrawAdd) el.redrawAdd();   // v73: and the Mentor picks' own button
       for (const el of document.querySelectorAll(".idea-tag")) {   // v41: the row tags the Compendium watches
         if (!el.shopPaint) continue;
         const t = shopListTag(el.shopPaint, el.shopTag);
@@ -2313,22 +2313,12 @@
       }
       return el.id;
     }
-    // The fold-out for one paint. Returns null when there is nothing to show (you own it, switched off, or no shop sells it).
-    function buildShopFoldout(paint, owned, source) {
-      if (owned || !shopLinksOn() || !paint || !String(paint.name || "").trim()) return null;
-      const shops = shopsFor([{ paint }]).map(x => x.shop);
-      if (!shops.length) return null;
-      const box = document.createElement("details");
-      box.className = "shop-more";
-      const summary = document.createElement("summary");
-      summary.textContent = "Shop links";
-      const who = hiddenName(paint.name);   // v55: the fold-out has no visible name of its own, so the paint's name is kept here for screen readers
-      labelWithName(summary, "Shop links for", who);
-      const body = document.createElement("div");
-      body.className = "shop-body";
+    // v73: the "Add to shopping list" button for one paint, or "On your shopping list" once it is there. who = the hidden line holding the
+    // paint's name. Shared by the Shop links fold-out and the Mentor picks. redrawAdd() makes it follow the list (after Add and after Undo).
+    function buildShopAddSlot(paint, source, who) {
       const addSlot = document.createElement("div");
       addSlot.className = "shop-add";
-      box.redrawAdd = () => {
+      addSlot.redrawAdd = () => {
         addSlot.replaceChildren();
         if (onShoppingList(paint)) {
           const done = document.createElement("span");
@@ -2347,7 +2337,41 @@
         addSlot.appendChild(add);
         return add;
       };
-      box.redrawAdd();
+      addSlot.redrawAdd();
+      return addSlot;
+    }
+    // v73: a Mentor pick gets the button on its own, outside the closed Shop links fold-out, and Settings -> Shop links does not hide it
+    // (it only writes to your own list, like the scheme tick boxes). Nothing for a paint you own or have running low, and nothing for a
+    // made-up example paint (no shop sells it).
+    function realPaintForShop(paint) {
+      const mine = palettePaintFor(paint);
+      return !(mine && (isExamplePaint(mine) || isMadeUpPaint(mine) || haveIt(mine))) && !isMadeUpPaint(paint);
+    }
+    function buildShopAddRow(paint, source) {
+      if (!paint || !String(paint.name || "").trim() || !realPaintForShop(paint)) return null;
+      const row = document.createElement("div");
+      row.className = "shop-add-row";
+      const who = hiddenName(paint.name);
+      const slot = buildShopAddSlot(paint, source, who);
+      row.redrawAdd = slot.redrawAdd;
+      row.append(slot, who);
+      return row;
+    }
+    // The fold-out for one paint. Returns null when there is nothing to show (you own it, switched off, or no shop sells it).
+    function buildShopFoldout(paint, owned, source, ownButton) {
+      if (owned || !shopLinksOn() || !paint || !String(paint.name || "").trim()) return null;
+      const shops = shopsFor([{ paint }]).map(x => x.shop);
+      if (!shops.length) return null;
+      const box = document.createElement("details");
+      box.className = "shop-more";
+      const summary = document.createElement("summary");
+      summary.textContent = "Shop links";
+      const who = hiddenName(paint.name);   // v55: the fold-out has no visible name of its own, so the paint's name is kept here for screen readers
+      labelWithName(summary, "Shop links for", who);
+      const body = document.createElement("div");
+      body.className = "shop-body";
+      const addSlot = buildShopAddSlot(paint, source, who);
+      box.redrawAdd = addSlot.redrawAdd;
       const links = document.createElement("div");
       links.className = "shop-links";
       for (const shop of shops) {
@@ -2363,7 +2387,7 @@
       const note = document.createElement("p");
       note.className = "hint";
       note.textContent = SHOP_PLAIN_WORDS;
-      body.append(addSlot, links, note, who);
+      if (ownButton) body.append(links, note, who); else body.append(addSlot, links, note, who);   // v73: the Mentor rows have their own button
       box.append(summary, body);
       return box;
     }
@@ -10189,10 +10213,14 @@
         const row = buildIdeaItem(paint, tag, reason, "", door.addStep ? () => door.addStep(paint, stepNote) : null, undefined, undefined, compactRows(door));
         if (door.listMarks && !idea.hit.owned) watchShopTag(row, paint, baseTag);
         // v39: a paint you do not own gets the small closed "Shop links" fold-out under its row (door.shops; the row itself is unchanged)
-        const shops = door.shops ? buildShopFoldout(paint, idea.hit.owned, door.shopSource ? door.shopSource() : "") : null;
+        const source = door.shopSource ? door.shopSource() : "";
+        const real = !door.realOnly || realPaintForShop(paint) || onShoppingList(paint);   // v73: Mentor picks: no shop actions for a made-up example paint
+        const shops = door.shops && real ? buildShopFoldout(paint, idea.hit.owned, source, !!door.listButton) : null;
         if (shops) row.appendChild(shops);
         const toRecipe = buildPaintToRecipeRow(door, paint);   // v62
         if (toRecipe) row.appendChild(toRecipe);
+        const toList = door.listButton && !idea.hit.owned ? buildShopAddRow(paint, source) : null;   // v73: Mentor picks: Add to shopping list in plain view
+        if (toList) row.appendChild(toList);
         if (idea.hit.alsoOwned) row.firstElementChild.after(alsoOwnedLine(idea.hit, door.addStep ? () => door.addStep(idea.hit.alsoOwned.paint, stepNote) : null, null, reason));   // v64: your best paint is a poor fit, so it comes second
         list.appendChild(row);
         lines.push(ideaTextLine(paint, tag, reason, ""));
@@ -11795,6 +11823,9 @@
         return out;
       }
       const role = mentorRole(st.mentorPart);
+      // v73: the rows get three next steps. Use in a recipe and Add to a recipe (v62) and the Shop links fold-out come with the shared rows;
+      // listButton puts Add to shopping list in plain view, and the list remembers "Ask the Mentor" as the place the paint came from.
+      const pickDoor = Object.assign({}, door, { listButton: true, realOnly: true, shopSource: () => "Compendium: Ask the Mentor" });
       for (const paint of chosen) {
         const label = document.createElement("p");
         label.className = "idea-label";
@@ -11807,7 +11838,7 @@
           none.textContent = "No paints with a known colour to suggest yet.";
           out.appendChild(none);
         } else {
-          out.appendChild(buildIdeasList(door, ideas, paint.colour, role).list);
+          out.appendChild(buildIdeasList(pickDoor, ideas, paint.colour, role).list);
         }
       }
       const tips = mentorTipsShown(st.mentorPart, chosen.map(p => p.colour));
@@ -15423,12 +15454,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=72".
+    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=73".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v72";
+    const APP_VERSION = "v73";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -15879,6 +15910,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v73", date: "27 Oct 2026", changes: [
+        "Each paint pick in Ask the Mentor now has Add to shopping list in plain view, next to Use in a recipe, Add to a recipe and Similar paints. Each one says what it did and has an Undo.",
+        "Add to shopping list stays there even if you switch Shop links off in Settings. Paints you own and made-up example paints don't get it.",
+      ]},
       { version: "v72", date: "27 Oct 2026", changes: [
         "Ask the Mentor now shows tips for the part you chose under the paint picks, each with its colours and, where it has one, a link to the creator it credits. A tip about your chosen colour comes first.",
         "The tips there are samples for now. Real tips will replace them later.",
