@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=75"></script>
+  <script src="early.js?v=76"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -930,6 +930,9 @@
       border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card); padding: 14px; display: grid; gap: 6px;
     }
     .recipe-item:hover { border-color: var(--accent); }
+    /* v76: a very long recipe or paint name wraps instead of stretching the page sideways */
+    ul.recipe-list > li, ul.paint-list > li, .recipe-item, .recipe-item > *, .paint-head, .paint-text > * { min-width: 0; }
+    .recipe-item .name, .paint-text .name, #recipe-page h2, #recipe-page h3, #palette-view h2, #palette-view h3, .paint-item .panel { overflow-wrap: anywhere; }
     /* v50: a recipe card is the open button (name, colour dots, Have / Missing) with More info under it. */
     li.recipe-card { background: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card); padding: 0 14px 0 0; display: grid; }
     li.recipe-card:hover, li.recipe-card:focus-within { border-color: var(--accent); }
@@ -2604,7 +2607,7 @@
             <li>Your data and backups carry a data version number. If an older copy of the app (say an installed app that hasn't updated yet) finds data saved by a newer one, it stops saving and asks you to <strong>reload</strong>, so it can't damage that newer data. A backup saved by a newer version asks you to update before it restores.</li>
             <li>A <strong>Saved</strong> message only shows when your change really was saved. If the device's storage is full you'll see <strong>Not saved</strong> with a <strong>Save backup</strong> button instead. A paste import that can't be saved is put back and stays open, so your answers aren't lost.</li>
             <li>Got the app open in two places at once (say the installed app and a browser tab)? Changes made in one now show up in the other, instead of being saved over.</li>
-            <li id="help-backup-checks"><strong>Restore backup</strong> checks the file first. A picture or other file picked by mistake, a file over 300 MB, or a backup that's damaged is refused with a message, and nothing changes.</li>
+            <li id="help-backup-checks"><strong>Restore backup</strong> checks the file first. A picture or other file picked by mistake, a file over 300 MB, or a backup that's damaged is refused with a message, and nothing changes. A unit with more than 999 models is lowered to 999, and the restore tells you how many were changed.</li>
             <li>New phone? Save a backup on the old one, open the app on the new one, and restore it.</li>
           </ul>
         </details>
@@ -2901,7 +2904,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=75" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=76" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -2912,11 +2915,11 @@
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks.
        v70: mentor-tips.js (the Mentor tips, plain data) loads between basing-tips.js and app.js. It only adds three
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=75"></script>
-  <script src="schemes.js?v=75"></script>
-  <script src="detail-recipes.js?v=75"></script>
-  <script src="basing-tips.js?v=75"></script>
-  <script src="mentor-tips.js?v=75"></script>
-  <script src="app.js?v=75"></script>
+  <script src="colour.js?v=76"></script>
+  <script src="schemes.js?v=76"></script>
+  <script src="detail-recipes.js?v=76"></script>
+  <script src="basing-tips.js?v=76"></script>
+  <script src="mentor-tips.js?v=76"></script>
+  <script src="app.js?v=76"></script>
 </body>
 </html>
