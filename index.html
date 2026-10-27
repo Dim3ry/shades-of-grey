@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=78"></script>
+  <script src="early.js?v=79"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -1546,6 +1546,17 @@
       #recipe-split.layout-split #recipe-page { max-width: none; }
       #recipe-split.layout-split ul.recipe-list { grid-template-columns: 1fr; }
       #recipe-split.layout-split .recipe-item[aria-current="true"] { outline: 2px solid var(--accent); outline-offset: -2px; }
+      /* v79: beside the open units the list is one column; the side pane stays in view under the tab bar and scrolls on its own. */
+      #unit-split.layout-split ul.units { grid-template-columns: 1fr; }
+      #unit-split.layout-split > .layout-side:not(.hidden) {
+        display: grid; gap: 12px; align-content: start;
+        position: sticky; top: 84px; max-height: calc(100vh - 100px); overflow-y: auto;
+      }
+      #unit-split.layout-split li.unit[aria-current="true"] { outline: 2px solid var(--accent); outline-offset: -2px; }
+      .unit-side-card { margin-bottom: 0; }
+      .unit-side-card .card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+      .unit-side-card h2 { margin: 0; font-size: 18px; overflow-wrap: anywhere; }
+      .unit-side-card .plain-button { min-height: 44px; flex-shrink: 0; }
       .seg { max-width: 480px; }
       ul.paint-list { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; align-items: start; }
       .help details { break-inside: avoid; }
@@ -2339,7 +2350,11 @@
       <datalist id="game-options"></datalist>
       <datalist id="faction-options"></datalist>
 
-      <ul class="units" id="unit-list"></ul>
+      <!-- v79: on wide screens the open units' details show in the side pane (layout-split is switched on by renderUnits() only then). -->
+      <div id="unit-split" class="layout-detail-wide">
+        <div class="layout-main"><ul class="units" id="unit-list"></ul></div>
+        <div class="layout-side hidden" id="unit-side" role="region" aria-label="Open units"></div>
+      </div>
 
       <!-- v21.1: the bar shown while selecting. The stage menu is filled in by refreshSelectBar(). -->
       <div class="select-bar hidden" id="select-bar" role="region" aria-label="Move ticked units">
@@ -2484,7 +2499,7 @@
             <li id="help-unfinished-work"><strong>Unfinished work is kept:</strong> if the page reloads or the app closes while you are part-way through adding a unit (the name box has something in it), writing a recipe, or pasting notes into Paste recipes, the app keeps what you had. Next time you open the Units or Recipes tab, a card says <strong>We kept your unfinished…</strong>. <strong>Keep going</strong> puts it all back. <strong>Discard</strong> asks first, then throws it away for good (there is no Undo). Nothing opens by itself, and a kept draft is never replaced by accident: if you try to start a new one first, the app asks. It goes when you press Add or Save, or Cancel and say yes. It stays on this device and is not in your backups.</li>
             <li id="help-typing"><strong>Typing:</strong> while the cursor is in a text box, the tab bar at the bottom hides so it can't sit on your keyboard. Tap somewhere else and it comes back.</li>
             <li id="help-move-many"><strong>Move several units at once:</strong> on the Units tab press <strong>Select</strong>. Each unit gets a tick box (tapping a unit ticks it). Tick the ones you want, or press <strong>Select all shown</strong> to tick every unit your filters are showing. Then pick a stage from <strong>Move … to stage</strong> in the bar at the bottom. Units tracked model by model have all their models moved. One <strong>Undo</strong> puts every unit back as it was, diary included. <strong>Cancel</strong>, the phone's Back button or leaving the tab stops selecting without changing anything.</li>
-            <li>Tap a unit's name to open its details: its <strong>stage</strong>, photos, paint recipes and paint notes, then <strong>back a stage</strong> and delete.</li>
+            <li>Tap a unit's name to open its details: its <strong>stage</strong>, photos, paint recipes and paint notes, then <strong>back a stage</strong> and delete. On a wide screen they open in a pane beside the list, where you can keep several open and press <strong>Close</strong> on each.</li>
             <li id="help-edit-details"><strong>Changing a unit:</strong> the boxes for its name, game, faction, nickname, number of models and repaint flag are folded away under <strong>Edit details</strong>, near the bottom of its details. Tap it to open them. It stays open while you make changes, and shuts when you open the unit again later.</li>
             <li id="help-questions"><strong>Questions:</strong> when the app needs to check before doing something (deleting, replacing, leaving a recipe you haven't saved) or needs a name from you, it asks in its own small box over the page. Tap <strong>Yes</strong> or <strong>No</strong>, or type the name and tap <strong>OK</strong>. <strong>No</strong>, <strong>Cancel</strong>, the <strong>Escape</strong> key and the phone's <strong>Back</strong> button all mean no, and nothing changes. On a keyboard, <strong>Enter</strong> means yes.</li>
             <li id="help-delete-unit"><strong>Deleting a unit:</strong> press <strong>Delete</strong> in its details and say yes. Changed your mind? Press <strong>Undo</strong> on the message that appears (it stays about 8 seconds): the unit comes back exactly as it was, photos, recipes and diary included.</li>
@@ -2934,7 +2949,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=78" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=79" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -2945,11 +2960,11 @@
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks.
        v70: mentor-tips.js (the Mentor tips, plain data) loads between basing-tips.js and app.js. It only adds three
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=78"></script>
-  <script src="schemes.js?v=78"></script>
-  <script src="detail-recipes.js?v=78"></script>
-  <script src="basing-tips.js?v=78"></script>
-  <script src="mentor-tips.js?v=78"></script>
-  <script src="app.js?v=78"></script>
+  <script src="colour.js?v=79"></script>
+  <script src="schemes.js?v=79"></script>
+  <script src="detail-recipes.js?v=79"></script>
+  <script src="basing-tips.js?v=79"></script>
+  <script src="mentor-tips.js?v=79"></script>
+  <script src="app.js?v=79"></script>
 </body>
 </html>
