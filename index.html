@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=79"></script>
+  <script src="early.js?v=80"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -1548,11 +1548,15 @@
       #recipe-split.layout-split .recipe-item[aria-current="true"] { outline: 2px solid var(--accent); outline-offset: -2px; }
       /* v79: beside the open units the list is one column; the side pane stays in view under the tab bar and scrolls on its own. */
       #unit-split.layout-split ul.units { grid-template-columns: 1fr; }
-      #unit-split.layout-split > .layout-side:not(.hidden) {
+      #unit-split.layout-split > .layout-side:not(.hidden), #palette-split.layout-split > .layout-side:not(.hidden) {
         display: grid; gap: 12px; align-content: start;
         position: sticky; top: 84px; max-height: calc(100vh - 100px); overflow-y: auto;
       }
       #unit-split.layout-split li.unit[aria-current="true"] { outline: 2px solid var(--accent); outline-offset: -2px; }
+      /* v80: Your Palette uses the same pane: one column list, open paint marked, and the paint's own heading as the card title. */
+      #palette-split.layout-split ul.paint-list { grid-template-columns: 1fr; }
+      #palette-split.layout-split .paint-item[aria-current="true"], #palette-split.layout-split .swatch-tile[aria-current="true"] { outline: 2px solid var(--accent); outline-offset: -2px; }
+      .unit-side-card .paint-head { min-width: 0; }
       .unit-side-card { margin-bottom: 0; }
       .unit-side-card .card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
       .unit-side-card h2 { margin: 0; font-size: 18px; overflow-wrap: anywhere; }
@@ -2416,7 +2420,11 @@
           <div id="palette-search-result" style="margin-top: 8px;"></div>
         </div>
         <div class="status-legend hidden" id="palette-legend" aria-label="Key to the marks"></div>
-        <ul class="paint-list" id="paint-list"></ul>
+        <!-- v80: on wide screens the open paints' details show in the side pane (layout-split is switched on by renderPaintSide() only then). -->
+        <div id="palette-split" class="layout-detail-wide">
+          <div class="layout-main"><ul class="paint-list" id="paint-list"></ul></div>
+          <div class="layout-side hidden" id="palette-side" role="region" aria-label="Open paints"></div>
+        </div>
       </div>
 
       <!-- v40: the Shopping list, its own switch next to Your Palette. Filled by renderShopPanel(). -->
@@ -2583,6 +2591,7 @@
             <li>Link a recipe to units from the recipe (<strong>Used on</strong>) or from a unit's details. Linked recipes show as buttons on the unit's card: tap one to open it.</li>
             <li><strong>Your Palette</strong> (top of the Recipes tab) lists every paint in your recipes, once each. It fills itself in: add a paint to a recipe and it appears.</li>
             <li id="help-palette-swatches"><strong>List or Swatches</strong> (top of Your Palette): Swatches shows each paint as a small colour tile with a mark for its status. Tap a tile to open that paint. In an open paint, <strong>More options</strong> holds its name, brand, colour, Merge and Remove.</li>
+            <li>On a wide screen, a paint you tap in Your Palette opens in a pane beside the list. You can keep several open and press <strong>Close</strong> on each.</li>
             <li>In Your Palette, sort by colour, name or brand, and tap a brand to show only its paints. Tap a paint to change its colour, name or brand: the change applies in every recipe that uses it.</li>
             <li>At the bottom of an open paint: <strong>Remove</strong> deletes a paint no recipe uses (a paint that's still in a recipe can't be removed). <strong>Merge into…</strong> joins it to another paint, handy for a typo twin like "Deep Bluee": its recipes move to the paint you pick, and that paint keeps its own name and brand. Both have Undo.</li>
             <li><strong>Scan a paint pot</strong> (in Your Palette) reads the paint's name from its label with the camera and suggests matches. The reading happens on your phone; the photo is never sent anywhere. The first scan loads the label reader (about 11 MB) from Minifolio's own site, and after that scanning works with no internet. Leaving the app, or closing the scan panel, switches the camera off.</li>
@@ -2949,7 +2958,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=79" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=80" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -2960,11 +2969,11 @@
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks.
        v70: mentor-tips.js (the Mentor tips, plain data) loads between basing-tips.js and app.js. It only adds three
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=79"></script>
-  <script src="schemes.js?v=79"></script>
-  <script src="detail-recipes.js?v=79"></script>
-  <script src="basing-tips.js?v=79"></script>
-  <script src="mentor-tips.js?v=79"></script>
-  <script src="app.js?v=79"></script>
+  <script src="colour.js?v=80"></script>
+  <script src="schemes.js?v=80"></script>
+  <script src="detail-recipes.js?v=80"></script>
+  <script src="basing-tips.js?v=80"></script>
+  <script src="mentor-tips.js?v=80"></script>
+  <script src="app.js?v=80"></script>
 </body>
 </html>

@@ -95,25 +95,29 @@ with sync_playwright() as pw:
         page.click("#recipe-seg button[data-view='palette']")
         def open_paint(name):
             page.locator(".paint-item", has_text=name).locator("button.paint-head").click()
+        # v80: from 900 px an open paint's details are a card in the Palette side pane, not under the paint in the list.
+        def box(name):
+            if w >= 900: return page.locator("#palette-side .unit-side-card", has_text=name)
+            return page.locator(".paint-item", has_text=name)
         open_paint("Abaddon Black")
         for key in ["owned", "low", "empty", "wishlist", "notowned"]:
-            page.locator(".paint-item", has_text="Abaddon Black").locator(f'.status-chip[data-status="{key}"]').click()
+            box("Abaddon Black").locator(f'.status-chip[data-status="{key}"]').click()
             got = page.evaluate("paintStatus(book.paints.find(p => p.name === 'Abaddon Black'))")
             check(f"{size}: tap sets {key}", got == key, got)
-        page.locator(".paint-item", has_text="Abaddon Black").locator('.status-chip[data-status="notowned"]').click()
+        box("Abaddon Black").locator('.status-chip[data-status="notowned"]').click()
         check(f"{size}: tapping the same status again clears it", page.evaluate("paintStatus(book.paints.find(p => p.name === 'Abaddon Black'))") == "")
         check(f"{size}: cleared status is saved as blank", page.evaluate("'status' in book.paints.find(p => p.name === 'Abaddon Black')") is False)
         page.evaluate("showTab('recipes')")
         page.click("#recipe-seg button[data-view='palette']")
         open_paint("Nuln Oil")
-        spare = page.locator(".paint-item", has_text="Nuln Oil").locator(".spare-tick input")
+        spare = box("Nuln Oil").locator(".spare-tick input")
         check(f"{size}: running low shows spare in stock tick", spare.count() == 1)
         spare.uncheck()
         check(f"{size}: spare tick saves", page.evaluate("book.paints.find(p => p.name === 'Nuln Oil').spare") is False)
-        page.locator(".paint-item", has_text="Nuln Oil").locator('.status-chip[data-status="owned"]').click()
+        box("Nuln Oil").locator('.status-chip[data-status="owned"]').click()
         check(f"{size}: spare tick goes when status is not running low", page.evaluate("'spare' in book.paints.find(p => p.name === 'Nuln Oil')") is False)
-        page.locator(".paint-item", has_text="Nuln Oil").locator('.status-chip[data-status="low"]').click()
-        page.locator(".paint-item", has_text="Nuln Oil").locator(".spare-tick input").check()
+        box("Nuln Oil").locator('.status-chip[data-status="low"]').click()
+        box("Nuln Oil").locator(".spare-tick input").check()
         page.screenshot(path=f"{SHOTS}/v17-{size}-palette-status.png", full_page=False)
 
         # ---- Search or add on Your Palette ----
