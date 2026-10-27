@@ -269,7 +269,7 @@ def main():
         check("a unit tracked model by model counts each model at its own stage", summary == f"{done} of {total} models done · {under} under way · 1 units" and (done, under) == (1, 2), (summary, done, under))
         one = [{"id": 1, "name": "Solo", "hobby": "40K", "faction": "Tyranids", "stage": 1, "count": 1}]
         pct, summary = dash(one)
-        check("one model under way reads sensibly", summary.startswith("0 of 1 models done · 1 under way"), summary)
+        check("one model under way reads sensibly", summary.startswith("0 of 1 model done · 1 under way"), summary)
         dash(BASE_UNITS)
         page.evaluate("() => { settings.doneFrom = 3; saveSettings(); renderDashboard(); }")
         summary = page.inner_text("#done-summary")

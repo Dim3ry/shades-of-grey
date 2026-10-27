@@ -4292,7 +4292,7 @@
       const underWay = stageCounts(models).reduce((sum, c, i) => sum + (i >= 1 && !isDone(i) ? c : 0), 0);
       donePercent.textContent = total ? `${percent}%` : "–";
       doneSummary.textContent = total
-        ? `${done} of ${total} models done · ${underWay ? `${underWay} under way · ` : ""}${models.length} units`
+        ? `${done} of ${plural(total, "model")} done · ${underWay ? `${underWay} under way · ` : ""}${models.length} units`
         : "No units yet. Add some on the Units tab: one at a time, or a whole army from a pasted army list or a CSV file.";
 
       todoButton.innerHTML = "";
@@ -4786,8 +4786,8 @@
       // The summary line always shows what you're looking at, even with Filters folded away.
       const scope = [filters.faction || filters.hobby].filter(Boolean).join("");
       filterNote.textContent = anyFilter
-        ? `${scope ? scope + ": " : ""}${visible.length} of ${models.length} units (${modelCount(visible)} models)`
-        : `${models.length} units, ${modelCount(models)} models`;
+        ? `${scope ? scope + ": " : ""}${visible.length} of ${models.length} units (${plural(modelCount(visible), "model")})`
+        : `${models.length} units, ${plural(modelCount(models), "model")}`;
       toggleFilters.textContent = `Filters${anyFilter ? " (" + activeCount + ")" : ""} ${filtersOpen ? "▴" : "▾"}`;
 
       // Suggestions for the game/faction boxes in the add form and the edit panel.
@@ -4919,7 +4919,7 @@
         info.setAttribute("role", "button");
         info.tabIndex = 0;
         info.setAttribute("aria-pressed", ticked.has(model.id));
-        info.setAttribute("aria-label", `${displayName(model)}, ${STAGES[model.stage]}. ${ticked.has(model.id) ? "Ticked" : "Tap to tick"}.`);
+        info.setAttribute("aria-label", `${displayName(model)}, ${stageSummary(model).replace(/ · /g, ", ")}. ${ticked.has(model.id) ? "Ticked" : "Tap to tick"}.`);
       }
 
       const name = document.createElement("div");
@@ -5015,16 +5015,18 @@
 
     // The stage name and the 7 bars for a unit. A unit tracked model by model shows how many are at each stage,
     // furthest first; the bars are solid up to the furthest-behind model and faint up to the furthest-ahead one.
+    function stageSummary(model) {
+      if (model.each && new Set(model.stages).size > 1) {
+        const counts = stageCounts([model]);
+        return counts.map((c, i) => [c, i]).filter(([c]) => c > 0).reverse()
+          .map(([c, i]) => `${c} ${STAGES[i]}`).join(" · ");
+      }
+      return STAGES[model.stage];
+    }
     function stageParts(model) {
       const stage = document.createElement("div");
       stage.className = "stage";
-      let stageText = STAGES[model.stage];
-      if (model.each && new Set(model.stages).size > 1) {
-        const counts = stageCounts([model]);
-        stageText = counts.map((c, i) => [c, i]).filter(([c]) => c > 0).reverse()
-          .map(([c, i]) => `${c} ${STAGES[i]}`).join(" · ");
-      }
-      stage.textContent = stageText + (model.repaint ? "  ·  ↻ repaint" : "");
+      stage.textContent = stageSummary(model) + (model.repaint ? "  ·  ↻ repaint" : "");
       const furthest = Math.max(...stagesOf(model));
       const pips = document.createElement("div");
       pips.className = "pips";
@@ -5323,6 +5325,7 @@
       editSection.className = "edit-details help-look";   // v53: the Help look (More info / Less info)
       const editSummary = document.createElement("summary");
       editSummary.textContent = "Edit details";
+      editSummary.setAttribute("role", "button");   // B2: a screen reader announces it as a button, not an unnamed group
       const editHint = document.createElement("span");
       editHint.className = "edit-details-hint";
       editHint.textContent = "name, game, faction, nickname, models";
@@ -5344,6 +5347,7 @@
       const del = document.createElement("button");
       del.className = "danger-button";
       del.textContent = "Delete";
+      del.setAttribute("aria-label", `Delete ${displayName(model)}`);   // B2: says which unit
       del.addEventListener("click", () => deleteModel(model.id));
       buttons.appendChild(del);
 
@@ -14463,7 +14467,7 @@
       try { used = (localStorage.getItem(STORAGE_KEY) || "").length + (localStorage.getItem(RECIPES_KEY) || "").length; } catch (ignored) {}
       const photos = models.reduce((sum, m) => sum + (m.photos || []).length + (m.photo ? 1 : 0), 0);
       const summary =
-        `${models.length} units, ${modelCount(models)} models, ${plural(photos, "photo")}, ` +
+        `${models.length} units, ${plural(modelCount(models), "model")}, ${plural(photos, "photo")}, ` +
         `${plural(book.recipes.length, "recipe")}. ` +
         `Units and recipes use about ${Math.max(1, Math.round(used / 1024))} KB of roughly 5,000 KB. ` +
         (settings.lastBackup ? `Last backup: ${shortDate(settings.lastBackup)}.` : "No backup saved yet.") +
