@@ -126,14 +126,15 @@ def today_and_yesterday(page):
 
 def add_photos(page, uid, count, wait=20000):
     open_unit(page, uid)
-    picker = page.locator(f'#view-units li.unit[data-id="{uid}"] input[type="file"][accept="image/*"]').first
+    # v79: from 900 px a unit's details (photos included) sit in the side pane, not inside its card, so look in either place.
+    picker = page.locator(f'#view-units :is(li.unit, .unit-side-card)[data-id="{uid}"] input[type="file"][accept="image/*"]').first
     picker.set_input_files(files=[{"name": f"p{i}.png", "mimeType": "image/png",
                                    "buffer": png(300, 200, (40 + i * 30, 90, 160))} for i in range(count)])
-    page.wait_for_function(f"""() => {{ const im = [...document.querySelectorAll('#view-units li.unit[data-id="{uid}"] .photo-tile img')];
+    page.wait_for_function(f"""() => {{ const im = [...document.querySelectorAll('#view-units :is(li.unit, .unit-side-card)[data-id="{uid}"] .photo-tile img')];
         return im.length === {count} && im.every(i => i.complete && i.naturalWidth > 0); }}""", timeout=wait)
     page.wait_for_timeout(500)
 
-STRIP_JS = """(uid) => { const s = document.querySelector('#view-units li.unit[data-id="' + uid + '"] .photo-strip');
+STRIP_JS = """(uid) => { const s = document.querySelector('#view-units :is(li.unit, .unit-side-card)[data-id="' + uid + '"] .photo-strip');
     if (!s) return null;
     const sr = s.getBoundingClientRect();
     const items = [...s.querySelectorAll('li')].map(li => ({ li, r: li.getBoundingClientRect(), t: li.querySelector('.photo-tile').getBoundingClientRect() }));

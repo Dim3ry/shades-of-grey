@@ -4622,7 +4622,7 @@
     function renderUnitSide(visible) {
       const open = unitWide.matches && !selectMode ? visible.filter(m => openIds.has(m.id)) : [];
       const scrolled = unitSide.scrollTop;
-      unitSide.innerHTML = "";
+      unitSide.replaceChildren();
       unitSplit.classList.toggle("layout-split", open.length > 0);
       unitSide.classList.toggle("hidden", open.length === 0);
       for (const model of open) {
