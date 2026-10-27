@@ -9858,6 +9858,73 @@
       return tips.filter(t => (!ask.part || t.part === ask.part) && has(t.technique, ask.technique) && has(t.colour, ask.colour));
     }
 
+    // v72: the Mentor tips under the Ask the Mentor picks (buildMentor draws the rest). A tip shows when its part is the chosen part; a tip whose colour words name the family of
+    // a chosen colour (blue, red, brown...) comes first. No tip fits: nothing is shown. All text goes in through textContent, and a
+    // credit becomes a link only when it is a plain https address.
+    function mentorTipsShown(part, colours) {
+      const families = colours.map(c => String(MinifolioColour.colourFamily(c) || "").split(" ").pop()).filter(w => /^[a-z]+$/.test(w));
+      const fits = (t) => families.some(w => String(t.colour || "").toLowerCase().split(/[^a-z]+/).includes(w));
+      const tips = mentorTipsFor({ part });
+      return [...tips.filter(fits), ...tips.filter(t => !fits(t))];
+    }
+    function safeHttpsUrl(text) {
+      try {
+        const url = new URL(String(text || ""));
+        return url.protocol === "https:" ? url.href : "";
+      } catch (e) { return ""; }
+    }
+    function buildMentorTips(door, tips) {
+      const box = document.createElement("div");
+      box.className = "mentor-tips";
+      box.id = door.id("mentor-tips");
+      const label = document.createElement("p");
+      label.className = "idea-label";
+      label.textContent = tips.length === 1 ? "Tip" : "Tips";
+      const list = document.createElement("ul");
+      list.className = "mentor-tip-list";
+      for (const tip of tips) {
+        const li = document.createElement("li");
+        li.className = "mentor-tip";
+        li.dataset.tip = tip.key;
+        const advice = document.createElement("p");
+        advice.className = "mentor-tip-advice";
+        advice.textContent = tip.technique ? `${tip.technique}: ${tip.advice}` : tip.advice;
+        li.appendChild(advice);
+        const colours = (tip.colours || []).filter(c => c && /^#[0-9a-f]{6}$/i.test(c.hex));
+        if (colours.length) {
+          const row = document.createElement("ul");
+          row.className = "mentor-tip-colours";
+          for (const c of colours) {
+            const item = document.createElement("li");
+            const look = document.createElement("span");
+            look.textContent = c.look;
+            item.append(makeSwatch(c.hex), look);
+            row.appendChild(item);
+          }
+          li.appendChild(row);
+        }
+        const href = tip.credit && safeHttpsUrl(tip.credit.url);
+        if (tip.credit && tip.credit.name) {
+          const credit = document.createElement("p");
+          credit.className = "mentor-tip-credit";
+          if (href) {
+            const a = document.createElement("a");
+            a.href = href;
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";   // the creator's site isn't told which page sent you
+            a.textContent = `Credit: ${tip.credit.name} \u2197`;
+            credit.appendChild(a);
+          } else {
+            credit.textContent = `Credit: ${tip.credit.name}`;
+          }
+          li.appendChild(credit);
+        }
+        list.appendChild(li);
+      }
+      box.append(label, list);
+      return box;
+    }
+
     // ---- (4) v33: Basing tips ----
     // The tips (BASING_TIPS, grouped by BASING_GROUPS) live in basing-tips.js, which loads between detail-recipes.js and this file.
     // Each has a plain list of materials, a few how-to steps and optional paint steps. The materials and how-to steps are only
@@ -11679,7 +11746,8 @@
     // Pick a base colour, a second colour and a part (armour, eyes, weapon or base) and get paint picks for that part, each with its reason.
     // It reuses the colour ideas above: colourIdeas() finds paints that go with a colour for a part (your own paints first, a poor fit
     // you own labelled "Yours, poor fit"), and buildIdeasList() draws them with the same rows, reasons and tags. Nothing new is stored
-    // (the picks are kept only while the app is open) and nothing is sent anywhere. The tips (mentor-tips.js) join in later.
+    // (the picks are kept only while the app is open) and nothing is sent anywhere. v72: the tips (mentor-tips.js) for the chosen part
+    // show under the picks (buildMentorTips, next to mentorTipsFor).
     const MENTOR_PART_FALLBACK = [{ key: "armour", name: "Armour" }, { key: "eyes", name: "Eyes" }, { key: "weapon", name: "Weapon" }, { key: "base", name: "Base" }];
     const MENTOR_ARMOUR_ROLE = { key: "armour", label: "Armour", note: "armour", boost: { s: 0.35, l: [0.3, 0.65] }, picks: ["analogous0", "analogous1", "light"], tip: "", why: {} };
     function mentorRole(part) {
@@ -11742,6 +11810,8 @@
           out.appendChild(buildIdeasList(door, ideas, paint.colour, role).list);
         }
       }
+      const tips = mentorTipsShown(st.mentorPart, chosen.map(p => p.colour));
+      if (tips.length) out.appendChild(buildMentorTips(door, tips));
       return out;
     }
 
@@ -15353,12 +15423,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=71".
+    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=72".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v71";
+    const APP_VERSION = "v72";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -15809,6 +15879,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v72", date: "27 Oct 2026", changes: [
+        "Ask the Mentor now shows tips for the part you chose under the paint picks, each with its colours and, where it has one, a link to the creator it credits. A tip about your chosen colour comes first.",
+        "The tips there are samples for now. Real tips will replace them later.",
+      ]},
       { version: "v71", date: "27 Oct 2026", changes: [
         "Ask the Mentor (Pro preview): in the Compendium, choose a base colour, a second colour and a part (armour, eyes, weapon or base). You get paints that go with each colour for that part, with the reason. Your own paints come first, and a poor match you own says Yours, poor fit.",
         "Mentor tips will join these picks in the next update.",
