@@ -1577,6 +1577,9 @@
       #recipe-split.layout-split #recipe-page { max-width: none; }
       #recipe-split.layout-split ul.recipe-list { grid-template-columns: 1fr; }
       #recipe-split.layout-split .recipe-item[aria-current="true"] { outline: 2px solid var(--accent); outline-offset: -2px; }
+      /* R3b-2: a recipe opened on its own (from Schemes or Your Palette) fills the page instead of a 780 px strip with empty space beside it; the unit names inside a chip are 12 px, not 10.8 px. */
+      #recipe-page:not(.editing) { max-width: none; }
+      .recipe-chip small { font-size: 12px; }
       /* v79: beside the open units the list is one column; the side pane stays in view under the tab bar and scrolls on its own. */
       #unit-split.layout-split ul.units { grid-template-columns: 1fr; }
       #unit-split.layout-split > .layout-side:not(.hidden), #palette-split.layout-split > .layout-side:not(.hidden) {
