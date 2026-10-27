@@ -1410,6 +1410,26 @@
     .shop-brand { font-weight: 600; color: var(--accent); margin: 12px 0 4px; }
     .shop-list { margin: 0; padding-left: 20px; line-height: 1.6; }
     .shop-list small { color: var(--muted); }
+    /* A1: shopping list rows (tick box, name, Remove), the Bought section, and the greyed Add to shopping list on a recipe with nothing to add. */
+    .shop-list { list-style: none; padding-left: 0; }
+    .shop-item { display: flex; align-items: center; gap: 4px; min-height: 44px; }
+    .shop-item .pick-tick.shop-tick { flex: none; }
+    .shop-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+    .shop-remove, .shop-addback { flex: none; min-height: 44px; padding: 8px 12px; }
+    .shop-item.shop-ticking .shop-text { color: var(--muted); text-decoration: line-through; transition: color 0.2s; }
+    .shop-item.shop-ticking .shop-remove { visibility: hidden; }
+    .shop-item.shop-ticking .pick-box { background: var(--accent); border-color: var(--accent); }
+    .shop-item.shop-ticking .pick-box::after { content: ""; position: absolute; left: 6px; top: 1px; width: 6px; height: 12px; border-right: 2.5px solid var(--on-accent); border-bottom: 2.5px solid var(--on-accent); transform: rotate(45deg); }
+    .shop-bought { margin-top: 16px; }
+    .shop-bought-head { width: 100%; min-height: 44px; text-align: left; }
+    .shop-bought-head::after { content: "\25B8"; float: right; }
+    .shop-bought-head[aria-expanded="true"]::after { content: "\25BE"; }
+    .shop-bought-body { margin-top: 8px; display: grid; gap: 8px; }
+    .shop-bought-clear { min-height: 44px; justify-self: start; }
+    .shop-bought-body[hidden] { display: none; }
+    .recipe-shop-idle-wrap { margin-top: 12px; }
+    .recipe-shop-idle-wrap .shop-idle-button { min-height: 44px; }
+    @media (prefers-reduced-motion: reduce) { .shop-item.shop-ticking .shop-text { transition: none; } }
     /* v19.1: the "Buy these" bar at the top of the shopping list */
     .buy-bar { margin: 0 0 14px; padding: 10px 12px; border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-box);
                background: linear-gradient(to right, var(--accent-wash), transparent 80%), var(--card); }
@@ -2631,7 +2651,8 @@
             <li><strong>Scan a paint pot</strong> (in Your Palette) reads the paint's name from its label with the camera and suggests matches. The reading happens on your phone; the photo is never sent anywhere. The first scan loads the label reader (about 11 MB) from Minifolio's own site, and after that scanning works with no internet. Leaving the app, or closing the scan panel, switches the camera off.</li>
             <li id="help-scan-brands"><strong>Brands the scanner knows:</strong> Citadel, Warhammer Tone Pro (each colour in its five tones, like Carmine Blades 1 to 5), Vallejo, The Army Painter, Pro Acryl, AK Interactive, Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World (about 4,000 paints), and every paint already in Your Palette. <strong>Settings → Paint brands</strong> switches brands on or off: a brand that's off isn't suggested, matched or used in Colour ideas. Your own paints always are. On a Vallejo pot it also reads the <strong>code number</strong> (like 72.021), which picks the exact paint even if the name is hard to read. Other brands still work: if the scanner doesn't know the name, type it in. The same lists help when you paste recipes from your notes. Where two brands share a name (like "Black"), you're asked which one. The colours for these brands are close guesses, so tap a paint to fix its colour.</li>
             <li>Typed a paint into a recipe that isn't in Your Palette yet? Above <strong>Save recipe</strong>, <strong>Do you own these?</strong> asks about the new paints: <strong>All</strong> (Owned), <strong>None</strong> (Not owned) or <strong>Let me pick</strong> (tap a paint to untick it). The card names the paints it means. A paint name only counts once it matches a known paint or you leave the box. Save stops and says so if a step has a brand but no paint name, and a step with no paint says <strong>No paint</strong> on its line.</li>
-            <li id="help-recipe-shop">Missing paints are not put on the shopping list by themselves. On a recipe with missing paints, <strong>Add missing paints to shopping list</strong> under its steps adds the real paints you don't own (never the made-up example paints) and says how many. Undo takes them off again.</li>
+            <li id="help-recipe-shop">Missing paints are not put on the shopping list by themselves. Every recipe has an <strong>Add to shopping list</strong> button under its steps. It adds the real paints you don't own (never the made-up example paints) and says how many. Undo takes them off again. It is greyed out when there is nothing to add.</li>
+            <li id="help-shop-tick">On the Shopping list, tick a paint when you have bought it: it moves to <strong>Bought</strong> at the bottom and is marked Owned in Your Palette. Open Bought to tap <strong>Add back</strong>, or <strong>Clear bought</strong> to forget the list. <strong>Remove</strong> takes a paint off the list. Both have an Undo.</li>
             <li id="help-shop"><strong>Shopping list</strong> (in Your Palette) lists only the paints you put there: your Wishlist paints and anything added with an <strong>Add to shopping list</strong> button, grouped by brand. Nothing is added by itself, not even a paint a recipe needs or one that is empty or running low. <strong>Buy these</strong> at the top has a button for each shop that sells them (Firestorm Games, Wayland Games, Element Games, and The Army Painter for Army Painter paints). Tap a shop for one search link per paint; each opens that shop's own search in a new tab. They're plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop. The link searches for the paint's name, so the results can include other brands' paints with the same name: check you've got the right pot before you buy.</li>
             <li id="help-wide-shop">On a wide screen, the shop links and <strong>Copy as text</strong> sit beside the paints on the Shopping list, and in the Compendium the colour wheel sits beside the sections.</li>
             <li id="help-shop-links"><strong>Shop links on suggested paints</strong> (Pro preview): under a suggested paint you don't own, in the colour wheel's paint panel and in <strong>Colour ideas</strong> (in a recipe and in the Compendium), tap <strong>Shop links</strong> to open a small fold-out. It has <strong>Add to shopping list</strong> (Undo is offered) and a plain search link for each shop that sells the paint. Paints you own show nothing. They're plain links, the same as in Buy these: Minifolio isn't paid for them, and only the paint's name goes to the shop. To hide every shop link and shop button, including Buy these, untick <strong>Settings → Shop links</strong>. Your shopping list stays.</li>

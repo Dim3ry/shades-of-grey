@@ -2133,6 +2133,65 @@
       return items.sort((a, b) => (a.paint.brand || "￿").localeCompare(b.paint.brand || "￿") || a.paint.name.localeCompare(b.paint.name));
     }
 
+    // A1: taking an item off the list, and the Bought tick. Both work on the paint's status, so they behave the same for a paint that came
+    // from the Compendium, from a recipe or from your own Wishlist tap. Each Undo puts back only that one paint (not the whole book),
+    // so ticking several items quickly cannot undo the others.
+    const SHOP_TICK_PAUSE = 700;   // how long a ticked item stays grey on the list before it moves to Bought
+    let boughtOpen = false;        // the Bought section is closed until you open it (kept while the app is open)
+    function boughtItems() {
+      const out = [];
+      for (const b of Array.isArray(book.bought) ? book.bought : []) {
+        const paint = book.paints.find(p => p.id === b.id);
+        if (paint && paintStatus(paint) === "owned") out.push({ paint, entry: b });
+      }
+      return out.sort((a, c) => (a.paint.brand || "￿").localeCompare(c.paint.brand || "￿") || a.paint.name.localeCompare(c.paint.name));
+    }
+    function afterShopChange() { const ok = render(); updateBasket(); updateShopFoldouts(); return ok; }
+    function removeFromShoppingList(id) {
+      const paint = book.paints.find(p => p.id === id);
+      if (!paint || paintStatus(paint) !== "wishlist") return;
+      const from = Array.isArray(paint.shopFrom) ? paint.shopFrom.slice() : [];
+      applyPaintStatus(paint, "notowned");
+      if (!afterShopChange()) { showNotSaved(); return; }
+      showToast(`Removed ${paint.name} from your shopping list`, () => {
+        const back = book.paints.find(p => p.id === id);
+        if (!back || paintStatus(back) === "wishlist") return;
+        applyPaintStatus(back, "wishlist");
+        if (from.length) back.shopFrom = from;
+        afterShopChange();
+      });
+    }
+    function tickBought(id) {
+      const paint = book.paints.find(p => p.id === id);
+      if (!paint || paintStatus(paint) !== "wishlist") return;
+      const entry = { id, prev: paintStatus(paint), from: Array.isArray(paint.shopFrom) ? paint.shopFrom.slice() : [] };
+      applyPaintStatus(paint, "owned");   // Owned in Your Palette, so every recipe that uses it counts it as bought
+      book.bought = (Array.isArray(book.bought) ? book.bought : []).filter(b => b.id !== id).concat(entry);
+      if (!afterShopChange()) { showNotSaved(); return; }
+      showToast(`Bought ${paint.name}`, () => addBackFromBought(id, true));
+    }
+    function addBackFromBought(id, quiet) {
+      const paint = book.paints.find(p => p.id === id);
+      const entry = (Array.isArray(book.bought) ? book.bought : []).find(b => b.id === id);
+      if (!entry) return;
+      book.bought = book.bought.filter(b => b.id !== id);
+      if (!book.bought.length) delete book.bought;
+      if (paint) {
+        applyPaintStatus(paint, entry.prev || "wishlist");   // what it was before the tick
+        if (entry.from.length && paintStatus(paint) !== "owned") paint.shopFrom = entry.from.slice();
+      }
+      if (!afterShopChange()) { showNotSaved(); return; }
+      if (!quiet && paint) showToast(`${paint.name} is back on your shopping list`);
+    }
+    function clearBought() {
+      const n = boughtItems().length;
+      askYesNo(`Clear ${plural(n, "bought paint")} from this list for good? They stay Owned in Your Palette.`, () => {
+        delete book.bought;
+        if (!afterShopChange()) { showNotSaved(); return; }
+        showToast("Cleared the bought paints");
+      }, { danger: true, yes: "Clear" });
+    }
+
     // The list as plain text, one brand at a time (for copy as text).
     function shoppingText(items) {
       const groups = new Map();
@@ -2502,17 +2561,48 @@
           list.className = "shop-list";
           for (const i of groups.get(brand)) {
             const li = document.createElement("li");
-            li.textContent = i.paint.name + " ";   // v62: every paint here is one you added, so no "· wishlist" after each name
+            li.className = "shop-item";
+            // A1: a tick box (44 px) that marks it bought, the name and where it came from, and Remove.
+            const tick = document.createElement("button");
+            tick.type = "button";
+            tick.className = "pick-tick shop-tick";
+            tick.setAttribute("role", "checkbox");
+            tick.setAttribute("aria-checked", "false");
+            const box = document.createElement("span");
+            box.className = "pick-box";
+            box.setAttribute("aria-hidden", "true");
+            tick.appendChild(box);
+            tick.addEventListener("click", () => {
+              if (li.classList.contains("shop-ticking")) return;
+              li.classList.add("shop-ticking");
+              tick.setAttribute("aria-checked", "true");
+              setTimeout(() => tickBought(i.paint.id), SHOP_TICK_PAUSE);
+            });
+            const text = document.createElement("span");
+            text.className = "shop-text";
+            const nameEl = document.createElement("span");
+            nameEl.textContent = i.paint.name + " ";   // v62: every paint here is one you added, so no "· wishlist" after each name
+            text.appendChild(nameEl);
             if (i.from && i.from.length) {   // v40: where it came from (first three, then a count)
               const src = document.createElement("small");
               src.className = "shop-from";
               src.textContent = "from " + i.from.slice(0, 3).join(", ") + (i.from.length > 3 ? ` and ${i.from.length - 3} more` : "");
-              li.appendChild(src);
+              text.appendChild(src);
             }
+            const remove = document.createElement("button");
+            remove.type = "button";
+            remove.className = "plain-button shop-remove";
+            remove.textContent = "Remove";
+            labelWithName(remove, "", nameEl);   // the button's name is "Remove" then the paint's name
+            remove.addEventListener("click", () => removeFromShoppingList(i.paint.id));
+            labelWithName(tick, "", nameEl);   // the row's own name is the tick box's name
+            li.append(tick, text, remove);
             list.appendChild(li);
           }
           lists.append(brandHead, list);
         }
+        const doneBox = buildBoughtSection();
+        if (doneBox) lists.appendChild(doneBox);
         const copy = document.createElement("button");
         copy.className = "primary-button layout-side shop-side-copy";
         copy.style.width = "100%";
@@ -2521,7 +2611,50 @@
         copy.addEventListener("click", () => copyText(shoppingText(shoppingItems()), "Shopping list"));
         card.appendChild(copy);
       }
+      if (!items.length) { const doneBox = buildBoughtSection(); if (doneBox) card.appendChild(doneBox); }
       panel.appendChild(card);
+    }
+    // A1: the Bought section at the bottom of the list: closed to start with, named with its count. Open, it has Clear bought and each
+    // paint with Add back. Nothing here when nothing has been ticked.
+    function buildBoughtSection() {
+      const done = boughtItems();
+      if (!done.length) return null;
+      const box = document.createElement("div");
+      box.className = "shop-bought";
+      const head = document.createElement("button");
+      head.type = "button";
+      head.className = "plain-button shop-bought-head";
+      head.setAttribute("aria-expanded", String(boughtOpen));
+      head.textContent = `Bought · ${done.length}`;
+      const body = document.createElement("div");
+      body.className = "shop-bought-body";
+      body.hidden = !boughtOpen;
+      head.addEventListener("click", () => { boughtOpen = !boughtOpen; head.setAttribute("aria-expanded", String(boughtOpen)); body.hidden = !boughtOpen; });
+      const clear = document.createElement("button");
+      clear.type = "button";
+      clear.className = "plain-button shop-bought-clear";
+      clear.textContent = "Clear bought";
+      clear.addEventListener("click", clearBought);
+      const list = document.createElement("ul");
+      list.className = "shop-list shop-bought-list";
+      for (const x of done) {
+        const li = document.createElement("li");
+        li.className = "shop-item";
+        const text = document.createElement("span");
+        text.className = "shop-text";
+        text.textContent = x.paint.name + (x.paint.brand ? ` · ${x.paint.brand}` : "");
+        const back = document.createElement("button");
+        back.type = "button";
+        back.className = "plain-button shop-addback";
+        back.textContent = "Add back";
+        labelWithName(back, "", text);
+        back.addEventListener("click", () => addBackFromBought(x.paint.id));
+        li.append(text, back);
+        list.appendChild(li);
+      }
+      body.append(clear, list);
+      box.append(head, body);
+      return box;
     }
 
     // v40: the small basket count on the tab bar. Shows how many paints are on the list (hidden at none) and, when tapped, takes you
@@ -3250,7 +3383,22 @@
           if (k && v && typeof v.name === "string" && v.name.trim()) shorthand[k] = { brand: tidyBrand(v.brand), name: v.name.trim() };
         }
       }
-      return { parts, techniques, paints: keptPaints, recipes, schemes, shorthand, v15: true };
+      // A1: the shopping list's Bought history: [{ id: paint id, prev: the status before the tick, from: where it came from }]. One entry per
+      // paint that still exists; absent from older books and backups (then there is none). Kept off the book when empty.
+      const bought = [];
+      for (const b of Array.isArray(src.bought) ? src.bought : []) {
+        const id = b && Number.isInteger(b.id) ? (mergedInto.get(b.id) ?? b.id) : null;
+        if (id === null || !keptPaints.some(p => p.id === id) || bought.some(o => o.id === id)) continue;
+        const from = [];
+        for (const f of Array.isArray(b.from) ? b.from : []) {
+          const t = String(f ?? "").trim().slice(0, 60);
+          if (t && !from.some(o => sameText(o, t))) from.push(t);
+        }
+        bought.push({ id, prev: PAINT_STATUS_KEYS.includes(b.prev) ? b.prev : "wishlist", from: from.slice(0, 5) });
+      }
+      const cleaned = { parts, techniques, paints: keptPaints, recipes, schemes, shorthand, v15: true };
+      if (bought.length) cleaned.bought = bought;
+      return cleaned;
     }
 
     // localStorage only holds text, so we turn the list into text (JSON) to save it,
@@ -4455,6 +4603,7 @@
         ...buttons.map(c => c.textContent + (c.getAttribute("aria-pressed") === "true" || c.getAttribute("aria-expanded") === "true" ? "*" : ""))].join("\u0001");
       if (row.dataset.look !== look) {
         row.dataset.look = look;
+        const keepLeft = row.scrollLeft;   // A1: measuring squeezes the row for a moment, which would send a row you slid to its end back to the start
         row.classList.remove("chips-scroll", "chips-tight", "chips-tall", "chips-more-left", "chips-more-right");
         row.classList.add("chips-fit");
         // Try the normal spacing, then a tighter one (less padding and gap), then give up and slide.
@@ -4470,12 +4619,13 @@
         row.classList.toggle("chips-scroll", !fits);
         row.classList.toggle("chips-tall", fits && lines.some(n => n === 2));
         if (!fits) {
+          row.scrollLeft = keepLeft;   // A1: back to where you slid it to
           // Bring the pressed button into view, unless one already is.
           const rowBox = row.getBoundingClientRect();
           // (the Pick by stage / Hide stages opener sits in the row but is not a choice, so it is never scrolled to)
           const on = buttons.filter(c => c.id !== "stage-chips-toggle" && (c.getAttribute("aria-pressed") === "true" || c.getAttribute("aria-expanded") === "true"));
           const inView = (c) => { const r = c.getBoundingClientRect(); return r.left >= rowBox.left - 1 && r.right <= rowBox.right + 1; };
-          if (on.length && !on.some(inView)) {
+          if (on.length && !on.some(inView) && row !== tappedRow) {   // A1: not in a row you are tapping in: you know where you are
             const r = on[0].getBoundingClientRect();
             row.scrollLeft = Math.max(0, row.scrollLeft + r.left - rowBox.left - (rowBox.width - r.width) / 2);
           }
@@ -4499,13 +4649,24 @@
     // Rows are redrawn all over the app, so watch the page for new buttons rather than calling this from every render.
     new MutationObserver(fitChipRows).observe(document.body, { childList: true, subtree: true });
     window.addEventListener("resize", fitChipRows);
-    document.addEventListener("click", fitChipRows, true);   // a pressed button turns bold, which can change what fits
+    let tappedRow = null;   // A1: the row of buttons tapped just now, forgotten on the next tap elsewhere
+    document.addEventListener("click", (event) => { tappedRow = event.target.closest ? event.target.closest(CHIP_ROWS) : null; fitChipRows(); }, true);   // a pressed button turns bold, which can change what fits
     document.addEventListener("scroll", (event) => { const row = event.target; if (row.matches && row.matches(CHIP_ROWS)) chipRowFade(row); }, true);
     if (document.fonts) document.fonts.addEventListener("loadingdone", () => {   // a theme's font arriving changes every width
       for (const row of document.querySelectorAll(CHIP_ROWS)) delete row.dataset.look;
       fitChipRows();
     });
     fitChipRows();
+
+    // A1: redraw something and keep the row you tapped where it was on the screen (and slid sideways to the same place), so a filter
+    // does not throw you back up the page. If the page is now too short to hold that place, it keeps as much as it can.
+    function holdPlace(row, redraw) {
+      const top = row.getBoundingClientRect().top, left = row.scrollLeft;
+      redraw();
+      row.scrollLeft = left;
+      const drift = row.getBoundingClientRect().top - top;
+      if (Math.abs(drift) > 1) window.scrollBy(0, drift);
+    }
 
     function makeChip(text, pressed, onClick, colourVar) {
       const chip = document.createElement("button");
@@ -7113,15 +7274,22 @@
       });
       stepsCard.appendChild(steps);
       // v62: missing paints no longer go on the shopping list by themselves. One button adds this recipe's real paints you don't
-      // own (made-up example paints never), says how many, and has one Undo (addSchemePaintsToShoppingList). Hidden when none are left.
+      // own (made-up example paints never), says how many, and has one Undo (addSchemePaintsToShoppingList).
+      // A1: the button is on every recipe. When nothing can be added it stays, greyed out, with one line saying why (an example recipe
+      // only has made-up paints, no shop sells them), so it is never a missing button. Same words as the rest of the app.
       const toShop = schemePaintsToAdd(recipeShopPaints(recipe));
       if (toShop.length) {
         const add = document.createElement("button");
         add.type = "button";
         add.className = "plain-button recipe-shop-add";
-        add.textContent = `Add missing paints to shopping list (${toShop.length})`;
+        add.textContent = `Add to shopping list (${toShop.length})`;
         add.addEventListener("click", () => addSchemePaintsToShoppingList(recipeShopPaints(recipe), `Recipe: ${recipe.name}`));
         stepsCard.appendChild(add);
+      } else if (recipe.steps.some(st => st.paints.length)) {
+        const why = recipeShopPaints(recipe).length ? "You own these paints, or they are already on your list."
+          : "Example paints are made up, so no shop sells them.";
+        stepsCard.appendChild(buildIdleShop({ id: (x) => `recipe-${recipe.id}-${x}` }, "recipe-shop-idle", why));
+        stepsCard.lastChild.classList.add("recipe-shop-idle-wrap");
       }
       recipePage.appendChild(stepsCard);
 
@@ -7649,10 +7817,10 @@
       if (paletteBrand !== null && !(brands.includes(paletteBrand) || (paletteBrand === "" && noBrand))) paletteBrand = null;
       brandChips.innerHTML = "";
       brandChips.classList.toggle("hidden", brands.length + (noBrand ? 1 : 0) < 2);
-      brandChips.appendChild(makeChip("All brands", paletteBrand === null, () => { paletteBrand = null; renderPalette(); }));
+      brandChips.appendChild(makeChip("All brands", paletteBrand === null, () => holdPlace(brandChips, () => { paletteBrand = null; renderPalette(); })));
       for (const brand of [...brands, ...(noBrand ? [""] : [])]) {
         brandChips.appendChild(makeChip(brand || "No brand", paletteBrand === brand,
-          () => { paletteBrand = paletteBrand === brand ? null : brand; renderPalette(); }));
+          () => holdPlace(brandChips, () => { paletteBrand = paletteBrand === brand ? null : brand; renderPalette(); })));
       }
 
       const shown = paints.filter(p => (paletteBrand === null || p.brand === paletteBrand) &&
@@ -13954,7 +14122,7 @@
         saveSettings();
         updateSearchedPaints();
         showBrandChoice();
-        render();
+        holdPlace(brandToggles, render);
       });
       brandToggles.appendChild(chip);
     }
