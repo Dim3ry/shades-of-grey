@@ -128,7 +128,8 @@ def main():
         check("an older entry still holds all its lines in the page (read with text_content)",
               all(c[:30] in (page.locator("#changelog .release").nth(1).text_content() or "") for c in page.evaluate("CHANGELOG[1].changes")))
         h_before = page.evaluate("document.getElementById('view-updates').getBoundingClientRect().height")
-        check("the page is much shorter than before (the lines of four entries are tucked away)", h_before < 1400, h_before)
+        # v83: the newest entry grew to nine lines, so the old 1400 px limit was too tight. Four entries are still tucked away, so 1800 keeps the point.
+        check("the page is much shorter than before (the lines of four entries are tucked away)", h_before < 1800, h_before)
         check("the You're on version line and the Unofficial line are still shown",
               f"You're on version {version}" in page.inner_text("#view-updates") and "Unofficial fan-made app" in page.inner_text("#view-updates"))
         before = storage_dump(page)
