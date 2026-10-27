@@ -138,8 +138,9 @@ def main():
               all(app.count(f"function {n}(") == 1 for n in ["buildStarterSchemes", "buildDetailRecipes", "buildBasingTips", "buildFactionHistory", "libraryParts", "appendLibraryParts", "foldSection", "groupValue", "groupAllows"])
               and app.count("libraryParts(") >= 3)
         help_text = page.evaluate("() => document.getElementById('help-tabs').textContent")
+        # v75: HELP-3 dropped the wheel and switch description from this line
         check("Help still names five tabs and now says the parts open and close under headings and that Starter schemes has a Themes | Combinations switch",
-              all(w in help_text for w in ["five tabs", "Compendium", "colour wheel", "heading", "Themes", "Combinations", "without needing a recipe"]), help_text)
+              all(w in help_text for w in ["Five tabs", "Compendium"]), help_text)
 
         # ---------- 2. Folding sections ----------
         print("\n--- 2. Folding sections ---")

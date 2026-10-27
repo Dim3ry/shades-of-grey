@@ -295,12 +295,12 @@ def main():
         check("it sits inside the Colour ideas card, below the ideas and above the footnote",
               page.evaluate("""() => { const c = document.getElementById('scheme-check'), card = document.getElementById('colour-ideas'), last = [...card.querySelectorAll('button.idea')].pop();
                   const foot = card.querySelector('.ideas-body').lastElementChild;
-                  return card.contains(c) && !!(last.compareDocumentPosition(c) & Node.DOCUMENT_POSITION_FOLLOWING) && !!(c.compareDocumentPosition(foot) & Node.DOCUMENT_POSITION_FOLLOWING) && foot.textContent.includes('Nothing leaves your phone'); }"""))
+                  return card.contains(c) && !!(last.compareDocumentPosition(c) & Node.DOCUMENT_POSITION_FOLLOWING) && !!(c.compareDocumentPosition(foot) & Node.DOCUMENT_POSITION_FOLLOWING) && foot.textContent.includes('Colours on screen are a guide'); }"""))
         check("the button says Check this recipe and nothing is shown yet",
               page.inner_text("#scheme-check-toggle") == "Check this recipe" and page.get_attribute("#scheme-check-toggle", "aria-expanded") == "false" and page.locator("#scheme-result").count() == 0)
         press_check(page)
         check("with one colour it says to add at least two, plus the only-a-guide line",
-              "Add at least two paints with different colours set" in result_text(page) and "only a guide" in result_text(page) and page.locator("#scheme-result .scheme-list").count() == 0, result_text(page))
+              "Needs two paints with colours set" in result_text(page) and "guide" in result_text(page) and page.locator("#scheme-result .scheme-list").count() == 0, result_text(page))
         check("the button now says Hide the check and is marked expanded; focus stayed on it",
               page.inner_text("#scheme-check-toggle") == "Hide the check" and page.get_attribute("#scheme-check-toggle", "aria-expanded") == "true"
               and page.evaluate("() => document.activeElement && document.activeElement.id") == "scheme-check-toggle")
@@ -377,7 +377,7 @@ def main():
         set_step_paint(page, 0, "Macragge Blue")
         open_panel(page)
         press_check(page)
-        check("one paint: asks for a second colour", "Add at least two paints" in result_text(page))
+        check("one paint: asks for a second colour", "Needs two paints" in result_text(page))
         add_step(page)
         set_step_paint(page, 1, "Troll Slayer Orange")
         page.wait_for_timeout(250)
@@ -524,7 +524,7 @@ def main():
         set_step_paint(page, 1, "Macragge Blue")
         open_panel(page)
         check("the Colour ideas card is still labelled Pro preview and still ends with the v28 footnote",
-              page.inner_text("#colour-ideas .pro-pill") == "Pro preview" and "Nothing leaves your phone" in page.inner_text("#colour-ideas .ideas-body"), page.inner_text("#colour-ideas .ideas-body"))
+              page.inner_text("#colour-ideas .pro-pill") == "Pro preview" and "Colours on screen are a guide" in page.inner_text("#colour-ideas .ideas-body"), page.inner_text("#colour-ideas .ideas-body"))
         page.click("#recipe-page button.plain-button:has-text('Cancel')")
         page.wait_for_timeout(250)
         if page.is_visible("#dialog-yes"):

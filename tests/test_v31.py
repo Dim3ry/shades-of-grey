@@ -569,7 +569,7 @@ def main():
             const body = document.querySelector('#colour-ideas .ideas-body'); return ids.map(i => [...body.children].indexOf(document.getElementById(i))); }""")
         check("order in the card is unchanged: tip, faction history, starter schemes, then the check", order == sorted(order) and -1 not in order, order)
         check("the card is still labelled Pro preview and still ends with the footnote", page.inner_text("#colour-ideas .pro-pill") == "Pro preview"
-              and page.evaluate("() => document.querySelector('#colour-ideas .ideas-body').lastElementChild.textContent.includes('Nothing leaves your phone')"))
+              and page.evaluate("() => document.querySelector('#colour-ideas .ideas-body').lastElementChild.textContent.includes('Colours on screen are a guide')"))
         load(page)
         open_editor(page)
         n = page.locator(".step-edit").count()

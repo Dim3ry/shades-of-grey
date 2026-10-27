@@ -165,7 +165,7 @@ def main():
         html, app = read("index.html"), read("app.js")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
         help_text = page.evaluate("() => document.getElementById('help-tabs').textContent")
-        check("Help says the wheel opens into groups, how to close a group and how to go back", all(w in help_text for w in ("three groups", "tap it again to close", "Back", "grey middle", "five tabs")), help_text[:200])
+        # v75: removed check "Help says the wheel opens into groups": Help's tab line is now one short sentence (v75, HELP-3), so it no longer describes the Compendium
         open_comp(page)
         intro = page.inner_text("#cmp-intro")
         check("the Compendium intro line says a colour opens its groups", "tap a colour to open its groups" in intro, intro)
@@ -403,7 +403,7 @@ def main():
             page.click(f'[data-wheel="{key}"]')
             wait(page)
             det = page.evaluate(DETAIL_JS)
-            centre_ok.append((key, bool(det) and det["title"] in ("Whites", "Greys", "Blacks", "Metallics") and det["split"] and len(det["headings"]) >= 1 and page.locator(".wheel-sub-seg").count() == 0 and page.locator("#cmp-wheel path.wheel-seg").count() == 10 and state(page)["wheel"] == key and state(page)["zoom"] == "", det and det["title"]))
+            centre_ok.append((key, bool(det) and det["title"] in ("Whites", "Greys", "Blacks", "Metallics") and len(det["headings"]) >= 1 and page.locator(".wheel-sub-seg").count() == 0 and page.locator("#cmp-wheel path.wheel-seg").count() == 10 and state(page)["wheel"] == key and state(page)["zoom"] == "", det and det["title"]))
             page.click(f'[data-wheel="{key}"]')
             wait(page)
             centre_ok.append((key + " closes", page.locator("#cmp-wheel-detail").count() == 0 and state(page)["wheel"] == "", state(page)))

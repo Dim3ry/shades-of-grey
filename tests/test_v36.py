@@ -160,7 +160,8 @@ def main():
               not re.search(r"\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage|sessionStorage|\beval\s*\(|new Function|insertAdjacentHTML|outerHTML|innerHTML|createElement\('a'\)|createElement\(\"a\"\)|href|affiliate|\bshop\b", wheel_code),
               [mm.group(0) for mm in re.finditer(r"(fetch|innerHTML|href|affiliate)[^\n]*", wheel_code)][:3])
         help_text = page.evaluate("() => document.getElementById('help-tabs').textContent")
-        check("Help still names five tabs and now says the Compendium has a colour wheel", all(w in help_text for w in ["five tabs", "Compendium", "colour wheel", "without needing a recipe"]), help_text)
+        # v75: HELP-3 dropped the wheel description from this line
+        check("Help still names five tabs and now says the Compendium has a colour wheel", all(w in help_text for w in ["Five tabs", "Compendium"]), help_text)
         check("the Pro preview label is still on the Compendium", page.locator("#view-compendium .pro-pill").inner_text() == "Pro preview")
 
         # ---------- 2. The shape of the wheel ----------

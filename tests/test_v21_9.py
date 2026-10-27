@@ -344,7 +344,8 @@ def main():
         def help_text(i):
             return page.evaluate(f"() => document.getElementById('{i}') ? document.getElementById('{i}').textContent : ''")
         tabs_text = help_text("help-tabs")
-        check("Help explains the five tabs and the switch", all(w in tabs_text for w in ["five tabs", "Dashboard", "Units", "Recipes", "Compendium", "Settings", "Settings / Help / Updates", "remembers"]), tabs_text)
+        # v75: HELP-3 made this one short sentence
+        check("Help explains the five tabs and the switch", all(w in tabs_text for w in ["Five tabs", "Dashboard", "Units", "Recipes", "Compendium", "Settings", "Help and Updates are in Settings"]), tabs_text)
         feedback_lines = [t for t in page.eval_on_selector_all("#view-help li", "els => els.map(e => e.textContent)") if "Give feedback" in t]
         check("the Help lines that tell you where to find Give feedback say Settings → Updates",
               sum("Settings → Updates" in t for t in feedback_lines) >= 2 and not any("Updates tab" in t for t in feedback_lines), feedback_lines)

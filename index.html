@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=74"></script>
+  <script src="early.js?v=75"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -1098,10 +1098,10 @@
     /* v18d-1: a step's words, with its ✕ (leave it out) on the right */
     .import-line { display: flex; align-items: flex-start; gap: 8px; }
     .import-line-body { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-    .import-remove { width: 32px; height: 32px; font-size: 13px; border-radius: var(--radius-control); margin-top: -4px; }
-    @media (max-width: 400px) { .import-remove { width: 32px; height: 32px; } }
+    /* v75: 44 px tap targets (were 32 px) */
+    .import-remove { width: 44px; height: 44px; min-width: 44px; flex-shrink: 0; font-size: 13px; border-radius: var(--radius-control); margin-top: -8px; }
     /* v18d-2a: ✎ (change a step), ✕ on a part's name and on a part note, and the small step editor */
-    .import-edit, .import-drop-part, .import-drop-note { width: 32px; height: 32px; min-width: 32px; padding: 0; font-size: 13px; border-radius: var(--radius-control); margin-top: -4px; }
+    .import-edit, .import-drop-part, .import-drop-note { width: 44px; height: 44px; min-width: 44px; flex-shrink: 0; padding: 0; font-size: 13px; border-radius: var(--radius-control); margin-top: -8px; }
     .import-edit[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
     .import-part-line { display: flex; align-items: center; gap: 8px; margin: 14px 0 4px; }
     .import-part-line .import-part { flex: 1; min-width: 0; margin: 0; overflow-wrap: anywhere; }
@@ -2429,14 +2429,13 @@
         <details>
           <summary>Getting started</summary>
           <ol>
-            <li id="help-example-recipes">A brand-new start also comes with five <strong>example recipes</strong> (Blue armour, Gold metal, Green skin, Glowing eyes and Stone base), two <strong>example schemes</strong> that group them (Blue army colours and Green army colours), and the made-up paints they use, which show in <strong>Your Palette</strong>. The <strong>These are examples</strong> card says so on the Dashboard, Units and Recipes tabs. <strong>Clear examples</strong> removes all the examples at once, units, recipes, schemes and paints (one Undo brings them all back): anything you've edited, and any paint you've used in your own recipe or given a status, stays yours, and example paints never go on the shopping list. <strong>Keep them</strong> makes all of them yours, and the card goes away on every tab. The made-up paints stay off the shopping list and out of Copy as text even after Keep them, because no shop sells them, and a recipe that only uses them says <strong>Uses example paints</strong> instead of Missing. To make a recipe real, open an example paint on Your Palette and choose <strong>More options → Swap for a real paint</strong>: every recipe using it uses the real paint instead. If you already had recipes, nothing is added by itself, but <strong>Settings → Your data → Restore example recipes</strong> brings the examples back for anyone, without changing your own recipes, schemes or paints and without adding any twice.</li>
-            <li>The app starts with three example units, marked with a <strong>These are examples</strong> card on the Dashboard and Units tab. <strong>Clear examples</strong> removes them together with the example recipes, schemes and paints (with Undo); <strong>Keep them</strong> keeps all of them as your own.</li>
+            <li id="help-example-recipes">A new start comes with example units, recipes, schemes and paints. <strong>Clear examples</strong> removes them (one Undo brings them back); anything you edited or used stays yours. <strong>Keep them</strong> makes them yours. To make a recipe real, open an example paint on Your Palette and choose <strong>More options → Swap for a real paint</strong>. <strong>Settings → Your data → Restore example recipes</strong> brings the examples back.</li>
             <li>Add your units: one at a time with <strong>Units → + Add unit</strong>, or a whole army at once with <strong>Paste army list</strong> or <strong>Import CSV</strong>, which are on the same panel (see <strong>Importing</strong>).</li>
             <li>As you build and paint, press <strong>▲</strong> on a unit to move it up a stage (or tap its name and pick any stage from its <strong>Stage</strong> menu).</li>
             <li>Check the <strong>Dashboard</strong> to see how far you've got.</li>
             <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
           </ol>
-          <p id="help-tabs" style="margin: 8px 0 0;">There are five tabs along the bottom: <strong>Dashboard</strong>, <strong>Units</strong>, <strong>Recipes</strong>, <strong>Compendium</strong> and <strong>Settings</strong>. Compendium (a Pro preview) has a colour wheel, split into groups (tap red, orange, yellow, green, blue or purple and the wheel opens into that colour's three groups; tap a group to see its paints, and tap it again to close it; tap the middle or Back to go back up; the grey middle opens its paints as before; tap a paint to see colours that go with it and starter schemes with a similar colour), then Ask the Mentor, colour ideas, your schemes, starter schemes, detail recipes and basing tips, each under a heading you tap to open and close, all without needing a recipe. Starter schemes has a Themes | Combinations switch. Start from and Faction are boxes you can type in, and the lists of schemes, recipes and tips have a search box. Help and Updates live inside Settings: open it and use the <strong>Settings / Help / Updates</strong> switch at the top. The app remembers which page you were on.</p>
+          <p id="help-tabs" style="margin: 8px 0 0;">Five tabs: <strong>Dashboard</strong>, <strong>Units</strong>, <strong>Recipes</strong>, <strong>Compendium</strong> and <strong>Settings</strong>. Help and Updates are in Settings.</p>
           <p id="help-back" style="margin: 8px 0 0;">The phone's <strong>Back</strong> button closes what's open first, one thing per press: a question box (it counts as No), a photo, the camera, a recipe, the paste box. Then it goes to the Dashboard. On the Dashboard, with nothing open, it leaves the app.</p>
         </details>
         <details>
@@ -2631,7 +2630,9 @@
             <li><strong>Stays on your phone:</strong> your units, photos, recipes, paints and settings. They're saved in this browser on this device only. There's no account and no cloud copy.</li>
             <li><strong>Scanning a paint pot</strong> reads the label on your phone. The photo never leaves it.</li>
             <li><strong>What goes out:</strong> only what you choose to send. <strong>Give feedback</strong> opens a form on Tally's website, which receives what you type there plus the app's version number. Backups and exports are files you save yourself. <strong>Send backup to…</strong> and <strong>Send full backup with photos to…</strong> only open your phone's own share menu: the backup goes where you choose, and the app sends nothing itself. The one thing the app does send on its own is the visit count, described next.</li>
-            <li id="privacy-counting"><strong>Counting visits:</strong> to learn roughly how many people use Minifolio, each time the app opens it asks <strong>GoatCounter</strong> (goatcounter.com, a small privacy-friendly counting service run from Ireland, with its data kept in Finland and Germany) for one tiny, empty picture. That request is all that is sent. There are no cookies, nothing is saved on your device, there is no account or ID, and nothing from your units, recipes, photos or settings goes with it. It doesn't tell GoatCounter which page you came from. The one extra: if you opened Minifolio from a link that ends in a short tag, such as minifolio.app/?from=club, that one short word is sent along too, so visits can be counted by where the link was shared. It is never saved and never goes into your backups; a link without a tag sends nothing extra. Like any request to a website, it carries your device's internet address and browser type. GoatCounter uses them only to add up visits and totals of countries, browsers and systems, and says it doesn't keep the address. It only counts when the app is opened from minifolio.app, and with no internet it does nothing. <strong>You can switch it off</strong> under Settings → Counting visits; the app then asks GoatCounter for nothing.</li>
+            <li id="privacy-counting"><strong>Counting visits:</strong> to learn roughly how many people use Minifolio, each time the app opens it asks <strong>GoatCounter</strong> (goatcounter.com, a small privacy-friendly counting service run from Ireland, with its data kept in Finland and Germany) for one tiny, empty picture. That request is all that is sent. There are no cookies, nothing is saved on your device, there is no account or ID, and nothing from your units, recipes, photos or settings goes with it. It doesn't tell GoatCounter which page you came from.</li>
+            <li id="privacy-counting-extra">The one extra: if you opened Minifolio from a link that ends in a short tag, such as minifolio.app/?from=club, that one short word is sent along too, so visits can be counted by where the link was shared. It is never saved and never goes into your backups; a link without a tag sends nothing extra. Like any request to a website, it carries your device's internet address and browser type. GoatCounter uses them only to add up visits and totals of countries, browsers and systems, and says it doesn't keep the address.</li>
+            <li id="privacy-counting-switch">It only counts when the app is opened from minifolio.app, and with no internet it does nothing. <strong>You can switch it off</strong> under Settings → Counting visits; the app then asks GoatCounter for nothing.</li>
             <li><strong>The feedback card:</strong> to know when to ask, the app saves the date you first opened it, and your choice on the card, in your settings on this device. They are never sent anywhere.</li>
             <li id="privacy-drafts"><strong>Unfinished work:</strong> to keep a half-written recipe, a half-filled Add unit form or pasted notes through a reload, the app saves what you typed in this browser on this device. It is never sent anywhere, it is not in your backups, and it is removed when you finish it or discard it.</li>
             <li><strong>Shop links</strong> (Buy these on the shopping list, and the Shop links fold-outs under suggested paints) open the shop's website only when you tap one. They are plain links: Minifolio earns nothing from them. You can hide them all under Settings → Shop links. The link carries just the paint's name for the shop's search, and the shop isn't told it came from Minifolio. From then on you're on the shop's site, under its own privacy rules.</li>
@@ -2647,7 +2648,7 @@
             <li>The app knows paint and faction names so it can recognise what you type or scan. Citadel, Warhammer and faction and paint names are trademarks of Games Workshop Ltd. Other paint names (such as Vallejo, The Army Painter and AK Interactive) belong to their makers. All are used only to identify those products.</li>
             <li>The Vallejo, Army Painter, Pro Acryl, AK, Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World paint names, colours and codes (and some Citadel ones) come from the free <strong>miniature-paints</strong> list by Rick Fleuren (MIT licence). The colours are close guesses, not exact matches.</li>
             <li>Your data stays on this device. There's no account, and nothing you add is sent anywhere, except what you choose to write in the feedback form and a paint's name when you tap a shop link.</li>
-            <li><strong>Contact:</strong> use <strong>Give feedback</strong> under <strong>Settings → Updates</strong>. Every message is read.</li>
+            <li><strong>Contact:</strong> use <strong>Give feedback</strong> under <strong>Settings → Updates</strong>.</li>
           </ul>
         </details>
       </div>
@@ -2686,13 +2687,7 @@
         </div>
         <p class="hint" id="backup-age" style="margin: 12px 0 0;"></p>
         <p class="hint" id="backup-explain" style="margin: 8px 0 0;">
-          Save backup is small and quick but leaves out photos. Save full backup with photos
-          makes one bigger file with everything. Restore backup reads either kind.
-        </p>
-        <p class="hint" id="share-hint" style="margin: 8px 0 0;">
-          Send backup to… opens your phone's share menu, so you can put the backup straight into OneDrive, an email or a message.
-          It sends the same small backup (no photos). If your phone can't send files from here, it saves the backup instead.
-          Send full backup with photos to… does the same with the bigger file, photos included.
+          Save backup leaves out photos. Save full backup includes them.
         </p>
         <input type="file" id="restore-file" class="hidden" accept=".json">
       </div>
@@ -2808,7 +2803,7 @@
             <p class="hint" style="margin: 0 0 6px;">What should this import do?</p>
             <div class="mode-choice" role="radiogroup" aria-label="Import mode">
               <button class="mode-button" data-mode="add" role="radio">
-                <strong>Add to my collection</strong><small>Keep everything you have and add these</small>
+                <strong>Add to my collection</strong>
               </button>
               <button class="mode-button" data-mode="replace" role="radio">
                 <strong>Replace my collection</strong><small>Delete your current units, then load these</small>
@@ -2843,10 +2838,8 @@
         </div></div>
 
         <p class="hint" id="import-explain" style="margin: 12px 0 0;">
-          Export CSV gives you a spreadsheet of your collection (no photos), which Import CSV can read back.
           CSV columns: name, game, faction, stage, nickname, count, repaint, notes.
-          Only name is needed. Stage should match one of your stages. Repeat a row for
-          several of the same unit; they'll be numbered for you.
+          Only name is needed.
         </p>
         <input type="file" id="csv-file" class="hidden" accept=".csv,text/csv">
       </div>
@@ -2908,7 +2901,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=74" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=75" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -2919,11 +2912,11 @@
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks.
        v70: mentor-tips.js (the Mentor tips, plain data) loads between basing-tips.js and app.js. It only adds three
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=74"></script>
-  <script src="schemes.js?v=74"></script>
-  <script src="detail-recipes.js?v=74"></script>
-  <script src="basing-tips.js?v=74"></script>
-  <script src="mentor-tips.js?v=74"></script>
-  <script src="app.js?v=74"></script>
+  <script src="colour.js?v=75"></script>
+  <script src="schemes.js?v=75"></script>
+  <script src="detail-recipes.js?v=75"></script>
+  <script src="basing-tips.js?v=75"></script>
+  <script src="mentor-tips.js?v=75"></script>
+  <script src="app.js?v=75"></script>
 </body>
 </html>

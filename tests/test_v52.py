@@ -78,13 +78,13 @@ def press(page, button):
     page.wait_for_timeout(80)
 
 SETTINGS_FOLDS = {
-    "backups": ("#backup-card", ["backup-explain", "share-hint"], "Save backup is small"),
+    "backups": ("#backup-card", ["backup-explain"], "Save backup leaves out photos"),
     "stages": ("#stages-explain", ["stages-explain"], "Rename, reorder"),
     "appearance": ("#appearance-card", ["appearance-note"], None),
     "counting": ("#counting-card", ["counting-note", "counting-effect"], "Takes effect"),
     "shoplinks": ("#shoplinks-card", ["shoplinks-note"], None),
     "faction-colours": ("#faction-colours-card", ["faction-colour-hint"], None),
-    "import": ("#import-explain", ["import-explain"], "Export CSV gives you"),
+    "import": ("#import-explain", ["import-explain"], "CSV columns"),
     "your-data": ("#restore-examples", ["data-summary", "photo-summary", "storage-note", "restore-examples-hint"], None),
 }
 
@@ -120,11 +120,11 @@ def main():
               page.locator("#shop-panel .more-info-button").count() == 1 and page.get_attribute("#shop-panel .more-info-button", "aria-expanded") == "false")
         check("it says More info and is at least 44 px tall", text(page, "#shop-panel .more-info-button") == "More info" and height(page, "#shop-panel .more-info-button") >= 43.5)
         check("while closed, the sentence, the warning and the shop note are all hidden",
-              not any(page.get_by_text(x).first.is_visible() for x in ("to get: the paints you added", "No statuses set yet", "Tap a shop under Buy these", "Plain links")))
+              not any(page.get_by_text(x).first.is_visible() for x in ("paints to get", "No statuses set yet", "Plain links")))
         panel = text(page, "#shop-panel .more-info-panel")
         check("the panel holds the sentence, the shop note and the shop links words",
-              # v62 (chunk 2.2): the sentence now reads "to get: the paints you added and your Wishlist paints" (was "to get: running low, ...").
-              panel and "to get: the paints you added" in panel and "Tap a shop under Buy these" in panel and "Plain links" in panel, panel)
+              # v75: the sentence is now just "N paints to get." and the shop note is only the plain-links words (SHOP-1, SHOP-4)
+              panel and "paints to get" in panel and "Plain links" in panel, panel)
         before = v51.all_local(page)
         press(page, page.locator("#shop-panel .more-info-button").first)
         check("tapping it opens the panel, the button says Less info and aria-expanded is true",
@@ -168,7 +168,7 @@ def main():
         check("each one's panel holds the lines it should (they moved, they were not copied)",
               page.evaluate("(spec) => Object.entries(spec).every(([k, ids]) => ids.every(id => { const e = document.getElementById(id); return e && e.closest('#more-' + k) && document.querySelectorAll('#' + id).length === 1; }))",
                             {k: v[1] for k, v in SETTINGS_FOLDS.items()}))
-        check("closed, the explanations are hidden", not any(page.locator(f"#{i}").is_visible() for i in ("share-hint", "backup-explain", "appearance-note", "counting-note", "shoplinks-note", "data-summary", "stages-explain", "import-explain")))
+        check("closed, the explanations are hidden", not any(page.locator(f"#{i}").is_visible() for i in ("backup-explain", "appearance-note", "counting-note", "shoplinks-note", "data-summary", "stages-explain", "import-explain")))
         check("the Backups buttons stay in view, closed, and are at least 44 px tall",
               all(page.locator(f"#{i}").is_visible() and height(page, f"#{i}") >= 43.5 for i in ("export-button", "share-button", "full-export-button", "full-share-button", "restore-button")))
         check("the last-backup line stays visible", page.locator("#backup-age").is_visible())
@@ -176,8 +176,8 @@ def main():
               all(page.locator(s).first.is_visible() for s in ("#appearance-card .chip", "#count-visits", "#show-shop-links", "#save-stages", "#delete-all", "#clean-photos", "#restore-examples", "#csv-button")))
         before = v51.all_local(page)
         press(page, page.locator('[aria-controls="more-backups"]'))
-        check("opening Backups More info shows both explanation paragraphs and the button says Less info",
-              page.locator("#share-hint").is_visible() and page.locator("#backup-explain").is_visible() and
+        check("opening Backups More info shows the explanation and the button says Less info",
+              page.locator("#backup-explain").is_visible() and
               page.get_attribute('[aria-controls="more-backups"]', "aria-expanded") == "true" and text(page, '[aria-controls="more-backups"]') == "Less info")
         press(page, page.locator('[aria-controls="more-your-data"]'))
         check("opening Your data More info shows the summary and the restore-examples line", page.locator("#data-summary").is_visible() and page.locator("#restore-examples-hint").is_visible())
@@ -217,7 +217,7 @@ def main():
         check("…the explanation and the unit names are hidden until it is opened", not page.locator("#examples-card-dash .more-info-panel").is_visible()
               and all(n in (text(page, "#examples-card-dash .more-info-panel") or "") for n in ("Captain", "Brutes", "Guardians")))
         press(page, page.locator("#examples-card-dash .more-info-button"))
-        check("…opened, it says what the examples are for", "so you can try things out" in (text(page, "#examples-card-dash .more-info-panel") or "") and page.locator("#examples-card-dash .more-info-panel").is_visible())
+        check("…opened, it says what the examples are for", "to start your own" in (text(page, "#examples-card-dash .more-info-panel") or "") and page.locator("#examples-card-dash .more-info-panel").is_visible())
         check("Dashboard: the buttons are still at least 44 px tall", height(page, "#examples-card-dash .clear-examples") >= 43.5 and height(page, "#examples-card-dash .keep-examples") >= 43.5)
         page.evaluate("() => document.querySelector('nav button[data-tab=\"units\"]').click()")
         page.wait_for_timeout(150)
@@ -293,7 +293,7 @@ def main():
                       for i in ("export-button", "share-button", "full-export-button", "full-share-button", "restore-button")))
                 press(page, page.locator('[aria-controls="more-backups"]'))
                 low = v51.contrast(page, '[aria-controls="more-backups"]')
-                hint = v51.contrast(page, "#share-hint", "color", False)
+                hint = v51.contrast(page, "#backup-explain", "color", False)
                 check(f"{tag}: Settings, the More info text and the explanation inside it have contrast of at least 4.5", low >= 4.5 and hint >= 4.5, (low, hint))
                 if width == 390: t.shot(page, f"v52-settings-{mode}.png")
                 more_page(page, "help")

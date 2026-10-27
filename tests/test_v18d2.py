@@ -114,10 +114,10 @@ def main():
         check("buttons say what they do (for screen readers)",
               page.locator("#import-page .import-drop-part").first.get_attribute("aria-label") == "Leave out the whole Cloak part"
               and page.locator("#import-page .import-drop-note").first.get_attribute("aria-label") == "Leave out the note “thin your paints” from Cloak"
-              and step_li(page, 0).locator(".import-edit").get_attribute("aria-label") == "Change Mephiston Red in Cloak",
+              # v75: the ✎ name is now "Change" plus the step's own text (aria-labelledby)
+              and all(w in step_li(page, 0).locator(".import-edit").aria_snapshot() for w in ("Change", "Mephiston Red")),
               page.locator("#import-page .import-drop-part").first.get_attribute("aria-label"))
-        check("the hint mentions ✎ and the part ✕", "Tap ✎ on a step" in page.text_content("#import-page")
-              and "✕ on a part's name" in page.text_content("#import-page"))
+        check("the hint mentions ✎ and ✕", "Tap ✎ to change a step, ✕ to leave something out" in page.text_content("#import-page"))   # v75: shorter hint
 
         # --- 2. Leave a part note out ---
         page.locator("#import-page .import-drop-note").first.click()

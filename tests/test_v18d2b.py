@@ -131,9 +131,10 @@ def main():
         check("the editor lists each paint in the step, with Change…",
               swap_names(page) == ["Mephiston Red", "CM?"] and editor(page).locator(".import-swap").count() == 2, swap_names(page))
         check("Change… says what it does (for screen readers)",
-              editor(page).locator(".import-swap").nth(1).get_attribute("aria-label") == "Change CM? to a different paint",
-              editor(page).locator(".import-swap").nth(1).get_attribute("aria-label"))
-        check("the hint mentions changing paints", "change its technique, mix ratio or paints" in page.text_content("#import-page"))
+              # v75: the name is now "Change" plus the paint's name (aria-labelledby)
+              all(w in editor(page).locator(".import-swap").nth(1).aria_snapshot() for w in ("Change", "CM?")),
+              editor(page).locator(".import-swap").nth(1).aria_snapshot())
+        check("the hint mentions changing a step", "Tap ✎ to change a step" in page.text_content("#import-page"))   # v75: shorter hint
 
         # --- 2. Open the box, swap the unsure CM in this step ---
         change(page, 1)

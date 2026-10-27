@@ -228,7 +228,8 @@ def main():
         box = page.locator("#count-visits")
         check("the tick box is ticked by default", box.is_checked())
         note_on = page.inner_text("#counting-note")
-        check("the note says it is on and what is sent", note_on.startswith("On.") and "one tiny picture" in note_on and "nothing from your collection" in note_on, note_on)
+        # v75: the note says just On (the detail is in Help, Privacy)
+        check("the note says it is on and what is sent", note_on == "On.", note_on)
         counter["hits"].clear()
         page.click("#counting-card .count-label")
         page.wait_for_timeout(300)
@@ -365,7 +366,7 @@ def main():
         site_load(page, units=UNITS)
         main_tab(page, "settings")
         sub_tab(page, "help")
-        counting = page.evaluate("() => document.getElementById('privacy-counting').textContent")
+        counting = page.evaluate("() => ['privacy-counting', 'privacy-counting-extra', 'privacy-counting-switch'].map(i => document.getElementById(i).textContent).join(' ')   // v75: HELP-6 split this bullet in three")
         check("Privacy says what is counted and who gets it (GoatCounter, Ireland, Finland and Germany)",
               all(w in counting for w in ["GoatCounter", "Ireland", "Finland and Germany", "one tiny, empty picture"]), counting)
         check("Privacy says what is NOT sent (cookies, device storage, account, units, recipes, photos, settings, referrer)",

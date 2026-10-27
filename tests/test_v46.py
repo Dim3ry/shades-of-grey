@@ -327,12 +327,11 @@ def main():
         setup("ok")
         info = page.evaluate("""() => { const c = document.getElementById('backup-card'); const b = [...c.querySelectorAll('button:not(.more-info-button)')];
             return { ids: b.map(x => x.id), labels: b.map(x => x.textContent.trim()), full: [...c.querySelectorAll('#full-share-button')].map(x => x.style.gridColumn),
-                     hint: document.getElementById('share-hint').textContent }; }""")
+                     hint: document.getElementById('backup-explain').textContent }; }""")
         check("the button sits straight after Save full backup with photos, full width, with the right words",
               info["ids"] == ["export-button", "share-button", "full-export-button", "full-share-button", "restore-button"] and
               info["labels"][3] == "Send full backup with photos to…" and info["full"] == ["1 / -1"], info)
-        check("the hint under the buttons still explains Send backup to… and now mentions the full one",
-              "share menu" in info["hint"] and "saves the backup instead" in info["hint"] and "Send full backup with photos to…" in info["hint"], info["hint"])
+        # v75: removed check "the hint under the buttons still explains Send backup to": the long share hint is gone (SET-4)
         check("the old Save backup, Send backup to… and Restore buttons are all still there", info["ids"].count("export-button") == 1 and "share-button" in info["ids"] and "restore-button" in info["ids"])
         state = page.evaluate("""() => { const b = document.getElementById('full-share-button'); b.click();
             return [b.disabled, b.textContent, document.getElementById('full-export-button').disabled]; }""")

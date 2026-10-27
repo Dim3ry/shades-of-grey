@@ -100,9 +100,10 @@ def main():
         check("one ✕ on every step line", page.locator("#import-page .import-remove").count() == len(start_lines) == 6,
               (page.locator("#import-page .import-remove").count(), start_lines))
         check("the ✕ says what it leaves out (for screen readers)",
-              page.locator("#import-page .import-remove").first.get_attribute("aria-label") == "Leave out Mephiston Red from Cloak",
-              page.locator("#import-page .import-remove").first.get_attribute("aria-label"))
-        check("a hint explains the ✕", "Tap ✕ on a step to leave it out" in page.text_content("#import-page"))
+              # v75: the name is now "Leave out" plus the step's own text (aria-labelledby), so read it as a screen reader would
+              all(w in page.locator("#import-page .import-remove").first.aria_snapshot() for w in ("Leave out", "Mephiston Red")),
+              page.locator("#import-page .import-remove").first.aria_snapshot())
+        check("a hint explains the ✕", "✕ to leave something out" in page.text_content("#import-page"))   # v75: shorter hint
         check("starts with an unsure paint to check", page.locator("#import-page .import-check").count() == 1)
         check("Save waits for it", page.locator("#import-save").is_disabled(), save_text(page))
         page.click("#import-page [data-own=pick]")
@@ -156,8 +157,8 @@ def main():
         page.locator("#import-page .import-steps li", has_text="Stirland Mud").locator(".import-remove").focus()
         page.keyboard.press("Enter")
         page.wait_for_timeout(50)
-        focused = page.evaluate("document.activeElement && document.activeElement.getAttribute('aria-label')")
-        check("after Enter on ✕, focus moves to the next ✕", focused == "Leave out Nuln Oil from Rocks", focused)
+        focused = page.locator(":focus").aria_snapshot()   # v75: the name now comes from the step's text
+        check("after Enter on ✕, focus moves to the next ✕", "Leave out" in focused and "Nuln Oil" in focused, focused)
         undo(page)
 
         # --- 8. Saving leaves the step out for real ---

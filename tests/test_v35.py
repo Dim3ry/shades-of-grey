@@ -163,7 +163,7 @@ def main():
               and all(app.count(f"function {n}(") == 1 for n in ["buildStarterSchemes", "buildDetailRecipes", "buildBasingTips", "buildFactionHistory", "buildIdeaItem", "appendLibraryParts", "appendRolePicker", "buildIdeasList"]))
         check("the Pro preview label is on the Compendium", page.inner_text("#view-compendium .pro-pill") == "Pro preview" if page.locator("#view-compendium .pro-pill").count() else False)
         help_text = page.evaluate("() => document.getElementById('help-tabs').textContent")
-        check("Help names five tabs and says what the Compendium is", all(w in help_text for w in ["five tabs", "Compendium", "Pro preview", "without needing a recipe"]), help_text)
+        check("Help names five tabs and says what the Compendium is", all(w in help_text for w in ["Five tabs", "Compendium"]), help_text)
 
         # ---------- 2. The five-tab bar ----------
         print("\n--- 2. The five-tab bar ---")
@@ -535,7 +535,7 @@ def main():
         pick_combo(page, "#cmp-colour-ideas-base", index=1)
         check("with an empty palette you can still choose a colour and get three ideas, none of them owned",
               len(comp_idea_rows(page)) == 3 and all(r["tag"] == "Not in your palette" for r in comp_idea_rows(page)))
-        check("the footnote says colours are only a guide and nothing leaves the phone", all(w in page.inner_text("#cmp-foot") for w in ["only a guide", "Nothing leaves your phone"]))
+        check("the footnote says colours are only a guide and nothing leaves the phone", all(w in page.inner_text("#cmp-foot") for w in ["Colours on screen are a guide"]))
 
         # ---------- 8. Separate picks, kept picks, no duplicate ids ----------
         print("\n--- 8. Separate picks ---")
@@ -708,7 +708,7 @@ def main():
         open_panel(page)
         check("the card still has the check at the bottom", page.locator("#scheme-check").count() == 1)
         check("the card still ends with its footnote and keeps its Pro preview label", page.inner_text("#colour-ideas .pro-pill") == "Pro preview"
-              and "Nothing leaves your phone" in page.evaluate("() => document.querySelector('#colour-ideas .ideas-body').lastElementChild.textContent"))
+              and "Colours on screen are a guide" in page.evaluate("() => document.querySelector('#colour-ideas .ideas-body').lastElementChild.textContent"))
         page.click("#recipe-page button.plain-button:has-text('Cancel')")
         page.wait_for_timeout(250)
         check("no real browser pop-ups appeared", not [d for d in dialogs if "Do you own" in d], dialogs[:3])

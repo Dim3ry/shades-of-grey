@@ -209,8 +209,8 @@ def main():
         check("every idea has a paint name, a label and a plain-English reason",
               all(i["name"] and i["tag"] in ("You own this", "Yours, poor fit", "Not in your palette") and i["why"].endswith(".") and len(i["why"]) > 25 for i in got), got)
         check("the first reason names the opposite on the colour wheel", "opposite" in got[0]["why"] and "blue" in got[0]["why"], got[0])
-        check("the foot note says ideas use owned paints first and nothing leaves the phone",
-              "own first" in page.inner_text("#colour-ideas .ideas-body") and "Nothing leaves your phone" in page.inner_text("#colour-ideas .ideas-body"))
+        check("the foot note says colours on screen are a guide (v75: shorter, COMP-5)",
+              "Colours on screen are a guide" in page.inner_text("#colour-ideas .ideas-body") and "Colours on screen are a guide" in page.inner_text("#colour-ideas .ideas-body"))
         shot(page, "v28-panel-dark-390.png")
 
         # ---------- 3. The ideas are right ----------

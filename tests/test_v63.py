@@ -111,7 +111,7 @@ def main():
         help_li = page.evaluate("() => { const e = document.getElementById('help-wheel-order'); return e ? e.textContent : ''; }")
         check("Help has a line on the wheel's order: 12, popular ranges, Show all, and no brand names", "12" in help_li and "popular ranges" in help_li and "Show all" in help_li and not any(b in help_li for b in POPULAR), help_li)
         check("no em dash in the Help line or the v63 Updates entry", "—" not in help_li and "—" not in app[app.index('{ version: "v63"'):app.index('{ version: "v62"')])
-        check("the wheel's group sentence says popular ranges come next", "yours first, then popular ranges" in app)
+        # v75: removed check "the wheel's group sentence says popular ranges come next": the 'Split into' sentence was removed (COMP-9)
 
         # ---------- 6. Phones, dark and light ----------
         print("\n--- 6. Phones ---")
