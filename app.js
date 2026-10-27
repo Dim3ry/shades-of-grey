@@ -4194,7 +4194,7 @@
     }
     function dayLabel(day, withYear) {
       return new Date(day * DAY_MS).toLocaleDateString("en-GB",
-        withYear ? { month: "short", year: "2-digit", timeZone: "UTC" } : { day: "numeric", month: "short", timeZone: "UTC" });
+        withYear ? { month: "short", year: "numeric", timeZone: "UTC" } : { day: "numeric", month: "short", timeZone: "UTC" });
     }
 
     // How many of a unit's models were Done at the end of a given day.
@@ -4310,8 +4310,13 @@
       // Dates along the bottom.
       const ticks = width < 500 ? 3 : 5;
       const withYear = x1 - x0 > 300;
+      // A9: a middle date is left out when it would repeat or crowd the one before it or the "Today" label.
+      let lastLabelX = -Infinity;
       for (let i = 0; i < ticks; i++) {
         const day = Math.round(x0 + (x1 - x0) * i / (ticks - 1));
+        const middle = i > 0 && i < ticks - 1;
+        if (middle && (X(day) - lastLabelX < 70 || X(x1) - X(day) < 56 || dayLabel(day, withYear) === dayLabel(x0, withYear))) continue;
+        lastLabelX = X(day);
         const t = svgEl("text", { x: X(day), y: height - 8, fill: "var(--muted)", "font-size": 11,
           "text-anchor": i === 0 ? "start" : i === ticks - 1 ? "end" : "middle" }, svg);
         t.textContent = i === ticks - 1 ? "Today" : dayLabel(day, withYear);
@@ -6569,6 +6574,11 @@
       toggleAdd.textContent = opening ? "Close" : "+ Add unit";
       toggleAdd.setAttribute("aria-expanded", String(opening));   // v53
       if (opening && selectMode) closeSelect();   // v21.1: one thing at a time
+      // C5: start from the last game and faction used, unless something is already typed.
+      if (opening && !hobbyInput.value && !factionInput.value) {
+        hobbyInput.value = typeof settings.lastGame === "string" ? settings.lastGame : "";
+        factionInput.value = typeof settings.lastFaction === "string" ? settings.lastFaction : "";
+      }
       if (opening) nameInput.focus();
     });
 
@@ -6590,6 +6600,12 @@
       if (!isVisible(newModel)) clearFilters();  // so a new unit never seems to vanish
       nameInput.value = "";
       countInput.value = 1;
+      // C5: remember this game and faction for the next time the form is opened, even after a reload.
+      if (settings.lastGame !== hobbyInput.value.trim() || settings.lastFaction !== factionInput.value.trim()) {
+        settings.lastGame = hobbyInput.value.trim().slice(0, 100);
+        settings.lastFaction = factionInput.value.trim().slice(0, 100);
+        saveSettings();
+      }
       // preventScroll: keep the box ready for the next name without jumping back up to it.
       nameInput.focus({ preventScroll: true });
       // Game, faction and starting stage stay filled in, since you'll often add several
@@ -14108,6 +14124,10 @@
           dataSummary.textContent = summary + ` Altogether (photos included) the app uses about ${mb(usage)} of ${mb(quota)} available.`;
         }).catch(() => {});
       }
+      // C6: one quiet line, shown only once the offline copy is really in place.
+      if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+        navigator.serviceWorker.ready.then(() => { document.getElementById("offline-note").textContent = "Works offline."; }).catch(() => {});
+      }
       renderPhotoSummary();
       renderRecover();
     }
@@ -16322,7 +16342,7 @@
     // own copy in memory and saved over the other's changes. Now, when the OTHER window
     // saves, the browser tells this one (the "storage" event) and we load its changes.
     // Screen choices (which tab is open, sort order...) stay this window's own.
-    const VIEW_ONLY_SETTINGS = ["tab", "recipeView", "historyRange", "paintSort"];
+    const VIEW_ONLY_SETTINGS = ["tab", "recipeView", "historyRange", "paintSort", "lastGame", "lastFaction"];
     const withoutViewSettings = (s) => {
       const copy = { ...s };
       for (const key of VIEW_ONLY_SETTINGS) delete copy[key];
