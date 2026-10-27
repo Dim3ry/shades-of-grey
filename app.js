@@ -16008,12 +16008,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=83".
+    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=84".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v83";
+    const APP_VERSION = "v84";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -16464,6 +16464,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v84", date: "28 Oct 2026", changes: [
+        "The Recipes tab is now called Painting. Inside it, Recipes and Schemes keep their names. Help and the empty lists now say what each is: a recipe is your own step-by-step for a model; a scheme is a colour plan or idea you can save into a recipe.",
+        "The screen reader names are clearer. A unit with models at different stages now says so when you select it, Edit details is announced as a button, and Delete says which unit it will delete. \"1 models\" now reads \"1 model\" everywhere.",
+      ] },
       { version: "v83", date: "28 Oct 2026", changes: [
         "Each unit card now has a clear Details button, and a stage bar under the name with a back arrow on the left and an up arrow on the right. Both move the unit one stage and both have an Undo. The old stage button and the small Back a stage button are gone: open Details and use Jump to stage. Details also has a Paints row that opens the unit's full set.",
         "Every paint on the Shopping list now has a Remove button, with Undo. It takes only that paint off the list.",
