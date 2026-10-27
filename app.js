@@ -6678,6 +6678,8 @@
     const recipeHome = document.getElementById("recipe-home");
     const recipePage = document.getElementById("recipe-page");
     const recipeList = document.getElementById("recipe-list");
+    const recipeSplit = document.getElementById("recipe-split");   // v78
+    const recipeWide = window.matchMedia("(min-width: " + WIDE_MIN_PX + "px)");   // v78
     const partFilter = document.getElementById("part-filter");
     let recipePartFilter = "";
     let openRecipeId = null;   // the recipe being read, or null for the list
@@ -6709,7 +6711,10 @@
       fillDraftCard("recipe", !onPage && !(onSchemes && !!schemeDraft));    // v26: kept unfinished work
       fillDraftCard("paste", !onPage && !(onSchemes && !!schemeDraft));
       recipeSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", b.dataset.view === current));
-      recipeHome.classList.toggle("hidden", onPage || onPalette || onSchemes || onShopping);
+      // v78: from 900 px an open recipe (or one being written) shows beside the list, but only when it was opened from the Recipes list.
+      const wideSplit = onPage && recipeWide.matches && !["palette", "schemes", "shopping"].includes(settings.recipeView);
+      recipeSplit.classList.toggle("layout-split", wideSplit);
+      recipeHome.classList.toggle("hidden", (onPage && !wideSplit) || onPalette || onSchemes || onShopping);
       shoppingView.classList.toggle("hidden", !onShopping);
       paletteView.classList.toggle("hidden", !onPalette);
       schemeView.classList.toggle("hidden", !onSchemes);
@@ -6720,7 +6725,13 @@
       else if (onSchemes) renderSchemes();
       else if (onShopping) renderShopPanel();
       else renderRecipeList();
+      if (wideSplit) renderRecipeList();
     }
+
+    // v78: crossing 900 px with a recipe open moves it beside the list or back to full screen.
+    recipeWide.addEventListener("change", () => {
+      if (settings.tab === "recipes" && (openRecipeId !== null || recipeDraft)) renderRecipes();
+    });
 
     const recipeSeg = document.getElementById("recipe-seg");
     recipeSeg.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
@@ -6888,7 +6899,8 @@
           status.append(words.text);
           button.appendChild(status);
         }
-        button.addEventListener("click", () => { openRecipeId = recipe.id; renderRecipes(); window.scrollTo(0, 0); });
+        if (openRecipeId === recipe.id) button.setAttribute("aria-current", "true");   // v78
+        button.addEventListener("click", () => { openRecipe(recipe.id); window.scrollTo(0, 0); });   // v78: openRecipe asks before dropping a recipe being written (the list can stay visible beside it)
         const users = unitsUsing(recipe.id).length;
         const meta = document.createElement("p");
         meta.className = "meta";
@@ -15495,12 +15507,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=77".
+    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=78".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v77";
+    const APP_VERSION = "v78";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -15951,6 +15963,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v78", date: "27 Oct 2026", changes: [
+        "On a wide screen, opening a recipe now shows it beside the list, so you can pick another without going back. Phones are unchanged.",
+      ]},
       { version: "v77", date: "27 Oct 2026", changes: [
         "Groundwork for wider screens: pages can now sit side by side from 900 px wide. Phones look and work the same. The Updates page on a wide screen is the first to use it.",
       ]},
