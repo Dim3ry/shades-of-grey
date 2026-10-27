@@ -359,8 +359,9 @@ def main():
         print("--- 5. Help, Back, light mode ---")
         seed(page, settings=full_settings())
         tab(page, "help")
+        # A3: the Details menu is now called "Jump to stage" (it was "Stage"), so Help says that.
         jump = page.text_content("#help-jump-stage") or ""
-        check("Help explains jumping to a stage and its Undo", "Stage" in jump and "Undo" in jump and "Move all models to stage" in jump, jump)
+        check("Help explains jumping to a stage and its Undo", "Jump to stage" in jump and "Undo" in jump and "Move all models to stage" in jump, jump)
         started = page.text_content("#view-help") or ""
         check("Help explains Starting stage and the examples card",
               "Starting stage" in started and "Clear examples" in started and "Keep them" in started)

@@ -164,9 +164,10 @@ def main():
         e.sub_tab(page, "help")
         page.click("summary:has-text('Stages and')")
         page.wait_for_timeout(150)
+        # A3: the unit card's ▲ became a right arrow, so Help says "right arrow".
         topic = page.text_content("#help-touch-ups") or ""
         check("Help explains Needs touch-ups, where it sits and its old name",
-              all(w in topic for w in ["Needs touch-ups", "Battle ready", "Parade ready", "▲", "Painted with issues"]), topic)
+              all(w in topic for w in ["Needs touch-ups", "Battle ready", "Parade ready", "right arrow", "Painted with issues"]), topic)
         check("Help's Done line names the new stage", '"Needs touch-ups"' in html and '"Battle ready", "Painted with issues" and' not in html)
 
         # ---------- 10. Phones, dark and light ----------
