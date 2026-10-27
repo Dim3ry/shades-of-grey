@@ -1557,6 +1557,12 @@
       #view-help .help:not(.hidden) { columns: 2; column-gap: 40px; }
       ul.recipe-list { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
       #recipe-page, #scheme-page { max-width: 780px; }   /* v81: the Compendium now uses the full width (two columns) */
+      /* R3b-5: Paste recipes stays a readable width (its text box and step rows were 1200 px+ wide); the scheme editor puts its two cards side by side. */
+      #import-page { max-width: 780px; }
+      #scheme-page:not(.hidden) { max-width: none; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+      #scheme-page > .link-button, #scheme-page > :last-child { grid-column: 1 / -1; }
+      #scheme-page > .link-button { justify-self: start; }
+      #scheme-page > .card { margin-bottom: 0; }
       /* v78: beside the list the recipe fills its column; the open recipe in the list gets an outline (and aria-current). */
       #recipe-split.layout-split #recipe-page { max-width: none; }
       #recipe-split.layout-split ul.recipe-list { grid-template-columns: 1fr; }
