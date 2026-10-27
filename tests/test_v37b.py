@@ -176,7 +176,7 @@ def main():
         new_code = app[mark_a:mark_b] + app[app.index("const WHEEL_TINT_C"):app.index("function wheelTone(")]
         check("each shared builder is defined once and used by every box: buildSearchPicker (Start from, Faction), buildListSearch (three lists), wheelSub",
               all(app.count(f"function {n}(") == 1 for n in ["buildSearchPicker", "buildListSearch", "wheelSub", "wheelTint", "searchNorm", "searchMatches", "groupAllowsNow"])
-              and app.count("appendChild(buildSearchPicker(door") == 2 and app.count("appendChild(buildListSearch(door") == 3)
+              and app.count("appendChild(buildSearchPicker(door") == 3 and app.count("appendChild(buildListSearch(door") == 3)
         check("the door flag is the switch: the Compendium door has search, the recipe card's door does not, and the door comment names it",
               re.search(r"fold: true, short: true, switcher: true, search: true", app) is not None and "search        (v37 part 2, Compendium only)" in app
               and "door.search" in app and not re.search(r"search:\s*true", app[app.index("function appendLibraryParts"):app.index("function appendRolePicker")]))
@@ -925,7 +925,7 @@ def main():
         check("the ring picture is exactly as before: the same ten slices in the same order with the same shapes", len(ring) == 10 and digest == "566f183642b86302", (digest, len(ring)))
         check("the wheel still has the same hint line, caption and ten slices in the same order",
               page.inner_text("#cmp-wheel-hint") == "Tap a colour to see what's in it" and page.evaluate("() => [...document.querySelectorAll('#cmp-wheel path.wheel-seg')].map(e => e.dataset.wheel)") == PART_ORDER)
-        check("the five folding parts and their order are as in part 1", page.evaluate("() => [...document.querySelectorAll('#compendium-body > section.fold .fold-button')].map(b => b.firstElementChild.textContent)") == ["Colour ideas", "Your schemes", "Starter schemes", "Detail recipes", "Basing tips"])
+        check("the six folding parts and their order are as in part 1 (v71: Ask the Mentor first)", page.evaluate("() => [...document.querySelectorAll('#compendium-body > section.fold .fold-button')].map(b => b.firstElementChild.textContent)") == ["Ask the Mentor", "Colour ideas", "Your schemes", "Starter schemes", "Detail recipes", "Basing tips"])
         check("no page id appears twice with everything open and a wheel part showing", (lambda: (open_all(page), tap(page, "orange"), page.click(BASE), page.keyboard.press("Escape"),
               page.evaluate("() => { const ids = [...document.querySelectorAll('[id]')].map(e => e.id); return ids.filter((x, i) => ids.indexOf(x) !== i); }") == [])[-1])())
         check("every id the new boxes add starts with cmp- (so the recipe editor can never clash)", page.evaluate("() => [...document.querySelectorAll('#compendium-body [id]')].every(e => e.id.startsWith('cmp-'))"))

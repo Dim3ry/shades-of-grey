@@ -46,7 +46,8 @@ def check(name, ok, detail=""):
 BRAND_WORDS = re.compile(r"\b(citadel|vallejo|army painter|scale ?75|tamiya|games workshop|warhammer|amazon|ebay|etsy|shop|buy|store)\b", re.I)
 
 KEYS = ["ideas", "history", "starter", "detail", "basing"]
-LABELS = ["Colour ideas", "Your schemes", "Starter schemes", "Detail recipes", "Basing tips"]
+LABELS = ["Ask the Mentor", "Colour ideas",   # v71: Ask the Mentor is the first folding part
+           "Your schemes", "Starter schemes", "Detail recipes", "Basing tips"]
 THEMES = ["All", "Cold", "Warm", "Dark", "Bright"]
 COMBOS = ["All", "Reds", "Oranges and browns", "Yellows and sand", "Greens", "Blues", "Purples", "Greys, blacks and whites"]
 COMBO_KEYS = ["red", "orange", "yellow", "green", "blue", "purple", "neutral"]
@@ -146,7 +147,7 @@ def main():
         heads = page.evaluate("""() => [...document.querySelectorAll('#compendium-body > section.fold')].map(s => { const h = s.querySelector(':scope > h3.fold-head'), b = h && h.querySelector('button.fold-button'),
             p = s.querySelector(':scope > .fold-panel'); return { label: b && b.firstElementChild.textContent, name: b && b.textContent, exp: b && b.getAttribute('aria-expanded'),
             controls: b && b.getAttribute('aria-controls'), panelId: p && p.id, hidden: p && p.hidden, empty: p && p.childElementCount === 0, type: b && b.type }; })""")
-        check("there are five headings in order: Colour ideas, Your schemes, Starter schemes, Detail recipes, Basing tips", [h["label"] for h in heads] == LABELS, heads)
+        check("there are six headings in order (v71: Ask the Mentor first): Ask the Mentor, Colour ideas, Your schemes, Starter schemes, Detail recipes, Basing tips", [h["label"] for h in heads] == LABELS, heads)
         check("each heading is a real heading (h3) holding one button that says what the part is", all(h["name"] == h["label"] and h["type"] == "button" for h in heads), heads)
         check("they all start closed (aria-expanded false), and each button points at its own panel (aria-controls)",
               all(h["exp"] == "false" and h["controls"] == h["panelId"] for h in heads), heads)
@@ -466,8 +467,8 @@ def main():
             open_tab(page)
             geo = page.evaluate("""() => { const c = document.querySelector('#view-compendium .card').getBoundingClientRect();
                 return [...document.querySelectorAll('.fold-button')].map(b => { const r = b.getBoundingClientRect(); return { h: r.height, w: r.width, l: r.left - c.left, rr: c.right - r.right }; }); }""")
-            check(f"at {width} px the five headings are 44 px tall or more, full width inside the card, and nothing scrolls sideways",
-                  len(geo) == 5 and all(g["h"] >= 44 and g["l"] >= -0.5 and g["rr"] >= -0.5 and g["w"] > 250 for g in geo) and no_sideways(page), geo)
+            check(f"at {width} px the six headings are 44 px tall or more, full width inside the card, and nothing scrolls sideways",
+                  len(geo) == 6 and all(g["h"] >= 44 and g["l"] >= -0.5 and g["rr"] >= -0.5 and g["w"] > 250 for g in geo) and no_sideways(page), geo)
             open_all(page)
             page.click('#cmp-starter-moods [data-mood="all"]')
             page.click('#cmp-detail-groups [data-detail-group="all"]')
@@ -544,8 +545,8 @@ def main():
             page.wait_for_timeout(120)
             check(f"the {tab} tab opens its own page and hides the others", page.is_visible(f"#{view}") and sum(page.is_visible(f"#{v}") for v in ["view-dashboard", "view-units", "view-recipes", "view-settings", "view-compendium"]) == 1)
         order = page.evaluate("() => [...document.querySelectorAll('#compendium-body > *')].flatMap(e => e.classList.contains('more-info') ? [...e.querySelectorAll('.more-info-panel > *')] : [e]).map(e => e.id).filter(Boolean)")
-        check("the Compendium is: the intro, the wheel, the five folding parts, then the footnote",
-              order == ["cmp-intro", "cmp-wheel-block", "cmp-fold-ideas", "cmp-fold-history", "cmp-fold-starter", "cmp-fold-detail", "cmp-fold-basing", "cmp-foot"], order)
+        check("the Compendium is: the intro, the wheel, the six folding parts (v71: Ask the Mentor first), then the footnote",
+              order == ["cmp-intro", "cmp-wheel-block", "cmp-fold-mentor", "cmp-fold-ideas", "cmp-fold-history", "cmp-fold-starter", "cmp-fold-detail", "cmp-fold-basing", "cmp-foot"], order)
         if page.get_attribute("#compendium-body > .more-info .more-info-button", "aria-expanded") == "false":   # v49: the intro sits behind More info
             page.click("#compendium-body > .more-info .more-info-button")
         check("the intro line says to tap a heading", "Tap a heading to open it" in page.inner_text("#cmp-intro"), page.inner_text("#cmp-intro"))
