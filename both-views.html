@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Developer tool, not part of the app and not linked from it. Shows the app twice (phone width and desktop
+       width) so a layout can be checked side by side. Its own security policy: it may only frame this same site. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta name="robots" content="noindex">
+  <title>Minifolio both views</title>
+  <style>
+    body { margin: 0; padding: 12px; background: #0b1220; color: #cfe0f5; font: 14px/1.4 system-ui, sans-serif; }
+    header { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+    select, button { background: #16233a; color: #cfe0f5; border: 1px solid #2c4468; border-radius: 6px; padding: 8px 12px; font: inherit; min-height: 44px; }
+    .row { display: flex; gap: 16px; align-items: flex-start; }
+    .pane { min-width: 0; }
+    .pane h2 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: #8fa9c9; }
+    .box { overflow: hidden; border: 1px solid #2c4468; background: #000; }
+    #phone-pane { flex: 0 0 392px; }
+    #desktop-pane { flex: 1 1 0; }
+    iframe { border: 0; display: block; background: #fff; }
+    #phone { width: 390px; height: 800px; }
+    #desktop { width: 1280px; height: 800px; transform-origin: 0 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <label for="page">Page</label>
+    <select id="page"></select>
+    <button type="button" id="reload">Reload both</button>
+  </header>
+  <div class="row">
+    <div class="pane" id="phone-pane"><h2>Phone, 390 px</h2><div class="box"><iframe id="phone" title="Phone view" src="index.html"></iframe></div></div>
+    <div class="pane" id="desktop-pane"><h2 id="desktop-title">Desktop, 1280 px</h2><div class="box" id="desktop-box"><iframe id="desktop" title="Desktop view" src="index.html"></iframe></div></div>
+  </div>
+  <script src="both-views.js"></script>
+</body>
+</html>

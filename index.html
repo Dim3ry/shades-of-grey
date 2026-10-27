@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=76"></script>
+  <script src="early.js?v=77"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -1453,12 +1453,33 @@
     /* Slightly smaller labels on a narrow phone so "Dashboard" still fits. */
     @media (max-width: 420px) { .tabs button { font-size: 11px; } }
 
+    /* ----- v77: THE WIDE-SCREEN BREAKPOINT (this comment is the one place it is written down) -----
+       Wide means 900 px or more. CSS cannot read a variable inside "@media", so every wide rule in this file
+       says "(min-width: 900px)" and "(max-width: 899.98px)" for the phone side. The one JavaScript use is
+       WIDE_MIN_PX in app.js. To change the breakpoint, change all of those together; tests/test_v77.py fails
+       if they disagree. Phones (under 900 px) never get the rules below, so the phone layout is unchanged.
+
+       Reusable two-column layout. Put class "layout-split" on a page, "layout-main" on the big part and
+       "layout-side" on the small part. Under 900 px it is plain stacked blocks, in the order they are written.
+       From 900 px the main part takes two thirds on the left and the side part one third on the right.
+       Parts must be direct children of the page. --content-max is the widest the page content ever gets. */
+    :root { --content-max: 1280px; }
+    @media (min-width: 900px) {
+      .layout-split:not(.hidden) {
+        display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+        grid-template-areas: "main side"; gap: 18px; align-items: start;
+      }
+      .layout-split > .layout-main { grid-area: main; min-width: 0; }
+      .layout-split > .layout-side { grid-area: side; min-width: 0; }
+      .layout-split > .card { margin-bottom: 0; }
+    }
+
     /* ----- Wide screens (laptops and desktops) -----
        "@media (min-width: 900px)" means: only use these rules when the window is at
        least 900 pixels wide. Phones never see them, so the phone layout is unchanged. */
     @media (min-width: 900px) {
       body { padding: 0 32px 40px; }
-      main { max-width: 1280px; }
+      main { max-width: var(--content-max); }
       /* v60: the import check's "Set every row to" bar stays in view below the tab bar (69 px). */
       .review-set-all { top: 69px; }
 
@@ -1466,7 +1487,7 @@
          view as you scroll down. */
       .tabs {
         position: sticky; top: 0;
-        max-width: 1280px; margin: 0 auto 24px;
+        max-width: var(--content-max); margin: 0 auto 24px;
         border-top: none; border-bottom: var(--frame);
         border-radius: 0 0 14px 14px;
         padding: 6px; gap: 6px;
@@ -1515,8 +1536,7 @@
       /* Settings: two columns of cards. */
       #view-settings:not(.hidden) { columns: 2; column-gap: 18px; }
       #view-settings .card { break-inside: avoid; }
-      #view-updates:not(.hidden) { display: grid; grid-template-columns: 1fr 2fr; gap: 18px; align-items: start; }
-      #view-updates .card { margin-bottom: 0; }
+      /* v77: Updates now uses the shared layout-split class (above) instead of its own two-column rule. */
       #view-help .help:not(.hidden) { columns: 2; column-gap: 40px; }
       ul.recipe-list { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
       #recipe-page, #scheme-page, #view-compendium { max-width: 780px; }
@@ -2658,15 +2678,15 @@
     </section>
 
     <!-- ===== TAB: Updates (feedback and change history) ===== -->
-    <section id="view-updates" class="hidden">
-      <div class="card">
+    <section id="view-updates" class="layout-split hidden">
+      <div class="card layout-side">
         <h2>Tell us what you think</h2>
         <p class="hint" id="feedback-explain">About 2 minutes.</p>
         <a class="primary-button" id="feedback-link" target="_blank" rel="noopener noreferrer"
            style="display: block; text-align: center; text-decoration: none;">Give feedback</a>
         <p class="hint hidden" id="feedback-soon" style="margin: 0;">Feedback form not available yet.</p>
       </div>
-      <div class="card">
+      <div class="card layout-main">
         <h2>What's new</h2>
         <p class="hint" id="version-note"></p>
         <p class="hint" id="unofficial-note">Unofficial fan-made app. Not affiliated with Games Workshop or any paint maker.</p>
@@ -2904,7 +2924,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=76" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=77" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -2915,11 +2935,11 @@
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks.
        v70: mentor-tips.js (the Mentor tips, plain data) loads between basing-tips.js and app.js. It only adds three
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=76"></script>
-  <script src="schemes.js?v=76"></script>
-  <script src="detail-recipes.js?v=76"></script>
-  <script src="basing-tips.js?v=76"></script>
-  <script src="mentor-tips.js?v=76"></script>
-  <script src="app.js?v=76"></script>
+  <script src="colour.js?v=77"></script>
+  <script src="schemes.js?v=77"></script>
+  <script src="detail-recipes.js?v=77"></script>
+  <script src="basing-tips.js?v=77"></script>
+  <script src="mentor-tips.js?v=77"></script>
+  <script src="app.js?v=77"></script>
 </body>
 </html>

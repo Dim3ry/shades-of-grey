@@ -29,7 +29,7 @@ import hashlib, os, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, "..")
 CODE_FILES = ["app.js", "colour.js", "schemes.js", "detail-recipes.js", "basing-tips.js",
-              "early.js", "sw.js", "ocr/ocr-worker.js"]
+              "early.js", "sw.js", "ocr/ocr-worker.js", "both-views.js"]
 results = []
 
 # Statements a person has looked at: each only inserts numbers, dates the app works out itself,
