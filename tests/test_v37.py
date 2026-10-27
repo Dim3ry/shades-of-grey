@@ -153,9 +153,10 @@ def main():
         check("they all start closed (aria-expanded false), and each button points at its own panel (aria-controls)",
               all(h["exp"] == "false" and h["controls"] == h["panelId"] for h in heads), heads)
         check("a closed panel is hidden and empty (nothing is built until it is opened)", all(h["hidden"] and h["empty"] for h in heads), heads)
+        # v81: the wheel now sits in the left part of the Compendium (not a direct child of the body), so check it is not inside a fold-out instead
         check("the wheel is not inside a heading: it stays open at the top, before the five parts",
               page.evaluate("""() => { const b = document.getElementById('compendium-body'), w = document.getElementById('cmp-wheel-block'), f = document.getElementById('cmp-fold-ideas');
-                return w.parentElement === b && b.contains(f) && !!(w.compareDocumentPosition(f) & Node.DOCUMENT_POSITION_FOLLOWING) && w.getBoundingClientRect().height > 250; }"""))
+                return b.contains(w) && !w.closest('.fold') && b.contains(f) && !!(w.compareDocumentPosition(f) & Node.DOCUMENT_POSITION_FOLLOWING) && w.getBoundingClientRect().height > 250; }"""))
         check("none of the five parts' content is on the page while they are closed",
               all(page.locator(f"#{i}").count() == 0 for i in ["cmp-colour-ideas-base", "cmp-faction-history", "cmp-starter-schemes", "cmp-detail-recipes", "cmp-basing-tips"]))
         closed_height = page.evaluate("() => document.getElementById('compendium-body').offsetHeight")
