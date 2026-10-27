@@ -14568,6 +14568,8 @@
         if (backupStages) STAGES = backupStages;
         const restored = cleanModels(backupModels);
         STAGES = currentStages;
+        // v76: counts above the limit were lowered by cleanModels; count them so the end can say so.
+        const loweredCounts = backupModels.filter(m => m && typeof m.name === "string" && m.name.trim() && parseInt(m.count, 10) > MAX_MODELS).length;
         // Backups from v5 onwards also hold recipes. Older ones don't, so your recipes stay.
         const backupBook = !isList && parsed.recipes && typeof parsed.recipes === "object" ? cleanRecipeBook(parsed.recipes) : null;
         const hasRecipes = !!backupBook && (backupBook.recipes.length > 0 || backupBook.paints.length > 0 || backupBook.schemes.length > 0);
@@ -14640,10 +14642,10 @@
             }
             if (missing) {
               notify(photoFiles
-                ? `Backup restored, but ${missing} of ${plural(needed, "photo")} couldn't be loaded on this device (${imported} of ${photoCount} in the file worked), so they won't show. Keep the backup file safe: you can restore it again later, for example after freeing some space.`
-                : `Backup restored, but this backup was saved without photos, so ${plural(missing, "photo")} won't show on this device. Keep the backup file safe. To bring photos across, use Save full backup with photos on the other device.`);
+                ? `Backup restored${loweredCounts ? ` (${plural(loweredCounts, "count")} lowered to ${MAX_MODELS})` : ""}, but ${missing} of ${plural(needed, "photo")} couldn't be loaded on this device (${imported} of ${photoCount} in the file worked), so they won't show. Keep the backup file safe: you can restore it again later, for example after freeing some space.`
+                : `Backup restored${loweredCounts ? ` (${plural(loweredCounts, "count")} lowered to ${MAX_MODELS})` : ""}, but this backup was saved without photos, so ${plural(missing, "photo")} won't show on this device. Keep the backup file safe. To bring photos across, use Save full backup with photos on the other device.`);
             } else {
-              if (unitsToo) showToast("Backup restored");
+              if (unitsToo) showToast("Backup restored" + (loweredCounts ? `. ${plural(loweredCounts, "count")} lowered to ${MAX_MODELS}` : ""));
               else showToast(`Recipes restored (${plural(book.recipes.length, "recipe")})`, () => {
                 if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(recipesBefore)); })) { notify(fullMessage()); return; }
                 afterBigChange();
@@ -15491,12 +15493,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=75".
+    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=76".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v75";
+    const APP_VERSION = "v76";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -15947,6 +15949,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v76", date: "27 Oct 2026", changes: [
+        "Very long recipe and paint names now wrap onto more lines instead of making the page scroll sideways.",
+        "If Restore backup lowers any unit's model count to the 999 limit, it now tells you how many were changed.",
+      ]},
       { version: "v75", date: "27 Oct 2026", changes: [
         "Less small print. Many hints are shorter or gone: on the Dashboard, shopping list, Colour ideas, the Compendium, the paint scanner, the paste-recipes preview, Settings (Backups, Import, Counting visits, Shop links) and Help. Nothing you can do has changed.",
         "The notes on Counting visits and Shop links in Settings now just say On or Off. The full explanation is in Help, Privacy, which is split into three shorter points.",
