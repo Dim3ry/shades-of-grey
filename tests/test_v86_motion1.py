@@ -3,7 +3,7 @@
 New behaviour only:
 1. One place for the timings (--motion-fast / med / slow / ease), and one shared reduced-motion block.
 2. Main buttons lift on hover and press on tap; a ripple starts at the tap point; the tab bar and chips get none.
-3. Chips: the fill sweeps when switched on (and ticks on the Units filters); the stage chips cascade in once, on opening.
+3. Chips: the fill sweeps when switched on (To do / Done / Repaint also tick); the stage chips cascade in once, on opening.
 4. The question box fades and rises; Escape still means No.
 5. The Undo message slides up and its line drains over the real lifetime (one timer).
 6. A new unit drops in once; the outline flash stays.

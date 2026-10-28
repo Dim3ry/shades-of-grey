@@ -497,7 +497,7 @@
       min-width: 44px;        /* v53: the short "All" chip was 36 wide */
       border-radius: 999px;   /* pill shape */
     }
-    .chip[aria-pressed="true"] { color: var(--on-accent); border-color: var(--accent); font-weight: 600; }   /* Mo1: the accent fill is the sweep below */
+    .chip[aria-pressed="true"] { color: var(--on-accent); background-color: var(--accent); border-color: var(--accent); font-weight: 600; }
     /* v49: the Units filter groups (To do, Done, Repaint) are three equal buttons across the card; the stage chips open underneath */
     #group-chips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
     #group-chips .chip { justify-content: center; text-align: center; min-height: 44px; padding: 10px 6px; }
@@ -2290,22 +2290,22 @@
     .rip-host { position: relative; overflow: hidden; }
     .ripple { position: absolute; width: 10px; height: 10px; margin: -5px; border-radius: 50%; background: currentColor; opacity: 0; pointer-events: none; animation: mo-ripple calc(var(--motion-slow) + 80ms) var(--motion-ease); }
     @keyframes mo-ripple { from { transform: scale(1); opacity: 0.35; } to { transform: scale(36); opacity: 0; } }
-    /* 2. Chips: the accent fill sweeps across when switched on. The Units filter chips also get a tick, so colour is not the only sign. */
-    .chip { background-image: linear-gradient(var(--accent), var(--accent)); background-repeat: no-repeat; background-size: 0% 100%; transition: background-size var(--motion-med) var(--motion-ease), color var(--motion-fast) var(--motion-ease); }
+    /* 2. Chips: the accent fill sweeps across when switched on. To / Done / Repaint also get a tick; the stage chips do not, because a tick would widen them and change how their row fits. */
+    .chip { background-image: linear-gradient(var(--accent), var(--accent)); background-repeat: no-repeat; background-size: 0% 100%; transition: background-size var(--motion-med) var(--motion-ease), color var(--motion-fast) var(--motion-ease), background-color 0s linear var(--motion-med); }   /* the real accent colour lands as the sweep ends, so contrast checks and themes see it */
     .chip[aria-pressed="true"] { background-size: 100% 100%; }
-    .chip.sweep { background-size: 0% 100%; color: var(--muted); }   /* a freshly drawn chip that was just switched on starts empty, then fills */
-    #group-chips .chip::before, #stage-chips .chip::before { content: "\2713"; display: inline-block; width: 0; overflow: hidden; opacity: 0; vertical-align: bottom; transition: width var(--motion-med) var(--motion-ease), opacity var(--motion-med) var(--motion-ease); }
-    #group-chips .chip[aria-pressed="true"]:not(.sweep)::before, #stage-chips .chip[aria-pressed="true"]:not(.sweep)::before { width: 1em; margin-right: 0.3em; opacity: 1; }
+    .chip.sweep { background-size: 0% 100%; background-color: var(--background); color: var(--muted); }   /* a freshly drawn chip that was just switched on starts empty, then fills */
+    #group-chips .chip::before { content: "\2713"; display: inline-block; width: 0; overflow: hidden; opacity: 0; vertical-align: bottom; transition: width var(--motion-med) var(--motion-ease), opacity var(--motion-med) var(--motion-ease); }
+    #group-chips .chip[aria-pressed="true"]:not(.sweep)::before { width: 1em; margin-right: 0.3em; opacity: 1; }
     /* 3. The stage chips open under To do / Done / Repaint: the row is revealed top down and the chips follow one after another. */
     #stage-chips.cascade { animation: mo-reveal var(--motion-med) var(--motion-ease) both; }
     #stage-chips.cascade > .chip { animation: mo-cascade var(--motion-med) var(--motion-ease) both; animation-delay: calc(var(--i, 0) * 50ms); }
     @keyframes mo-reveal { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
-    @keyframes mo-cascade { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+    @keyframes mo-cascade { from { opacity: 0; } to { opacity: 1; } }
     /* 4. The question box: the dim layer fades in, the box rises and settles. */
     .dialog-backdrop:not(.hidden) { animation: mo-fade var(--motion-med) var(--motion-ease) both; }
     .dialog-backdrop:not(.hidden) > .dialog { animation: mo-rise var(--motion-med) var(--motion-ease) both; }
     @keyframes mo-fade { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes mo-rise { from { transform: translateY(14px) scale(0.95); } to { transform: none; } }
+    @keyframes mo-rise { from { transform: translateY(14px); } to { transform: none; } }   /* position only, so the box and its buttons are full size the whole time */
     /* 5. The Undo message slides up, and a thin line drains along its bottom edge over the message's life (JS sets --toast-life). */
     .toast:not(.hidden) { animation: mo-toast-in var(--motion-med) var(--motion-ease) both; }
     @keyframes mo-toast-in { from { transform: translateY(140%); opacity: 0; } to { transform: none; opacity: 1; } }
