@@ -2316,7 +2316,32 @@
     li.unit.just-added { animation: just-added 2.5s var(--motion-ease) forwards; }
     li.unit.just-dropped { animation: mo-drop var(--motion-med) var(--motion-ease) both, just-added 2.5s var(--motion-ease) forwards; }
     @keyframes mo-drop { from { opacity: 0; transform: translateY(-12px) scale(0.97); } to { opacity: 1; transform: none; } }
-    /* One reduced-motion rule for everything above and the basket pop: no movement at all. */
+    /* ===== Mo2: unit card motion ===== */
+    /* Only the unit (or model row) you tapped moves; JS adds the mo-* classes for that one redraw and takes them away again. */
+    /* 1. Stage change: the old name slides out (a pseudo-element, so it is not page text) and the new one slides in; up moves names upward, back downward. */
+    .mo-slide { position: relative; overflow: hidden; }
+    .mo-slide::before { content: attr(data-from); content: attr(data-from) / ""; position: absolute; left: 0; right: 0; top: 0; text-align: inherit; color: var(--prev-colour); pointer-events: none; animation: mo-name-out-up var(--motion-med) var(--motion-ease) both; }
+    .mo-slide > .stage-in { display: block; animation: mo-name-in-up var(--motion-med) var(--motion-ease) backwards; }
+    .mo-back .mo-slide::before { animation-name: mo-name-out-down; }
+    .mo-back .mo-slide > .stage-in { animation-name: mo-name-in-down; }
+    @keyframes mo-name-out-up { from { transform: none; opacity: 1; } to { transform: translateY(-110%); opacity: 0; } }
+    @keyframes mo-name-out-down { from { transform: none; opacity: 1; } to { transform: translateY(110%); opacity: 0; } }
+    @keyframes mo-name-in-up { from { transform: translateY(110%); opacity: 0; } to { transform: none; opacity: 1; } }
+    @keyframes mo-name-in-down { from { transform: translateY(-110%); opacity: 0; } to { transform: none; opacity: 1; } }
+    /* The stripe, the Up button, the name colour and the bar segments fade from the old stage colour; the segments follow one another 30 ms apart. */
+    li.unit.mo-stage, li.each-row.mo-row { animation: mo-stripe var(--motion-med) var(--motion-ease) backwards; }
+    @keyframes mo-stripe { from { border-left-color: var(--prev-colour); } }
+    .mo-stage .up-button, .mo-row .each-up { animation: mo-up-fill var(--motion-med) var(--motion-ease) backwards; }
+    @keyframes mo-up-fill { from { background-color: var(--prev-colour); border-color: var(--prev-colour); } }
+    .mo-pip { animation: mo-pip var(--motion-med) var(--motion-ease) backwards; animation-delay: calc(var(--i, 0) * 30ms); }
+    @keyframes mo-pip { from { background-color: var(--prev-colour); } }
+    /* Moving up: the card pulses once with a ring in the stage colour that fades out (card only, never a model row). Back has no ring. */
+    li.unit.mo-up { position: relative; }
+    li.unit.mo-up::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; animation: mo-ring var(--motion-slow) var(--motion-ease) both; }
+    @keyframes mo-ring { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--stage-colour) 55%, transparent); } to { box-shadow: 0 0 0 12px transparent; } }
+    /* 2. Details: JS grows and shrinks the panel and pops the swatches; the blank space left behind while closing is only a spacer. */
+    .panel-ghost { flex-basis: 100%; box-sizing: border-box; overflow: hidden; border-top: 1px solid var(--border); pointer-events: none; }
+    /* One reduced-motion rule for everything above (Mo1 and Mo2; the swatch and panel movement JavaScript starts also checks the setting) and the basket pop: no movement at all. */
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation: none !important; transition: none !important; }
       .ripple { display: none; }

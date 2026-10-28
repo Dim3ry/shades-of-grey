@@ -3770,6 +3770,9 @@
     const ticked = new Set();
     // v21.5: the unit just added (outlined for a moment; see showNewUnit()). Not saved.
     let justAddedId = null;
+    // Mo2: the unit (and model row) whose stage the person just changed. Set only for the redraw that follows their tap,
+    // so a bulk move, Import, Restore, Undo or a page load never moves anything.
+    let stageMotion = null;   // { id, index (a model row, or undefined for the card), dir (+1 up, -1 back), fromStage, fromName }
     let droppedId = null;   // Mo1: the new unit that has already dropped in
     let justAddedTimer = null;
 
@@ -4984,14 +4987,23 @@
 
       // A3: the stage and its 7 bars live in the stepper under the header (see buildStepper); in select mode,
       // where there is no stepper, the card shows them here as before.
-      const part = stageParts(model);
+      const motion = stageMotion && stageMotion.id === model.id && stageMotion.index === undefined ? stageMotion : null;
+      if (motion) {
+        item.classList.add("mo-stage", motion.dir > 0 ? "mo-up" : "mo-back");
+        item.style.setProperty("--prev-colour", `var(--stage-${motion.fromStage})`);
+      }
+      const part = stageParts(model, motion);
       if (selectMode) info.append(name, details, part.stage, part.pips);
       else info.append(name, details);
       const toggle = () => {
         if (selectMode) { toggleTick(model.id); return; }   // v21.1: in select mode a tap ticks
         // v23: closing a unit also puts its "Edit details" section away again.
-        if (openIds.has(model.id)) { openIds.delete(model.id); editOpenIds.delete(model.id); paintsOpenIds.delete(model.id); } else openIds.add(model.id);
+        const wasOpen = openIds.has(model.id);
+        const panelNow = wasOpen ? document.querySelector(`li.unit[data-id="${model.id}"] > .panel`) : null;
+        const heightNow = panelNow ? panelNow.offsetHeight : 0;
+        if (wasOpen) { openIds.delete(model.id); editOpenIds.delete(model.id); paintsOpenIds.delete(model.id); } else openIds.add(model.id);
         render();
+        animatePanel(model.id, !wasOpen, heightNow);   // Mo2
       };
       info.addEventListener("click", toggle);
       info.addEventListener("keydown", (event) => {
@@ -5059,19 +5071,88 @@
       }
       return STAGES[model.stage];
     }
-    function stageParts(model) {
+    function stageText(model) { return stageSummary(model) + (model.repaint ? "  ·  ↻ repaint" : ""); }
+    function stageParts(model, motion) {
       const stage = document.createElement("div");
       stage.className = "stage";
-      stage.textContent = stageSummary(model) + (model.repaint ? "  ·  ↻ repaint" : "");
+      stage.textContent = stageText(model);
+      if (motion) {
+        // Mo2: the old name (a CSS pseudo-element, so it is not part of the text) slides out while the new one slides in.
+        stage.classList.add("mo-slide");
+        stage.dataset.from = motion.fromName;
+        const text = document.createElement("span");
+        text.className = "stage-in";
+        text.textContent = stage.textContent;
+        stage.replaceChildren(text);
+      }
       const furthest = Math.max(...stagesOf(model));
       const pips = document.createElement("div");
       pips.className = "pips";
       for (let i = 0; i < STAGES.length; i++) {
         const pip = document.createElement("div");
         pip.className = i <= model.stage ? "pip filled" : i <= furthest ? "pip part" : "pip";
+        if (motion) markPip(pip, i, motion);
         pips.appendChild(pip);
       }
       return { stage, pips };
+    }
+    // Mo2: a bar segment fades from the colour it had before; they follow one after another, 30 ms apart.
+    function markPip(pip, i, motion) {
+      pip.classList.add("mo-pip");
+      pip.style.setProperty("--i", i);
+      pip.style.setProperty("--prev-colour", i <= motion.fromStage ? `var(--stage-${motion.fromStage})` : "var(--border)");
+    }
+    function motionMs(name) { return parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name)) || 0; }
+    // Mo2: put the movement classes away again a moment after the motion ends, so nothing is left behind at rest
+    // (the old name must not stay in the page for a screen reader).
+    let stageMotionTimer = null;
+    function endStageMotion() {
+      clearTimeout(stageMotionTimer);
+      stageMotionTimer = setTimeout(() => {
+        document.querySelectorAll(".mo-slide, .mo-pip, .mo-stage, .mo-row").forEach(el => el.classList.remove("mo-slide", "mo-pip", "mo-stage", "mo-row", "mo-up", "mo-back"));
+      }, motionMs("--motion-slow") + 400);
+    }
+    // Mo2: take this before a tapped stage change ...
+    function stageBefore(model, index) {
+      const row = model.each && index !== undefined;
+      const from = row ? model.stages[index] : model.stage;
+      return { id: model.id, index: row ? index : undefined, fromStage: from, fromName: row ? STAGES[from] : stageText(model) };
+    }
+    // ... and run the redraw with it, so that unit (or model row) is the one thing that moves.
+    function redrawWithStageMotion(before, dir, redraw) {
+      stageMotion = reducedMotion() ? null : { ...before, dir };
+      try { return redraw(); } finally { if (stageMotion) endStageMotion(); stageMotion = null; }
+    }
+    // Mo2: the Details panel grows or shrinks, and the paint swatches pop in one after another (whole thing under 300 ms).
+    function animatePanel(id, opening, before) {
+      if (reducedMotion() || !Element.prototype.animate) return;
+      const card = [...document.querySelectorAll("li.unit")].find(li => li.dataset.id === String(id));
+      if (!card) return;
+      const ms = motionMs("--motion-med");
+      const gap = parseFloat(getComputedStyle(card).rowGap) || 0;
+      if (opening) {
+        const panel = card.querySelector(":scope > .panel");
+        if (!panel) return;
+        const cs = getComputedStyle(panel);
+        const rest = { height: cs.height, paddingTop: cs.paddingTop, marginTop: cs.marginTop, opacity: 1 };
+        panel.style.overflow = "hidden";
+        const grow = panel.animate([{ height: "0px", paddingTop: "0px", marginTop: `${-gap}px`, opacity: 0 }, rest], { duration: ms, easing: "linear" });
+        grow.onfinish = grow.oncancel = () => { panel.style.overflow = ""; };
+        const swatches = panel.querySelectorAll(".paints-preview .swatch, .paints-grid .swatch");
+        const step = swatches.length > 1 ? Math.min(30, 150 / (swatches.length - 1)) : 0;   // 150 ms of stagger at most, then a 120 ms pop
+        swatches.forEach((sw, k) => sw.animate([{ transform: "scale(0.3)", opacity: 0 }, { transform: "none", opacity: 1 }],
+          { duration: motionMs("--motion-fast"), delay: k * step, easing: "linear", fill: "backwards" }));
+      } else if (before) {
+        // The panel is already gone from the redrawn card: a blank, hidden space of its old height shrinks away.
+        const ghost = document.createElement("div");
+        ghost.className = "panel-ghost";
+        ghost.setAttribute("aria-hidden", "true");
+        ghost.inert = true;
+        card.appendChild(ghost);
+        const shrink = ghost.animate([{ height: `${before}px`, marginTop: "2px", opacity: 1 }, { height: "0px", marginTop: `${-gap}px`, opacity: 0 }], { duration: ms, easing: "linear" });
+        shrink.onfinish = shrink.oncancel = () => ghost.remove();
+        setTimeout(() => ghost.remove(), ms + 300);
+      }
     }
 
     // A3: the stage stepper under a unit's header. Back (outlined) on the left, the stage with its 7 bars in the
@@ -5206,6 +5287,12 @@
       const row = document.createElement("li");
       row.className = simple ? "each-row simple" : "each-row";
       row.style.setProperty("--stage-colour", `var(--stage-${st})`);
+      // Mo2: only the row that was tapped moves: its stage name slides and its bar fades, with no ring.
+      const motion = stageMotion && stageMotion.id === model.id && stageMotion.index === index ? stageMotion : null;
+      if (motion) {
+        row.classList.add("mo-row", motion.dir > 0 ? "mo-up" : "mo-back");
+        row.style.setProperty("--prev-colour", `var(--stage-${motion.fromStage})`);
+      }
 
       const name = document.createElement("span");
       name.className = "each-name";
@@ -5239,6 +5326,14 @@
       const stageName = document.createElement("span");
       stageName.className = "each-stage-name";
       stageName.textContent = STAGES[st];
+      if (motion) {
+        stageName.classList.add("mo-slide");
+        stageName.dataset.from = motion.fromName;
+        const text = document.createElement("span");
+        text.className = "stage-in";
+        text.textContent = STAGES[st];
+        stageName.replaceChildren(text);
+      }
       mid.appendChild(stageName);
       if (!simple) {
         const pips = document.createElement("div");
@@ -5246,6 +5341,7 @@
         for (let k = 0; k <= top; k++) {
           const pip = document.createElement("div");
           pip.className = k <= st ? "pip filled" : "pip";
+          if (motion) markPip(pip, k, motion);
           pips.appendChild(pip);
         }
         mid.appendChild(pips);
@@ -5685,8 +5781,9 @@
         const movable = (s) => direction > 0 ? s < top : s > 0;
         if (!model.stages.some(movable)) return;
         const kept = JSON.stringify({ stage: model.stage, stages: model.stages, log: model.log });
+        const moving = stageBefore(model);
         model.stages.forEach((s, i) => { if (movable(s)) setStage(model, s + (direction > 0 ? 1 : -1), i); });
-        render();
+        redrawWithStageMotion(moving, direction, render);
         showToast(`All of ${displayName(model)} ${direction > 0 ? "up" : "back"} one stage`, () => {
           const unit = models.find(m => m.id === id);
           if (!unit) return;
@@ -5705,8 +5802,9 @@
       // (before, Undo moved the model back but added a new diary entry dated today, which would
       // now show as the wrong date under a model's name).
       const snapshot = JSON.stringify({ stage: model.stage, stages: model.stages, log: model.log });
+      const moving = stageBefore(model, model.each ? index : undefined);
       setStage(model, after, model.each ? index : undefined);
-      render();
+      redrawWithStageMotion(moving, direction, render);
       const who = model.each ? `${displayName(model)}, model ${index + 1}` : displayName(model);
       showToast(`${who} → ${STAGES[after]}`, () => {
         const unit = models.find(m => m.id === id);
@@ -6081,10 +6179,11 @@
         : model.each ? model.stages.every(s => s === stage) : model.stage === stage;
       if (already) { render(); return; }
       const before = JSON.stringify({ stage: model.stage, stages: model.stages, log: model.log });
+      const moving = stageBefore(model, index);
       setStage(model, stage, index);
       const who = index !== undefined ? `${displayName(model)}, model ${index + 1}`
         : model.each ? `All of ${displayName(model)}` : displayName(model);
-      commit(`${who} → ${STAGES[stage]}`, () => {
+      redrawWithStageMotion(moving, stage > moving.fromStage ? 1 : -1, () => commit(`${who} → ${STAGES[stage]}`, () => {
         const unit = models.find(m => m.id === id);
         if (!unit) return;
         const was = JSON.parse(before);
@@ -6092,7 +6191,7 @@
         if (Array.isArray(was.stages)) unit.stages = was.stages;
         unit.log = was.log;
         render();
-      });
+      }));
     }
 
     // ----- v21.1: SELECT MODE AND BULK "MOVE TO STAGE" -----
