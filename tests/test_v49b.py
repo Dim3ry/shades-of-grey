@@ -76,7 +76,7 @@ def load(page, settings=None, units=UNITS, book=BOOK):
 
 def tab(page, name):
     t.blur(page)   # the tab bar hides while a text box has the focus (a phone's keyboard is up)
-    page.click(f'.tabs button[data-tab="{name}"]')
+    page.click(f'nav button[data-tab="{name}"]')
     page.wait_for_timeout(200)
 
 def settle(page):

@@ -163,12 +163,12 @@ def main():
               and all(app.count(f"function {n}(") == 1 for n in ["buildStarterSchemes", "buildDetailRecipes", "buildBasingTips", "buildFactionHistory", "buildIdeaItem", "appendLibraryParts", "appendRolePicker", "buildIdeasList"]))
         check("the Pro preview label is on the Compendium", page.inner_text("#view-compendium .pro-pill") == "Pro preview" if page.locator("#view-compendium .pro-pill").count() else False)
         help_text = page.evaluate("() => document.getElementById('help-tabs').textContent")
-        check("Help names five tabs and says what the Compendium is", all(w in help_text for w in ["Five tabs", "Compendium"]), help_text)
+        check("Help names the four sections and says what the Compendium is", all(w in help_text for w in ["four sections", "Compendium"]), help_text)   # U4a: the bar has four sections, Settings is the cog
 
         # ---------- 2. The five-tab bar ----------
         print("\n--- 2. The five-tab bar ---")
-        names = page.evaluate("() => [...document.querySelectorAll('nav.tabs button[data-tab]')].map(b => b.dataset.tab)")
-        check("five tabs in order: Dashboard, Units, Recipes, Compendium, Settings", names == ["dashboard", "units", "recipes", "compendium", "settings"], names)
+        names = page.evaluate("() => [...document.querySelectorAll('nav button[data-tab]')].map(b => b.dataset.tab)")   # U4a: the four segments, then the Settings cog in the header
+        check("tabs in order: Dashboard, Units, Recipes, Compendium, Settings (the cog)", names == ["dashboard", "units", "recipes", "compendium", "settings"], names)
         label = page.evaluate("() => [...document.querySelector('nav.tabs button[data-tab=compendium]').childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('')")
         check("the label is Compendium in full", label == "Compendium", label)
         for width in (360, 375, 390, 400):
@@ -181,7 +181,7 @@ def main():
                 return out; }""")
             fits = all(x["left"] >= 0 and x["right"] >= 0 for x in m) and m[0]["bl"] >= -0.5 and m[-1]["br"] <= width + 0.5
             check(f"at {width} px every label fits inside its own button (Compendium text {round(m[3]['text'], 1)} of {round(m[3]['w'], 1)} px) and the bar is inside the screen", fits, m)
-            check(f"at {width} px the five buttons are the same width and nothing scrolls sideways", len({round(x['w']) for x in m}) == 1 and no_sideways(page), [x["w"] for x in m])
+            check(f"at {width} px the four segments are inside the screen and nothing scrolls sideways", all(x["bl"] >= -0.5 and x["br"] <= width + 0.5 for x in m) and no_sideways(page), [x["w"] for x in m])   # U4a: the end segments are a little wider than the middle two, so equal widths is no longer the rule
         page.set_viewport_size({"width": 390, "height": 844})
         open_comp(page)
         check("tapping Compendium opens it and lights up its tab",
@@ -195,8 +195,8 @@ def main():
         check("Back from the Compendium goes to the Dashboard", page.evaluate("() => typeof backTarget() === 'function'"))
         page.set_viewport_size({"width": 1100, "height": 800})
         frames(page)
-        names_top = page.evaluate("() => [...document.querySelectorAll('nav.tabs button[data-tab]')].map(b => b.dataset.tab)")
-        check("on a wide screen the top bar has all five tabs and the Compendium page is still there", names_top == names and page.is_visible("#view-compendium") and no_sideways(page))
+        names_top = page.evaluate("() => [...document.querySelectorAll('nav button[data-tab]')].map(b => b.dataset.tab)")
+        check("on a wide screen the bar and the cog have all five tabs and the Compendium page is still there", names_top == names and page.is_visible("#view-compendium") and no_sideways(page))
         page.set_viewport_size({"width": 390, "height": 844})
 
         # ---------- 3. Same content, not a copy ----------
@@ -693,7 +693,7 @@ def main():
                 rowsg = page.evaluate("""() => { const b = [...document.querySelectorAll('#compendium-body .share-row button, #compendium-body .chip')];
                     return b.length && Math.min(...b.map(x => x.getBoundingClientRect().height)); }""")
                 check(f"{tag}: every button is at least 36 px tall (the Copy and Save buttons 44 px)", rowsg >= 36 and page.evaluate("() => [...document.querySelectorAll('#compendium-body .share-row button')].every(b => b.getBoundingClientRect().height >= 43.5)"), rowsg)
-                bar = page.evaluate("() => { const b = document.querySelector('nav.tabs button[data-tab=compendium]'); return [getComputedStyle(b).color, getComputedStyle(document.querySelector('nav.tabs')).backgroundColor]; }")
+                bar = page.evaluate("() => { const b = document.querySelector('nav.tabs button[data-tab=compendium]'); return [getComputedStyle(b).color, getComputedStyle(b).backgroundColor]; }")   # U4a: the lit segment has its own fill
                 check(f"{tag}: the lit-up Compendium tab is readable (contrast 3 or more)", contrast(rgb(bar[0]), rgb(bar[1])) >= 3, bar)
         page.set_viewport_size({"width": 390, "height": 844})
 

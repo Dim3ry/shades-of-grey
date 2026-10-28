@@ -200,8 +200,8 @@ def main():
         page.evaluate("() => document.querySelector('#review-list li:last-child').scrollIntoView({ block: 'end' })")
         page.wait_for_timeout(150)
         box = page.evaluate("""() => [document.getElementById('review-set-all').getBoundingClientRect().top,
-                                      document.querySelector('.tabs').getBoundingClientRect().bottom]""")
-        check("wide screen: the set-all bar sits below the tab bar, not under it", box[0] >= box[1] - 1, box)
+                                      document.querySelector('.app-bar').getBoundingClientRect().bottom]""")
+        check("wide screen: the set-all bar sits below the header, not under it", box[0] >= box[1] - 1, box)   # U4a: the top bar on a wide screen is now the header
 
         # ---------- 8. Safety ----------
         print("\n--- 8. Safety ---")

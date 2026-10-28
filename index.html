@@ -170,8 +170,8 @@
 
     body {
       margin: 0;
-      /* Extra space at the bottom so the tab bar never covers the last item. */
-      padding: 20px 16px calc(96px + env(safe-area-inset-bottom));
+      /* Extra space at the bottom so the menu bar (about 158 px tall) never covers the last item. */
+      padding: 20px 16px calc(170px + env(safe-area-inset-bottom));
       background: var(--background);
       color: var(--text);
       font-family: var(--font-body);
@@ -241,46 +241,93 @@
     /* v22: the backup buttons are the ones people most need to hit, so they are full 44 px targets. */
     #backup-card .plain-button { min-height: 44px; }
 
-    /* ----- The tab bar at the bottom ----- */
+    /* ----- U4a: the menu bar at the bottom (one curved band of four segments around the round Mentor button) -----
+       The shape is drawn for a 390 px wide phone: band inner radius 62, outer 132, 8 to 172 degrees, 3 degree gaps, the
+       Mentor button 100 px across with its centre 26 px above the bottom edge. app.js sets --arc-scale (min(1, width / 390))
+       and the whole .arc is scaled from its bottom centre; wide screens keep it at full size, centred.
+       Each segment is one real button, as tall and wide as the segment's own box, shaped with clip-path (the tap area is the
+       segment itself). Names, order and tap targets are checked in tests/test_v88_menu.py. */
+    :root { --arc-scale: 1; --arc-h: calc(158px * var(--arc-scale) + env(safe-area-inset-bottom)); }
     .tabs {
       position: fixed;        /* stays put while the page scrolls */
       left: 0; right: 0; bottom: 0;
-      display: flex;
-      background: var(--card);
-      border-top: var(--frame);
-      padding-bottom: env(safe-area-inset-bottom);  /* room for the phone's own gesture bar */
+      height: var(--arc-h);
+      pointer-events: none;   /* only the segments and the Mentor button take taps */
       z-index: 10;
     }
-    .tabs button {
-      flex: 1;
-      background: none;
-      color: var(--muted);
-      padding: 10px 0 12px;
-      font-size: 12px;
-      display: grid;
-      gap: 2px;
-      border-radius: 0;
+    /* The soft fade behind the bar, so page content does not clash with it. */
+    .tabs::before {
+      content: ""; position: absolute; left: 0; right: 0; bottom: 0;
+      height: calc(230px * var(--arc-scale) + env(safe-area-inset-bottom));
+      background: linear-gradient(to bottom, transparent 0%, var(--background) 60%);
+      pointer-events: none;
     }
-    .tabs .icon { font-size: 20px; line-height: 1; }
-    /* v40: the basket count. It sits at the top corner of the middle tab so it shows on every tab; tapping it opens the Shopping list.
-       Same colours as the rest of the app (no new ones). The ::after makes the tap area bigger than the little pill you see. */
-    .tabs .basket {
-      position: absolute; top: 3px; left: calc(50% + 10px);
-      flex: none; display: inline-flex; align-items: center; gap: 3px; min-width: 0; min-height: 0; height: 26px; padding: 0 8px 0 6px;
-      border-radius: 13px; z-index: 2;
+    .arc {
+      position: absolute; left: 50%; bottom: env(safe-area-inset-bottom);
+      width: 390px; height: 158px; margin-left: -195px;
+      transform: scale(var(--arc-scale)); transform-origin: 50% 100%;
+    }
+    .arc > button { position: absolute; pointer-events: auto; margin: 0; border: 0; box-sizing: border-box; }
+    .arc [data-tab] {
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+      background-color: var(--card); color: var(--muted); font-size: 11px; line-height: 14px; text-align: center; border-radius: 0;
+    }
+    .arc [data-tab="dashboard"] { left: 64px; top: 35px; width: 89px; height: 89px; padding: 12px 6px 0px 0px; clip-path: path('M0.28 78.63 A132 132 0 0 1 40.56 0.86 L88.52 51.84 A62 62 0 0 0 69.60 88.37 Z'); }
+    .arc [data-tab="units"] { left: 109px; top: 0px; width: 85px; height: 85px; padding: 1px 0px 0px 19px; clip-path: path('M0.71 31.25 A132 132 0 0 1 82.54 0.05 L84.38 70.02 A62 62 0 0 0 45.94 84.68 Z'); }
+    .arc [data-tab="recipes"] { left: 196px; top: 0px; width: 85px; height: 85px; padding: 1px 19px 0px 0px; clip-path: path('M2.46 0.05 A132 132 0 0 1 84.29 31.25 L39.06 84.68 A62 62 0 0 0 0.62 70.02 Z'); }
+    .arc [data-tab="compendium"] { left: 237px; top: 35px; width: 89px; height: 89px; padding: 12px 0px 0px 6px; clip-path: path('M48.44 0.86 A132 132 0 0 1 88.72 78.63 L19.40 88.37 A62 62 0 0 0 0.48 51.84 Z'); }
+    .arc [data-tab="compendium"] { font-size: 10.5px; }
+    .arc .icon { display: inline-flex; font-size: 22px; line-height: 1; }
+    .arc .icon svg { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    /* The segment you are in stays lit: a brighter fill, a thicker icon and a bold label (never colour alone). */
+    .arc [data-tab][aria-current="page"] { background-color: var(--accent); color: var(--on-accent); font-weight: 700; }
+    .arc [data-tab][aria-current="page"] .icon svg { stroke-width: 2.4; }
+    .arc [data-tab]:focus-visible, .mentor-orb:focus-visible { outline: 2px solid var(--text); outline-offset: -4px; }
+    /* The round Mentor button: one component, so its look can be restyled later (the orb comes with the Mentor chunks). */
+    .mentor-orb {
+      left: 145px; top: 82px; width: 100px; height: 100px; padding: 14px 0 0; border-radius: 50%;
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 3px;
+      background-color: var(--accent); background-image: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.35) 0%, transparent 60%);
+      color: var(--on-accent); font-size: 13px; font-weight: 700; line-height: 16px;
+      box-shadow: 0 0 28px color-mix(in srgb, var(--accent) 50%, transparent);
+    }
+    .mentor-orb svg { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ----- The header: the title with the shopping basket and the Settings cog in the top corner -----
+       U4a: .app-actions is its own small block (the basket and the cog), so it is easy to move somewhere else. It stays in
+       view while you scroll, so the basket and Settings are one tap away on every page. */
+    .app-bar {
+      position: sticky; top: 0; z-index: 12;
+      display: flex; align-items: center; gap: 8px; min-height: 56px;
+      margin: -20px -16px 16px; padding: 8px 16px var(--rule-gap);
+      background-color: var(--background); border-bottom: var(--rule);
+    }
+    .app-bar h1 { flex: 1; min-width: 0; margin: 0; padding: 0; border: 0; }
+    .app-actions { display: flex; align-items: center; gap: 12px; flex: none; }
+    .app-actions .cog {
+      display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0;
+      border-radius: 50%; background-color: var(--card); color: var(--muted); border: 1px solid var(--border);
+    }
+    .app-actions .cog svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .app-actions .cog[aria-current="page"] { background-color: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+    .app-actions .cog:focus-visible, .app-actions .basket:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+    /* v40: the basket count. Same colours as the rest of the app (no new ones). The ::after makes the tap area bigger than the little pill you see. */
+    .app-actions .basket {
+      position: relative; flex: none; display: inline-flex; align-items: center; gap: 3px; min-width: 0; min-height: 0; height: 26px; padding: 0 8px 0 6px;
+      border-radius: 13px;
       background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 72%, var(--basket-deep)));
       color: var(--on-accent); font-size: 13px; font-weight: 700; line-height: 1;
-      border: 2px solid var(--card);                          /* a ring in the bar's own colour, so the pill reads cleanly on any tab */
+      border: 2px solid var(--card);                          /* a ring in the page's own colour, so the pill reads cleanly */
       box-shadow: 0 0 0 1px var(--accent), 0 2px 10px color-mix(in srgb, var(--accent) 45%, transparent);   /* a soft, cold glow */
     }
-    .tabs .basket svg { width: 15px; height: 15px; flex: none; }
-    .tabs .basket::after { content: ""; position: absolute; inset: -11px -8px; }   /* v53: the hit area is 44 px tall (it was 42) */
-    .tabs .basket:active { transform: scale(0.94); }
-    .tabs .basket:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
-    .tabs .basket.pop { animation: basket-pop 0.35s ease-out; }
+    .app-actions .basket svg { width: 15px; height: 15px; flex: none; }
+    .app-actions .basket::after { content: ""; position: absolute; inset: -11px -8px; }   /* v53: the hit area is 44 px tall (it was 42) */
+    .app-actions .basket:active { transform: scale(0.94); }
+    .app-actions .basket.pop { animation: basket-pop 0.35s ease-out; }
     @keyframes basket-pop { 0% { transform: scale(0.8); } 55% { transform: scale(1.18); } 100% { transform: scale(1); } }
     .shop-list .shop-from { display: block; color: var(--muted); margin-top: 1px; }
-    .tabs button[aria-current="page"] { color: var(--accent); }
+    /* Scrolling to Ask the Mentor (the round button) stops below the sticky header. */
+    .fold { scroll-margin-top: 72px; }
 
     /* ----- Dashboard ----- */
     .headline { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
@@ -426,13 +473,13 @@
       0%, 60% { box-shadow: 0 0 0 3px var(--accent); }
       100% { box-shadow: 0 0 0 3px transparent; }
     }
-    body.selecting { padding-bottom: calc(210px + env(safe-area-inset-bottom)); }
+    body.selecting { padding-bottom: calc(310px + env(safe-area-inset-bottom)); }
     /* v21.5: room under the last unit, so it can scroll clear of the message above the tab
        bar (a new unit is scrolled into view there, and Undo no longer covers the last ▲). */
     #view-units { padding-bottom: 64px; }
     .select-bar {
       position: fixed; left: 16px; right: 16px;
-      bottom: calc(74px + env(safe-area-inset-bottom));
+      bottom: calc(var(--arc-h) + 8px);
       max-width: 480px; margin: 0 auto;
       background: var(--card); border: 1px solid var(--accent); border-radius: var(--radius-card);
       box-shadow: 0 6px 20px var(--shadow);
@@ -764,7 +811,7 @@
     .toast {
       position: fixed;
       left: 16px; right: 16px;
-      bottom: calc(80px + env(safe-area-inset-bottom));
+      bottom: calc(var(--arc-h) + 12px);
       max-width: 480px;
       margin: 0 auto;
       background: var(--text);
@@ -1487,12 +1534,6 @@
     .paint-edit .remove { grid-area: remove; height: 44px; }
     .mix-warning { color: var(--caution); font-size: 13px; margin: 0; }
 
-    /* ----- Bigger tab buttons (all screen sizes) ----- */
-    .tabs button { padding: 12px 0 14px; font-size: 13px; gap: 4px; min-height: 64px; }
-    .tabs .icon { font-size: 24px; display: inline-flex; justify-content: center; }
-    .tabs button[aria-current="page"] { background: var(--accent-wash); box-shadow: inset 0 3px 0 var(--accent); }
-    /* Slightly smaller labels on a narrow phone so "Dashboard" still fits. */
-    @media (max-width: 420px) { .tabs button { font-size: 11px; } }
 
     /* ----- v77: THE WIDE-SCREEN BREAKPOINT (this comment is the one place it is written down) -----
        Wide means 900 px or more. CSS cannot read a variable inside "@media", so every wide rule in this file
@@ -1537,29 +1578,14 @@
        "@media (min-width: 900px)" means: only use these rules when the window is at
        least 900 pixels wide. Phones never see them, so the phone layout is unchanged. */
     @media (min-width: 900px) {
-      body { padding: 0 32px 40px; }
+      body { padding: 0 32px calc(170px + env(safe-area-inset-bottom)); }
       main { max-width: var(--content-max); }
-      /* v60: the import check's "Set every row to" bar stays in view below the tab bar (69 px). */
+      /* v60: the import check's "Set every row to" bar stays in view below the header (69 px). */
       .review-set-all { top: 69px; }
 
-      /* The tabs move to the top as a bar of large buttons. "sticky" keeps them in
-         view as you scroll down. */
-      .tabs {
-        position: sticky; top: 0;
-        max-width: var(--content-max); margin: 0 auto 24px;
-        border-top: none; border-bottom: var(--frame);
-        border-radius: 0 0 14px 14px;
-        padding: 6px; gap: 6px;
-      }
-      .tabs button {
-        display: flex; justify-content: center; align-items: center; gap: 10px;
-        font-size: 17px; min-height: 56px; border-radius: var(--radius-box);
-      }
-      .tabs button:hover { color: var(--text); background: var(--accent-wash-hover); }
-      .tabs .basket { top: 50%; margin-top: -13px; left: calc(50% + 54px); min-height: 0; }
-      .tabs .basket:hover { filter: brightness(1.12); background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 72%, var(--basket-deep))); color: var(--on-accent); }
-      .tabs button[aria-current="page"] { box-shadow: inset 0 -3px 0 var(--accent); }
-      h1 { font-size: calc(var(--wordmark-size) + 6px); margin: 24px 0 20px; }
+      /* U4a: the menu bar stays at the bottom, full size and centred; the header is the only thing at the top. */
+      .app-bar { height: 69px; margin: 0 -32px 24px; padding: 0 32px var(--rule-gap); }
+      .app-bar h1 { font-size: calc(var(--wordmark-size) + 6px); }
       .card { padding: calc(var(--card-pad) + 6px); }
       h2 { font-size: calc(var(--heading-size) + 2px); }
 
@@ -1637,10 +1663,6 @@
       ul.paint-list { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; align-items: start; }
       .help details { break-inside: avoid; }
 
-      /* The pop-up message sits at the bottom now the tabs are at the top. */
-      .toast { bottom: 24px; }
-      .select-bar { bottom: 24px; }
-      body.selecting { padding-bottom: 200px; }
     }
 
     /* v19: army-list paste on the Units tab, and the buttons on an empty Units list. */
@@ -2212,10 +2234,6 @@
 
     /* Parchment Codex: an illuminated first letter, a double line on the open tab, and numbers in italic. */
     [data-t="parchment"] h1::first-letter { font-size: 1.45em; color: var(--first-letter); }
-    [data-t="parchment"] .tabs button[aria-current="page"] { box-shadow: inset 0 1px 0 var(--accent), inset 0 3px 0 transparent, inset 0 4px 0 var(--accent); }
-    @media (min-width: 900px) {
-      [data-t="parchment"] .tabs button[aria-current="page"] { box-shadow: inset 0 -1px 0 var(--accent), inset 0 -4px 0 var(--accent); }
-    }
 
     /* Grim Forge: the bevel (in the card shadow) and heavy borders, plus a hard shadow under the title in dark. */
     [data-t="forge"] h1 { text-shadow: var(--wordmark-shadow, none); }
@@ -2356,19 +2374,29 @@
     <button id="banner-backup">Save backup</button>
     <button id="banner-retry">Try again</button>
   </div>
-  <!-- The tab bar. aria-current marks the tab you're on, for screen readers and for the CSS. -->
+  <!-- U4a: the menu bar. Four segments around the round Mentor button; aria-current marks the segment you're in, for screen readers and for the CSS.
+       The numbers that shape it are in the CSS (".arc"). Settings is the cog in the header, not a segment. -->
   <nav class="tabs" aria-label="Sections">
-    <button data-tab="dashboard"><span class="icon"><svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="3" opacity="0.35"/><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="34 51" transform="rotate(-90 12 12)"/></svg></span>Dashboard</button>
-    <button data-tab="units"><span class="icon">☰</span>Units</button>
-    <button data-tab="recipes"><span class="icon"><svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><path d="M12 3c3.5 4.2 6 7.6 6 10.5a6 6 0 0 1-12 0C6 10.6 8.5 7.2 12 3z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg></span>Painting</button>
-    <button data-tab="compendium"><span class="icon"><svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><path d="M12 6.5C10.3 5.3 8 5 4.5 5v12.5c3.5 0 5.8.4 7.5 1.7 1.7-1.3 4-1.7 7.5-1.7V5c-3.5 0-5.8.3-7.5 1.5zM12 6.5v12.7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg></span>Compendium</button>
-    <button data-tab="settings"><span class="icon">⚙</span>Settings</button>
-    <!-- v40: the basket count (hidden when the list is empty). Filled and wired by updateBasket() in app.js. -->
-    <button type="button" class="basket hidden" id="basket-button" aria-label="Shopping list"></button>
+    <div class="arc">
+      <button data-tab="dashboard"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>Dashboard</button>
+      <button data-tab="units"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 7.9-8 9-4.8-1.1-8-4.5-8-9V6l8-3z"/></svg></span>Models</button>
+      <button data-tab="recipes"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3.5 4.2 6 7.6 6 10.5a6 6 0 0 1-12 0C6 10.6 8.5 7.2 12 3z"/></svg></span>Painting</button>
+      <button data-tab="compendium"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5C10.3 5.3 8 5 4.5 5v12.5c3.5 0 5.8.4 7.5 1.7 1.7-1.3 4-1.7 7.5-1.7V5c-3.5 0-5.8.3-7.5 1.5zM12 6.5v12.7"/></svg></span>Compendium</button>
+      <!-- The round Ask Mentor button: one component, wired by app.js (it opens the Compendium at Ask the Mentor). -->
+      <button type="button" class="mentor-orb" id="mentor-button" aria-label="Ask Mentor"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"/></svg>Ask Mentor</button>
+    </div>
   </nav>
   <!-- ===== HTML: this section is WHAT is on the page. ===== -->
   <main>
-    <h1>Minifolio <span class="version-tag" id="version-tag"></span></h1>
+    <!-- U4a: the header. The title, then the basket and the Settings cog in the top corner (.app-actions is one small block, easy to move). -->
+    <header class="app-bar">
+      <h1>Minifolio <span class="version-tag" id="version-tag"></span></h1>
+      <nav class="app-actions" aria-label="Shopping list and Settings">
+        <!-- v40: the basket count (hidden when the list is empty). Filled and wired by updateBasket() in app.js. -->
+        <button type="button" class="basket hidden" id="basket-button" aria-label="Shopping list"></button>
+        <button type="button" class="cog" data-tab="settings" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg></button>
+      </nav>
+    </header>
 
     <!-- ===== TAB 1: Dashboard ===== -->
     <section id="view-dashboard">
@@ -2429,7 +2457,7 @@
       </div>
     </section>
 
-    <!-- ===== TAB 2: Units ===== -->
+    <!-- ===== TAB 2: Models (data-tab "units", called Units before v88) ===== -->
     <section id="view-units" class="hidden">
       <!-- v26: a kept, unfinished unit (the Add unit boxes). Filled by fillDraftCard(). -->
       <div class="card notice-card draft-card hidden" id="draft-card-unit" role="note"></div>
@@ -2630,28 +2658,28 @@
           <summary>Getting started</summary>
           <ol>
             <li id="help-example-recipes">A new start comes with example units, recipes, schemes and paints. <strong>Clear examples</strong> removes them (one Undo brings them back); anything you edited or used stays yours. <strong>Keep them</strong> makes them yours. To make a recipe real, open an example paint on Your Palette and choose <strong>More options → Swap for a real paint</strong>. <strong>Settings → Your data → Restore example recipes</strong> brings the examples back.</li>
-            <li>Add your units: one at a time with <strong>Units → + Add unit</strong>, or a whole army at once with <strong>Paste army list</strong> or <strong>Import CSV</strong>, which are on the same panel (see <strong>Importing</strong>).</li>
+            <li>Add your units: one at a time with <strong>Models → + Add unit</strong>, or a whole army at once with <strong>Paste army list</strong> or <strong>Import CSV</strong>, which are on the same panel (see <strong>Importing</strong>).</li>
             <li>As you build and paint, press the right arrow on a unit to move it up a stage (or open <strong>Details</strong> and pick any stage from <strong>Jump to stage</strong>).</li>
             <li>Check the <strong>Dashboard</strong> to see how far you've got.</li>
             <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
           </ol>
-          <p id="help-tabs" style="margin: 8px 0 0;">Five tabs: <strong>Dashboard</strong>, <strong>Units</strong>, <strong>Painting</strong>, <strong>Compendium</strong> and <strong>Settings</strong>. Help and Updates are in Settings.</p>
+          <p id="help-tabs" style="margin: 8px 0 0;">The bar at the bottom has four sections around the round <strong>Ask Mentor</strong> button: <strong>Dashboard</strong>, <strong>Models</strong>, <strong>Painting</strong> and <strong>Compendium</strong>. The one you are in is lit. Ask Mentor opens <strong>Ask the Mentor</strong> in the Compendium. The cog at the top right opens <strong>Settings</strong> (Help and Updates are in Settings), and the shopping basket sits next to it once your list has a paint.</p>
           <p id="help-back" style="margin: 8px 0 0;">The phone's <strong>Back</strong> button closes what's open first, one thing per press: a question box (it counts as No), a photo, the camera, a recipe, the paste box. Then it goes to the Dashboard. On the Dashboard, with nothing open, it leaves the app.</p>
         </details>
         <details>
           <summary>Adding and updating units</summary>
           <ul>
-            <li><strong>+ Add unit</strong> on the Units tab. The number box is how many models are in the unit (up to 999; tracking each model separately works for up to 100). The game and faction you used last are filled in the next time you open the form.</li>
+            <li><strong>+ Add unit</strong> on the Models tab. The number box is how many models are in the unit (up to 999; tracking each model separately works for up to 100). The game and faction you used last are filled in the next time you open the form.</li>
             <li>Add the same unit twice (same name, game and faction) and they're numbered for you: Intercessors 1, Intercessors 2.</li>
             <li><strong>Starting stage</strong> in the Add form puts a new unit straight at the stage it's really at (it stays picked for the next unit you add).</li>
             <li id="help-new-unit-shown">Each new unit is <strong>scrolled into view</strong> and outlined for a moment, so you can see where it went in the list.</li>
             <li>Press the right arrow to move a unit up a stage, or the left arrow to move it back one. Made a mistake? Press <strong>Undo</strong> on the message that pops up.</li>
-            <li id="help-track-each"><strong>Track models separately:</strong> for painting a unit one model at a time. Tap a unit with more than one model to open its details, then press <strong>Track models separately</strong> under its stage. Each model gets its own row with a back button, its stage name and an up button, and when they differ, the card shows how many are at each stage. With units tracked this way, the Units tab has a <strong>Detailed</strong> / <strong>Simple</strong> switch: Detailed adds the date line and a thin progress bar to every row, Simple leaves them out. A unit of more than 8 models groups its rows by stage; tap a stage to open or close its models. <strong>Track as one batch</strong> goes back: if the models are at different stages, the app asks first, then puts them all at the stage of the furthest-behind model. Both have an <strong>Undo</strong>. It works for units of up to 100 models, and one-model units don't have the button.</li>
+            <li id="help-track-each"><strong>Track models separately:</strong> for painting a unit one model at a time. Tap a unit with more than one model to open its details, then press <strong>Track models separately</strong> under its stage. Each model gets its own row with a back button, its stage name and an up button, and when they differ, the card shows how many are at each stage. With units tracked this way, the Models tab has a <strong>Detailed</strong> / <strong>Simple</strong> switch: Detailed adds the date line and a thin progress bar to every row, Simple leaves them out. A unit of more than 8 models groups its rows by stage; tap a stage to open or close its models. <strong>Track as one batch</strong> goes back: if the models are at different stages, the app asks first, then puts them all at the stage of the furthest-behind model. Both have an <strong>Undo</strong>. It works for units of up to 100 models, and one-model units don't have the button.</li>
             <li id="help-jump-stage"><strong>Jump to a stage:</strong> press <strong>Details</strong> on a unit and pick a stage from <strong>Jump to stage</strong>, to go straight to any stage (forwards or back). The right arrow on the card moves the whole unit up one stage and the left arrow moves it back one, even on a unit tracked model by model (each model moves). If you track each model separately, the buttons on a model's row move that one model a stage, and <strong>Move all models to stage</strong> moves them all at once. Every jump has an <strong>Undo</strong>.</li>
             <li id="help-model-dates"><strong>When did it get there?</strong> If you track each model separately, each model says under its name when it reached its stage: <strong>Today</strong>, <strong>Yesterday</strong>, or <strong>Since 7 Oct</strong> (with the year added for an earlier year). Hold or long-press the date to see it in full. A model with no date shown has no record of when it moved. The Simple view leaves the dates out.</li>
-            <li id="help-unfinished-work"><strong>Unfinished work is kept:</strong> if the page reloads or the app closes while you are part-way through adding a unit (the name box has something in it), writing a recipe, or pasting notes into Paste recipes, the app keeps what you had. Next time you open the Units or Painting tab, a card says <strong>We kept your unfinished…</strong>. <strong>Keep going</strong> puts it all back. <strong>Discard</strong> asks first, then throws it away for good (there is no Undo). Nothing opens by itself, and a kept draft is never replaced by accident: if you try to start a new one first, the app asks. It goes when you press Add or Save, or Cancel and say yes. It stays on this device and is not in your backups.</li>
-            <li id="help-typing"><strong>Typing:</strong> while the cursor is in a text box, the tab bar at the bottom hides so it can't sit on your keyboard. Tap somewhere else and it comes back.</li>
-            <li id="help-move-many"><strong>Move several units at once:</strong> on the Units tab press <strong>Select</strong>. Each unit gets a tick box (tapping a unit ticks it). Tick the ones you want, or press <strong>Select all shown</strong> to tick every unit your filters are showing. Then pick a stage from <strong>Move … to stage</strong> in the bar at the bottom. Units tracked model by model have all their models moved. One <strong>Undo</strong> puts every unit back as it was, diary included. <strong>Cancel</strong>, the phone's Back button or leaving the tab stops selecting without changing anything.</li>
+            <li id="help-unfinished-work"><strong>Unfinished work is kept:</strong> if the page reloads or the app closes while you are part-way through adding a unit (the name box has something in it), writing a recipe, or pasting notes into Paste recipes, the app keeps what you had. Next time you open the Models or Painting tab, a card says <strong>We kept your unfinished…</strong>. <strong>Keep going</strong> puts it all back. <strong>Discard</strong> asks first, then throws it away for good (there is no Undo). Nothing opens by itself, and a kept draft is never replaced by accident: if you try to start a new one first, the app asks. It goes when you press Add or Save, or Cancel and say yes. It stays on this device and is not in your backups.</li>
+            <li id="help-typing"><strong>Typing:</strong> while the cursor is in a text box, the menu bar at the bottom hides so it can't sit on your keyboard. Tap somewhere else and it comes back.</li>
+            <li id="help-move-many"><strong>Move several units at once:</strong> on the Models tab press <strong>Select</strong>. Each unit gets a tick box (tapping a unit ticks it). Tick the ones you want, or press <strong>Select all shown</strong> to tick every unit your filters are showing. Then pick a stage from <strong>Move … to stage</strong> in the bar at the bottom. Units tracked model by model have all their models moved. One <strong>Undo</strong> puts every unit back as it was, diary included. <strong>Cancel</strong>, the phone's Back button or leaving the tab stops selecting without changing anything.</li>
             <li>Tap a unit's name to open its details: its <strong>stage</strong>, photos, paint recipes and paint notes, then <strong>back a stage</strong> and delete. On a wide screen they open in a pane beside the list, where you can keep several open and press <strong>Close</strong> on each.</li>
             <li id="help-edit-details"><strong>Changing a unit:</strong> the boxes for its name, game, faction, nickname, number of models and repaint flag are folded away under <strong>Edit details</strong>, near the bottom of its details. Tap it to open them. It stays open while you make changes, and shuts when you open the unit again later.</li>
             <li id="help-questions"><strong>Questions:</strong> when the app needs to check before doing something (deleting, replacing, leaving a recipe you haven't saved) or needs a name from you, it asks in its own small box over the page. Tap <strong>Yes</strong> or <strong>No</strong>, or type the name and tap <strong>OK</strong>. <strong>No</strong>, <strong>Cancel</strong>, the <strong>Escape</strong> key and the phone's <strong>Back</strong> button all mean no, and nothing changes. On a keyboard, <strong>Enter</strong> means yes.</li>
@@ -2780,14 +2808,14 @@
         <details>
           <summary>Importing (CSV and army lists)</summary>
           <ul>
-            <li><strong>From the Warhammer app:</strong> open a list, tap Export, copy it as text, then on the Units tab tap <strong>+ Add unit → Paste army list</strong> (it's also in Settings), paste it and press Read list. Only unit names and model counts are kept: points, wargear and rules text are thrown away.</li>
+            <li><strong>From the Warhammer app:</strong> open a list, tap Export, copy it as text, then on the Models tab tap <strong>+ Add unit → Paste army list</strong> (it's also in Settings), paste it and press Read list. Only unit names and model counts are kept: points, wargear and rules text are thrown away.</li>
             <li id="help-typed-list">A list typed by hand works too: one unit per line with its count, such as <strong>10x Boyz</strong>, <strong>Boyz x10</strong> or <strong>Boyz (10 models)</strong>. A unit with no count comes in as 1 model.</li>
             <li><strong>From a spreadsheet:</strong> save it as CSV with the columns name, game, faction, stage, nickname, count, repaint, notes, then use <strong>Import CSV</strong> (under + Add unit, or in Settings). <strong>CSV template</strong> in Settings gives you an example file.</li>
             <li id="help-csv-checks">The first line of the CSV must be the column titles, and one must be <strong>name</strong>. The other columns are found by their titles, so they can be in any order or left out. A file without a name column, a picture, an Excel file that isn't saved as CSV, or a file over 2 MB is refused with a message, and nothing changes.</li>
             <li>Before anything changes, you choose <strong>Add to my collection</strong> or <strong>Replace my collection</strong>, and can untick any units you don't want.</li>
             <li id="help-row-stage">Each unit in the check has its own <strong>model count</strong> and <strong>stage</strong>. <strong>Set every row to</strong> puts every unit at one stage in one go, then you can change single units. The tick only decides whether a unit comes in. A CSV stage that matches one of your stages is used; otherwise the unit starts at the Set every row to stage.</li>
             <li>Units you already have start unticked. If one has a different name in the import, it's highlighted so you can pick which name to keep. The Warhammer app's name is the default.</li>
-            <li>After an import, the <strong>Units</strong> tab opens so you can see what came in. Changed your mind? Press <strong>Undo</strong> straight after.</li>
+            <li>After an import, the <strong>Models</strong> tab opens so you can see what came in. Changed your mind? Press <strong>Undo</strong> straight after.</li>
           </ul>
         </details>
         <details>

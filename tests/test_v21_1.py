@@ -386,7 +386,7 @@ def main():
         page.click("#toggle-select")
         page.wait_for_timeout(100)
         b = page.evaluate("document.getElementById('select-bar').getBoundingClientRect().bottom")
-        check("on a wide screen the bar sits at the bottom of the window", 800 < b <= 900, b)
+        check("on a wide screen the bar sits at the bottom of the window", 700 < b <= 900, b)   # U4a: it now rests above the 158 px menu bar (it used to sit at the bottom edge because the tabs were at the top)
         shot(page, "v21-1-select-mode-wide.png")
         page.click("#select-cancel")
         check("no page errors", not errors, errors[:3])

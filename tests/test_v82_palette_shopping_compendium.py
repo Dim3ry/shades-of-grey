@@ -35,7 +35,7 @@ def main():
         page = ctx.new_page()
         page.on("pageerror", lambda x: errors.append(str(x)))
         load(page, paints=PAINTS, recipes=[t.rec(1, "Blue", "Armour", [100, 101])], settings={"recipeView": "palette"})
-        page.click('.tabs button[data-tab="recipes"]')
+        page.click('nav button[data-tab="recipes"]')
 
         print("\n--- 1. Palette (list, swatches) and Shopping, 40 wishlist paints: no sideways scroll, taps 44 px ---")
         for layout in ("list", "swatches"):
@@ -55,7 +55,7 @@ def main():
                       no_sideways(page) and not small_taps(page, "#shop-panel"), small_taps(page, "#shop-panel"))
 
         print("\n--- 2. Compendium ---")
-        page.click('.tabs button[data-tab="compendium"]')
+        page.click('nav button[data-tab="compendium"]')
         page.wait_for_timeout(300)
         page.evaluate("() => document.querySelectorAll('#compendium-body .fold-button').forEach(b => b.click())")
         page.wait_for_timeout(300)

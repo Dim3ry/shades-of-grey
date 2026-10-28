@@ -161,7 +161,7 @@ def main():
               [mm.group(0) for mm in re.finditer(r"(fetch|innerHTML|href|affiliate)[^\n]*", wheel_code)][:3])
         help_text = page.evaluate("() => document.getElementById('help-tabs').textContent")
         # v75: HELP-3 dropped the wheel description from this line
-        check("Help still names five tabs and now says the Compendium has a colour wheel", all(w in help_text for w in ["Five tabs", "Compendium"]), help_text)
+        check("Help still names five tabs and now says the Compendium has a colour wheel", all(w in help_text for w in ["four sections", "Compendium"]), help_text)   # U4a: four sections around Ask Mentor
         check("the Pro preview label is still on the Compendium", page.locator("#view-compendium .pro-pill").inner_text() == "Pro preview")
 
         # ---------- 2. The shape of the wheel ----------

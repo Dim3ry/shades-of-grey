@@ -160,7 +160,7 @@ def main():
         print("\n--- 5b. Paint brands in Settings ---")
         page.goto(t.BASE + "manifest.json"); page.evaluate("localStorage.clear()")
         page.goto(URL); page.wait_for_function("() => typeof APP_VERSION === 'string'")
-        page.click('.tabs button[data-tab="settings"]')
+        page.click('nav button[data-tab="settings"]')
         chips = page.evaluate("[...document.querySelectorAll('#brand-toggles [data-brand-choice]')].map(b => [b.textContent, b.getAttribute('aria-pressed'), b.type])")
         check("Settings has one button per brand, all pressed (searched) to start with",
               [c[0] for c in chips] == list(EXPECTED) and all(c[1] == "true" and c[2] == "button" for c in chips), chips)
@@ -182,7 +182,7 @@ def main():
         page.evaluate("""() => { book.paints.push({ id: 'mine-p3', brand: 'Formula P3', name: 'Wurm Green', colour: '#3b5a36' }); }""")
         check("your own paint of a switched-off brand is still found", page.evaluate("matchPaint('Wurm Green').status") == "sure")
         page.evaluate("() => { book.paints = book.paints.filter(p => p.id !== 'mine-p3'); }")
-        page.click('.tabs button[data-tab="settings"]'); page.click('#brands-card .card-fold-button'); page.click('[data-brand-choice="Formula P3"]')   # v53: the card is shut again after the reload
+        page.click('nav button[data-tab="settings"]'); page.click('#brands-card .card-fold-button'); page.click('[data-brand-choice="Formula P3"]')   # v53: the card is shut again after the reload
         check("switching it back on brings its paints back", page.evaluate("searchedPaints.length") == sum(EXPECTED.values()) and page.evaluate("matchPaint('Wurm Green').status") == "sure")
         bad = page.evaluate("""() => [cleanBrandsOff(['Nope', 'Tamiya', 'Tamiya', 5, null, '__proto__']), cleanBrandsOff('Tamiya'), cleanBrandsOff(null)]""")
         check("unknown, repeated and non-text brands are dropped from the setting", bad == [["Tamiya"], [], []], bad)
@@ -194,7 +194,7 @@ def main():
         print("\n--- 6. Speed ---")
         took = page.evaluate("() => { const t0 = performance.now(); for (const w of ['nuln oil','khorn red','xv88','balthasar gold','flat black','abyssal blue','wurm green','zima blue','absolution green','arctic white']) matchPaint(w); return performance.now() - t0; }")
         check("ten names match in under a second (desktop speed)", took < 1000, round(took))
-        page.click('.tabs button[data-tab="recipes"]')
+        page.click('nav button[data-tab="recipes"]')
         t0 = time.time(); page.reload(); page.wait_for_function("() => typeof APP_VERSION === 'string'")
         check("the app opens in under three seconds with about 3,900 built-in paints", time.time() - t0 < 3, round(time.time() - t0, 2))
 

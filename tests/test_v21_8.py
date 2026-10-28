@@ -424,7 +424,7 @@ def main():
         page.keyboard.press("Escape")
         page.wait_for_timeout(200)
 
-        # Wide screen: the tabs are a bar at the top, never in the way.
+        # Wide screen. U4a: the menu bar is at the bottom on every width and only steps aside under 900 px, so on a wide screen it stays.
         page.set_viewport_size({"width": 1000, "height": 800})
         seed(page)
         tab(page, "units")
@@ -433,7 +433,7 @@ def main():
         page.click("#name-input")
         page.wait_for_timeout(150)
         top = page.evaluate("() => { const r = document.querySelector('.tabs').getBoundingClientRect(); return r.top; }")
-        check("wide screen: the top tab bar stays while typing", not tabs_hidden(page) and top < 120, top)
+        check("wide screen: the menu bar stays while typing", not tabs_hidden(page) and top > 400, top)
         shot(page, "v21-8-typing-wide.png")
         page.set_viewport_size({"width": 390, "height": 844})
 
@@ -536,7 +536,7 @@ def main():
             return page.evaluate(f"() => document.getElementById('{i}') ? document.getElementById('{i}').textContent : ''")
         check("Help explains the dark-mode lift", "too dark" in help_text("help-dark-readable") and "brighter" in help_text("help-dark-readable"), help_text("help-dark-readable"))
         check("Help explains the model dates", all(w in help_text("help-model-dates") for w in ["Today", "Yesterday", "Since 7 Oct"]), help_text("help-model-dates"))
-        check("Help explains the tab bar while typing", "tab bar" in help_text("help-typing") and "keyboard" in help_text("help-typing"), help_text("help-typing"))
+        check("Help explains the menu bar while typing", "menu bar" in help_text("help-typing") and "keyboard" in help_text("help-typing"), help_text("help-typing"))
 
         check("no page errors", not errors, errors[:3])
         context.close()

@@ -55,7 +55,7 @@ def main():
 
         # ---------- 2. Compendium ----------
         print("\n--- 2. Compendium ---")
-        page.click('.tabs button[data-tab="compendium"]')
+        page.click('nav button[data-tab="compendium"]')
         top = page.locator("#compendium-body > .more-info").first
         check("a More info button sits at the top of the Compendium", top.count() == 1)
         btn = top.locator(".more-info-button")
@@ -97,7 +97,7 @@ def main():
 
         # ---------- 3. Palette ----------
         print("\n--- 3. Your Palette ---")
-        page.click('.tabs button[data-tab="recipes"]')
+        page.click('nav button[data-tab="recipes"]')
         page.get_by_text("Your Palette").first.click()
         sw_btn = page.locator('#palette-layout [data-layout="swatches"]')
         check("a List | Swatches switch is there, List first", page.locator("#palette-layout .chip").count() == 2
@@ -133,7 +133,7 @@ def main():
 
         # ---------- 4. Units filters ----------
         print("\n--- 4. Units filters ---")
-        page.click('.tabs button[data-tab="units"]')
+        page.click('nav button[data-tab="units"]')
         if page.locator("#filter-card").is_hidden():
             page.click("#toggle-filters")
         groups = page.locator("#group-chips .chip")

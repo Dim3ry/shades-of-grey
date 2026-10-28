@@ -22,7 +22,7 @@ def main():
         page.on("pageerror", lambda x: errors.append(str(x)))
         units = [{"id": i, "name": f"Unit {i}", "faction": "Gloom Legion", "stage": i % 4, "count": 5, "added": "2026-05-10", "log": []} for i in range(1, 6)]
         t.load(page, units=units)
-        page.click('.tabs button[data-tab="dashboard"]')
+        page.click('nav button[data-tab="dashboard"]')
         for scheme in ("dark", "light"):
             page.emulate_media(color_scheme=scheme)
             for width in (360, 390, 899, 1280):

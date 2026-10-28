@@ -68,7 +68,7 @@ def main():
         check("the ripple removes itself", page.locator("#toggle-select .ripple").count() == 0)
         page.click("#toggle-select")   # leave select mode again
         page.wait_for_timeout(200)
-        check("tab bar buttons get no lift", css(page, '.tabs button[data-tab="units"]', "translate") in ("none", "0px"))
+        check("tab bar buttons get no lift", css(page, 'nav button[data-tab="units"]', "translate") in ("none", "0px"))
         page.mouse.move(5, 5)
 
         print("\n--- 3. Chips ---")

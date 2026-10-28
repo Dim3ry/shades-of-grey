@@ -46,7 +46,7 @@ def main():
         page.on("pageerror", lambda x: errors.append(str(x)))
         page.on("dialog", lambda d: (dialogs.append(d.message), d.dismiss()))
         load(page, units=UNITS)
-        page.click('nav button[data-tab="units"], .tabs button[data-tab="units"]')
+        page.click('nav button[data-tab="units"], nav button[data-tab="units"]')
 
         print("\n--- 1. Under 900 px: unchanged ---")
         for scheme in ("dark", "light"):
