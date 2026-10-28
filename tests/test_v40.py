@@ -221,8 +221,9 @@ def main():
                 fits = page.evaluate("() => [...document.querySelectorAll('#recipe-seg button')].every(b => b.scrollWidth <= b.clientWidth + 1)")
                 check(f"{tag}: the four switch buttons all fit their words", fits)
                 check(f"{tag}: nothing scrolls sideways", no_sideways(page))
-                box = page.evaluate("() => { const r = document.getElementById('basket-button').getBoundingClientRect(); const t = document.querySelector('nav button[data-tab=recipes]').getBoundingClientRect(); const n = document.querySelector('nav button[data-tab=compendium] .icon svg').getBoundingClientRect(); return { l: r.left, r: r.right, top: r.top, bot: r.bottom, h: r.height, tl: t.left, tr: t.right, tt: t.top, tb: t.bottom, nextIcon: n.left, w: innerWidth }; }")
-                check(f"{tag}: the basket is a small pill at the top corner of the Recipes tab, inside the screen and clear of the next tab's picture", box["l"] >= box["tl"] and box["r"] <= box["w"] and box["r"] <= box["nextIcon"] and box["top"] >= box["tt"] and box["h"] <= 30, box)
+                # U4a: the basket moved from the tab bar into the header, next to the Settings cog (the colours and the pop are unchanged)
+                box = page.evaluate("() => { const r = document.getElementById('basket-button').getBoundingClientRect(); const c = document.querySelector('.cog').getBoundingClientRect(); return { l: r.left, r: r.right, top: r.top, h: r.height, cogL: c.left, w: window.innerWidth }; }")
+                check(f"{tag}: the basket is a small pill in the header, left of the cog and inside the screen", box["l"] >= 0 and box["r"] <= box["cogL"] and box["r"] <= box["w"] and box["top"] >= 0 and box["h"] <= 30, box)
                 col = page.evaluate("() => { const cs = getComputedStyle(document.getElementById('basket-button')); const root = getComputedStyle(document.documentElement); return [cs.color, root.getPropertyValue('--accent').trim()]; }")
                 acc = rgb(col[1]) if col[1].startswith("rgb") else [int(col[1][i:i + 2], 16) for i in (1, 3, 5)]
                 end = [0.72 * a + 0.28 * b for a, b in zip(acc, (0x1e, 0x3a, 0x8a))]
@@ -230,8 +231,9 @@ def main():
                 shot(page, f"v40-shopping-{appearance}-{width}.png")
         page.set_viewport_size({"width": 1100, "height": 800})
         load(page, paints=PAINTS, recipes=RECIPES)
-        d = page.evaluate("() => { const r = document.getElementById('basket-button').getBoundingClientRect(); const t = document.querySelector('nav button[data-tab=recipes]').getBoundingClientRect(); return [r.left >= t.left && r.right <= t.right + 4, r.top >= t.top && r.bottom <= t.bottom]; }")
-        check("on a wide screen (tabs along the top) the basket sits inside the Recipes tab", d[0] and d[1], d)
+        # U4a: on a wide screen the basket is in the header too, left of the cog
+        d = page.evaluate("() => { const r = document.getElementById('basket-button').getBoundingClientRect(); const c = document.querySelector('.cog').getBoundingClientRect(); return [r.right <= c.left, r.top >= 0 && r.bottom <= 69]; }")
+        check("on a wide screen the basket sits in the header, left of the cog", d[0] and d[1], d)
         shot(page, "v40-basket-wide.png")
         page.set_viewport_size({"width": 390, "height": 844})
         check("no page error and no unexpected dialog during all of this", not errors and not dialogs, (errors[:3], dialogs[:3]))

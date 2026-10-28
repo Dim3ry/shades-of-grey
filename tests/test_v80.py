@@ -49,7 +49,7 @@ def main():
         page.on("pageerror", lambda x: errors.append(str(x)))
         page.on("dialog", lambda d: (dialogs.append(d.message), d.dismiss()))
         load(page, paints=PAINTS, recipes=RECIPES, units=[unit(1, "Troop A", "Gloom Legion")], settings={"recipeView": "palette"})
-        page.click('nav button[data-tab="recipes"], .tabs button[data-tab="recipes"]')
+        page.click('nav button[data-tab="recipes"], nav button[data-tab="recipes"]')
 
         print("\n--- 1. Under 900 px: unchanged ---")
         for scheme in ("dark", "light"):
@@ -126,7 +126,7 @@ def main():
         check("widening puts them in the pane again", s["inline"] == 0 and s["cards"] == 1, s)
 
         print("\n--- 6. Units use the shared pane ---")
-        page.click('nav button[data-tab="units"], .tabs button[data-tab="units"]')
+        page.click('nav button[data-tab="units"], nav button[data-tab="units"]')
         page.click('#unit-list li.unit:has-text("Troop A") .info')
         check("a unit opens in its pane", page.locator("#unit-side .unit-side-card").count() == 1)
         page.click("#unit-side .unit-side-card >> text=Close")

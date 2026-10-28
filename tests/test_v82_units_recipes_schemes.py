@@ -37,10 +37,10 @@ def widths(page):
 
 def small_taps(page):
     return page.evaluate("""() => [...document.querySelectorAll('main button, main select')].filter(e => {
-        const r = e.getBoundingClientRect(); return r.width > 0 && !e.closest('.hidden') && r.height < 43.5; }).map(e => e.textContent.trim().slice(0, 20))""")
+        const r = e.getBoundingClientRect(); return r.width > 0 && !e.closest('.hidden, .app-bar') && r.height < 43.5; })   /* U4a: the header's basket (inside main now) counts at its enlarged tap area, 44 px, checked in test_v88_menu */.map(e => e.textContent.trim().slice(0, 20))""")
 
 def open_scheme_recipe(page):
-    page.click('.tabs button[data-tab="recipes"]')
+    page.click('nav button[data-tab="recipes"]')
     page.click('#recipe-seg [data-view="schemes"]')
     page.click('#scheme-list .recipe-chip:has-text("Orange trim")')
     page.wait_for_timeout(150)
@@ -96,12 +96,12 @@ def main():
 
             print(f"\n--- {appearance}: list pages and the unit pane ---")
             page.reload(); page.wait_for_timeout(400)
-            page.click('.tabs button[data-tab="recipes"]')
+            page.click('nav button[data-tab="recipes"]')
             page.click('#recipe-seg [data-view="schemes"]')
             for width in (1280, 1920):
                 page.set_viewport_size({"width": width, "height": 900})
                 check(f"{appearance} {width}: scheme list, no sideways scroll, taps 44 px or more", no_sideways(page) and not small_taps(page), small_taps(page))
-            page.click('.tabs button[data-tab="units"]')
+            page.click('nav button[data-tab="units"]')
             page.click('#unit-list li.unit:has-text("Troop A") .info')
             page.wait_for_timeout(150)
             for width in (1280, 1920):

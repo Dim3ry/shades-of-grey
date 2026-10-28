@@ -405,7 +405,7 @@ def main():
         # ---------- 8. Nothing else broke ----------
         print("\n--- 8. Nothing else broke ---")
         site_load(page, units=UNITS)
-        check("five tabs along the bottom", page.locator("nav.tabs button[data-tab]").count() == 5)
+        check("four sections in the menu bar and the Settings cog (U4a: Settings moved from the bar to the header)", page.locator("nav.tabs button[data-tab]").count() == 4 and page.locator("nav button[data-tab=settings]").count() == 1)
         main_tab(page, "settings")
         for name in ["help", "updates", "settings"]:
             sub_tab(page, name)

@@ -3721,7 +3721,16 @@
       updates: document.getElementById("view-updates"),
       help: document.getElementById("view-help"),
     };
-    const tabButtons = document.querySelectorAll(".tabs button[data-tab]");   // v40: not the basket
+    const tabButtons = document.querySelectorAll("nav button[data-tab]");   // v40: not the basket. U4a: the four menu segments and the Settings cog in the header
+
+    // U4a: the menu bar is drawn for a 390 px wide phone and scaled down to fit narrower screens (scale = min(1, width / 390));
+    // wider screens keep it at full size, centred. The CSS reads --arc-scale (see ".arc").
+    function fitMenuBar() {
+      const scale = Math.min(1, document.documentElement.clientWidth / 390);
+      document.documentElement.style.setProperty("--arc-scale", String(Math.round(scale * 1000) / 1000));
+    }
+    fitMenuBar();
+    window.addEventListener("resize", fitMenuBar);
 
     // v21.9: Settings, Help and Updates are ONE main tab (Settings) with a Settings / Help /
     // Updates switch (#more-seg) at the top. The page names are still "settings", "help" and
@@ -3758,6 +3767,15 @@
       if (b.dataset.tab === "compendium") compendiumState.focus = null;   // v69: the tab itself opens the whole Compendium
       showTab(b.dataset.tab);
     }));
+
+    // U4a: the round Ask Mentor button. There is no Mentor chat yet, so it opens the Compendium with Ask the Mentor open and scrolls to it.
+    document.getElementById("mentor-button").addEventListener("click", () => {
+      compendiumState.focus = null;
+      compendiumState.open.mentor = true;
+      showTab("compendium");
+      const fold = document.getElementById(compendiumId("fold-mentor"));
+      if (fold) fold.scrollIntoView({ block: "start" });
+    });
 
     // ================= FILTERS =================
 
@@ -4297,7 +4315,7 @@
       donePercent.textContent = total ? `${percent}%` : "–";
       doneSummary.textContent = total
         ? `${done} of ${plural(total, "model")} done · ${underWay ? `${underWay} under way · ` : ""}${models.length} units`
-        : "No units yet. Add some on the Units tab: one at a time, or a whole army from a pasted army list or a CSV file.";
+        : "No units yet. Add some on the Models tab: one at a time, or a whole army from a pasted army list or a CSV file.";
 
       todoButton.innerHTML = "";
       todoButton.append(Object.assign(document.createElement("strong"), { textContent: todo }), "models to do");
@@ -11192,7 +11210,7 @@
         factionPick: { names, onChange: (key, focus) => { st.faction = key; renderCompendium(focus || `#${compendiumId("faction-history-pick")}`); } },
         noFactionText: names.length
           ? "Choose a faction above to see the paints you have used on it. It looks at the recipes saved on your units of that faction."
-          : "None of your units has a faction yet, so there is no history to show. Give a unit a faction on the Units tab, and the paints you use on it show here.",
+          : "None of your units has a faction yet, so there is no history to show. Give a unit a faction on the Models tab, and the paints you use on it show here.",
         id: compendiumId,
       };
     }

@@ -140,7 +140,7 @@ def main():
         help_text = page.evaluate("() => document.getElementById('help-tabs').textContent")
         # v75: HELP-3 dropped the wheel and switch description from this line
         check("Help still names five tabs and now says the parts open and close under headings and that Starter schemes has a Themes | Combinations switch",
-              all(w in help_text for w in ["Five tabs", "Compendium"]), help_text)
+              all(w in help_text for w in ["four sections", "Compendium"]), help_text)   # U4a: four sections around Ask Mentor
 
         # ---------- 2. Folding sections ----------
         print("\n--- 2. Folding sections ---")

@@ -81,7 +81,7 @@ def fresh(page, settings=None, units=None):
     page.wait_for_function("() => typeof APP_VERSION === 'string'")
 
 def tab(page, name):
-    page.click(f'.tabs button[data-tab="{name}"]')
+    page.click(f'nav button[data-tab="{name}"]')
     page.wait_for_timeout(120)
 
 def var(page, name, selector=":root"):
@@ -315,7 +315,7 @@ def main():
         sp.reload(); sp.wait_for_function("() => typeof APP_VERSION === 'string'")
         fonts_before = sp.evaluate("caches.open('shades-of-grey-fonts').then(c => c.keys()).then(k => k.length)")
         check("nothing is saved in the font store while Classic is in use (Settings not opened)", fonts_before == 0, fonts_before)
-        sp.click('.tabs button[data-tab="settings"]'); sp.click('[data-theme-choice="bench"]')
+        sp.click('nav button[data-tab="settings"]'); sp.click('[data-theme-choice="bench"]')
         sp.evaluate("document.fonts.ready"); sp.wait_for_timeout(800)
         saved = sp.evaluate("caches.open('shades-of-grey-fonts').then(c => c.keys()).then(k => k.map(r => r.url.split('/').pop()))")
         check("after choosing Paint Bench, its fonts are saved for offline use",

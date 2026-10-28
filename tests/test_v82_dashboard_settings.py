@@ -34,7 +34,7 @@ def cards(page):
 
 def show(page, tab, width):
     page.set_viewport_size({"width": width, "height": 1000})
-    page.click(f'.tabs button[data-tab="{tab}"]')
+    page.click(f'nav button[data-tab="{tab}"]')
     page.wait_for_timeout(250)
 
 def small_taps(page, scope):
