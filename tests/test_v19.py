@@ -304,7 +304,7 @@ def main():
         check("Getting started points to Paste army list on the Units tab", "Paste army list" in help_text)
         check("Help explains the Back button", page.locator("#help-back").count() == 1 and "Back" in page.text_content("#help-back"))   # v53: Help starts with every topic closed, so read the text, not what shows
         check("Importing says where to find it (+ Add unit → Paste army list)", "+ Add unit → Paste army list" in help_text)
-        check("Importing says the Units tab opens after an import", "Units tab opens" in help_text)
+        check("Importing says the Models tab opens after an import", "Models tab opens" in help_text)   # U4a: the tab is now called Models
         check("no page errors", not errors, errors)
 
         browser.close()
