@@ -16137,12 +16137,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=84".
+    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=85".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v84";
+    const APP_VERSION = "v85";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -16593,6 +16593,12 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v85", date: "28 Oct 2026", changes: [
+        "Each model in a unit you track model by model now has back and up buttons next to its stage name, with a thin progress bar and the date it got there. The stage menu on each row has gone. Use Move all models to stage for big jumps.",
+        "New Detailed and Simple switch on the Units tab (it shows once a unit is tracked model by model). Simple leaves out the dates and bars.",
+        "Units of more than 8 models group their rows by stage. Tap a stage to open or close it.",
+        "Track as one batch has an Undo that puts every model back exactly.",
+      ] },
       { version: "v84", date: "28 Oct 2026", changes: [
         "The Recipes tab is now called Painting. Inside it, Recipes and Schemes keep their names. Help and the empty lists now say what each is: a recipe is your own step-by-step for a model; a scheme is a colour plan or idea you can save into a recipe.",
         "The screen reader names are clearer. A unit with models at different stages now says so when you select it, Edit details is announced as a button, and Delete says which unit it will delete. \"1 models\" now reads \"1 model\" everywhere.",
