@@ -16308,12 +16308,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=87".
+    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=88".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v87";
+    const APP_VERSION = "v88";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -16764,6 +16764,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v88", date: "28 Oct 2026", changes: [
+        "The menu is now a curved bar at the bottom around a round Ask Mentor button. The Units tab is now called Models. Settings is the cog at the top right, and the shopping basket sits beside it. Ask Mentor opens Ask the Mentor in the Compendium.",
+      ] },
       { version: "v87", date: "28 Oct 2026", changes: [
         "Unit cards now move a little when you change a stage: the stage name slides, the colours fade across and the card pulses once on the way up. Details opens and closes smoothly and the paint swatches pop in.",
       ] },
@@ -17204,8 +17207,16 @@
       if (element.tagName === "INPUT") return KEYBOARD_INPUT_TYPES.has((element.type || "text").toLowerCase());
       return element.isContentEditable === true;
     }
+    // U4a: while a mouse or finger is held down, the bar and the message stay where they are when the cursor leaves a text box. Pressing a button takes the cursor out of
+    // the text box on the way down, and the message (it rises above the taller menu bar) could jump under the pointer before it is
+    // released, so the press would land on the message instead of the button. The check is made just after the press ends.
+    let pressing = false, pressGuard = 0;
+    document.addEventListener("pointerdown", () => { pressing = true; clearTimeout(pressGuard); pressGuard = setTimeout(() => { pressing = false; updateTyping(); }, 3000); }, true);
+    for (const type of ["pointerup", "pointercancel"]) document.addEventListener(type, () => { pressing = false; clearTimeout(pressGuard); setTimeout(updateTyping, 0); }, true);
     function updateTyping() {
-      document.body.classList.toggle("typing", isTextBox(document.activeElement));
+      const typing = isTextBox(document.activeElement);
+      if (pressing && !typing) return;   // only leaving "typing" waits; starting it is at once
+      document.body.classList.toggle("typing", typing);
     }
     // Focus moves in and out of boxes; "focusout" is checked a moment later, once we can see
     // where the cursor went (so tapping from one text box to another doesn't flicker the bar).
