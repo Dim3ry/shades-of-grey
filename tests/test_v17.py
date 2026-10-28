@@ -3,6 +3,7 @@ shopping list). Serve the repo folder with `python3 -m http.server 8765`, then r
 python3 tests/test_v17.py <folder for screenshots>. Also run test_v14.py to test_v16.py to check nothing broke."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 import os as _os
 PORT = _os.environ.get("SOG_PORT", "8765")
 
@@ -65,6 +66,7 @@ def load(page, book):
     page.evaluate("b => { localStorage.clear(); localStorage.setItem('shades-of-grey-recipes', JSON.stringify(b)); }", book)
     page.reload()
     page.wait_for_timeout(300)
+    leave_launch(page)   # U4b: tap through the start page
 
 def saved(page):
     return page.evaluate("JSON.parse(localStorage.getItem('shades-of-grey-recipes'))")

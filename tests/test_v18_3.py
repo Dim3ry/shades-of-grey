@@ -13,6 +13,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import datetime, json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 from dialog_watch import DialogAnswers
 from notice_watch import attach_notices
@@ -55,6 +56,7 @@ def seed(page, book=None):
                   " if (b) localStorage.setItem('shades-of-grey-recipes', JSON.stringify(b)); }", book)
     page.reload()
     page.wait_for_timeout(300)
+    leave_launch(page)   # U4b: tap through the start page
 
 def stored(page, key):
     return page.evaluate("k => JSON.parse(localStorage.getItem(k) || 'null')", key)
@@ -212,6 +214,7 @@ def main():
         check("Undo puts the old recipes back (and saves them)", recipe_names(page) == ["Old armour"], recipe_names(page))
         page.reload()
         page.wait_for_timeout(300)
+        leave_launch(page)   # U4b: tap through the start page
         check("...still there after a reload", recipe_names(page) == ["Old armour"])
         # Restore again, then bring the old recipes back from Recover earlier data instead.
         page.click("nav button[data-tab='settings']")
@@ -235,6 +238,7 @@ def main():
         page.evaluate("localStorage.setItem('shades-of-grey-recipes-before-recipes-restore', JSON.stringify({date: '2020-01-01', book: {recipes: []}}))")
         page.reload()
         page.wait_for_timeout(300)
+        leave_launch(page)   # U4b: tap through the start page
         check("a recipes copy over 30 days old is removed at start-up",
               stored(page, "shades-of-grey-recipes-before-recipes-restore") is None)
         context.close()
@@ -256,6 +260,7 @@ def main():
         page2 = context.new_page()
         page2.goto(URL)
         page2.wait_for_timeout(300)
+        leave_launch(page2)   # U4b: tap through the start page
         page2.evaluate("""() => { const s = JSON.parse(localStorage.getItem('shades-of-grey-settings'));
                            s.dataVersion = 99; localStorage.setItem('shades-of-grey-settings', JSON.stringify(s)); }""")
         page.wait_for_timeout(600)
@@ -272,6 +277,7 @@ def main():
         # Opening the app when newer data is already saved.
         page.reload()
         page.wait_for_timeout(400)
+        leave_launch(page)   # U4b: tap through the start page
         check("opening with newer data saved: banner shows at once", page.is_visible("#save-banner")
               and "newer version" in page.inner_text("#save-banner"))
         check("the data version on the device is left at 99", stored(page, "shades-of-grey-settings")["dataVersion"] == 99)

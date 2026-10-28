@@ -293,6 +293,39 @@
     }
     .mentor-orb svg { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
+    /* ----- U4b: the launch page (shown every time the app is opened fresh; app.js puts the class "launching" on <body class="launching">) -----
+       The SAME menu bar and the SAME round Mentor button, drawn as a full circle in the middle of the screen: four quarter segments
+       around the button. Drawn for a 390 px wide phone: ring inner radius 80, outer 170, 4 degree gaps on the vertical and horizontal
+       axes, Mentor button 124 px across. app.js sets --ring-cy (the circle's centre, from the top) and --ring-scale
+       (min(1, width / 390), and small enough to fit the height); the whole .arc is scaled from its centre. Nothing is lit.
+       Each segment is its own box (its bounding box), shaped with clip-path, so the tap area is the segment itself. */
+    body.launching main > :not(.app-bar) { display: none; }
+    body.launching .tabs { top: 0; height: auto; }
+    body.launching .tabs::before {
+      height: auto; top: 0;
+      background: radial-gradient(circle at 50% var(--ring-cy, 50%), color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent calc(260px * var(--ring-scale, 1)));
+    }
+    body.launching .arc {
+      left: 50%; top: var(--ring-cy, 50%); bottom: auto; width: 390px; height: 360px; margin: -180px 0 0 -195px;
+      transform: scale(var(--ring-scale, 1)); transform-origin: 50% 50%;
+    }
+    body.launching .arc [data-tab] { padding: 0; gap: 4px; background-color: color-mix(in srgb, var(--accent) 14%, var(--card)); color: var(--text); font-size: 13px; line-height: 16px; font-weight: 400; }
+    body.launching .arc .icon { font-size: 32px; color: var(--accent); }
+    body.launching .arc [data-tab="dashboard"] { left: 25.10px; top: 10.10px; width: 167.10px; height: 167.10px; clip-path: path('M163.96 0.00 A170 170 0 0 0 0.00 163.96 L89.95 167.10 A80 80 0 0 1 167.10 89.95 Z'); }
+    body.launching .arc [data-tab="units"] { left: 197.79px; top: 10.10px; width: 167.10px; height: 167.10px; clip-path: path('M167.10 163.96 A170 170 0 0 0 3.14 0.00 L0.00 89.95 A80 80 0 0 1 77.16 167.10 Z'); }
+    body.launching .arc [data-tab="recipes"] { left: 25.10px; top: 182.79px; width: 167.10px; height: 167.10px; clip-path: path('M0.00 3.14 A170 170 0 0 0 163.96 167.10 L167.10 77.16 A80 80 0 0 1 89.95 0.00 Z'); }
+    body.launching .arc [data-tab="compendium"] { left: 197.79px; top: 182.79px; width: 167.10px; height: 167.10px; clip-path: path('M3.14 167.10 A170 170 0 0 0 167.10 3.14 L77.16 0.00 A80 80 0 0 1 0.00 77.16 Z'); }
+    body.launching .mentor-orb {
+      left: 133px; top: 118px; width: 124px; height: 124px; padding: 0; justify-content: center; gap: 4px; font-size: 14px; line-height: 18px;
+      box-shadow: 0 0 56px color-mix(in srgb, var(--accent) 55%, transparent);
+    }
+    body.launching .mentor-orb svg { width: 44px; height: 44px; }
+    body.launching .toast { bottom: calc(12px + env(safe-area-inset-bottom)); }
+
+    /* The title is a button (it takes you back to the launch page): looks like the plain title, with a 44 px tap area. */
+    .app-bar h1 .home { display: inline-flex; align-items: center; min-height: 44px; padding: 0; background: none; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; text-align: left; border-radius: var(--radius-control); }
+    .app-bar h1 .home:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
     /* ----- The header: the title with the shopping basket and the Settings cog in the top corner -----
        U4a: .app-actions is its own small block (the basket and the cog), so it is easy to move somewhere else. It stays in
        view while you scroll, so the basket and Settings are one tap away on every page. */
@@ -2390,7 +2423,7 @@
   <main>
     <!-- U4a: the header. The title, then the basket and the Settings cog in the top corner (.app-actions is one small block, easy to move). -->
     <header class="app-bar">
-      <h1>Minifolio <span class="version-tag" id="version-tag"></span></h1>
+      <h1><button type="button" class="home" id="home-button" aria-label="Minifolio, back to the start page">Minifolio</button> <span class="version-tag" id="version-tag"></span></h1>
       <nav class="app-actions" aria-label="Shopping list and Settings">
         <!-- v40: the basket count (hidden when the list is empty). Filled and wired by updateBasket() in app.js. -->
         <button type="button" class="basket hidden" id="basket-button" aria-label="Shopping list"></button>
@@ -2663,7 +2696,7 @@
             <li>Check the <strong>Dashboard</strong> to see how far you've got.</li>
             <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
           </ol>
-          <p id="help-tabs" style="margin: 8px 0 0;">The bar at the bottom has four sections around the round <strong>Ask Mentor</strong> button: <strong>Dashboard</strong>, <strong>Models</strong>, <strong>Painting</strong> and <strong>Compendium</strong>. The one you are in is lit. Ask Mentor opens <strong>Ask the Mentor</strong> in the Compendium. The cog at the top right opens <strong>Settings</strong> (Help and Updates are in Settings), and the shopping basket sits next to it once your list has a paint.</p>
+          <p id="help-tabs" style="margin: 8px 0 0;">The bar at the bottom has four sections around the round <strong>Ask Mentor</strong> button: <strong>Dashboard</strong>, <strong>Models</strong>, <strong>Painting</strong> and <strong>Compendium</strong>. The one you are in is lit. Ask Mentor opens <strong>Ask the Mentor</strong> in the Compendium. The cog at the top right opens <strong>Settings</strong> (Help and Updates are in Settings), and the shopping basket sits next to it once your list has a paint. When you open the app it starts on a <strong>start page</strong>: the same four sections as a circle around Ask Mentor. Tap a section to go in. Tap the <strong>Minifolio</strong> title at the top to come back to it. Switching to another app and back leaves you where you were.</p>
           <p id="help-back" style="margin: 8px 0 0;">The phone's <strong>Back</strong> button closes what's open first, one thing per press: a question box (it counts as No), a photo, the camera, a recipe, the paste box. Then it goes to the Dashboard. On the Dashboard, with nothing open, it leaves the app.</p>
         </details>
         <details>

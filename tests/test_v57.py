@@ -22,6 +22,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import datetime, json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
@@ -141,7 +142,7 @@ def main():
         s = e.saved_settings(page)
         check("for 14 days", s.get("backupNudgeNextAfter") == day(14), s.get("backupNudgeNextAfter"))
         check("Not now saves nothing as a backup", not s.get("lastBackup"), s.get("lastBackup"))
-        page.reload(); page.wait_for_timeout(300)
+        page.reload(); page.wait_for_timeout(300); leave_launch(page)   # U4b: tap through the start page
         check("still hidden after a reload", not nudge(page))
         e.existing(page, units(6), settings={"backupNudgeNextAfter": day(3)})
         check("still hidden 11 days later", not nudge(page))

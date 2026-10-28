@@ -19,6 +19,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
@@ -68,6 +69,7 @@ def load(page, paints=None, settings=None, recipes=None, units=None):
     page.reload()
     page.wait_for_function("() => typeof APP_VERSION === 'string'")
     page.wait_for_timeout(400)
+    leave_launch(page)   # U4b: tap through the start page
 
 def blur(page):
     page.evaluate("() => document.activeElement && document.activeElement.blur()")

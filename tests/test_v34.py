@@ -17,6 +17,7 @@ What is checked:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t   # the helpers and the Games Workshop word lists
@@ -43,6 +44,7 @@ def fresh(page, settings=None):
         r.onsuccess = r.onerror = r.onblocked = () => done(); }); }""")
     page.goto(URL)
     page.wait_for_timeout(500)
+    leave_launch(page)   # U4b: tap through the start page
 
 def main():
     with sync_playwright() as p:
@@ -123,7 +125,7 @@ def main():
         page.evaluate("""([u, b]) => { localStorage.clear(); localStorage.setItem('mini-tracker-models', JSON.stringify(u));
             localStorage.setItem('shades-of-grey-recipes', JSON.stringify(b));
             localStorage.setItem('shades-of-grey-settings', JSON.stringify({examplesChecked: true, recipeExamplesChecked: true})); }""", [old_units, old_book])
-        page.goto(URL); page.wait_for_timeout(500)
+        page.goto(URL); page.wait_for_timeout(500); leave_launch(page)   # U4b: tap through the start page
         now = json.loads(page.evaluate("localStorage.getItem('mini-tracker-models')"))
         check("units saved with the old example names are unchanged",
               [(u["name"], u["hobby"], u["faction"], u.get("example")) for u in now] == [(u["name"], u["hobby"], u["faction"], True) for u in old_units], now)
@@ -134,19 +136,19 @@ def main():
         # unmarked old examples (saved before v21) are still recognised once
         unmarked = [{k: v for k, v in u.items() if k != "example"} for u in old_units]
         page.evaluate("""(u) => { localStorage.clear(); localStorage.setItem('mini-tracker-models', JSON.stringify(u)); }""", unmarked)
-        page.goto(URL); page.wait_for_timeout(500)
+        page.goto(URL); page.wait_for_timeout(500); leave_launch(page)   # U4b: tap through the start page
         check("old examples saved before v21 are still recognised and marked",
               all(u.get("example") is True for u in json.loads(page.evaluate("localStorage.getItem('mini-tracker-models')"))))
         # a renamed one is yours
         renamed = [dict(unmarked[0], name="Chapter Master")] + unmarked[1:]
         page.evaluate("""(u) => { localStorage.clear(); localStorage.setItem('mini-tracker-models', JSON.stringify(u)); }""", renamed)
-        page.goto(URL); page.wait_for_timeout(500)
+        page.goto(URL); page.wait_for_timeout(500); leave_launch(page)   # U4b: tap through the start page
         marks = [u.get("example") is True for u in json.loads(page.evaluate("localStorage.getItem('mini-tracker-models')"))]
         check("a renamed old example is not marked", marks[0] is False and marks[1:] == [True, True], marks)
         # the new examples are recognised too, if unmarked
         new_unmarked = [{"id": 1, "name": "Captain", "hobby": "Sci-fi", "faction": "Blue army", "stage": 3, "count": 1}]
         page.evaluate("""(u) => { localStorage.clear(); localStorage.setItem('mini-tracker-models', JSON.stringify(u)); }""", new_unmarked)
-        page.goto(URL); page.wait_for_timeout(500)
+        page.goto(URL); page.wait_for_timeout(500); leave_launch(page)   # U4b: tap through the start page
         check("an unmarked new-style example is recognised too", json.loads(page.evaluate("localStorage.getItem('mini-tracker-models')"))[0].get("example") is True)
 
         # ---------- 5. Safety and offline ----------

@@ -23,6 +23,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import base64, json, mimetypes, os, re, sys, urllib.parse
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
@@ -97,10 +98,12 @@ def site_load(page, settings=None, units=None, url=SITE):
     clear_photos(page)
     counter["hits"].clear()
     page.reload()
+    leave_launch(page)   # U4b: tap through the start page
     settle(page)
 
 def reload(page):
     page.reload()
+    leave_launch(page)   # U4b: tap through the start page
     settle(page)
 
 def blur(page):
@@ -216,6 +219,7 @@ def main():
         local.goto(URL)
         local.evaluate("() => localStorage.clear()")
         local.reload()
+        leave_launch(local)   # U4b: tap through the start page
         settle(local)
         check("a local copy (localhost) never counts", counter["hits"] == [] and local.evaluate("countingHere()") is False, counter["hits"])
         check("and the same for an app opened from any other address", local.evaluate("COUNTED_HOSTS") == ["minifolio.app"], local.evaluate("COUNTED_HOSTS"))

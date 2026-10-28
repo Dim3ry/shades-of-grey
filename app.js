@@ -3740,8 +3740,36 @@
     const moreSeg = document.getElementById("more-seg");
     moreSeg.querySelectorAll("button").forEach(b => b.addEventListener("click", () => showTab(b.dataset.page)));
 
+    // U4b: the launch page. It shows every time the app is opened fresh (a new page load, which includes the phone throwing the page away
+    // and loading it again). Nothing here listens for the page being hidden or shown, so switching away and coming back never resets it.
+    // While it shows, <body> has the class "launching" (the CSS hides the sections and draws the menu bar as a full circle).
+    // The section you were in is kept underneath, so going to the launch page from the title and back loses nothing.
+    let launching = document.body.classList.contains("launching");
+    // The circle is drawn for a 390 px wide phone and centred in the space under the header; it shrinks (never grows) to fit the
+    // width and the height.
+    function fitLaunch() {
+      if (!launching) return;
+      const top = document.querySelector(".app-bar").getBoundingClientRect().bottom;
+      const room = window.innerHeight - top;
+      const scale = Math.min(1, document.documentElement.clientWidth / 390, (room - 24) / 340);
+      const root = document.documentElement.style;
+      root.setProperty("--ring-scale", String(Math.max(0.3, Math.round(scale * 1000) / 1000)));
+      root.setProperty("--ring-cy", Math.round(top + room / 2) + "px");
+    }
+    function enterLaunch() {
+      launching = true;
+      document.body.classList.add("launching");
+      tabButtons.forEach(b => b.removeAttribute("aria-current"));   // nothing is chosen yet
+      window.scrollTo(0, 0);
+      fitLaunch();
+    }
+    window.addEventListener("resize", fitLaunch);
+    window.addEventListener("load", fitLaunch);   // fonts may change the header height
+    document.getElementById("home-button").addEventListener("click", () => { if (!launching) enterLaunch(); });
+
     function showTab(name) {
       if (!views[name]) name = "dashboard";
+      if (launching) { launching = false; document.body.classList.remove("launching"); }
       if (name !== "units" && selectMode) closeSelect();   // v21.1: leaving Units ends select mode
       for (const [key, view] of Object.entries(views)) view.classList.toggle("hidden", key !== name);
       const mainTab = MORE_PAGES.includes(name) ? "settings" : name;   // the bottom-bar tab to light up
@@ -3760,7 +3788,7 @@
     }
     tabButtons.forEach(b => b.addEventListener("click", () => {
       // Tapping Recipes while already on it goes back to the list (unless you're mid-edit).
-      if (b.dataset.tab === "recipes" && settings.tab === "recipes" && !recipeDraft) {
+      if (b.dataset.tab === "recipes" && settings.tab === "recipes" && !recipeDraft && !launching) {
         openRecipeId = null;
         renderRecipes();
       }
@@ -17041,7 +17069,10 @@
     expireSafetyCopies();
     showIphoneWarning();
     renderUpdates();
-    showTab(settings.tab);
+    // U4b: a fresh open shows the launch page, unless the address names a section (#dashboard, #units, #recipes, #compendium, #settings...).
+    const linkedTab = decodeURIComponent(location.hash.slice(1));
+    if (Object.prototype.hasOwnProperty.call(views, linkedTab)) showTab(linkedTab);
+    else { showTab(settings.tab); enterLaunch(); }
     if (upgradedStages) showToast("Stages updated: Parade ready added as the final stage", null, null, 8);
     else if (settingsUnreadable) showToast("Your settings couldn't be read, so they were reset. Your units kept their stages, and a copy of the old settings was kept.", null, null, 10);
 
@@ -17130,6 +17161,7 @@
       if (dialogState) return cancelDialog;   // v21.7: a question box sits over everything; Back = No / Cancel
       if (similarState) return closeSimilar;  // v65: the Similar paints pop-up; Back closes it
       if (viewer) return closeViewer;
+      if (launching) return null;   // U4b: the launch page has nothing to close; Back leaves the app as usual
       const tab = settings.tab;
       if (tab === "recipes") {
         if (document.getElementById("scan-camera") || cameraOpening) return closeCamera;

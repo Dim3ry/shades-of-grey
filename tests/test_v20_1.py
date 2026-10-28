@@ -17,6 +17,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 from dialog_watch import DialogAnswers
 
@@ -58,6 +59,7 @@ def seed(page, settings=None, units=UNITS):
         if (s) localStorage.setItem('shades-of-grey-settings', JSON.stringify(s)); }""", [units, settings])
     page.reload()
     page.wait_for_timeout(300)
+    leave_launch(page)   # U4b: tap through the start page
 
 def full_settings(**extra):
     s = {"palette": "ice", "tab": "dashboard", "stages": STAGES, "doneFrom": 5}
@@ -283,7 +285,7 @@ def main():
         check("restoring brings Custom back", s.get("useCustom") is True and s.get("customColours") == MINE
               and s.get("palette") == "forge" and page.input_value("#palette-select") == "custom" and stage_vars(page) == shl(page, MINE),
               (s.get("useCustom"), s.get("customColours")))
-        page.reload(); page.wait_for_timeout(300)
+        page.reload(); page.wait_for_timeout(300); leave_launch(page)   # U4b: tap through the start page
         check("…and it survives a reload after the restore", stage_vars(page) == shl(page, MINE))
         seed(page, full_settings(palette="forge"))
         fb = page.evaluate("backupData()")

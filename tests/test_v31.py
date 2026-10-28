@@ -28,6 +28,7 @@ from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
+from launch_helpers import leave_launch
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}/"
@@ -71,7 +72,8 @@ def book(paints=None, recipes=None):
     return {"parts": ["Whole model", "Armour"], "techniques": ["Layer", "Base coat", "Wash"],
             "paints": PAINTS if paints is None else paints, "recipes": recipes or [], "schemes": [], "shorthand": {}, "v15": True}
 
-def load(page, paints=None, settings=None, recipes=None, units=None):
+def load(page, paints=None, settings=None, recipes=None, units=None, launch=False):
+    """launch=True stays on the start page (U4b); otherwise it taps through to the saved section, which is where tests started before v89."""
     page.goto(URL)
     page.evaluate("""([b, s, u]) => { localStorage.clear();
         localStorage.setItem('shades-of-grey-recipes', JSON.stringify(b));
@@ -82,6 +84,8 @@ def load(page, paints=None, settings=None, recipes=None, units=None):
     page.reload()
     page.wait_for_function("() => typeof APP_VERSION === 'string'")
     page.wait_for_timeout(400)
+    if not launch:
+        leave_launch(page)
 
 def blur(page):
     page.evaluate("() => document.activeElement && document.activeElement.blur()")

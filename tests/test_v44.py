@@ -67,6 +67,7 @@ def wait_loaded(page):
 def reload(page):
     page.reload()
     wait_loaded(page)
+    t.leave_launch(page)   # U4b (v89): a reload shows the start page; tap through to the saved section, as before
 
 def fresh(page, settings=None):
     """A brand-new start: nothing saved at all (apart from the look, if asked)."""

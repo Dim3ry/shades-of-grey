@@ -29,6 +29,7 @@ from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
+from launch_helpers import leave_launch
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}/"
@@ -62,6 +63,7 @@ def clear_photos(page):
 def settle(page):
     page.wait_for_function("() => typeof APP_VERSION === 'string'")
     page.wait_for_timeout(300)
+    leave_launch(page)   # U4b (v89): a fresh load shows the start page; tap through to the saved section, as before
 
 def fresh(page, settings=None):
     """A brand-new start: nothing saved at all (apart from the settings given)."""

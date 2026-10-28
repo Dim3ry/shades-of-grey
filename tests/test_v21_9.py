@@ -25,6 +25,7 @@ Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run 
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
 import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
+from launch_helpers import leave_launch
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}/"
@@ -72,6 +73,7 @@ def seed(page, units=UNITS, settings=None):
     page.reload()
     page.wait_for_function("() => typeof APP_VERSION === 'string'")
     page.wait_for_timeout(300)
+    leave_launch(page)   # U4b (v89): a fresh load shows the start page; tap through to the saved section, as before
 
 def main_tab(page, name):
     page.click(f'nav button[data-tab="{name}"]')
@@ -262,9 +264,12 @@ def main():
             page.wait_for_function("() => typeof APP_VERSION === 'string'")
             page.wait_for_timeout(300)
             check(f"after a reload the {name} page is open", shown_views(page) == [name], shown_views(page))
+            # U4b (v89): a reload now shows the start page, so the page is kept underneath and nothing is lit or shown until a section is tapped.
+            check(f"after a reload the start page shows, with nothing lit ({name})", page.evaluate("() => document.body.classList.contains('launching')") and lit_tabs(page) == [], lit_tabs(page))
+            page.click('nav button[data-tab="settings"]')
+            page.wait_for_timeout(150)
             st = seg_state(page)
-            check(f"after a reload the switch shows {LABELS[name]} selected", st["shown"] and st["selected"] == [name], st)
-            check(f"after a reload Settings is lit in the bar", lit_tabs(page) == ["settings"], lit_tabs(page))
+            check(f"after tapping the cog the switch is shown and Settings is lit ({name})", st["shown"] and lit_tabs(page) == ["settings"], (st, lit_tabs(page)))
         for old in ["help", "updates", "settings"]:
             seed(page, settings=full_settings(tab=old, appearance="dark", customColours=["#112233"], palette="forge"))
             check(f"an old saved tab of \"{old}\" opens that page", shown_views(page) == [old], shown_views(page))

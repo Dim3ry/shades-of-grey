@@ -22,6 +22,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -208,6 +209,7 @@ def main():
         page.evaluate("() => localStorage.clear()")   # a first visit: the three example units are made
         page.reload()
         page.wait_for_timeout(300)
+        leave_launch(page)   # U4b: tap through the start page
         page.evaluate("() => document.querySelector('nav button[data-tab=\"dashboard\"]').click()")
         page.wait_for_timeout(150)
         check("Dashboard: the examples card shows its heading line, the two buttons and one More info (closed)",
