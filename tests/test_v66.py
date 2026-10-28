@@ -253,6 +253,8 @@ def main():
         # ---------- 8. Phones, dark and light, another theme ----------
         print("\n--- 8. Phones, dark and light ---")
         def sizes_ok(width, scheme, label):
+            # Mo1: the pop-up now rises into place over 240 ms; measure it once it has settled (mid-rise the box sits a fraction of a pixel off, so a 44 px button reads 43.99999).
+            page.wait_for_timeout(500)
             sizes = page.evaluate("() => [...document.querySelectorAll('.similar button')].filter(b => b.offsetParent).map(b => { const r = b.getBoundingClientRect(); return [r.width, r.height]; })")
             inside = page.evaluate("() => { const b = document.querySelector('.similar'); return b.scrollWidth <= b.clientWidth + 1 && b.getBoundingClientRect().left >= 15 && b.getBoundingClientRect().right <= window.innerWidth - 15; }")
             check(f"{label}: no sideways scroll, 16 px side margins, every button 44 px or more", no_sideways(page) and inside and sizes and all(w >= 44 and hh >= 44 for w, hh in sizes), (sizes, inside))
