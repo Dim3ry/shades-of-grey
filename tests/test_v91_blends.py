@@ -14,7 +14,17 @@ from playwright.sync_api import sync_playwright
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
 
-load, no_sideways = t.load, t.no_sideways
+no_sideways = t.no_sideways
+
+def load(page, **kw):
+    """t.load, tried once more if the browser drops the page load (net::ERR_ABORTED, seen now and then on a busy machine)."""
+    try:
+        t.load(page, **kw)
+    except Exception as err:
+        if "ERR_ABORTED" not in str(err):
+            raise
+        page.wait_for_timeout(300)
+        t.load(page, **kw)
 results = []
 
 def check(name, ok, detail=""):
