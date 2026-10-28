@@ -17207,8 +17207,16 @@
       if (element.tagName === "INPUT") return KEYBOARD_INPUT_TYPES.has((element.type || "text").toLowerCase());
       return element.isContentEditable === true;
     }
+    // U4a: while a mouse or finger is held down, the bar and the message stay where they are when the cursor leaves a text box. Pressing a button takes the cursor out of
+    // the text box on the way down, and the message (it rises above the taller menu bar) could jump under the pointer before it is
+    // released, so the press would land on the message instead of the button. The check is made just after the press ends.
+    let pressing = false, pressGuard = 0;
+    document.addEventListener("pointerdown", () => { pressing = true; clearTimeout(pressGuard); pressGuard = setTimeout(() => { pressing = false; updateTyping(); }, 3000); }, true);
+    for (const type of ["pointerup", "pointercancel"]) document.addEventListener(type, () => { pressing = false; clearTimeout(pressGuard); setTimeout(updateTyping, 0); }, true);
     function updateTyping() {
-      document.body.classList.toggle("typing", isTextBox(document.activeElement));
+      const typing = isTextBox(document.activeElement);
+      if (pressing && !typing) return;   // only leaving "typing" waits; starting it is at once
+      document.body.classList.toggle("typing", typing);
     }
     // Focus moves in and out of boxes; "focusout" is checked a moment later, once we can see
     // where the cursor went (so tapping from one text box to another doesn't flicker the bar).

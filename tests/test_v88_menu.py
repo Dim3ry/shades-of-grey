@@ -147,6 +147,14 @@ def main():
         page.evaluate("() => document.activeElement.blur()")
         page.wait_for_timeout(100)
         check("…and comes back", page.evaluate("getComputedStyle(document.querySelector('.tabs')).display") != "none")
+        # Pressing a button takes the cursor out of the box on the way down; the bar and message must not move until the press ends.
+        page.focus("#name-input")
+        page.evaluate("() => { document.dispatchEvent(new Event('pointerdown')); document.activeElement.blur(); }")
+        page.wait_for_timeout(100)
+        check("the bar stays hidden while a press is still held", page.evaluate("document.body.classList.contains('typing')"))
+        page.evaluate("() => document.dispatchEvent(new Event('pointerup'))")
+        page.wait_for_timeout(100)
+        check("…and comes back once the press ends", not page.evaluate("document.body.classList.contains('typing')"))
 
         print("\n--- 8. Narrow phones, dark and light ---")
         ctx.close()
