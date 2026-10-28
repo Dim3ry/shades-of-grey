@@ -20,6 +20,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 from dialog_watch import DialogAnswers
 
 PORT = os.environ.get("SOG_PORT", "8765")
@@ -63,6 +64,7 @@ def seed(page, units=UNITS, settings=None, book=None):
         if (b) localStorage.setItem('shades-of-grey-recipes', JSON.stringify(b)); }""", [units, settings, book])
     page.reload()
     page.wait_for_timeout(300)
+    leave_launch(page)   # U4b: tap through the start page
 
 def full_settings(**extra):
     s = {"palette": "ice", "tab": "dashboard", "stages": STAGES, "doneFrom": 5}
@@ -242,6 +244,7 @@ def main():
         shot(page, "v21-1-moved.png")
         page.reload()
         page.wait_for_timeout(300)
+        leave_launch(page)   # U4b: tap through the start page
         after = units(page)
         check("the move survives a reload", all(by_id(after, i)["stage"] == 5 for i in (1, 2, 3)) and by_id(after, 2)["stages"] == [5] * 4)
         # Undo (do it again, then Undo straight away).
@@ -259,6 +262,7 @@ def main():
         shot(page, "v21-1-undo.png")
         page.reload()
         page.wait_for_timeout(300)
+        leave_launch(page)   # U4b: tap through the start page
         check("the Undo survives a reload", {u["id"]: keep(u) for u in units(page)} == before)
         # Units already at the stage are skipped.
         tab(page, "units")

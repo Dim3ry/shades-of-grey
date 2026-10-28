@@ -21,6 +21,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import datetime, json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
@@ -58,6 +59,7 @@ def clear_photos(page):
 def settle(page):
     page.wait_for_function("() => typeof APP_VERSION === 'string'")
     page.wait_for_timeout(300)
+    leave_launch(page)   # U4b: tap through the start page (the card to check is on the Dashboard)
 
 def fresh(page, settings=None):
     """A brand-new start: nothing saved at all (apart from the settings given)."""
@@ -65,6 +67,7 @@ def fresh(page, settings=None):
     page.evaluate("(s) => { localStorage.clear(); if (s) localStorage.setItem('shades-of-grey-settings', JSON.stringify(s)); }", settings)
     clear_photos(page)
     page.reload()
+    leave_launch(page)   # U4b: tap through the start page
     settle(page)
 
 def existing(page, settings=None, units=None):
@@ -75,6 +78,7 @@ def existing(page, settings=None, units=None):
         if (s) localStorage.setItem('shades-of-grey-settings', JSON.stringify(s)); }""", [units or UNITS, settings])
     clear_photos(page)
     page.reload()
+    leave_launch(page)   # U4b: tap through the start page
     settle(page)
 
 def patch_settings(page, **changes):
@@ -83,6 +87,7 @@ def patch_settings(page, **changes):
         for (const [k, v] of Object.entries(c)) { if (v === null) delete s[k]; else s[k] = v; }
         localStorage.setItem('shades-of-grey-settings', JSON.stringify(s)); }""", changes)
     page.reload()
+    leave_launch(page)   # U4b: tap through the start page
     settle(page)
 
 def main_tab(page, name):

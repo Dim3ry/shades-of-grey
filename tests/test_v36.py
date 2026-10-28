@@ -28,6 +28,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, subprocess, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import wheel_helpers as wh   # v43
@@ -253,6 +254,7 @@ def main():
         page.reload()
         page.wait_for_function("() => typeof APP_VERSION === 'string'")
         page.wait_for_timeout(300)
+        leave_launch(page)   # U4b: tap through the start page
         check("after closing and opening the app the wheel starts closed again (like the other Compendium picks)", open_key(page) == "" and page.locator("#cmp-wheel-detail").count() == 0)
 
         # ---------- 5. The lists ----------

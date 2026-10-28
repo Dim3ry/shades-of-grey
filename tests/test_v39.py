@@ -23,6 +23,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import colorsys, json, os, re, subprocess, sys, time
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import wheel_helpers as wh   # v43
@@ -422,6 +423,7 @@ def main():
         page.reload()
         page.wait_for_function("() => typeof APP_VERSION === 'string'")
         page.wait_for_timeout(300)
+        leave_launch(page)   # U4b: tap through the start page
         go_settings(page)
         check("the choice is still off after the app is closed and opened again, and the box is unticked", not page.is_checked("#show-shop-links") and stored_settings(page).get("hideShopLinks") is True)
         backup = page.evaluate("() => JSON.stringify(backupData())")

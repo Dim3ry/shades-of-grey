@@ -12,6 +12,7 @@ New behaviour only:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, re, sys, time
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
@@ -176,6 +177,7 @@ def main():
         check("it is a view-only setting", page.evaluate("VIEW_ONLY_SETTINGS.includes('modelRows')"))
         page.reload()
         page.wait_for_timeout(500)
+        leave_launch(page)   # U4b: tap through the start page
         page.click('nav button[data-tab="units"]')
         check("it survives a reload", page.locator("#model-rows-switch [data-rows=simple]").get_attribute("aria-pressed") == "true")
         page.click("#model-rows-switch [data-rows=detailed]")

@@ -2,6 +2,7 @@
 Serve the repo folder with `python3 -m http.server 8765`, then run: python3 tests/test_v16.py <folder for screenshots>."""
 import json, os, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 import os as _os
 PORT = _os.environ.get("SOG_PORT", "8765")
 
@@ -39,6 +40,7 @@ with sync_playwright() as pw:
         page.evaluate("b => { localStorage.clear(); localStorage.setItem('shades-of-grey-recipes', JSON.stringify(b)); }", V15_BOOK)
         page.reload()
         page.wait_for_timeout(300)
+        leave_launch(page)   # U4b: tap through the start page
 
         if size == "phone":
             b = page.evaluate("book")

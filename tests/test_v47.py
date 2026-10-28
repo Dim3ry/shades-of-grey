@@ -29,6 +29,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t     # the shared page helpers
@@ -79,6 +80,7 @@ def fresh(page, settings=None, units=None):
         if (u) localStorage.setItem('mini-tracker-models', JSON.stringify(u)); }""", [settings, units])
     page.goto(URL)
     page.wait_for_function("() => typeof APP_VERSION === 'string'")
+    leave_launch(page)   # U4b: tap through the start page
 
 def tab(page, name):
     page.click(f'nav button[data-tab="{name}"]')
@@ -312,6 +314,7 @@ def main():
         sp.evaluate("localStorage.setItem('shades-of-grey-settings', JSON.stringify({ theme: 'classic' }))")
         sp.goto(URL)
         sp.wait_for_function("() => navigator.serviceWorker && navigator.serviceWorker.controller", timeout=15000)
+        leave_launch(sp)   # U4b: tap through the start page
         sp.reload(); sp.wait_for_function("() => typeof APP_VERSION === 'string'")
         fonts_before = sp.evaluate("caches.open('shades-of-grey-fonts').then(c => c.keys()).then(k => k.length)")
         check("nothing is saved in the font store while Classic is in use (Settings not opened)", fonts_before == 0, fonts_before)

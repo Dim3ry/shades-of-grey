@@ -12,6 +12,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
@@ -74,10 +75,10 @@ def main():
         text = restore(page, [unit(1, 5000), unit(2, 1200), unit(3, 10)])
         check("two counts over 999: the toast says 2 counts were lowered to 999", "2 counts lowered to 999" in text, text)
         check("and the counts are 999, 999, 10", page.evaluate("models.map(m => m.count)") == [999, 999, 10])
-        page.reload(); page.wait_for_timeout(400)
+        page.reload(); page.wait_for_timeout(400); leave_launch(page)   # U4b: tap through the start page
         text = restore(page, [unit(1, 1000), unit(2, 10)])
         check("one count over 999: the toast says 1 count", "1 count lowered to 999" in text, text)
-        page.reload(); page.wait_for_timeout(400)
+        page.reload(); page.wait_for_timeout(400); leave_launch(page)   # U4b: tap through the start page
         text = restore(page, [unit(1, 999), unit(2, 10)])
         check("nothing over 999: no mention of counts", "lowered" not in text, text)
 

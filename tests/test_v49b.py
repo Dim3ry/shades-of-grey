@@ -23,6 +23,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
@@ -73,6 +74,7 @@ def load(page, settings=None, units=UNITS, book=BOOK):
     page.goto(URL)
     page.wait_for_function("() => typeof APP_VERSION === 'string'")
     page.wait_for_timeout(300)
+    leave_launch(page)   # U4b: tap through the start page
 
 def tab(page, name):
     t.blur(page)   # the tab bar hides while a text box has the focus (a phone's keyboard is up)

@@ -11,6 +11,7 @@ def is_launching(page):
 
 def leave_launch(page):
     """Tap through the start page to the saved section, as a person would. Does nothing when the start page is not showing."""
+    page.wait_for_function("() => typeof settings === 'object'")   # the app has started
     if not is_launching(page):
         return
     tab = page.evaluate("() => settings.tab") or "dashboard"
@@ -20,4 +21,4 @@ def leave_launch(page):
             page.click(f'#more-seg button[data-page="{tab}"]')
     else:
         page.click(f'.tabs button[data-tab="{tab}"]')
-    page.wait_for_timeout(150)
+    page.wait_for_function("() => !document.body.classList.contains('launching')")   # waits for the section itself, no fixed pause
