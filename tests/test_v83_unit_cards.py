@@ -119,7 +119,7 @@ def main():
 
         card(page, 4).locator(".details-toggle").click()
         page.wait_for_timeout(250)
-        card(page, 4).locator(".each-list button[aria-label='Move model 1 up a stage']").click()
+        card(page, 4).locator(".each-list .each-up").first.click()
         page.wait_for_timeout(250)
         check("the per-model rows still work inside Details", saved(page, 4)["stages"][0] == 2, saved(page, 4))
 
