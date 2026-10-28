@@ -28,7 +28,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, subprocess, sys
 from playwright.sync_api import sync_playwright
-from launch_helpers import leave_launch
+from launch_helpers import leave_launch, wait_settled
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import wheel_helpers as wh   # v43
@@ -561,7 +561,7 @@ def main():
         for tab, view in [("dashboard", "view-dashboard"), ("units", "view-units"), ("recipes", "view-recipes"), ("settings", "view-settings"), ("compendium", "view-compendium")]:
             blur(page)
             page.click(f'nav button[data-tab="{tab}"]')
-            page.wait_for_timeout(120)
+            wait_settled(page)   # v92 (Mo3a): the old section slides out over 240 ms; only the new one is showing after that
             check(f"the {tab} tab opens its own page and hides the others", page.is_visible(f"#{view}") and sum(page.is_visible(f"#{v}") for v in ["view-dashboard", "view-units", "view-recipes", "view-settings", "view-compendium"]) == 1)
         open_comp(page)
         # v37: the five parts now sit under folding headings (each opened by open_comp), so look inside them as well as at the top level

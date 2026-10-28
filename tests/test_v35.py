@@ -29,6 +29,7 @@ from playwright.sync_api import sync_playwright
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
 from settle import frames
+from launch_helpers import wait_settled
 import test_v31 as t   # the helpers (loading the app, the palette, the colours) and the Games Workshop word lists
 from combo_helpers import pick_combo   # v37 part 2: "Start from" and "Faction" are search boxes now, not drop-downs
 
@@ -707,7 +708,7 @@ def main():
         for tab, view in [("dashboard", "view-dashboard"), ("units", "view-units"), ("recipes", "view-recipes"), ("settings", "view-settings"), ("compendium", "view-compendium")]:
             blur(page)
             page.click(f'nav button[data-tab="{tab}"]')
-            page.wait_for_timeout(120)
+            wait_settled(page)   # v92 (Mo3a): the old section slides out over 240 ms; only the new one is showing after that
             check(f"the {tab} tab opens its own page and hides the others", page.is_visible(f"#{view}") and sum(page.is_visible(f"#{v}") for v in ["view-dashboard", "view-units", "view-recipes", "view-settings", "view-compendium"]) == 1)
         check("the card in a recipe still starts closed in a fresh editor", (lambda: (load(page, recipes=RECIPES, units=UNITS), t.open_editor(page), page.evaluate("() => document.getElementById('colour-ideas').open"))[-1])() is False)
         open_panel(page)

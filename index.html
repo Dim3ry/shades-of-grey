@@ -2420,6 +2420,10 @@
     /* 2. Details: JS grows and shrinks the panel and pops the swatches; the blank space left behind while closing is only a spacer. */
     .panel-ghost { flex-basis: 100%; box-sizing: border-box; overflow: hidden; border-top: 1px solid var(--border); pointer-events: none; }
     /* One reduced-motion rule for everything above (Mo1 and Mo2; the swatch and panel movement JavaScript starts also checks the setting) and the basket pop: no movement at all. */
+    /* Mo3a: moving between screens. While two screens trade places, the old one is a see-through layer on top (it keeps its "hidden" class so the
+       app's state is already the new one). The box is positioned only for the move; sideways overflow is clipped so the page never scrolls sideways. */
+    .mo-box { position: relative; overflow-x: clip; }
+    .mo-out.hidden { display: block !important; position: absolute; pointer-events: none; }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation: none !important; transition: none !important; }
       .ripple { display: none; }

@@ -14,7 +14,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
-from launch_helpers import leave_launch
+from launch_helpers import leave_launch, wait_settled
 import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 from dialog_watch import DialogAnswers
 
@@ -151,6 +151,7 @@ def main():
         page.wait_for_timeout(100)
         check("a recipe is open", page.is_visible("#recipe-page"))
         back(page)
+        wait_settled(page)   # v92 (Mo3a): the detail slides away over 240 ms; the list is the only thing showing once that is done
         check("Back closes the recipe and shows the recipe list", not page.is_visible("#recipe-page") and page.is_visible("#recipe-list"))
         check("…still on Recipes", current_tab(page) == "recipes")
         back(page)

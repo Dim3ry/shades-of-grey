@@ -3783,11 +3783,61 @@
     window.addEventListener("load", fitLaunch);   // fonts may change the header height
     document.getElementById("home-button").addEventListener("click", () => { if (!launching) enterLaunch(); });
 
-    function showTab(name) {
+    // Mo3a: MOVING BETWEEN SCREENS. Only the look changes; what shows and hides (and scroll, focus and Back) is exactly as before.
+    // The old screen keeps its "hidden" class at once, so the app's state is already the new one; for a moment it is drawn on top as
+    // a see-through layer (class mo-out) that cannot be tapped or read by a screen reader (inert, aria-hidden), and is tidied away
+    // when the move ends (or at once if another move starts). Nothing is left with a resting transform. Reduced motion: no move at all.
+    let moveEnd = null;
+    function endMove() { if (moveEnd) { const done = moveEnd; moveEnd = null; done(); } }
+    // Take this BEFORE the old screen is hidden (a hidden element cannot be measured): where it sits inside its box.
+    function moveSnap(box, out) {
+      endMove();
+      box.classList.add("mo-box");
+      return { box, out, top: out.offsetTop, left: out.offsetLeft, width: out.offsetWidth };
+    }
+    // ... and this once the new screen is showing: slide the two (either may be left out) and clean up at the end.
+    function moveRun(snap, outFrames, inEl, inFrames, ms) {
+      const { box, out } = snap;
+      out.classList.add("mo-out");
+      Object.assign(out.style, { top: snap.top + "px", left: snap.left + "px", width: snap.width + "px" });
+      out.inert = true;
+      out.setAttribute("aria-hidden", "true");
+      const timing = { duration: ms, easing: "linear" };
+      const anims = [out.animate(outFrames, timing)];
+      if (inEl) anims.push(inEl.animate(inFrames, timing));
+      const done = () => {
+        anims.forEach(a => a.cancel());
+        out.classList.remove("mo-out");
+        for (const k of ["top", "left", "width"]) out.style.removeProperty(k);
+        out.inert = false;
+        out.removeAttribute("aria-hidden");
+        box.classList.remove("mo-box");
+      };
+      moveEnd = done;
+      anims[anims.length - 1].onfinish = () => { if (moveEnd === done) endMove(); };
+    }
+    const BAR_ORDER = ["dashboard", "units", "recipes", "compendium"];   // the menu bar's order: later = slide left, earlier = slide right
+    function canMove() { return !reducedMotion() && !!Element.prototype.animate; }
+
+    // how: "slide" only for a tap on a menu segment. Anything chosen by code (an import, a jump, the Mentor button) or leaving the
+    // start page gets a short fade at most; Settings, Help and Updates (the cog) keep their instant switch.
+    function showTab(name, how) {
       if (!views[name]) name = "dashboard";
+      const before = launching ? null : (views[settings.tab] ? settings.tab : null);
+      const move = canMove() && BAR_ORDER.includes(name) && before !== name && (before === null || BAR_ORDER.includes(before)) ? (how === "slide" && before ? "slide" : "fade") : "";
+      const snap = move === "slide" ? moveSnap(document.querySelector("main"), views[before]) : null;
+      if (move !== "slide" && before !== name) endMove();
       if (launching) { launching = false; document.body.classList.remove("launching"); }
       if (name !== "units" && selectMode) closeSelect();   // v21.1: leaving Units ends select mode
       for (const [key, view] of Object.entries(views)) view.classList.toggle("hidden", key !== name);
+      if (move === "slide") {
+        const dir = BAR_ORDER.indexOf(name) > BAR_ORDER.indexOf(before) ? 1 : -1;
+        moveRun(snap,
+          [{ transform: "none", opacity: 1 }, { transform: `translateX(${-40 * dir}%)`, opacity: 0 }],
+          views[name], [{ transform: `translateX(${40 * dir}%)`, opacity: 0 }, { transform: "none", opacity: 1 }], motionMs("--motion-med"));
+      } else if (move === "fade") {
+        views[name].animate([{ opacity: 0 }, { opacity: 1 }], { duration: motionMs("--motion-fast"), easing: "linear" });
+      }
       const mainTab = MORE_PAGES.includes(name) ? "settings" : name;   // the bottom-bar tab to light up
       tabButtons.forEach(b => {
         if (b.dataset.tab === mainTab) b.setAttribute("aria-current", "page");
@@ -3809,7 +3859,7 @@
         renderRecipes();
       }
       if (b.dataset.tab === "compendium") compendiumState.focus = null;   // v69: the tab itself opens the whole Compendium
-      showTab(b.dataset.tab);
+      showTab(b.dataset.tab, b.classList.contains("cog") ? undefined : "slide");
     }));
 
     // U4a: the round Ask Mentor button. There is no Mentor chat yet, so it opens the Compendium with Ask the Mentor open and scrolls to it.
@@ -7431,6 +7481,25 @@
       recipeSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", b.dataset.view === current));
       // v78: from 900 px an open recipe (or one being written) shows beside the list, but only when it was opened from the Recipes list.
       const wideSplit = onPage && recipeWide.matches && !["palette", "schemes", "shopping"].includes(settings.recipeView);
+      // Mo3a: a recipe opening or closing from the Recipes list, by a tap. On a phone the list steps back and the detail slides in from the
+      // right (closing reverses it); from 900 px, where the detail sits in the side pane, it is a short fade. Not from Palette, Schemes or Shopping.
+      let detailMove = null;
+      const wasPage = !recipePage.classList.contains("hidden");
+      if (onPage !== wasPage && canMove() && settings.tab === "recipes" && !launching && !views.recipes.classList.contains("hidden")
+          && !["palette", "schemes", "shopping"].includes(settings.recipeView)) {
+        const ms = motionMs("--motion-med");
+        const sideways = [{ transform: "none", opacity: 1 }, { transform: "translateX(-20%)", opacity: 0.45 }];
+        if (recipeWide.matches) {
+          if (onPage) detailMove = () => recipePage.animate([{ opacity: 0 }, { opacity: 1 }], { duration: motionMs("--motion-fast"), easing: "linear" });
+        } else if (onPage && !recipeHome.classList.contains("hidden")) {
+          const snap = moveSnap(recipeSplit, recipeHome);   // the list stays on screen, dimmed, while the detail slides over it
+          detailMove = () => moveRun(snap, sideways, recipePage, [{ transform: "translateX(100%)" }, { transform: "none" }], ms);
+        } else if (!onPage) {
+          const snap = moveSnap(recipeSplit, recipePage);   // the detail slides away to the right and the list steps forward
+          detailMove = () => moveRun(snap, [{ transform: "none", opacity: 1 }, { transform: "translateX(100%)", opacity: 1 }],
+            recipeHome, [...sideways].reverse(), ms);
+        }
+      }
       recipeSplit.classList.toggle("layout-split", wideSplit);
       recipeHome.classList.toggle("hidden", (onPage && !wideSplit) || onPalette || onSchemes || onShopping);
       shoppingView.classList.toggle("hidden", !onShopping);
@@ -7444,6 +7513,7 @@
       else if (onShopping) renderShopPanel();
       else renderRecipeList();
       if (wideSplit) renderRecipeList();
+      if (detailMove) detailMove();
     }
 
     // v78: crossing 900 px with a recipe open moves it beside the list or back to full screen.
