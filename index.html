@@ -90,6 +90,8 @@
       --series-added: #6366f1; --series-painted: #10a99a;   /* dashboard graph lines */
     }
     :root { --done-colour: #a7f3d0; } /* the "finished" colour, also set by JavaScript */
+    /* Mo1: every movement in the app takes its time and feel from these four values. Change them here and everything follows. */
+    :root { --motion-fast: 120ms; --motion-med: 240ms; --motion-slow: 480ms; --motion-ease: linear; }
     :root[data-appearance="light"], .theme-swatch[data-t="classic"][data-m="light"] {
       --background: #e9eff6;  /* pale cool blue-grey page */
       --card: #f8fafc;        /* near-white boxes */
@@ -277,7 +279,6 @@
     .tabs .basket:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
     .tabs .basket.pop { animation: basket-pop 0.35s ease-out; }
     @keyframes basket-pop { 0% { transform: scale(0.8); } 55% { transform: scale(1.18); } 100% { transform: scale(1); } }
-    @media (prefers-reduced-motion: reduce) { .tabs .basket.pop { animation: none; } }
     .shop-list .shop-from { display: block; color: var(--muted); margin-top: 1px; }
     .tabs button[aria-current="page"] { color: var(--accent); }
 
@@ -420,12 +421,11 @@
     .unit-tick input { width: 24px; height: 24px; margin: 0; accent-color: var(--accent); cursor: pointer; }
     li.unit.ticked { box-shadow: 0 0 0 2px var(--accent); }
     /* v21.5: a unit you've just added is outlined for a moment, then fades back. */
-    li.unit.just-added { box-shadow: 0 0 0 3px var(--accent); animation: just-added 2.5s ease-out forwards; }
+    li.unit.just-added { box-shadow: 0 0 0 3px var(--accent); }   /* Mo1: the animation is set in the Mo1 block at the end of the styles */
     @keyframes just-added {
       0%, 60% { box-shadow: 0 0 0 3px var(--accent); }
       100% { box-shadow: 0 0 0 3px transparent; }
     }
-    @media (prefers-reduced-motion: reduce) { li.unit.just-added { animation: none; } }
     body.selecting { padding-bottom: calc(210px + env(safe-area-inset-bottom)); }
     /* v21.5: room under the last unit, so it can scroll clear of the message above the tab
        bar (a new unit is scrolled into view there, and Undo no longer covers the last ▲). */
@@ -497,7 +497,7 @@
       min-width: 44px;        /* v53: the short "All" chip was 36 wide */
       border-radius: 999px;   /* pill shape */
     }
-    .chip[aria-pressed="true"] { color: var(--on-accent); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+    .chip[aria-pressed="true"] { color: var(--on-accent); border-color: var(--accent); font-weight: 600; }   /* Mo1: the accent fill is the sweep below */
     /* v49: the Units filter groups (To do, Done, Repaint) are three equal buttons across the card; the stage chips open underneath */
     #group-chips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
     #group-chips .chip { justify-content: center; text-align: center; min-height: 44px; padding: 10px 6px; }
@@ -2278,6 +2278,49 @@
     .theme-swatch[data-t="rulebook"] .ts-bar { box-shadow: 2px 2px 0 var(--hard-shadow); }
     @media (forced-colors: active) { .theme-swatch[aria-pressed="true"] { outline-color: Highlight; } }
     .hidden { display: none !important; }
+
+    /* ===== Mo1: shared motion ===== */
+    /* 1. Main buttons: lift on hover, press on tap, a ripple from the tap point. translate and scale are separate
+          properties, so themes that tilt a button with transform keep their tilt. */
+    .primary-button, .plain-button { transition: translate var(--motion-fast) var(--motion-ease), scale var(--motion-fast) var(--motion-ease), box-shadow var(--motion-med) var(--motion-ease), filter var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease); }
+    @media (hover: hover) {
+      .primary-button:not(:disabled):hover, .plain-button:not(:disabled):hover { translate: 0 -2px; box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 38%, transparent); }
+    }
+    .primary-button:not(:disabled):active, .plain-button:not(:disabled):active { translate: 0 1px; scale: 0.97; box-shadow: none; filter: brightness(0.92); }
+    .rip-host { position: relative; overflow: hidden; }
+    .ripple { position: absolute; width: 10px; height: 10px; margin: -5px; border-radius: 50%; background: currentColor; opacity: 0; pointer-events: none; animation: mo-ripple calc(var(--motion-slow) + 80ms) var(--motion-ease); }
+    @keyframes mo-ripple { from { transform: scale(1); opacity: 0.35; } to { transform: scale(36); opacity: 0; } }
+    /* 2. Chips: the accent fill sweeps across when switched on. The Units filter chips also get a tick, so colour is not the only sign. */
+    .chip { background-image: linear-gradient(var(--accent), var(--accent)); background-repeat: no-repeat; background-size: 0% 100%; transition: background-size var(--motion-med) var(--motion-ease), color var(--motion-fast) var(--motion-ease); }
+    .chip[aria-pressed="true"] { background-size: 100% 100%; }
+    .chip.sweep { background-size: 0% 100%; color: var(--muted); }   /* a freshly drawn chip that was just switched on starts empty, then fills */
+    #group-chips .chip::before, #stage-chips .chip::before { content: "\2713"; display: inline-block; width: 0; overflow: hidden; opacity: 0; vertical-align: bottom; transition: width var(--motion-med) var(--motion-ease), opacity var(--motion-med) var(--motion-ease); }
+    #group-chips .chip[aria-pressed="true"]:not(.sweep)::before, #stage-chips .chip[aria-pressed="true"]:not(.sweep)::before { width: 1em; margin-right: 0.3em; opacity: 1; }
+    /* 3. The stage chips open under To do / Done / Repaint: the row is revealed top down and the chips follow one after another. */
+    #stage-chips.cascade { animation: mo-reveal var(--motion-med) var(--motion-ease) both; }
+    #stage-chips.cascade > .chip { animation: mo-cascade var(--motion-med) var(--motion-ease) both; animation-delay: calc(var(--i, 0) * 50ms); }
+    @keyframes mo-reveal { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+    @keyframes mo-cascade { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+    /* 4. The question box: the dim layer fades in, the box rises and settles. */
+    .dialog-backdrop:not(.hidden) { animation: mo-fade var(--motion-med) var(--motion-ease) both; }
+    .dialog-backdrop:not(.hidden) > .dialog { animation: mo-rise var(--motion-med) var(--motion-ease) both; }
+    @keyframes mo-fade { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes mo-rise { from { transform: translateY(14px) scale(0.95); } to { transform: none; } }
+    /* 5. The Undo message slides up, and a thin line drains along its bottom edge over the message's life (JS sets --toast-life). */
+    .toast:not(.hidden) { animation: mo-toast-in var(--motion-med) var(--motion-ease) both; }
+    @keyframes mo-toast-in { from { transform: translateY(140%); opacity: 0; } to { transform: none; opacity: 1; } }
+    .toast::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 0; height: 3px; border-radius: 3px; background: var(--toast-action); transform-origin: left; transform: scaleX(0); pointer-events: none; }
+    .toast.draining::after { animation: mo-drain var(--toast-life, 4s) linear forwards; }
+    @keyframes mo-drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+    /* 6. A new unit drops in, and its outline flashes then fades (this replaces the old outline-only animation). */
+    li.unit.just-added { animation: just-added 2.5s var(--motion-ease) forwards; }
+    li.unit.just-dropped { animation: mo-drop var(--motion-med) var(--motion-ease) both, just-added 2.5s var(--motion-ease) forwards; }
+    @keyframes mo-drop { from { opacity: 0; transform: translateY(-12px) scale(0.97); } to { opacity: 1; transform: none; } }
+    /* One reduced-motion rule for everything above and the basket pop: no movement at all. */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .ripple { display: none; }
+    }
   </style>
 </head>
 

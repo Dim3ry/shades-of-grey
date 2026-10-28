@@ -3770,6 +3770,7 @@
     const ticked = new Set();
     // v21.5: the unit just added (outlined for a moment; see showNewUnit()). Not saved.
     let justAddedId = null;
+    let droppedId = null;   // Mo1: the new unit that has already dropped in
     let justAddedTimer = null;
 
     function clearFilters() {
@@ -4719,16 +4720,28 @@
       if (Math.abs(drift) > 1) window.scrollBy(0, drift);
     }
 
+    // Mo1: chips are redrawn after every tap, so the fill could not sweep. The chip you tap is remembered by its label;
+    // the redrawn copy starts empty (class "sweep") and fills on the next frames. aria-pressed is already right from the start.
+    let sweepLabel = null;
     function makeChip(text, pressed, onClick, colourVar) {
       const chip = document.createElement("button");
       chip.className = "chip";
       chip.textContent = text;
       chip.setAttribute("aria-pressed", pressed);
       if (colourVar) chip.style.setProperty("--chip-colour", colourVar);
-      chip.addEventListener("click", onClick);
+      if (pressed && sweepLabel === text && !reducedMotion()) {
+        sweepLabel = null;
+        chip.classList.add("sweep");
+        requestAnimationFrame(() => requestAnimationFrame(() => chip.classList.remove("sweep")));
+      }
+      chip.addEventListener("click", (event) => {
+        sweepLabel = text;
+        try { onClick(event); } finally { sweepLabel = null; }
+      });
       return chip;
     }
 
+    let stagesWereShown = false;   // Mo1
     let unitStagesOpen = false;   // v49: "Pick by stage" on the Units filters (kept while the app is open)
     function renderUnits() {
       // M2: the Detailed / Simple switch for model rows shows only while some unit is tracked model by model.
@@ -4767,13 +4780,18 @@
       // is tapped), so the filter card starts as three equal buttons.
       stageChips.innerHTML = "";
       const stagesShown = filters.stages.size > 0 || unitStagesOpen;
+      // Mo1: the stage chips open smoothly, one after another, only on the redraw where they first appear.
+      stageChips.classList.toggle("cascade", stagesShown && !stagesWereShown && !reducedMotion());
+      stagesWereShown = stagesShown;
       if (stagesShown) {
         STAGES.forEach((stageName, index) => {
-          stageChips.appendChild(makeChip(stageName, filters.stages.has(index), () => {
+          const chip = makeChip(stageName, filters.stages.has(index), () => {
             if (filters.stages.has(index)) filters.stages.delete(index);
             else filters.stages.add(index);
             render();
-          }, `var(--stage-${index})`));
+          }, `var(--stage-${index})`);
+          chip.style.setProperty("--i", index);
+          stageChips.appendChild(chip);
         });
       }
       if (!filters.stages.size) {
@@ -4895,7 +4913,10 @@
       const item = document.createElement("li");
       item.className = "unit";
       item.dataset.id = model.id;   // so we can scroll to it from a recipe
-      if (model.id === justAddedId) item.classList.add("just-added");   // v21.5
+      if (model.id === justAddedId) {
+        item.classList.add("just-added");   // v21.5
+        if (droppedId !== model.id) { droppedId = model.id; item.classList.add("just-dropped"); }   // Mo1: it drops in once, not on every redraw
+      }
       item.style.setProperty("--stage-colour", `var(--stage-${model.stage})`);
       const isOpen = openIds.has(model.id) && !selectMode;
 
@@ -6783,6 +6804,28 @@
       viewerBody.append(switchRow, pickers, pictures);
     }
 
+    // Mo1: the phone's reduced-motion setting. The CSS stops all movement; this stops the movement that JavaScript starts.
+    function reducedMotion() { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
+
+    // Mo1: a ripple spreads from where a main button is tapped. One listener for every .primary-button and .plain-button.
+    document.addEventListener("pointerdown", (event) => {
+      const button = event.target instanceof Element ? event.target.closest(".primary-button, .plain-button") : null;
+      if (!button || button.disabled || reducedMotion()) return;
+      if (!button.classList.contains("rip-host")) {
+        if (getComputedStyle(button).position !== "static") return;   // already placed by the page: leave it alone
+        button.classList.add("rip-host");
+      }
+      const box = button.getBoundingClientRect();
+      const dot = document.createElement("span");
+      dot.className = "ripple";
+      dot.setAttribute("aria-hidden", "true");
+      dot.style.left = (event.clientX - box.left) + "px";
+      dot.style.top = (event.clientY - box.top) + "px";
+      button.appendChild(dot);
+      dot.addEventListener("animationend", () => dot.remove());
+      setTimeout(() => dot.remove(), 800);   // in case the animation never runs
+    }, { passive: true });
+
     // ----- The pop-up message with Undo -----
 
     const toast = document.getElementById("toast");
@@ -6801,6 +6844,11 @@
       toast.classList.remove("hidden");
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => toast.classList.add("hidden"), (seconds || 4) * 1000);
+      // Mo1: the thin line along the bottom drains over the same time as the timer above (no second timer).
+      toast.style.setProperty("--toast-life", (seconds || 4) + "s");
+      toast.classList.remove("draining");
+      void toast.offsetWidth;   // so the line starts again when a new message replaces one that is still showing
+      toast.classList.add("draining");
     }
     toastUndo.addEventListener("click", () => {
       // Hide first, THEN run the action, so the action can show a new message of its own
@@ -7054,14 +7102,14 @@
         if (box.bottom > bottom) by = box.bottom - bottom;     // below the clear area: scroll down
         if (box.top - by < gap) by = box.top - gap;            // taller than the gap, or above: show its top
         if (Math.abs(by) > 1) {
-          const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          const calm = reducedMotion();
           window.scrollBy({ top: by, behavior: calm ? "auto" : "smooth" });
         }
       }
       clearTimeout(justAddedTimer);
       justAddedTimer = setTimeout(() => {
         justAddedId = null;
-        list.querySelectorAll("li.unit.just-added").forEach(li => li.classList.remove("just-added"));
+        list.querySelectorAll("li.unit.just-added").forEach(li => li.classList.remove("just-added", "just-dropped"));
       }, JUST_ADDED_MS);
     }
 
