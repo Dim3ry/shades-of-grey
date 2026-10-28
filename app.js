@@ -1633,6 +1633,22 @@
         "Metallic orange", "Pearl yellow", "Pure metallic red", "Semi-gloss bright gun metal"],
     };
     const NOT_A_COLOUR = new Set(Object.entries(NOT_A_COLOUR_TABLE).flatMap(([brand, names]) => names.map(n => sameKey(`${brand}|${n}`))));
+    // Mix2: paints that are never mixed in a blend: anything that is not a colour (the list above), Shade, Contrast, Glaze and Technical
+    // paints, metallics, inks and washes, and the odd finishes (fluorescent, chameleon, candy, clear, pearl, primer, texture). Custom
+    // paints still on the default grey cannot be matched at all (canMatch). The Citadel paints are found by their place in the built-in
+    // list (everything from Agrax Earthshade on is Shade, Contrast, Glaze, Technical, Dry or spray), plus a few by name, so the paint
+    // data itself is untouched. Kept here, with the other paint-name lists, and used by blendPool in the similar paints code.
+    const BLEND_SKIP_CITADEL = new Set([
+      ...KNOWN_PAINT_TABLE.Citadel.slice(KNOWN_PAINT_TABLE.Citadel.findIndex(r => r.startsWith("Agrax Earthshade|"))).map(r => r.split("|")[0]),
+      "Agrellan Badland", "Armageddon Dunes", "Astrogranite Debris", "Martian Ironcrust", "Nighthaunt Gloom", "Stirland Battlemire",
+      "Leadbelcher", "Retributor Armour", "Ironbreaker", "Brass Scorpion", "Stormhost Silver", "Liberator Gold", "Warplock Bronze",
+      "Canoptek Alloy", "Sycorax Bronze", "Boltgun Metal", "Chainmail", "Tin Bitz", "Mithril Silver",   // metallics with no metal word in the name
+    ].map(n => sameKey(`Citadel|${n}`)));
+    const BLEND_SKIP_NAMES = /shade|wash|\bink\b|glaze|fluo|neon|chameleon|candy|clear|pearl|primer|spray|texture|gloss|crackle|transparent|translucent/i;
+    function blendMayMix(p) {
+      return MinifolioColour.canMatch(p) && !MinifolioColour.isRoughColour(p) && !BLEND_SKIP_NAMES.test(String(p.name || ""))
+        && !BLEND_SKIP_CITADEL.has(paintKey(p)) && !NOT_A_COLOUR.has(paintKey(p));
+    }
     const PAINT_BRANDS = [...new Set(KNOWN_PAINTS.map(k => k.brand))];
     // v63: the paint ranges most painters already know. In a colour wheel group, the built-in paints from these come before the other
     // brands, so the short list is not filled with brands nobody has heard of. Chosen by George (chunk 3.3); the paint data has no
@@ -11507,23 +11523,8 @@
 
     // ---- Mix2: blend suggestions in Your closest (paint blends, chunk Mix 2) ----
     // Only when your closest single paint is a Poor fit. Owned paints only, two at a time (the maths is in colour.js: blendSuggestions
-    // and the one mixing function). These paints are never mixed: anything that is not a colour (the list above), Citadel Shade,
-    // Contrast, Glaze and Technical paints, metallics, inks and washes, and the odd finishes (fluorescent, chameleon, candy, clear, pearl,
-    // primer, texture). Pure white and pure black ARE mixed (blends need them). Custom paints still on the default grey cannot be matched
-    // at all (canMatch). The same colour in two brands counts once. The Citadel paints are found by their place in the built-in list
-    // (everything from Agrax Earthshade on is Shade, Contrast, Glaze, Technical, Dry or spray), plus a few Technical paints by name,
-    // so the paint data itself is untouched.
-    const BLEND_SKIP_CITADEL = new Set([
-      ...KNOWN_PAINT_TABLE.Citadel.slice(KNOWN_PAINT_TABLE.Citadel.findIndex(r => r.startsWith("Agrax Earthshade|"))).map(r => r.split("|")[0]),
-      "Agrellan Badland", "Armageddon Dunes", "Astrogranite Debris", "Martian Ironcrust", "Nighthaunt Gloom", "Stirland Battlemire",
-      "Leadbelcher", "Retributor Armour", "Ironbreaker", "Brass Scorpion", "Stormhost Silver", "Liberator Gold", "Warplock Bronze",
-      "Canoptek Alloy", "Sycorax Bronze", "Boltgun Metal", "Chainmail", "Tin Bitz", "Mithril Silver",   // metallics with no metal word in the name
-    ].map(n => sameKey(`Citadel|${n}`)));
-    const BLEND_SKIP_NAMES = /shade|wash|\bink\b|glaze|fluo|neon|chameleon|candy|clear|pearl|primer|spray|texture|gloss|crackle|transparent|translucent/i;
-    function blendMayMix(p) {
-      return MinifolioColour.canMatch(p) && !MinifolioColour.isRoughColour(p) && !BLEND_SKIP_NAMES.test(String(p.name || ""))
-        && !BLEND_SKIP_CITADEL.has(paintKey(p)) && !NOT_A_COLOUR.has(paintKey(p));
-    }
+    // and the one mixing function). Which paints are never mixed is decided by blendMayMix, with its lists beside the not-a-colour list
+    // near the top of this file. Pure white and pure black ARE mixed (blends need them). The same colour in two brands counts once.
     // The paints that may be mixed: yours (Owned or Running low) that pass blendMayMix, one per colour. The paint itself is never one.
     function blendPool(paint) {
       const self = paintKey(paint), seen = new Set();
