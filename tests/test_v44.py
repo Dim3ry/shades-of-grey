@@ -23,6 +23,7 @@ from playwright.sync_api import sync_playwright
 import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from launch_helpers import wait_settled
 import test_v31 as t   # shared helpers and the Games Workshop word lists
 
 URL, read, shot, no_sideways = t.URL, t.read, t.shot, t.no_sideways
@@ -702,7 +703,7 @@ def main():
                 page.set_viewport_size({"width": width, "height": 844})
                 fresh(page, {"appearance": appearance})
                 main_tab(page, "recipes")
-                page.wait_for_timeout(300)   # v92 (Mo3a): the section slides in over 240 ms; its place is read once it has settled
+                wait_settled(page)   # v92 (Mo3a): the section slides in over 240 ms; its place is read once it has settled
                 box = page.evaluate("""() => { const r = document.getElementById('examples-card-recipes').getBoundingClientRect();
                     return { l: r.left, r: r.right, w: window.innerWidth }; }""")
                 check(f"{tag} Recipes: the card is inside the screen", box["l"] >= 0 and box["r"] <= box["w"] + 0.5, box)
