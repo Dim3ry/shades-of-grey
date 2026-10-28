@@ -21,6 +21,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 from dialog_watch import DialogAnswers
 
 PORT = os.environ.get("SOG_PORT", "8765")
@@ -61,6 +62,7 @@ def seed(page):
     page.evaluate("() => { localStorage.clear(); localStorage.setItem('mini-tracker-models', '[]'); }")
     page.reload()
     page.wait_for_timeout(600)
+    leave_launch(page)   # U4b: tap through the start page
 
 def top(page, text):
     return page.evaluate("t => suggestFromLabel(t).suggestions.map(s => s.brand + '|' + s.name)", text)

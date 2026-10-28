@@ -9,15 +9,20 @@ SETTINGS_PAGES = ("settings", "help", "updates")
 def is_launching(page):
     return page.evaluate("() => document.body.classList.contains('launching')")
 
+# One page.evaluate does it all: it taps the same buttons a person would (a real click event on the segment or the cog), without
+# Playwright's actionability waits, and the app switches section in the same call.
+_TAP = """() => {
+    if (typeof settings !== 'object') return null;                       // the app has not started yet
+    if (!document.body.classList.contains('launching')) return false;    // nothing to do
+    const tab = settings.tab || 'dashboard';
+    const page = ['settings', 'help', 'updates'].includes(tab);
+    document.querySelector(page ? '.cog[data-tab="settings"]' : '.tabs button[data-tab="' + tab + '"]').click();
+    if (page && tab !== 'settings') document.querySelector('#more-seg button[data-page="' + tab + '"]').click();
+    return true;
+}"""
+
 def leave_launch(page):
-    """Tap through the start page to the saved section, as a person would. Does nothing when the start page is not showing."""
-    if not is_launching(page):
-        return
-    tab = page.evaluate("() => settings.tab") or "dashboard"
-    if tab in SETTINGS_PAGES:
-        page.click('.cog[data-tab="settings"]')
-        if tab != "settings":
-            page.click(f'#more-seg button[data-page="{tab}"]')
-    else:
-        page.click(f'.tabs button[data-tab="{tab}"]')
-    page.wait_for_timeout(150)
+    """Tap through the start page to the saved section. Does nothing when the start page is not showing."""
+    if page.evaluate(_TAP) is None:
+        page.wait_for_function("() => typeof settings === 'object'")
+        page.evaluate(_TAP)

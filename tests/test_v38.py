@@ -22,6 +22,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import colorsys, os, re, subprocess, sys, time
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import wheel_helpers as wh   # v43
@@ -302,6 +303,7 @@ def main():
         check("leaving the tab and coming back keeps the page consistent (a panel is shown only with its button open, never two, never a stale one)", ok_back and page.locator(".paint-panel").count() <= 1)
         page.reload()
         page.wait_for_function("() => typeof APP_VERSION === 'string'")
+        leave_launch(page)   # U4b: tap through the start page
         open_tab(page)
         check("closing and reopening the app starts with nothing open", page.locator(".paint-panel").count() == 0 and page.evaluate("() => compendiumState.paintOpen") == "")
 

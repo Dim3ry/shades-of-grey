@@ -16,6 +16,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 from dialog_watch import DialogAnswers
 
@@ -60,6 +61,7 @@ def seed(page, units=UNITS, settings=None, fresh=False):
         if (s) localStorage.setItem('shades-of-grey-settings', JSON.stringify(s)); }""", [units, settings, fresh])
     page.reload()
     page.wait_for_timeout(300)
+    leave_launch(page)   # U4b: tap through the start page
 
 def full_settings(**extra):
     s = {"palette": "ice", "tab": "dashboard", "stages": STAGES, "doneFrom": 5}
@@ -174,13 +176,13 @@ def main():
               [u["name"] for u in back] == ["Captain", "Brutes", "Guardians", "Hormagaunts"] and
               all(u.get("example") is True for u in back[:3]) and "example" not in back[3], [u["name"] for u in back])
         check("…and the card is back", page.is_visible("#examples-card"))
-        page.reload(); page.wait_for_timeout(300)
+        page.reload(); page.wait_for_timeout(300); leave_launch(page)   # U4b: tap through the start page
         check("after a reload the examples and the card are still there",
               len(units(page)) == 4 and shown(page, "examples-card-dash"))
         tab(page, "dashboard")
         page.click("#examples-card-dash .clear-examples")
         page.wait_for_timeout(150)
-        page.reload(); page.wait_for_timeout(300)
+        page.reload(); page.wait_for_timeout(300); leave_launch(page)   # U4b: tap through the start page
         check("a clear survives a reload (and the examples don't come back)",
               [u["name"] for u in units(page)] == ["Hormagaunts"] and not page.is_visible("#examples-card-dash"))
 
@@ -195,7 +197,7 @@ def main():
         check("Undo marks them as examples again", all(u.get("example") is True for u in units(page)) and page.is_visible("#examples-card-dash"))
         page.click("#examples-card-dash .keep-examples")
         page.wait_for_timeout(150)
-        page.reload(); page.wait_for_timeout(300)
+        page.reload(); page.wait_for_timeout(300); leave_launch(page)   # U4b: tap through the start page
         check("kept examples stay unmarked after a reload (not recognised again)",
               all("example" not in u for u in units(page)) and not page.is_visible("#examples-card-dash"))
 
@@ -253,7 +255,7 @@ def main():
         page.select_option(f"{card(page, 1)} select.jump-stage", "1")   # jumping backwards works too
         page.wait_for_timeout(150)
         check("jumping backwards works too", units(page)[0]["stage"] == 1)
-        page.reload(); page.wait_for_timeout(300)
+        page.reload(); page.wait_for_timeout(300); leave_launch(page)   # U4b: tap through the start page
         check("the jumped stage survives a reload", units(page)[0]["stage"] == 1)
 
         # Each model tracked separately.
@@ -282,7 +284,7 @@ def main():
         shot(page, "v21-jump-each-model.png")
         undo(page)
         check("…Undo puts every model back where it was", units(page)[1]["stages"] == [1, 1, 2, 3])
-        page.reload(); page.wait_for_timeout(300)
+        page.reload(); page.wait_for_timeout(300); leave_launch(page)   # U4b: tap through the start page
         check("model stages survive a reload", units(page)[1]["stages"] == [1, 1, 2, 3])
 
         # Starting stage in the Add form.
@@ -302,7 +304,7 @@ def main():
         check("the new unit starts at the picked stage (Primed)", new and new[0]["stage"] == 3, new)
         check("…and its diary starts there", new and new[0]["log"] == [[new[0]["added"], 3]], new and new[0].get("log"))
         check("the Starting stage stays picked for the next unit", page.input_value("#stage-input") == "3")
-        page.reload(); page.wait_for_timeout(300)
+        page.reload(); page.wait_for_timeout(300); leave_launch(page)   # U4b: tap through the start page
         check("the new unit's stage survives a reload", [x["stage"] for x in units(page) if x["name"] == "Hive Tyrant"] == [3])
         # Fewer stages: the menu follows Settings.
         seed(page, settings=full_settings(stages=STAGES[:4], doneFrom=3))
@@ -375,7 +377,7 @@ def main():
               page.evaluate("settings.tab") == "dashboard")
         seed(page, settings=full_settings(appearance="light"), fresh=True)
         page.evaluate("localStorage.setItem('shades-of-grey-settings', JSON.stringify(Object.assign(JSON.parse(localStorage.getItem('shades-of-grey-settings')), {appearance: 'light'})))")
-        page.reload(); page.wait_for_timeout(300)
+        page.reload(); page.wait_for_timeout(300); leave_launch(page)   # U4b: tap through the start page
         check("the examples card shows in light mode too", page.is_visible("#examples-card-dash"))
         shot(page, "v21-examples-card-light.png")
         check("v21 screenshots saved", all(os.path.exists(os.path.join(SHOTS, f)) for f in [

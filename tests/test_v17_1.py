@@ -2,6 +2,7 @@
 Serve the repo folder with `python3 -m http.server 8765`, then run: python3 tests/test_v17_1.py <folder for screenshots>."""
 import os, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 import os as _os
 PORT = _os.environ.get("SOG_PORT", "8765")
 
@@ -27,6 +28,7 @@ def load(page, book):
     page.evaluate("b => { localStorage.clear(); localStorage.setItem('shades-of-grey-recipes', JSON.stringify(b)); }", book)
     page.reload()
     page.wait_for_timeout(300)
+    leave_launch(page)   # U4b: tap through the start page
 
 with sync_playwright() as pw:
     browser = pw.chromium.launch()

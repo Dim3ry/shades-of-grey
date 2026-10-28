@@ -30,6 +30,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, subprocess, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
@@ -389,6 +390,7 @@ def main():
         check("leaving only the picture drilled in (no group open) is kept too", (lambda: (tap_group(page, "green", "sea"), blur(page), page.click('nav button[data-tab="dashboard"]'), wait(page, 100), open_comp(page), state(page)["zoom"] == "green" and state(page)["group"] == "" and page.locator(".wheel-sub-seg").count() == 3)[-1])())
         page.reload()
         page.wait_for_function("() => typeof APP_VERSION === 'string'")
+        leave_launch(page)   # U4b: tap through the start page
         wait(page, 300)
         open_comp(page)
         check("after the app is closed and opened again it starts at the whole wheel (like the other Compendium picks)", state(page)["zoom"] == "" and page.locator(".wheel-sub-seg").count() == 0 and page.locator("#cmp-wheel path.wheel-seg").count() == 10)

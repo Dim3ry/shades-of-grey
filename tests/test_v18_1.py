@@ -6,6 +6,7 @@ scroll on a 360px phone, and no page errors.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 
 PORT = os.environ.get("SOG_PORT", "8765")
 URL = f"http://localhost:{PORT}/index.html"
@@ -21,6 +22,7 @@ def start(page):
     page.evaluate("localStorage.clear(); localStorage.setItem('mini-tracker-models', '[]')")
     page.reload()
     page.wait_for_timeout(300)
+    leave_launch(page)   # U4b: tap through the start page
 
 def main():
     readme = open(os.path.join(HERE, "..", "README.md"), encoding="utf-8").read()
