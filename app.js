@@ -3773,11 +3773,81 @@
       root.setProperty("--ring-cy", Math.round(top + room / 2) + "px");
     }
     function enterLaunch() {
+      const move = launchMoveStart("bar");
       launching = true;
       document.body.classList.add("launching");
       tabButtons.forEach(b => b.removeAttribute("aria-current"));   // nothing is chosen yet
       window.scrollTo(0, 0);
       fitLaunch();
+      launchMoveRun(move);
+    }
+
+    // Mo3b: THE START CIRCLE TURNING INTO THE MENU BAR (and back). It is one bar and one Mentor button, so the real Mentor button glides
+    // (measured before and after, then slid from the old place to the new one); the segments rise or shrink in; and a picture of the old
+    // shape (a copy of the segments, inert, hidden from screen readers) shrinks and fades on top. Only the look moves: the app is already in
+    // its new state, and when the move ends (or another starts, or the setting says no motion) everything is put away and nothing keeps a
+    // resting transform. Whichever segment was chosen is lit with a quick fill change.
+    let launchEnd = null;
+    let launchMotionReady = false;   // set once the app has opened: the first showTab / enterLaunch of a page load never move
+    function endLaunchMove() { if (launchEnd) { const done = launchEnd; launchEnd = null; done(); } }
+    const arcEl = document.querySelector(".tabs .arc");
+    const orbEl = document.getElementById("mentor-button");
+    function orbBox() {
+      const r = orbEl.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, scale: arcEl.getBoundingClientRect().width / arcEl.offsetWidth };
+    }
+    // Call BEFORE the state changes. from: "ring" (the circle is showing, so it fades away) or "bar" (the bar is showing).
+    function launchMoveStart(from) {
+      endLaunchMove();
+      if (!launchMotionReady || !canMove()) return null;
+      const first = orbBox();
+      if (!first.w) return null;   // the bar is not drawn (keyboard open): nothing to move
+      const ghost = document.createElement("div");
+      ghost.className = from === "ring" ? "mo-ring" : "tabs mo-ghost";
+      const copy = arcEl.cloneNode(true);
+      copy.querySelector(".mentor-orb").remove();
+      copy.querySelectorAll("[id]").forEach(e => e.removeAttribute("id"));
+      ghost.appendChild(copy);
+      ghost.inert = true;
+      ghost.setAttribute("aria-hidden", "true");
+      document.documentElement.appendChild(ghost);   // outside <body>, so the start page's own rules cannot reach it
+      const litBefore = {};
+      arcEl.querySelectorAll("[data-tab]").forEach(b => { litBefore[b.dataset.tab] = getComputedStyle(b).backgroundColor; });
+      return { from, first, ghost, copy, litBefore };
+    }
+    // Call AFTER the state has changed (and the new bar or circle is drawn).
+    function launchMoveRun(move) {
+      if (!move) return;
+      const { from, first, ghost, copy, litBefore } = move;
+      const last = orbBox();
+      if (!last.w) { ghost.remove(); return; }
+      const ms = motionMs("--motion-slow");
+      const timing = { duration: ms, easing: "linear" };
+      const anims = [];
+      const slide = (frames) => ({ ...timing, ...frames });
+      // the real Mentor button: from where it was to where it is (centres and size measured on screen, then put into the bar's own scale)
+      const dx = (first.x - last.x) / last.scale, dy = (first.y - last.y) / last.scale;
+      anims.push(orbEl.animate([{ transform: `translate(${dx}px, ${dy}px) scale(${first.w / last.w})` }, { transform: "none" }], timing));
+      // the old shape: the circle shrinks and fades back, or the bar sinks and fades (see-through by half way)
+      const fade = (el, shape) => anims.push(el.animate([{ ...shape[0], opacity: 1 }, { opacity: 0, offset: 0.5 }, { ...shape[1], opacity: 0 }], timing));
+      if (from === "ring") {
+        const t = getComputedStyle(copy).transform;
+        fade(copy, [{ transform: t }, { transform: `scale(0.55) ${t}` }]);
+      } else {
+        copy.querySelectorAll("[data-tab]").forEach(b => fade(b, [{ transform: "none" }, { transform: "translateY(60px)" }]));
+      }
+      // the real segments: the bar rises from below, or the circle grows out from its centre
+      arcEl.querySelectorAll("[data-tab]").forEach(b => {
+        const hide = from === "ring" ? { transform: "translateY(60px)" } : { transform: "scale(0.55)", transformOrigin: `${arcEl.offsetWidth / 2 - b.offsetLeft}px ${arcEl.offsetHeight / 2 - b.offsetTop}px` };
+        anims.push(b.animate([{ ...hide, opacity: 0 }, { opacity: 1, offset: 0.5 }, { transform: "none", opacity: 1 }], timing));
+      });
+      anims.push(document.querySelector(".tabs").animate([{ opacity: 0 }, { opacity: 1 }], { duration: motionMs("--motion-med"), easing: "linear", pseudoElement: "::before" }));
+      // the chosen section: a quick fill change from the circle's colour to the lit colour
+      const lit = arcEl.querySelector('[data-tab][aria-current="page"]');
+      if (lit) anims.push(lit.animate([{ backgroundColor: litBefore[lit.dataset.tab] }, { backgroundColor: getComputedStyle(lit).backgroundColor }], { duration: motionMs("--motion-med"), easing: "linear" }));
+      const done = () => { anims.forEach(a => a.cancel()); ghost.remove(); };
+      launchEnd = done;
+      anims[0].onfinish = () => { if (launchEnd === done) endLaunchMove(); };
     }
     window.addEventListener("resize", fitLaunch);
     window.addEventListener("load", fitLaunch);   // fonts may change the header height
@@ -3827,6 +3897,7 @@
       const move = canMove() && BAR_ORDER.includes(name) && before !== name && (before === null || BAR_ORDER.includes(before)) ? (how === "slide" && before ? "slide" : "fade") : "";
       const snap = move === "slide" ? moveSnap(document.querySelector("main"), views[before]) : null;
       if (move !== "slide" && before !== name) endMove();
+      const leaving = launching ? launchMoveStart("ring") : (endLaunchMove(), null);
       if (launching) { launching = false; document.body.classList.remove("launching"); }
       if (name !== "units" && selectMode) closeSelect();   // v21.1: leaving Units ends select mode
       for (const [key, view] of Object.entries(views)) view.classList.toggle("hidden", key !== name);
@@ -3843,6 +3914,7 @@
         if (b.dataset.tab === mainTab) b.setAttribute("aria-current", "page");
         else b.removeAttribute("aria-current");
       });
+      launchMoveRun(leaving);
       moreSeg.classList.toggle("hidden", !MORE_PAGES.includes(name));
       moreSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.page === name)));
       settings.tab = name;
@@ -17293,6 +17365,7 @@
     const linkedTab = decodeURIComponent(location.hash.slice(1));
     if (Object.prototype.hasOwnProperty.call(views, linkedTab)) showTab(linkedTab);
     else { showTab(settings.tab); enterLaunch(); }
+    launchMotionReady = true;
     if (upgradedStages) showToast("Stages updated: Parade ready added as the final stage", null, null, 8);
     else if (settingsUnreadable) showToast("Your settings couldn't be read, so they were reset. Your units kept their stages, and a copy of the old settings was kept.", null, null, 10);
 
