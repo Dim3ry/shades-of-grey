@@ -7094,10 +7094,16 @@
         let bottom = window.innerHeight - gap;
         for (const el of [document.querySelector(".tabs"), toast]) {
           if (!el || el.classList.contains("hidden")) continue;
+          el.style.animation = "none";   // Mo1: its resting place, not where its slide-in has it for this frame
           const r = el.getBoundingClientRect();
+          el.style.animation = "";
           if (r.height && r.top > window.innerHeight / 2) bottom = Math.min(bottom, r.top - gap);   // only bars along the bottom
         }
+        // Mo1: measure where the card really sits, not where the drop-in has moved it to for this frame.
+        const dropping = card.classList.contains("just-dropped");
+        card.classList.remove("just-dropped");
         const box = card.getBoundingClientRect();
+        if (dropping) card.classList.add("just-dropped");
         let by = 0;
         if (box.bottom > bottom) by = box.bottom - bottom;     // below the clear area: scroll down
         if (box.top - by < gap) by = box.top - gap;            // taller than the gap, or above: show its top
