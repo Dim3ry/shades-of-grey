@@ -8,6 +8,7 @@ Checks: 899 px unchanged (recipe page still 780 max), 900 / 1280 / 1920 as desig
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
@@ -30,6 +31,7 @@ def set_up(page, appearance):
         localStorage.setItem('shades-of-grey-settings', JSON.stringify(st)); }""", [SCHEMES, appearance])
     page.reload()
     page.wait_for_timeout(400)
+    leave_launch(page)   # U4b: tap through the start page
 
 def widths(page):
     return page.evaluate("""() => { const w = s => document.querySelector(s).getBoundingClientRect().width;
@@ -95,7 +97,7 @@ def main():
             check(f"{appearance} 1280: back from the editor, the recipe fills the width again", w["page"] > 1000, w)
 
             print(f"\n--- {appearance}: list pages and the unit pane ---")
-            page.reload(); page.wait_for_timeout(400)
+            page.reload(); page.wait_for_timeout(400); leave_launch(page)   # U4b: tap through the start page
             page.click('nav button[data-tab="recipes"]')
             page.click('#recipe-seg [data-view="schemes"]')
             for width in (1280, 1920):

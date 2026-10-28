@@ -11,6 +11,7 @@ New behaviour only:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, sys, json
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
@@ -92,6 +93,7 @@ def main():
         page.reload()
         page.wait_for_function("() => typeof renderShopPanel === 'function'")
         page.wait_for_timeout(400)
+        leave_launch(page)   # U4b: tap through the start page
         page.evaluate("() => openRecipe(book.recipes.find(r => r.example === true).id)")
         page.wait_for_timeout(300)
         idle = page.locator("#recipe-page .shop-idle-button")
@@ -192,6 +194,7 @@ def main():
         page.reload()
         page.wait_for_function("() => typeof renderShopPanel === 'function'")
         page.wait_for_timeout(300)
+        leave_launch(page)   # U4b: tap through the start page
         check("the history is still there after reopening the app", page.evaluate("boughtItems().length") == 1)
 
         print("\n--- 6. Phone sizes, dark and light ---")

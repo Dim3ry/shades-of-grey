@@ -23,6 +23,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys, urllib.parse
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v27 as s27   # the shared minifolio.app routing and counter helpers
@@ -62,6 +63,7 @@ def fresh(page, settings=None, units=None, photos=None):
     page.goto(URL)
     page.wait_for_function("() => typeof APP_VERSION === 'string'")
     page.wait_for_timeout(400)
+    leave_launch(page)   # U4b: tap through the start page
     if photos:
         page.evaluate("""async (ids) => { for (const id of ids) { const b = new Blob(['photo-' + id], { type: 'image/jpeg' });
             await putPhoto({ id, full: b, thumb: b }); } }""", photos)
@@ -69,6 +71,7 @@ def fresh(page, settings=None, units=None, photos=None):
         page.goto(URL)
         page.wait_for_function("() => typeof APP_VERSION === 'string'")
         page.wait_for_timeout(400)
+        leave_launch(page)   # U4b: tap through the start page
 
 def tab(page, name):
     page.evaluate("() => document.activeElement && document.activeElement.blur()")

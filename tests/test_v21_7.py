@@ -19,6 +19,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 
 PORT = os.environ.get("SOG_PORT", "8765")
@@ -78,6 +79,7 @@ def start(page, units=UNITS, book=BOOK, settings=None):
     page.goto(URL)
     page.wait_for_function("() => typeof APP_VERSION === 'string'")
     page.wait_for_timeout(300)
+    leave_launch(page)   # U4b: tap through the start page
 
 def tab(page, name):
     if name in ("help", "updates"):   # v21.9: these are sub-tabs of Settings now

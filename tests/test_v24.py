@@ -21,6 +21,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}/"
@@ -64,6 +65,7 @@ def fresh(page, settings=None):
     page.reload()
     page.wait_for_function("() => typeof APP_VERSION === 'string'")
     page.wait_for_timeout(300)
+    leave_launch(page)   # U4b: tap through the start page
 
 def existing(page, units, book=None, settings=None):
     """Someone who has used the app before: units saved (and maybe recipes and settings)."""
@@ -77,6 +79,7 @@ def existing(page, units, book=None, settings=None):
     page.reload()
     page.wait_for_function("() => typeof APP_VERSION === 'string'")
     page.wait_for_timeout(300)
+    leave_launch(page)   # U4b: tap through the start page
 
 def main_tab(page, name):
     page.click(f'nav button[data-tab="{name}"]')
@@ -227,6 +230,7 @@ def main():
         page.reload()
         page.wait_for_function("() => typeof APP_VERSION === 'string'")
         page.wait_for_timeout(300)
+        leave_launch(page)   # U4b: tap through the start page
         check("no units saved but recipes are: their recipes are left exactly as they were",
               page.evaluate("() => book.recipes.map(r => r.name)") == ["My black"] and page.evaluate("() => book.paints.length") == 1)
         empty_book = {"parts": ["Whole model"], "techniques": ["Layer"], "paints": [], "recipes": [], "schemes": [], "shorthand": {}, "v15": True}
@@ -235,6 +239,7 @@ def main():
         page.reload()
         page.wait_for_function("() => typeof APP_VERSION === 'string'")
         page.wait_for_timeout(300)
+        leave_launch(page)   # U4b: tap through the start page
         check("an empty recipe book that was saved is not a new start: no examples",
               page.evaluate("() => book.recipes.length + book.paints.length") == 0)
         fresh(page)
@@ -244,12 +249,14 @@ def main():
         page.reload()
         page.wait_for_function("() => typeof APP_VERSION === 'string'")
         page.wait_for_timeout(300)
+        leave_launch(page)   # U4b: tap through the start page
         check("after Clear and a reload the examples do not come back",
               page.evaluate("() => book.recipes.length + book.paints.length") == 0)
         page.evaluate("() => localStorage.removeItem('mini-tracker-models')")
         page.reload()
         page.wait_for_function("() => typeof APP_VERSION === 'string'")
         page.wait_for_timeout(300)
+        leave_launch(page)   # U4b: tap through the start page
         check("even if the units list is emptied from storage, cleared examples are not given again",
               page.evaluate("() => book.recipes.length + book.paints.length") == 0)
 
@@ -281,6 +288,7 @@ def main():
         page.reload()
         page.wait_for_function("() => typeof APP_VERSION === 'string'")
         page.wait_for_timeout(300)
+        leave_launch(page)   # U4b: tap through the start page
         check("after a reload the examples are still gone", page.evaluate("() => book.recipes.length + book.paints.length") == 0)
         # Undo when a new recipe has taken a cleared one's number in the meantime.
         fresh(page)
@@ -312,6 +320,7 @@ def main():
         page.reload()
         page.wait_for_function("() => typeof APP_VERSION === 'string'")
         page.wait_for_timeout(300)
+        leave_launch(page)   # U4b: tap through the start page
         check("Keep them sticks after a reload (not given again, not marked again)",
               page.evaluate("() => book.recipes.length") == 5 and page.evaluate("() => book.recipes.every(r => !('example' in r))"))
         fresh(page)

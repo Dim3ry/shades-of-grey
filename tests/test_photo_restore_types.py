@@ -14,6 +14,7 @@ Checks (using the app's own importPhotoFiles, in a real browser):
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 
 PORT = os.environ.get("SOG_PORT", "8765")
 URL = f"http://localhost:{PORT}/index.html"
@@ -43,6 +44,7 @@ def main():
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.goto(URL)
         page.wait_for_function("() => typeof APP_VERSION === 'string' && typeof importPhotoFiles === 'function'")
+        leave_launch(page)   # U4b: tap through the start page
 
         files = {
             "t-jpeg": {"full": FAKE_JPEG, "thumb": FAKE_JPEG},

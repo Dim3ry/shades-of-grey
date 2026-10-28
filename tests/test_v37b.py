@@ -25,6 +25,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import colorsys, hashlib, os, re, subprocess, sys, unicodedata
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import wheel_helpers as wh   # v43
@@ -522,6 +523,7 @@ def main():
         page.reload()
         page.wait_for_function("() => typeof APP_VERSION === 'string'")
         page.wait_for_timeout(300)
+        leave_launch(page)   # U4b: tap through the start page
         open_tab(page)
         fold(page, "detail", True)
         check("after the app is closed and opened again the search is empty", page.input_value("#cmp-detail-search") == "")

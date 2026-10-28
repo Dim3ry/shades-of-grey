@@ -17,6 +17,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import leave_launch
 from dialog_watch import DialogAnswers
 
 PORT = os.environ.get("SOG_PORT", "8765")
@@ -65,6 +66,7 @@ def seed(page, settings=None, units=UNITS, book=BOOK):
         if (s) localStorage.setItem('shades-of-grey-settings', JSON.stringify(s)); }""", [units, book, settings])
     page.reload()
     page.wait_for_timeout(300)
+    leave_launch(page)   # U4b: tap through the start page
 
 def full_settings(**extra):
     s = {"palette": "ice", "tab": "dashboard", "stages": STAGES, "doneFrom": 5, "factionColours": FACTIONS}
@@ -162,7 +164,7 @@ def main():
             seed(page, full_settings())
             page.emulate_media(color_scheme="dark")
             choose(page, choice)
-            page.reload(); page.wait_for_timeout(300)
+            page.reload(); page.wait_for_timeout(300); leave_launch(page)   # U4b: tap through the start page
             tab(page, "settings")
             check(f"'{choice}' survives a reload", saved(page).get("appearance") == choice and pressed(page) == [choice]
                   and mark(page) == want, (saved(page).get("appearance"), pressed(page), mark(page)))
@@ -171,7 +173,7 @@ def main():
         page.add_init_script("""document.addEventListener('readystatechange', () => {
             if (document.readyState === 'interactive' && window.__early === undefined)
               window.__early = document.documentElement.dataset.appearance || ''; });""")
-        page.reload(); page.wait_for_timeout(300)
+        page.reload(); page.wait_for_timeout(300); leave_launch(page)   # U4b: tap through the start page
         check("light is set before the page is first drawn (no dark flash)",
               page.evaluate("window.__early") == "light" or "document.documentElement.dataset.appearance = \"light\"" in html.split("<style>")[0],
               page.evaluate("window.__early"))
