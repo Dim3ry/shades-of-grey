@@ -10,6 +10,7 @@ New behaviour only:
 6. 390, 360 and 320 px, dark and light, and short screens: the circle fits, no sideways scroll, tap areas 44 px or more, no motion."""
 import os, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import wait_settled
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
@@ -182,7 +183,7 @@ def main():
         check("1280 px wide: full size and centred", abs(o[2] - 124) < 1 and abs(cx - 640) < 1)
         start(page)
         page.click(seg("dashboard"))
-        page.wait_for_timeout(150)
+        wait_settled(page)   # v93 (Mo3b): the circle now takes half a second to turn into the bar; measure once it has settled
         check("after going in, the bar is back to the curved band along the bottom (Mentor button 100 px, near the bottom)",
               abs(box(page, "#mentor-button")[2] - 100) < 1 and box(page, "#mentor-button")[1] > 844 - 200)
         check("help says how the start page works", "start page" in page.evaluate("() => document.getElementById('help-tabs').textContent"))
