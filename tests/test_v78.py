@@ -53,10 +53,12 @@ def main():
             for width in (360, 390, 899):
                 page.set_viewport_size({"width": width, "height": 900})
                 open_recipe(page, "Blue armour")
+                page.wait_for_timeout(300)   # v92 (Mo3a): below 900 px the list steps back over 240 ms; once done only the detail is showing
                 s = state(page)
                 check(f"{scheme} {width}: recipe fills the screen, list hidden", s["pageShown"] and not s["homeShown"], s)
                 check(f"{scheme} {width}: no sideways scroll", no_sideways(page))
                 page.click("#recipe-page >> text=All recipes")
+                page.wait_for_timeout(300)   # v92 (Mo3a): the detail slides away over 240 ms
                 check(f"{scheme} {width}: Back shows the list again", state(page)["homeShown"] and not state(page)["pageShown"])
 
         print("\n--- 2. 900 px and wider: side by side ---")

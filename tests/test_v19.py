@@ -151,6 +151,7 @@ def main():
         page.wait_for_timeout(100)
         check("a recipe is open", page.is_visible("#recipe-page"))
         back(page)
+        page.wait_for_timeout(300)   # v92 (Mo3a): the detail slides away over 240 ms; the list is the only thing showing once that is done
         check("Back closes the recipe and shows the recipe list", not page.is_visible("#recipe-page") and page.is_visible("#recipe-list"))
         check("…still on Recipes", current_tab(page) == "recipes")
         back(page)

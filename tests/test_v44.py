@@ -702,6 +702,7 @@ def main():
                 page.set_viewport_size({"width": width, "height": 844})
                 fresh(page, {"appearance": appearance})
                 main_tab(page, "recipes")
+                page.wait_for_timeout(300)   # v92 (Mo3a): the section slides in over 240 ms; its place is read once it has settled
                 box = page.evaluate("""() => { const r = document.getElementById('examples-card-recipes').getBoundingClientRect();
                     return { l: r.left, r: r.right, w: window.innerWidth }; }""")
                 check(f"{tag} Recipes: the card is inside the screen", box["l"] >= 0 and box["r"] <= box["w"] + 0.5, box)

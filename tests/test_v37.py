@@ -545,7 +545,7 @@ def main():
         for tab, view in [("dashboard", "view-dashboard"), ("units", "view-units"), ("recipes", "view-recipes"), ("settings", "view-settings"), ("compendium", "view-compendium")]:
             blur(page)
             page.click(f'nav button[data-tab="{tab}"]')
-            page.wait_for_timeout(120)
+            page.wait_for_timeout(300)   # v92 (Mo3a): the old section slides out over 240 ms; only the new one is showing after that
             check(f"the {tab} tab opens its own page and hides the others", page.is_visible(f"#{view}") and sum(page.is_visible(f"#{v}") for v in ["view-dashboard", "view-units", "view-recipes", "view-settings", "view-compendium"]) == 1)
         order = page.evaluate("() => [...document.querySelectorAll('#compendium-body > :not(.compendium-split), #compendium-body .compendium-split > * > *')].flatMap(e => e.classList.contains('more-info') ? [...e.querySelectorAll('.more-info-panel > *')] : [e]).map(e => e.id).filter(Boolean)")
         check("the Compendium is: the intro, the wheel, the six folding parts (v71: Ask the Mentor first), then the footnote",
