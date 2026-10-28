@@ -102,7 +102,8 @@ def main():
               page.is_visible("#shop-panel") and not page.is_visible("#paint-list") and not page.is_visible("#recipe-home")
               and page.get_attribute('#recipe-seg button[data-view="shopping"]', "aria-selected") == "true")
         page.reload(); page.wait_for_function("() => typeof APP_VERSION === 'string'"); page.wait_for_timeout(300)
-        check("after a reload the app comes back on Shopping (the choice is remembered)", page.is_visible("#shop-panel"))
+        t.leave_launch(page)   # U4b (v89): a reload shows the start page; tapping Painting goes back in to the remembered Shopping part
+        check("after a reload and a tap on Painting the app comes back on Shopping (the choice is remembered)", page.is_visible("#shop-panel"))
 
         # ---------- 3. What is on the list ----------
         print("\n--- 3. What is on the list ---")

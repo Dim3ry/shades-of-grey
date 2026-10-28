@@ -20,6 +20,8 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, struct, sys, zlib
 from playwright.sync_api import sync_playwright
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from launch_helpers import leave_launch
 from dialog_watch import DialogAnswers
 
 PORT = os.environ.get("SOG_PORT", "8765")
@@ -86,6 +88,7 @@ def seed(page, units=UNITS, settings=None):
         if (s) localStorage.setItem('shades-of-grey-settings', JSON.stringify(s)); }""", [units, settings])
     page.reload()
     page.wait_for_timeout(300)
+    leave_launch(page)   # U4b (v89): a fresh load shows the start page; tap through to the saved section, as before
 
 def full_settings(**extra):
     s = {"palette": "ice", "tab": "dashboard", "stages": STAGES, "doneFrom": 5}
@@ -230,6 +233,7 @@ def main():
         context.set_offline(True)
         page.reload()
         page.wait_for_timeout(800)
+        leave_launch(page)   # U4b (v89): a reload shows the start page; tap through to the saved section, as before
         check("with the internet off, the app reloads", page.evaluate("typeof APP_VERSION") == "string")
         check("…shows the Dashboard", page.is_visible("#view-dashboard"))
         tab(page, "units")

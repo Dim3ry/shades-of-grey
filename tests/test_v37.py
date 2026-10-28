@@ -201,6 +201,7 @@ def main():
         page.reload()
         page.wait_for_function("() => typeof APP_VERSION === 'string'")
         page.wait_for_timeout(300)
+        t.leave_launch(page)   # U4b (v89): a reload shows the start page; tap Compendium to go back in
         check("after the app is closed and opened again (a reload) everything starts closed again", page.is_visible("#view-compendium") and all(not is_open(page, k) for k in KEYS))
         load(page, paints=PAINTS, recipes=RECIPES, units=UNITS)
         open_tab(page)

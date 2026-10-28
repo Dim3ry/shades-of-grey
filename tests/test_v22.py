@@ -20,6 +20,8 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from launch_helpers import leave_launch
 import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 
 PORT = os.environ.get("SOG_PORT", "8765")
@@ -66,6 +68,7 @@ def seed(page, units=UNITS, settings=None):
     page.reload()
     page.wait_for_function("() => typeof APP_VERSION === 'string'")
     page.wait_for_timeout(300)
+    leave_launch(page)   # U4b (v89): a fresh load shows the start page; tap through to the saved section, as before
 
 def main_tab(page, name):
     page.click(f'nav button[data-tab="{name}"]')
@@ -315,6 +318,7 @@ def main():
               saved_settings(page).get("tab") == "settings")
         page.reload()
         page.wait_for_function("() => typeof APP_VERSION === 'string'")
+        leave_launch(page)   # U4b (v89): a fresh load shows the start page; tap through to the saved section, as before
         check("after a reload the Settings page opens with the Backups card first",
               page.evaluate("() => document.querySelector('#view-settings > .card').id") == "backup-card" and page.evaluate("() => settings.tab") == "settings")
         for name in ["updates", "help", "settings"]:

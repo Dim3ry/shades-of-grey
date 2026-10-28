@@ -43,7 +43,7 @@ def shown_sections(page):
 
 def start(page, w=390, h=844, settings=None, units=True):
     page.set_viewport_size({"width": w, "height": h})
-    load(page, paints=[PAINT], units=[UNIT] if units else None, settings=dict({"examplesChecked": True}, **(settings or {})))
+    load(page, paints=[PAINT], units=[UNIT] if units else None, settings=dict({"examplesChecked": True}, **(settings or {})), launch=True)
 
 def circle(page):
     """The circle's centre and size as drawn: the Mentor button's centre, and the four segments' boxes."""
@@ -141,19 +141,19 @@ def main():
         check("...with the typed text and the scroll position as they were", page.input_value("#name-input") == "Still here" and abs(page.evaluate("() => window.scrollY") - y0) < 2,
               (page.evaluate("() => window.scrollY"), y0))
         page.reload()
-        page.wait_for_function("() => typeof APP_VERSION === 'string'")
+        page.wait_for_function("() => typeof settings === 'object'")
         page.wait_for_timeout(300)
         check("a real reload shows the circle again", launching(page) and shown_sections(page) == [])
 
         print("\n--- 5. A link that names a section ---")
         page.goto("about:blank")
         page.goto(t.URL + "#units")
-        page.wait_for_function("() => typeof APP_VERSION === 'string'")
+        page.wait_for_function("() => typeof settings === 'object'")
         page.wait_for_timeout(300)
         check("#units opens Models straight away", not launching(page) and shown_sections(page) == ["view-units"])
         page.goto("about:blank")
         page.goto(t.URL + "#toString")
-        page.wait_for_function("() => typeof APP_VERSION === 'string'")
+        page.wait_for_function("() => typeof settings === 'object'")
         page.wait_for_timeout(300)
         check("a hash that names nothing known shows the launch page", launching(page))
 

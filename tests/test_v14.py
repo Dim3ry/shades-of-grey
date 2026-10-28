@@ -5,6 +5,7 @@ from playwright.sync_api import sync_playwright
 import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 from dialog_watch import DialogAnswers
 from notice_watch import attach_notices
+from launch_helpers import leave_launch
 import os as _os
 PORT = _os.environ.get("SOG_PORT", "8765")
 
@@ -72,6 +73,7 @@ def run(viewport, label):
                           [data, settings, extra])
             page.goto(URL)
             page.wait_for_timeout(300)
+            leave_launch(page)   # U4b (v89): a fresh load shows the start page; tap through to the saved section, as before
 
         def stored(key="mini-tracker-models"):
             return page.evaluate("k => JSON.parse(localStorage.getItem(k) || 'null')", key)
@@ -121,6 +123,7 @@ def run(viewport, label):
           u[0].photos = [{ id: 'p1', stage: 3, date: '2026-10-01' }, { id: 'p2', stage: 5 }];
           localStorage.setItem('mini-tracker-models', JSON.stringify(u)); }""")
         page.reload(); page.wait_for_timeout(400)
+        leave_launch(page)   # U4b (v89): a reload shows the start page; tap through to the saved section, as before
         dialogs.clear()
         page.evaluate("() => { draft.splice(1, 1); renderStageEditor(); }")   # remove "Part assembled"
         page.click("#save-stages")
@@ -317,6 +320,7 @@ def run(viewport, label):
         ip = ictx.new_page()
         ip.on("pageerror", lambda e: errors.append(f"{label} iphone pageerror: {e}"))
         ip.goto(URL); ip.wait_for_timeout(300)
+        leave_launch(ip)   # U4b (v89): a fresh load shows the start page; tap through to the saved section, as before
         check(f"{label} 9d iPhone in Safari sees the Home Screen card", ip.is_visible("#iphone-warning"))
         ip.screenshot(path=f"{SHOTS}/{label}-iphone.png")
         ip.click("#iphone-warning-ok")

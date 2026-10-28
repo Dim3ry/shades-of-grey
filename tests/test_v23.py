@@ -19,6 +19,8 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from launch_helpers import leave_launch
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}/"
@@ -69,6 +71,7 @@ def seed(page, units=UNITS, settings=None):
     page.reload()
     page.wait_for_function("() => typeof APP_VERSION === 'string'")
     page.wait_for_timeout(300)
+    leave_launch(page)   # U4b (v89): a fresh load shows the start page; tap through to the saved section, as before
 
 def main_tab(page, name):
     page.click(f'nav button[data-tab="{name}"]')

@@ -191,7 +191,11 @@ def main():
         page.reload()
         page.wait_for_function("() => typeof APP_VERSION === 'string'")
         page.wait_for_timeout(300)
-        check("reloading the app on the Compendium opens it again (the page you were on is remembered)", page.is_visible("#view-compendium"))
+        # U4b (v89): a reload shows the start page; the Compendium is one tap away.
+        check("reloading the app shows the start page, and tapping Compendium opens it", page.evaluate("() => document.body.classList.contains('launching')") and not page.is_visible("#view-compendium"))
+        page.click('nav button[data-tab="compendium"]')
+        page.wait_for_timeout(150)
+        check("...Compendium opens from the start page", page.is_visible("#view-compendium"))
         check("Back from the Compendium goes to the Dashboard", page.evaluate("() => typeof backTarget() === 'function'"))
         page.set_viewport_size({"width": 1100, "height": 800})
         frames(page)

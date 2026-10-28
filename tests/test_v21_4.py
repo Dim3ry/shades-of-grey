@@ -24,6 +24,8 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, re, socket, subprocess, sys, time
 from playwright.sync_api import sync_playwright
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from launch_helpers import leave_launch
 from dialog_watch import DialogAnswers
 
 PORT = os.environ.get("SOG_PORT", "8765")
@@ -65,6 +67,7 @@ def seed(page, units=UNITS, settings=None, url=URL):
         if (s) localStorage.setItem('shades-of-grey-settings', JSON.stringify(s)); }""", [units, settings])
     page.reload()
     page.wait_for_timeout(300)
+    leave_launch(page)   # U4b (v89): a fresh load shows the start page; tap through to the saved section, as before
 
 def full_settings(**extra):
     s = {"palette": "ice", "tab": "dashboard", "stages": STAGES, "doneFrom": 5}
@@ -285,6 +288,7 @@ def main():
             page.close()
             page = reopen()
             check("with the server switched off, the app opens", page.evaluate("typeof APP_VERSION") == "string")
+            leave_launch(page)   # U4b (v89): a fresh load shows the start page; tap through to the saved section, as before
             check("…shows the Dashboard", page.is_visible("#view-dashboard"))
             tab(page, "units")
             check("…and the units are there", page.locator("#view-units li.unit").count() == 2)
