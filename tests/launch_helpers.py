@@ -26,3 +26,13 @@ def leave_launch(page):
     if page.evaluate(_TAP) is None:
         page.wait_for_function("() => typeof settings === 'object'")
         page.evaluate(_TAP)
+
+
+# v92 (Mo3a): moving between screens takes 240 ms, and while it moves the old section is still drawn on top. Tests that look at a
+# section right after a tap wait for the real end of the move (no layer left and no animation on any section), which is as soon
+# as it has settled however slow the machine is, instead of a fixed delay.
+_SETTLED = """() => !document.querySelector('.mo-out, .mo-box')
+    && [...document.querySelectorAll('main > section, #recipe-home, #recipe-page')].every(e => e.getAnimations().length === 0)"""
+
+def wait_settled(page, timeout=15000):
+    page.wait_for_function(_SETTLED, timeout=timeout)
