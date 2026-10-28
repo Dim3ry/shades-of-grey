@@ -4599,6 +4599,18 @@
     const selectAllButton = document.getElementById("select-all");
     const selectMoveSlot = document.getElementById("select-move-slot");
 
+    // M2: Detailed / Simple model rows. One saved choice for every card (settings.modelRows, default Detailed).
+    const modelRowsSwitch = document.getElementById("model-rows-switch");
+    modelRowsSwitch.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-rows]");
+      if (!button) return;
+      settings.modelRows = button.dataset.rows === "simple" ? "simple" : "detailed";
+      saveSettings();
+      render();
+      const again = modelRowsSwitch.querySelector(`button[data-rows="${settings.modelRows}"]`);
+      if (again) again.focus();
+    });
+
     // Which units have their details panel open. Not saved.
     const openIds = new Set();
     const unitSplit = document.getElementById("unit-split");   // v79
@@ -4719,6 +4731,9 @@
 
     let unitStagesOpen = false;   // v49: "Pick by stage" on the Units filters (kept while the app is open)
     function renderUnits() {
+      // M2: the Detailed / Simple switch for model rows shows only while some unit is tracked model by model.
+      modelRowsSwitch.classList.toggle("hidden", !models.some(m => m.each));
+      for (const b of modelRowsSwitch.querySelectorAll("button")) b.setAttribute("aria-pressed", String((b.dataset.rows === "simple") === rowsSimple()));
       // Dropdowns: the faction list only shows factions from the chosen game.
       const games = uniqueSorted(models.map(m => m.hobby));
       if (!games.includes(filters.hobby)) filters.hobby = "";
@@ -5128,6 +5143,159 @@
       return box;
     }
 
+    // ----- M2: the model rows of a unit tracked model by model -----
+    // Each row: name (and, in the Detailed view, when it reached its stage), then back, the stage name with a thin bar,
+    // up. Units of more than EACH_GROUP_OVER models list their rows grouped by stage instead; which groups are open is
+    // kept per unit for this visit only (not saved). The Detailed / Simple choice is the saved setting modelRows.
+    const EACH_GROUP_OVER = 8;
+    const groupOpen = new Map();   // unit id -> Set of stage numbers whose group is open
+    const rowsSimple = () => settings.modelRows === "simple";
+
+    function openGroups(model) {
+      let open = groupOpen.get(model.id);
+      if (!open) { open = new Set(); groupOpen.set(model.id, open); }
+      // Nothing open (first look, or after Move all / Undo): open the furthest-behind group.
+      if (![...open].some(st => model.stages.includes(st))) { open.clear(); open.add(Math.min(...model.stages)); }
+      return open;
+    }
+
+    // Keep keyboard focus on the button that was tapped. Once it has no move left, the row's other button gets it.
+    function focusRowButton(id, index, dir) {
+      const find = (d) => document.querySelector(`[data-each-row="${id}:${index}"][data-dir="${d}"]:not(:disabled)`);
+      const button = find(dir > 0 ? "up" : "back") || find(dir > 0 ? "back" : "up");
+      if (button) button.focus();
+    }
+
+    // One model one stage up (+1) or back (-1), with Undo. Both the group it leaves and the one it lands in stay open,
+    // so the model never seems to vanish.
+    function moveEachModel(model, index, dir) {
+      const to = model.stages[index] + dir;
+      if (to < 0 || to >= STAGES.length) return;
+      const open = openGroups(model);
+      open.add(model.stages[index]);
+      open.add(to);
+      jumpToStage(model.id, to, index);
+      focusRowButton(model.id, index, dir);
+    }
+
+    function buildEachRow(model, index, simple) {
+      const st = model.stages[index];
+      const top = STAGES.length - 1;
+      const who = `Model ${index + 1}`;
+      const row = document.createElement("li");
+      row.className = simple ? "each-row simple" : "each-row";
+      row.style.setProperty("--stage-colour", `var(--stage-${st})`);
+
+      const name = document.createElement("span");
+      name.className = "each-name";
+      const label = document.createElement("span");
+      label.className = "each-label";
+      label.textContent = who;
+      name.appendChild(label);
+      // v21.8: when this model reached its stage ("Today", "Yesterday", "Since 7 Oct"), from the unit's diary.
+      // Left out when the diary can't say. The Simple view has no date line.
+      const since = simple ? null : modelSince(model, index);
+      if (since) {
+        const when = document.createElement("small");
+        when.className = "each-since";
+        when.textContent = sinceWording(since);
+        when.title = `${who} reached ${STAGES[st]} on ${shortDate(since)}`;
+        name.appendChild(when);
+      }
+
+      const back = document.createElement("button");
+      back.type = "button";
+      back.className = "each-back";
+      back.disabled = st <= 0;
+      back.dataset.eachRow = `${model.id}:${index}`;
+      back.dataset.dir = "back";
+      back.setAttribute("aria-label", st <= 0 ? `${who} is at the first stage` : `${who}, back to ${STAGES[st - 1]}`);
+      back.appendChild(chevron("left"));
+      back.addEventListener("click", () => moveEachModel(model, index, -1));
+
+      const mid = document.createElement("div");
+      mid.className = "each-mid";
+      const stageName = document.createElement("span");
+      stageName.className = "each-stage-name";
+      stageName.textContent = STAGES[st];
+      mid.appendChild(stageName);
+      if (!simple) {
+        const pips = document.createElement("div");
+        pips.className = "pips";
+        for (let k = 0; k <= top; k++) {
+          const pip = document.createElement("div");
+          pip.className = k <= st ? "pip filled" : "pip";
+          pips.appendChild(pip);
+        }
+        mid.appendChild(pips);
+      }
+
+      const up = document.createElement("button");
+      up.type = "button";
+      up.className = "each-up";
+      up.disabled = st >= top;
+      up.dataset.eachRow = `${model.id}:${index}`;
+      up.dataset.dir = "up";
+      up.setAttribute("aria-label", st >= top ? `${who} is at the last stage` : `${who}, up to ${STAGES[st + 1]}`);
+      up.appendChild(chevron("right"));
+      up.addEventListener("click", () => moveEachModel(model, index, +1));
+
+      const step = document.createElement("div");
+      step.className = "each-step";
+      step.append(back, mid, up);
+      row.append(name, step);
+      return row;
+    }
+
+    function buildEachRows(model) {
+      const simple = rowsSimple();
+      const list = (indexes) => {
+        const ol = document.createElement("ol");
+        ol.className = "each-list";
+        for (const i of indexes) ol.appendChild(buildEachRow(model, i, simple));
+        return ol;
+      };
+      const all = model.stages.map((st, i) => i);
+      if (model.stages.length <= EACH_GROUP_OVER) {
+        const ol = list(all);
+        ol.setAttribute("aria-label", "Each model's stage");
+        return ol;
+      }
+      // A long unit: one collapsible group per stage that has models, in stage order.
+      const open = openGroups(model);
+      const wrap = document.createElement("div");
+      wrap.className = "each-groups";
+      wrap.setAttribute("role", "group");
+      wrap.setAttribute("aria-label", "Each model's stage, grouped by stage");
+      STAGES.forEach((stageName, st) => {
+        const members = all.filter(i => model.stages[i] === st);
+        if (!members.length) return;
+        const isOpen = open.has(st);
+        const head = document.createElement("button");
+        head.type = "button";
+        head.className = "each-group-head";
+        head.dataset.group = `${model.id}:${st}`;
+        head.style.setProperty("--stage-colour", `var(--stage-${st})`);
+        head.setAttribute("aria-expanded", isOpen);
+        const name = document.createElement("span");
+        name.className = "each-group-stage";
+        name.textContent = stageName;
+        const count = document.createElement("span");
+        count.className = "each-group-count";
+        count.textContent = `${members.length} ${members.length === 1 ? "model" : "models"}`;
+        head.append(name, count, chevron(isOpen ? "up" : "down"));
+        head.addEventListener("click", () => {
+          if (open.has(st)) open.delete(st); else open.add(st);
+          render();
+          const again = document.querySelector(`[data-group="${model.id}:${st}"]`);
+          if (again) again.focus();
+        });
+        wrap.appendChild(head);
+        if (isOpen) wrap.appendChild(list(members));
+      });
+      return wrap;
+    }
+
     // ----- The details panel -----
 
     function buildPanel(model) {
@@ -5152,14 +5320,14 @@
 
       // v21: JUMP TO STAGE. Pick the stage straight from a menu instead of tapping ▲ up
       // to 7 times. For a unit tracked model by model it moves EVERY model (each model
-      // also has its own menu further down); while they're at different stages the menu
+      // has its own stepper further down); while they're at different stages the menu
       // says "Mixed stages".
       const spread = model.each && new Set(model.stages).size > 1;
       const stageLabel = document.createElement("label");
       stageLabel.textContent = model.each ? "Move all models to stage" : "Jump to stage";
       const stageMenu = stagePicker(spread ? null : model.stage,
         model.each ? `Move all models of ${displayName(model)} to stage` : `Stage of ${displayName(model)}`,
-        (to) => jumpToStage(model.id, to), spread ? "Mixed stages" : "");
+        (to) => { groupOpen.delete(model.id); jumpToStage(model.id, to); }, spread ? "Mixed stages" : "");
       stageMenu.classList.add("jump-stage");
       stageLabel.appendChild(stageMenu);
       // v23: PANEL ORDER. What people use most comes first: stage, (each model's stage),
@@ -5228,46 +5396,7 @@
 
       editFields.push(nicknameLabel, extras);
 
-      if (model.each) {
-        const list = document.createElement("ol");
-        list.className = "each-list";
-        list.setAttribute("aria-label", "Each model's stage");
-        model.stages.forEach((st, i) => {
-          const row = document.createElement("li");
-          row.style.setProperty("--stage-colour", `var(--stage-${st})`);
-          const label = document.createElement("span");
-          label.className = "each-name";
-          label.textContent = `Model ${i + 1}`;
-          // v21.8: when this model reached its stage, in plain words, under its name.
-          const since = modelSince(model, i);
-          if (since) {
-            const when = document.createElement("small");
-            when.className = "each-since";
-            when.textContent = sinceWording(since);
-            when.title = `Model ${i + 1} reached ${STAGES[st]} on ${shortDate(since)}`;
-            label.appendChild(when);
-          }
-          // v21: the stage is a menu, so one model can jump straight to any stage.
-          const stageName = stagePicker(st, `Model ${i + 1} of ${displayName(model)}: stage`,
-                                        (to) => jumpToStage(model.id, to, i));
-          stageName.classList.add("each-stage");
-          const down = document.createElement("button");
-          down.className = "plain-button";
-          down.textContent = "◀";
-          down.disabled = st === 0;
-          down.setAttribute("aria-label", `Move model ${i + 1} back a stage`);
-          down.addEventListener("click", () => changeStage(model.id, -1, i));
-          const upOne = document.createElement("button");
-          upOne.className = "plain-button";
-          upOne.textContent = "▲";
-          upOne.disabled = st >= STAGES.length - 1;
-          upOne.setAttribute("aria-label", `Move model ${i + 1} up a stage`);
-          upOne.addEventListener("click", () => changeStage(model.id, +1, i));
-          row.append(label, stageName, down, upOne);
-          list.appendChild(row);
-        });
-        panel.appendChild(list);
-      }
+      if (model.each) panel.appendChild(buildEachRows(model));   // M2: a stepper on every model's row
 
       // A3: the unit's paints sit behind one row (6 swatches and a count) that opens the full grid.
       const paintsRow = buildPaintsRow(model);
@@ -16567,7 +16696,7 @@
         "If the paint is not in Your Palette yet, it is added as Not owned, so it reaches your shopping list once a recipe uses it, and the message says so. Made-up example paints are not offered.",
       ]},
       { version: "v61", date: "24 Oct 2026", changes: [
-        "A unit with more than one model has a Track models separately button in its details, under the stage. One tap shows every model with its own stage. Track as one batch goes back. Both have an Undo.",
+        "A unit with more than one model has a Track models separately button in its details, under the stage. One tap shows every model with its own stage, each with back and up buttons. Track as one batch goes back. Both have an Undo.",
         "The old tick for this in Edit details has gone, as the button does the same job.",
       ]},
       { version: "v60", date: "24 Oct 2026", changes: [
@@ -16735,7 +16864,7 @@
     // own copy in memory and saved over the other's changes. Now, when the OTHER window
     // saves, the browser tells this one (the "storage" event) and we load its changes.
     // Screen choices (which tab is open, sort order...) stay this window's own.
-    const VIEW_ONLY_SETTINGS = ["tab", "recipeView", "historyRange", "paintSort", "lastGame", "lastFaction"];
+    const VIEW_ONLY_SETTINGS = ["tab", "recipeView", "historyRange", "paintSort", "lastGame", "lastFaction", "modelRows"];
     const withoutViewSettings = (s) => {
       const copy = { ...s };
       for (const key of VIEW_ONLY_SETTINGS) delete copy[key];

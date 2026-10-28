@@ -539,16 +539,36 @@
 
     /* Per-model list inside a unit's details */
     .each-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-    .each-list li { display: flex; align-items: center; gap: 8px; padding: 6px 8px;
-                    border: var(--border-width) var(--border-style) var(--border); border-left: 4px solid var(--stage-colour); border-radius: var(--radius-control); }
-    .each-list .each-name { font-size: 13px; color: var(--muted); width: 64px; flex-shrink: 0; display: grid; gap: 1px; align-content: center; }
-    /* v21.8: "Today", "Yesterday" or "Since 7 Oct" under the model's name (a long one wraps). */
-    .each-list .each-since { font-size: 11px; overflow-wrap: anywhere; line-height: 1.25; }
-    .each-list .each-stage { flex: 1; font-size: 13px; font-weight: 600; color: var(--stage-colour); }
-    /* v21: 44 px, the size a fingertip needs (was 40 × 36). */
-    .each-list button { min-width: 44px; min-height: 44px; padding: 4px 10px; flex-shrink: 0; }
-    /* v21: each model's stage is a menu you can jump with. */
-    .each-list select.each-stage { flex: 1; min-height: 44px; padding: 6px 8px; font-size: 16px; }
+    /* M2: model rows. Name (and date line) on the left, back / stage name with a thin bar / up on the right.
+       Theme variables only: the stage colour, --accent, --background, --border, --muted. */
+    .each-row { display: flex; align-items: center; gap: 8px; min-height: 60px; padding: 6px 8px;
+                border: var(--border-width) var(--border-style) var(--border); border-left: 4px solid var(--stage-colour); border-radius: var(--radius-control); }
+    .each-row.simple { min-height: 56px; padding-top: 4px; padding-bottom: 4px; }
+    .each-name { flex: 1 1 0; min-width: 0; display: block; font-size: 14px; color: var(--text); }
+    .each-label { display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    /* v21.8: "Today", "Yesterday" or "Since 7 Oct" under the model's name. */
+    .each-since { display: block; font-size: 12px; color: var(--muted); line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .each-step { display: flex; align-items: center; gap: 4px; flex: none; }
+    .each-mid { width: 88px; flex: none; display: grid; gap: 4px; justify-items: center; text-align: center; }
+    .each-stage-name { font-size: 13px; font-weight: 700; color: var(--stage-colour); overflow-wrap: anywhere; line-height: 1.15; }
+    .each-mid .pips { margin-top: 0; width: 100%; }
+    .each-back, .each-up { width: 44px; height: 44px; flex: none; padding: 0; display: inline-flex; align-items: center; justify-content: center;
+                           border-radius: var(--radius-control); }
+    .each-back { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); }
+    .each-up { background: var(--stage-colour); color: var(--background); border: 1.5px solid var(--stage-colour); }
+    .each-back:disabled, .each-up:disabled { opacity: 0.45; background: transparent; color: var(--muted); border: 1.5px dashed var(--border); cursor: default; }
+    .each-back .chev, .each-up .chev { width: 22px; height: 22px; }
+    .each-groups { display: grid; gap: 6px; }
+    .each-group-head { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 48px; padding: 0 8px; text-align: left;
+                       background: transparent; color: var(--text); border: 0; border-top: var(--border-width) var(--border-style) var(--border); border-radius: 0; }
+    .each-group-stage { font-weight: 700; color: var(--stage-colour); }
+    .each-group-count { flex: 1; font-size: 13px; color: var(--muted); }
+    /* M2: the Detailed / Simple switch above the unit list. */
+    .rows-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .rows-switch .plain-button { min-height: 44px; padding: 8px 12px; }
+    .rows-switch .plain-button[aria-pressed="true"] { color: var(--on-accent); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+    /* M2: Move all models / Track as one batch are full-width, 48 px tall. */
+    .panel .jump-stage, .panel .track-each { min-height: 48px; width: 100%; }
 
     /* v21: "Jump to stage" menus (unit details, each model, the Add form). The stage's
        colour shows as a stripe on the left, like the stage chips. */
@@ -2351,6 +2371,11 @@
         <button class="plain-button" id="toggle-select" aria-pressed="false">Select</button>
         <button class="plain-button" id="toggle-filters" aria-expanded="false" aria-controls="filter-card">Filters ▾</button>
       </div>
+      <!-- M2: Detailed / Simple model rows, for every unit tracked model by model. Shown only when there is one. -->
+      <div class="rows-switch hidden" id="model-rows-switch" role="group" aria-label="Model rows view">
+        <button type="button" class="plain-button" data-rows="detailed" aria-pressed="true">Detailed</button>
+        <button type="button" class="plain-button" data-rows="simple" aria-pressed="false">Simple</button>
+      </div>
 
       <!-- The add form starts hidden; the button above shows it. -->
       <form id="add-form" class="card hidden" style="display: grid; gap: 10px;">
@@ -2553,9 +2578,9 @@
             <li><strong>Starting stage</strong> in the Add form puts a new unit straight at the stage it's really at (it stays picked for the next unit you add).</li>
             <li id="help-new-unit-shown">Each new unit is <strong>scrolled into view</strong> and outlined for a moment, so you can see where it went in the list.</li>
             <li>Press the right arrow to move a unit up a stage, or the left arrow to move it back one. Made a mistake? Press <strong>Undo</strong> on the message that pops up.</li>
-            <li id="help-track-each"><strong>Track models separately:</strong> for painting a unit one model at a time. Tap a unit with more than one model to open its details, then press <strong>Track models separately</strong> under its stage. Each model gets its own row with its own stage menu and back and up buttons, and when they differ, the card shows how many are at each stage. <strong>Track as one batch</strong> goes back: if the models are at different stages, the app asks first, then puts them all at the stage of the furthest-behind model. Both have an <strong>Undo</strong>. It works for units of up to 100 models, and one-model units don't have the button.</li>
-            <li id="help-jump-stage"><strong>Jump to a stage:</strong> press <strong>Details</strong> on a unit and pick a stage from <strong>Jump to stage</strong>, to go straight to any stage (forwards or back). The right arrow on the card moves the whole unit up one stage and the left arrow moves it back one, even on a unit tracked model by model (each model moves). If you track each model separately, each model has its own stage menu, and <strong>Move all models to stage</strong> moves them all at once. Every jump has an <strong>Undo</strong>.</li>
-            <li id="help-model-dates"><strong>When did it get there?</strong> If you track each model separately, each model says under its name when it reached its stage: <strong>Today</strong>, <strong>Yesterday</strong>, or <strong>Since 7 Oct</strong> (with the year added for an earlier year). Hold or long-press the date to see it in full. A model with no date shown has no record of when it moved.</li>
+            <li id="help-track-each"><strong>Track models separately:</strong> for painting a unit one model at a time. Tap a unit with more than one model to open its details, then press <strong>Track models separately</strong> under its stage. Each model gets its own row with a back button, its stage name and an up button, and when they differ, the card shows how many are at each stage. With units tracked this way, the Units tab has a <strong>Detailed</strong> / <strong>Simple</strong> switch: Detailed adds the date line and a thin progress bar to every row, Simple leaves them out. A unit of more than 8 models groups its rows by stage; tap a stage to open or close its models. <strong>Track as one batch</strong> goes back: if the models are at different stages, the app asks first, then puts them all at the stage of the furthest-behind model. Both have an <strong>Undo</strong>. It works for units of up to 100 models, and one-model units don't have the button.</li>
+            <li id="help-jump-stage"><strong>Jump to a stage:</strong> press <strong>Details</strong> on a unit and pick a stage from <strong>Jump to stage</strong>, to go straight to any stage (forwards or back). The right arrow on the card moves the whole unit up one stage and the left arrow moves it back one, even on a unit tracked model by model (each model moves). If you track each model separately, the buttons on a model's row move that one model a stage, and <strong>Move all models to stage</strong> moves them all at once. Every jump has an <strong>Undo</strong>.</li>
+            <li id="help-model-dates"><strong>When did it get there?</strong> If you track each model separately, each model says under its name when it reached its stage: <strong>Today</strong>, <strong>Yesterday</strong>, or <strong>Since 7 Oct</strong> (with the year added for an earlier year). Hold or long-press the date to see it in full. A model with no date shown has no record of when it moved. The Simple view leaves the dates out.</li>
             <li id="help-unfinished-work"><strong>Unfinished work is kept:</strong> if the page reloads or the app closes while you are part-way through adding a unit (the name box has something in it), writing a recipe, or pasting notes into Paste recipes, the app keeps what you had. Next time you open the Units or Painting tab, a card says <strong>We kept your unfinished…</strong>. <strong>Keep going</strong> puts it all back. <strong>Discard</strong> asks first, then throws it away for good (there is no Undo). Nothing opens by itself, and a kept draft is never replaced by accident: if you try to start a new one first, the app asks. It goes when you press Add or Save, or Cancel and say yes. It stays on this device and is not in your backups.</li>
             <li id="help-typing"><strong>Typing:</strong> while the cursor is in a text box, the tab bar at the bottom hides so it can't sit on your keyboard. Tap somewhere else and it comes back.</li>
             <li id="help-move-many"><strong>Move several units at once:</strong> on the Units tab press <strong>Select</strong>. Each unit gets a tick box (tapping a unit ticks it). Tick the ones you want, or press <strong>Select all shown</strong> to tick every unit your filters are showing. Then pick a stage from <strong>Move … to stage</strong> in the bar at the bottom. Units tracked model by model have all their models moved. One <strong>Undo</strong> puts every unit back as it was, diary included. <strong>Cancel</strong>, the phone's Back button or leaving the tab stops selecting without changing anything.</li>

@@ -279,10 +279,11 @@ def main():
         check("paint notes still save as you type", saved_unit(page, 1)["note"] == "blue armour, gold trim")
         blur(page)
         open_unit(page, 2)
-        page.locator(f"{card(2)} .each-list select").nth(0).select_option("6")
+        first_before = saved_unit(page, 2)["stages"][0]
+        page.locator(f"{card(2)} .each-list .each-up").nth(0).click()   # M2: the per-row menu is gone; the row's up button moves one model
         page.wait_for_timeout(250)
         open_unit(page, 2)
-        check("a single model's own stage menu still works", saved_unit(page, 2)["stages"][0] == 6, saved_unit(page, 2)["stages"])
+        check("a single model's own up button still works", saved_unit(page, 2)["stages"][0] == first_before + 1, saved_unit(page, 2)["stages"])
         check("the recipe menu is on show (no fold to open)",
               page.locator(f'{card(2)} .panel select[aria-label^="Link a recipe"]').is_visible())
         # Track each model on and off with real taps (v61: the button under the stage, not a tick in the fold).
@@ -293,7 +294,7 @@ def main():
         check("Track each model separately switches on (each-list appears right under the stage)",
               saved_unit(page, 1).get("each") is True and order(page, 1)[:3] == ["stage", "track", "each"], order(page, 1))
         # The question only comes when the models are at different stages, so move one model up first.
-        page.locator(f'{card(1)} .each-list button:has-text("▲")').first.click()
+        page.locator(f'{card(1)} .each-list .each-up').first.click()
         page.wait_for_timeout(300)
         open_unit(page, 1)
         page.locator(f'{card(1)} .panel button.track-each').click()

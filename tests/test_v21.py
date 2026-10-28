@@ -262,15 +262,16 @@ def main():
         all_menu = f"{card(page, 2)} select.jump-stage"
         check("a model-by-model unit's menu says Mixed stages while they differ",
               page.evaluate(f"document.querySelector('{all_menu}').selectedOptions[0].textContent") == "Mixed stages")
-        each_menus = page.locator(f"{card(page, 2)} .each-list select")
-        check("each model has its own stage menu", each_menus.count() == 4 and
-              [each_menus.nth(i).input_value() for i in range(4)] == ["1", "1", "2", "3"])
-        each_menus.nth(1).select_option("6")
+        # M2: the per-row stage menu is gone. Each row names its stage in words and moves one stage with back / up.
+        each_names = page.locator(f"{card(page, 2)} .each-list .each-stage-name")
+        check("each model row names its own stage", each_names.count() == 4 and
+              [each_names.nth(i).inner_text() for i in range(4)] == [STAGES[1], STAGES[1], STAGES[2], STAGES[3]])
+        page.locator(f"{card(page, 2)} .each-list .each-up").nth(1).click()
         page.wait_for_timeout(150)
         u = units(page)[1]
-        check("one model jumps on its own; the unit's stage is still the furthest behind",
-              u["stages"] == [1, 6, 2, 3] and u["stage"] == 1, u)
-        check("…message names the model", "model 2 → Needs touch-ups" in toast(page), toast(page))
+        check("one model moves on its own; the unit's stage is still the furthest behind",
+              u["stages"] == [1, 2, 2, 3] and u["stage"] == 1, u)
+        check("…message names the model", f"model 2 → {STAGES[2]}" in toast(page), toast(page))
         undo(page)
         check("…Undo puts that model back", units(page)[1]["stages"] == [1, 1, 2, 3])
         page.select_option(f"{card(page, 2)} select.jump-stage", "4")
@@ -317,8 +318,8 @@ def main():
             open_unit(page, 2)
             buttons = sizes(page, f"{card(page, 2)} .each-list button")
             check(f"[{width}px] per-model ◀ ▲ are at least 44 × 44", len(buttons) == 8 and all_big(buttons), buttons)
-            menus = sizes(page, f"{card(page, 2)} .each-list select") + sizes(page, f"{card(page, 2)} select.jump-stage")
-            check(f"[{width}px] the stage menus are at least 44 tall", len(menus) == 5 and all_big(menus, need_width=False), menus)
+            menus = sizes(page, f"{card(page, 2)} select.jump-stage")   # M2: the per-row menus are gone
+            check(f"[{width}px] the stage menu is at least 44 tall", len(menus) == 1 and all_big(menus, need_width=False), menus)
             check(f"[{width}px] no sideways scroll with a unit open", no_sideways(page))
             if width == 360: shot(page, "v21-tap-targets-units-360.png")
             page.click("#toggle-add")

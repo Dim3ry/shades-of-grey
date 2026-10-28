@@ -468,9 +468,10 @@ def main():
         check("the date has a full wording on hold: stage and date", title == f"Model 4 reached Assembled on 30 Nov {year - 1}", title)
         check("the model's name is still there", page.evaluate("""() => [...document.querySelectorAll('#view-units li.unit[data-id="1"] .each-name')].map(l => l.firstChild.textContent)""")
               == ["Model 1", "Model 2", "Model 3", "Model 4"])
-        check("each row's stage menu and ◀ ▲ buttons are still there and 44 px",
+        # M2: the per-row stage menu became a written stage name between two chevron buttons.
+        check("each row's stage name and back / up buttons are there and 44 px",
               page.evaluate("""() => [...document.querySelectorAll('#view-units li.unit[data-id="1"] .each-list li')].every(li =>
-                  li.querySelector('select.each-stage') && li.querySelectorAll('button').length === 2 &&
+                  li.querySelector('.each-stage-name') && li.querySelectorAll('button').length === 2 &&
                   [...li.querySelectorAll('button')].every(b => b.getBoundingClientRect().width >= 43.5 && b.getBoundingClientRect().height >= 43.5))"""))
         shot(page, "v21-8-model-dates-dark-390.png")
 
@@ -485,7 +486,7 @@ def main():
 
         # Real taps change the date.
         open_unit(page, 1)
-        page.click('#view-units li.unit[data-id="1"] button[aria-label="Move model 2 up a stage"]')
+        page.click('#view-units li.unit[data-id="1"] button[data-each-row="1:1"][data-dir="up"]')   # M2: Model 2's up button
         page.wait_for_timeout(300)
         texts = since_texts(1)
         check("▲ on Model 2: its date becomes 'Today', the others are as they were",
@@ -498,9 +499,9 @@ def main():
         check("Undo brings Model 2's old date back ('Yesterday')", texts[1] == "Yesterday", texts)
         check("…and the saved diary is exactly as before",
               next(u for u in saved_units(page) if u["id"] == 1)["log"] == each_unit["log"])
-        page.select_option('#view-units li.unit[data-id="1"] .each-list li:nth-child(3) select.each-stage', label="Battle ready")
+        page.click('#view-units li.unit[data-id="1"] button[data-each-row="1:2"][data-dir="up"]')   # M2: no per-row menu any more
         page.wait_for_timeout(300)
-        check("jumping Model 3 with its stage menu: its date becomes 'Today'", since_texts(1)[2] == "Today", since_texts(1))
+        check("moving Model 3 up: its date becomes 'Today'", since_texts(1)[2] == "Today", since_texts(1))
         open_unit(page, 1)
         page.wait_for_timeout(100)
         page.select_option('#view-units li.unit[data-id="1"] select.jump-stage', label="Primed")
@@ -520,10 +521,10 @@ def main():
                       const n = li.querySelector('.each-since');
                       return { inside: s.left >= r.left - 0.5 && s.right <= r.right + 0.5 && s.top >= r.top - 0.5 && s.bottom <= r.bottom + 0.5,
                                ratio: contrastRatio(hex(getComputedStyle(n).color), hex(getComputedStyle(li.closest('.card, li.unit')).backgroundColor)),
-                               stageW: li.querySelector('select.each-stage').getBoundingClientRect().width }; }); }""")
+                               stageW: li.querySelector('.each-mid').getBoundingClientRect().width }; }); }""")
                 check(f"{appearance} {width}px: each date sits inside its row", all(g["inside"] for g in geo), geo)
                 check(f"{appearance} {width}px: the date text reads at 4.5 or more", all(g["ratio"] >= 4.5 for g in geo), [round(g["ratio"], 2) for g in geo])
-                check(f"{appearance} {width}px: each stage menu is still wide enough to use (80 px or more)", all(g["stageW"] >= 80 for g in geo), [round(g["stageW"]) for g in geo])
+                check(f"{appearance} {width}px: each stage name box is still wide enough (80 px or more)", all(g["stageW"] >= 80 for g in geo), [round(g["stageW"]) for g in geo])
                 check(f"{appearance} {width}px: nothing scrolls sideways", no_sideways(page))
                 shot(page, f"v21-8-model-dates-{appearance}-{width}.png")
 
