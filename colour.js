@@ -299,6 +299,98 @@
     return nearestPaints(wanted, paints, { limit: 1, ownedFirst: false })[0] || null;
   }
 
+  // ---------- mixing two paints (Mix 2) ----------
+  // THE MIXING MODEL LIVES HERE, in mixLinear() and nowhere else. To change how a blend is predicted, change that one function.
+  // Model C from the Mix 1 report: the "geometric mean". Each paint is turned into the amount of light it gives back (linear light),
+  // and the mix multiplies those amounts together, weighted by the parts. It is like stacking coloured filters, and it is closer to
+  // how pigments behave than averaging screen colours: blue + yellow gives green, opposite colours go dull and dark, white lifts a
+  // colour without turning it to chalk. It needs nothing but the screen colours, so it is only a rough guess.
+  const MIX_FLOOR = 0.002;   // a channel never counts as less than this, so a pure 0 (black) does not flatten the whole mix to black
+  function toLinear(n) { const c = n / 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
+  function fromLinear(v) { const c = v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055; return c * 255; }
+  // THE model. logs: the natural log of each paint's linear [r, g, b] (floored); weights: how much of each (adding to 1).
+  // Returns the mix's linear [r, g, b].
+  function mixLinear(logs, weights) {
+    const out = [0, 0, 0];
+    for (let c = 0; c < 3; c++) {
+      let sum = 0;
+      for (let i = 0; i < logs.length; i++) sum += weights[i] * logs[i][c];
+      out[c] = Math.exp(sum);
+    }
+    return out;
+  }
+  const mixLogs = (hex) => hexToRgb(hex).map((n) => Math.log(Math.max(MIX_FLOOR, toLinear(n))));
+  // The predicted colour of paints mixed in the given parts: mixColours(["#0d407f", "#fbb81c"], [1, 1]) -> a green. Null for a bad input.
+  function mixColours(hexes, parts) {
+    if (!Array.isArray(hexes) || !Array.isArray(parts) || !hexes.length || hexes.length !== parts.length || !hexes.every(isHex)) return null;
+    const total = parts.reduce((a, b) => a + b, 0);
+    if (!(total > 0) || parts.some((n) => !(n >= 0))) return null;
+    const lin = mixLinear(hexes.map(mixLogs), parts.map((n) => n / total));
+    return rgbToHex(fromLinear(lin[0]), fromLinear(lin[1]), fromLinear(lin[2]));
+  }
+
+  // Blend suggestions: the best two-paint mixes of the paints given, for a wanted colour.
+  //   wanted: "#rrggbb"; paints: ONLY the paints that may be mixed (the screen leaves out metallics, washes, mediums and so on)
+  //   options.single: the best single paint's distance (CIEDE2000); a blend must be at least 5 points closer than it
+  //   options.limit: how many to return (default 2)
+  // Painter-friendly ratios only: 1:1, 2:1, 3:1, 4:1 and the reverse. Each result:
+  //   { a: { paint, parts }, b: { paint, parts }, ratio: "2:1", colour: "#rrggbb", distance }   (a has the larger share)
+  // Only a blend that is at least 5 points closer than the best single paint AND an Okay fit or better is returned, so the list is
+  // usually empty. Cheap: every pair is scored by a quick sum on the way in, then only the best 25 get the full colour rule.
+  const BLEND_RATIOS = [[1, 1], [2, 1], [3, 1], [4, 1]];
+  const BLEND_BETTER_BY = 5, BLEND_KEEP = 25;
+  function blendSuggestions(wanted, paints, options) {
+    const opts = options || {};
+    const limit = Number.isInteger(opts.limit) && opts.limit > 0 ? opts.limit : 2;
+    const better = typeof opts.betterBy === "number" ? opts.betterBy : BLEND_BETTER_BY;
+    const target = hexToLab(wanted);
+    if (!target || !Array.isArray(paints)) return [];
+    const list = paints.filter(canMatch);
+    const logs = list.map((p) => mixLogs(p.colour));
+    const lab = (lin) => {   // linear light -> Lab, written out so a hex round trip is not needed 100,000 times
+      const x = (0.4124564 * lin[0] + 0.3575761 * lin[1] + 0.1804375 * lin[2]) / 0.95047;
+      const y = 0.2126729 * lin[0] + 0.7151522 * lin[1] + 0.0721750 * lin[2];
+      const z = (0.0193339 * lin[0] + 0.1191920 * lin[1] + 0.9503041 * lin[2]) / 1.08883;
+      const f = (t) => (t > 216 / 24389 ? Math.cbrt(t) : (24389 / 27 * t + 16) / 116);
+      const fx = f(x), fy = f(y), fz = f(z);
+      return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
+    };
+    // best ratio for every pair, by plain Lab distance (squared)
+    const keep = [];   // sorted, at most BLEND_KEEP: { q, i, j, hi, lo }
+    const pair = [[0, 0, 0], [0, 0, 0]];
+    for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
+      pair[0] = logs[i]; pair[1] = logs[j];
+      let bestQ = Infinity, bestHi = 0, bestLo = 0, bestFirst = true;
+      for (const [hi, lo] of BLEND_RATIOS) for (const first of (hi === lo ? [true] : [true, false])) {
+        const w = hi / (hi + lo);
+        const lin = mixLinear(pair, first ? [w, 1 - w] : [1 - w, w]);
+        const l = lab(lin);
+        const q = (l[0] - target.L) ** 2 + (l[1] - target.a) ** 2 + (l[2] - target.b) ** 2;
+        if (q < bestQ) { bestQ = q; bestHi = hi; bestLo = lo; bestFirst = first; }
+      }
+      if (keep.length === BLEND_KEEP && bestQ >= keep[keep.length - 1].q) continue;
+      keep.push({ q: bestQ, i: bestFirst ? i : j, j: bestFirst ? j : i, hi: bestHi, lo: bestLo });
+      keep.sort((x, y) => x.q - y.q);
+      if (keep.length > BLEND_KEEP) keep.pop();
+    }
+    // the full colour rule, on the colour as it would be stored
+    const scored = keep.map((k) => {
+      const colour = mixColours([list[k.i].colour, list[k.j].colour], [k.hi, k.lo]);
+      return { a: { paint: list[k.i], parts: k.hi }, b: { paint: list[k.j], parts: k.lo }, ratio: k.hi + ":" + k.lo, colour,
+        distance: colourDistance(wanted, colour) };
+    }).sort((x, y) => x.distance - y.distance);
+    const single = typeof opts.single === "number" ? opts.single : Infinity;
+    const clear = scored.filter((s) => s.distance <= single - better && s.distance <= CLOSE_UNDER);
+    // a second blend only if it is a different mix with a visibly different colour, and nearly as close as the first
+    const out = [];
+    for (const s of clear) {
+      if (out.length >= limit) break;
+      if (out.length && (s.distance > out[0].distance + 2 || colourDistance(s.colour, out[0].colour) < 2)) continue;
+      out.push(s);
+    }
+    return out;
+  }
+
   // ---------- does a scheme hang together? (Coach 3) ----------
   // Looks at the colours of one recipe and answers three plain questions. It hands back numbers and
   // colours only; the screen chooses the words. It is a rule of thumb, not a verdict.
@@ -387,6 +479,7 @@
     labDistance, colourDistance, harmonies, colourFamily,
     haveIt, isRoughColour, canMatch, judgeMatch, fitLabel, FIT_WORDS,
     nearestPaints, suggestPaint, closestOwned, closestAny,
+    mixColours, blendSuggestions,
     isStrongColour, schemeCheck,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;

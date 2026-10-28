@@ -11330,10 +11330,71 @@
       updateBasket(); updateShopFoldouts();
     }
 
+    // Mix2: "Add to recipe step" on a blend. Fills the two paints and the ratio (like "2:1", the same way the step editor keeps one; the
+    // % of each is worked out from it) into step stepIndex of a saved recipe, or into a new last step (-1). Choosing a step that has
+    // paints already swaps them for the blend. Saved at once; Undo puts the recipe back as it was. Both paints are yours, so Your Palette
+    // does not change.
+    function addBlendToRecipe(blend, recipeId, stepIndex) {
+      const recipe = recipeById(recipeId);
+      if (!recipe) return;
+      if (recipeDraft && recipeDraft.id === recipe.id) { notify("Finish or cancel your changes to that recipe first."); return; }
+      const step = stepIndex >= 0 ? recipe.steps[stepIndex] : null;
+      if (stepIndex >= 0 && !step) return;
+      const mineA = palettePaintFor(blend.a.paint), mineB = palettePaintFor(blend.b.paint);
+      if (!mineA || !mineB) return;
+      const before = JSON.stringify(book);
+      const mix = ratioPercents(blend.ratio, 2);
+      const paints = [{ paint: mineA.id, mix: mix[0] }, { paint: mineB.id, mix: mix[1] }];
+      if (step) { step.paints = paints; step.ratio = blend.ratio; }
+      else recipe.steps.push({ technique: "", coats: 1, paints, ratio: blend.ratio, note: "", optional: false });
+      delete recipe.example;
+      const where = step ? `step ${stepIndex + 1}` : `a new step ${recipe.steps.length}`;
+      commit(`Added the mix ${blend.ratio} to ${recipe.name}, ${where}.`, () => {
+        book = cleanRecipeBook(JSON.parse(before));
+        refreshAfterPaintChange();
+        notify("Took that back.");
+      }, "Undo", 8);
+    }
+
     function stepChoiceLabel(step, i) {
       const names = step.paints.map(sp => { const p = paintById(sp.paint); return p ? p.name : ""; }).filter(Boolean).join(" + ");
       const text = String(step.technique || "").trim() || names || "empty step";
       return `Step ${i + 1}: ${text.length > 40 ? text.slice(0, 39) + "…" : text}`;
+    }
+
+    // The small picker: choose a recipe, then a step (or a new step), then Add. onPick(recipeId, stepIndex) does the adding (-1 = a new step).
+    // Shared by Add to a recipe and (Mix2) Add to recipe step on a blend.
+    function buildRecipeStepPicker(onPick) {
+      const picker = document.createElement("div");
+      picker.className = "paint-recipe-picker";
+      const recipeSel = document.createElement("select");
+      recipeSel.setAttribute("aria-label", "Recipe");
+      recipeSel.add(new Option("Choose a recipe", ""));
+      for (const r of book.recipes) recipeSel.add(new Option(r.name || "Untitled recipe", String(r.id)));
+      const stepSel = document.createElement("select");
+      stepSel.setAttribute("aria-label", "Step");
+      stepSel.classList.add("hidden");
+      const go = document.createElement("button");
+      go.type = "button";
+      go.className = "primary-button";
+      go.textContent = "Add";
+      go.disabled = true;
+      recipeSel.addEventListener("change", () => {
+        const r = recipeById(Number(recipeSel.value));
+        stepSel.replaceChildren();
+        stepSel.classList.toggle("hidden", !r);
+        go.disabled = !r;
+        if (!r) return;
+        stepSel.add(new Option("A new step", "-1"));
+        r.steps.forEach((s, i) => stepSel.add(new Option(stepChoiceLabel(s, i), String(i))));
+      });
+      go.addEventListener("click", () => {
+        const id = Number(recipeSel.value);
+        if (!recipeById(id)) return;
+        onPick(id, Number(stepSel.value));
+      });
+      picker.append(recipeSel, stepSel, go);
+      return picker;
     }
 
     // The two buttons for one paint, with a small picker (recipe, then step) under them when you tap Add to a recipe.
@@ -11364,38 +11425,10 @@
       add.addEventListener("click", () => {
         if (picker) { picker.remove(); picker = null; add.setAttribute("aria-expanded", "false"); return; }
         if (!book.recipes.length) { notify("You have no recipes yet. Use in a recipe starts one."); return; }
-        picker = document.createElement("div");
-        picker.className = "paint-recipe-picker";
-        const recipeSel = document.createElement("select");
-        recipeSel.setAttribute("aria-label", "Recipe");
-        recipeSel.add(new Option("Choose a recipe", ""));
-        for (const r of book.recipes) recipeSel.add(new Option(r.name || "Untitled recipe", String(r.id)));
-        const stepSel = document.createElement("select");
-        stepSel.setAttribute("aria-label", "Step");
-        stepSel.classList.add("hidden");
-        const go = document.createElement("button");
-        go.type = "button";
-        go.className = "primary-button";
-        go.textContent = "Add";
-        go.disabled = true;
-        recipeSel.addEventListener("change", () => {
-          const r = recipeById(Number(recipeSel.value));
-          stepSel.replaceChildren();
-          stepSel.classList.toggle("hidden", !r);
-          go.disabled = !r;
-          if (!r) return;
-          stepSel.add(new Option("A new step", "-1"));
-          r.steps.forEach((s, i) => stepSel.add(new Option(stepChoiceLabel(s, i), String(i))));
-        });
-        go.addEventListener("click", () => {
-          const id = Number(recipeSel.value);
-          if (!recipeById(id)) return;
-          addCompendiumPaintToRecipe(paint, id, Number(stepSel.value));
-        });
-        picker.append(recipeSel, stepSel, go);
+        picker = buildRecipeStepPicker((id, stepIndex) => addCompendiumPaintToRecipe(paint, id, stepIndex));
         wrap.appendChild(picker);
         add.setAttribute("aria-expanded", "true");
-        recipeSel.focus();
+        picker.querySelector("select").focus();
       });
       return wrap;
     }
@@ -11468,7 +11501,50 @@
       const mine = similarYourClosest(paint, shift);
       if (!mine.owned) return { best, yours: null };
       const close = mine.hits.length && mine.hits[0].quality !== "poor";
-      return { best, yours: { hits: close ? mine.hits : [] } };
+      // Mix2: when even your closest paint is a Poor fit, blends may be offered (found after the pop-up is drawn: see similarBlends).
+      return { best, yours: { hits: close ? mine.hits : [], single: !close && mine.hits.length ? mine.hits[0].distance : null } };
+    }
+
+    // ---- Mix2: blend suggestions in Your closest (paint blends, chunk Mix 2) ----
+    // Only when your closest single paint is a Poor fit. Owned paints only, two at a time (the maths is in colour.js: blendSuggestions
+    // and the one mixing function). These paints are never mixed: anything that is not a colour (the list above), Citadel Shade,
+    // Contrast, Glaze and Technical paints, metallics, inks and washes, and the odd finishes (fluorescent, chameleon, candy, clear, pearl,
+    // primer, texture). Pure white and pure black ARE mixed (blends need them). Custom paints still on the default grey cannot be matched
+    // at all (canMatch). The same colour in two brands counts once. The Citadel paints are found by their place in the built-in list
+    // (everything from Agrax Earthshade on is Shade, Contrast, Glaze, Technical, Dry or spray), plus a few Technical paints by name,
+    // so the paint data itself is untouched.
+    const BLEND_SKIP_CITADEL = new Set([
+      ...KNOWN_PAINT_TABLE.Citadel.slice(KNOWN_PAINT_TABLE.Citadel.findIndex(r => r.startsWith("Agrax Earthshade|"))).map(r => r.split("|")[0]),
+      "Agrellan Badland", "Armageddon Dunes", "Astrogranite Debris", "Martian Ironcrust", "Nighthaunt Gloom", "Stirland Battlemire",
+      "Leadbelcher", "Retributor Armour", "Ironbreaker", "Brass Scorpion", "Stormhost Silver", "Liberator Gold", "Warplock Bronze",
+      "Canoptek Alloy", "Sycorax Bronze", "Boltgun Metal", "Chainmail", "Tin Bitz", "Mithril Silver",   // metallics with no metal word in the name
+    ].map(n => sameKey(`Citadel|${n}`)));
+    const BLEND_SKIP_NAMES = /shade|wash|\bink\b|glaze|fluo|neon|chameleon|candy|clear|pearl|primer|spray|texture|gloss|crackle|transparent|translucent/i;
+    function blendMayMix(p) {
+      return MinifolioColour.canMatch(p) && !MinifolioColour.isRoughColour(p) && !BLEND_SKIP_NAMES.test(String(p.name || ""))
+        && !BLEND_SKIP_CITADEL.has(paintKey(p)) && !NOT_A_COLOUR.has(paintKey(p));
+    }
+    // The paints that may be mixed: yours (Owned or Running low) that pass blendMayMix, one per colour. The paint itself is never one.
+    function blendPool(paint) {
+      const self = paintKey(paint), seen = new Set();
+      return similarPool().filter(p => paintKey(p) !== self && MinifolioColour.haveIt(p) && blendMayMix(p))
+        .filter(p => { const c = p.colour.toLowerCase(); if (seen.has(c)) return false; seen.add(c); return true; });
+    }
+    // Remembered by wanted colour and paint set, so Lighter / Close / Darker back and forth, and reopening, cost nothing.
+    const blendCache = new Map();
+    // The blends worth showing for this paint and shift, given the closest single paint's distance (similarCards has it as yours.single):
+    // 0, 1 or 2 of { a, b, ratio, colour, distance, target }. Nothing at all unless a blend is clearly better and an Okay fit or better.
+    function similarBlends(paint, shift, single) {
+      const target = similarTarget(paint.colour, shift);
+      if (!target || typeof single !== "number") return [];
+      const pool = blendPool(paint);
+      if (pool.length < 2) return [];
+      const key = `${target}|${single.toFixed(2)}|${pool.map(p => paintKey(p) + p.colour).join(";")}`;
+      if (!blendCache.has(key)) {
+        if (blendCache.size > 30) blendCache.clear();
+        blendCache.set(key, MinifolioColour.blendSuggestions(target, pool, { single }).map(b => Object.assign(b, { target })));
+      }
+      return blendCache.get(key);
     }
 
     // The "Similar paints" button on a Compendium paint (next to Use in a recipe and Add to a recipe).
@@ -11546,6 +11622,9 @@
       };
       const best = makeCard("Best match", "No similar paints found.");
       const mine = makeCard("Your closest", "Nothing close in your paints.");
+      mine.blends = document.createElement("div");   // Mix2: Try mixing, under the card's one line
+      mine.blends.className = "mix-blends";
+      mine.section.appendChild(mine.blends);
       const tabList = document.createElement("div");
       tabList.className = "similar-tabs";
       tabList.setAttribute("role", "tablist");
@@ -11688,6 +11767,64 @@
           mine.ul.replaceChildren();
         }
         place();
+        drawBlends();
+      }
+
+      // Mix2: Try mixing. Only when your closest paint is a Poor fit. The search runs just after the pop-up is on screen (and is
+      // remembered), so the pop-up opens at once however many paints you own.
+      function buildBlend(blend) {
+        const nameOf = (side) => `${side.parts} ${side.parts === 1 ? "part" : "parts"} ${side.paint.name}`;
+        const wrap = document.createElement("div");
+        wrap.className = "mix-blend";
+        const title = document.createElement("p");
+        title.className = "mix-title";
+        title.textContent = `Try mixing ${nameOf(blend.a)}, ${nameOf(blend.b)}`;
+        const swatches = document.createElement("div");
+        swatches.className = "mix-swatches";
+        const named = (colour, label) => {
+          const sw = makeSwatch(colour);
+          sw.classList.add("mix-swatch");
+          sw.setAttribute("role", "img");
+          sw.setAttribute("aria-label", label);
+          return sw;
+        };
+        const sign = (text) => { const e = document.createElement("span"); e.className = "mix-sign"; e.setAttribute("aria-hidden", "true"); e.textContent = text; return e; };
+        swatches.append(named(blend.a.paint.colour, blend.a.paint.name), sign("+"), named(blend.b.paint.colour, blend.b.paint.name), sign("="),
+          named(blend.colour, "Mix"), sign("/"), named(blend.target, "Wanted"));
+        const approx = document.createElement("p");
+        approx.className = "similar-note";
+        approx.textContent = "Approximate. Test on a palette first.";
+        const add = document.createElement("button");
+        add.type = "button";
+        add.className = "plain-button mix-add";
+        add.textContent = "Add to recipe step";
+        add.setAttribute("aria-expanded", "false");
+        let picker = null;
+        add.addEventListener("click", () => {
+          if (picker) { picker.remove(); picker = null; add.setAttribute("aria-expanded", "false"); return; }
+          if (!book.recipes.length) { notify("You have no recipes yet."); return; }
+          picker = buildRecipeStepPicker((id, stepIndex) => {
+            addBlendToRecipe(blend, id, stepIndex);
+            picker.remove(); picker = null;
+            add.setAttribute("aria-expanded", "false");
+            add.focus();
+          });
+          wrap.appendChild(picker);
+          add.setAttribute("aria-expanded", "true");
+          picker.querySelector("select").focus();
+        });
+        wrap.append(title, swatches, approx, add);
+        return wrap;
+      }
+      function drawBlends() {
+        const single = state.cards.yours ? state.cards.yours.single : null;
+        const token = state.blendToken = {};
+        mine.blends.replaceChildren();
+        if (typeof single !== "number") return;
+        setTimeout(() => {
+          if (similarState !== state || state.blendToken !== token) return;
+          mine.blends.replaceChildren(...similarBlends(paint, SIMILAR_SHIFT[state.shift], single).slice(0, 2).map(buildBlend));
+        }, 0);
       }
       draw();
 
@@ -11697,7 +11834,7 @@
           event.preventDefault(); event.stopPropagation();
           closeSimilar();
         } else if (event.key === "Tab") {
-          const stops = [...box.querySelectorAll("button")].filter(b => b.tabIndex >= 0 && b.offsetParent !== null);   // v66: the tab not in use is skipped (arrow keys reach it)
+          const stops = [...box.querySelectorAll("button, select")].filter(b => b.tabIndex >= 0 && b.offsetParent !== null);   // Mix2: the recipe picker's dropdowns too   // v66: the tab not in use is skipped (arrow keys reach it)
           const at = stops.indexOf(document.activeElement);
           const next = event.shiftKey ? (at <= 0 ? stops.length - 1 : at - 1) : (at < 0 || at === stops.length - 1 ? 0 : at + 1);
           event.preventDefault();
