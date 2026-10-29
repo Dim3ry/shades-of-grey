@@ -1,0 +1,67 @@
+{
+  "guides": [
+    {
+      "key": "sample-warm-and-cool", "sample": true, "category": "colour-basics",
+      "title": "SAMPLE: Warm and cool colours",
+      "summary": "Sample entry that shows the shape of a colour basics guide.",
+      "body": [
+        "Sample text. Colours lean warm (towards red and yellow) or cool (towards blue).",
+        "Sample text. Warm colours feel close to you. Cool colours feel far away.",
+        "Sample text. A real entry gives one clear idea and one thing to try."
+      ],
+      "related": ["sample-wet-blending"],
+      "keywords": ["warm colours", "cool colours", "colour temperature", "warm vs cool", "red or blue", "mood"]
+    },
+    {
+      "key": "sample-wet-blending", "sample": true, "category": "techniques",
+      "title": "SAMPLE: Wet blending",
+      "summary": "Sample entry that shows the shape of a technique guide.",
+      "body": [
+        "Sample step. Put two wet colours side by side on the model.",
+        "Sample step. Soften the line where they meet with a clean, damp brush.",
+        "Sample step. Work in small areas before the paint dries."
+      ],
+      "related": ["sample-thinning-paint", "sample-warm-and-cool"],
+      "keywords": ["wet blend", "blending", "smooth blend", "smooth gradient", "gradient", "mix on the model", "wet on wet"],
+      "credit": { "name": "Sample creator", "url": "https://example.com/" }
+    },
+    {
+      "key": "sample-thinning-paint", "sample": true, "category": "tools-prep",
+      "title": "SAMPLE: Thinning paint",
+      "summary": "Sample entry that shows the shape of a tools and prep guide.",
+      "body": [
+        "Sample text. Thin paint with a little water or medium on a palette.",
+        "Sample text. Aim for the feel of milk, not of cream.",
+        "Sample text. A real entry says why it matters."
+      ],
+      "related": ["sample-chalky-paint"],
+      "keywords": ["thin paint", "thinning", "add water", "too thick", "paint consistency", "medium", "dilute"]
+    },
+    {
+      "key": "sample-chalky-paint", "sample": true, "category": "problems",
+      "title": "SAMPLE: Chalky paint",
+      "summary": "Sample entry that shows the shape of a problems guide.",
+      "body": [
+        "Sample text. Say what the problem looks like in plain words.",
+        "Sample text. Say the usual cause. Say the fix in one or two steps.",
+        "Sample text. Say how to avoid it next time."
+      ],
+      "related": ["sample-thinning-paint"],
+      "keywords": ["chalky", "gritty", "rough finish", "powdery", "dusty paint", "grainy", "paint looks dry"]
+    }
+  ],
+  "starters": [
+    {
+      "key": "sample-starter-thinning", "sample": true,
+      "text": "SAMPLE: How thin should my paint be?",
+      "targets": ["sample-thinning-paint", "sample-chalky-paint"]
+    }
+  ],
+  "mentor-tips": [
+    {
+      "key": "sample-mentor-armour", "sample": true, "part": "armour", "colour": "a cold blue", "technique": "Layer",
+      "advice": "Sample tip. It only shows the shape. A real tip gives plain advice for this part and colour.",
+      "colours": [{ "look": "a deep blue", "hex": "#1f3a66" }, { "look": "a light blue", "hex": "#6f93c9" }]
+    }
+  ]
+}
