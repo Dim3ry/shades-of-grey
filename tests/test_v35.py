@@ -416,7 +416,7 @@ def main():
         text = copied(page)
         lines = text.splitlines()
         check("Copy as text on a starter scheme: its name, summary, reason, four colour lines and the footnote",
-              lines[0] == "Starter scheme: Cold blue and gold" and lines[1] == "Cold blue armour, gold trim, red eyes" and lines[2].startswith("Blue and gold is a classic pair")
+              lines[0] == "Colour plan: Cold blue and gold" and lines[1] == "Cold blue armour, gold trim, red eyes" and lines[2].startswith("Blue and gold is a classic pair")
               and len(lines) == 8 and lines[3].startswith("- ") and "Armour: a deep blue." in lines[3], text)
         check("the toast says Cold blue and gold copied", toast(page) == "Cold blue and gold copied. Paste it anywhere.", toast(page))
         cmp_pick(page, "detail-chips", keys_d[0])

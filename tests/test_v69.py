@@ -105,7 +105,7 @@ def main():
         labels = page.evaluate("() => [...document.querySelectorAll('#cmp-focus .paint-panel-label')].map(p => p.textContent)")
         check("colours that go with it: Opposite, Neighbours and Triad", all(x in labels for x in ["Opposite", "Neighbours", "Triad"]), labels)
         check("then starter schemes, detail recipes and basing tips with a similar colour",
-              labels[-3:] == ["Starter schemes with a similar colour", "Detail recipes with a similar colour", "Basing tips with a similar colour"], labels)
+              labels[-3:] == ["Colour plans with a similar colour", "Detail recipes with a similar colour", "Basing tips with a similar colour"], labels)
         lists = page.evaluate("() => [...document.querySelectorAll('#cmp-focus-panel > .idea-list')].slice(0, 3).map(l => [...l.querySelectorAll('.idea-tag')].map(x => x.textContent))")
         tags = [t for l in lists for t in l]
         # v69: since v64 a paint you own comes first only when it is a Good or Okay fit; a poor fit ("Yours, poor fit") comes after the closest paint overall.

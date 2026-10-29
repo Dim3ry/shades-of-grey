@@ -180,7 +180,7 @@ def main():
         check("the panel sits in the same list item, straight after the paint's button, which now says expanded and controls it", li_kids == ["LI", "BUTTON", "true", "cmp-paint-panel"], li_kids)
         check("the intro says its colour (blue) and that yours come first", pn["intro"] == ["Its colour is blue. These go with it, yours first."], pn["intro"])
         names = {s["label"]: [r["name"] for r in s["rows"]] for s in pn["sections"]}
-        check("the groups are Opposite, Neighbours, Triad and the starter schemes, in that order", [s["label"] for s in pn["sections"]] == ["Opposite", "Neighbours", "Triad", "Starter schemes with a similar colour"], [s["label"] for s in pn["sections"]])
+        check("the groups are Opposite, Neighbours, Triad and the starter schemes, in that order", [s["label"] for s in pn["sections"]] == ["Opposite", "Neighbours", "Triad", "Colour plans with a similar colour"], [s["label"] for s in pn["sections"]])
         check("known answers: the opposite is the paint made exactly opposite, the neighbours are the ones 30 degrees either side, the triad the ones 120 and 240 degrees round (all yours, so all You own this)",
               names["Opposite"] == ["Probe Opposite"] and names["Neighbours"] == ["Probe Left", "Probe Right"] and names["Triad"] == ["Probe Triad A", "Probe Triad B"]
               and all(r["tag"] == "You own this" for s in pn["sections"][:3] for r in s["rows"]), names)
@@ -234,7 +234,7 @@ def main():
         copy_spy(page)
         page.click("#cmp-paint-panel .share-row button")
         text = copied(page)
-        check("Copy as text in the panel copies the title, the group names, the rows and the footer, as plain text", text and text.startswith("Matching colours for Probe gold metal (Test Paints)") and "Starter schemes with a similar colour" in text
+        check("Copy as text in the panel copies the title, the group names, the rows and the footer, as plain text", text and text.startswith("Matching colours for Probe gold metal (Test Paints)") and "Colour plans with a similar colour" in text
               and "Colours on a screen are only a guide" in text and "<" not in text and text.count("\n- ") >= 4, (text or "")[:200])
         # v62: the panel's paint now has Use in a recipe and Add to a recipe at the top, so the panel has those two plus Copy as text (still no Save into a new recipe). v65: and a third, Similar paints, in the same row (so 3 buttons there)
         check("and the panel has Copy as text plus the v62 paint buttons and (v65) Similar paints, only (no Save into a new recipe, no links inside)", page.locator("#cmp-paint-panel .share-row button").count() == 1 and page.locator("#cmp-paint-panel > .paint-recipe .paint-recipe-buttons button").count() == 3 and page.locator("#cmp-paint-panel a:not(.shop-more a), #cmp-paint-panel [href]:not(.shop-more *), #cmp-paint-panel [role=link]:not(.shop-more *)").count() == 0)   # v64: a paint you do not own can sit in the panel (a poor owned match no longer goes first), and it has the v39 Shop links fold-out
@@ -397,8 +397,8 @@ def main():
         everything = "\n".join(shown)
         hits = GW_WORDS.findall(everything) + GW_MORE.findall(everything)
         check("everything we wrote in the panels (intro, group names, reasons, tags, notes, buttons) names no Games Workshop game, faction, scheme, paint or product",
-              not hits and all(w in everything for w in ["Opposite", "Neighbours", "Triad", "Starter schemes with a similar colour", "Accents that stand out", "yours first", "Copy as text"]), (hits[:10], everything[:200]))
-        own = "\n".join([joined, help_text, new_code, "Tap a paint to see colours that go with it, and starter schemes with a similar colour.", "Matching colours"])
+              not hits and all(w in everything for w in ["Opposite", "Neighbours", "Triad", "Colour plans with a similar colour", "Accents that stand out", "yours first", "Copy as text"]), (hits[:10], everything[:200]))
+        own = "\n".join([joined, help_text, new_code, "Tap a paint to see colours that go with it, and colour plans with a similar colour.", "Matching colours"])
         own_hits = GW_WORDS.findall(own) + GW_MORE.findall(own)
         check("there are no links at all in the new parts (no shop links, no web links of any kind)", page.locator("#compendium-body a, #compendium-body [href], #compendium-body [role=link]").count() == 0)
 

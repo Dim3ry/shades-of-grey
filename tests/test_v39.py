@@ -69,7 +69,7 @@ ALL_OWNED = [BLUE, P(2, "Probe Opposite", at(180)), P(3, "Probe Left", at(-30)),
              P(5, "Probe Triad A", at(120)), P(6, "Probe Triad B", at(240))]
 JUST_BLUE = [BLUE]   # every match then comes from the built-in list
 
-STARTER_LABEL = "Starter schemes with a similar colour"
+STARTER_LABEL = "Colour plans with a similar colour"
 ROWS_JS = """() => [...document.querySelectorAll('#cmp-wheel-detail button.idea-link')].map(b => b.querySelector('.idea-name').childNodes[0].textContent)"""
 SPOKEN_JS = """const spoken = (el) => { const ids = (el.getAttribute('aria-labelledby') || '').split(/\\s+/).filter(Boolean);
       if (!ids.length) return el.getAttribute('aria-label') || el.textContent.replace(/\\s+/g, ' ').trim();

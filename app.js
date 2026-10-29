@@ -8085,7 +8085,7 @@
         emptyLine.textContent = "No schemes yet.";
         const emptyMore = document.createElement("p");
         emptyMore.className = "hint";
-        emptyMore.textContent = "A scheme is a colour plan or idea you can save into a recipe. Here it groups the recipes you use for one faction " +
+        emptyMore.textContent = "A scheme is the look for a whole model, unit or army. It is a bundle of recipes. Here it groups the recipes you use for one faction " +
           "(armour, trim, lenses, base…). Apply it to the whole faction at once, and new units in that faction get it automatically.";
         empty.append(emptyLine, pageMoreInfo("schemes-empty", [emptyMore], { label: "Schemes" }));
         schemeListEl.appendChild(empty);
@@ -9756,6 +9756,30 @@
     // v52: tuck the explanations on Settings and Updates behind one More info per card. The controls stay where they are (Backups stay at 44 px
     // and in view); only the text moves. The nodes keep their ids, so the code that writes into them (appearance-note, counting-note...) is
     // unchanged. Run once at start-up. The More info goes where the first moved line was.
+    // S1: "Recipe or scheme? What's the difference". One closed More info at the top of Painting > Recipes and Painting > Schemes (the open
+    // state is kept only while the app is open). The same words are in Help. Words only: no data or storage.
+    function addRecipeSchemeExplainers() {
+      const lines = [
+        ["Recipe", "how to paint one part, like teeth or armour. It has steps, paints and mixes."],
+        ["Scheme", "the look for a whole model, unit or army. It is a bundle of recipes. For example, my dark green scheme is an Armour recipe, a Trim recipe, a Skin recipe and a Weapon recipe."],
+        ["Colour plan (Compendium)", "a quick idea of which colours go together. No steps. Save it into a recipe when you want steps."],
+      ];
+      for (const [key, host] of [["recipes", document.getElementById("recipe-home")], ["schemes", document.getElementById("scheme-view")]]) {
+        if (!host || document.getElementById("more-recipe-or-scheme-" + key)) continue;
+        const nodes = lines.map(([word, text]) => {
+          const p = document.createElement("p");
+          p.style.margin = "0 0 6px";
+          const b = document.createElement("strong");
+          b.textContent = word + ": ";
+          p.append(b, text);
+          return p;
+        });
+        const info = pageMoreInfo("recipe-or-scheme-" + key, nodes, { openText: "Recipe or scheme? What's the difference", closeText: "Recipe or scheme? What's the difference" });
+        info.classList.add("recipe-scheme-explainer");
+        info.style.marginBottom = "12px";
+        host.prepend(info);
+      }
+    }
     function foldPageText() {
       const groups = [
         ["backups", "Backups", ["backup-explain"]],
@@ -10585,7 +10609,7 @@
       row.id = door.id("starter-view");
       row.style.marginTop = "0";
       row.setAttribute("role", "group");
-      row.setAttribute("aria-label", "Browse starter schemes by");
+      row.setAttribute("aria-label", "Browse colour plans by");
       for (const v of [{ key: "themes", name: "Themes" }, { key: "combos", name: "Combinations" }]) {
         const chip = makeChip(v.name, v.key === view, () => onView(v.key));
         chip.dataset.view = v.key;
@@ -10602,14 +10626,14 @@
       box.id = door.id("starter-schemes");
       const title = document.createElement("h3");
       title.className = "scheme-title";
-      title.textContent = "Starter schemes";
+      title.textContent = "Colour plans";
       const hint = document.createElement("p");
       hint.className = "hint";
       hint.textContent = door.switcher
-        ? "Pick a group, then a scheme."
+        ? "Pick a group, then a colour plan."
         : door.addStep
-        ? "Pick a group, then a scheme. Tap a paint to add it as a step."
-        : "Pick a group, then a scheme.";
+        ? "Pick a group, then a colour plan. Tap a paint to add it as a step."
+        : "Pick a group, then a colour plan.";
       const combos = !!door.switcher && st.view === "combos";
       const groups = combos ? STARTER_COMBOS : STARTER_MOODS;
       const value = groupValue(door, groups, combos ? st.combo : st.mood);
@@ -10618,7 +10642,7 @@
       moods.id = door.id(combos ? "starter-combos" : "starter-moods");
       moods.style.marginTop = "0";
       moods.setAttribute("role", "group");
-      moods.setAttribute("aria-label", combos ? "Show schemes by main colour" : "Show schemes by mood");
+      moods.setAttribute("aria-label", combos ? "Show colour plans by main colour" : "Show colour plans by mood");
       for (const m of groupButtons(door, groups)) {
         const chip = makeChip(m.name, m.key === value, () => (combos ? onCombo : onMood)(groupNext(door, m.key, value), m.key));
         chip.dataset[combos ? "combo" : "mood"] = m.key || "all";
@@ -10633,13 +10657,13 @@
         chip.dataset.scheme = s.key;
         chips.appendChild(chip);
       }
-      box.append(title, compactRows(door) ? buildMoreInfo([hint], { state: infoState(door, "starter-hint"), id: door.id("starter-hint-panel"), label: "starter schemes" }) : hint);
+      box.append(title, compactRows(door) ? buildMoreInfo([hint], { state: infoState(door, "starter-hint"), id: door.id("starter-hint-panel"), label: "colour plans" }) : hint);
       if (door.switcher) box.appendChild(buildSchemeSwitch(door, combos ? "combos" : "themes", onView));
       const q = door.search ? searchQuery(st, "starter") : "";
       if (door.search) {   // v37 part 2: the search box (only what comes after it is rebuilt while you type)
         const groupName = (groups.find(g => g.key === value && value !== "all") || {}).name || "";
         box.appendChild(buildListSearch(door, "starter", {
-          label: "Search starter schemes", status: searchStatus(q, starterSchemesShown(st, door).length, groupName),
+          label: "Search colour plans", status: searchStatus(q, starterSchemesShown(st, door).length, groupName),
           rebuild: (text) => { onSearch(text); return buildStarterSchemes(door, onPick, onMood, onView, onCombo, onSearch); },
         }));
       }
@@ -10647,7 +10671,7 @@
       if (!(door.short && !value && !q) && (!q || chips.childElementCount)) box.appendChild(chips);
       const scheme = starterSchemesShown(st, door).find(s => s.key === st.scheme);
       if (!scheme) {
-        if (door.schemeShop) box.appendChild(buildIdleShop(door, "starter-shop-idle", "Select a scheme to generate a shopping list"));
+        if (door.schemeShop) box.appendChild(buildIdleShop(door, "starter-shop-idle", "Select a colour plan to generate a shopping list"));
         return box;
       }
 
@@ -10662,7 +10686,7 @@
       const list = document.createElement("ul");
       list.className = "idea-list";
       list.id = door.id("starter-list");
-      const lines = [`Starter scheme: ${scheme.name}`, scheme.summary, scheme.reason], steps = [];
+      const lines = [`Colour plan: ${scheme.name}`, scheme.summary, scheme.reason], steps = [];
       const schemeHits = starterSchemePaints(scheme);
       // v51: tick boxes, Select all and the Add to shopping list button (Compendium only)
       const pick = pickable(door) ? buildPick(door, { id: `starter-${scheme.key}`, source: `Scheme: ${scheme.name}`, head: lines.slice(), foot: [COMPENDIUM_TEXT_FOOT] }) : null;
@@ -12271,10 +12295,10 @@
       }
       if (!found) say("No paints with a known colour to suggest yet.");
 
-      label("Starter schemes with a similar colour");
+      label("Colour plans with a similar colour");
       const like = starterSchemesLike(paint);
       if (!like.length) {
-        lines.push(say("No starter scheme uses a colour close to this one.").textContent);
+        lines.push(say("No colour plan uses a colour close to this one.").textContent);
       } else {
         const list = document.createElement("ul");
         list.className = "idea-list";
@@ -12938,7 +12962,7 @@
       const door = compendiumDoor();
       const redraw = (selector) => renderCompendium(selector);
 
-      const intro = say("A colour wheel (tap a colour to open its groups), Ask the Mentor, colour ideas, starter schemes, detail recipes and basing tips, without needing a recipe. Tap a heading to open it, and type in a search box to find things fast. Use Copy as text to keep anything, or Save into a new recipe\u2026 to start a recipe from colour ideas, schemes, detail recipes and basing tips.", "intro");
+      const intro = say("A colour wheel (tap a colour to open its groups), Ask the Mentor, colour ideas, colour plans, detail recipes and basing tips, without needing a recipe. Tap a heading to open it, and type in a search box to find things fast. Use Copy as text to keep anything, or Save into a new recipe\u2026 to start a recipe from colour ideas, colour plans, detail recipes and basing tips.", "intro");
 
       appendIdeasFocus(body, door, redraw);   // v69: a paint's ideas, when the Compendium was opened from its Ideas for this button
       // v81: from 900 px the colour wheel sits on the left and the fold-outs on the right (layout-split). Written in the phone order, so
@@ -12960,8 +12984,8 @@
       const fold = (key, label, make) => { if (make) right.appendChild(foldSection(door, key, label, make)); };
       fold("mentor", "Ask the Mentor", () => buildMentor(door, redraw));   // v71
       fold("ideas", "Colour ideas", () => { const out = document.createDocumentFragment(); buildCompendiumIdeas(out, door, redraw); return out; });
-      fold("history", "Your schemes", parts.history && (() => dropTitle(parts.history(), "Colours you've used on this faction before.")));
-      fold("starter", "Starter schemes", parts.starter && (() => dropTitle(parts.starter())));
+      fold("history", "Colours you've used", parts.history && (() => dropTitle(parts.history(), "Colours you've used on this faction before.")));
+      fold("starter", "Colour plans", parts.starter && (() => dropTitle(parts.starter())));
       fold("detail", "Detail recipes", parts.detail && (() => dropTitle(parts.detail())));
       fold("basing", "Basing tips", parts.basing && (() => dropTitle(parts.basing())));
       right.appendChild(say("Ideas use paints you own first. Colours on screen are a guide.", "foot"));
@@ -17347,6 +17371,7 @@
     seedExampleRecipes();   // v24: only on a brand-new start
     planFeedbackPrompt();   // v25: decides whether the feedback card shows today (saved by the render below)
     foldPageText();   // v52
+    addRecipeSchemeExplainers();   // S1
     markHelpFolds();   // v52
     foldCard(document.getElementById("faction-colours-card"), "faction-colours");   // v53
     foldCard(document.getElementById("brands-card"), "paint-brands");   // v53

@@ -556,7 +556,7 @@ def main():
             check(f"the {tab} tab still opens", page.locator(f"#{view}").is_visible())
         open_comp(page)
         parts = page.evaluate("() => [...document.querySelectorAll('#compendium-body .compendium-folds > .fold > h3 button span:first-child')].map(e => e.textContent)")
-        check("the six folding parts under the wheel are all still there (v71: Ask the Mentor first)", parts == ["Ask the Mentor", "Colour ideas", "Your schemes", "Starter schemes", "Detail recipes", "Basing tips"], parts)
+        check("the six folding parts under the wheel are all still there (v71: Ask the Mentor first)", parts == ["Ask the Mentor", "Colour ideas", "Colours you've used", "Colour plans", "Detail recipes", "Basing tips"], parts)
         zoom(page, "red")
         check("the six folding parts still work while the wheel is drilled into a colour",
               page.evaluate("() => [...document.querySelectorAll('#compendium-body .compendium-folds > .fold')].length") == 6 and page.locator("#cmp-fold-starter-button").count() == 1)

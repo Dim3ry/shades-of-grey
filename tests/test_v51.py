@@ -112,7 +112,7 @@ def main():
         w.load(page, paints=[], settings={"appearance": "dark"})
         c.open_comp(page)
         check("with no scheme picked there is the greyed button and its old hint",
-              page.locator(".shop-idle-button").count() == 1 and "Select a scheme to generate a shopping list" in page.locator(".shop-idle .hint").inner_text())
+              page.locator(".shop-idle-button").count() == 1 and "Select a colour plan to generate a shopping list" in page.locator(".shop-idle .hint").inner_text())
         c.cmp_pick(page, "starter-chips", KEY)
         page.wait_for_timeout(100)
         sp = w.scheme_paints(page)
