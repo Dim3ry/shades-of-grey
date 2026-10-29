@@ -16,6 +16,7 @@ python3 tests/test_v18c.py
 The port comes from the SOG_PORT environment variable, or 8765 if it isn't set."""
 import json, os, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import quiet
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}"
@@ -35,7 +36,7 @@ def start(page, book=None):
     page.evaluate("""book => { localStorage.clear(); localStorage.setItem('mini-tracker-models', '[]');
                      if (book) localStorage.setItem('shades-of-grey-recipes', JSON.stringify(book)); }""", book)
     page.goto(f"{BASE}/index.html")
-    page.wait_for_timeout(300)
+    quiet(page)
 
 def saved_book(page):
     return json.loads(page.evaluate(f"localStorage.getItem('{RECIPES_KEY}') || '{{}}'"))

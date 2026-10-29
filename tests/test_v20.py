@@ -17,6 +17,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import quiet
 from launch_helpers import leave_launch
 from dialog_watch import DialogAnswers
 
@@ -65,7 +66,7 @@ def seed(page, settings=None, units=UNITS, book=BOOK):
         if (b) localStorage.setItem('shades-of-grey-recipes', JSON.stringify(b));
         if (s) localStorage.setItem('shades-of-grey-settings', JSON.stringify(s)); }""", [units, book, settings])
     page.reload()
-    page.wait_for_timeout(300)
+    quiet(page)
     leave_launch(page)   # U4b: tap through the start page
 
 def full_settings(**extra):

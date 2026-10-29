@@ -17,6 +17,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import quiet
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
@@ -36,7 +37,7 @@ def open_mentor(page):
     page.wait_for_selector("#cmp-fold-mentor-button")
     if page.get_attribute("#cmp-fold-mentor-button", "aria-expanded") != "true":
         page.click("#cmp-fold-mentor-button")
-    page.wait_for_timeout(150)
+    quiet(page)
 
 def pick(page, box, text):
     page.click(f"#cmp-mentor-{box}")

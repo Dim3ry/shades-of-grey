@@ -19,6 +19,8 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import quiet
+from launch_helpers import app_ready
 from launch_helpers import leave_launch
 import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 
@@ -77,8 +79,7 @@ def start(page, units=UNITS, book=BOOK, settings=None):
                                     r.onsuccess = r.onerror = r.onblocked = () => done(); }); }""",
                   [units, book, settings or full_settings()])
     page.goto(URL)
-    page.wait_for_function("() => typeof APP_VERSION === 'string'")
-    page.wait_for_timeout(300)
+    app_ready(page)
     leave_launch(page)   # U4b: tap through the start page
 
 def tab(page, name):
@@ -87,7 +88,7 @@ def tab(page, name):
         page.click(f'#more-seg button[data-page="{name}"]')
     else:
         page.click(f'nav button[data-tab="{name}"]')
-    page.wait_for_timeout(150)
+    quiet(page)
 
 def shot(page, name):
     os.makedirs(SHOTS, exist_ok=True)
@@ -108,11 +109,11 @@ def box_kind(page):
 
 def yes(page):
     page.click("#dialog-yes")
-    page.wait_for_timeout(150)
+    quiet(page)
 
 def no(page):
     page.click("#dialog-no")
-    page.wait_for_timeout(150)
+    quiet(page)
 
 def asks(page, expected):
     """The box is open and says this (a string, or a compiled regex)."""

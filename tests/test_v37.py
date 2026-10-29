@@ -25,6 +25,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, re, subprocess, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import app_ready, quiet
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import wheel_helpers as wh   # v43
@@ -72,7 +73,7 @@ def rows(page, sel):
 def open_tab(page):
     blur(page)
     page.click('nav button[data-tab="compendium"]')
-    page.wait_for_timeout(200)
+    quiet(page)
 
 def is_open(page, key):
     return page.get_attribute(f"#cmp-fold-{key}-button", "aria-expanded") == "true"
@@ -80,7 +81,7 @@ def is_open(page, key):
 def fold(page, key, want=True):
     if is_open(page, key) != want:
         page.click(f"#cmp-fold-{key}-button")
-        page.wait_for_timeout(100)
+        quiet(page)
 
 def open_all(page):
     for key in KEYS:
@@ -200,8 +201,7 @@ def main():
               [is_open(page, k) for k in KEYS])
         check("the kept state is the door's own (compendiumState.open)", page.evaluate("() => JSON.stringify(Object.keys(compendiumState.open).filter(k => compendiumState.open[k]).sort())") == '["detail","ideas"]')
         page.reload()
-        page.wait_for_function("() => typeof APP_VERSION === 'string'")
-        page.wait_for_timeout(300)
+        app_ready(page)
         t.leave_launch(page)   # U4b (v89): a reload shows the start page; tap Compendium to go back in
         check("after the app is closed and opened again (a reload) everything starts closed again", page.is_visible("#view-compendium") and all(not is_open(page, k) for k in KEYS))
         load(page, paints=PAINTS, recipes=RECIPES, units=UNITS)

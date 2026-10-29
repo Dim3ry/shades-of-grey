@@ -23,6 +23,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import base64, json, mimetypes, os, re, sys, urllib.parse
 from playwright.sync_api import sync_playwright
+from launch_helpers import app_ready, quiet
 from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -86,8 +87,7 @@ def clear_photos(page):
         r.onsuccess = r.onerror = r.onblocked = () => done(); }); }""")
 
 def settle(page):
-    page.wait_for_function("() => typeof APP_VERSION === 'string'")
-    page.wait_for_timeout(500)
+    app_ready(page)
 
 def site_load(page, settings=None, units=None, url=SITE):
     """Open the app as minifolio.app with the given saved settings and units, counting only the real start-up."""
@@ -113,7 +113,7 @@ def blur(page):
 def main_tab(page, name):
     blur(page)
     page.click(f'nav button[data-tab="{name}"]')
-    page.wait_for_timeout(150)
+    quiet(page)
 
 def sub_tab(page, name):
     page.click(f'#more-seg button[data-page="{name}"]')

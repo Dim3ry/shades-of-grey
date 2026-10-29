@@ -45,3 +45,25 @@ _SETTLED = """() => !document.querySelector('.mo-out, .mo-box, .mo-ring, .mo-gho
 
 def wait_settled(page, timeout=15000):
     page.wait_for_function(_SETTLED, timeout=timeout)
+
+
+# T1: waits for a real condition, used where older tests slept for a fixed time (300 to 500 ms after a load, 100 to 250 ms after a tap).
+# app_ready: the page has finished loading and the app has started (it starts in one go when its scripts finish), plus two painted frames.
+_READY = """() => document.readyState === 'complete' && typeof APP_VERSION === 'string' && typeof settings === 'object'
+    && new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true))))"""
+
+def app_ready(page, timeout=15000):
+    page.wait_for_function(_READY, timeout=timeout)
+
+# quiet: two painted frames, then no short animation or transition is still running anywhere on the page. "Short" means ending within a second:
+# the screen moves of this app take 240 to 500 ms, while a message's own display time (several seconds) must not be waited out, or the message
+# would be gone before the test looks at it. An endless animation (a spinner) does not count either, and the wait stops after a second at most.
+_QUIET = """() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))).then(() => new Promise(done => {
+    const stop = performance.now() + 1000;
+    const busy = () => document.getAnimations().some(a => { if (a.playState !== 'running' || !a.effect) return false;
+        const t = a.effect.getComputedTiming(); return t.iterations !== Infinity && t.endTime <= 1000; });
+    const check = () => busy() && performance.now() < stop ? requestAnimationFrame(check) : done();
+    check(); }))"""
+
+def quiet(page):
+    page.evaluate(_QUIET)

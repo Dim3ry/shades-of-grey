@@ -25,6 +25,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import colorsys, hashlib, os, re, subprocess, sys, unicodedata
 from playwright.sync_api import sync_playwright
+from launch_helpers import app_ready, quiet
 from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -104,7 +105,7 @@ CHIPS_JS = "(s) => [...document.querySelectorAll(s)].map(c => c.textContent)"
 def open_tab(page):
     blur(page)
     page.click('nav button[data-tab="compendium"]')
-    page.wait_for_timeout(200)
+    quiet(page)
 
 def is_open(page, key):
     return page.get_attribute(f"#cmp-fold-{key}-button", "aria-expanded") == "true"
@@ -112,7 +113,7 @@ def is_open(page, key):
 def fold(page, key, want=True):
     if is_open(page, key) != want:
         page.click(f"#cmp-fold-{key}-button")
-        page.wait_for_timeout(100)
+        quiet(page)
 
 def open_all(page):
     for key in KEYS:
@@ -309,7 +310,7 @@ def main():
                 break
             page.hover(LIST)
             page.mouse.wheel(0, 4000)
-            page.wait_for_timeout(40)
+            quiet(page)
         n_now = page.locator(f"{LIST} [role=option]").count()
         check(f"scrolling the list with the wheel keeps adding lines until all {len(texts)} are there and nothing is missing or twice", n_now == len(texts) and len(set(option_texts(page, LIST))) == len(set(texts)), (n_now, len(texts)))
         last = page.locator(f'{LIST} [role=option][aria-posinset="{len(texts)}"]')
@@ -521,8 +522,7 @@ def main():
         open_tab(page)
         check("what you typed is kept while the app is open (leave the tab and come back)", page.input_value("#cmp-detail-search") == "wet" and is_open(page, "detail"))
         page.reload()
-        page.wait_for_function("() => typeof APP_VERSION === 'string'")
-        page.wait_for_timeout(300)
+        app_ready(page)
         leave_launch(page)   # U4b: tap through the start page
         open_tab(page)
         fold(page, "detail", True)

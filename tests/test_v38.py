@@ -22,6 +22,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import colorsys, os, re, subprocess, sys, time
 from playwright.sync_api import sync_playwright
+from launch_helpers import quiet
 from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -80,7 +81,7 @@ ROWS_JS = """() => [...document.querySelectorAll('#cmp-wheel-detail button.idea-
 def open_tab(page):
     blur(page)
     page.click('nav button[data-tab="compendium"]')
-    page.wait_for_timeout(200)
+    quiet(page)
 
 def tap(page, key):
     wh.tap(page, key)   # v43: a colour opens its groups first (see wheel_helpers.py); same meaning as before
@@ -91,7 +92,7 @@ def row(page, name):
 
 def open_row(page, name, wait=120):
     row(page, name).click()
-    page.wait_for_timeout(wait)
+    quiet(page) if wait <= 300 else page.wait_for_timeout(wait)
 
 def panel(page):
     return page.evaluate(PANEL_JS)

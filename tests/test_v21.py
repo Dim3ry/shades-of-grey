@@ -16,6 +16,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import quiet
 from launch_helpers import leave_launch
 import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 from dialog_watch import DialogAnswers
@@ -60,7 +61,7 @@ def seed(page, units=UNITS, settings=None, fresh=False):
         if (!fresh) localStorage.setItem('mini-tracker-models', JSON.stringify(u || []));
         if (s) localStorage.setItem('shades-of-grey-settings', JSON.stringify(s)); }""", [units, settings, fresh])
     page.reload()
-    page.wait_for_timeout(300)
+    quiet(page)
     leave_launch(page)   # U4b: tap through the start page
 
 def full_settings(**extra):

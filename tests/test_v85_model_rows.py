@@ -12,6 +12,7 @@ New behaviour only:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, re, sys, time
 from playwright.sync_api import sync_playwright
+from launch_helpers import quiet
 from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -53,7 +54,7 @@ def undo(page):
 
 def open_details(page, uid):
     page.click(f"li.unit[data-id='{uid}'] .details-toggle")
-    page.wait_for_timeout(250)
+    quiet(page)
 
 def main():
     errors, dialogs = [], []

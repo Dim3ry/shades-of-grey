@@ -19,6 +19,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import app_ready, quiet
 from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -67,20 +68,19 @@ def load(page, paints=None, settings=None, recipes=None, units=None):
     page.evaluate("""async () => { await new Promise(done => { const r = indexedDB.deleteDatabase('shades-of-grey-photos');
         r.onsuccess = r.onerror = r.onblocked = () => done(); }); }""")
     page.reload()
-    page.wait_for_function("() => typeof APP_VERSION === 'string'")
-    page.wait_for_timeout(400)
+    app_ready(page)
     leave_launch(page)   # U4b: tap through the start page
 
 def blur(page):
     page.evaluate("() => document.activeElement && document.activeElement.blur()")
-    page.wait_for_timeout(100)
+    quiet(page)
 
 def open_editor(page):
     blur(page)
     page.click('nav button[data-tab="recipes"]')
     page.wait_for_timeout(120)
     page.click("#new-recipe")
-    page.wait_for_timeout(200)
+    quiet(page)
 
 def set_step_paint(page, step, name, colour=None):
     """Type a paint into a step's first paint box (the app fills in its colour for known paints)."""
@@ -114,7 +114,7 @@ def using_text(page):
 def open_panel(page):
     if not page.evaluate("() => document.getElementById('colour-ideas').open"):
         page.click("#colour-ideas > summary")
-        page.wait_for_timeout(150)
+        quiet(page)
 
 def ideas(page):
     return page.evaluate("""() => [...document.querySelectorAll('#colour-ideas button.idea')].map(b => ({

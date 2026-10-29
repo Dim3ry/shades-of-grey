@@ -21,6 +21,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import app_ready, quiet
 from launch_helpers import leave_launch
 
 PORT = os.environ.get("SOG_PORT", "8765")
@@ -63,8 +64,7 @@ def fresh(page, settings=None):
         await new Promise(done => { const r = indexedDB.deleteDatabase('shades-of-grey-photos');
                                     r.onsuccess = r.onerror = r.onblocked = () => done(); }); }""", settings)
     page.reload()
-    page.wait_for_function("() => typeof APP_VERSION === 'string'")
-    page.wait_for_timeout(300)
+    app_ready(page)
     leave_launch(page)   # U4b: tap through the start page
 
 def existing(page, units, book=None, settings=None):
@@ -77,13 +77,12 @@ def existing(page, units, book=None, settings=None):
         await new Promise(done => { const r = indexedDB.deleteDatabase('shades-of-grey-photos');
                                     r.onsuccess = r.onerror = r.onblocked = () => done(); }); }""", [units, book, settings])
     page.reload()
-    page.wait_for_function("() => typeof APP_VERSION === 'string'")
-    page.wait_for_timeout(300)
+    app_ready(page)
     leave_launch(page)   # U4b: tap through the start page
 
 def main_tab(page, name):
     page.click(f'nav button[data-tab="{name}"]')
-    page.wait_for_timeout(150)
+    quiet(page)
 
 def sub_tab(page, name):
     page.click(f'#more-seg button[data-page="{name}"]')
@@ -91,7 +90,7 @@ def sub_tab(page, name):
 
 def recipe_view(page, view):
     page.click(f'#recipe-seg button[data-view="{view}"]')
-    page.wait_for_timeout(200)
+    quiet(page)
 
 def shot(page, name):
     os.makedirs(SHOTS, exist_ok=True)
@@ -228,8 +227,7 @@ def main():
         page.goto(URL)
         page.evaluate("""(b) => { localStorage.clear(); localStorage.setItem('shades-of-grey-recipes', JSON.stringify(b)); }""", own_book)
         page.reload()
-        page.wait_for_function("() => typeof APP_VERSION === 'string'")
-        page.wait_for_timeout(300)
+        app_ready(page)
         leave_launch(page)   # U4b: tap through the start page
         check("no units saved but recipes are: their recipes are left exactly as they were",
               page.evaluate("() => book.recipes.map(r => r.name)") == ["My black"] and page.evaluate("() => book.paints.length") == 1)
@@ -237,8 +235,7 @@ def main():
         page.goto(URL)
         page.evaluate("""(b) => { localStorage.clear(); localStorage.setItem('shades-of-grey-recipes', JSON.stringify(b)); }""", empty_book)
         page.reload()
-        page.wait_for_function("() => typeof APP_VERSION === 'string'")
-        page.wait_for_timeout(300)
+        app_ready(page)
         leave_launch(page)   # U4b: tap through the start page
         check("an empty recipe book that was saved is not a new start: no examples",
               page.evaluate("() => book.recipes.length + book.paints.length") == 0)
@@ -247,15 +244,13 @@ def main():
         page.click("#examples-card-recipes .clear-recipe-examples")
         page.wait_for_timeout(300)
         page.reload()
-        page.wait_for_function("() => typeof APP_VERSION === 'string'")
-        page.wait_for_timeout(300)
+        app_ready(page)
         leave_launch(page)   # U4b: tap through the start page
         check("after Clear and a reload the examples do not come back",
               page.evaluate("() => book.recipes.length + book.paints.length") == 0)
         page.evaluate("() => localStorage.removeItem('mini-tracker-models')")
         page.reload()
-        page.wait_for_function("() => typeof APP_VERSION === 'string'")
-        page.wait_for_timeout(300)
+        app_ready(page)
         leave_launch(page)   # U4b: tap through the start page
         check("even if the units list is emptied from storage, cleared examples are not given again",
               page.evaluate("() => book.recipes.length + book.paints.length") == 0)
@@ -286,8 +281,7 @@ def main():
         page.wait_for_timeout(9500)
         check("the message goes after about 8 seconds", not toast(page)["shown"] or not toast(page)["undo"])
         page.reload()
-        page.wait_for_function("() => typeof APP_VERSION === 'string'")
-        page.wait_for_timeout(300)
+        app_ready(page)
         leave_launch(page)   # U4b: tap through the start page
         check("after a reload the examples are still gone", page.evaluate("() => book.recipes.length + book.paints.length") == 0)
         # Undo when a new recipe has taken a cleared one's number in the meantime.
@@ -318,8 +312,7 @@ def main():
               and page.evaluate("() => book.recipes.every(r => !('example' in r)) && book.paints.every(p => !('example' in p)) && book.schemes.every(s => !('example' in s))"))
         check("Keep them: the card is gone", not card_visible(page))
         page.reload()
-        page.wait_for_function("() => typeof APP_VERSION === 'string'")
-        page.wait_for_timeout(300)
+        app_ready(page)
         leave_launch(page)   # U4b: tap through the start page
         check("Keep them sticks after a reload (not given again, not marked again)",
               page.evaluate("() => book.recipes.length") == 5 and page.evaluate("() => book.recipes.every(r => !('example' in r))"))

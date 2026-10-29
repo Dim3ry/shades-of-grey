@@ -23,6 +23,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import colorsys, json, os, re, subprocess, sys, time
 from playwright.sync_api import sync_playwright
+from launch_helpers import app_ready, quiet
 from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -88,7 +89,7 @@ PLAIN = "Plain links: Minifolio isn't paid for them, and only the paint's name g
 def open_tab(page):
     blur(page)
     page.click('nav button[data-tab="compendium"]')
-    page.wait_for_timeout(200)
+    quiet(page)
 
 def tap(page, key):
     wh.tap(page, key)   # v43: a colour opens its groups first (see wheel_helpers.py); same meaning as before
@@ -96,7 +97,7 @@ def tap(page, key):
 def open_row(page, name, wait=150):
     names = page.evaluate(ROWS_JS)
     page.locator("#cmp-wheel-detail button.idea-link").nth(names.index(name)).click()
-    page.wait_for_timeout(wait)
+    quiet(page) if wait <= 300 else page.wait_for_timeout(wait)
 
 def reopen_panel(page, key="blue", name="Probe Blue"):
     """Back in the Compendium: the app remembers which colour and which paint were open, so only open what is not open already."""
@@ -421,8 +422,7 @@ def main():
         t.open_panel(page)
         check("and none in the recipe's Colour ideas card, which still has its three ideas", page.locator("#colour-ideas .shop-more").count() == 0 and page.locator("#colour-ideas button.idea").count() == 3)
         page.reload()
-        page.wait_for_function("() => typeof APP_VERSION === 'string'")
-        page.wait_for_timeout(300)
+        app_ready(page)
         leave_launch(page)   # U4b: tap through the start page
         go_settings(page)
         check("the choice is still off after the app is closed and opened again, and the box is unticked", not page.is_checked("#show-shop-links") and stored_settings(page).get("hideShopLinks") is True)

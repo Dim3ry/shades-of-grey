@@ -19,6 +19,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import quiet
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
@@ -57,7 +58,7 @@ def cards_seen(page):
 def tap(page, selector):
     page.locator(selector).scroll_into_view_if_needed()
     page.click(selector)
-    page.wait_for_timeout(300)
+    quiet(page)
 
 def undo(page):
     page.click("#toast-undo")

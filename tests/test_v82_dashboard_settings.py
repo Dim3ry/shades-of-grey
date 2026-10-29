@@ -13,6 +13,7 @@ Checks:
 4. Settings at 899 / 900 / 1280 / 1920 px: no sideways scroll, nothing wider than 1280 px, every tap target 44 px or more (a checkbox counts by its label)."""
 import os, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import quiet
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
@@ -35,7 +36,7 @@ def cards(page):
 def show(page, tab, width):
     page.set_viewport_size({"width": width, "height": 1000})
     page.click(f'nav button[data-tab="{tab}"]')
-    page.wait_for_timeout(250)
+    quiet(page)
 
 def small_taps(page, scope):
     return page.evaluate("""(scope) => [...document.querySelectorAll(scope + ' button, ' + scope + ' select, ' + scope + ' summary, ' + scope + ' input')]

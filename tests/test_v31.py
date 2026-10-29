@@ -25,6 +25,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import app_ready, quiet
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
@@ -82,21 +83,20 @@ def load(page, paints=None, settings=None, recipes=None, units=None, launch=Fals
     page.evaluate("""async () => { await new Promise(done => { const r = indexedDB.deleteDatabase('shades-of-grey-photos');
         r.onsuccess = r.onerror = r.onblocked = () => done(); }); }""")
     page.reload()
-    page.wait_for_function("() => typeof APP_VERSION === 'string'")
-    page.wait_for_timeout(400)
+    app_ready(page)
     if not launch:
         leave_launch(page)
 
 def blur(page):
     page.evaluate("() => document.activeElement && document.activeElement.blur()")
-    page.wait_for_timeout(100)
+    quiet(page)
 
 def open_editor(page):
     blur(page)
     page.click('nav button[data-tab="recipes"]')
-    page.wait_for_timeout(120)
+    quiet(page)
     page.click("#new-recipe")
-    page.wait_for_timeout(200)
+    quiet(page)
 
 def set_step_paint(page, step, name):
     """Type a paint into a step's first paint box; leaving the box fills in a known paint's brand and colour."""
@@ -117,14 +117,14 @@ def rec(rid, name, part, paint_ids):
 def edit_recipe(page, rid):
     blur(page)
     page.click('nav button[data-tab="recipes"]')
-    page.wait_for_timeout(150)
+    quiet(page)
     page.evaluate("(id) => startRecipeDraft(draftFrom(recipeById(id)))", rid)
-    page.wait_for_timeout(300)
+    quiet(page)
 
 def open_panel(page):
     if not page.evaluate("() => document.getElementById('colour-ideas').open"):
         page.click("#colour-ideas > summary")
-        page.wait_for_timeout(150)
+        quiet(page)
 
 def ideas(page):
     return page.evaluate("""() => [...document.querySelectorAll('#colour-ideas button.idea')].map(b => ({
@@ -198,7 +198,7 @@ def starter_rows(page):
 
 def pick_scheme(page, key):
     page.click(f'#starter-schemes [data-scheme="{key}"]')
-    page.wait_for_timeout(150)
+    quiet(page)
 
 def draft_steps(page):
     return page.evaluate("() => recipeDraft.steps.map(s => ({ n: s.paints[0].name, b: s.paints[0].brand, c: s.paints[0].colour, mix: s.paints[0].mix, note: s.note }))")
@@ -249,7 +249,7 @@ def scheme_chips(page):
 
 def pick_mood(page, key):
     page.click(f'#starter-moods [data-mood="{key}"]')
-    page.wait_for_timeout(150)
+    quiet(page)
 
 def focused(page):
     return page.evaluate("() => document.activeElement && (document.activeElement.dataset.mood || document.activeElement.dataset.scheme || document.activeElement.id) || ''")

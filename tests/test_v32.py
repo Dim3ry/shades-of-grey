@@ -32,6 +32,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import quiet
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
@@ -76,11 +77,11 @@ def recipe_chips(page):
 
 def pick_group(page, key):
     page.click(f'#detail-groups [data-detail-group="{key}"]')
-    page.wait_for_timeout(150)
+    quiet(page)
 
 def pick_recipe(page, key):
     page.click(f'#detail-chips [data-detail="{key}"]')
-    page.wait_for_timeout(150)
+    quiet(page)
 
 def full_steps(page):
     return page.evaluate("() => recipeDraft.steps.map(s => ({ technique: s.technique, coats: s.coats, ratio: s.ratio, optional: s.optional, note: s.note, n: s.paints.length, name: s.paints[0].name, brand: s.paints[0].brand, colour: s.paints[0].colour, mix: s.paints[0].mix }))")

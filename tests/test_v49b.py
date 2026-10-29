@@ -23,6 +23,8 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import quiet
+from launch_helpers import app_ready
 from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -72,17 +74,16 @@ def load(page, settings=None, units=UNITS, book=BOOK):
         localStorage.setItem('shades-of-grey-recipes', JSON.stringify(b));
         if (s) localStorage.setItem('shades-of-grey-settings', JSON.stringify(s)); }""", [settings, units, book])
     page.goto(URL)
-    page.wait_for_function("() => typeof APP_VERSION === 'string'")
-    page.wait_for_timeout(300)
+    app_ready(page)
     leave_launch(page)   # U4b: tap through the start page
 
 def tab(page, name):
     t.blur(page)   # the tab bar hides while a text box has the focus (a phone's keyboard is up)
     page.click(f'nav button[data-tab="{name}"]')
-    page.wait_for_timeout(200)
+    quiet(page)
 
 def settle(page):
-    page.wait_for_timeout(120)
+    quiet(page)
     page.evaluate("() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))")
 
 def open_filters(page):

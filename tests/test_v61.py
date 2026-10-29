@@ -19,6 +19,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import quiet
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
@@ -57,7 +58,7 @@ def open_unit(page, uid):
     # A3: open or shut now shows on the Details button (the name area is no longer a button with aria-expanded).
     if page.get_attribute(info.replace(" .info", " .details-toggle"), "aria-expanded") != "true":
         page.click(info)
-        page.wait_for_timeout(250)
+        quiet(page)
 
 def track(page, uid):
     return page.locator(f"{card(uid)} .panel button.track-each")

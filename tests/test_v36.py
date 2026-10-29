@@ -28,6 +28,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, subprocess, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import app_ready, quiet
 from launch_helpers import leave_launch, wait_settled
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -86,7 +87,7 @@ KEYS = ["red", "orange", "yellow", "green", "blue", "purple", "white", "grey", "
 def open_comp(page):
     blur(page)
     page.click('nav button[data-tab="compendium"]')
-    page.wait_for_timeout(200)
+    quiet(page)
     # v49: the page introduction sits behind a More info button; open it so the text can be read
     if page.get_attribute("#compendium-body > .more-info .more-info-button", "aria-expanded") == "false":
         page.click("#compendium-body > .more-info .more-info-button")
@@ -252,8 +253,7 @@ def main():
         open_comp(page)
         check("the open part is kept while the app is open (go to another tab and back)", open_key(page) == "metallic" and page.inner_text("#cmp-wheel-detail h3") == "Metallics")
         page.reload()
-        page.wait_for_function("() => typeof APP_VERSION === 'string'")
-        page.wait_for_timeout(300)
+        app_ready(page)
         leave_launch(page)   # U4b: tap through the start page
         check("after closing and opening the app the wheel starts closed again (like the other Compendium picks)", open_key(page) == "" and page.locator("#cmp-wheel-detail").count() == 0)
 
@@ -498,7 +498,7 @@ def main():
                 x, y = g["points"][key]
                 hit = page.evaluate("([x, y]) => { const e = document.elementFromPoint(x, y); return e && e.dataset ? e.dataset.wheel : (e ? e.tagName : null); }", [x, y])
                 page.mouse.click(x, y)
-                page.wait_for_timeout(120)
+                quiet(page)
                 opened = (zoom_key(page) == key) if key in wh.HUES else (open_key(page) == key)   # v43: a colour drills in, a grey-centre slice opens its list
                 if hit != key or not opened:
                     wrong.append((key, hit, open_key(page), zoom_key(page)))

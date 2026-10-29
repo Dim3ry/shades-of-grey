@@ -60,8 +60,10 @@ def main():
         STAGES = page.evaluate("STAGES")
         check("nothing moves on a first load", moving(page) == 0 and page.evaluate("() => document.getAnimations().length") == 0)
         old_colour = page.evaluate("() => getComputedStyle(document.querySelector('li.unit[data-id=\"1\"]')).borderLeftColor")
-        card(page, 1).locator(".up-button").click()
-        info = page.evaluate("""() => { const li = document.querySelector('li.unit[data-id="1"]'); const st = li.querySelector('.stage');
+        # T1: the tap and the first reading happen in ONE call. Before, a slow machine let the fade move on between the click and the
+        # reading, so "starts in the old colour" sometimes read a colour part-way. The check itself is unchanged.
+        info = page.evaluate("""() => { document.querySelector('li.unit[data-id="1"] .up-button').click();
+            const li = document.querySelector('li.unit[data-id="1"]'); const st = li.querySelector('.stage');
             return { cls: li.className, text: st.textContent, from: st.dataset.from, before: getComputedStyle(st, '::before').content,
                      ring: getComputedStyle(li, '::after').animationName, stripe: getComputedStyle(li).borderLeftColor,
                      delays: [...li.querySelectorAll('.pip')].map(p => getComputedStyle(p).animationDelay), pips: li.querySelectorAll('.mo-pip').length }; }""")

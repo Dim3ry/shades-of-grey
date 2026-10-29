@@ -22,6 +22,8 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, struct, sys, zlib
 from playwright.sync_api import sync_playwright
+from launch_helpers import quiet
+from launch_helpers import app_ready
 from launch_helpers import leave_launch
 
 PORT = os.environ.get("SOG_PORT", "8765")
@@ -78,8 +80,7 @@ def seed(page, units=UNITS, settings=None):
                                     r.onsuccess = r.onerror = r.onblocked = () => done(); }); }""",
                   [units, settings or full_settings()])
     page.reload()
-    page.wait_for_function("() => typeof APP_VERSION === 'string'")
-    page.wait_for_timeout(300)
+    app_ready(page)
     leave_launch(page)   # U4b: tap through the start page
 
 def tab(page, name):
@@ -88,7 +89,7 @@ def tab(page, name):
         page.click(f'#more-seg button[data-page="{name}"]')
     else:
         page.click(f'nav button[data-tab="{name}"]')
-    page.wait_for_timeout(150)
+    quiet(page)
 
 def shot(page, name, full=False):
     os.makedirs(SHOTS, exist_ok=True)
@@ -114,7 +115,7 @@ def open_unit(page, uid):
     # A3: open or shut now shows on the Details button (the name area is no longer a button with aria-expanded).
     if page.get_attribute(info.replace(" .info", " .details-toggle"), "aria-expanded") != "true":
         page.click(info)
-        page.wait_for_timeout(250)
+        quiet(page)
 
 def tabs_hidden(page):
     return page.evaluate("() => getComputedStyle(document.querySelector('.tabs')).display === 'none'")

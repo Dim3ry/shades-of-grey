@@ -22,6 +22,8 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, struct, sys, zlib
 from playwright.sync_api import sync_playwright
+from launch_helpers import quiet
+from launch_helpers import app_ready
 from launch_helpers import leave_launch
 import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 from dialog_watch import DialogAnswers
@@ -76,8 +78,7 @@ def seed(page, units=UNITS, settings=None):
                                     r.onsuccess = r.onerror = r.onblocked = () => done(); }); }""",
                   [units, settings or full_settings()])
     page.reload()
-    page.wait_for_function("() => typeof APP_VERSION === 'string'")
-    page.wait_for_timeout(300)
+    app_ready(page)
     leave_launch(page)   # U4b: tap through the start page
 
 def tab(page, name):
@@ -154,7 +155,7 @@ def main():
         # ---------- 3. Real notices ----------
         print("\n--- 3. Real notices ---")
         def says(fragment):
-            page.wait_for_timeout(250)
+            quiet(page)
             t = toast(page)
             return t["shown"] and t["kind"] == "notice" and not t["undo"] and fragment in t["text"], t
 
