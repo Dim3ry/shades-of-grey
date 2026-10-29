@@ -162,6 +162,8 @@ def main():
         check("the editor's Remove button reads 'Remove' and the paint's name from the box beside it", remove0 == f"Remove {first_name}", remove0)
         page.locator('[data-key="step-0-paint-0"]').fill("Typed Name")
         check("the name follows what is typed in the box (no label to keep up to date)", spoken(page, "#recipe-page .icon-button.remove[aria-labelledby]") == "Remove Typed Name", spoken(page, "#recipe-page .icon-button.remove[aria-labelledby]"))
+        # T4: typing in a box makes the Colour ideas panel redraw a moment later; wait until its buttons are back before reading them (on a starved machine the read landed in the gap and found none)
+        page.wait_for_function("() => document.querySelectorAll('#colour-ideas button.idea .idea-name').length > 0")
         idea = spoken(page, "#colour-ideas button.idea")
         check("each Colour ideas button reads 'Add as a new step', then its visible name, tag and reason", idea.startswith("Add as a new step ") and page.locator("#colour-ideas button.idea").first.evaluate("e => e.querySelector('.idea-name').textContent.length") > 0
               and page.locator("#colour-ideas button.idea").first.evaluate("e => e.textContent.includes('+ Add as a step')"), idea)
