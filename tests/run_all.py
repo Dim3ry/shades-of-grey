@@ -6,6 +6,7 @@ How to run it (from the repo folder):
     python3 tests/run_all.py --jobs 4     # a different number at once (the whole-run time limits are only checked at the default)
     python3 tests/run_all.py --quick      # only the newest three versions plus a short always-run list
     python3 tests/run_all.py --update-budget   # after a clean full run: rewrite tests/time_budget.json on purpose
+    python3 tests/run_all.py --rerun-failed    # after the run, rerun each failed file alone to tell a busy-machine failure from a real one
 
 What it does:
 1. Finds a free port on this computer, so it never clashes with another server.
@@ -22,6 +23,10 @@ What it does:
 7. A cheap source lint: a test file that is not in the budget's "version_words_ok" list may not mention APP_VERSION,
    sw.js, ?v=, CHANGELOG, DATA_VERSION or git diff. Those checks live only in tests/test_version_plumbing.py (which uses
    tests/version_helpers.py).
+8. (T5) --rerun-failed: after the normal run, each failed file is run again alone, one at a time, and reported as "failed in the run,
+   passed alone", "time only" (no failed check, just over its time limit) or "still failing". Exit 0 only if every failure passed alone.
+   The reruns never count toward the time budget. SOG_TESTS_DIR (a folder path) makes the runner use that folder's test_*.py files
+   instead of this one's, which is how tests/test_runner_rerun.py tries it on fake files.
 """
 import argparse, json, math, os, re, socket, subprocess, sys, time, glob
 from concurrent.futures import ThreadPoolExecutor
@@ -31,6 +36,7 @@ REPO = os.path.dirname(HERE)
 SCREENSHOTS = os.path.join(HERE, "screenshots")  # the tests save pictures here; it is git-ignored
 TIMINGS = os.path.join(SCREENSHOTS, "timings.json")
 BUDGET = os.path.join(HERE, "time_budget.json")  # kept in the repo; only --update-budget rewrites it
+TESTS = os.environ.get("SOG_TESTS_DIR") or HERE   # the folder whose test_*.py files are run (only a test of the runner changes it)
 PLUMBING_FILES = ("test_version_plumbing.py", "version_helpers.py")  # the only files allowed to check the version
 # T4: the tests mostly wait for the browser, so more files at once than cores is faster; too many starves the machine and makes timing
 # checks wobble. JOBS_EXTRA files more than the number of cores, never more than MAX_JOBS and never fewer than 2.
@@ -45,6 +51,9 @@ VERSION_WORDS = re.compile(r"APP_VERSION|sw\.js|\?v=|CHANGELOG|DATA_VERSION|git 
 # Test files that cannot share the machine with others. They run one at a time after the parallel ones.
 # (None found: tests only use their own browser, their own port-less files and their own screenshots folder.)
 RUN_ALONE = []
+
+# Failures that also happen on main (see CLAUDE.md). --rerun-failed names them but never counts them as cleared.
+KNOWN_FAILURES = ("test_colour_engine.py", "test_v21_7.py")
 
 # --quick always runs these, besides the newest three versions:
 #  - test_version_plumbing, the one test that checks the version number, the script tags, sw.js and the Updates entry,
@@ -119,7 +128,7 @@ def lint_sources(budget):
     list, DATA_VERSION or a git diff itself. Returns a list of failure lines."""
     ok = set(budget.get("version_words_ok", [])) | set(PLUMBING_FILES)
     bad = []
-    for path in sorted(glob.glob(os.path.join(HERE, "test_*.py"))):
+    for path in sorted(glob.glob(os.path.join(TESTS, "test_*.py"))):
         name = os.path.basename(path)
         if name in ok:
             continue
@@ -209,6 +218,28 @@ def run_one(path, port):
     return name, took, problems, checks
 
 
+def rerun_alone(run_problems, time_only, port, budget, factor):
+    """T5: runs each failed file again by itself, one at a time. run_problems is {file: problems} for files that failed a check or
+    crashed; time_only is {file: sentence} for files that only went over a time limit. Returns {file: (cleared, plain sentence)}.
+    The times of these reruns are not kept anywhere, so they never reach the budget."""
+    out = {}
+    print("\n===== RERUNNING FAILED FILES ALONE =====", flush=True)
+    for name in sorted(set(run_problems) | set(time_only)):
+        _, took, problems, count = run_one(os.path.join(TESTS, name), port)
+        if problems:
+            known = " (a known failure on main)" if name in KNOWN_FAILURES else ""
+            out[name] = (False, f"{name}: still failing{known}: {'; '.join(problems)}")
+        elif name in time_only:
+            _, slow = check_budget(budget, {name: took}, {name: count}, took, -1, factor)
+            if slow:
+                out[name] = (False, f"{name}: time only, and still too slow alone: {slow[0]}")
+            else:
+                out[name] = (True, f"{name}: time only. {time_only[name]}. Alone it took {took:.0f} s, inside the limit.")
+        else:
+            out[name] = (True, f"{name}: failed in the run, passed alone ({took:.0f} s alone).")
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(description="Run the Minifolio tests.")
     ap.add_argument("--jobs", type=int, default=DEFAULT_JOBS, help=f"how many test files to run at once (default {DEFAULT_JOBS})")
@@ -216,6 +247,8 @@ def main():
                     help="only the newest three versions plus the always-run list (not for before a merge)")
     ap.add_argument("--update-budget", action="store_true",
                     help="after a clean full run, rewrite tests/time_budget.json with this run's times (on purpose, never automatic)")
+    ap.add_argument("--rerun-failed", action="store_true",
+                    help="after the run, rerun each failed file alone and say whether it passed alone; exit 0 only if every failure did")
     args = ap.parse_args()
     if args.update_budget and args.quick:
         sys.exit("--update-budget needs a full run, not --quick.")
@@ -232,7 +265,7 @@ def main():
     server = subprocess.Popen([sys.executable, "-c", SERVER, str(port)],
                               cwd=REPO, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(1)  # give the server a moment to start
-    paths = sorted(glob.glob(os.path.join(HERE, "test_*.py")))
+    paths = sorted(glob.glob(os.path.join(TESTS, "test_*.py")))
     if args.quick:
         paths = pick_quick(paths)
         print("QUICK MODE: " + str(len(paths)) + " test files. Run without --quick before any merge.", flush=True)
@@ -266,6 +299,29 @@ def main():
         for w in warns:
             print("  - " + w)
         print("These do not fail the run. Look for a slow loop that can be sampled (see CLAUDE.md).")
+    if args.rerun_failed and failed:
+        run_problems = {n: p for n, _, p, _ in results if p}
+        time_only = {}
+        for sentence in fails:
+            name = sentence.split()[0]
+            if name in times and name not in run_problems:
+                time_only[name] = sentence
+        if run_problems or time_only:
+            port = free_port()
+            server = subprocess.Popen([sys.executable, "-c", SERVER, str(port)],
+                                      cwd=REPO, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            time.sleep(1)
+            try:
+                again = rerun_alone(run_problems, time_only, port, budget, factor)
+            finally:
+                server.terminate()
+            cleared = {n for n, (ok, _) in again.items() if ok}
+            print("\n===== RERUN RESULT =====")
+            for _, (_, line) in sorted(again.items()):
+                print("  " + line)
+            failed = [f for f in failed if (re.search(r"test_\w+\.py", f) or [None])[0] not in cleared]
+            if not failed:
+                print("Every failure passed alone.")
     if args.update_budget:
         if failed:
             print("\nNot updating the budget: the run had failures.")
