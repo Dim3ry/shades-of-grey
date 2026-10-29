@@ -19,7 +19,7 @@ def check(name, ok, detail=""):
     print(("PASS " if ok else "FAIL ") + name + ("" if ok else f"  -> {detail}"))
 
 BUDGET = {"files": {"test_a.py": 40, "test_b.py": 100, "test_c.py": 20}, "fail_overrides": {"test_b.py": 240},
-          "total_warn_minutes": 12, "total_fail_minutes": 16, "calibration_seconds": 0.30, "calibration_cores": 4}
+          "total_warn_minutes": 12, "total_fail_minutes": 16, "calibration_seconds": 0.30, "calibration_jobs": 6, "calibration_cores": 4}
 JOBS = run_all.DEFAULT_JOBS
 
 def run(times, minutes, factor, total_factor=None):
@@ -49,7 +49,7 @@ os.environ["SOG_TIME_FACTOR"] = "1.7"
 check("SOG_TIME_FACTOR overrides the measurement", run_all.time_factor(b, 0.30) == 1.7)
 del os.environ["SOG_TIME_FACTOR"]
 check("the default number of files at once is between 2 and 8", 2 <= run_all.default_jobs() <= 8, run_all.default_jobs())
-check("the speed check itself takes a positive time", run_all.calibrate() > 0)
+check("the speed check itself takes a positive time with several copies at once", run_all.calibrate(3) > 0)
 
 print(f"\n{sum(results)} of {len(results)} checks passed")
 sys.exit(0 if all(results) else 1)

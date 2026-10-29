@@ -75,16 +75,19 @@ def pick_quick(paths):
     return [p for p, n in zip(paths, names) if version_key(n) in keys or n in ALWAYS]
 
 
-def calibrate():
-    """T4: how fast is this machine right now? Runs a fixed small CPU job (about 0.3 s on the machine the budget was recorded on) three
-    times and keeps the fastest. The time limits are scaled by how much slower than the recorded reference this is (see time_factor)."""
+_CAL_JOB = ("import time\nt = time.perf_counter()\nx = 0\nfor i in range(2_000_000):\n    x += (i * i) % 7\nprint(time.perf_counter() - t)")
+
+
+def calibrate(jobs):
+    """T4: how fast would a test file run on this machine right now? Starts `jobs` copies of a small fixed CPU job at the same moment (as
+    many as there are test files running at once, so it feels the cores being shared and any other work on the machine), and takes the
+    middle time of the copies. Done three times, fastest round kept. It is about 0.15 s on the machine the budget was recorded on.
+    The time limits are scaled by how much slower than the recorded reference this is (see time_factor)."""
     best = float("inf")
     for _ in range(3):
-        t = time.perf_counter()
-        x = 0
-        for i in range(2_000_000):
-            x += (i * i) % 7
-        best = min(best, time.perf_counter() - t)
+        procs = [subprocess.Popen([sys.executable, "-c", _CAL_JOB], stdout=subprocess.PIPE, text=True) for _ in range(max(1, jobs))]
+        times = sorted(float(p.communicate()[0]) for p in procs)
+        best = min(best, times[len(times) // 2])
     return best
 
 
@@ -160,10 +163,11 @@ def check_budget(budget, times, checks, total_seconds, jobs, factor=1.0, total_f
     return warns, fails
 
 
-def update_budget(budget, times, calibration):
+def update_budget(budget, times, calibration, jobs):
     budget["files"] = {n: math.ceil(t) for n, t in sorted(times.items())}
     # T4: the reference the time limits are scaled against: how long the fixed CPU job took on this machine, and how many cores it has
     budget["calibration_seconds"] = round(calibration, 3)
+    budget["calibration_jobs"] = jobs
     budget["calibration_cores"] = os.cpu_count() or 4
     with open(BUDGET, "w", encoding="utf-8") as f:
         json.dump(budget, f, indent=1)
@@ -217,13 +221,11 @@ def main():
         sys.exit("--update-budget needs a full run, not --quick.")
     budget = load_budget()
     lint = lint_sources(budget)
-    measured = calibrate()   # before any test starts, so the other tests do not slow it down
+    measured = calibrate(args.jobs)   # before any test starts, so the tests do not slow it down
     factor = time_factor(budget, measured)
-    # the whole-run limits also depend on how many cores share the work (the budget was recorded on calibration_cores cores)
-    cores_ratio = (budget.get("calibration_cores") or (os.cpu_count() or 4)) / (os.cpu_count() or 4)
-    total_factor = max(FACTOR_MIN, min(FACTOR_MAX * 2, factor * cores_ratio))
-    print(f"Speed check: {measured:.2f} s (reference {budget.get('calibration_seconds', 'not recorded')}), {os.cpu_count()} cores, "
-          f"{args.jobs} test files at a time. Per-file time limits x{factor:.2f}, whole-run limits x{total_factor:.2f}.", flush=True)
+    total_factor = factor   # the speed check already includes how many cores share the jobs
+    print(f"Speed check: {measured:.2f} s with {args.jobs} at once (reference {budget.get('calibration_seconds', 'not recorded')}), "
+          f"{os.cpu_count()} cores. Time limits x{factor:.2f}.", flush=True)
 
     port = free_port()
     os.makedirs(SCREENSHOTS, exist_ok=True)
@@ -268,7 +270,7 @@ def main():
         if failed:
             print("\nNot updating the budget: the run had failures.")
         else:
-            update_budget(budget, times, measured)
+            update_budget(budget, times, measured, args.jobs)
 
     print("\n===== SUMMARY =====")
     if failed:
