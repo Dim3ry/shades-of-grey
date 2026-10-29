@@ -19,6 +19,7 @@ import json, os, sys
 from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import lab_helpers as labh   # X1: the old all-in-one Compendium page (see lab_helpers.py)
 import test_v31 as t
 import test_v71 as m
 
@@ -83,7 +84,8 @@ def main():
         btn.click()
         page.wait_for_timeout(300)
         check("the line says what was added", f"Added {name} to your shopping list" in toast(page), toast(page))
-        check("the paint is on the list and the list remembers the Mentor", [x for x in listed(page) if x["name"] == name and "Compendium: Ask the Mentor" in x["from"]], listed(page))
+        # X1: the source now says "Colour Lab: Picker" (was "Compendium: Ask the Mentor")
+        check("the paint is on the list and the list remembers the Mentor", [x for x in listed(page) if x["name"] == name and "Colour Lab: Picker" in x["from"]], listed(page))
         row = page.locator(ROWS).filter(has=page.locator(".idea-name", has_text=name)).first
         check("the same row now says On your shopping list, and its button is gone",
               "On your shopping list" in row.locator(".shop-add-row").inner_text() and row.locator(".shop-add-row button").count() == 0, row.locator(".shop-add-row").inner_text())
@@ -118,7 +120,7 @@ def main():
         check("the line says so and has an Undo", f"Started a new recipe with {name}" in toast(page) and page.is_visible("#toast-undo"), toast(page))
         undo(page)
         check("Undo closes it again", page.evaluate("() => recipeDraft") is None)
-        page.click('nav button[data-tab="compendium"]')
+        labh.go_compendium(page)
         open_mentor(page)
         row = not_owned_row(page)
         row.locator("button", has_text="Add to a recipe").click()

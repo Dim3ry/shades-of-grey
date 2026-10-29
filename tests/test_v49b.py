@@ -28,6 +28,7 @@ from launch_helpers import app_ready
 from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import lab_helpers as labh   # X1: the old all-in-one Compendium page (see lab_helpers.py)
 import test_v31 as t
 from combo_helpers import pick_combo
 
@@ -79,6 +80,7 @@ def load(page, settings=None, units=UNITS, book=BOOK):
 
 def tab(page, name):
     t.blur(page)   # the tab bar hides while a text box has the focus (a phone's keyboard is up)
+    if name == "compendium": labh.legacy_compendium(page)   # X1: the old all-in-one page
     page.click(f'nav button[data-tab="{name}"]')
     quiet(page)
 

@@ -16,6 +16,7 @@ import os, sys
 from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import lab_helpers as labh   # X1: the old all-in-one Compendium page (see lab_helpers.py)
 import test_v31 as t
 
 load, no_sideways, rec = t.load, t.no_sideways, t.rec
@@ -36,7 +37,7 @@ def shop_boxes(page):
 
 def comp_boxes(page):
     return page.evaluate("""() => { const r = s => { const e = document.querySelector(s); return e ? e.getBoundingClientRect().toJSON() : null; };
-        return { card: r('.compendium-card'), wheel: r('#compendium-body .wheel-block'), folds: r('#compendium-body .compendium-folds'),
+        return { card: r('#view-compendium .compendium-card'), wheel: r('#compendium-body .wheel-block'), folds: r('#compendium-body .compendium-folds'),   // X1: Colour Lab's card has the same class, so name the Compendium's
                  firstFold: r('#compendium-body .fold') }; }""")
 
 def small_taps(page, scope):
@@ -79,7 +80,7 @@ def main():
                 check(f"{scheme} {width}: buttons 44 px or taller", not small_taps(page, "#shop-panel"), small_taps(page, "#shop-panel"))
 
         print("\n--- 3. Compendium ---")
-        page.click('nav button[data-tab="compendium"]')
+        labh.go_compendium(page)
         page.wait_for_timeout(300)
         for scheme in ("dark", "light"):
             page.emulate_media(color_scheme=scheme)

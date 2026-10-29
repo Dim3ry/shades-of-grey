@@ -80,7 +80,8 @@ def main():
         page.click("#toast-undo")
         page.wait_for_timeout(150)
         check("Undo puts back only that paint, with where it came from",
-              "Macragge Blue" in names(page) and "Alpha Blue" not in names(page) and page.evaluate("shoppingItems().find(i => i.paint.name === 'Macragge Blue').from[0]") == "Compendium: Colour wheel")
+              # X1: a stored "Compendium: ..." source is shown as "Colour Lab: ..." (display only)
+              "Macragge Blue" in names(page) and "Alpha Blue" not in names(page) and page.evaluate("shoppingItems().find(i => i.paint.name === 'Macragge Blue').from[0]") == "Colour Lab: Colour wheel")
 
         print("\n--- 2. Add to shopping list on every recipe ---")
         load(page, paints=PAINTS, recipes=[t.rec(1, "Blue", "Armour", [1, 5])], settings=dict(SETTINGS, recipeView="recipes"))

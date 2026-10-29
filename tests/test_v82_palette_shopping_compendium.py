@@ -10,6 +10,7 @@ import os, sys
 from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import lab_helpers as labh   # X1: the old all-in-one Compendium page (see lab_helpers.py)
 import test_v31 as t
 
 load, no_sideways = t.load, t.no_sideways
@@ -55,7 +56,7 @@ def main():
                       no_sideways(page) and not small_taps(page, "#shop-panel"), small_taps(page, "#shop-panel"))
 
         print("\n--- 2. Compendium ---")
-        page.click('nav button[data-tab="compendium"]')
+        labh.go_compendium(page)
         page.wait_for_timeout(300)
         page.evaluate("() => document.querySelectorAll('#compendium-body .fold-button').forEach(b => b.click())")
         page.wait_for_timeout(300)

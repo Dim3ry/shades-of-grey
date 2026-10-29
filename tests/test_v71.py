@@ -20,6 +20,7 @@ from playwright.sync_api import sync_playwright
 from launch_helpers import quiet
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import lab_helpers as labh   # X1: the old all-in-one Compendium page (see lab_helpers.py)
 import test_v31 as t
 
 load, no_sideways = t.load, t.no_sideways
@@ -33,7 +34,7 @@ PANEL = "#cmp-fold-mentor-panel"
 
 def open_mentor(page):
     t.blur(page)   # the bottom bar hides while a box has the focus
-    page.click('nav button[data-tab="compendium"]')
+    labh.go_compendium(page)
     page.wait_for_selector("#cmp-fold-mentor-button")
     if page.get_attribute("#cmp-fold-mentor-button", "aria-expanded") != "true":
         page.click("#cmp-fold-mentor-button")
@@ -70,7 +71,7 @@ def main():
 
         print("\n--- 1. The part ---")
         load(page)
-        page.click('nav button[data-tab="compendium"]')
+        labh.go_compendium(page)
         page.wait_for_selector("#cmp-fold-mentor-button")
         first = page.evaluate("() => document.querySelector('#compendium-body .fold-button').id")
         check("Ask the Mentor is the first folding part and starts shut", first == "cmp-fold-mentor-button" and page.get_attribute("#cmp-fold-mentor-button", "aria-expanded") == "false")

@@ -28,6 +28,7 @@ from playwright.sync_api import sync_playwright
 from launch_helpers import app_ready, quiet
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import lab_helpers as labh   # X1: the old all-in-one Compendium page (see lab_helpers.py)
 from notice_watch import attach_notices
 from settle import frames
 from launch_helpers import wait_settled
@@ -72,7 +73,7 @@ def rows(page, sel):
 
 def open_comp(page):
     blur(page)
-    page.click('nav button[data-tab="compendium"]')
+    labh.go_compendium(page)
     quiet(page)
     # v49: the page introduction sits behind a More info button; open it so the text can be read
     if page.get_attribute("#compendium-body > .more-info .more-info-button", "aria-expanded") == "false":
@@ -194,7 +195,7 @@ def main():
         app_ready(page)
         # U4b (v89): a reload shows the start page; the Compendium is one tap away.
         check("reloading the app shows the start page, and tapping Compendium opens it", page.evaluate("() => document.body.classList.contains('launching')") and not page.is_visible("#view-compendium"))
-        page.click('nav button[data-tab="compendium"]')
+        labh.go_compendium(page)
         page.wait_for_timeout(150)
         check("...Compendium opens from the start page", page.is_visible("#view-compendium"))
         check("Back from the Compendium goes to the Dashboard", page.evaluate("() => typeof backTarget() === 'function'"))

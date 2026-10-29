@@ -35,6 +35,7 @@ from launch_helpers import leave_launch, quiet
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
 import test_v31 as t
+import lab_helpers as labh   # X1: the old all-in-one Compendium page (see lab_helpers.py)
 import test_v39 as h   # wheel helpers (P, open_tab, open_row, open_fold, prows, stored_paints ...)
 
 SHOTS, ROOT = t.SHOTS, t.ROOT
@@ -431,7 +432,8 @@ def main():
         page.click("#cmp-paint-panel .shop-more .shop-add button")
         wait(page, 250)
         src = next((p.get("shopFrom") for p in h.stored_paints(page) if p["name"] == first), "missing")
-        check("Add in that panel records Compendium: Colour wheel, Blue on the one paint (the part the colour wheel is in, as before)", src == ["Compendium: Colour wheel, Blue"], src)
+        # X1: the source now says Colour Lab (was Compendium)
+        check("Add in that panel records Compendium: Colour wheel, Blue on the one paint (the part the colour wheel is in, as before)", src == ["Colour Lab: Colour wheel, Blue"], src)
         check("the paint's row in the panel now says On your shopping list straight away and the basket count follows",
               next(r["tag"] for r in h.prows(page) if r["name"] == first) == "On your shopping list" and page.evaluate("() => { const b = document.getElementById('basket-button'); return !b.classList.contains('hidden') && b.textContent.trim(); }") not in ("", False))
         page.click("#toast-undo") if page.locator("#toast-undo:not(.hidden)").count() else None
@@ -568,7 +570,7 @@ def main():
         page2 = offline.new_page()
         load(page2, paints=PAINTS)
         offline.set_offline(True)
-        page2.click('nav button[data-tab="compendium"]')
+        labh.go_compendium(page2)   # X1
         wait(page2, 200)
         page2.click('[data-wheel="green"]')
         wait(page2)

@@ -32,6 +32,7 @@ import json, os, re, sys
 from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import lab_helpers as labh   # X1: the old all-in-one Compendium page (see lab_helpers.py)
 from notice_watch import attach_notices
 import test_v31 as t
 import test_v42 as w   # load
@@ -116,7 +117,7 @@ def run_pages(page, width, mode):
     t.edit_recipe(page, 101)
     t.open_panel(page)
     scan(page, f"{tag}, the recipe editor with Colour ideas open")
-    tab(page, "compendium")
+    labh.legacy_compendium(page); tab(page, "compendium")   # X1: the old all-in-one page
     page.evaluate("""() => { for (const k of ['ideas', 'history', 'starter', 'detail', 'basing']) { const b = document.getElementById('cmp-fold-' + k + '-button'); if (b && b.getAttribute('aria-expanded') !== 'true') b.click(); } }""")
     page.wait_for_timeout(200)
     scan(page, f"{tag}, Compendium with every part open")
@@ -298,7 +299,7 @@ def main():
         # U3: wording now starts "A scheme is a colour plan or idea..."
         check("...tapping it shows what a scheme is", "groups the recipes you use for one faction" in page.inner_text("#scheme-list"))
 
-        tab(page, "compendium")
+        labh.legacy_compendium(page); tab(page, "compendium")   # X1: the old all-in-one page
         check("Compendium: the colour wheel caption is not on show", not page.locator(".wheel-caption").is_visible())
         check("...but is in the page, whole", "whites, greys, blacks and metallics" in page.text_content("#more-wheel-caption"))
         btn = page.locator("button[aria-controls=\"more-wheel-caption\"]")

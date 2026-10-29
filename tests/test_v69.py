@@ -98,7 +98,8 @@ def main():
         print("\n--- 3. Ideas for one paint ---")
         btn(1, "#rstep-1").click()
         page.wait_for_timeout(300)
-        check("the Compendium tab is shown", page.evaluate("settings.tab") == "compendium" and page.is_visible("#view-compendium"))
+        # X1: Ideas for this opens Painting > Colour Lab now
+        check("Colour Lab is shown", page.evaluate("settings.tab + settings.recipeView") == "recipescolourlab" and page.is_visible("#colourlab-view"))
         check("the paint's ideas sit above the colour wheel", page.evaluate("""() => { const f = document.getElementById('cmp-focus'), w = document.getElementById('cmp-wheel-block');
             return !!f && !!w && !!(f.compareDocumentPosition(w) & Node.DOCUMENT_POSITION_FOLLOWING); }"""))
         check("the title names the paint", page.text_content("#cmp-focus-title") == "Ideas for Macragge Blue (Citadel)", page.text_content("#cmp-focus-title"))
@@ -129,10 +130,11 @@ def main():
             key = detail.first.get_attribute("data-detail")
             detail.first.click()
             page.wait_for_timeout(300)
+            # X1: Detail recipes stay in the Compendium, so Show steps goes there; the paint's ideas are kept for the way back
             check("Show steps opens Detail recipes with that recipe picked", page.get_attribute("#cmp-fold-detail-button", "aria-expanded") == "true"
                   and page.locator(f'#cmp-fold-detail-panel [data-detail="{key}"]').count() == 1 and page.is_visible("#cmp-detail-summary"))
             check("…and the focus goes to it", page.evaluate("() => document.activeElement && document.activeElement.dataset.detail") == key)
-            check("the paint's ideas are still on show", page.locator("#cmp-focus").count() == 1)
+            check("the paint's ideas are kept for the way back", page.evaluate("() => !!compendiumState.focus"))
         t.load(page, paints=PAINTS, recipes=RECIPES, settings=SETTINGS)
         open_recipe(page, 102)
         open_step(page, 0)
@@ -149,7 +151,8 @@ def main():
 
         # ---------- 5. Back to recipe ----------
         print("\n--- 5. Back to recipe ---")
-        page.click("#cmp-focus-back")
+        page.go_back()   # X1: the Compendium has no Back button; the phone's Back returns to the recipe step
+        page.wait_for_function("() => settings.tab === 'recipes'")
         page.wait_for_timeout(300)
         check("back on the Recipes tab, in the same recipe", page.evaluate("settings.tab") == "recipes" and page.evaluate("openRecipeId") == 102)
         check("…with the same step still open", page.get_attribute('#recipe-page button.step-line[aria-controls="rstep-0"]', "aria-expanded") == "true")
@@ -173,7 +176,7 @@ def main():
         check("an open palette paint with no colour has none", btn(30, "#paint-list").count() == 0)
         btn(4, "#paint-list").click()
         page.wait_for_timeout(300)
-        check("it opens the Compendium for that paint", page.text_content("#cmp-focus-title") == "Ideas for Eshin Grey (Citadel)")
+        check("it opens Colour Lab for that paint", page.text_content("#cmp-focus-title") == "Ideas for Eshin Grey (Citadel)")
         check("a grey gets the neutral accents instead of an opposite", "Accents that stand out" in page.text_content("#cmp-focus"))
         check("the Back button says Back to Your Palette", page.inner_text("#cmp-focus-back").strip() == "← Back to Your Palette")
         page.click("#cmp-focus-back")
@@ -190,9 +193,8 @@ def main():
         print("\n--- 7. The Compendium tab ---")
         btn(4, "#paint-list").click()
         page.wait_for_timeout(300)
-        e.main_tab(page, "recipes")
-        e.main_tab(page, "compendium")
-        check("tapping the Compendium tab shows the whole Compendium", page.locator("#cmp-focus").count() == 0 and page.locator("#cmp-wheel-block").count() == 1)
+        e.main_tab(page, "recipes")   # X1: tapping the Painting tab itself shows the whole Colour Lab again
+        check("tapping the Painting tab shows the whole Colour Lab", page.locator("#cmp-focus").count() == 0 and page.locator("#cmp-wheel-block").count() == 1)
 
         # ---------- 8. Help ----------
         print("\n--- 8. Help ---")
