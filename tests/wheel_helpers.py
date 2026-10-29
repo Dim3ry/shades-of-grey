@@ -10,6 +10,7 @@ The older tests were written around "tap a colour, look at its list", so they us
   The grey centre (white, grey, black, metallic) is tapped exactly as before.
 
 The new behaviour itself is tested in test_v43.py."""
+from launch_helpers import quiet
 
 HUES = ["red", "orange", "yellow", "green", "blue", "purple"]
 SUBS = {
@@ -23,14 +24,14 @@ def wheel_state(page):
 def go_back(page):
     page.evaluate("() => document.getElementById('cmp-wheel').scrollIntoView({ block: 'center' })")
     page.click("#cmp-wheel-back")
-    page.wait_for_timeout(120)
+    quiet(page)
 
 def zoom_in(page, key):
     if wheel_state(page)["zoom"]:
         go_back(page)   # another colour (or this one) is drilled into: the colour slices are not on show, so go back up first
     page.evaluate("() => document.getElementById('cmp-wheel').scrollIntoView({ block: 'center' })")
     page.click(f'[data-wheel="{key}"]')
-    page.wait_for_timeout(120)
+    quiet(page)
 
 def open_group(page, key, sub):
     """Tap one group of the drilled-in colour (its middle ring point, as a finger would)."""
@@ -39,7 +40,7 @@ def open_group(page, key, sub):
     x, y = page.evaluate("""(i) => { const r = document.getElementById('cmp-wheel').getBoundingClientRect(), k = r.width / 320, a = [0, 120, 240][i] * Math.PI / 180;
         return [r.left + (160 + 73 * Math.sin(a)) * k, r.top + (150 - 73 * Math.cos(a)) * k]; }""", index)
     page.mouse.click(x, y)
-    page.wait_for_timeout(120)
+    quiet(page)
 
 def default_group(page, key):
     """The first group of this colour with a paint of the person's own (owned, wishlist or empty), else the middle group."""
@@ -53,7 +54,7 @@ def tap(page, key):
         if st["zoom"]:
             go_back(page)        # a colour is drilled into: the grey centre is not on show, so go back up first
         page.click(f'[data-wheel="{key}"]')
-        page.wait_for_timeout(120)
+        quiet(page)
         return
     if st["zoom"] == key:
         go_back(page)            # the second tap: back up, so everything is closed again

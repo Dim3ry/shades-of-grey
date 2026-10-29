@@ -23,6 +23,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import quiet
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
@@ -64,7 +65,7 @@ NO_STATUS = [dict((k, v) for k, v in p.items() if k != "status") for p in PAINTS
 def tab_recipes(page):
     t.blur(page)
     page.click('nav button[data-tab="recipes"]')
-    page.wait_for_timeout(200)
+    quiet(page)
 
 def saved_recipes(page):
     return page.evaluate("() => localStorage.getItem('shades-of-grey-recipes')")

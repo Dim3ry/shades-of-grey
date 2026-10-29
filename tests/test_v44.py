@@ -20,6 +20,8 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import quiet
+from launch_helpers import app_ready
 import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -62,8 +64,7 @@ STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted"
 ALL_WORDS = "5 example recipes, 2 example schemes and 16 example paints"
 
 def wait_loaded(page):
-    page.wait_for_function("() => typeof APP_VERSION === 'string'")
-    page.wait_for_timeout(300)
+    app_ready(page)
 
 def reload(page):
     page.reload()
@@ -93,7 +94,7 @@ def existing(page, units, book=None, settings=None):
 def main_tab(page, name):
     page.evaluate("() => document.activeElement && document.activeElement.blur()")
     page.click(f'nav button[data-tab="{name}"]')
-    page.wait_for_timeout(200)
+    quiet(page)
 
 def sub_tab(page, name):
     page.click(f'#more-seg button[data-page="{name}"]')
@@ -101,7 +102,7 @@ def sub_tab(page, name):
 
 def recipe_view(page, view):
     page.click(f'#recipe-seg button[data-view="{view}"]')
-    page.wait_for_timeout(200)
+    quiet(page)
 
 def saved_book(page):
     return page.evaluate("() => JSON.parse(localStorage.getItem('shades-of-grey-recipes') || 'null')")
@@ -136,13 +137,13 @@ def palette_names(page):
 def clear_on_card(page):
     main_tab(page, "recipes")
     page.click("#examples-card-recipes .clear-recipe-examples")
-    page.wait_for_timeout(300)
+    quiet(page)
 
 def restore_in_settings(page):
     main_tab(page, "settings")
     page.evaluate("() => document.getElementById('restore-examples').scrollIntoView({ block: 'center' })")
     page.click("#restore-examples")
-    page.wait_for_timeout(300)
+    quiet(page)
 
 def own_recipe(page, name="My recipe", paint="My own paint", colour="#336699"):
     page.evaluate("""([n, pn, c]) => { const p = findOrAddPaint('', pn, c);

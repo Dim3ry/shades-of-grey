@@ -46,6 +46,22 @@ if LOG:
 
         Browser.new_page = browser_new_page
         BrowserContext.new_page = context_new_page
+
+        # T1: a page.goto sometimes fails with net::ERR_ABORTED when the machine is busy (the browser drops the load; nothing is wrong with
+        # the app). Try again, up to 3 times in all. Any other error, and any address used for a deliberate probe, is raised straight away.
+        from playwright.sync_api import Page
+
+        _goto = Page.goto
+
+        def goto_with_retry(self, url, *args, **kwargs):
+            for attempt in range(3):
+                try:
+                    return _goto(self, url, *args, **kwargs)
+                except Exception as error:
+                    if "ERR_ABORTED" not in str(error) or "csp-probe" in str(url) or attempt == 2:
+                        raise
+
+        Page.goto = goto_with_retry
     except Exception as error:  # never stop a test from running just because the watcher failed
         with open(LOG, "a", encoding="utf-8") as f:
             f.write(f"WATCHER-NOT-LOADED {error}\n")

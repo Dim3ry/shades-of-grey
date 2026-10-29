@@ -19,6 +19,8 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import quiet
+from launch_helpers import app_ready
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from launch_helpers import leave_launch
 
@@ -69,8 +71,7 @@ def seed(page, units=UNITS, settings=None):
                                     r.onsuccess = r.onerror = r.onblocked = () => done(); }); }""",
               [units, settings or full_settings()])
     page.reload()
-    page.wait_for_function("() => typeof APP_VERSION === 'string'")
-    page.wait_for_timeout(300)
+    app_ready(page)
     leave_launch(page)   # U4b (v89): a fresh load shows the start page; tap through to the saved section, as before
 
 def main_tab(page, name):
@@ -113,7 +114,7 @@ def open_unit(page, uid):
     # A3: open or shut now shows on the Details button (the name area is no longer a button with aria-expanded).
     if page.get_attribute(info.replace(" .info", " .details-toggle"), "aria-expanded") != "true":
         page.click(info)
-        page.wait_for_timeout(250)
+        quiet(page)
 
 def fold(uid):
     return f'{card(uid)} .panel details.edit-details'

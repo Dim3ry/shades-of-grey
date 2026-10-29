@@ -35,6 +35,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import quiet
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
@@ -82,11 +83,11 @@ def tip_chips(page):
 
 def pick_group(page, key):
     page.click(f'#basing-groups [data-basing-group="{key}"]')
-    page.wait_for_timeout(150)
+    quiet(page)
 
 def pick_tip(page, key):
     page.click(f'#basing-chips [data-basing="{key}"]')
-    page.wait_for_timeout(150)
+    quiet(page)
 
 def list_texts(page, sel):
     return page.evaluate("(s) => [...document.querySelectorAll(s)].map(e => e.textContent)", sel)

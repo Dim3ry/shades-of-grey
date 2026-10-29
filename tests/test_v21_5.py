@@ -18,6 +18,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, struct, sys, zlib
 from playwright.sync_api import sync_playwright
+from launch_helpers import app_ready, quiet
 from launch_helpers import leave_launch
 from dialog_watch import DialogAnswers
 
@@ -74,8 +75,7 @@ def seed(page, units=UNITS, settings=None):
                                     r.onsuccess = r.onerror = r.onblocked = () => done(); }); }""",
                   [units, settings or full_settings()])
     page.reload()
-    page.wait_for_function("() => typeof APP_VERSION === 'string'")
-    page.wait_for_timeout(300)
+    app_ready(page)
     leave_launch(page)   # U4b: tap through the start page
 
 def tab(page, name):
@@ -219,8 +219,7 @@ def main():
         page.wait_for_timeout(9000)
         check("after Undo the photo files are never deleted", photo_files(page) == files_before, photo_files(page))
         page.reload()
-        page.wait_for_function("() => typeof APP_VERSION === 'string'")
-        page.wait_for_timeout(400)
+        app_ready(page)
         leave_launch(page)   # U4b: tap through the start page
         check("after reopening the app the unit is there with both photos",
               card_ids(page) == [1, 2, 3] and len(next(u for u in saved_units(page) if u["id"] == 2)["photos"]) == 2)

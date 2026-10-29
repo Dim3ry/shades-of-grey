@@ -23,6 +23,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import quiet
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
@@ -49,9 +50,9 @@ def tap(page, selector, nth=0):
     """Scroll to the middle of the screen first, so the fixed tab bar is never over the thing, then tap it."""
     loc = page.locator(selector).nth(nth)
     loc.evaluate("e => e.scrollIntoView({ block: 'center' })")
-    page.wait_for_timeout(60)
+    quiet(page)
     loc.click()
-    page.wait_for_timeout(80)
+    quiet(page)
 
 def open_scheme(page, key=KEY):
     c.open_comp(page)

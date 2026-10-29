@@ -25,6 +25,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, subprocess, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import app_ready, quiet
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
@@ -72,7 +73,7 @@ def rows(page, sel):
 def open_comp(page):
     blur(page)
     page.click('nav button[data-tab="compendium"]')
-    page.wait_for_timeout(200)
+    quiet(page)
     # v49: the page introduction sits behind a More info button; open it so the text can be read
     if page.get_attribute("#compendium-body > .more-info .more-info-button", "aria-expanded") == "false":
         page.click("#compendium-body > .more-info .more-info-button")
@@ -84,7 +85,7 @@ def open_comp(page):
     for sel in ['#cmp-starter-moods [data-mood="all"]', '#cmp-detail-groups [data-detail-group="all"]', '#cmp-basing-groups [data-basing-group="all"]']:
         if page.get_attribute(sel, "aria-pressed") != "true":
             page.click(sel)
-    page.wait_for_timeout(100)
+    quiet(page)
 
 def pick_base(page, value):
     pick_combo(page, "#cmp-colour-ideas-base", value=value)
@@ -101,7 +102,7 @@ def card_idea_rows(page):
 
 def cmp_pick(page, part, key):
     page.click(f'#cmp-{part} [data-{part_attr(part)}="{key}"]')
-    page.wait_for_timeout(120)
+    quiet(page)
 
 def part_attr(part):
     return {"starter-chips": "scheme", "detail-chips": "detail", "basing-chips": "basing",
@@ -109,7 +110,7 @@ def part_attr(part):
 
 def card_pick(page, part, key):
     page.click(f'#{part} [data-{part_attr(part)}="{key}"]')
-    page.wait_for_timeout(120)
+    quiet(page)
 
 def copy_spy(page):
     page.evaluate("""() => { window.__copied = null;
@@ -190,8 +191,7 @@ def main():
               and page.get_attribute('nav button[data-tab="settings"]', "aria-current") is None and not page.is_visible("#view-dashboard"))
         check("the page is called Compendium and says what it is", page.inner_text("#view-compendium h2") == "Compendium" and "without needing a recipe" in page.inner_text("#cmp-intro"))
         page.reload()
-        page.wait_for_function("() => typeof APP_VERSION === 'string'")
-        page.wait_for_timeout(300)
+        app_ready(page)
         # U4b (v89): a reload shows the start page; the Compendium is one tap away.
         check("reloading the app shows the start page, and tapping Compendium opens it", page.evaluate("() => document.body.classList.contains('launching')") and not page.is_visible("#view-compendium"))
         page.click('nav button[data-tab="compendium"]')

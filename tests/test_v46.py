@@ -23,6 +23,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys, urllib.parse
 from playwright.sync_api import sync_playwright
+from launch_helpers import app_ready, quiet
 from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -61,27 +62,25 @@ def fresh(page, settings=None, units=None, photos=None):
         if (s) localStorage.setItem('shades-of-grey-settings', JSON.stringify(s)); }""", [units, settings])
     s27.clear_photos(page)
     page.goto(URL)
-    page.wait_for_function("() => typeof APP_VERSION === 'string'")
-    page.wait_for_timeout(400)
+    app_ready(page)
     leave_launch(page)   # U4b: tap through the start page
     if photos:
         page.evaluate("""async (ids) => { for (const id of ids) { const b = new Blob(['photo-' + id], { type: 'image/jpeg' });
             await putPhoto({ id, full: b, thumb: b }); } }""", photos)
         page.evaluate("""(u) => localStorage.setItem('mini-tracker-models', JSON.stringify(u))""", units)
         page.goto(URL)
-        page.wait_for_function("() => typeof APP_VERSION === 'string'")
-        page.wait_for_timeout(400)
+        app_ready(page)
         leave_launch(page)   # U4b: tap through the start page
 
 def tab(page, name):
     page.evaluate("() => document.activeElement && document.activeElement.blur()")
     page.click(f'nav button[data-tab="{name}"]')
-    page.wait_for_timeout(200)
+    quiet(page)
 
 def open_more(page, which):
     tab(page, "settings")
     page.click(f'#more-seg button[data-page="{which}"]')
-    page.wait_for_timeout(200)
+    quiet(page)
 
 def toast(page):
     return page.inner_text("#toast-text")

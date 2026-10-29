@@ -30,7 +30,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, subprocess, sys
 from playwright.sync_api import sync_playwright
-from launch_helpers import leave_launch
+from launch_helpers import leave_launch, quiet
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
@@ -83,7 +83,8 @@ DETAIL_JS = """() => { const d = document.getElementById('cmp-wheel-detail'); if
                  tag: li.querySelector('.idea-tag').textContent, why: li.querySelector('.idea-why').textContent })) }; }"""
 
 def wait(page, ms=150):
-    page.wait_for_timeout(ms)
+    # T1: a short wait (up to 300 ms) is a wait for the screen change to finish; a longer one stays a fixed pause
+    quiet(page) if ms <= 300 else page.wait_for_timeout(ms)
 
 def open_comp(page):
     h.open_tab(page)

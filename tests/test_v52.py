@@ -22,6 +22,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import quiet
 from launch_helpers import leave_launch
 import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 
@@ -41,12 +42,12 @@ def check(name, ok, detail=""):
 def tab(page, name):
     page.evaluate("() => document.activeElement && document.activeElement.blur()")
     page.click(f'nav button[data-tab="{name}"]')
-    page.wait_for_timeout(150)
+    quiet(page)
 
 def more_page(page, name):
     tab(page, "settings")
     page.click(f'#more-seg button[data-page="{name}"]')
-    page.wait_for_timeout(150)
+    quiet(page)
 
 def open_shopping(page):
     tab(page, "recipes")
@@ -74,9 +75,9 @@ def more(page, scope):
 
 def press(page, button):
     button.evaluate("e => e.scrollIntoView({ block: 'center' })")
-    page.wait_for_timeout(60)
+    quiet(page)
     button.click()
-    page.wait_for_timeout(80)
+    quiet(page)
 
 SETTINGS_FOLDS = {
     "backups": ("#backup-card", ["backup-explain"], "Save backup leaves out photos"),

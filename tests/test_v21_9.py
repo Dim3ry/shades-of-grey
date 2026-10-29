@@ -24,6 +24,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import app_ready, quiet
 import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 from launch_helpers import leave_launch
 
@@ -71,18 +72,17 @@ def seed(page, units=UNITS, settings=None):
                                     r.onsuccess = r.onerror = r.onblocked = () => done(); }); }""",
                   [units, settings or full_settings()])
     page.reload()
-    page.wait_for_function("() => typeof APP_VERSION === 'string'")
-    page.wait_for_timeout(300)
+    app_ready(page)
     leave_launch(page)   # U4b (v89): a fresh load shows the start page; tap through to the saved section, as before
 
 def main_tab(page, name):
     page.click(f'nav button[data-tab="{name}"]')
-    page.wait_for_timeout(150)
+    quiet(page)
 
 def sub_tab(page, name):
     """A real tap on the Settings / Help / Updates switch (the page must already be one of the three)."""
     page.click(f'#more-seg button[data-page="{name}"]')
-    page.wait_for_timeout(150)
+    quiet(page)
 
 def shot(page, name, full=False):
     os.makedirs(SHOTS, exist_ok=True)
@@ -261,8 +261,7 @@ def main():
             sub_tab(page, name)
             check(f"opening {LABELS[name]} saves settings.tab as \"{name}\" (same plain names as before)", saved_settings(page).get("tab") == name, saved_settings(page).get("tab"))
             page.reload()
-            page.wait_for_function("() => typeof APP_VERSION === 'string'")
-            page.wait_for_timeout(300)
+            app_ready(page)
             check(f"after a reload the {name} page is open", shown_views(page) == [name], shown_views(page))
             # U4b (v89): a reload now shows the start page, so the page is kept underneath and nothing is lit or shown until a section is tapped.
             check(f"after a reload the start page shows, with nothing lit ({name})", page.evaluate("() => document.body.classList.contains('launching')") and lit_tabs(page) == [], lit_tabs(page))

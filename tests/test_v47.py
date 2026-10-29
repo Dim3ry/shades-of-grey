@@ -29,6 +29,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import quiet
 from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -84,7 +85,7 @@ def fresh(page, settings=None, units=None):
 
 def tab(page, name):
     page.click(f'nav button[data-tab="{name}"]')
-    page.wait_for_timeout(120)
+    quiet(page)
 
 def var(page, name, selector=":root"):
     return page.evaluate("([s, n]) => getComputedStyle(document.querySelector(s)).getPropertyValue(n).trim()", [selector, name])

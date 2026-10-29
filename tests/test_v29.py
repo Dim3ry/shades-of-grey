@@ -24,6 +24,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import app_ready, quiet
 from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -80,13 +81,12 @@ def load(page, paints=None, settings=None, recipes=None, units=None):
     page.evaluate("""async () => { await new Promise(done => { const r = indexedDB.deleteDatabase('shades-of-grey-photos');
         r.onsuccess = r.onerror = r.onblocked = () => done(); }); }""")
     page.reload()
-    page.wait_for_function("() => typeof APP_VERSION === 'string'")
-    page.wait_for_timeout(400)
+    app_ready(page)
     leave_launch(page)   # U4b: tap through the start page
 
 def blur(page):
     page.evaluate("() => document.activeElement && document.activeElement.blur()")
-    page.wait_for_timeout(100)
+    quiet(page)
 
 def open_editor(page):
     blur(page)
@@ -114,14 +114,14 @@ def rec(rid, name, part, paint_ids):
 def edit_recipe(page, rid):
     blur(page)
     page.click('nav button[data-tab="recipes"]')
-    page.wait_for_timeout(150)
+    quiet(page)
     page.evaluate("(id) => startRecipeDraft(draftFrom(recipeById(id)))", rid)
-    page.wait_for_timeout(300)
+    quiet(page)
 
 def open_panel(page):
     if not page.evaluate("() => document.getElementById('colour-ideas').open"):
         page.click("#colour-ideas > summary")
-        page.wait_for_timeout(150)
+        quiet(page)
 
 def ideas(page):
     return page.evaluate("""() => [...document.querySelectorAll('#colour-ideas button.idea')].map(b => ({
@@ -130,14 +130,14 @@ def ideas(page):
 
 def pick_role(page, key):
     page.click(f'#colour-ideas [data-role="{key}"]')
-    page.wait_for_timeout(120)
+    quiet(page)
 
 def tip(page):
     return page.evaluate("() => (document.getElementById('colour-ideas-tip') || {}).textContent || ''")
 
 def press_check(page):
     page.click("#scheme-check-toggle")
-    page.wait_for_timeout(150)
+    quiet(page)
 
 def result_text(page):
     return page.evaluate("() => (document.getElementById('scheme-result') || {}).innerText || ''")

@@ -21,6 +21,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, re, subprocess, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import quiet
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
@@ -50,7 +51,7 @@ def popup_open(page):
 
 def open_for(page, index=0):
     page.evaluate(f"() => openSimilarPaints(book.paints[{index}], null)")
-    page.wait_for_timeout(200)
+    quiet(page)
 
 def cards(page, paints):
     """What similarCards decides for the first paint: names of Best match, and Your closest (None, or a list of names)."""

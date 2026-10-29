@@ -45,3 +45,22 @@ _SETTLED = """() => !document.querySelector('.mo-out, .mo-box, .mo-ring, .mo-gho
 
 def wait_settled(page, timeout=15000):
     page.wait_for_function(_SETTLED, timeout=timeout)
+
+
+# T1: waits for a real condition, used where older tests slept for a fixed time (300 to 500 ms after a load, 100 to 250 ms after a tap).
+# app_ready: the page has finished loading and the app has started (it starts in one go when its scripts finish), plus two painted frames.
+_READY = """() => document.readyState === 'complete' && typeof APP_VERSION === 'string' && typeof settings === 'object'
+    && new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true))))"""
+
+def app_ready(page, timeout=15000):
+    page.wait_for_function(_READY, timeout=timeout)
+
+# quiet: two painted frames, then no animation or transition that has an end is still running anywhere on the page (an endless one,
+# such as a spinner, does not count). This is as soon as a tap's screen change has finished, however slow the machine is.
+_QUIET = """() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))).then(() => new Promise(done => {
+    const busy = () => document.getAnimations().some(a => a.playState === 'running' && a.effect && a.effect.getComputedTiming().iterations !== Infinity);
+    const check = () => busy() ? requestAnimationFrame(check) : done();
+    check(); }))"""
+
+def quiet(page):
+    page.evaluate(_QUIET)

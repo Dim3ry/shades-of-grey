@@ -1,8 +1,9 @@
 """Runs every test file in this folder and fails loudly if any check fails.
 
 How to run it (from the repo folder):
-    python3 tests/run_all.py              # everything, 4 test files at a time (this is the full run before a merge)
+    python3 tests/run_all.py              # everything, 8 test files at a time (this is the full run before a merge)
     python3 tests/run_all.py --jobs 1     # one at a time, the old way
+    python3 tests/run_all.py --jobs 4     # fewer at once, if the machine struggles (the whole-run time limits are not checked then)
     python3 tests/run_all.py --quick      # only the newest three versions plus a short always-run list
     python3 tests/run_all.py --update-budget   # after a clean full run: rewrite tests/time_budget.json on purpose
 
@@ -31,6 +32,7 @@ SCREENSHOTS = os.path.join(HERE, "screenshots")  # the tests save pictures here;
 TIMINGS = os.path.join(SCREENSHOTS, "timings.json")
 BUDGET = os.path.join(HERE, "time_budget.json")  # kept in the repo; only --update-budget rewrites it
 PLUMBING_FILES = ("test_version_plumbing.py", "version_helpers.py")  # the only files allowed to check the version
+DEFAULT_JOBS = 8  # T1: the tests mostly wait for the browser, so 8 at a time is much faster than 4, even on a 4-core machine
 VERSION_WORDS = re.compile(r"APP_VERSION|sw\.js|\?v=|CHANGELOG|DATA_VERSION|git diff")
 
 # Test files that cannot share the machine with others. They run one at a time after the parallel ones.
@@ -112,7 +114,7 @@ def check_budget(budget, times, checks, total_seconds, jobs):
                 warns.append(f"{name} is a new test file and took {took:.0f} s, over 30 s")
             if checks.get(name, 0) > 60:
                 warns.append(f"{name} is a new test file with {checks[name]} checks, over 60")
-    if jobs == 4:  # the total limits were set with 4 files at a time, so they mean nothing for other settings
+    if jobs == DEFAULT_JOBS:  # the total limits were set with the default number of files at a time, so they mean nothing for other settings
         minutes = total_seconds / 60
         if minutes > budget.get("total_fail_minutes", 20):
             fails.append(f"the whole run took {minutes:.1f} minutes, over the {budget.get('total_fail_minutes', 20)} minute limit")
@@ -165,7 +167,7 @@ def run_one(path, port):
 
 def main():
     ap = argparse.ArgumentParser(description="Run the Minifolio tests.")
-    ap.add_argument("--jobs", type=int, default=4, help="how many test files to run at once (default 4)")
+    ap.add_argument("--jobs", type=int, default=DEFAULT_JOBS, help=f"how many test files to run at once (default {DEFAULT_JOBS})")
     ap.add_argument("--quick", action="store_true",
                     help="only the newest three versions plus the always-run list (not for before a merge)")
     ap.add_argument("--update-budget", action="store_true",

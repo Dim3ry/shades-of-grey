@@ -26,6 +26,8 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import quiet
+from launch_helpers import app_ready
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
@@ -61,8 +63,7 @@ def clear_photos(page):
         r.onsuccess = r.onerror = r.onblocked = () => done(); }); }""")
 
 def settle(page):
-    page.wait_for_function("() => typeof APP_VERSION === 'string'")
-    page.wait_for_timeout(300)
+    app_ready(page)
     leave_launch(page)   # U4b (v89): a fresh load shows the start page; tap through to the saved section, as before
 
 def fresh(page, settings=None):
@@ -89,12 +90,12 @@ def reload(page):
 
 def blur(page):
     page.evaluate("() => document.activeElement && document.activeElement.blur()")
-    page.wait_for_timeout(150)
+    quiet(page)
 
 def main_tab(page, name):
     blur(page)
     page.click(f'nav button[data-tab="{name}"]')
-    page.wait_for_timeout(150)
+    quiet(page)
 
 def sub_tab(page, name):
     page.click(f'#more-seg button[data-page="{name}"]')

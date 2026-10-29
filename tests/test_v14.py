@@ -2,6 +2,7 @@
 `python3 -m http.server 8765`, then run: python3 tests/test_v14.py <folder for screenshots>."""
 import json, sys, time, base64, datetime
 from playwright.sync_api import sync_playwright
+from launch_helpers import quiet
 import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 from dialog_watch import DialogAnswers
 from notice_watch import attach_notices
@@ -72,7 +73,7 @@ def run(viewport, label):
               for (const [k, v] of Object.entries(x || {})) localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v)); }""",
                           [data, settings, extra])
             page.goto(URL)
-            page.wait_for_timeout(300)
+            quiet(page)
             leave_launch(page)   # U4b (v89): a fresh load shows the start page; tap through to the saved section, as before
 
         def stored(key="mini-tracker-models"):
@@ -275,7 +276,7 @@ def run(viewport, label):
             dialogs.clear()
             bad = {"app": "Shades of Grey", "version": 6, "stages": stages, "doneFrom": 1, "models": units(7, 0)}
             page.set_input_files("#restore-file", files=[{"name": "x.json", "mimeType": "application/json", "buffer": json.dumps(bad).encode()}])
-            page.wait_for_timeout(300)
+            quiet(page)
             check(f"{label} 10b broken stages ({name}) refused", len(stored()) == 2 and any("damaged" in d for d in dialogs), dialogs)
         dialogs.clear()
         page.set_input_files("#restore-file", files=[{"name": "x.json", "mimeType": "application/json", "buffer": b'{"hello": 1}'}])
