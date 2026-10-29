@@ -411,7 +411,7 @@ def main():
         data = page.evaluate("""() => ({ starter: STARTER_SCHEMES.map(s => ({ key: s.key, text: s.name + ' ' + s.summary, name: s.name, mood: s.mood })),
             detail: DETAIL_RECIPES.map(s => ({ key: s.key, text: s.name + ' ' + s.summary, name: s.name, group: s.group })),
             basing: BASING_TIPS.map(s => ({ key: s.key, text: s.name + ' ' + s.summary, name: s.name, group: s.group })) })""")
-        PARTS = [("starter", "Search starter schemes", "starter-chips", "starter-moods", "mood", "starter-none", "schemes"),
+        PARTS = [("starter", "Search colour plans", "starter-chips", "starter-moods", "mood", "starter-none", "schemes"),
                  ("detail", "Search detail recipes", "detail-chips", "detail-groups", "detail-group", "detail-none-group", "recipes"),
                  ("basing", "Search basing tips", "basing-chips", "basing-groups", "basing-group", "basing-none-group", "tips")]
         for key, label, chips_id, groups_id, attr, none_id, what in PARTS:
@@ -763,7 +763,7 @@ def main():
         everything = "\n".join(shown)
         hits = GW_WORDS.findall(everything) + GW_MORE.findall(everything)
         check("everything we wrote for the search boxes and wheel groups (labels, placeholders, status lines, headings, descriptions, buttons) names no Games Workshop game, faction, scheme, paint or product",
-              not hits and all(w in everything for w in ["Search starter schemes", "Search detail recipes", "Search basing tips", "Type or choose a paint", "Type or choose a faction", "No matches.", "Warm blacks", "Lavender and lilac"]), (hits[:10], [w for w in ["Search starter schemes", "Search detail recipes", "Search basing tips", "Type or choose a paint", "Type or choose a faction", "No matches.", "Warm blacks", "Lavender and lilac"] if w not in everything]))
+              not hits and all(w in everything for w in ["Search colour plans", "Search detail recipes", "Search basing tips", "Type or choose a paint", "Type or choose a faction", "No matches.", "Warm blacks", "Lavender and lilac"]), (hits[:10], [w for w in ["Search colour plans", "Search detail recipes", "Search basing tips", "Type or choose a paint", "Type or choose a faction", "No matches.", "Warm blacks", "Lavender and lilac"] if w not in everything]))
         own = "\n".join([joined, help_text, new_code])
         own_hits = GW_WORDS.findall(own) + GW_MORE.findall(own)
         check("the Updates entry, the Help line and the new code's own words are clean too", not own_hits and not BRAND_WORDS.findall(joined + help_text), own_hits[:10])
@@ -925,7 +925,7 @@ def main():
         check("the ring picture is exactly as before: the same ten slices in the same order with the same shapes", len(ring) == 10 and digest == "566f183642b86302", (digest, len(ring)))
         check("the wheel still has the same hint line, caption and ten slices in the same order",
               page.inner_text("#cmp-wheel-hint") == "Tap a colour to see what's in it" and page.evaluate("() => [...document.querySelectorAll('#cmp-wheel path.wheel-seg')].map(e => e.dataset.wheel)") == PART_ORDER)
-        check("the six folding parts and their order are as in part 1 (v71: Ask the Mentor first)", page.evaluate("() => [...document.querySelectorAll('#compendium-body .compendium-folds > section.fold .fold-button')].map(b => b.firstElementChild.textContent)") == ["Ask the Mentor", "Colour ideas", "Your schemes", "Starter schemes", "Detail recipes", "Basing tips"])   # v81: the sections now sit in the right-hand part (compendium-folds)
+        check("the six folding parts and their order are as in part 1 (v71: Ask the Mentor first)", page.evaluate("() => [...document.querySelectorAll('#compendium-body .compendium-folds > section.fold .fold-button')].map(b => b.firstElementChild.textContent)") == ["Ask the Mentor", "Colour ideas", "Colours you've used", "Colour plans", "Detail recipes", "Basing tips"])   # v81: the sections now sit in the right-hand part (compendium-folds)
         check("no page id appears twice with everything open and a wheel part showing", (lambda: (open_all(page), tap(page, "orange"), page.click(BASE), page.keyboard.press("Escape"),
               page.evaluate("() => { const ids = [...document.querySelectorAll('[id]')].map(e => e.id); return ids.filter((x, i) => ids.indexOf(x) !== i); }") == [])[-1])())
         check("every id the new boxes add starts with cmp- (so the recipe editor can never clash)", page.evaluate("() => [...document.querySelectorAll('#compendium-body [id]')].every(e => e.id.startsWith('cmp-'))"))

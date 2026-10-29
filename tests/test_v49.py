@@ -68,10 +68,10 @@ def main():
         check("the introduction shows", page.locator("#cmp-intro").is_visible())
         btn.click()
         check("tapping again closes it", btn.get_attribute("aria-expanded") == "false")
-        page.get_by_role("button", name="Starter schemes").first.click()
+        page.get_by_role("button", name="Colour plans").first.click()
         check("with no scheme picked there is a greyed shopping list button",
               page.locator(".shop-idle-button").count() == 1 and page.locator(".shop-idle-button").get_attribute("aria-disabled") == "true")
-        check("its hint says what to do", "Select a scheme" in page.locator(".shop-idle .hint").inner_text())
+        check("its hint says what to do", "Select a colour plan" in page.locator(".shop-idle .hint").inner_text())
         page.locator('[data-mood="cold"]').first.click()
         page.get_by_role("button", name="Cold blue and gold").click()
         # v51: the greyed button stays under the scheme's paints (until something is ticked) and its hint now says paints

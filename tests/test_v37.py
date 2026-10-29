@@ -48,7 +48,7 @@ BRAND_WORDS = re.compile(r"\b(citadel|vallejo|army painter|scale ?75|tamiya|game
 
 KEYS = ["ideas", "history", "starter", "detail", "basing"]
 LABELS = ["Ask the Mentor", "Colour ideas",   # v71: Ask the Mentor is the first folding part
-           "Your schemes", "Starter schemes", "Detail recipes", "Basing tips"]
+           "Colours you've used", "Colour plans", "Detail recipes", "Basing tips"]
 THEMES = ["All", "Cold", "Warm", "Dark", "Bright"]
 COMBOS = ["All", "Reds", "Oranges and browns", "Yellows and sand", "Greens", "Blues", "Purples", "Greys, blacks and whites"]
 COMBO_KEYS = ["red", "orange", "yellow", "green", "blue", "purple", "neutral"]
@@ -276,7 +276,7 @@ def main():
         sw_ = page.evaluate("""() => { const g = document.getElementById('cmp-starter-view'); return { role: g.getAttribute('role'), label: g.getAttribute('aria-label'),
             buttons: [...g.querySelectorAll('button')].map(b => [b.textContent, b.getAttribute('aria-pressed'), b.dataset.view]) }; }""")
         check("the switch has two buttons, Themes then Combinations, as a labelled group, and Themes is on to start with",
-              sw_["role"] == "group" and sw_["label"] == "Browse starter schemes by" and sw_["buttons"] == [["Themes", "true", "themes"], ["Combinations", "false", "combos"]], sw_)
+              sw_["role"] == "group" and sw_["label"] == "Browse colour plans by" and sw_["buttons"] == [["Themes", "true", "themes"], ["Combinations", "false", "combos"]], sw_)
         check("it sits at the top of Starter schemes, above the group buttons",
               page.evaluate("() => { const a = document.getElementById('cmp-starter-view').getBoundingClientRect(), b = document.getElementById('cmp-starter-moods').getBoundingClientRect(); return a.bottom <= b.top + 0.5; }"))
         check("Themes shows the groups All, Cold, Warm, Dark, Bright", [r[0] for r in chips(page, "#cmp-starter-moods .chip")] == THEMES)
@@ -340,7 +340,7 @@ def main():
         page.click("#cmp-starter-schemes .share-row button:has-text('Copy as text')")
         c_copy = copied(page)
         check("the same scheme gives the same four rows, tags and notes in both views", t_rows == c_rows and len(t_rows) == 4, (t_rows[:1], c_rows[:1]))
-        check("and the same Copy as text", t_copy and t_copy == c_copy and t_copy.startswith("Starter scheme: Cold blue and gold"), (t_copy or "")[:80])
+        check("and the same Copy as text", t_copy and t_copy == c_copy and t_copy.startswith("Colour plan: Cold blue and gold"), (t_copy or "")[:80])
         check("Copy as text is plain text: the name, the summary, the reason, one line for each paint and the screen-colours footnote",
               all(r["name"] in t_copy for r in t_rows) and "Cold blue armour, gold trim, red eyes" in t_copy and "classic pair" in t_copy
               and t_copy.rstrip().endswith("Colours on a screen are only a guide, so check them on your model.") and "<" not in t_copy, t_copy[-120:])

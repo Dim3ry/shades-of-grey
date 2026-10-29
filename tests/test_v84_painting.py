@@ -46,15 +46,16 @@ def main():
               and "your own step-by-step for a model" in page.text_content("#recipe-list li.empty"), empty.all_inner_texts())
         page.evaluate("() => { settings.recipeView = 'schemes'; renderRecipes(); }")
         page.wait_for_timeout(200)
-        check("no schemes: the explanation says a scheme is a colour plan or idea you can save into a recipe",
-              "a colour plan or idea you can save into a recipe" in page.text_content("#scheme-list li.empty"))
+        # S1: George changed the meaning of a scheme (a bundle of recipes), so the old U3 wording is gone
+        check("no schemes: the explanation says a scheme is a bundle of recipes",
+              "It is a bundle of recipes" in page.text_content("#scheme-list li.empty"))
 
         print("\n--- 3. Help ---")
         help_ = page.evaluate("() => document.getElementById('view-help').textContent")
         check("Help lists the Painting tab", "Dashboard" in help_ and "Painting" in page.text_content("#help-tabs")
               and "Recipes" not in page.text_content("#help-tabs"), page.text_content("#help-tabs"))
         check("Help says what a recipe and a scheme are",
-              "your own step-by-step for a model" in help_ and "a colour plan or idea you can save into a recipe" in help_)
+              "your own step-by-step for a model" in help_ and "the look for a whole model, unit or army" in help_)   # S1: new wording
         check("Help no longer calls the group the Recipes tab", "Recipes tab" not in help_, help_.count("Recipes tab"))
 
         print("\n--- 4. Restore example recipes ---")
