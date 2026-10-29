@@ -1,7 +1,7 @@
 """Runs every test file in this folder and fails loudly if any check fails.
 
 How to run it (from the repo folder):
-    python3 tests/run_all.py              # everything, 8 test files at a time (this is the full run before a merge)
+    python3 tests/run_all.py              # everything, several test files at a time (cores + 2, at most 8; this is the full run before a merge)
     python3 tests/run_all.py --jobs 1     # one at a time, the old way
     python3 tests/run_all.py --jobs 4     # a different number at once (the whole-run time limits are only checked at the default)
     python3 tests/run_all.py --quick      # only the newest three versions plus a short always-run list
@@ -33,7 +33,7 @@ TIMINGS = os.path.join(SCREENSHOTS, "timings.json")
 BUDGET = os.path.join(HERE, "time_budget.json")  # kept in the repo; only --update-budget rewrites it
 PLUMBING_FILES = ("test_version_plumbing.py", "version_helpers.py")  # the only files allowed to check the version
 # T4: the tests mostly wait for the browser, so more files at once than cores is faster; too many starves the machine and makes timing
-# checks wobble. JOBS_PER_CORE_EXTRA files more than the number of cores, never more than MAX_JOBS and never fewer than 2.
+# checks wobble. JOBS_EXTRA files more than the number of cores, never more than MAX_JOBS and never fewer than 2.
 JOBS_EXTRA, MAX_JOBS = 2, 8
 
 def default_jobs():
