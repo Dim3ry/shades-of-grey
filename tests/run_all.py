@@ -3,7 +3,7 @@
 How to run it (from the repo folder):
     python3 tests/run_all.py              # everything, 8 test files at a time (this is the full run before a merge)
     python3 tests/run_all.py --jobs 1     # one at a time, the old way
-    python3 tests/run_all.py --jobs 4     # fewer at once, if the machine struggles (the whole-run time limits are not checked then)
+    python3 tests/run_all.py --jobs 4     # a different number at once (the whole-run time limits are only checked at the default)
     python3 tests/run_all.py --quick      # only the newest three versions plus a short always-run list
     python3 tests/run_all.py --update-budget   # after a clean full run: rewrite tests/time_budget.json on purpose
 
@@ -32,7 +32,14 @@ SCREENSHOTS = os.path.join(HERE, "screenshots")  # the tests save pictures here;
 TIMINGS = os.path.join(SCREENSHOTS, "timings.json")
 BUDGET = os.path.join(HERE, "time_budget.json")  # kept in the repo; only --update-budget rewrites it
 PLUMBING_FILES = ("test_version_plumbing.py", "version_helpers.py")  # the only files allowed to check the version
-DEFAULT_JOBS = 8  # T1: the tests mostly wait for the browser, so 8 at a time is much faster than 4, even on a 4-core machine
+# T4: the tests mostly wait for the browser, so more files at once than cores is faster; too many starves the machine and makes timing
+# checks wobble. JOBS_PER_CORE_EXTRA files more than the number of cores, never more than MAX_JOBS and never fewer than 2.
+JOBS_EXTRA, MAX_JOBS = 2, 8
+
+def default_jobs():
+    return max(2, min(MAX_JOBS, (os.cpu_count() or 4) + JOBS_EXTRA))
+
+DEFAULT_JOBS = default_jobs()
 VERSION_WORDS = re.compile(r"APP_VERSION|sw\.js|\?v=|CHANGELOG|DATA_VERSION|git diff")
 
 # Test files that cannot share the machine with others. They run one at a time after the parallel ones.
@@ -68,6 +75,34 @@ def pick_quick(paths):
     return [p for p, n in zip(paths, names) if version_key(n) in keys or n in ALWAYS]
 
 
+def calibrate():
+    """T4: how fast is this machine right now? Runs a fixed small CPU job (about 0.3 s on the machine the budget was recorded on) three
+    times and keeps the fastest. The time limits are scaled by how much slower than the recorded reference this is (see time_factor)."""
+    best = float("inf")
+    for _ in range(3):
+        t = time.perf_counter()
+        x = 0
+        for i in range(2_000_000):
+            x += (i * i) % 7
+        best = min(best, time.perf_counter() - t)
+    return best
+
+
+FACTOR_MIN, FACTOR_MAX = 0.8, 3.0   # a very fast machine is not allowed to tighten the limits by more than 20%, a very slow one loosens them by 3x at most
+
+
+def time_factor(budget, measured):
+    """Speed of this machine relative to the one the budget was recorded on, kept between FACTOR_MIN and FACTOR_MAX. SOG_TIME_FACTOR
+    (a number) overrides it for a probe. Without a recorded reference in the budget file the factor is 1."""
+    forced = os.environ.get("SOG_TIME_FACTOR")
+    if forced:
+        return max(FACTOR_MIN, min(FACTOR_MAX, float(forced)))
+    ref = budget.get("calibration_seconds")
+    if not ref or not measured:
+        return 1.0
+    return max(FACTOR_MIN, min(FACTOR_MAX, measured / ref))
+
+
 def load_budget():
     try:
         with open(BUDGET, encoding="utf-8") as f:
@@ -93,7 +128,7 @@ def lint_sources(budget):
     return bad
 
 
-def check_budget(budget, times, checks, total_seconds, jobs):
+def check_budget(budget, times, checks, total_seconds, jobs, factor=1.0, total_factor=None):
     """The growth guard. Returns (warnings, failures), two lists of plain sentences."""
     warns, fails = [], []
     known = budget.get("files", {})
@@ -101,30 +136,35 @@ def check_budget(budget, times, checks, total_seconds, jobs):
         took = times[name]
         if name in known:
             was = known[name]
-            limit = budget.get("fail_overrides", {}).get(name, 180)   # a temporary exception, named in the budget file, until the file is trimmed
+            limit = budget.get("fail_overrides", {}).get(name, 180) * factor   # a longer allowance, named in the budget file, for a file that is slow because the app is
             if took > limit:
-                fails.append(f"{name} took {took:.0f} s, over the {limit} s limit (recorded {was:.0f} s)")
-            elif took > was * 1.25 or took > 120:
-                why = f"over its recorded {was:.0f} s plus 25%" if took > was * 1.25 else "over 120 s"
+                fails.append(f"{name} took {took:.0f} s, over the {limit:.0f} s limit (recorded {was:.0f} s)")
+            elif took > was * 1.25 * factor or took > 120 * factor:
+                why = f"over its recorded {was:.0f} s plus 25%" if took > was * 1.25 * factor else f"over {120 * factor:.0f} s"
                 warns.append(f"{name} took {took:.0f} s, {why}")
         else:
-            if took > 45:
-                fails.append(f"{name} is a new test file and took {took:.0f} s, over the 45 s limit")
-            elif took > 30:
-                warns.append(f"{name} is a new test file and took {took:.0f} s, over 30 s")
+            if took > 45 * factor:
+                fails.append(f"{name} is a new test file and took {took:.0f} s, over the {45 * factor:.0f} s limit")
+            elif took > 30 * factor:
+                warns.append(f"{name} is a new test file and took {took:.0f} s, over {30 * factor:.0f} s")
             if checks.get(name, 0) > 60:
                 warns.append(f"{name} is a new test file with {checks[name]} checks, over 60")
     if jobs == DEFAULT_JOBS:  # the total limits were set with the default number of files at a time, so they mean nothing for other settings
         minutes = total_seconds / 60
-        if minutes > budget.get("total_fail_minutes", 20):
-            fails.append(f"the whole run took {minutes:.1f} minutes, over the {budget.get('total_fail_minutes', 20)} minute limit")
-        elif minutes > budget.get("total_warn_minutes", 15):
-            warns.append(f"the whole run took {minutes:.1f} minutes, over {budget.get('total_warn_minutes', 15)}")
+        tf = factor if total_factor is None else total_factor
+        fail_at, warn_at = budget.get("total_fail_minutes", 20) * tf, budget.get("total_warn_minutes", 15) * tf
+        if minutes > fail_at:
+            fails.append(f"the whole run took {minutes:.1f} minutes, over the {fail_at:.1f} minute limit")
+        elif minutes > warn_at:
+            warns.append(f"the whole run took {minutes:.1f} minutes, over {warn_at:.1f}")
     return warns, fails
 
 
-def update_budget(budget, times):
+def update_budget(budget, times, calibration):
     budget["files"] = {n: math.ceil(t) for n, t in sorted(times.items())}
+    # T4: the reference the time limits are scaled against: how long the fixed CPU job took on this machine, and how many cores it has
+    budget["calibration_seconds"] = round(calibration, 3)
+    budget["calibration_cores"] = os.cpu_count() or 4
     with open(BUDGET, "w", encoding="utf-8") as f:
         json.dump(budget, f, indent=1)
         f.write("\n")
@@ -177,6 +217,13 @@ def main():
         sys.exit("--update-budget needs a full run, not --quick.")
     budget = load_budget()
     lint = lint_sources(budget)
+    measured = calibrate()   # before any test starts, so the other tests do not slow it down
+    factor = time_factor(budget, measured)
+    # the whole-run limits also depend on how many cores share the work (the budget was recorded on calibration_cores cores)
+    cores_ratio = (budget.get("calibration_cores") or (os.cpu_count() or 4)) / (os.cpu_count() or 4)
+    total_factor = max(FACTOR_MIN, min(FACTOR_MAX * 2, factor * cores_ratio))
+    print(f"Speed check: {measured:.2f} s (reference {budget.get('calibration_seconds', 'not recorded')}), {os.cpu_count()} cores, "
+          f"{args.jobs} test files at a time. Per-file time limits x{factor:.2f}, whole-run limits x{total_factor:.2f}.", flush=True)
 
     port = free_port()
     os.makedirs(SCREENSHOTS, exist_ok=True)
@@ -210,7 +257,7 @@ def main():
         print(f"  {took:7.1f}s  {name}")
     print(f"Total: {total / 60:.1f} minutes for {len(times)} test files, {sum(checks.values())} checks ({args.jobs} at a time).")
 
-    warns, fails = ([], []) if args.quick else check_budget(budget, times, checks, total, args.jobs)
+    warns, fails = ([], []) if args.quick else check_budget(budget, times, checks, total, args.jobs, factor, total_factor)
     failed += [f"TIME: {x}" for x in fails]
     if warns:
         print("\n===== TIME WARNINGS =====")
@@ -221,7 +268,7 @@ def main():
         if failed:
             print("\nNot updating the budget: the run had failures.")
         else:
-            update_budget(budget, times)
+            update_budget(budget, times, measured)
 
     print("\n===== SUMMARY =====")
     if failed:
