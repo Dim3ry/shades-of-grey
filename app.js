@@ -16688,12 +16688,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=94".
+    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=95".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v94";
+    const APP_VERSION = "v95";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -17144,6 +17144,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v95", date: "29 Oct 2026", changes: [
+        "Example recipes and schemes now say so above their name. A scheme card lists its recipes as rows you can tap, with the part, the steps and the colours. A scheme with more than 3 recipes has Show all.",
+      ] },
       { version: "v94", date: "29 Oct 2026", changes: [
         "The Compendium's Starter schemes are now called Colour plans, and Your schemes is now Colours you've used, so scheme only means a bundle of recipes. A new closed box, Recipe or scheme? What's the difference, is at the top of Painting > Recipes and Painting > Schemes, and in Help. Words only: your recipes, schemes and backups are untouched.",
       ] },
