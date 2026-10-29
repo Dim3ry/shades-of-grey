@@ -36,7 +36,8 @@ def main():
         load(page, settings={"tab": "recipes", "examplesChecked": True})
         check("the tab bar says Painting", tab_text(page) == "Painting", tab_text(page))
         subs = page.evaluate("() => [...document.querySelectorAll('#recipe-seg button')].map(b => b.textContent.trim())")
-        check("the sub-tabs keep their names", subs == ["Recipes", "Schemes", "Your Palette", "Shopping"], subs)
+        # X1: Colour Lab was added between Schemes and Your Palette
+        check("the sub-tabs keep their names", subs == ["Recipes", "Schemes", "Colour Lab", "Your Palette", "Shopping"], subs)
 
         print("\n--- 2. Empty states ---")
         empty = page.locator("#recipe-list li.empty")
