@@ -16616,12 +16616,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=92".
+    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=93".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v92";
+    const APP_VERSION = "v93";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -17072,6 +17072,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v93", date: "29 Oct 2026", changes: [
+        "Tapping a section on the start circle now glides into the menu bar, and going back to the start page glides the other way. Nothing moves if your phone is set to reduce motion.",
+      ] },
       { version: "v92", date: "28 Oct 2026", changes: [
         "Moving between sections now slides in the direction you are going, and opening a recipe slides over the list.",
       ] },
