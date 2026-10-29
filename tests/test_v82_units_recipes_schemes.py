@@ -44,7 +44,7 @@ def small_taps(page):
 def open_scheme_recipe(page):
     page.click('nav button[data-tab="recipes"]')
     page.click('#recipe-seg [data-view="schemes"]')
-    page.click('#scheme-list .recipe-chip:has-text("Orange trim")')
+    page.click('#scheme-list .scheme-recipe-row:has-text("Orange trim")')   # S2 (v95): the scheme card lists its recipes as rows now, not chips
     page.wait_for_timeout(150)
 
 def main():

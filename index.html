@@ -1076,6 +1076,20 @@
     }
     .scheme-item .meta .faction-dot { width: 10px; height: 10px; vertical-align: -1px; margin-right: 6px; }
     .scheme-item .recipe-links { margin-top: 2px; }
+    /* S2: example label (plain text above the name) and the recipes nested inside a scheme card */
+    .example-label { font-size: 13px; color: var(--muted); }
+    .scheme-recipes { display: grid; gap: 6px; margin-left: 10px; padding-left: 10px; border-left: 3px solid var(--border); }
+    .scheme-recipe-row {
+      display: grid; gap: 2px; width: 100%; min-height: 44px; padding: 8px 12px; text-align: left; min-width: 0;
+      background: var(--background); color: var(--text); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card);
+    }
+    .scheme-recipe-row:hover { border-color: var(--accent); }
+    .scheme-recipe-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+    .scheme-recipe-name { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    .scheme-recipe-row .swatches { flex-wrap: nowrap; flex: none; }
+    .scheme-recipe-row .swatch { width: 14px; height: 14px; }
+    .scheme-recipe-meta { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .scheme-show-all { justify-self: start; min-height: 44px; padding: 0 12px; }
     .scheme-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
     .scheme-buttons button { padding: 10px 14px; min-height: 44px; }
     .scheme-buttons .primary-button { flex: 1; }
@@ -2726,7 +2740,7 @@
         <details>
           <summary>Getting started</summary>
           <ol>
-            <li id="help-example-recipes">A new start comes with example units, recipes, schemes and paints. <strong>Clear examples</strong> removes them (one Undo brings them back); anything you edited or used stays yours. <strong>Keep them</strong> makes them yours. To make a recipe real, open an example paint on Your Palette and choose <strong>More options → Swap for a real paint</strong>. <strong>Settings → Your data → Restore example recipes</strong> brings the examples back.</li>
+            <li id="help-example-recipes">A new start comes with example units, recipes, schemes and paints. Each example says <strong>Example recipe</strong> or <strong>Example scheme</strong> above its name, and the example recipes sit inside the example schemes. <strong>Clear examples</strong> removes them (one Undo brings them back); anything you edited or used stays yours. <strong>Keep them</strong> makes them yours. To make a recipe real, open an example paint on Your Palette and choose <strong>More options → Swap for a real paint</strong>. <strong>Settings → Your data → Restore example recipes</strong> brings the examples back.</li>
             <li>Add your units: one at a time with <strong>Models → + Add unit</strong>, or a whole army at once with <strong>Paste army list</strong> or <strong>Import CSV</strong>, which are on the same panel (see <strong>Importing</strong>).</li>
             <li>As you build and paint, press the right arrow on a unit to move it up a stage (or open <strong>Details</strong> and pick any stage from <strong>Jump to stage</strong>).</li>
             <li>Check the <strong>Dashboard</strong> to see how far you've got.</li>
@@ -2853,6 +2867,7 @@
             <li id="help-ask-mentor"><strong>Ask the Mentor</strong> (Pro preview): in the <strong>Compendium</strong>, open <strong>Ask the Mentor</strong>, choose a <strong>Base colour</strong>, a <strong>Second colour</strong> if you like, and a <strong>Part</strong> (Armour, Eyes, Weapon or Base). Under each colour you get up to three paints that go with it for that part, with the reason, and your own paints come first. A paint of yours that is a poor match says <strong>Yours, poor fit</strong>. Under the picks are tips for that part, each with its colours and, where it has one, a link to the creator it credits; a tip about your colour comes first. The tips are samples for now. Each paint row has <strong>Use in a recipe</strong>, <strong>Add to a recipe</strong> and <strong>Similar paints</strong> (for alternatives), and a paint you do not own also has <strong>Add to shopping list</strong> and <strong>Shop links</strong> (plain links to shops; Settings can switch the links off). Each one says what it did and has an <strong>Undo</strong>. It uses the same colour rules as Colour ideas, and the picks are kept only while the app is open.</li>
             <li id="help-compendium-ticks">In the <strong>Compendium</strong>, tick the paints you want from a colour plan or detail recipe, or press <strong>Select all</strong>. <strong>Add to shopping list</strong> is grey until you tick something, then adds only the ticked paints. A paint you own, or that is already on the list, shows a mark instead of a tick box. <strong>Copy as text</strong> and <strong>Save into a new recipe</strong> use the ticked paints, or all of them if none is ticked.</li>
             <li><strong>Schemes</strong> (top of the Painting tab) group the recipes you use for one faction, e.g. "My Blue Army" = armour, trim, lenses and base. Press <strong>+ New scheme</strong>, name it, type the faction and tick its recipes.</li>
+            <li>A scheme card lists its recipes as rows (name, part, steps, colour dots). Tap a row to open that recipe. A scheme with more than 3 recipes shows the first 3: tap <strong>Show all</strong> for the rest.</li>
             <li><strong>Apply to … units</strong> links a scheme's recipes to every unit in its faction that doesn't have them all yet. Recipes a unit already has stay linked.</li>
             <li>With <strong>New units … get these recipes automatically</strong> ticked, any unit you add to that faction later (by hand or by import) gets the scheme straight away.</li>
             <li>In a unit's details, the <strong>Link a recipe…</strong> menu also lists its faction's schemes. Deleting a scheme leaves its recipes and links alone.</li>
