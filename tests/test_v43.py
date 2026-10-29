@@ -90,7 +90,7 @@ def open_comp(page):
     h.open_tab(page)
 
 def live(page, ms=120):
-    wait(page, ms)
+    page.wait_for_timeout(ms)   # T1: stays a fixed pause: the app updates this announcement on a short timer, which nothing on screen shows
     return page.evaluate("() => document.getElementById('wheel-live').textContent")
 
 def state(page):

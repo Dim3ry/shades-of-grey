@@ -55,11 +55,14 @@ _READY = """() => document.readyState === 'complete' && typeof APP_VERSION === '
 def app_ready(page, timeout=15000):
     page.wait_for_function(_READY, timeout=timeout)
 
-# quiet: two painted frames, then no animation or transition that has an end is still running anywhere on the page (an endless one,
-# such as a spinner, does not count). This is as soon as a tap's screen change has finished, however slow the machine is.
+# quiet: two painted frames, then no short animation or transition is still running anywhere on the page. "Short" means ending within a second:
+# the screen moves of this app take 240 to 500 ms, while a message's own display time (several seconds) must not be waited out, or the message
+# would be gone before the test looks at it. An endless animation (a spinner) does not count either, and the wait stops after a second at most.
 _QUIET = """() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))).then(() => new Promise(done => {
-    const busy = () => document.getAnimations().some(a => a.playState === 'running' && a.effect && a.effect.getComputedTiming().iterations !== Infinity);
-    const check = () => busy() ? requestAnimationFrame(check) : done();
+    const stop = performance.now() + 1000;
+    const busy = () => document.getAnimations().some(a => { if (a.playState !== 'running' || !a.effect) return false;
+        const t = a.effect.getComputedTiming(); return t.iterations !== Infinity && t.endTime <= 1000; });
+    const check = () => busy() && performance.now() < stop ? requestAnimationFrame(check) : done();
     check(); }))"""
 
 def quiet(page):
