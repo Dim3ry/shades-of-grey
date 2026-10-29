@@ -37,6 +37,9 @@ Keep `no page errors` and `no browser pop-ups` in each new test; those are cheap
 - Remove duplicates by keeping the oldest copy. Never weaken a check that stays.
 - Prove it: checks before and after, run time before and after, and that every kept check still passes (compare the PASS lines of a before and an after run).
 
+## Triage helper
+`python3 tests/run_all.py --rerun-failed` reruns each failed file alone and says "failed in the run, passed alone", "time only" or "still failing". The `test-runner` agent (`.claude/agents/test-runner.md`) runs the full suite this way and gives one plain paragraph; use it before a merge by saying "use the test-runner agent".
+
 ## Budget
 `tests/time_budget.json` records each file's time. A warning is a prompt to sample or cut, not to raise the number. Run `python3 tests/run_all.py --update-budget` only after a clean full run and only on purpose, and say so in the pull request.
 
