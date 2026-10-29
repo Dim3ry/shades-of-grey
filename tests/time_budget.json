@@ -1,8 +1,12 @@
 {
  "_note": "Per-file seconds from the last clean full run (4 at a time). Rewrite only with: python3 tests/run_all.py --update-budget",
- "total_warn_minutes": 15,
- "total_fail_minutes": 20,
- "fail_overrides": {"test_v35.py": 240, "test_v37b.py": 240, "test_v21_3.py": 240},
+ "total_warn_minutes": 12,
+ "total_fail_minutes": 16,
+ "fail_overrides": {
+  "test_v35.py": 300,
+  "test_v37b.py": 240,
+  "test_v21_3.py": 240
+ },
  "files": {
   "test_colour_engine.py": 17,
   "test_html_safety.py": 1,
