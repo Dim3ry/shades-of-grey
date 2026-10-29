@@ -19,6 +19,7 @@ import json, os, sys
 from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import lab_helpers as labh   # X1: the old all-in-one Compendium page (see lab_helpers.py)
 import test_v31 as t
 import test_v71 as m
 
@@ -118,7 +119,7 @@ def main():
         check("the line says so and has an Undo", f"Started a new recipe with {name}" in toast(page) and page.is_visible("#toast-undo"), toast(page))
         undo(page)
         check("Undo closes it again", page.evaluate("() => recipeDraft") is None)
-        page.click('nav button[data-tab="compendium"]')
+        labh.go_compendium(page)
         open_mentor(page)
         row = not_owned_row(page)
         row.locator("button", has_text="Add to a recipe").click()

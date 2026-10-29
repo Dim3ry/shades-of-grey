@@ -29,6 +29,7 @@ from launch_helpers import app_ready, quiet
 from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import lab_helpers as labh   # X1: the old all-in-one Compendium page (see lab_helpers.py)
 import wheel_helpers as wh   # v43
 from notice_watch import attach_notices
 import test_v31 as t   # the helpers (loading the app, the palette, the colours) and the Games Workshop word lists
@@ -104,7 +105,7 @@ CHIPS_JS = "(s) => [...document.querySelectorAll(s)].map(c => c.textContent)"
 
 def open_tab(page):
     blur(page)
-    page.click('nav button[data-tab="compendium"]')
+    labh.go_compendium(page)
     quiet(page)
 
 def is_open(page, key):

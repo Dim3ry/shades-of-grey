@@ -33,6 +33,7 @@ from launch_helpers import leave_launch, wait_settled
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import wheel_helpers as wh   # v43
+import lab_helpers as labh   # X1
 from notice_watch import attach_notices
 import test_v31 as t   # the helpers (loading the app, the palette, the colours) and the Games Workshop word lists
 from combo_helpers import pick_combo   # v37 part 2: "Start from" is a search box now
@@ -85,17 +86,9 @@ WHEEL_TEXT_JS = """() => { const c = document.getElementById('cmp-wheel-block').
 KEYS = ["red", "orange", "yellow", "green", "blue", "purple", "white", "grey", "black", "metallic"]
 
 def open_comp(page):
+    # X1: the wheel is in Painting > Colour Lab > Wheel now (the other colour parts are in their own Colour Lab sections)
     blur(page)
-    page.click('nav button[data-tab="compendium"]')
-    quiet(page)
-    # v49: the page introduction sits behind a More info button; open it so the text can be read
-    if page.get_attribute("#compendium-body > .more-info .more-info-button", "aria-expanded") == "false":
-        page.click("#compendium-body > .more-info .more-info-button")
-    # v37: the five parts under the wheel fold and start closed; open them so the rest of the Compendium can be checked as before
-    for key in ["ideas", "history", "starter", "detail", "basing"]:
-        if page.get_attribute(f"#cmp-fold-{key}-button", "aria-expanded") != "true":
-            page.click(f"#cmp-fold-{key}-button")
-    page.wait_for_timeout(100)
+    labh.open_lab(page, "wheel")
 
 def tap(page, key):
     wh.tap(page, key)   # v43: a colour opens its groups first (see wheel_helpers.py); same meaning as before
@@ -170,8 +163,8 @@ def main():
         print("\n--- 2. The shape of the wheel ---")
         open_comp(page)
         check("the hint line is exactly: Tap a colour to see what's in it", page.inner_text("#cmp-wheel-hint") == "Tap a colour to see what's in it", page.inner_text("#cmp-wheel-hint"))
-        order = page.evaluate("() => [...document.querySelectorAll('#compendium-body > :not(.compendium-split), #compendium-body .compendium-split > * > *')].flatMap(e => e.classList.contains('more-info') ? [...e.querySelectorAll('.more-info-panel > *')] : [e]).map(e => e.id)")
-        check("the wheel comes first in the tab (after the intro line), before the colour chooser", order[0] == "cmp-intro" and order[1] == "cmp-wheel-block" and order.index("cmp-wheel-block") < len(order) - 1, order[:5])
+        order = page.evaluate("() => [...document.querySelectorAll('#colourlab-body > :not(.compendium-split), #colourlab-body .compendium-split > * > *')].flatMap(e => e.classList.contains('more-info') ? [...e.querySelectorAll('.more-info-panel > *')] : [e]).map(e => e.id)")
+        check("the wheel is the first Colour Lab section (X1: it no longer sits above the Compendium's fold-outs)", order[0] == "cmp-lab-wheel" and page.locator("#cmp-lab-wheel > #cmp-wheel-block").count() == 1 and page.locator("#lab-seg button").first.inner_text() == "Wheel", order[:5])
         inside = page.evaluate("() => [...document.getElementById('cmp-wheel-block').children].map(e => e.id || e.tagName.toLowerCase())")
         check("inside the wheel part: the hint, the picture, then the small caption (v53: behind More info)", inside[:3] == ["cmp-wheel-hint", "cmp-wheel", "div"] and page.evaluate("() => !!document.querySelector('#cmp-wheel-block > .more-info .wheel-caption')"), inside)   # v53: the caption sits behind More info
         check("the hint sits above the picture", page.evaluate("() => document.getElementById('cmp-wheel-hint').getBoundingClientRect().bottom <= document.getElementById('cmp-wheel').getBoundingClientRect().top + 0.5"))
@@ -238,7 +231,7 @@ def main():
         tap(page, "grey")
         tap(page, "black")
         check("tapping another slice switches to it (only one part is open)", open_key(page) == "black" and page.locator("#cmp-wheel-detail").count() == 1 and page.inner_text("#cmp-wheel-detail h3") == "Blacks")
-        page.evaluate("() => { compendiumState.wheel = ''; renderCompendium(); }")
+        page.evaluate("() => { compendiumState.wheel = ''; renderColourLab(); }")
         page.focus('[data-wheel="white"]')
         page.keyboard.press("Enter")
         page.wait_for_timeout(120)
@@ -373,20 +366,23 @@ def main():
         check("each shared builder is still defined exactly once, and the wheel builds no rows or buttons of its own copy",
               all(app.count(f"function {n}(") == 1 for n in ["buildIdeaItem", "buildShareRow", "compendiumBaseChoices", "appendLibraryParts", "appendRolePicker", "buildIdeasList", "ideaTextLine"])
               and 'createElement("li")' not in wheel_code and "idea-static" not in wheel_code and "idea-tag" not in wheel_code)
-        check("renderCompendium draws the wheel through the same door as the other parts", "appendColourWheel(body, door, redraw)" in app)
+        check("Colour Lab draws the wheel through the same door as the other parts", "appendColourWheel(section, door, redraw)" in app)
         load(page, paints=WPAINTS)
         open_comp(page)
         tap(page, "orange")
         page.click("#cmp-wheel-others")
+        labh.open_lab(page, "ideas")   # X1: Colour ideas is its own Colour Lab section; the wheel keeps its choice while it is away
         pick_combo(page, "#cmp-colour-ideas-base", index=1)
         dupes = page.evaluate("() => { const ids = [...document.querySelectorAll('[id]')].map(e => e.id); return ids.filter((x, i) => ids.indexOf(x) !== i); }")
         check("no page id appears twice with the wheel open next to the rest of the Compendium", not dupes, dupes[:5])
         check("every id the wheel adds starts with cmp- (so the recipe editor can never clash)",
               page.evaluate("() => [...document.querySelectorAll('#cmp-wheel-block [id], #cmp-wheel-block + * [id]')].filter(e => e.closest('#cmp-wheel-block')).every(e => e.id.startsWith('cmp-'))"))
         check("the rest of the Compendium still works with the wheel open (choose a colour, get 3 ideas, and the wheel stays open)",
-              page.locator("#cmp-fold-ideas-panel > .idea-list .idea-static").count() == 3 and zoom_key(page) == "orange" and page.locator("#cmp-wheel-detail").count() == 1)
-        page.click('#compendium-body [data-role="trim"]')
+              page.locator("#cmp-lab-ideas > .idea-list .idea-static").count() == 3 and zoom_key(page) == "orange")
+        page.click('#colourlab-body [data-role="trim"]')
         page.wait_for_timeout(150)
+        labh.open_lab(page, "wheel")
+        check("back on the Wheel section the part is still open", page.locator("#cmp-wheel-detail").count() == 1)
         check("changing the role redraws the page and the wheel keeps its choice (and its other-paints switch)", zoom_key(page) == "orange" and page.get_attribute("#cmp-wheel-others", "aria-expanded") == "true")
         check("the wheel's choice is separate from the recipe card: the card's own state has no wheel", page.evaluate("() => !('wheel' in colourIdeasState)"))
 
@@ -449,13 +445,13 @@ def main():
         copy_spy(page)
         tap(page, "blue")
         check("a hostile paint name and brand never become markup in the blue list and no script runs",
-              page.locator("#view-compendium img, #view-compendium script, #view-compendium b, #view-compendium iframe").count() == 0 and page.evaluate("() => window.__pwned") is None)
+              page.locator("#colourlab-view img, #colourlab-view script, #colourlab-view b, #colourlab-view iframe").count() == 0 and page.evaluate("() => window.__pwned") is None)
         blue_rows = [r for g in part_groups(page, "blue") for r in g["rows"]]   # v37 part 2: the blues are in three groups (v43: opened one at a time)
         wh.zoom_in(page, "blue")
         wh.open_group(page, "blue", "blue")
         check("it shows as plain text instead", any("<img src=x" in r["name"] for r in blue_rows) and "<script>" in page.inner_text("#cmp-wheel-detail"), [r["name"] for r in blue_rows][:5])
         tap(page, "metallic")   # (goes back up from the blues first)
-        check("the same in the metallics (a hostile name with a metal word in it)", page.locator("#view-compendium img, #view-compendium script, #view-compendium b").count() == 0
+        check("the same in the metallics (a hostile name with a metal word in it)", page.locator("#colourlab-view img, #colourlab-view script, #colourlab-view b").count() == 0
               and page.evaluate("() => window.__pwned") is None and "<img src=x" in page.inner_text("#cmp-wheel-detail"))
         page.click("#cmp-wheel-detail .share-row button")
         text = copied(page)
@@ -482,7 +478,7 @@ def main():
         # ---------- 11. Phone widths ----------
         print("\n--- 11. Phone widths 360, 375, 390 and 400 ---")
         for width in (360, 375, 390, 400):
-            page.set_viewport_size({"width": width, "height": 800})
+            page.set_viewport_size({"width": width, "height": 1000})   # X1: the wheel sits lower on the page (Painting's switches above it), so the screen is taller
             load(page, paints=WPAINTS)
             open_comp(page)
             page.evaluate("() => window.scrollTo(0, 0)")
@@ -502,7 +498,7 @@ def main():
                 opened = (zoom_key(page) == key) if key in wh.HUES else (open_key(page) == key)   # v43: a colour drills in, a grey-centre slice opens its list
                 if hit != key or not opened:
                     wrong.append((key, hit, open_key(page), zoom_key(page)))
-                    page.evaluate("() => { compendiumState.wheel = ''; compendiumState.wheelZoom = ''; compendiumState.wheelGroup = ''; renderCompendium(); }")
+                    page.evaluate("() => { compendiumState.wheel = ''; compendiumState.wheelZoom = ''; compendiumState.wheelGroup = ''; renderColourLab(); }")
                 elif key in wh.HUES:
                     wh.go_back(page)   # back up, ready for the next
                     page.evaluate("() => window.scrollTo(0, 0)")   # the points were measured from the top of the page
@@ -513,7 +509,7 @@ def main():
             longest = wh.open_each_group(page, "orange", wh.open_everything)   # v43: each of the three groups with every paint showing (the colour opens one group at a time)
             check(f"at {width} px nothing scrolls sideways with the longest lists open (every orange and brown, one group at a time)", all(ok for ok, _ in longest) and sum(n for _, n in longest) > 100, longest)
             tap(page, "orange")
-            outside = page.evaluate("""() => { const c = document.querySelector('#view-compendium .card').getBoundingClientRect();
+            outside = page.evaluate("""() => { const c = document.querySelector('#colourlab-view .card').getBoundingClientRect();
                 return [...document.querySelectorAll('#cmp-wheel-block *')].filter(e => { const r = e.getBoundingClientRect();
                     return r.width > 0 && (r.right > c.right + 0.5 || r.left < c.left - 0.5); }).map(e => e.id || e.className.baseVal || e.className || e.tagName); }""")
             check(f"at {width} px everything in the wheel part is inside the Compendium card", not outside, outside[:5])
@@ -539,14 +535,14 @@ def main():
                     const pairs = [['hint', '#cmp-wheel-hint'], ['caption', '.wheel-caption'], ['title', '#cmp-wheel-detail h3'], ['about', '#cmp-wheel-detail > .hint'],
                                    ['count', '#cmp-wheel-detail .idea-label'], ['group', '.wheel-sub'], ['name', '#cmp-wheel-detail .idea-name'], ['why', '#cmp-wheel-detail .idea-why'],
                                    ['tag own', '#cmp-wheel-detail .idea-tag.own'], ['tag none', '#cmp-wheel-detail .idea-tag.none'], ['button', '#cmp-wheel-others'],
-                                   ['copy', '#cmp-wheel-detail .share-row button'], ['intro', '#cmp-intro']];
+                                   ['copy', '#cmp-wheel-detail .share-row button'], ['foot', '#cmp-foot']];   // X1: Colour Lab has no intro line; its footnote is checked instead
                     for (const [k, s] of pairs) { const el = document.querySelector(s); if (el) out[k] = [getComputedStyle(el).color, bg(el)]; }
                     return out; }""")
                 bad = {k: round(contrast(rgb(v[0]), rgb(v[1])), 2) for k, v in col.items() if contrast(rgb(v[0]), rgb(v[1])) < 4.5}
                 tag = f"{appearance} {width}px"
                 check(f"{tag}: the hint, caption, description, count, group names, rows, tags and buttons all have contrast of at least 4.5", not bad and len(col) >= 12, (bad, len(col)))
                 ring = page.evaluate("""() => { const open = getComputedStyle(document.querySelector('#cmp-wheel path[aria-pressed="true"]')), shut = getComputedStyle(document.querySelector('#cmp-wheel path[aria-pressed="false"]'));
-                    const card = getComputedStyle(document.querySelector('#view-compendium .card')).backgroundColor;
+                    const card = getComputedStyle(document.querySelector('#colourlab-view .card')).backgroundColor;
                     return { open: open.stroke, shut: shut.stroke, width: open.strokeWidth, card }; }""")
                 check(f"{tag}: the open slice has an outline you can see (contrast 3 or more against the card) and the shut ones do not", contrast(rgb(ring["open"]), rgb(ring["card"])) >= 3 and ring["open"] != ring["shut"], ring)
                 fills = page.evaluate("() => Object.fromEntries([...document.querySelectorAll('#cmp-wheel path.wheel-seg')].map(e => [e.dataset.wheel, getComputedStyle(e).fill]))")
@@ -566,9 +562,9 @@ def main():
         open_comp(page)
         # v37: the five parts now sit under folding headings (each opened by open_comp), so look inside them as well as at the top level
         # v81: the wheel, the sections and the footnote now sit inside two parts (compendium-split), so the lists also look one level down.
-        ids = page.evaluate("() => [...document.querySelectorAll('#compendium-body > *, #compendium-body .compendium-split > * > *, #compendium-body > .more-info .more-info-panel > *, #compendium-body .fold-panel > *')].map(e => e.id).filter(Boolean)")
-        want = ["cmp-intro", "cmp-wheel-block", "cmp-colour-ideas-none", "cmp-faction-history", "cmp-starter-schemes", "cmp-detail-recipes", "cmp-basing-tips", "cmp-foot"]
-        check("the rest of the Compendium is all still there, in the same order, after the wheel", [i for i in ids if i in want] == want, ids)
+        # X1: the parts that sat under the wheel are now the other Colour Lab sections, one open at a time, in this order
+        sections = page.evaluate("() => [...document.querySelectorAll('#lab-seg button')].map(b => b.dataset.lab)")
+        check("the rest of Colour Lab is all still there, in the same order, after the wheel", sections == ["wheel", "ideas", "plans", "history", "picker"], sections)
         check("the card in a recipe has no wheel and still starts closed", (lambda: (load(page, paints=WPAINTS, recipes=[rec(1, "R", "Armour", [1])]), t.open_editor(page), page.evaluate("() => [document.getElementById('colour-ideas').open, document.querySelectorAll('#view-recipes .wheel-svg').length]"))[-1])() == [False, 0])
         check("no real browser pop-ups appeared", not [d for d in dialogs if "Do you own" in d], dialogs[:3])
         check("no page errors", not errors, errors[:3])

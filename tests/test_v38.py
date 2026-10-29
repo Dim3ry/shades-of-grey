@@ -26,6 +26,7 @@ from launch_helpers import quiet
 from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import lab_helpers as labh   # X1: the old all-in-one Compendium page (see lab_helpers.py)
 import wheel_helpers as wh   # v43
 from notice_watch import attach_notices
 import test_v31 as t   # the helpers (loading the app, the palette, the colours) and the Games Workshop word lists
@@ -80,7 +81,7 @@ ROWS_JS = """() => [...document.querySelectorAll('#cmp-wheel-detail button.idea-
 
 def open_tab(page):
     blur(page)
-    page.click('nav button[data-tab="compendium"]')
+    labh.go_compendium(page)
     quiet(page)
 
 def tap(page, key):
@@ -298,7 +299,7 @@ def main():
         open_row(page, "Probe Blue")
         page.click('nav button[data-tab="dashboard"]')
         page.wait_for_timeout(150)
-        page.click('nav button[data-tab="compendium"]')
+        labh.go_compendium(page)
         page.wait_for_timeout(250)
         ok_back = page.locator(".paint-panel").count() == page.locator(btn_sel + '[aria-expanded="true"]').count()
         check("leaving the tab and coming back keeps the page consistent (a panel is shown only with its button open, never two, never a stale one)", ok_back and page.locator(".paint-panel").count() <= 1)

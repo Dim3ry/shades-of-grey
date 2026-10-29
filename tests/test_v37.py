@@ -28,6 +28,7 @@ from playwright.sync_api import sync_playwright
 from launch_helpers import app_ready, quiet
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import lab_helpers as labh   # X1: the old all-in-one Compendium page (see lab_helpers.py)
 import wheel_helpers as wh   # v43
 from notice_watch import attach_notices
 from launch_helpers import wait_settled
@@ -72,7 +73,7 @@ def rows(page, sel):
 
 def open_tab(page):
     blur(page)
-    page.click('nav button[data-tab="compendium"]')
+    labh.go_compendium(page)
     quiet(page)
 
 def is_open(page, key):

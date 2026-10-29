@@ -2142,7 +2142,8 @@
         if (paintStatus(p) !== "wishlist") continue;
         // v40: where it came from: the notes saved with the paint (a colour suggestion, a recipe, a scheme). One paint is one entry.
         const from = [];
-        const addFrom = (t) => { t = String(t || "").trim(); if (t && !from.some(o => sameText(o, t))) from.push(t); };
+        // X1: display only. A source saved before Colour Lab says "Compendium: ..."; it is shown as "Colour Lab: ..." and the saved text is not changed.
+        const addFrom = (t) => { t = shopSourceShown(String(t || "").trim()); if (t && !from.some(o => sameText(o, t))) from.push(t); };
         for (const f of Array.isArray(p.shopFrom) ? p.shopFrom : []) addFrom(f);
         items.push({ paint: p, reason: "wishlist", from });
       }
@@ -2290,6 +2291,9 @@
     function watchShopTag(row, paint, tag) {
       const el = row && row.querySelector(".idea-tag");
       if (el) { el.shopPaint = paint; el.shopTag = tag; }
+    }
+    function shopSourceShown(text) {
+      return text.replace(/^Compendium: Ask the Mentor/, "Colour Lab: Picker").replace(/^Compendium: /, "Colour Lab: ");
     }
     // Puts a paint on the shopping list as Wishlist (adding it to your palette first if it is only in the built-in list).
     // Undo puts the palette back as it was. Done in place: the page is not redrawn, so the button keeps its place on the screen.
@@ -3930,17 +3934,17 @@
         openRecipeId = null;
         renderRecipes();
       }
-      if (b.dataset.tab === "compendium") compendiumState.focus = null;   // v69: the tab itself opens the whole Compendium
+      if (b.dataset.tab === "compendium" || b.dataset.tab === "recipes") compendiumState.focus = null;   // v69: the tab itself opens the whole Compendium (X1: and the whole Colour Lab)
       showTab(b.dataset.tab, b.classList.contains("cog") ? undefined : "slide");
     }));
 
-    // U4a: the round Ask Mentor button. There is no Mentor chat yet, so it opens the Compendium with Ask the Mentor open and scrolls to it.
+    // U4a: the round Ask Mentor button. There is no Mentor chat yet (X5 adds the pop-up), so it opens Painting > Colour Lab > Picker and scrolls to it.
     document.getElementById("mentor-button").addEventListener("click", () => {
       compendiumState.focus = null;
-      compendiumState.open.mentor = true;
-      showTab("compendium");
-      const fold = document.getElementById(compendiumId("fold-mentor"));
-      if (fold) fold.scrollIntoView({ block: "start" });
+      openColourLab("picker", () => {
+        const section = document.getElementById(compendiumId("lab-picker"));
+        if (section) section.scrollIntoView({ block: "start" });
+      });
     });
 
     // ================= FILTERS =================
@@ -7526,6 +7530,7 @@
     let recipeDraft = null;    // the recipe being edited (a copy), or null
     const schemeView = document.getElementById("scheme-view");
     const shoppingView = document.getElementById("shopping-view");   // v40
+    const labView = document.getElementById("colourlab-view");   // X1
     let schemeDraft = null;    // the painting scheme being edited (a copy), or null
 
     function renderRecipes() {
@@ -7536,7 +7541,7 @@
       if (importDraft) {
         renderRecipeExamplesCard(false);
         fillDraftCard("recipe", false); fillDraftCard("paste", false);   // v26
-        for (const el of [recipeSeg, recipeHome, paletteView, schemeView, shoppingView, recipePage]) el.classList.add("hidden");
+        for (const el of [recipeSeg, recipeHome, paletteView, schemeView, shoppingView, labView, recipePage]) el.classList.add("hidden");
         renderImport();
         return;
       }
@@ -7544,7 +7549,8 @@
       const onPalette = !onPage && settings.recipeView === "palette";
       const onSchemes = !onPage && settings.recipeView === "schemes";
       const onShopping = !onPage && settings.recipeView === "shopping";   // v40
-      const current = onPalette ? "palette" : onSchemes ? "schemes" : onShopping ? "shopping" : "recipes";
+      const onLab = !onPage && settings.recipeView === "colourlab";   // X1
+      const current = onPalette ? "palette" : onSchemes ? "schemes" : onShopping ? "shopping" : onLab ? "colourlab" : "recipes";
       // The switch hides while a recipe or a scheme being edited fills the screen.
       recipeSeg.classList.toggle("hidden", onPage || (onSchemes && !!schemeDraft));
       renderRecipeExamplesCard(!onPage && !(onSchemes && !!schemeDraft));   // v24
@@ -7552,13 +7558,13 @@
       fillDraftCard("paste", !onPage && !(onSchemes && !!schemeDraft));
       recipeSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", b.dataset.view === current));
       // v78: from 900 px an open recipe (or one being written) shows beside the list, but only when it was opened from the Recipes list.
-      const wideSplit = onPage && recipeWide.matches && !["palette", "schemes", "shopping"].includes(settings.recipeView);
+      const wideSplit = onPage && recipeWide.matches && !["palette", "schemes", "shopping", "colourlab"].includes(settings.recipeView);
       // Mo3a: a recipe opening or closing from the Recipes list, by a tap. On a phone the list steps back and the detail slides in from the
       // right (closing reverses it); from 900 px, where the detail sits in the side pane, it is a short fade. Not from Palette, Schemes or Shopping.
       let detailMove = null;
       const wasPage = !recipePage.classList.contains("hidden");
       if (onPage !== wasPage && canMove() && settings.tab === "recipes" && !launching && !views.recipes.classList.contains("hidden")
-          && !["palette", "schemes", "shopping"].includes(settings.recipeView)) {
+          && !["palette", "schemes", "shopping", "colourlab"].includes(settings.recipeView)) {
         const ms = motionMs("--motion-med");
         const sideways = [{ transform: "none", opacity: 1 }, { transform: "translateX(-20%)", opacity: 0.45 }];
         if (recipeWide.matches) {
@@ -7573,8 +7579,9 @@
         }
       }
       recipeSplit.classList.toggle("layout-split", wideSplit);
-      recipeHome.classList.toggle("hidden", (onPage && !wideSplit) || onPalette || onSchemes || onShopping);
+      recipeHome.classList.toggle("hidden", (onPage && !wideSplit) || onPalette || onSchemes || onShopping || onLab);
       shoppingView.classList.toggle("hidden", !onShopping);
+      labView.classList.toggle("hidden", !onLab);
       paletteView.classList.toggle("hidden", !onPalette);
       schemeView.classList.toggle("hidden", !onSchemes);
       recipePage.classList.toggle("hidden", !onPage);
@@ -7583,6 +7590,7 @@
       else if (onPalette) renderPalette();
       else if (onSchemes) renderSchemes();
       else if (onShopping) renderShopPanel();
+      else if (onLab) renderColourLab();
       else renderRecipeList();
       if (wideSplit) renderRecipeList();
       if (detailMove) detailMove();
@@ -9362,6 +9370,7 @@
                             paintOpen: "",   // v38: paintOpen = the key of the wheel paint whose "matching colours" panel is open ("" = none)
                             ticks: {},   // v51: the paints ticked in each list (a Set per list), kept only while the app is open
                             wheelZoom: "", wheelGroup: "",
+                            lab: "wheel",   // X1: the open Colour Lab section: wheel, ideas, plans, history or picker (kept only while the app is open)
                             focus: null };   // v69: focus = { paintId, from } while the Compendium shows one paint's ideas (Ideas for this), else null   // v43: wheelZoom = the hue colour the picture is drilled into ("" = the whole wheel), wheelGroup = its open group ("" = none)
 
     // v35: ONE set of building blocks, TWO doors. The parts of the Colour ideas card (the ideas, Your schemes, Starter schemes,
@@ -9810,7 +9819,7 @@
       const lines = [
         ["Recipe", "how to paint one part, like teeth or armour. It has steps, paints and mixes."],
         ["Scheme", "the look for a whole model, unit or army. It is a bundle of recipes. For example, my dark green scheme is an Armour recipe, a Trim recipe, a Skin recipe and a Weapon recipe."],
-        ["Colour plan (Compendium)", "a quick idea of which colours go together. No steps. Save it into a recipe when you want steps."],
+        ["Colour plan (Colour Lab)", "a quick idea of which colours go together. No steps. Save it into a recipe when you want steps."],
       ];
       for (const [key, host] of [["recipes", document.getElementById("recipe-home")], ["schemes", document.getElementById("scheme-view")]]) {
         if (!host || document.getElementById("more-recipe-or-scheme-" + key)) continue;
@@ -11460,12 +11469,12 @@
         fold: true, short: true, switcher: true, search: true,   // v37: folding parts, short lists, the Themes | Combinations switch, search boxes
         links: true,   // v38: a paint in the colour wheel's lists can be tapped to open its "matching colours" panel (the recipe card has no such panels)
         shops: true,   // v39: paints you do not own, in that panel and in Colour ideas, get a closed "Shop links" fold-out (plain links)
-        shopSource: () => "Compendium: Colour ideas",   // v41: what the shopping list remembers for Add buttons in the Compendium's Colour ideas
+        shopSource: () => "Colour Lab: Colour ideas",   // v41: what the shopping list remembers for Add buttons in Colour ideas (X1: was "Compendium: ...")
         listMarks: true,   // v41: a paint already on the shopping list says "On your shopping list" on its row
         schemeShop: true,  // v42, v51: Starter schemes, Your schemes and Detail recipes get tick boxes, Select all and "Add to shopping list" (buildPick)
         share: { copy: (text, what) => copyText(text, what, "Paste it anywhere."), startRecipe: startRecipeFromCompendium },
         factions: () => new Map(chosen ? [[factionKey(chosen), chosen]] : []),
-        factionPick: { names, onChange: (key, focus) => { st.faction = key; renderCompendium(focus || `#${compendiumId("faction-history-pick")}`); } },
+        factionPick: { names, onChange: (key, focus) => { st.faction = key; redrawLibrary(focus || `#${compendiumId("faction-history-pick")}`); } },
         noFactionText: names.length
           ? "Choose a faction above to see the paints you have used on it. It looks at the recipes saved on your units of that faction."
           : "None of your units has a faction yet, so there is no history to show. Give a unit a faction on the Models tab, and the paints you use on it show here.",
@@ -11488,6 +11497,7 @@
         };
         startRecipeDraft(draft);
         if (recipeDraft !== draft) return;   // a kept unfinished recipe was offered first instead
+        if (settings.recipeView === "colourlab") settings.recipeView = "recipes";   // X1: the new recipe belongs to the Recipes list, as it did from the Compendium
         showTab("recipes");
         if (after) after(draft);
         else notify(`Started a new recipe with ${plural(steps.length, "step")}. Give it a name and press Save recipe.`);
@@ -12304,7 +12314,7 @@
       if (x.at.seg === "metallic" || C.isRoughColour(paint)) lines.push(say(`${WHEEL_ROUGH_NOTE} The matches are only a guide too.`).textContent);
 
       const part = WHEEL.find(w => w.key === x.at.seg);
-      const panelSource = `Compendium: Colour wheel${part ? ", " + part.label : ""}`;   // v41: what the shopping list remembers
+      const panelSource = `Colour Lab: Colour wheel${part ? ", " + part.label : ""}`;   // v41: what the shopping list remembers
       const pool = colourIdeaPool();
       const used = [paint.colour];   // the paint itself is never offered as its own match, and the same colour is never offered twice
       let slot = 0, found = false;
@@ -12407,11 +12417,12 @@
       return button;
     }
     function openIdeasFor(paint, from) {
-      compendiumState.focus = { paintId: paint.id, from };
+      compendiumState.focus = { paintId: paint.id, from, returnView: settings.recipeView };   // X1: returnView = the Painting sub-tab to go back to
       compendiumState.paintOpen = "";
-      showTab("compendium");
-      const back = document.getElementById(compendiumId("focus-back"));
-      if (back) back.focus({ preventScroll: true });
+      openColourLab("wheel", () => {
+        const back = document.getElementById(compendiumId("focus-back"));
+        if (back) back.focus({ preventScroll: true });
+      });
     }
     // Back to where the button was: the same recipe (its step stays open) or Your Palette (the paint stays open).
     function leaveIdeasFor() {
@@ -12424,6 +12435,7 @@
         let where = "";
         if (from.kind === "recipe" && book.recipes.some(r => r.id === from.recipeId)) {
           openRecipeId = from.recipeId;
+          settings.recipeView = focus.returnView || "recipes";   // X1: the Painting sub-tab it was opened from
           where = `#rstep-${from.step} `;
         } else {
           openRecipeId = null;
@@ -12510,11 +12522,13 @@
       };
       if (typeof DETAIL_RECIPES !== "undefined") part("Detail recipes with a similar colour", libraryLike(paint, DETAIL_RECIPES, r => r.steps), "detail", (r) => {
         st.open.detail = true; st.detailGroup = r.group; st.detail = r.key; st.search.detail = "";
-        redraw(`#${door.id("fold-detail")} [data-detail="${r.key}"]`);
+        showTab("compendium");   // X1: detail recipes stay in the Compendium for now
+        renderCompendium(`#${door.id("fold-detail")} [data-detail="${r.key}"]`);
       });
       if (typeof BASING_TIPS !== "undefined") part("Basing tips with a similar colour", libraryLike(paint, BASING_TIPS, t => t.paintSteps), "basing", (t) => {
         st.open.basing = true; st.basingGroup = t.group; st.basing = t.key; st.search.basing = "";
-        redraw(`#${door.id("fold-basing")} [data-basing="${t.key}"]`);
+        showTab("compendium");
+        renderCompendium(`#${door.id("fold-basing")} [data-basing="${t.key}"]`);
       });
       block.append(back, panel);
       body.appendChild(block);
@@ -12970,7 +12984,7 @@
       const role = mentorRole(st.mentorPart);
       // v73: the rows get three next steps. Use in a recipe and Add to a recipe (v62) and the Shop links fold-out come with the shared rows;
       // listButton puts Add to shopping list in plain view, and the list remembers "Ask the Mentor" as the place the paint came from.
-      const pickDoor = Object.assign({}, door, { listButton: true, realOnly: true, shopSource: () => "Compendium: Ask the Mentor" });
+      const pickDoor = Object.assign({}, door, { listButton: true, realOnly: true, shopSource: () => "Colour Lab: Picker" });
       for (const paint of chosen) {
         const label = document.createElement("p");
         label.className = "idea-label";
@@ -12991,6 +13005,7 @@
       return out;
     }
 
+    // X1: the Compendium keeps only Detail recipes and Basing tips (X2 gives them their new home). The colour parts moved to Colour Lab.
     function renderCompendium(focusSelector) {
       const body = document.getElementById("compendium-body");
       if (!body) return;
@@ -13010,38 +13025,101 @@
       const door = compendiumDoor();
       const redraw = (selector) => renderCompendium(selector);
 
-      const intro = say("A colour wheel (tap a colour to open its groups), Ask the Mentor, colour ideas, colour plans, detail recipes and basing tips, without needing a recipe. Tap a heading to open it, and type in a search box to find things fast. Use Copy as text to keep anything, or Save into a new recipe\u2026 to start a recipe from colour ideas, colour plans, detail recipes and basing tips.", "intro");
+      const intro = say("Detail recipes and basing tips, without needing a recipe. Tap a heading to open it, and type in a search box to find things fast. Use Copy as text to keep anything, or Save into a new recipe\u2026 to start a recipe from them.", "intro");
 
-      appendIdeasFocus(body, door, redraw);   // v69: a paint's ideas, when the Compendium was opened from its Ideas for this button
-      // v81: from 900 px the colour wheel sits on the left and the fold-outs on the right (layout-split). Written in the phone order, so
-      // under 900 px nothing moves.
-      const split = document.createElement("div");
-      split.className = "compendium-split layout-split layout-detail-wide";
-      const left = document.createElement("div");
-      left.className = "layout-main";
-      const right = document.createElement("div");
-      right.className = "layout-side compendium-folds";
-      split.append(left, right);
-      body.appendChild(split);
-      // v36: the colour wheel comes first
-      appendColourWheel(left, door, redraw);
-
-      // v37: the five parts each sit under a heading you tap to open and close. They all start closed; which are open is kept in
-      // st.open while the app is open, like the other Compendium picks. The wheel above stays open.
+      // v37: the parts each sit under a heading you tap to open and close. They all start closed; which are open is kept in
+      // st.open while the app is open, like the other Compendium picks.
+      const folds = document.createElement("div");
+      folds.className = "compendium-folds";
+      body.appendChild(folds);
       const parts = libraryParts(door, redraw);
-      const fold = (key, label, make) => { if (make) right.appendChild(foldSection(door, key, label, make)); };
-      fold("mentor", "Ask the Mentor", () => buildMentor(door, redraw));   // v71
-      fold("ideas", "Colour ideas", () => { const out = document.createDocumentFragment(); buildCompendiumIdeas(out, door, redraw); return out; });
-      fold("history", "Colours you've used", parts.history && (() => dropTitle(parts.history(), "Colours you've used on this faction before.")));
-      fold("starter", "Colour plans", parts.starter && (() => dropTitle(parts.starter())));
+      const fold = (key, label, make) => { if (make) folds.appendChild(foldSection(door, key, label, make)); };
       fold("detail", "Detail recipes", parts.detail && (() => dropTitle(parts.detail())));
       fold("basing", "Basing tips", parts.basing && (() => dropTitle(parts.basing())));
-      right.appendChild(say("Ideas use paints you own first. Colours on screen are a guide.", "foot"));
-      // v49: the introduction sits behind a More info at the top of the page (the footnote stays, it is a short honest note)
+      // v49: the introduction sits behind a More info at the top of the page
       body.insertBefore(buildMoreInfo([intro], { state: infoState(door, "page"), id: compendiumId("page-info-panel"), label: "the Compendium" }), body.firstChild);
 
       if (focusSelector) {
         const target = body.querySelector(focusSelector);
+        if (target) target.focus();
+      }
+    }
+
+    // ================= X1: COLOUR LAB (Painting > Colour Lab) =================
+    // The colour wheel, Colour ideas, Colour plans (Starter schemes), Colours you've used and the Picker (the old Ask the Mentor form)
+    // used to be in the Compendium. They are the same building blocks and the same door (compendiumDoor, compendiumState); only where they
+    // sit changed. One section is open at a time, chosen by the row of buttons at the top (state.lab). Internal ids keep their old names.
+    const LAB_SECTIONS = [
+      { key: "wheel", label: "Wheel" },
+      { key: "ideas", label: "Colour ideas" },
+      { key: "plans", label: "Colour plans" },
+      { key: "history", label: "Colours you've used" },
+      { key: "picker", label: "Picker" },
+    ];
+    // After a choice inside a library part: redraw whichever page is showing it.
+    function redrawLibrary(selector) {
+      if (settings.tab === "recipes" && settings.recipeView === "colourlab") renderColourLab(selector);
+      else renderCompendium(selector);
+    }
+    // Go to Painting > Colour Lab with one section open, like the basket goes to Shopping. then() runs once it is on screen.
+    function openColourLab(section, then) {
+      if (importDraft) { showToast("Close Paste recipes first, then open Colour Lab."); return; }
+      if (schemeDraft) { showToast("Finish or close the scheme you're editing first, then open Colour Lab."); return; }
+      whenOkToLeaveDraft(() => {
+        recipeDraft = null;
+        openRecipeId = null;
+        if (LAB_SECTIONS.some(x => x.key === section)) compendiumState.lab = section;
+        settings.recipeView = "colourlab";
+        renderRecipes();
+        showTab("recipes");
+        if (then) then();
+      });
+    }
+    const labSeg = document.getElementById("lab-seg");
+    for (const x of LAB_SECTIONS) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.setAttribute("role", "tab");
+      b.dataset.lab = x.key;
+      b.textContent = x.label;
+      b.addEventListener("click", () => { compendiumState.lab = x.key; renderColourLab(`[data-lab="${x.key}"]`); });
+      labSeg.appendChild(b);
+    }
+    function renderColourLab(focusSelector) {
+      const body = document.getElementById("colourlab-body");
+      if (!body) return;
+      body.replaceChildren();
+      const st = compendiumState;
+      if (!LAB_SECTIONS.some(x => x.key === st.lab)) st.lab = "wheel";
+      labSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.lab === st.lab)));
+      const say = (text, id) => {
+        const p = document.createElement("p");
+        p.className = "hint";
+        if (id) p.id = compendiumId(id);
+        p.textContent = text;
+        body.appendChild(p);
+        return p;
+      };
+      if (typeof MinifolioColour === "undefined") {
+        say("The colour part of the app did not load, so Colour Lab cannot show anything. Close the app and open it again.");
+        return;
+      }
+      const door = compendiumDoor();
+      const redraw = (selector) => renderColourLab(selector);
+      appendIdeasFocus(body, door, redraw);   // v69: a paint's ideas, when Colour Lab was opened from its Ideas for this button
+      const section = document.createElement("section");
+      section.className = "lab-section";
+      section.id = compendiumId("lab-" + st.lab);
+      body.appendChild(section);
+      const parts = libraryParts(door, redraw);
+      if (st.lab === "wheel") appendColourWheel(section, door, redraw);
+      else if (st.lab === "ideas") buildCompendiumIdeas(section, door, redraw);
+      else if (st.lab === "picker") section.appendChild(buildMentor(door, redraw));
+      else if (st.lab === "plans" && parts.starter) section.appendChild(dropTitle(parts.starter()));
+      else if (st.lab === "history" && parts.history) section.appendChild(dropTitle(parts.history(), "Colours you've used on this faction before."));
+      body.appendChild(Object.assign(document.createElement("p"), { className: "hint", id: compendiumId("foot"), textContent: "Ideas use paints you own first. Colours on screen are a guide." }));
+      if (focusSelector) {
+        const target = document.querySelector("#colourlab-view " + focusSelector);
         if (target) target.focus();
       }
     }
@@ -17556,7 +17634,7 @@
         if (openRecipeId !== null) return () => { openRecipeId = null; renderRecipes(); window.scrollTo(0, 0); };
         if (schemeDraft && settings.recipeView === "schemes") return () => closeScheme(true);
       }
-      if (tab === "compendium" && compendiumState.focus) return leaveIdeasFor;   // v69: back to the recipe step or palette paint
+      if ((tab === "compendium" || (tab === "recipes" && settings.recipeView === "colourlab")) && compendiumState.focus) return leaveIdeasFor;   // v69 (X1: also in Colour Lab): back to the recipe step or palette paint
       if (tab === "units" && !unitsImport.classList.contains("hidden")) return closeUnitsImport;
       if (tab === "units" && selectMode) return closeSelect;   // v21.1: select mode's tick boxes
       if (tab && tab !== "dashboard") return () => showTab("dashboard");

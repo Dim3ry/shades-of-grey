@@ -22,6 +22,7 @@ import os, re, sys
 from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import lab_helpers as labh   # X1: the old all-in-one Compendium page (see lab_helpers.py)
 import test_v31 as t
 
 URL, read = t.URL, t.read
@@ -55,7 +56,7 @@ def main():
 
         # ---------- 2. Compendium ----------
         print("\n--- 2. Compendium ---")
-        page.click('nav button[data-tab="compendium"]')
+        labh.go_compendium(page)
         top = page.locator("#compendium-body > .more-info").first
         check("a More info button sits at the top of the Compendium", top.count() == 1)
         btn = top.locator(".more-info-button")
