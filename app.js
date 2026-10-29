@@ -3929,12 +3929,12 @@
       window.scrollTo(0, 0);
     }
     tabButtons.forEach(b => b.addEventListener("click", () => {
+      if (b.dataset.tab === "compendium" || b.dataset.tab === "recipes") compendiumState.focus = null;   // v69: the tab itself opens the whole Compendium (X1: and the whole Colour Lab)
       // Tapping Recipes while already on it goes back to the list (unless you're mid-edit).
       if (b.dataset.tab === "recipes" && settings.tab === "recipes" && !recipeDraft && !launching) {
         openRecipeId = null;
         renderRecipes();
       }
-      if (b.dataset.tab === "compendium" || b.dataset.tab === "recipes") compendiumState.focus = null;   // v69: the tab itself opens the whole Compendium (X1: and the whole Colour Lab)
       showTab(b.dataset.tab, b.classList.contains("cog") ? undefined : "slide");
     }));
 

@@ -84,7 +84,8 @@ def main():
         btn.click()
         page.wait_for_timeout(300)
         check("the line says what was added", f"Added {name} to your shopping list" in toast(page), toast(page))
-        check("the paint is on the list and the list remembers the Mentor", [x for x in listed(page) if x["name"] == name and "Compendium: Ask the Mentor" in x["from"]], listed(page))
+        # X1: the source now says "Colour Lab: Picker" (was "Compendium: Ask the Mentor")
+        check("the paint is on the list and the list remembers the Mentor", [x for x in listed(page) if x["name"] == name and "Colour Lab: Picker" in x["from"]], listed(page))
         row = page.locator(ROWS).filter(has=page.locator(".idea-name", has_text=name)).first
         check("the same row now says On your shopping list, and its button is gone",
               "On your shopping list" in row.locator(".shop-add-row").inner_text() and row.locator(".shop-add-row button").count() == 0, row.locator(".shop-add-row").inner_text())

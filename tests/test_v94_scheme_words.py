@@ -44,14 +44,18 @@ def main():
         page.on("pageerror", lambda x: errors.append(str(x)))
         page.on("dialog", lambda d: (errors.append("dialog: " + d.message), d.dismiss()))
 
-        print("\n--- 1. Compendium names ---")
-        load(page, settings={"tab": "compendium", "examplesChecked": True})
-        heads = page.evaluate("() => [...document.querySelectorAll('#compendium-body .compendium-folds > section.fold .fold-button')].map(b => b.firstElementChild.textContent)")
-        check("the folds say Colours you've used and Colour plans", heads[2:4] == ["Colours you've used", "Colour plans"], heads)
-        check("the ids are unchanged", page.locator("#cmp-fold-starter").count() == 1 and page.locator("#cmp-fold-history").count() == 1)
-        page.evaluate("() => document.querySelector('#cmp-fold-starter').closest('section.fold').querySelector('.fold-button').click()")
+        print("\n--- 1. Colour Lab names ---")
+        # X1: these two parts moved to Painting > Colour Lab, where they are section buttons
+        load(page, settings={"tab": "recipes", "recipeView": "colourlab", "examplesChecked": True})
+        heads = page.evaluate("() => [...document.querySelectorAll('#lab-seg button')].map(b => b.textContent)")
+        check("the sections say Colour plans and Colours you've used", heads[2:4] == ["Colour plans", "Colours you've used"], heads)
+        check("the part ids are unchanged", page.locator("#cmp-faction-history").count() == 0 and page.locator("#cmp-starter-schemes").count() == 0)
+        page.click('#lab-seg [data-lab="plans"]')
         page.wait_for_selector("#cmp-starter-search")
-        body = page.text_content("#compendium-body")
+        check("the history part id is unchanged", page.evaluate("() => { compendiumState.lab = 'history'; renderColourLab(); return !!document.getElementById('cmp-faction-history'); }"))
+        page.click('#lab-seg [data-lab="plans"]')
+        check("the starter part id is unchanged", page.locator("#cmp-starter-schemes").count() == 1)
+        body = page.text_content("#colourlab-body")
         check("the search box and the text say colour plans, not starter schemes", page.get_by_label("Search colour plans").count() >= 1
               and "Pick a group, then a colour plan" in body and "Starter scheme" not in body, body[:200])
 
@@ -65,7 +69,7 @@ def main():
         ex = explainer(page, "schemes")
         check("tapping it opens the three definitions", ex["expanded"] == "true" and not ex["hidden"]
               and "Recipe: how to paint one part" in ex["text"] and "Scheme: the look for a whole model, unit or army. It is a bundle of recipes." in ex["text"]
-              and "Colour plan (Compendium): a quick idea of which colours go together. No steps." in ex["text"], ex["text"])
+              and "Colour plan (Colour Lab): a quick idea of which colours go together. No steps." in ex["text"], ex["text"])   # X1: the explainer now points to Colour Lab
         check("the example uses plain colour words and no faction words", "dark green scheme" in ex["text"] and not FACTION_WORDS.search(ex["text"]), ex["text"])
 
         print("\n--- 3. Help ---")

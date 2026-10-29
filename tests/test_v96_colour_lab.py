@@ -61,6 +61,7 @@ def main():
             check(f"{key}: its own content shows and no other section", page.locator(mark).count() == 1 and only)
         page.locator("#cmp-mentor-base").fill("Mid")
         check("Picker keeps its Part chips (Armour first)", page.locator("[data-mentor-part]").first.get_attribute("data-mentor-part") == "armour")
+        page.evaluate("() => document.activeElement.blur()")   # the tab bar hides while a text box has the focus
         t.main_tab(page, "compendium")
         check("Compendium keeps only Detail recipes and Basing tips", labels(page, "#compendium-body .fold-button") == ["Detail recipes", "Basing tips"]
               and page.locator("#cmp-wheel, #cmp-fold-mentor, #cmp-fold-ideas").count() == 0, labels(page, "#compendium-body .fold-button"))
@@ -117,6 +118,7 @@ def main():
         t.existing(page, [], None, {"tab": "recipes", "recipeView": "palette"})
         backup = {"app": "Shades of Grey", "version": 6, "models": [], "recipes": book_with_old_source()}
         page.set_input_files("#restore-file", files=[{"name": "old.json", "mimeType": "application/json", "buffer": json.dumps(backup).encode()}])
+        page.click("#dialog-yes")   # the app asks before replacing recipes
         page.wait_for_function("() => book.paints.some(p => p.name === 'Mid Blue')")
         check("a backup from before this change restores with its source text unchanged",
               page.evaluate("() => JSON.parse(localStorage.getItem('shades-of-grey-recipes')).paints.find(p => p.name === 'Mid Blue').shopFrom") == [OLD_SOURCE])

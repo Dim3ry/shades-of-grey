@@ -102,10 +102,10 @@ def main():
         check("it has the name Ask Mentor", page.get_attribute("#mentor-button", "aria-label") == "Ask Mentor")
         page.click("#mentor-button")
         page.wait_for_timeout(200)
-        fold = box(page, "#cmp-fold-mentor")
-        check("it opens the Compendium with Ask the Mentor open", page.is_visible("#view-compendium") and page.get_attribute("#cmp-fold-mentor-button", "aria-expanded") == "true")
-        check("Ask the Mentor is scrolled into view, below the header", 0 <= fold[1] < 400, fold)
-        check("the Compendium segment is lit", page.get_attribute(seg("compendium"), "aria-current") == "page")
+        fold = box(page, "#cmp-lab-picker")   # X1: the button opens Painting > Colour Lab > Picker
+        check("it opens Colour Lab with the Picker open", page.is_visible("#colourlab-view") and page.get_attribute('#lab-seg [data-lab="picker"]', "aria-selected") == "true")
+        check("the Picker is scrolled into view, below the header", 0 <= fold[1] < 400, fold)
+        check("the Painting segment is lit", page.get_attribute(seg("recipes"), "aria-current") == "page")
 
         print("\n--- 5. The header: basket and cog ---")
         page.click(seg("dashboard"))

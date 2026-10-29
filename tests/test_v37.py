@@ -204,6 +204,7 @@ def main():
         page.reload()
         app_ready(page)
         t.leave_launch(page)   # U4b (v89): a reload shows the start page; tap Compendium to go back in
+        labh.legacy_compendium(page); page.evaluate("() => renderCompendium()")   # X1: the old all-in-one page again after the reload
         check("after the app is closed and opened again (a reload) everything starts closed again", page.is_visible("#view-compendium") and all(not is_open(page, k) for k in KEYS))
         load(page, paints=PAINTS, recipes=RECIPES, units=UNITS)
         open_tab(page)
@@ -544,6 +545,7 @@ def main():
         # ---------- 9. Nothing else changed ----------
         print("\n--- 9. Nothing else changed ---")
         load(page, paints=PAINTS, recipes=RECIPES, units=UNITS)
+        labh.legacy_compendium(page)   # X1: the old all-in-one page
         for tab, view in [("dashboard", "view-dashboard"), ("units", "view-units"), ("recipes", "view-recipes"), ("settings", "view-settings"), ("compendium", "view-compendium")]:
             blur(page)
             page.click(f'nav button[data-tab="{tab}"]')

@@ -87,7 +87,8 @@ def main():
         start(page)
         page.click("#mentor-button")
         page.wait_for_timeout(200)
-        check("tapping the orb opens Ask the Mentor in the Compendium", page.get_attribute("#cmp-fold-mentor-button", "aria-expanded") == "true")
+        # X1: the orb opens the Picker in Painting > Colour Lab
+        check("tapping the orb opens the Picker in Colour Lab", page.get_attribute('#lab-seg [data-lab="picker"]', "aria-selected") == "true")
 
         check("no page errors", not errors, errors)
         browser.close()

@@ -38,8 +38,8 @@ def check(name, ok, detail=""):
     print(("PASS " if ok else "FAIL ") + name + ("" if ok else f"  -> {detail}"))
 
 LISTED = "On your shopping list"
-WHEEL_SRC = "Compendium: Colour wheel, "
-IDEAS_SRC = "Compendium: Colour ideas"
+WHEEL_SRC = "Colour Lab: Colour wheel, "   # X1: new sources say Colour Lab (was Compendium)
+IDEAS_SRC = "Colour Lab: Colour ideas"
 P, at = h.P, h.at
 BASE = "test paints|probe blue"
 

@@ -109,8 +109,9 @@ def main():
         start(page)
         page.click("#mentor-button")
         page.wait_for_timeout(200)
-        check("Ask Mentor opens the Compendium with Ask the Mentor open", not launching(page) and shown_sections(page) == ["view-compendium"]
-              and page.get_attribute("#cmp-fold-mentor-button", "aria-expanded") == "true")
+        # X1: Ask Mentor opens Painting > Colour Lab > Picker
+        check("Ask Mentor opens Colour Lab with the Picker open", not launching(page) and shown_sections(page) == ["view-recipes"]
+              and page.get_attribute('#lab-seg [data-lab="picker"]', "aria-selected") == "true")
         page.click(seg("units"))
         page.wait_for_timeout(150)
         page.click("#toggle-add")

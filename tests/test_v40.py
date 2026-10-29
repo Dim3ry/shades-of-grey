@@ -91,7 +91,7 @@ def main():
         print("\n--- 2. The new switch ---")
         tab(page, "recipes")
         labels = page.evaluate("() => [...document.querySelectorAll('#recipe-seg button')].map(b => b.textContent.trim())")
-        check("the Recipes switch now reads Recipes, Schemes, Your Palette, Shopping", labels == ["Recipes", "Schemes", "Your Palette", "Shopping"], labels)
+        check("the Recipes switch now reads Recipes, Schemes, Colour Lab, Your Palette, Shopping", labels == ["Recipes", "Schemes", "Colour Lab", "Your Palette", "Shopping"], labels)   # X1: Colour Lab added
         page.click('#recipe-seg button[data-view="palette"]')
         page.wait_for_timeout(150)
         check("Your Palette no longer has a shopping list button or panel under it",
