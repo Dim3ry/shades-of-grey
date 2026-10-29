@@ -1,0 +1,44 @@
+{
+  "guides": [
+    {
+      "key": "Bad Key", "category": "colours", "title": "x",
+      "summary": "Uses an em dash — and an emoji 😀 and <b>tags</b>.",
+      "body": ["too short"],
+      "related": ["does-not-exist"],
+      "keywords": ["one", "two"],
+      "extra": "not allowed"
+    },
+    {
+      "key": "banned-words", "category": "problems", "title": "Banned words test",
+      "summary": "This summary names Ultramarines, Citadel and a Space Marine army.",
+      "body": ["Paragraph one is long enough to pass the length rule here.", "Paragraph two is long enough to pass the length rule here.", "Paragraph three is long enough to pass the length rule here."],
+      "related": [], "keywords": ["a", "b", "c", "d", "e", "f"]
+    },
+    {
+      "key": "dup-key", "category": "techniques", "title": "Duplicate key one",
+      "summary": "Sample for a repeated key in the same file.",
+      "body": ["Paragraph one is long enough to pass the length rule here.", "Paragraph two is long enough to pass the length rule here.", "Paragraph three is long enough to pass the length rule here."],
+      "related": ["dup-key"], "keywords": ["aa", "bb", "cc", "dd", "ee", "ff"]
+    }
+  ],
+  "starters": [
+    { "key": "dup-key", "text": "Same key as a guide?", "targets": ["missing-target"] },
+    { "key": "no-targets", "text": "A starter question with no targets" }
+  ],
+  "mentor-tips": [
+    {
+      "key": "bad-tip", "part": "legs", "colour": "a blue", "technique": "Layer",
+      "advice": "Advice that is long enough to pass the length rule.",
+      "colours": [{ "look": "a blue", "hex": "blue" }]
+    }
+  ],
+  "detail-recipes": [
+    {
+      "key": "bad-recipe", "group": "body", "name": "Bad recipe", "summary": "A recipe with unusual steps.",
+      "steps": [
+        { "technique": "Painting", "coats": 9, "mix": 100, "look": "a red", "hex": "#c8321e", "note": "One sentence." },
+        { "technique": "Wash", "coats": 1, "mix": 100, "look": "a brown", "hex": "#6b4f33", "note": "Not thinned. And two sentences." }
+      ]
+    }
+  ]
+}
