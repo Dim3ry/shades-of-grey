@@ -7763,6 +7763,7 @@
         const swatches = document.createElement("div");
         swatches.className = "swatches";
         recipeColours(recipe).slice(0, 12).forEach(c => swatches.appendChild(makeSwatch(c)));
+        if (recipe.example === true) button.append(exampleLabel("Example recipe"));
         button.append(name, swatches);
         const count = anyStatusSet() ? recipeMissing(recipe) : null;
         if (count !== null) {
@@ -8071,6 +8072,39 @@
     const schemePage = document.getElementById("scheme-page");
     const schemeListEl = document.getElementById("scheme-list");
 
+    // S2: plain text above the name of an example (the app has no other example label, and the UI rule says no pills).
+    function exampleLabel(text) {
+      const label = document.createElement("div");
+      label.className = "example-label";
+      label.textContent = text;
+      return label;
+    }
+    const SCHEME_ROWS_SHOWN = 3;
+    const schemesShowingAll = new Set();   // scheme ids whose full recipe list is open (until the page is closed)
+    // One nested row on a scheme card: a button that opens the recipe.
+    function schemeRecipeRow(recipe) {
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = "scheme-recipe-row";
+      const top = document.createElement("span");
+      top.className = "scheme-recipe-top";
+      const name = document.createElement("span");
+      name.className = "scheme-recipe-name";
+      name.textContent = recipe.name;
+      const dots = document.createElement("span");
+      dots.className = "swatches";
+      dots.setAttribute("aria-hidden", "true");
+      recipeColours(recipe).slice(0, 4).forEach(c => dots.appendChild(makeSwatch(c)));
+      top.append(name, dots);
+      const meta = document.createElement("span");
+      meta.className = "scheme-recipe-meta";
+      meta.textContent = [recipe.part, plural(recipe.steps.length, "step")].filter(Boolean).join(" · ");
+      row.append(top, meta);
+      row.setAttribute("aria-label", `Open recipe: ${recipe.name}`);
+      row.addEventListener("click", () => openRecipe(recipe.id));
+      return row;
+    }
+
     function renderSchemes() {
       schemeHome.classList.toggle("hidden", !!schemeDraft);
       schemePage.classList.toggle("hidden", !schemeDraft);
@@ -8110,9 +8144,22 @@
         meta.append([scheme.faction, plural(recipes.length, "recipe"), scheme.auto ? "new units get it" : ""]
           .filter(Boolean).join(" · "));
 
-        const chips = document.createElement("div");
-        chips.className = "recipe-links";
-        for (const recipe of recipes) chips.appendChild(recipeChip(recipe, () => openRecipe(recipe.id)));
+        // S2: the scheme's recipes as nested rows (name, then part and steps, with colour dots). More than 3: the first 3 and "Show all N".
+        const nested = document.createElement("div");
+        nested.className = "scheme-recipes";
+        const showAll = schemesShowingAll.has(scheme.id);
+        for (const recipe of showAll ? recipes : recipes.slice(0, SCHEME_ROWS_SHOWN)) nested.appendChild(schemeRecipeRow(recipe));
+        if (recipes.length > SCHEME_ROWS_SHOWN) {
+          const toggle = document.createElement("button");
+          toggle.className = "link-button scheme-show-all";
+          toggle.textContent = showAll ? "Show fewer" : `Show all ${recipes.length}`;
+          toggle.setAttribute("aria-expanded", showAll ? "true" : "false");
+          toggle.addEventListener("click", () => {
+            if (showAll) schemesShowingAll.delete(scheme.id); else schemesShowingAll.add(scheme.id);
+            renderSchemes();
+          });
+          nested.appendChild(toggle);
+        }
 
         // How many of the faction's units have the whole scheme.
         const units = schemeUnits(scheme);
@@ -8149,7 +8196,8 @@
           buttons.appendChild(asText);
         }
 
-        card.append(name, meta, chips, status, buttons);
+        if (scheme.example === true) card.append(exampleLabel("Example scheme"));
+        card.append(name, meta, nested, status, buttons);
         item.appendChild(card);
         schemeListEl.appendChild(item);
       }
