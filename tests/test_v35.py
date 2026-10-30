@@ -171,9 +171,9 @@ def main():
         # ---------- 2. The five-tab bar ----------
         print("\n--- 2. The five-tab bar ---")
         names = page.evaluate("() => [...document.querySelectorAll('nav button[data-tab]')].map(b => b.dataset.tab)")   # U4a: the four segments, then the Settings cog in the header
-        check("tabs in order: Dashboard, Units, Recipes, Help and Tools (X2: the fourth is data-tab guides; no cog)", names == ["dashboard", "units", "recipes", "guides"], names)
+        check("tabs in order: Dashboard, Units, Recipes, Tools and Settings (X2: the fourth is data-tab guides; no cog)", names == ["dashboard", "units", "recipes", "guides"], names)
         label = page.evaluate("() => [...document.querySelector('nav.tabs button[data-tab=guides]').childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('')")
-        check("the label is Help in full (X2)", label == "Help", label)
+        check("the label is Tools in full (X2)", label == "Tools", label)
         for width in (360, 375, 390, 400):
             page.set_viewport_size({"width": width, "height": 800})
             frames(page)
@@ -190,7 +190,7 @@ def main():
         check("tapping Compendium opens it and lights up its tab",
               page.is_visible("#view-guides") and page.get_attribute('nav button[data-tab="guides"]', "aria-current") == "page"
               and page.locator('nav button[data-tab="settings"]').count() == 0 and not page.is_visible("#view-dashboard"))
-        check("the page says what it is", "without needing a recipe" in page.inner_text("#cmp-intro"))   # X2: the page heading is Help and Tools above the switch, not inside the card
+        check("the page says what it is", "without needing a recipe" in page.inner_text("#cmp-intro"))   # X2: the page heading is Tools and Settings above the switch, not inside the card
         page.reload()
         app_ready(page)
         # U4b (v89): a reload shows the start page; the Compendium is one tap away.

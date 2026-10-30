@@ -7,7 +7,7 @@
     ["dashboard", "Dashboard"], ["units", "Units"], ["recipes", "Painting"],
     ["guides", "Guides"], ["settings", "Settings"], ["help", "Help"], ["updates", "Updates"]
   ];
-  var MORE = ["guides", "settings", "help", "updates"];   // these four are pages of the Help and Tools tab (data-tab guides)
+  var MORE = ["guides", "settings", "help", "updates"];   // these four are pages of the Tools and Settings tab (data-tab guides)
   var select = document.getElementById("page");
   var frames = [document.getElementById("phone"), document.getElementById("desktop")];
   var desktop = frames[1];

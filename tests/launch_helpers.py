@@ -4,7 +4,7 @@ Older tests were written when the app opened straight on the last section. Their
 the page loads: it taps the segment for the section the app had saved (settings.tab, or the Dashboard), which puts the
 page where those tests have always started. Tests of the start page itself skip it (see tests/test_v89_launch.py)."""
 
-SETTINGS_PAGES = ("guides", "settings", "help", "updates")   # X2: the pages of Help and Tools
+SETTINGS_PAGES = ("guides", "settings", "help", "updates")   # X2: the pages of Tools and Settings
 
 def is_launching(page):
     return page.evaluate("() => document.body.classList.contains('launching')")
@@ -15,7 +15,7 @@ _TAP = """() => {
     if (typeof settings !== 'object') return null;                       // the app has not started yet
     if (!document.body.classList.contains('launching')) return false;    // nothing to do
     const tab = settings.tab || 'dashboard';
-    // X2: Settings, Help and Updates are pages of the fourth segment (Help and Tools, data-tab guides); the header cog is gone
+    // X2: Settings, Help and Updates are pages of the fourth segment (Tools and Settings, data-tab guides); the header cog is gone
     const page = ['guides', 'compendium', 'settings', 'help', 'updates'].includes(tab);
     document.querySelector('.tabs button[data-tab="' + (page ? 'guides' : tab) + '"]').click();
     if (page && ['settings', 'help', 'updates'].includes(tab)) document.querySelector('#more-seg button[data-page="' + tab + '"]').click();
@@ -38,7 +38,7 @@ def leave_launch(page):
 
 
 def open_settings(page):
-    """X2: Settings is a page of the fourth segment (Help and Tools) now that the header cog is gone: tap that segment, then Settings."""
+    """X2: Settings is a page of the fourth segment (Tools and Settings) now that the header cog is gone: tap that segment, then Settings."""
     page.click('.tabs button[data-tab="guides"]')
     quiet(page)
     page.click('#more-seg button[data-page="settings"]')
@@ -47,7 +47,7 @@ def open_settings(page):
 
 def tap_tab(page, name):
     """X2: tap the menu segment for a section name older tests use. Settings is a page of the fourth segment now (no cog), and the
-    Compendium tab is gone: its name taps the fourth segment (Help and Tools, which opens on Guides)."""
+    Compendium tab is gone: its name taps the fourth segment (Tools and Settings, which opens on Guides)."""
     if name == "settings":
         open_settings(page)
     else:

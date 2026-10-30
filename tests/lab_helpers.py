@@ -66,6 +66,6 @@ def legacy_compendium(page):
     page.evaluate(_LEGACY)
 
 def go_compendium(page):
-    """Tap the fourth segment (Help and Tools > Guides; X2), with the old all-in-one page installed first."""
+    """Tap the fourth segment (Tools and Settings > Guides; X2), with the old all-in-one page installed first."""
     legacy_compendium(page)
     page.click('nav button[data-tab="guides"]')

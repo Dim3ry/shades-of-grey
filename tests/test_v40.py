@@ -168,7 +168,7 @@ def main():
         page.evaluate("() => { for (const r of book.recipes) addSchemePaintsToShoppingList(recipeShopPaints(r), `Recipe: ${r.name}`); }")   # v62: fill the list
         n = page.evaluate("() => shoppingItems().length")
         seen = {}
-        for name in ("dashboard", "units", "recipes", "compendium", "settings"):   # X2: "compendium" taps the Help segment (Guides), "settings" its Settings page
+        for name in ("dashboard", "units", "recipes", "compendium", "settings"):   # X2: "compendium" taps the Tools segment (Guides), "settings" its Settings page
             tab(page, name)
             seen[name] = (count_text(page), page.is_visible("#basket-button"))
         check("the basket shows the same count on all five tabs", all(v == (str(n), True) for v in seen.values()) and n >= 3, seen)   # v62: 3 (was 4 or more with running low and empty)

@@ -162,7 +162,7 @@ def main():
                 seed(page, settings=full_settings(appearance=appearance))
                 # U4a: the bar has four segments; Settings is the cog in the header (the tab names inside are unchanged)
                 names = page.evaluate("() => [...document.querySelectorAll('nav button[data-tab]')].map(b => b.dataset.tab)")
-                check(f"{appearance} {width}px: the bar has Dashboard, Units, Recipes and Help and Tools (X2: the cog is gone)",
+                check(f"{appearance} {width}px: the bar has Dashboard, Units, Recipes and Tools and Settings (X2: the cog is gone)",
                       names == ["dashboard", "units", "recipes", "guides"], names)
                 check(f"{appearance} {width}px: no Help or Updates button in the bar",
                       page.locator('nav.tabs button[data-tab="help"], nav.tabs button[data-tab="updates"]').count() == 0)
@@ -171,7 +171,7 @@ def main():
                 check(f"{appearance} {width}px: every tab button is at least 44 px tall and wide", min(heights) >= 44 and min(widths) >= 44, [heights, widths])
                 labels = page.evaluate("""() => [...document.querySelectorAll('nav.tabs button[data-tab]')].map(b =>
                     [...b.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim())""")
-                check(f"{appearance} {width}px: the labels read Dashboard, Models, Painting, Compendium", labels == ["Dashboard", "Models", "Painting", "Help"], labels)   # X2: the fourth says Help # U3: Painting. U4a: Units is now Models and Settings is the cog
+                check(f"{appearance} {width}px: the labels read Dashboard, Models, Painting, Compendium", labels == ["Dashboard", "Models", "Painting", "Tools"], labels)   # X2: the fourth says Tools # U3: Painting. U4a: Units is now Models and Settings is the cog
                 fits = page.evaluate("""() => [...document.querySelectorAll('nav.tabs button[data-tab]')].every(b => b.scrollWidth <= b.clientWidth + 1)""")
                 check(f"{appearance} {width}px: no label is cut off", fits)
                 check(f"{appearance} {width}px: nothing scrolls sideways", no_sideways(page))
@@ -191,7 +191,7 @@ def main():
         check("tapping Settings in the bar opens the Settings page", shown_views(page) == ["settings"], shown_views(page))
         check("the switch shows, with Settings, Help and Updates in that order", st["shown"] and st["labels"] == ["Guides", "Settings", "Help", "Updates"], st)   # X2: Guides is first
         check("Settings is the selected one", st["selected"] == ["settings"], st)
-        check("Settings stays lit in the bar", lit_tabs(page) == ["guides"], lit_tabs(page))   # X2: Settings lives under the Help segment
+        check("Settings stays lit in the bar", lit_tabs(page) == ["guides"], lit_tabs(page))   # X2: Settings lives under the Tools segment
         check("the switch buttons are at least 44 px tall", st["minHeight"] >= 44, st["minHeight"])
         check("the switch sits inside the screen", st["inside"], st)
         roles = page.evaluate("""() => { const s = document.getElementById('more-seg');
@@ -203,7 +203,7 @@ def main():
             st = seg_state(page)
             check(f"tap {LABELS[name]}: only the {name} page shows", shown_views(page) == [name], shown_views(page))
             check(f"tap {LABELS[name]}: it is the selected one", st["selected"] == [name], st)
-            check(f"tap {LABELS[name]}: Settings stays lit in the bar", lit_tabs(page) == ["guides"], lit_tabs(page))   # X2: Settings lives under the Help segment
+            check(f"tap {LABELS[name]}: Settings stays lit in the bar", lit_tabs(page) == ["guides"], lit_tabs(page))   # X2: Settings lives under the Tools segment
             check(f"tap {LABELS[name]}: the switch stays on screen", st["shown"])
             check(f"tap {LABELS[name]}: the page starts at the top", page.evaluate("() => window.scrollY") == 0)
         sub_tab(page, "help")
@@ -268,7 +268,7 @@ def main():
             open_settings(page)
             page.wait_for_timeout(150)
             st = seg_state(page)
-            check(f"after opening Settings the switch is shown and Settings is lit ({name})", st["shown"] and lit_tabs(page) == ["guides"], (st, lit_tabs(page)))   # X2: the Help segment is lit
+            check(f"after opening Settings the switch is shown and Settings is lit ({name})", st["shown"] and lit_tabs(page) == ["guides"], (st, lit_tabs(page)))   # X2: the Tools segment is lit
         for old in ["help", "updates", "settings"]:
             seed(page, settings=full_settings(tab=old, appearance="dark", customColours=["#112233"], palette="forge"))
             check(f"an old saved tab of \"{old}\" opens that page", shown_views(page) == [old], shown_views(page))
@@ -350,7 +350,7 @@ def main():
             return page.evaluate(f"() => document.getElementById('{i}') ? document.getElementById('{i}').textContent : ''")
         tabs_text = help_text("help-tabs")
         # v75: HELP-3 made this one short sentence
-        check("Help explains the four sections and the Help and Tools pages", all(w in tabs_text for w in ["four sections", "Dashboard", "Models", "Painting", "Help and Tools", "Guides", "Settings", "Updates"]), tabs_text)   # X2: no cog   # U4a: four sections around Ask Mentor, Units is Models, Settings is the cog
+        check("Help explains the four sections and the Tools and Settings pages", all(w in tabs_text for w in ["four sections", "Dashboard", "Models", "Painting", "Tools and Settings", "Guides", "Settings", "Updates"]), tabs_text)   # X2: no cog   # U4a: four sections around Ask Mentor, Units is Models, Settings is the cog
         feedback_lines = [t for t in page.eval_on_selector_all("#view-help li", "els => els.map(e => e.textContent)") if "Give feedback" in t]
         check("the Help lines that tell you where to find Give feedback say Settings → Updates",
               sum("Settings → Updates" in t for t in feedback_lines) >= 2 and not any("Updates tab" in t for t in feedback_lines), feedback_lines)

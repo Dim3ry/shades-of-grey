@@ -24,7 +24,7 @@ def check(name, ok, detail=""):
 
 PAINT = {"id": 1, "brand": "Citadel", "name": "Macragge Blue", "colour": "#1f3f9a", "status": "wishlist", "shopFrom": ["Recipe: Blue"]}
 UNIT = {"id": 1, "name": "Squad", "hobby": "40K", "stage": 1, "count": 5, "added": "2026-10-01", "log": [["2026-10-01", 1]]}
-SEGMENTS = ["dashboard", "units", "recipes", "guides"]   # X2: the fourth is Help and Tools (data-tab guides)
+SEGMENTS = ["dashboard", "units", "recipes", "guides"]   # X2: the fourth is Tools and Settings (data-tab guides)
 
 def seg(tab):
     return f'.tabs button[data-tab="{tab}"]'
@@ -59,12 +59,12 @@ def main():
         print("\n--- 1. The four segments ---")
         start(page)
         labels = page.evaluate("() => [...document.querySelectorAll('.tabs button[data-tab]')].sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left).map(b => [b.getAttribute('aria-label') || b.textContent.trim(), b.textContent.trim()])")
-        check("left to right: Dashboard, Models, Painting, Help (aria-label and visible label; X2: the fourth says Help, its name is Help and Tools)",
-              labels == [["Dashboard", "Dashboard"], ["Models", "Models"], ["Painting", "Painting"], ["Help and Tools", "Help"]], labels)
+        check("left to right: Dashboard, Models, Painting, Tools (aria-label and visible label; X2: the fourth says Tools, the page is Tools and Settings)",
+              labels == [["Dashboard", "Dashboard"], ["Models", "Models"], ["Painting", "Painting"], ["Tools", "Tools"]], labels)
         check("the old Units name is gone from the bar and Settings is not a segment",
               "Units" not in [l[1] for l in labels] and page.locator(".tabs button[data-tab='settings']").count() == 0)
         check("the Models segment still opens the unit list", (page.click(seg("units")), page.wait_for_timeout(100), page.is_visible("#view-units"))[2])
-        check("Help says Models and names Help and Tools (X2: the cog is gone)", "Models" in page.inner_text("#help-tabs") and "Help and Tools" in page.inner_text("#help-tabs") and "cog" not in page.inner_text("#help-tabs"))
+        check("Help says Models and names Tools and Settings (X2: the cog is gone)", "Models" in page.inner_text("#help-tabs") and "Tools and Settings" in page.inner_text("#help-tabs") and "cog" not in page.inner_text("#help-tabs"))
 
         print("\n--- 2. The tap area is the segment ---")
         page.click(seg("dashboard"))
@@ -91,10 +91,10 @@ def main():
         page.click("#more-seg [data-page='settings']")
         page.wait_for_timeout(100)
         # X2: Settings is a page of the fourth segment now, which stays lit (there is no cog)
-        check("Settings: the Help segment is current", page.get_attribute(seg("guides"), "aria-current") == "page" and page.locator(".tabs [aria-current]").count() == 1)
+        check("Settings: the Tools segment is current", page.get_attribute(seg("guides"), "aria-current") == "page" and page.locator(".tabs [aria-current]").count() == 1)
         check("Settings shows its Settings, Help and Updates switch", page.is_visible("#more-seg") and page.is_visible("#view-settings"))
         page.click("[data-page='help']")
-        check("Help is reached from Settings and the Help segment stays current", page.is_visible("#view-help") and page.get_attribute(seg("guides"), "aria-current") == "page")
+        check("Help is reached from Settings and the Tools segment stays current", page.is_visible("#view-help") and page.get_attribute(seg("guides"), "aria-current") == "page")
 
         print("\n--- 4. Ask Mentor ---")
         page.click(seg("units"))

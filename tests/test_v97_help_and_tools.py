@@ -1,5 +1,5 @@
-"""X2 tests for Minifolio (Help and Tools). New behaviour only:
-1. The fourth bar segment and start-circle segment say Help; the page heading says Help and Tools; its switch is Guides, Settings, Help, Updates.
+"""X2 tests for Minifolio (Tools and Settings). New behaviour only:
+1. The fourth bar segment and start-circle segment say Tools; the page heading says Tools and Settings; its switch is Guides, Settings, Help, Updates.
 2. The header cog is gone and the basket stays. The segment is lit on all four pages. The Compendium tab is gone.
 3. Guides holds Detail recipes and Basing tips, working as before; Show steps from Ideas for this lands there.
 4. Old state: a saved tab or address of "compendium" opens Guides; "settings" still opens Settings; an unknown tab falls back; an old backup restores.
@@ -52,13 +52,13 @@ def main():
 
         print("\n--- 1. Segments, heading, switch ---")
         t.load(page, paints=PAINTS, units=UNITS, launch=True)
-        check("the start circle's segments: Dashboard, Models, Painting, Help",
-              texts(page, ".arc [data-tab]") == ["Dashboard", "Models", "Painting", "Help"], texts(page, ".arc [data-tab]"))
+        check("the start circle's segments: Dashboard, Models, Painting, Tools",
+              texts(page, ".arc [data-tab]") == ["Dashboard", "Models", "Painting", "Tools"], texts(page, ".arc [data-tab]"))   # George renamed the fourth label from Help to Tools
         page.click('.tabs button[data-tab="guides"]')
         settle(page)
-        check("the bar's fourth segment says Help; its tap name is Help and Tools",
-              texts(page, ".arc [data-tab]")[3] == "Help" and page.get_attribute('.arc [data-tab="guides"]', "aria-label") == "Help and Tools")
-        check("the page heading says Help and Tools", page.inner_text("#more-title").strip() == "Help and Tools" and page.is_visible("#more-title"))
+        check("the bar's fourth segment says Tools, and its tap name is Tools",
+              texts(page, ".arc [data-tab]")[3] == "Tools" and page.get_attribute('.arc [data-tab="guides"]', "aria-label") == "Tools")
+        check("the page heading says Tools and Settings", page.inner_text("#more-title").strip() == "Tools and Settings" and page.is_visible("#more-title"))
         check("the switch is Guides, Settings, Help, Updates, with Guides selected first",
               texts(page, "#more-seg button") == ["Guides", "Settings", "Help", "Updates"]
               and page.evaluate("() => [...document.querySelectorAll('#more-seg button')].map(b => b.getAttribute('aria-selected')).join()") == "true,false,false,false")
@@ -68,10 +68,10 @@ def main():
         for name in ["settings", "help", "updates", "guides"]:
             page.click(f'#more-seg button[data-page="{name}"]')
             settle(page)
-            check(f"{name}: its page shows and the Help segment is lit",
+            check(f"{name}: its page shows and the Tools segment is lit",
                   page.evaluate("(n) => settings.tab === n && !document.getElementById('view-' + n).classList.contains('hidden')", name) and lit(page) == ["guides"], lit(page))
-        check("a page outside the section lights its own segment, not Help", (page.click('.tabs button[data-tab="units"]'), settle(page), lit(page))[2] == ["units"])
-        check("the heading and switch hide outside Help and Tools", not page.is_visible("#more-title") and not page.is_visible("#more-seg"))
+        check("a page outside the section lights its own segment, not Tools", (page.click('.tabs button[data-tab="units"]'), settle(page), lit(page))[2] == ["units"])
+        check("the heading and switch hide outside Tools and Settings", not page.is_visible("#more-title") and not page.is_visible("#more-seg"))
 
         print("\n--- 2. Guides ---")
         page.click('.tabs button[data-tab="guides"]')
@@ -97,7 +97,7 @@ def main():
         btn.click()
         page.wait_for_selector(f'#cmp-fold-detail-panel [data-detail="{key}"]')
         settle(page)
-        check("Show steps lands in Help and Tools > Guides with that recipe open and in focus",
+        check("Show steps lands in Tools and Settings > Guides with that recipe open and in focus",
               page.evaluate("() => settings.tab") == "guides" and lit(page) == ["guides"] and page.get_attribute("#more-seg [data-page=guides]", "aria-selected") == "true"
               and page.evaluate("() => document.activeElement && document.activeElement.dataset.detail") == key)
 
@@ -124,21 +124,21 @@ def main():
         print("\n--- 5. Motion ---")
         t.load(page, paints=PAINTS, units=UNITS, launch=True)
         r = page.evaluate(TAP, '.tabs button[data-tab="guides"]')
-        check("the start circle glides into the bar for Help (the button moves, a picture of the circle is on top)", r["orb"] >= 1 and r["ghost"], r)
+        check("the start circle glides into the bar for Tools (the button moves, a picture of the circle is on top)", r["orb"] >= 1 and r["ghost"], r)
         settle(page)
         check("... and ends tidy with the segment lit", lit(page) == ["guides"] and page.evaluate("() => document.querySelectorAll('.mo-ring, .mo-ghost').length") == 0)
         r = page.evaluate(TAP, '.tabs button[data-tab="units"]')
-        check("Help to Models: the sections slide (the old one is a layer on top, earlier slides right)",
+        check("Tools to Models: the sections slide (the old one is a layer on top, earlier slides right)",
               r["layer"] and any(m.startswith("translateX(") for m in r["moving"]), r)
         settle(page)
         r = page.evaluate(TAP, '.tabs button[data-tab="guides"]')
-        check("Models to Help: the sections slide", r["layer"] and any(m.startswith("translateX(") for m in r["moving"]), r)
+        check("Models to Tools: the sections slide", r["layer"] and any(m.startswith("translateX(") for m in r["moving"]), r)
         settle(page)
         r = page.evaluate(TAP, '#more-seg button[data-page="settings"]')
         check("Guides to Settings (same section): an instant switch, nothing moves", not r["layer"] and r["moving"] == [], r)
 
         print("\n--- 6. Sizes and looks ---")
-        for width in (390, 360):
+        for width in (390, 360, 320):   # 320 px added with the rename: the short label Tools must still fit
             for mode in ("dark", "light"):
                 page.set_viewport_size({"width": width, "height": 844})
                 t.load(page, paints=PAINTS, units=UNITS, settings={"mode": mode, "tab": "guides", "examplesChecked": True})
@@ -148,8 +148,8 @@ def main():
                 check(f"{tag}: no sideways scroll", page.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth + 1"))
                 check(f"{tag}: the four switch buttons and the bar segments are 44 px or more by the real tap area",
                       all(h >= 44 for _, w, h, _ in small), small)
-                check(f"{tag}: the four switch labels fit on one line each",
-                      page.evaluate("() => [...document.querySelectorAll('#more-seg button')].every(b => b.scrollWidth <= b.clientWidth + 1 && b.getBoundingClientRect().height < 60)"))
+                check(f"{tag}: the four switch labels and the bar labels fit on one line each",
+                      page.evaluate("() => [...document.querySelectorAll('#more-seg button, .arc [data-tab]')].every(b => b.scrollWidth <= b.clientWidth + 1 && (!b.closest('#more-seg') || b.getBoundingClientRect().height < 60))"))
         page.set_viewport_size({"width": 1280, "height": 900})
         t.load(page, paints=PAINTS, units=UNITS, settings={"tab": "guides", "examplesChecked": True})
         check("1280 px: Guides shows with no sideways scroll", page.is_visible("#view-guides") and page.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth + 1"))

@@ -24,8 +24,8 @@ def check(name, ok, detail=""):
 
 PAINT = {"id": 1, "brand": "Citadel", "name": "Macragge Blue", "colour": "#1f3f9a", "status": "wishlist", "shopFrom": ["Recipe: Blue"]}
 UNIT = {"id": 1, "name": "Squad", "hobby": "40K", "stage": 1, "count": 5, "added": "2026-10-01", "log": [["2026-10-01", 1]]}
-SEGMENTS = ["dashboard", "units", "recipes", "guides"]   # X2: the fourth is Help and Tools
-NAMES = {"dashboard": "Dashboard", "units": "Models", "recipes": "Painting", "guides": "Help and Tools"}   # X2: the button reads Help, its name is Help and Tools
+SEGMENTS = ["dashboard", "units", "recipes", "guides"]   # X2: the fourth is Tools and Settings
+NAMES = {"dashboard": "Dashboard", "units": "Models", "recipes": "Painting", "guides": "Tools"}   # X2: the fourth segment reads Tools (George's rename; the page is Tools and Settings)
 
 def seg(tab):
     return f'.tabs button[data-tab="{tab}"]'
@@ -67,7 +67,7 @@ def main():
         check("four segments, in order, each a real button with its name", names == [NAMES[s] for s in SEGMENTS], names)
         check("nothing is lit (no aria-current anywhere)", page.locator("[aria-current]").count() == 0)
         words = [w.strip() for w in page.inner_text(".tabs").split("\n") if w.strip()]
-        check("no sentences: only the four names and Ask Mentor", sorted(words) == sorted(list(NAMES.values()) + ["Ask Mentor"]) or sorted(words) == sorted(["Dashboard", "Models", "Painting", "Help", "Ask Mentor"]), words)   # X2: the circle shows the short label Help, the button name is Help and Tools
+        check("no sentences: only the four names and Ask Mentor", sorted(words) == sorted(list(NAMES.values()) + ["Ask Mentor"]), words)
         check("header: the title is a real button with an aria-label, next to the basket (X2: the cog is gone)",
               page.locator("button#home-button[aria-label]").count() == 1 and page.is_visible("#basket-button") and page.locator(".cog").count() == 0)
         check("the round Mentor button is the same one component as in the bar", page.locator("#mentor-button").count() == 1 and page.locator(".tabs .arc #mentor-button").count() == 1)

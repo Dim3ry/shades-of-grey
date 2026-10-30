@@ -3736,7 +3736,7 @@
       dashboard: document.getElementById("view-dashboard"),
       units: document.getElementById("view-units"),
       recipes: document.getElementById("view-recipes"),
-      guides: document.getElementById("view-guides"),   // v35 as the Compendium; X2: Guides, the first page of Help and Tools
+      guides: document.getElementById("view-guides"),   // v35 as the Compendium; X2: Guides, the first page of Tools and Settings
       settings: document.getElementById("view-settings"),
       updates: document.getElementById("view-updates"),
       help: document.getElementById("view-help"),
@@ -3752,7 +3752,7 @@
     fitMenuBar();
     window.addEventListener("resize", fitMenuBar);
 
-    // v21.9, X2: Guides, Settings, Help and Updates are ONE section (Help and Tools; the bar and the start circle say Help) with a
+    // v21.9, X2: Guides, Settings, Help and Updates are ONE section (Tools and Settings; the bar and the start circle say Tools) with a
     // Guides / Settings / Help / Updates switch (#more-seg) at the top. The page names are "guides", "settings", "help" and "updates", so a
     // saved settings.tab of "settings", "help" or "updates" opens the right page. A saved "compendium" (the old tab) opens Guides, which
     // holds the Detail recipes and Basing tips that were all it had left (TAB_ALIASES; the same goes for the address #compendium).
@@ -13010,7 +13010,7 @@
       return out;
     }
 
-    // X2: Help and Tools > Guides (it was the Compendium tab, which X1 had cut down to Detail recipes and Basing tips). The colour parts are in Colour Lab.
+    // X2: Tools and Settings > Guides (it was the Compendium tab, which X1 had cut down to Detail recipes and Basing tips). The colour parts are in Colour Lab.
     function renderGuides(focusSelector) {
       const body = document.getElementById("compendium-body");
       if (!body) return;

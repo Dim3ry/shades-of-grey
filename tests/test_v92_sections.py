@@ -3,7 +3,7 @@
 New behaviour only:
 1. Tapping a menu segment slides the sections: later in the bar slides left (new one comes in from the right), earlier slides right.
    While it moves the old section is a see-through layer that is hidden from screen readers and cannot be tapped; afterwards nothing is left.
-2. Tapping the section you are in, moving between the pages of Help and Tools does not move. A jump chosen by code and leaving the start page fade only.
+2. Tapping the section you are in, moving between the pages of Tools and Settings does not move. A jump chosen by code and leaving the start page fade only.
 3. Scroll position, keyboard focus and the phone's Back button behave as before.
 4. A recipe opening on a phone: the list steps back and the detail slides in; closing reverses it. At 1280 px: a fade only.
 5. Reduced motion: nothing moves at all.
@@ -91,7 +91,7 @@ def main():
         tap(page, "guides")
         wait_settled(page)
         page.click('#more-seg button[data-page="settings"]')
-        check("moving between the pages of Help and Tools does not move", page.evaluate("() => document.getAnimations().length") == 0)
+        check("moving between the pages of Tools and Settings does not move", page.evaluate("() => document.getAnimations().length") == 0)
         page.click('#more-seg button[data-page="help"]')
         check("Help does not move", page.evaluate("() => document.getAnimations().length") == 0)
         tap(page, "dashboard")
