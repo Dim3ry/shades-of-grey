@@ -11,7 +11,7 @@ New behaviour only:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, sys, json
 from playwright.sync_api import sync_playwright
-from launch_helpers import leave_launch
+from launch_helpers import leave_launch, open_settings
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
@@ -123,7 +123,7 @@ def main():
         page.locator(f"{row} .chip").nth(10).click()
         page.wait_for_timeout(300)
         check("and the page stays where it was", abs(page.evaluate("(r) => document.querySelector(r).getBoundingClientRect().top", row) - top) < 3)
-        page.click('nav button[data-tab="settings"]')
+        open_settings(page)
         page.wait_for_timeout(250)
         page.evaluate("() => document.querySelector('#brands-card button').click()")
         page.wait_for_timeout(250)

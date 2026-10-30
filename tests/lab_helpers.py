@@ -25,17 +25,22 @@ def open_lab(page, section="wheel"):
 # Before v96 the Compendium showed the colour wheel and five fold-outs on ONE page, and about thirty older test files read that page (their
 # checks are about the building blocks: the rows, tags, ids and picks, not about where the page puts them). v96 moved those parts into
 # Painting > Colour Lab (one section at a time). So those files can still run their checks unchanged, go_compendium() puts the old
-# arrangement back for the test only: it replaces renderCompendium in the page with the old one, built from the SAME app functions
+# arrangement back for the test only: it replaces renderGuides in the page with the old one, built from the SAME app functions
 # (appendColourWheel, libraryParts, buildMentor, buildCompendiumIdeas, foldSection, ...). Nothing in the app is changed by this. The new arrangement
 # is tested in test_v96_colour_lab.py and in the few files that test navigation (v69, v71, v73, v88 to v94).
 _LEGACY = """() => {
-  window.renderCompendium = function (focusSelector) {
+  if (!document.getElementById('legacy-compendium-style')) {   // X2: these two wide-screen rules were the app's own until the Compendium tab went; only this copy uses them
+    const st = document.createElement('style'); st.id = 'legacy-compendium-style';
+    st.textContent = '.compendium-split { display: grid; gap: 12px; } @media (min-width: 900px) { .compendium-split .wheel-block { border-bottom: 0; padding-bottom: 0; } .compendium-split > .layout-main { align-self: start; position: sticky; top: 84px; max-height: calc(100vh - 100px); overflow-y: auto; } }';
+    document.head.appendChild(st);
+  }
+  window.renderGuides = function (focusSelector) {   // X2: the app's renderer is now renderGuides (it was renderGuides)
     const body = document.getElementById('compendium-body');
     if (!body) return;
     body.replaceChildren();
     const say = (text, id) => { const p = document.createElement('p'); p.className = 'hint'; if (id) p.id = compendiumId(id); p.textContent = text; body.appendChild(p); return p; };
     const door = compendiumDoor();
-    const redraw = (selector) => renderCompendium(selector);
+    const redraw = (selector) => renderGuides(selector);
     const intro = say("A colour wheel (tap a colour to open its groups), Ask the Mentor, colour ideas, colour plans, detail recipes and basing tips, without needing a recipe. Tap a heading to open it, and type in a search box to find things fast. Use Copy as text to keep anything, or Save into a new recipe\\u2026 to start a recipe from colour ideas, colour plans, detail recipes and basing tips.", 'intro');
     appendIdeasFocus(body, door, redraw);
     const split = document.createElement('div'); split.className = 'compendium-split layout-split layout-detail-wide';
@@ -61,6 +66,6 @@ def legacy_compendium(page):
     page.evaluate(_LEGACY)
 
 def go_compendium(page):
-    """Tap the Compendium tab, with the old all-in-one page installed first."""
+    """Tap the fourth segment (Tools and Settings > Guides; X2), with the old all-in-one page installed first."""
     legacy_compendium(page)
-    page.click('nav button[data-tab="compendium"]')
+    page.click('nav button[data-tab="guides"]')

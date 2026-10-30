@@ -100,9 +100,9 @@ def main():
         check("title then a segment straight away: one clean end state, no extra picture",
               page.evaluate("() => settings.tab") == "units" and page.evaluate(TIDY) and page.evaluate(GEOM)["orb"] == bar_ref["orb"])
         page.evaluate("() => { document.getElementById('home-button').click(); }")
-        page.evaluate("() => { window.scrollTo(0, 0); document.querySelector('.cog[data-tab=\"settings\"]').click(); }")
+        page.evaluate("() => { window.scrollTo(0, 0); document.querySelector('.tabs button[data-tab=\"guides\"]').click(); }")   # X2: the cog is gone; the Tools segment
         settle(page)
-        check("the Settings cog from the circle: lands in Settings, tidy", page.evaluate("() => settings.tab") == "settings" and page.evaluate(TIDY))
+        check("the Tools segment from the circle: lands in Guides, tidy", page.evaluate("() => settings.tab") == "guides" and page.evaluate(TIDY))
 
         print("\n--- 5. Keyboard open: nothing to move ---")
         load(page, units=UNITS, launch=True)

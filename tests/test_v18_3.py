@@ -13,7 +13,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import datetime, json, os, re, sys
 from playwright.sync_api import sync_playwright
-from launch_helpers import leave_launch
+from launch_helpers import leave_launch, open_settings
 import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 from dialog_watch import DialogAnswers
 from notice_watch import attach_notices
@@ -176,7 +176,7 @@ def main():
         page.clock.install(time=datetime.datetime(2026, 7, 15, 23, 30, tzinfo=datetime.timezone.utc))
         seed(page)
         check("todayISO() gives the UK date", page.evaluate("todayISO()") == "2026-07-16", page.evaluate("todayISO()"))
-        page.click("nav button[data-tab='settings']")
+        open_settings(page)
         with page.expect_download() as d:
             page.click("#export-button")
         name = d.value.suggested_filename
@@ -199,7 +199,7 @@ def main():
         attach_notices(page, lambda text: dialogs.append(text))
         seed(page, OLD_BOOK)
         ronly = {"app": "Minifolio", "version": 6, "models": [], "recipes": BACKUP_BOOK}
-        page.click("nav button[data-tab='settings']")
+        open_settings(page)
         page.set_input_files("#restore-file", files=[{"name": "r.json", "mimeType": "application/json", "buffer": json.dumps(ronly).encode()}])
         page.wait_for_timeout(500)
         check("recipes-only restore replaces the recipes", recipe_names(page) == ["Backup armour", "Backup eyes"], recipe_names(page))
@@ -217,7 +217,7 @@ def main():
         leave_launch(page)   # U4b: tap through the start page
         check("...still there after a reload", recipe_names(page) == ["Old armour"])
         # Restore again, then bring the old recipes back from Recover earlier data instead.
-        page.click("nav button[data-tab='settings']")
+        open_settings(page)
         page.set_input_files("#restore-file", files=[{"name": "r.json", "mimeType": "application/json", "buffer": json.dumps(ronly).encode()}])
         page.wait_for_timeout(500)
         page.evaluate("renderRecover()")
@@ -291,7 +291,7 @@ def main():
         page.evaluate("save()")
         newer = {"app": "Minifolio", "version": 6, "dataVersion": 99,
                  "models": [{"id": 1, "name": "Future unit", "hobby": "", "faction": "", "stage": 0, "count": 1}]}
-        page.click("nav button[data-tab='settings']")
+        open_settings(page)
         dialogs.clear()
         page.set_input_files("#restore-file", files=[{"name": "n.json", "mimeType": "application/json", "buffer": json.dumps(newer).encode()}])
         page.wait_for_timeout(400)
@@ -336,7 +336,7 @@ def main():
             text = str(error)
         check("with the internet off, a scan still reads", "NULN" in text.upper(), text)
         context.set_offline(False)
-        page.click('nav button[data-tab="settings"]')   # v21.9: Help and Updates are sub-tabs of Settings
+        open_settings(page)   # v21.9: Help and Updates are sub-tabs of Settings
         page.click('#more-seg button[data-page="help"]')
         page.evaluate("document.getElementById('about').open = true")
         about = page.inner_text("#about")

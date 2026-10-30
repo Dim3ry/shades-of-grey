@@ -275,8 +275,7 @@
     .arc [data-tab="dashboard"] { left: 64px; top: 35px; width: 89px; height: 89px; padding: 12px 6px 0px 0px; clip-path: path('M0.28 78.63 A132 132 0 0 1 40.56 0.86 L88.52 51.84 A62 62 0 0 0 69.60 88.37 Z'); }
     .arc [data-tab="units"] { left: 109px; top: 0px; width: 85px; height: 85px; padding: 1px 0px 0px 19px; clip-path: path('M0.71 31.25 A132 132 0 0 1 82.54 0.05 L84.38 70.02 A62 62 0 0 0 45.94 84.68 Z'); }
     .arc [data-tab="recipes"] { left: 196px; top: 0px; width: 85px; height: 85px; padding: 1px 19px 0px 0px; clip-path: path('M2.46 0.05 A132 132 0 0 1 84.29 31.25 L39.06 84.68 A62 62 0 0 0 0.62 70.02 Z'); }
-    .arc [data-tab="compendium"] { left: 237px; top: 35px; width: 89px; height: 89px; padding: 12px 0px 0px 6px; clip-path: path('M48.44 0.86 A132 132 0 0 1 88.72 78.63 L19.40 88.37 A62 62 0 0 0 0.48 51.84 Z'); }
-    .arc [data-tab="compendium"] { font-size: 10.5px; }
+    .arc [data-tab="guides"] { left: 237px; top: 35px; width: 89px; height: 89px; padding: 12px 0px 0px 6px; clip-path: path('M48.44 0.86 A132 132 0 0 1 88.72 78.63 L19.40 88.37 A62 62 0 0 0 0.48 51.84 Z'); }
     .arc .icon { display: inline-flex; font-size: 22px; line-height: 1; }
     .arc .icon svg { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
     /* The segment you are in stays lit: a brighter fill, a thicker icon and a bold label (never colour alone). */
@@ -329,7 +328,7 @@
     :is(body.launching, .mo-ring) .arc [data-tab="dashboard"] { left: 25.10px; top: 10.10px; width: 167.10px; height: 167.10px; clip-path: path('M163.96 0.00 A170 170 0 0 0 0.00 163.96 L89.95 167.10 A80 80 0 0 1 167.10 89.95 Z'); }
     :is(body.launching, .mo-ring) .arc [data-tab="units"] { left: 197.79px; top: 10.10px; width: 167.10px; height: 167.10px; clip-path: path('M167.10 163.96 A170 170 0 0 0 3.14 0.00 L0.00 89.95 A80 80 0 0 1 77.16 167.10 Z'); }
     :is(body.launching, .mo-ring) .arc [data-tab="recipes"] { left: 25.10px; top: 182.79px; width: 167.10px; height: 167.10px; clip-path: path('M0.00 3.14 A170 170 0 0 0 163.96 167.10 L167.10 77.16 A80 80 0 0 1 89.95 0.00 Z'); }
-    :is(body.launching, .mo-ring) .arc [data-tab="compendium"] { left: 197.79px; top: 182.79px; width: 167.10px; height: 167.10px; clip-path: path('M3.14 167.10 A170 170 0 0 0 167.10 3.14 L77.16 0.00 A80 80 0 0 1 0.00 77.16 Z'); }
+    :is(body.launching, .mo-ring) .arc [data-tab="guides"] { left: 197.79px; top: 182.79px; width: 167.10px; height: 167.10px; clip-path: path('M3.14 167.10 A170 170 0 0 0 167.10 3.14 L77.16 0.00 A80 80 0 0 1 0.00 77.16 Z'); }
     body.launching .mentor-orb {
       left: 133px; top: 118px; width: 124px; height: 124px; padding: 0; justify-content: center; gap: 4px; font-size: 14px; line-height: 18px;
       box-shadow: 0 0 56px color-mix(in srgb, var(--accent) 55%, transparent);
@@ -346,9 +345,9 @@
     .app-bar h1 .home { display: inline-flex; align-items: center; min-height: 44px; padding: 0; background: none; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; text-align: left; border-radius: var(--radius-control); }
     .app-bar h1 .home:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
 
-    /* ----- The header: the title with the shopping basket and the Settings cog in the top corner -----
-       U4a: .app-actions is its own small block (the basket and the cog), so it is easy to move somewhere else. It stays in
-       view while you scroll, so the basket and Settings are one tap away on every page. */
+    /* ----- The header: the title with the shopping basket in the top corner -----
+       U4a: .app-actions is its own small block (the basket), so it is easy to move somewhere else. It stays in
+       view while you scroll, so the basket is one tap away on every page. */
     .app-bar {
       position: sticky; top: 0; z-index: 12;
       display: flex; align-items: center; gap: 8px; min-height: 56px;
@@ -357,13 +356,7 @@
     }
     .app-bar h1 { flex: 1; min-width: 0; margin: 0; padding: 0; border: 0; }
     .app-actions { display: flex; align-items: center; gap: 12px; flex: none; }
-    .app-actions .cog {
-      display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0;
-      border-radius: 50%; background-color: var(--card); color: var(--muted); border: 1px solid var(--border);
-    }
-    .app-actions .cog svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-    .app-actions .cog[aria-current="page"] { background-color: var(--accent); color: var(--on-accent); border-color: var(--accent); }
-    .app-actions .cog:focus-visible, .app-actions .basket:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+    .app-actions .basket:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
     /* v40: the basket count. Same colours as the rest of the app (no new ones). The ::after makes the tap area bigger than the little pill you see. */
     .app-actions .basket {
       position: relative; flex: none; display: inline-flex; align-items: center; gap: 3px; min-width: 0; min-height: 0; height: 26px; padding: 0 8px 0 6px;
@@ -1147,6 +1140,9 @@
     }
     .seg button { background: none; color: var(--muted); padding: 10px; font-size: 15px; min-height: 44px; }
     .seg button[aria-selected="true"] { background: var(--accent); color: var(--on-accent); font-weight: 600; }
+    .more-title { margin: 0 0 8px; }   /* X2: the page heading above the Guides / Settings / Help / Updates switch */
+    #more-seg { grid-template-columns: repeat(4, 1fr); gap: 2px; }   /* X2: four pages now (Guides added) */
+    #more-seg button { padding: 10px 2px; font-size: 14px; }
     /* v40: the Recipes tab's switch has four parts now (Recipes, Schemes, Your Palette, Shopping), so each is a little narrower */
     #recipe-seg { grid-template-columns: repeat(4, 1fr); gap: 2px; }
     #recipe-seg button { padding: 10px 2px; font-size: 14px; }
@@ -1314,7 +1310,7 @@
     .ideas-body { display: grid; gap: 12px; margin-top: 10px; }
     .ideas-body .hint { margin: 0; }
     .shop-head { margin-bottom: 4px; }   /* v81: what More info's own bottom margin gave before the heading and More info were wrapped */
-    .compendium-split, .compendium-folds { display: grid; gap: 12px; }   /* v81: same spacing as before the two parts were wrapped */
+    .compendium-folds { display: grid; gap: 12px; }   /* v81: same spacing as before the two parts were wrapped */
     .idea-label { margin: 0; font-size: 13px; color: var(--muted); }
     /* v72: Mentor tips under the Ask the Mentor picks */
     .mentor-tips { display: grid; gap: 6px; }
@@ -1657,9 +1653,6 @@
       #shop-panel .shop-split > .shop-side-buy { grid-area: buy; }
       #shop-panel .shop-split > .shop-side-copy { grid-area: copy; margin-top: 0 !important; }
       #shop-panel .shop-lists > .shop-brand:first-child { margin-top: 0; }
-      .compendium-split .wheel-block { border-bottom: 0; padding-bottom: 0; }
-      /* R3b-3: the wheel stays in view beside the long fold-outs (same idea as the side panes above); the Add to shopping list button reaches 44 px. */
-      .compendium-split > .layout-main { align-self: start; position: sticky; top: 84px; max-height: calc(100vh - 100px); overflow-y: auto; }
       #compendium-body .shop-idle-button { min-height: 44px; }
     }
 
@@ -1719,7 +1712,7 @@
       /* v77: Updates now uses the shared layout-split class (above) instead of its own two-column rule. */
       #view-help .help:not(.hidden) { columns: 2; column-gap: 40px; }
       ul.recipe-list { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
-      #recipe-page, #scheme-page { max-width: 780px; }   /* v81: the Compendium now uses the full width (two columns) */
+      #recipe-page, #scheme-page { max-width: 780px; }   /* v81: Colour Lab and Guides use the full width */
       /* R3b-5: Paste recipes stays a readable width (its text box and step rows were 1200 px+ wide); the scheme editor puts its two cards side by side. */
       #import-page { max-width: 780px; }
       #scheme-page:not(.hidden) { max-width: none; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
@@ -2468,26 +2461,25 @@
     <button id="banner-retry">Try again</button>
   </div>
   <!-- U4a: the menu bar. Four segments around the round Mentor button; aria-current marks the segment you're in, for screen readers and for the CSS.
-       The numbers that shape it are in the CSS (".arc"). Settings is the cog in the header, not a segment. -->
+       The numbers that shape it are in the CSS (".arc"). The fourth segment is Tools and Settings (Guides, Settings, Help, Updates); its short label is Tools. -->
   <nav class="tabs" aria-label="Sections">
     <div class="arc">
       <button data-tab="dashboard"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>Dashboard</button>
       <button data-tab="units"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 7.9-8 9-4.8-1.1-8-4.5-8-9V6l8-3z"/></svg></span>Models</button>
       <button data-tab="recipes"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3.5 4.2 6 7.6 6 10.5a6 6 0 0 1-12 0C6 10.6 8.5 7.2 12 3z"/></svg></span>Painting</button>
-      <button data-tab="compendium"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5C10.3 5.3 8 5 4.5 5v12.5c3.5 0 5.8.4 7.5 1.7 1.7-1.3 4-1.7 7.5-1.7V5c-3.5 0-5.8.3-7.5 1.5zM12 6.5v12.7"/></svg></span>Compendium</button>
+      <button data-tab="guides" aria-label="Tools"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.6 2.2c-.8.4-1.2 1-1.2 1.8M12 17h.01"/></svg></span>Tools</button>
       <!-- The round Ask Mentor button: one component, wired by app.js (it opens Painting > Colour Lab > Picker). -->
       <button type="button" class="mentor-orb" id="mentor-button" aria-label="Ask Mentor"><svg viewBox="16.67 16.67 166.67 166.67" aria-hidden="true" focusable="false"><g><circle class="orb-bg" cx="100" cy="100" r="74"/><g fill="none" stroke-width="15"><circle class="orb-a" cx="100" cy="100" r="58" stroke-dasharray="111 253.4" transform="rotate(100 100 100)"/><circle class="orb-c" cx="100" cy="100" r="58" stroke-dasharray="81 283.4" transform="rotate(10 100 100)"/><circle class="orb-b" cx="100" cy="100" r="58" stroke-dasharray="56 308.4" transform="rotate(-60 100 100)"/><circle class="orb-dim" cx="100" cy="100" r="58" stroke-dasharray="51 313.4" transform="rotate(-125 100 100)"/></g><circle class="orb-lens" cx="100" cy="100" r="30" stroke-width="3"/><circle class="orb-core" cx="100" cy="100" r="17"/><circle cx="95" cy="94" r="4" fill="#ffffff" opacity="0.85"/></g></svg>Ask Mentor</button>
     </div>
   </nav>
   <!-- ===== HTML: this section is WHAT is on the page. ===== -->
   <main>
-    <!-- U4a: the header. The title, then the basket and the Settings cog in the top corner (.app-actions is one small block, easy to move). -->
+    <!-- U4a: the header. The title, then the basket in the top corner (.app-actions is one small block, easy to move). -->
     <header class="app-bar">
       <h1><button type="button" class="home" id="home-button" aria-label="Minifolio, back to the start page">Minifolio</button> <span class="version-tag" id="version-tag"></span></h1>
-      <nav class="app-actions" aria-label="Shopping list and Settings">
+      <nav class="app-actions" aria-label="Shopping list">
         <!-- v40: the basket count (hidden when the list is empty). Filled and wired by updateBasket() in app.js. -->
         <button type="button" class="basket hidden" id="basket-button" aria-label="Shopping list"></button>
-        <button type="button" class="cog" data-tab="settings" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg></button>
       </nav>
     </header>
 
@@ -2672,6 +2664,7 @@
         <div class="card compendium-card">
           <div class="lab-pro"><span class="pro-pill">Pro preview</span></div>
           <div class="ideas-body" id="colourlab-body"></div>
+          <p class="sr-only" id="wheel-live" role="status" aria-live="polite"></p>
         </div>
       </div>
 
@@ -2733,21 +2726,22 @@
       <div id="import-page" class="hidden"></div>
     </section>
 
-    <!-- v21.9: Settings, Help and Updates share ONE main tab (Settings). This switch (same style as
-         the Recipes tab's) moves between the three pages. It shows only on those pages and is
+    <!-- v21.9, X2: Guides, Settings, Help and Updates share ONE main tab (Tools and Settings). This switch (same style as
+         the Recipes tab's) moves between the four pages. It shows only on those pages and is
          filled in by showTab(). -->
-    <div class="seg hidden" id="more-seg" role="tablist" aria-label="Settings, help or updates">
+    <h2 class="more-title hidden" id="more-title">Tools and Settings</h2>
+    <div class="seg hidden" id="more-seg" role="tablist" aria-label="Guides, settings, help or updates">
+      <button role="tab" data-page="guides">Guides</button>
       <button role="tab" data-page="settings">Settings</button>
       <button role="tab" data-page="help">Help</button>
       <button role="tab" data-page="updates">Updates</button>
     </div>
 
-    <!-- ===== TAB: Compendium (v35, Pro preview: colour ideas, schemes, detail recipes and basing tips, no recipe needed) ===== -->
-    <section id="view-compendium" class="hidden">
+    <!-- ===== TAB: Guides (v35 as the Compendium; X2: the first page of Tools and Settings. Pro preview: detail recipes and basing tips, no recipe needed) ===== -->
+    <section id="view-guides" class="hidden">
       <div class="card compendium-card">
-        <div class="card-head"><h2>Compendium</h2><span class="pro-pill">Pro preview</span></div>
+        <div class="lab-pro"><span class="pro-pill">Pro preview</span></div>
         <div class="ideas-body" id="compendium-body"></div>
-        <p class="sr-only" id="wheel-live" role="status" aria-live="polite"></p>
       </div>
     </section>
 
@@ -2766,7 +2760,7 @@
             <li>Check the <strong>Dashboard</strong> to see how far you've got.</li>
             <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
           </ol>
-          <p id="help-tabs" style="margin: 8px 0 0;">The bar at the bottom has four sections around the round <strong>Ask Mentor</strong> button: <strong>Dashboard</strong>, <strong>Models</strong>, <strong>Painting</strong> and <strong>Compendium</strong>. The one you are in is lit. Ask Mentor opens the <strong>Picker</strong> in <strong>Painting → Colour Lab</strong>. The cog at the top right opens <strong>Settings</strong> (Help and Updates are in Settings), and the shopping basket sits next to it once your list has a paint. When you open the app it starts on a <strong>start page</strong>: the same four sections as a circle around Ask Mentor. Tap a section to go in. Tap the <strong>Minifolio</strong> title at the top to come back to it. Switching to another app and back leaves you where you were.</p>
+          <p id="help-tabs" style="margin: 8px 0 0;">The bar at the bottom has four sections around the round <strong>Ask Mentor</strong> button: <strong>Dashboard</strong>, <strong>Models</strong>, <strong>Painting</strong> and <strong>Tools</strong>. The one you are in is lit. <strong>Tools</strong> opens <strong>Tools and Settings</strong>, which has four pages: <strong>Guides</strong> (detail recipes and basing tips), <strong>Settings</strong>, <strong>Help</strong> and <strong>Updates</strong>. Ask Mentor opens the <strong>Picker</strong> in <strong>Painting → Colour Lab</strong>. The shopping basket sits at the top right once your list has a paint. When you open the app it starts on a <strong>start page</strong>: the same four sections as a circle around Ask Mentor. Tap a section to go in. Tap the <strong>Minifolio</strong> title at the top to come back to it. Switching to another app and back leaves you where you were.</p>
           <p id="help-back" style="margin: 8px 0 0;">The phone's <strong>Back</strong> button closes what's open first, one thing per press: a question box (it counts as No), a photo, the camera, a recipe, the paste box. Then it goes to the Dashboard. On the Dashboard, with nothing open, it leaves the app.</p>
         </details>
         <details>
@@ -2877,15 +2871,15 @@
             <li id="help-recipe-shop">Missing paints are not put on the shopping list by themselves. Every recipe has an <strong>Add to shopping list</strong> button under its steps. It adds the real paints you don't own (never the made-up example paints) and says how many. Undo takes them off again. It is greyed out when there is nothing to add.</li>
             <li id="help-shop-tick">On the Shopping list, tick a paint when you have bought it: it moves to <strong>Bought</strong> at the bottom and is marked Owned in Your Palette. Open Bought to tap <strong>Add back</strong>, or <strong>Clear bought</strong> to forget the list. <strong>Remove</strong> takes a paint off the list. Both have an Undo.</li>
             <li id="help-shop"><strong>Shopping list</strong> (in Your Palette) lists only the paints you put there: your Wishlist paints and anything added with an <strong>Add to shopping list</strong> button, grouped by brand. Nothing is added by itself, not even a paint a recipe needs or one that is empty or running low. <strong>Buy these</strong> at the top has a button for each shop that sells them (Firestorm Games, Wayland Games, Element Games, and The Army Painter for Army Painter paints). Tap a shop for one search link per paint; each opens that shop's own search in a new tab. They're plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop. The link searches for the paint's name, so the results can include other brands' paints with the same name: check you've got the right pot before you buy.</li>
-            <li id="help-wide-shop">On a wide screen, the shop links and <strong>Copy as text</strong> sit beside the paints on the Shopping list, and the Compendium's sections use the full width.</li>
+            <li id="help-wide-shop">On a wide screen, the shop links and <strong>Copy as text</strong> sit beside the paints on the Shopping list, and the Guides sections use the full width.</li>
             <li id="help-shop-links"><strong>Shop links on suggested paints</strong> (Pro preview): under a suggested paint you don't own, in the colour wheel's paint panel and in <strong>Colour ideas</strong> (in a recipe and in Colour Lab), tap <strong>Shop links</strong> to open a small fold-out. It has <strong>Add to shopping list</strong> (Undo is offered) and a plain search link for each shop that sells the paint. Paints you own show nothing. They're plain links, the same as in Buy these: Minifolio isn't paid for them, and only the paint's name goes to the shop. To hide every shop link and shop button, including Buy these, untick <strong>Settings → Shop links</strong>. Your shopping list stays.</li>
-            <li id="help-ideas-for"><strong>Ideas for this</strong> (Pro preview): open a step in a recipe, or a paint in <strong>Your Palette</strong>, and tap <strong>Ideas for this</strong> under the paint. <strong>Colour Lab</strong> (in Painting) opens with that paint's ideas at the top: colours that go with it, colour plans with a similar colour, and detail recipes and basing tips with a step of a similar colour. Your own paints come first. <strong>Show steps</strong> or <strong>Show tip</strong> opens that recipe or tip in full in the Compendium. <strong>Back to recipe</strong> or <strong>Back to Your Palette</strong> (or the phone's Back button) takes you to the same step or paint. A paint with no colour set, or a basing material, has no button, as there is nothing to match. Tapping the Painting tab itself shows the whole Colour Lab again.</li>
+            <li id="help-ideas-for"><strong>Ideas for this</strong> (Pro preview): open a step in a recipe, or a paint in <strong>Your Palette</strong>, and tap <strong>Ideas for this</strong> under the paint. <strong>Colour Lab</strong> (in Painting) opens with that paint's ideas at the top: colours that go with it, colour plans with a similar colour, and detail recipes and basing tips with a step of a similar colour. Your own paints come first. <strong>Show steps</strong> or <strong>Show tip</strong> opens that recipe or tip in full in <strong>Tools and Settings → Guides</strong>. <strong>Back to recipe</strong> or <strong>Back to Your Palette</strong> (or the phone's Back button) takes you to the same step or paint. A paint with no colour set, or a basing material, has no button, as there is nothing to match. Tapping the Painting tab itself shows the whole Colour Lab again.</li>
             <li id="help-wheel-order">In the <strong>Colour Lab</strong> wheel, each group shows 12 paints first: yours, then the rest of Your Palette, then paints from popular ranges, then other brands. Each part runs from dark to light. <strong>Show all</strong> lists the rest.</li>
             <li id="help-fit">Suggested paints (Colour ideas, colour plans, detail recipes, basing, and the colour wheel's paint panel) show a fit: <strong>Good fit</strong>, <strong>Okay fit</strong> or <strong>Poor fit</strong>, judged by how different the two colours look. A paint you own comes first when it is a Good or Okay fit. If your best paint is a poor fit, the closest paint overall comes first and your own is second, marked <strong>Yours, poor fit</strong>. Metallic, Contrast, wash and similar paints are allowed a little more room.</li>
             <li id="help-paint-to-recipe">In <strong>Colour Lab</strong>, a colour idea, and a colour wheel paint once you open it, has <strong>Use in a recipe</strong> and <strong>Add to a recipe</strong>. Use in a recipe starts a new recipe with that paint in step 1. Add to a recipe lets you choose a recipe, then one of its steps or a new step, and saves it straight away. Both have an <strong>Undo</strong>. A paint that is not in Your Palette is added as <strong>Not owned</strong>, so it reaches your shopping list once a recipe uses it.</li>
             <li id="help-similar-paints">In <strong>Colour Lab</strong>, those same paints also have <strong>Similar paints</strong>. It opens a pop-up with <strong>Best match</strong>: up to three paints from different brands, closest first, whether or not you own them, each with its fit. <strong>Lighter</strong> and <strong>Darker</strong> look for a lighter or darker colour. <strong>Your closest</strong> shows the nearest paints you own, with the same fit; it is left out when your closest paint is already the best match, and says so when none of your paints is close. When none is close, it may also show <strong>Try mixing</strong>: one or two blends of two paints you own, with the parts to use, next to the colour you want. It is a rough guess from screen colours, so test it on a palette first. <strong>Add to recipe step</strong> puts the two paints and the ratio into a recipe step, with an <strong>Undo</strong>. Metallics, washes, shades, Contrast, glazes and other special paints are never mixed. On a phone the two cards are tabs (<strong>Best</strong> and <strong>Yours</strong>, with the arrow keys); on a wider screen they sit side by side. A paint you do not own can go on your shopping list, with an <strong>Undo</strong>. Varnishes, mediums, thinners and other paints that are not colours are never offered.</li>
             <li id="help-ask-mentor"><strong>Picker</strong> (Pro preview): in <strong>Painting → Colour Lab</strong>, open <strong>Picker</strong> (the round <strong>Ask Mentor</strong> button opens it too), choose a <strong>Base colour</strong>, a <strong>Second colour</strong> if you like, and a <strong>Part</strong> (Armour, Eyes, Weapon or Base). Under each colour you get up to three paints that go with it for that part, with the reason, and your own paints come first. A paint of yours that is a poor match says <strong>Yours, poor fit</strong>. Under the picks are tips for that part, each with its colours and, where it has one, a link to the creator it credits; a tip about your colour comes first. The tips are samples for now. Each paint row has <strong>Use in a recipe</strong>, <strong>Add to a recipe</strong> and <strong>Similar paints</strong> (for alternatives), and a paint you do not own also has <strong>Add to shopping list</strong> and <strong>Shop links</strong> (plain links to shops; Settings can switch the links off). Each one says what it did and has an <strong>Undo</strong>. It uses the same colour rules as Colour ideas, and the picks are kept only while the app is open.</li>
-            <li id="help-compendium-ticks">In <strong>Colour Lab</strong> and the <strong>Compendium</strong>, tick the paints you want from a colour plan or detail recipe, or press <strong>Select all</strong>. <strong>Add to shopping list</strong> is grey until you tick something, then adds only the ticked paints. A paint you own, or that is already on the list, shows a mark instead of a tick box. <strong>Copy as text</strong> and <strong>Save into a new recipe</strong> use the ticked paints, or all of them if none is ticked.</li>
+            <li id="help-compendium-ticks">In <strong>Colour Lab</strong> and <strong>Guides</strong>, tick the paints you want from a colour plan or detail recipe, or press <strong>Select all</strong>. <strong>Add to shopping list</strong> is grey until you tick something, then adds only the ticked paints. A paint you own, or that is already on the list, shows a mark instead of a tick box. <strong>Copy as text</strong> and <strong>Save into a new recipe</strong> use the ticked paints, or all of them if none is ticked.</li>
             <li><strong>Schemes</strong> (top of the Painting tab) group the recipes you use for one faction, e.g. "My Blue Army" = armour, trim, lenses and base. Press <strong>+ New scheme</strong>, name it, type the faction and tick its recipes.</li>
             <li>A scheme card lists its recipes as rows (name, part, steps, colour dots). Tap a row to open that recipe. A scheme with more than 3 recipes shows the first 3: tap <strong>Show all</strong> for the rest.</li>
             <li><strong>Apply to … units</strong> links a scheme's recipes to every unit in its faction that doesn't have them all yet. Recipes a unit already has stay linked.</li>

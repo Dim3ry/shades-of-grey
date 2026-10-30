@@ -9,6 +9,7 @@ What changed:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import open_settings
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
@@ -41,7 +42,7 @@ def main():
 
         print("\n--- A6: Settings count matches the Units tab ---")
         t.load(page, units=[unit(i, 10) for i in range(1, 7)])
-        page.click('nav button[data-tab="settings"]')
+        open_settings(page)
         summary = page.evaluate("() => document.getElementById('data-summary').textContent")
         check("Settings says 6 units, 60 models", summary.startswith("6 units, 60 models"), summary)
 
@@ -56,7 +57,7 @@ def main():
         print("\n--- C6: Works offline ---")
         page.evaluate("() => navigator.serviceWorker.ready")
         page.reload(); page.wait_for_function("() => !!document.getElementById('toggle-add')")
-        page.click('nav button[data-tab="settings"]')
+        open_settings(page)
         page.wait_for_function("() => document.getElementById('offline-note').textContent === 'Works offline.'", timeout=8000)
         check("offline note shown once the offline copy is ready", True)
         for width in (390, 360):

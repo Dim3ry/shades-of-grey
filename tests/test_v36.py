@@ -28,7 +28,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, subprocess, sys
 from playwright.sync_api import sync_playwright
-from launch_helpers import app_ready, quiet
+from launch_helpers import app_ready, quiet, tap_tab
 from launch_helpers import leave_launch, wait_settled
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -150,14 +150,14 @@ def main():
             print("SKIP (entry no longer in the public Updates list): " + 'the Updates entry says colour wheel, Compendium, Pro preview, You own this, Show other pai')
         policy = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
         policy = policy.group(1) if policy else ""
-        wheel_code = app[app.index("v36: THE COLOUR WHEEL"):app.index("function renderCompendium(")]
+        wheel_code = app[app.index("v36: THE COLOUR WHEEL"):app.index("function renderGuides(")]
         check("the wheel code has no network code, no storage, no innerHTML, no links and no shop wording",
               not re.search(r"\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage|sessionStorage|\beval\s*\(|new Function|insertAdjacentHTML|outerHTML|innerHTML|createElement\('a'\)|createElement\(\"a\"\)|href|affiliate|\bshop\b", wheel_code),
               [mm.group(0) for mm in re.finditer(r"(fetch|innerHTML|href|affiliate)[^\n]*", wheel_code)][:3])
         help_text = page.evaluate("() => document.getElementById('help-tabs').textContent")
         # v75: HELP-3 dropped the wheel description from this line
-        check("Help still names five tabs and now says the Compendium has a colour wheel", all(w in help_text for w in ["four sections", "Compendium"]), help_text)   # U4a: four sections around Ask Mentor
-        check("the Pro preview label is still on the Compendium", page.locator("#view-compendium .pro-pill").inner_text() == "Pro preview")
+        check("Help still names five tabs and now says the Compendium has a colour wheel", all(w in help_text for w in ["four sections", "Guides"]), help_text)   # U4a: four sections around Ask Mentor
+        check("the Pro preview label is still on the Compendium", page.locator("#view-guides .pro-pill").inner_text() == "Pro preview")
 
         # ---------- 2. The shape of the wheel ----------
         print("\n--- 2. The shape of the wheel ---")
@@ -554,11 +554,11 @@ def main():
         # ---------- 13. Nothing else changed ----------
         print("\n--- 13. Nothing else changed ---")
         load(page, paints=WPAINTS)
-        for tab, view in [("dashboard", "view-dashboard"), ("units", "view-units"), ("recipes", "view-recipes"), ("settings", "view-settings"), ("compendium", "view-compendium")]:
+        for tab, view in [("dashboard", "view-dashboard"), ("units", "view-units"), ("recipes", "view-recipes"), ("settings", "view-settings"), ("compendium", "view-guides")]:
             blur(page)
-            page.click(f'nav button[data-tab="{tab}"]')
+            tap_tab(page, tab)
             wait_settled(page)   # v92 (Mo3a): the old section slides out over 240 ms; only the new one is showing after that
-            check(f"the {tab} tab opens its own page and hides the others", page.is_visible(f"#{view}") and sum(page.is_visible(f"#{v}") for v in ["view-dashboard", "view-units", "view-recipes", "view-settings", "view-compendium"]) == 1)
+            check(f"the {tab} tab opens its own page and hides the others", page.is_visible(f"#{view}") and sum(page.is_visible(f"#{v}") for v in ["view-dashboard", "view-units", "view-recipes", "view-settings", "view-guides"]) == 1)
         open_comp(page)
         # v37: the five parts now sit under folding headings (each opened by open_comp), so look inside them as well as at the top level
         # v81: the wheel, the sections and the footnote now sit inside two parts (compendium-split), so the lists also look one level down.

@@ -25,7 +25,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, re, subprocess, sys
 from playwright.sync_api import sync_playwright
-from launch_helpers import app_ready, quiet
+from launch_helpers import app_ready, quiet, tap_tab
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lab_helpers as labh   # X1: the old all-in-one Compendium page (see lab_helpers.py)
@@ -133,7 +133,7 @@ def main():
             print("SKIP (entry no longer in the public Updates list): " + 'the Updates entry says Compendium, Pro preview, heading, Themes, Combinations, all 24 sche')
         policy = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
         policy = policy.group(1) if policy else ""
-        new_code = app[app.index("v37: the group buttons"):app.index("v35: door = where this is shown")] + app[app.index("v37: one folding part"):app.index("function renderCompendium(")]
+        new_code = app[app.index("v37: the group buttons"):app.index("v35: door = where this is shown")] + app[app.index("v37: one folding part"):app.index("function renderGuides(")]
         check("the new code has no network code, no storage, no innerHTML, no links and no shop wording",
               not re.search(r"\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage|sessionStorage|\beval\s*\(|new Function|insertAdjacentHTML|outerHTML|innerHTML|createElement\('a'\)|createElement\(\"a\"\)|href|affiliate|\bshop\b", new_code),
               [mm.group(0) for mm in re.finditer(r"(fetch|innerHTML|href|affiliate)[^\n]*", new_code)][:3])
@@ -143,7 +143,7 @@ def main():
         help_text = page.evaluate("() => document.getElementById('help-tabs').textContent")
         # v75: HELP-3 dropped the wheel and switch description from this line
         check("Help still names five tabs and now says the parts open and close under headings and that Starter schemes has a Themes | Combinations switch",
-              all(w in help_text for w in ["four sections", "Compendium"]), help_text)   # U4a: four sections around Ask Mentor
+              all(w in help_text for w in ["four sections", "Guides"]), help_text)   # U4a: four sections around Ask Mentor
 
         # ---------- 2. Folding sections ----------
         print("\n--- 2. Folding sections ---")
@@ -204,8 +204,8 @@ def main():
         page.reload()
         app_ready(page)
         t.leave_launch(page)   # U4b (v89): a reload shows the start page; tap Compendium to go back in
-        labh.legacy_compendium(page); page.evaluate("() => renderCompendium()")   # X1: the old all-in-one page again after the reload
-        check("after the app is closed and opened again (a reload) everything starts closed again", page.is_visible("#view-compendium") and all(not is_open(page, k) for k in KEYS))
+        labh.legacy_compendium(page); page.evaluate("() => renderGuides()")   # X1: the old all-in-one page again after the reload
+        check("after the app is closed and opened again (a reload) everything starts closed again", page.is_visible("#view-guides") and all(not is_open(page, k) for k in KEYS))
         load(page, paints=PAINTS, recipes=RECIPES, units=UNITS)
         open_tab(page)
         closed_height = page.evaluate("() => document.getElementById('compendium-body').offsetHeight")
@@ -426,7 +426,7 @@ def main():
         check("the new buttons are built from fixed text only (no HTML in the headings, the switch or the group buttons)",
               page.evaluate("() => [...document.querySelectorAll('.fold-button, #cmp-starter-view .chip, #cmp-starter-combos .chip')].every(c => [...c.children].every(k => k.tagName === 'SPAN'))"))
         state_ok = page.evaluate("""() => { compendiumState.view = '<img src=x onerror="window.__pwned=7">'; compendiumState.combo = '<b>x</b>'; compendiumState.mood = '<b>y</b>'; compendiumState.open = { starter: true, '<i>': true };
-            renderCompendium(); return window.__pwned === undefined && document.querySelectorAll('#compendium-body img[src=x]').length === 0 && document.querySelectorAll('#cmp-starter-chips .chip').length === 0; }""")
+            renderGuides(); return window.__pwned === undefined && document.querySelectorAll('#compendium-body img[src=x]').length === 0 && document.querySelectorAll('#cmp-starter-chips .chip').length === 0; }""")
         check("odd saved choices (HTML in the view, group or open state) change nothing and break nothing", state_ok)
         load(page, paints=PAINTS, recipes=RECIPES, units=UNITS)
         open_tab(page)
@@ -471,7 +471,7 @@ def main():
             page.set_viewport_size({"width": width, "height": 800})
             load(page, paints=PAINTS, recipes=RECIPES, units=UNITS)
             open_tab(page)
-            geo = page.evaluate("""() => { const c = document.querySelector('#view-compendium .card').getBoundingClientRect();
+            geo = page.evaluate("""() => { const c = document.querySelector('#view-guides .card').getBoundingClientRect();
                 return [...document.querySelectorAll('.fold-button')].map(b => { const r = b.getBoundingClientRect(); return { h: r.height, w: r.width, l: r.left - c.left, rr: c.right - r.right }; }); }""")
             check(f"at {width} px the six headings are 44 px tall or more, full width inside the card, and nothing scrolls sideways",
                   len(geo) == 6 and all(g["h"] >= 44 and g["l"] >= -0.5 and g["rr"] >= -0.5 and g["w"] > 250 for g in geo) and no_sideways(page), geo)
@@ -481,20 +481,20 @@ def main():
             page.click('#cmp-basing-groups [data-basing-group="all"]')
             page.wait_for_timeout(100)
             check(f"at {width} px nothing scrolls sideways with all five parts open and every list showing", no_sideways(page))
-            sw_geo = page.evaluate("""() => { const c = document.querySelector('#view-compendium .card').getBoundingClientRect();
+            sw_geo = page.evaluate("""() => { const c = document.querySelector('#view-guides .card').getBoundingClientRect();
                 return [...document.querySelectorAll('#cmp-starter-view .chip')].map(b => { const r = b.getBoundingClientRect(); return { h: r.height, w: r.width, in: r.left >= c.left - 0.5 && r.right <= c.right + 0.5, text: b.scrollWidth <= b.clientWidth + 1 }; }); }""")
             check(f"at {width} px the Themes and Combinations buttons are 44 px tall, the same width, inside the card, with the words fully inside",
                   len(sw_geo) == 2 and all(g["h"] >= 44 and g["in"] and g["text"] for g in sw_geo) and abs(sw_geo[0]["w"] - sw_geo[1]["w"]) < 1, sw_geo)
             page.click('#cmp-starter-view [data-view="combos"]')
             page.wait_for_timeout(100)
-            combo_geo = page.evaluate("""() => { const c = document.querySelector('#view-compendium .card').getBoundingClientRect();
+            combo_geo = page.evaluate("""() => { const c = document.querySelector('#view-guides .card').getBoundingClientRect();
                 return [...document.querySelectorAll('#cmp-starter-combos .chip')].map(b => { const r = b.getBoundingClientRect(), o = (b.closest('.chips-scroll') || b).getBoundingClientRect(); return { h: r.height, in: o.left >= c.left - 0.5 && o.right <= c.right + 0.5, text: b.scrollWidth <= b.clientWidth + 1 }; }); }""")
             check(f"at {width} px the eight pairing group buttons are all inside the card (or in a one-line row that slides sideways inside it), at least 36 px tall, with their words fully inside, and nothing scrolls sideways",
                   len(combo_geo) == 8 and all(g["h"] >= 36 and g["in"] and g["text"] for g in combo_geo) and no_sideways(page), combo_geo)
             page.click('#cmp-starter-combos [data-combo="all"]')
             page.click('#cmp-starter-chips [data-scheme="red-grey"]')
             page.wait_for_timeout(120)
-            outside = page.evaluate("""() => { const c = document.querySelector('#view-compendium .card').getBoundingClientRect();
+            outside = page.evaluate("""() => { const c = document.querySelector('#view-guides .card').getBoundingClientRect();
                 return [...document.querySelectorAll('#compendium-body *')].filter(e => { const r = (e.closest('.chips-scroll') || e).getBoundingClientRect();   // v49: judged by the sliding row it's clipped to
                     return r.width > 0 && (r.right > c.right + 0.5 || r.left < c.left - 0.5); }).map(e => e.id || e.className.baseVal || e.className || e.tagName); }""")
             check(f"at {width} px everything in the Compendium is inside the card with Combinations, All and a scheme open", not outside and no_sideways(page), outside[:5])
@@ -533,7 +533,7 @@ def main():
                 bad = {k: round(contrast(rgb(v[0]), rgb(v[1])), 2) for k, v in col.items() if contrast(rgb(v[0]), rgb(v[1])) < 4.5}
                 tag = f"{appearance} {width}px"
                 check(f"{tag}: the headings, the switch, the group and scheme buttons, the plain line and the text all have contrast of at least 4.5", not bad and len(col) >= 10, (bad, len(col)))   # v59: the plain line under the group buttons is gone, so one fewer
-                edge = page.evaluate("""() => { const open = getComputedStyle(document.getElementById('cmp-fold-starter-button')), card = getComputedStyle(document.querySelector('#view-compendium .card')).backgroundColor;
+                edge = page.evaluate("""() => { const open = getComputedStyle(document.getElementById('cmp-fold-starter-button')), card = getComputedStyle(document.querySelector('#view-guides .card')).backgroundColor;
                     return { border: open.borderTopColor, card }; }""")
                 check(f"{tag}: an open heading has an outline you can see (contrast 3 or more against the card)", contrast(rgb(edge["border"]), rgb(edge["card"])) >= 3, edge)
                 mark = page.evaluate("() => { const b = document.getElementById('cmp-fold-starter-button'), m = b.querySelector('.fold-mark'); return [getComputedStyle(m).borderRightColor, getComputedStyle(b).color, getComputedStyle(b).backgroundColor]; }")
@@ -546,11 +546,11 @@ def main():
         print("\n--- 9. Nothing else changed ---")
         load(page, paints=PAINTS, recipes=RECIPES, units=UNITS)
         labh.legacy_compendium(page)   # X1: the old all-in-one page
-        for tab, view in [("dashboard", "view-dashboard"), ("units", "view-units"), ("recipes", "view-recipes"), ("settings", "view-settings"), ("compendium", "view-compendium")]:
+        for tab, view in [("dashboard", "view-dashboard"), ("units", "view-units"), ("recipes", "view-recipes"), ("settings", "view-settings"), ("compendium", "view-guides")]:
             blur(page)
-            page.click(f'nav button[data-tab="{tab}"]')
+            tap_tab(page, tab)
             wait_settled(page)   # v92 (Mo3a): the old section slides out over 240 ms; only the new one is showing after that
-            check(f"the {tab} tab opens its own page and hides the others", page.is_visible(f"#{view}") and sum(page.is_visible(f"#{v}") for v in ["view-dashboard", "view-units", "view-recipes", "view-settings", "view-compendium"]) == 1)
+            check(f"the {tab} tab opens its own page and hides the others", page.is_visible(f"#{view}") and sum(page.is_visible(f"#{v}") for v in ["view-dashboard", "view-units", "view-recipes", "view-settings", "view-guides"]) == 1)
         order = page.evaluate("() => [...document.querySelectorAll('#compendium-body > :not(.compendium-split), #compendium-body .compendium-split > * > *')].flatMap(e => e.classList.contains('more-info') ? [...e.querySelectorAll('.more-info-panel > *')] : [e]).map(e => e.id).filter(Boolean)")
         check("the Compendium is: the intro, the wheel, the six folding parts (v71: Ask the Mentor first), then the footnote",
               order == ["cmp-intro", "cmp-wheel-block", "cmp-fold-mentor", "cmp-fold-ideas", "cmp-fold-history", "cmp-fold-starter", "cmp-fold-detail", "cmp-fold-basing", "cmp-foot"], order)

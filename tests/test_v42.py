@@ -346,7 +346,7 @@ def main():
         page.evaluate("() => { const u = JSON.parse(localStorage.getItem('shades-of-grey-recipes')); }")
         load(page, paints=hp, recipes=hostile_recipes, units=hostile_units)
         c.open_comp(page)
-        page.evaluate("() => { compendiumState.faction = factionKey(" + json.dumps(HOSTILE) + "); renderCompendium(); }")
+        page.evaluate("() => { compendiumState.faction = factionKey(" + json.dumps(HOSTILE) + "); renderGuides(); }")
         page.wait_for_timeout(200)
         c.open_comp(page)
         f = fold(page, "#cmp-faction-history")

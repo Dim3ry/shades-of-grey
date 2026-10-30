@@ -3,7 +3,7 @@
 New behaviour only:
 1. Tapping a menu segment slides the sections: later in the bar slides left (new one comes in from the right), earlier slides right.
    While it moves the old section is a see-through layer that is hidden from screen readers and cannot be tapped; afterwards nothing is left.
-2. Tapping the section you are in, the Settings cog and Help / Updates do not move. A jump chosen by code and leaving the start page fade only.
+2. Tapping the section you are in, moving between the pages of Tools and Settings does not move. A jump chosen by code and leaving the start page fade only.
 3. Scroll position, keyboard focus and the phone's Back button behave as before.
 4. A recipe opening on a phone: the list steps back and the detail slides in; closing reverses it. At 1280 px: a fade only.
 5. Reduced motion: nothing moves at all.
@@ -87,8 +87,11 @@ def main():
         print("\n--- 2. What does not slide ---")
         tap(page, "units")
         check("tapping the section you are in does not move", page.evaluate("() => document.getAnimations().length") == 0)
-        page.click('.cog[data-tab="settings"]')
-        check("the Settings cog does not move", page.evaluate("() => document.getAnimations().length") == 0)
+        # X2: there is no cog; Settings, Help and Updates are pages of the fourth section, so switching between them (same section) is instant
+        tap(page, "guides")
+        wait_settled(page)
+        page.click('#more-seg button[data-page="settings"]')
+        check("moving between the pages of Tools and Settings does not move", page.evaluate("() => document.getAnimations().length") == 0)
         page.click('#more-seg button[data-page="help"]')
         check("Help does not move", page.evaluate("() => document.getAnimations().length") == 0)
         tap(page, "dashboard")
@@ -149,7 +152,7 @@ def main():
         page.emulate_media(reduced_motion="reduce")
         page.set_viewport_size({"width": 390, "height": 900})
         tap(page, "units")
-        tap(page, "compendium")
+        tap(page, "guides")   # X2: the fourth segment
         check("sections switch with no animation and no layer", page.evaluate("() => document.getAnimations().length") == 0
               and page.evaluate("() => document.querySelectorAll('.mo-out').length") == 0)
         load(page, units=UNITS, recipes=[RECIPE])

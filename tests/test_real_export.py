@@ -7,6 +7,7 @@ The port comes from the SOG_PORT environment variable, or 8765 if it isn't set."
 import json, os, re, sys
 from collections import Counter
 from playwright.sync_api import sync_playwright
+from launch_helpers import open_settings
 import fold_opener   # v54: the Import card folds shut; this older test works inside it
 
 PORT = os.environ.get("SOG_PORT", "8765")
@@ -47,7 +48,7 @@ def main():
         page.evaluate("() => { localStorage.clear(); localStorage.setItem('mini-tracker-models', '[]'); }")
         page.goto(f"{BASE}/index.html")
         page.wait_for_timeout(300)
-        page.click('nav button[data-tab="settings"]')
+        open_settings(page)
         page.click("#wh-button")
         page.fill("#wh-text", export)
         page.click("#wh-read")

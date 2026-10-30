@@ -16,6 +16,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import open_settings, wait_settled
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
@@ -61,7 +62,7 @@ def main():
             page.emulate_media(color_scheme=scheme)
             for width in (360, 390, 899):
                 page.set_viewport_size({"width": width, "height": 900})
-                page.click("[data-tab='settings']"); page.click("[data-page='updates']")
+                open_settings(page); page.click("[data-page='updates']")
                 b = boxes(page)
                 check(f"{scheme} {width}: stacked, feedback first, same left edge", b["firstIsSide"] and b["sideTop"] < b["mainTop"] and abs(b["sideX"] - b["mainX"]) < 1, b)
                 check(f"{scheme} {width}: no sideways scroll", no_sideways(page))
@@ -75,6 +76,7 @@ def main():
         page.set_viewport_size({"width": 1920, "height": 900})
         check("content is at most 1280 px wide on a 1920 px screen", boxes(page)["mainEl"] <= 1280.5, boxes(page)["mainEl"])
         page.click("[data-tab='dashboard']")
+        wait_settled(page)   # X2: Updates is in the fourth section now, so leaving it slides and the old page is a layer until the move ends
         check("Updates stays hidden when another page is open", page.evaluate("() => getComputedStyle(document.getElementById('view-updates')).display") == "none")
 
         print("\n--- 4. both-views.html ---")

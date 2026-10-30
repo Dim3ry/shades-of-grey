@@ -88,7 +88,7 @@ def main():
         new_code = app[app.index("v50: the Recipes tab, decluttered"):app.index("function renderRecipeList(")]
         new_code += app[app.index("function buildStepEditor("):app.index("function buildPaintEditor(")]
         check("the new code builds nothing with innerHTML or insertAdjacentHTML", not re.search(r"innerHTML|insertAdjacentHTML", new_code))
-        wheel = (app.index("v36: THE COLOUR WHEEL"), app.index("function renderCompendium("))
+        wheel = (app.index("v36: THE COLOUR WHEEL"), app.index("function renderGuides("))
         v37 = (app.index("v37: the group buttons"), app.index("v35: door = where this is shown"))
         helpers = [app.index("function foldStep("), app.index("function buildHaveKey("), app.index("function stepFold(")]
         check("the new helpers sit outside the code the v36 and v37 tests scan",

@@ -13,6 +13,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import open_settings
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
@@ -72,7 +73,7 @@ def main():
 
         print("\n--- 3. Settings notes ---")
         load(page, units=[])
-        page.click('nav button[data-tab="settings"]')
+        open_settings(page)
         page.wait_for_timeout(150)
         check("Counting visits note is just On or Off", page.text_content("#counting-note").strip() in ("On.", "Off."), page.text_content("#counting-note"))
         check("Shop links note is just On or Off", page.text_content("#shoplinks-note").strip() in ("On.", "Off."), page.text_content("#shoplinks-note"))

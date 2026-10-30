@@ -23,7 +23,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import colorsys, json, os, re, subprocess, sys, time
 from playwright.sync_api import sync_playwright
-from launch_helpers import app_ready, quiet
+from launch_helpers import app_ready, quiet, open_settings
 from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -136,7 +136,7 @@ def active(page):
 
 def go_settings(page):
     blur(page)
-    page.click('nav button[data-tab="settings"]')
+    open_settings(page)
     page.wait_for_timeout(150)
 
 def open_shopping(page):
@@ -191,7 +191,7 @@ def main():
               and "door.shops" in app[app.index("function buildIdeasList"):app.index("function buildColourIdeasCard")] and "door.shops" in app[app.index("function buildPaintPanel"):app.index("function togglePaintPanel")])
         check("the Your schemes, Starter schemes, Detail recipes, Basing tips and wheel list code has no shop code in it",
               "buildShopFoldout" not in app[app.index("function buildFactionHistory"):app.index("function buildIdeasList")]
-              and "buildShopFoldout" not in app[app.index("function buildWheelDetail"):app.index("function renderCompendium(")])
+              and "buildShopFoldout" not in app[app.index("function buildWheelDetail"):app.index("function renderGuides(")])
 
         # ---------- 2. The tracking-link slot ----------
         print("\n--- 2. The tracking-link slot (SHOPS.extra) ---")
@@ -541,7 +541,7 @@ def main():
 
         # ---------- 9. Phone widths, touch, keyboard ----------
         print("\n--- 9. Phone widths 360, 375, 390 and 400, a touch phone, the keyboard ---")
-        GEO = """() => { const card = document.querySelector('#view-compendium .card').getBoundingClientRect(), p = document.getElementById('cmp-paint-panel');
+        GEO = """() => { const card = document.querySelector('#view-guides .card').getBoundingClientRect(), p = document.getElementById('cmp-paint-panel');
             const inside = [...p.querySelectorAll('.shop-more *, .shop-more')].filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && (r.right > card.right + 0.5 || r.left < card.left - 0.5); }).map(e => e.className || e.tagName);
             const small = [...p.querySelectorAll('.shop-more summary, .shop-more button, .shop-more a')].filter(e => e.getBoundingClientRect().height < 43.5 && e.getBoundingClientRect().height > 0).map(e => e.textContent);
             return { inside, small, sw: document.documentElement.scrollWidth, vw: window.innerWidth }; }"""
@@ -644,7 +644,7 @@ def main():
                 page.keyboard.press("Shift+Tab")
                 page.keyboard.press("Tab")
                 fo = page.evaluate("() => { const cs = getComputedStyle(document.activeElement); return [document.activeElement.tagName, cs.outlineColor, cs.outlineStyle, parseFloat(cs.outlineWidth)]; }")
-                card_bg = page.evaluate("() => getComputedStyle(document.querySelector('#view-compendium .card')).backgroundColor")
+                card_bg = page.evaluate("() => getComputedStyle(document.querySelector('#view-guides .card')).backgroundColor")
                 check(f"{tag}: a Shop links line that has the keyboard focus shows an outline (contrast 3 or more against the card)", fo[0] == "SUMMARY" and fo[2] != "none" and fo[3] >= 2 and contrast(rgb(fo[1]), rgb(card_bg)) >= 3, fo)
                 check(f"{tag}: nothing scrolls sideways", no_sideways(page))
                 page.evaluate("() => document.querySelector('#cmp-paint-panel .shop-more[open]').scrollIntoView({ block: 'center' })")

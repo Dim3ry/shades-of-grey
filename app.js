@@ -3736,12 +3736,12 @@
       dashboard: document.getElementById("view-dashboard"),
       units: document.getElementById("view-units"),
       recipes: document.getElementById("view-recipes"),
-      compendium: document.getElementById("view-compendium"),   // v35
+      guides: document.getElementById("view-guides"),   // v35 as the Compendium; X2: Guides, the first page of Tools and Settings
       settings: document.getElementById("view-settings"),
       updates: document.getElementById("view-updates"),
       help: document.getElementById("view-help"),
     };
-    const tabButtons = document.querySelectorAll("nav button[data-tab]");   // v40: not the basket. U4a: the four menu segments and the Settings cog in the header
+    const tabButtons = document.querySelectorAll("nav button[data-tab]");   // v40: not the basket. U4a: the four menu segments
 
     // U4a: the menu bar is drawn for a 390 px wide phone and scaled down to fit narrower screens (scale = min(1, width / 390));
     // wider screens keep it at full size, centred. The CSS reads --arc-scale (see ".arc").
@@ -3752,12 +3752,14 @@
     fitMenuBar();
     window.addEventListener("resize", fitMenuBar);
 
-    // v21.9: Settings, Help and Updates are ONE main tab (Settings) with a Settings / Help /
-    // Updates switch (#more-seg) at the top. The page names are still "settings", "help" and
-    // "updates", so a saved settings.tab of "help" or "updates" (from before v21.9) opens the
-    // right page, and nothing about how it's saved has changed.
-    const MORE_PAGES = ["settings", "help", "updates"];
+    // v21.9, X2: Guides, Settings, Help and Updates are ONE section (Tools and Settings; the bar and the start circle say Tools) with a
+    // Guides / Settings / Help / Updates switch (#more-seg) at the top. The page names are "guides", "settings", "help" and "updates", so a
+    // saved settings.tab of "settings", "help" or "updates" opens the right page. A saved "compendium" (the old tab) opens Guides, which
+    // holds the Detail recipes and Basing tips that were all it had left (TAB_ALIASES; the same goes for the address #compendium).
+    const MORE_PAGES = ["guides", "settings", "help", "updates"];
+    const TAB_ALIASES = { compendium: "guides" };
     const moreSeg = document.getElementById("more-seg");
+    const moreTitle = document.getElementById("more-title");
     moreSeg.querySelectorAll("button").forEach(b => b.addEventListener("click", () => showTab(b.dataset.page)));
 
     // U4b: the launch page. It shows every time the app is opened fresh (a new page load, which includes the phone throwing the page away
@@ -3890,15 +3892,17 @@
       moveEnd = done;
       anims[anims.length - 1].onfinish = () => { if (moveEnd === done) endMove(); };
     }
-    const BAR_ORDER = ["dashboard", "units", "recipes", "compendium"];   // the menu bar's order: later = slide left, earlier = slide right
+    const BAR_ORDER = ["dashboard", "units", "recipes", "guides"];   // the menu bar's order: later = slide left, earlier = slide right
+    const barOf = (name) => (MORE_PAGES.includes(name) ? "guides" : name);   // the bar segment a page belongs to (Settings, Help and Updates are in the fourth)
     function canMove() { return !reducedMotion() && !!Element.prototype.animate; }
 
     // how: "slide" only for a tap on a menu segment. Anything chosen by code (an import, a jump, the Mentor button) or leaving the
-    // start page gets a short fade at most; Settings, Help and Updates (the cog) keep their instant switch.
+    // start page gets a short fade at most. Moving between the pages inside one section (Guides, Settings, Help, Updates) is an instant switch.
     function showTab(name, how) {
+      if (TAB_ALIASES[name]) name = TAB_ALIASES[name];
       if (!views[name]) name = "dashboard";
-      const before = launching ? null : (views[settings.tab] ? settings.tab : null);
-      const move = canMove() && BAR_ORDER.includes(name) && before !== name && (before === null || BAR_ORDER.includes(before)) ? (how === "slide" && before ? "slide" : "fade") : "";
+      const before = launching ? null : (views[TAB_ALIASES[settings.tab] || settings.tab] ? (TAB_ALIASES[settings.tab] || settings.tab) : null);
+      const move = canMove() && before !== name && (before === null || barOf(before) !== barOf(name)) ? (how === "slide" && before ? "slide" : "fade") : "";
       const snap = move === "slide" ? moveSnap(document.querySelector("main"), views[before]) : null;
       if (move !== "slide" && before !== name) endMove();
       const leaving = launching ? launchMoveStart("ring") : (endLaunchMove(), null);
@@ -3906,36 +3910,37 @@
       if (name !== "units" && selectMode) closeSelect();   // v21.1: leaving Units ends select mode
       for (const [key, view] of Object.entries(views)) view.classList.toggle("hidden", key !== name);
       if (move === "slide") {
-        const dir = BAR_ORDER.indexOf(name) > BAR_ORDER.indexOf(before) ? 1 : -1;
+        const dir = BAR_ORDER.indexOf(barOf(name)) > BAR_ORDER.indexOf(barOf(before)) ? 1 : -1;
         moveRun(snap,
           [{ transform: "none", opacity: 1 }, { transform: `translateX(${-40 * dir}%)`, opacity: 0 }],
           views[name], [{ transform: `translateX(${40 * dir}%)`, opacity: 0 }, { transform: "none", opacity: 1 }], motionMs("--motion-med"));
       } else if (move === "fade") {
         views[name].animate([{ opacity: 0 }, { opacity: 1 }], { duration: motionMs("--motion-fast"), easing: "linear" });
       }
-      const mainTab = MORE_PAGES.includes(name) ? "settings" : name;   // the bottom-bar tab to light up
+      const mainTab = barOf(name);   // the bottom-bar tab to light up
       tabButtons.forEach(b => {
         if (b.dataset.tab === mainTab) b.setAttribute("aria-current", "page");
         else b.removeAttribute("aria-current");
       });
       launchMoveRun(leaving);
       moreSeg.classList.toggle("hidden", !MORE_PAGES.includes(name));
+      moreTitle.classList.toggle("hidden", !MORE_PAGES.includes(name));
       moreSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.page === name)));
       settings.tab = name;
       saveSettings();
       if (name === "settings") renderSettings();
-      if (name === "compendium") renderCompendium();   // v35: built fresh each time, from your palette and units as they are now
+      if (name === "guides") renderGuides();   // v35: built fresh each time, from your palette and units as they are now
       if (name === "dashboard") renderHistory();   // the graph needs to be on screen to measure its width
       window.scrollTo(0, 0);
     }
     tabButtons.forEach(b => b.addEventListener("click", () => {
-      if (b.dataset.tab === "compendium" || b.dataset.tab === "recipes") compendiumState.focus = null;   // v69: the tab itself opens the whole Compendium (X1: and the whole Colour Lab)
+      if (b.dataset.tab === "guides" || b.dataset.tab === "recipes") compendiumState.focus = null;   // v69: the tab itself opens the whole of Guides (X1: and the whole Colour Lab)
       // Tapping Recipes while already on it goes back to the list (unless you're mid-edit).
       if (b.dataset.tab === "recipes" && settings.tab === "recipes" && !recipeDraft && !launching) {
         openRecipeId = null;
         renderRecipes();
       }
-      showTab(b.dataset.tab, b.classList.contains("cog") ? undefined : "slide");
+      showTab(b.dataset.tab, "slide");
     }));
 
     // U4a: the round Ask Mentor button. There is no Mentor chat yet (X5 adds the pop-up), so it opens Painting > Colour Lab > Picker and scrolls to it.
@@ -4004,7 +4009,7 @@
       renderDashboard();
       renderUnits();
       renderRecipes();
-      if (settings.tab === "compendium") renderCompendium();   // v35: only while you are looking at it
+      if (settings.tab === "guides") renderGuides();   // v35: only while you are looking at it
       return ok;
     }
 
@@ -12522,13 +12527,13 @@
       };
       if (typeof DETAIL_RECIPES !== "undefined") part("Detail recipes with a similar colour", libraryLike(paint, DETAIL_RECIPES, r => r.steps), "detail", (r) => {
         st.open.detail = true; st.detailGroup = r.group; st.detail = r.key; st.search.detail = "";
-        showTab("compendium");   // X1: detail recipes stay in the Compendium for now
-        renderCompendium(`#${door.id("fold-detail")} [data-detail="${r.key}"]`);
+        showTab("guides");
+        renderGuides(`#${door.id("fold-detail")} [data-detail="${r.key}"]`);
       });
       if (typeof BASING_TIPS !== "undefined") part("Basing tips with a similar colour", libraryLike(paint, BASING_TIPS, t => t.paintSteps), "basing", (t) => {
         st.open.basing = true; st.basingGroup = t.group; st.basing = t.key; st.search.basing = "";
-        showTab("compendium");
-        renderCompendium(`#${door.id("fold-basing")} [data-basing="${t.key}"]`);
+        showTab("guides");
+        renderGuides(`#${door.id("fold-basing")} [data-basing="${t.key}"]`);
       });
       block.append(back, panel);
       body.appendChild(block);
@@ -13005,8 +13010,8 @@
       return out;
     }
 
-    // X1: the Compendium keeps only Detail recipes and Basing tips (X2 gives them their new home). The colour parts moved to Colour Lab.
-    function renderCompendium(focusSelector) {
+    // X2: Tools and Settings > Guides (it was the Compendium tab, which X1 had cut down to Detail recipes and Basing tips). The colour parts are in Colour Lab.
+    function renderGuides(focusSelector) {
       const body = document.getElementById("compendium-body");
       if (!body) return;
       body.replaceChildren();
@@ -13019,11 +13024,11 @@
         return p;
       };
       if (typeof MinifolioColour === "undefined") {
-        say("The colour part of the app did not load, so the Compendium cannot show anything. Close the app and open it again.");
+        say("The colour part of the app did not load, so Guides cannot show anything. Close the app and open it again.");
         return;
       }
       const door = compendiumDoor();
-      const redraw = (selector) => renderCompendium(selector);
+      const redraw = (selector) => renderGuides(selector);
 
       const intro = say("Detail recipes and basing tips, without needing a recipe. Tap a heading to open it, and type in a search box to find things fast. Use Copy as text to keep anything, or Save into a new recipe\u2026 to start a recipe from them.", "intro");
 
@@ -13037,7 +13042,7 @@
       fold("detail", "Detail recipes", parts.detail && (() => dropTitle(parts.detail())));
       fold("basing", "Basing tips", parts.basing && (() => dropTitle(parts.basing())));
       // v49: the introduction sits behind a More info at the top of the page
-      body.insertBefore(buildMoreInfo([intro], { state: infoState(door, "page"), id: compendiumId("page-info-panel"), label: "the Compendium" }), body.firstChild);
+      body.insertBefore(buildMoreInfo([intro], { state: infoState(door, "page"), id: compendiumId("page-info-panel"), label: "Guides" }), body.firstChild);
 
       if (focusSelector) {
         const target = body.querySelector(focusSelector);
@@ -13059,7 +13064,7 @@
     // After a choice inside a library part: redraw whichever page is showing it.
     function redrawLibrary(selector) {
       if (settings.tab === "recipes" && settings.recipeView === "colourlab") renderColourLab(selector);
-      else renderCompendium(selector);
+      else renderGuides(selector);
     }
     // Go to Painting > Colour Lab with one section open, like the basket goes to Shopping. then() runs once it is on screen.
     function openColourLab(section, then) {
@@ -17524,9 +17529,9 @@
     expireSafetyCopies();
     showIphoneWarning();
     renderUpdates();
-    // U4b: a fresh open shows the launch page, unless the address names a section (#dashboard, #units, #recipes, #compendium, #settings...).
+    // U4b: a fresh open shows the launch page, unless the address names a section (#dashboard, #units, #recipes, #guides, #settings, #help, #updates; the old #compendium opens Guides).
     const linkedTab = decodeURIComponent(location.hash.slice(1));
-    if (Object.prototype.hasOwnProperty.call(views, linkedTab)) showTab(linkedTab);
+    if (Object.prototype.hasOwnProperty.call(views, TAB_ALIASES[linkedTab] || linkedTab)) showTab(linkedTab);
     else { showTab(settings.tab); enterLaunch(); }
     launchMotionReady = true;
     if (upgradedStages) showToast("Stages updated: Parade ready added as the final stage", null, null, 8);
@@ -17637,7 +17642,7 @@
         if (openRecipeId !== null) return () => { openRecipeId = null; renderRecipes(); window.scrollTo(0, 0); };
         if (schemeDraft && settings.recipeView === "schemes") return () => closeScheme(true);
       }
-      if ((tab === "compendium" || (tab === "recipes" && settings.recipeView === "colourlab")) && compendiumState.focus) return leaveIdeasFor;   // v69 (X1: also in Colour Lab): back to the recipe step or palette paint
+      if ((tab === "guides" || (tab === "recipes" && settings.recipeView === "colourlab")) && compendiumState.focus) return leaveIdeasFor;   // v69 (X1: also in Colour Lab): back to the recipe step or palette paint
       if (tab === "units" && !unitsImport.classList.contains("hidden")) return closeUnitsImport;
       if (tab === "units" && selectMode) return closeSelect;   // v21.1: select mode's tick boxes
       if (tab && tab !== "dashboard") return () => showTab("dashboard");

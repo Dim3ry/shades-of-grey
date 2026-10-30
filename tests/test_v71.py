@@ -75,7 +75,7 @@ def main():
         page.wait_for_selector("#cmp-fold-mentor-button")
         first = page.evaluate("() => document.querySelector('#compendium-body .fold-button').id")
         check("Ask the Mentor is the first folding part and starts shut", first == "cmp-fold-mentor-button" and page.get_attribute("#cmp-fold-mentor-button", "aria-expanded") == "false")
-        check("the Compendium still carries the Pro preview label", "Pro preview" in page.inner_text("#view-compendium .card-head"))
+        check("the Compendium still carries the Pro preview label", "Pro preview" in page.inner_text("#view-guides .lab-pro"))   # X2: the label sits at the top of the Guides card (there is no card heading)
 
         print("\n--- 2. Empty state and the buttons ---")
         open_mentor(page)

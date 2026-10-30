@@ -21,7 +21,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
-from launch_helpers import app_ready, quiet
+from launch_helpers import app_ready, quiet, tap_tab
 from launch_helpers import leave_launch
 
 PORT = os.environ.get("SOG_PORT", "8765")
@@ -81,7 +81,7 @@ def existing(page, units, book=None, settings=None):
     leave_launch(page)   # U4b: tap through the start page
 
 def main_tab(page, name):
-    page.click(f'nav button[data-tab="{name}"]')
+    tap_tab(page, name)
     quiet(page)
 
 def sub_tab(page, name):

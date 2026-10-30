@@ -23,7 +23,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
-from launch_helpers import quiet
+from launch_helpers import quiet, tap_tab
 from launch_helpers import app_ready
 from launch_helpers import leave_launch
 
@@ -81,7 +81,7 @@ def load(page, settings=None, units=UNITS, book=BOOK):
 def tab(page, name):
     t.blur(page)   # the tab bar hides while a text box has the focus (a phone's keyboard is up)
     if name == "compendium": labh.legacy_compendium(page)   # X1: the old all-in-one page
-    page.click(f'nav button[data-tab="{name}"]')
+    tap_tab(page, name)
     quiet(page)
 
 def settle(page):
@@ -139,7 +139,7 @@ def sweep(page, tag, results_out, seen):
     page.fill("#palette-search", ""); t.blur(page)
     seg(page, "shopping"); look("shopping (shop buttons)")
     tab(page, "compendium")
-    for f in page.locator("#view-compendium .fold-button").all():
+    for f in page.locator("#view-guides .fold-button").all():
         if f.get_attribute("aria-expanded") == "false": f.click(); page.wait_for_timeout(100)
     pick_combo(page, "#cmp-colour-ideas-base", index=1)
     page.click('#cmp-starter-moods [data-mood="all"]')   # shows the 24 schemes (a browse list, which wraps)
@@ -200,7 +200,7 @@ def main():
         page.set_viewport_size({"width": 390, "height": 900})
         load(page)
         tab(page, "compendium")
-        for f in page.locator("#view-compendium .fold-button").all():
+        for f in page.locator("#view-guides .fold-button").all():
             if f.get_attribute("aria-expanded") == "false": f.click(); page.wait_for_timeout(100)
         page.click('#cmp-starter-moods [data-mood="all"]')
         settle(page)

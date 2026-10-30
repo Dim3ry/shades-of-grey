@@ -24,7 +24,7 @@ def check(name, ok, detail=""):
 
 PAINT = {"id": 1, "brand": "Citadel", "name": "Macragge Blue", "colour": "#1f3f9a", "status": "wishlist", "shopFrom": ["Recipe: Blue"]}
 UNIT = {"id": 1, "name": "Squad", "hobby": "40K", "stage": 1, "count": 5, "added": "2026-10-01", "log": [["2026-10-01", 1]]}
-SEGMENTS = ["dashboard", "units", "recipes", "compendium"]
+SEGMENTS = ["dashboard", "units", "recipes", "guides"]   # X2: the fourth is Tools and Settings (data-tab guides)
 
 def seg(tab):
     return f'.tabs button[data-tab="{tab}"]'
@@ -59,12 +59,12 @@ def main():
         print("\n--- 1. The four segments ---")
         start(page)
         labels = page.evaluate("() => [...document.querySelectorAll('.tabs button[data-tab]')].sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left).map(b => [b.getAttribute('aria-label') || b.textContent.trim(), b.textContent.trim()])")
-        check("left to right: Dashboard, Models, Painting, Compendium (aria-label and visible label)",
-              labels == [["Dashboard", "Dashboard"], ["Models", "Models"], ["Painting", "Painting"], ["Compendium", "Compendium"]], labels)
+        check("left to right: Dashboard, Models, Painting, Tools (aria-label and visible label; X2: the fourth says Tools, the page is Tools and Settings)",
+              labels == [["Dashboard", "Dashboard"], ["Models", "Models"], ["Painting", "Painting"], ["Tools", "Tools"]], labels)
         check("the old Units name is gone from the bar and Settings is not a segment",
               "Units" not in [l[1] for l in labels] and page.locator(".tabs button[data-tab='settings']").count() == 0)
         check("the Models segment still opens the unit list", (page.click(seg("units")), page.wait_for_timeout(100), page.is_visible("#view-units"))[2])
-        check("Help says Models and names the cog", "Models" in page.inner_text("#help-tabs") and "cog" in page.inner_text("#help-tabs"))
+        check("Help says Models and names Tools and Settings (X2: the cog is gone)", "Models" in page.inner_text("#help-tabs") and "Tools and Settings" in page.inner_text("#help-tabs") and "cog" not in page.inner_text("#help-tabs"))
 
         print("\n--- 2. The tap area is the segment ---")
         page.click(seg("dashboard"))
@@ -87,12 +87,14 @@ def main():
         check("exactly one segment is current", len(on) == 1 and on[0][0] == "recipes", lit)
         check("it is bold and has a different fill from the others (not colour alone)",
               int(on[0][2]) >= 700 and all(int(r[2]) < 700 for r in off) and all(r[3] != on[0][3] for r in off), lit)
-        page.click(".cog")
+        page.click(seg("guides"))
+        page.click("#more-seg [data-page='settings']")
         page.wait_for_timeout(100)
-        check("Settings: the cog is current, no segment is", page.get_attribute(".cog", "aria-current") == "page" and page.locator(".tabs [aria-current]").count() == 0)
+        # X2: Settings is a page of the fourth segment now, which stays lit (there is no cog)
+        check("Settings: the Tools segment is current", page.get_attribute(seg("guides"), "aria-current") == "page" and page.locator(".tabs [aria-current]").count() == 1)
         check("Settings shows its Settings, Help and Updates switch", page.is_visible("#more-seg") and page.is_visible("#view-settings"))
         page.click("[data-page='help']")
-        check("Help is reached from Settings and the cog stays current", page.is_visible("#view-help") and page.get_attribute(".cog", "aria-current") == "page")
+        check("Help is reached from Settings and the Tools segment stays current", page.is_visible("#view-help") and page.get_attribute(seg("guides"), "aria-current") == "page")
 
         print("\n--- 4. Ask Mentor ---")
         page.click(seg("units"))
@@ -107,12 +109,10 @@ def main():
         check("the Picker is scrolled into view, below the header", 0 <= fold[1] < 400, fold)
         check("the Painting segment is lit", page.get_attribute(seg("recipes"), "aria-current") == "page")
 
-        print("\n--- 5. The header: basket and cog ---")
+        print("\n--- 5. The header: basket (X2: the cog is gone) ---")
         page.click(seg("dashboard"))
         b = page.evaluate("() => { const r = document.getElementById('basket-button').getBoundingClientRect(); const a = getComputedStyle(document.getElementById('basket-button'), '::after'); return [r.right, r.top, r.height, a.top, a.bottom, a.left, a.right, a.position]; }")
-        cog = box(page, ".cog")
-        check("the basket shows in the header next to the cog (it has a paint on the list)", page.is_visible("#basket-button") and cog[0] > b[0] and cog[1] < 60, (b, cog))
-        check("the cog is 44 px or more and sits in the top corner", cog[2] >= 43.9 and cog[3] >= 43.9 and cog[0] + cog[2] > 390 - 40, cog)
+        check("the basket shows in the header, in the top corner (it has a paint on the list)", page.is_visible("#basket-button") and b[0] > 390 - 40 and b[1] < 60 and page.locator(".cog").count() == 0, b)
         check("the basket keeps its enlarged tap area (the ::after reaches 11 px above and below)", b[7] == "absolute" and b[3] == "-11px" and b[4] == "-11px", b)
         page.click("#basket-button")
         page.wait_for_timeout(150)
@@ -130,14 +130,14 @@ def main():
         arc = box(page, ".arc")
         check("1280 px: full size and centred at the bottom", abs(arc[2] - 390) < 1 and abs(arc[0] + 195 - 640) < 1 and abs(arc[1] + arc[3] - 800) < 1, arc)
         check("1280 px: there is no tab bar at the top", box(page, ".tabs")[1] > 400)
-        check("1280 px: the header is the only thing at the top and the cog is in the right corner", box(page, ".cog")[0] + 44 > 1280 - 60 and box(page, ".cog")[1] < 40)
+        check("1280 px: the header is the only thing at the top and the basket is in the right corner", box(page, "#basket-button")[0] + box(page, "#basket-button")[2] > 1280 - 60 and box(page, "#basket-button")[1] < 40)
 
         print("\n--- 7. Room under the page, and the keyboard ---")
-        start(page, tab="compendium")
+        start(page, tab="guides")
         page.evaluate("() => window.scrollTo(0, document.documentElement.scrollHeight)")
         page.wait_for_timeout(100)
-        gap = page.evaluate("() => { const els = [...document.querySelectorAll('#view-compendium *')].filter(e => e.getBoundingClientRect().height > 0); const last = Math.max(...els.map(e => e.getBoundingClientRect().bottom)); return [last, document.querySelector('.tabs').getBoundingClientRect().top]; }")
-        check("the end of the Compendium scrolls clear of the bar", gap[0] <= gap[1] + 1, gap)
+        gap = page.evaluate("() => { const els = [...document.querySelectorAll('#view-guides *')].filter(e => e.getBoundingClientRect().height > 0); const last = Math.max(...els.map(e => e.getBoundingClientRect().bottom)); return [last, document.querySelector('.tabs').getBoundingClientRect().top]; }")
+        check("the end of Guides scrolls clear of the bar", gap[0] <= gap[1] + 1, gap)
         check("the page has at least 170 px of room at the bottom", page.evaluate("parseFloat(getComputedStyle(document.body).paddingBottom)") >= 170)
         page.click(seg("units"))
         page.click("#toggle-add")

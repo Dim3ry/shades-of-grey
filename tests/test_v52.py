@@ -22,7 +22,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, re, sys
 from playwright.sync_api import sync_playwright
-from launch_helpers import quiet
+from launch_helpers import quiet, tap_tab
 from launch_helpers import leave_launch
 import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 
@@ -41,7 +41,7 @@ def check(name, ok, detail=""):
 
 def tab(page, name):
     page.evaluate("() => document.activeElement && document.activeElement.blur()")
-    page.click(f'nav button[data-tab="{name}"]')
+    tap_tab(page, name)
     quiet(page)
 
 def more_page(page, name):
@@ -256,7 +256,7 @@ def main():
         page.evaluate("document.querySelectorAll('#view-help details').forEach(d => d.open = true)")
         lines = {"help-palette-swatches": ["Swatches", "More options", "Merge", "Remove"],
                  "help-recipe-steps": ["folded", "More options", "technique", "Optional"],
-                 "help-compendium-ticks": ["Compendium", "Select all", "Add to shopping list", "Copy as text", "Save into a new recipe"]}
+                 "help-compendium-ticks": ["Guides", "Select all", "Add to shopping list", "Copy as text", "Save into a new recipe"]}
         for hid, wanted in lines.items():
             line = text(page, f"#{hid}") or ""
             check(f"the new Help line {hid} exists and mentions {', '.join(wanted)}", all(x in line for x in wanted), line[:140])

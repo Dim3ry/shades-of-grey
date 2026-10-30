@@ -37,7 +37,7 @@ def shop_boxes(page):
 
 def comp_boxes(page):
     return page.evaluate("""() => { const r = s => { const e = document.querySelector(s); return e ? e.getBoundingClientRect().toJSON() : null; };
-        return { card: r('#view-compendium .compendium-card'), wheel: r('#compendium-body .wheel-block'), folds: r('#compendium-body .compendium-folds'),   // X1: Colour Lab's card has the same class, so name the Compendium's
+        return { card: r('#view-guides .compendium-card'), wheel: r('#compendium-body .wheel-block'), folds: r('#compendium-body .compendium-folds'),   // X1: Colour Lab's card has the same class, so name the Compendium's
                  firstFold: r('#compendium-body .fold') }; }""")
 
 def small_taps(page, scope):

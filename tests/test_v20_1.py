@@ -17,7 +17,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
-from launch_helpers import quiet
+from launch_helpers import quiet, open_settings, tap_tab
 from launch_helpers import leave_launch
 import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 from dialog_watch import DialogAnswers
@@ -69,10 +69,10 @@ def full_settings(**extra):
 
 def tab(page, name):
     if name in ("help", "updates"):   # v21.9: these are sub-tabs of Settings now
-        page.click('nav button[data-tab="settings"]')
+        open_settings(page)
         page.click(f'#more-seg button[data-page="{name}"]')
     else:
-        page.click(f'nav button[data-tab="{name}"]')
+        tap_tab(page, name)
     page.wait_for_timeout(80)
 
 def saved(page):

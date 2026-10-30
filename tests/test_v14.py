@@ -2,7 +2,7 @@
 `python3 -m http.server 8765`, then run: python3 tests/test_v14.py <folder for screenshots>."""
 import json, sys, time, base64, datetime
 from playwright.sync_api import sync_playwright
-from launch_helpers import quiet
+from launch_helpers import quiet, open_settings
 import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 from dialog_watch import DialogAnswers
 from notice_watch import attach_notices
@@ -295,14 +295,14 @@ def run(viewport, label):
         # ---------- 11. Fan-tool basics ----------
         seed(units(1, 0), base_settings)
         check(f"{label} 11a import button says Paste an army list", page.inner_text("#wh-button") == "Paste an army list")
-        page.click('nav button[data-tab="settings"]')   # v21.9: Help and Updates are sub-tabs of Settings
+        open_settings(page)   # v21.9: Help and Updates are sub-tabs of Settings
         page.click('#more-seg button[data-page="help"]')
         page.click("#about summary")
         about = page.inner_text("#about")
         check(f"{label} 11b About has the fan-tool notice and contact", "Unofficial fan-made" in about and "not affiliated with or endorsed by Games Workshop" in about and "Contact" in about)
         page.locator("#about").scroll_into_view_if_needed()
         page.screenshot(path=f"{SHOTS}/{label}-about.png")
-        page.click('nav button[data-tab="settings"]')
+        open_settings(page)
         page.click("#wh-button")
         army = ("Test list (500 points)\n\nOrks\nStrike Force (2000 points)\n\nWarboss (75 points)\n  • 1x Big choppa\n\n"
                 "Boyz (170 points)\n  • 1x Boss Nob\n    • 1x Slugga\n  • 19x Boy\n    • 19x Choppa\n\nExported with App Version: v1.0")

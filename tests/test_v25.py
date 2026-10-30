@@ -21,7 +21,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import datetime, json, os, re, sys
 from playwright.sync_api import sync_playwright
-from launch_helpers import quiet
+from launch_helpers import quiet, tap_tab
 from launch_helpers import app_ready
 from launch_helpers import leave_launch
 
@@ -93,7 +93,7 @@ def patch_settings(page, **changes):
 
 def main_tab(page, name):
     page.evaluate("() => document.activeElement && document.activeElement.blur()")
-    page.click(f'nav button[data-tab="{name}"]')
+    tap_tab(page, name)
     page.wait_for_timeout(150)
 
 def sub_tab(page, name):

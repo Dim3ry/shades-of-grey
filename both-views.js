@@ -4,10 +4,10 @@
 (function () {
   "use strict";
   var PAGES = [
-    ["dashboard", "Dashboard"], ["units", "Units"], ["recipes", "Painting"], ["compendium", "Compendium"],
-    ["settings", "Settings"], ["help", "Help"], ["updates", "Updates"]
+    ["dashboard", "Dashboard"], ["units", "Units"], ["recipes", "Painting"],
+    ["guides", "Guides"], ["settings", "Settings"], ["help", "Help"], ["updates", "Updates"]
   ];
-  var MORE = ["help", "updates"];   // these two sit under the Settings tab
+  var MORE = ["guides", "settings", "help", "updates"];   // these four are pages of the Tools and Settings tab (data-tab guides)
   var select = document.getElementById("page");
   var frames = [document.getElementById("phone"), document.getElementById("desktop")];
   var desktop = frames[1];
@@ -26,7 +26,7 @@
     try {
       var doc = frame.contentDocument;
       var btn = MORE.indexOf(name) >= 0
-        ? (doc.querySelector('[data-tab="settings"]') && (doc.querySelector('[data-tab="settings"]').click(), doc.querySelector('[data-page="' + name + '"]')))
+        ? (doc.querySelector('[data-tab="guides"]') && (doc.querySelector('[data-tab="guides"]').click(), doc.querySelector('[data-page="' + name + '"]')))
         : doc.querySelector('[data-tab="' + name + '"]');
       if (btn) btn.click();
     } catch (ignored) { /* frame not ready yet */ }

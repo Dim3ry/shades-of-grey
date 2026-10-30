@@ -1,8 +1,8 @@
 """v89 tests for Minifolio (chunk U4b: the launch page, a circular menu).
 
 New behaviour only:
-1. A fresh load shows the launch page: four quarter segments (Dashboard, Models, Painting, Compendium) around the round Ask Mentor
-   button, no section open, nothing lit, no sentences. The header keeps the title (a button), the basket and the cog.
+1. A fresh load shows the launch page: four quarter segments (Dashboard, Models, Painting, Help) around the round Ask Mentor
+   button, no section open, nothing lit, no sentences. The header keeps the title (a button), the basket (X2: the cog is gone).
 2. The circle: centred under the header, 124 px Mentor button, 340 px across at 390 px, each segment is its own tap area, a tap in a gap hits nothing.
 3. A segment opens its section lit; Ask Mentor opens Ask the Mentor; the title goes back to the launch page, and the section you were in is untouched.
 4. Switching away and back (visibilitychange, blur, focus) never changes the screen, typed text or scroll position; only a reload shows the circle.
@@ -24,8 +24,8 @@ def check(name, ok, detail=""):
 
 PAINT = {"id": 1, "brand": "Citadel", "name": "Macragge Blue", "colour": "#1f3f9a", "status": "wishlist", "shopFrom": ["Recipe: Blue"]}
 UNIT = {"id": 1, "name": "Squad", "hobby": "40K", "stage": 1, "count": 5, "added": "2026-10-01", "log": [["2026-10-01", 1]]}
-SEGMENTS = ["dashboard", "units", "recipes", "compendium"]
-NAMES = {"dashboard": "Dashboard", "units": "Models", "recipes": "Painting", "compendium": "Compendium"}
+SEGMENTS = ["dashboard", "units", "recipes", "guides"]   # X2: the fourth is Tools and Settings
+NAMES = {"dashboard": "Dashboard", "units": "Models", "recipes": "Painting", "guides": "Tools"}   # X2: the fourth segment reads Tools (George's rename; the page is Tools and Settings)
 
 def seg(tab):
     return f'.tabs button[data-tab="{tab}"]'
@@ -68,8 +68,8 @@ def main():
         check("nothing is lit (no aria-current anywhere)", page.locator("[aria-current]").count() == 0)
         words = [w.strip() for w in page.inner_text(".tabs").split("\n") if w.strip()]
         check("no sentences: only the four names and Ask Mentor", sorted(words) == sorted(list(NAMES.values()) + ["Ask Mentor"]), words)
-        check("header: the title is a real button with an aria-label, next to the basket and the cog",
-              page.locator("button#home-button[aria-label]").count() == 1 and page.is_visible("#basket-button") and page.is_visible('.cog[data-tab="settings"]'))
+        check("header: the title is a real button with an aria-label, next to the basket (X2: the cog is gone)",
+              page.locator("button#home-button[aria-label]").count() == 1 and page.is_visible("#basket-button") and page.locator(".cog").count() == 0)
         check("the round Mentor button is the same one component as in the bar", page.locator("#mentor-button").count() == 1 and page.locator(".tabs .arc #mentor-button").count() == 1)
 
         print("\n--- 2. The circle ---")
@@ -80,10 +80,10 @@ def main():
               abs(cx - 195) < 1 and abs(cy - (head + (844 - head) / 2)) < 2 and 440 <= cy <= 460, (cx, cy, head))
         r = lambda d: d  # readability
         check("the ring is 340 px across: a tap 165 px out hits a segment, 175 px out hits nothing",
-              hit(page, cx - 118, cy - 118) == "dashboard" and hit(page, cx - 128, cy - 128) == "" and hit(page, cx + 118, cy + 118) == "compendium")
+              hit(page, cx - 118, cy - 118) == "dashboard" and hit(page, cx - 128, cy - 128) == "" and hit(page, cx + 118, cy + 118) == "guides")
         check("a tap on the round button (56 px from its centre) hits Ask Mentor, not a segment", hit(page, cx - 40, cy - 40) == "mentor-button")
         check("segments sit top left, top right, bottom left, bottom right",
-              hit(page, cx - 90, cy - 90) == "dashboard" and hit(page, cx + 90, cy - 90) == "units" and hit(page, cx - 90, cy + 90) == "recipes" and hit(page, cx + 90, cy + 90) == "compendium")
+              hit(page, cx - 90, cy - 90) == "dashboard" and hit(page, cx + 90, cy - 90) == "units" and hit(page, cx - 90, cy + 90) == "recipes" and hit(page, cx + 90, cy + 90) == "guides")
         check("a tap in the gap on the vertical or the horizontal axis hits nothing",
               hit(page, cx, cy - 120) == "" and hit(page, cx - 120, cy) == "" and hit(page, cx + 120, cy) == "" and hit(page, cx, cy + 120) == "")
         check("the glow behind the circle uses a theme colour (a gradient on the layer behind it)",
@@ -97,7 +97,7 @@ def main():
         for s in SEGMENTS:
             start(page)
             cx, cy, _ = circle(page)
-            dx, dy = {"dashboard": (-90, -90), "units": (90, -90), "recipes": (-90, 90), "compendium": (90, 90)}[s]
+            dx, dy = {"dashboard": (-90, -90), "units": (90, -90), "recipes": (-90, 90), "guides": (90, 90)}[s]
             page.mouse.click(cx + dx, cy + dy)
             page.wait_for_timeout(150)
             ok = (not launching(page) and shown_sections(page) == [f"view-{s}"]
@@ -126,7 +126,7 @@ def main():
 
         print("\n--- 4. Switching away and back never resets ---")
         page.click(seg("dashboard"))
-        page.click("button.cog")
+        page.click(seg("guides"))   # X2: the cog is gone
         page.wait_for_timeout(150)
         page.evaluate("() => window.scrollTo(0, 400)")
         page.click(seg("units"))
@@ -168,8 +168,8 @@ def main():
                 head = page.evaluate("() => document.querySelector('.app-bar').getBoundingClientRect().bottom")
                 thick = min(box(page, seg(s))[2] for s in SEGMENTS) / 167.1 * 90   # the ring is 90 px thick (drawn), times the scale
                 inside = cy - 170 * scale >= head - 0.5 and cy + 170 * scale <= h and cx - 170 * scale >= -0.5 and cx + 170 * scale <= w + 0.5
-                ok = no_sideways(page) and inside and thick >= 44 and o[2] >= 44 and box(page, "#home-button")[3] >= 44 and box(page, ".cog")[3] >= 44
-                check(f"{w} px {mode}: circle fits under the header, no sideways scroll, ring {thick:.0f} px thick, Mentor {o[2]:.0f} px, title and cog 44 px+",
+                ok = no_sideways(page) and inside and thick >= 44 and o[2] >= 44 and box(page, "#home-button")[3] >= 44
+                check(f"{w} px {mode}: circle fits under the header, no sideways scroll, ring {thick:.0f} px thick, Mentor {o[2]:.0f} px, title 44 px+",
                       ok, (inside, thick, o, no_sideways(page)))
         for w, h in [(640, 360), (390, 420)]:
             start(page, w, h)
