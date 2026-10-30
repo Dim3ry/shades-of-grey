@@ -3934,6 +3934,7 @@
       window.scrollTo(0, 0);
     }
     tabButtons.forEach(b => b.addEventListener("click", () => {
+      if (b.dataset.tab === "guides") Object.assign(guidesState, { view: "home", cat: "", key: "", kind: "", missing: false });   // X3: the tab itself opens the category list
       if (b.dataset.tab === "guides" || b.dataset.tab === "recipes") compendiumState.focus = null;   // v69: the tab itself opens the whole of Guides (X1: and the whole Colour Lab)
       // Tapping Recipes while already on it goes back to the list (unless you're mid-edit).
       if (b.dataset.tab === "recipes" && settings.tab === "recipes" && !recipeDraft && !launching) {
@@ -12526,14 +12527,14 @@
         panel.insertBefore(list, share);
       };
       if (typeof DETAIL_RECIPES !== "undefined") part("Detail recipes with a similar colour", libraryLike(paint, DETAIL_RECIPES, r => r.steps), "detail", (r) => {
-        st.open.detail = true; st.detailGroup = r.group; st.detail = r.key; st.search.detail = "";
+        guidesState.query = ""; guidesPoint({ key: r.key, kind: "detail" });
         showTab("guides");
-        renderGuides(`#${door.id("fold-detail")} [data-detail="${r.key}"]`);
+        renderGuides(`[data-detail="${r.key}"]`);
       });
       if (typeof BASING_TIPS !== "undefined") part("Basing tips with a similar colour", libraryLike(paint, BASING_TIPS, t => t.paintSteps), "basing", (t) => {
-        st.open.basing = true; st.basingGroup = t.group; st.basing = t.key; st.search.basing = "";
+        guidesState.query = ""; guidesPoint({ key: t.key, kind: "basing" });
         showTab("guides");
-        renderGuides(`#${door.id("fold-basing")} [data-basing="${t.key}"]`);
+        renderGuides(`[data-basing="${t.key}"]`);
       });
       block.append(back, panel);
       body.appendChild(block);
@@ -13010,39 +13011,305 @@
       return out;
     }
 
-    // X2: Tools and Settings > Guides (it was the Compendium tab, which X1 had cut down to Detail recipes and Basing tips). The colour parts are in Colour Lab.
+    // X3: Tools and Settings > Guides, the library. One index holds every kind of entry (guides, detail recipes, basing tips, Mentor tips and
+    // starter questions); the screen is a search box and a list of categories, then the entries of one category, then one entry as a page.
+    // Detail recipes and basing tips keep their own controls (the same builders as before), so their category shows those.
+    const GUIDE_CATEGORIES = [
+      { key: "colour-basics", name: "Colour basics" },
+      { key: "techniques", name: "Techniques" },
+      { key: "detail", name: "Detail recipes" },
+      { key: "basing", name: "Basing" },
+      { key: "tools-prep", name: "Tools and prep" },
+      { key: "problems", name: "Problems" },
+    ];
+    // One index of every entry, built from the lists it is given (so a test can give it a small fixture). An entry is
+    // { key, kind, category, title, summary, body, related, keywords, credit, id }. kind is guide, detail, basing, tip or starter.
+    // Keys should be unique across kinds. If one is not (the old "mud", a detail recipe and a basing tip), BOTH entries are kept and
+    // listed, the first loaded (guides, detail recipes, basing tips, Mentor tips, starters) answers get(key) and the key links, and the
+    // later one is reached from its own list. Its element id gets the kind added, so ids stay unique. Nothing throws.
+    function makeKnowledgeIndex(src) {
+      const entries = [], first = new Map(), clashes = [];
+      const text = (v) => (typeof v === "string" ? v : "");
+      const words = (v) => (Array.isArray(v) ? v.filter(x => typeof x === "string") : []);
+      const each = (v) => (Array.isArray(v) ? v.filter(x => x && typeof x === "object") : []);
+      const add = (e) => {
+        if (!e.key || !e.title) return;
+        if (first.has(e.key)) { clashes.push(e.key); e.id = `guide-${e.key}-${e.kind}`; }
+        else { first.set(e.key, e); e.id = `guide-${e.key}`; }
+        entries.push(e);
+      };
+      const make = (kind, raw, o) => add({
+        key: text(raw && raw.key), kind, category: o.category, title: o.title, summary: o.summary || "", body: o.body || [],
+        related: words(o.related), keywords: words(o.keywords), credit: o.credit && text(o.credit.name) ? o.credit : null, id: "",
+      });
+      for (const g of each(src.guides)) make("guide", g, { category: text(g.category), title: text(g.title), summary: text(g.summary), body: words(g.body), related: g.related, keywords: g.keywords, credit: g.credit });
+      for (const r of each(src.recipes)) make("detail", r, { category: "detail", title: text(r.name), summary: text(r.summary), keywords: [text(r.group)] });
+      for (const t of each(src.basing)) make("basing", t, { category: "basing", title: text(t.name), summary: text(t.summary), keywords: [text(t.group)] });
+      for (const t of each(src.tips)) {
+        const part = (src.parts || []).find(p => p.key === t.part);
+        make("tip", t, { category: "", title: `${part ? part.name : text(t.part)}: ${text(t.colour)}`, summary: text(t.technique), body: [text(t.advice)], keywords: [text(t.part), text(t.colour), text(t.technique).toLowerCase()], credit: t.credit });
+      }
+      for (const s of each(src.starters)) make("starter", s, { category: "", title: text(s.text), related: s.targets });
+      // Plain words, any case. Every word must be found in the title, summary or keywords. Title counts most, then keywords, then summary.
+      const search = (query) => {
+        const q = String(query || "").toLowerCase().split(/[^a-z0-9']+/).filter(Boolean);
+        if (!q.length) return [];
+        const scored = [];
+        for (const e of entries) {
+          const title = e.title.toLowerCase(), summary = e.summary.toLowerCase(), keys = e.keywords.map(k => k.toLowerCase());
+          let score = 0, all = true;
+          for (const w of q) {
+            const s = (title.includes(w) ? 3 : 0) + (keys.some(k => k.includes(w)) ? 2 : 0) + (summary.includes(w) ? 1 : 0);
+            if (!s) { all = false; break; }
+            score += s;
+          }
+          if (all) scored.push({ e, score });
+        }
+        return scored.sort((a, b) => b.score - a.score || a.e.title.localeCompare(b.e.title)).map(x => x.e);
+      };
+      return {
+        entries, clashes, search,
+        get: (key, kind) => (kind ? entries.find(e => e.key === key && e.kind === kind) : first.get(key)) || null,
+        list: (o = {}) => entries.filter(e => (!o.kind || e.kind === o.kind) && (o.category === undefined || e.category === o.category)),
+      };
+    }
+    let knowledgeCache = null;
+    function knowledgeIndex() {
+      if (!knowledgeCache) {
+        knowledgeCache = makeKnowledgeIndex({
+          guides: typeof GUIDE_ENTRIES === "undefined" ? [] : GUIDE_ENTRIES,
+          recipes: typeof DETAIL_RECIPES === "undefined" ? [] : DETAIL_RECIPES,
+          basing: typeof BASING_TIPS === "undefined" ? [] : BASING_TIPS,
+          tips: typeof MENTOR_TIPS === "undefined" ? [] : MENTOR_TIPS,
+          parts: typeof MENTOR_PARTS === "undefined" ? [] : MENTOR_PARTS,
+          starters: typeof GUIDE_STARTERS === "undefined" ? [] : GUIDE_STARTERS,
+        });
+      }
+      return knowledgeCache;
+    }
+    // Where the Guides screen is: home (search and categories), a category, or one entry. Kept while the app is open, never saved.
+    const guidesState = { view: "home", cat: "", key: "", kind: "", query: "", missing: false };
+    function guidesPoint(e) {   // point the screen at one entry
+      guidesState.missing = false;
+      guidesState.key = e.key;
+      guidesState.kind = e.kind;
+      if (e.kind === "detail" || e.kind === "basing") {
+        const st = compendiumState;
+        guidesState.view = "category"; guidesState.cat = e.kind;
+        if (e.kind === "detail") { const r = DETAIL_RECIPES.find(x => x.key === e.key); st.detailGroup = r.group; st.detail = r.key; st.search.detail = ""; }
+        else { const t = BASING_TIPS.find(x => x.key === e.key); st.basingGroup = t.group; st.basing = t.key; st.search.basing = ""; }
+      } else {
+        guidesState.view = "entry";
+        guidesState.cat = e.category;
+      }
+    }
+    // Open Guides on one entry, from anywhere in the app. A key that is not in the library shows one calm line instead.
+    function openGuide(key) {
+      if (importDraft) { showToast("Close Paste recipes first, then open Guides."); return; }
+      if (schemeDraft) { showToast("Finish or close the scheme you're editing first, then open Guides."); return; }
+      whenOkToLeaveDraft(() => {
+        recipeDraft = null;
+        openRecipeId = null;
+        const e = knowledgeIndex().get(String(key));
+        Object.assign(guidesState, { view: "home", cat: "", key: "", kind: "", query: "", missing: false });
+        if (e) guidesPoint(e); else guidesState.missing = true;
+        showTab("guides");
+        const target = e && document.getElementById(e.id);
+        if (target) { target.scrollIntoView({ block: "start" }); target.focus({ preventScroll: true }); }
+      });
+    }
     function renderGuides(focusSelector) {
       const body = document.getElementById("compendium-body");
       if (!body) return;
       body.replaceChildren();
-      const say = (text, id) => {
+      if (typeof MinifolioColour === "undefined") {
         const p = document.createElement("p");
         p.className = "hint";
-        if (id) p.id = compendiumId(id);
-        p.textContent = text;
+        p.textContent = "The colour part of the app did not load, so Guides cannot show anything. Close the app and open it again.";
         body.appendChild(p);
-        return p;
-      };
-      if (typeof MinifolioColour === "undefined") {
-        say("The colour part of the app did not load, so Guides cannot show anything. Close the app and open it again.");
         return;
       }
+      const g = guidesState, kn = knowledgeIndex();
       const door = compendiumDoor();
       const redraw = (selector) => renderGuides(selector);
-
-      const intro = say("Detail recipes and basing tips, without needing a recipe. Tap a heading to open it, and type in a search box to find things fast. Use Copy as text to keep anything, or Save into a new recipe\u2026 to start a recipe from them.", "intro");
-
-      // v37: the parts each sit under a heading you tap to open and close. They all start closed; which are open is kept in
-      // st.open while the app is open, like the other Compendium picks.
-      const folds = document.createElement("div");
-      folds.className = "compendium-folds";
-      body.appendChild(folds);
       const parts = libraryParts(door, redraw);
-      const fold = (key, label, make) => { if (make) folds.appendChild(foldSection(door, key, label, make)); };
-      fold("detail", "Detail recipes", parts.detail && (() => dropTitle(parts.detail())));
-      fold("basing", "Basing tips", parts.basing && (() => dropTitle(parts.basing())));
-      // v49: the introduction sits behind a More info at the top of the page
-      body.insertBefore(buildMoreInfo([intro], { state: infoState(door, "page"), id: compendiumId("page-info-panel"), label: "Guides" }), body.firstChild);
+      const catName = (key) => (GUIDE_CATEGORIES.find(c => c.key === key) || {}).name || "";
+      const shown = GUIDE_CATEGORIES.filter(c => kn.list({ category: c.key }).length);
+      if (g.view !== "home" && !(g.view === "entry" ? kn.get(g.key, g.kind) : shown.some(c => c.key === g.cat))) Object.assign(g, { view: "home", cat: "", key: "", kind: "" });
+
+      const wrap = document.createElement("div");
+      wrap.className = "guides-split" + (g.view === "home" ? "" : " guides-has-main");
+      const nav = document.createElement("div");
+      nav.className = "guides-nav";
+      const main = document.createElement("div");
+      main.className = "guides-main";
+      wrap.append(nav, main);
+      body.appendChild(wrap);
+
+      const row = (title, summary, onClick, current) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "guides-row";
+        if (current) b.setAttribute("aria-current", "true");
+        const t = document.createElement("span");
+        t.className = "guides-row-title";
+        t.textContent = title;
+        b.appendChild(t);
+        if (summary) {
+          const s = document.createElement("span");
+          s.className = "guides-row-summary";
+          s.textContent = summary;
+          b.appendChild(s);
+        }
+        b.addEventListener("click", onClick);
+        return b;
+      };
+      const openEntry = (e) => { guidesPoint(e); renderGuides(`#${e.id}`); };
+      const entryRows = (list) => {
+        const box = document.createElement("div");
+        box.className = "guides-rows";
+        if (!list.length) {
+          const none = document.createElement("p");
+          none.className = "hint";
+          none.textContent = "Nothing found.";
+          box.appendChild(none);
+        }
+        for (const e of list) {
+          const b = row(e.title, e.summary, () => openEntry(e));
+          b.dataset.guide = e.key;
+          b.dataset.kind = e.kind;
+          box.appendChild(b);
+        }
+        return box;
+      };
+
+      // ---- left: search, then the categories (or what the search found)
+      const label = document.createElement("label");
+      label.className = "combo-label";
+      label.htmlFor = "guides-search";
+      label.textContent = "Search Guides";
+      const input = document.createElement("input");
+      input.type = "search";
+      input.id = "guides-search";
+      input.className = "combo-input";
+      input.placeholder = "Type to search";
+      for (const [k, v] of [["autocomplete", "off"], ["autocapitalize", "none"], ["autocorrect", "off"], ["spellcheck", "false"], ["enterkeyhint", "search"]]) input.setAttribute(k, v);
+      input.value = g.query;
+      const lower = document.createElement("div");
+      lower.className = "guides-lower";
+      const drawLower = () => {
+        lower.replaceChildren();
+        const q = g.query.trim();
+        if (q) { lower.appendChild(entryRows(kn.search(q))); return; }
+        const list = document.createElement("div");
+        list.className = "guides-rows guides-cats";
+        for (const c of shown) {
+          const b = row(c.name, "", () => { Object.assign(g, { view: "category", cat: c.key, key: "", kind: "" }); renderGuides(`[data-cat="${c.key}"]`); }, g.view !== "home" && g.cat === c.key);
+          b.dataset.cat = c.key;
+          const n = document.createElement("span");
+          n.className = "guides-count";
+          n.textContent = String(kn.list({ category: c.key }).length);
+          b.appendChild(n);
+          list.appendChild(b);
+        }
+        lower.appendChild(list);
+      };
+      input.addEventListener("input", () => { g.query = input.value; drawLower(); });
+      input.addEventListener("keydown", (e) => { if (e.key === "Escape" && input.value) { e.preventDefault(); e.stopPropagation(); input.value = ""; g.query = ""; drawLower(); } });
+      nav.append(label, input);
+      if (g.missing) {
+        const m = document.createElement("p");
+        m.className = "hint";
+        m.id = "guides-missing";
+        m.setAttribute("role", "status");
+        m.textContent = "That guide could not be found.";
+        nav.appendChild(m);
+      }
+      nav.appendChild(lower);
+      drawLower();
+
+      // ---- right: a category, or one entry
+      if (g.view !== "home") {
+        const back = document.createElement("button");
+        back.type = "button";
+        back.className = "plain-button guides-back";
+        back.id = "guides-back";
+        const toCat = g.view === "entry" && g.cat && shown.some(c => c.key === g.cat);
+        back.textContent = toCat ? `Back to ${catName(g.cat)}` : "Back to Guides";
+        back.addEventListener("click", () => {
+          if (toCat) Object.assign(g, { view: "category", key: "", kind: "" });
+          else Object.assign(g, { view: "home", cat: "", key: "", kind: "" });
+          renderGuides("#guides-search");
+        });
+        main.appendChild(back);
+        if (g.view === "category") {
+          const h = document.createElement("h3");
+          h.className = "guides-title";
+          h.textContent = catName(g.cat);
+          main.appendChild(h);
+          const part = g.cat === "detail" ? parts.detail : g.cat === "basing" ? parts.basing : null;
+          if (part) {
+            const holder = document.createElement("div");
+            const pick = g.cat === "detail" ? compendiumState.detail : compendiumState.basing;
+            const picked = kn.get(pick, g.cat);
+            if (picked) { holder.id = picked.id; holder.tabIndex = -1; }
+            holder.appendChild(dropTitle(part()));
+            main.appendChild(holder);
+          } else {
+            main.appendChild(entryRows(kn.list({ category: g.cat })));
+          }
+        } else {
+          const e = kn.get(g.key, g.kind);
+          const page = document.createElement("article");
+          page.className = "guides-entry";
+          page.id = e.id;
+          page.tabIndex = -1;
+          page.dataset.key = e.key;
+          const h = document.createElement("h3");
+          h.className = "guides-title";
+          h.textContent = e.title;
+          page.appendChild(h);
+          for (const para of e.body) {
+            const p = document.createElement("p");
+            p.textContent = para;
+            page.appendChild(p);
+          }
+          const rel = e.related.map(k => kn.get(k)).filter(Boolean);
+          if (rel.length) {
+            const box = document.createElement("div");
+            box.className = "guides-related";
+            box.setAttribute("role", "group");
+            box.setAttribute("aria-label", "Related");
+            for (const r of rel) {
+              const b = document.createElement("button");
+              b.type = "button";
+              b.className = "plain-button";
+              b.dataset.related = r.key;
+              b.textContent = r.title;
+              b.addEventListener("click", () => openEntry(r));
+              box.appendChild(b);
+            }
+            page.appendChild(box);
+          }
+          if (e.credit) {
+            const c = document.createElement("p");
+            c.className = "hint guides-credit";
+            c.append("Credit: ");
+            if (/^https:\/\//.test(String(e.credit.url || ""))) {
+              const a = document.createElement("a");
+              a.href = e.credit.url;
+              a.target = "_blank";
+              a.rel = "noopener noreferrer";
+              a.textContent = e.credit.name;
+              c.appendChild(a);
+            } else {
+              c.append(e.credit.name);
+            }
+            page.appendChild(c);
+          }
+          main.appendChild(page);
+        }
+      }
 
       if (focusSelector) {
         const target = body.querySelector(focusSelector);
