@@ -3947,15 +3947,19 @@
 
     // ================= X5: THE MENTOR POP-UP =================
     // The round Ask Mentor button opens a small window over whatever is showing. It has a greeting, a Paint Picker chip, a text box that is
-    // switched off until X6b, and the orb. Nothing typed or shown is stored or sent: mentorMessages lives only while the app is open.
+    // text box (X6b: it works), and the orb. Nothing typed or shown is stored or sent: mentorMessages lives only while the app is open.
     // Stock phrases live in one place so later chunks can fill the empty lists.
     const MENTOR_PHRASES = {
       greeting: ["How can I help?", "What are you painting?", "Ready when you are."],
       picker: ["Let's find some paints.", "Welcome back. Pick a colour and a part."],   // not shown yet
-      thinking: [], answer: [], unsure: [], finished: [], actions: [],
+      thinking: [], answer: [], unsure: ["I could not find that yet."], finished: [], actions: [],   // X6b fills unsure; the rest wait for X9
     };
-    const MENTOR_TYPING = false;   // X6b switches the text box on
-    const mentorMessages = [];     // X6b fills this; empty for now and gone when the app reloads
+    const MENTOR_TYPING = true;    // X6b: the text box is on (one line to switch it off)
+    const MENTOR_MAX_LENGTH = 300;
+    const MENTOR_MAX_MESSAGES = 30;
+    const mentorMessages = [];     // { who: "me" | "mentor", text, sources, suggestions, pick }: the last 30, kept only while the app is open
+    const mentorUsed = new Set();  // questions already asked (lower case): a starter chip with the same words drops out of the row
+    let mentorWarm = false;
     let mentorState = null;        // null, or { backdrop, win, opener, onKey } while the window is open
 
     function goToPaintPicker() {
@@ -4000,6 +4004,158 @@
       win.style.setProperty("--mp-oy", `${Math.round(b.top + b.height / 2 - win.offsetTop)}px`);
     }
 
+    // ---- X6b: typing, chips and answers ----
+    // What the person types goes to MinifolioMentor.mentorAnswer (mentor-engine.js) and nowhere else. The conversation is kept in mentorMessages
+    // while the app is open (the last 30 messages) and is never saved or sent. Every word on screen goes in through textContent.
+    function mentorStarters() {
+      return knowledgeIndex().list({ kind: "starter" }).map(e => e.title).filter(t => t && !mentorUsed.has(t.toLowerCase()));
+    }
+    // Ask the engine. The Paint Picker's own colour code does the picks (ctx.ideas), so they are exactly the Paint Picker's.
+    function mentorAsk(text) {
+      let pick = null;
+      const answer = MinifolioMentor.mentorAnswer(text, {
+        index: knowledgeIndex(),
+        paints: colourIdeaPool(),
+        tips: typeof MENTOR_TIPS === "undefined" ? [] : MENTOR_TIPS,
+        ideas: (hex, part) => { pick = { hex, part }; return colourIdeas(null, hex, mentorRole(part)); },
+      });
+      return { answer, pick: answer.picks && answer.picks.length ? pick : null };
+    }
+    const mentorPhrase = (list, fallback) => (list.length ? list[Math.floor(Math.random() * list.length)] : fallback);
+
+    // The first question after a new index takes about 59 ms on a slow phone, so the window asks one empty question once it has finished
+    // growing. That builds the engine's word tables before the first real question.
+    function mentorWarmUp() {
+      if (mentorWarm || typeof MinifolioMentor === "undefined") return;
+      mentorWarm = true;
+      setTimeout(() => { try { MinifolioMentor.mentorAnswer("hello", { index: knowledgeIndex(), paints: [], tips: [] }); } catch (ignored) {} }, 400);
+    }
+
+    let mentorDoors = 0;
+    function mentorPickDoor() {
+      const n = ++mentorDoors;
+      // Same rows and actions as the Paint Picker. Similar paints opens its own pop-up behind this window, so it is left out; Use in a recipe leaves the window first.
+      return Object.assign({}, compendiumDoor(), {
+        listButton: true, realOnly: true, noSimilar: true,
+        shopSource: () => "Colour Lab: Paint Picker",
+        id: (name) => `mentor-chat-${n}-${name}`,
+        leaving: () => closeMentor(false),
+      });
+    }
+
+    const MENTOR_SOURCE_WORD = { guide: "guide ", recipe: "detail recipe ", basing: "basing tip " };
+    function mentorOpenSource(src) {
+      closeMentor(false);
+      if (src.type === "colour-lab") openColourLab("wheel");
+      else openGuide(src.key);   // X7 sends each kind to its exact place
+    }
+
+    function mentorBuildMessage(m) {
+      const box = document.createElement("div");
+      if (m.who === "me") {
+        box.className = "mentor-msg mentor-me";
+        const p = document.createElement("p");
+        p.textContent = m.text;
+        box.appendChild(p);
+        return box;
+      }
+      box.className = "mentor-msg mentor-reply";
+      const lead = document.createElement("p");
+      lead.className = "mentor-lead";
+      lead.textContent = m.text;
+      box.appendChild(lead);
+      if (m.pick) {
+        const role = mentorRole(m.pick.part);
+        const ideas = colourIdeas(null, m.pick.hex, role);
+        if (ideas.length) box.appendChild(buildIdeasList(mentorPickDoor(), ideas, m.pick.hex, role).list);
+      }
+      if (m.sources && m.sources.length) {
+        const label = document.createElement("p");
+        label.className = "mentor-sources-label";
+        label.textContent = "Sources";
+        const list = document.createElement("div");
+        list.className = "mentor-sources";
+        for (const src of m.sources) {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "mentor-source";
+          if (src.colour && MinifolioColour.isHex(src.colour)) b.appendChild(makeSwatch(src.colour));
+          const t = document.createElement("span");
+          t.textContent = src.label;
+          b.appendChild(t);
+          b.setAttribute("aria-label", `Open ${MENTOR_SOURCE_WORD[src.type] || ""}${src.label}`);
+          b.addEventListener("click", () => mentorOpenSource(src));
+          list.appendChild(b);
+        }
+        box.append(label, list);
+      }
+      const ask = (m.suggestions || []).filter(s => s && s.text && !mentorUsed.has(String(s.text).toLowerCase()));
+      if (ask.length) {
+        const row = document.createElement("div");
+        row.className = "mentor-chips mentor-chips-in";
+        for (const s of ask) row.appendChild(mentorChip(s.text, () => mentorSend(s.text, true)));
+        box.appendChild(row);
+      }
+      return box;
+    }
+    function mentorChip(text, onClick) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "mentor-chip";
+      b.textContent = text;
+      b.addEventListener("click", onClick);
+      return b;
+    }
+
+    function mentorDrawChips(state) {
+      state.chips.replaceChildren(state.pickerChip, ...mentorStarters().map(t => mentorChip(t, () => mentorSend(t, true))));
+    }
+
+    // Send what the box holds (or the text of a chip). Returns false when there was nothing to send.
+    function mentorSend(raw, fromChip) {
+      const state = mentorState;
+      const text = String(raw == null ? "" : raw).trim().slice(0, MENTOR_MAX_LENGTH);
+      if (!state || !text) return false;
+      mentorUsed.add(text.toLowerCase());
+      for (const c of state.msgs.querySelectorAll(".mentor-chips-in .mentor-chip")) {   // a question already asked leaves the suggestions in older answers too
+        if (!mentorUsed.has(c.textContent.toLowerCase())) continue;
+        const row = c.parentElement;
+        c.remove();
+        if (!row.children.length) row.remove();
+      }
+      let reply;
+      try {
+        const { answer, pick } = mentorAsk(text);
+        reply = answer.kind === "none"
+          ? { who: "mentor", text: mentorPhrase(MENTOR_PHRASES.unsure, "I could not find that yet."), sources: [], suggestions: answer.suggestions || [] }
+          : { who: "mentor", text: answer.lead, sources: answer.sources || [], pick };
+      } catch (ignored) {
+        reply = { who: "mentor", text: mentorPhrase(MENTOR_PHRASES.unsure, "I could not find that yet."), sources: [], suggestions: [] };
+      }
+      const mine = { who: "me", text };
+      mentorMessages.push(mine, reply);
+      const first = mentorBuildMessage(mine);
+      state.msgs.append(first, mentorBuildMessage(reply));
+      while (mentorMessages.length > MENTOR_MAX_MESSAGES) mentorMessages.shift();
+      while (state.msgs.children.length > mentorMessages.length) state.msgs.firstElementChild.remove();
+      state.win.classList.add("mentor-chatting");
+      state.status.textContent = reply.text;   // announced politely; the rows themselves are not read out unprompted
+      mentorDrawChips(state);
+      state.scroll.scrollTop = first.offsetTop - 4;
+      if (fromChip) state.scroll.focus({ preventScroll: true });   // the chip that was tapped is gone, and a chip must not open the keyboard
+      else state.input.focus({ preventScroll: true });
+      return true;
+    }
+
+    // On a phone the keyboard covers the lower part of the screen: the window follows the part that is left, so the box and Send stay in view.
+    function mentorFit(state) {
+      const vv = window.visualViewport;
+      if (!vv) return;
+      state.backdrop.style.top = `${Math.round(vv.offsetTop)}px`;
+      state.backdrop.style.height = `${Math.round(vv.height)}px`;
+      state.backdrop.style.bottom = "auto";
+    }
+
     function openMentor(opener) {
       if (mentorState) return;
       const backdrop = document.createElement("div");
@@ -4018,24 +4174,60 @@
 
       const col = document.createElement("div");
       col.className = "mentor-col";
+      const scroll = document.createElement("div");
+      scroll.className = "mentor-scroll";
+      scroll.tabIndex = -1;
+      scroll.setAttribute("role", "region");
+      scroll.setAttribute("aria-label", "Conversation");
       const greeting = document.createElement("p");
       greeting.className = "mentor-greeting";
-      greeting.textContent = MENTOR_PHRASES.greeting[Math.floor(Math.random() * MENTOR_PHRASES.greeting.length)];
-      const chip = document.createElement("button");
-      chip.type = "button";
-      chip.className = "mentor-chip";
-      chip.textContent = "Paint Picker";
+      greeting.textContent = mentorPhrase(MENTOR_PHRASES.greeting, "How can I help?");
+      const msgs = document.createElement("div");
+      msgs.className = "mentor-msgs";
+      scroll.append(greeting, msgs);
+      const status = document.createElement("p");
+      status.className = "sr-only";
+      status.setAttribute("role", "status");
+      status.setAttribute("aria-live", "polite");
+      const chips = document.createElement("div");
+      chips.className = "mentor-chips";
+      const pickerChip = mentorChip("Paint Picker", () => { closeMentor(false); goToPaintPicker(); });
+      const form = document.createElement("form");
+      form.className = "mentor-form";
+      form.noValidate = true;
       const input = document.createElement("input");
       input.type = "text";
       input.className = "mentor-input";
       input.placeholder = "Ask Mentor";
       input.setAttribute("aria-label", "Ask Mentor");
+      input.maxLength = MENTOR_MAX_LENGTH;
+      input.autocomplete = "off";
+      input.enterKeyHint = "send";
       input.disabled = !MENTOR_TYPING;
       if (!MENTOR_TYPING) input.tabIndex = -1;
-      const top = document.createElement("div");
-      top.className = "mentor-top";
-      top.append(greeting, chip);
-      col.append(top, input);
+      const send = document.createElement("button");
+      send.type = "submit";
+      send.className = "mentor-send";
+      send.setAttribute("aria-label", "Send");
+      send.disabled = !MENTOR_TYPING;
+      const NS = "http://www.w3.org/2000/svg";
+      const arrow = document.createElementNS(NS, "svg");
+      arrow.setAttribute("viewBox", "0 0 24 24");
+      arrow.setAttribute("width", "20");
+      arrow.setAttribute("height", "20");
+      arrow.setAttribute("aria-hidden", "true");
+      arrow.setAttribute("focusable", "false");
+      const shape = document.createElementNS(NS, "path");
+      shape.setAttribute("d", "M12 19V5M5 12l7-7 7 7");
+      shape.setAttribute("fill", "none");
+      shape.setAttribute("stroke", "currentColor");
+      shape.setAttribute("stroke-width", "2.5");
+      shape.setAttribute("stroke-linecap", "round");
+      shape.setAttribute("stroke-linejoin", "round");
+      arrow.appendChild(shape);
+      send.appendChild(arrow);
+      form.append(input, send);
+      col.append(scroll, chips, form, status);
 
       const orbBox = document.createElement("div");
       orbBox.className = "mentor-orbbox";
@@ -4043,20 +4235,25 @@
       win.append(col, orbBox, close);
       backdrop.appendChild(win);
       document.body.appendChild(backdrop);
-      setMentorOrigin(win, opener);
+      document.body.classList.add("mentor-open");
 
-      const state = { backdrop, win, opener, prevOverflow: document.body.style.overflow };
+      const state = { backdrop, win, opener, scroll, msgs, chips, pickerChip, input, status, prevOverflow: document.body.style.overflow };
       mentorState = state;
+      for (const m of mentorMessages) msgs.appendChild(mentorBuildMessage(m));   // the conversation so far, if the window was closed and opened again
+      if (mentorMessages.length) win.classList.add("mentor-chatting");
+      mentorDrawChips(state);
+      setMentorOrigin(win, opener);
+      if (mentorMessages.length) scroll.scrollTop = scroll.scrollHeight;
       document.body.style.overflow = "hidden";   // the page behind does not scroll
       close.addEventListener("click", () => closeMentor());
-      chip.addEventListener("click", () => { closeMentor(false); goToPaintPicker(); });
+      form.addEventListener("submit", (event) => { event.preventDefault(); if (mentorSend(input.value, false)) input.value = ""; });
       backdrop.addEventListener("click", (event) => { if (event.target === backdrop) closeMentor(); });
       state.onKey = (event) => {
         if (event.key === "Escape") {
           event.preventDefault(); event.stopPropagation();
           closeMentor();
         } else if (event.key === "Tab") {
-          const stops = [...win.querySelectorAll("button, input")].filter(b => !b.disabled && b.tabIndex >= 0);
+          const stops = [...win.querySelectorAll("button, input, select, summary, a[href]")].filter(b => !b.disabled && b.tabIndex >= 0 && b.getClientRects().length);
           const at = stops.indexOf(document.activeElement);
           const next = event.shiftKey ? (at <= 0 ? stops.length - 1 : at - 1) : (at < 0 || at === stops.length - 1 ? 0 : at + 1);
           event.preventDefault();
@@ -4064,7 +4261,14 @@
         }
       };
       document.addEventListener("keydown", state.onKey, true);
+      if (window.visualViewport) {
+        state.onView = () => mentorFit(state);
+        window.visualViewport.addEventListener("resize", state.onView);
+        window.visualViewport.addEventListener("scroll", state.onView);
+        mentorFit(state);
+      }
       close.focus({ preventScroll: true });
+      mentorWarmUp();
     }
 
     // restoreFocus is false when the chip closes it, because focus then goes on to the Paint Picker.
@@ -4073,7 +4277,12 @@
       if (!state) return;
       mentorState = null;
       document.removeEventListener("keydown", state.onKey, true);
+      if (state.onView) {
+        window.visualViewport.removeEventListener("resize", state.onView);
+        window.visualViewport.removeEventListener("scroll", state.onView);
+      }
       document.body.style.overflow = state.prevOverflow;
+      document.body.classList.remove("mentor-open");
       const { backdrop, win, opener } = state;
       backdrop.inert = true;
       if (restoreFocus && opener && opener.isConnected) { try { opener.focus({ preventScroll: true }); } catch (ignored) {} }
@@ -11875,7 +12084,7 @@
       use.textContent = "Use in a recipe";
       const who = hiddenName(paint.name);   // v55: the paint's name is read from a hidden line, never built into an aria-label
       labelWithName(use, "Use in a recipe", who);
-      use.addEventListener("click", () => useCompendiumPaintInNewRecipe(paint));
+      use.addEventListener("click", () => { if (door.leaving) door.leaving(); useCompendiumPaintInNewRecipe(paint); });   // X6b: the Mentor window closes first
       const add = document.createElement("button");
       add.type = "button";
       add.className = "plain-button";
@@ -11911,7 +12120,7 @@
 
     // The pop-up is only offered in the Compendium, on a paint with a real colour that is not an example or made-up paint.
     function similarOffered(door, paint) {
-      return !!door && !!door.share && MinifolioColour.canMatch(paint) && !NOT_A_COLOUR.has(paintKey(paint))
+      return !!door && !!door.share && !door.noSimilar && MinifolioColour.canMatch(paint) && !NOT_A_COLOUR.has(paintKey(paint))
         && !isExamplePaint(paint) && !isMadeUpPaint(paint);
     }
     // Every paint that may be offered: your palette and the built-in list (hidden brands left out), minus anything that is not a colour
