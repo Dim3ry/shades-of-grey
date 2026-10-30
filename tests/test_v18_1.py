@@ -6,7 +6,7 @@ scroll on a 360px phone, and no page errors.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, re, sys
 from playwright.sync_api import sync_playwright
-from launch_helpers import leave_launch
+from launch_helpers import leave_launch, open_settings
 
 PORT = os.environ.get("SOG_PORT", "8765")
 URL = f"http://localhost:{PORT}/index.html"
@@ -51,7 +51,7 @@ def main():
             print("SKIP (entry no longer in the public Updates list): " + 'v18 is listed straight below v18.1')
 
         print("\n--- Help → About ---")
-        page.click('nav button[data-tab="settings"]')   # v21.9: Help and Updates are sub-tabs of Settings
+        open_settings(page)   # v21.9: Help and Updates are sub-tabs of Settings
         page.click('#more-seg button[data-page="help"]')
         page.wait_for_timeout(150)
         page.evaluate("document.getElementById('about').open = true")
@@ -68,7 +68,7 @@ def main():
         check("About still says data stays on this device", "Your data stays on this device" in about)
 
         print("\n--- Updates tab note ---")
-        page.click('nav button[data-tab="settings"]')   # v21.9: Help and Updates are sub-tabs of Settings
+        open_settings(page)   # v21.9: Help and Updates are sub-tabs of Settings
         page.click('#more-seg button[data-page="updates"]')
         page.wait_for_timeout(150)
         note = page.locator("#unofficial-note")
@@ -90,7 +90,7 @@ def main():
         small.on("pageerror", lambda e: errors.append(str(e)))
         start(small)
         for tab in ["updates", "help"]:
-            small.click("nav button[data-tab='settings']")   # v21.9: Help and Updates are sub-tabs of Settings
+            open_settings(small)   # v21.9: Help and Updates are sub-tabs of Settings
             small.click(f"#more-seg button[data-page='{tab}']")
             small.wait_for_timeout(150)
             if tab == "help":
@@ -99,7 +99,7 @@ def main():
             check(f"360px phone, {tab} tab: no sideways scroll", not wide)
         shots = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "screenshots")
         os.makedirs(shots, exist_ok=True)
-        small.click('nav button[data-tab="settings"]')   # v21.9: Help and Updates are sub-tabs of Settings
+        open_settings(small)   # v21.9: Help and Updates are sub-tabs of Settings
         small.click('#more-seg button[data-page="updates"]')
         small.screenshot(path=os.path.join(shots, "v18_1_updates_phone.png"), full_page=True)
 

@@ -21,7 +21,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
-from launch_helpers import leave_launch
+from launch_helpers import leave_launch, open_settings
 from dialog_watch import DialogAnswers
 
 PORT = os.environ.get("SOG_PORT", "8765")
@@ -86,7 +86,7 @@ with sync_playwright() as p:
     # ---------- 1. Versions and kept things ----------
     print("\n--- 1. Versions and kept things ---")
     m = re.search(r'const VERSION = "([^"]+)"', sw)
-    page.click('nav button[data-tab="settings"]')   # v21.9: Help and Updates are sub-tabs of Settings
+    open_settings(page)   # v21.9: Help and Updates are sub-tabs of Settings
     page.click('#more-seg button[data-page="updates"]')
     heads = page.locator("#view-updates h3").all_inner_texts()
     for key in ["mini-tracker-models", "shades-of-grey-settings", "shades-of-grey-recipes"]:
@@ -301,7 +301,7 @@ with sync_playwright() as p:
 
     # ---------- 8. Help, About, errors ----------
     print("\n--- 8. Help and About ---")
-    page.click('nav button[data-tab="settings"]')   # v21.9: Help and Updates are sub-tabs of Settings
+    open_settings(page)   # v21.9: Help and Updates are sub-tabs of Settings
     page.click('#more-seg button[data-page="help"]')
     helps = page.locator("#help-scan-brands").text_content() or ""
     # v48: Help now names every brand (Vallejo's ranges are no longer listed one by one).

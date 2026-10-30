@@ -19,6 +19,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import tap_tab
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
@@ -50,7 +51,7 @@ RECIPES = [rec(1, "Moss Armour", "Armour", [5, 1]), rec(2, "Dusty Cloak", "Armou
 
 def tab(page, name):
     blur(page)
-    page.click(f'nav button[data-tab="{name}"]')
+    tap_tab(page, name)
     page.wait_for_timeout(150)
 
 def open_shopping(page):
@@ -167,7 +168,7 @@ def main():
         page.evaluate("() => { for (const r of book.recipes) addSchemePaintsToShoppingList(recipeShopPaints(r), `Recipe: ${r.name}`); }")   # v62: fill the list
         n = page.evaluate("() => shoppingItems().length")
         seen = {}
-        for name in ("dashboard", "units", "recipes", "compendium", "settings"):
+        for name in ("dashboard", "units", "recipes", "compendium", "settings"):   # X2: "compendium" taps the Help segment (Guides), "settings" its Settings page
             tab(page, name)
             seen[name] = (count_text(page), page.is_visible("#basket-button"))
         check("the basket shows the same count on all five tabs", all(v == (str(n), True) for v in seen.values()) and n >= 3, seen)   # v62: 3 (was 4 or more with running low and empty)
@@ -223,8 +224,8 @@ def main():
                 check(f"{tag}: the four switch buttons all fit their words", fits)
                 check(f"{tag}: nothing scrolls sideways", no_sideways(page))
                 # U4a: the basket moved from the tab bar into the header, next to the Settings cog (the colours and the pop are unchanged)
-                box = page.evaluate("() => { const r = document.getElementById('basket-button').getBoundingClientRect(); const c = document.querySelector('.cog').getBoundingClientRect(); return { l: r.left, r: r.right, top: r.top, h: r.height, cogL: c.left, w: window.innerWidth }; }")
-                check(f"{tag}: the basket is a small pill in the header, left of the cog and inside the screen", box["l"] >= 0 and box["r"] <= box["cogL"] and box["r"] <= box["w"] and box["top"] >= 0 and box["h"] <= 30, box)
+                box = page.evaluate("() => { const r = document.getElementById('basket-button').getBoundingClientRect(); return { l: r.left, r: r.right, top: r.top, h: r.height, w: window.innerWidth }; }")
+                check(f"{tag}: the basket is a small pill in the header (X2: the cog is gone, so it sits in the corner) and inside the screen", box["l"] >= 0 and box["r"] <= box["w"] and box["top"] >= 0 and box["h"] <= 30, box)
                 col = page.evaluate("() => { const cs = getComputedStyle(document.getElementById('basket-button')); const root = getComputedStyle(document.documentElement); return [cs.color, root.getPropertyValue('--accent').trim()]; }")
                 acc = rgb(col[1]) if col[1].startswith("rgb") else [int(col[1][i:i + 2], 16) for i in (1, 3, 5)]
                 end = [0.72 * a + 0.28 * b for a, b in zip(acc, (0x1e, 0x3a, 0x8a))]
@@ -233,8 +234,8 @@ def main():
         page.set_viewport_size({"width": 1100, "height": 800})
         load(page, paints=PAINTS, recipes=RECIPES)
         # U4a: on a wide screen the basket is in the header too, left of the cog
-        d = page.evaluate("() => { const r = document.getElementById('basket-button').getBoundingClientRect(); const c = document.querySelector('.cog').getBoundingClientRect(); return [r.right <= c.left, r.top >= 0 && r.bottom <= 69]; }")
-        check("on a wide screen the basket sits in the header, left of the cog", d[0] and d[1], d)
+        d = page.evaluate("() => { const r = document.getElementById('basket-button').getBoundingClientRect(); return [r.right <= window.innerWidth, r.top >= 0 && r.bottom <= 69]; }")
+        check("on a wide screen the basket sits in the header, inside the right edge (X2: no cog)", d[0] and d[1], d)
         shot(page, "v40-basket-wide.png")
         page.set_viewport_size({"width": 390, "height": 844})
         check("no page error and no unexpected dialog during all of this", not errors and not dialogs, (errors[:3], dialogs[:3]))

@@ -65,7 +65,7 @@ def main():
         t.main_tab(page, "compendium")
         check("Compendium keeps only Detail recipes and Basing tips", labels(page, "#compendium-body .fold-button") == ["Detail recipes", "Basing tips"]
               and page.locator("#cmp-wheel, #cmp-fold-mentor, #cmp-fold-ideas").count() == 0, labels(page, "#compendium-body .fold-button"))
-        check("Pro preview shows on the Compendium and on Colour Lab", "Pro preview" in page.inner_text("#view-compendium")
+        check("Pro preview shows on the Compendium and on Colour Lab", "Pro preview" in page.inner_text("#view-guides")
               and page.evaluate("() => !!document.querySelector('#colourlab-view .pro-pill')"))
 
         print("\n--- 3. Links ---")
@@ -108,7 +108,7 @@ def main():
         print("\n--- 5. Old saved state ---")
         t.existing(page, [], None, {"tab": "compendium"})
         page.wait_for_selector("#cmp-fold-detail")
-        check("a saved Compendium tab opens cleanly", page.evaluate("() => settings.tab") == "compendium")
+        check("a saved Compendium tab opens cleanly", page.evaluate("() => settings.tab") == "guides")   # X2: the Compendium tab is gone; a saved "compendium" opens Guides
         t.existing(page, [], None, {"tab": "recipes", "recipeView": "colourlab"})
         page.wait_for_selector("#cmp-lab-wheel")
         check("a saved Colour Lab view opens on Wheel after a reload", page.evaluate("() => settings.recipeView") == "colourlab")

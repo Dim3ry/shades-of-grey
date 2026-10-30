@@ -12,7 +12,7 @@ What is checked:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, re, subprocess, sys
 from playwright.sync_api import sync_playwright
-from launch_helpers import leave_launch
+from launch_helpers import leave_launch, open_settings
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t   # the shared helpers
@@ -32,7 +32,7 @@ def fresh(page, settings=None):
     leave_launch(page)   # U4b: tap through the start page
 
 def open_more(page, which):
-    page.click('nav button[data-tab="settings"]')
+    open_settings(page)
     page.click(f'#more-seg button[data-page="{which}"]')
     page.wait_for_timeout(150)
 

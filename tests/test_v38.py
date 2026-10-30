@@ -147,7 +147,7 @@ def main():
         card_door = card_door[:card_door.index("id: doorId,")]
         check("the door flag is the switch: the Compendium door has links: true, the recipe card's door has no such flag, and the door comment names door.links",
               "links: true" in door_c and "links" not in card_door and "door.links" in app)
-        check("the panel's own sentences name no shop and the wheel code builds no web link", "createElement(\"a\")" not in app[app.index("v36: THE COLOUR WHEEL"):app.index("function renderCompendium(")])
+        check("the panel's own sentences name no shop and the wheel code builds no web link", "createElement(\"a\")" not in app[app.index("v36: THE COLOUR WHEEL"):app.index("function renderGuides(")])
 
         # ---------- 2. The row ----------
         print("\n--- 2. The row ---")
@@ -378,7 +378,7 @@ def main():
         pe2 = panel(page)
         match_names = [r["name"] for s in pe2["sections"][:3] for r in s["rows"]]
         check("a hostile name as a match is plain text too (Opposite and Neighbours show it as typed), with no element made from it", any("<img src=x" in n for n in match_names) and any("<i>Left</i>" in n for n in match_names)
-              and page.locator("#view-compendium img, #view-compendium script, #view-compendium b, #view-compendium i, #view-compendium iframe").count() == 0 and page.evaluate("() => window.__pwned") is None, match_names)
+              and page.locator("#view-guides img, #view-guides script, #view-guides b, #view-guides i, #view-guides iframe").count() == 0 and page.evaluate("() => window.__pwned") is None, match_names)
         page.click("#cmp-paint-panel .share-row button")
         text = copied(page)
         check("and Copy as text keeps the hostile name as plain text", text and "<img src=x" in text and "<i>Left</i>" in text)
@@ -446,13 +446,13 @@ def main():
             page.click("#cmp-wheel-more-blue")
             page.wait_for_timeout(150)
             open_row(page, "Probe Blue")
-            geo = page.evaluate("""() => { const card = document.querySelector('#view-compendium .card').getBoundingClientRect(), p = document.getElementById('cmp-paint-panel'), pr = p.getBoundingClientRect();
+            geo = page.evaluate("""() => { const card = document.querySelector('#view-guides .card').getBoundingClientRect(), p = document.getElementById('cmp-paint-panel'), pr = p.getBoundingClientRect();
                 const out = [...p.querySelectorAll('*')].filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && (r.right > card.right + 0.5 || r.left < card.left - 0.5); }).map(e => e.className || e.tagName);
                 const btn = p.querySelector('.share-row button').getBoundingClientRect(), row = p.previousElementSibling.getBoundingClientRect();
                 return { inCard: pr.left >= card.left - 0.5 && pr.right <= card.right + 0.5, out, w: pr.width, copyH: btn.height, rowH: row.height, vw: window.innerWidth, sw: document.documentElement.scrollWidth }; }""")
             check(f"at {width} px the open panel is inside the card, nothing in it pokes out, the Copy button and the paint row are 44 px tall and nothing scrolls sideways", geo["inCard"] and not geo["out"] and geo["copyH"] >= 44 and geo["rowH"] >= 44 and no_sideways(page), geo)
             open_row(page, page.evaluate(ROWS_JS)[-1])
-            check(f"at {width} px the panel for the very last paint of a long group fits too", panel(page) is not None and no_sideways(page) and page.evaluate("""() => { const c = document.querySelector('#view-compendium .card').getBoundingClientRect(), r = document.getElementById('cmp-paint-panel').getBoundingClientRect(); return r.left >= c.left - 0.5 && r.right <= c.right + 0.5; }"""))
+            check(f"at {width} px the panel for the very last paint of a long group fits too", panel(page) is not None and no_sideways(page) and page.evaluate("""() => { const c = document.querySelector('#view-guides .card').getBoundingClientRect(), r = document.getElementById('cmp-paint-panel').getBoundingClientRect(); return r.left >= c.left - 0.5 && r.right <= c.right + 0.5; }"""))
             visible = page.evaluate("""() => { const r = document.getElementById('cmp-paint-panel').getBoundingClientRect(); return r.top < window.innerHeight && r.bottom > 0; }""")
             check(f"at {width} px opening a panel brings it into view (it is not left below the screen)", visible)
             tap_long = page.evaluate("() => { const l = [...document.querySelectorAll('#cmp-wheel-detail .idea-name')].map(n => n.textContent.length); return Math.max(...l); }")
@@ -469,7 +469,7 @@ def main():
             tap(page, "blue")
             page.locator("#cmp-wheel-detail button.idea-link").first.click()
             page.wait_for_timeout(150)
-            check(f"at {width} px a very long paint name, with a long brand and a long word, stays inside the card in the row and the panel title", no_sideways(page) and page.evaluate("""() => { const c = document.querySelector('#view-compendium .card').getBoundingClientRect();
+            check(f"at {width} px a very long paint name, with a long brand and a long word, stays inside the card in the row and the panel title", no_sideways(page) and page.evaluate("""() => { const c = document.querySelector('#view-guides .card').getBoundingClientRect();
                 return [...document.querySelectorAll('#cmp-wheel-detail li, #cmp-paint-panel, #cmp-paint-panel *')].every(e => { const r = e.getBoundingClientRect(); return r.width === 0 || (r.left >= c.left - 0.5 && r.right <= c.right + 0.5); }); }"""))
             tap(page, "blue")
         page.set_viewport_size({"width": 390, "height": 844})
@@ -523,7 +523,7 @@ def main():
                     for (const [k, s] of pairs) { const el = document.querySelector(s); if (el) out[k] = [getComputedStyle(el).color, bg(el)]; } return out; }""")
                 bad = {k: round(contrast(rgb(v[0]), rgb(v[1])), 2) for k, v in col.items() if contrast(rgb(v[0]), rgb(v[1])) < 4.5}
                 check(f"{tag}: the panel's title, intro, group names, row words, tags, notes and button, and the Matching colours words and the tap hint, all have contrast of at least 4.5", not bad and len(col) >= 9, (bad, len(col)))
-                ring = page.evaluate("""() => { const b = document.querySelector('#cmp-wheel-detail button.idea-link[aria-expanded="true"]'); const cs = getComputedStyle(b); const card = getComputedStyle(document.querySelector('#view-compendium .card')).backgroundColor;
+                ring = page.evaluate("""() => { const b = document.querySelector('#cmp-wheel-detail button.idea-link[aria-expanded="true"]'); const cs = getComputedStyle(b); const card = getComputedStyle(document.querySelector('#view-guides .card')).backgroundColor;
                     const p = getComputedStyle(document.getElementById('cmp-paint-panel')); return { border: cs.borderTopColor, card, panelBorder: p.borderTopColor }; }""")
                 check(f"{tag}: the open paint and its panel have an accent border you can see (contrast 3 or more against the card)", contrast(rgb(ring["border"]), rgb(ring["card"])) >= 3 and contrast(rgb(ring["panelBorder"]), rgb(ring["card"])) >= 3, ring)
                 page.locator("#cmp-wheel-detail button.idea-link").first.focus()

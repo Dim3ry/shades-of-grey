@@ -23,7 +23,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys, urllib.parse
 from playwright.sync_api import sync_playwright
-from launch_helpers import app_ready, quiet
+from launch_helpers import app_ready, quiet, open_settings, tap_tab
 from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -74,7 +74,7 @@ def fresh(page, settings=None, units=None, photos=None):
 
 def tab(page, name):
     page.evaluate("() => document.activeElement && document.activeElement.blur()")
-    page.click(f'nav button[data-tab="{name}"]')
+    tap_tab(page, name)
     quiet(page)
 
 def open_more(page, which):
@@ -209,7 +209,7 @@ def main():
         everything = site.evaluate("""() => JSON.stringify({ local: Object.entries(localStorage), session: Object.entries(sessionStorage),
             backup: backupData(), settings: settings, dom: document.documentElement.outerHTML, title: document.title })""")
         check("the tag is not saved anywhere: not in saved data, session storage, settings or backups", TAG not in everything, "found")
-        site.click('nav button[data-tab="settings"]'); site.wait_for_timeout(200)
+        open_settings(site); site.wait_for_timeout(200)
         all_text = site.evaluate("() => document.body.innerText + document.documentElement.outerHTML")
         check("the tag is not written into the page at all (not as text, not as HTML)", TAG not in all_text)
         s27.counter["hits"].clear()

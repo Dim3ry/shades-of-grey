@@ -25,7 +25,7 @@ Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run 
 import os, re, socket, subprocess, sys, time
 from playwright.sync_api import sync_playwright
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from launch_helpers import leave_launch
+from launch_helpers import leave_launch, open_settings, tap_tab
 from dialog_watch import DialogAnswers
 
 PORT = os.environ.get("SOG_PORT", "8765")
@@ -76,10 +76,10 @@ def full_settings(**extra):
 
 def tab(page, name):
     if name in ("help", "updates"):   # v21.9: these are sub-tabs of Settings now
-        page.click('nav button[data-tab="settings"]')
+        open_settings(page)
         page.click(f'#more-seg button[data-page="{name}"]')
     else:
-        page.click(f'nav button[data-tab="{name}"]')
+        tap_tab(page, name)
     page.wait_for_timeout(120)
 
 def shot(page, name, full=False):

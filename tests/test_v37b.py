@@ -712,7 +712,7 @@ def main():
               and page.evaluate("() => window.__pwned") is None, evil_opts[:2])
         pick_combo(page, BASE, value=page.evaluate("() => { const c = compendiumBaseChoices(); return c.key([...c.own, ...c.other].find(p => p.name.includes('Evil Blue') || p.name.includes('<img'))); }"))
         check("choosing it puts the text in the box as text, and the ideas below are plain text too",
-              "<img src=x" in page.input_value(BASE) and page.locator("#view-compendium img, #view-compendium script, #view-compendium b, #view-compendium iframe").count() == 0 and page.evaluate("() => window.__pwned") is None)
+              "<img src=x" in page.input_value(BASE) and page.locator("#view-guides img, #view-guides script, #view-guides b, #view-guides iframe").count() == 0 and page.evaluate("() => window.__pwned") is None)
         page.click(FT)
         check("a hostile faction name is plain text in the Faction list", any("<img src=x" in o for o in option_texts(page, FL)) and page.locator(f"{FL} img, {FL} b").count() == 0)
         page.keyboard.press("Escape")
@@ -723,14 +723,14 @@ def main():
                 page.wait_for_timeout(40)
             page.keyboard.press("Escape")
         check("typing hostile text into every search box never makes markup or runs anything, and the No matches. lines never repeat it",
-              page.locator("#view-compendium img, #view-compendium script, #view-compendium b, #view-compendium iframe").count() == 0 and page.evaluate("() => window.__pwned") is None
+              page.locator("#view-guides img, #view-guides script, #view-guides b, #view-guides iframe").count() == 0 and page.evaluate("() => window.__pwned") is None
               and all("<" not in status(page, s) and "script" not in status(page, s).lower() for s in ("#cmp-starter-search-status", "#cmp-detail-search-status", "#cmp-basing-search-status", STAT, FS)))
         check("saved odd search text in the door's state is handled (a number, an empty list, a long string) without an error",
-              (lambda: (page.evaluate("() => { compendiumState.search = { starter: 5, detail: null, basing: 'x'.repeat(5000) }; renderCompendium(); }"), page.wait_for_timeout(200), page.locator("#cmp-starter-search").count() == 1)[-1])())
-        page.evaluate("() => { compendiumState.search = { starter: '', detail: '', basing: '' }; renderCompendium(); }")
+              (lambda: (page.evaluate("() => { compendiumState.search = { starter: 5, detail: null, basing: 'x'.repeat(5000) }; renderGuides(); }"), page.wait_for_timeout(200), page.locator("#cmp-starter-search").count() == 1)[-1])())
+        page.evaluate("() => { compendiumState.search = { starter: '', detail: '', basing: '' }; renderGuides(); }")
         tap(page, "blue")
         tap(page, "blue")
-        page.evaluate("() => { compendiumState.wheel = 'blue'; renderCompendium(); }")
+        page.evaluate("() => { compendiumState.wheel = 'blue'; renderGuides(); }")
         rows_ = page.evaluate(GROUPS_JS)
         check("hostile paint names in the wheel groups show as plain text and are in a group", any("<img src=x" in r["name"] for g in rows_ for r in g["rows"]) and page.locator("#cmp-wheel-detail img, #cmp-wheel-detail b, #cmp-wheel-detail script").count() == 0)
         check("the Copy as text for a wheel group has the hostile name as plain text too", (lambda: (page.click("#cmp-wheel-detail .share-row button"), "<img src=x" in (copied(page) or ""))[-1])())
@@ -796,7 +796,7 @@ def main():
             load(page, paints=PAINTS, recipes=RECIPES, units=UNITS)
             open_tab(page)
             open_all(page)
-            geo = page.evaluate("""() => { const card = document.querySelector('#view-compendium .card').getBoundingClientRect();
+            geo = page.evaluate("""() => { const card = document.querySelector('#view-guides .card').getBoundingClientRect();
                 const rows = ['cmp-colour-ideas-base', 'cmp-faction-history-pick', 'cmp-starter-search', 'cmp-detail-search', 'cmp-basing-search'].map(id => { const i = document.getElementById(id), r = i.getBoundingClientRect(), row = i.parentElement.getBoundingClientRect();
                     const sib = [...i.parentElement.children].map(c => c.getBoundingClientRect()); return { id, h: r.height, w: r.width, inCard: row.left >= card.left - 0.5 && row.right <= card.right + 0.5, fits: sib.every(s => s.right <= row.right + 0.5), font: parseFloat(getComputedStyle(i).fontSize) }; });
                 const tog = document.getElementById('cmp-colour-ideas-base-toggle').getBoundingClientRect();
@@ -805,7 +805,7 @@ def main():
                   all(r["h"] >= 44 and r["w"] > 150 and r["inCard"] and r["fits"] and r["font"] >= 16 for r in geo["rows"]) and geo["tog"][0] >= 44 and geo["tog"][1] >= 44 and no_sideways(page), geo)
             page.click(BASE)
             page.wait_for_timeout(100)
-            lst = page.evaluate("""() => { const l = document.getElementById('cmp-colour-ideas-base-list').getBoundingClientRect(), card = document.querySelector('#view-compendium .card').getBoundingClientRect();
+            lst = page.evaluate("""() => { const l = document.getElementById('cmp-colour-ideas-base-list').getBoundingClientRect(), card = document.querySelector('#view-guides .card').getBoundingClientRect();
                 return { h: l.height, in: l.left >= card.left - 0.5 && l.right <= card.right + 0.5, vh: window.innerHeight, scrolls: document.getElementById('cmp-colour-ideas-base-list').scrollHeight > document.getElementById('cmp-colour-ideas-base-list').clientHeight }; }""")
             check(f"at {width} px the open list is inside the card, no taller than 300 px (so it is never most of the screen) and scrolls", lst["in"] and 100 < lst["h"] <= 300 and lst["scrolls"] and no_sideways(page), lst)
             type_into(page, BASE, "orange")
@@ -819,7 +819,7 @@ def main():
             wrong = []
             for part in PART_ORDER:
                 tap(page, part)
-                bad = page.evaluate("""() => { const c = document.querySelector('#view-compendium .card').getBoundingClientRect(); return [...document.querySelectorAll('#cmp-wheel-detail *')].filter(e => { const r = e.getBoundingClientRect();
+                bad = page.evaluate("""() => { const c = document.querySelector('#view-guides .card').getBoundingClientRect(); return [...document.querySelectorAll('#cmp-wheel-detail *')].filter(e => { const r = e.getBoundingClientRect();
                     return r.width > 0 && (r.right > c.right + 0.5 || r.left < c.left - 0.5); }).map(e => e.className || e.tagName); }""")
                 if bad or not no_sideways(page):
                     wrong.append((part, bad[:3]))
@@ -896,7 +896,7 @@ def main():
                     return out; }""")
                 bad = {k: round(contrast(rgb(v[0]), rgb(v[1])), 2) for k, v in col.items() if contrast(rgb(v[0]), rgb(v[1])) < 4.5}
                 check(f"{tag}: the labels, the typed text, the list lines, headings, the highlighted line, the status lines, the placeholder and the buttons all have contrast of at least 4.5", not bad and len(col) >= 12, (bad, len(col)))
-                ring = page.evaluate("""() => { const el = document.querySelector('#cmp-colour-ideas-base-list .is-active'); const cs = getComputedStyle(el); const card = getComputedStyle(document.querySelector('#view-compendium .card')).backgroundColor;
+                ring = page.evaluate("""() => { const el = document.querySelector('#cmp-colour-ideas-base-list .is-active'); const cs = getComputedStyle(el); const card = getComputedStyle(document.querySelector('#view-guides .card')).backgroundColor;
                     const listbg = getComputedStyle(document.getElementById('cmp-colour-ideas-base-list')).backgroundColor; return { outline: cs.outlineColor, listbg, card, input: getComputedStyle(document.getElementById('cmp-colour-ideas-base')).borderColor }; }""")
                 check(f"{tag}: the highlighted line has an outline you can see (contrast 3 or more against the list)", contrast(rgb(ring["outline"]), rgb(ring["listbg"])) >= 3, ring)
                 page.focus("#cmp-starter-search")

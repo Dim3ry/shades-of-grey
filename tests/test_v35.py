@@ -25,7 +25,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, subprocess, sys
 from playwright.sync_api import sync_playwright
-from launch_helpers import app_ready, quiet
+from launch_helpers import app_ready, quiet, tap_tab
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lab_helpers as labh   # X1: the old all-in-one Compendium page (see lab_helpers.py)
@@ -164,16 +164,16 @@ def main():
         check("the card's pieces are shared, not copied: the card (appendLibraryParts) and the Compendium (libraryParts) both use the same parts, and both call appendRolePicker and buildIdeasList, and each builder is defined once",
               app.count("appendLibraryParts(") >= 2 and app.count("libraryParts(") >= 3 and app.count("appendRolePicker(") >= 3 and app.count("buildIdeasList(") >= 3
               and all(app.count(f"function {n}(") == 1 for n in ["buildStarterSchemes", "buildDetailRecipes", "buildBasingTips", "buildFactionHistory", "buildIdeaItem", "appendLibraryParts", "appendRolePicker", "buildIdeasList"]))
-        check("the Pro preview label is on the Compendium", page.inner_text("#view-compendium .pro-pill") == "Pro preview" if page.locator("#view-compendium .pro-pill").count() else False)
+        check("the Pro preview label is on the Compendium", page.inner_text("#view-guides .pro-pill") == "Pro preview" if page.locator("#view-guides .pro-pill").count() else False)
         help_text = page.evaluate("() => document.getElementById('help-tabs').textContent")
-        check("Help names the four sections and says what the Compendium is", all(w in help_text for w in ["four sections", "Compendium"]), help_text)   # U4a: the bar has four sections, Settings is the cog
+        check("Help names the four sections and says what Guides is", all(w in help_text for w in ["four sections", "Guides"]), help_text)   # X2: the Compendium is Guides now   # U4a: the bar has four sections, Settings is the cog
 
         # ---------- 2. The five-tab bar ----------
         print("\n--- 2. The five-tab bar ---")
         names = page.evaluate("() => [...document.querySelectorAll('nav button[data-tab]')].map(b => b.dataset.tab)")   # U4a: the four segments, then the Settings cog in the header
-        check("tabs in order: Dashboard, Units, Recipes, Compendium, Settings (the cog)", names == ["dashboard", "units", "recipes", "compendium", "settings"], names)
-        label = page.evaluate("() => [...document.querySelector('nav.tabs button[data-tab=compendium]').childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('')")
-        check("the label is Compendium in full", label == "Compendium", label)
+        check("tabs in order: Dashboard, Units, Recipes, Help and Tools (X2: the fourth is data-tab guides; no cog)", names == ["dashboard", "units", "recipes", "guides"], names)
+        label = page.evaluate("() => [...document.querySelector('nav.tabs button[data-tab=guides]').childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('')")
+        check("the label is Help in full (X2)", label == "Help", label)
         for width in (360, 375, 390, 400):
             page.set_viewport_size({"width": width, "height": 800})
             frames(page)
@@ -188,21 +188,21 @@ def main():
         page.set_viewport_size({"width": 390, "height": 844})
         open_comp(page)
         check("tapping Compendium opens it and lights up its tab",
-              page.is_visible("#view-compendium") and page.get_attribute('nav button[data-tab="compendium"]', "aria-current") == "page"
-              and page.get_attribute('nav button[data-tab="settings"]', "aria-current") is None and not page.is_visible("#view-dashboard"))
-        check("the page is called Compendium and says what it is", page.inner_text("#view-compendium h2") == "Compendium" and "without needing a recipe" in page.inner_text("#cmp-intro"))
+              page.is_visible("#view-guides") and page.get_attribute('nav button[data-tab="guides"]', "aria-current") == "page"
+              and page.locator('nav button[data-tab="settings"]').count() == 0 and not page.is_visible("#view-dashboard"))
+        check("the page says what it is", "without needing a recipe" in page.inner_text("#cmp-intro"))   # X2: the page heading is Help and Tools above the switch, not inside the card
         page.reload()
         app_ready(page)
         # U4b (v89): a reload shows the start page; the Compendium is one tap away.
-        check("reloading the app shows the start page, and tapping Compendium opens it", page.evaluate("() => document.body.classList.contains('launching')") and not page.is_visible("#view-compendium"))
+        check("reloading the app shows the start page, and tapping Compendium opens it", page.evaluate("() => document.body.classList.contains('launching')") and not page.is_visible("#view-guides"))
         labh.go_compendium(page)
         page.wait_for_timeout(150)
-        check("...Compendium opens from the start page", page.is_visible("#view-compendium"))
+        check("...Compendium opens from the start page", page.is_visible("#view-guides"))
         check("Back from the Compendium goes to the Dashboard", page.evaluate("() => typeof backTarget() === 'function'"))
         page.set_viewport_size({"width": 1100, "height": 800})
         frames(page)
         names_top = page.evaluate("() => [...document.querySelectorAll('nav button[data-tab]')].map(b => b.dataset.tab)")
-        check("on a wide screen the bar and the cog have all five tabs and the Compendium page is still there", names_top == names and page.is_visible("#view-compendium") and no_sideways(page))
+        check("on a wide screen the bar and the cog have all five tabs and the Compendium page is still there", names_top == names and page.is_visible("#view-guides") and no_sideways(page))
         page.set_viewport_size({"width": 390, "height": 844})
 
         # ---------- 3. Same content, not a copy ----------
@@ -609,7 +609,7 @@ def main():
         own = "\n".join([joined, help_text, app[app.index("v35: THE COMPENDIUM TAB"):app.index('v18c: TIDY BRANDS')]])
         own_hits = GW_WORDS.findall(own) + GW_MORE.findall(own)
         check("the new Updates entry, the Help line and the new code's words are clean too", not own_hits, own_hits[:10])
-        check("the Compendium has no links at all (no shop links, those come later)", page.locator("#view-compendium a:not(.shop-more a)").count() == 0)   # v64: a paint you do not own can now come first, with the v39 Shop links fold-out
+        check("the Compendium has no links at all (no shop links, those come later)", page.locator("#view-guides a:not(.shop-more a)").count() == 0)   # v64: a paint you do not own can now come first, with the v39 Shop links fold-out
 
         # ---------- 10. Hostile text ----------
         print("\n--- 10. Hostile text ---")
@@ -627,7 +627,7 @@ def main():
         cmp_pick(page, "detail-chips", keys_d[0])
         cmp_pick(page, "basing-chips", "snow")
         check("hostile paint, brand, faction and recipe names never become markup anywhere in the Compendium",
-              page.locator("#view-compendium img, #view-compendium script, #view-compendium b, #view-compendium iframe").count() == 0 and page.evaluate("() => window.__pwned") is None)
+              page.locator("#view-guides img, #view-guides script, #view-guides b, #view-guides iframe").count() == 0 and page.evaluate("() => window.__pwned") is None)
         check("they show as plain text instead", "<img src=x" in page.inner_text("#cmp-faction-history-for") or "<img src=x" in page.inner_text("#cmp-faction-history"), page.inner_text("#cmp-faction-history")[:200])
         check("the chosen hostile paint shows as plain text in the chooser and in the copied heading",
               "<img src=x" in page.input_value('#cmp-colour-ideas-base'))
@@ -676,10 +676,10 @@ def main():
                 shot(page, f"v35-compendium-{appearance}-{width}.png")
                 tag = f"{appearance} {width}px"
                 check(f"{tag}: nothing scrolls sideways with every part open", no_sideways(page))
-                outside = page.evaluate("""() => { const c = document.querySelector('#view-compendium .card').getBoundingClientRect();
+                outside = page.evaluate("""() => { const c = document.querySelector('#view-guides .card').getBoundingClientRect();
                     return [...document.querySelectorAll('#compendium-body *')].filter(e => { const r = (e.closest('.chips-scroll') || e).getBoundingClientRect();   // v49: judged by the sliding row it's clipped to
                         return r.width > 0 && (r.right > c.right + 0.5 || r.left < c.left - 0.5); }).map(e => e.id || e.className || e.tagName); }""")
-                check(f"{tag}: everything is inside the Compendium card, or in a one-line row that slides inside it (and the card is inside the screen)", not outside and page.evaluate("() => document.querySelector('#view-compendium .card').getBoundingClientRect().right") <= width + 0.5, outside[:5])
+                check(f"{tag}: everything is inside the Compendium card, or in a one-line row that slides inside it (and the card is inside the screen)", not outside and page.evaluate("() => document.querySelector('#view-guides .card').getBoundingClientRect().right") <= width + 0.5, outside[:5])
                 col = page.evaluate("""() => { const bg = (el) => { let e = el; while (e) { const v = getComputedStyle(e).backgroundColor;
                         const m = v.match(/rgba\\(.*,\\s*([\\d.]+)\\)/);
                         if (v && v !== 'transparent' && !(m && parseFloat(m[1]) < 0.9)) return v; e = e.parentElement; } return 'rgb(0,0,0)'; };
@@ -691,7 +691,7 @@ def main():
                                    ['scheme on', '#cmp-starter-chips .chip[aria-pressed="true"]'], ['summary', '#cmp-starter-summary'], ['reason', '#cmp-starter-reason'],
                                    ['scheme why', '#cmp-starter-list .idea-why'], ['detail why', '#cmp-detail-list .idea-why'], ['detail note', '#cmp-detail-list .idea-note'],
                                    ['basing list', '#cmp-basing-materials li'], ['basing sub', '#cmp-basing-tips .basing-sub'], ['basing why', '#cmp-basing-list .idea-why'],
-                                   ['copy button', '#cmp-starter-schemes .share-row button'], ['foot', '#cmp-foot'], ['pro pill', '#view-compendium .pro-pill']];
+                                   ['copy button', '#cmp-starter-schemes .share-row button'], ['foot', '#cmp-foot'], ['pro pill', '#view-guides .pro-pill']];
                     for (const [k, s] of pairs) { const el = document.querySelector(s); if (el) out[k] = [getComputedStyle(el).color, bg(el)]; }
                     return out; }""")
                 bad = {k: round(contrast(rgb(v[0]), rgb(v[1])), 2) for k, v in col.items() if contrast(rgb(v[0]), rgb(v[1])) < 4.5}
@@ -699,18 +699,18 @@ def main():
                 rowsg = page.evaluate("""() => { const b = [...document.querySelectorAll('#compendium-body .share-row button, #compendium-body .chip')];
                     return b.length && Math.min(...b.map(x => x.getBoundingClientRect().height)); }""")
                 check(f"{tag}: every button is at least 36 px tall (the Copy and Save buttons 44 px)", rowsg >= 36 and page.evaluate("() => [...document.querySelectorAll('#compendium-body .share-row button')].every(b => b.getBoundingClientRect().height >= 43.5)"), rowsg)
-                bar = page.evaluate("() => { const b = document.querySelector('nav.tabs button[data-tab=compendium]'); return [getComputedStyle(b).color, getComputedStyle(b).backgroundColor]; }")   # U4a: the lit segment has its own fill
+                bar = page.evaluate("() => { const b = document.querySelector('nav.tabs button[data-tab=guides]'); return [getComputedStyle(b).color, getComputedStyle(b).backgroundColor]; }")   # U4a: the lit segment has its own fill
                 check(f"{tag}: the lit-up Compendium tab is readable (contrast 3 or more)", contrast(rgb(bar[0]), rgb(bar[1])) >= 3, bar)
         page.set_viewport_size({"width": 390, "height": 844})
 
         # ---------- 13. Nothing else changed ----------
         print("\n--- 13. Nothing else changed ---")
         load(page, recipes=RECIPES, units=UNITS)
-        for tab, view in [("dashboard", "view-dashboard"), ("units", "view-units"), ("recipes", "view-recipes"), ("settings", "view-settings"), ("compendium", "view-compendium")]:
+        for tab, view in [("dashboard", "view-dashboard"), ("units", "view-units"), ("recipes", "view-recipes"), ("settings", "view-settings"), ("compendium", "view-guides")]:
             blur(page)
-            page.click(f'nav button[data-tab="{tab}"]')
+            tap_tab(page, tab)
             wait_settled(page)   # v92 (Mo3a): the old section slides out over 240 ms; only the new one is showing after that
-            check(f"the {tab} tab opens its own page and hides the others", page.is_visible(f"#{view}") and sum(page.is_visible(f"#{v}") for v in ["view-dashboard", "view-units", "view-recipes", "view-settings", "view-compendium"]) == 1)
+            check(f"the {tab} tab opens its own page and hides the others", page.is_visible(f"#{view}") and sum(page.is_visible(f"#{v}") for v in ["view-dashboard", "view-units", "view-recipes", "view-settings", "view-guides"]) == 1)
         check("the card in a recipe still starts closed in a fresh editor", (lambda: (load(page, recipes=RECIPES, units=UNITS), t.open_editor(page), page.evaluate("() => document.getElementById('colour-ideas').open"))[-1])() is False)
         open_panel(page)
         check("the card still has the check at the bottom", page.locator("#scheme-check").count() == 1)

@@ -14,6 +14,7 @@ python3 tests/test_v18.py
 The port comes from the SOG_PORT environment variable, or 8765 if it isn't set."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import open_settings
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}"
@@ -90,7 +91,7 @@ def compare(case, parts):
     return problems
 
 def help_text(page):
-    page.click('nav button[data-tab="settings"]')   # v21.9: Help and Updates are sub-tabs of Settings
+    open_settings(page)   # v21.9: Help and Updates are sub-tabs of Settings
     page.click('#more-seg button[data-page="help"]')
     page.wait_for_timeout(150)
     # Closed topics' text isn't visible, so open them all before reading.
@@ -114,7 +115,7 @@ def main():
             check("v17.1 is still listed, straight below v18", page.evaluate(f"CHANGELOG[{v18_at + 1}].version") == "v17.1")
         else:
             print("SKIP (entry no longer in the public Updates list): " + 'v17.1 is still listed, straight below v18')
-        page.click('nav button[data-tab="settings"]')   # v21.9: Help and Updates are sub-tabs of Settings
+        open_settings(page)   # v21.9: Help and Updates are sub-tabs of Settings
         page.click('#more-seg button[data-page="updates"]')
         page.wait_for_timeout(150)
 

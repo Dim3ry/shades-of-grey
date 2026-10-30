@@ -30,7 +30,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, subprocess, sys
 from playwright.sync_api import sync_playwright
-from launch_helpers import leave_launch, quiet
+from launch_helpers import leave_launch, quiet, tap_tab
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
@@ -382,7 +382,7 @@ def main():
         tap_group(page, "green", "sea")
         for tab in ("dashboard", "units", "recipes", "settings"):
             blur(page)
-            page.click(f'nav button[data-tab="{tab}"]')
+            tap_tab(page, tab)
             wait(page, 120)
             open_comp(page)
             st = state(page)
@@ -508,7 +508,7 @@ def main():
                 check(f"{tag}: every group's tap area (its name and its segment) and the Back button are at least 44 px across (smallest {round(min(hits), 1)})", min(hits) >= 44, hits)
                 zoom(page, "blue")
                 tap_group(page, "blue", "navy")
-                col = page.evaluate("""() => { const bg = getComputedStyle(document.querySelector('#view-compendium .card')).backgroundColor, out = {};
+                col = page.evaluate("""() => { const bg = getComputedStyle(document.querySelector('#view-guides .card')).backgroundColor, out = {};
                     const pairs = [['hint', '#cmp-wheel-hint'], ['label', '#cmp-wheel .wheel-sub-seg[aria-pressed="false"] .wheel-label'], ['back disc', '#cmp-wheel .wheel-back-text'],
                                    ['title', '#cmp-wheel-detail h3'], ['about', '#cmp-wheel-detail > .hint'], ['count', '#cmp-wheel-detail .idea-label'], ['group', '.wheel-sub'], ['name', '#cmp-wheel-detail .idea-name'],
                                    ['copy', '#cmp-wheel-detail .share-row button'], ['back button', '#cmp-wheel-back']];
@@ -534,7 +534,7 @@ def main():
         zoom(page, "blue")
         tap_group(page, "blue", "blue")
         check("a hostile paint name and brand never become markup in the drilled-down wheel and its list, and no script runs",
-              page.locator("#view-compendium img, #view-compendium script, #view-compendium b, #view-compendium iframe").count() == 0 and page.evaluate("() => window.__pwned") is None)
+              page.locator("#view-guides img, #view-guides script, #view-guides b, #view-guides iframe").count() == 0 and page.evaluate("() => window.__pwned") is None)
         rows = [r["name"] for r in page.evaluate(DETAIL_JS)["rows"]]
         check("the hostile name is shown as plain text, tags and all, inside the group list", HOSTILE in rows, rows)
         h.open_row(page, HOSTILE)
@@ -552,9 +552,9 @@ def main():
         # ---------- 13. Nothing else changed ----------
         print("\n--- 13. Nothing else changed ---")
         load(page, paints=PAINTS)
-        for tab, view in [("dashboard", "view-dashboard"), ("units", "view-units"), ("recipes", "view-recipes"), ("settings", "view-settings"), ("compendium", "view-compendium")]:
+        for tab, view in [("dashboard", "view-dashboard"), ("units", "view-units"), ("recipes", "view-recipes"), ("settings", "view-settings"), ("compendium", "view-guides")]:
             blur(page)
-            page.click(f'nav button[data-tab="{tab}"]')
+            tap_tab(page, tab)
             wait(page, 150)
             check(f"the {tab} tab still opens", page.locator(f"#{view}").is_visible())
         open_comp(page)

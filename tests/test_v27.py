@@ -23,7 +23,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import base64, json, mimetypes, os, re, sys, urllib.parse
 from playwright.sync_api import sync_playwright
-from launch_helpers import app_ready, quiet
+from launch_helpers import app_ready, quiet, tap_tab
 from launch_helpers import leave_launch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -112,7 +112,7 @@ def blur(page):
 
 def main_tab(page, name):
     blur(page)
-    page.click(f'nav button[data-tab="{name}"]')
+    tap_tab(page, name)
     quiet(page)
 
 def sub_tab(page, name):
@@ -409,7 +409,7 @@ def main():
         # ---------- 8. Nothing else broke ----------
         print("\n--- 8. Nothing else broke ---")
         site_load(page, units=UNITS)
-        check("four sections in the menu bar and the Settings cog (U4a: Settings moved from the bar to the header)", page.locator("nav.tabs button[data-tab]").count() == 4 and page.locator("nav button[data-tab=settings]").count() == 1)
+        check("four sections in the menu bar and no Settings cog (X2: Settings is a page of the fourth section)", page.locator("nav.tabs button[data-tab]").count() == 4 and page.locator("nav button[data-tab=settings]").count() == 0)
         main_tab(page, "settings")
         for name in ["help", "updates", "settings"]:
             sub_tab(page, name)
