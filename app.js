@@ -4043,11 +4043,37 @@
       });
     }
 
-    const MENTOR_SOURCE_WORD = { guide: "guide ", recipe: "detail recipe ", basing: "basing tip " };
+    const MENTOR_SOURCE_WORD = { guide: "guide ", recipe: "detail recipe ", basing: "basing tip ", tip: "tip " };
+    const MENTOR_SOURCE_KIND = { guide: "guide", recipe: "detail", basing: "basing", tip: "tip" };   // the engine's source type -> the library's entry kind
+    // X7: the colour wheel part a "wheel:<group>" source names, selected the way a tap would (centre parts open, hue colours open their groups).
+    function mentorWheelTarget(key) {
+      const m = /^wheel:(.+)$/.exec(String(key || ""));
+      return m ? WHEEL.find(w => w.key === m[1]) || null : null;
+    }
+    function mentorOpenColour(src) {
+      const seg = mentorWheelTarget(src.key);
+      if (!seg) { showToast("That colour could not be found."); return; }
+      const st = compendiumState;
+      st.focus = null;
+      st.paintOpen = "";
+      st.wheelGroup = "";
+      st.wheelZoom = seg.ring !== undefined ? seg.key : "";
+      st.wheel = seg.ring !== undefined ? "" : seg.key;
+      openColourLab("wheel", () => {
+        const hint = document.getElementById(compendiumId("wheel-hint"));
+        if (!hint) return;
+        hint.tabIndex = -1;
+        hint.scrollIntoView({ block: "start" });
+        hint.focus({ preventScroll: true });
+      });
+    }
+    // The window closes first (its own exit finishes), then the screen moves, so the two never fight. Focus then lands on the destination.
     function mentorOpenSource(src) {
-      closeMentor(false);
-      if (src.type === "colour-lab") openColourLab("wheel");
-      else openGuide(src.key);   // X7 sends each kind to its exact place
+      closeMentor(false, () => {
+        if (src.type === "colour-lab") mentorOpenColour(src);
+        else openGuide(src.key, MENTOR_SOURCE_KIND[src.type]);
+        queueBackCheck();   // the tap came before the move, so Back's spare step is checked again now: Back goes to the Dashboard, not out of the app
+      });
     }
 
     function mentorBuildMessage(m) {
@@ -4272,9 +4298,9 @@
     }
 
     // restoreFocus is false when the chip closes it, because focus then goes on to the Paint Picker.
-    function closeMentor(restoreFocus = true) {
+    function closeMentor(restoreFocus = true, after) {
       const state = mentorState;
-      if (!state) return;
+      if (!state) { if (after) after(); return; }
       mentorState = null;
       document.removeEventListener("keydown", state.onKey, true);
       if (state.onView) {
@@ -4286,7 +4312,8 @@
       const { backdrop, win, opener } = state;
       backdrop.inert = true;
       if (restoreFocus && opener && opener.isConnected) { try { opener.focus({ preventScroll: true }); } catch (ignored) {} }
-      const done = () => backdrop.remove();
+      let finished = false;
+      const done = () => { if (finished) return; finished = true; backdrop.remove(); if (after) after(); };
       if (getComputedStyle(win).animationName === "none") done();   // reduce motion: it simply disappears
       else {
         setMentorOrigin(win, opener);
@@ -13536,18 +13563,20 @@
       try { return new URL(String(url)).protocol === "https" + ":"; } catch (e) { return false; }
     }
     // Open Guides on one entry, from anywhere in the app. A key that is not in the library shows one calm line instead.
-    function openGuide(key) {
+    function openGuide(key, kind) {
       if (importDraft) { showToast("Close Paste recipes first, then open Guides."); return; }
       if (schemeDraft) { showToast("Finish or close the scheme you're editing first, then open Guides."); return; }
       whenOkToLeaveDraft(() => {
         recipeDraft = null;
         openRecipeId = null;
-        const e = knowledgeIndex().get(String(key));
+        const e = knowledgeIndex().get(String(key), kind);
         Object.assign(guidesState, { view: "home", cat: "", key: "", kind: "", query: "", missing: false });
         if (e) guidesPoint(e); else guidesState.missing = true;
         showTab("guides");
         const target = e && document.getElementById(e.id);
         if (target) { target.scrollIntoView({ block: "start" }); target.focus({ preventScroll: true }); }
+        const gone = !e && document.getElementById("guides-missing");   // X7: a retired key: the one calm line gets the focus
+        if (gone) { gone.tabIndex = -1; gone.focus({ preventScroll: true }); }
       });
     }
     function renderGuides(focusSelector) {
