@@ -3930,6 +3930,7 @@
       saveSettings();
       if (name === "settings") renderSettings();
       if (name === "guides") renderGuides();   // v35: built fresh each time, from your palette and units as they are now
+      if (name === "dashboard") renderPaletteTile();   // X4: the palette may have changed since the Dashboard was last drawn
       if (name === "dashboard") renderHistory();   // the graph needs to be on screen to measure its width
       window.scrollTo(0, 0);
     }
@@ -4556,8 +4557,88 @@
         button.addEventListener("click", () => goToUnits({ faction }));
         factionGrid.appendChild(button);
       }
+      renderPaletteTile();
       renderHistory();
     }
+
+    // ----- X4: the Palette tile and the Achievements tile on the Dashboard -----
+    // Only data the app already has. The strip has one block per hue, in wheel order, sized by the paints you have (Owned and Running low),
+    // each paint's hue coming from wheelPlace (its colour, so custom paints work too). A hue with none, or only one, is a gap. Whites, greys,
+    // blacks and metallics share one last block that is never a gap. Paints with no colour set are left out of the strip, not of the counts.
+    const PALETTE_HUES = [["red", "Red"], ["orange", "Orange"], ["yellow", "Yellow"], ["green", "Green"], ["blue", "Blue"], ["purple", "Purple"]];
+    const paletteTile = document.getElementById("palette-tile");
+    const paletteStrip = document.getElementById("palette-strip");
+    const paletteLines = document.getElementById("palette-lines");
+
+    // Everything the tile shows, as plain data (no page needed): { hues: [{ key, label, count, gap }], neutral, most, gaps, owned, low, wish, empty }.
+    function dashPaletteSummary() {
+      const hues = PALETTE_HUES.map(([key, label]) => ({ key, label, count: 0, gap: false }));
+      let neutral = 0;
+      for (const p of book.paints) {
+        if (!haveIt(p)) continue;
+        const at = wheelPlace(p);
+        if (!at) continue;
+        const h = hues.find(x => x.key === at.seg);
+        if (h) h.count++; else neutral++;
+      }
+      for (const h of hues) h.gap = h.count < 2;
+      const uses = new Map();   // paint id -> how many recipes use it
+      for (const r of book.recipes) {
+        const ids = new Set();
+        for (const s of r.steps) for (const sp of s.paints) ids.add(sp.paint);
+        for (const id of ids) uses.set(id, (uses.get(id) || 0) + 1);
+      }
+      let most = null;   // a tie goes to the name that comes first in A to Z
+      for (const p of book.paints) {
+        const n = uses.get(p.id) || 0;
+        if (n && (!most || n > most.n || (n === most.n && String(p.name).localeCompare(most.name) < 0))) most = { name: String(p.name), n };
+      }
+      const count = (key) => book.paints.filter(p => paintStatus(p) === key).length;
+      return { hues, neutral, most, gaps: hues.filter(h => h.gap).map(h => h.label).slice(0, 2),
+               owned: count("owned"), low: count("low"), wish: count("wishlist"), empty: book.paints.length === 0 };
+    }
+
+    function renderPaletteTile() {
+      const s = dashPaletteSummary();
+      const lines = [];
+      if (s.empty) lines.push("No paints yet");
+      else {
+        if (s.most) lines.push(`Most used: ${s.most.name}, in ${plural(s.most.n, "recipe")}`);
+        if (s.gaps.length) lines.push(`Gap: ${s.gaps.join(", ")}`);
+        lines.push(`${s.owned} owned, ${s.low} running low, ${s.wish} wishlist`);
+      }
+      paletteStrip.replaceChildren();
+      paletteStrip.hidden = s.empty;
+      const blocks = s.hues.map(h => ({ key: h.key, count: h.count, gap: h.gap }));
+      if (s.neutral) blocks.push({ key: "neutral", count: s.neutral, gap: false });
+      for (const b of blocks) {
+        const cell = document.createElement("span");
+        cell.className = "palette-cell";
+        const bar = document.createElement("span");
+        bar.className = "palette-bar" + (b.gap ? " is-gap" : "") + (b.count === 0 ? " is-empty" : "");
+        bar.dataset.hue = b.key;
+        bar.style.setProperty("--grow", String(Math.max(b.count, 0)));
+        cell.style.setProperty("--grow", String(b.count));
+        cell.append(bar);
+        if (b.gap) cell.append(Object.assign(document.createElement("span"), { className: "palette-gap", textContent: "Gap" }));
+        paletteStrip.append(cell);
+      }
+      paletteLines.replaceChildren(...lines.map(t => Object.assign(document.createElement("span"), { textContent: t })));
+      // the same words as the lines, plus each hue's count, as the text alternative for the strip
+      const strip = s.empty ? "" : "Paints you have by hue: " + s.hues.map(h => `${h.label} ${h.count}${h.gap ? " (gap)" : ""}`).join(", ") + (s.neutral ? `, greys and neutrals ${s.neutral}` : "") + ". ";
+      paletteTile.setAttribute("aria-label", `Palette. ${strip}${lines.join(". ")}. Opens Your Palette.`);
+    }
+    paletteTile.addEventListener("click", () => {
+      if (importDraft) { showToast("Close Paste recipes first, then open Your Palette."); return; }
+      if (schemeDraft) { showToast("Finish or close the scheme you're editing first, then open Your Palette."); return; }
+      whenOkToLeaveDraft(() => {
+        recipeDraft = null;
+        openRecipeId = null;
+        settings.recipeView = "palette";
+        renderRecipes();
+        showTab("recipes");
+      });
+    });
 
     // ----- Progress over time (the line graph) -----
     // Every unit keeps a diary of stage changes (see logStage). To find how many models
