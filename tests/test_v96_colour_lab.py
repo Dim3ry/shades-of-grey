@@ -49,7 +49,7 @@ def main():
         t.main_tab(page, "recipes")
         check("Painting sub-tabs in order", labels(page, "#recipe-seg button") == ["Recipes", "Schemes", "Colour Lab", "Your Palette", "Shopping"], labels(page, "#recipe-seg button"))
         t.recipe_view(page, "colourlab")
-        check("Colour Lab sections in order", labels(page, "#lab-seg button") == ["Wheel", "Colour ideas", "Colour plans", "Colours you've used", "Picker"], labels(page, "#lab-seg button"))
+        check("Colour Lab sections in order", labels(page, "#lab-seg button") == ["Wheel", "Colour ideas", "Colour plans", "Colours you've used", "Paint Picker"], labels(page, "#lab-seg button"))
         check("Wheel is open first, the only one selected", page.evaluate("() => [...document.querySelectorAll('#lab-seg button')].map(b => b.getAttribute('aria-selected')).join()") == "true,false,false,false,false"
               and page.locator("#cmp-wheel").count() == 1)
 
@@ -71,8 +71,9 @@ def main():
         print("\n--- 3. Links ---")
         t.main_tab(page, "dashboard")
         page.click("#mentor-button")
+        page.click(".mentor-chip")   # X5: the button opens the Mentor window; its Paint Picker chip opens Colour Lab
         page.wait_for_selector("#cmp-lab-picker")
-        check("Ask Mentor button opens Painting > Colour Lab > Picker", page.evaluate("() => [settings.tab, settings.recipeView, compendiumState.lab].join()") == "recipes,colourlab,picker")
+        check("Ask Mentor button's Paint Picker chip opens Painting > Colour Lab > Paint Picker", page.evaluate("() => [settings.tab, settings.recipeView, compendiumState.lab].join()") == "recipes,colourlab,picker")
         seed = {"parts": ["Whole model"], "techniques": ["Layer"], "schemes": [], "shorthand": {}, "v15": True, "recipes": [],
                 "paints": [{"id": 1, "name": "Mid Blue", "brand": "Test", "colour": "#3355aa", "status": "owned"}]}
         t.existing(page, [], seed, {"tab": "recipes", "recipeView": "palette"})
@@ -93,9 +94,9 @@ def main():
         stored = page.evaluate("() => JSON.parse(localStorage.getItem('shades-of-grey-recipes')).paints[0].shopFrom")
         check("old source shows as Colour Lab: ... and never as Compendium", "Colour Lab: Colour ideas" in shown and "Compendium" not in shown, shown)
         check("the stored text is not rewritten", stored == [OLD_SOURCE], stored)
-        page.evaluate("() => { const p = book.paints[0]; noteShopSource(p, 'Colour Lab: Picker'); }")
+        page.evaluate("() => { const p = book.paints[0]; noteShopSource(p, 'Colour Lab: Paint Picker'); }")   # X5: renamed
         t.recipe_view(page, "recipes"); t.recipe_view(page, "shopping")
-        check("old and new sources show side by side, each once", page.inner_text("#shop-panel").count("Colour Lab: Colour ideas") == 1 and "Colour Lab: Picker" in page.inner_text("#shop-panel"))
+        check("old and new sources show side by side, each once", page.inner_text("#shop-panel").count("Colour Lab: Colour ideas") == 1 and "Colour Lab: Paint Picker" in page.inner_text("#shop-panel"))
         # the Picker's Add to shopping list writes the new text
         t.existing(page, [], seed, {"tab": "recipes", "recipeView": "colourlab"})
         page.evaluate("() => { const c = compendiumBaseChoices(); compendiumState.mentorBase = c.key(book.paints[0]); compendiumState.lab = 'picker'; renderColourLab(); }")
@@ -103,7 +104,7 @@ def main():
         add.wait_for()
         add.click()
         got = page.evaluate("() => book.paints.flatMap(p => p.shopFrom || [])")
-        check("a new source from the Picker is saved as Colour Lab: Picker", "Colour Lab: Picker" in got and not any(g.startswith("Compendium") for g in got), got)
+        check("a new source from the Paint Picker is saved as Colour Lab: Paint Picker", "Colour Lab: Paint Picker" in got and not any(g.startswith("Compendium") for g in got), got)
 
         print("\n--- 5. Old saved state ---")
         t.existing(page, [], None, {"tab": "compendium"})

@@ -90,8 +90,11 @@ def main():
               page.evaluate("() => document.body.classList.contains('launching')") and page.evaluate(TIDY) and end["orb"] == ring_orb, (end["orb"], ring_orb))
 
         print("\n--- 4. Other ways out, and interruptions ---")
-        r = page.evaluate(TAP, "#mentor-button")
-        check("tapping the Mentor button on the circle also moves", r["orb"] and r["ghost"] and "mo-ring" in r["ghost"]["cls"], r)
+        # X5: the Mentor button opens the Mentor window (no move); the Paint Picker chip in it is the way out that moves
+        page.evaluate("() => document.getElementById('mentor-button').click()")
+        page.wait_for_selector(".mentor-chip")
+        r = page.evaluate(TAP, ".mentor-chip")
+        check("tapping the Paint Picker chip from the circle also moves", r["orb"] and r["ghost"] and "mo-ring" in r["ghost"]["cls"], r)
         settle(page)
         # X1: the Mentor button lands in Painting > Colour Lab
         check("... and lands in Colour Lab, tidy", page.evaluate("() => settings.tab + settings.recipeView") == "recipescolourlab" and page.evaluate(TIDY))

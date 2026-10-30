@@ -108,8 +108,9 @@ def main():
                 check("the lit segment keeps a real background-colour, different from the others", bg(seg("units")) != "rgba(0, 0, 0, 0)" and bg(seg("units")) != bg(seg("recipes")))
         start(page)
         page.click("#mentor-button")
-        page.wait_for_timeout(200)
-        # X1: Ask Mentor opens Painting > Colour Lab > Picker
+        page.click(".mentor-chip")   # X5: Ask Mentor opens the Mentor window; the Paint Picker chip leaves the start page for Colour Lab
+        page.wait_for_selector("#cmp-lab-picker")
+        # X1: Painting > Colour Lab > Picker
         check("Ask Mentor opens Colour Lab with the Picker open", not launching(page) and shown_sections(page) == ["view-recipes"]
               and page.get_attribute('#lab-seg [data-lab="picker"]', "aria-selected") == "true")
         page.click(seg("units"))
