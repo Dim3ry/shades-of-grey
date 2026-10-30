@@ -4573,14 +4573,15 @@
     function dashPaletteSummary() {
       const hues = PALETTE_HUES.map(([key, label]) => ({ key, label, count: 0, gap: false }));
       let neutral = 0;
+      const colourOk = typeof MinifolioColour !== "undefined";   // without colour.js there is no hue to read: the strip and the gaps are left out
       for (const p of book.paints) {
-        if (!haveIt(p)) continue;
+        if (!colourOk || !haveIt(p)) continue;
         const at = wheelPlace(p);
         if (!at) continue;
         const h = hues.find(x => x.key === at.seg);
         if (h) h.count++; else neutral++;
       }
-      for (const h of hues) h.gap = h.count < 2;
+      for (const h of hues) h.gap = colourOk && h.count < 2;
       const uses = new Map();   // paint id -> how many recipes use it
       for (const r of book.recipes) {
         const ids = new Set();
@@ -4593,7 +4594,7 @@
         if (n && (!most || n > most.n || (n === most.n && String(p.name).localeCompare(most.name) < 0))) most = { name: String(p.name), n };
       }
       const count = (key) => book.paints.filter(p => paintStatus(p) === key).length;
-      return { hues, neutral, most, gaps: hues.filter(h => h.gap).map(h => h.label).slice(0, 2),
+      return { colourOk, hues, neutral, most, gaps: hues.filter(h => h.gap).map(h => h.label).slice(0, 2),
                owned: count("owned"), low: count("low"), wish: count("wishlist"), empty: book.paints.length === 0 };
     }
 
@@ -4607,7 +4608,7 @@
         lines.push(`${s.owned} owned, ${s.low} running low, ${s.wish} wishlist`);
       }
       paletteStrip.replaceChildren();
-      paletteStrip.hidden = s.empty;
+      paletteStrip.hidden = s.empty || !s.colourOk;
       const blocks = s.hues.map(h => ({ key: h.key, count: h.count, gap: h.gap }));
       if (s.neutral) blocks.push({ key: "neutral", count: s.neutral, gap: false });
       for (const b of blocks) {
@@ -4623,9 +4624,10 @@
         paletteStrip.append(cell);
       }
       paletteLines.replaceChildren(...lines.map(t => Object.assign(document.createElement("span"), { textContent: t })));
-      // the same words as the lines, plus each hue's count, as the text alternative for the strip
-      const strip = s.empty ? "" : "Paints you have by hue: " + s.hues.map(h => `${h.label} ${h.count}${h.gap ? " (gap)" : ""}`).join(", ") + (s.neutral ? `, greys and neutrals ${s.neutral}` : "") + ". ";
-      paletteTile.setAttribute("aria-label", `Palette. ${strip}${lines.join(". ")}. Opens Your Palette.`);
+      // The button has no aria-label (a label would replace its text, and paint names must not be in labels): a screen reader reads the visible
+      // lines, plus this hidden line for the strip, which gives each hue's count.
+      document.getElementById("palette-strip-text").textContent = s.empty || !s.colourOk ? ""
+        : "Paints you have by hue: " + s.hues.map(h => `${h.label} ${h.count}${h.gap ? " (gap)" : ""}`).join(", ") + (s.neutral ? `, greys and neutrals ${s.neutral}` : "") + ".";
     }
     paletteTile.addEventListener("click", () => {
       if (importDraft) { showToast("Close Paste recipes first, then open Your Palette."); return; }

@@ -440,9 +440,9 @@
     .tile-link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }   /* the whole card is the tap area */
     .tile-link:focus-visible { outline: none; }
     .tile-link:focus-visible::after { outline: 2px solid var(--accent); outline-offset: -2px; }
-    .palette-strip { display: flex; gap: 3px; align-items: flex-start; margin-bottom: 10px; }
+    .palette-strip { display: flex; flex-wrap: wrap; gap: 8px 3px; align-items: flex-start; margin-bottom: 10px; }   /* wraps on a very narrow screen instead of scrolling sideways */
     .palette-strip[hidden] { display: none; }
-    .palette-cell { flex: calc(var(--grow, 0) + 0.0001) 1 0; min-width: 40px; display: flex; flex-direction: column; gap: 3px; }
+    .palette-cell { flex: var(--grow, 0) 1 40px; min-width: 40px; display: flex; flex-direction: column; gap: 3px; }
     .palette-bar { display: block; height: 22px; border-radius: 4px; background: var(--bar, var(--muted)); }
     .palette-bar[data-hue="red"] { --bar: #c2413b; } .palette-bar[data-hue="orange"] { --bar: #d9782d; } .palette-bar[data-hue="yellow"] { --bar: #d8b82e; }
     .palette-bar[data-hue="green"] { --bar: #3f9a52; } .palette-bar[data-hue="blue"] { --bar: #3b7bd1; } .palette-bar[data-hue="purple"] { --bar: #8452c4; }
@@ -2566,6 +2566,7 @@
         <h2>Palette</h2>
         <button class="tile-link" id="palette-tile" type="button">
           <span class="palette-strip" id="palette-strip" aria-hidden="true"></span>
+          <span class="sr-only" id="palette-strip-text"></span>
           <span class="palette-lines" id="palette-lines"></span>
         </button>
       </div>

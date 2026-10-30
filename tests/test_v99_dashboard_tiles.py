@@ -39,7 +39,8 @@ def tile(page):
         widths: Object.fromEntries([...document.querySelectorAll('#palette-strip .palette-cell')].map(c => [c.querySelector('.palette-bar').dataset.hue, Math.round(c.getBoundingClientRect().width)])),
         lines: [...document.querySelectorAll('#palette-lines span')].map(s => s.textContent),
         stripHidden: document.getElementById('palette-strip').hidden,
-        label: document.getElementById('palette-tile').getAttribute('aria-label') })""")
+        label: document.getElementById('palette-strip-text').textContent,
+        tileLabel: document.getElementById('palette-tile').getAttribute('aria-label') || '' })""")
 
 def main():
     errors = []
@@ -65,8 +66,8 @@ def main():
         check("most used: the tie (two recipes each) goes to the first name A to Z", d["lines"][0] == "Most used: Ash red, in 2 recipes", d["lines"])
         check("gap line names the first two gaps", d["lines"][1] == "Gap: Orange, Yellow", d["lines"])
         check("counts line: owned, running low, wishlist", d["lines"][2] == "6 owned, 1 running low, 1 wishlist", d["lines"])
-        check("the strip's text alternative carries the same lines and each hue's count",
-              all(l in d["label"] for l in d["lines"]) and "Red 3" in d["label"] and "Blue 1 (gap)" in d["label"], d["label"])
+        check("the strip's text alternative gives each hue's count and gaps; the tile has no aria-label (so no paint name in one) and still reads the visible lines",
+              "Red 3" in d["label"] and "Blue 1 (gap)" in d["label"] and d["tileLabel"] == "" and "Ash red" in page.inner_text("#palette-tile"), d)
         page.evaluate("() => { book.recipes.length = 0; render(); }")
         d = tile(page)
         check("no recipe uses a paint: the Most used line is left out", not any(l.startswith("Most used") for l in d["lines"]), d["lines"])
@@ -92,6 +93,17 @@ def main():
                      text: c.textContent.replace(/\\s+/g, ' ').trim(), taps: c.querySelectorAll('button, a, input').length } }""")
         check("Achievements: title, three circles, Coming soon, nothing to tap", a["title"] == "Achievements" and a["circles"] == 3 and a["text"] == "Achievements Coming soon" and a["taps"] == 0, a)
 
+        print("\n--- 4b. Without colour.js ---")
+        nc = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
+        nc.route("**/colour.js*", lambda r: r.abort())
+        pg = nc.new_page(); pg.on("pageerror", lambda x: errors.append("no colour.js: " + str(x)))
+        t.fresh(pg)
+        pg.evaluate(FIXTURE)
+        d = tile(pg)
+        check("without colour.js the strip and gaps are left out, the counts and most-used lines stay, nothing throws",
+              d["stripHidden"] and not any(l.startswith("Gap") for l in d["lines"]) and d["lines"][0].startswith("Most used") and d["lines"][-1].endswith("1 wishlist"), d)
+        nc.close()
+
         print("\n--- 5. Order and layout ---")
         page.evaluate(FIXTURE)
         order = page.evaluate("() => [...document.getElementById('view-dashboard').children].map(c => c.id).filter(Boolean).slice(-4)")
@@ -103,7 +115,7 @@ def main():
         tops = pg.evaluate("() => ['palette-card', 'achievements-card'].map(i => { const r = document.getElementById(i).getBoundingClientRect(); return [Math.round(r.top), Math.round(r.left)]; })")
         check("1280 px: the two tiles sit side by side", tops[0][0] == tops[1][0] and tops[0][1] < tops[1][1], tops)
         big.close()
-        for width in (390, 360):
+        for width in (390, 360, 320):
             for scheme in ("dark", "light"):
                 c2 = browser.new_context(viewport={"width": width, "height": 800}, color_scheme=scheme, service_workers="block")
                 pg = c2.new_page(); pg.on("pageerror", lambda x: errors.append(str(x)))
