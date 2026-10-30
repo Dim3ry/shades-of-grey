@@ -16771,12 +16771,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=96".
+    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=97".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v96";
+    const APP_VERSION = "v97";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -17227,6 +17227,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v97", date: "30 Oct 2026", changes: [
+        "The fourth menu section is now Tools. It opens Tools and Settings, which has four pages: Guides (the detail recipes and basing tips that were in the Compendium), Settings, Help and Updates. The Compendium and the cog at the top are gone; the basket stays.",
+      ] },
       { version: "v96", date: "29 Oct 2026", changes: [
         "Painting has a new Colour Lab. The colour wheel, Colour ideas, Colour plans, Colours you've used and the Picker moved there from the Compendium. The round Ask Mentor button opens the Picker. The Compendium keeps Detail recipes and Basing tips for now.",
       ] },
