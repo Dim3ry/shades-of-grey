@@ -17499,12 +17499,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=102".
+    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=103".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v102";
+    const APP_VERSION = "v103";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -17955,6 +17955,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v103", date: "30 Oct 2026", changes: [
+        "Mentor's sources now take you to the exact guide, recipe, tip or colour on the Colour Lab wheel.",
+      ] },
       { version: "v102", date: "30 Oct 2026", changes: [
         "Mentor now answers. Type a question or tap a chip in the Mentor window. Mentor replies from Guides and the colour rules, shows paint ideas with the usual buttons, and lists its sources. What you type is not saved or sent, and the last 30 messages are forgotten when you close the app.",
       ] },
