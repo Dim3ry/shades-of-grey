@@ -1,0 +1,603 @@
+{
+ "guides": [
+  {
+   "key": "sample-warm-and-cool",
+   "sample": true,
+   "category": "colour-basics",
+   "title": "SAMPLE: Warm and cool colours",
+   "summary": "Sample entry that shows the shape of a colour basics guide.",
+   "body": [
+    "Sample text. Colours lean warm (towards red and yellow) or cool (towards blue).",
+    "Sample text. Warm colours feel close to you. Cool colours feel far away.",
+    "Sample text. A real entry gives one clear idea and one thing to try."
+   ],
+   "related": [
+    "sample-wet-blending"
+   ],
+   "keywords": [
+    "warm colours",
+    "cool colours",
+    "colour temperature",
+    "warm vs cool",
+    "red or blue",
+    "mood"
+   ]
+  },
+  {
+   "key": "sample-wet-blending",
+   "sample": true,
+   "category": "techniques",
+   "title": "SAMPLE: Wet blending",
+   "summary": "Sample entry that shows the shape of a technique guide.",
+   "body": [
+    "Sample step. Put two wet colours side by side on the model.",
+    "Sample step. Soften the line where they meet with a clean, damp brush.",
+    "Sample step. Work in small areas before the paint dries."
+   ],
+   "related": [
+    "sample-thinning-paint",
+    "sample-warm-and-cool"
+   ],
+   "keywords": [
+    "wet blend",
+    "blending",
+    "smooth blend",
+    "smooth gradient",
+    "gradient",
+    "mix on the model",
+    "wet on wet"
+   ],
+   "credit": {
+    "name": "Sample creator",
+    "url": "https://example.com/"
+   }
+  },
+  {
+   "key": "sample-thinning-paint",
+   "sample": true,
+   "category": "tools-prep",
+   "title": "SAMPLE: Thinning paint",
+   "summary": "Sample entry that shows the shape of a tools and prep guide.",
+   "body": [
+    "Sample text. Thin paint with a little water or medium on a palette.",
+    "Sample text. Aim for the feel of milk, not of cream.",
+    "Sample text. A real entry says why it matters."
+   ],
+   "related": [
+    "sample-chalky-paint"
+   ],
+   "keywords": [
+    "thin paint",
+    "thinning",
+    "add water",
+    "too thick",
+    "paint consistency",
+    "medium",
+    "dilute"
+   ]
+  },
+  {
+   "key": "sample-chalky-paint",
+   "sample": true,
+   "category": "problems",
+   "title": "SAMPLE: Chalky paint",
+   "summary": "Sample entry that shows the shape of a problems guide.",
+   "body": [
+    "Sample text. Say what the problem looks like in plain words.",
+    "Sample text. Say the usual cause. Say the fix in one or two steps.",
+    "Sample text. Say how to avoid it next time."
+   ],
+   "related": [
+    "sample-thinning-paint"
+   ],
+   "keywords": [
+    "chalky",
+    "gritty",
+    "rough finish",
+    "powdery",
+    "dusty paint",
+    "grainy",
+    "paint looks dry"
+   ]
+  },
+  {
+   "key": "edge-highlighting",
+   "category": "techniques",
+   "title": "Edge highlighting",
+   "summary": "Paint a thin light line along sharp edges to show the shape.",
+   "body": [
+    "Test text one for this fixture entry only.",
+    "Test text two for this fixture entry only.",
+    "Test text three for this fixture entry only."
+   ],
+   "related": [],
+   "keywords": [
+    "edge highlight",
+    "highlighting",
+    "edges",
+    "thin light line",
+    "sharp edges",
+    "pick out edges"
+   ]
+  },
+  {
+   "key": "drybrushing",
+   "category": "techniques",
+   "title": "Drybrushing",
+   "summary": "Brush almost dry paint over raised detail to bring it out.",
+   "body": [
+    "Test text one for this fixture entry only.",
+    "Test text two for this fixture entry only.",
+    "Test text three for this fixture entry only."
+   ],
+   "related": [],
+   "keywords": [
+    "drybrush",
+    "dry brush",
+    "texture",
+    "raised detail",
+    "wipe the brush",
+    "fur",
+    "rough surface"
+   ]
+  },
+  {
+   "key": "glazing",
+   "category": "techniques",
+   "title": "Glazing",
+   "summary": "Add a very thin coat of colour to shift the tone below it.",
+   "body": [
+    "Test text one for this fixture entry only.",
+    "Test text two for this fixture entry only.",
+    "Test text three for this fixture entry only."
+   ],
+   "related": [],
+   "keywords": [
+    "glaze",
+    "glazing",
+    "thin coat of colour",
+    "tint",
+    "smooth tint",
+    "transparent colour",
+    "change tone"
+   ]
+  },
+  {
+   "key": "washes-and-shades",
+   "category": "techniques",
+   "title": "Washes and shades",
+   "summary": "Run thin dark paint into the recesses to add depth.",
+   "body": [
+    "Test text one for this fixture entry only.",
+    "Test text two for this fixture entry only.",
+    "Test text three for this fixture entry only."
+   ],
+   "related": [],
+   "keywords": [
+    "wash",
+    "shade",
+    "shading",
+    "recesses",
+    "deep shadows",
+    "dark wash",
+    "pin wash"
+   ]
+  },
+  {
+   "key": "priming",
+   "category": "tools-prep",
+   "title": "Priming",
+   "summary": "Prime a model first so paint grips and the colour is even.",
+   "body": [
+    "Test text one for this fixture entry only.",
+    "Test text two for this fixture entry only.",
+    "Test text three for this fixture entry only."
+   ],
+   "related": [],
+   "keywords": [
+    "primer",
+    "prime",
+    "undercoat",
+    "first coat",
+    "spray",
+    "what colour primer",
+    "base layer"
+   ]
+  },
+  {
+   "key": "brush-care",
+   "category": "tools-prep",
+   "title": "Looking after brushes",
+   "summary": "Clean your brush well so its tip keeps a fine point.",
+   "body": [
+    "Test text one for this fixture entry only.",
+    "Test text two for this fixture entry only.",
+    "Test text three for this fixture entry only."
+   ],
+   "related": [],
+   "keywords": [
+    "clean brush",
+    "brush care",
+    "splayed",
+    "frayed tip",
+    "brush shape",
+    "soap",
+    "ruined brush"
+   ]
+  },
+  {
+   "key": "mixing-paint",
+   "category": "techniques",
+   "title": "Mixing paint",
+   "summary": "Mix two paints in small parts to reach a colour you do not own.",
+   "body": [
+    "Test text one for this fixture entry only.",
+    "Test text two for this fixture entry only.",
+    "Test text three for this fixture entry only."
+   ],
+   "related": [],
+   "keywords": [
+    "mix paint",
+    "mixing",
+    "blend two paints",
+    "make a new colour",
+    "ratio",
+    "parts",
+    "custom colour"
+   ]
+  },
+  {
+   "key": "light-and-dark",
+   "category": "colour-basics",
+   "title": "Light and dark",
+   "summary": "A model reads well when it has clear light and dark areas.",
+   "body": [
+    "Test text one for this fixture entry only.",
+    "Test text two for this fixture entry only.",
+    "Test text three for this fixture entry only."
+   ],
+   "related": [],
+   "keywords": [
+    "contrast",
+    "value",
+    "light and dark",
+    "flat",
+    "looks flat",
+    "tonal range",
+    "shadows and highlights"
+   ]
+  }
+ ],
+ "starters": [
+  {
+   "key": "sample-starter-thinning",
+   "sample": true,
+   "text": "SAMPLE: How thin should my paint be?",
+   "targets": [
+    "sample-thinning-paint",
+    "sample-chalky-paint"
+   ]
+  },
+  {
+   "key": "starter-flat",
+   "text": "Why does my model look flat?",
+   "targets": [
+    "light-and-dark",
+    "washes-and-shades"
+   ]
+  },
+  {
+   "key": "starter-prime",
+   "text": "What colour should I prime with?",
+   "targets": [
+    "priming"
+   ]
+  }
+ ],
+ "tips": [
+  {
+   "key": "tip-blue-armour",
+   "part": "armour",
+   "colour": "a cold blue",
+   "technique": "Layer",
+   "advice": "Keep blue armour dark in the recesses and light on the edges.",
+   "colours": [
+    {
+     "look": "a deep blue",
+     "hex": "#1f3a66"
+    }
+   ]
+  },
+  {
+   "key": "tip-red-eyes",
+   "part": "eyes",
+   "colour": "a warm red",
+   "technique": "Glaze",
+   "advice": "Glaze red eyes from dark to bright in two thin coats.",
+   "colours": [
+    {
+     "look": "a bright red",
+     "hex": "#c8321e"
+    }
+   ]
+  },
+  {
+   "key": "tip-brown-base",
+   "part": "base",
+   "colour": "a dry brown",
+   "technique": "Drybrush",
+   "advice": "Drybrush a brown base with a pale sand to lift the texture.",
+   "colours": [
+    {
+     "look": "a pale sand",
+     "hex": "#cdbd94"
+    }
+   ]
+  },
+  {
+   "key": "tip-grey-weapon",
+   "part": "weapon",
+   "colour": "a dark grey",
+   "technique": "Edge highlight",
+   "advice": "Keep a grey weapon calm and add a thin bright edge.",
+   "colours": [
+    {
+     "look": "a light grey",
+     "hex": "#b0b4b8"
+    }
+   ]
+  }
+ ],
+ "questions": [
+  [
+   "how thin should my paint be",
+   "sample-thinning-paint",
+   "answer"
+  ],
+  [
+   "why is my paint chalky",
+   "sample-chalky-paint",
+   "answer"
+  ],
+  [
+   "what is wet blending",
+   "sample-wet-blending",
+   "answer"
+  ],
+  [
+   "how do I get a smooth gradient",
+   "sample-wet-blending",
+   "answer"
+  ],
+  [
+   "what does warm and cool mean",
+   "sample-warm-and-cool",
+   "answer"
+  ],
+  [
+   "how do I edge highlight",
+   "edge-highlighting",
+   "answer"
+  ],
+  [
+   "how do I drybrush fur",
+   "drybrushing",
+   "answer"
+  ],
+  [
+   "what is a glaze",
+   "glazing",
+   "answer"
+  ],
+  [
+   "how to use a wash in the recesses",
+   "washes-and-shades",
+   "answer"
+  ],
+  [
+   "do I need primer",
+   "priming",
+   "answer"
+  ],
+  [
+   "how do I clean my brush",
+   "brush-care",
+   "answer"
+  ],
+  [
+   "can I mix two paints to make a new colour",
+   "mixing-paint",
+   "answer"
+  ],
+  [
+   "my model looks flat",
+   "light-and-dark",
+   "answer"
+  ],
+  [
+   "drybrushing rough surfaces",
+   "drybrushing",
+   "answer"
+  ],
+  [
+   "thinned paints",
+   "sample-thinning-paint",
+   "answer"
+  ],
+  [
+   "washing the shades",
+   "washes-and-shades",
+   "answer"
+  ],
+  [
+   "glazed colours",
+   "glazing",
+   "answer"
+  ],
+  [
+   "blended gradients",
+   "sample-wet-blending",
+   "answer"
+  ],
+  [
+   "highlighted edges",
+   "edge-highlighting",
+   "answer"
+  ],
+  [
+   "thining paint",
+   "sample-thinning-paint",
+   "answer"
+  ],
+  [
+   "chalcky finish",
+   "sample-chalky-paint",
+   "answer"
+  ],
+  [
+   "smooth gradiant",
+   "sample-wet-blending",
+   "answer"
+  ],
+  [
+   "undercoat spray",
+   "priming",
+   "answer"
+  ],
+  [
+   "splayed brush tip",
+   "brush-care",
+   "answer"
+  ],
+  [
+   "tinting with a transparent colour",
+   "glazing",
+   "answer"
+  ],
+  [
+   "pin wash",
+   "washes-and-shades",
+   "answer"
+  ],
+  [
+   "Please, how do I EDGE HIGHLIGHT??",
+   "edge-highlighting",
+   "answer"
+  ],
+  [
+   "hi, I was wondering about primer",
+   "priming",
+   "answer"
+  ],
+  [
+   "Why does my model look flat?",
+   "light-and-dark",
+   "answer"
+  ],
+  [
+   "What colour should I prime with?",
+   "priming",
+   "answer"
+  ],
+  [
+   "sample how thin should my paint be",
+   "sample-thinning-paint",
+   "answer"
+  ],
+  [
+   "how do I paint rust",
+   "rust",
+   "answer"
+  ],
+  [
+   "leather",
+   "leather",
+   "answer"
+  ],
+  [
+   "how to do snow on a base",
+   "snow",
+   "answer"
+  ],
+  [
+   "gold metal",
+   "gold",
+   "answer"
+  ],
+  [
+   "lava",
+   "lava",
+   "answer"
+  ],
+  [
+   "muddy ground",
+   "mud",
+   "answer"
+  ],
+  [
+   "verdigris",
+   "verdigris",
+   "answer"
+  ],
+  [
+   "what colour armour goes with blue",
+   "colour",
+   "colour"
+  ],
+  [
+   "red eyes on blue armour",
+   "colour",
+   "colour"
+  ],
+  [
+   "a brown base for green armour",
+   "colour",
+   "colour"
+  ],
+  [
+   "what colour weapon for grey armour",
+   "colour",
+   "colour"
+  ],
+  [
+   "what goes with orange",
+   "colour",
+   "colour"
+  ],
+  [
+   "green",
+   "colour",
+   "colour"
+  ],
+  [
+   "what is a good eye colour for a purple model",
+   "colour",
+   "colour"
+  ],
+  [
+   "what is the meaning of life",
+   "none",
+   "none"
+  ],
+  [
+   "paint",
+   "none",
+   "none"
+  ],
+  [
+   "how tall is a tree",
+   "none",
+   "none"
+  ],
+  [
+   "asdf qwerty",
+   "none",
+   "none"
+  ],
+  [
+   "",
+   "none",
+   "none"
+  ]
+ ]
+}
