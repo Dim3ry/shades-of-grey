@@ -17261,12 +17261,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=99".
+    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=100".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v99";
+    const APP_VERSION = "v100";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -17717,6 +17717,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v100", date: "30 Oct 2026", changes: [
+        "Ask Mentor now opens a small Mentor window over whatever you are on, with a Paint Picker chip that takes you to Colour Lab. The Picker is now called Paint Picker.",
+      ] },
       { version: "v99", date: "30 Oct 2026", changes: [
         "The Dashboard has a Palette card: a colour strip of the paints you have, which colours are missing (marked Gap), your most used paint and your paint counts. Tap it to open Your Palette. There is also an Achievements card, held for later.",
       ] },
