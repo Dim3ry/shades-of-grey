@@ -66,12 +66,13 @@ def main():
         check("window is named Mentor, modal, with a close X", page.get_attribute(".mentor-window", "role") == "dialog"
               and page.get_attribute(".mentor-window", "aria-modal") == "true" and page.get_attribute(".mentor-window", "aria-label") == "Mentor"
               and page.get_attribute(".mentor-close", "aria-label") == "Close Mentor")
-        check("one chip, Paint Picker; no other chips", page.locator(".mentor-window button").evaluate_all("els => els.map(e => e.textContent.trim())") == ["Paint Picker", "✕"])
+        # X6b: typing is on, so the box is a working input and there is a Send button (an arrow with no words), still only the one chip
+        check("one chip, Paint Picker; no other chips (and the Send button)", page.locator(".mentor-window button").evaluate_all("els => els.map(e => e.textContent.trim() || e.getAttribute('aria-label'))") == ["Paint Picker", "Send", "✕"])
         inp = page.locator(".mentor-input")
-        check("text box is switched off: disabled, Ask Mentor, dimmed, not focusable", inp.is_disabled() and inp.get_attribute("placeholder") == "Ask Mentor"
-              and float(page.evaluate("() => getComputedStyle(document.querySelector('.mentor-input')).opacity")) < 0.7 and inp.get_attribute("tabindex") == "-1")
-        check("phrases object holds the lists for later chunks, and the typing switch is off", page.evaluate(
-            "() => MENTOR_TYPING === false && MENTOR_PHRASES.picker.length === 2 && ['thinking','answer','unsure','finished','actions'].every(k => MENTOR_PHRASES[k].length === 0) && mentorMessages.length === 0"))
+        check("text box is on: enabled, Ask Mentor, full strength", inp.is_enabled() and inp.get_attribute("placeholder") == "Ask Mentor"
+              and float(page.evaluate("() => getComputedStyle(document.querySelector('.mentor-input')).opacity")) == 1)
+        check("phrases object holds the lists for later chunks", page.evaluate(
+            "() => MENTOR_TYPING === true && MENTOR_PHRASES.picker.length === 2 && ['thinking','answer','finished','actions'].every(k => MENTOR_PHRASES[k].length === 0) && mentorMessages.length === 0"))
         check("no 'the Mentor' in the window", "the Mentor" not in page.inner_text(".mentor-window"))
 
         print("\n--- 2. Dialog behaviour ---")
@@ -79,7 +80,8 @@ def main():
         seq = []
         for _ in range(4):
             page.keyboard.press("Tab"); seq.append(page.evaluate("() => document.activeElement.className"))
-        check("Tab stays inside (X and chip only, the off box is skipped)", set(seq) == {"mentor-chip", "mentor-close"}, seq)
+        # X6b: the box and Send are now tab stops too
+        check("Tab stays inside (chip, box, Send and X)", set(seq) == {"mentor-chip", "mentor-input", "mentor-send", "mentor-close"}, seq)
         page.keyboard.press("Shift+Tab")
         check("Shift+Tab stays inside too", page.evaluate("() => !!document.activeElement.closest('.mentor-window')"))
         check("page behind does not scroll", page.evaluate("() => document.body.style.overflow") == "hidden")
