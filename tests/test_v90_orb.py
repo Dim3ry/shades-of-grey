@@ -86,8 +86,9 @@ def main():
         print("\n--- 4. It still opens Ask the Mentor ---")
         start(page)
         page.click("#mentor-button")
-        page.wait_for_timeout(200)
-        # X1: the orb opens the Picker in Painting > Colour Lab
+        page.click(".mentor-chip")   # X5: the orb opens the Mentor window; its Paint Picker chip opens the picker in Painting > Colour Lab
+        page.wait_for_selector("#cmp-lab-picker")
+        # X1: the picker in Painting > Colour Lab
         check("tapping the orb opens the Picker in Colour Lab", page.get_attribute('#lab-seg [data-lab="picker"]', "aria-selected") == "true")
 
         check("no page errors", not errors, errors)

@@ -2293,7 +2293,7 @@
       if (el) { el.shopPaint = paint; el.shopTag = tag; }
     }
     function shopSourceShown(text) {
-      return text.replace(/^Compendium: Ask the Mentor/, "Colour Lab: Picker").replace(/^Compendium: /, "Colour Lab: ");
+      return text.replace(/^Compendium: Ask the Mentor/, "Colour Lab: Paint Picker").replace(/^Colour Lab: Picker/, "Colour Lab: Paint Picker").replace(/^Compendium: /, "Colour Lab: ");
     }
     // Puts a paint on the shopping list as Wishlist (adding it to your palette first if it is only in the built-in list).
     // Undo puts the palette back as it was. Done in place: the page is not redrawn, so the button keeps its place on the screen.
@@ -3945,14 +3945,150 @@
       showTab(b.dataset.tab, "slide");
     }));
 
-    // U4a: the round Ask Mentor button. There is no Mentor chat yet (X5 adds the pop-up), so it opens Painting > Colour Lab > Picker and scrolls to it.
-    document.getElementById("mentor-button").addEventListener("click", () => {
+    // ================= X5: THE MENTOR POP-UP =================
+    // The round Ask Mentor button opens a small window over whatever is showing. It has a greeting, a Paint Picker chip, a text box that is
+    // switched off until X6b, and the orb. Nothing typed or shown is stored or sent: mentorMessages lives only while the app is open.
+    // Stock phrases live in one place so later chunks can fill the empty lists.
+    const MENTOR_PHRASES = {
+      greeting: ["How can I help?", "What are you painting?", "Ready when you are."],
+      picker: ["Let's find some paints.", "Welcome back. Pick a colour and a part."],   // not shown yet
+      thinking: [], answer: [], unsure: [], finished: [], actions: [],
+    };
+    const MENTOR_TYPING = false;   // X6b switches the text box on
+    const mentorMessages = [];     // X6b fills this; empty for now and gone when the app reloads
+    let mentorState = null;        // null, or { backdrop, win, opener, onKey } while the window is open
+
+    function goToPaintPicker() {
       compendiumState.focus = null;
       openColourLab("picker", () => {
         const section = document.getElementById(compendiumId("lab-picker"));
         if (section) section.scrollIntoView({ block: "start" });
       });
-    });
+    }
+
+    // The orb for the window: the same art as the round button, with the ring and the lens in their own groups so they can move.
+    function buildMentorOrb() {
+      const NS = "http://www.w3.org/2000/svg";
+      const el = (name, attrs, parent) => {
+        const node = document.createElementNS(NS, name);
+        for (const [k, v] of Object.entries(attrs || {})) node.setAttribute(k, v);
+        if (parent) parent.appendChild(node);
+        return node;
+      };
+      const svg = el("svg", { viewBox: "10 10 180 180", class: "mp-orb", "aria-hidden": "true", focusable: "false" });
+      const art = el("g", { transform: "translate(100 100) scale(1.2) translate(-100 -100)" }, svg);
+      el("circle", { class: "orb-bg", cx: 100, cy: 100, r: 74 }, art);
+      const ring = el("g", { class: "mp-ring" }, art);
+      const arcs = el("g", { fill: "none", "stroke-width": 15 }, ring);
+      for (const [cls, dash, rot] of [["orb-a", "111 253.4", 100], ["orb-c", "81 283.4", 10], ["orb-b", "56 308.4", -60], ["orb-dim", "51 313.4", -125]]) {
+        el("circle", { class: cls, cx: 100, cy: 100, r: 58, "stroke-dasharray": dash, transform: `rotate(${rot} 100 100)` }, arcs);
+      }
+      const wake = el("g", { class: "mp-wake" }, art);
+      const look = el("g", { class: "mp-look" }, wake);
+      el("circle", { class: "orb-lens", cx: 100, cy: 100, r: 30, "stroke-width": 3 }, look);
+      el("circle", { class: "orb-core", cx: 100, cy: 100, r: 17 }, look);
+      el("circle", { cx: 95, cy: 94, r: 4, fill: "#ffffff", opacity: 0.85 }, look);
+      return svg;
+    }
+
+    // The window grows from the button: the origin is the button's centre, measured on screen, so it works wherever the button is.
+    function setMentorOrigin(win, opener) {
+      if (!opener || !opener.isConnected) return;
+      // offsetLeft and offsetTop ignore the grow itself (the window is already part-way scaled when this runs); its box fills the screen from the corner.
+      const b = opener.getBoundingClientRect();
+      win.style.setProperty("--mp-ox", `${Math.round(b.left + b.width / 2 - win.offsetLeft)}px`);
+      win.style.setProperty("--mp-oy", `${Math.round(b.top + b.height / 2 - win.offsetTop)}px`);
+    }
+
+    function openMentor(opener) {
+      if (mentorState) return;
+      const backdrop = document.createElement("div");
+      backdrop.className = "mentor-backdrop";
+      const win = document.createElement("div");
+      win.className = "mentor-window";
+      win.setAttribute("role", "dialog");
+      win.setAttribute("aria-modal", "true");
+      win.setAttribute("aria-label", "Mentor");
+
+      const close = document.createElement("button");
+      close.type = "button";
+      close.className = "mentor-close";
+      close.setAttribute("aria-label", "Close Mentor");
+      close.textContent = "✕";
+
+      const col = document.createElement("div");
+      col.className = "mentor-col";
+      const greeting = document.createElement("p");
+      greeting.className = "mentor-greeting";
+      greeting.textContent = MENTOR_PHRASES.greeting[Math.floor(Math.random() * MENTOR_PHRASES.greeting.length)];
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "mentor-chip";
+      chip.textContent = "Paint Picker";
+      const input = document.createElement("input");
+      input.type = "text";
+      input.className = "mentor-input";
+      input.placeholder = "Ask Mentor";
+      input.setAttribute("aria-label", "Ask Mentor");
+      input.disabled = !MENTOR_TYPING;
+      if (!MENTOR_TYPING) input.tabIndex = -1;
+      const top = document.createElement("div");
+      top.className = "mentor-top";
+      top.append(greeting, chip);
+      col.append(top, input);
+
+      const orbBox = document.createElement("div");
+      orbBox.className = "mentor-orbbox";
+      orbBox.appendChild(buildMentorOrb());
+      win.append(col, orbBox, close);
+      backdrop.appendChild(win);
+      document.body.appendChild(backdrop);
+      setMentorOrigin(win, opener);
+
+      const state = { backdrop, win, opener, prevOverflow: document.body.style.overflow };
+      mentorState = state;
+      document.body.style.overflow = "hidden";   // the page behind does not scroll
+      close.addEventListener("click", () => closeMentor());
+      chip.addEventListener("click", () => { closeMentor(false); goToPaintPicker(); });
+      backdrop.addEventListener("click", (event) => { if (event.target === backdrop) closeMentor(); });
+      state.onKey = (event) => {
+        if (event.key === "Escape") {
+          event.preventDefault(); event.stopPropagation();
+          closeMentor();
+        } else if (event.key === "Tab") {
+          const stops = [...win.querySelectorAll("button, input")].filter(b => !b.disabled && b.tabIndex >= 0);
+          const at = stops.indexOf(document.activeElement);
+          const next = event.shiftKey ? (at <= 0 ? stops.length - 1 : at - 1) : (at < 0 || at === stops.length - 1 ? 0 : at + 1);
+          event.preventDefault();
+          stops[next].focus();
+        }
+      };
+      document.addEventListener("keydown", state.onKey, true);
+      close.focus({ preventScroll: true });
+    }
+
+    // restoreFocus is false when the chip closes it, because focus then goes on to the Paint Picker.
+    function closeMentor(restoreFocus = true) {
+      const state = mentorState;
+      if (!state) return;
+      mentorState = null;
+      document.removeEventListener("keydown", state.onKey, true);
+      document.body.style.overflow = state.prevOverflow;
+      const { backdrop, win, opener } = state;
+      backdrop.inert = true;
+      if (restoreFocus && opener && opener.isConnected) { try { opener.focus({ preventScroll: true }); } catch (ignored) {} }
+      const done = () => backdrop.remove();
+      if (getComputedStyle(win).animationName === "none") done();   // reduce motion: it simply disappears
+      else {
+        setMentorOrigin(win, opener);
+        backdrop.classList.add("mentor-closing");
+        win.addEventListener("animationend", (event) => { if (event.target === win) done(); });
+        setTimeout(done, 600);   // safety net if the browser never reports the end
+      }
+      queueBackCheck();
+    }
+
+    document.getElementById("mentor-button").addEventListener("click", (event) => openMentor(event.currentTarget));
 
     // ================= FILTERS =================
 
@@ -13073,7 +13209,7 @@
       const role = mentorRole(st.mentorPart);
       // v73: the rows get three next steps. Use in a recipe and Add to a recipe (v62) and the Shop links fold-out come with the shared rows;
       // listButton puts Add to shopping list in plain view, and the list remembers "Ask the Mentor" as the place the paint came from.
-      const pickDoor = Object.assign({}, door, { listButton: true, realOnly: true, shopSource: () => "Colour Lab: Picker" });
+      const pickDoor = Object.assign({}, door, { listButton: true, realOnly: true, shopSource: () => "Colour Lab: Paint Picker" });
       for (const paint of chosen) {
         const label = document.createElement("p");
         label.className = "idea-label";
@@ -13413,7 +13549,7 @@
       { key: "ideas", label: "Colour ideas" },
       { key: "plans", label: "Colour plans" },
       { key: "history", label: "Colours you've used" },
-      { key: "picker", label: "Picker" },
+      { key: "picker", label: "Paint Picker" },
     ];
     // After a choice inside a library part: redraw whichever page is showing it.
     function redrawLibrary(selector) {
@@ -17983,6 +18119,7 @@
     // What Back would close right now, as a function that closes it, or null if nothing.
     function backTarget() {
       if (dialogState) return cancelDialog;   // v21.7: a question box sits over everything; Back = No / Cancel
+      if (mentorState) return closeMentor;    // X5: the Mentor window; Back closes it
       if (similarState) return closeSimilar;  // v65: the Similar paints pop-up; Back closes it
       if (viewer) return closeViewer;
       if (launching) return null;   // U4b: the launch page has nothing to close; Back leaves the app as usual
