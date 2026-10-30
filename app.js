@@ -13103,6 +13103,10 @@
         guidesState.cat = e.category;
       }
     }
+    // A credit link is only made for a full web address that starts with the secure scheme; anything else shows as plain text.
+    function safeCreditUrl(url) {
+      try { return new URL(String(url)).protocol === "https" + ":"; } catch (e) { return false; }
+    }
     // Open Guides on one entry, from anywhere in the app. A key that is not in the library shows one calm line instead.
     function openGuide(key) {
       if (importDraft) { showToast("Close Paste recipes first, then open Guides."); return; }
@@ -13295,7 +13299,7 @@
             const c = document.createElement("p");
             c.className = "hint guides-credit";
             c.append("Credit: ");
-            if (/^https:\/\//.test(String(e.credit.url || ""))) {
+            if (safeCreditUrl(e.credit.url)) {
               const a = document.createElement("a");
               a.href = e.credit.url;
               a.target = "_blank";

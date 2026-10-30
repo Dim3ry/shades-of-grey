@@ -76,16 +76,16 @@ def main():
         print("\n--- 2. Guides ---")
         page.click('.tabs button[data-tab="guides"]')
         settle(page)
-        check("Guides shows Detail recipes and Basing tips, closed", texts(page, "#compendium-body .fold-button") == ["Detail recipes", "Basing tips"]
-              and page.locator("#cmp-wheel, #cmp-fold-mentor, #cmp-fold-ideas").count() == 0, texts(page, "#compendium-body .fold-button"))
+        check("Guides shows Detail recipes and Basing as categories", [x.rstrip("0123456789") for x in texts(page, ".guides-cats .guides-row")] == ["Detail recipes", "Basing"]   # X3: was fold-outs
+              and page.locator("#cmp-wheel, #cmp-fold-mentor, #cmp-fold-ideas").count() == 0, texts(page, ".guides-cats .guides-row"))
         check("the Pro preview label shows in Guides", "Pro preview" in page.inner_text("#view-guides"))
-        page.click("#cmp-fold-detail-button")
-        page.wait_for_selector("#cmp-fold-detail-panel:not([hidden]) button")
-        check("Detail recipes opens with its controls", page.get_attribute("#cmp-fold-detail-button", "aria-expanded") == "true"
-              and page.locator("#cmp-fold-detail-panel button").count() >= 1)
-        page.click("#cmp-fold-basing-button")
-        page.wait_for_selector("#cmp-fold-basing-panel:not([hidden]) button")
-        check("Basing tips opens with its controls", page.get_attribute("#cmp-fold-basing-button", "aria-expanded") == "true")
+        page.click('.guides-cats [data-cat="detail"]')   # X3: a category now, not a fold-out
+        page.wait_for_selector(".guides-main .detail-recipes button")
+        check("Detail recipes opens with its controls", page.locator(".guides-main .detail-recipes button").count() >= 1)
+        page.click("#guides-back")
+        page.click('.guides-cats [data-cat="basing"]')
+        page.wait_for_selector(".guides-main .basing-tips button")
+        check("Basing opens with its controls", page.locator(".guides-main .basing-tips button").count() >= 1)
 
         print("\n--- 3. Repointed link ---")
         t.load(page, paints=PAINTS, settings={"tab": "recipes", "recipeView": "palette", "examplesChecked": True})
@@ -95,7 +95,7 @@ def main():
         btn = page.locator("#cmp-focus button.ideas-open[data-detail]").first
         key = btn.get_attribute("data-detail")
         btn.click()
-        page.wait_for_selector(f'#cmp-fold-detail-panel [data-detail="{key}"]')
+        page.wait_for_selector(f'.guides-main [data-detail="{key}"]')
         settle(page)
         check("Show steps lands in Tools and Settings > Guides with that recipe open and in focus",
               page.evaluate("() => settings.tab") == "guides" and lit(page) == ["guides"] and page.get_attribute("#more-seg [data-page=guides]", "aria-selected") == "true"

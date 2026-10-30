@@ -131,8 +131,8 @@ def main():
             detail.first.click()
             page.wait_for_timeout(300)
             # X1: Detail recipes stay in the Compendium, so Show steps goes there; the paint's ideas are kept for the way back
-            check("Show steps opens Detail recipes with that recipe picked", page.get_attribute("#cmp-fold-detail-button", "aria-expanded") == "true"
-                  and page.locator(f'#cmp-fold-detail-panel [data-detail="{key}"]').count() == 1 and page.is_visible("#cmp-detail-summary"))
+            check("Show steps opens Detail recipes with that recipe picked", page.evaluate("guidesState.cat") == "detail"   # X3: the Guides category, not a fold-out
+                  and page.locator(f'#cmp-detail-chips [data-detail="{key}"]').count() == 1 and page.is_visible("#cmp-detail-summary"))
             check("…and the focus goes to it", page.evaluate("() => document.activeElement && document.activeElement.dataset.detail") == key)
             check("the paint's ideas are kept for the way back", page.evaluate("() => !!compendiumState.focus"))
         t.load(page, paints=PAINTS, recipes=RECIPES, settings=SETTINGS)
@@ -146,7 +146,7 @@ def main():
             key = tip.first.get_attribute("data-basing")
             tip.first.click()
             page.wait_for_timeout(300)
-            check("Show tip opens Basing tips with that tip picked", page.get_attribute("#cmp-fold-basing-button", "aria-expanded") == "true"
+            check("Show tip opens Basing tips with that tip picked", page.evaluate("guidesState.cat") == "basing"   # X3
                   and page.evaluate("compendiumState.basing") == key)
 
         # ---------- 5. Back to recipe ----------
