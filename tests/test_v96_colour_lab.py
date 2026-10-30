@@ -63,8 +63,8 @@ def main():
         check("Picker keeps its Part chips (Armour first)", page.locator("[data-mentor-part]").first.get_attribute("data-mentor-part") == "armour")
         page.evaluate("() => document.activeElement.blur()")   # the tab bar hides while a text box has the focus
         t.main_tab(page, "compendium")
-        check("Compendium keeps only Detail recipes and Basing tips", labels(page, "#compendium-body .fold-button") == ["Detail recipes", "Basing tips"]
-              and page.locator("#cmp-wheel, #cmp-fold-mentor, #cmp-fold-ideas").count() == 0, labels(page, "#compendium-body .fold-button"))
+        check("Compendium keeps only Detail recipes and Basing tips", [x.rstrip("0123456789") for x in labels(page, ".guides-cats .guides-row")] == ["Detail recipes", "Basing"]   # X3: categories with counts
+              and page.locator("#cmp-wheel, #cmp-fold-mentor, #cmp-fold-ideas").count() == 0, labels(page, ".guides-cats .guides-row"))
         check("Pro preview shows on the Compendium and on Colour Lab", "Pro preview" in page.inner_text("#view-guides")
               and page.evaluate("() => !!document.querySelector('#colourlab-view .pro-pill')"))
 
@@ -107,7 +107,7 @@ def main():
 
         print("\n--- 5. Old saved state ---")
         t.existing(page, [], None, {"tab": "compendium"})
-        page.wait_for_selector("#cmp-fold-detail")
+        page.wait_for_selector(".guides-cats")   # X3
         check("a saved Compendium tab opens cleanly", page.evaluate("() => settings.tab") == "guides")   # X2: the Compendium tab is gone; a saved "compendium" opens Guides
         t.existing(page, [], None, {"tab": "recipes", "recipeView": "colourlab"})
         page.wait_for_selector("#cmp-lab-wheel")

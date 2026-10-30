@@ -157,6 +157,8 @@ def main():
         policy = policy.group(1) if policy else ""
         panel_code = app[app.index("v28: \"COLOUR IDEAS\""):app.index('v18c: TIDY BRANDS')]
         comp_code = panel_code[panel_code.index("v35: THE COMPENDIUM TAB"):]
+        # X3: the Guides library (credit links, its own checks in test_v98_guides_library.py) replaced the page that was here; it is left out of this old scan
+        comp_code = comp_code[:comp_code.index("X3: Tools and Settings > Guides")] + comp_code[comp_code.index("X1: COLOUR LAB"):]
         new_code = panel_code[panel_code.index("v35: ONE set of building blocks"):panel_code.index("let colourIdeasPressing")] + comp_code
         check("the new code has no network code, no storage, no innerHTML, no links and no shop wording; the panel still has exactly one innerHTML (the card's own clear)",
               not re.search(r"\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage|sessionStorage|\beval\s*\(|new Function|insertAdjacentHTML|outerHTML|innerHTML|createElement\('a'\)|createElement\(\"a\"\)|href|affiliate", new_code)
