@@ -434,6 +434,26 @@
     .history-table th:first-child, .history-table td:first-child { text-align: left; }
     .history-table th { color: var(--muted); font-weight: 500; position: sticky; top: 0; background: var(--card); }
 
+    /* X4: Dashboard Palette and Achievements tiles. */
+    .palette-card { position: relative; }
+    .tile-link { display: block; width: 100%; min-height: 44px; margin: 0; padding: 0; border: 0; background: transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+    .tile-link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }   /* the whole card is the tap area */
+    .tile-link:focus-visible { outline: none; }
+    .tile-link:focus-visible::after { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .palette-strip { display: flex; gap: 3px; align-items: flex-start; margin-bottom: 10px; }
+    .palette-strip[hidden] { display: none; }
+    .palette-cell { flex: calc(var(--grow, 0) + 0.0001) 1 0; min-width: 40px; display: flex; flex-direction: column; gap: 3px; }
+    .palette-bar { display: block; height: 22px; border-radius: 4px; background: var(--bar, var(--muted)); }
+    .palette-bar[data-hue="red"] { --bar: #c2413b; } .palette-bar[data-hue="orange"] { --bar: #d9782d; } .palette-bar[data-hue="yellow"] { --bar: #d8b82e; }
+    .palette-bar[data-hue="green"] { --bar: #3f9a52; } .palette-bar[data-hue="blue"] { --bar: #3b7bd1; } .palette-bar[data-hue="purple"] { --bar: #8452c4; }
+    .palette-bar[data-hue="neutral"] { --bar: #8b95a5; }
+    .palette-bar.is-gap { outline: 2px solid var(--text); outline-offset: -2px; }
+    .palette-bar.is-empty { background: transparent; outline: 2px dashed var(--text); }
+    .palette-gap { font-size: 13px; color: var(--text); line-height: 1.2; }
+    .palette-lines { display: flex; flex-direction: column; gap: 4px; font-size: 15px; }
+    .palette-lines span { overflow-wrap: anywhere; }
+    .ach-circles { display: flex; gap: 14px; }
+    .ach-circles i { width: 44px; height: 44px; border-radius: 50%; border: 2px dashed var(--muted); box-sizing: border-box; }
     .faction-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
     .faction-button {
       background: var(--background);
@@ -2540,6 +2560,20 @@
         </div>
         <div class="faction-grid" id="faction-grid"></div>
       </div>
+
+      <!-- X4: Palette tile (a whole-card tap opens Your Palette) and the Achievements placeholder. Filled by renderPaletteTile(). -->
+      <div class="card palette-card" id="palette-card">
+        <h2>Palette</h2>
+        <button class="tile-link" id="palette-tile" type="button">
+          <span class="palette-strip" id="palette-strip" aria-hidden="true"></span>
+          <span class="palette-lines" id="palette-lines"></span>
+        </button>
+      </div>
+      <div class="card" id="achievements-card">
+        <h2>Achievements</h2>
+        <div class="ach-circles" aria-hidden="true"><i></i><i></i><i></i></div>
+        <p class="hint" style="margin: 10px 0 0;">Coming soon</p>
+      </div>
     </section>
 
     <!-- ===== TAB 2: Models (data-tab "units", called Units before v88) ===== -->
@@ -2826,6 +2860,7 @@
           <summary>Faction colours</summary>
           <ul>
             <li>Give each faction its own colour in <strong>Settings → Faction colours</strong> (or tap <strong>Faction colours</strong> on the dashboard). Tap the colour circle to pick one.</li>
+            <li id="help-dashboard-tiles"><strong>Palette</strong> on the Dashboard shows a strip with one block for each colour (red to purple, then greys and neutrals), as wide as the paints you have in it (Owned and Running low). A colour with none, or only one, is marked <strong>Gap</strong>. Under it: the paint used in the most recipes, the first gaps, and how many paints are owned, running low and on the wishlist. Tap it to open Your Palette. <strong>Achievements</strong> is a place held for later and does nothing yet.</li>
             <li id="help-card-folds">In Settings, the <strong>Faction colours</strong> and <strong>Paint brands</strong> cards are shut each time you open the app. Tap the heading to open one. Tapping <strong>Faction colours</strong> on the dashboard opens it for you. <strong>Stages</strong>, <strong>Import</strong> and <strong>Your data</strong> fold shut the same way.</li>
             <li><strong>Suggest</strong> offers a colour. If the faction's units have recipes linked, it uses those (armour recipes first, each recipe's first paint, usually the base coat). Otherwise it uses the colour the faction is usually painted, for well-known factions.</li>
             <li><strong>Use suggested colours</strong> colours every faction that hasn't got one yet, in one tap. Press Undo on the message if you change your mind.</li>
