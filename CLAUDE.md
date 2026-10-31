@@ -20,7 +20,7 @@ Use it when a chunk splits cleanly by page (for example "check every page at 128
 
 ## Versions
 One version bump per chunk that changes the app. A bump means:
-- the ?v= number on all six script tags in index.html, and the comments that name it
+- the ?v= number on every script tag in index.html (ten at v106; count them, do not trust this number), and the comments that name it, including the example "app.js?vNN" in the comment above APP_VERSION in app.js
 - VERSION in sw.js
 - APP_VERSION in app.js
 - one new entry at the top of CHANGELOG in app.js, in plain words
