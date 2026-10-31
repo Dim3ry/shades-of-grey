@@ -299,8 +299,15 @@
       try { return !localStorage.getItem(STORAGE_KEY) && !localStorage.getItem(RECIPES_KEY); } catch (e) { return false; }
     })();
 
+    // Mo4a: the three real start-up steps the loading ring (cold start only) follows: your saved data read, the first draw done, the page fully loaded.
+    // Each holds the time it finished (0 = not yet). Nothing here is a timer.
+    const bootSteps = { data: 0, draw: 0, load: 0 };
+    window.addEventListener("load", () => { bootSteps.load = performance.now(); });
+    if (document.readyState === "complete") bootSteps.load = performance.now();
+
     // All units live in this list. Each is a small bundle of facts (an "object").
     let models = load();
+    bootSteps.data = performance.now();   // Mo4a: your saved units are read (the upgrades below are quick, in-memory checks)
 
     // v21: example units saved BEFORE v21 have no "example" mark. Recognise them once:
     // same id, name, game and faction as an example, and nothing of yours added to them
@@ -3896,6 +3903,73 @@
     const barOf = (name) => (MORE_PAGES.includes(name) ? "guides" : name);   // the bar segment a page belongs to (Settings, Help and Updates are in the fourth)
     function canMove() { return !reducedMotion() && !!Element.prototype.animate; }
 
+    // Mo4a: THE LOADING RING (a fresh page load only; the start circle is never redrawn when the app returns from the background, so neither is this).
+    // Three arcs around the Mentor button, one per real start-up step (bootSteps above): each starts once its step is done and the one before
+    // has filled, and takes at least 400 ms to fill, so the ring shows for 1.2 s at least and waits for the page to finish loading if that is
+    // later (but gives up after 5 s). The four segments are hidden and appear one by one as it fills; they and the Mentor button can be tapped
+    // once it is full. Reduced motion (or no animation support): no ring at all, the circle shows at once. Opening a section ends it instantly.
+    const RING_R = 71, RING_C = 2 * Math.PI * RING_R, RING_ARC = RING_C * 100 / 360, RING_FILL_MS = 400;
+    let ringState = null;
+    function startLoadingRing() {
+      if (!launching || !canMove() || ringState) return;
+      const NS = "http://www.w3.org/2000/svg";
+      const mk = (parent, tag, attrs) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); parent.appendChild(n); return n; };
+      const svg = mk(arcEl, "svg", { class: "mo-load", viewBox: "0 0 390 360", role: "progressbar", "aria-label": "Loading", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": "0", focusable: "false" });
+      arcEl.insertBefore(svg, arcEl.firstChild);
+      const turn = mk(svg, "g", { class: "mo-load-turn" });
+      const arcs = [0, 1, 2].map(i => {
+        const rot = `rotate(${-80 + i * 120} 195 180)`;   // starts at -80, +40 and +160 degrees from the top; about 100 degrees each with 20 degree gaps
+        mk(turn, "circle", { class: "t", cx: 195, cy: 180, r: RING_R, "stroke-dasharray": `${RING_ARC} ${RING_C}`, transform: rot });
+        return mk(turn, "circle", { class: "a a" + i, cx: 195, cy: 180, r: RING_R, "stroke-dasharray": `0 ${RING_C}`, transform: rot });
+      });
+      const wedges = [...arcEl.querySelectorAll("[data-tab]")];   // document order: Dashboard, Models, Painting, Tools (clockwise from top left)
+      wedges.forEach(w => w.classList.add("ring-hold"));
+      document.body.classList.add("ring-loading");
+      const stepAt = [() => bootSteps.data, () => bootSteps.draw, () => bootSteps.load];
+      const t0 = performance.now(), ends = [0, 0, 0], starts = [0, 0, 0];
+      let revealed = 0, raf = 0;
+      const state = ringState = { svg, wedges, stop() { cancelAnimationFrame(raf); } };
+      function step(now) {
+        // when each arc starts: its step is done and the one before has filled (the load step also gives up after 5 s)
+        let progress = 0;
+        for (let i = 0; i < 3; i++) {
+          const done = stepAt[i]() || (i === 2 && now - t0 > 5000 ? now : 0);
+          if (!starts[i] && done && (i === 0 || (ends[i - 1] && now >= ends[i - 1]))) { starts[i] = Math.max(done, i ? ends[i - 1] : t0); ends[i] = starts[i] + RING_FILL_MS; }
+          const f = starts[i] ? Math.min(1, Math.max(0, (now - starts[i]) / RING_FILL_MS)) : 0;
+          arcs[i].setAttribute("stroke-dasharray", `${RING_ARC * f} ${RING_C}`);
+          progress += f / 3;
+        }
+        const pct = Math.round(progress * 100);
+        if (String(pct) !== svg.getAttribute("aria-valuenow")) svg.setAttribute("aria-valuenow", String(pct));
+        while (revealed < 4 && progress >= (revealed + 1) / 4 - 0.02) {
+          const w = wedges[revealed++];
+          w.classList.remove("ring-hold");
+          w.animate([{ opacity: 0, transform: "scale(0.86)" }, { opacity: 1, transform: "scale(1)" }], { duration: 520, easing: "cubic-bezier(.2,.8,.2,1)" });
+        }
+        if (progress >= 0.999) { finish(); return; }
+        raf = requestAnimationFrame(step);
+      }
+      function finish() {
+        if (ringState !== state) return;
+        wedges.forEach(w => w.classList.remove("ring-hold"));
+        document.body.classList.remove("ring-loading");   // tappable from here
+        svg.setAttribute("aria-valuenow", "100");
+        const out = svg.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(1.12)" }], { duration: 700, easing: "ease-out", fill: "forwards" });
+        out.onfinish = () => { if (ringState === state) endLoadingRing(); };
+      }
+      raf = requestAnimationFrame(step);
+    }
+    function endLoadingRing() {
+      const r = ringState;
+      if (!r) return;
+      ringState = null;
+      r.stop();
+      r.svg.remove();   // the ring is gone, along with its progress bar role
+      r.wedges.forEach(w => { w.classList.remove("ring-hold"); w.getAnimations().forEach(a => a.finish()); });
+      document.body.classList.remove("ring-loading");
+    }
+
+
     // how: "slide" only for a tap on a menu segment. Anything chosen by code (an import, a jump, the Mentor button) or leaving the
     // start page gets a short fade at most. Moving between the pages inside one section (Guides, Settings, Help, Updates) is an instant switch.
     function showTab(name, how) {
@@ -3905,6 +3979,7 @@
       const move = canMove() && before !== name && (before === null || barOf(before) !== barOf(name)) ? (how === "slide" && before ? "slide" : "fade") : "";
       const snap = move === "slide" ? moveSnap(document.querySelector("main"), views[before]) : null;
       if (move !== "slide" && before !== name) endMove();
+      endLoadingRing();   // Mo4a: leaving the start circle ends the loading ring at once
       const leaving = launching ? launchMoveStart("ring") : (endLaunchMove(), null);
       if (launching) { launching = false; document.body.classList.remove("launching"); }
       if (name !== "units" && selectMode) closeSelect();   // v21.1: leaving Units ends select mode
@@ -17548,12 +17623,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL TEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=107".
+    // "?v=" number on ALL TEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=108".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v107";
+    const APP_VERSION = "v108";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -18004,6 +18079,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v108", date: "31 Oct 2026", changes: [
+        "When you open the app fresh, a ring of three coloured arcs fills around the Mentor button on the start circle, and the four sections appear one by one as it fills. It takes about a second and a quarter. With reduced motion on, the circle shows at once.",
+      ] },
       { version: "v107", date: "31 Oct 2026", changes: [
         "Help now describes the menu, Colour Lab, Guides and Mentor as they are today, and Help > Privacy says Mentor runs on your device: what you type is not sent or stored, and the chat is cleared when the app reloads.",
       ] },
@@ -18331,6 +18409,7 @@
     markFold(document.getElementById("recipe-lists"));   // v53: Parts and techniques
     markFold(document.getElementById("history-table-box"));   // v53: Show as a table
     render();
+    bootSteps.draw = performance.now();   // Mo4a: the first draw is done
     countThisVisit();   // v27: one anonymous visit count (only from minifolio.app, and only if switched on)
     startPhotos();   // moves any old photos across, then loads thumbnails (in the background)
     // Safety copies (Delete all, Replace, Restore, Recover) are kept for 30 days.
@@ -18342,7 +18421,7 @@
     // U4b: a fresh open shows the launch page, unless the address names a section (#dashboard, #units, #recipes, #guides, #settings, #help, #updates; the old #compendium opens Guides).
     const linkedTab = decodeURIComponent(location.hash.slice(1));
     if (Object.prototype.hasOwnProperty.call(views, TAB_ALIASES[linkedTab] || linkedTab)) showTab(linkedTab);
-    else { showTab(settings.tab); enterLaunch(); }
+    else { showTab(settings.tab); enterLaunch(); startLoadingRing(); }
     launchMotionReady = true;
     if (upgradedStages) showToast("Stages updated: Parade ready added as the final stage", null, null, 8);
     else if (settingsUnreadable) showToast("Your settings couldn't be read, so they were reset. Your units kept their stages, and a copy of the old settings was kept.", null, null, 10);

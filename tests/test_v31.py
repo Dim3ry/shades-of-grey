@@ -29,7 +29,7 @@ from launch_helpers import app_ready, quiet
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
-from launch_helpers import leave_launch
+from launch_helpers import leave_launch, wait_ring_done
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}/"
@@ -86,6 +86,8 @@ def load(page, paints=None, settings=None, recipes=None, units=None, launch=Fals
     app_ready(page)
     if not launch:
         leave_launch(page)
+    else:
+        wait_ring_done(page)   # v108: the start page's loading ring has finished, so the circle is whole (see launch_helpers.wait_ring_done)
 
 def blur(page):
     page.evaluate("() => document.activeElement && document.activeElement.blur()")
