@@ -23,6 +23,7 @@ Checks:
 12. Dark and light at 390 and 360 px: nothing scrolls sideways with every part open, text contrast 4.5 or more.
 13. Nothing else changed: the other tabs, the card in a recipe (Add step, Add all steps), no pop-ups, no page errors.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
+from common import click_card_chip   # X8d (v106): chips past the first 12 sit behind Show all in the Colour ideas card
 import json, os, re, subprocess, sys
 from playwright.sync_api import sync_playwright
 from launch_helpers import app_ready, quiet, tap_tab
@@ -110,7 +111,7 @@ def part_attr(part):
             "starter-moods": "mood", "detail-groups": "detail-group", "basing-groups": "basing-group"}[part]
 
 def card_pick(page, part, key):
-    page.click(f'#{part} [data-{part_attr(part)}="{key}"]')
+    click_card_chip(page, f'#{part} [data-{part_attr(part)}="{key}"]')   # v106: may need Show all first
     quiet(page)
 
 def copy_spy(page):
