@@ -57,6 +57,8 @@ def main():
         for g in guides:
             home(page)
             page.click(f'.guides-cats [data-cat="{g["category"]}"]')
+            # v106 (X8d): a category list now shows 30 rows first, so open the whole list before looking for the sample row
+            page.evaluate("() => { guidesState.shownRows = { ['cat:' + guidesState.cat]: 9999 }; renderGuides(); }")
             page.click(f'.guides-main .guides-row[data-guide="{g["key"]}"]')
             page.wait_for_selector(".guides-entry")
             got = page.evaluate("() => { const e = document.querySelector('.guides-entry'); return { key: e.dataset.key, title: e.querySelector('h3').textContent, text: e.innerText, related: [...e.querySelectorAll('.guides-related button')].map(b => b.dataset.related) }; }")
