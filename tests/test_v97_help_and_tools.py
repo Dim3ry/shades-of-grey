@@ -37,7 +37,7 @@ TAP = """(sel) => { const before = document.querySelector('main > section:not(.h
     document.querySelector(sel).click();
     const moving = [...document.querySelectorAll('main > section')].flatMap(s => s.getAnimations().map(a => { const k = a.effect.getKeyframes()[0]; return k.transform || ('o' + k.opacity); }));
     return { layer: before.classList.contains('mo-out'), moving, orb: document.getElementById('mentor-button').getAnimations().length,
-             ghost: !!document.querySelector('.mo-ring, .mo-ghost') }; }"""
+             ghost: !!document.querySelector('.mo-ring, .mo-ghost, .mo-tr') }; }"""   # v109: leaving the circle is the travel layer (.mo-tr), no longer the .mo-ring picture
 
 def main():
     errors, outside = [], []
@@ -125,9 +125,9 @@ def main():
         print("\n--- 5. Motion ---")
         t.load(page, paints=PAINTS, units=UNITS, launch=True)
         r = page.evaluate(TAP, '.tabs button[data-tab="guides"]')
-        check("the start circle glides into the bar for Tools (the button moves, a picture of the circle is on top)", r["orb"] >= 1 and r["ghost"], r)
+        check("the start circle travels into the bar for Tools (the button moves, the travel layer is on top)", r["orb"] >= 1 and r["ghost"], r)
         settle(page)
-        check("... and ends tidy with the segment lit", lit(page) == ["guides"] and page.evaluate("() => document.querySelectorAll('.mo-ring, .mo-ghost').length") == 0)
+        check("... and ends tidy with the segment lit", lit(page) == ["guides"] and page.evaluate("() => document.querySelectorAll('.mo-ring, .mo-ghost, .mo-tr').length") == 0)
         r = page.evaluate(TAP, '.tabs button[data-tab="units"]')
         check("Tools to Models: the sections slide (the old one is a layer on top, earlier slides right)",
               r["layer"] and any(m.startswith("translateX(") for m in r["moving"]), r)
