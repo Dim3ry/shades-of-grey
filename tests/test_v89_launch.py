@@ -55,7 +55,11 @@ def main():
     errors, dialogs = [], []
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
+        # v108 (Mo4a): a fresh load plays a loading ring for about 1.2 s. This file checks the start page's content and behaviour, not the ring
+        # (test_v108_loading_ring does), and it loads the page dozens of times, so it runs with reduced motion on, which skips the ring. The one
+        # check that is about motion ("nothing moves on first load") runs on a normal-motion page instead (see ctx_normal below).
+        ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block", reduced_motion="reduce")
+        ctx_normal = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
         page = ctx.new_page()
         page.on("pageerror", lambda x: errors.append(str(x)))
         page.on("dialog", lambda d: (dialogs.append(d.message), d.dismiss()))
@@ -88,10 +92,12 @@ def main():
               hit(page, cx, cy - 120) == "" and hit(page, cx - 120, cy) == "" and hit(page, cx + 120, cy) == "" and hit(page, cx, cy + 120) == "")
         check("the glow behind the circle uses a theme colour (a gradient on the layer behind it)",
               "radial-gradient" in page.evaluate("() => getComputedStyle(document.querySelector('.tabs'), '::before').backgroundImage"))
-        before = [box(page, seg(s)) for s in SEGMENTS]
-        page.wait_for_timeout(300)
-        check("nothing moves on first load (no motion)", before == [box(page, seg(s)) for s in SEGMENTS]
-              and page.evaluate("() => [...document.querySelectorAll('.tabs button')].every(b => parseFloat(getComputedStyle(b).transitionDuration) === 0 && getComputedStyle(b).animationName === 'none')"))
+        npage = ctx_normal.new_page()   # normal motion (the ring finishes first, see start()), so "no motion" is a real check and not a result of the setting
+        start(npage, settings={"tab": "recipes"})
+        before = [box(npage, seg(s)) for s in SEGMENTS]
+        npage.wait_for_timeout(300)
+        check("nothing moves on first load (no motion)", before == [box(npage, seg(s)) for s in SEGMENTS]
+              and npage.evaluate("() => [...document.querySelectorAll('.tabs button')].every(b => parseFloat(getComputedStyle(b).transitionDuration) === 0 && getComputedStyle(b).animationName === 'none')"))
 
         print("\n--- 3. Going in and coming back ---")
         for s in SEGMENTS:
