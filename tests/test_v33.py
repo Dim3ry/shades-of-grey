@@ -539,6 +539,7 @@ def main():
                 edit_recipe(page, 106)
                 open_panel(page)
                 page.locator("#basing-tips").scroll_into_view_if_needed()
+                page.click('#basing-chips + .chips-more')   # v106 (X8d): the card shows 12 chips until Show all is pressed; this check is about the whole list fitting
                 frames(page)
                 def geometry():
                     return page.evaluate("""() => { const c = document.getElementById('colour-ideas').getBoundingClientRect();
