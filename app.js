@@ -17548,12 +17548,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL TEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=106".
+    // "?v=" number on ALL TEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=107".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v106";
+    const APP_VERSION = "v107";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -18004,6 +18004,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v107", date: "31 Oct 2026", changes: [
+        "Help now describes the menu, Colour Lab, Guides and Mentor as they are today, and Help > Privacy says Mentor runs on your device: what you type is not sent or stored, and the chat is cleared when the app reloads.",
+      ] },
       { version: "v106", date: "31 Oct 2026", changes: [
         "Long lists are shorter on a phone: Guides shows 30 rows at a time with Show more, Detail recipes and Basing open on one group, and the Colour ideas card shows the first few.",
       ] },
