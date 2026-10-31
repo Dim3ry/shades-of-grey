@@ -225,9 +225,10 @@ def main():
             moods: Object.fromEntries(STARTER_MOODS.map(m => [m.key, STARTER_SCHEMES.filter(s => s.mood === m.key).length])),
             dgroups: Object.fromEntries(DETAIL_GROUPS.map(g => [g.key, DETAIL_RECIPES.filter(s => s.group === g.key).length])),
             bgroups: Object.fromEntries(BASING_GROUPS.map(g => [g.key, BASING_TIPS.filter(s => s.group === g.key).length])) })""")
-        check("the data is what the tests expect: 24 schemes, 18 detail recipes, 12 basing tips", (info["s"], info["d"], info["b"]) == (24, 18, 12), info)
-        for part, chipsId, noneId, what, attr, total in [("starter", "starter-chips", "starter-none", "schemes", "mood", 24), ("detail", "detail-chips", "detail-none-group", "recipes", "detail-group", 18),
-                                                          ("basing", "basing-chips", "basing-none-group", "tips", "basing-group", 12)]:
+        # X8: the knowledge base added 119 detail recipes and 48 basing tips (was 18 and 12), so All now lists 137 and 60
+        check("the data is what the tests expect: 24 schemes, 137 detail recipes, 60 basing tips", (info["s"], info["d"], info["b"]) == (24, 137, 60), info)
+        for part, chipsId, noneId, what, attr, total in [("starter", "starter-chips", "starter-none", "schemes", "mood", 24), ("detail", "detail-chips", "detail-none-group", "recipes", "detail-group", 137),
+                                                          ("basing", "basing-chips", "basing-none-group", "tips", "basing-group", 60)]:
             check(f"{part}: at the start no list is shown, and (v59) there is no plain line either",
                   page.locator(f"#cmp-{chipsId}").count() == 0 and page.locator(f"#cmp-{noneId}").count() == 0)
             groups_id = {"starter": "starter-moods", "detail": "detail-groups", "basing": "basing-groups"}[part]
@@ -395,7 +396,7 @@ def main():
         check("the card in a recipe is unchanged: no switch, no folding headings, the title is still there, and All is on with all 24 schemes listed from the start",
               card["view"] == 0 and card["folds"] == 0 and card["title"] and card["schemes"] == 24 and card["moods"][0] == ["All", "true"] and [m[0] for m in card["moods"]] == THEMES, card)
         check("the card's detail recipes and basing tips also still list everything from the start",
-              page.locator("#detail-chips .chip").count() == 18 and page.locator("#basing-chips .chip").count() == 12)
+              page.locator("#detail-chips .chip").count() == 137 and page.locator("#basing-chips .chip").count() == 60)   # X8: was 18 and 12
         page.click('#starter-moods [data-mood="cold"]')
         page.wait_for_timeout(100)
         check("in the card the mood buttons still work the old way (Cold shows six; All brings back 24)", page.locator("#starter-chips .chip").count() == 6)

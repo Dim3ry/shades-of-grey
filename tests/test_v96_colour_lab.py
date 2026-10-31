@@ -63,7 +63,9 @@ def main():
         check("Picker keeps its Part chips (Armour first)", page.locator("[data-mentor-part]").first.get_attribute("data-mentor-part") == "armour")
         page.evaluate("() => document.activeElement.blur()")   # the tab bar hides while a text box has the focus
         t.main_tab(page, "compendium")
-        check("Compendium keeps only Detail recipes and Basing tips", [x.rstrip("0123456789") for x in labels(page, ".guides-cats .guides-row")] == ["Detail recipes", "Basing"]   # X3: categories with counts
+        # X8: Guides now also lists the knowledge base's four guide categories, so the check is that Detail recipes and Basing are
+        # still there (and the Colour Lab parts are not), not that they are the only two rows
+        check("Compendium keeps Detail recipes and Basing tips (and none of the Colour Lab parts)", {"Detail recipes", "Basing"} <= {x.rstrip("0123456789") for x in labels(page, ".guides-cats .guides-row")}   # X3: categories with counts
               and page.locator("#cmp-wheel, #cmp-fold-mentor, #cmp-fold-ideas").count() == 0, labels(page, ".guides-cats .guides-row"))
         check("Pro preview shows on the Compendium and on Colour Lab", "Pro preview" in page.inner_text("#view-guides")
               and page.evaluate("() => !!document.querySelector('#colourlab-view .pro-pill')"))

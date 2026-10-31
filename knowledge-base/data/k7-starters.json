@@ -1,0 +1,195 @@
+{
+  "starters": [
+    {
+      "key": "starter-what-do-i-need",
+      "text": "I'm new. What do I need to start painting?",
+      "targets": [
+        "starter-tool-kit",
+        "first-model-steps",
+        "choosing-brushes",
+        "choosing-paints"
+      ]
+    },
+    {
+      "key": "starter-thin-paint",
+      "text": "How thin should my paint be?",
+      "targets": [
+        "thinning-paint",
+        "paint-consistency-by-technique",
+        "two-thin-coats",
+        "wet-palette"
+      ]
+    },
+    {
+      "key": "starter-priming",
+      "text": "Do I need to prime, and what colour should I use?",
+      "targets": [
+        "choosing-primer-colour",
+        "spray-priming",
+        "brush-priming",
+        "zenithal-priming"
+      ]
+    },
+    {
+      "key": "starter-streaky-base-coat",
+      "text": "Why is my base coat streaky and patchy?",
+      "targets": [
+        "poor-coverage-paints",
+        "base-coating",
+        "two-thin-coats",
+        "thinning-paint"
+      ]
+    },
+    {
+      "key": "starter-using-a-wash",
+      "text": "How do I use a wash for shading?",
+      "targets": [
+        "applying-washes",
+        "choosing-a-wash-colour",
+        "when-washes-work"
+      ]
+    },
+    {
+      "key": "starter-drybrushing",
+      "text": "How do I drybrush?",
+      "targets": [
+        "drybrushing",
+        "drybrushing-strokes",
+        "fix-drybrushing-problems"
+      ]
+    },
+    {
+      "key": "starter-layering",
+      "text": "What is layering and how do I do it?",
+      "targets": [
+        "layering",
+        "where-highlights-go",
+        "smooth-layering"
+      ]
+    },
+    {
+      "key": "starter-edge-highlights",
+      "text": "How do I paint thin edge highlights?",
+      "targets": [
+        "edge-highlighting",
+        "edge-highlight-brush-strokes",
+        "fix-messy-edge-highlights"
+      ]
+    },
+    {
+      "key": "starter-chalky-highlights",
+      "text": "Why do my highlights look chalky?",
+      "targets": [
+        "fix-chalky-highlights",
+        "fix-chalky-white-paint",
+        "thinning-paint"
+      ]
+    },
+    {
+      "key": "starter-wash-pools",
+      "text": "My wash dried in blotches and rings. How do I fix it?",
+      "targets": [
+        "fix-wash-tide-marks",
+        "applying-washes",
+        "gloss-coat-before-washing"
+      ]
+    },
+    {
+      "key": "starter-rough-primer",
+      "text": "Why did my spray primer come out rough or grainy?",
+      "targets": [
+        "fix-priming-problems",
+        "spray-priming",
+        "prep-check-before-priming"
+      ]
+    },
+    {
+      "key": "starter-paint-rubbing-off",
+      "text": "How do I stop paint rubbing off my models?",
+      "targets": [
+        "prep-check-before-priming",
+        "varnishing",
+        "protecting-painted-models",
+        "fix-priming-problems"
+      ]
+    },
+    {
+      "key": "starter-painting-metal",
+      "text": "How do I paint silver and gold metal?",
+      "targets": [
+        "metallic-paint-handling",
+        "shading-metallics",
+        "steel",
+        "gold"
+      ]
+    },
+    {
+      "key": "starter-skin-and-faces",
+      "text": "How do I paint skin and faces?",
+      "targets": [
+        "painting-faces",
+        "quick-faces",
+        "skin",
+        "mixing-skin-tones"
+      ]
+    },
+    {
+      "key": "starter-painting-eyes",
+      "text": "How do I paint eyes without them looking odd?",
+      "targets": [
+        "painting-eyes",
+        "painting-small-eyes",
+        "fixing-eyes"
+      ]
+    },
+    {
+      "key": "starter-simple-base",
+      "text": "How do I make a simple base?",
+      "targets": [
+        "designing-a-base",
+        "sand",
+        "basing-finishing-touches",
+        "painting-base-rims"
+      ]
+    },
+    {
+      "key": "starter-varnish",
+      "text": "Should I varnish my models, and how?",
+      "targets": [
+        "varnishing",
+        "fix-frosted-varnish",
+        "varnish-changes-colour"
+      ]
+    },
+    {
+      "key": "starter-army-faster",
+      "text": "How can I paint a whole army faster?",
+      "targets": [
+        "painting-armies-efficiently",
+        "batch-painting",
+        "quick-tabletop-method",
+        "speed-painting"
+      ]
+    },
+    {
+      "key": "starter-colour-scheme",
+      "text": "How do I pick colours that look good together?",
+      "targets": [
+        "choosing-a-colour-scheme",
+        "choosing-army-colours",
+        "colour-wheel-harmonies",
+        "accent-colour"
+      ]
+    },
+    {
+      "key": "starter-build-a-kit",
+      "text": "How do I build a kit and clean up mould lines and gaps?",
+      "targets": [
+        "building-your-first-kit",
+        "mould-line-removal",
+        "gap-filling",
+        "clippers-and-clipping"
+      ]
+    }
+  ]
+}

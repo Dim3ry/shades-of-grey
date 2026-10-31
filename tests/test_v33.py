@@ -32,6 +32,10 @@ Checks:
 9. Dark and light at 390 and 360 px: inside the screen, buttons wrap, the filtered list is shorter, lists and rows are inside the
    card, the Add all paint steps button and the rows are at least 44 px tall, contrast 4.5.
 10. Starter schemes, Your schemes and Detail recipes still work exactly as in v32, the order of the card parts, nothing else changed.
+X8 update: the knowledge base added 48 tips (60 in all) and 119 detail recipes (137), so the counts below use TIP_COUNT and
+DETAIL_COUNT, and the three loops that clicked through every tip in the browser (the on-screen text scan, exact paints, empty
+palette) now take three sample tips: the fewest paint steps, the most, and one with none (else the middle one). Every tip still
+goes through the data checks in section 2.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
@@ -55,6 +59,8 @@ def check(name, ok, detail=""):
 
 REQUIRED = ["sand", "snow", "grass", "mud", "rock", "cracked earth", "rubble", "lava", "gravel", "moss", "ash", "ice"]
 GROUPS = ["ground", "cold", "plants", "stone"]
+TIP_COUNT = 60       # X8: the 12 tips of v33 plus 48 from knowledge-base/data/k4-basing-tips.json (was 12)
+DETAIL_COUNT = 137   # X8: the 18 detail recipes of v32 plus 119 from knowledge-base/data/k3-detail-recipes.json (was 18)
 SHOWN_JS = """() => [...document.querySelectorAll('#basing-tips > .scheme-title, #basing-tips > .hint, #basing-tips .chip, #basing-summary, #basing-tips .basing-sub, #basing-tips .basing-list li, #basing-no-paint, #basing-none, #basing-add-all, #basing-list .idea-why, #basing-list .idea-tag, #basing-list .idea-note, #basing-list .idea-add')].map(e => e.textContent).join('\\n')"""
 # brand and product words that must not appear in anything we wrote for the tips
 BRAND_WORDS = re.compile(r"\b(citadel|vallejo|army painter|scale ?75|tamiya|ak interactive|woodland scenics|gale force|green stuff|milliput|vaseline|polyfilla|"
@@ -153,18 +159,22 @@ def main():
         tips = page.evaluate("BASING_TIPS")
         groups = page.evaluate("BASING_GROUPS")
         techniques = page.evaluate("DEFAULT_TECHNIQUES")
-        check("there are 12 tips (10 to 12 asked for)", len(tips) == 12, len(tips))
+        check(f"there are {TIP_COUNT} tips (12 from v33, 48 added by the knowledge base in X8)", len(tips) == TIP_COUNT, len(tips))
         check("four groups, in order: Dry ground, Wet and cold, Plants, Stone and fire",
               [g["key"] for g in groups] == GROUPS and [g["name"] for g in groups] == ["Dry ground", "Wet and cold", "Plants", "Stone and fire"], groups)
         counts = {g: len([x for x in tips if x["group"] == g]) for g in GROUPS}
-        check("every tip is in one of the groups and every group has at least two tips", sum(counts.values()) == 12 and all(v >= 2 for v in counts.values()), counts)
+        check("every tip is in one of the groups and every group has at least two tips", sum(counts.values()) == TIP_COUNT and all(v >= 2 for v in counts.values()), counts)
         names_lower = " | ".join(x["name"].lower() for x in tips)
+        # X8: three sample tips for the browser loops (sections 3, 5 and 6): the fewest paint steps, the most, and one with none (else the middle one)
+        by_len = sorted(tips, key=lambda t_: len(t_["paintSteps"]))
+        no_steps = next((t_ for t_ in tips if not t_["paintSteps"] and t_ not in (by_len[0], by_len[-1])), by_len[len(by_len) // 2])
+        SAMPLE = [by_len[0], by_len[-1], no_steps]
         missing = [w for w in REQUIRED if w not in names_lower]
         check("every subject asked for is there: sand, snow, grass, mud, rock, cracked earth, rubble, lava (and gravel, moss, ash, ice)", not missing, missing)
         check("every tip has exactly: key, group, name, summary, materials, howto, paintSteps", all(set(x) == {"key", "group", "name", "summary", "materials", "howto", "paintSteps"} for x in tips))
         check("every tip has 3 to 6 materials, 3 to 5 how-to steps and 0 to 5 paint steps", all(3 <= len(x["materials"]) <= 6 and 3 <= len(x["howto"]) <= 5 and 0 <= len(x["paintSteps"]) <= 5 for x in tips),
               [(x["key"], len(x["materials"]), len(x["howto"]), len(x["paintSteps"])) for x in tips])
-        check("most tips have paint steps (paint steps are optional, but at least 10 of the 12 give some)", len([x for x in tips if x["paintSteps"]]) >= 10)
+        check("most tips have paint steps (paint steps are optional, but at least five in six give some; X8: was 10 of the 12)", len([x for x in tips if x["paintSteps"]]) * 6 >= len(tips) * 5)
         check("each materials line is a plain thing: short, one line, no full stop, and the materials of a tip are all different",
               all(0 < len(m_) <= 70 and "\n" not in m_ and not m_.endswith(".") for x in tips for m_ in x["materials"]) and all(len(set(x["materials"])) == len(x["materials"]) for x in tips),
               [m_ for x in tips for m_ in x["materials"] if len(m_) > 70 or m_.endswith(".")])
@@ -213,14 +223,14 @@ def main():
         for g in ["all"] + GROUPS:
             pick_group(page, g)
             shown.append(page.evaluate(SHOWN_JS))
-            for x in [y for y in tips if g in ("all", y["group"])]:
+            for x in [y for y in SAMPLE if g in ("all", y["group"])]:   # X8: three samples, not every tip
                 pick_tip(page, x["key"])
                 shown.append(page.evaluate(SHOWN_JS))
                 pick_tip(page, x["key"])
         pick_group(page, "all")
         screen_hits = GW_WORDS.findall("\n".join(shown)) + GW_MORE.findall("\n".join(shown))
-        check("everything we wrote that the Basing tips part shows on screen (heading, hint, group and tip buttons, summary, materials, how-to steps, paint step lines, tags, notes), for every group and every tip, names no Games Workshop game, faction, scheme or product",
-              not screen_hits and len(shown) > 12, screen_hits[:10])
+        check("everything we wrote that the Basing tips part shows on screen (heading, hint, group and tip buttons, summary, materials, how-to steps, paint step lines, tags, notes), for every group and three sample tips, names no Games Workshop game, faction, scheme or product",
+              not screen_hits and len(shown) == 5 + 6, (screen_hits[:10], len(shown)))
         screen_brand = BRAND_WORDS.findall("\n".join(shown))
         check("and none of it names a brand, a shop or a product", not screen_brand, screen_brand[:10])
         own_text = " ".join(every_text) + " " + " ".join(s["technique"] for s in steps_all)
@@ -240,7 +250,7 @@ def main():
         check("the group buttons sit above the tip buttons, below the heading", order[0] < order[1] < order[2] and -1 not in order, order)
         check("the heading says Basing tips", page.inner_text("#basing-tips .scheme-title") == "Basing tips")
         rc = tip_chips(page)
-        check("all 12 tip buttons show to start, none picked, in order", len(rc) == 12 and all(c[1] == "false" for c in rc) and [c[2] for c in rc] == [x["key"] for x in tips] and [c[0] for c in rc] == [x["name"] for x in tips], len(rc))
+        check(f"all {TIP_COUNT} tip buttons show to start, none picked, in order", len(rc) == TIP_COUNT and all(c[1] == "false" for c in rc) and [c[2] for c in rc] == [x["key"] for x in tips] and [c[0] for c in rc] == [x["name"] for x in tips], len(rc))
         check("nothing is picked to start: no summary, no materials, no how-to, no rows, no Add all paint steps button",
               all(page.locator(s).count() == 0 for s in ["#basing-summary", "#basing-materials", "#basing-howto", "#basing-list", "#basing-add-all"]))
         for g in GROUPS:
@@ -251,7 +261,7 @@ def main():
             check(f"{g}: only that group's tips show, in order, and only that group's button is pressed", [c[2] for c in rc] == expect and [c[2] for c in gcs if c[1] == "true"] == [g], (len(rc), gcs))
             check(f"{g}: the button keeps the focus after it is tapped", focused(page) == g, focused(page))
         pick_group(page, "all")
-        check("All brings back all 12 and is the only one pressed, with the focus on it", len(tip_chips(page)) == 12 and [c[2] for c in group_chips(page) if c[1] == "true"] == ["all"] and focused(page) == "all")
+        check(f"All brings back all {TIP_COUNT} and is the only one pressed, with the focus on it", len(tip_chips(page)) == TIP_COUNT and [c[2] for c in group_chips(page) if c[1] == "true"] == ["all"] and focused(page) == "all")
         pick_group(page, "stone")
         pick_group(page, "stone")
         check("tapping the pressed group again leaves it as it is (use All to see everything)", len(tip_chips(page)) == counts["stone"] and [c[2] for c in group_chips(page) if c[1] == "true"] == ["stone"])
@@ -273,7 +283,7 @@ def main():
         check("switching to the group that contains the pick keeps it", page.locator("#basing-list").count() == 1 and page.inner_text("#basing-summary") == by_key["rock"]["summary"])
         pick_tip(page, "rock")
         check("tapping the picked tip again closes it, with the group kept", page.locator("#basing-list").count() == 0 and len(tip_chips(page)) == counts["stone"])
-        check("an unknown group value falls back to All (nothing breaks)", page.evaluate("""() => { colourIdeasState.basingGroup = 'nonsense'; return basingTipsShown().length; }""") == 12)
+        check("an unknown group value falls back to All (nothing breaks)", page.evaluate("""() => { colourIdeasState.basingGroup = 'nonsense'; return basingTipsShown().length; }""") == TIP_COUNT)
         page.evaluate("() => { colourIdeasState.basingGroup = ''; colourIdeasState.basing = ''; }")
         load(page, paints=[], recipes=[], units=[])
         open_editor(page)
@@ -287,11 +297,8 @@ def main():
         load(page, recipes=RECIPES, units=UNITS)
         edit_recipe(page, 106)
         open_panel(page)
-        # T3b: three tips instead of twelve: the fewest paint steps, the most, and one with none (else the middle one)
-        # (the exact-paint and empty-palette loops below still cover every tip)
-        by_len = sorted(tips, key=lambda t_: len(t_["paintSteps"]))
-        no_steps = next((t_ for t_ in tips if not t_["paintSteps"] and t_ not in (by_len[0], by_len[-1])), by_len[len(by_len) // 2])
-        for x in [by_len[0], by_len[-1], no_steps]:
+        # T3b: three tips: the fewest paint steps, the most, and one with none (else the middle one) (SAMPLE, section 2)
+        for x in SAMPLE:
             pick_tip(page, x["key"])
             rows = basing_rows(page)
             subs = list_texts(page, "#basing-tips .basing-sub")
@@ -305,9 +312,10 @@ def main():
             check(f"{x['name']} ({x['group']}): summary, {len(x['materials'])} materials, {len(x['howto'])} how-to steps as plain text, {len(x['paintSteps'])} paint rows with technique, coats, mix % and note, honest tags, one Add all paint steps button",
                   ok, (rows[:2], subs, page.inner_text("#basing-summary")))
             pick_tip(page, x["key"])
-        # Yours first: for every tip, own an exact paint for every paint step; each row must find it.
+        # Yours first: for each sample tip, own an exact paint for every paint step; each row must find it.
+        # (X8: three samples instead of every tip; one page load each would be 60 loads)
         exact_ok, exact_bad = True, []
-        for n, x in enumerate(tips):
+        for n, x in enumerate(SAMPLE):
             load(page, paints=exact_palette(x, n), recipes=[], units=[])
             open_editor(page)
             open_panel(page)
@@ -317,7 +325,7 @@ def main():
             if not good:
                 exact_ok = False
                 exact_bad.append((x["key"], rows))
-        check("with an exact paint owned for every paint step of a tip, every row of every one of the 12 tips finds your paint first and says You own this", exact_ok, exact_bad[:1])
+        check("with an exact paint owned for every paint step of a tip, every row of each of the three sample tips finds your paint first and says You own this", exact_ok, exact_bad[:1])
 
         # Adding one step and all paint steps
         load(page, recipes=RECIPES, units=UNITS)
@@ -420,12 +428,12 @@ def main():
         open_editor(page)
         open_panel(page)
         allnone = True
-        for x in tips:
+        for x in SAMPLE:   # X8: three samples, not every tip
             pick_tip(page, x["key"])
             rr = basing_rows(page)
             allnone = allnone and len(rr) == len(x["paintSteps"]) and all(r["tag"] == "Not in your palette" for r in rr)
             pick_tip(page, x["key"])
-        check("with an empty palette every row of every tip says Not in your palette (the built-in list is used, nothing is claimed as owned)", allnone)
+        check("with an empty palette every row of each sample tip says Not in your palette (the built-in list is used, nothing is claimed as owned)", allnone)
         far_only = [{"id": 1, "brand": "Test", "name": "Only Grey", "colour": "#808080", "status": "owned"}]
         load(page, paints=far_only, recipes=[], units=[])
         open_editor(page)
@@ -460,7 +468,7 @@ def main():
         check("the new group buttons, tip buttons and Add all button are built from fixed text (no HTML anywhere in them)",
               page.evaluate("() => [...document.querySelectorAll('#basing-groups .chip, #basing-chips .chip, #basing-add-all')].every(c => c.children.length === 0)"))
         hostile_state = page.evaluate("""() => { colourIdeasState.basingGroup = '<img src=x onerror="window.__pwned=3">'; colourIdeasState.basing = '<b>x</b>'; return basingTipsShown().length; }""")
-        check("a hostile saved group or tip value is ignored (it falls back to All, nothing is built from it)", hostile_state == 12 and page.evaluate("() => window.__pwned") is None)
+        check("a hostile saved group or tip value is ignored (it falls back to All, nothing is built from it)", hostile_state == TIP_COUNT and page.evaluate("() => window.__pwned") is None)
         page.evaluate("() => { colourIdeasState.basingGroup = ''; colourIdeasState.basing = ''; }")
         # A tip whose every text field is HTML: all of it must show as characters (the injection test on every kind of new text)
         page.evaluate("""(h) => BASING_TIPS.push({ key: 'evil', group: 'stone', name: h, summary: h, materials: [h, h + '2', h + '3'], howto: [h, h + '2', h + '3'],
@@ -487,7 +495,7 @@ def main():
             pick_group(page, g)
         pick_tip(page, "sand")
         pick_tip(page, "grass")
-        ok_off = len(basing_rows(page)) == 4 and len(tip_chips(page)) == 12 and len(list_texts(page, "#basing-howto li")) == 5
+        ok_off = len(basing_rows(page)) == 4 and len(tip_chips(page)) == TIP_COUNT and len(list_texts(page, "#basing-howto li")) == 5
         page.click("#basing-add-all")
         page.wait_for_timeout(250)
         page.locator("#basing-list button.idea-pick").first.click()
@@ -544,14 +552,14 @@ def main():
                 shot(page, f"v33-groups-all-{appearance}-{width}.png")
                 check(f"{tag}: the card is inside the screen, and every group and tip button is inside the card (or in a one-line sliding row inside it)",
                       g_all["cl"] >= 0 and g_all["cr"] <= g_all["w"] + 0.5 and g_all["grpInside"] and g_all["rcpInside"], g_all)
-                check(f"{tag}: the five group buttons take one or two lines and are at least 36 px tall, and the 12 tip buttons wrap onto several lines",
-                      g_all["n"] == 12 and g_all["grpRows"] <= 2 and g_all["rcpRows"] >= 2 and g_all["grpMinH"] >= 36, g_all)
+                check(f"{tag}: the five group buttons take one or two lines and are at least 36 px tall, and the {TIP_COUNT} tip buttons wrap onto several lines",
+                      g_all["n"] == TIP_COUNT and g_all["grpRows"] <= 2 and g_all["rcpRows"] >= 2 and g_all["grpMinH"] >= 36, g_all)
                 check(f"{tag}: no sideways scroll", no_sideways(page))
                 pick_group(page, "plants")
                 g_pl = geometry()
                 shot(page, f"v33-groups-plants-{appearance}-{width}.png")
                 check(f"{tag}: choosing a group makes the list clearly shorter than All and keeps everything inside",
-                      g_pl["n"] == 2 and g_pl["listH"] < g_all["listH"] * 0.6 and g_pl["rcpInside"] and no_sideways(page), (g_pl["listH"], g_all["listH"]))
+                      g_pl["n"] == counts["plants"] and g_pl["listH"] < g_all["listH"] * 0.6 and g_pl["rcpInside"] and no_sideways(page), (g_pl["listH"], g_all["listH"]))
                 pick_group(page, "stone")
                 pick_tip(page, "lava")
                 page.locator("#basing-summary").scroll_into_view_if_needed()
@@ -613,7 +621,7 @@ def main():
         check("tapping a faction history paint still adds one step with the note 'Used before on this faction'", len(full_steps(page)) == n0 + 1 and full_steps(page)[-1]["note"] == "Used before on this faction")
         # Detail recipes exactly as in v32
         dr = page.evaluate("DETAIL_RECIPES")
-        check("Detail recipes still has all 18 recipes and its five group buttons", len(dr) == 18 and page.locator("#detail-groups .chip").count() == 5 and page.locator("#detail-chips .chip").count() == 18)
+        check(f"Detail recipes still has all {DETAIL_COUNT} recipes and its five group buttons", len(dr) == DETAIL_COUNT and page.locator("#detail-groups .chip").count() == 5 and page.locator("#detail-chips .chip").count() == DETAIL_COUNT)
         page.click('#detail-chips [data-detail="rust"]')
         page.wait_for_timeout(150)
         rust = {r["key"]: r for r in dr}["rust"]

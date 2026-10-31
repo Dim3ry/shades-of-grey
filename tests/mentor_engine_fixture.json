@@ -531,8 +531,9 @@
   ],
   [
    "muddy ground",
-   "mud",
-   "answer"
+   "dry-mud-ground",
+   "answer",
+   "X8: was mud. The knowledge base added the basing tip dry-mud-ground, which now comes first for this question. Both are right answers; the checks compare one key, so the row names the one that comes first."
   ],
   [
    "verdigris",

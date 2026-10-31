@@ -29,6 +29,9 @@ Checks:
 9. Dark and light at 390 and 360 px: inside the screen, buttons wrap, the filtered list is shorter, the Add all steps button and
    the rows are at least 44 px tall, contrast 4.5.
 10. Starter schemes and Your schemes still work exactly as in v31, the order of the card parts, nothing else changed.
+X8 update: the knowledge base added 119 recipes (137 in all), so the counts below use DETAIL_COUNT, and the three loops that clicked
+through every recipe in the browser (the on-screen text scan, exact paints, empty palette) now take three sample recipes: the
+fewest steps, the most steps and one with a thinned step. Every recipe still goes through the data checks in section 2.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
@@ -53,6 +56,7 @@ def check(name, ok, detail=""):
 REQUIRED = ["teeth", "chitin", "eyes and glow", "rusty metal", "oiled metal", "bone", "leather", "cloth", "gems and lenses", "skin", "wood",
             "blood", "verdigris", "weathering"]
 GROUPS = ["body", "metal", "material", "light"]
+DETAIL_COUNT = 137   # X8: the 18 recipes of v32 plus 119 from knowledge-base/data/k3-detail-recipes.json (was 18)
 SHOWN_JS = """() => [...document.querySelectorAll('#detail-recipes > .scheme-title, #detail-recipes > .hint, #detail-recipes .chip, #detail-summary, #detail-add-all, #detail-list .idea-why, #detail-list .idea-tag, #detail-list .idea-note, #detail-list .idea-add')].map(e => e.textContent).join('\\n')"""
 
 def cap(text):
@@ -136,11 +140,15 @@ def main():
         recipes = page.evaluate("DETAIL_RECIPES")
         groups = page.evaluate("DETAIL_GROUPS")
         techniques = page.evaluate("DEFAULT_TECHNIQUES")
-        check("there are 15 to 20 recipes (this chunk has 18)", len(recipes) == 18, len(recipes))
+        check(f"there are {DETAIL_COUNT} recipes (18 from v32, 119 added by the knowledge base in X8)", len(recipes) == DETAIL_COUNT, len(recipes))
         check("four groups, in order: Body, Metal, Materials, Light", [g["key"] for g in groups] == GROUPS and [g["name"] for g in groups] == ["Body", "Metal", "Materials", "Light"], groups)
         counts = {g: len([r for r in recipes if r["group"] == g]) for g in GROUPS}
-        check("every recipe is in one of the groups and every group has at least two recipes", sum(counts.values()) == 18 and all(v >= 2 for v in counts.values()), counts)
+        check("every recipe is in one of the groups and every group has at least two recipes", sum(counts.values()) == DETAIL_COUNT and all(v >= 2 for v in counts.values()), counts)
         names_lower = " | ".join(r["name"].lower() for r in recipes)
+        # X8: three sample recipes for the browser loops (sections 3, 5 and 6): the fewest steps, the most, and one with a thinned step
+        by_len = sorted(recipes, key=lambda r: len(r["steps"]))
+        mixed = next((r for r in recipes if any(s["mix"] < 100 for s in r["steps"]) and r not in (by_len[0], by_len[-1])), by_len[len(by_len) // 2])
+        SAMPLE = [by_len[0], by_len[-1], mixed]
         missing = [w for w in REQUIRED if w not in names_lower]
         check("every subject asked for is there: teeth, chitin, eyes and glow, rusty metal, oiled metal, bone, leather, cloth, gems and lenses, skin, wood, blood, verdigris, weathering",
               not missing, missing)
@@ -190,14 +198,14 @@ def main():
         for g in ["all"] + GROUPS:
             pick_group(page, g)
             shown.append(page.evaluate(SHOWN_JS))
-            for r in [x for x in recipes if g in ("all", x["group"])]:
+            for r in [x for x in SAMPLE if g in ("all", x["group"])]:   # X8: three samples, not every recipe
                 pick_recipe(page, r["key"])
                 shown.append(page.evaluate(SHOWN_JS))
                 pick_recipe(page, r["key"])
         pick_group(page, "all")
         screen_hits = GW_WORDS.findall("\n".join(shown)) + GW_MORE.findall("\n".join(shown))
-        check("everything we wrote that the Detail recipes part shows on screen (heading, hint, group and recipe buttons, summary, Add all steps, row lines, tags, notes), for every group and every recipe, names no Games Workshop game, faction, scheme or product",
-              not screen_hits and len(shown) > 18, screen_hits[:10])
+        check("everything we wrote that the Detail recipes part shows on screen (heading, hint, group and recipe buttons, summary, Add all steps, row lines, tags, notes), for every group and three sample recipes, names no Games Workshop game, faction, scheme or product",
+              not screen_hits and len(shown) == 5 + 6, (screen_hits[:10], len(shown)))
         own_text = " ".join(" ".join([r["name"], r["summary"]] + [s["look"] + " " + s["note"] + " " + s["technique"] for s in r["steps"]]) for r in recipes) + " ".join(g["name"] for g in groups)
         check("not even the word Citadel appears in any text we wrote for the recipes", "citadel" not in own_text.lower() and "games workshop" not in own_text.lower() and "warhammer" not in own_text.lower())
         check("the shared word lists really do catch the words (the scan itself works)", GW_WORDS.findall("Ultramarines and Tyranids") and GW_MORE.findall("Nurgle and Macragge"))
@@ -216,7 +224,7 @@ def main():
         check("the group buttons sit above the recipe buttons, below the heading", order[0] < order[1] < order[2] and -1 not in order, order)
         check("the heading says Detail recipes", page.inner_text("#detail-recipes .scheme-title") == "Detail recipes")
         rc = recipe_chips(page)
-        check("all 18 recipe buttons show to start, none picked, in order", len(rc) == 18 and all(c[1] == "false" for c in rc) and [c[2] for c in rc] == [r["key"] for r in recipes] and [c[0] for c in rc] == [r["name"] for r in recipes], len(rc))
+        check(f"all {DETAIL_COUNT} recipe buttons show to start, none picked, in order", len(rc) == DETAIL_COUNT and all(c[1] == "false" for c in rc) and [c[2] for c in rc] == [r["key"] for r in recipes] and [c[0] for c in rc] == [r["name"] for r in recipes], len(rc))
         check("nothing is picked to start: no summary, no rows, no Add all steps button", page.locator("#detail-summary").count() == 0 and page.locator("#detail-list").count() == 0 and page.locator("#detail-add-all").count() == 0)
         for g in GROUPS:
             pick_group(page, g)
@@ -226,7 +234,7 @@ def main():
             check(f"{g}: only that group's recipes show, in order, and only that group's button is pressed", [c[2] for c in rc] == expect and [c[2] for c in gcs if c[1] == "true"] == [g], (len(rc), gcs))
             check(f"{g}: the button keeps the focus after it is tapped", focused(page) == g, focused(page))
         pick_group(page, "all")
-        check("All brings back all 18 and is the only one pressed, with the focus on it", len(recipe_chips(page)) == 18 and [c[2] for c in group_chips(page) if c[1] == "true"] == ["all"] and focused(page) == "all")
+        check(f"All brings back all {DETAIL_COUNT} and is the only one pressed, with the focus on it", len(recipe_chips(page)) == DETAIL_COUNT and [c[2] for c in group_chips(page) if c[1] == "true"] == ["all"] and focused(page) == "all")
         pick_group(page, "metal")
         pick_group(page, "metal")
         check("tapping the pressed group again leaves it as it is (use All to see everything)", len(recipe_chips(page)) == counts["metal"] and [c[2] for c in group_chips(page) if c[1] == "true"] == ["metal"])
@@ -250,7 +258,7 @@ def main():
         pick_recipe(page, "rust")
         check("tapping the picked recipe again closes it, with the group kept", page.locator("#detail-list").count() == 0 and len(recipe_chips(page)) == counts["metal"])
         check("the Detail recipes part shows without a start colour too (like the schemes)", True)
-        check("an unknown group value falls back to All (nothing breaks)", page.evaluate("""() => { colourIdeasState.detailGroup = 'nonsense'; return detailRecipesShown().length; }""") == 18)
+        check("an unknown group value falls back to All (nothing breaks)", page.evaluate("""() => { colourIdeasState.detailGroup = 'nonsense'; return detailRecipesShown().length; }""") == DETAIL_COUNT)
         page.evaluate("() => { colourIdeasState.detailGroup = ''; colourIdeasState.detail = ''; }")
         # With no start colour at all (empty recipe, no paints): the card shows the 'add a paint first' line and still shows the new part.
         load(page, paints=[], recipes=[], units=[])
@@ -265,11 +273,8 @@ def main():
         load(page, recipes=RECIPES, units=UNITS)
         edit_recipe(page, 106)
         open_panel(page)
-        # T3b: three recipes instead of eighteen, a click each: the shortest, the longest and one with mixed paints (mix under 100)
-        # (the exact-paint loop below still covers every recipe)
-        by_len = sorted(recipes, key=lambda r: len(r["steps"]))
-        mixed = next((r for r in recipes if any(s["mix"] < 100 for s in r["steps"]) and r not in (by_len[0], by_len[-1])), by_len[len(by_len) // 2])
-        for r in [by_len[0], by_len[-1], mixed]:
+        # T3b: three recipes, a click each: the shortest, the longest and one with mixed paints (mix under 100) (SAMPLE, section 2)
+        for r in SAMPLE:
             pick_recipe(page, r["key"])
             rows = detail_rows(page)
             ok = (page.inner_text("#detail-summary") == r["summary"] and len(rows) == len(r["steps"])
@@ -277,9 +282,10 @@ def main():
                   and all(x["tag"] in ("You own this", "Yours, poor fit", "Not in your palette") for x in rows) and page.locator("#detail-add-all").count() == 1)
             check(f"{r['name']} ({r['group']}): summary, {len(r['steps'])} rows with technique, coats, mix % and note, honest tags, one Add all steps button", ok, (rows[:2], page.inner_text("#detail-summary")))
             pick_recipe(page, r["key"])
-        # Yours first: for every recipe, own an exact paint for every step; each row must find it.
+        # Yours first: for each sample recipe, own an exact paint for every step; each row must find it.
+        # (X8: three samples instead of every recipe; one page load each would be 137 loads)
         exact_ok, exact_bad = True, []
-        for n, r in enumerate(recipes):
+        for n, r in enumerate(SAMPLE):
             load(page, paints=exact_palette(r, n), recipes=[], units=[])
             open_editor(page)
             open_panel(page)
@@ -289,7 +295,7 @@ def main():
             if not good:
                 exact_ok = False
                 exact_bad.append((r["key"], rows))
-        check("with an exact paint owned for every step of a recipe, every row of every one of the 18 recipes finds your paint first and says You own this", exact_ok, exact_bad[:1])
+        check("with an exact paint owned for every step of a recipe, every row of each of the three sample recipes finds your paint first and says You own this", exact_ok, exact_bad[:1])
 
         # Adding one step and all steps
         load(page, recipes=RECIPES, units=UNITS)
@@ -377,12 +383,12 @@ def main():
         open_editor(page)
         open_panel(page)
         allnone = True
-        for r in recipes:
+        for r in SAMPLE:   # X8: three samples, not every recipe
             pick_recipe(page, r["key"])
             rr = detail_rows(page)
             allnone = allnone and len(rr) == len(r["steps"]) and all(x["tag"] == "Not in your palette" for x in rr)
             pick_recipe(page, r["key"])
-        check("with an empty palette every row of every recipe says Not in your palette (the built-in list is used, nothing is claimed as owned)", allnone)
+        check("with an empty palette every row of each sample recipe says Not in your palette (the built-in list is used, nothing is claimed as owned)", allnone)
         page.evaluate("() => { colourIdeasState.detail = 'glow'; }")
         far_only = [{"id": 1, "brand": "Test", "name": "Only Grey", "colour": "#808080", "status": "owned"}]
         load(page, paints=far_only, recipes=[], units=[])
@@ -420,7 +426,7 @@ def main():
         check("the new group buttons and recipe buttons are built from fixed text (no HTML anywhere in them)",
               page.evaluate("() => [...document.querySelectorAll('#detail-groups .chip, #detail-chips .chip, #detail-add-all')].every(c => c.children.length === 0)"))
         hostile_state = page.evaluate("""() => { colourIdeasState.detailGroup = '<img src=x onerror="window.__pwned=3">'; colourIdeasState.detail = '<b>x</b>'; return detailRecipesShown().length; }""")
-        check("a hostile saved group or recipe value is ignored (it falls back to All, nothing is built from it)", hostile_state == 18 and page.evaluate("() => window.__pwned") is None)
+        check("a hostile saved group or recipe value is ignored (it falls back to All, nothing is built from it)", hostile_state == DETAIL_COUNT and page.evaluate("() => window.__pwned") is None)
         page.evaluate("() => { colourIdeasState.detailGroup = ''; colourIdeasState.detail = ''; }")
 
         # ---------- 8. Offline ----------
@@ -435,7 +441,7 @@ def main():
             pick_group(page, g)
         pick_recipe(page, "teeth")
         pick_recipe(page, "wood")
-        ok_off = len(detail_rows(page)) == 4 and len(recipe_chips(page)) == 18
+        ok_off = len(detail_rows(page)) == 4 and len(recipe_chips(page)) == DETAIL_COUNT
         page.click("#detail-add-all")
         page.wait_for_timeout(250)
         page.locator("#detail-list button.idea-pick").first.click()
@@ -492,14 +498,14 @@ def main():
                 shot(page, f"v32-groups-all-{appearance}-{width}.png")
                 check(f"{tag}: the card is inside the screen, and every group and recipe button is inside the card",
                       g_all["cl"] >= 0 and g_all["cr"] <= g_all["w"] + 0.5 and g_all["grpInside"] and g_all["rcpInside"], g_all)
-                check(f"{tag}: the five group buttons take one or two lines and are at least 36 px tall, and the 18 recipe buttons wrap onto several lines",
-                      g_all["n"] == 18 and g_all["grpRows"] <= 2 and g_all["rcpRows"] >= 3 and g_all["grpMinH"] >= 36, g_all)
+                check(f"{tag}: the five group buttons take one or two lines and are at least 36 px tall, and the {DETAIL_COUNT} recipe buttons wrap onto several lines",
+                      g_all["n"] == DETAIL_COUNT and g_all["grpRows"] <= 2 and g_all["rcpRows"] >= 3 and g_all["grpMinH"] >= 36, g_all)
                 check(f"{tag}: no sideways scroll", no_sideways(page))
                 pick_group(page, "light")
                 g_light = geometry()
                 shot(page, f"v32-groups-light-{appearance}-{width}.png")
                 check(f"{tag}: choosing a group makes the list clearly shorter than All and keeps everything inside",
-                      g_light["n"] == 2 and g_light["listH"] < g_all["listH"] * 0.5 and g_light["rcpInside"] and no_sideways(page), (g_light["listH"], g_all["listH"]))
+                      g_light["n"] == counts["light"] and g_light["listH"] < g_all["listH"] * 0.5 and g_light["rcpInside"] and no_sideways(page), (g_light["listH"], g_all["listH"]))
                 pick_group(page, "metal")
                 pick_recipe(page, "rust")
                 page.locator("#detail-add-all").scroll_into_view_if_needed()
