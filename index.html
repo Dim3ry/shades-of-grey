@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=108"></script>
+  <script src="early.js?v=109"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -91,7 +91,9 @@
     }
     :root { --done-colour: #a7f3d0; } /* the "finished" colour, also set by JavaScript */
     /* Mo1: every movement in the app takes its time and feel from these four values. Change them here and everything follows. */
-    :root { --motion-fast: 120ms; --motion-med: 240ms; --motion-slow: 480ms; --motion-ease: linear; }
+    :root { --motion-fast: 120ms; --motion-med: 240ms; --motion-slow: 480ms; --motion-ease: linear;
+      /* Mo4b: the travel of the start circle's segments into the bar (that travel only; everything else stays linear): 1.5 s, ease in and out with a small overshoot */
+      --motion-travel: 1500ms; --motion-travel-ease: cubic-bezier(0.65, 0, 0.3, 1.25); }
     :root[data-appearance="light"], .theme-swatch[data-t="classic"][data-m="light"] {
       --background: #e9eff6;  /* pale cool blue-grey page */
       --card: #f8fafc;        /* near-white boxes */
@@ -354,6 +356,16 @@
        segments (the rules above also match it), .mo-ghost is the bar's. Both are inert and removed when the move ends. */
     .mo-ring { position: fixed; inset: 0; z-index: 9; pointer-events: none; }
     .mo-ghost { z-index: 9; }
+    /* Mo4b: the four copies of the segments drawn while they travel from the circle into the bar (inert, hidden from screen readers, removed at the end).
+       The real segments are see-through and not tappable until then. */
+    .mo-tr { z-index: 9; }
+    .mo-tr::before { display: none; }
+    .mo-tr .arc { pointer-events: none; }
+    .mo-tr .w { position: absolute; }
+    .mo-tr .c { position: absolute; left: 0; top: 0; display: flex; flex-direction: column; align-items: center; text-align: center; white-space: nowrap; }
+    .mo-tr .icon { display: inline-flex; line-height: 1; }
+    .mo-tr .icon svg { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+    body.mo-travelling .tabs .arc > [data-tab] { opacity: 0; pointer-events: none; }
 
     /* The title is a button (it takes you back to the launch page): looks like the plain title, with a 44 px tap area. */
     .app-bar h1 .home { display: inline-flex; align-items: center; min-height: 44px; padding: 0; background: none; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; text-align: left; border-radius: var(--radius-control); }
@@ -3365,7 +3377,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=108" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=109" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -3376,14 +3388,14 @@
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks.
        v70: mentor-tips.js (the Mentor tips, plain data) loads between basing-tips.js and app.js. It only adds three
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=108"></script>
-  <script src="schemes.js?v=108"></script>
-  <script src="detail-recipes.js?v=108"></script>
-  <script src="basing-tips.js?v=108"></script>
-  <script src="mentor-tips.js?v=108"></script>
-  <script src="guides-data.js?v=108"></script>
-  <script src="mentor-data.js?v=108"></script>
-  <script src="mentor-engine.js?v=108"></script>
-  <script src="app.js?v=108"></script>
+  <script src="colour.js?v=109"></script>
+  <script src="schemes.js?v=109"></script>
+  <script src="detail-recipes.js?v=109"></script>
+  <script src="basing-tips.js?v=109"></script>
+  <script src="mentor-tips.js?v=109"></script>
+  <script src="guides-data.js?v=109"></script>
+  <script src="mentor-data.js?v=109"></script>
+  <script src="mentor-engine.js?v=109"></script>
+  <script src="app.js?v=109"></script>
 </body>
 </html>

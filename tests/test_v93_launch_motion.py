@@ -1,5 +1,10 @@
 """v93 tests for Minifolio (chunk Mo3b: the start circle turns into the menu bar and back).
 
+v109 (Mo4b) update: leaving the circle is no longer the Mo3b glide (a shrinking picture of the circle). It is the travel of four copies of the
+segments (a .tabs.mo-tr layer, tested in test_v109_travel.py) with the Mentor button gliding on the same clock. So the checks that looked for
+the old picture (.mo-ring) and the rising segments on the way OUT now look for the travel layer instead, and say what they check; every check
+stays, none is loosened. The way BACK (bar to circle, the .mo-ghost picture) is unchanged and is still tested here.
+
 New behaviour only:
 1. Tapping a segment on the start circle: the real Mentor button glides to the bar, the segments rise, a picture of the circle (inert, hidden
    from screen readers) shrinks and fades, and the chosen segment's fill changes. At the end nothing is left over and the bar and button are
@@ -12,7 +17,7 @@ from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
-from launch_helpers import wait_settled
+from launch_helpers import wait_settled, _FINISH_BAR
 
 load = t.load
 results = []
@@ -25,20 +30,23 @@ UNITS = [{"id": 1, "name": "Squad", "hobby": "40K", "stage": 2, "count": 5, "add
 
 GEOM = """() => { const r = e => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.width, b.height].map(v => Math.round(v * 100) / 100); };
     return { orb: r(document.getElementById('mentor-button')), segs: [...document.querySelectorAll('.arc [data-tab]')].map(r) }; }"""
-TIDY = """() => document.querySelectorAll('.mo-ring, .mo-ghost').length === 0
+TIDY = """() => document.querySelectorAll('.mo-ring, .mo-ghost, .mo-tr').length === 0 && !document.body.classList.contains('mo-travelling')
     && [...document.querySelectorAll('.tabs, .arc, .arc > button')].every(e => getComputedStyle(e).transform === (e.classList.contains('arc') ? getComputedStyle(e).transform : 'none') && !e.inert)
     && document.querySelector('.tabs').getAnimations({ subtree: true }).length === 0"""
 # the first keyframe of everything moving on the bar, read in the same call as the tap so a slow machine cannot finish first
 TAP = """(sel) => { document.querySelector(sel).click();
     const orb = document.getElementById('mentor-button');
-    const ghost = document.querySelector('.mo-ring, .mo-ghost');
+    const ghost = document.querySelector('.mo-ring, .mo-ghost, .mo-tr');
     return { orb: orb.getAnimations().map(a => a.effect.getKeyframes()[0].transform),
              ghost: ghost ? { cls: ghost.className, inert: ghost.inert, aria: ghost.getAttribute('aria-hidden'), anims: ghost.getAnimations({ subtree: true }).length } : null,
-             segs: [...document.querySelectorAll('.tabs:not(.mo-ghost) .arc > [data-tab]')].filter(b => b.getAnimations().length).length,
+             segs: [...document.querySelectorAll('.tabs:not(.mo-ghost):not(.mo-tr) .arc > [data-tab]')].filter(b => b.getAnimations().length).length,
+             copies: document.querySelectorAll('.mo-tr .w').length,
              fills: [...document.querySelectorAll('.arc [aria-current=page]')].map(b => b.getAnimations().some(a => 'backgroundColor' in a.effect.getKeyframes()[0])),
              scrollW: document.documentElement.scrollWidth > document.documentElement.clientWidth }; }"""
 
 def settle(page):
+    # v109: the travel out takes 1.7 s; these tests are about where it ends, so jump the moves to their ends (the same final state) and wait for that
+    page.evaluate(_FINISH_BAR)
     wait_settled(page)
 
 def main():
@@ -66,9 +74,10 @@ def main():
         r = page.evaluate(TAP, '.tabs button[data-tab="recipes"]')
         check("the real Mentor button moves (from its circle place to none)", len(r["orb"]) == 1 and r["orb"][0].startswith("translate("), r["orb"])
         g = r["ghost"]
-        check("a picture of the circle is on top, inert and hidden from screen readers, and it is animating",
-              g and "mo-ring" in g["cls"] and g["inert"] and g["aria"] == "true" and g["anims"] >= 1, g)
-        check("the segments rise (all four move) and the chosen one changes fill", r["segs"] == 4 and r["fills"] == [True], r)
+        check("four copies of the segments are on top (the travel), inert and hidden from screen readers, and the layer is animating",
+              g and "mo-tr" in g["cls"] and g["inert"] and g["aria"] == "true" and g["anims"] >= 1 and r["copies"] == 4, g)
+        check("the real segments wait, see-through (the travel replaces the old rise and fill change)",
+              page.evaluate("() => document.body.classList.contains('mo-travelling') && [...document.querySelectorAll('.arc > [data-tab]')].every(b => getComputedStyle(b).opacity === '0')"))
         check("the chosen section shows already (state is new at once)", page.evaluate("() => settings.tab === 'recipes' && !document.body.classList.contains('launching')"))
         settle(page)
         check("end: nothing left, no resting transform", page.evaluate(TIDY))
@@ -94,7 +103,7 @@ def main():
         page.evaluate("() => document.getElementById('mentor-button').click()")
         page.wait_for_selector(".mentor-chip")
         r = page.evaluate(TAP, ".mentor-chip")
-        check("tapping the Paint Picker chip from the circle also moves", r["orb"] and r["ghost"] and "mo-ring" in r["ghost"]["cls"], r)
+        check("tapping the Paint Picker chip from the circle also moves", r["orb"] and r["ghost"] and "mo-tr" in r["ghost"]["cls"], r)
         settle(page)
         # X1: the Mentor button lands in Painting > Colour Lab
         check("... and lands in Colour Lab, tidy", page.evaluate("() => settings.tab + settings.recipeView") == "recipescolourlab" and page.evaluate(TIDY))

@@ -3815,6 +3815,7 @@
       if (!launchMotionReady || !canMove()) return null;
       const first = orbBox();
       if (!first.w) return null;   // the bar is not drawn (keyboard open): nothing to move
+      if (from === "ring") return travelStart(first);   // Mo4b: the circle's segments travel into the bar (the picture-and-glide below is for the way back)
       const ghost = document.createElement("div");
       ghost.className = from === "ring" ? "mo-ring" : "tabs mo-ghost";
       const copy = arcEl.cloneNode(true);
@@ -3831,6 +3832,7 @@
     // Call AFTER the state has changed (and the new bar or circle is drawn).
     function launchMoveRun(move) {
       if (!move) return;
+      if (move.from === "ring") { travelRun(move); return; }
       const { from, first, ghost, copy, litBefore } = move;
       const last = orbBox();
       if (!last.w) { ghost.remove(); return; }
@@ -3862,9 +3864,156 @@
       launchEnd = done;
       anims[0].onfinish = () => { if (launchEnd === done) endLaunchMove(); };
     }
+
+    // Mo4b: THE START CIRCLE'S FOUR SEGMENTS TRAVELLING INTO THE BAR (leaving the start page; the way back is still the Mo3b glide above).
+    // The app is already in its new state, so the real segments are hidden for the length of the travel (see-through and not tappable)
+    // and four copies (inert, hidden from screen readers) are drawn on top. Each segment is treated as a slice of a ring (centre, inner
+    // and outer radius, start and end angle). Those five numbers, the colours and the sizes are read ONCE from the real elements (the
+    // circle's before the state changes, the bar's after), then blended on one clock and drawn as a polygon each frame (a plain
+    // clip-path animation cannot do it: the two shapes use arcs that curve the other way). When it ends the copies go and the real
+    // segments are back, so the end state is the bar exactly. The real Mentor button glides on the same clock.
+    let travelling = false;   // true while the travel runs: taps on the bar and the title button are ignored
+    const TRAVEL_SPREAD = 16, TRAVEL_POP = 11, TRAVEL_POP_MS = 260, TRAVEL_PAGE_AT = 0.7;
+    const clipOf = (el) => (getComputedStyle(el).clipPath.match(/path\("(.*)"\)/) || [])[1];
+    // "M x y A ro ro 0 f f x y L x y A ri ri 0 f f x y Z": the outer arc's two ends and the two radii
+    function slicePath(d) {
+      const c = d.match(/[MALZ][^MALZ]*/g).map(t => t.slice(1).trim().split(/[ ,]+/).map(Number));
+      return { p0: [c[0][0], c[0][1]], p1: [c[1][5], c[1][6]], ro: c[1][0], ri: c[3][0] };
+    }
+    function segLook(b) {
+      const cs = getComputedStyle(b), ics = getComputedStyle(b.querySelector(".icon")), svg = getComputedStyle(b.querySelector(".icon svg"));
+      return { bg: cs.backgroundColor, color: cs.color, icon: ics.color, weight: parseFloat(cs.fontWeight), fs: parseFloat(cs.fontSize), lh: parseFloat(cs.lineHeight),
+               ifs: parseFloat(ics.fontSize), gap: parseFloat(cs.rowGap) || 0, stroke: parseFloat(svg.strokeWidth),
+               pl: parseFloat(cs.paddingLeft), pr: parseFloat(cs.paddingRight), pt: parseFloat(cs.paddingTop), pb: parseFloat(cs.paddingBottom) };
+    }
+    // Call BEFORE the state changes (the circle is still drawn).
+    function travelStart(first) {
+      const segs = {};
+      for (const b of arcEl.querySelectorAll("[data-tab]")) {
+        const r = b.getBoundingClientRect(), d = clipOf(b);
+        if (!d || !r.width) return null;
+        segs[b.dataset.tab] = { rect: r, sc: r.width / b.offsetWidth, d, look: segLook(b), label: b.textContent };
+      }
+      return { from: "ring", first, segs };
+    }
+    // Call AFTER the state has changed (the bar is drawn). Returns false (and draws nothing) if something cannot be measured.
+    function travelRun(move) {
+      const { first, segs } = move;
+      const ar = arcEl.getBoundingClientRect(), sb = ar.width / arcEl.offsetWidth;
+      const last = orbBox();
+      if (!ar.width || !last.w) return false;
+      const TAU = Math.PI * 2;
+      const loc = (x, y) => [(x - ar.left) / sb, (y - ar.top) / sb];   // page position -> the bar's own pixels
+      const CR = loc(first.x, first.y);
+      const CB = [orbEl.offsetLeft + orbEl.offsetWidth / 2, orbEl.offsetTop + orbEl.offsetHeight / 2];
+      const range = (a, c) => { let lo = Math.min(a, c), hi = Math.max(a, c); if (hi - lo > Math.PI) { const t = hi; hi = lo + TAU; lo = t; } return [lo, hi]; };
+      const items = [];
+      for (const b of arcEl.querySelectorAll("[data-tab]")) {
+        const s = segs[b.dataset.tab], bd = clipOf(b);
+        if (!s || !bd) return false;
+        const a = slicePath(s.d), z = slicePath(bd);
+        const fromRing = (p) => loc(s.rect.left + p[0] * s.sc, s.rect.top + p[1] * s.sc);
+        const inBar = (p) => [b.offsetLeft + p[0], b.offsetTop + p[1]];
+        const ang = (p, c) => Math.atan2(p[1] - c[1], p[0] - c[0]);
+        const [rlo, rhi] = range(ang(fromRing(a.p0), CR), ang(fromRing(a.p1), CR));
+        const [blo, bhi] = range(ang(inBar(z.p0), CB), ang(inBar(z.p1), CB));
+        const sh = Math.round(((rlo + rhi) / 2 - (blo + bhi) / 2) / TAU) * TAU;   // the shortest way round
+        const look1 = segLook(b);
+        items.push({
+          tab: b.dataset.tab, chosen: b.getAttribute("aria-current") === "page", rlo: rlo - sh, rhi: rhi - sh, blo, bhi,
+          ro: [a.ro * s.sc / sb, z.ro], ri: [a.ri * s.sc / sb, z.ri],
+          c0: loc(s.rect.left + s.rect.width / 2, s.rect.top + s.rect.height / 2),
+          c1: [b.offsetLeft + (b.offsetWidth + look1.pl - look1.pr) / 2, b.offsetTop + (b.offsetHeight + look1.pt - look1.pb) / 2],
+          k0: s.look, k1: look1, src: b,
+        });
+      }
+      // one drawing area for all four (covers the circle, the bar and the overshoot), in the bar's own pixels
+      const big = Math.max(...items.map(i => i.ro[0])) + TRAVEL_SPREAD + TRAVEL_POP + 40;
+      const x0 = Math.min(0, CR[0] - big), y0 = Math.min(-60, CR[1] - big);
+      const x1 = Math.max(arcEl.offsetWidth, CR[0] + big), y1 = Math.max(arcEl.offsetHeight, CR[1] + big);
+      const layer = document.createElement("div");
+      layer.className = "tabs mo-tr";
+      layer.inert = true;
+      layer.setAttribute("aria-hidden", "true");
+      const arc = document.createElement("div");
+      arc.className = "arc";
+      layer.appendChild(arc);
+      for (const it of items) {
+        const w = document.createElement("div");
+        w.className = "w";
+        w.style.cssText = `left:${x0}px;top:${y0}px;width:${x1 - x0}px;height:${y1 - y0}px`;
+        const c = document.createElement("div");
+        c.className = "c";
+        const icon = it.src.querySelector(".icon").cloneNode(true);
+        c.appendChild(icon);
+        c.appendChild(document.createTextNode(segs[it.tab].label));
+        w.appendChild(c);
+        arc.appendChild(w);
+        Object.assign(it, { w, c, icon, svg: icon.querySelector("svg") });
+      }
+      document.documentElement.appendChild(layer);
+      const ms = motionMs("--motion-travel");
+      const ease = getComputedStyle(document.documentElement).getPropertyValue("--motion-travel-ease").trim() || "ease-in-out";
+      const L = (a, b, t) => a + (b - a) * t;
+      const mix = (a, b, q) => `color-mix(in srgb, ${a} ${Math.round((1 - q) * 1000) / 10}%, ${b})`;
+      const N = 24;
+      function render(p, pop) {
+        const q = Math.min(1, Math.max(0, p)), out = TRAVEL_SPREAD * Math.sin(Math.PI * q) / sb;
+        for (const it of items) {
+          const lo = L(it.rlo, it.blo, p), hi = L(it.rhi, it.bhi, p), ro = L(it.ro[0], it.ro[1], p), ri = L(it.ri[0], it.ri[1], p);
+          const mid = (lo + hi) / 2, off = out + (it.chosen ? TRAVEL_POP * Math.sin(Math.PI * pop) / sb : 0);
+          const dx = Math.cos(mid) * off, dy = Math.sin(mid) * off;
+          const cx = L(CR[0], CB[0], p) + dx - x0, cy = L(CR[1], CB[1], p) + dy - y0;
+          const pts = [];
+          for (let i = 0; i <= N; i++) { const t = L(lo, hi, i / N); pts.push(`${(cx + ro * Math.cos(t)).toFixed(2)}px ${(cy + ro * Math.sin(t)).toFixed(2)}px`); }
+          for (let i = N; i >= 0; i--) { const t = L(lo, hi, i / N); pts.push(`${(cx + ri * Math.cos(t)).toFixed(2)}px ${(cy + ri * Math.sin(t)).toFixed(2)}px`); }
+          const k0 = it.k0, k1 = it.k1;
+          it.w.style.clipPath = `polygon(${pts.join(",")})`;
+          it.w.style.backgroundColor = mix(k0.bg, k1.bg, q);
+          const c = it.c.style;
+          c.transform = `translate(${(L(it.c0[0], it.c1[0], p) + dx - x0).toFixed(2)}px, ${(L(it.c0[1], it.c1[1], p) + dy - y0).toFixed(2)}px) translate(-50%, -50%)`;
+          c.color = mix(k0.color, k1.color, q);
+          c.fontSize = L(k0.fs, k1.fs, p) + "px"; c.lineHeight = L(k0.lh, k1.lh, p) + "px"; c.gap = L(k0.gap, k1.gap, p) + "px";
+          c.fontWeight = q < 0.5 ? k0.weight : k1.weight;
+          it.icon.style.fontSize = L(k0.ifs, k1.ifs, p) + "px"; it.icon.style.color = mix(k0.icon, k1.icon, q);
+          it.svg.style.strokeWidth = L(k0.stroke, k1.stroke, q);
+        }
+      }
+      render(0, 0);
+      document.body.classList.add("mo-travelling");   // the real segments: see-through and not tappable until the travel ends
+      travelling = true;
+      // the real Mentor button, from its circle place to the bar's, on the same clock
+      const timing = { duration: ms, easing: ease };
+      const dx = (first.x - last.x) / last.scale, dy = (first.y - last.y) / last.scale;
+      const clock = layer.animate([{ opacity: 1 }, { opacity: 1 }], timing);   // the one clock the drawing follows (it reads this animation's own progress)
+      const pop = layer.animate([{ opacity: 1 }, { opacity: 1 }], { duration: TRAVEL_POP_MS, delay: ms, easing: "linear" });   // the lit segment's small push outward as it lands
+      const anims = [clock, pop,
+        orbEl.animate([{ transform: `translate(${dx}px, ${dy}px) scale(${first.w / last.w})` }, { transform: "none" }], timing),
+        document.querySelector(".tabs").animate([{ opacity: 0 }, { opacity: 1 }], { duration: ms, easing: "linear", pseudoElement: "::before" })];
+      move.anims = anims;
+      let raf = 0, live = true;
+      const frame = () => {
+        if (!live) return;
+        const p = clock.effect.getComputedTiming().progress, u = pop.effect.getComputedTiming().progress;
+        render(p == null ? 1 : p, u || 0);
+        raf = requestAnimationFrame(frame);
+      };
+      raf = requestAnimationFrame(frame);
+      const done = () => {
+        live = false; cancelAnimationFrame(raf);
+        anims.forEach(a => a.cancel());
+        if (move.fade) move.fade.cancel();
+        layer.remove();
+        document.body.classList.remove("mo-travelling");
+        travelling = false;
+      };
+      launchEnd = done;
+      pop.onfinish = () => { if (launchEnd === done) endLaunchMove(); };
+      return true;
+    }
     window.addEventListener("resize", fitLaunch);
     window.addEventListener("load", fitLaunch);   // fonts may change the header height
-    document.getElementById("home-button").addEventListener("click", () => { if (!launching) enterLaunch(); });
+    document.getElementById("home-button").addEventListener("click", () => { if (!launching && !travelling) enterLaunch(); });
 
     // Mo3a: MOVING BETWEEN SCREENS. Only the look changes; what shows and hides (and scroll, focus and Back) is exactly as before.
     // The old screen keeps its "hidden" class at once, so the app's state is already the new one; for a moment it is drawn on top as
@@ -3990,7 +4139,10 @@
           [{ transform: "none", opacity: 1 }, { transform: `translateX(${-40 * dir}%)`, opacity: 0 }],
           views[name], [{ transform: `translateX(${40 * dir}%)`, opacity: 0 }, { transform: "none", opacity: 1 }], motionMs("--motion-med"));
       } else if (move === "fade") {
-        views[name].animate([{ opacity: 0 }, { opacity: 1 }], { duration: motionMs("--motion-fast"), easing: "linear" });
+        // Mo4b: leaving the start page, the section's page fades in once the travel is 70% done (it stays see-through until then)
+        const fade = views[name].animate([{ opacity: 0 }, { opacity: 1 }], { duration: motionMs("--motion-fast"), easing: "linear",
+          ...(leaving && leaving.from === "ring" ? { delay: motionMs("--motion-travel") * TRAVEL_PAGE_AT, fill: "backwards" } : {}) });
+        if (leaving && leaving.from === "ring") leaving.fade = fade;
       }
       const mainTab = barOf(name);   // the bottom-bar tab to light up
       tabButtons.forEach(b => {
@@ -4010,6 +4162,7 @@
       window.scrollTo(0, 0);
     }
     tabButtons.forEach(b => b.addEventListener("click", () => {
+      if (travelling) return;   // Mo4b: taps on the bar are ignored while the segments travel
       if (b.dataset.tab === "guides") Object.assign(guidesState, { view: "home", cat: "", key: "", kind: "", missing: false });   // X3: the tab itself opens the category list
       if (b.dataset.tab === "guides" || b.dataset.tab === "recipes") compendiumState.focus = null;   // v69: the tab itself opens the whole of Guides (X1: and the whole Colour Lab)
       // Tapping Recipes while already on it goes back to the list (unless you're mid-edit).
@@ -17623,12 +17776,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL TEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=108".
+    // "?v=" number on ALL TEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=109".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v108";
+    const APP_VERSION = "v109";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -18079,6 +18232,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v109", date: "31 Oct 2026", changes: [
+        "Tapping a section on the start circle now sends the four sections and the Mentor button travelling down together into the bottom bar, and the section opens as they land. With reduced motion on, it swaps at once.",
+      ] },
       { version: "v108", date: "31 Oct 2026", changes: [
         "When you open the app fresh, a ring of three coloured arcs fills around the Mentor button on the start circle, and the four sections appear one by one as it fills. It takes about a second and a quarter. With reduced motion on, the circle shows at once.",
       ] },
