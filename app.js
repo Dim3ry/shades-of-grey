@@ -4023,7 +4023,7 @@
     }
     const mentorPhrase = (list, fallback) => (list.length ? list[Math.floor(Math.random() * list.length)] : fallback);
 
-    // The first question after a new index takes about 59 ms on a slow phone, so the window asks one empty question once it has finished
+    // The first question after a new index takes about 0.9 s with the CPU slowed 4x (X8b, with mentor-data.js; about 0.2 s on a fast machine), so the window asks one empty question once it has finished
     // growing. That builds the engine's word tables before the first real question.
     function mentorWarmUp() {
       if (mentorWarm || typeof MinifolioMentor === "undefined") return;
@@ -17499,12 +17499,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=104".
+    // "?v=" number on ALL TEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=105".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v104";
+    const APP_VERSION = "v105";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -17955,6 +17955,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v105", date: "31 Oct 2026", changes: [
+        "Mentor understands far more ways of asking.",
+      ] },
       { version: "v104", date: "31 Oct 2026", changes: [
         "Guides now has over 600 entries, plus 119 new detail recipes and 48 new basing tips.",
       ] },
