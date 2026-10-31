@@ -37,6 +37,7 @@ DETAIL_COUNT, and the three loops that clicked through every tip in the browser 
 palette) now take three sample tips: the fewest paint steps, the most, and one with none (else the middle one). Every tip still
 goes through the data checks in section 2.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
+from common import click_card_chip   # X8d (v106): chips past the first 12 sit behind Show all in the Colour ideas card
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
 from launch_helpers import quiet
@@ -92,7 +93,7 @@ def pick_group(page, key):
     quiet(page)
 
 def pick_tip(page, key):
-    page.click(f'#basing-chips [data-basing="{key}"]')
+    click_card_chip(page, f'#basing-chips [data-basing="{key}"]')   # v106: may need Show all first
     quiet(page)
 
 def list_texts(page, sel):
@@ -538,6 +539,7 @@ def main():
                 edit_recipe(page, 106)
                 open_panel(page)
                 page.locator("#basing-tips").scroll_into_view_if_needed()
+                page.click('#basing-chips + .chips-more')   # v106 (X8d): the card shows 12 chips until Show all is pressed; this check is about the whole list fitting
                 frames(page)
                 def geometry():
                     return page.evaluate("""() => { const c = document.getElementById('colour-ideas').getBoundingClientRect();
@@ -622,7 +624,7 @@ def main():
         # Detail recipes exactly as in v32
         dr = page.evaluate("DETAIL_RECIPES")
         check(f"Detail recipes still has all {DETAIL_COUNT} recipes and its five group buttons", len(dr) == DETAIL_COUNT and page.locator("#detail-groups .chip").count() == 5 and page.locator("#detail-chips .chip").count() == DETAIL_COUNT)
-        page.click('#detail-chips [data-detail="rust"]')
+        click_card_chip(page, '#detail-chips [data-detail="rust"]')
         page.wait_for_timeout(150)
         rust = {r["key"]: r for r in dr}["rust"]
         drows = page.evaluate("""() => [...document.querySelectorAll('#detail-list button.idea-pick .idea-why')].map(e => e.textContent)""")

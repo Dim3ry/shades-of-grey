@@ -10783,6 +10783,26 @@
     //  - In the Compendium (door.short): nothing is listed until a group is chosen, "All" is a choice of its own ("all"), and tapping the
     //    group that is on puts it away again. That keeps a long list out of the page by default.
     // value is the stored choice; groups is the list of { key, name }. These four small functions are used by all the group rows.
+    // X8d: in the recipe editor's Colour ideas card a long list of chips shows its first few, with a button to show the rest.
+    // A chip that is picked always stays visible. Phones only; the list is the same, nothing is removed.
+    const CHIPS_FIRST = 12;
+    function collapseChips(door, st, name, chips) {
+      const all = [...chips.children];
+      if (door.short || all.length <= CHIPS_FIRST + 2) return null;
+      st.more = st.more || {};
+      const apply = () => {
+        all.forEach((c, i) => { c.hidden = !st.more[name] && i >= CHIPS_FIRST && c.getAttribute("aria-pressed") !== "true"; });
+        btn.textContent = st.more[name] ? "Show fewer" : `Show all ${all.length}`;
+        btn.setAttribute("aria-expanded", st.more[name] ? "true" : "false");
+      };
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "plain-button chips-more";
+      btn.addEventListener("click", () => { st.more[name] = !st.more[name]; apply(); });
+      apply();
+      return btn;
+    }
+
     function groupValue(door, groups, value) {
       const known = groups.some(g => g.key === value);
       if (door.short) return known || value === "all" ? value : "";
@@ -11314,7 +11334,7 @@
         }));
       }
       box.appendChild(groups);
-      if (!(door.short && !activeGroup && !q) && (!q || chips.childElementCount)) box.appendChild(chips);
+      if (!(door.short && !activeGroup && !q) && (!q || chips.childElementCount)) { box.appendChild(chips); const m = collapseChips(door, st, "detail", chips); if (m) box.appendChild(m); }
       const recipe = detailRecipesShown(st, door).find(r => r.key === st.detail);
       if (!recipe) return box;
 
@@ -11517,7 +11537,7 @@
         }));
       }
       box.appendChild(groups);
-      if (!(door.short && !activeGroup && !q) && (!q || chips.childElementCount)) box.appendChild(chips);
+      if (!(door.short && !activeGroup && !q) && (!q || chips.childElementCount)) { box.appendChild(chips); const m = collapseChips(door, st, "basing", chips); if (m) box.appendChild(m); }
       const tip = basingTipsShown(st, door).find(t => t.key === st.basing);
       if (!tip) return box;
 
@@ -13626,7 +13646,9 @@
         return b;
       };
       const openEntry = (e) => { guidesPoint(e); renderGuides(`#${e.id}`); };
-      const entryRows = (list) => {
+      // X8d: long lists show 30 rows, "Show more" adds the next 30. Search always looks through the whole list.
+      const PAGE = 30;
+      const entryRows = (list, pageKey) => {
         const box = document.createElement("div");
         box.className = "guides-rows";
         if (!list.length) {
@@ -13635,11 +13657,33 @@
           none.textContent = "Nothing found.";
           box.appendChild(none);
         }
-        for (const e of list) {
-          const b = row(e.title, e.summary, () => openEntry(e));
-          b.dataset.guide = e.key;
-          b.dataset.kind = e.kind;
-          box.appendChild(b);
+        let count = Math.min(list.length, Math.max(PAGE, (g.shownRows && g.shownRows[pageKey]) || 0));
+        let more = null;
+        const add = (from, to) => {
+          for (const e of list.slice(from, to)) {
+            const b = row(e.title, e.summary, () => openEntry(e));
+            b.dataset.guide = e.key;
+            b.dataset.kind = e.kind;
+            if (more) box.insertBefore(b, more); else box.appendChild(b);
+          }
+        };
+        add(0, count);
+        if (list.length > count) {
+          more = document.createElement("button");
+          more.type = "button";
+          more.className = "plain-button guides-more";
+          const label = () => `Show more (${Math.min(PAGE, list.length - count)} of ${list.length - count} left)`;
+          more.textContent = label();
+          more.addEventListener("click", () => {
+            const first = count;
+            count = Math.min(list.length, count + PAGE);
+            (g.shownRows = g.shownRows || {})[pageKey] = count;
+            add(first, count);
+            const firstNew = box.querySelectorAll(".guides-row")[first];
+            if (count >= list.length) { more.remove(); more = null; } else more.textContent = label();
+            if (firstNew) firstNew.focus();
+          });
+          box.appendChild(more);
         }
         return box;
       };
@@ -13661,11 +13705,16 @@
       const drawLower = () => {
         lower.replaceChildren();
         const q = g.query.trim();
-        if (q) { lower.appendChild(entryRows(kn.search(q))); return; }
+        if (q) { lower.appendChild(entryRows(kn.search(q), "q:" + q)); return; }
         const list = document.createElement("div");
         list.className = "guides-rows guides-cats";
         for (const c of shown) {
-          const b = row(c.name, "", () => { Object.assign(g, { view: "category", cat: c.key, key: "", kind: "" }); renderGuides(`[data-cat="${c.key}"]`); }, g.view !== "home" && g.cat === c.key);
+          const b = row(c.name, "", () => {
+            Object.assign(g, { view: "category", cat: c.key, key: "", kind: "" });
+            // X8d: Detail recipes and Basing open on their first group (Body, Dry ground); All is still one tap away
+            if (c.key === "detail" && !compendiumState.detailGroup) compendiumState.detailGroup = DETAIL_GROUPS[0].key;
+            if (c.key === "basing" && !compendiumState.basingGroup) compendiumState.basingGroup = BASING_GROUPS[0].key;
+            renderGuides(`[data-cat="${c.key}"]`); }, g.view !== "home" && g.cat === c.key);
           b.dataset.cat = c.key;
           const n = document.createElement("span");
           n.className = "guides-count";
@@ -13717,7 +13766,7 @@
             holder.appendChild(dropTitle(part()));
             main.appendChild(holder);
           } else {
-            main.appendChild(entryRows(kn.list({ category: g.cat })));
+            main.appendChild(entryRows(kn.list({ category: g.cat }), "cat:" + g.cat));
           }
         } else {
           const e = kn.get(g.key, g.kind);
@@ -17499,12 +17548,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL TEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=105".
+    // "?v=" number on ALL TEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=106".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v105";
+    const APP_VERSION = "v106";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -17955,6 +18004,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v106", date: "31 Oct 2026", changes: [
+        "Long lists are shorter on a phone: Guides shows 30 rows at a time with Show more, Detail recipes and Basing open on one group, and the Colour ideas card shows the first few.",
+      ] },
       { version: "v105", date: "31 Oct 2026", changes: [
         "Mentor understands far more ways of asking.",
       ] },

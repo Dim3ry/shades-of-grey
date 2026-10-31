@@ -33,6 +33,7 @@ X8 update: the knowledge base added 119 recipes (137 in all), so the counts belo
 through every recipe in the browser (the on-screen text scan, exact paints, empty palette) now take three sample recipes: the
 fewest steps, the most steps and one with a thinned step. Every recipe still goes through the data checks in section 2.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
+from common import click_card_chip   # X8d (v106): chips past the first 12 sit behind Show all in the Colour ideas card
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
 from launch_helpers import quiet
@@ -84,7 +85,7 @@ def pick_group(page, key):
     quiet(page)
 
 def pick_recipe(page, key):
-    page.click(f'#detail-chips [data-detail="{key}"]')
+    click_card_chip(page, f'#detail-chips [data-detail="{key}"]')   # v106: may need Show all first
     quiet(page)
 
 def full_steps(page):
@@ -484,6 +485,7 @@ def main():
                 edit_recipe(page, 106)
                 open_panel(page)
                 page.locator("#detail-recipes").scroll_into_view_if_needed()
+                page.click('#detail-chips + .chips-more')   # v106 (X8d): the card shows 12 chips until Show all is pressed; this check is about the whole list fitting
                 frames(page)
                 def geometry():
                     return page.evaluate("""() => { const c = document.getElementById('colour-ideas').getBoundingClientRect();
