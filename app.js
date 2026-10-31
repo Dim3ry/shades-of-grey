@@ -17499,12 +17499,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=103".
+    // "?v=" number on ALL SEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=104".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v103";
+    const APP_VERSION = "v104";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -17955,6 +17955,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v104", date: "31 Oct 2026", changes: [
+        "Guides now has over 600 entries, plus 119 new detail recipes and 48 new basing tips.",
+      ] },
       { version: "v103", date: "30 Oct 2026", changes: [
         "Mentor's sources now take you to the exact guide, recipe, tip or colour on the Colour Lab wheel.",
       ] },

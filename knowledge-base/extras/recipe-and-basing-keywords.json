@@ -1,0 +1,1983 @@
+{
+ "aged-bronze": [
+  "aged bronze",
+  "old bronze",
+  "how to paint bronze",
+  "green bronze",
+  "ancient bronze",
+  "bronze statue",
+  "dirty bronze",
+  "weathered bronze",
+  "bronze with verdigris"
+ ],
+ "aged-dirty-bone": [
+  "dirty bone",
+  "old bone",
+  "stained bone",
+  "grimy skulls",
+  "yellowed bone",
+  "bone piles",
+  "filthy skulls",
+  "aged skulls",
+  "brown bone"
+ ],
+ "albino-scaly-skin": [
+  "albino skin",
+  "pale scales",
+  "white lizard",
+  "pale reptile skin",
+  "pink scales",
+  "albino lizard",
+  "pale snake skin",
+  "white scaly skin"
+ ],
+ "banded-fur": [
+  "banded fur",
+  "striped fur",
+  "wolf fur",
+  "fur gradient",
+  "brown fur",
+  "animal pelt",
+  "two tone fur",
+  "fur tips",
+  "how to paint fur"
+ ],
+ "beaks-and-talons": [
+  "beaks",
+  "talons",
+  "bird feet",
+  "bird claws",
+  "how to paint a beak",
+  "yellow beak",
+  "eagle claws",
+  "griffon beak",
+  "bird legs"
+ ],
+ "black-bodysuit": [
+  "black bodysuit",
+  "undersuit",
+  "black jumpsuit",
+  "black catsuit",
+  "black under armour",
+  "rubber suit",
+  "black clothing",
+  "black joints"
+ ],
+ "black-feathers": [
+  "black feathers",
+  "dark feathers",
+  "crow feathers",
+  "raven wings",
+  "feathered wings",
+  "how to paint feathers",
+  "black wings",
+  "bird wings"
+ ],
+ "black-fur": [
+  "black fur",
+  "dark fur",
+  "black dog",
+  "black wolf",
+  "quick fur",
+  "drybrush fur",
+  "black pelt",
+  "black hairy"
+ ],
+ "black-gun-casing": [
+  "black gun",
+  "gun casing",
+  "black weapon",
+  "black rifle",
+  "black plastic gun",
+  "weapon casing",
+  "black pistol",
+  "gun body"
+ ],
+ "black-leather": [
+  "black leather",
+  "leather jacket",
+  "black boots",
+  "black belts",
+  "shiny leather",
+  "black straps",
+  "smart leather",
+  "black gloves"
+ ],
+ "black-scaly-hide": [
+  "black scales",
+  "black dragon",
+  "black hide",
+  "dark monster skin",
+  "scaly hide",
+  "dragon skin",
+  "black lizard skin",
+  "stippling texture"
+ ],
+ "blonde-hair": [
+  "blonde hair",
+  "blond hair",
+  "blonde beard",
+  "yellow hair",
+  "sandy hair",
+  "fair hair",
+  "golden hair",
+  "how to paint hair",
+  "straw hair"
+ ],
+ "blue-black-armour": [
+  "blue black armour",
+  "black armour with blue",
+  "black armor",
+  "highlight black armour",
+  "black armour edges",
+  "night blue armour",
+  "blue grey edges",
+  "how to paint black"
+ ],
+ "blue-energy-glow": [
+  "blue glow",
+  "energy sword",
+  "glowing blade",
+  "blue magic",
+  "energy blade",
+  "glowing weapon",
+  "blue light effect",
+  "glowing sword"
+ ],
+ "blue-lightning": [
+  "lightning",
+  "blue lightning",
+  "electricity",
+  "electric arcs",
+  "lightning bolt",
+  "sparks",
+  "electric effect",
+  "crackling energy",
+  "lightning on a sword"
+ ],
+ "blue-tinted-steel": [
+  "blue steel",
+  "blue silver armour",
+  "cold steel",
+  "silver with blue wash",
+  "shiny blue armour",
+  "knight armour",
+  "blue tinted metal",
+  "polished steel armour"
+ ],
+ "bog-zombie-skin": [
+  "rotten skin",
+  "yellow skin",
+  "swamp zombie",
+  "rotting flesh",
+  "sickly yellow",
+  "rotten yellow skin",
+  "corpse rot",
+  "drowned body",
+  "green rot"
+ ],
+ "bright-blue-armour": [
+  "bright blue armour",
+  "blue armor",
+  "light blue armour",
+  "mid blue armour",
+  "clean blue",
+  "how to paint blue",
+  "royal blue armour",
+  "sky blue armour"
+ ],
+ "bright-bronze": [
+  "bright bronze",
+  "shiny bronze",
+  "warm bronze",
+  "bronze trim",
+  "bronze weapon",
+  "orange metal",
+  "bronze highlights",
+  "bronze armour"
+ ],
+ "bright-green-armour": [
+  "bright green armour",
+  "green armor",
+  "lime armour",
+  "emerald armour",
+  "how to paint green",
+  "light green armour",
+  "yellow green edges",
+  "green plates"
+ ],
+ "bright-green-skin": [
+  "bright green skin",
+  "green monster",
+  "goblin skin",
+  "green creature",
+  "contrast paint green",
+  "quick green skin",
+  "contrasty green",
+  "lizard green skin"
+ ],
+ "bright-pink-armour": [
+  "pink armour",
+  "hot pink",
+  "bubblegum pink",
+  "pink armor",
+  "neon pink",
+  "bright pink",
+  "pink plates",
+  "how to paint pink"
+ ],
+ "bright-steel-armour": [
+  "silver armour",
+  "steel armour",
+  "bright silver",
+  "shiny armour",
+  "metallic silver",
+  "chrome look",
+  "clean metal",
+  "how to paint silver",
+  "silver armor"
+ ],
+ "bright-yellow-armour": [
+  "yellow armour",
+  "yellow armor",
+  "bright yellow",
+  "how to paint yellow",
+  "yellow over white",
+  "punchy yellow",
+  "yellow plates",
+  "yellow is hard"
+ ],
+ "brown-to-bone-cloth": [
+  "brown cloth",
+  "bone cloth",
+  "monk robes",
+  "mixing two colours",
+  "beige cloth",
+  "tan robes",
+  "layered cloth",
+  "brown robes"
+ ],
+ "candles": [
+  "candles",
+  "candle wax",
+  "candle flame",
+  "wax drips",
+  "melted candle",
+  "small flame",
+  "candlestick",
+  "shrine candles"
+ ],
+ "clean-bone-armour": [
+  "bone armour",
+  "white armour",
+  "bone white",
+  "ivory armour",
+  "cream armour",
+  "off white armour",
+  "bone armor",
+  "clean bone"
+ ],
+ "cold-blue-skin": [
+  "blue skin",
+  "alien skin",
+  "cold skin",
+  "blue alien",
+  "blue creature",
+  "purple flush",
+  "blue face",
+  "frost giant skin"
+ ],
+ "cold-desaturated-skin": [
+  "grim skin",
+  "desaturated skin",
+  "shadowy face",
+  "cold skin tone",
+  "grey skin tone",
+  "gritty skin",
+  "gloomy faces",
+  "moody skin"
+ ],
+ "cool-bone": [
+  "cool bone",
+  "cold bone",
+  "grey bone",
+  "white bone",
+  "bleached bone",
+  "skeleton",
+  "bone with grey shadows",
+  "cold skulls"
+ ],
+ "dark-blue-armour": [
+  "dark blue armour",
+  "navy armour",
+  "midnight blue",
+  "deep blue armor",
+  "dark blue edge highlights",
+  "dark blue plates",
+  "deep blue armour"
+ ],
+ "dark-brown-skin": [
+  "dark brown skin",
+  "dark skin",
+  "brown skin",
+  "deep skin tone",
+  "dark skin tones",
+  "dark complexion",
+  "rich brown face",
+  "darker skin"
+ ],
+ "dark-glossy-claws": [
+  "glossy claws",
+  "dark claws",
+  "shiny claws",
+  "black claws",
+  "monster claws",
+  "teal claws",
+  "insect claws",
+  "wet look claws"
+ ],
+ "dark-green-armour": [
+  "dark green armour",
+  "quick green",
+  "fast green armour",
+  "drybrush green",
+  "batch painting green",
+  "horde green",
+  "army green",
+  "green armour quick"
+ ],
+ "dark-iron": [
+  "dark iron",
+  "gunmetal",
+  "black metal",
+  "dull metal",
+  "iron",
+  "gun barrel",
+  "dark steel",
+  "weapon metal"
+ ],
+ "dark-weathered-wood": [
+  "dark wood",
+  "weathered wood",
+  "wood grain",
+  "old wood",
+  "dark brown wood",
+  "wooden handle",
+  "shield wood",
+  "painted grain"
+ ],
+ "deep-red-cloth": [
+  "red cloth",
+  "red cloak",
+  "red robes",
+  "crimson cloth",
+  "drybrush cloth",
+  "dark red fabric",
+  "deep red",
+  "red cape"
+ ],
+ "desert-spot-camo": [
+  "desert camo",
+  "spot camo",
+  "camouflage",
+  "sand camo",
+  "tan camo",
+  "dotted camo",
+  "desert uniform",
+  "brown spots"
+ ],
+ "drab-greatcoat": [
+  "greatcoat",
+  "trench coat",
+  "wool coat",
+  "long coat",
+  "soldier coat",
+  "drab uniform",
+  "grey blue coat",
+  "military coat"
+ ],
+ "exposed-muscle": [
+  "muscle",
+  "flayed skin",
+  "raw flesh",
+  "skinless",
+  "exposed muscle",
+  "gore",
+  "bloody flesh",
+  "raw meat"
+ ],
+ "fair-skin": [
+  "fair skin",
+  "pale skin",
+  "light skin",
+  "light skin tone",
+  "pale face",
+  "pink skin",
+  "rosy cheeks",
+  "cream skin"
+ ],
+ "fiery-red-glow": [
+  "red glow",
+  "fire glow",
+  "hot glow",
+  "glowing cracks",
+  "lava glow",
+  "magma cracks",
+  "burning glow",
+  "red light"
+ ],
+ "frost-and-ice-weapons": [
+  "ice sword",
+  "frost blade",
+  "ice weapon",
+  "frozen weapon",
+  "crystal blade",
+  "ice magic",
+  "frost effect",
+  "icy axe"
+ ],
+ "glossy-flesh": [
+  "brain",
+  "exposed brain",
+  "fleshy growth",
+  "mutation",
+  "wet flesh",
+  "pink flesh",
+  "tumour",
+  "gloss flesh",
+  "slimy growth"
+ ],
+ "glowing-fungus": [
+  "glowing mushrooms",
+  "glowing fungus",
+  "cyan glow",
+  "bioluminescent",
+  "cave mushrooms",
+  "glowing plants",
+  "fungus light",
+  "mushroom glow"
+ ],
+ "glowing-screens": [
+  "screens",
+  "glowing screen",
+  "monitor",
+  "computer screen",
+  "display screen",
+  "tablet screen",
+  "control panel",
+  "screen glow"
+ ],
+ "glowing-water": [
+  "glowing water",
+  "magic water",
+  "lit water",
+  "blue water glow",
+  "magic pool",
+  "water light",
+  "glowing liquid",
+  "spirit water"
+ ],
+ "gold-armour": [
+  "gold armour",
+  "gold armor",
+  "metallic gold",
+  "golden armour",
+  "shiny gold",
+  "gold edges",
+  "gold edge highlight",
+  "gold plates"
+ ],
+ "gold-treasure": [
+  "treasure",
+  "gold coins",
+  "coin pile",
+  "treasure hoard",
+  "dragon hoard",
+  "treasure chest",
+  "loot",
+  "coins"
+ ],
+ "graded-horns-and-tusks": [
+  "horns",
+  "tusks",
+  "how to paint horns",
+  "ivory tusks",
+  "ram horns",
+  "bull horns",
+  "horn gradient",
+  "dark tip horns",
+  "antlers"
+ ],
+ "green-glowing-lenses": [
+  "green lenses",
+  "green eye lens",
+  "glowing green eyes",
+  "goggles",
+  "green glass",
+  "green visor glow",
+  "green optics",
+  "helmet lenses"
+ ],
+ "green-scales": [
+  "green scales",
+  "lizard skin",
+  "green lizard",
+  "dragon scales",
+  "snake skin",
+  "reptile skin",
+  "crocodile skin",
+  "scaly skin"
+ ],
+ "green-water-stains": [
+  "water stains",
+  "verdigris streaks",
+  "green streaks",
+  "stained metal",
+  "corroded metal",
+  "green corrosion",
+  "drip stains",
+  "oxidised metal"
+ ],
+ "grey-armour": [
+  "grey armour",
+  "grey armor",
+  "blue grey armour",
+  "light grey edges",
+  "slate grey",
+  "grey plates",
+  "battleship grey",
+  "how to paint grey"
+ ],
+ "grey-hide": [
+  "grey hide",
+  "elephant skin",
+  "rhino skin",
+  "thick hide",
+  "beast hide",
+  "grey animal",
+  "dusty legs",
+  "mammoth skin"
+ ],
+ "grey-stone-detail": [
+  "grey stone",
+  "carved stone",
+  "stone statue",
+  "stone icon",
+  "gargoyle",
+  "statue",
+  "stone details",
+  "stone skull"
+ ],
+ "grey-zombie-skin": [
+  "zombie skin",
+  "grey zombie",
+  "dead skin",
+  "undead skin",
+  "ghoul skin",
+  "grey flesh",
+  "dried flesh",
+  "mummy skin"
+ ],
+ "grimy-olive-armour": [
+  "olive armour",
+  "olive green armour",
+  "khaki armour",
+  "dirty green armour",
+  "muddy green",
+  "worn olive",
+  "military green",
+  "drab green"
+ ],
+ "grimy-steel": [
+  "grimy steel",
+  "dirty metal",
+  "worn steel",
+  "quick metal",
+  "quick steel",
+  "batch metal",
+  "grim steel",
+  "dirty silver"
+ ],
+ "heat-stained-metal": [
+  "heat stains",
+  "burnt metal",
+  "gun barrel heat",
+  "exhaust pipes",
+  "heat discolouration",
+  "rainbow metal",
+  "blued metal",
+  "hot barrel",
+  "exhaust stains"
+ ],
+ "heavy-rust": [
+  "heavy rust",
+  "rusty metal",
+  "rust streaks",
+  "corrosion",
+  "orange rust",
+  "rusty vehicle",
+  "rotten metal",
+  "rust layers",
+  "very rusty"
+ ],
+ "ink-shaded-silver": [
+  "silver shaded",
+  "black ink silver",
+  "silver wash",
+  "mid silver",
+  "sharp metal edges",
+  "shaded metal",
+  "inked silver",
+  "silver with ink"
+ ],
+ "jade-gem": [
+  "jade",
+  "green gem",
+  "green jewel",
+  "emerald gem",
+  "jade stone",
+  "green crystal",
+  "amulet",
+  "green gemstone"
+ ],
+ "light-rust": [
+  "light rust",
+  "rust in cracks",
+  "a little rust",
+  "subtle rust",
+  "slight weathering",
+  "worn metal armour",
+  "rusty rivets",
+  "hint of rust"
+ ],
+ "magenta-energy-glow": [
+  "pink glow",
+  "magenta glow",
+  "pink energy",
+  "purple glow weapon",
+  "neon pink glow",
+  "plasma pink",
+  "glowing pink blade",
+  "magenta energy"
+ ],
+ "metallic-blue": [
+  "metallic blue",
+  "candy blue",
+  "blue metal",
+  "shiny blue",
+  "candy paint",
+  "blue chrome",
+  "glaze over silver",
+  "blue metallic armour"
+ ],
+ "metallic-red": [
+  "metallic red",
+  "candy red",
+  "red metal",
+  "shiny red",
+  "red chrome",
+  "ruby metallic",
+  "red over silver",
+  "red metallic armour"
+ ],
+ "navy-blue-cloth": [
+  "navy cloth",
+  "navy blue",
+  "dark blue cloth",
+  "navy uniform",
+  "dark blue coat",
+  "sailor uniform",
+  "blue robes",
+  "midnight cloth"
+ ],
+ "ochre-armour": [
+  "ochre",
+  "sand yellow armour",
+  "mustard armour",
+  "desert vehicle",
+  "tan armour",
+  "yellow ochre",
+  "sandy armour",
+  "khaki tank"
+ ],
+ "olive-green-skin": [
+  "olive green skin",
+  "brute skin",
+  "green brute",
+  "ogre skin",
+  "troll skin",
+  "dark green skin",
+  "big green monster",
+  "purple shadow skin"
+ ],
+ "olive-skin": [
+  "olive skin",
+  "mediterranean skin",
+  "tanned olive",
+  "ochre skin",
+  "light brown skin",
+  "olive complexion",
+  "olive skin tone"
+ ],
+ "olive-uniform-cloth": [
+  "olive uniform",
+  "army uniform",
+  "military fatigues",
+  "olive cloth",
+  "combat uniform",
+  "olive drab",
+  "soldier uniform",
+  "green fatigues"
+ ],
+ "orange-armour": [
+  "orange armour",
+  "orange armor",
+  "bright orange",
+  "how to paint orange",
+  "safety orange",
+  "hazard orange",
+  "orange plates"
+ ],
+ "orange-flames": [
+  "flames",
+  "fire",
+  "how to paint fire",
+  "burning",
+  "fire effect",
+  "torch flame",
+  "campfire",
+  "flame effect",
+  "flamer fire"
+ ],
+ "painted-copper-and-bronze": [
+  "nmm copper",
+  "non metallic copper",
+  "nmm bronze",
+  "painted copper",
+  "copper without metallics",
+  "bronze without metallics",
+  "fake copper",
+  "freehand metal copper"
+ ],
+ "painted-gold": [
+  "nmm gold",
+  "non metallic gold",
+  "painted gold",
+  "gold without metallics",
+  "fake gold",
+  "yellow gold nmm",
+  "gold effect no metal"
+ ],
+ "painted-steel": [
+  "nmm steel",
+  "non metallic metal",
+  "nmm silver",
+  "painted silver",
+  "steel without metallics",
+  "fake metal",
+  "nmm sword",
+  "nmm"
+ ],
+ "pale-tent-cloth": [
+  "canvas",
+  "tent",
+  "banner",
+  "sails",
+  "pale cloth",
+  "rough fabric",
+  "flag",
+  "sackcloth",
+  "burlap"
+ ],
+ "pale-corpse-skin": [
+  "corpse skin",
+  "vampire skin",
+  "cold pale skin",
+  "dead pale skin",
+  "ghostly skin",
+  "lavender skin",
+  "undead pale",
+  "deathly pale"
+ ],
+ "pale-sickly-skin": [
+  "sickly skin",
+  "ill skin",
+  "diseased skin",
+  "clammy skin",
+  "unhealthy skin",
+  "pale yellow skin",
+  "cultist skin",
+  "feverish",
+  "plague skin"
+ ],
+ "pale-tinted-gold": [
+  "pale gold",
+  "tinted gold",
+  "cool gold",
+  "gold on purple",
+  "champagne gold",
+  "gold trim on purple",
+  "light gold",
+  "white gold"
+ ],
+ "pearl-white-metal": [
+  "pearl",
+  "pearl white",
+  "white metal",
+  "pearlescent",
+  "shiny white",
+  "mother of pearl",
+  "opal metal",
+  "metallic white armour"
+ ],
+ "pink-and-magenta-cloth": [
+  "pink cloth",
+  "magenta cloth",
+  "pink robes",
+  "fuchsia cloth",
+  "hot pink fabric",
+  "magenta robes",
+  "plum glaze",
+  "pink dress"
+ ],
+ "pink-tails-and-bare-skin": [
+  "rat tails",
+  "pink tail",
+  "rat skin",
+  "vermin",
+  "bare pink skin",
+  "rat ears",
+  "mouse tail",
+  "pink paws"
+ ],
+ "pitted-green-armour": [
+  "pitted armour",
+  "corroded green",
+  "mottled armour",
+  "textured green",
+  "blue green armour",
+  "pockmarked armour",
+  "sea green armour",
+  "battle damage green"
+ ],
+ "plasma-coils": [
+  "plasma coils",
+  "glowing coils",
+  "energy coils",
+  "plasma gun",
+  "blue coils glow",
+  "plasma weapon",
+  "reactor glow",
+  "glowing vents"
+ ],
+ "plum-red-rope": [
+  "rope",
+  "cord",
+  "tassels",
+  "plum red",
+  "red rope",
+  "purple red cord",
+  "string",
+  "maroon tassels"
+ ],
+ "polished-brass": [
+  "brass",
+  "polished brass",
+  "shell casings",
+  "bullets",
+  "brass trim",
+  "brass pipes",
+  "ammo",
+  "yellow metal"
+ ],
+ "purple-armour": [
+  "purple armour",
+  "purple armor",
+  "violet armour",
+  "plum armour",
+  "deep purple",
+  "how to paint purple",
+  "purple plates",
+  "royal purple"
+ ],
+ "quick-bright-gem": [
+  "quick gem",
+  "easy gem",
+  "bright gem",
+  "fast gems",
+  "gem in minutes",
+  "white under gem",
+  "simple jewel",
+  "beginner gem"
+ ],
+ "red-demon-skin": [
+  "demon skin",
+  "red skin",
+  "devil skin",
+  "red flesh",
+  "red creature",
+  "fiend skin",
+  "crimson skin",
+  "red monster"
+ ],
+ "red-gem": [
+  "red gem",
+  "ruby",
+  "red jewel",
+  "ruby gemstone",
+  "red crystal",
+  "blood gem",
+  "red stone",
+  "garnet"
+ ],
+ "red-glowing-eyes": [
+  "red eyes",
+  "glowing red eyes",
+  "evil eyes",
+  "red lenses",
+  "robot eyes",
+  "red eye glow",
+  "demon eyes",
+  "red visor"
+ ],
+ "red-hot-metal": [
+  "red hot metal",
+  "glowing metal",
+  "hot barrel glow",
+  "heated blade",
+  "molten metal",
+  "glowing hot coils",
+  "forge hot",
+  "overheated gun"
+ ],
+ "red-warning-light": [
+  "warning light",
+  "small red light",
+  "status light",
+  "beacon",
+  "indicator light",
+  "alarm light",
+  "light glow on surface",
+  "blinking light"
+ ],
+ "rich-red-armour": [
+  "red armour",
+  "red armor",
+  "deep red armour",
+  "how to paint red",
+  "burgundy armour",
+  "crimson armour",
+  "red plates",
+  "clean red"
+ ],
+ "silver-tipped-gold": [
+  "gold with silver",
+  "gold silver edges",
+  "bright gold edges",
+  "warm gold",
+  "gold highlight silver",
+  "brown wash gold",
+  "gold quick",
+  "silver tipped gold"
+ ],
+ "spider-webs": [
+  "spider web",
+  "spider webs",
+  "cobwebs",
+  "webs",
+  "web strands",
+  "spider silk",
+  "webbing",
+  "cobweb base"
+ ],
+ "tanned-skin": [
+  "tanned skin",
+  "tan skin",
+  "medium skin",
+  "warm skin tone",
+  "sun tan",
+  "tanned face",
+  "bronzed skin",
+  "medium skin tone"
+ ],
+ "tarnished-gold": [
+  "tarnished gold",
+  "old gold",
+  "dull gold",
+  "dirty gold",
+  "ancient gold",
+  "green gold",
+  "aged gold",
+  "worn gold"
+ ],
+ "clay-roof-tiles": [
+  "roof tiles",
+  "clay tiles",
+  "terracotta",
+  "roofs",
+  "orange tiles",
+  "rooftop",
+  "pottery",
+  "clay pots"
+ ],
+ "toxic-green-glow": [
+  "toxic glow",
+  "green glow",
+  "radioactive",
+  "nuclear glow",
+  "poison green",
+  "acid glow",
+  "green slime glow",
+  "radiation"
+ ],
+ "turquoise-armour": [
+  "turquoise armour",
+  "teal armour",
+  "aqua armour",
+  "turquoise armor",
+  "cyan armour",
+  "mint armour",
+  "sea green to turquoise",
+  "teal armor"
+ ],
+ "turquoise-gem": [
+  "turquoise gem",
+  "blue gem",
+  "sapphire",
+  "blue jewel",
+  "gem highlight",
+  "aqua gem",
+  "crystal blue",
+  "blue gemstone"
+ ],
+ "turquoise-lenses": [
+  "turquoise lenses",
+  "teal lenses",
+  "cyan eyes",
+  "blue lenses",
+  "glowing eye lenses",
+  "turquoise visor",
+  "glowing goggles",
+  "helmet eyes"
+ ],
+ "two-colour-primer-blend": [
+  "two colour primer",
+  "primer blend",
+  "spray blend",
+  "colour shift primer",
+  "zenithal colour",
+  "gradient primer",
+  "purple to pink",
+  "coloured primer",
+  "spray gradient"
+ ],
+ "urban-camo": [
+  "urban camo",
+  "city camo",
+  "grey camo",
+  "black and white camo",
+  "blue grey camo",
+  "splinter camo",
+  "city camouflage",
+  "urban camouflage"
+ ],
+ "warm-copper": [
+  "copper",
+  "warm copper",
+  "copper trim",
+  "copper pipes",
+  "copper armour",
+  "stippled copper",
+  "reddish metal",
+  "copper metallic"
+ ],
+ "warm-skin-from-dark-brown": [
+  "warm skin",
+  "smooth skin",
+  "skin blending",
+  "mixing skin",
+  "brown base skin",
+  "warm face",
+  "skin from brown",
+  "smooth skin blend"
+ ],
+ "weathered-grey-wood": [
+  "grey wood",
+  "driftwood",
+  "sun bleached wood",
+  "old fence",
+  "bleached planks",
+  "aged wood",
+  "grey planks",
+  "silver wood"
+ ],
+ "white-and-grey-hair": [
+  "white hair",
+  "grey hair",
+  "old man beard",
+  "white beard",
+  "grey beard",
+  "silver hair",
+  "elderly hair",
+  "wizard beard"
+ ],
+ "white-and-pale-fur": [
+  "white fur",
+  "pale fur",
+  "cream fur",
+  "snow fur",
+  "polar bear",
+  "white wolf",
+  "arctic fur",
+  "white fur cloak"
+ ],
+ "wine-purple-cloth": [
+  "wine cloth",
+  "burgundy cloth",
+  "maroon cloth",
+  "purple red cloth",
+  "wine red",
+  "plum cloth",
+  "burgundy shield",
+  "dark red purple"
+ ],
+ "woodland-camo": [
+  "woodland camo",
+  "green camo",
+  "forest camo",
+  "green camouflage",
+  "jungle camo",
+  "blotch camo",
+  "army camo",
+  "olive camo"
+ ],
+ "worn-black-armour": [
+  "worn black armour",
+  "battered armour",
+  "chipped black",
+  "damaged black armour",
+  "scratched black",
+  "weathered black armour",
+  "battle damage",
+  "rusty black armour"
+ ],
+ "yellow-cloth": [
+  "yellow cloth",
+  "yellow robes",
+  "mustard cloth",
+  "yellow fabric",
+  "yellow cloak",
+  "how to paint yellow cloth",
+  "warm yellow",
+  "yellow tabard"
+ ],
+ "yellow-glowing-lenses": [
+  "yellow lenses",
+  "yellow eyes",
+  "glowing yellow eyes",
+  "amber lenses",
+  "yellow visor",
+  "amber glow",
+  "yellow light"
+ ],
+ "yellow-over-warm-undercoat": [
+  "yellow undercoat",
+  "yellow over pink",
+  "yellow over orange",
+  "warm undercoat",
+  "orange shadows",
+  "yellow coverage",
+  "yellow wont cover",
+  "streaky yellow"
+ ],
+ "teeth": [
+  "teeth",
+  "fangs",
+  "mouth",
+  "gums",
+  "monster teeth",
+  "how to paint teeth",
+  "jaws",
+  "ivory teeth"
+ ],
+ "bone": [
+  "bone",
+  "bones",
+  "skull",
+  "skeleton bones",
+  "how to paint bone",
+  "yellow bone",
+  "skulls",
+  "bone weapon"
+ ],
+ "chitin": [
+  "chitin",
+  "insect shell",
+  "carapace",
+  "bug shell",
+  "beetle shell",
+  "exoskeleton",
+  "shell armour",
+  "insect armour"
+ ],
+ "skin": [
+  "skin",
+  "how to paint skin",
+  "flesh",
+  "faces",
+  "skin tone",
+  "basic skin",
+  "flesh tone",
+  "beginner skin",
+  "how to paint a face"
+ ],
+ "blood": [
+  "blood",
+  "blood effects",
+  "fresh blood",
+  "wet blood",
+  "bloody weapon",
+  "blood splatter",
+  "blood spatter",
+  "blood on sword"
+ ],
+ "rust": [
+  "rust",
+  "how to paint rust",
+  "rusty",
+  "corroded",
+  "rusted armour",
+  "rust patches",
+  "rusty edges",
+  "simple rust"
+ ],
+ "oiled-metal": [
+  "oiled metal",
+  "oily metal",
+  "greasy metal",
+  "grease",
+  "engine oil",
+  "mechanical parts",
+  "well used metal",
+  "oily gunmetal"
+ ],
+ "verdigris": [
+  "verdigris",
+  "green copper",
+  "old copper",
+  "patina",
+  "copper patina",
+  "blue green metal",
+  "oxidised copper",
+  "statue patina"
+ ],
+ "weathering": [
+  "weathering",
+  "paint chips",
+  "chipping",
+  "scratches",
+  "worn paint",
+  "dusty armour",
+  "sponge chipping",
+  "weathered vehicle",
+  "chipped paint"
+ ],
+ "gold": [
+  "gold",
+  "how to paint gold",
+  "gold metal",
+  "golden",
+  "gold trim",
+  "gold paint",
+  "rich gold",
+  "gold shade"
+ ],
+ "steel": [
+  "steel",
+  "bright steel",
+  "silver",
+  "shiny metal",
+  "swords",
+  "sword blade",
+  "blades",
+  "metal weapons"
+ ],
+ "leather": [
+  "leather",
+  "brown leather",
+  "belts",
+  "straps",
+  "pouches",
+  "boots",
+  "leather armour",
+  "saddles"
+ ],
+ "cloth": [
+  "cloth",
+  "fabric",
+  "robes",
+  "folds",
+  "cloak",
+  "clothes",
+  "how to paint cloth",
+  "tabard"
+ ],
+ "wood": [
+  "wood",
+  "wooden",
+  "staff",
+  "spear shaft",
+  "axe handle",
+  "planks",
+  "how to paint wood",
+  "wooden shield"
+ ],
+ "scorch": [
+  "scorch marks",
+  "burn marks",
+  "burnt",
+  "soot",
+  "blackened",
+  "fire damage",
+  "scorched metal",
+  "smoke stains",
+  "exhaust soot"
+ ],
+ "glow": [
+  "glow",
+  "glowing eyes",
+  "eyes glow",
+  "light effect",
+  "osl",
+  "object source lighting",
+  "glowing light",
+  "eye lenses",
+  "small glow"
+ ],
+ "gems": [
+  "gems",
+  "gem",
+  "jewels",
+  "lenses",
+  "glass lens",
+  "gemstone",
+  "crystal",
+  "how to paint gems"
+ ],
+ "mud": [
+  "mud",
+  "muddy",
+  "mud base",
+  "mud on legs",
+  "dirt on legs",
+  "dried mud",
+  "mud splatter",
+  "shiny mud",
+  "thick mud",
+  "dirty legs",
+  "wet mud base",
+  "mud on feet"
+ ],
+ "alien-world-ground": [
+  "alien base",
+  "alien planet",
+  "alien world",
+  "weird plants",
+  "colourful base",
+  "sci fi planet",
+  "strange ground",
+  "ink base"
+ ],
+ "ash-wastes": [
+  "ash wastes",
+  "grey wasteland",
+  "post apocalyptic base",
+  "scrap base",
+  "ash ground",
+  "dead ground",
+  "ruined wasteland",
+  "grey ash base"
+ ],
+ "bark-rocks": [
+  "bark rocks",
+  "cork bark",
+  "rocks from bark",
+  "layered rocks",
+  "riverbed",
+  "rock outcrop",
+  "cliff base",
+  "bark chips"
+ ],
+ "beach-shoreline": [
+  "beach",
+  "shore",
+  "beach base",
+  "sand and shells",
+  "driftwood base",
+  "coast",
+  "seaside",
+  "shells"
+ ],
+ "blending-base-textures": [
+  "mixed ground",
+  "natural ground",
+  "blending textures",
+  "varied ground",
+  "rocks and sand",
+  "realistic base",
+  "combined textures",
+  "ground transitions"
+ ],
+ "bright-green-sand": [
+  "green base",
+  "classic base",
+  "old school base",
+  "retro base",
+  "bright green sand",
+  "nostalgic base",
+  "green painted base",
+  "90s base"
+ ],
+ "cobblestone-streets": [
+  "cobblestones",
+  "cobble street",
+  "street base",
+  "town street",
+  "cobbled road",
+  "medieval street",
+  "stone road",
+  "cobbles"
+ ],
+ "coloured-liquid-pools": [
+  "blood pool",
+  "slime",
+  "ooze",
+  "blood base",
+  "glowing ooze",
+  "toxic puddle",
+  "goo",
+  "acid pool",
+  "slime pool"
+ ],
+ "paving-and-cast-stone": [
+  "concrete",
+  "paving",
+  "pavement",
+  "sidewalk",
+  "paving slabs",
+  "cracked paving",
+  "modern city base",
+  "cast concrete"
+ ],
+ "cork-and-texture-gel": [
+  "cork base",
+  "cork",
+  "texture gel",
+  "rocky earth",
+  "quick rocky base",
+  "coarse gel",
+  "broken cork",
+  "cork and gel"
+ ],
+ "crackle-earth": [
+  "crackle paint",
+  "crackle base",
+  "sun baked earth",
+  "dry cracked earth",
+  "cracked mud",
+  "desert cracks",
+  "parched ground",
+  "crackle texture"
+ ],
+ "crystal-and-ice-shards": [
+  "crystals",
+  "ice shards",
+  "crystal base",
+  "clear plastic crystals",
+  "ice spikes",
+  "crystal shards",
+  "clear sprue",
+  "frozen shards"
+ ],
+ "dirt-roads": [
+  "dirt road",
+  "road base",
+  "tracks",
+  "wheel ruts",
+  "tyre tracks",
+  "path",
+  "dirt track",
+  "rutted road"
+ ],
+ "dry-mud-ground": [
+  "dry mud",
+  "quick base",
+  "dried mud base",
+  "brown base",
+  "easy base",
+  "mud texture",
+  "simple ground",
+  "beginner base"
+ ],
+ "dungeon-flagstones": [
+  "dungeon",
+  "flagstones",
+  "dungeon floor",
+  "stone floor",
+  "indoor base",
+  "castle floor",
+  "damp stone",
+  "crypt floor"
+ ],
+ "dusty-wasteland": [
+  "dusty ground",
+  "wasteland",
+  "dusty base",
+  "dry earth",
+  "rust ground",
+  "dry tufts",
+  "desert dust",
+  "pigment dust"
+ ],
+ "foam-bushes-and-shrubs": [
+  "bushes",
+  "shrubs",
+  "foam bushes",
+  "hedges",
+  "sponge bushes",
+  "foliage",
+  "clump foliage",
+  "bush base"
+ ],
+ "foam-hills": [
+  "hills",
+  "cliffs",
+  "foam hills",
+  "display board",
+  "expanding foam",
+  "scenic board",
+  "terrain hills",
+  "cliff display"
+ ],
+ "forest-floor": [
+  "forest floor",
+  "woodland base",
+  "forest base",
+  "leaves",
+  "leaf litter",
+  "moss and leaves",
+  "woods base",
+  "fallen leaves"
+ ],
+ "glowing-sewer": [
+  "sewer",
+  "sewer base",
+  "sewer grate",
+  "glowing sludge",
+  "drain",
+  "underground base",
+  "toxic sewer",
+  "sludge"
+ ],
+ "grey-rocky-ground": [
+  "grey rocks",
+  "rocky ground",
+  "grey base",
+  "stony ground",
+  "rocky base",
+  "dark grey base",
+  "rock drybrush",
+  "grey stone base"
+ ],
+ "meadow-and-flowers": [
+  "meadow",
+  "flowers",
+  "flower base",
+  "grassland",
+  "wildflowers",
+  "green field",
+  "spring base",
+  "grassy meadow"
+ ],
+ "natural-tufts": [
+  "tufts",
+  "grass tufts",
+  "realistic tufts",
+  "tufts look fake",
+  "tuft placement",
+  "tinted tufts",
+  "clumps of grass",
+  "cutting tufts"
+ ],
+ "pale-stone-ground": [
+  "pale stone",
+  "sandy stone",
+  "light stone",
+  "dusty stone",
+  "pale ground",
+  "dusty feet",
+  "light grey stone",
+  "bleached stone"
+ ],
+ "paper-plants": [
+  "paper plants",
+  "ferns",
+  "paper leaves",
+  "laser cut plants",
+  "jungle plants",
+  "leafy plants",
+  "paper ferns",
+  "paper foliage"
+ ],
+ "puddles-and-water": [
+  "puddles",
+  "water on base",
+  "water effects",
+  "puddle base",
+  "wet ground",
+  "rain puddles",
+  "gloss water",
+  "water gel"
+ ],
+ "real-soil-bases": [
+  "real soil",
+  "garden soil",
+  "dirt",
+  "fine dirt",
+  "sifted soil",
+  "earth base",
+  "soil base",
+  "real dirt"
+ ],
+ "red-desert": [
+  "red desert",
+  "mars base",
+  "red planet",
+  "red rocks",
+  "red ground",
+  "red dust",
+  "red earth",
+  "canyon base"
+ ],
+ "red-toadstools": [
+  "toadstools",
+  "mushrooms",
+  "red mushrooms",
+  "fly agaric",
+  "spotted mushrooms",
+  "mushroom base",
+  "fungi",
+  "fairy mushrooms"
+ ],
+ "resin-ice": [
+  "resin ice",
+  "frozen lake",
+  "deep ice",
+  "clear resin",
+  "realistic ice base",
+  "frozen water",
+  "ice cracks",
+  "mirror ice"
+ ],
+ "sand-and-rocks": [
+  "sand and rocks",
+  "simple base",
+  "quick army basing",
+  "sand base",
+  "quick basing",
+  "batch basing",
+  "desert base",
+  "rocks base"
+ ],
+ "sandbags-and-low-walls": [
+  "sandbags",
+  "low wall",
+  "stone wall",
+  "barricade",
+  "battlefield cover",
+  "sandbag wall",
+  "defence line",
+  "dry stone wall"
+ ],
+ "sci-fi-deck-plates": [
+  "deck plates",
+  "spaceship floor",
+  "sci fi base",
+  "metal floor",
+  "grating",
+  "mesh floor",
+  "plasticard base",
+  "industrial floor"
+ ],
+ "sea-waves": [
+  "waves",
+  "sea",
+  "ocean",
+  "surf",
+  "sea base",
+  "water waves",
+  "ocean base",
+  "crashing waves"
+ ],
+ "slate-shards": [
+  "slate",
+  "slate base",
+  "broken ground",
+  "shattered ground",
+  "rock shards",
+  "burst ground",
+  "upheaval",
+  "slate rocks"
+ ],
+ "snow-bases": [
+  "snow drifts",
+  "winter base",
+  "snowy ground",
+  "snowy rocks",
+  "frozen ground",
+  "snow effect",
+  "tundra",
+  "gritty snow"
+ ],
+ "snowy-flagstones": [
+  "snowy flagstones",
+  "snow on stones",
+  "winter town",
+  "snowy paving",
+  "snow and leaves",
+  "frosty floor",
+  "snowy street",
+  "frozen flagstones"
+ ],
+ "static-grass": [
+  "static grass",
+  "flock",
+  "grass flock",
+  "moss paste",
+  "grassy base",
+  "grass applicator",
+  "green grass base",
+  "lawn"
+ ],
+ "swamp-and-bog": [
+  "swamp",
+  "bog",
+  "marsh",
+  "swamp base",
+  "murky water",
+  "mossy log",
+  "wetland",
+  "hanging moss"
+ ],
+ "texture-paint-bases": [
+  "texture paint",
+  "textured paint",
+  "gritty base",
+  "quick texture",
+  "texture paste",
+  "rough base",
+  "ground texture paint",
+  "easy texture"
+ ],
+ "tile-grout-ground": [
+  "tile grout",
+  "grout",
+  "cheap basing",
+  "cheap texture",
+  "sanded grout",
+  "budget base",
+  "grout base",
+  "no glue base"
+ ],
+ "tinted-moss-on-rocks": [
+  "moss on rocks",
+  "mossy rocks",
+  "green tint rocks",
+  "quick moss",
+  "moss effect",
+  "mossy stones",
+  "green moss",
+  "moss wash"
+ ],
+ "trees-from-twigs": [
+  "trees",
+  "twigs",
+  "model trees",
+  "roots",
+  "tree base",
+  "dead tree",
+  "scenic tree",
+  "branches"
+ ],
+ "urban-ruins": [
+  "ruins",
+  "urban ruins",
+  "rubble base",
+  "city ruins",
+  "bricks",
+  "broken walls",
+  "destroyed city",
+  "war torn city"
+ ],
+ "weathered-marble": [
+  "marble",
+  "marble floor",
+  "weathered marble",
+  "temple floor",
+  "old stone floor",
+  "marble tiles",
+  "chequered floor",
+  "mossy marble"
+ ],
+ "wet-muddy-ground": [
+  "wet mud",
+  "muddy ground",
+  "mud splashes",
+  "muddy boots",
+  "churned mud",
+  "trench mud",
+  "glossy mud",
+  "mud puddles"
+ ],
+ "wooden-plank-floors": [
+  "wooden planks",
+  "plank floor",
+  "ship deck",
+  "boardwalk",
+  "walkway",
+  "wooden floor",
+  "pier",
+  "tavern floor"
+ ],
+ "worn-grass-pitch": [
+  "sports pitch",
+  "sports field",
+  "pitch base",
+  "worn grass",
+  "field lines",
+  "white lines",
+  "playing field",
+  "stadium base"
+ ],
+ "sand": [
+  "sand",
+  "sand base",
+  "desert",
+  "sandy base",
+  "dunes",
+  "pale sand",
+  "beach sand",
+  "sand drifts"
+ ],
+ "gravel": [
+  "gravel",
+  "small stones",
+  "pebbles",
+  "stony base",
+  "loose stones",
+  "fine gravel",
+  "gravel path",
+  "chippings"
+ ],
+ "cracked": [
+  "cracked earth",
+  "dry ground",
+  "cracked ground",
+  "split earth",
+  "drought",
+  "dry plates",
+  "cracked base",
+  "flat cracks"
+ ],
+ "ash": [
+  "ash",
+  "soot base",
+  "burnt ground",
+  "scorched earth",
+  "ash base",
+  "volcanic ash",
+  "burned base",
+  "fire aftermath"
+ ],
+ "snow": [
+  "snow",
+  "fresh snow",
+  "snow base",
+  "white snow",
+  "winter",
+  "snowy base",
+  "blue snow shadows",
+  "simple snow"
+ ],
+ "ice": [
+  "ice",
+  "ice base",
+  "frozen",
+  "icy ground",
+  "clear ice",
+  "frost",
+  "frozen puddle",
+  "icy"
+ ],
+ "grass": [
+  "grass",
+  "green grass",
+  "short grass",
+  "painted grass",
+  "grass base",
+  "dry grass tips",
+  "grassy",
+  "how to paint grass"
+ ],
+ "moss": [
+  "moss",
+  "damp moss",
+  "mossy base",
+  "moss on stone",
+  "moss texture",
+  "soft moss",
+  "damp ground",
+  "mossy ground"
+ ],
+ "rock": [
+  "rock",
+  "rocks",
+  "grey rock",
+  "stone",
+  "rocky",
+  "sharp rocks",
+  "rock highlights",
+  "boulders"
+ ],
+ "rubble": [
+  "rubble",
+  "broken stones",
+  "wall rubble",
+  "debris",
+  "ruins base",
+  "ruined wall",
+  "dusty rubble",
+  "collapsed wall"
+ ],
+ "lava": [
+  "lava",
+  "lava base",
+  "magma",
+  "volcanic base",
+  "molten lava",
+  "lava cracks",
+  "volcano",
+  "glowing cracks base"
+ ],
+ "quick-skin": [
+  "quick skin",
+  "fast skin",
+  "two paint skin",
+  "easy skin",
+  "skin in two steps",
+  "speed painting skin",
+  "contrast paint skin",
+  "batch painting skin",
+  "simple flesh"
+ ]
+}

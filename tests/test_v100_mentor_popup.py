@@ -42,6 +42,8 @@ def main():
         page.on("pageerror", lambda x: errors.append(str(x)))
         page.on("dialog", lambda d: (errors.append("dialog: " + d.message), d.dismiss()))
         page.on("request", lambda r: requests.append(r.url) if not r.url.startswith(("http://localhost", "http://127.0.0.1", "data:", "blob:")) else None)
+        # X8: the knowledge base's 20 starter questions show as chips after Paint Picker; this test is about the window, so it uses empty guide lists (starter chips are tested in test_v102)
+        ctx.route("**/guides-data.js*", lambda route: route.fulfill(body="const GUIDE_ENTRIES = [];\nconst GUIDE_STARTERS = [];\n", content_type="text/javascript"))
 
         print("\n--- 1. Opening ---")
         t.fresh(page)

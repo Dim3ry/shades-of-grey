@@ -61,8 +61,11 @@ def main():
         check("entries without a key or title are skipped, nothing throws", r["bad"] == 0, r["bad"])
 
         print("\n--- 2. The screen ---")
+        # X8: the app now ships 602 guide entries, so the empty case is set up here on purpose (empty lists) to keep testing
+        # that empty categories are hidden. The real lists and their counts are checked in the X8 test.
+        put(page, [], [])
         guides(page)
-        check("with no guide entries yet, only Detail recipes and Basing show, with counts",
+        check("with no guide entries, only Detail recipes and Basing show, with counts",
               [x.rstrip("0123456789") for x in texts(page, ".guides-cats .guides-row")] == ["Detail recipes", "Basing"]
               and all(re.search(r"\d+$", x) for x in texts(page, ".guides-cats .guides-row")), texts(page, ".guides-cats .guides-row"))
         check("no heading or sentence under the search box on the home list", page.locator(".guides-nav h3, .guides-nav p").count() == 0)

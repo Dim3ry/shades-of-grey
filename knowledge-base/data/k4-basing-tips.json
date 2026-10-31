@@ -1,0 +1,2618 @@
+{
+  "basing-tips": [
+    {
+      "key": "alien-world-ground",
+      "group": "ground",
+      "name": "Alien world ground",
+      "summary": "Mixed textures flooded with bright inks, with odd plants and coloured tufts",
+      "materials": [
+        "Cork pieces for height",
+        "Fine sand paste, crackle paint and coarse grit paste",
+        "A few small rocks",
+        "Spare tentacles or tails for strange plants",
+        "Brightly coloured grass tufts",
+        "Purple, turquoise and magenta inks"
+      ],
+      "howto": [
+        "Glue cork down, then spread patches of sand paste, crackle and coarse grit so they overlap.",
+        "Press in a few rocks and glue spare tentacles upright in a cluster as an odd plant.",
+        "Prime it all white, then flood bright inks into each other while wet so the colours run and mix.",
+        "Drybrush white over the raised texture and work a purple wash into dips and round the plants.",
+        "Glue on bright tufts, open their tips with tweezers, then varnish matt, as inks dry shiny."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Prime",
+          "coats": 1,
+          "mix": 100,
+          "look": "a bright white",
+          "hex": "#ffffff",
+          "note": "A white start keeps the inks bright."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 60,
+          "look": "a bright turquoise",
+          "hex": "#2ab0c8",
+          "note": "Splash turquoise, purple and magenta wet into each other."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a near white",
+          "hex": "#f0f0f0",
+          "note": "Only once the inks are fully dry."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 50,
+          "look": "a deep purple",
+          "hex": "#4a2a6a",
+          "note": "Into level changes and under plants to separate them."
+        }
+      ]
+    },
+    {
+      "key": "ash-wastes",
+      "group": "ground",
+      "name": "Grey ash wasteland",
+      "summary": "Dead grey ash drifting over dark rocks and half buried scrap",
+      "materials": [
+        "Fine grain texture paste",
+        "Bark pieces or slate chips for dark rock",
+        "Sand and a few small stones",
+        "Small scrap bits such as canisters or pipes",
+        "A damp sponge",
+        "Matt varnish"
+      ],
+      "howto": [
+        "Glue the bark rocks and scrap down first, leaving room for the feet.",
+        "Spread fine texture paste thickly over the open ground and bank it up against the rocks and scrap.",
+        "Press sand and stones into the wet paste, then dab it with a damp sponge after a while for soft drifts.",
+        "Let it dry overnight, paint the rocks near black and wash the ground with a thin grey mix.",
+        "Drybrush a warm white very lightly, then add a few dry grass clumps and paint the rim black."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a near black",
+          "hex": "#1c1c1e",
+          "note": "Rocks only, with a broken edge where the ash meets them."
+        },
+        {
+          "technique": "Wash",
+          "coats": 2,
+          "mix": 30,
+          "look": "a dark grey",
+          "hex": "#4a4c4f",
+          "note": "Grey thinned right down with water and a drop of matt varnish."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 30,
+          "look": "a charcoal",
+          "hex": "#2a2b2d",
+          "note": "Dot it into tracks and hollows while the grey is still wet."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a warm white",
+          "hex": "#e8e6e1",
+          "note": "A very light dusting for the pale flecks in ash."
+        }
+      ]
+    },
+    {
+      "key": "bark-rocks",
+      "group": "stone",
+      "name": "Bark rocks",
+      "summary": "Garden bark or cork bark chips as layered, wind worn rocks and riverbeds",
+      "materials": [
+        "Garden bark chips or real cork bark",
+        "Super glue",
+        "A pin vice and brass rod",
+        "Two-part epoxy putty for pebbles",
+        "Fine sand and white glue",
+        "An old drybrush"
+      ],
+      "howto": [
+        "Break the bark into pieces of different sizes, as its flaky layers read like wind worn rock.",
+        "Plan the rocks while building the model so the feet still fit, then super glue them down.",
+        "If a figure stands on a rock, pin through foot, rock and base, as glue alone can snap.",
+        "For a riverbed, roll leftover putty into smooth pebbles and scatter sand between them.",
+        "Fill any gaps a brush could not reach later with extra small rocks before priming."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a near black",
+          "hex": "#1e1c1a",
+          "note": "Right into every layer of the bark."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a mid grey-brown",
+          "hex": "#6e665c",
+          "note": "Firm strokes across the layers to pick them out."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a pale stone",
+          "hex": "#c8c0b0",
+          "note": "Light, on the top edge of each layer only."
+        }
+      ]
+    },
+    {
+      "key": "beach-shoreline",
+      "group": "ground",
+      "name": "Beach shoreline",
+      "summary": "A sandy shore with driftwood and tiny shells half buried",
+      "materials": [
+        "Fine sand",
+        "White glue",
+        "Small pieces of driftwood or twigs",
+        "Tiny shells, bottles or crabs",
+        "Super glue",
+        "Clear water gel for surf"
+      ],
+      "howto": [
+        "Paint glue in a rough patch where the sand should go and leave some ground bare.",
+        "For wind ripples, first drag a flat shaper through a thin layer of putty in wavy, crossing lines.",
+        "Dip the base in sand, tap off the loose grains, and glue driftwood and props in so they look half buried.",
+        "Once painted, run clear water gel along the lowest edge for lapping surf.",
+        "Keep the base darker overall and the props few, so it does not draw the eye from the model."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a warm sand",
+          "hex": "#b49a6e",
+          "note": "Cover the sand and the bare ground."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 40,
+          "look": "a soft brown",
+          "hex": "#6e5638",
+          "note": "Into the gaps and round the props."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a pale cream",
+          "hex": "#e6dcc0",
+          "note": "Light, on the sand only, from one side so ripples catch it."
+        },
+        {
+          "technique": "Layer",
+          "coats": 1,
+          "mix": 100,
+          "look": "a grey driftwood",
+          "hex": "#8e8a80",
+          "note": "Wood and shells picked out after the sand."
+        },
+        {
+          "technique": "Glaze",
+          "coats": 1,
+          "mix": 30,
+          "look": "a soft mid blue",
+          "hex": "#3a7fb0",
+          "note": "On the low side where the water gel will sit."
+        }
+      ]
+    },
+    {
+      "key": "blending-base-textures",
+      "group": "ground",
+      "name": "Mixed ground",
+      "summary": "Rocks, sand and cracked earth feathered into one natural ground",
+      "materials": [
+        "A few small rocks or slate pieces",
+        "Sand and grit in fine, medium and coarse sizes",
+        "White glue and a damp old brush",
+        "Texture paste or crackle paint",
+        "A few tiny dried roots",
+        "A dark brown paint"
+      ],
+      "howto": [
+        "Plan where the feet go, then glue rocks at random rather than in a neat ring, with a tiny root on any bank.",
+        "Lay at least two textures, such as sand and crackle, with grit of three sizes in overlapping patches.",
+        "Add the second paste while the first is wet, or feather the joins with a damp brush, so no line shows.",
+        "Paint one colour over every texture so they read as one ground, then wash and drybrush as normal.",
+        "Shade round the foot of each rock with thinned dark brown and soften the line with a damp brush."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a mid earth brown",
+          "hex": "#6e5236",
+          "note": "One colour over everything ties the textures together."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 40,
+          "look": "a dark brown",
+          "hex": "#3a2a1c",
+          "note": "Let it settle in the gaps and at the foot of the rocks."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a light tan",
+          "hex": "#b9a07a",
+          "note": "Over the whole base to bring out every texture."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a pale bone",
+          "hex": "#e2d6b4",
+          "note": "Light touches on the high points only, brushed in circles."
+        }
+      ]
+    },
+    {
+      "key": "bright-green-sand",
+      "group": "plants",
+      "name": "Classic bright green base",
+      "summary": "Old style sand soaked in bright green and drybrushed yellow for a retro look",
+      "materials": [
+        "Fine sand in a tub",
+        "White glue",
+        "An old medium brush",
+        "A bright mid green paint",
+        "A bright yellow paint",
+        "Reusable putty for loose slots"
+      ],
+      "howto": [
+        "Fill any loose slot round the model's tab with putty so the glue has something to sit on.",
+        "Brush white glue over the base top, dip it in sand, tap off the excess and wipe the rim clean with a thumb.",
+        "Leave it an hour, then soak very watery green into the sand so it runs into every grain.",
+        "Once dry, drybrush bright yellow in light flicks across the grains, steering round the feet.",
+        "Paint the rim in the same green, less thinned, with smooth strokes."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 1,
+          "mix": 100,
+          "look": "an inky bright green",
+          "hex": "#3f9a2e",
+          "note": "Thinned with lots of water so the sand soaks it up."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a bright yellow",
+          "hex": "#f2d21a",
+          "note": "Light flicks across the tops of the grains."
+        },
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a bright mid green",
+          "hex": "#3f8a2a",
+          "note": "For the rim, smooth and less thinned."
+        }
+      ]
+    },
+    {
+      "key": "cobblestone-streets",
+      "group": "stone",
+      "name": "Cobblestone streets",
+      "summary": "Putty cobbles pressed into a street, with mud and town debris in the gaps",
+      "materials": [
+        "Two-part epoxy putty",
+        "Silicone shapers, an old damp brush or a cobble texture roller",
+        "Fine dirt and thin super glue",
+        "Small debris such as bones, pots or scrap wood",
+        "Grass tufts and tiny flowers",
+        "Paper towel"
+      ],
+      "howto": [
+        "Spread a thin layer of putty and press in stone shapes, or roll a cobble texture roller across it in one even pass.",
+        "Push the gaps down with a damp brush or shaper so each stone stands proud of the next.",
+        "Trim the edges after about an hour, let it cure, then sand a few stones flat for wear.",
+        "Scatter dirt and debris, seal it with thin super glue and blot the excess with paper towel at once.",
+        "Prime and paint, then add tufts and flowers in the gaps to hide any messy patches."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a cool grey",
+          "hex": "#6f7276",
+          "note": "Thin it a little and vary the grey from stone to stone."
+        },
+        {
+          "technique": "Contrast",
+          "coats": 1,
+          "mix": 100,
+          "look": "a deep mud brown",
+          "hex": "#4a3322",
+          "note": "Over the dirt between the stones for quick depth."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 40,
+          "look": "an earth brown",
+          "hex": "#5a4632",
+          "note": "Thin layers in the gaps so the stones look grimy."
+        },
+        {
+          "technique": "Edge highlight",
+          "coats": 1,
+          "mix": 100,
+          "look": "a grey khaki",
+          "hex": "#b5ae90",
+          "note": "A few stone edges only, adding more khaki for the last pass."
+        }
+      ]
+    },
+    {
+      "key": "coloured-liquid-pools",
+      "group": "cold",
+      "name": "Blood and slime pools",
+      "summary": "Glossy blood, slime or glowing ooze pooled in the hollows of a base",
+      "materials": [
+        "Thick clear gloss water effect or clear resin",
+        "Clear tinting inks or see-through paints in red, green or yellow",
+        "Tiny glass beads or silica beads for bubbles",
+        "A toothpick or silicone shaping tool",
+        "Dead-looking dark grass tufts"
+      ],
+      "howto": [
+        "Paint the hollow first, dark for blood and murky slime and bright yellow under ooze that should glow.",
+        "Glaze the pool bed with ink so it reads deeper in the middle and lighter at the edges.",
+        "Stir a very small drop of ink into the clear gloss and pour it in thin layers, as it shrinks while drying.",
+        "While the last layer is wet, drop in a few tiny beads so they sink halfway and look like bubbles.",
+        "Dot a brighter tint round the bubbles once cured, then add dead tufts along the edge."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a bright yellow",
+          "hex": "#f2e03a",
+          "note": "Under glowing ooze, so the green on top looks lit from within."
+        },
+        {
+          "technique": "Glaze",
+          "coats": 2,
+          "mix": 30,
+          "look": "a lime green",
+          "hex": "#7ee02a",
+          "note": "Over the yellow, darker towards the middle of the pool."
+        },
+        {
+          "technique": "Glaze",
+          "coats": 2,
+          "mix": 30,
+          "look": "a deep red",
+          "hex": "#8a0f12",
+          "note": "For blood, glaze over a pale bed so it deepens away from the edge."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 40,
+          "look": "a sepia brown",
+          "hex": "#5e4a2a",
+          "note": "Blend the ground into the pool edge so it looks stained."
+        }
+      ]
+    },
+    {
+      "key": "paving-and-cast-stone",
+      "group": "stone",
+      "name": "Paving and cast stone",
+      "summary": "Cracked paving from snapped tile and grout, or cast stone from paste",
+      "materials": [
+        "A plain plastic floor tile with no sticky back",
+        "Super glue",
+        "Ready-mixed sanded grout",
+        "Grey texture paste, for cast stone",
+        "A spatula or lolly stick",
+        "Gravel and a few small grass tufts"
+      ],
+      "howto": [
+        "Snap the tile by hand or with pliers, as it breaks with rough edges much like real paving.",
+        "Glue the pieces down as one cracked slab, or tilt and prop some up as if the ground has shifted.",
+        "Press in gravel, then fill the gaps with sanded grout straight from the tube and shape it with the stick.",
+        "For cast stone walls or floors, spread grey texture paste unevenly with a spatula, not a brush.",
+        "Once painted, add a little grass in the cracks for an overgrown look."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a mid stone grey",
+          "hex": "#8a8a85",
+          "note": "Over the slabs, though grey paste already gives this colour."
+        },
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a dark earth brown",
+          "hex": "#4a3426",
+          "note": "On the grout and ground between the slabs."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 50,
+          "look": "a dark brown grime",
+          "hex": "#4a3c30",
+          "note": "Thin, low down, in the cracks and along the edges."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a light grey",
+          "hex": "#c4c4bf",
+          "note": "Wipe the brush almost dry or the texture flattens."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a near white",
+          "hex": "#f2f2ee",
+          "note": "Only on slab edges and broken corners."
+        }
+      ]
+    },
+    {
+      "key": "cork-and-texture-gel",
+      "group": "ground",
+      "name": "Cork and texture gel",
+      "summary": "Broken cork under coarse gel for quick, rocky earth",
+      "materials": [
+        "Coarse sheet cork with large, loose grains",
+        "Old bottle corks",
+        "Coarse artist's texture gel",
+        "Grit or small cork chips",
+        "Super glue and pliers",
+        "A pin and an old brush"
+      ],
+      "howto": [
+        "Tear coarse sheet cork into rocks by twisting pliers in it, as fine pressed cork looks like cork, not stone.",
+        "Trim each piece flat underneath, glue it down, and gouge any smooth cork faces with a pin.",
+        "Spread texture gel round the cork so it slopes down to the base, pressing grit into it while wet.",
+        "Let it dry fully, then prime, as the primer seals the cork well enough to paint.",
+        "Keep spare corks, as a stack of them makes a simple holder for painting models."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a dark brown",
+          "hex": "#3e2e22",
+          "note": "Cover the cork and gel completely."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a mid grey-brown",
+          "hex": "#7c7062",
+          "note": "Bring out the torn edges of the cork rocks."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a light stone",
+          "hex": "#bab09c",
+          "note": "Light pass on the highest edges."
+        }
+      ]
+    },
+    {
+      "key": "crackle-earth",
+      "group": "ground",
+      "name": "Crackle paint earth",
+      "summary": "Crackle paint blended into sand for sun baked cracked ground",
+      "materials": [
+        "Crackle texture paint",
+        "Gritty texture paste or fine sand",
+        "An old brush and a damp brush",
+        "Small rocks or skulls",
+        "Short dry beige tufts",
+        "Two-part epoxy putty, for crisper cracks"
+      ],
+      "howto": [
+        "Lay a thin coat of sandy paste or brown paint first, so cracks do not open onto bare plastic.",
+        "Mix a little grit into the crackle and lay it thicker for bigger cracks, but too thick and it chips off.",
+        "Blend it into the sand with a damp brush, push rocks into the sandy parts, and let it dry fully.",
+        "Seal the dry crackle with varnish or thinned white glue so washes do not loosen it and chunks stay put.",
+        "For crisper cracks, press a very thin rolled sheet of putty over a bumpy base and crack it with a brush end."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a pale sandy yellow",
+          "hex": "#d2b886",
+          "note": "Thin it a little so it does not fill the cracks."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 40,
+          "look": "a dull red brown",
+          "hex": "#5a3a2a",
+          "note": "Sparingly into the cracks, with a darker wash in the deepest ones."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 2,
+          "mix": 100,
+          "look": "a pale bone",
+          "hex": "#e8dcb8",
+          "note": "Many light passes, crackle needs more than sand."
+        },
+        {
+          "technique": "Glaze",
+          "coats": 1,
+          "mix": 20,
+          "look": "a warm brown",
+          "hex": "#8a5a3a",
+          "note": "Very thin near rocks, then drybrush again."
+        }
+      ]
+    },
+    {
+      "key": "crystal-and-ice-shards",
+      "group": "cold",
+      "name": "Crystal and ice shards",
+      "summary": "Jagged ice or crystal shards cut from clear frame plastic or clear rod",
+      "materials": [
+        "Clear plastic frame offcuts or clear acrylic rod",
+        "Clippers, a hobby knife and a fine saw",
+        "Plastic glue or super glue",
+        "Crackle or rough texture paint for the ground",
+        "Gloss varnish and snow paste",
+        "A hot glue gun and baking paper, for icicles"
+      ],
+      "howto": [
+        "Cut clear frame or rod into strips and cut both ends at sharp angles so each shard comes to a point.",
+        "Shave the sides unevenly with a knife, then glue the shards in leaning clusters of mixed sizes.",
+        "Spread texture paint on the ground, wipe any off the feet, and seal it with gloss varnish once dry.",
+        "Leave clear plastic bare for glassy crystal, or paint it white and tint it blue, then pile snow round each foot.",
+        "For icicles, pull hot glue to a point on baking paper, glue them to bare plastic, not paint, and seal with gloss."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a clean white",
+          "hex": "#f4f4f2",
+          "note": "Over the ground and any shards meant to look like solid ice."
+        },
+        {
+          "technique": "Contrast",
+          "coats": 1,
+          "mix": 100,
+          "look": "a pale icy blue",
+          "hex": "#7fb6cf",
+          "note": "Neat on the shards, thinned well with medium on the ground."
+        },
+        {
+          "technique": "Contrast",
+          "coats": 1,
+          "mix": 100,
+          "look": "a deep blue",
+          "hex": "#1f4f86",
+          "note": "Wipe most off the brush and dot it into the middle of each shard."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a bright white",
+          "hex": "#fbfcfd",
+          "note": "One light pass over everything before the snow goes on."
+        }
+      ]
+    },
+    {
+      "key": "dirt-roads",
+      "group": "ground",
+      "name": "Dirt roads",
+      "summary": "Rutted dirt tracks pressed into putty and dusted with pigment",
+      "materials": [
+        "Two-part epoxy putty or a thick texture paste",
+        "Spare vehicle track links and a toothpick",
+        "Fine real earth, white glue and water",
+        "Earth pigments in two or three tones",
+        "White spirit or pigment fixer and a large soft brush",
+        "Small shrub clumps or tufts"
+      ],
+      "howto": [
+        "Lay putty in a road across the base with low banks either side, keeping it below the rim.",
+        "While soft, press track links along it and scratch thin wheel ruts with a toothpick.",
+        "Spread equal parts earth, white glue and water on the banks so they look rougher than the road.",
+        "Once painted, brush dry pigment over the road, wet it with spirit, then dust on a second layer.",
+        "Push darker pigment into the ruts and set shrubs in uneven numbers along the banks."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a mid earth brown",
+          "hex": "#8a6e50",
+          "note": "Patch in a darker and a lighter earth here and there for variety."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 40,
+          "look": "a dark brown",
+          "hex": "#4a3424",
+          "note": "Run it along the ruts and track marks."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a dusty tan",
+          "hex": "#b39b78",
+          "note": "Across the road and banks, keeping the ruts dark."
+        },
+        {
+          "technique": "Texture",
+          "coats": 1,
+          "mix": 100,
+          "look": "a pale dust",
+          "hex": "#c4ad88",
+          "note": "Dry pigment over the road, fixed and then dusted again."
+        }
+      ]
+    },
+    {
+      "key": "dry-mud-ground",
+      "group": "ground",
+      "name": "Dry mud ground",
+      "summary": "A quick dried mud texture with a drybrush and grass fibres",
+      "materials": [
+        "Mud effect texture paste",
+        "A light earth paint",
+        "Dark brown or black for the rim",
+        "Loose grass fibres",
+        "Super glue and tweezers",
+        "Light earth pigment powder"
+      ],
+      "howto": [
+        "Spread texture paste front and back, thinned a little if it looks crusty, and work it round the feet with a wet brush.",
+        "Once dry, drybrush the texture with a light earth colour.",
+        "Stab the same colour onto the boots, or thin it into low cloth folds, as dried mud spatter.",
+        "Push pigment into the hollows and wipe the high points with a damp brush so dust sits only in the dips.",
+        "Paint the rim, then dot glue in a few small clumps, dip in grass fibres and pull off any extra with tweezers."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 50,
+          "look": "a dark mud brown",
+          "hex": "#3e2e20",
+          "note": "Only if the paste dried flat in colour."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a light earth",
+          "hex": "#a88c68",
+          "note": "Over the texture and onto the boots."
+        },
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a dark brown",
+          "hex": "#2e2218",
+          "note": "Neat coats on the rim."
+        }
+      ]
+    },
+    {
+      "key": "dungeon-flagstones",
+      "group": "stone",
+      "name": "Dungeon flagstones",
+      "summary": "Dark, damp stone flags for dungeon and indoor scenes",
+      "materials": [
+        "A base with sculpted flagstones",
+        "A grey undercoat and black rim paint",
+        "A dark grey paint",
+        "Brown and green washes",
+        "A small soft drybrush and matt varnish",
+        "Fine sand or a thinned earth texture paint"
+      ],
+      "howto": [
+        "Prime grey, paint the stones dark grey up to the feet, and tint a few single slabs a little warmer or cooler.",
+        "For worn joints, brush thinned earth texture or fine sand over the stones so it settles in the gaps.",
+        "Wash brown and green at the same time, swapping at random so they mix into a damp, mossy look.",
+        "Let the wash dry fully, then wipe almost all paint off the brush before drybrushing the fine texture.",
+        "Paint the rim matt black and seal with matt varnish to take the shine off the washes."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 1,
+          "mix": 100,
+          "look": "a dark grey",
+          "hex": "#4a4d50",
+          "note": "Even coat over all the stone."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 60,
+          "look": "a murky brown-green",
+          "hex": "#3b3a24",
+          "note": "Let the two washes mix on the stone."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a light grey",
+          "hex": "#9a9c9e",
+          "note": "Very little paint on the brush."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a pale bone",
+          "hex": "#ece0c0",
+          "note": "A very light dusting to finish."
+        }
+      ]
+    },
+    {
+      "key": "dusty-wasteland",
+      "group": "ground",
+      "name": "Dusty wasteland",
+      "summary": "Dry dusty earth with a rust wash, pigment and dry tufts",
+      "materials": [
+        "Sandy texture paste or fine dry earth",
+        "A rust or brown shade",
+        "Earth pigment, or scraped soft pastel, in a dark, mid and light tone",
+        "A bone coloured paint",
+        "Dry beige grass tufts",
+        "Matt varnish"
+      ],
+      "howto": [
+        "Spread texture paste over the base, thinning it with water near the feet, and let it dry fully.",
+        "Wash it all with a thinned rust or brown, with two drops of matt varnish stirred in so it dries flat.",
+        "Drybrush bone over the texture, or a dark grey for a sooty, burnt look.",
+        "Dab on pigment, mostly dark, less mid and a touch of light, carry it up the feet and fix it with a little water.",
+        "Stick a few dry tufts on at random, not in rows, paint the rim brown and seal with matt varnish."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 50,
+          "look": "a rust brown",
+          "hex": "#7a4426",
+          "note": "Over all the texture, thinned with water."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 40,
+          "look": "a dark brown",
+          "hex": "#4a2e1c",
+          "note": "Dot it into the first wash while wet to mottle the ground."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a bone",
+          "hex": "#d9cca6",
+          "note": "Pick out the raised grit, or use a pale skin tone for a softer finish."
+        },
+        {
+          "technique": "Texture",
+          "coats": 1,
+          "mix": 100,
+          "look": "a dusty tan",
+          "hex": "#b09470",
+          "note": "Pigment on the ground and the lower legs."
+        }
+      ]
+    },
+    {
+      "key": "foam-bushes-and-shrubs",
+      "group": "plants",
+      "name": "Foam bushes and shrubs",
+      "summary": "Crumbled sponge mixed with glue and paint into bushes with real height",
+      "materials": [
+        "Fine sponge or soft foam, torn into crumbs",
+        "White glue",
+        "Green and a little yellow paint, thinned with water",
+        "A mixing pot",
+        "An old brush with a blunt handle end",
+        "A few tufts to sit round the bushes"
+      ],
+      "howto": [
+        "Tear the sponge into small crumbs rather than cutting it, so the edges look leafy.",
+        "Mix the crumbs with white glue and well thinned paint into a thick paste that holds together.",
+        "Lift some on the brush handle, set it on the base and press it into shape with the blunt end.",
+        "Build each bush up in clumps for height, as loose crumbs sprinkled on glue only lie flat.",
+        "Let the wet paint tint the ground round each bush, and keep colours muted so they do not pull the eye."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 1,
+          "mix": 100,
+          "look": "a dark foliage green",
+          "hex": "#2f4a26",
+          "note": "Mixed into the paste, so the bush is coloured as it goes on."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a mid green",
+          "hex": "#5f7f38",
+          "note": "Over the top of each bush once fully dry."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a yellow green",
+          "hex": "#a3ad4a",
+          "note": "Lightly on the highest crumbs only."
+        }
+      ]
+    },
+    {
+      "key": "foam-hills",
+      "group": "stone",
+      "name": "Foam hills and cliffs",
+      "summary": "Expanding foam carved into light hills and cliffs for display boards",
+      "materials": [
+        "A wooden board",
+        "A can of expanding foam, or sheets of extruded foam board",
+        "A long snap-off blade knife and a fine hobby knife",
+        "Fine surface filler",
+        "Matt sealer and black paint",
+        "Model trees, tufts and moss"
+      ],
+      "howto": [
+        "Spray foam where hills should go, using less than you think as it grows, or stack cut foam board layers.",
+        "Carve slopes and cliff faces with the long blade in several passes, changing blades often.",
+        "Slice cracks with a fine knife first, then widen them with a blunt tool so the foam does not tear.",
+        "Spread fine filler over the bubbles and steps, then coat it in matt sealer mixed with black, not plain white glue.",
+        "Paint it and add trees, bushes and tufts, but never put super glue on bare foam, as it melts it."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a dark grey-brown",
+          "hex": "#4a4440",
+          "note": "Cover all the filler."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a light stone grey",
+          "hex": "#a9a49c",
+          "note": "Over the rock faces to bring out texture."
+        },
+        {
+          "technique": "Glaze",
+          "coats": 1,
+          "mix": 30,
+          "look": "a moss green",
+          "hex": "#5c7a3a",
+          "note": "Into hollows and on tops for moss."
+        }
+      ]
+    },
+    {
+      "key": "forest-floor",
+      "group": "plants",
+      "name": "Forest floor",
+      "summary": "Bark, soil, moss and leaves built up with height for woodland",
+      "materials": [
+        "Bark, cork or small rocks for the big shapes",
+        "Two-part epoxy putty for height",
+        "Dry garden soil, baked dry",
+        "Crumbled dried leaves, birch seeds or tea leaves, and moss clumps",
+        "A small twig for a fallen branch",
+        "Thick and thin super glue"
+      ],
+      "howto": [
+        "Press putty onto the base for height and shape it with wet fingers, pushing in any bits to half bury them.",
+        "Glue the biggest bark or rock pieces first, then smaller stones, then soil, always big to small.",
+        "Glue a twig across one side as a fallen branch and settle it into the ground.",
+        "Scatter soil and leaf litter, or set single leaves with tweezers, and lock it with thin super glue.",
+        "Once painted, add moss, bent paper ferns and tufts in clusters with white glue, against rocks and in hollows."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a dark muted green",
+          "hex": "#2c3a27",
+          "note": "The darkest tone, mixed a little into every earth colour too."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a mid moss green",
+          "hex": "#5a7034",
+          "note": "Build up, getting brighter as you go."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a yellow green",
+          "hex": "#9aaa3c",
+          "note": "Only the raised areas and the moss."
+        },
+        {
+          "technique": "Layer",
+          "coats": 1,
+          "mix": 100,
+          "look": "a green-brown",
+          "hex": "#5a4a30",
+          "note": "Branch and bark, with a little green in the brown."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 40,
+          "look": "a moss green",
+          "hex": "#3d6a2a",
+          "note": "Stippled onto rocks for fine moss, never over the whole base."
+        }
+      ]
+    },
+    {
+      "key": "glowing-sewer",
+      "group": "stone",
+      "name": "Glowing sewer",
+      "summary": "Blue-grey sewer stone with rusty grates and glowing green sludge",
+      "materials": [
+        "Stone or brick sewer base toppers",
+        "Black and white spray undercoat",
+        "A blue-black acrylic ink and a teal paint",
+        "Dark oil paint and white spirit",
+        "White, a fluorescent paint in bright green and a little yellow",
+        "Steel paint and rust pigment"
+      ],
+      "howto": [
+        "Prime it all black, dust white from above, then line the brick joints with a thin dark wash.",
+        "Glaze a see-through blue-black over the stone, then stipple teal on with a wiped big brush.",
+        "Oil wash the stone dark, wipe the tops after half an hour or so, then stipple teal again.",
+        "Paint the sludge white first, then fluorescent paint in bright green with a touch of yellow over it.",
+        "Paint grates steel, add rust dabs, and rub rust pigment into cracks and along the metal."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Glaze",
+          "coats": 1,
+          "mix": 40,
+          "look": "a deep teal",
+          "hex": "#24414a",
+          "note": "See-through, so the light undercoat varies it."
+        },
+        {
+          "technique": "Stipple",
+          "coats": 1,
+          "mix": 100,
+          "look": "a speckled teal",
+          "hex": "#3f7f86",
+          "note": "Stab straight down, dragging gives streaks."
+        },
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a glowing green",
+          "hex": "#8cff3a",
+          "note": "Over white so it stays bright."
+        },
+        {
+          "technique": "Layer",
+          "coats": 1,
+          "mix": 100,
+          "look": "a bright orange rust",
+          "hex": "#d2621f",
+          "note": "Tiny dabs on rivets and grate edges."
+        }
+      ]
+    },
+    {
+      "key": "grey-rocky-ground",
+      "group": "stone",
+      "name": "Grey rocky ground",
+      "summary": "A dark textured base drybrushed up to grey with a touch of rust",
+      "materials": [
+        "Textured paste or sand and small rocks",
+        "Black or dark brown paint",
+        "Two or three greys",
+        "A large flat drybrush",
+        "Black and brown washes",
+        "Rust coloured pigment powder and a few grass tufts"
+      ],
+      "howto": [
+        "Texture with paste, or stones first and then fine sand on thinned white glue, keeping clear of the feet.",
+        "Base everything black or dark brown, getting right into every gap so they read as shadow.",
+        "Drybrush the whole base dark grey, then paler greys in stages on the raised rocks.",
+        "For variety, wash one part of the base black and another brown, then drybrush the pale grey back over it.",
+        "Work a little rust pigment in round the rocks, then add a few tufts to hide any patches where grit fell off."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a near black",
+          "hex": "#151515",
+          "note": "Solid over all the texture."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a dark grey",
+          "hex": "#3d4447",
+          "note": "Over everything."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a mid blue-grey",
+          "hex": "#6d7b80",
+          "note": "Lighter, on the raised rocks, with a little blue to keep the grey cool."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a pale grey",
+          "hex": "#a9b0b2",
+          "note": "Very light, only the sharpest edges."
+        }
+      ]
+    },
+    {
+      "key": "meadow-and-flowers",
+      "group": "plants",
+      "name": "Meadow and flowers",
+      "summary": "Stained sand under layered tufts and flowers for green grassland",
+      "materials": [
+        "Sieved sand in mixed grain sizes",
+        "White glue",
+        "Loose grass fibres",
+        "Grass, shrub and flower tufts",
+        "Red and green earth pigments",
+        "Tweezers and a few dried real grass stems"
+      ],
+      "howto": [
+        "Glue sand over the base, tap off the extra and wipe the rim clean with a finger.",
+        "Once dry, flood on a very thin brown, then drybrush pale bone and paint the rim before any grass.",
+        "Glue tufts from low to high, shrubs first, flowers overlapping them, then grass in the gaps.",
+        "Dab glue in patches and press grass fibres on, then tap off the loose ones.",
+        "Add a few real grass stems, dried flat for a week, and stipple red and green pigment on bare ground."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 20,
+          "look": "a mid brown",
+          "hex": "#6b4a2e",
+          "note": "Thin as ink and flooded into the sand."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a pale bone",
+          "hex": "#d8cba8",
+          "note": "Light, with the brush wiped almost dry."
+        },
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a dark brown",
+          "hex": "#3a2616",
+          "note": "For the rim, before the grass goes on."
+        }
+      ]
+    },
+    {
+      "key": "natural-tufts",
+      "group": "plants",
+      "name": "Natural tufts",
+      "summary": "Cut, tint and tuck tufts so they look rooted, not stuck on",
+      "materials": [
+        "Ready-made grass tufts in two shades and sizes",
+        "A one-coat paint in a muted green or straw",
+        "A sharp hobby knife and tweezers",
+        "Super glue or white glue",
+        "A brown shade and a pale paint",
+        "Earth coloured pigment powder"
+      ],
+      "howto": [
+        "Tint bright, plastic-looking tufts on their backing sheet with a one-coat paint and let them dry.",
+        "Pull off stray fibres, then cut each tuft in half from the side so a flat edge sits against rocks and walls.",
+        "Dip each tuft in glue and push it hard into cracks, corners and dips where water would gather.",
+        "Put the tallest in shelter and a few tiny ones in the open, with only a few on ruined or muddy bases.",
+        "Dab thinned brown into the roots, stroke pale colour over the tips, then flow watery pigment round the roots."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 60,
+          "look": "a dark earth brown",
+          "hex": "#3e2c1c",
+          "note": "Poke it into the root of the tuft until it soaks in."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a pale straw",
+          "hex": "#d6c98e",
+          "note": "Stroke the tips only, using the same highlight as the rocks."
+        },
+        {
+          "technique": "Texture",
+          "coats": 1,
+          "mix": 100,
+          "look": "a dusty earth",
+          "hex": "#7a6044",
+          "note": "Use the base colour so the tuft looks grown in."
+        }
+      ]
+    },
+    {
+      "key": "pale-stone-ground",
+      "group": "stone",
+      "name": "Pale dusty stone",
+      "summary": "Light sandy stone with grimy edges and dust matched on the feet",
+      "materials": [
+        "A textured base",
+        "Brown, sandy and ivory paints",
+        "A small sponge",
+        "Brown oil paint and odourless spirits",
+        "Light earth pigment powder",
+        "A soft make-up brush for the last drybrush"
+      ],
+      "howto": [
+        "Base the ground brown, then build up through lighter browns to ivory, brighter than feels right.",
+        "Sponge a dark greenish brown grime onto the edges of the base.",
+        "Wash with thinned oil paint, then wipe back with clean spirits where the stone should be brightest.",
+        "Mix pigment with water, run it round the feet and dry it with a hair dryer.",
+        "Dab dry pigment onto the feet and lower legs so model and ground share the same dust."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 1,
+          "mix": 100,
+          "look": "an earth brown",
+          "hex": "#6b5233",
+          "note": "Solid coat over the whole ground."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a sandy stone",
+          "hex": "#c2b394",
+          "note": "Over most of the base."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "an ivory",
+          "hex": "#ece3c8",
+          "note": "Strong, as the wash tones it down, with a soft brush to spare the edges."
+        },
+        {
+          "technique": "Sponge",
+          "coats": 1,
+          "mix": 100,
+          "look": "a greenish brown",
+          "hex": "#4a4430",
+          "note": "Edges of the base only."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 30,
+          "look": "a warm brown",
+          "hex": "#7a6038",
+          "note": "Wipe it back on the brightest stone, or use a yellow-brown for a sunnier stone."
+        }
+      ]
+    },
+    {
+      "key": "paper-plants",
+      "group": "plants",
+      "name": "Paper plants",
+      "summary": "Laser cut paper ferns and leaves shaped, tinted and glued in natural clumps",
+      "materials": [
+        "Laser cut paper plant sheets",
+        "Tweezers and a hobby knife",
+        "A blunt point such as a ball tool",
+        "Strong hair gel, to stiffen shaped leaves",
+        "White glue or super glue",
+        "A green shade and a soft brown shade"
+      ],
+      "howto": [
+        "Pop each plant out of the sheet gently, using tweezers for small bits left in the frame.",
+        "Bend and twist every plant so none sit flat, opening healthy leaves out and letting dead ones droop and curl.",
+        "Run a blunt point down a leaf so its sides lift, or roll the tip to curl it, and hair gel holds the shape.",
+        "Before gluing, wash live plants green and dead ones soft brown to hide the white cut edges.",
+        "Glue ferns first, then larger leaves, then a few tufts, letting them hide joins and spill over rocks."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 40,
+          "look": "a fresh green",
+          "hex": "#3d6a2a",
+          "note": "Thin it well so it tints the print without hiding it."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 40,
+          "look": "a soft brown",
+          "hex": "#6e5638",
+          "note": "On dead or dying leaves, and on the tips of a few live ones."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a pale fresh green",
+          "hex": "#9ab860",
+          "note": "Lightly over the leaf edges while the plant is still loose."
+        }
+      ]
+    },
+    {
+      "key": "puddles-and-water",
+      "group": "cold",
+      "name": "Puddles and water",
+      "summary": "Tinted gloss puddles and water gel in the low parts of a base",
+      "materials": [
+        "Thick gloss varnish or a ready-mixed water gel",
+        "A tinted one-coat paint",
+        "A pipette or old brush",
+        "A toothpick",
+        "A thick water gel for ripples",
+        "Two-part clear resin and tape, for deeper water"
+      ],
+      "howto": [
+        "Paint and finish the ground first, darkening the mud round each dip, as wet earth is darker.",
+        "Stir a single drop of tinted paint into thick gloss, blue-green for clean water or yellow-brown for swamp.",
+        "Fill the dips in thin layers, popping bubbles with a toothpick, and pull a little out with a wet brush for damp ground.",
+        "For deeper water, tape round the base edge and pour two-part resin in layers no more than about 6 mm thick.",
+        "Drag water gel into rings round rocks, then gloss over it, which also clears water that cured cloudy or scratched."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Glaze",
+          "coats": 1,
+          "mix": 20,
+          "look": "a murky green-brown",
+          "hex": "#4a4a2a",
+          "note": "Darken the bottom of the dip before the gloss goes in."
+        },
+        {
+          "technique": "Glaze",
+          "coats": 2,
+          "mix": 10,
+          "look": "a clean blue-green",
+          "hex": "#5e9a90",
+          "note": "One drop of paint in the gloss is plenty."
+        },
+        {
+          "technique": "Varnish",
+          "coats": 1,
+          "mix": 100,
+          "look": "a clear gloss",
+          "hex": "#eef4f2",
+          "note": "Top coat to level and clear the surface."
+        },
+        {
+          "technique": "Edge highlight",
+          "coats": 1,
+          "mix": 100,
+          "look": "a bright pale blue",
+          "hex": "#e2eef2",
+          "note": "A fine shine line where the water meets rock or wood."
+        }
+      ]
+    },
+    {
+      "key": "real-soil-bases",
+      "group": "ground",
+      "name": "Real soil and fine dirt",
+      "summary": "Sifted garden soil fine enough to keep small or sculpted bases crisp",
+      "materials": [
+        "Garden soil, dried right through",
+        "An old blender or mortar for grinding",
+        "A nylon stocking or very fine sieve",
+        "White glue thinned with water",
+        "A tub kept for fine dirt only",
+        "Thin super glue"
+      ],
+      "howto": [
+        "Dry the soil fully so it does not clump, grind it fine, pick out stones and twigs, and sift it through a stocking.",
+        "Keep a tub of only the finest dirt, as coarse grains look like boulders, and save any tiny roots for later.",
+        "Brush thinned white glue over the base, not letting it pool and fill any sculpted detail.",
+        "Dip the base into the tub, or spoon dirt over it, and tap off the excess once it grips.",
+        "Flow thin super glue over the dirt to seal it if you want to paint straight away."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a dark earth brown",
+          "hex": "#4a3626",
+          "note": "Thinned a little so it soaks into the dirt without clogging it."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a mid earth",
+          "hex": "#8a7052",
+          "note": "Over the whole base to bring out the grain."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a pale tan",
+          "hex": "#c4b08c",
+          "note": "Very light, on the highest grains only."
+        }
+      ]
+    },
+    {
+      "key": "red-desert",
+      "group": "ground",
+      "name": "Red desert",
+      "summary": "Dusty red ground and rocks drybrushed from deep red to bone",
+      "materials": [
+        "Cork pieces and small flat slate",
+        "Fine sand and white glue",
+        "Super glue",
+        "Crackle texture paint",
+        "Earth coloured pigments",
+        "Spray varnish"
+      ],
+      "howto": [
+        "Super glue cork and slate on, leaving room for the feet, then prime.",
+        "Brush glue round the rocks, leaving some bare patches, dip in sand and wipe the rim clean.",
+        "Paint the bare patches dark red brown, since this shows through the cracks later.",
+        "Lay crackle thickly on the patches, feather it into the sand with a wet brush, and seal it with varnish once dry.",
+        "Drybrush up through the colours without fully cleaning the brush, then dust on pigment and add a few tufts."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a dark red brown",
+          "hex": "#5a2a22",
+          "note": "On rocks and ground."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 50,
+          "look": "a warm red-brown",
+          "hex": "#8a4b2e",
+          "note": "Shades without killing the red, and a thin dark green deepens the lowest spots."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "an orange tan",
+          "hex": "#b0643e",
+          "note": "Rough pass over all the texture."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "an ochre",
+          "hex": "#d0a070",
+          "note": "Lighter, mostly on the rocks."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a dusty bone",
+          "hex": "#ddd2b0",
+          "note": "A very light touch on the highest edges."
+        }
+      ]
+    },
+    {
+      "key": "red-toadstools",
+      "group": "plants",
+      "name": "Red toadstools",
+      "summary": "Red caps washed brown and drybrushed up on pale stems",
+      "materials": [
+        "Small sculpted or cast toadstools, or putty caps on wire stems",
+        "Super glue and tweezers",
+        "A fine brush and an old brush for drybrushing",
+        "A dark brown shade and some clear medium",
+        "Moss or small tufts to sit round them"
+      ],
+      "howto": [
+        "Glue the toadstools in a small cluster of mixed sizes, in shade by a rock, root or tuft.",
+        "Paint the stems white and the caps a deep red, keeping the two colours apart.",
+        "Wash everything with dark brown thinned half and half with medium, giving the stems a second coat.",
+        "Drybrush the caps bright pink-red, then give the tops a gentle pass of pale pink.",
+        "Dot a few pale spots on the caps if you like, then tuck moss or tufts round the stems."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a clean white",
+          "hex": "#eeeae0",
+          "note": "Stems first, with a fine brush."
+        },
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a deep red",
+          "hex": "#a01c2a",
+          "note": "Caps only."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 50,
+          "look": "a dark brown",
+          "hex": "#3a2818",
+          "note": "Half and half with medium, with two coats on the stems."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a bright pink red",
+          "hex": "#e04a5a",
+          "note": "All over the caps."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a pale pink",
+          "hex": "#f0c0c8",
+          "note": "A gentle last pass on the top of each cap."
+        }
+      ]
+    },
+    {
+      "key": "resin-ice",
+      "group": "cold",
+      "name": "Deep resin ice",
+      "summary": "Clear resin over a mirror and tint, with cracks for real depth",
+      "materials": [
+        "Thin stick-on plastic mirror cut to the base shape",
+        "Clear UV curing resin and a UV lamp",
+        "Thinned blue and blue-black one-coat paints",
+        "Gloss varnish and coarse sandpaper",
+        "A tiny touch of white paint, for frosted ice",
+        "Snow paste for the edges"
+      ],
+      "howto": [
+        "Cut the mirror to the base, stick it down, then spread a thin layer of resin to the edge and cure it.",
+        "Spray or glaze thin blue in light layers, with blue-black in one area to suggest deep water.",
+        "Brush gloss on and work a wet brush over it so it dries cracked, then drag folded sandpaper across for scratches.",
+        "For frosted ice, stir far less than a drop of white into clear resin and set it in hollows and at the foot of snow.",
+        "Glue the model on and push snow paste round the edges and feet, which also hides resin that crept up them."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Glaze",
+          "coats": 2,
+          "mix": 30,
+          "look": "a pale ice blue",
+          "hex": "#6fa8d6",
+          "note": "Build it in light passes so the mirror still shines through."
+        },
+        {
+          "technique": "Glaze",
+          "coats": 1,
+          "mix": 30,
+          "look": "a deep blue-black",
+          "hex": "#1c2a44",
+          "note": "Only where you want the ice to look deepest."
+        },
+        {
+          "technique": "Varnish",
+          "coats": 1,
+          "mix": 100,
+          "look": "a clear gloss",
+          "hex": "#e8f1f8",
+          "note": "Brush on to bring the shine back over the tint."
+        }
+      ]
+    },
+    {
+      "key": "sand-and-rocks",
+      "group": "ground",
+      "name": "Sand and rocks",
+      "summary": "Warm sand with a few cool grey rocks and tufts, quick for a whole army",
+      "materials": [
+        "Small pieces of slate",
+        "Fine sand mixed with a little coarser grit",
+        "White glue",
+        "Super glue",
+        "Small dry tufts or grass fibres",
+        "Tweezers and a soft make-up brush"
+      ],
+      "howto": [
+        "Glue two to four slate pieces of different sizes on each base, with one stray rock away from the cluster.",
+        "Brush white glue out from the centre round the rocks, dip in sand and tap off the extra.",
+        "Wipe the rim and flick sand off the rocks while wet, then let it dry naturally, as a hair dryer blows grit off.",
+        "Drip thinned white glue over loose sand to lock it, then sweep off dust with a soft brush before priming.",
+        "Stain, wash and drybrush as below, then add a tuft or two with white glue."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 30,
+          "look": "a warm brown stain",
+          "hex": "#6b4a2b",
+          "note": "Very thin over sand and rocks, the sand soaks it up."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a mid sand",
+          "hex": "#a8865a",
+          "note": "Over the sand only, after a thin wash of black on the rocks."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a cool grey",
+          "hex": "#8a9196",
+          "note": "Over the rocks only, and jabbing it on with an old brush also works."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a pale bone",
+          "hex": "#ddd2b0",
+          "note": "Light pass over everything to tie it together."
+        },
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a khaki brown",
+          "hex": "#6e6341",
+          "note": "Neat rim, starting and ending at the back."
+        }
+      ]
+    },
+    {
+      "key": "sandbags-and-low-walls",
+      "group": "stone",
+      "name": "Sandbags and low walls",
+      "summary": "Putty sandbags laid over a low wall of small stacked stones",
+      "materials": [
+        "Small rounded stones or fine gravel",
+        "Super glue",
+        "Two-part epoxy putty",
+        "A sculpting tool",
+        "A hobby knife",
+        "A little water to stop the putty sticking"
+      ],
+      "howto": [
+        "Clear the front of the base and stack small stones into a low wall with dots of super glue.",
+        "Roll a thin strip of putty, flatten it slightly and cut it into small rectangles.",
+        "Lay the bags one at a time over the wall, overlapping like bricks, and press each so it sags naturally.",
+        "Press the edge of the knife along each bag to mark the seams and pinch the corners a little.",
+        "Let the putty cure fully, then paint the stones and the bags as separate steps."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a dark brown",
+          "hex": "#4a3523",
+          "note": "Cover all the stones in the wall."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 2,
+          "mix": 100,
+          "look": "a light brown",
+          "hex": "#9c8263",
+          "note": "Two passes pick out the shape of each stone."
+        },
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a pale olive",
+          "hex": "#8a8456",
+          "note": "On the bags, or a dull olive mixed with ochre works too."
+        },
+        {
+          "technique": "Layer",
+          "coats": 1,
+          "mix": 100,
+          "look": "a pale yellow khaki",
+          "hex": "#c4bd8a",
+          "note": "On the tops of the bags only."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 40,
+          "look": "a dark brown",
+          "hex": "#3a2a1c",
+          "note": "Run it along the seams and between the bags to outline them."
+        }
+      ]
+    },
+    {
+      "key": "sci-fi-deck-plates",
+      "group": "stone",
+      "name": "Sci-fi deck plates",
+      "summary": "A spaceship floor base from plastic card, tube and fine mesh",
+      "materials": [
+        "Plastic card about 1 mm thick",
+        "Plastic tube about 3 mm across",
+        "Offcuts of plastic frame",
+        "Fine steel mesh",
+        "Super glue",
+        "A compass cutter and a steel ruler"
+      ],
+      "howto": [
+        "Measure the top face of the base, which is smaller than its listed size, and cut a disc to match.",
+        "Pencil panel lines, cut thin slivers out between panels, glue them down and deepen the lines with a file.",
+        "Add tube as pipes and frame offcuts as steps, then file every end flush with the rim.",
+        "Lay mesh over the pipes, short of the edges, and hide its cut edges under thin card strips.",
+        "Make a dent with a knife tip and drill tiny holes in panel corners as bolts."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Prime",
+          "coats": 1,
+          "mix": 100,
+          "look": "a black",
+          "hex": "#111111",
+          "note": "Keeps everything under the mesh in shadow."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a dark grey",
+          "hex": "#4a4d50",
+          "note": "Heavy, buffed onto the panels, brightest just off centre like a spotlight."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 60,
+          "look": "a brown-black grime",
+          "hex": "#2e2419",
+          "note": "Swap between brown and black for uneven grime."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a light grey",
+          "hex": "#9a9c9e",
+          "note": "Light pass to catch the panel edges."
+        },
+        {
+          "technique": "Stipple",
+          "coats": 1,
+          "mix": 100,
+          "look": "an orange rust",
+          "hex": "#c2561e",
+          "note": "Small random patches, kept matt, with a dot of dark gloss for spilt oil."
+        }
+      ]
+    },
+    {
+      "key": "sea-waves",
+      "group": "cold",
+      "name": "Sea waves",
+      "summary": "Surf breaking on a cork rock, shaped from fast-setting putty",
+      "materials": [
+        "Cork, even an old bottle stopper, for the rock",
+        "Fast-setting two-part putty or a thick water gel",
+        "White glue",
+        "A dental spatula or sculpting tool",
+        "A craft knife",
+        "Loose grass fibres"
+      ],
+      "howto": [
+        "Carve and tear cork into a rock with natural edges and glue it over about two thirds of the base.",
+        "Knead a small amount of putty until the colour is even and press it onto the open area.",
+        "Push it into curling waves with quick, firm strokes, leaving flat room for the feet, as it sets in minutes.",
+        "Wash your hands after handling the putty and let it set hard before painting.",
+        "Paint the water and the rock, fix the figure on, and add a little grass on top of the rock."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a very deep navy",
+          "hex": "#1c2a4a",
+          "note": "The darkest water, left showing in the hollows."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 2,
+          "mix": 100,
+          "look": "an icy light blue",
+          "hex": "#9ec4dc",
+          "note": "Brush up the wave faces with plenty of paint, mixing lighter each pass."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a white",
+          "hex": "#f6f8fa",
+          "note": "Only on the crests and where the foam hits the rock."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a tan stone",
+          "hex": "#b8a07a",
+          "note": "On the rock, over a dark brown base coat."
+        },
+        {
+          "technique": "Varnish",
+          "coats": 1,
+          "mix": 100,
+          "look": "a clear gloss",
+          "hex": "#eef3f6",
+          "note": "On the water only, so it looks wet against the matt rock."
+        }
+      ]
+    },
+    {
+      "key": "slate-shards",
+      "group": "stone",
+      "name": "Slate shards",
+      "summary": "Real slate pushed up through the earth for broken, burst ground",
+      "materials": [
+        "A natural slate tile broken with a hammer",
+        "Earth texture paste or two-part epoxy putty",
+        "Fine dry garden soil",
+        "White glue",
+        "A dark brown shade",
+        "Earth coloured pigment powders"
+      ],
+      "howto": [
+        "Wrap the slate in a cloth before you hit it, then pick the best sharp shards.",
+        "Glue the shards so they angle upward, as if the ground has burst open.",
+        "Blend the gaps round them with paste or putty and sprinkle soil on while wet, piling more against the shards.",
+        "Once dry, lock any loose soil with thinned white glue so it does not shed under the brush.",
+        "Paint and wash the whole base, then dab pigments on for colour variation."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a blue-black",
+          "hex": "#1e2229",
+          "note": "Dark base over the whole ground."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 50,
+          "look": "a muddy blue-brown",
+          "hex": "#2f2a2b",
+          "note": "Over everything, into the slate layers."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a slate grey",
+          "hex": "#7a7e86",
+          "note": "Catch the split edges of the shards."
+        },
+        {
+          "technique": "Texture",
+          "coats": 1,
+          "mix": 100,
+          "look": "an earthy brown",
+          "hex": "#7a5c3e",
+          "note": "Pigment dabbed on the earth, not the slate."
+        }
+      ]
+    },
+    {
+      "key": "snow-bases",
+      "group": "cold",
+      "name": "Snow drifts",
+      "summary": "Gritty white snow over cold blue ground, with rocks pushed bright",
+      "materials": [
+        "Cork pieces and a few small rocks",
+        "Gritty texture paste",
+        "A light textured modelling paste or ready-mixed snow paste",
+        "Fine snow powder and a pinch of pearly sparkle powder",
+        "Or white glue thickened with baking soda and a drop of white",
+        "An old brush and a pot of water"
+      ],
+      "howto": [
+        "Glue cork and rocks inside the rim, hide the cork under texture paste, then prime dark grey.",
+        "Drybrush the ground cold blues and glue in tufts before any snow, as both show through in the shadows.",
+        "Use less than you think, dabbing paste into cracks and against rocks, thick in drifts and thin at the edges.",
+        "While wet, sprinkle snow powder and a pinch of sparkle over it and tap off the extra, as the paste acts as glue.",
+        "For homemade snow, stir baking soda into white glue until it holds a peak, with a drop of white so it dries bright."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a blue-black",
+          "hex": "#1e2430",
+          "note": "Cover the rocks and ground before the snow goes on."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a slate grey",
+          "hex": "#5e6a78",
+          "note": "Brush the rocks firmly so their texture shows."
+        },
+        {
+          "technique": "Edge highlight",
+          "coats": 1,
+          "mix": 100,
+          "look": "a pale blue-grey",
+          "hex": "#b8c6d4",
+          "note": "Push rock edges brighter than feels right, as snow makes them read dark."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a pale icy blue",
+          "hex": "#b8d4e4",
+          "note": "On bare ground under thin snow, not grey."
+        },
+        {
+          "technique": "Glaze",
+          "coats": 1,
+          "mix": 20,
+          "look": "a soft cold blue",
+          "hex": "#9ab8d0",
+          "note": "Very thin into the undersides of the drifts for shadow."
+        }
+      ]
+    },
+    {
+      "key": "snowy-flagstones",
+      "group": "cold",
+      "name": "Snowy flagstones",
+      "summary": "Grey flagstones with tints, dead leaves and blue-shadowed snow",
+      "materials": [
+        "A sculpted flagstone base",
+        "Snow texture paste",
+        "An old brush for spooning",
+        "A very thin blue paint",
+        "Plastic glue",
+        "Tissue for handling"
+      ],
+      "howto": [
+        "Test-fit the painted model on the base, holding it in tissue, before painting the base.",
+        "Paint the stones and ground as below, then pick out leaves and any small details.",
+        "Spoon snow paste into drifts with an old brush, leaving room for the feet, and build it up once dry.",
+        "While the snow is still wet, touch in a very thin blue so it soaks in as cold shadow.",
+        "When fully dry, glue the model on and paint the rim black."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 1,
+          "mix": 100,
+          "look": "a brown-grey",
+          "hex": "#4b4440",
+          "note": "On the stone, with warm brown on any earth."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a warm mid grey",
+          "hex": "#7a7470",
+          "note": "Overbrush the stone, then a thin wash of black over it all."
+        },
+        {
+          "technique": "Edge highlight",
+          "coats": 1,
+          "mix": 100,
+          "look": "a light grey",
+          "hex": "#a7a9a6",
+          "note": "Flagstone edges and a few scratches."
+        },
+        {
+          "technique": "Glaze",
+          "coats": 1,
+          "mix": 30,
+          "look": "a deep green",
+          "hex": "#2f3d2c",
+          "note": "Thin patches on random stones for age."
+        },
+        {
+          "technique": "Glaze",
+          "coats": 1,
+          "mix": 10,
+          "look": "a cold blue",
+          "hex": "#8aa8c8",
+          "note": "Drop into the wet snow for shadow."
+        }
+      ]
+    },
+    {
+      "key": "static-grass",
+      "group": "plants",
+      "name": "Grass fibres and scatter",
+      "summary": "Dipped grass fibres, layered fine scatter and raised moss paste for grassy bases",
+      "materials": [
+        "Grass fibres in two or three shades, and very fine foam scatter",
+        "Thin super glue or white glue",
+        "Tweezers",
+        "A tub of grass fibres for dipping",
+        "Dark green paint and paper towel, for moss paste",
+        "A balloon and a wool jumper, to lift the fibres"
+      ],
+      "howto": [
+        "Dot glue in patches on a painted, dry base, leaving bare ground between, dip it in the tub and flick the underside.",
+        "For taller grass, dab a clump on wet glue with tweezers and pull away, or hold a charged balloon just above it.",
+        "Build in layers, with fine scatter first as low texture, then grass fibres, then a few tufts for bigger clumps.",
+        "For raised moss, mix fine scatter with plenty of white glue, a drop of dark green and very little water.",
+        "Blot the brush on paper towel, dab the paste where moss grows and press it down, as it grips only once dry."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 30,
+          "look": "a thin brown",
+          "hex": "#4a3a24",
+          "note": "Dulls bright packet green and dirties the roots."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a pale straw",
+          "hex": "#cfc690",
+          "note": "Lightly over the tips once dry, or varnish first to stiffen it for a full repaint."
+        }
+      ]
+    },
+    {
+      "key": "swamp-and-bog",
+      "group": "plants",
+      "name": "Swamp and bog",
+      "summary": "Dark wet mud, a murky pond, a mossy log and hanging moss with a gloss finish",
+      "materials": [
+        "Dark brown mud texture paste",
+        "Grass tufts and moss pads in several greens",
+        "Cotton wool and white glue for hanging moss",
+        "A green shade",
+        "Clear gloss wet-effect gel or water effect",
+        "A real twig for a log"
+      ],
+      "howto": [
+        "Dab a thick layer of mud paste on and press tufts, moss pads, a twig log or rocks into it while wet.",
+        "Leave a hollow free for a pond and paint its bed dark in the middle, fading to lighter green at the shore.",
+        "For hanging moss, soak cotton wool in one part glue to three of water and tease it into strands on plastic.",
+        "Once dry, drape the strands over the log and wash them dark green, with a lighter green touched on top.",
+        "Run a green shade into the mud for algae, then add gloss gel to the pond and low ground so it looks wet."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Wet blend",
+          "coats": 1,
+          "mix": 100,
+          "look": "a dark green",
+          "hex": "#1f3a24",
+          "note": "Pond bed, dark in the deep end blending to grass green at the shore."
+        },
+        {
+          "technique": "Glaze",
+          "coats": 1,
+          "mix": 20,
+          "look": "a near black",
+          "hex": "#0e0e0e",
+          "note": "Only in the deepest part of the pond."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 40,
+          "look": "a murky green",
+          "hex": "#4a5a2a",
+          "note": "Into the mud for algae, feathered out at the edges."
+        },
+        {
+          "technique": "Varnish",
+          "coats": 1,
+          "mix": 100,
+          "look": "a wet gloss",
+          "hex": "#e8eef0",
+          "note": "Gloss over the matt wash makes the mud read as boggy."
+        }
+      ]
+    },
+    {
+      "key": "texture-paint-bases",
+      "group": "ground",
+      "name": "Texture paint ground",
+      "summary": "A quick gritty base spread on with an old brush and tidied",
+      "materials": [
+        "Gritty texture paint, or a large tub of artist's texture paste",
+        "An old flat brush or a flexible plastic spatula",
+        "A clean damp brush",
+        "Fine grit or a few small stones",
+        "A couple of grass tufts and tweezers",
+        "Paint for the rim"
+      ],
+      "howto": [
+        "Pick a ground that contrasts with the model, light ground for a dark model and dark for a light one.",
+        "Blob the paste in the middle and spread it out to the feet, about 1 to 2 mm thick so it suits the scale.",
+        "Wipe paste off the feet with a clean damp brush, and press grit in while wet, as the paste acts as glue.",
+        "Let it air dry for up to an hour, as a hair dryer can skin the surface, and rinse the brush under a strong tap.",
+        "Paint the rim neatly, then press a tuft or two on with tweezers so no grass sticks to wet rim paint."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 40,
+          "look": "a warm brown",
+          "hex": "#5c4430",
+          "note": "Brings out the grit if the paste came out flat."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a light earth",
+          "hex": "#b8a07c",
+          "note": "Brush firmly with a wide flat brush, as the grit is locked in."
+        },
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a near black",
+          "hex": "#1c1a18",
+          "note": "For the rim, painted last."
+        }
+      ]
+    },
+    {
+      "key": "tile-grout-ground",
+      "group": "ground",
+      "name": "Tile grout ground",
+      "summary": "Cheap sanded tile grout that grips the base without glue",
+      "materials": [
+        "Sanded tile grout for grit, or unsanded for a smoother ground",
+        "A metal palette knife or an old spoon",
+        "A few small rocks",
+        "Brown acrylic ink or a brown shade",
+        "Black paint or acrylic ink for the rim",
+        "A light tan for drybrushing"
+      ],
+      "howto": [
+        "Spread a thin layer of grout over the top of the base with the palette knife, and it sticks without extra glue.",
+        "Press in a few small rocks while it is soft, then let it dry, which takes under an hour.",
+        "Left plain, its own colour reads as beach sand, so it can be inked straight away.",
+        "For darker earth, flood brown acrylic ink over it so the colour soaks right in, and let it dry.",
+        "Drybrush a light tan over the grains and paint the rim black for a neat edge."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 50,
+          "look": "an earth brown",
+          "hex": "#5b3e26",
+          "note": "Use plenty so it soaks into the grout."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a light tan",
+          "hex": "#c2a77e",
+          "note": "Catch just the tops of the grains."
+        },
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a near black",
+          "hex": "#1a1a1a",
+          "note": "On the rim only."
+        }
+      ]
+    },
+    {
+      "key": "tinted-moss-on-rocks",
+      "group": "plants",
+      "name": "Tinted moss",
+      "summary": "Green tint dropped onto drybrushed rocks for quick moss",
+      "materials": [
+        "A finished, drybrushed rocky or earth base",
+        "A light green one-coat paint",
+        "A darker green one-coat paint",
+        "A clean, very wet brush",
+        "A pale bone paint",
+        "Fine green scatter and thin super glue, for raised moss"
+      ],
+      "howto": [
+        "Start from a base that is already painted and drybrushed.",
+        "Drop a little light green onto parts of the rocks, mostly on tops and the shaded side.",
+        "Push it around with a very wet clean brush so it settles into the texture, adding more for stronger colour.",
+        "Once dry, add a darker green the same way in a few places, with a touch of brown in it to look more natural.",
+        "Drybrush pale bone lightly to blend, then for raised moss glue fine scatter in cracks and dull it with a brown shade."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Glaze",
+          "coats": 1,
+          "mix": 40,
+          "look": "a light moss green",
+          "hex": "#7a9a3a",
+          "note": "Let it settle into the texture, as it looks patchy until it dries."
+        },
+        {
+          "technique": "Glaze",
+          "coats": 1,
+          "mix": 40,
+          "look": "a deep green",
+          "hex": "#2f4a24",
+          "note": "A few patches only, inside the lighter moss."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a pale bone",
+          "hex": "#ddd3b2",
+          "note": "Very light, to tie moss and rock together."
+        }
+      ]
+    },
+    {
+      "key": "trees-from-twigs",
+      "group": "plants",
+      "name": "Trees from roots and twigs",
+      "summary": "Model trees from dried roots and twigs, with putty hiding the joins",
+      "materials": [
+        "Dry roots and twigs in a range of thicknesses",
+        "Super glue and accelerator",
+        "Two-part epoxy putty and a sculpting tool",
+        "A pin vice and brass rod for pinning",
+        "Clump foliage or sea moss sprigs, and fine scatter",
+        "White glue"
+      ],
+      "howto": [
+        "Collect far more dry roots and twigs than you need, and pick a main tree big enough to tower over the figure.",
+        "Place the largest tree first, then smaller ones either side to frame the figure, one running past the top.",
+        "Glue with super glue and accelerator, one branch at a time, letting each set before the next goes on.",
+        "Press putty into the gaps and joins, curing each layer, then drag a tool along the grain so it reads as bark.",
+        "Fix foliage with super glue on the twig and white glue between clumps, and pin the figure so it always refits."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a dark bark brown",
+          "hex": "#3a2c20",
+          "note": "Over wood and putty so the joins disappear."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a grey-brown",
+          "hex": "#7a6e60",
+          "note": "Along the grain to bring out the bark."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a pale grey",
+          "hex": "#b8b0a0",
+          "note": "Lightly on the highest ridges and roots."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 40,
+          "look": "a moss green",
+          "hex": "#4a5a2a",
+          "note": "Into the roots and shaded side, alternating with thin brown for damp bark."
+        }
+      ]
+    },
+    {
+      "key": "urban-ruins",
+      "group": "stone",
+      "name": "Urban ruins",
+      "summary": "Ruined city ground of slabs, bricks and rubble in dirty grey",
+      "materials": [
+        "Broken floor slabs or small slate pieces",
+        "Plastic frame offcuts cut into bricks, planks and rubble",
+        "Small beams and rubble bits",
+        "Sand, white glue and super glue",
+        "Texture paste",
+        "Rust, red brick and pale dust pigments"
+      ],
+      "howto": [
+        "Build one focal pile of beams and bricks leaning together, dry fitting the model so the feet sit firm.",
+        "Lay broken slabs round it, fill cracks with chopped frame plastic or crushed rubble, the rest with texture paste.",
+        "Stain everything a thin grey-brown, then wash brown and olive together without rinsing for grime.",
+        "Drybrush the slabs grey and pick out a few bricks in two or three warm tones, starting lighter than you want.",
+        "Add rust on metal, red brick dust on broken bricks, then pale dust on the ground and feet, fixed with matt varnish."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 20,
+          "look": "a brown-grey stain",
+          "hex": "#4b4440",
+          "note": "Heavily thinned over everything."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a mid grey",
+          "hex": "#8d9397",
+          "note": "Over the slabs and sand."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a warm stone",
+          "hex": "#a8987e",
+          "note": "Over the rocks and bricks only."
+        },
+        {
+          "technique": "Layer",
+          "coats": 1,
+          "mix": 100,
+          "look": "a rust brown",
+          "hex": "#8a4a2a",
+          "note": "On beams and metal bits."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a pale bone",
+          "hex": "#ddd2b0",
+          "note": "Light pass over everything to unify it."
+        }
+      ]
+    },
+    {
+      "key": "weathered-marble",
+      "group": "stone",
+      "name": "Weathered marble",
+      "summary": "Quick old marble or stone flooring with dirt and a hint of moss",
+      "materials": [
+        "A base with sculpted stone or ruins",
+        "Black and grey spray undercoat",
+        "A large drybrush",
+        "A medium brush for soil",
+        "Brown and green washes",
+        "A dry wipe stretched tight, for airbrushed veins"
+      ],
+      "howto": [
+        "Prime it all black and dust grey from above.",
+        "Drybrush the stone deep ivory with a circular motion, leaving grey in the recesses.",
+        "Paint soil brown, wash brown and green at once, and let it dry fully so the next drybrush does not smear.",
+        "Bring the ivory back, dust pale bone over it all, and paint the rim matt black.",
+        "For veined marble, airbrush pale greys and white through a wipe stretched tight over the base, then gloss it."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a deep ivory",
+          "hex": "#d8c9a3",
+          "note": "Heavy, leaving grey in the recesses."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 60,
+          "look": "a mossy brown",
+          "hex": "#4a3d22",
+          "note": "Mix brown and green on the base for age."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a warm ivory",
+          "hex": "#dccfa8",
+          "note": "Lighter pass to bring the marble back."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a pale bone",
+          "hex": "#ece0c0",
+          "note": "Very light dusting over everything."
+        }
+      ]
+    },
+    {
+      "key": "wet-muddy-ground",
+      "group": "ground",
+      "name": "Wet muddy earth",
+      "summary": "Glossy churned mud splashed up the boots and worked into tufts and puddles",
+      "materials": [
+        "Wet mud texture paint or a thick brown texture paste",
+        "Clear heavy gel with a little dark brown pigment, for glossy mud",
+        "Water and an old brush",
+        "A stiff short brush and a toothpick, for splatter",
+        "Grass tufts in mixed sizes",
+        "Gloss varnish for puddles"
+      ],
+      "howto": [
+        "Spread mud thickly round the feet, with a little sand or root bits mixed in, then add more for mounds and ruts.",
+        "Thin some with water and stab it onto the boots, or flick it from a stiff brush with a toothpick for spatter.",
+        "Press footprint dips into the wet mud with the back of a brush.",
+        "Glue on tufts, then brush thinned mud over them so they look trampled rather than fresh.",
+        "Once painted, leave raised mud matt and lighter, and gloss the dips and lowest mud so it looks fresh and wet."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a dark warm brown",
+          "hex": "#3e2b20",
+          "note": "Over a dark primer, on every base at once so they match."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a khaki brown",
+          "hex": "#6f6146",
+          "note": "A firm pass to lift the ridges of the mud."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 40,
+          "look": "a green-brown",
+          "hex": "#3d4129",
+          "note": "Over everything for a grimy, slightly mossy tone."
+        },
+        {
+          "technique": "Varnish",
+          "coats": 2,
+          "mix": 100,
+          "look": "a clear gloss",
+          "hex": "#eef0ec",
+          "note": "Only in the hollows and on the wettest mud."
+        }
+      ]
+    },
+    {
+      "key": "wooden-plank-floors",
+      "group": "stone",
+      "name": "Wooden plank floors",
+      "summary": "Weathered wooden planks for ship decks, floors and walkways",
+      "materials": [
+        "Balsa or thin wooden strips in a few widths",
+        "Thin super glue",
+        "A hobby knife and an awl or pin",
+        "Fine sandpaper",
+        "Black, brown and grey washes",
+        "Tissue"
+      ],
+      "howto": [
+        "Glue wooden strips across the base in a few widths, leaving a snapped board or small gaps for interest.",
+        "Soak the wood with thin super glue to harden it, then trim the overhang flush with the rim.",
+        "Gouge and scratch the planks along the grain and press nail holes near the ends with an awl.",
+        "Sand the edge smooth, prime, and paint the planks in slightly different browns or greys.",
+        "Wash neighbouring planks with different washes, then wipe the tops back with damp tissue so dirt stays in the gaps."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Prime",
+          "coats": 1,
+          "mix": 100,
+          "look": "a black",
+          "hex": "#111111",
+          "note": "Keeps the gaps between planks dark."
+        },
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a weathered brown",
+          "hex": "#6b5a46",
+          "note": "Vary it a little from plank to plank."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 50,
+          "look": "a grime brown",
+          "hex": "#4a3b28",
+          "note": "Swap to black or grey on the next plank, then wipe the tops back."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a pale grey wood",
+          "hex": "#a8a090",
+          "note": "Along the grain, not across it."
+        },
+        {
+          "technique": "Glaze",
+          "coats": 1,
+          "mix": 30,
+          "look": "a soft blue green",
+          "hex": "#3f7a5a",
+          "note": "Into a few low joins and plank ends as algae."
+        }
+      ]
+    },
+    {
+      "key": "worn-grass-pitch",
+      "group": "plants",
+      "name": "Worn grass pitch",
+      "summary": "Cracked dry earth, tufts and faded white lines like a playing field",
+      "materials": [
+        "Crackle texture paste",
+        "Gritty texture paste",
+        "A beige brown paint and wash",
+        "Grass tufts in two colours, or grass fibres",
+        "A white paint",
+        "Masking tape and a small sponge"
+      ],
+      "howto": [
+        "Paint the base first so any wide cracks do not show bare black.",
+        "Mix crackle with a little gritty paste and spread it on, then let it dry fully.",
+        "Wash with a beige brown and drybrush the raised chunks.",
+        "Stick on tufts in two shades with their tops pressed different ways, or trim grass fibres flat for short turf.",
+        "Mask a line and sponge or stipple thick white along it for a worn marking, then paint the rim black."
+      ],
+      "paintSteps": [
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 40,
+          "look": "a beige brown",
+          "hex": "#7a6448",
+          "note": "Into all the cracks."
+        },
+        {
+          "technique": "Dry brush",
+          "coats": 1,
+          "mix": 100,
+          "look": "a dry tan",
+          "hex": "#c2ac84",
+          "note": "On the raised chunks only."
+        },
+        {
+          "technique": "Stipple",
+          "coats": 1,
+          "mix": 100,
+          "look": "a chalky white",
+          "hex": "#ece8de",
+          "note": "Broken, patchy line rather than a solid stripe."
+        }
+      ]
+    }
+  ]
+}

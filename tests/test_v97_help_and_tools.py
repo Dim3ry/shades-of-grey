@@ -76,7 +76,8 @@ def main():
         print("\n--- 2. Guides ---")
         page.click('.tabs button[data-tab="guides"]')
         settle(page)
-        check("Guides shows Detail recipes and Basing as categories", [x.rstrip("0123456789") for x in texts(page, ".guides-cats .guides-row")] == ["Detail recipes", "Basing"]   # X3: was fold-outs
+        # X8: the knowledge base adds four guide categories around these two, so the check is that both are there, not that they are alone
+        check("Guides shows Detail recipes and Basing as categories", {"Detail recipes", "Basing"} <= {x.rstrip("0123456789") for x in texts(page, ".guides-cats .guides-row")}   # X3: was fold-outs
               and page.locator("#cmp-wheel, #cmp-fold-mentor, #cmp-fold-ideas").count() == 0, texts(page, ".guides-cats .guides-row"))
         check("the Pro preview label shows in Guides", "Pro preview" in page.inner_text("#view-guides"))
         page.click('.guides-cats [data-cat="detail"]')   # X3: a category now, not a fold-out

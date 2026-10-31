@@ -1,0 +1,2979 @@
+{
+ "groups": [
+  {
+   "canonical": "colour",
+   "variants": [
+    "color",
+    "colors",
+    "colored",
+    "coloring",
+    "colr",
+    "colur",
+    "colours"
+   ]
+  },
+  {
+   "canonical": "colourful",
+   "variants": [
+    "colorful",
+    "colourfull",
+    "colorfull"
+   ]
+  },
+  {
+   "canonical": "discoloured",
+   "variants": [
+    "discolored",
+    "discolor",
+    "discolour",
+    "discoloration",
+    "discolouration"
+   ]
+  },
+  {
+   "canonical": "grey",
+   "variants": [
+    "gray",
+    "grays",
+    "greyish",
+    "grayish",
+    "greys"
+   ]
+  },
+  {
+   "canonical": "greyscale",
+   "variants": [
+    "grayscale",
+    "gray scale",
+    "grey scale",
+    "grey-scale",
+    "gray-scale"
+   ]
+  },
+  {
+   "canonical": "armour",
+   "variants": [
+    "armor",
+    "armors",
+    "armr"
+   ]
+  },
+  {
+   "canonical": "armoured",
+   "variants": [
+    "armored"
+   ]
+  },
+  {
+   "canonical": "mould",
+   "variants": [
+    "mold",
+    "molds",
+    "moulds",
+    "molded",
+    "moulded"
+   ]
+  },
+  {
+   "canonical": "magnetise",
+   "variants": [
+    "magnetize",
+    "magnetizing",
+    "magnetized",
+    "magnetising",
+    "magnetised",
+    "magnetisation",
+    "magnetization",
+    "magnet",
+    "magnets",
+    "magnetic",
+    "magnetizes",
+    "magnetises"
+   ]
+  },
+  {
+   "canonical": "practice",
+   "variants": [
+    "practise",
+    "practicing",
+    "practising",
+    "practiced",
+    "practised"
+   ]
+  },
+  {
+   "canonical": "organise",
+   "variants": [
+    "organize",
+    "organizing",
+    "organising",
+    "organized",
+    "organised",
+    "organization",
+    "organisation",
+    "organiser",
+    "organizer",
+    "organisers",
+    "organizers"
+   ]
+  },
+  {
+   "canonical": "customise",
+   "variants": [
+    "customize",
+    "customizing",
+    "customising",
+    "customized",
+    "customised"
+   ]
+  },
+  {
+   "canonical": "centre",
+   "variants": [
+    "center",
+    "centers",
+    "centres"
+   ]
+  },
+  {
+   "canonical": "modelling",
+   "variants": [
+    "modeling",
+    "modeler",
+    "modeller"
+   ]
+  },
+  {
+   "canonical": "aluminium",
+   "variants": [
+    "aluminum"
+   ]
+  },
+  {
+   "canonical": "vice",
+   "variants": [
+    "vise"
+   ]
+  },
+  {
+   "canonical": "plasticard",
+   "variants": [
+    "plastic card",
+    "plasticcard",
+    "styrene sheet",
+    "styrene sheets",
+    "plastic sheet",
+    "plastic sheets"
+   ]
+  },
+  {
+   "canonical": "hairdryer",
+   "variants": [
+    "hair dryer",
+    "hairdrier",
+    "hair drier",
+    "blow dryer",
+    "blowdryer"
+   ]
+  },
+  {
+   "canonical": "highlight",
+   "variants": [
+    "highlite",
+    "highlites",
+    "hilight",
+    "hilights",
+    "hilite",
+    "hilites",
+    "highlihgt",
+    "higlight",
+    "higlights",
+    "hightlight",
+    "hightlights",
+    "highligh",
+    "highlght",
+    "hi light",
+    "hi lights",
+    "hi-light"
+   ]
+  },
+  {
+   "canonical": "highlighting",
+   "variants": [
+    "highliting",
+    "hilighting",
+    "highlighing",
+    "higlighting",
+    "hightlighting"
+   ]
+  },
+  {
+   "canonical": "metallic",
+   "variants": [
+    "metalic",
+    "metalics",
+    "metallik",
+    "metalllic"
+   ]
+  },
+  {
+   "canonical": "silver",
+   "variants": [
+    "silverr",
+    "silvr"
+   ]
+  },
+  {
+   "canonical": "helmet",
+   "variants": [
+    "helmit",
+    "helmits",
+    "helmets",
+    "helment"
+   ]
+  },
+  {
+   "canonical": "palette",
+   "variants": [
+    "pallet",
+    "pallete",
+    "pallette",
+    "palete",
+    "pallets",
+    "palletes",
+    "pallettes"
+   ]
+  },
+  {
+   "canonical": "wet palette",
+   "variants": [
+    "wetpalette",
+    "wet pallet",
+    "wet pallete",
+    "wet pallette",
+    "wet palete"
+   ]
+  },
+  {
+   "canonical": "recipe",
+   "variants": [
+    "recipie",
+    "recipies",
+    "recipes",
+    "recepie",
+    "recipe s"
+   ]
+  },
+  {
+   "canonical": "consistency",
+   "variants": [
+    "consistancy",
+    "consistensy",
+    "consistancey"
+   ]
+  },
+  {
+   "canonical": "technique",
+   "variants": [
+    "techinque",
+    "tecnique",
+    "techniqe",
+    "techiques",
+    "technic"
+   ]
+  },
+  {
+   "canonical": "weathering",
+   "variants": [
+    "weathring",
+    "wethering",
+    "weatherin"
+   ]
+  },
+  {
+   "canonical": "zenithal",
+   "variants": [
+    "zenith",
+    "zenethal",
+    "zenital",
+    "zenithial",
+    "zenithal prime",
+    "zenithal priming",
+    "zenithal highlight",
+    "zenithal spray",
+    "zenith prime",
+    "white from above",
+    "white from the top",
+    "spray from above",
+    "spray white from above",
+    "spray white from the top",
+    "top down white",
+    "top-down spray"
+   ]
+  },
+  {
+   "canonical": "primer",
+   "variants": [
+    "primmer",
+    "primier",
+    "primr",
+    "priimer",
+    "primers"
+   ]
+  },
+  {
+   "canonical": "miniature",
+   "variants": [
+    "minature",
+    "minatures",
+    "miniture",
+    "minitures",
+    "miniatur",
+    "minaiture",
+    "minaitures"
+   ]
+  },
+  {
+   "canonical": "model",
+   "variants": [
+    "modle",
+    "modles",
+    "modell"
+   ]
+  },
+  {
+   "canonical": "acrylic",
+   "variants": [
+    "acrilic",
+    "acryllic",
+    "acrylics",
+    "acrilics"
+   ]
+  },
+  {
+   "canonical": "varnish",
+   "variants": [
+    "varnsih",
+    "varnis",
+    "varnsh",
+    "vanish",
+    "sealant",
+    "sealer",
+    "clear coat",
+    "clearcoat",
+    "clear coats",
+    "top coat",
+    "topcoat",
+    "top coats",
+    "topcoats",
+    "lacquer",
+    "protective coat",
+    "sealing coat"
+   ]
+  },
+  {
+   "canonical": "airbrush",
+   "variants": [
+    "air brush",
+    "airbursh",
+    "airbrsh",
+    "air-brush",
+    "air brushing",
+    "air brushes",
+    "air brushed",
+    "airbush",
+    "arbrush"
+   ]
+  },
+  {
+   "canonical": "drybrush",
+   "variants": [
+    "dry brush",
+    "dry brushing",
+    "dry brushed",
+    "dry brushes",
+    "drybush",
+    "drybushing",
+    "dribrush",
+    "dry bushing",
+    "drybrsh",
+    "drybursh",
+    "drybrushs",
+    "dry-brushing"
+   ]
+  },
+  {
+   "canonical": "stipple",
+   "variants": [
+    "stippling",
+    "stippled",
+    "stipples",
+    "stipling",
+    "stippeling",
+    "stiple"
+   ]
+  },
+  {
+   "canonical": "camo",
+   "variants": [
+    "camouflage",
+    "camoflage",
+    "camoflauge",
+    "camouflauge",
+    "camoflague",
+    "camouflaged"
+   ]
+  },
+  {
+   "canonical": "complementary",
+   "variants": [
+    "complimentary",
+    "complementery",
+    "complimentery"
+   ]
+  },
+  {
+   "canonical": "translucent",
+   "variants": [
+    "transluscent",
+    "translucant"
+   ]
+  },
+  {
+   "canonical": "sable",
+   "variants": [
+    "kolinsky",
+    "kolinksy",
+    "kolinski",
+    "kolinsky sable",
+    "natural hair"
+   ]
+  },
+  {
+   "canonical": "glaze",
+   "variants": [
+    "glazes",
+    "glazing",
+    "glazed",
+    "glazeing"
+   ]
+  },
+  {
+   "canonical": "base",
+   "variants": [
+    "bases",
+    "basing"
+   ]
+  },
+  {
+   "canonical": "texture",
+   "variants": [
+    "textures",
+    "textured",
+    "texturing"
+   ]
+  },
+  {
+   "canonical": "sponge",
+   "variants": [
+    "sponges",
+    "sponging",
+    "sponged"
+   ]
+  },
+  {
+   "canonical": "line",
+   "variants": [
+    "lines",
+    "lining",
+    "lined"
+   ]
+  },
+  {
+   "canonical": "fade",
+   "variants": [
+    "fades",
+    "faded",
+    "fading"
+   ]
+  },
+  {
+   "canonical": "chip",
+   "variants": [
+    "chips",
+    "chipping",
+    "chipped",
+    "chipps"
+   ]
+  },
+  {
+   "canonical": "dab",
+   "variants": [
+    "dabs",
+    "dabbing",
+    "dabbed"
+   ]
+  },
+  {
+   "canonical": "drip",
+   "variants": [
+    "drips",
+    "dripping",
+    "dripped",
+    "drippy"
+   ]
+  },
+  {
+   "canonical": "pin",
+   "variants": [
+    "pins",
+    "pinned",
+    "pinning",
+    "paper clip",
+    "paperclip",
+    "paper clips",
+    "paperclips"
+   ]
+  },
+  {
+   "canonical": "cut",
+   "variants": [
+    "cuts",
+    "cutting",
+    "cutted"
+   ]
+  },
+  {
+   "canonical": "clip",
+   "variants": [
+    "clips",
+    "clipping",
+    "clipped"
+   ]
+  },
+  {
+   "canonical": "trim",
+   "variants": [
+    "trims",
+    "trimming",
+    "trimmed"
+   ]
+  },
+  {
+   "canonical": "dip",
+   "variants": [
+    "dips",
+    "dipping",
+    "dipped"
+   ]
+  },
+  {
+   "canonical": "plan",
+   "variants": [
+    "plans",
+    "planning",
+    "planned"
+   ]
+  },
+  {
+   "canonical": "fit",
+   "variants": [
+    "fits",
+    "fitting",
+    "fitted"
+   ]
+  },
+  {
+   "canonical": "split",
+   "variants": [
+    "splits",
+    "splitting"
+   ]
+  },
+  {
+   "canonical": "snap",
+   "variants": [
+    "snaps",
+    "snapping",
+    "snapped"
+   ]
+  },
+  {
+   "canonical": "rub",
+   "variants": [
+    "rubs",
+    "rubbing",
+    "rubbed"
+   ]
+  },
+  {
+   "canonical": "rot",
+   "variants": [
+    "rots",
+    "rotting",
+    "rotted",
+    "rotten"
+   ]
+  },
+  {
+   "canonical": "spot",
+   "variants": [
+    "spots",
+    "spotting",
+    "spotted",
+    "spotty"
+   ]
+  },
+  {
+   "canonical": "step",
+   "variants": [
+    "steps",
+    "stepping",
+    "stepped"
+   ]
+  },
+  {
+   "canonical": "web",
+   "variants": [
+    "webs",
+    "webbing",
+    "webbed",
+    "cobweb",
+    "cobwebs",
+    "spiderweb",
+    "spiderwebs",
+    "spider web",
+    "spider webs"
+   ]
+  },
+  {
+   "canonical": "stop",
+   "variants": [
+    "stops",
+    "stopping",
+    "stopped"
+   ]
+  },
+  {
+   "canonical": "eye",
+   "variants": [
+    "eyes",
+    "eyed",
+    "eyeball",
+    "eyeballs"
+   ]
+  },
+  {
+   "canonical": "gem",
+   "variants": [
+    "gems",
+    "gemstone",
+    "gemstones",
+    "jewel",
+    "jewels",
+    "jewelled",
+    "jeweled"
+   ]
+  },
+  {
+   "canonical": "lip",
+   "variants": [
+    "lips"
+   ]
+  },
+  {
+   "canonical": "dot",
+   "variants": [
+    "dots",
+    "dotted",
+    "dotting"
+   ]
+  },
+  {
+   "canonical": "ink",
+   "variants": [
+    "inks",
+    "inked",
+    "inking"
+   ]
+  },
+  {
+   "canonical": "pen",
+   "variants": [
+    "pens"
+   ]
+  },
+  {
+   "canonical": "pot",
+   "variants": [
+    "pots",
+    "potted"
+   ]
+  },
+  {
+   "canonical": "kit",
+   "variants": [
+    "kits"
+   ]
+  },
+  {
+   "canonical": "bit",
+   "variants": [
+    "bits"
+   ]
+  },
+  {
+   "canonical": "gap",
+   "variants": [
+    "gaps"
+   ]
+  },
+  {
+   "canonical": "arm",
+   "variants": [
+    "arms"
+   ]
+  },
+  {
+   "canonical": "leg",
+   "variants": [
+    "legs"
+   ]
+  },
+  {
+   "canonical": "gun",
+   "variants": [
+    "guns"
+   ]
+  },
+  {
+   "canonical": "toy",
+   "variants": [
+    "toys"
+   ]
+  },
+  {
+   "canonical": "axe",
+   "variants": [
+    "axes",
+    "ax"
+   ]
+  },
+  {
+   "canonical": "rim",
+   "variants": [
+    "rims"
+   ]
+  },
+  {
+   "canonical": "orb",
+   "variants": [
+    "orbs"
+   ]
+  },
+  {
+   "canonical": "tree",
+   "variants": [
+    "trees"
+   ]
+  },
+  {
+   "canonical": "blade",
+   "variants": [
+    "blades",
+    "bladed"
+   ]
+  },
+  {
+   "canonical": "bone",
+   "variants": [
+    "bones",
+    "boney",
+    "bony"
+   ]
+  },
+  {
+   "canonical": "stone",
+   "variants": [
+    "stones",
+    "stony",
+    "stoney",
+    "masonry",
+    "stonework"
+   ]
+  },
+  {
+   "canonical": "tone",
+   "variants": [
+    "tones",
+    "toned"
+   ]
+  },
+  {
+   "canonical": "stroke",
+   "variants": [
+    "strokes",
+    "stroking"
+   ]
+  },
+  {
+   "canonical": "pose",
+   "variants": [
+    "poses",
+    "posing",
+    "posed"
+   ]
+  },
+  {
+   "canonical": "sprue",
+   "variants": [
+    "sprues"
+   ]
+  },
+  {
+   "canonical": "recess",
+   "variants": [
+    "recesses",
+    "recessed",
+    "crevice",
+    "crevices",
+    "nooks and crannies",
+    "crannies"
+   ]
+  },
+  {
+   "canonical": "blue",
+   "variants": [
+    "blues",
+    "bluish",
+    "blueish"
+   ]
+  },
+  {
+   "canonical": "purple",
+   "variants": [
+    "purples",
+    "purplish",
+    "violet",
+    "violets"
+   ]
+  },
+  {
+   "canonical": "orange",
+   "variants": [
+    "oranges",
+    "orangey",
+    "orangy",
+    "orangish"
+   ]
+  },
+  {
+   "canonical": "mistake",
+   "variants": [
+    "mistakes",
+    "mistaken",
+    "messed up",
+    "mess up",
+    "messing up",
+    "screwed up",
+    "screw up",
+    "error",
+    "errors",
+    "oops"
+   ]
+  },
+  {
+   "canonical": "muscle",
+   "variants": [
+    "muscles",
+    "muscular",
+    "muscled"
+   ]
+  },
+  {
+   "canonical": "wrinkle",
+   "variants": [
+    "wrinkles",
+    "wrinkled",
+    "wrinkly"
+   ]
+  },
+  {
+   "canonical": "freckle",
+   "variants": [
+    "freckles",
+    "freckled",
+    "freckling"
+   ]
+  },
+  {
+   "canonical": "bubble",
+   "variants": [
+    "bubbles",
+    "bubbled",
+    "bubbling",
+    "air bubbles",
+    "bubbly"
+   ]
+  },
+  {
+   "canonical": "puddle",
+   "variants": [
+    "puddles",
+    "puddled"
+   ]
+  },
+  {
+   "canonical": "candle",
+   "variants": [
+    "candles",
+    "candlelight",
+    "candle light"
+   ]
+  },
+  {
+   "canonical": "bottle",
+   "variants": [
+    "bottles",
+    "bottled"
+   ]
+  },
+  {
+   "canonical": "needle",
+   "variants": [
+    "needles"
+   ]
+  },
+  {
+   "canonical": "smooth",
+   "variants": [
+    "smoother",
+    "smoothly",
+    "smoothness",
+    "smoothest"
+   ]
+  },
+  {
+   "canonical": "army",
+   "variants": [
+    "armies"
+   ]
+  },
+  {
+   "canonical": "horde",
+   "variants": [
+    "hordes"
+   ]
+  },
+  {
+   "canonical": "horse",
+   "variants": [
+    "horses",
+    "steed",
+    "steeds"
+   ]
+  },
+  {
+   "canonical": "wolf",
+   "variants": [
+    "wolves",
+    "wolfs"
+   ]
+  },
+  {
+   "canonical": "leaf",
+   "variants": [
+    "leaves",
+    "leafs"
+   ]
+  },
+  {
+   "canonical": "knife",
+   "variants": [
+    "knives"
+   ]
+  },
+  {
+   "canonical": "elf",
+   "variants": [
+    "elves",
+    "elven",
+    "elvish",
+    "elfs",
+    "elfes"
+   ]
+  },
+  {
+   "canonical": "dwarf",
+   "variants": [
+    "dwarves",
+    "dwarfs",
+    "dwarven",
+    "dwarfes"
+   ]
+  },
+  {
+   "canonical": "zombie",
+   "variants": [
+    "zombies",
+    "zombi",
+    "zombified"
+   ]
+  },
+  {
+   "canonical": "vampire",
+   "variants": [
+    "vampires",
+    "vampiric"
+   ]
+  },
+  {
+   "canonical": "skeleton",
+   "variants": [
+    "skeletons",
+    "skeletal",
+    "skelly",
+    "skellies",
+    "skellie"
+   ]
+  },
+  {
+   "canonical": "demon",
+   "variants": [
+    "demons",
+    "daemon",
+    "daemons",
+    "demonic",
+    "daemonic"
+   ]
+  },
+  {
+   "canonical": "teeth",
+   "variants": [
+    "tooth",
+    "fangs",
+    "fang"
+   ]
+  },
+  {
+   "canonical": "ice",
+   "variants": [
+    "icy",
+    "iced over"
+   ]
+  },
+  {
+   "canonical": "snow",
+   "variants": [
+    "snowy",
+    "snows",
+    "snowed"
+   ]
+  },
+  {
+   "canonical": "mud",
+   "variants": [
+    "muddy",
+    "muddied"
+   ]
+  },
+  {
+   "canonical": "moss",
+   "variants": [
+    "mossy"
+   ]
+  },
+  {
+   "canonical": "grass",
+   "variants": [
+    "grassy"
+   ]
+  },
+  {
+   "canonical": "rock",
+   "variants": [
+    "rocky",
+    "boulder",
+    "boulders"
+   ]
+  },
+  {
+   "canonical": "blood",
+   "variants": [
+    "bloody",
+    "bloodied",
+    "bloodstained",
+    "blood stained",
+    "gore",
+    "gory",
+    "blood splatter",
+    "blood spatter",
+    "blood splatters"
+   ]
+  },
+  {
+   "canonical": "slime",
+   "variants": [
+    "slimy",
+    "goo",
+    "gooey",
+    "ooze",
+    "oozing",
+    "oozy",
+    "snot"
+   ]
+  },
+  {
+   "canonical": "fire",
+   "variants": [
+    "flame",
+    "flames",
+    "flaming",
+    "fiery",
+    "campfire",
+    "campfires",
+    "bonfire",
+    "brazier",
+    "braziers"
+   ]
+  },
+  {
+   "canonical": "wood",
+   "variants": [
+    "wooden",
+    "timber",
+    "woodgrain",
+    "wood grain"
+   ]
+  },
+  {
+   "canonical": "vehicle",
+   "variants": [
+    "vehicles",
+    "car",
+    "cars",
+    "truck",
+    "trucks"
+   ]
+  },
+  {
+   "canonical": "cloak",
+   "variants": [
+    "cloaks",
+    "cape",
+    "capes"
+   ]
+  },
+  {
+   "canonical": "robe",
+   "variants": [
+    "robes",
+    "robed"
+   ]
+  },
+  {
+   "canonical": "cloth",
+   "variants": [
+    "fabric",
+    "fabrics",
+    "clothing",
+    "clothes",
+    "garment",
+    "garments"
+   ]
+  },
+  {
+   "canonical": "fur",
+   "variants": [
+    "furry",
+    "pelt",
+    "pelts"
+   ]
+  },
+  {
+   "canonical": "feather",
+   "variants": [
+    "feathers",
+    "feathered",
+    "plumage"
+   ]
+  },
+  {
+   "canonical": "claw",
+   "variants": [
+    "claws",
+    "talon",
+    "talons"
+   ]
+  },
+  {
+   "canonical": "smoke",
+   "variants": [
+    "smoky",
+    "smokey"
+   ]
+  },
+  {
+   "canonical": "crackle",
+   "variants": [
+    "crackled",
+    "crackling",
+    "crackly",
+    "crackles"
+   ]
+  },
+  {
+   "canonical": "cobblestone",
+   "variants": [
+    "cobblestones",
+    "cobbles",
+    "cobbled",
+    "cobble stone",
+    "cobble stones"
+   ]
+  },
+  {
+   "canonical": "flagstone",
+   "variants": [
+    "flagstones",
+    "flag stone",
+    "flag stones"
+   ]
+  },
+  {
+   "canonical": "stripe",
+   "variants": [
+    "stripes",
+    "striped",
+    "stripey",
+    "striping"
+   ]
+  },
+  {
+   "canonical": "hazard stripe",
+   "variants": [
+    "hazard stripes",
+    "warning stripes",
+    "warning stripe",
+    "caution stripes",
+    "caution stripe"
+   ]
+  },
+  {
+   "canonical": "drybrush and tint",
+   "variants": [
+    "drybrush then contrast",
+    "dry brush then contrast",
+    "drybrush and contrast"
+   ]
+  },
+  {
+   "canonical": "two-part putty",
+   "variants": [
+    "green stuff",
+    "greenstuff",
+    "green stuf",
+    "greenstuf",
+    "green putty",
+    "two part putty",
+    "2 part putty",
+    "2-part putty",
+    "epoxy putty",
+    "two part epoxy",
+    "brown stuff",
+    "grey stuff",
+    "gray stuff"
+   ]
+  },
+  {
+   "canonical": "gap fill",
+   "variants": [
+    "liquid green stuff",
+    "liquid greenstuff",
+    "liquid putty",
+    "gap filler",
+    "gap fillers",
+    "fill gaps",
+    "filling gaps",
+    "fill the gaps",
+    "fill in gaps"
+   ]
+  },
+  {
+   "canonical": "sprue goo",
+   "variants": [
+    "plastic goo",
+    "liquid sprue",
+    "sprue glue"
+   ]
+  },
+  {
+   "canonical": "mould line",
+   "variants": [
+    "seam line",
+    "seam lines",
+    "seamline",
+    "seamlines",
+    "mold line",
+    "mold lines",
+    "mould lines"
+   ]
+  },
+  {
+   "canonical": "onecoat paint",
+   "variants": [
+    "speedpaint",
+    "speedpaints",
+    "speed paint",
+    "speed paints",
+    "contrast paint",
+    "contrast paints",
+    "one coat paint",
+    "one coat paints",
+    "one-coat paints",
+    "contrasts paints"
+   ]
+  },
+  {
+   "canonical": "thin",
+   "variants": [
+    "thinners",
+    "thinner",
+    "thinning",
+    "thinned",
+    "thins",
+    "thining",
+    "thiner",
+    "dilute",
+    "diluted",
+    "diluting",
+    "dilution",
+    "water down",
+    "watered down",
+    "watering down",
+    "water it down"
+   ]
+  },
+  {
+   "canonical": "thick",
+   "variants": [
+    "gloopy",
+    "goopy",
+    "gloppy",
+    "claggy",
+    "gluggy",
+    "globby",
+    "too thick"
+   ]
+  },
+  {
+   "canonical": "watery",
+   "variants": [
+    "runny",
+    "too runny",
+    "too watery"
+   ]
+  },
+  {
+   "canonical": "chalky",
+   "variants": [
+    "powdery",
+    "dusty looking",
+    "dusty finish",
+    "chalk like",
+    "chalklike",
+    "chalkiness"
+   ]
+  },
+  {
+   "canonical": "grainy",
+   "variants": [
+    "gritty",
+    "grittiness",
+    "graininess",
+    "sandy finish",
+    "sandpapery",
+    "grain"
+   ]
+  },
+  {
+   "canonical": "grimdark",
+   "variants": [
+    "grim dark",
+    "grim-dark",
+    "gritty dark"
+   ]
+  },
+  {
+   "canonical": "blotchy",
+   "variants": [
+    "splotchy",
+    "blotch",
+    "blotches",
+    "blotched",
+    "splotches"
+   ]
+  },
+  {
+   "canonical": "poor coverage",
+   "variants": [
+    "wont cover",
+    "won t cover",
+    "doesnt cover",
+    "doesn t cover",
+    "not covering",
+    "isnt covering",
+    "isn t covering",
+    "bad coverage",
+    "low coverage",
+    "covers badly",
+    "covers poorly",
+    "won t cover up",
+    "will not cover"
+   ]
+  },
+  {
+   "canonical": "tide mark",
+   "variants": [
+    "tide marks",
+    "tidemark",
+    "tidemarks",
+    "tide lines",
+    "tide line",
+    "coffee ring",
+    "coffee rings",
+    "coffee stain",
+    "coffee stains",
+    "ring around",
+    "rings around",
+    "water marks",
+    "watermarks"
+   ]
+  },
+  {
+   "canonical": "frosted varnish",
+   "variants": [
+    "foggy",
+    "fogged",
+    "fogging",
+    "hazy",
+    "white haze",
+    "milky varnish",
+    "cloudy varnish",
+    "varnish went white",
+    "varnish turned white"
+   ]
+  },
+  {
+   "canonical": "matte",
+   "variants": [
+    "matt",
+    "matte coat",
+    "matt coat",
+    "flat varnish",
+    "matte finish",
+    "matt finish"
+   ]
+  },
+  {
+   "canonical": "gloss",
+   "variants": [
+    "glossy",
+    "glossier",
+    "glossiness",
+    "glossed"
+   ]
+  },
+  {
+   "canonical": "shine",
+   "variants": [
+    "shiny",
+    "shininess",
+    "shinier",
+    "shines",
+    "shining"
+   ]
+  },
+  {
+   "canonical": "pin wash",
+   "variants": [
+    "pinwash",
+    "pinwashes",
+    "pin washing",
+    "pin washes",
+    "pin-wash"
+   ]
+  },
+  {
+   "canonical": "preshade",
+   "variants": [
+    "pre-shade",
+    "pre shade",
+    "preshading",
+    "pre-shading",
+    "pre shading",
+    "preshaded",
+    "pre shaded"
+   ]
+  },
+  {
+   "canonical": "pre highlight",
+   "variants": [
+    "prehighlight",
+    "prehighlighting",
+    "pre highlighting",
+    "pre-highlighting",
+    "prehighlights",
+    "pre highlights"
+   ]
+  },
+  {
+   "canonical": "underpainting",
+   "variants": [
+    "under painting",
+    "under-painting",
+    "grisaille",
+    "underpaint",
+    "under paint"
+   ]
+  },
+  {
+   "canonical": "hue shift",
+   "variants": [
+    "hue shifting",
+    "hue-shifting",
+    "hueshift",
+    "hueshifting",
+    "colour shift",
+    "colour shifting",
+    "color shift",
+    "color shifting"
+   ]
+  },
+  {
+   "canonical": "wet blending",
+   "variants": [
+    "wet into wet",
+    "wet-on-wet",
+    "wet on wet",
+    "wet in wet",
+    "wetblending",
+    "wetblend"
+   ]
+  },
+  {
+   "canonical": "two-brush blending",
+   "variants": [
+    "feathering",
+    "feather blending",
+    "feather blend",
+    "two brush blending",
+    "2 brush blending",
+    "two-brush blend",
+    "two brush blend",
+    "2 brush blend",
+    "two brush technique"
+   ]
+  },
+  {
+   "canonical": "stipple blending",
+   "variants": [
+    "blending with dots",
+    "blend with dots",
+    "dot blending",
+    "blending using dots",
+    "stippling blend",
+    "stipple blend"
+   ]
+  },
+  {
+   "canonical": "smooth layering",
+   "variants": [
+    "layer blending",
+    "layer blend",
+    "layered blending",
+    "blending with layers",
+    "blend with layers",
+    "blending by layering",
+    "lots of thin layers",
+    "many thin layers"
+   ]
+  },
+  {
+   "canonical": "dot highlight",
+   "variants": [
+    "dot highlights",
+    "spot highlights",
+    "spot highlight",
+    "point highlights",
+    "point highlight",
+    "pin highlights",
+    "pinpoint highlights",
+    "pinpoint highlight",
+    "specular highlights",
+    "specular highlight",
+    "specular",
+    "glint",
+    "glints",
+    "catchlight",
+    "catchlights",
+    "light spots",
+    "light spot"
+   ]
+  },
+  {
+   "canonical": "raised areas",
+   "variants": [
+    "raised parts",
+    "raised bits",
+    "raised details",
+    "raised detail",
+    "raised edges",
+    "raised surfaces",
+    "high points",
+    "raised areas lighter"
+   ]
+  },
+  {
+   "canonical": "nmm",
+   "variants": [
+    "non metallic metal",
+    "non-metallic metal",
+    "nonmetallic metal",
+    "non metallic",
+    "non-metallic",
+    "nonmetallic",
+    "fake metal",
+    "painted metal effect"
+   ]
+  },
+  {
+   "canonical": "tmm",
+   "variants": [
+    "true metallic metal",
+    "true metal",
+    "true metallics",
+    "true-metallic"
+   ]
+  },
+  {
+   "canonical": "batch painting",
+   "variants": [
+    "assembly line",
+    "assembly-line",
+    "production line",
+    "conveyor belt",
+    "batch paint",
+    "batching",
+    "chain painting"
+   ]
+  },
+  {
+   "canonical": "tabletop",
+   "variants": [
+    "table top",
+    "table-top",
+    "tabletop ready",
+    "battle ready",
+    "game ready",
+    "gaming standard",
+    "tabletop quality"
+   ]
+  },
+  {
+   "canonical": "hairspray chipping",
+   "variants": [
+    "hairspray technique",
+    "hair spray chipping",
+    "hair spray technique",
+    "hairspray method",
+    "salt chipping",
+    "salt technique",
+    "salt weathering",
+    "salt method",
+    "chipping medium",
+    "chipping fluid"
+   ]
+  },
+  {
+   "canonical": "soot",
+   "variants": [
+    "sooty",
+    "scorch",
+    "scorched",
+    "scorching",
+    "scorch marks",
+    "carbon scoring",
+    "burn marks",
+    "smoke stains",
+    "smoke stained"
+   ]
+  },
+  {
+   "canonical": "verdigris",
+   "variants": [
+    "patina",
+    "green patina",
+    "bronze patina",
+    "copper patina",
+    "verdigri",
+    "verdigrise"
+   ]
+  },
+  {
+   "canonical": "stubble",
+   "variants": [
+    "stubbly",
+    "five o clock shadow",
+    "5 o clock shadow",
+    "beard shadow",
+    "shaved",
+    "shaven",
+    "unshaven",
+    "shadow of a beard"
+   ]
+  },
+  {
+   "canonical": "lava",
+   "variants": [
+    "magma",
+    "molten rock",
+    "molten lava"
+   ]
+  },
+  {
+   "canonical": "lightning",
+   "variants": [
+    "electricity",
+    "electric",
+    "electrical",
+    "lightning bolt",
+    "lightning bolts",
+    "energy arcs",
+    "electric arcs",
+    "arcs of electricity"
+   ]
+  },
+  {
+   "canonical": "fluorescent",
+   "variants": [
+    "neon",
+    "uv",
+    "blacklight",
+    "black light",
+    "day-glo",
+    "dayglo",
+    "fluoro",
+    "fluo",
+    "flourescent",
+    "florescent"
+   ]
+  },
+  {
+   "canonical": "candy",
+   "variants": [
+    "candy paint",
+    "candy coat",
+    "kandy",
+    "tinted metallic",
+    "tinted metallics"
+   ]
+  },
+  {
+   "canonical": "chrome",
+   "variants": [
+    "mirror finish",
+    "mirror effect",
+    "mirror-like",
+    "chromed"
+   ]
+  },
+  {
+   "canonical": "gold",
+   "variants": [
+    "golden",
+    "gilded",
+    "gilt",
+    "gold leaf"
+   ]
+  },
+  {
+   "canonical": "magic",
+   "variants": [
+    "spell",
+    "spells",
+    "arcane",
+    "magical",
+    "sorcery",
+    "sorcerous",
+    "magick"
+   ]
+  },
+  {
+   "canonical": "ghost",
+   "variants": [
+    "ghosts",
+    "ghostly",
+    "spectral",
+    "spirit",
+    "spirits",
+    "wraith",
+    "wraiths",
+    "ethereal",
+    "phantom",
+    "phantoms",
+    "spectre",
+    "specter",
+    "spectres",
+    "spooky spirit"
+   ]
+  },
+  {
+   "canonical": "mineral spirits",
+   "variants": [
+    "white spirit",
+    "white spirits",
+    "mineral spirit",
+    "odourless mineral spirits",
+    "odorless mineral spirits",
+    "turpentine",
+    "turps",
+    "oms",
+    "odourless thinner",
+    "odorless thinner"
+   ]
+  },
+  {
+   "canonical": "isopropyl alcohol",
+   "variants": [
+    "ipa",
+    "isopropyl",
+    "isopropanol",
+    "rubbing alcohol",
+    "isopropyl alchohol",
+    "isopropyl alcohal",
+    "surgical spirit"
+   ]
+  },
+  {
+   "canonical": "stripping",
+   "variants": [
+    "strip",
+    "strips",
+    "stripped",
+    "stripper",
+    "strippers",
+    "paint stripper",
+    "paint strippers",
+    "strip paint",
+    "remove old paint",
+    "remove paint",
+    "removing paint",
+    "remove the paint",
+    "get paint off",
+    "getting paint off",
+    "take paint off",
+    "taking paint off",
+    "paint removal",
+    "paint remover",
+    "strip off",
+    "stripping paint",
+    "remove all the paint"
+   ]
+  },
+  {
+   "canonical": "superglue",
+   "variants": [
+    "super glue",
+    "cyanoacrylate",
+    "ca glue",
+    "crazy glue",
+    "instant glue",
+    "superglues"
+   ]
+  },
+  {
+   "canonical": "plastic glue",
+   "variants": [
+    "poly cement",
+    "polystyrene cement",
+    "plastic cement",
+    "liquid poly",
+    "model cement",
+    "polystyrene glue"
+   ]
+  },
+  {
+   "canonical": "pva",
+   "variants": [
+    "white glue",
+    "wood glue",
+    "school glue",
+    "craft glue",
+    "pva glue"
+   ]
+  },
+  {
+   "canonical": "accelerator",
+   "variants": [
+    "kicker",
+    "activator",
+    "glue accelerator",
+    "accelerant"
+   ]
+  },
+  {
+   "canonical": "sticky tack",
+   "variants": [
+    "blu tack",
+    "blutack",
+    "blu-tack",
+    "blue tack",
+    "bluetack",
+    "poster putty",
+    "white tack",
+    "sticky putty",
+    "tack it"
+   ]
+  },
+  {
+   "canonical": "clippers",
+   "variants": [
+    "clipper",
+    "sprue cutters",
+    "sprue cutter",
+    "snips",
+    "side cutters",
+    "nippers",
+    "flush cutters",
+    "sprue clippers",
+    "sprue snips",
+    "sprue nippers"
+   ]
+  },
+  {
+   "canonical": "hobby knife",
+   "variants": [
+    "craft knife",
+    "scalpel",
+    "utility knife",
+    "modelling knife",
+    "modeling knife",
+    "razor knife",
+    "precision knife",
+    "hobby blade"
+   ]
+  },
+  {
+   "canonical": "sandpaper",
+   "variants": [
+    "sanding paper",
+    "emery board",
+    "sanding stick",
+    "sanding sticks",
+    "sanding sponge",
+    "nail file",
+    "wet and dry paper",
+    "sand paper"
+   ]
+  },
+  {
+   "canonical": "pin vice",
+   "variants": [
+    "pin vise",
+    "pinvice",
+    "pinvise",
+    "hand drill",
+    "pin drill"
+   ]
+  },
+  {
+   "canonical": "painting handle",
+   "variants": [
+    "paint handle",
+    "painting holder",
+    "model holder",
+    "mini holder",
+    "miniature holder",
+    "hobby holder",
+    "painting grip",
+    "paint holder",
+    "hold the model",
+    "hold the mini",
+    "holding the model",
+    "holding the mini",
+    "holding minis",
+    "holding models",
+    "hold my mini",
+    "hold my model",
+    "stick the mini on",
+    "mount the mini on"
+   ]
+  },
+  {
+   "canonical": "dry fit",
+   "variants": [
+    "dry fitting",
+    "dry-fit",
+    "test fit",
+    "test fitting",
+    "dryfit",
+    "dry fitted"
+   ]
+  },
+  {
+   "canonical": "hard to reach",
+   "variants": [
+    "can t reach",
+    "cant reach",
+    "cannot reach",
+    "hard to get to",
+    "difficult to reach",
+    "cant get my brush",
+    "can t get my brush",
+    "can t get the brush",
+    "cant get the brush",
+    "awkward to reach",
+    "hard-to-reach"
+   ]
+  },
+  {
+   "canonical": "stress marks",
+   "variants": [
+    "stress mark",
+    "stress whitening",
+    "white stress marks",
+    "whitening on the plastic",
+    "white marks on the plastic"
+   ]
+  },
+  {
+   "canonical": "broken off",
+   "variants": [
+    "broke off",
+    "snapped off",
+    "fell off",
+    "came off",
+    "breaks off",
+    "keeps falling off",
+    "came loose",
+    "falls off",
+    "falling off",
+    "broken off"
+   ]
+  },
+  {
+   "canonical": "scratchbuild",
+   "variants": [
+    "scratch build",
+    "scratch building",
+    "scratch built",
+    "scratch-build",
+    "scratch-built",
+    "scratchbuilding",
+    "scratchbuilt",
+    "scratch builds"
+   ]
+  },
+  {
+   "canonical": "kitbash",
+   "variants": [
+    "kitbashing",
+    "kit-bash",
+    "kit bash",
+    "kit bashing",
+    "kitbashed",
+    "kit bashed"
+   ]
+  },
+  {
+   "canonical": "3d print",
+   "variants": [
+    "3d printed",
+    "3d prints",
+    "3d printing",
+    "3d-printed",
+    "3d-print",
+    "3d printer",
+    "3d printers",
+    "resin printed",
+    "resin print",
+    "resin prints",
+    "resin printer"
+   ]
+  },
+  {
+   "canonical": "decal",
+   "variants": [
+    "decals",
+    "transfer",
+    "transfers",
+    "waterslide",
+    "water slide",
+    "water slides",
+    "sticker",
+    "stickers",
+    "waterslide decals",
+    "waterslide decal"
+   ]
+  },
+  {
+   "canonical": "freehand",
+   "variants": [
+    "free hand",
+    "free-hand",
+    "freehanding",
+    "free handing"
+   ]
+  },
+  {
+   "canonical": "emblem",
+   "variants": [
+    "emblems",
+    "insignia",
+    "logo",
+    "logos",
+    "crest",
+    "crests",
+    "coat of arms"
+   ]
+  },
+  {
+   "canonical": "tartan",
+   "variants": [
+    "plaid",
+    "tartans",
+    "plaids"
+   ]
+  },
+  {
+   "canonical": "lettering",
+   "variants": [
+    "letters",
+    "text",
+    "writing",
+    "script",
+    "words on"
+   ]
+  },
+  {
+   "canonical": "homemade",
+   "variants": [
+    "home made",
+    "home-made",
+    "diy",
+    "make my own",
+    "make your own",
+    "making my own",
+    "making your own",
+    "self made"
+   ]
+  },
+  {
+   "canonical": "drying too fast",
+   "variants": [
+    "dries too fast",
+    "dries too quickly",
+    "drying too quickly",
+    "dries before",
+    "dries so fast",
+    "dries quickly",
+    "dries fast",
+    "dry too fast",
+    "dry too quickly",
+    "drying fast",
+    "drying so fast",
+    "dries on my brush",
+    "dries on the brush"
+   ]
+  },
+  {
+   "canonical": "retarder",
+   "variants": [
+    "drying retarder",
+    "slow dry",
+    "slow-dry",
+    "slow drying medium",
+    "extender",
+    "open time",
+    "drying time extender"
+   ]
+  },
+  {
+   "canonical": "flow improver",
+   "variants": [
+    "flow aid",
+    "flow medium",
+    "flow enhancer",
+    "flow release"
+   ]
+  },
+  {
+   "canonical": "dried out",
+   "variants": [
+    "dried up",
+    "dried-out",
+    "dried-up",
+    "gone hard",
+    "gone solid",
+    "solidified",
+    "gone thick",
+    "gone gloopy"
+   ]
+  },
+  {
+   "canonical": "revive",
+   "variants": [
+    "reviving",
+    "revived",
+    "rejuvenate",
+    "rejuvenating",
+    "rescue",
+    "bring back",
+    "bring it back"
+   ]
+  },
+  {
+   "canonical": "clog",
+   "variants": [
+    "clogs",
+    "clogged",
+    "clogging",
+    "tip dry",
+    "tip drying",
+    "blockage",
+    "gunked up",
+    "clogs up"
+   ]
+  },
+  {
+   "canonical": "pressure",
+   "variants": [
+    "psi"
+   ]
+  },
+  {
+   "canonical": "fumes",
+   "variants": [
+    "smell",
+    "smells",
+    "smelly",
+    "stink",
+    "stinks",
+    "stinky",
+    "odor",
+    "odour",
+    "odours",
+    "odors"
+   ]
+  },
+  {
+   "canonical": "safety",
+   "variants": [
+    "safe",
+    "dangerous",
+    "harmful",
+    "health risk",
+    "unsafe",
+    "hazardous"
+   ]
+  },
+  {
+   "canonical": "children",
+   "variants": [
+    "child",
+    "kids",
+    "kid",
+    "son",
+    "daughter",
+    "toddler",
+    "kiddo",
+    "my son",
+    "my daughter"
+   ]
+  },
+  {
+   "canonical": "hobby space",
+   "variants": [
+    "workspace",
+    "work space",
+    "workstation",
+    "work station",
+    "painting station",
+    "paint station",
+    "hobby station",
+    "hobby desk",
+    "painting desk",
+    "painting area",
+    "hobby area",
+    "hobby room",
+    "painting space",
+    "hobby corner"
+   ]
+  },
+  {
+   "canonical": "storage",
+   "variants": [
+    "store",
+    "storing",
+    "stored"
+   ]
+  },
+  {
+   "canonical": "transport",
+   "variants": [
+    "transporting",
+    "transported",
+    "carry case",
+    "carrying case",
+    "travel case",
+    "figure case",
+    "carry",
+    "carrying",
+    "travel",
+    "travelling",
+    "traveling"
+   ]
+  },
+  {
+   "canonical": "rinse water",
+   "variants": [
+    "water pot",
+    "water cup",
+    "rinse pot",
+    "water jar",
+    "paint water",
+    "rinse cup",
+    "brush water",
+    "dirty water",
+    "water pots",
+    "rinse jar"
+   ]
+  },
+  {
+   "canonical": "magnification",
+   "variants": [
+    "magnifier",
+    "magnifiers",
+    "magnifying glass",
+    "magnifying glasses",
+    "magnifying",
+    "loupe",
+    "magnifying lamp",
+    "head magnifier"
+   ]
+  },
+  {
+   "canonical": "lamp",
+   "variants": [
+    "lamps",
+    "light bulb",
+    "lightbulb",
+    "desk lamp",
+    "bulb",
+    "bulbs",
+    "desk light"
+   ]
+  },
+  {
+   "canonical": "photo",
+   "variants": [
+    "photos",
+    "photograph",
+    "photographs",
+    "photography",
+    "photographing",
+    "picture",
+    "pictures",
+    "pic",
+    "pics",
+    "take photos",
+    "taking photos",
+    "take pictures",
+    "taking pictures"
+   ]
+  },
+  {
+   "canonical": "backdrop",
+   "variants": [
+    "backdrops",
+    "background",
+    "backgrounds",
+    "back drop",
+    "back ground"
+   ]
+  },
+  {
+   "canonical": "shaky",
+   "variants": [
+    "wobbly",
+    "trembling",
+    "tremor",
+    "tremors",
+    "hand tremor",
+    "shaky hands",
+    "shaking hands",
+    "wobbly hands",
+    "jittery"
+   ]
+  },
+  {
+   "canonical": "posture",
+   "variants": [
+    "ergonomics",
+    "ergonomic",
+    "back pain",
+    "neck pain",
+    "sore back",
+    "sore neck",
+    "hunched",
+    "hunching"
+   ]
+  },
+  {
+   "canonical": "motivation",
+   "variants": [
+    "unmotivated",
+    "demotivated",
+    "no motivation",
+    "lost motivation",
+    "lack of motivation",
+    "slump",
+    "hobby slump",
+    "burnout",
+    "burnt out",
+    "burned out",
+    "burn out"
+   ]
+  },
+  {
+   "canonical": "backlog",
+   "variants": [
+    "pile of shame",
+    "grey pile",
+    "gray pile",
+    "plastic pile",
+    "unpainted pile",
+    "back log"
+   ]
+  },
+  {
+   "canonical": "improve",
+   "variants": [
+    "level up",
+    "next level",
+    "get better",
+    "getting better",
+    "improving",
+    "improvement",
+    "improvements",
+    "improved"
+   ]
+  },
+  {
+   "canonical": "beginner",
+   "variants": [
+    "newbie",
+    "noob",
+    "newb",
+    "novice",
+    "beginners",
+    "begginer",
+    "beginer",
+    "new to the hobby",
+    "new to painting",
+    "first time",
+    "first timer",
+    "never painted",
+    "just starting",
+    "just started",
+    "starting out",
+    "complete beginner",
+    "total beginner",
+    "brand new to"
+   ]
+  },
+  {
+   "canonical": "tools",
+   "variants": [
+    "supplies",
+    "supply",
+    "equipment",
+    "gear",
+    "tool"
+   ]
+  },
+  {
+   "canonical": "buy",
+   "variants": [
+    "buying",
+    "bought",
+    "purchase",
+    "purchasing",
+    "shop for"
+   ]
+  },
+  {
+   "canonical": "cheap",
+   "variants": [
+    "budget",
+    "inexpensive",
+    "affordable",
+    "low cost",
+    "on a budget",
+    "cheaply",
+    "cheaper",
+    "cheapest",
+    "bargain"
+   ]
+  },
+  {
+   "canonical": "expensive",
+   "variants": [
+    "pricey",
+    "costly",
+    "pricy",
+    "overpriced"
+   ]
+  },
+  {
+   "canonical": "brush",
+   "variants": [
+    "paintbrush",
+    "paint brush",
+    "paintbrushes",
+    "paint brushes",
+    "brsh",
+    "bursh"
+   ]
+  },
+  {
+   "canonical": "tacky",
+   "variants": [
+    "sticky",
+    "tackiness",
+    "stickiness"
+   ]
+  },
+  {
+   "canonical": "blob",
+   "variants": [
+    "blobs",
+    "blobby",
+    "glob",
+    "globs",
+    "globules"
+   ]
+  },
+  {
+   "canonical": "beading",
+   "variants": [
+    "beads up",
+    "beading up",
+    "beaded",
+    "repels",
+    "repelling",
+    "rolls off",
+    "slides off",
+    "beads of paint"
+   ]
+  },
+  {
+   "canonical": "dries darker",
+   "variants": [
+    "dried darker",
+    "drying darker",
+    "darker when dry",
+    "darker when it dries",
+    "darker once dry",
+    "darker after drying"
+   ]
+  },
+  {
+   "canonical": "vibrant",
+   "variants": [
+    "vivid",
+    "punchy",
+    "vibrancy",
+    "vivid colours"
+   ]
+  },
+  {
+   "canonical": "colour scheme",
+   "variants": [
+    "colour palette",
+    "color palette",
+    "colour palettes",
+    "colourway",
+    "colorway",
+    "colourways",
+    "colorways",
+    "paint scheme",
+    "paint schemes",
+    "colour schemes",
+    "colour combo",
+    "colour combination",
+    "colour combinations"
+   ]
+  },
+  {
+   "canonical": "opposite colours",
+   "variants": [
+    "opposite colour",
+    "opposite colors",
+    "opposite color",
+    "colours opposite"
+   ]
+  },
+  {
+   "canonical": "gradient",
+   "variants": [
+    "gradients",
+    "ombre",
+    "gradation",
+    "gradations"
+   ]
+  },
+  {
+   "canonical": "rosy",
+   "variants": [
+    "blush",
+    "blushing",
+    "flushed",
+    "ruddy",
+    "rosy cheeks",
+    "red cheeks"
+   ]
+  },
+  {
+   "canonical": "female",
+   "variants": [
+    "woman",
+    "women",
+    "feminine",
+    "girl",
+    "girls",
+    "lady",
+    "ladies",
+    "womens"
+   ]
+  },
+  {
+   "canonical": "insect",
+   "variants": [
+    "insects",
+    "bug",
+    "bugs",
+    "insectoid",
+    "insectile"
+   ]
+  },
+  {
+   "canonical": "carapace",
+   "variants": [
+    "chitin",
+    "exoskeleton",
+    "bug armour",
+    "insect armour",
+    "chitinous"
+   ]
+  },
+  {
+   "canonical": "monster",
+   "variants": [
+    "monsters",
+    "creature",
+    "creatures",
+    "beast",
+    "beasts",
+    "monstrous"
+   ]
+  },
+  {
+   "canonical": "dragon",
+   "variants": [
+    "dragons",
+    "wyvern",
+    "wyverns",
+    "drake",
+    "drakes"
+   ]
+  },
+  {
+   "canonical": "skin",
+   "variants": [
+    "flesh",
+    "fleshy",
+    "flesh tone",
+    "flesh tones",
+    "fleshtone",
+    "skintone",
+    "skintones"
+   ]
+  },
+  {
+   "canonical": "green skin",
+   "variants": [
+    "greenskin",
+    "greenskins",
+    "green skinned"
+   ]
+  },
+  {
+   "canonical": "pale skin",
+   "variants": [
+    "fair skin",
+    "light skin",
+    "pale skinned",
+    "fair skinned",
+    "porcelain skin"
+   ]
+  },
+  {
+   "canonical": "dark skin",
+   "variants": [
+    "black skin",
+    "brown skin",
+    "darker skin",
+    "deep skin",
+    "dark skinned",
+    "brown skinned",
+    "deep skin tone",
+    "deep skin tones"
+   ]
+  },
+  {
+   "canonical": "dirt",
+   "variants": [
+    "dirty",
+    "dirtier",
+    "dirtied",
+    "filthy",
+    "filth",
+    "grime",
+    "grimy",
+    "grimey",
+    "grubby",
+    "muck",
+    "mucky"
+   ]
+  },
+  {
+   "canonical": "damp",
+   "variants": [
+    "soggy",
+    "soaked",
+    "sodden",
+    "waterlogged",
+    "moist"
+   ]
+  },
+  {
+   "canonical": "dust",
+   "variants": [
+    "dusty",
+    "dusted"
+   ]
+  },
+  {
+   "canonical": "cliff",
+   "variants": [
+    "cliffs",
+    "ledge",
+    "ledges",
+    "crag",
+    "crags",
+    "rock face",
+    "outcrop",
+    "outcrops",
+    "rocky outcrop",
+    "escarpment"
+   ]
+  },
+  {
+   "canonical": "ruin",
+   "variants": [
+    "ruins",
+    "ruined",
+    "rubble",
+    "ruined buildings",
+    "bombed out"
+   ]
+  },
+  {
+   "canonical": "foliage",
+   "variants": [
+    "vegetation",
+    "greenery",
+    "undergrowth"
+   ]
+  },
+  {
+   "canonical": "shrub",
+   "variants": [
+    "shrubs",
+    "bush",
+    "bushes"
+   ]
+  },
+  {
+   "canonical": "alien",
+   "variants": [
+    "otherworldly",
+    "extraterrestrial",
+    "alien planet",
+    "alien world",
+    "alien worlds"
+   ]
+  },
+  {
+   "canonical": "scifi",
+   "variants": [
+    "sci-fi",
+    "sci fi",
+    "science fiction",
+    "futuristic"
+   ]
+  },
+  {
+   "canonical": "screen",
+   "variants": [
+    "screens",
+    "monitor",
+    "monitors",
+    "computer screen",
+    "display screen"
+   ]
+  },
+  {
+   "canonical": "exhaust",
+   "variants": [
+    "exhausts",
+    "exhaust pipe",
+    "exhaust pipes",
+    "tailpipe",
+    "tailpipes",
+    "muffler"
+   ]
+  },
+  {
+   "canonical": "track",
+   "variants": [
+    "tracks",
+    "tread",
+    "treads",
+    "tank tracks"
+   ]
+  },
+  {
+   "canonical": "clear",
+   "variants": [
+    "transparent",
+    "transparency"
+   ]
+  },
+  {
+   "canonical": "terrain",
+   "variants": [
+    "scenery",
+    "terain",
+    "terrian"
+   ]
+  },
+  {
+   "canonical": "unit",
+   "variants": [
+    "units",
+    "squad",
+    "squads"
+   ]
+  },
+  {
+   "canonical": "fast",
+   "variants": [
+    "quick",
+    "quickly",
+    "faster",
+    "fastest",
+    "quicker",
+    "quickest",
+    "speedy",
+    "rapid",
+    "rapidly"
+   ]
+  },
+  {
+   "canonical": "slow",
+   "variants": [
+    "takes forever",
+    "taking forever",
+    "takes ages",
+    "taking ages",
+    "takes so long",
+    "taking so long",
+    "too slow",
+    "so slow"
+   ]
+  },
+  {
+   "canonical": "bad",
+   "variants": [
+    "ugly",
+    "terrible",
+    "awful",
+    "rubbish",
+    "crap",
+    "crappy",
+    "garbage",
+    "horrible",
+    "trash",
+    "sucks",
+    "looks off",
+    "dreadful"
+   ]
+  },
+  {
+   "canonical": "rpg",
+   "variants": [
+    "tabletop rpg",
+    "ttrpg",
+    "role playing",
+    "roleplaying",
+    "role-playing",
+    "roleplay"
+   ]
+  },
+  {
+   "canonical": "light box",
+   "variants": [
+    "lightbox",
+    "light tent",
+    "photo box",
+    "photo tent"
+   ]
+  },
+  {
+   "canonical": "parchment",
+   "variants": [
+    "scroll",
+    "scrolls",
+    "parchments"
+   ]
+  },
+  {
+   "canonical": "humidity",
+   "variants": [
+    "humid weather",
+    "damp weather",
+    "wet weather",
+    "rainy weather",
+    "muggy",
+    "humid day",
+    "humid days",
+    "humid",
+    "cold weather",
+    "hot weather"
+   ]
+  }
+ ]
+}
