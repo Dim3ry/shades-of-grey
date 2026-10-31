@@ -3,7 +3,10 @@
 v109 (Mo4b) update: leaving the circle is no longer the Mo3b glide (a shrinking picture of the circle). It is the travel of four copies of the
 segments (a .tabs.mo-tr layer, tested in test_v109_travel.py) with the Mentor button gliding on the same clock. So the checks that looked for
 the old picture (.mo-ring) and the rising segments on the way OUT now look for the travel layer instead, and say what they check; every check
-stays, none is loosened. The way BACK (bar to circle, the .mo-ghost picture) is unchanged and is still tested here.
+stays, none is loosened. v110 (Mo4c) update: the way BACK (bar to circle) is the same travel run backwards (.mo-tr layer, tested in test_v110_return.py), so the .mo-ghost picture
+and the growing segments are gone from this direction. The back-direction checks below now look for the travel layer; none is dropped. A tap on a
+segment while the way back is still travelling is ignored (taps are ignored while it travels, as on the way out), so the "title then a segment
+straight away" check waits for the travel to end before tapping.
 
 New behaviour only:
 1. Tapping a segment on the start circle: the real Mentor button glides to the bar, the segments rise, a picture of the circle (inert, hidden
@@ -90,9 +93,9 @@ def main():
 
         print("\n--- 3. Bar to circle (title button) ---")
         r = page.evaluate(TAP, "#home-button")
-        check("the Mentor button glides back and a picture of the bar is on top (inert)",
-              r["orb"] and r["orb"][0].startswith("translate(") and r["ghost"] and "mo-ghost" in r["ghost"]["cls"] and r["ghost"]["inert"] and r["ghost"]["aria"] == "true", r)
-        check("the circle's segments grow in", r["segs"] == 4, r)
+        check("the Mentor button glides back and four copies of the bar's segments are on top (inert, the travel run backwards)",
+              r["orb"] and r["orb"][0].startswith("translate(") and r["ghost"] and "mo-tr" in r["ghost"]["cls"] and r["ghost"]["inert"] and r["ghost"]["aria"] == "true", r)
+        check("the real circle segments wait see-through (the old growing-in is gone)", r["segs"] == 0 and r["copies"] == 4, r)
         settle(page)
         end = page.evaluate(GEOM)
         check("end: the start page is showing, nothing left, the button is 124 px again at its circle place",
@@ -107,11 +110,14 @@ def main():
         settle(page)
         # X1: the Mentor button lands in Painting > Colour Lab
         check("... and lands in Colour Lab, tidy", page.evaluate("() => settings.tab + settings.recipeView") == "recipescolourlab" and page.evaluate(TIDY))
-        page.evaluate("() => { document.getElementById('home-button').click(); document.querySelector('.tabs button[data-tab=\"units\"]').click(); }")
+        page.evaluate("() => document.getElementById('home-button').click()")
         settle(page)
-        check("title then a segment straight away: one clean end state, no extra picture",
+        page.evaluate("() => document.querySelector('.tabs button[data-tab=\"units\"]').click()")
+        settle(page)
+        check("title, the return ends, then a segment: one clean end state, no extra picture",
               page.evaluate("() => settings.tab") == "units" and page.evaluate(TIDY) and page.evaluate(GEOM)["orb"] == bar_ref["orb"])
         page.evaluate("() => { document.getElementById('home-button').click(); }")
+        settle(page)   # v110: a tap during the way back's travel is ignored, so let it end first
         page.evaluate("() => { window.scrollTo(0, 0); document.querySelector('.tabs button[data-tab=\"guides\"]').click(); }")   # X2: the cog is gone; the Tools segment
         settle(page)
         check("the Tools segment from the circle: lands in Guides, tidy", page.evaluate("() => settings.tab") == "guides" and page.evaluate(TIDY))
@@ -131,7 +137,7 @@ def main():
         check("reduced motion, circle to bar: no animation, no picture", not r["orb"] and not r["ghost"] and r["segs"] == 0, r)
         check("... and the bar is in its place at once", page.evaluate(GEOM)["orb"] == bar_ref["orb"])
         r = page.evaluate(TAP, "#home-button")
-        check("reduced motion, bar to circle: no animation, no picture", not r["orb"] and not r["ghost"] and r["segs"] == 0, r)
+        check("reduced motion, bar to circle: no travel, no picture (a short fade only, tested in test_v110_return.py)", not r["orb"] and not r["ghost"] and r["segs"] == 0, r)
         check("... and the circle is in place at once", page.evaluate(GEOM)["orb"] == ring_orb)
         page.emulate_media(reduced_motion="no-preference")
 
