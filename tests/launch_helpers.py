@@ -61,6 +61,12 @@ _SETTLED = """() => !document.querySelector('.mo-out, .mo-box, .mo-ring, .mo-gho
     && [...document.querySelectorAll('main > section, #recipe-home, #recipe-page')].every(e => e.getAnimations().length === 0)
     && document.querySelector('.tabs').getAnimations({ subtree: true }).length === 0"""
 
+def wait_ring_done(page, timeout=10000):
+    """v108 (Mo4a): a fresh load of the start page first plays the loading ring (about 1.2 s; the segments are hidden and untappable until it
+    ends). Older tests of the start page mean the finished circle, so they wait for the ring to go. Does nothing with reduced motion (no ring)."""
+    page.wait_for_function("() => typeof settings === 'object' && !document.querySelector('.mo-load') && !document.body.classList.contains('ring-loading')", timeout=timeout)
+
+
 def wait_settled(page, timeout=15000):
     page.wait_for_function(_SETTLED, timeout=timeout)
 
