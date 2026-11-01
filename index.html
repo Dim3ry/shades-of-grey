@@ -336,8 +336,8 @@
     .clearable input:placeholder-shown + .clear-x { display: none; }
     .five-list { margin: 0; padding-left: 22px; display: grid; gap: 8px; }
     .start-line { display: none; }
-    body.launching .app-bar { flex-wrap: wrap; }
-    body.launching .start-line { display: block; flex: 0 0 100%; order: 3; margin: 0; text-align: center; color: var(--muted); font-size: 15px; }
+    /* it hangs just under the header bar and adds no height, so the circle keeps its size and centring */
+    body.launching .start-line { display: block; position: absolute; left: 16px; right: 16px; top: 100%; margin: 8px 0 0; text-align: center; color: var(--muted); font-size: 15px; line-height: 20px; }
     body.launching .version-tag { display: none; }
     body.launching .tabs { top: 0; height: auto; }
     body.launching .tabs::before {
