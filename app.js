@@ -4162,6 +4162,8 @@
     const MENTOR_TYPING = true;    // X6b: the text box is on (one line to switch it off)
     const MENTOR_MAX_LENGTH = 300;
     const MENTOR_MAX_MESSAGES = 30;
+    const MENTOR_IDLE_MINUTES = 30;   // D: after this long without a message (yours or Mentor's), the window opens at its start. The one place to change it.
+    let mentorLastAt = 0;          // D: the app's clock (Date.now) when the last message was added; kept in memory only, like the messages
     const mentorMessages = [];     // { who: "me" | "mentor", text, sources, suggestions, pick }: the last 30, kept only while the app is open
     const mentorUsed = new Set();  // questions already asked (lower case): a starter chip with the same words drops out of the row
     let mentorWarm = false;
@@ -4225,6 +4227,12 @@
         ideas: (hex, part) => { pick = { hex, part }; return colourIdeas(null, hex, mentorRole(part)); },
       });
       return { answer, pick: answer.picks && answer.picks.length ? pick : null };
+    }
+    // D: back to the start: no exchange, and the starter questions that were used come back. Memory only; nothing was ever saved.
+    function mentorClear() {
+      mentorMessages.length = 0;
+      mentorUsed.clear();
+      mentorLastAt = 0;
     }
     const mentorPhrase = (list, fallback) => (list.length ? list[Math.floor(Math.random() * list.length)] : fallback);
 
@@ -4365,6 +4373,7 @@
       }
       const mine = { who: "me", text };
       mentorMessages.push(mine, reply);
+      mentorLastAt = Date.now();
       const first = mentorBuildMessage(mine);
       state.msgs.append(first, mentorBuildMessage(reply));
       while (mentorMessages.length > MENTOR_MAX_MESSAGES) mentorMessages.shift();
@@ -4397,11 +4406,30 @@
       win.setAttribute("aria-modal", "true");
       win.setAttribute("aria-label", "Mentor");
 
+      // D: a conversation left alone for MENTOR_IDLE_MINUTES is dropped before the window is drawn, so it opens at its start.
+      if (mentorMessages.length && Date.now() - mentorLastAt >= MENTOR_IDLE_MINUTES * 60000) mentorClear();
+
       const close = document.createElement("button");
       close.type = "button";
       close.className = "mentor-close";
       close.setAttribute("aria-label", "Close Mentor");
       close.textContent = "✕";
+
+      // D: the Back button (arrow only, top left). It shows only in the chat view; it clears the exchange and returns to the start view.
+      const back = document.createElement("button");
+      back.type = "button";
+      back.className = "mentor-back";
+      back.setAttribute("aria-label", "Back to start");
+      const backArrow = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      backArrow.setAttribute("viewBox", "0 0 24 24");
+      backArrow.setAttribute("aria-hidden", "true");
+      backArrow.setAttribute("focusable", "false");
+      for (const d of ["M19 12H5", "M11 6l-6 6 6 6"]) {
+        const part = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        part.setAttribute("d", d);
+        backArrow.appendChild(part);
+      }
+      back.appendChild(backArrow);
 
       const col = document.createElement("div");
       col.className = "mentor-col";
@@ -4463,7 +4491,7 @@
       const orbBox = document.createElement("div");
       orbBox.className = "mentor-orbbox";
       orbBox.appendChild(buildMentorOrb());
-      win.append(col, orbBox, close);
+      win.append(back, col, orbBox, close);
       backdrop.appendChild(win);
       document.body.appendChild(backdrop);
       document.body.classList.add("mentor-open");
@@ -4477,6 +4505,16 @@
       if (mentorMessages.length) scroll.scrollTop = scroll.scrollHeight;
       document.body.style.overflow = "hidden";   // the page behind does not scroll
       close.addEventListener("click", () => closeMentor());
+      back.addEventListener("click", () => {
+        mentorClear();
+        msgs.replaceChildren();
+        win.classList.remove("mentor-chatting");
+        status.textContent = "";
+        input.value = "";
+        mentorDrawChips(state);
+        scroll.scrollTop = 0;
+        pickerChip.focus({ preventScroll: true });   // the first thing in the start view
+      });
       form.addEventListener("submit", (event) => { event.preventDefault(); if (mentorSend(input.value, false)) input.value = ""; });
       backdrop.addEventListener("click", (event) => { if (event.target === backdrop) closeMentor(); });
       state.onKey = (event) => {
@@ -7770,11 +7808,11 @@
     // Mo1: the phone's reduced-motion setting. The CSS stops all movement; this stops the movement that JavaScript starts.
     function reducedMotion() { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
 
-    // Mo1: a ripple spreads from where a main button is tapped. One listener for every .primary-button, .plain-button and the back arrow.
+    // Mo1: a ripple spreads from where a main button is tapped. One listener for every .primary-button, .plain-button, the back arrow and Back in Mentor's window.
     document.addEventListener("pointerdown", (event) => {
-      const button = event.target instanceof Element ? event.target.closest(".primary-button, .plain-button, .back-menu") : null;
+      const button = event.target instanceof Element ? event.target.closest(".primary-button, .plain-button, .back-menu, .mentor-back") : null;
       if (!button || button.disabled || reducedMotion()) return;
-      if (!button.classList.contains("rip-host") && !button.classList.contains("back-menu")) {   // the back arrow is already fixed in place and clips its own ripple
+      if (!button.classList.contains("rip-host") && !button.classList.contains("back-menu") && !button.classList.contains("mentor-back")) {   // the back arrow is already fixed in place and clips its own ripple
         if (getComputedStyle(button).position !== "static") return;   // already placed by the page: leave it alone
         button.classList.add("rip-host");
       }
