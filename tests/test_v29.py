@@ -249,7 +249,7 @@ def main():
         check("the tip sits under the role buttons and above the ideas",
               page.evaluate("""() => { const t = document.getElementById('colour-ideas-tip'), chips = document.querySelector('#colour-ideas [data-role]').parentElement, first = document.querySelector('#colour-ideas button.idea');
                   return !!(chips.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_FOLLOWING) && !!(t.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING); }"""))
-        check("the card still says Pro preview and still has exactly 6 roles", page.inner_text("#colour-ideas .pro-pill") == "Pro preview" and page.locator("#colour-ideas [data-role]").count() == 6)
+        check("the card still says Pro preview and still has exactly 6 roles", page.text_content("#colour-ideas .pro-pill") == "Pro preview" and page.locator("#colour-ideas [data-role]").count() == 6)
 
         # ---------- 3. Role-specific reasons ----------
         print("\n--- 3. Role-specific reasons ---")
@@ -526,7 +526,7 @@ def main():
         set_step_paint(page, 1, "Macragge Blue")
         open_panel(page)
         check("the Colour ideas card is still labelled Pro preview and still ends with the v28 footnote",
-              page.inner_text("#colour-ideas .pro-pill") == "Pro preview" and "Colours on screen are a guide" in page.inner_text("#colour-ideas .ideas-body"), page.inner_text("#colour-ideas .ideas-body"))
+              page.text_content("#colour-ideas .pro-pill") == "Pro preview" and "Colours on screen are a guide" in page.inner_text("#colour-ideas .ideas-body"), page.inner_text("#colour-ideas .ideas-body"))
         page.click("#recipe-page button.plain-button:has-text('Cancel')")
         page.wait_for_timeout(250)
         if page.is_visible("#dialog-yes"):

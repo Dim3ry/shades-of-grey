@@ -17754,12 +17754,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL TEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=111".
+    // "?v=" number on ALL TEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=112".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v111";
+    const APP_VERSION = "v112";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -18210,6 +18210,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v112", date: "1 Nov 2026", changes: [
+        "Pro preview labels moved. The Colour Lab page, the colour wheel and everything you track yourself no longer carry one. Guides, Colour ideas, Colour plans and Paint Picker show a small PRO PREVIEW tag at the right of their row, and Guides says it is free while in preview. Nothing is locked and nothing works differently.",
+      ] },
       { version: "v111", date: "1 Nov 2026", changes: [
         "Fixes: the Ask Mentor label is no longer cut off at the bottom, the last card scrolls clear of the menu, Mentor questions wrap instead of running off the side, the Guides search box is full width, and leftover sample tips are gone.",
       ] },

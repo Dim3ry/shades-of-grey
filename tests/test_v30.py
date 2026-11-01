@@ -453,7 +453,7 @@ def main():
             return { pos, sameParent: ids.every(i => document.getElementById(i).parentElement === document.querySelector('#colour-ideas .ideas-body')) }; }""")
         check("order in the card: tip, then the three ideas, then faction history, then starter schemes, then the check",
               order["sameParent"] and order["pos"] == sorted(order["pos"]) and -1 not in order["pos"], order)
-        check("the card is still labelled Pro preview", page.inner_text("#colour-ideas .pro-pill") == "Pro preview")
+        check("the card is still labelled Pro preview", page.text_content("#colour-ideas .pro-pill") == "Pro preview")
         check("the footnote is still last", page.evaluate("() => document.querySelector('#colour-ideas .ideas-body').lastElementChild.textContent.includes('Colours on screen are a guide')"))
         check("the main ideas, tip and Whole model start-from still work", page.locator("#colour-ideas button.idea").count() == 3 and page.locator("#colour-ideas-base").count() == 1)
 
@@ -555,7 +555,7 @@ def main():
         set_step_paint(page, 1, "Macragge Blue")
         open_panel(page)
         check("the card is still labelled Pro preview, still has the scheme check, and still ends with the v28 footnote",
-              page.inner_text("#colour-ideas .pro-pill") == "Pro preview" and page.locator("#scheme-check-toggle").count() == 1
+              page.text_content("#colour-ideas .pro-pill") == "Pro preview" and page.locator("#scheme-check-toggle").count() == 1
               and "Colours on screen are a guide" in page.inner_text("#colour-ideas .ideas-body"))
         page.click("#recipe-page button.plain-button:has-text('Cancel')")
         page.wait_for_timeout(250)

@@ -157,7 +157,8 @@ def main():
         help_text = page.evaluate("() => document.getElementById('help-tabs').textContent")
         # v75: HELP-3 dropped the wheel description from this line
         check("Help still names five tabs and now says the Compendium has a colour wheel", all(w in help_text for w in ["four sections", "Guides"]), help_text)   # U4a: four sections around Ask Mentor
-        check("the Pro preview label is still on the Compendium", page.locator("#view-guides .pro-pill").inner_text() == "Pro preview")
+        # v112 (P1): the whole Guides page no longer carries a Pro preview label (the tag sits on each section row), so this old check now confirms the page-wide label is gone
+        check("the whole Guides page no longer carries a Pro preview label", page.locator("#view-guides .lab-pro").count() == 0)
 
         # ---------- 2. The shape of the wheel ----------
         print("\n--- 2. The shape of the wheel ---")
