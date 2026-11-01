@@ -17849,12 +17849,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL TEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=116".
+    // "?v=" number on ALL TEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=117".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v116";
+    const APP_VERSION = "v117";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -18305,6 +18305,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v117", date: "1 Nov 2026", changes: [
+        "A grey square no longer flashes over the round Ask Mentor button, or the back arrow, basket and Mentor window buttons, when you tap them. The keyboard focus ring on Ask Mentor is now clearer.",
+      ] },
       { version: "v116", date: "1 Nov 2026", changes: [
         "Mentor now starts fresh after 30 minutes without use, and has a Back button (an arrow, top left) that takes you back to the start. The Mentor window is also taller on a phone, so more of the chat shows.",
       ] },
