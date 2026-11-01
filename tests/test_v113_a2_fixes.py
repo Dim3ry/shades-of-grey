@@ -118,10 +118,8 @@ def main():
             check(f"{name}: shown with Undo for 10 s", got["shown"] and got["undo"] and got["life"] == "10s", got)
         page.evaluate("() => deleteModelNow(models[0].id)")
         check("delete unit: 10 s", page.evaluate(TOAST)["life"] == "10s")
-        page.wait_for_timeout(9000)
-        check("delete unit: still offered at 9 s", page.evaluate(TOAST)["shown"])
-        page.wait_for_timeout(2000)
-        check("delete unit: gone by 11 s", not page.evaluate(TOAST)["shown"])
+        page.wait_for_timeout(5000)   # longer than the old 4 s and 8 s limits; the older v24 and v44 tests wait out the full 10 s
+        check("delete unit: still offered at 5 s", page.evaluate(TOAST)["shown"])
         for w, h in ((390, 844), (360, 640), (320, 568)):
             page.set_viewport_size({"width": w, "height": h})
             page.evaluate("() => showToast('Deleted a unit with a rather long name for a small phone, Intercessor Veterans', () => {})")
