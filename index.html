@@ -303,6 +303,12 @@
       box-shadow: 0 0 28px color-mix(in srgb, var(--accent) 50%, transparent);
     }
     .mentor-orb svg { width: 50px; height: 50px; flex: none; }
+    /* A3: the keyboard ring sits just outside the circle (on the page colour, where the text colour reads at 3:1 or more in every theme); inside, it sat on the accent fill and was too faint. */
+    .mentor-orb:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+    /* A3: no square tap flash or long-press text selection over the round and pill buttons (the phone drew a box around the button's square frame).
+       The keyboard ring (:focus-visible above and below) is kept and follows each button's own shape. */
+    .mentor-orb, .back-menu, .mentor-back, .mentor-close, .app-actions .basket, .app-bar h1 .home { -webkit-tap-highlight-color: transparent; }
+    .mentor-orb, .back-menu, .mentor-back, .mentor-close, .app-actions .basket { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
     /* U5: the Mentor orb drawn inside the round button (a static inline graphic; the colours come from the --mentor-* names below, which are
        built from each theme's own colours, so there are no new colours). */
     :root {
