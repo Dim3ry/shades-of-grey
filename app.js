@@ -17793,12 +17793,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL TEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=113".
+    // "?v=" number on ALL TEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=114".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v113";
+    const APP_VERSION = "v114";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -18249,6 +18249,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v114", date: "1 Nov 2026", changes: [
+        "A round back arrow now sits at the bottom left of the screen. Tap it to go back to the start page, the same as tapping the Minifolio title. It hides on the start page and while things are moving.",
+      ] },
       { version: "v113", date: "1 Nov 2026", changes: [
         "Fixed a handful of small things. One unit now reads \"1 unit\" instead of \"1 units\". A message that has run out of time no longer lingers when the phone wakes up. A kept unfinished unit is offered once, by the card at the top of Models, instead of twice. Unit name, game and faction boxes stop at 80 characters (longer ones you already have still load and show unchanged). Every message with an Undo button now stays for 10 seconds. The four start-circle segments now arrive clockwise: Dashboard, Models, Tools, Painting.",
       ] },
