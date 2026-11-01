@@ -17742,12 +17742,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL TEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=110".
+    // "?v=" number on ALL TEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=111".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v110";
+    const APP_VERSION = "v111";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -18198,6 +18198,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v111", date: "1 Nov 2026", changes: [
+        "Fixes: the Ask Mentor label is no longer cut off at the bottom, the last card scrolls clear of the menu, Mentor questions wrap instead of running off the side, the Guides search box is full width, and leftover sample tips are gone.",
+      ] },
       { version: "v110", date: "31 Oct 2026", changes: [
         "Tapping the Minifolio title now sends the bottom bar's four sections and the Mentor button travelling back up into the start circle, the same journey in reverse. With reduced motion on, it fades quickly instead.",
       ] },
