@@ -101,7 +101,7 @@ def main():
         check("saying yes opens the other recipe", "Teal eyes" in page.inner_text("#recipe-page h2"))
 
         print("\n--- 5. Delete and Undo ---")
-        page.click("#recipe-page >> text=Delete")
+        page.click("#recipe-page .recipe-menu-button"); page.click("#recipe-page >> text=Delete recipe")   # RS1: Delete is in the Edit menu now
         page.click("#dialog-yes")
         check("deleted: gone from the list, list full width", page.locator('#recipe-list .recipe-item:has-text("Teal eyes")').count() == 0 and not state(page)["pageShown"])
         page.click("#toast-undo")

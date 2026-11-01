@@ -158,8 +158,8 @@ def main():
         page.wait_for_timeout(250)
         lines = page.locator("#recipe-page ol.recipe-steps > li > .step-line")
         check("three steps, each one line", lines.count() == 3, lines.count())
-        check("each line says its number and technique", [l.locator(".step-line-text").inner_text() for l in [lines.nth(i) for i in range(3)]]
-              == ["1. Base coat", "2. Layer", "3. Glaze"], lines.all_inner_texts())
+        check("each line says its number, paints and technique", [l.locator(".step-line-text").inner_text() for l in [lines.nth(i) for i in range(3)]]
+              == ["1. Deep Test Blue, Base coat", "2. Deep Test Blue + Mid Test Blue, Layer", "3. Test Orange, Glaze"], lines.all_inner_texts())   # RS1: rows name the paints
         check("every step starts closed", all(lines.nth(i).get_attribute("aria-expanded") == "false" for i in range(3)))
         check("step lines show small swatches (1, 2 and 1)", [lines.nth(i).locator(".swatch").count() for i in range(3)] == [1, 2, 1])
         check("step lines are at least 44 px tall", all(box(lines.nth(i))["height"] >= 43.5 for i in range(3)), [box(lines.nth(i)) for i in range(3)])
@@ -306,7 +306,7 @@ def main():
                 check(f"[{tag}] reading: step facts contrast 4.5 or more", t.contrast(fc, card_bg) >= 4.5, round(t.contrast(fc, card_bg), 2))
                 kc = t.rgb(page.evaluate("() => getComputedStyle(document.querySelector('.have-key')).color"))
                 check(f"[{tag}] reading: key contrast 4.5 or more", t.contrast(kc, card_bg) >= 4.5, round(t.contrast(kc, card_bg), 2))
-                page.locator("#recipe-page button", has_text="Edit").first.click(); page.wait_for_timeout(300)
+                page.click("#recipe-page .recipe-menu-button"); page.click("text=Edit steps and paints"); page.wait_for_timeout(300)   # RS1: Edit is a menu now
                 page.locator("#recipe-page li.step-edit .step-line").nth(1).click()
                 page.locator("#recipe-page li.step-edit").nth(1).locator(".more-info-button").click()
                 check(f"[{tag}] editor: no sideways scroll", t.no_sideways(page))

@@ -1199,6 +1199,7 @@
     .recipe-chip small { color: var(--muted); }
     .recipe-chip .swatch { width: 12px; height: 12px; }
     .linked-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .linked-list[hidden] { display: none; }   /* RS1: the folded Used on list */
     .linked { display: inline-flex; }
     .linked .recipe-chip { border-radius: 999px 0 0 999px; }
     .linked .unlink {
@@ -1654,6 +1655,32 @@
     .shop-bought-body { margin-top: 8px; display: grid; gap: 8px; }
     .shop-bought-clear { min-height: 44px; justify-self: start; }
     .shop-bought-body[hidden] { display: none; }
+    /* RS1: the recipe page. Edit menu by the title, named steps, folded Used on, and the Add to scheme picker. */
+    .recipe-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .recipe-title-row h2 { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+    .recipe-menu { flex: none; display: grid; justify-items: end; }
+    .recipe-menu-button { min-width: 64px; }
+    .recipe-menu-list { display: grid; gap: 8px; margin-top: 8px; padding: 8px; min-width: 200px; background: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card); }
+    .recipe-menu-list[hidden] { display: none; }
+    .recipe-menu-list button { min-height: 44px; text-align: left; }
+    .recipe-title-row:has(.recipe-menu-list:not([hidden])) { flex-wrap: wrap; }
+    .recipe-title-row:has(.recipe-menu-list:not([hidden])) .recipe-menu { flex: 1 0 100%; }
+    .step-line-named { min-height: 44px; height: auto; padding-top: 4px; padding-bottom: 4px; }
+    .step-line-named .step-line-text { white-space: normal; overflow-wrap: anywhere; }
+    .recipe-bottom-row { display: flex; gap: 8px; align-items: stretch; margin-top: 12px; }
+    .recipe-bottom-row > *, .recipe-bottom-row > .recipe-shop-idle-wrap { flex: 1 1 0; min-width: 0; margin-top: 0; }
+    .recipe-bottom-row .recipe-shop-add, .recipe-bottom-row .recipe-scheme-add, .recipe-bottom-row .shop-idle-button { width: 100%; min-height: 44px; overflow-wrap: anywhere; }
+    .recipe-bottom-row .shop-idle { justify-items: stretch; }
+    #dialog-pick { min-height: 0; }
+    .dialog-pick-mode { grid-template-rows: auto minmax(0, 1fr) auto; max-height: 100%; }
+    .dialog-pick-mode #dialog-pick { overflow-y: auto; }
+    .dialog-pick-mode .dialog-buttons { grid-template-columns: 1fr 1fr; }
+    .scheme-picker { display: grid; gap: 8px; }
+    .scheme-picker-list { display: grid; }
+    .scheme-picker-row { display: flex; align-items: center; gap: 4px; min-height: 44px; }
+    .scheme-picker-row[hidden] { display: none; }
+    .scheme-picker-row .pick-slot, .scheme-picker-row .pick-tick { margin: 0; }
+    .scheme-picker-name { flex: 1; min-width: 0; padding: 8px 0; overflow-wrap: anywhere; cursor: pointer; }
     .recipe-shop-idle-wrap { margin-top: 12px; }
     .recipe-shop-idle-wrap .shop-idle-button { min-height: 44px; }
     @media (prefers-reduced-motion: reduce) { .shop-item.shop-ticking .shop-text { transition: none; } }
@@ -3077,6 +3104,7 @@
             <li>On a wide screen an open recipe sits beside the list, so you can open another without going back.</li>
             <li>Reorder steps with <strong>↑ ↓</strong>. Nothing is saved until you press <strong>Save recipe</strong>.</li>
             <li>Link a recipe to units from the recipe (<strong>Used on</strong>) or from a unit's details. Linked recipes show as buttons on the unit's card: tap one to open it.</li>
+            <li id="help-recipe-menu">On an open recipe, <strong>Edit</strong> by the title opens a short list: edit the steps and paints, duplicate it, copy it as text or delete it. <strong>Add to scheme</strong>, next to Add to shopping list, ticks which schemes hold the recipe. Nothing changes until you press <strong>Done</strong>.</li>
             <li><strong>Your Palette</strong> (top of the Painting tab) lists every paint in your recipes, once each. It fills itself in: add a paint to a recipe and it appears.</li>
             <li id="help-palette-swatches"><strong>List or Swatches</strong> (top of Your Palette): Swatches shows each paint as a small colour tile with a mark for its status. Tap a tile to open that paint. In an open paint, <strong>More options</strong> holds its name, brand, colour, Merge and Remove.</li>
             <li>On a wide screen, a paint you tap in Your Palette opens in a pane beside the list. You can keep several open and press <strong>Close</strong> on each.</li>
@@ -3446,8 +3474,10 @@
       <p class="dialog-message" id="dialog-message"></p>
       <input id="dialog-input" class="hidden" type="text" autocomplete="off" autocapitalize="sentences" maxlength="200" aria-labelledby="dialog-message">
       <textarea id="dialog-area" class="hidden" readonly aria-labelledby="dialog-message"></textarea>
+      <div id="dialog-pick" class="hidden"></div>
       <div class="dialog-buttons" id="dialog-buttons">
         <button type="button" class="plain-button" id="dialog-no">No</button>
+        <button type="button" class="plain-button hidden" id="dialog-extra"></button>
         <button type="button" class="primary-button" id="dialog-yes">Yes</button>
       </div>
     </div>

@@ -3,7 +3,7 @@
 import json, sys
 from playwright.sync_api import sync_playwright
 from launch_helpers import leave_launch
-import os as _os
+import os as _os, re
 PORT = _os.environ.get("SOG_PORT", "8765")
 
 URL = f"http://localhost:{PORT}/index.html"
@@ -136,10 +136,12 @@ with sync_playwright() as pw:
         # The recipe page. (v50: open every step and its More options to read the coats, mix, note and optional.)
         page.evaluate("() => { document.querySelectorAll('#recipe-page .step-line').forEach(b => b.click()); document.querySelectorAll('#recipe-page .step-options .more-info-button').forEach(b => b.click()); }")
         text = page.locator("#recipe-page").inner_text() if page.locator("#recipe-page").count() else page.inner_text("body")
-        check(f"{size}: view shows guessed Layer", "1. Layer" in text, text[:300])
-        check(f"{size}: view shows Contrast and mix ratio", "2. Contrast" in text and "mix 2:1" in text)
-        check(f"{size}: view shows Varnish (optional)", "3. Varnish" in text and "optional" in text)
-        check(f"{size}: view shows Texture for rocks", "4. Texture" in text)
+        # RS1: a step row now reads "1. <paint name>, Layer", so these look for the number and the technique with the paint name between.
+        has = lambda n, word: re.search(r"%d\. [^\n]*, %s" % (n, word), text) is not None
+        check(f"{size}: view shows guessed Layer", has(1, "Layer"), text[:300])
+        check(f"{size}: view shows Contrast and mix ratio", has(2, "Contrast") and "mix 2:1" in text)
+        check(f"{size}: view shows Varnish (optional)", has(3, "Varnish") and "optional" in text)
+        check(f"{size}: view shows Texture for rocks", has(4, "Texture"))
         check(f"{size}: view shows note", "heavier on the top" in text)
         check(f"{size}: optional step faded", page.locator("li.optional-step").count() == 1)
         page.screenshot(path=f"{SHOTS}/v15-{size}-recipe.png", full_page=True)
