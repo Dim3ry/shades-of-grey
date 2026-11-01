@@ -32,6 +32,14 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://dim3ry.goatcounter.com/count; media-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
   <meta name="theme-color" content="#0b1220">
   <title>Minifolio</title>
+  <!-- C3: what search engines and link previews show. The share picture is the app icon for now (a 1200x630 image would look better). -->
+  <meta name="description" content="Track your miniature painting: keep your models, paint recipes and colour schemes in one place. Works offline and keeps your data on your own device.">
+  <meta property="og:title" content="Minifolio">
+  <meta property="og:description" content="Track your miniature painting: keep your models, paint recipes and colour schemes in one place. Works offline and keeps your data on your own device.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://minifolio.app/">
+  <meta property="og:image" content="https://minifolio.app/icon-512.png">
+  <meta name="twitter:card" content="summary">
 
   <!-- PHASE 6: these three lines make the app installable.
        manifest.json tells the phone the app's name, colours and icon.
@@ -318,6 +326,19 @@
        (min(1, width / 390), and small enough to fit the height); the whole .arc is scaled from its centre. Nothing is lit.
        Each segment is its own box (its bounding box), shaped with clip-path, so the tap area is the segment itself. */
     body.launching main > :not(.app-bar) { display: none; }
+    /* C1: the one line under the name on the start page; hidden everywhere else. C2: the version number is not shown on the start page (it is in Updates). */
+    /* C8: a box with a clear button (an x) at its end. The button is a 44 px tap area; it hides while the box is empty. */
+    .clearable { position: relative; display: block; min-width: 0; }
+    .clearable input { width: 100%; padding-right: 40px; }
+    .clear-x { position: absolute; right: 0; top: 0; width: 44px; height: 44px; padding: 0; display: inline-flex; align-items: center; justify-content: center; background: none; border: 0; color: var(--muted); cursor: pointer; }
+    .clear-x svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+    .clear-x:focus-visible { outline: 2px solid var(--text); outline-offset: -4px; }
+    .clearable input:placeholder-shown + .clear-x { display: none; }
+    .five-list { margin: 0; padding-left: 22px; display: grid; gap: 8px; }
+    .start-line { display: none; }
+    /* it hangs just under the header bar and adds no height, so the circle keeps its size and centring */
+    body.launching .start-line { display: block; position: absolute; left: 16px; right: 16px; top: 100%; margin: 8px 0 0; text-align: center; color: var(--muted); font-size: 15px; line-height: 20px; }
+    body.launching .version-tag { display: none; }
     body.launching .tabs { top: 0; height: auto; }
     body.launching .tabs::before {
       height: auto; top: 0;
@@ -2634,6 +2655,7 @@
     <!-- U4a: the header. The title, then the basket in the top corner (.app-actions is one small block, easy to move). -->
     <header class="app-bar">
       <h1><button type="button" class="home" id="home-button" aria-label="Minifolio, back to the start page">Minifolio</button> <span class="version-tag" id="version-tag"></span></h1>
+      <p class="start-line" id="start-line">Track your miniature painting</p>
       <nav class="app-actions" aria-label="Shopping list">
         <!-- v40: the basket count (hidden when the list is empty). Filled and wired by updateBasket() in app.js. -->
         <button type="button" class="basket hidden" id="basket-button" aria-label="Shopping list"></button>
@@ -2659,6 +2681,7 @@
           <span class="big" id="done-percent">–</span>
           <span class="of" id="done-summary"></span>
         </div>
+        <p class="hint hidden" id="done-meaning" style="margin: 8px 0 0;"></p>
         <div class="groups">
           <button class="group-button" id="todo-button"></button>
           <button class="group-button" id="done-button"></button>
@@ -2737,8 +2760,8 @@
           <input id="count-input" type="number" min="1" max="999" value="1" aria-label="Number of models" title="Number of models">
         </div>
         <div class="row">
-          <input id="hobby-input" maxlength="80" placeholder="Game, e.g. Sci-fi" aria-label="Game" list="game-options">
-          <input id="faction-input" maxlength="80" placeholder="Faction" aria-label="Faction" list="faction-options">
+          <span class="clearable"><input id="hobby-input" maxlength="80" placeholder="Game, e.g. Sci-fi" aria-label="Game" list="game-options"><button type="button" class="clear-x" id="clear-game" aria-label="Clear game"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>
+          <span class="clearable"><input id="faction-input" maxlength="80" placeholder="Faction" aria-label="Faction" list="faction-options"><button type="button" class="clear-x" id="clear-faction" aria-label="Clear faction"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>
         </div>
         <!-- v21: start a unit at the stage it's really at, instead of tapping ▲ several times. -->
         <label class="stage-pick-label">Starting stage
@@ -2917,6 +2940,16 @@
 
     <!-- ===== TAB: Help (how to use the app) ===== -->
     <section id="view-help" class="hidden">
+      <div class="card" id="help-five">
+        <h2>5 things to know</h2>
+        <ol class="five-list">
+          <li>Add units in Models, then tap the arrows to move them through the stages.</li>
+          <li>Painting holds recipes (one part of a model) and schemes (a whole army).</li>
+          <li>Colour Lab suggests paints that go together. Add any to your shopping list.</li>
+          <li>Mentor answers painting questions from built-in guides. It isn't AI and works offline.</li>
+          <li>Everything stays on this phone. Save a backup in Settings.</li>
+        </ol>
+      </div>
       <div class="card help-intro">
         <h2>How to use Minifolio</h2>
       </div>
@@ -2997,7 +3030,7 @@
           <summary>Faction colours</summary>
           <ul>
             <li>Give each faction its own colour in <strong>Settings → Faction colours</strong> (or tap <strong>Faction colours</strong> on the dashboard). Tap the colour circle to pick one.</li>
-            <li id="help-dashboard-tiles"><strong>Palette</strong> on the Dashboard shows a strip with one block for each colour (red to purple, then greys and neutrals), as wide as the paints you have in it (Owned and Running low). A colour with none, or only one, is marked <strong>Gap</strong>. Under it: the paint used in the most recipes, the first gaps, and how many paints are owned, running low and on the wishlist. Tap it to open Your Palette. <strong>Achievements</strong> is a place held for later and does nothing yet.</li>
+            <li id="help-dashboard-tiles"><strong>Palette</strong> on the Dashboard shows a strip with one block for each colour (red to purple, then greys and neutrals), as wide as the paints you have in it (Owned and Running low). A colour with none, or only one, is marked <strong>Gap</strong>. The tile appears once you have a paint. Under it: the paint used in the most recipes, the first gaps, and how many paints are owned, running low and on the wishlist. Tap it to open Your Palette. <strong>Achievements</strong> is a place held for later and does nothing yet.</li>
             <li id="help-card-folds">In Settings, the <strong>Faction colours</strong> and <strong>Paint brands</strong> cards are shut each time you open the app. Tap the heading to open one. Tapping <strong>Faction colours</strong> on the dashboard opens it for you. <strong>Stages</strong>, <strong>Import</strong> and <strong>Your data</strong> fold shut the same way.</li>
             <li><strong>Suggest</strong> offers a colour. If the faction's units have recipes linked, it uses those (armour recipes first, each recipe's first paint, usually the base coat). Otherwise it uses the colour the faction is usually painted, for well-known factions.</li>
             <li><strong>Use suggested colours</strong> colours every faction that hasn't got one yet, in one tap. Press Undo on the message if you change your mind.</li>
@@ -3012,7 +3045,7 @@
             <li>It counts <strong>models</strong>, not units: a 10-model squad counts as 10.</li>
             <li>Tap any number, chart row or faction to jump to those units.</li>
             <li><strong>Repaint projects</strong> shows units you've flagged for a repaint.</li>
-            <li><strong>Progress over time</strong> shows how many models you've added and how many are painted (Done), day by day. Touch or hover over the graph to see the numbers for any day, or open <strong>Show as a table</strong>.</li>
+            <li><strong>Progress over time</strong> shows how many models you've added and how many are painted (Done), day by day. Touch or hover over the graph to see the numbers for any day, or open <strong>Show as a table</strong>. It appears once you have a unit. <strong>Done</strong> means the stage named under the percentage on the Dashboard, or any stage after it.</li>
             <li>The graph uses the dates the app has recorded since v4. Units added before that count from the start of the graph, and deleted units drop out of its history.</li>
           </ul>
         </details>
@@ -3126,7 +3159,7 @@
         <details>
           <summary>Updates and feedback</summary>
           <ul>
-            <li>The version number is next to the title. The <strong>Updates</strong> tab lists what changed in the latest five versions.</li>
+            <li>The version number is next to the title on every page except the start page, and in <strong>Updates</strong>, which lists what changed in the latest five versions.</li>
             <li>Found a bug or have an idea? Use <strong>Give feedback</strong> under <strong>Settings → Updates</strong>.</li>
             <li id="help-feedback-prompt">About a week after you start using the app, a small card on the Dashboard asks if you'd like to send feedback. <strong>Give feedback</strong> opens the same form and the card goes away for good. <strong>Not now</strong> hides it for 30 days. <strong>Don't ask again</strong> hides it for good. If you don't answer, it hides itself the next day and waits 30 days, so it never shows two days running. The app only remembers the date you started and your choice, on this device. Nothing is sent anywhere.</li>
           </ul>
