@@ -44,7 +44,7 @@ def main():
 
         print("\n--- 1. 1 model ---")
         start([SOLO])
-        check("the Units line says 1 model", "1 units, 1 model" in page.inner_text("#view-units") and "1 models" not in page.inner_text("#view-units"),
+        check("the Units line says 1 model", "1 unit, 1 model" in page.inner_text("#view-units") and "1 models" not in page.inner_text("#view-units"),   # A2: one unit now reads "1 unit" (the plural helper), it was "1 units"
               page.inner_text("#view-units")[:200])
         page.evaluate("() => { filters.hobby = '40K'; render(); }")
         check("the filtered line says 1 model", "(1 model)" in page.inner_text("#view-units"), page.inner_text("#view-units")[:200])
