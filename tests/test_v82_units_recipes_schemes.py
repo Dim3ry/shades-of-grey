@@ -86,7 +86,7 @@ def main():
 
             page.set_viewport_size({"width": 1280, "height": 900})
             print(f"\n--- {appearance}: editors keep the form width ---")
-            page.evaluate("() => [...document.querySelectorAll('#recipe-page button')].find(b => /^Edit/.test(b.textContent.trim())).click()")
+            page.evaluate("() => { document.querySelector('#recipe-page .recipe-menu-button').click(); document.querySelector('#recipe-page .recipe-menu-list button').click(); }")   # RS1: Edit is a menu now
             page.wait_for_timeout(200)
             w = widths(page)
             check(f"{appearance} 1280: recipe editor stays at 780 or less", w["page"] <= 781, w)
