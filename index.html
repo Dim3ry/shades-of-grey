@@ -325,7 +325,7 @@
        axes, Mentor button 124 px across. app.js sets --ring-cy (the circle's centre, from the top) and --ring-scale
        (min(1, width / 390), and small enough to fit the height); the whole .arc is scaled from its centre. Nothing is lit.
        Each segment is its own box (its bounding box), shaped with clip-path, so the tap area is the segment itself. */
-    body.launching main > :not(.app-bar):not(.start-line) { display: none; }
+    body.launching main > :not(.app-bar) { display: none; }
     /* C1: the one line under the name on the start page; hidden everywhere else. C2: the version number is not shown on the start page (it is in Updates). */
     /* C8: a box with a clear button (an x) at its end. The button is a 44 px tap area; it hides while the box is empty. */
     .clearable { position: relative; display: block; min-width: 0; }
@@ -336,7 +336,8 @@
     .clearable input:placeholder-shown + .clear-x { display: none; }
     .five-list { margin: 0; padding-left: 22px; display: grid; gap: 8px; }
     .start-line { display: none; }
-    body.launching .start-line { display: block; margin: -8px 0 0; text-align: center; color: var(--muted); font-size: 15px; }
+    body.launching .app-bar { flex-wrap: wrap; }
+    body.launching .start-line { display: block; flex: 0 0 100%; order: 3; margin: 0; text-align: center; color: var(--muted); font-size: 15px; }
     body.launching .version-tag { display: none; }
     body.launching .tabs { top: 0; height: auto; }
     body.launching .tabs::before {
@@ -2654,12 +2655,12 @@
     <!-- U4a: the header. The title, then the basket in the top corner (.app-actions is one small block, easy to move). -->
     <header class="app-bar">
       <h1><button type="button" class="home" id="home-button" aria-label="Minifolio, back to the start page">Minifolio</button> <span class="version-tag" id="version-tag"></span></h1>
+      <p class="start-line" id="start-line">Track your miniature painting</p>
       <nav class="app-actions" aria-label="Shopping list">
         <!-- v40: the basket count (hidden when the list is empty). Filled and wired by updateBasket() in app.js. -->
         <button type="button" class="basket hidden" id="basket-button" aria-label="Shopping list"></button>
       </nav>
     </header>
-    <p class="start-line" id="start-line">Track your miniature painting</p>
 
     <!-- ===== TAB 1: Dashboard ===== -->
     <section id="view-dashboard">

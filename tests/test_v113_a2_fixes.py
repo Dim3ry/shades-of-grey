@@ -162,7 +162,7 @@ def main():
                 page.wait_for_function("() => document.body.classList.contains('launching') && !document.querySelector('.mo-tr')", timeout=8000)
                 wait_settled(page)
                 r = page.evaluate(CLEAN)
-                check(f"{w}x{h} {scheme}: from {tab} the start page is clean", r["launching"] and r["content"] in ([], ["start-line"]) and r["layers"] == 0, r)
+                check(f"{w}x{h} {scheme}: from {tab} the start page is clean", r["launching"] and r["content"] == [] and r["layers"] == 0, r)
                 leave_launch(page)
 
         check("no page errors", not errors, errors)
