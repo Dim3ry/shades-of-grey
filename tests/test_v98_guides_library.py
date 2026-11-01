@@ -66,12 +66,12 @@ def main():
         put(page, [], [])
         guides(page)
         check("with no guide entries, only Detail recipes and Basing show, with counts",
-              [x.rstrip("0123456789") for x in texts(page, ".guides-cats .guides-row")] == ["Detail recipes", "Basing"]
-              and all(re.search(r"\d+$", x) for x in texts(page, ".guides-cats .guides-row")), texts(page, ".guides-cats .guides-row"))
-        check("no heading or sentence under the search box on the home list", page.locator(".guides-nav h3, .guides-nav p").count() == 0)
+              [x.replace("Pro preview", "").rstrip("0123456789") for x in texts(page, ".guides-cats .guides-row")] == ["Detail recipes", "Basing"]   # P1: each row ends with its Pro preview tag
+              and all(re.search(r"\d+Pro preview$", x) for x in texts(page, ".guides-cats .guides-row")), texts(page, ".guides-cats .guides-row"))
+        check("no heading or sentence under the search box on the home list", page.locator(".guides-nav h3, .guides-nav p:not(.guides-free)").count() == 0)   # P1: the one line George asked for, "Free while in preview.", is allowed
         put(page, SAMPLES["guides"], SAMPLES["starters"])
         guides(page)
-        cats = texts(page, ".guides-cats .guides-row")
+        cats = [c.replace("Pro preview", "") for c in texts(page, ".guides-cats .guides-row")]   # P1: without the tag
         n = page.evaluate("() => GUIDE_ENTRIES.length")
         shown = {c.rstrip("0123456789"): int(re.sub(r"\D", "", c) or 0) for c in cats}
         have = page.evaluate("() => [...new Set(GUIDE_ENTRIES.map(e => e.category))]")
