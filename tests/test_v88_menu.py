@@ -100,7 +100,7 @@ def main():
         page.click(seg("units"))
         m = box(page, "#mentor-button")
         check("100 px across and round", abs(m[2] - 100) < 0.6 and abs(m[3] - 100) < 0.6 and page.evaluate("getComputedStyle(document.getElementById('mentor-button')).borderRadius") in ("50%", "50px"), m)
-        check("its centre is 26 px above the bottom edge", abs((m[1] + m[3] / 2) - (844 - 26)) < 1, m)
+        check("its centre is 40 px above the bottom edge (26 px, plus the 14 px the whole bar was lifted in A1 so the Ask Mentor label shows in full)", abs((m[1] + m[3] / 2) - (844 - 40)) < 1, m)
         check("it has the name Ask Mentor", page.get_attribute("#mentor-button", "aria-label") == "Ask Mentor")
         page.click("#mentor-button")
         page.click(".mentor-chip")   # X5: the button opens the Mentor window; its Paint Picker chip goes where the button used to
@@ -129,7 +129,7 @@ def main():
             check(f"{w} px: scale is width / 390 and the bar spans the screen", abs(scale - w / 390) < 0.01 and abs(arc[2] - w) < 1 and abs(arc[0]) < 1, (scale, arc))
         start(page, w=1280, h=800)
         arc = box(page, ".arc")
-        check("1280 px: full size and centred at the bottom", abs(arc[2] - 390) < 1 and abs(arc[0] + 195 - 640) < 1 and abs(arc[1] + arc[3] - 800) < 1, arc)
+        check("1280 px: full size and centred at the bottom", abs(arc[2] - 390) < 1 and abs(arc[0] + 195 - 640) < 1 and abs(arc[1] + arc[3] - (800 - 14)) < 1, arc)   # A1: the bar sits 14 px up from the bottom edge
         check("1280 px: there is no tab bar at the top", box(page, ".tabs")[1] > 400)
         check("1280 px: the header is the only thing at the top and the basket is in the right corner", box(page, "#basket-button")[0] + box(page, "#basket-button")[2] > 1280 - 60 and box(page, "#basket-button")[1] < 40)
 

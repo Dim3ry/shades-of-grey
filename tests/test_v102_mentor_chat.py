@@ -102,8 +102,9 @@ def main():
         top_chips = page.locator(".mentor-col > .mentor-chips .mentor-chip").evaluate_all("els => els.map(e => e.textContent)")
         check("starter chips sit after Paint Picker", top_chips[0] == "Paint Picker" and "Why add water?" in top_chips and "How do I thin paint?" in top_chips, top_chips)
         row = page.locator(".mentor-col > .mentor-chips")
-        check("the chip row is one line that scrolls sideways with no visible scroll bar", page.evaluate(
-            "() => { const r = document.querySelector('.mentor-col > .mentor-chips'), c = getComputedStyle(r); return c.overflowX === 'auto' && c.flexWrap === 'nowrap' && c.scrollbarWidth === 'none'; }"))
+        # A1: the pills now wrap onto several lines (no sideways scroll) and the strip scrolls up and down when it is tall, so the old one-line check became this
+        check("the chip row wraps and never scrolls sideways", page.evaluate(
+            "() => { const r = document.querySelector('.mentor-col > .mentor-chips'), c = getComputedStyle(r); return c.overflowX === 'hidden' && c.flexWrap === 'wrap' && c.overflowY === 'auto'; }"))
         page.locator(".mentor-col > .mentor-chips").get_by_text("Why add water?").click()
         check("a starter chip sends its question as if typed", page.locator(".mentor-me").last.inner_text() == "Why add water?" and count(page, ".mentor-reply .mentor-source") >= 2)
         again = page.locator(".mentor-chip").evaluate_all("els => els.map(e => e.textContent)")

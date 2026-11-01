@@ -173,7 +173,7 @@
     body {
       margin: 0;
       /* Extra space at the bottom so the menu bar (about 158 px tall) never covers the last item. */
-      padding: 20px 16px calc(170px + env(safe-area-inset-bottom));
+      padding: 20px 16px calc(var(--arc-h) + 24px);   /* A1: the bar's own height plus room, so the last card scrolls fully clear of it */
       background: var(--background);
       color: var(--text);
       font-family: var(--font-body);
@@ -249,7 +249,7 @@
        and the whole .arc is scaled from its bottom centre; wide screens keep it at full size, centred.
        Each segment is one real button, as tall and wide as the segment's own box, shaped with clip-path (the tap area is the
        segment itself). Names, order and tap targets are checked in tests/test_v88_menu.py. */
-    :root { --arc-scale: 1; --arc-h: calc(158px * var(--arc-scale) + env(safe-area-inset-bottom)); }
+    :root { --arc-scale: 1; --arc-lift: 14px; --arc-h: calc((158px + var(--arc-lift)) * var(--arc-scale) + env(safe-area-inset-bottom)); }   /* A1: the bar sits 14 px up so the whole Ask Mentor label shows */
     .tabs {
       position: fixed;        /* stays put while the page scrolls */
       left: 0; right: 0; bottom: 0;
@@ -260,12 +260,12 @@
     /* The soft fade behind the bar, so page content does not clash with it. */
     .tabs::before {
       content: ""; position: absolute; left: 0; right: 0; bottom: 0;
-      height: calc(230px * var(--arc-scale) + env(safe-area-inset-bottom));
+      height: calc((230px + var(--arc-lift)) * var(--arc-scale) + env(safe-area-inset-bottom));
       background: linear-gradient(to bottom, transparent 0%, var(--background) 60%);
       pointer-events: none;
     }
     .arc {
-      position: absolute; left: 50%; bottom: env(safe-area-inset-bottom);
+      position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom) + var(--arc-lift) * var(--arc-scale));
       width: 390px; height: 158px; margin-left: -195px;
       transform: scale(var(--arc-scale)); transform-origin: 50% 100%;
     }
@@ -278,6 +278,8 @@
     .arc [data-tab="units"] { left: 109px; top: 0px; width: 85px; height: 85px; padding: 1px 0px 0px 19px; clip-path: path('M0.71 31.25 A132 132 0 0 1 82.54 0.05 L84.38 70.02 A62 62 0 0 0 45.94 84.68 Z'); }
     .arc [data-tab="recipes"] { left: 196px; top: 0px; width: 85px; height: 85px; padding: 1px 19px 0px 0px; clip-path: path('M2.46 0.05 A132 132 0 0 1 84.29 31.25 L39.06 84.68 A62 62 0 0 0 0.62 70.02 Z'); }
     .arc [data-tab="guides"] { left: 237px; top: 35px; width: 89px; height: 89px; padding: 12px 0px 0px 6px; clip-path: path('M48.44 0.86 A132 132 0 0 1 88.72 78.63 L19.40 88.37 A62 62 0 0 0 0.48 51.84 Z'); }
+    /* A1: the menu words keep their own tight spacing in every theme (a theme's wide capital letters pushed DASHBOARD past the slanted edge and its first letter was cut off) */
+    .arc [data-tab], .mentor-orb { letter-spacing: 0.01em; white-space: nowrap; }
     .arc .icon { display: inline-flex; font-size: 22px; line-height: 1; }
     .arc .icon svg { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
     /* The segment you are in stays lit: a brighter fill, a thicker icon and a bold label (never colour alone). */
@@ -2501,6 +2503,8 @@
     .guides-split { display: grid; gap: 14px; min-width: 0; }
     .guides-nav, .guides-main { display: grid; gap: 10px; align-content: start; min-width: 0; }
     .guides-nav .hint, .guides-main .hint { margin: 0; }
+    /* A1: the search box in the Guides list is a grid child, so the 'width: 0' that a combo box uses inside a flex row would squeeze it to a sliver */
+    .guides-nav > .combo-input { width: 100%; }
     .guides-rows { display: grid; gap: 8px; }
     /* X8d: long lists on a phone */
     .guides-more, .chips-more { min-height: 44px; justify-self: start; }
@@ -2528,14 +2532,20 @@
     .mentor-window { position: relative; box-sizing: border-box; width: 100%; max-width: 380px; height: 260px; max-height: calc(100% - 56px); display: flex; gap: 12px; padding: 16px; color: var(--text); background-color: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: 18px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45); transform-origin: var(--mp-ox, 50%) var(--mp-oy, 100%); animation: mp-grow var(--motion-med) var(--motion-ease) both; }
     .mentor-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
     .mentor-greeting { margin: 0; padding-top: 4px; font-size: 18px; font-weight: 600; line-height: 1.3; color: var(--accent); overflow-wrap: anywhere; }
-    .mentor-chip { flex: none; min-height: 44px; padding: 0 16px; font: inherit; font-size: 15px; font-weight: 600; white-space: nowrap; color: var(--accent); background-color: var(--card); border: 1px solid var(--accent); border-radius: 999px; cursor: pointer; }
+    .mentor-chip { flex: 0 1 auto; max-width: 100%; min-height: 44px; padding: 6px 16px; font: inherit; font-size: 15px; font-weight: 600; text-align: left; white-space: normal; overflow-wrap: anywhere; color: var(--accent); background-color: var(--card); border: 1px solid var(--accent); border-radius: 22px; cursor: pointer; }
     .mentor-input { flex: 1; min-width: 0; height: 48px; box-sizing: border-box; padding: 0 12px; font: inherit; font-size: 16px; color: var(--text); background-color: var(--background); border: 1px solid var(--border); border-radius: 12px; }
     .mentor-input:disabled { opacity: 0.55; }
     /* X6b: the conversation. The scroll box holds the greeting and the messages; the chips sit under it (one line, scrolling sideways, no scroll bar); the typing box is at the bottom. */
-    .mentor-scroll { position: relative; flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+    .mentor-scroll { position: relative; flex: 0 1 auto; min-height: 0; padding-bottom: 6px; overflow-y: auto; overscroll-behavior: contain; }   /* A1: 6 px so the last chip is not cut by the edge */
     .mentor-scroll:focus { outline: none; }
-    .mentor-chips { flex: none; display: flex; gap: 8px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; }
-    .mentor-chips::-webkit-scrollbar { display: none; }
+    /* A1: the question pills wrap onto several lines instead of running off the right edge. The strip under the conversation scrolls up and down once it
+       is taller than about a third of the screen. A long question wraps inside its own pill. */
+    .mentor-chips { flex: 0 1 auto; display: flex; flex-wrap: wrap; gap: 8px; max-height: min(33vh, 160px); min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; }
+    .mentor-chips-in { max-height: none; overflow: visible; }
+    /* the first screen has no conversation yet: the window grows to show the greeting and the first starter questions in full, the rest scroll */
+    .mentor-window:not(.mentor-chatting) { height: auto; min-height: 260px; }
+    .mentor-window:not(.mentor-chatting) .mentor-chips { max-height: min(40vh, 230px); }
+    .mentor-window:not(.mentor-chatting) .mentor-scroll { flex: none; }
     .mentor-form { flex: none; display: flex; gap: 6px; margin-top: auto; }
     .mentor-send { flex: none; width: 44px; height: 48px; padding: 0; display: flex; align-items: center; justify-content: center; color: var(--chip-on); background-color: var(--accent); border: 0; border-radius: 12px; cursor: pointer; }
     .mentor-send:disabled { opacity: 0.55; cursor: default; }
@@ -2558,8 +2568,8 @@
     .mentor-chatting .mp-orb { width: 40px; height: 40px; }
     body.typing .mentor-backdrop { padding-bottom: 12px; }
     body.mentor-open .toast { z-index: 210; bottom: auto; top: 12px; }   /* a notice from a row in the window shows at the top, clear of every button in it */
-    .mentor-orbbox { flex: none; width: 100px; display: flex; align-items: center; justify-content: center; }
-    .mp-orb { width: 92px; height: 92px; animation: mp-float 4s ease-in-out infinite; }
+    .mentor-orbbox { flex: none; width: 72px; display: flex; align-items: center; justify-content: center; }
+    .mp-orb { width: 68px; height: 68px; animation: mp-float 4s ease-in-out infinite; }
     .mp-ring { transform-box: fill-box; transform-origin: center; animation: mp-turn 40s linear infinite; }
     .mp-wake { transform-box: fill-box; transform-origin: center; animation: mp-lens 160ms var(--motion-ease) var(--motion-med) both; }
     .mp-look { animation: mp-glance 6s ease-in-out infinite; }
