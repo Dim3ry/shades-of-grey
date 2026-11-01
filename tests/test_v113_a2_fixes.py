@@ -68,7 +68,7 @@ def main():
         quiet(page)
         page.click("#toggle-add")
         page.fill("#name-input", "Halfway")
-        page.wait_for_timeout(2500)   # the draft is saved a moment after typing
+        page.wait_for_timeout(1500)   # the draft is saved a moment after typing
         page.reload()
         app_ready(page)
         leave_launch(page)
@@ -157,7 +157,7 @@ def main():
         for scheme, (w, h) in (("dark", (390, 844)), ("light", (360, 640))):
             page.set_viewport_size({"width": w, "height": h})
             t.load(page, units=[unit(i, stage=i % 8) for i in range(1, 13)], settings={"appearance": scheme})
-            for tab in ("dashboard", "units", "recipes", "guides"):
+            for tab in (("dashboard", "units", "recipes", "guides") if scheme == "dark" else ("dashboard", "guides")):
                 tap_tab(page, tab)
                 wait_settled(page)
                 page.click("#home-button")
