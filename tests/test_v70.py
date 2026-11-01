@@ -18,6 +18,7 @@ import os, re, sys
 from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from common import use_sample_tips
 import test_v31 as t
 
 load, GW_WORDS, GW_MORE = t.load, t.GW_WORDS, t.GW_MORE
@@ -51,6 +52,7 @@ def main():
     with sync_playwright() as p:
         browser = p.chromium.launch()
         ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
+        use_sample_tips(ctx)   # A1: the real file no longer holds the sample tips, this test puts them back in memory
         page = ctx.new_page()
         page.on("pageerror", lambda x: errors.append(str(x)))
         page.on("dialog", lambda d: (dialogs.append(d.message), d.dismiss()))

@@ -8,6 +8,7 @@ import os, sys
 from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from common import use_sample_tips
 import test_v24 as t
 
 results = []
@@ -50,6 +51,7 @@ def main():
     with sync_playwright() as p:
         browser = p.chromium.launch()
         ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
+        use_sample_tips(ctx)   # A1: the real file no longer holds the sample tips; this test puts them back in memory
         ctx.route("**/guides-data.js*", lambda route: route.fulfill(body=SAMPLE, content_type="text/javascript"))
         page = ctx.new_page()
         page.on("pageerror", lambda x: errors.append(str(x)))

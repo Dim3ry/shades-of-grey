@@ -4,8 +4,7 @@
 // How it is shared: it is loaded as a plain script just before app.js (after basing-tips.js), so the names below
 // (MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS) are there when app.js starts.
 //
-// Where tips come from: George's own notes, nothing else. Do not invent tips. The three tips below are SAMPLES (sample: true)
-// that only show the format; they hold no real advice and are replaced when George's notes arrive.
+// Where tips come from: George's own notes, nothing else. Do not invent tips. The list below is empty until George's notes arrive.
 //
 // Rules for anything written here (a test checks the text):
 //  - Our own words. A tip that draws on a creator carries a credit (name and link); never copy a creator's wording.
@@ -28,14 +27,4 @@ const MENTOR_PARTS = [
 const MENTOR_TECHNIQUES = ["Base coat", "Layer", "Shade", "Wash", "Glaze", "Drybrush", "Edge highlight", "Blend"];
 
 const MENTOR_TIPS = [
-  { key: "sample-armour", sample: true, part: "armour", colour: "a cold blue", technique: "Layer",
-    advice: "Sample tip. It only shows the format. A real tip from George's notes goes here.",
-    colours: [{ look: "a deep blue", hex: "#1f3a66" }, { look: "a light blue", hex: "#6f93c9" }] },
-  { key: "sample-eyes", sample: true, part: "eyes", colour: "a warm red", technique: "Glaze",
-    advice: "Sample tip. It only shows the format. A real tip from George's notes goes here.",
-    colours: [{ look: "a bright red", hex: "#c8321e" }] },
-  { key: "sample-base", sample: true, part: "base", colour: "a dry brown", technique: "Drybrush",
-    advice: "Sample tip. It only shows the format and the optional credit.",
-    colours: [{ look: "a mid brown", hex: "#7a5c3a" }, { look: "a pale sand", hex: "#cdbd94" }],
-    credit: { name: "Sample creator", url: "https://example.com/" } },
 ];
