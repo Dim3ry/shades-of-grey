@@ -3979,7 +3979,14 @@
     }
     window.addEventListener("resize", fitLaunch);
     window.addEventListener("load", fitLaunch);   // fonts may change the header height
-    document.getElementById("home-button").addEventListener("click", () => { if (!launching && !travelling) enterLaunch(); });
+    // The Minifolio title and the round back arrow (chunk B) both call this one function.
+    function goToStartPage() { if (!launching && !travelling) enterLaunch(); }
+    document.getElementById("home-button").addEventListener("click", goToStartPage);
+    document.getElementById("back-menu").addEventListener("click", (event) => {
+      const wasFocused = document.activeElement === event.currentTarget;
+      goToStartPage();
+      if (wasFocused) document.getElementById("home-button").focus({ focusVisible: false });   // the arrow hides, so focus moves to the title button (where it stays after the title is tapped)
+    });
 
     // Mo3a: MOVING BETWEEN SCREENS. Only the look changes; what shows and hides (and scroll, focus and Back) is exactly as before.
     // The old screen keeps its "hidden" class at once, so the app's state is already the new one; for a moment it is drawn on top as
@@ -7752,11 +7759,11 @@
     // Mo1: the phone's reduced-motion setting. The CSS stops all movement; this stops the movement that JavaScript starts.
     function reducedMotion() { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
 
-    // Mo1: a ripple spreads from where a main button is tapped. One listener for every .primary-button and .plain-button.
+    // Mo1: a ripple spreads from where a main button is tapped. One listener for every .primary-button, .plain-button and the back arrow.
     document.addEventListener("pointerdown", (event) => {
-      const button = event.target instanceof Element ? event.target.closest(".primary-button, .plain-button") : null;
+      const button = event.target instanceof Element ? event.target.closest(".primary-button, .plain-button, .back-menu") : null;
       if (!button || button.disabled || reducedMotion()) return;
-      if (!button.classList.contains("rip-host")) {
+      if (!button.classList.contains("rip-host") && !button.classList.contains("back-menu")) {   // the back arrow is already fixed in place and clips its own ripple
         if (getComputedStyle(button).position !== "static") return;   // already placed by the page: leave it alone
         button.classList.add("rip-host");
       }
