@@ -7913,12 +7913,20 @@
     const dialogButtons = document.getElementById("dialog-buttons");
     const dialogYes = document.getElementById("dialog-yes");
     const dialogNo = document.getElementById("dialog-no");
+    const dialogPick = document.getElementById("dialog-pick");     // RS1: the scheme picker's list sits here
+    const dialogExtra = document.getElementById("dialog-extra");   // RS1: the picker's "New scheme" button
     let dialogState = null;   // null, or { cfg, opener } while a question is showing
 
     function showDialog(cfg) {
       if (dialogState) finishDialog(dialogState.cfg.mode === "text" ? null : false);   // a new question replaces the old one, which counts as "no"
-      const text = cfg.mode === "text", show = cfg.mode === "show";
+      const text = cfg.mode === "text", show = cfg.mode === "show", pick = cfg.mode === "pick";
       dialogMessage.textContent = cfg.message;
+      dialogPick.replaceChildren();
+      dialogPick.classList.toggle("hidden", !pick);
+      if (pick) dialogPick.appendChild(cfg.content);
+      dialogExtra.classList.toggle("hidden", !pick);
+      dialogExtra.textContent = cfg.extra || "";
+      dialogBox.classList.toggle("dialog-pick-mode", pick);
       dialogInput.classList.toggle("hidden", !text);
       dialogArea.classList.toggle("hidden", !show);
       dialogInput.value = text ? (cfg.initial || "") : "";
@@ -7928,11 +7936,11 @@
       // A question about something destructive makes the safe answer the bold one.
       dialogYes.className = cfg.danger ? "danger-button" : "primary-button";
       dialogNo.className = cfg.danger ? "primary-button" : "plain-button";
-      dialogNo.classList.toggle("hidden", show);   // (after the line above, which sets the whole class)
+      dialogNo.classList.toggle("hidden", show || pick);   // (after the line above, which sets the whole class)
       dialogButtons.classList.toggle("single", show);
       dialogState = { cfg, opener: document.activeElement };
       dialogBackdrop.classList.remove("hidden");
-      const first = text ? dialogInput : show ? dialogArea : dialogYes;
+      const first = text ? dialogInput : show ? dialogArea : pick ? (dialogPick.querySelector("input, button") || dialogYes) : dialogYes;
       first.focus();
       if (text || show) first.select();
       queueBackCheck();   // so the phone's Back button can close it
@@ -7944,6 +7952,7 @@
       if (!state) return;
       dialogState = null;
       dialogBackdrop.classList.add("hidden");
+      dialogPick.replaceChildren();
       dialogInput.value = "";
       dialogArea.value = "";
       const opener = state.opener;
@@ -7957,6 +7966,11 @@
     function cancelDialog() {
       if (dialogState) finishDialog(dialogState.cfg.mode === "text" ? null : false);
     }
+    dialogExtra.addEventListener("click", () => finishDialog("extra"));
+    // RS1: a tap on the dim area around the scheme picker closes it (Back and Escape already do).
+    dialogBackdrop.addEventListener("click", (event) => {
+      if (event.target === dialogBackdrop && dialogState && dialogState.cfg.mode === "pick") cancelDialog();
+    });
     function acceptDialog() {
       if (!dialogState) return;
       const mode = dialogState.cfg.mode;
@@ -7972,10 +7986,12 @@
         event.preventDefault(); event.stopPropagation();
         cancelDialog();
       } else if (event.key === "Enter" && !(event.target instanceof HTMLButtonElement)) {
+        if (dialogState.cfg.mode === "pick") return;   // RS1: Enter in the search box must not press Done
         event.preventDefault(); event.stopPropagation();
         acceptDialog();
       } else if (event.key === "Tab") {
-        const stops = [dialogInput, dialogArea, dialogNo, dialogYes].filter(el => !el.classList.contains("hidden"));
+        const stops = [dialogInput, dialogArea, ...dialogPick.querySelectorAll("input, button"), dialogNo, dialogExtra, dialogYes]
+          .filter(el => !el.classList.contains("hidden") && !el.closest("[hidden]"));
         const at = stops.indexOf(document.activeElement);
         const next = event.shiftKey ? (at <= 0 ? stops.length - 1 : at - 1) : (at < 0 || at === stops.length - 1 ? 0 : at + 1);
         event.preventDefault();
@@ -7985,7 +8001,8 @@
     // If focus somehow lands outside the box (a screen reader's own keys, say), pull it back in.
     document.addEventListener("focusin", (event) => {
       if (dialogState && !dialogBox.contains(event.target)) {
-        const first = !dialogInput.classList.contains("hidden") ? dialogInput : !dialogArea.classList.contains("hidden") ? dialogArea : dialogYes;
+        const first = !dialogInput.classList.contains("hidden") ? dialogInput : !dialogArea.classList.contains("hidden") ? dialogArea
+          : !dialogPick.classList.contains("hidden") ? (dialogPick.querySelector("input, button") || dialogYes) : dialogYes;
         first.focus();
       }
     });
@@ -8409,7 +8426,10 @@
       const draw = () => {
         const text = document.createElement("span");
         text.className = "step-line-text";
-        text.textContent = `${o.number}. ${o.technique()}`;
+        // RS1: the recipe page also names the paints ("1. Yriel Yellow, Layer"); the editor passes no names and is unchanged.
+        const names = o.paintNames ? o.paintNames() : "";
+        text.textContent = `${o.number}. ${names ? names + ", " : ""}${o.technique()}`;
+        if (o.paintNames) button.classList.add("step-line-named");
         const dots = document.createElement("span");
         dots.className = "step-line-swatches";
         dots.setAttribute("aria-hidden", "true");
@@ -8596,7 +8616,12 @@
       const title = document.createElement("h2");
       title.textContent = recipe.name;
       title.style.fontSize = "20px";
-      top.appendChild(title);
+      // RS1: one small Edit button by the title rolls out Edit steps and paints, Duplicate, Copy as text and Delete recipe.
+      const titleRow = document.createElement("div");
+      titleRow.className = "recipe-title-row";
+      title.style.margin = "0";
+      titleRow.append(title, buildRecipeMenu(recipe));
+      top.appendChild(titleRow);
       if (recipe.part) {
         const tag = document.createElement("span");
         tag.className = "part-tag";
@@ -8666,6 +8691,7 @@
           number: i + 1, body, fold,
           // v15: a blank technique shows the app's guess from the paints.
           technique: () => step.technique || guessTechnique(step.paints.map(sp => paintById(sp.paint))) || "Step",
+          paintNames: () => step.paints.map(sp => paintById(sp.paint)).filter(Boolean).map(pt => pt.name).join(" + "),   // RS1
           colours: () => step.paints.map(sp => paintById(sp.paint)).filter(Boolean).map(pt => pt.colour),
           missing: () => anyStatusSet() && step.paints.some(sp => { const pt = paintById(sp.paint); return pt && !isMadeUpPaint(pt) && !haveIt(pt); }),   // v58: made-up paints don't count
           noPaint: () => !step.paints.some(sp => paintById(sp.paint)),   // v62
@@ -8677,6 +8703,9 @@
       // own (made-up example paints never), says how many, and has one Undo (addSchemePaintsToShoppingList).
       // A1: the button is on every recipe. When nothing can be added it stays, greyed out, with one line saying why (an example recipe
       // only has made-up paints, no shop sells them), so it is never a missing button. Same words as the rest of the app.
+      // RS1: "Add to scheme" sits on the same row as the shopping list button, the same size and style.
+      const bottomRow = document.createElement("div");
+      bottomRow.className = "recipe-bottom-row";
       const toShop = schemePaintsToAdd(recipeShopPaints(recipe));
       if (toShop.length) {
         const add = document.createElement("button");
@@ -8684,24 +8713,57 @@
         add.className = "plain-button recipe-shop-add";
         add.textContent = `Add to shopping list (${toShop.length})`;
         add.addEventListener("click", () => addSchemePaintsToShoppingList(recipeShopPaints(recipe), `Recipe: ${recipe.name}`));
-        stepsCard.appendChild(add);
+        bottomRow.appendChild(add);
       } else if (recipe.steps.some(st => st.paints.length)) {
         const why = recipeShopPaints(recipe).length ? "You own these paints, or they are already on your list."
           : "Example paints are made up, so no shop sells them.";
-        stepsCard.appendChild(buildIdleShop({ id: (x) => `recipe-${recipe.id}-${x}` }, "recipe-shop-idle", why));
-        stepsCard.lastChild.classList.add("recipe-shop-idle-wrap");
+        bottomRow.appendChild(buildIdleShop({ id: (x) => `recipe-${recipe.id}-${x}` }, "recipe-shop-idle", why));
+        bottomRow.lastChild.classList.add("recipe-shop-idle-wrap");
       }
+      const inSchemes = book.schemes.filter(sc => sc.recipes.includes(recipe.id));
+      const schemeButton = document.createElement("button");
+      schemeButton.type = "button";
+      schemeButton.className = "plain-button recipe-scheme-add";
+      schemeButton.textContent = inSchemes.length === 0 ? "Add to scheme"
+        : inSchemes.length === 1 ? inSchemes[0].name : `In ${inSchemes.length} schemes`;
+      schemeButton.addEventListener("click", () => openSchemePicker(recipe));
+      bottomRow.appendChild(schemeButton);
+      stepsCard.appendChild(bottomRow);
       recipePage.appendChild(stepsCard);
 
-      // Used on: linked units, plus a menu to link more.
+      // Used on: linked units, plus a menu to link more. RS1: the list is folded (the count is in the heading) and shows nothing at all
+      // when the recipe is used on nothing; the Add to a unit menu stays.
       const usedCard = document.createElement("div");
       usedCard.className = "card";
-      usedCard.innerHTML = "<h2>Used on</h2>";
       const users = unitsUsing(recipe.id);
       if (users.length) {
+        const open = usedOnOpen.has(recipe.id);
+        const head = document.createElement("h2");
+        head.className = "card-fold";
+        const toggle = document.createElement("button");
+        toggle.type = "button";
+        toggle.className = "card-fold-button";
+        toggle.setAttribute("aria-expanded", String(open));
+        toggle.setAttribute("aria-controls", "used-on-list");
+        const words = document.createElement("span");
+        words.textContent = `Used on ${plural(users.length, "unit")}`;
+        const mark = document.createElement("span");
+        mark.className = "fold-mark";
+        mark.setAttribute("aria-hidden", "true");
+        toggle.append(words, mark);
+        head.appendChild(toggle);
+        usedCard.appendChild(head);
         const linkedList = document.createElement("div");
         linkedList.className = "linked-list";
-        linkedList.style.marginBottom = "10px";
+        linkedList.id = "used-on-list";
+        linkedList.style.margin = "10px 0";
+        linkedList.hidden = !open;
+        toggle.addEventListener("click", () => {
+          const now = linkedList.hidden;
+          linkedList.hidden = !now;
+          toggle.setAttribute("aria-expanded", String(now));
+          if (now) usedOnOpen.add(recipe.id); else usedOnOpen.delete(recipe.id);
+        });
         for (const unit of users) {
           const chip = document.createElement("button");
           chip.className = "recipe-chip";
@@ -8717,8 +8779,6 @@
             () => { unlinkRecipe(unit, recipe.id); render(); }));
         }
         usedCard.appendChild(linkedList);
-      } else {
-        usedCard.insertAdjacentHTML("beforeend", '<p class="hint">Not linked to any units yet.</p>');
       }
       const others = models.filter(m => !users.includes(m)).sort((a, b) =>
         (a.faction || "").localeCompare(b.faction || "") || displayName(a).localeCompare(displayName(b)));
@@ -8734,36 +8794,140 @@
         });
         usedCard.appendChild(picker);
       }
-      recipePage.appendChild(usedCard);
+      if (usedCard.children.length) recipePage.appendChild(usedCard);
+    }
 
-      // Edit, duplicate, delete.
-      const buttons = document.createElement("div");
-      buttons.className = "panel-buttons";
+    // RS1: recipe ids whose Used on list is open (kept while the app is open, so unlinking a unit does not fold it shut)
+    const usedOnOpen = new Set();
+
+    // RS1: the Edit button and the short list that rolls out under it. Edit again, Escape or a tap outside closes it.
+    // Each action does exactly what its button did at the bottom of the page.
+    function buildRecipeMenu(recipe) {
+      const wrap = document.createElement("div");
+      wrap.className = "recipe-menu";
       const edit = document.createElement("button");
-      edit.className = "primary-button";
-      edit.style.padding = "11px 20px";
+      edit.type = "button";
+      edit.className = "plain-button recipe-menu-button";
       edit.textContent = "Edit";
-      edit.addEventListener("click", () => { startRecipeDraft(draftFrom(recipe)); });
-      const copy = document.createElement("button");
-      copy.className = "plain-button";
-      copy.textContent = "Duplicate";
-      copy.addEventListener("click", () => {
+      edit.setAttribute("aria-expanded", "false");
+      edit.setAttribute("aria-controls", "recipe-menu-list");
+      const list = document.createElement("div");
+      list.className = "recipe-menu-list";
+      list.id = "recipe-menu-list";
+      list.hidden = true;
+      const entry = (text, cls, action) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = cls;
+        b.textContent = text;
+        b.addEventListener("click", () => { setOpen(false); action(); });
+        list.appendChild(b);
+      };
+      entry("Edit steps and paints", "plain-button", () => startRecipeDraft(draftFrom(recipe)));
+      entry("Duplicate", "plain-button", () => {
         const d = draftFrom(recipe);
         d.id = null;
         d.name = `${recipe.name} (copy)`;
         startRecipeDraft(d);
       });
-      const del = document.createElement("button");
-      del.className = "danger-button";
-      del.textContent = "Delete";
-      del.addEventListener("click", () => deleteRecipe(recipe.id));
       // v16: the recipe as text, in the format Paste recipes reads back.
-      const asText = document.createElement("button");
-      asText.className = "plain-button";
-      asText.textContent = "Copy as text";
-      asText.addEventListener("click", () => copyText(recipeToText(recipe), "Recipe"));
-      buttons.append(edit, copy, asText, del);
-      recipePage.appendChild(buttons);
+      entry("Copy as text", "plain-button", () => copyText(recipeToText(recipe), "Recipe"));
+      entry("Delete recipe", "danger-button", () => deleteRecipe(recipe.id));
+      const outside = (event) => {
+        if (!wrap.isConnected) { setOpen(false); return; }
+        if (!wrap.contains(event.target)) setOpen(false);
+      };
+      const onKey = (event) => { if (event.key === "Escape" && !dialogState) { setOpen(false); edit.focus(); } };
+      function setOpen(open) {
+        list.hidden = !open;
+        edit.setAttribute("aria-expanded", String(open));
+        document.removeEventListener("click", outside, true);
+        document.removeEventListener("keydown", onKey);
+        if (open) {
+          document.addEventListener("click", outside, true);
+          document.addEventListener("keydown", onKey);
+        }
+      }
+      edit.addEventListener("click", () => setOpen(list.hidden));
+      wrap.append(edit, list);
+      return wrap;
+    }
+
+    // RS1: the scheme picker. A list of every scheme with a tick box (44 px); schemes that already hold the recipe start ticked.
+    // Nothing changes until Done. Closing any other way (outside tap, Back, Escape) throws the ticks away and says so.
+    // Only a scheme's recipe list (scheme.recipes, a list of recipe ids, the same shape as always) changes: units that have the scheme
+    // applied are never touched.
+    const SCHEME_SEARCH_OVER = 6;
+    function openSchemePicker(recipe) {
+      const ticked = new Set(book.schemes.filter(sc => sc.recipes.includes(recipe.id)).map(sc => sc.id));
+      const started = new Set(ticked);
+      const wrap = document.createElement("div");
+      wrap.className = "scheme-picker";
+      let search = null;
+      const list = document.createElement("div");
+      list.className = "scheme-picker-list";
+      const rows = book.schemes.map(sc => {
+        const row = document.createElement("div");
+        row.className = "scheme-picker-row";
+        const tick = document.createElement("button");
+        tick.type = "button";
+        tick.className = "pick-tick";
+        tick.setAttribute("role", "checkbox");
+        const nameId = `scheme-pick-name-${sc.id}`;
+        tick.setAttribute("aria-labelledby", nameId);
+        const box = document.createElement("span");
+        box.className = "pick-box";
+        box.setAttribute("aria-hidden", "true");
+        tick.appendChild(box);
+        const name = document.createElement("span");
+        name.className = "scheme-picker-name";
+        name.id = nameId;
+        name.textContent = sc.name;
+        const draw = () => tick.setAttribute("aria-checked", String(ticked.has(sc.id)));
+        const flip = () => { if (ticked.has(sc.id)) ticked.delete(sc.id); else ticked.add(sc.id); draw(); };
+        tick.addEventListener("click", flip);
+        name.addEventListener("click", flip);
+        draw();
+        row.append(tick, name);
+        list.appendChild(row);
+        return { row, sc };
+      });
+      if (!rows.length) {
+        const none = document.createElement("p");
+        none.className = "hint";
+        none.textContent = "No schemes yet.";
+        list.appendChild(none);
+      }
+      if (book.schemes.length > SCHEME_SEARCH_OVER) {
+        search = document.createElement("input");
+        search.type = "search";
+        search.className = "scheme-picker-search";
+        search.setAttribute("aria-label", "Search schemes");
+        search.setAttribute("autocomplete", "off");
+        search.placeholder = "Search schemes";
+        search.addEventListener("input", () => {
+          const q = search.value.trim();
+          for (const r of rows) r.row.hidden = !!q && !sameKey(r.sc.name).includes(sameKey(q));
+        });
+        wrap.appendChild(search);
+      }
+      wrap.appendChild(list);
+      showDialog({
+        mode: "pick", message: "Add to scheme", content: wrap, yes: "Done", extra: "New scheme",
+        onDone: (answer) => {
+          if (answer === "extra") { startScheme(null, "", [recipe.id]); return; }
+          if (answer !== true) { showToast("Closed without changes", null, null, UNDO_SECONDS); return; }
+          let added = 0, removed = 0;
+          for (const sc of book.schemes) {
+            const has = sc.recipes.includes(recipe.id);
+            if (ticked.has(sc.id) && !has) { sc.recipes = [...sc.recipes, recipe.id]; delete sc.example; added++; }
+            else if (!ticked.has(sc.id) && started.has(sc.id) && has) { sc.recipes = sc.recipes.filter(id => id !== recipe.id); delete sc.example; removed++; }
+          }
+          if (!added && !removed) return;   // nothing changed: no message
+          const message = removed ? "Schemes updated" : `Added to ${plural(added, "scheme")}`;
+          commit(message, null, null, UNDO_SECONDS);
+        },
+      });
     }
 
     function deleteRecipe(id) {
@@ -8962,10 +9126,10 @@
     }
 
     // Open the scheme editor: a COPY is edited, and nothing changes until Save.
-    function startScheme(scheme, faction) {
+    function startScheme(scheme, faction, recipeIds) {   // RS1: recipeIds = recipes already ticked in a new scheme
       schemeDraft = scheme
         ? { id: scheme.id, name: scheme.name, faction: scheme.faction, auto: scheme.auto, recipes: scheme.recipes.slice() }
-        : { id: null, name: "", faction: faction || "", auto: true, recipes: [] };
+        : { id: null, name: "", faction: faction || "", auto: true, recipes: recipeIds ? recipeIds.slice() : [] };
       schemeDraft.original = schemeSnapshot(schemeDraft);
       settings.recipeView = "schemes";
       saveSettings();
