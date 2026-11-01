@@ -65,9 +65,9 @@ def main():
         t.main_tab(page, "compendium")
         # X8: Guides now also lists the knowledge base's four guide categories, so the check is that Detail recipes and Basing are
         # still there (and the Colour Lab parts are not), not that they are the only two rows
-        check("Compendium keeps Detail recipes and Basing tips (and none of the Colour Lab parts)", {"Detail recipes", "Basing"} <= {x.rstrip("0123456789") for x in labels(page, ".guides-cats .guides-row")}   # X3: categories with counts
+        check("Compendium keeps Detail recipes and Basing tips (and none of the Colour Lab parts)", {"Detail recipes", "Basing"} <= {x.replace("Pro preview", "").rstrip("0123456789") for x in labels(page, ".guides-cats .guides-row")}   # P1: each row now ends with its Pro preview tag   # X3: categories with counts
               and page.locator("#cmp-wheel, #cmp-fold-mentor, #cmp-fold-ideas").count() == 0, labels(page, ".guides-cats .guides-row"))
-        check("Pro preview shows on the Compendium and on Colour Lab", "Pro preview" in page.inner_text("#view-guides")
+        check("Pro preview shows on the Compendium and on Colour Lab", "Pro preview" in page.text_content("#view-guides")
               and page.evaluate("() => !!document.querySelector('#colourlab-view .pro-pill')"))
 
         print("\n--- 3. Links ---")

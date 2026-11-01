@@ -167,7 +167,8 @@ def main():
         check("the card's pieces are shared, not copied: the card (appendLibraryParts) and the Compendium (libraryParts) both use the same parts, and both call appendRolePicker and buildIdeasList, and each builder is defined once",
               app.count("appendLibraryParts(") >= 2 and app.count("libraryParts(") >= 3 and app.count("appendRolePicker(") >= 3 and app.count("buildIdeasList(") >= 3
               and all(app.count(f"function {n}(") == 1 for n in ["buildStarterSchemes", "buildDetailRecipes", "buildBasingTips", "buildFactionHistory", "buildIdeaItem", "appendLibraryParts", "appendRolePicker", "buildIdeasList"]))
-        check("the Pro preview label is on the Compendium", page.inner_text("#view-guides .pro-pill") == "Pro preview" if page.locator("#view-guides .pro-pill").count() else False)
+        page.evaluate("() => renderGuides()")   # P1: the tags are drawn with the Guides list, so draw it first
+        check("the Pro preview label is on the Compendium", page.locator("#view-guides .pro-pill").first.text_content() == "Pro preview" if page.locator("#view-guides .pro-pill").count() else False)   # P1: now a tag on each row of the Guides list, not one label at the top
         help_text = page.evaluate("() => document.getElementById('help-tabs').textContent")
         check("Help names the four sections and says what Guides is", all(w in help_text for w in ["four sections", "Guides"]), help_text)   # X2: the Compendium is Guides now   # U4a: the bar has four sections, Settings is the cog
 
@@ -717,7 +718,7 @@ def main():
         check("the card in a recipe still starts closed in a fresh editor", (lambda: (load(page, recipes=RECIPES, units=UNITS), t.open_editor(page), page.evaluate("() => document.getElementById('colour-ideas').open"))[-1])() is False)
         open_panel(page)
         check("the card still has the check at the bottom", page.locator("#scheme-check").count() == 1)
-        check("the card still ends with its footnote and keeps its Pro preview label", page.inner_text("#colour-ideas .pro-pill") == "Pro preview"
+        check("the card still ends with its footnote and keeps its Pro preview label", page.text_content("#colour-ideas .pro-pill") == "Pro preview"
               and "Colours on screen are a guide" in page.evaluate("() => document.querySelector('#colour-ideas .ideas-body').lastElementChild.textContent"))
         page.click("#recipe-page button.plain-button:has-text('Cancel')")
         page.wait_for_timeout(250)

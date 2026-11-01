@@ -11941,6 +11941,14 @@
       return { list, lines, steps };
     }
 
+    // P1: the "Pro preview" tag: plain text at the right end of a row (see .pro-pill). Only advice and analysis features carry it.
+    function proTag() {
+      const tag = document.createElement("span");
+      tag.className = "pro-pill";
+      tag.textContent = "Pro preview";
+      return tag;
+    }
+
     function buildColourIdeasCard(d) {
       const card = document.createElement("details");
       card.className = "card colour-ideas help-look";   // v53: the Help look (More info / Less info)
@@ -11949,10 +11957,7 @@
       const summary = document.createElement("summary");
       const title = document.createElement("h2");
       title.textContent = "Colour ideas";
-      const pill = document.createElement("span");
-      pill.className = "pro-pill";
-      pill.textContent = "Pro preview";
-      summary.append(title, pill);
+      summary.append(title, proTag());
       const body = document.createElement("div");
       body.className = "ideas-body";
       card.append(summary, body);
@@ -13913,10 +13918,11 @@
           const n = document.createElement("span");
           n.className = "guides-count";
           n.textContent = String(kn.list({ category: c.key }).length);
-          b.appendChild(n);
+          b.append(n, proTag());   // P1: the whole Guides section is Pro preview for now
           list.appendChild(b);
         }
         lower.appendChild(list);
+        lower.appendChild(Object.assign(document.createElement("p"), { className: "guides-free", textContent: "Free while in preview." }));
       };
       input.addEventListener("input", () => { g.query = input.value; drawLower(); });
       input.addEventListener("keydown", (e) => { if (e.key === "Escape" && input.value) { e.preventDefault(); e.stopPropagation(); input.value = ""; g.query = ""; drawLower(); } });
@@ -14087,6 +14093,12 @@
       section.className = "lab-section";
       section.id = compendiumId("lab-" + st.lab);
       body.appendChild(section);
+      if (st.lab === "ideas" || st.lab === "plans" || st.lab === "picker") {   // P1: the wheel and the lists of your own paints stay free; the advice sections carry the tag
+        const row = document.createElement("div");
+        row.className = "pro-row";
+        row.appendChild(proTag());
+        section.appendChild(row);
+      }
       const parts = libraryParts(door, redraw);
       if (st.lab === "wheel") appendColourWheel(section, door, redraw);
       else if (st.lab === "ideas") buildCompendiumIdeas(section, door, redraw);

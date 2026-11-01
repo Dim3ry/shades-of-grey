@@ -191,7 +191,7 @@ def main():
               page.evaluate("""() => { const ids = [...document.querySelectorAll('#recipe-page > .card, #recipe-page > details')].map(c => c.id || c.querySelector('h2').textContent);
                   return ids.indexOf('colour-ideas') > ids.indexOf('Steps') && ids.indexOf('colour-ideas') > 0; }"""))
         check("the heading says Colour ideas and the label says Pro preview",
-              page.inner_text("#colour-ideas > summary h2") == "Colour ideas" and page.inner_text("#colour-ideas .pro-pill") == "Pro preview")
+              page.inner_text("#colour-ideas > summary h2") == "Colour ideas" and page.text_content("#colour-ideas .pro-pill") == "Pro preview")
         check("it starts closed", page.evaluate("() => document.getElementById('colour-ideas').open") is False)
         check("with no paints yet it explains what to do when opened",
               (open_panel(page) or True) and "Add a paint to a step first" in page.inner_text("#colour-ideas .ideas-body"), page.inner_text("#colour-ideas .ideas-body"))

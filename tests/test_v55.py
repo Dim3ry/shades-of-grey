@@ -128,7 +128,7 @@ def main():
         print("\n--- 2. F11: plain text, not pills ---")
         for mode in ("dark", "light"):
             open_editor_ideas(page, mode)
-            check(f"{mode}: Pro preview on Colour ideas keeps its words and is plain text", page.inner_text("#colour-ideas .pro-pill") == "Pro preview" and plain(page, "#colour-ideas .pro-pill") is True)
+            check(f"{mode}: Pro preview on Colour ideas keeps its words and is plain text", page.text_content("#colour-ideas .pro-pill") == "Pro preview" and plain(page, "#colour-ideas .pro-pill") is True)
             tag_words = page.evaluate("() => [...document.querySelectorAll('#colour-ideas .idea-tag')].map(e => e.textContent.trim())")
             check(f"{mode}: the idea tags in Colour ideas are plain text and every one still says a word", len(tag_words) >= 3 and all(tag_words) and plain(page, "#colour-ideas .idea-tag") is True, tag_words[:6])
             check(f"{mode}: the tag classes (own, near, none) are still on the tags", page.evaluate("() => [...document.querySelectorAll('#colour-ideas .idea-tag')].every(e => /\\b(own|near|none)\\b/.test(e.className))"))
@@ -145,7 +145,10 @@ def main():
             check(f"{mode}: the part name on a recipe is plain text with its words", page.inner_text(".part-tag") == "Whole model" and plain(page, ".part-tag") is True, page.inner_text(".part-tag"))
             check(f"{mode}: the part name is at least 4.5:1", contrast_of(page, ".part-tag") >= 4.5, contrast_of(page, ".part-tag"))
             v41.open_ideas(page, h.JUST_BLUE, settings={"appearance": mode})
-            check(f"{mode}: Pro preview on the Compendium keeps its words and is plain text", page.inner_text("#view-guides .pro-pill") == "Pro preview" and plain(page, "#view-guides .pro-pill") is True)
+            # P1: Guides and Colour Lab draw their tags only when their lists exist, which this fixture does not give; so the shared tag maker is checked directly
+            page.evaluate("() => { const e = proTag(); e.id = 'p1-test-tag'; document.body.appendChild(e); }")
+            check(f"{mode}: the shared Pro preview tag keeps its words and is plain text", page.text_content("#p1-test-tag") == "Pro preview" and plain(page, "#p1-test-tag") is True)
+            page.evaluate("() => document.getElementById('p1-test-tag').remove()")
             check(f"{mode}: the Compendium row tags are plain text with words", page.locator("#cmp-fold-ideas-panel .idea-tag").count() >= 3 and plain(page, "#cmp-fold-ideas-panel .idea-tag") is True)
             check(f"{mode}: the Compendium row tag text is at least 4.5:1", all(contrast_of(page, f"#cmp-fold-ideas-panel .idea-tag.{c}") >= 4.5 for c in ("own", "near", "none") if page.locator(f"#cmp-fold-ideas-panel .idea-tag.{c}").count()))
         check("the three rules have no fill, no border and no round corner in the style sheet",

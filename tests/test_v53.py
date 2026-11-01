@@ -230,7 +230,7 @@ def main():
         i = info(ideas)
         check("Colour ideas: native fold in the Help look, shut, aria-expanded false, at least 44 px, says More info",
               i["tag"] == "DETAILS" and i["look"] and i["exp"] == "false" and i["after"] == '"More info"' and i["h"] >= 44, i)
-        check("Colour ideas still shows its title and Pro preview", "Colour ideas" in page.locator(ideas).inner_text() and "Pro preview" in page.locator(ideas).inner_text())
+        check("Colour ideas still shows its title and Pro preview", "Colour ideas" in page.locator(ideas).inner_text() and "pro preview" in page.locator(ideas).inner_text().lower())   # P1: the tag shows in capitals
         press(page, page.locator(ideas))
         i = info(ideas)
         check("tapping Colour ideas opens it: aria-expanded true, Less info", i["open"] and i["exp"] == "true" and i["after"] == '"Less info"', i)

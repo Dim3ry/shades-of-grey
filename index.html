@@ -1204,7 +1204,7 @@
     #lab-seg button { flex: 1 1 auto; padding: 10px 12px; font-size: 14px; }
     #colourlab-body .wheel-block { border-bottom: 0; padding-bottom: 0; }
     #colourlab-body .shop-idle-button { min-height: 44px; }
-    .lab-pro { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+    .pro-row { display: flex; justify-content: flex-end; margin-bottom: 8px; }   /* P1: the Pro preview tag on its own row at the top of a Colour Lab section */
 
     /* Your Palette */
     ul.paint-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
@@ -1349,12 +1349,14 @@
     /* v50: Have / Missing in a recipe are the small status marks (a tick or a cross), never a word badge. */
     .have-mark { display: inline-flex; align-items: center; flex: none; margin-left: 6px; }
     /* v28: Colour ideas (Pro preview) in the recipe editor */
-    .colour-ideas > summary { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-height: 44px; cursor: pointer; list-style: none; }
+    .colour-ideas > summary { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; min-height: 44px; cursor: pointer; list-style: none; }
     .colour-ideas > summary::-webkit-details-marker { display: none; }
-    .colour-ideas > summary h2 { margin: 0; }
-    .colour-ideas > summary::after { content: "\25BE"; margin-left: auto; color: var(--muted); }
+    .colour-ideas > summary h2 { margin: 0; min-width: 0; }
+    .colour-ideas > summary .pro-pill { margin-left: auto; }
+    .colour-ideas > summary::after { content: "\25BE"; color: var(--muted); }
     .colour-ideas[open] > summary::after { content: "\25B4"; }
-    .pro-pill { font-size: 13px; color: var(--muted); white-space: nowrap; }   /* v55: plain text, was a pill */
+    /* P1: "Pro preview" is a plain text tag at the right end of a row: small spaced capitals in the accent colour, no fill, border or icon. */
+    .pro-pill { flex: none; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
     .ideas-body { display: grid; gap: 12px; margin-top: 10px; }
     .ideas-body .hint { margin: 0; }
     .shop-head { margin-bottom: 4px; }   /* v81: what More info's own bottom margin gave before the heading and More info were wrapped */
@@ -2510,6 +2512,9 @@
     .guides-more, .chips-more { min-height: 44px; justify-self: start; }
     .chip[hidden] { display: none; }
     .guides-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; min-height: 48px; width: 100%; padding: 8px 12px; text-align: left; font: inherit; color: var(--text); background-color: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card); cursor: pointer; }
+    .guides-cats .guides-row { grid-template-columns: minmax(0, 1fr) auto auto; gap: 2px 8px; box-shadow: inset 3px 0 0 var(--accent); }   /* P1: thin accent bar on the left, title, count, then the Pro preview tag */
+    .guides-cats .guides-row-title { white-space: normal; text-overflow: clip; overflow: visible; overflow-wrap: anywhere; }   /* P1: a long title wraps rather than being pushed off by the tag */
+    .guides-free { margin: 0; font-size: 13px; color: var(--muted); }
     .guides-row[aria-current="true"] { border-color: var(--accent); background-color: var(--accent-wash); box-shadow: inset 4px 0 0 var(--accent); }
     .guides-row-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .guides-row-summary { grid-column: 1; font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -2809,7 +2814,6 @@
       <div id="colourlab-view" class="hidden">
         <div class="seg" id="lab-seg" role="tablist" aria-label="Colour Lab sections"></div>
         <div class="card compendium-card">
-          <div class="lab-pro"><span class="pro-pill">Pro preview</span></div>
           <div class="ideas-body" id="colourlab-body"></div>
           <p class="sr-only" id="wheel-live" role="status" aria-live="polite"></p>
         </div>
@@ -2887,7 +2891,6 @@
     <!-- ===== TAB: Guides (v35 as the Compendium; X2: the first page of Tools and Settings. Pro preview: detail recipes and basing tips, no recipe needed) ===== -->
     <section id="view-guides" class="hidden">
       <div class="card compendium-card">
-        <div class="lab-pro"><span class="pro-pill">Pro preview</span></div>
         <div class="ideas-body" id="compendium-body"></div>
       </div>
     </section>

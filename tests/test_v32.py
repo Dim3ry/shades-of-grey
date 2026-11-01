@@ -561,7 +561,7 @@ def main():
         order = page.evaluate("""() => { const ids = ['colour-ideas-tip', 'faction-history', 'starter-schemes', 'detail-recipes', 'scheme-check'];
             const body = document.querySelector('#colour-ideas .ideas-body'); return ids.map(i => [...body.children].indexOf(document.getElementById(i))); }""")
         check("order in the card: tip, faction history, starter schemes, Detail recipes (new), then the check", order == sorted(order) and -1 not in order, order)
-        check("the card is still labelled Pro preview and still ends with the footnote", page.inner_text("#colour-ideas .pro-pill") == "Pro preview"
+        check("the card is still labelled Pro preview and still ends with the footnote", page.text_content("#colour-ideas .pro-pill") == "Pro preview"
               and page.evaluate("() => document.querySelector('#colour-ideas .ideas-body').lastElementChild.textContent.includes('Colours on screen are a guide')"))
         check("the Colour ideas card starts closed in a fresh editor", (lambda: (load(page), open_editor(page), page.evaluate("() => document.getElementById('colour-ideas').open"))[-1])() is False)
         n = page.locator(".step-edit").count()
