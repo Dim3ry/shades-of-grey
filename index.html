@@ -2713,12 +2713,12 @@
       <!-- The add form starts hidden; the button above shows it. -->
       <form id="add-form" class="card hidden" style="display: grid; gap: 10px;">
         <div class="row" style="grid-template-columns: 1fr 76px;">
-          <input id="name-input" placeholder="Unit name, e.g. Intercessors" aria-label="Unit name" required>
+          <input id="name-input" maxlength="80" placeholder="Unit name, e.g. Intercessors" aria-label="Unit name" required>
           <input id="count-input" type="number" min="1" max="999" value="1" aria-label="Number of models" title="Number of models">
         </div>
         <div class="row">
-          <input id="hobby-input" placeholder="Game, e.g. Sci-fi" aria-label="Game" list="game-options">
-          <input id="faction-input" placeholder="Faction" aria-label="Faction" list="faction-options">
+          <input id="hobby-input" maxlength="80" placeholder="Game, e.g. Sci-fi" aria-label="Game" list="game-options">
+          <input id="faction-input" maxlength="80" placeholder="Faction" aria-label="Faction" list="faction-options">
         </div>
         <!-- v21: start a unit at the stage it's really at, instead of tapping ▲ several times. -->
         <label class="stage-pick-label">Starting stage

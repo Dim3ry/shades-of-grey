@@ -486,16 +486,14 @@ def main():
         wait_kept(page, "unit")
         reload(page)
         old = store_text(page)
+        # A2: the card at the top of Models already offers it, so Add unit no longer opens a second box: it takes you to the card.
         page.click("#toggle-add")
         page.wait_for_timeout(250)
-        check("opening the Add form while a unit is kept asks first, and the form stays shut",
-              ask_open(page) and "unfinished unit kept from earlier" in page.inner_text("#dialog-message") and not page.is_visible("#add-form"))
-        page.keyboard.press("Escape")
-        page.wait_for_timeout(250)
-        check("Escape: the form is still shut and the unit is still kept", not page.is_visible("#add-form") and store_text(page) == old and shown(page, "unit"))
-        page.click("#toggle-add")
-        page.wait_for_timeout(250)
-        page.click("#dialog-yes")
+        check("opening the Add form while a unit is kept shows no second box, and the form stays shut",
+              not ask_open(page) and not page.is_visible("#add-form") and shown(page, "unit"))
+        check("...and puts the cursor on the card's Keep going", page.evaluate("() => document.activeElement.classList.contains('draft-keep')"))
+        check("the unit is still kept", store_text(page) == old and shown(page, "unit"))
+        page.click("#draft-card-unit .draft-keep")
         page.wait_for_timeout(250)
         check("Keep going brings it back into the form", page.input_value("#name-input") == "Old unit" and page.is_visible("#add-form"))
 

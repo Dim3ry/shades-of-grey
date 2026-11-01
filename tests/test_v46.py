@@ -268,7 +268,7 @@ def main():
         mixed = [{"id": 1, "name": "Gaunts", "hobby": "40K", "faction": "Tyranids", "stage": 0, "count": 4, "each": True, "stages": [0, 1, 2, last], "log": [["2026-09-01", 1]]}]
         pct, summary = dash(mixed)
         total, done, under = expected(mixed)
-        check("a unit tracked model by model counts each model at its own stage", summary == f"{done} of {total} models done · {under} under way · 1 units" and (done, under) == (1, 2), (summary, done, under))
+        check("a unit tracked model by model counts each model at its own stage", summary == f"{done} of {total} models done · {under} under way · 1 unit" and (done, under) == (1, 2), (summary, done, under))   # A2: one unit now reads "1 unit" (the plural helper), it was "1 units"
         one = [{"id": 1, "name": "Solo", "hobby": "40K", "faction": "Tyranids", "stage": 1, "count": 1}]
         pct, summary = dash(one)
         check("one model under way reads sensibly", summary.startswith("0 of 1 model done · 1 under way"), summary)

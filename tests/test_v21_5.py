@@ -241,7 +241,7 @@ def main():
         delete_button(page, 2).click()
         page.wait_for_timeout(300)
         check("deleted again (no Undo this time)", card_ids(page) == [1, 3], card_ids(page))
-        page.wait_for_timeout(9200)
+        page.wait_for_timeout(11200)   # A2: the Undo message now lasts 10 seconds (it was 8), and the files go half a second after it
         check("the message has gone", not toast(page)["shown"])
         check("the photo files are deleted once Undo has gone", photo_files(page) == [], photo_files(page))
         check("no page errors so far", not errors, errors[:3])

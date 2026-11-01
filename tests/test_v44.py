@@ -444,8 +444,8 @@ def main():
         main_tab(page, "units")
         main_tab(page, "recipes")
         check("and stays gone after leaving the tab and coming back", not card_shown(page))
-        page.wait_for_timeout(9500)
-        check("the Undo message goes by itself after about 8 seconds", not toast(page)["shown"] or not toast(page)["undo"])
+        page.wait_for_timeout(10500)   # A2: Undo messages last 10 seconds now (UNDO_SECONDS), not 8
+        check("the Undo message goes by itself after about 10 seconds", not toast(page)["shown"] or not toast(page)["undo"])
         reload(page)
         main_tab(page, "recipes")
         check("and stays gone after a reload", not card_shown(page))

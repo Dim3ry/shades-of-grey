@@ -4037,7 +4037,11 @@
         mk(turn, "circle", { class: "t", cx: 195, cy: 180, r: RING_R, "stroke-dasharray": `${RING_ARC} ${RING_C}`, transform: rot });
         return mk(turn, "circle", { class: "a a" + i, cx: 195, cy: 180, r: RING_R, "stroke-dasharray": `0 ${RING_C}`, transform: rot });
       });
-      const wedges = [...arcEl.querySelectorAll("[data-tab]")];   // document order: Dashboard, Models, Painting, Tools (clockwise from top left)
+      // A2: the ring turns clockwise from the top, so the segments arrive clockwise from the top left: Dashboard, Models, Tools, Painting.
+      // Only this arrival order changes; the segments stay where they are (the menu's own order is Dashboard, Models, Painting, Tools).
+      const byName = {};
+      for (const b of arcEl.querySelectorAll("[data-tab]")) byName[b.dataset.tab] = b;
+      const wedges = ["dashboard", "units", "guides", "recipes"].map(n => byName[n]);
       wedges.forEach(w => w.classList.add("ring-hold"));
       document.body.classList.add("ring-loading");
       const stepAt = [() => bootSteps.data, () => bootSteps.draw, () => bootSteps.load];
@@ -5057,7 +5061,7 @@
       const underWay = stageCounts(models).reduce((sum, c, i) => sum + (i >= 1 && !isDone(i) ? c : 0), 0);
       donePercent.textContent = total ? `${percent}%` : "–";
       doneSummary.textContent = total
-        ? `${done} of ${plural(total, "model")} done · ${underWay ? `${underWay} under way · ` : ""}${models.length} units`
+        ? `${done} of ${plural(total, "model")} done · ${underWay ? `${underWay} under way · ` : ""}${plural(models.length, "unit")}`
         : "No units yet. Add some on the Models tab: one at a time, or a whole army from a pasted army list or a CSV file.";
 
       todoButton.innerHTML = "";
@@ -5665,8 +5669,8 @@
       // The summary line always shows what you're looking at, even with Filters folded away.
       const scope = [filters.faction || filters.hobby].filter(Boolean).join("");
       filterNote.textContent = anyFilter
-        ? `${scope ? scope + ": " : ""}${visible.length} of ${models.length} units (${plural(modelCount(visible), "model")})`
-        : `${models.length} units, ${plural(modelCount(models), "model")}`;
+        ? `${scope ? scope + ": " : ""}${visible.length} of ${plural(models.length, "unit")} (${plural(modelCount(visible), "model")})`
+        : `${plural(models.length, "unit")}, ${plural(modelCount(models), "model")}`;
       toggleFilters.textContent = `Filters${anyFilter ? " (" + activeCount + ")" : ""} ${filtersOpen ? "▴" : "▾"}`;
 
       // Suggestions for the game/faction boxes in the add form and the edit panel.
@@ -6733,7 +6737,7 @@
         }
         putRecipesBack();   // after the units, so their links to the example recipes come back too
         render();
-      }, "Undo", 8);
+      }, "Undo", UNDO_SECONDS);
     }
     // v56: keeps every example at once (units, recipes, schemes and paints), so no card is left on any tab.
     function keepExamples() {
@@ -7099,7 +7103,7 @@
       const before = moving.map(m => ({ id: m.id, was: JSON.stringify({ stage: m.stage, stages: m.stages, log: m.log }) }));
       for (const m of moving) setStage(m, stage);
       const skipped = chosen.length - moving.length;
-      const who = moving.length === 1 ? displayName(moving[0]) : `${moving.length} units`;
+      const who = moving.length === 1 ? displayName(moving[0]) : plural(moving.length, "unit");
       const message = `${who} → ${STAGES[stage]}` + (skipped ? ` (${skipped} already there)` : "");
       commit(message, () => {
         for (const b of before) {
@@ -7111,7 +7115,7 @@
           unit.log = was.log;
         }
         render();
-      }, "Undo", 8);
+      }, "Undo", UNDO_SECONDS);
     }
 
     // v21.5: deleting a unit still asks first, then offers Undo (8 seconds), like
@@ -7121,7 +7125,6 @@
     // If the save fails (storage full), the files are left alone: the unit would come
     // back from the old saved copy next time, and it should still have its photos.
     // "Clean up photo storage" in Settings can tidy any left behind.
-    const DELETE_UNIT_SECONDS = 8;
     function deleteModel(id) {
       const asked = models.find(m => m.id === id);
       if (!asked) return;
@@ -7147,7 +7150,7 @@
         for (const f of files) pendingPhotoDeletes.delete(f);
         if (wasOpen) openIds.add(model.id);
         commit(`${displayName(model)} is back`);
-      }, "Undo", DELETE_UNIT_SECONDS);
+      }, "Undo", UNDO_SECONDS);
       if (!saved) { for (const f of files) pendingPhotoDeletes.delete(f); return; }
       setTimeout(() => {
         for (const f of files) {
@@ -7157,7 +7160,7 @@
           forgetUrls(f);
           deletePhotoFile(f);
         }
-      }, DELETE_UNIT_SECONDS * 1000 + 500);
+      }, UNDO_SECONDS * 1000 + 500);
     }
 
     // ================= THE PHOTO STORE (v10) =================
@@ -7381,7 +7384,7 @@
       if (wasCover) delete model.coverPhoto;
       pendingPhotoDeletes.add(id);
       render();
-      const seconds = 6;
+      const seconds = UNDO_SECONDS;
       showToast("Photo deleted", () => {
         model.photos = model.photos || [];
         model.photos.splice(Math.min(index, model.photos.length), 0, note);
@@ -7774,10 +7777,15 @@
     const toastText = document.getElementById("toast-text");
     const toastUndo = document.getElementById("toast-undo");
     let toastTimer;
+    let toastUntil = 0;   // A2: the clock time (ms) the message is due to go, so a frozen timer can't leave it up
     let undoAction = null;
+    // A2: how long a message with an Undo button stays up, in seconds. One number for every Undo
+    // message; a new one should use it too (showToast does so by itself when it has an Undo).
+    const UNDO_SECONDS = 10;
 
     // The button usually says "Undo", but can say something else (e.g. "Back up").
     function showToast(message, undo, buttonLabel, seconds) {
+      if (undo && !seconds && (!buttonLabel || buttonLabel === "Undo")) seconds = UNDO_SECONDS;
       delete toast.dataset.kind;   // v21.6: notify() marks a plain notice below; every other message is unmarked
       toastText.textContent = message;
       undoAction = undo || null;
@@ -7786,12 +7794,25 @@
       toast.classList.remove("hidden");
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => toast.classList.add("hidden"), (seconds || 4) * 1000);
+      toastUntil = Date.now() + (seconds || 4) * 1000;
       // Mo1: the thin line along the bottom drains over the same time as the timer above (no second timer).
       toast.style.setProperty("--toast-life", (seconds || 4) + "s");
       toast.classList.remove("draining");
       void toast.offsetWidth;   // so the line starts again when a new message replaces one that is still showing
       toast.classList.add("draining");
     }
+    // A2: a phone can freeze the page (screen off, another app on top) with the message's timer unfinished, and the
+    // message was then still up when you came back, on whatever screen you opened next. So whenever the page wakes
+    // up or the screen changes, a message past its time goes.
+    function expireToast() {
+      if (!toast.classList.contains("hidden") && Date.now() >= toastUntil) {
+        clearTimeout(toastTimer);
+        toast.classList.add("hidden");
+      }
+    }
+    document.addEventListener("visibilitychange", expireToast);
+    window.addEventListener("pageshow", expireToast);
+    window.addEventListener("focus", expireToast);
     toastUndo.addEventListener("click", () => {
       // Hide first, THEN run the action, so the action can show a new message of its own
       // (e.g. "Apply to 3 units" shows "Applied…" with its own Undo).
@@ -7979,7 +8000,18 @@
 
     toggleAdd.addEventListener("click", () => {
       const opening = form.classList.contains("hidden");
-      if (opening && draftWaiting("unit")) return;   // v26: a kept unfinished unit is offered first
+      // v26: a kept unfinished unit is offered first. A2: its card at the top of Models already offers it, so
+      // tapping Add unit takes you to that card (no second box) and leaves the form shut.
+      if (opening && draftOffers.unit) {
+        const card = document.getElementById("draft-card-unit");
+        if (card && !card.classList.contains("hidden")) {
+          card.scrollIntoView({ block: "nearest" });
+          const keep = card.querySelector(".draft-keep");
+          if (keep) keep.focus({ preventScroll: true });
+          return;
+        }
+        if (draftWaiting("unit")) return;
+      }
       form.classList.toggle("hidden", !opening);
       toggleAdd.textContent = opening ? "Close" : "+ Add unit";
       toggleAdd.setAttribute("aria-expanded", String(opening));   // v53
@@ -9031,7 +9063,7 @@
       // v18c-3: commit() only says Saved (and offers Apply) if the save worked.
       const missing = unitsMissing(scheme);
       if (missing.length && scheme.recipes.length) {
-        commit(`Saved ${name}`, () => applyScheme(scheme, missing), `Apply to ${plural(missing.length, "unit")}`, 8);
+        commit(`Saved ${name}`, () => applyScheme(scheme, missing), `Apply to ${plural(missing.length, "unit")}`, UNDO_SECONDS);
       } else {
         commit(`Saved ${name}`);
       }
@@ -12216,7 +12248,7 @@
           if (added) book = cleanRecipeBook(JSON.parse(before));
           refreshAfterPaintChange();
           notify("Took that back.");
-        }, "Undo", 8);
+        }, "Undo", UNDO_SECONDS);
       });
     }
 
@@ -12246,7 +12278,7 @@
         book = cleanRecipeBook(JSON.parse(before));
         refreshAfterPaintChange();
         notify("Took that back.");
-      }, "Undo", 8);
+      }, "Undo", UNDO_SECONDS);
       updateBasket(); updateShopFoldouts();
     }
 
@@ -12273,7 +12305,7 @@
         book = cleanRecipeBook(JSON.parse(before));
         refreshAfterPaintChange();
         notify("Took that back.");
-      }, "Undo", 8);
+      }, "Undo", UNDO_SECONDS);
     }
 
     function stepChoiceLabel(step, i) {
@@ -16222,7 +16254,7 @@
       try { used = (localStorage.getItem(STORAGE_KEY) || "").length + (localStorage.getItem(RECIPES_KEY) || "").length; } catch (ignored) {}
       const photos = models.reduce((sum, m) => sum + (m.photos || []).length + (m.photo ? 1 : 0), 0);
       const summary =
-        `${models.length} units, ${plural(modelCount(models), "model")}, ${plural(photos, "photo")}, ` +
+        `${plural(models.length, "unit")}, ${plural(modelCount(models), "model")}, ${plural(photos, "photo")}, ` +
         `${plural(book.recipes.length, "recipe")}. ` +
         `Units and recipes use about ${Math.max(1, Math.round(used / 1024))} KB of roughly 5,000 KB. ` +
         (settings.lastBackup ? `Last backup: ${shortDate(settings.lastBackup)}.` : "No backup saved yet.") +
@@ -16385,7 +16417,7 @@
         showToast(`Recovered ${plural(book.recipes.length, "recipe")}`, () => {
           if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(before)); })) { notify(fullMessage()); return; }
           afterBigChange();
-        }, "Undo", 10);
+        }, "Undo", UNDO_SECONDS);
       }, { danger: true });
     }
 
@@ -16430,7 +16462,7 @@
           });
           if (!back) { notify(fullMessage()); return; }
           afterBigChange();
-        }, "Undo", 10);
+        }, "Undo", UNDO_SECONDS);
       }, { danger: true });
     }
 
@@ -16502,7 +16534,7 @@
     document.getElementById("delete-all").addEventListener("click", () => {
       if (!models.length) return;
       // v21.7: asks in the app's own box; everything below runs when you say yes.
-      askYesNo(`Delete all ${models.length} units? A copy is kept on this device for ${SAFETY_DAYS} days ` +
+      askYesNo(`Delete all ${plural(models.length, "unit")}? A copy is kept on this device for ${SAFETY_DAYS} days ` +
           `(Settings → Recover earlier data), but please save a backup first.`, () => {
         if (!models.length) return;
         // v14: STOP if the safety copy can't be kept, rather than delete with no safety net.
@@ -16521,7 +16553,7 @@
           models = before;
           render();
           renderSettings();
-        }, "Undo", 10);
+        }, "Undo", UNDO_SECONDS);
       }, { danger: true });
     });
 
@@ -16847,7 +16879,7 @@
             : backupBook
             ? `Replace your current ${plural(models.length, "unit")} and ${plural(book.recipes.length, "recipe")} with ` +
               `${plural(restored.length, "unit")} and ${plural(backupBook.recipes.length, "recipe")} from the backup?`
-            : `Replace your current ${models.length} units with ${restored.length} from the backup? (Your recipes stay as they are.)`)
+            : `Replace your current ${plural(models.length, "unit")} with ${restored.length} from the backup? (Your recipes stay as they are.)`)
           + (photoCount ? ` It includes ${plural(photoCount, "photo")}.` : "");
         // v21.7: asks in the app's own box; the restore runs when you say yes.
         askYesNo(question, () => {
@@ -16911,7 +16943,7 @@
                 if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(recipesBefore)); })) { notify(fullMessage()); return; }
                 afterBigChange();
                 showToast("Your recipes are back as they were");
-              }, "Undo", 10);
+              }, "Undo", UNDO_SECONDS);
             }
             // Old backups may hold old-style photos: move them. Then load the thumbnails.
             startPhotos();
@@ -17563,7 +17595,7 @@
           models = before;
           render();
           renderSettings();
-        }, "Undo", 10);
+        }, "Undo", UNDO_SECONDS);
       };
       if (reviewMode === "replace" && models.length) {
         askYesNo(`Remove your ${plural(models.length, "unit")} and replace them with ${plural(toAdd.length, "unit")}?`, run, { danger: true });

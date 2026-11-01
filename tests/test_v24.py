@@ -278,8 +278,8 @@ def main():
         check("Undo: the units (and their recipe links) are exactly as before", json.dumps(saved_units(page), sort_keys=True) == before_units)
         check("Undo: the card is back", card_visible(page))
         page.click("#examples-card-recipes .clear-recipe-examples")
-        page.wait_for_timeout(9500)
-        check("the message goes after about 8 seconds", not toast(page)["shown"] or not toast(page)["undo"])
+        page.wait_for_timeout(10500)   # A2: Undo messages last 10 seconds now (UNDO_SECONDS), not 8
+        check("the message goes after about 10 seconds", not toast(page)["shown"] or not toast(page)["undo"])
         page.reload()
         app_ready(page)
         leave_launch(page)   # U4b: tap through the start page
