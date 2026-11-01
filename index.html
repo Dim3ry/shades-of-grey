@@ -2427,6 +2427,24 @@
     .theme-swatch[data-t="rulebook"] .ts-card { border-width: 2px; border-color: var(--border); font-size: 12px; letter-spacing: .02em; }
     .theme-swatch[data-t="rulebook"] .ts-bar { box-shadow: 2px 2px 0 var(--hard-shadow); }
     @media (forced-colors: active) { .theme-swatch[aria-pressed="true"] { outline-color: Highlight; } }
+    /* Chunk B: the round back arrow at the bottom left, beside the bar (look from the chosen mockup, colours from the app's own names). 44 px wide and high.
+       Hidden on the start page, while the loading ring or the travel plays, while the Mentor pop-up is open and while a text box has the cursor (the bar steps aside too);
+       it fades in again when they end. */
+    .back-menu {
+      position: fixed; z-index: 10; left: calc(8px + env(safe-area-inset-left)); bottom: calc(6px + env(safe-area-inset-bottom));
+      width: 44px; height: 44px; min-height: 44px; padding: 0; box-sizing: border-box; border-radius: 50%; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--card); color: var(--accent); border: 1.5px solid var(--accent);
+      transition: opacity var(--motion-fast) var(--motion-ease), translate var(--motion-fast) var(--motion-ease), scale var(--motion-fast) var(--motion-ease), filter var(--motion-fast) var(--motion-ease);
+    }
+    @media (max-width: 345px) { .back-menu { left: calc(4px + env(safe-area-inset-left)); } }   /* the band is scaled down here, so the arrow sits 4 px further left to stay clear of the Dashboard segment by 4 px or more */
+    .back-menu svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .back-menu:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+    body.launching .back-menu, body.mo-travelling .back-menu, body.mentor-open .back-menu { visibility: hidden; opacity: 0; pointer-events: none; transition: none; }
+    @media (max-width: 899.98px) { body.typing .back-menu { visibility: hidden; opacity: 0; pointer-events: none; transition: none; } }
+    @media (hover: hover) { .back-menu:hover { translate: 0 -2px; } }
+    .back-menu:active { translate: 0 1px; scale: 0.97; filter: brightness(0.92); }
+
     .hidden { display: none !important; }
 
     /* ===== Mo1: shared motion ===== */
@@ -2609,6 +2627,8 @@
       <button type="button" class="mentor-orb" id="mentor-button" aria-label="Ask Mentor"><svg viewBox="16.67 16.67 166.67 166.67" aria-hidden="true" focusable="false"><g><circle class="orb-bg" cx="100" cy="100" r="74"/><g fill="none" stroke-width="15"><circle class="orb-a" cx="100" cy="100" r="58" stroke-dasharray="111 253.4" transform="rotate(100 100 100)"/><circle class="orb-c" cx="100" cy="100" r="58" stroke-dasharray="81 283.4" transform="rotate(10 100 100)"/><circle class="orb-b" cx="100" cy="100" r="58" stroke-dasharray="56 308.4" transform="rotate(-60 100 100)"/><circle class="orb-dim" cx="100" cy="100" r="58" stroke-dasharray="51 313.4" transform="rotate(-125 100 100)"/></g><circle class="orb-lens" cx="100" cy="100" r="30" stroke-width="3"/><circle class="orb-core" cx="100" cy="100" r="17"/><circle cx="95" cy="94" r="4" fill="#ffffff" opacity="0.85"/></g></svg>Ask Mentor</button>
     </div>
   </nav>
+  <!-- Chunk B: the round back arrow beside the bar. It does what the Minifolio title does (back to the start page); the name is the only text. -->
+  <button type="button" class="back-menu" id="back-menu" aria-label="Back to menu"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg></button>
   <!-- ===== HTML: this section is WHAT is on the page. ===== -->
   <main>
     <!-- U4a: the header. The title, then the basket in the top corner (.app-actions is one small block, easy to move). -->
@@ -2910,7 +2930,7 @@
             <li>Check the <strong>Dashboard</strong> to see how far you've got.</li>
             <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
           </ol>
-          <p id="help-tabs" style="margin: 8px 0 0;">The bar at the bottom has four sections around the round <strong>Ask Mentor</strong> button: <strong>Dashboard</strong>, <strong>Models</strong>, <strong>Painting</strong> and <strong>Tools</strong>. The one you are in is lit. <strong>Tools</strong> opens <strong>Tools and Settings</strong>: <strong>Guides</strong>, <strong>Settings</strong>, <strong>Help</strong> and <strong>Updates</strong>. The shopping basket sits at the top right once your list has a paint. The app opens on a <strong>start page</strong>: the same four sections in a circle around Ask Mentor. Tap the <strong>Minifolio</strong> title to come back to it. Switching to another app and back leaves you where you were.</p>
+          <p id="help-tabs" style="margin: 8px 0 0;">The bar at the bottom has four sections around the round <strong>Ask Mentor</strong> button: <strong>Dashboard</strong>, <strong>Models</strong>, <strong>Painting</strong> and <strong>Tools</strong>. The one you are in is lit. <strong>Tools</strong> opens <strong>Tools and Settings</strong>: <strong>Guides</strong>, <strong>Settings</strong>, <strong>Help</strong> and <strong>Updates</strong>. The shopping basket sits at the top right once your list has a paint. The app opens on a <strong>start page</strong>: the same four sections in a circle around Ask Mentor. Tap the round arrow at the bottom left, or the <strong>Minifolio</strong> title, to come back to it. Switching to another app and back leaves you where you were.</p>
           <p id="help-mentor" style="margin: 8px 0 0;"><strong>Mentor:</strong> tap <strong>Ask Mentor</strong> to open a small window over whatever you are on. Type a question or tap a chip. Mentor answers from <strong>Guides</strong> and the colour rules, with a <strong>Sources</strong> row; a source opens that guide, recipe, tip or colour. The <strong>Paint Picker</strong> chip takes you to <strong>Painting → Colour Lab</strong>. Close the window with the cross, a tap outside it, Escape or Back; Ask Mentor brings the chat back. Mentor runs on this device. What you type is not sent anywhere and is not stored, and the chat is cleared when the app reloads.</p>
           <p id="help-back" style="margin: 8px 0 0;">The phone's <strong>Back</strong> button closes what's open first, one thing per press: a question box (it counts as No), a photo, the camera, a recipe, the paste box. Then it goes to the Dashboard. On the Dashboard, with nothing open, it leaves the app.</p>
         </details>
