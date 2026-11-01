@@ -42,7 +42,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=112"></script>
+  <script src="early.js?v=113"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -2925,7 +2925,7 @@
             <li id="help-track-each"><strong>Track models separately:</strong> for painting a unit one model at a time. Tap a unit with more than one model to open its details, then press <strong>Track models separately</strong> under its stage. Each model gets its own row with a back button, its stage name and an up button, and when they differ, the card shows how many are at each stage. With units tracked this way, the Models tab has a <strong>Detailed</strong> / <strong>Simple</strong> switch: Detailed adds the date line and a thin progress bar to every row, Simple leaves them out. A unit of more than 8 models groups its rows by stage; tap a stage to open or close its models. <strong>Track as one batch</strong> goes back: if the models are at different stages, the app asks first, then puts them all at the stage of the furthest-behind model. Both have an <strong>Undo</strong>. It works for units of up to 100 models, and one-model units don't have the button.</li>
             <li id="help-jump-stage"><strong>Jump to a stage:</strong> press <strong>Details</strong> on a unit and pick a stage from <strong>Jump to stage</strong>, to go straight to any stage (forwards or back). The right arrow on the card moves the whole unit up one stage and the left arrow moves it back one, even on a unit tracked model by model (each model moves). If you track each model separately, the buttons on a model's row move that one model a stage, and <strong>Move all models to stage</strong> moves them all at once. Every jump has an <strong>Undo</strong>.</li>
             <li id="help-model-dates"><strong>When did it get there?</strong> If you track each model separately, each model says under its name when it reached its stage: <strong>Today</strong>, <strong>Yesterday</strong>, or <strong>Since 7 Oct</strong> (with the year added for an earlier year). Hold or long-press the date to see it in full. A model with no date shown has no record of when it moved. The Simple view leaves the dates out.</li>
-            <li id="help-unfinished-work"><strong>Unfinished work is kept:</strong> if the page reloads or the app closes while you are part-way through adding a unit (the name box has something in it), writing a recipe, or pasting notes into Paste recipes, the app keeps what you had. Next time you open the Models or Painting tab, a card says <strong>We kept your unfinished…</strong>. <strong>Keep going</strong> puts it all back. <strong>Discard</strong> asks first, then throws it away for good (there is no Undo). Nothing opens by itself, and a kept draft is never replaced by accident: if you try to start a new one first, the app asks. It goes when you press Add or Save, or Cancel and say yes. It stays on this device and is not in your backups.</li>
+            <li id="help-unfinished-work"><strong>Unfinished work is kept:</strong> if the page reloads or the app closes while you are part-way through adding a unit (the name box has something in it), writing a recipe, or pasting notes into Paste recipes, the app keeps what you had. Next time you open the Models or Painting tab, a card says <strong>We kept your unfinished…</strong>. <strong>Keep going</strong> puts it all back. <strong>Discard</strong> asks first, then throws it away for good (there is no Undo). Nothing opens by itself, and a kept draft is never replaced by accident: if you try to start a new one first, the app asks (for a unit, + Add unit takes you to the card instead). It goes when you press Add or Save, or Cancel and say yes. It stays on this device and is not in your backups.</li>
             <li id="help-typing"><strong>Typing:</strong> while the cursor is in a text box, the menu bar at the bottom hides so it can't sit on your keyboard. Tap somewhere else and it comes back.</li>
             <li id="help-move-many"><strong>Move several units at once:</strong> on the Models tab press <strong>Select</strong>. Each unit gets a tick box (tapping a unit ticks it). Tick the ones you want, or press <strong>Select all shown</strong> to tick every unit your filters are showing. Then pick a stage from <strong>Move … to stage</strong> in the bar at the bottom. Units tracked model by model have all their models moved. One <strong>Undo</strong> puts every unit back as it was, diary included. <strong>Cancel</strong>, the phone's Back button or leaving the tab stops selecting without changing anything.</li>
             <li>Tap a unit's name to open its details: its <strong>stage</strong>, photos, paint recipes and paint notes, then <strong>back a stage</strong> and delete. On a wide screen they open in a pane beside the list, where you can keep several open and press <strong>Close</strong> on each.</li>
@@ -3390,7 +3390,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=112" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=113" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -3401,14 +3401,14 @@
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks.
        v70: mentor-tips.js (the Mentor tips, plain data) loads between basing-tips.js and app.js. It only adds three
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=112"></script>
-  <script src="schemes.js?v=112"></script>
-  <script src="detail-recipes.js?v=112"></script>
-  <script src="basing-tips.js?v=112"></script>
-  <script src="mentor-tips.js?v=112"></script>
-  <script src="guides-data.js?v=112"></script>
-  <script src="mentor-data.js?v=112"></script>
-  <script src="mentor-engine.js?v=112"></script>
-  <script src="app.js?v=112"></script>
+  <script src="colour.js?v=113"></script>
+  <script src="schemes.js?v=113"></script>
+  <script src="detail-recipes.js?v=113"></script>
+  <script src="basing-tips.js?v=113"></script>
+  <script src="mentor-tips.js?v=113"></script>
+  <script src="guides-data.js?v=113"></script>
+  <script src="mentor-data.js?v=113"></script>
+  <script src="mentor-engine.js?v=113"></script>
+  <script src="app.js?v=113"></script>
 </body>
 </html>
