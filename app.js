@@ -5071,6 +5071,13 @@
         ? `${done} of ${plural(total, "model")} done · ${underWay ? `${underWay} under way · ` : ""}${plural(models.length, "unit")}`
         : "No units yet. Add some on the Models tab: one at a time, or a whole army from a pasted army list or a CSV file.";
 
+      // C5: say what "done" means, using the real name of the first stage that counts (so renamed or reordered stages stay right).
+      // Hidden when there are no units or that stage has no name.
+      const doneName = String(STAGES[settings.doneFrom] || "").trim();
+      const doneMeaning = document.getElementById("done-meaning");
+      doneMeaning.textContent = doneName ? `Done means ${doneName}${settings.doneFrom < STAGES.length - 1 ? " or later" : ""}.` : "";
+      doneMeaning.classList.toggle("hidden", !total || !doneName);
+
       todoButton.innerHTML = "";
       todoButton.append(Object.assign(document.createElement("strong"), { textContent: todo }), "models to do");
       doneButton.innerHTML = "";
@@ -5185,6 +5192,8 @@
         if (s.gaps.length) lines.push(`Gap: ${s.gaps.join(", ")}`);
         lines.push(`${s.owned} owned, ${s.low} running low, ${s.wish} wishlist`);
       }
+      // C6: with no paints the tile has nothing to show, so it is left out until there is one.
+      document.getElementById("palette-card").classList.toggle("hidden", s.empty);
       paletteStrip.replaceChildren();
       paletteStrip.hidden = s.empty || !s.colourOk;
       const blocks = s.hues.map(h => ({ key: h.key, count: h.count, gap: h.gap }));
@@ -5298,6 +5307,8 @@
       const legend = document.getElementById("history-legend");
       const rangeChips = document.getElementById("history-range");
       if (views.dashboard.classList.contains("hidden")) return;   // drawn when the tab opens
+      // C6: with no units the graph has nothing to show, so the whole card is left out until there is one.
+      document.getElementById("history-card").classList.toggle("hidden", !models.length);
 
       const data = historyData();
       const ready = models.length > 0 && data.first < data.today;
@@ -7987,6 +7998,13 @@
     const countInput = document.getElementById("count-input");
     const hobbyInput = document.getElementById("hobby-input");
     const factionInput = document.getElementById("faction-input");
+
+    // C8: Game and Faction keep the last values (quicker for several units). Focusing a box selects the whole value so typing replaces it,
+    // and the x at its end empties it and puts the cursor back in it.
+    for (const [input, id] of [[hobbyInput, "clear-game"], [factionInput, "clear-faction"]]) {
+      input.addEventListener("focus", () => setTimeout(() => { if (document.activeElement === input) input.select(); }, 0));
+      document.getElementById(id).addEventListener("click", () => { input.value = ""; input.focus(); });
+    }
 
     // v21: the Add form's "Starting stage" menu. Rebuilt with every redraw (stages can be
     // renamed or added in Settings), keeping your choice while that stage still exists.
