@@ -69,7 +69,7 @@ def main():
               and page.get_attribute(".mentor-window", "aria-modal") == "true" and page.get_attribute(".mentor-window", "aria-label") == "Mentor"
               and page.get_attribute(".mentor-close", "aria-label") == "Close Mentor")
         # X6b: typing is on, so the box is a working input and there is a Send button (an arrow with no words), still only the one chip
-        check("one chip, Paint Picker; no other chips (and the Send button)", page.locator(".mentor-window button").evaluate_all("els => els.map(e => e.textContent.trim() || e.getAttribute('aria-label'))") == ["Paint Picker", "Send", "✕"])
+        check("one chip, Paint Picker; no other chips (and the Send button)", page.locator(".mentor-window button").evaluate_all("els => els.filter(e => e.getClientRects().length).map(e => e.textContent.trim() || e.getAttribute('aria-label'))") == ["Paint Picker", "Send", "✕"])   # chunk D: the hidden Back button (chat view only) is not counted
         inp = page.locator(".mentor-input")
         check("text box is on: enabled, Ask Mentor, full strength", inp.is_enabled() and inp.get_attribute("placeholder") == "Ask Mentor"
               and float(page.evaluate("() => getComputedStyle(document.querySelector('.mentor-input')).opacity")) == 1)
