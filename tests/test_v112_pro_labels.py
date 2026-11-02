@@ -67,8 +67,9 @@ def main():
         t.main_tab(page, "compendium")
         rows = page.locator(".guides-cats .guides-row")
         n = rows.count()
-        check("every row of the sections list has the tag, as its last item", n >= 4 and page.evaluate(
-            "() => [...document.querySelectorAll('.guides-cats .guides-row')].every(r => r.lastElementChild.classList.contains('pro-pill') && r.lastElementChild.textContent === 'Pro preview')"))
+        # G2a: the section number (small and grey) now sits at the right edge, so the tag is the last item before it
+        check("every row of the sections list has the tag, as its last item before the section number", n >= 4 and page.evaluate(
+            "() => [...document.querySelectorAll('.guides-cats .guides-row')].every(r => { const g = r.lastElementChild.classList.contains('guides-num') ? r.lastElementChild.previousElementSibling : r.lastElementChild; return g.classList.contains('pro-pill') && g.textContent === 'Pro preview'; })"))
         check("no other tag on the Guides page", tags(page, "#view-guides") == ["Pro preview"] * n, tags(page, "#view-guides"))
         free = page.locator(".guides-free")
         check("one line of plain text under the list: 'Free while in preview.'", free.count() == 1 and free.inner_text() == "Free while in preview."
