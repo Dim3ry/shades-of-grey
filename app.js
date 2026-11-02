@@ -1842,6 +1842,10 @@
       }
       return { brand: "", rest: String(text).trim() };
     }
+    // RS4a: stray quote marks round a typed name ("'Foo Bar'", smart quotes, a backtick) are dropped from its start and end.
+    function stripStrayQuotes(text) {
+      return plainQuotes(String(text || "")).replace(/^[\s'"`´]+|[\s'"`´]+$/g, "");
+    }
     // "mystic blue" = "Mystic Blue" (small joining words stay small, ALL CAPS stays).
     function tidyName(text) {
       return String(text).trim().replace(/\s+/g, " ").split(" ").map((w, i) =>
@@ -1942,7 +1946,7 @@
         return result("unsure", null, exact.slice(0, 4).map(pick));
       if (exact.length) return result("sure", pick(exact[0]));
       // 3. A basing material: kept as you wrote it.
-      if (MATERIAL_WORDS.test(typed)) return result("material", { brand: "", name: tidyName(split.rest || typed), colour: DEFAULT_PAINT_COLOUR, type: "material" });
+      if (MATERIAL_WORDS.test(typed)) return result("material", { brand: "", name: tidyName(stripStrayQuotes(split.rest || typed)), colour: DEFAULT_PAINT_COLOUR, type: "material" });
 
       const words = key.split(" ");
       const suggestions = [];
@@ -1973,7 +1977,7 @@
       }
       if (suggestions.length || vague || /^[a-z]{1,4}$/.test(key)) return result("unsure", null, suggestions.slice(0, 4));
       // 7. Nothing like it: a new paint, exactly as typed.
-      return result("new", { brand, name: tidyName(split.rest || typed), colour: DEFAULT_PAINT_COLOUR });
+      return result("new", { brand, name: tidyName(stripStrayQuotes(split.rest || typed)), colour: DEFAULT_PAINT_COLOUR });
     }
 
     // Remembers that "typed" means this paint, for next time (both import and scan).
@@ -3245,6 +3249,19 @@
         } else if (role === "paint") out[out.length - 1].steps.push(step);
       }
       return out.filter((sec, i) => sec.steps.length || (i === 0 && part.notes.length));
+    }
+
+    // RS4a: the Part a pasted heading belongs to. A Part you already have is used (capitals, extra spaces and a trailing "s" ignored);
+    // otherwise the heading is added as a new Part in the same style as the others (first letter capital, the rest as typed in lower case,
+    // short ALL CAPS words such as NMM kept). A section under a part ("Armour – Heraldry") belongs to the part's own heading ("Armour").
+    // Returns { name, isNew }. The caller adds a new name to book.parts, so the next heading with the same words finds it.
+    function partForHeading(heading) {
+      const base = String(heading || "").split(/\s[–-]\s/)[0].replace(/\s+/g, " ").trim();
+      const key = (t) => plainQuotes(String(t || "")).replace(/\s+/g, " ").trim().toLowerCase().replace(/s$/, "");
+      const found = book.parts.find(p => key(p) === key(base));
+      if (found) return { name: found, isNew: false };
+      const style = base.split(" ").map(w => /^[A-Z0-9&]{2,3}$/.test(w) ? w : w.toLowerCase()).join(" ");
+      return { name: style.charAt(0).toUpperCase() + style.slice(1), isNew: true };
     }
 
     // Every paint mention that needs your answer, grouped by what was typed ("CM" once, not 3 times).
@@ -15305,10 +15322,11 @@
               return { technique: step.technique, coats: cleanCount(step.coats), ratio, note: step.note || "", optional: !!step.optional,
                        paints: paints.map((p, i) => ({ paint: p.id, mix: mixes[i] })) };
             });
-            const existingPart = book.parts.find(p => sameText(p, part.name) || sameText(p + "s", part.name) || sameText(p, part.name + "s"));
+            const partFor = partForHeading(part.name);   // RS4a
+            if (partFor.isNew) book.parts.push(partFor.name);
             let name = part.name;
             if (book.recipes.some(r => sameText(r.name, name))) name = `${part.name} (${schemeName})`;
-            const recipe = { id: Math.max(0, ...book.recipes.map(r => r.id)) + 1, name, part: existingPart || part.name,
+            const recipe = { id: Math.max(0, ...book.recipes.map(r => r.id)) + 1, name, part: partFor.name,
                              notes: si2 ? "" : whole.notes.join("\n"), steps };
             book.recipes.push(recipe);
             ids.push(recipe.id);
