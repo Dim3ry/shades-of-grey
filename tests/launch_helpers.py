@@ -4,7 +4,7 @@ Older tests were written when the app opened straight on the last section. Their
 the page loads: it taps the segment for the section the app had saved (settings.tab, or the Dashboard), which puts the
 page where those tests have always started. Tests of the start page itself skip it (see tests/test_v89_launch.py)."""
 
-SETTINGS_PAGES = ("guides", "settings", "help", "updates")   # X2: the pages of Tools and Settings
+SETTINGS_PAGES = ("about", "guides", "settings", "help", "updates")   # X2: the pages of Tools and Settings
 
 def is_launching(page):
     return page.evaluate("() => document.body.classList.contains('launching')")
@@ -16,9 +16,9 @@ _TAP = """() => {
     if (!document.body.classList.contains('launching')) return false;    // nothing to do
     const tab = settings.tab || 'dashboard';
     // X2: Settings, Help and Updates are pages of the fourth segment (Tools and Settings, data-tab guides); the header cog is gone
-    const page = ['guides', 'compendium', 'settings', 'help', 'updates'].includes(tab);
+    const page = ['about', 'guides', 'compendium', 'settings', 'help', 'updates'].includes(tab);
     document.querySelector('.tabs button[data-tab="' + (page ? 'guides' : tab) + '"]').click();
-    if (page && ['settings', 'help', 'updates'].includes(tab)) document.querySelector('#more-seg button[data-page="' + tab + '"]').click();
+    if (page && ['about', 'settings', 'help', 'updates'].includes(tab)) document.querySelector('#more-seg button[data-page="' + tab + '"]').click();
     return true;
 }"""
 

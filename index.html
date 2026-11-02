@@ -334,7 +334,7 @@
        (min(1, width / 390), and small enough to fit the height); the whole .arc is scaled from its centre. Nothing is lit.
        Each segment is its own box (its bounding box), shaped with clip-path, so the tap area is the segment itself. */
     body.launching main > :not(.app-bar) { display: none; }
-    /* C1: the one line under the name on the start page; hidden everywhere else. C2: the version number is not shown on the start page (it is in Updates). */
+    /* C1: the one line under the name on the start page; hidden everywhere else. AM1: it now reads the tagline (capitals, wide spacing, muted theme colour). C2: the version number is not shown on the start page (it is in Updates). */
     /* C8: a box with a clear button (an x) at its end. The button is a 44 px tap area; it hides while the box is empty. */
     .clearable { position: relative; display: block; min-width: 0; }
     .clearable input { width: 100%; padding-right: 40px; }
@@ -345,7 +345,8 @@
     .five-list { margin: 0; padding-left: 22px; display: grid; gap: 8px; }
     .start-line { display: none; }
     /* it hangs just under the header bar and adds no height, so the circle keeps its size and centring */
-    body.launching .start-line { display: block; position: absolute; left: 16px; right: 16px; top: 100%; margin: 8px 0 0; text-align: center; color: var(--muted); font-size: 15px; line-height: 20px; }
+    body.launching .start-line { display: block; position: absolute; left: 16px; right: 16px; top: 100%; margin: 8px 0 0; text-align: center; color: var(--muted); font-size: 12px; line-height: 20px; letter-spacing: 0.22em; text-transform: uppercase; }
+    @media (max-height: 699px) { body.launching .start-line { display: none; } }   /* AM1: hidden on short screens so the circle is never squeezed */
     body.launching .version-tag { display: none; }
     body.launching .tabs { top: 0; height: auto; }
     body.launching .tabs::before {
@@ -1219,8 +1220,9 @@
     .seg button { background: none; color: var(--muted); padding: 10px; font-size: 15px; min-height: 44px; }
     .seg button[aria-selected="true"] { background: var(--accent); color: var(--on-accent); font-weight: 600; }
     .more-title { margin: 0 0 8px; }   /* X2: the page heading above the Guides / Settings / Help / Updates switch */
-    #more-seg { grid-template-columns: repeat(4, 1fr); gap: 2px; }   /* X2: four pages now (Guides added) */
+    #more-seg { grid-template-columns: repeat(5, 1fr); gap: 2px; }   /* X2: Guides added; AM1: About added (five pages) */
     #more-seg button { padding: 10px 2px; font-size: 14px; }
+    @media (max-width: 380px) { #more-seg button { font-size: 13px; } }   /* AM1: five pages must fit 320 px */
     /* v40: the Recipes tab's switch has four parts now (Recipes, Schemes, Your Palette, Shopping), so each is a little narrower */
     #recipe-seg { grid-template-columns: repeat(4, 1fr); gap: 2px; }
     #recipe-seg button { padding: 10px 2px; font-size: 14px; }
@@ -2696,7 +2698,7 @@
     <!-- U4a: the header. The title, then the basket in the top corner (.app-actions is one small block, easy to move). -->
     <header class="app-bar">
       <h1><button type="button" class="home" id="home-button" aria-label="Minifolio, back to the start page">Minifolio</button> <span class="version-tag" id="version-tag"></span></h1>
-      <p class="start-line" id="start-line">Track your miniature painting</p>
+      <p class="start-line" id="start-line">Track. Paint. Learn.</p>
       <nav class="app-actions" aria-label="Shopping list">
         <!-- v40: the basket count (hidden when the list is empty). Filled and wired by updateBasket() in app.js. -->
         <button type="button" class="basket hidden" id="basket-button" aria-label="Shopping list"></button>
@@ -2960,12 +2962,23 @@
          the Recipes tab's) moves between the four pages. It shows only on those pages and is
          filled in by showTab(). -->
     <h2 class="more-title hidden" id="more-title">Tools and Settings</h2>
-    <div class="seg hidden" id="more-seg" role="tablist" aria-label="Guides, settings, help or updates">
+    <div class="seg hidden" id="more-seg" role="tablist" aria-label="About, guides, settings, help or updates">
+      <button role="tab" data-page="about">About</button>
       <button role="tab" data-page="guides">Guides</button>
       <button role="tab" data-page="settings">Settings</button>
       <button role="tab" data-page="help">Help</button>
       <button role="tab" data-page="updates">Updates</button>
     </div>
+
+    <!-- ===== AM1: About and Mission (fixed wording, straight text only) ===== -->
+    <section id="view-about" class="hidden">
+      <div class="card about-card">
+        <h2>About</h2>
+        <p>Minifolio is a hobby tracker made by a nerd, for nerds. It began as one painter’s side project to track their own models and learn to code, and it grew arms, legs and a few tentacles. It’s still mostly one person, so thanks for your patience.</p>
+        <h2>Mission</h2>
+        <p>To give every painter a mentor in their pocket: a place to track your progress, get advice, and find the right colours.</p>
+      </div>
+    </section>
 
     <!-- ===== TAB: Guides (v35 as the Compendium; X2: the first page of Tools and Settings. Pro preview: detail recipes and basing tips, no recipe needed) ===== -->
     <section id="view-guides" class="hidden">
@@ -2999,7 +3012,7 @@
             <li>Check the <strong>Dashboard</strong> to see how far you've got.</li>
             <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
           </ol>
-          <p id="help-tabs" style="margin: 8px 0 0;">The bar at the bottom has four sections around the round <strong>Ask Mentor</strong> button: <strong>Dashboard</strong>, <strong>Models</strong>, <strong>Painting</strong> and <strong>Tools</strong>. The one you are in is lit. <strong>Tools</strong> opens <strong>Tools and Settings</strong>: <strong>Guides</strong>, <strong>Settings</strong>, <strong>Help</strong> and <strong>Updates</strong>. The shopping basket sits at the top right once your list has a paint. The app opens on a <strong>start page</strong>: the same four sections in a circle around Ask Mentor. Tap the round arrow at the bottom left, or the <strong>Minifolio</strong> title, to come back to it. Switching to another app and back leaves you where you were.</p>
+          <p id="help-tabs" style="margin: 8px 0 0;">The bar at the bottom has four sections around the round <strong>Ask Mentor</strong> button: <strong>Dashboard</strong>, <strong>Models</strong>, <strong>Painting</strong> and <strong>Tools</strong>. The one you are in is lit. <strong>Tools</strong> opens <strong>Tools and Settings</strong>: <strong>About</strong>, <strong>Guides</strong>, <strong>Settings</strong>, <strong>Help</strong> and <strong>Updates</strong>. The shopping basket sits at the top right once your list has a paint. The app opens on a <strong>start page</strong>: the same four sections in a circle around Ask Mentor. Tap the round arrow at the bottom left, or the <strong>Minifolio</strong> title, to come back to it. Switching to another app and back leaves you where you were.</p>
           <p id="help-mentor" style="margin: 8px 0 0;"><strong>Mentor:</strong> tap <strong>Ask Mentor</strong> to open a small window over whatever you are on. Type a question or tap a chip. Mentor answers from <strong>Guides</strong> and the colour rules, with a <strong>Sources</strong> row; a source opens that guide, recipe, tip or colour. The <strong>Paint Picker</strong> chip takes you to <strong>Painting → Colour Lab</strong>. Close the window with the cross, a tap outside it, Escape or Back; Ask Mentor brings the chat back. Mentor runs on this device. What you type is not sent anywhere and is not stored, and the chat is cleared when the app reloads or after a while without use.</p>
           <p id="help-back" style="margin: 8px 0 0;">The phone's <strong>Back</strong> button closes what's open first, one thing per press: a question box (it counts as No), a photo, the camera, a recipe, the paste box. Then it goes to the Dashboard. On the Dashboard, with nothing open, it leaves the app.</p>
         </details>

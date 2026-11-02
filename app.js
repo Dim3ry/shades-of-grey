@@ -3760,6 +3760,7 @@
       dashboard: document.getElementById("view-dashboard"),
       units: document.getElementById("view-units"),
       recipes: document.getElementById("view-recipes"),
+      about: document.getElementById("view-about"),   // AM1: About and Mission, the first page of Tools and Settings
       guides: document.getElementById("view-guides"),   // v35 as the Compendium; X2: Guides, the first page of Tools and Settings
       settings: document.getElementById("view-settings"),
       updates: document.getElementById("view-updates"),
@@ -3780,7 +3781,7 @@
     // Guides / Settings / Help / Updates switch (#more-seg) at the top. The page names are "guides", "settings", "help" and "updates", so a
     // saved settings.tab of "settings", "help" or "updates" opens the right page. A saved "compendium" (the old tab) opens Guides, which
     // holds the Detail recipes and Basing tips that were all it had left (TAB_ALIASES; the same goes for the address #compendium).
-    const MORE_PAGES = ["guides", "settings", "help", "updates"];
+    const MORE_PAGES = ["about", "guides", "settings", "help", "updates"];
     const TAB_ALIASES = { compendium: "guides" };
     const moreSeg = document.getElementById("more-seg");
     const moreTitle = document.getElementById("more-title");
