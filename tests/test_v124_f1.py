@@ -164,8 +164,8 @@ def main():
               and r0.locator(".shop-add-row button").count() == 1 and page.locator("#basket-button.hidden").count() == 1, r0.locator(".idea-tag").first.inner_text())
         page.evaluate("() => { settings.hideShopLinks = false; renderColourLab(); }")
         r0 = page.locator("#cmp-lab-ideas .idea-list > li").nth(unowned[0])
-        check("with Shop links on, the Shop links fold-out is still there and keeps its own Add", r0.locator(".shop-more").count() == 1
-              and r0.locator(".shop-more .shop-add button").count() == 1)
+        check("with Shop links on, the fold-out keeps its shop links but not a second Add (one Add per row)", r0.locator(".shop-more").count() == 1
+              and r0.locator(".shop-more .shop-links a").count() >= 1 and r0.locator(".shop-add button").count() == 1)
 
         print("\n--- 5. Phone sizes, dark and light ---")
         for (w, h), scheme in (((390, 844), "dark"), ((360, 640), "light"), ((320, 640), "dark"), ((320, 640), "light")):

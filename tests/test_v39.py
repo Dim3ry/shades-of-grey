@@ -384,11 +384,10 @@ def main():
                      parts: ['starter', 'detail', 'basing', 'history'].map(k => document.getElementById('cmp-fold-' + k + '-panel').childElementCount > 0) }; }""")
         check("and in the Compendium nothing else has shop links: the wheel lists, Your schemes, Starter schemes, Detail recipes and Basing tips (all open) have none",
               every["all"] == 3 and every["notInIdeas"] == 0 and every["links"] == 0 and all(every["parts"]), every)
-        page.locator("#cmp-fold-ideas-panel .shop-more > summary").first.click()
-        page.locator("#cmp-fold-ideas-panel .shop-more .shop-add button").first.click()
+        # F1: in Colour Lab's Colour ideas the Add is on the row now, and the Shop links fold-out keeps only its links (one Add per row)
+        page.locator("#cmp-fold-ideas-panel .shop-add-row button").first.click()
         page.wait_for_timeout(250)
-        # F1: the row has its own Add slot too, so this counts the fold-out's words only
-        check("Add to shopping list works in the Compendium's Colour ideas too (the fold-out then says On your shopping list)", page.locator("#cmp-fold-ideas-panel .shop-more .shop-onlist").count() == 1 and toast(page)["text"].startswith("Added "))
+        check("Add to shopping list works in the Compendium's Colour ideas too (the fold-out then says On your shopping list)", page.locator("#cmp-fold-ideas-panel .shop-onlist").count() == 1 and toast(page)["text"].startswith("Added "))
 
         # ---------- 6. The hide switch ----------
         print("\n--- 6. The Settings switch: Show shop links ---")

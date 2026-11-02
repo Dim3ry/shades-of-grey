@@ -12326,12 +12326,13 @@
         // v39: a paint you do not own gets the small closed "Shop links" fold-out under its row (door.shops; the row itself is unchanged)
         const source = door.shopSource ? door.shopSource() : "";
         const real = !door.realOnly || realPaintForShop(paint) || onShoppingList(paint);   // v73: Mentor picks: no shop actions for a made-up example paint
-        const shops = door.shops && real ? buildShopFoldout(paint, idea.hit.owned, source, !!door.listButton) : null;
+        // v73: Mentor picks: Add to shopping list in plain view. F1: Colour Lab's Colour ideas too (plainAdd). One Add per row: when the row
+        // has its own, the Shop links fold-out keeps only its links.
+        const toList = (door.listButton || door.plainAdd) && !idea.hit.owned ? buildShopAddRow(paint, source) : null;
+        const shops = door.shops && real ? buildShopFoldout(paint, idea.hit.owned, source, !!door.listButton || !!toList) : null;
         if (shops) row.appendChild(shops);
         const toRecipe = buildPaintToRecipeRow(door, paint);   // v62
         if (toRecipe) row.appendChild(toRecipe);
-        // v73: Mentor picks: Add to shopping list in plain view. F1: Colour Lab's Colour ideas too (plainAdd), with its Shop links fold-out left as it was.
-        const toList = (door.listButton || door.plainAdd) && !idea.hit.owned ? buildShopAddRow(paint, source) : null;
         if (toList) row.appendChild(toList);
         if (idea.hit.alsoOwned) row.firstElementChild.after(alsoOwnedLine(idea.hit, door.addStep ? () => door.addStep(idea.hit.alsoOwned.paint, stepNote) : null, null, reason));   // v64: your best paint is a poor fit, so it comes second
         list.appendChild(row);
