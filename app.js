@@ -17262,14 +17262,60 @@
         } else if (char === ",") {
           row.push(cell); cell = "";
         } else if (char === "\n") {
-          row.push(cell); rows.push(row); row = []; cell = "";
+          row.push(cell); row.line = rows.length + 1; rows.push(row); row = []; cell = "";
         } else if (char !== "\r") {
           cell += char;
         }
       }
       row.push(cell);
+      row.line = rows.length + 1;   // IM1: the row number a spreadsheet shows (titles are row 1), counted before blank rows go
       rows.push(row);
       return rows.filter(r => r.some(c => c.trim() !== ""));
+    }
+
+    // IM1: a CSV date, as "2026-11-02" or day first "02/11/2026". Nothing else is read.
+    // Gives "" for an empty cell, the date as "2026-11-02", or null for a date that can't be
+    // used (not a real day, another style, or later than today).
+    function csvDate(text) {
+      const t = String(text || "").trim();
+      if (!t) return "";
+      let y, mo, d, found;
+      if ((found = t.match(/^(\d{4})-(\d{2})-(\d{2})$/))) [, y, mo, d] = found;
+      else if ((found = t.match(/^(\d{2})\/(\d{2})\/(\d{4})$/))) [, d, mo, y] = found;
+      else return null;
+      const day = new Date(Date.UTC(Number(y), Number(mo) - 1, Number(d)));
+      if (day.getUTCFullYear() !== Number(y) || day.getUTCMonth() !== Number(mo) - 1 || day.getUTCDate() !== Number(d)) return null;
+      const iso = `${y}-${mo}-${d}`;
+      return iso > todayISO() ? null : iso;
+    }
+
+    // IM1: the day a unit reached the stage it is at now, from its diary (see logStage), or ""
+    // if the diary can't say. Export CSV writes it as date_stage.
+    function stageReachedOn(m) {
+      const log = Array.isArray(m.log) ? m.log : [];
+      if (!log.length) return "";
+      if (!m.each) {
+        const last = log[log.length - 1];
+        return last[2] === undefined && last[1] === m.stage ? last[0] : "";
+      }
+      // Track-each-model: replay the diary and keep the day the slowest model got there.
+      const st = new Array(m.count || 1).fill(log[0][1]);
+      let was = null, since = "";
+      for (const e of log) {
+        if (e[2] === undefined) st.fill(e[1]);
+        else if (e[2] < st.length) st[e[2]] = e[1];
+        const now = lowest(st);
+        if (now !== was) { since = now === m.stage ? e[0] : ""; was = now; }
+      }
+      return was === m.stage ? since : "";
+    }
+
+    // IM1: give an imported unit the dates from its CSV row. Joined on `added`; if it reached
+    // its stage on a later day, the diary starts at the first stage and moves on that day.
+    function giveCsvDates(model, added, since) {
+      if (!added) return;
+      model.added = added;
+      model.log = since && since !== added ? [[added, 0], [since, model.stage]] : [[added, model.stage]];
     }
 
     // A stage number from a stage name (any capitals) or a number. Unknown = first stage.
@@ -17286,11 +17332,12 @@
     // the other columns are found by their titles, so they can be in any order (or missing).
     // Without a "name" title the file is refused, so a random file can't become units.
     const CSV_COLUMNS = { name: ["name", "unit", "unit name"], game: ["game", "hobby"], faction: ["faction", "army"],
-      stage: ["stage"], nickname: ["nickname"], count: ["count", "models", "number"], repaint: ["repaint"], notes: ["notes", "note"] };
+      stage: ["stage"], nickname: ["nickname"], count: ["count", "models", "number"], repaint: ["repaint"], notes: ["notes", "note"],
+      dateAdded: ["date_added", "date added"], dateStage: ["date_stage", "date stage"] };   // IM1: the two date columns
     function csvToUnits(rows) {
       rows = rows.filter(cells => cells.some(c => String(c).trim()));
       const noName = 'This file has no "name" column, so Minifolio can\'t tell which column holds your unit names. ' +
-        'The first line should be the column titles: name, game, faction, stage, nickname, count, repaint, notes ' +
+        'The first line should be the column titles: name, game, faction, stage, nickname, count, repaint, notes, date_added, date_stage ' +
         '(only "name" is needed). CSV template in Settings gives you an example. Nothing has changed.';
       if (!rows.length) return { problem: "That file is empty. Nothing has changed." };
       const titles = rows[0].map(c => plainQuotes(String(c)).trim().toLowerCase());
@@ -17300,9 +17347,18 @@
       const cell = (cells, key) => col[key] < 0 ? "" : String(cells[col[key]] || "").trim();
       const unknownStages = new Set();
       const units = [];
+      const datesLeftOut = [];   // IM1: row numbers where a date couldn't be used
       for (const cells of rows.slice(1)) {
         const name = plainQuotes(cell(cells, "name"));
         if (!name) continue;
+        // IM1: a date that can't be used is left out (the row still comes in). A stage date with
+        // no joined date, or a joined date after the stage date, uses the stage date for both.
+        let dateAdded = csvDate(cell(cells, "dateAdded")), dateStage = csvDate(cell(cells, "dateStage"));
+        let leftOut = dateAdded === null || dateStage === null;
+        if (dateAdded === null) dateAdded = "";
+        if (dateStage === null) dateStage = "";
+        if (dateStage && (!dateAdded || dateAdded > dateStage)) { if (dateAdded) leftOut = true; dateAdded = dateStage; }
+        if (leftOut) datesLeftOut.push(cells.line);
         const stageText = cell(cells, "stage");
         const n = Number(stageText);
         const validNumber = stageText !== "" && Number.isInteger(n) && n >= 0 && n < STAGES.length;
@@ -17320,9 +17376,10 @@
           count: cleanCount(cell(cells, "count")),
           repaint: ["yes", "y", "true", "1"].includes(cell(cells, "repaint").toLowerCase()),
           note: cell(cells, "notes"),
+          dateAdded, dateStage,   // IM1: only for the import, never saved as they are
         });
       }
-      return { units, unknownStages };
+      return { units, unknownStages, datesLeftOut };
     }
 
     // Import CSV reads the file, then shows the review so you can choose Add or Replace.
@@ -17342,20 +17399,23 @@
         if (!looksLikeText(text)) { notify(`"${file.name}" isn't a CSV file (it isn't plain text). Nothing has changed.`); return; }
         const read = csvToUnits(parseCSV(text.replace(/^﻿/, "")));   // ﻿: an invisible mark Excel adds
         if (read.problem) { notify(read.problem); return; }
-        const { units, unknownStages } = read;
+        const { units, unknownStages, datesLeftOut } = read;
         if (!units.length) { notify("No units found in that file."); return; }
         whPanel.classList.add("hidden");
-        openReview({ source: "csv", title: `"${file.name}"`, rows: units, unknownStages: [...unknownStages] });
+        openReview({ source: "csv", title: `"${file.name}"`, rows: units, unknownStages: [...unknownStages], datesLeftOut });
       });
     });
 
     document.getElementById("template-button").addEventListener("click", () => {
       const last = STAGES[STAGES.length - 1];
+      // IM1: the two date columns, with the last row filled in (joined 60 days ago, finished 14 days ago).
+      const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
       const template =
-        "name,game,faction,stage,nickname,count,repaint,notes\n" +
-        `Intercessors,40K,Ultramarines,${STAGES[0]},,5,no,\n` +
-        `Intercessors,40K,Ultramarines,${STAGES[Math.min(3, STAGES.length - 1)]},The Gold Squad,5,no,\n` +
-        `Redemptor Dreadnought,40K,Ultramarines,${last},,1,yes,"Magnetised, so can swap guns"\n`;
+        "name,game,faction,stage,nickname,count,repaint,notes,date_added,date_stage\n" +
+        `Intercessors,40K,Ultramarines,${STAGES[0]},,5,no,,,\n` +
+        `Intercessors,40K,Ultramarines,${STAGES[Math.min(3, STAGES.length - 1)]},The Gold Squad,5,no,,,\n` +
+        `Redemptor Dreadnought,40K,Ultramarines,${last},,1,yes,"Magnetised, so can swap guns",${daysAgo(60)},${daysAgo(14)}\n`;
       downloadFile("minifolio-template.csv", template, "text/csv");
     });
 
@@ -17369,9 +17429,10 @@
     }
     document.getElementById("csv-export-button").addEventListener("click", () => {
       if (!models.length) { notify("There are no units to export yet."); return; }
-      const header = "name,game,faction,stage,nickname,count,repaint,notes";
+      const header = "name,game,faction,stage,nickname,count,repaint,notes,date_added,date_stage";
       const rows = models.map(m => [m.name, m.hobby, m.faction, STAGES[m.stage], m.nickname || "",
-        m.count || 1, m.repaint ? "yes" : "no", m.note || ""].map(csvCell).join(","));
+        m.count || 1, m.repaint ? "yes" : "no", m.note || "",
+        m.added || "", stageReachedOn(m)].map(csvCell).join(","));   // IM1: blank when the app has no date
       const today = todayISO();
       // "﻿" at the start helps Excel read accents and curly quotes properly.
       downloadFile(`minifolio-${today}.csv`, "﻿" + [header, ...rows].join("\r\n") + "\r\n", "text/csv");
@@ -17654,6 +17715,12 @@
         summary += ` These stages don't match yours, so those units will start at "${STAGES[0]}": ` +
           incoming.unknownStages.join(", ") + ".";
       }
+      // IM1: one line for CSV dates that couldn't be used (the rows still come in).
+      const leftOut = incoming.datesLeftOut || [];
+      if (leftOut.length) {
+        summary += ` Dates left out on ${plural(leftOut.length, "row")}: ${leftOut.slice(0, 5).join(", ")}` +
+          (leftOut.length > 5 ? ` and ${leftOut.length - 5} more.` : ".");
+      }
       if (!adding && models.length) {
         summary += ` Your current ${plural(models.length, "unit")} will be removed first. You can Undo straight after.`;
       }
@@ -17859,13 +17926,14 @@
           if (!c.tick) return;
           // Extra copies of a unit you have, where you chose to keep your name, use your name.
           const useYours = reviewMode === "add" && m.match && c.keep === "yours";
-          const { stageGiven, ...row } = m.row;   // stageGiven is only for the check, never saved
-          addModel({
+          const { stageGiven, dateAdded, dateStage, ...row } = m.row;   // stageGiven and the dates are only for the check, never saved as they are
+          const unit = addModel({
             ...row,
             name: useYours ? m.match.name : m.row.name,
             stage: c.stage,     // v60: each row's own stage and count
             count: c.count,
           });
+          giveCsvDates(unit, dateAdded, dateStage);   // IM1: a row with no dates keeps today, as before
         });
 
         const parts = [];
