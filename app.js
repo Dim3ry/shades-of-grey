@@ -14326,13 +14326,17 @@
         const toCat = !toGroup && (g.view === "entry" || g.view === "group") && g.cat && shown.some(c => c.key === g.cat);
         back.textContent = toGroup ? `Back to ${groupHere.name}` : toCat ? `Back to ${catName(g.cat)}` : "Back to Guides";
         back.addEventListener("click", () => {
-          const from = g.view === "group" ? `[data-group="${CSS.escape(g.group)}"]` : g.view === "entry" && (toGroup || toCat) ? `[data-guide="${CSS.escape(g.key)}"]` : `[data-cat="${CSS.escape(g.cat)}"]`;
+          // the row it came from: in the right-hand list for a group or an entry (a search result with the same key sits, hidden on a phone, in the left one)
+          const from = g.view === "group" ? `.guides-main [data-group="${CSS.escape(g.group)}"]` : g.view === "entry" && (toGroup || toCat) ? `.guides-main [data-guide="${CSS.escape(g.key)}"]` : `.guides-cats [data-cat="${CSS.escape(g.cat)}"]`;
           if (toGroup) Object.assign(g, { view: "group", key: "", kind: "" });
           else if (toCat) Object.assign(g, { view: "category", group: "", key: "", kind: "" });
           else Object.assign(g, { view: "home", cat: "", group: "", key: "", kind: "" });
           renderGuides(from);
-          const body2 = document.getElementById("compendium-body");   // the row it came from is focused; if it is not on screen, the search box
-          if (body2 && !body2.contains(document.activeElement)) { const s = document.getElementById("guides-search"); if (s) s.focus(); }
+          const body2 = document.getElementById("compendium-body");   // if that row is not on screen, the first of Back or the search box that is
+          if (body2 && !body2.contains(document.activeElement)) {
+            const next = ["guides-back", "guides-search"].map(id => document.getElementById(id)).find(x => x && x.offsetParent);
+            if (next) next.focus();
+          }
         });
         main.appendChild(back);
         if (g.view === "category") {

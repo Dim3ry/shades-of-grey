@@ -156,7 +156,14 @@ def main():
         page.fill("#guides-search", "rust")
         page.wait_for_selector(".guides-lower .guides-row[data-guide]")
         check("search results are left as they were (no numbers in this chunk)", page.locator(".guides-lower .guides-num").count() == 0)
-        page.fill("#guides-search", "")
+        hit = page.get_attribute(".guides-lower .guides-row[data-guide]", "data-guide")
+        page.click(".guides-lower .guides-row[data-guide]")
+        page.wait_for_selector(".guides-entry")
+        page.click("#guides-back")
+        wait_settled(page)
+        f = page.evaluate("() => { const a = document.activeElement; return { key: a.dataset.guide || '', tag: a.tagName, shown: !!a.offsetParent, main: !!a.closest('.guides-main') }; }")
+        check("Back from a search result on a phone focuses that entry's row in its group (not a hidden search row)", f == {"key": hit, "tag": "BUTTON", "shown": True, "main": True}, f)
+        home(page)
         page.click('.guides-cats [data-cat="detail"]')
         page.wait_for_selector(".guides-main .detail-recipes")
         check("Detail recipes keeps its own controls, with no numbers yet", page.locator(".guides-main .guides-num").count() == 0)
@@ -190,9 +197,10 @@ def main():
                    (320, 640, "dark", "classic"), (320, 640, "light", "parchment")]
         page.evaluate("() => window.scrollTo(0, 0)")
         for w, h, scheme, theme in configs:
-            # one page: the size changes, and the theme and light or dark are set on the page the way the app sets them
+            # one page: the size changes, and the theme and light or dark are set the way the Theme and Appearance buttons set them
             page.set_viewport_size({"width": w, "height": h})
-            page.evaluate("([th, lt]) => { const r = document.documentElement; r.dataset.t = th; if (lt) r.dataset.appearance = 'light'; else delete r.dataset.appearance; }", [theme, scheme == "light"])
+            r = page.evaluate("""([th, lt]) => { settings.theme = th; settings.appearance = lt ? 'light' : 'dark'; applyPalette(settings.palette); render();
+                const d = document.documentElement.dataset; return [d.t, d.m]; }""", [theme, scheme == "light"])
             home(page)
             page.evaluate("() => document.fonts.ready.then(() => true)")   # a theme's own font has loaded before anything is measured
             seen = []
@@ -207,7 +215,7 @@ def main():
                 wait_settled(page)
                 seen.append((step, page.evaluate(LAYOUT)))
             check(f"{w}x{h} {scheme} {theme}: numbers on one line at the right of the title's first line, no word split, taps 44 px, no sideways scroll",
-                  all(m["rows"] >= 1 and not m["bad"] and not m["small"] and not m["sideways"] for _, m in seen), [x for x in seen if x[1]["bad"] or x[1]["small"] or x[1]["sideways"]])
+                  r == [theme, scheme] and all(m["rows"] >= 1 and not m["bad"] and not m["small"] and not m["sideways"] for _, m in seen), [x for x in seen if x[1]["bad"] or x[1]["small"] or x[1]["sideways"]])
 
         check("no page errors or pop-ups", errors == [], errors)
         browser.close()
