@@ -100,7 +100,7 @@ def main():
         quiet(page)
         page.click(".recipe-menu-button")
         page.click("text=Duplicate")
-        check("Duplicate opens a copy in the editor", "(copy)" in page.evaluate("() => recipeDraft && recipeDraft.name"))
+        check("Duplicate opens a copy in the editor", " copy" in page.evaluate("() => recipeDraft && recipeDraft.name"))   # RS3a: the name ends " copy", not "(copy)"
         page.evaluate("() => { recipeDraft = null; renderRecipes(); }")
         page.evaluate("(id) => openRecipe(id)", 101)
         quiet(page)
