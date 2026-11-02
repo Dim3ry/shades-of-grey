@@ -160,7 +160,7 @@ def main():
 
         # A recipe being written, with a change: Back asks first.
         tab(page, "recipes")
-        page.click("#new-recipe")
+        page.evaluate("() => startNewRecipe(null)")   # RS3b: + New recipe now opens the quick form; this test is about the full editor, which startNewRecipe still opens
         page.wait_for_timeout(100)
         page.locator("#recipe-page input").first.fill("Half-written recipe")
         page.wait_for_timeout(100)

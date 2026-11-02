@@ -97,7 +97,7 @@ def open_editor(page):
     blur(page)
     page.click('nav button[data-tab="recipes"]')
     quiet(page)
-    page.click("#new-recipe")
+    page.evaluate("() => startNewRecipe(null)")   # RS3b: + New recipe now opens the quick form; this test is about the full editor, which startNewRecipe still opens
     quiet(page)
 
 def set_step_paint(page, step, name):

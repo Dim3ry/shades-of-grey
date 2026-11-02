@@ -1685,6 +1685,31 @@
     .scheme-picker-row[hidden] { display: none; }
     .scheme-picker-row .pick-slot, .scheme-picker-row .pick-tick { margin: 0; }
     .scheme-picker-name { flex: 1; min-width: 0; padding: 8px 0; overflow-wrap: anywhere; cursor: pointer; }
+    /* RS3b: the quick New recipe form (one box, a read-only preview, More options, a full-width Save) and the "Do you own these?" sheet. */
+    .quick-recipe .quick-lines { min-height: 112px; font-size: 16px; }
+    .quick-preview { display: grid; gap: 8px; }
+    .quick-preview[hidden] { display: none; }
+    .quick-meta { margin: 0; display: flex; flex-wrap: wrap; gap: 2px 16px; font-size: 15px; overflow-wrap: anywhere; }
+    .quick-meta-label { color: var(--muted); font-size: 13px; }
+    .quick-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+    .quick-row { border: 1px solid var(--border); border-radius: var(--radius-control); padding: 8px 10px; }
+    .quick-row.quick-unknown { border: 2px solid var(--caution); padding: 7px 9px; }
+    .quick-row-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .quick-num { flex: none; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .quick-swatches { display: inline-flex; gap: 3px; flex: none; }
+    .quick-name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+    .quick-tech { flex: none; color: var(--muted); font-size: 14px; }
+    .quick-unknown-note { margin: 4px 0 0; font-size: 13px; }
+    .quick-fields { display: grid; gap: 12px; padding-top: 8px; }
+    .quick-step-fields { display: grid; gap: 8px; border-top: 1px solid var(--border); padding-top: 10px; }
+    .quick-step-title { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+    #recipe-page .quick-save { width: 100%; min-height: 44px; }
+    .dialog-backdrop.dialog-sheet { align-items: flex-end; padding: calc(16px + env(safe-area-inset-top)) 0 0; }
+    .dialog-sheet > .dialog { max-width: 560px; border-radius: var(--radius-card) var(--radius-card) 0 0; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+    .own-sheet-list { display: grid; }
+    .own-sheet-row { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+    .own-sheet-row .pick-tick { flex: none; margin: 0; }
+    .own-sheet-name { flex: 1; min-width: 0; padding: 8px 0; overflow-wrap: anywhere; cursor: pointer; }
     .recipe-shop-idle-wrap { margin-top: 12px; }
     .recipe-shop-idle-wrap .shop-idle-button { min-height: 44px; }
     @media (prefers-reduced-motion: reduce) { .shop-item.shop-ticking .shop-text { transition: none; } }
@@ -3102,6 +3127,7 @@
           <summary>Paint recipes</summary>
           <ul>
             <li>A recipe is your own step-by-step for a model, for one part like armour, eyes or trim. Press <strong>Painting → Recipes → + New recipe</strong>.</li>
+            <li id="help-quick-recipe">In <strong>New recipe</strong>, type or paste lines like <em>Eyes: yriel yellow, then flash gitz yellow</em>: a part, a colon, then paints split by commas or "then", or one paint per line. A mix like 2:1 and (optional) work as in Paste recipes. The preview shows the part, a name and each step. A paint that is not in the paint list is kept as typed. <strong>More options</strong> holds the name, part, and each step's technique, coats, brand and note. A technique you pick there stays when you change that step's paint. After <strong>Save recipe</strong>, <strong>Do you own these?</strong> lets you tick the paints you have: <strong>Done</strong> marks them Owned, <strong>Skip</strong> changes nothing. To change a recipe later, use <strong>Edit</strong> on its page.</li>
             <li id="help-recipe-or-scheme"><strong>Recipe or scheme? What's the difference.</strong> <strong>Recipe:</strong> how to paint one part, like teeth or armour. It has steps, paints and mixes. <strong>Scheme:</strong> the look for a whole model, unit or army. It is a bundle of recipes. For example, my dark green scheme is an Armour recipe, a Trim recipe, a Skin recipe and a Weapon recipe. <strong>Colour plan</strong> (Painting → Colour Lab): a quick idea of which colours go together. No steps. Save it into a recipe when you want steps.</li>
             <li>Add steps in the order you paint them. Each step has a technique (base coat, wash, dry brush…), the number of coats, and one or more paints.</li>
             <li>Not sure what to call a technique? Leave it on <strong>Auto</strong> and the app guesses from the paints: a shade becomes Wash, a Contrast paint becomes Contrast, 'Ardcoat becomes Varnish, and so on. You can always pick one yourself.</li>

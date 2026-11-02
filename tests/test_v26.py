@@ -142,7 +142,7 @@ def type_unit(page, name="Half typed unit", count="7", game="40K", faction="Tyra
 
 def start_recipe(page, name="Half written recipe", notes="some notes", paint="Macragge Blue"):
     main_tab(page, "recipes")
-    page.click("#new-recipe")
+    page.evaluate("() => startNewRecipe(null)")   # RS3b: + New recipe now opens the quick form; this test is about the full editor, which startNewRecipe still opens
     page.wait_for_timeout(250)
     page.fill(NAME_BOX, name)
     page.fill(NOTES_BOX, notes)
@@ -303,7 +303,7 @@ def main():
         page.wait_for_timeout(700)
         check("a name of only spaces is not kept", store_text(page) is None)
         main_tab(page, "recipes")
-        page.click("#new-recipe")
+        page.evaluate("() => startNewRecipe(null)")   # RS3b: + New recipe now opens the quick form; this test is about the full editor, which startNewRecipe still opens
         page.wait_for_timeout(700)
         check("a new recipe nobody has typed in is not kept", store_text(page) is None)
         page.fill(NAME_BOX, "x")

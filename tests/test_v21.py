@@ -338,7 +338,7 @@ def main():
                 page.locator("#stage-list").scroll_into_view_if_needed()
                 shot(page, "v21-tap-targets-stage-editor-360.png", full=False)
             tab(page, "recipes")
-            page.click("#new-recipe")
+            page.evaluate("() => startNewRecipe(null)")   # RS3b: + New recipe now opens the quick form; this test is about the full editor, which startNewRecipe still opens
             page.wait_for_timeout(120)
             # A new recipe starts with one empty paint, so the button already says "Mix in another paint".
             mix = [x for x in sizes(page, "#recipe-page button.link-button") if x[2].startswith("+ Mix in another paint")]

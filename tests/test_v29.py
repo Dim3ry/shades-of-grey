@@ -92,7 +92,7 @@ def open_editor(page):
     blur(page)
     page.click('nav button[data-tab="recipes"]')
     page.wait_for_timeout(120)
-    page.click("#new-recipe")
+    page.evaluate("() => startNewRecipe(null)")   # RS3b: + New recipe now opens the quick form; this test is about the full editor, which startNewRecipe still opens
     page.wait_for_timeout(200)
 
 def set_step_paint(page, step, name):
