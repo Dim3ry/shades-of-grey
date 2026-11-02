@@ -82,7 +82,7 @@ def main():
         page.click(f'.guides-cats [data-cat="{first_cat}"]')
         wait_settled(page)
         # G2a: a category now lists its topic groups first (the sample entries are not in the mapping, so they sit in "Not yet grouped");
-        # one more tap opens the group's entries. The groups themselves are checked in test_v124_g2a.py.
+        # one more tap opens the group's entries. The groups themselves are checked in test_v123_g2a.py.
         page.click(".guides-main .guides-groups .guides-row")
         wait_settled(page)
         rows = texts(page, ".guides-main .guides-row .guides-row-title")

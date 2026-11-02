@@ -18639,12 +18639,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL TEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=122".
+    // "?v=" number on ALL ELEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, app), e.g. "app.js?v=123".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v122";
+    const APP_VERSION = "v123";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -19095,6 +19095,11 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v123", date: "2 Nov 2026", changes: [
+        "+ New recipe now opens a quick form: type or paste lines like Eyes: yriel yellow, then flash gitz yellow and check the preview. A paint the app does not know is outlined and kept as typed. More options holds the name, part and each step's technique, coats, brand and note, and a technique you pick there stays when you change the paint. After saving, Do you own these? lets you tick the paints you have.",
+        "Import CSV can now read two optional dates for each unit: date_added (when it joined your collection) and date_stage (when it reached its stage), as 2026-11-02 or 02/11/2026. The progress graph then shows your collection's real history instead of starting on the day you imported. Export CSV and the CSV template have the two new columns too.",
+        "Guides: Colour basics, Techniques, Tools and prep and Problems now open on topic groups, then the entries in each group, all in A to Z order. Each row has a small number (like 2.3.4) so you can find your place, and Back goes up one level at a time.",
+      ]},
       { version: "v122", date: "2 Nov 2026", changes: [
         "New About page in Tools and Settings, with what Minifolio is and what it is for. The start page has a new short line under the name.",
       ] },
