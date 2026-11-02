@@ -3,7 +3,7 @@
 2. A saved Blueprint or Rulebook theme loads as Classic (with and without app.js), with no error.
 3. Restoring a backup that names Blueprint or Rulebook works and ends on Classic.
 4. Classic's accent (ice cyan) and its borders pass contrast in light and dark: text 4.5 to 1, borders and controls 3 to 1;
-   good, bad and warning stay green, red and amber, clearly apart from each other and from the cyan; the note colour is no longer lavender.
+   good, bad and warning stay green, red and amber, clearly apart from each other and from the cyan; the note colour is a cold violet-blue, clearly apart from muted grey.
 5. Classic's title and number font (Oxanium) loads from the app's own site; body text keeps the system font; the removed fonts are gone.
 6. Cards get thin lines and small corner marks drawn in CSS, with tighter corners and no resting transform.
 7. The photo viewer and the camera keep their old colours in Classic, light and dark.
@@ -133,7 +133,11 @@ def main():
             check(f"{mode}: good is green (hue 100 to 150), bad red, warning amber", 100 <= hue(g["--good"]) <= 150 and (hue(g["--bad"]) <= 15 or hue(g["--bad"]) >= 345)
                   and 25 <= hue(g["--caution"]) <= 50, [round(hue(g[n])) for n in ("--good", "--bad", "--caution")])
             check(f"{mode}: good, bad, warning and the cyan are at least 25 degrees of hue apart", min(gaps.values()) >= 25, gaps)
-            check(f"{mode}: the note colour is no longer lavender or purple", not (240 <= hue(g["--note"]) <= 300), (g["--note"], round(hue(g["--note"]))))
+            sat = lambda c: colorsys.rgb_to_hls(*[x / 255 for x in rgb(c)])[2]
+            note_gaps = [round(hue_gap(g["--note"], g[n])) for n in ("--accent", "--good", "--bad", "--caution")]
+            check(f"{mode}: the note colour is a cold violet-blue (hue 225 to 245), clearly coloured next to muted grey, and apart from cyan, good, bad and warning",
+                  225 <= hue(g["--note"]) <= 245 and sat(g["--note"]) >= 0.5 > sat(g["--muted"]) and min(note_gaps) >= 25
+                  and g["--note"].lower() not in ("#c4b5fd", "#6d28d9"), (g["--note"], round(hue(g["--note"])), note_gaps))
 
             print(f"\n--- 5 to 7. Fonts, panels and the photo viewer ({mode}) ---")
             page.evaluate("document.fonts.ready")
@@ -152,6 +156,9 @@ def main():
                   and rgb(re.search(r"rgb\([^)]*\)", card["img"]).group(0)) == rgb(g["--accent"]), card)
             check(f"{mode}: no resting transform or scale on cards or buttons", page.evaluate("""() => [...document.querySelectorAll('.card, .primary-button, .plain-button, .chip')]
                 .every(e => { const s = getComputedStyle(e); return s.transform === 'none' && (s.scale === 'none' || s.scale === '1'); })"""))
+            edge = page.evaluate("""() => { const c = [...document.querySelectorAll('#history-card .chip')].find(e => e.getAttribute('aria-pressed') !== 'true' && !e.style.getPropertyValue('--chip-colour'));
+                return c ? getComputedStyle(c).borderLeftColor : null; }""")
+            check(f"{mode}: a plain pill keeps its old subtle 4 px left edge", edge and rgb(edge) == rgb({"dark": "#22304a", "light": "#c4d0de"}[mode]), edge)
             for sel in (".viewer", "#scan-camera"):
                 # the camera box is only built when the camera opens, so a bare one stands in for it here (only its colours are read)
                 page.evaluate("(s) => { if (!document.querySelector(s)) { const d = document.createElement('div'); if (s[0] === '#') d.id = s.slice(1); else d.className = s.slice(1); d.hidden = true; document.body.appendChild(d); } }", sel)
