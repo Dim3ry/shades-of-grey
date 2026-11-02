@@ -2035,6 +2035,14 @@
       }
     }
 
+    // F1: a status set with the status buttons. Taking a paint off the shopping list this way (Wishlist to Empty, Not owned or no status)
+    // counts as dismissing it, as Remove on the list does, so it does not jump into Suggested. Owned and Running low need no dismissal.
+    function setStatusByHand(paint, key) {
+      const was = paintStatus(paint);
+      applyPaintStatus(paint, key);
+      if (was === "wishlist" && key !== "wishlist" && !haveIt(paint)) paint.shopDismissed = true;
+    }
+
     // The status buttons in a paint's details. Tap one to set it; tap it again to clear it.
     function buildStatusRow(paint) {
       const wrap = document.createElement("div");
@@ -2048,7 +2056,7 @@
       const current = paintStatus(paint);
       for (const s of PAINT_STATUSES) {
         const chip = makeChip(s.label, current === s.key, () => {
-          applyPaintStatus(paint, current === s.key ? "" : s.key);
+          setStatusByHand(paint, current === s.key ? "" : s.key);   // F1
           render();
         }, s.colour);
         chip.classList.add("status-chip");
@@ -2283,7 +2291,7 @@
         const text = document.createElement("span");
         text.className = "shop-text";
         const nameEl = document.createElement("span");
-        nameEl.textContent = x.paint.name + " ";
+        nameEl.textContent = x.paint.name + (String(x.paint.brand || "").trim() ? ` · ${x.paint.brand}` : "") + " ";   // the brand tells same-name paints apart
         const word = document.createElement("small");
         word.className = "shop-suggest-word";
         word.textContent = x.word;
@@ -2406,7 +2414,8 @@
     }
     function addToShoppingList(paint, source) {
       const before = JSON.stringify(book);
-      const mine = findOrAddPaint(paint.brand, paint.name, "");   // "" = leave a colour you already picked alone
+      // F1: a paint from Your Palette itself (Suggested) is used as it is, so a same-name paint of another brand is never picked instead
+      const mine = book.paints.includes(paint) ? paint : findOrAddPaint(paint.brand, paint.name, "");   // "" = leave a colour you already picked alone
       if (haveIt(mine)) return false;                            // you own it: nothing to add
       applyPaintStatus(mine, "wishlist");
       noteShopSource(mine, source || "Colour suggestion");        // v40
@@ -2493,11 +2502,15 @@
     }
     // v73: the "Add to shopping list" button for one paint, or "On your shopping list" once it is there. who = the hidden line holding the
     // paint's name. Shared by the Shop links fold-out and the Mentor picks. redrawAdd() makes it follow the list (after Add and after Undo).
-    function buildShopAddSlot(paint, source, who) {
+    // F1: tagged = the row's own tag already says "On your shopping list", so once listed the slot is left empty (no second copy of the
+    // words) and the focus goes to that tag.
+    function buildShopAddSlot(paint, source, who, tagged) {
       const addSlot = document.createElement("div");
       addSlot.className = "shop-add";
       addSlot.redrawAdd = () => {
         addSlot.replaceChildren();
+        addSlot.hidden = false;
+        if (onShoppingList(paint) && tagged) { addSlot.hidden = true; return null; }
         if (onShoppingList(paint)) {
           const done = document.createElement("span");
           done.className = "shop-onlist";
@@ -2511,7 +2524,20 @@
         add.className = "plain-button";
         add.textContent = "Add to shopping list";
         labelWithName(add, "", who);   // v55: "Add to shopping list" (its own words) then the paint's name
-        add.addEventListener("click", () => { if (addToShoppingList(paint, source)) { const done = addSlot.querySelector(".shop-onlist"); if (done) done.focus(); } });
+        add.addEventListener("click", () => {
+          // F1: Colour Lab is drawn again after Add, so the tag is found again by its place (which list, which row)
+          const li = tagged && tagged.closest("ul.idea-list > li");
+          const lists = [...document.querySelectorAll("ul.idea-list")];
+          const where = li ? [lists.indexOf(li.parentElement), [...li.parentElement.children].indexOf(li)] : null;
+          if (!addToShoppingList(paint, source)) return;
+          let done = addSlot.querySelector(".shop-onlist") || (tagged && tagged.isConnected ? tagged : null);
+          if (!done && where) {
+            const again = document.querySelectorAll("ul.idea-list")[where[0]];
+            const tag = again && again.children[where[1]] && again.children[where[1]].querySelector(".idea-tag");
+            if (tag) { tag.tabIndex = -1; done = tag; }
+          }
+          if (done) done.focus();
+        });
         addSlot.appendChild(add);
         return add;
       };
@@ -2525,13 +2551,14 @@
       const mine = palettePaintFor(paint);
       return !(mine && (isExamplePaint(mine) || isMadeUpPaint(mine) || haveIt(mine))) && !isMadeUpPaint(paint);
     }
-    function buildShopAddRow(paint, source) {
+    function buildShopAddRow(paint, source, tagged) {
       if (!paint || !String(paint.name || "").trim() || !realPaintForShop(paint)) return null;
       const row = document.createElement("div");
       row.className = "shop-add-row";
       const who = hiddenName(paint.name);
-      const slot = buildShopAddSlot(paint, source, who);
-      row.redrawAdd = slot.redrawAdd;
+      const slot = buildShopAddSlot(paint, source, who, tagged);
+      row.redrawAdd = () => { const el = slot.redrawAdd(); row.hidden = slot.hidden; return el; };   // F1: an empty slot hides its row too
+      row.hidden = slot.hidden;
       row.append(slot, who);
       return row;
     }
@@ -2881,7 +2908,7 @@
         const chip = makeChip(s.label, current === s.key, () => {
           const paint = found() || findOrAddPaint(p.brand || "", p.name, p.colour || DEFAULT_PAINT_COLOUR);
           if (p.type === "material") paint.type = "material";
-          applyPaintStatus(paint, current === s.key ? "" : s.key);
+          setStatusByHand(paint, current === s.key ? "" : s.key);   // F1
           render();
         }, s.colour);
         chip.classList.add("status-chip");
@@ -12328,7 +12355,9 @@
         const real = !door.realOnly || realPaintForShop(paint) || onShoppingList(paint);   // v73: Mentor picks: no shop actions for a made-up example paint
         // v73: Mentor picks: Add to shopping list in plain view. F1: Colour Lab's Colour ideas too (plainAdd). One Add per row: when the row
         // has its own, the Shop links fold-out keeps only its links.
-        const toList = (door.listButton || door.plainAdd) && !idea.hit.owned ? buildShopAddRow(paint, source) : null;
+        const tagEl = door.plainAdd && door.listMarks ? row.querySelector(".idea-tag") : null;   // F1: Colour Lab's tag says it once
+        if (tagEl) tagEl.tabIndex = -1;
+        const toList = (door.listButton || door.plainAdd) && !idea.hit.owned ? buildShopAddRow(paint, source, tagEl) : null;
         const shops = door.shops && real ? buildShopFoldout(paint, idea.hit.owned, source, !!door.listButton || !!toList) : null;
         if (shops) row.appendChild(shops);
         const toRecipe = buildPaintToRecipeRow(door, paint);   // v62

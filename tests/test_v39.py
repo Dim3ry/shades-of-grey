@@ -387,7 +387,9 @@ def main():
         # F1: in Colour Lab's Colour ideas the Add is on the row now, and the Shop links fold-out keeps only its links (one Add per row)
         page.locator("#cmp-fold-ideas-panel .shop-add-row button").first.click()
         page.wait_for_timeout(250)
-        check("Add to shopping list works in the Compendium's Colour ideas too (the fold-out then says On your shopping list)", page.locator("#cmp-fold-ideas-panel .shop-onlist").count() == 1 and toast(page)["text"].startswith("Added "))
+        # F1: the row's tag says On your shopping list and the words are not repeated under it
+        check("Add to shopping list works in the Compendium's Colour ideas too (the row then says On your shopping list once)", page.locator("#cmp-fold-ideas-panel .idea-tag", has_text="On your shopping list").count() == 1
+              and page.locator("#cmp-fold-ideas-panel .shop-onlist").count() == 0 and toast(page)["text"].startswith("Added "))
 
         # ---------- 6. The hide switch ----------
         print("\n--- 6. The Settings switch: Show shop links ---")

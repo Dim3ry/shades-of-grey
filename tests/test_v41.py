@@ -179,8 +179,8 @@ def main():
         page.locator("#cmp-fold-ideas-panel > .idea-list > li", has_text=listed_name).locator("summary").click()
         shows = page.locator("#cmp-fold-ideas-panel > .idea-list > li", has_text=listed_name).locator(".shop-onlist").count()
         adds = page.locator("#cmp-fold-ideas-panel > .idea-list > li", has_text=listed_name).locator(".shop-add button").count()
-        # F1: the Add and its words sit on the row now (the fold-out keeps only its links), so this counts the row's
-        check("and its row shows no Add button (it says the same words)", shows == 1 and adds == 0, (shows, adds))
+        # F1: the Add sits on the row now (the fold-out keeps only its links), and once listed the row's tag says it, so the words are not repeated
+        check("and its row shows no Add button and does not repeat the words", shows == 0 and adds == 0, (shows, adds))
         pick = next(r for r in ideas_rows(page) if r["tag"] != LISTED)
         idx = [r["name"] for r in ideas_rows(page)].index(pick["name"])
         page.locator("#cmp-fold-ideas-panel > .idea-list > li").nth(idx).locator("summary").click()

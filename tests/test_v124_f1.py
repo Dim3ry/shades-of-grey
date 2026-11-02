@@ -31,7 +31,10 @@ def P(i, name, **more):
 LONG = "Zeta Empty With A Rather Long Paint Name That Goes On"
 PAINTS = [P(1, "Alpha Empty", status="empty"), P(2, "Beta Needed", status="notowned"), P(3, "Gamma Owned", status="owned"),
           P(4, "Delta Unused", status="notowned"), P(5, "Eta Listed", status="wishlist", shopFrom=["Recipe: Blue"]),
-          P(6, "Example Blue", brand="", example=True, status="empty")]   # brand-less example name: a made-up paint (no shop sells it)
+          P(6, "Example Blue", brand="", example=True, status="empty"),   # brand-less example name: a made-up paint (no shop sells it)
+          P(12, "Example Real", example=True, status="notowned"),   # an example paint with a real brand, used only by an example recipe
+          P(13, "Kappa Listed", status="wishlist")]
+EXAMPLE_REC = dict(t.rec(2, "Example", "Armour", [12]), example=True)
 SETTINGS = {"tab": "recipes", "recipeView": "shopping", "examplesChecked": True, "recipeExamplesChecked": True}
 
 def open_shop(page):
@@ -55,6 +58,14 @@ def paint(page, pid):
 def row(page, name):
     return page.locator("#shop-panel .shop-suggest-item", has_text=name)
 
+def settled(page, js, timeout=3000):
+    """Waits for the layout to settle (fonts, the section fade) until js is true; False if it never is."""
+    try:
+        page.wait_for_function(js, timeout=timeout)
+        return True
+    except Exception:
+        return False
+
 def small_taps(page):
     return page.evaluate("""() => [...document.querySelectorAll('#shop-panel button')].filter(b => b.offsetParent)
         .map(b => b.getBoundingClientRect()).filter(r => r.height < 44 || r.width < 44).length""")
@@ -69,7 +80,7 @@ def main():
         page.on("dialog", lambda d: (errors.append("dialog: " + d.message), d.dismiss()))
 
         print("\n--- 1. Suggested ---")
-        load(page, paints=PAINTS, recipes=[t.rec(1, "Blue", "Armour", [2, 3, 5, 6])], settings=SETTINGS)
+        load(page, paints=PAINTS, recipes=[t.rec(1, "Blue", "Armour", [2, 3, 5, 6, 13]), EXAMPLE_REC], settings=SETTINGS)
         mname = page.evaluate("() => EXAMPLE_RECIPES[0].steps[0].paints[0][1]")
         page.evaluate("(n) => { const p = book.paints.find(x => x.id === 6); p.name = n; save(); }", mname)
         open_shop(page)
@@ -78,13 +89,13 @@ def main():
               and head.get_attribute("aria-expanded") == "false" and not page.locator("#shop-panel .shop-suggest-item").first.is_visible())
         head.click()
         rows = suggested(page)
-        check("it lists the Empty paint and the Not owned recipe paint, each with its word, and nothing else",
-              rows == [{"name": "Alpha Empty", "word": "Empty"}, {"name": "Beta Needed", "word": "Not owned"}], rows)
+        check("it lists the Empty paint and the Not owned recipe paint, each with its brand and word, and nothing else (no example paint, even with a real brand)",
+              rows == [{"name": "Alpha Empty · Citadel", "word": "Empty"}, {"name": "Beta Needed · Citadel", "word": "Not owned"}], rows)
         check("each row has one Add and a Dismiss named Dismiss",
               all(row(page, n).locator(".shop-suggest-add").count() == 1 for n in names(page))
               and (row(page, "Alpha Empty").locator(".shop-suggest-dismiss").get_attribute("aria-label") == "Dismiss"))
         check("no explanatory sentence in it", page.locator("#shop-panel .shop-suggested p").count() == 0)
-        check("the basket counts the list only", basket(page) == "1", basket(page))
+        check("the basket counts the list only", basket(page) == "2", basket(page))
 
         print("\n--- 2. Add, Undo, Dismiss, Remove ---")
         row(page, "Beta Needed").locator(".shop-suggest-add").click()
@@ -92,33 +103,39 @@ def main():
         b = paint(page, 2)
         check("Add puts it on the list with the source Suggested and says so", b["s"] == "wishlist" and b["from"] == ["Suggested"]
               and page.inner_text("#toast").startswith("Added Beta Needed"), (b, page.inner_text("#toast")))
-        check("it leaves Suggested, the fold-out stays open, and the basket follows", names(page) == ["Alpha Empty"] and basket(page) == "2"
+        check("it leaves Suggested, the fold-out stays open, and the basket follows", names(page) == ["Alpha Empty · Citadel"] and basket(page) == "3"
               and head.get_attribute("aria-expanded") == "true", (names(page), basket(page)))
         check("the focus moves to the next row's Add", page.evaluate("() => document.activeElement.classList.contains('shop-suggest-add')"))
         page.click("#toast-undo")
         page.wait_for_timeout(150)
-        check("Undo takes it off the list and back into Suggested", paint(page, 2)["s"] == "notowned" and "Beta Needed" in names(page) and basket(page) == "1")
+        check("Undo takes it off the list and back into Suggested", paint(page, 2)["s"] == "notowned" and "Beta Needed · Citadel" in names(page) and basket(page) == "2")
 
         row(page, "Alpha Empty").locator(".shop-suggest-dismiss").click()
         page.wait_for_timeout(150)
         check("Dismiss takes it out of Suggested and leaves the paint Empty and off the list",
-              names(page) == ["Beta Needed"] and paint(page, 1) == {"s": "empty", "d": True, "from": []} and basket(page) == "1", (names(page), paint(page, 1)))
+              names(page) == ["Beta Needed · Citadel"] and paint(page, 1) == {"s": "empty", "d": True, "from": []} and basket(page) == "2", (names(page), paint(page, 1)))
         page.click("#toast-undo")
         page.wait_for_timeout(150)
-        check("Undo brings it back", "Alpha Empty" in names(page) and not paint(page, 1)["d"])
+        check("Undo brings it back", "Alpha Empty · Citadel" in names(page) and not paint(page, 1)["d"])
         row(page, "Alpha Empty").locator(".shop-suggest-dismiss").click()
         page.wait_for_timeout(150)
 
         page.locator("#shop-panel .shop-item", has_text="Eta Listed").locator(".shop-remove").click()
         page.wait_for_timeout(150)
         check("Remove on the list counts as dismissing: the paint is Not owned and does not jump into Suggested",
-              paint(page, 5)["s"] == "notowned" and paint(page, 5)["d"] and "Eta Listed" not in names(page), (paint(page, 5), names(page)))
+              paint(page, 5)["s"] == "notowned" and paint(page, 5)["d"] and "Eta Listed" not in str(names(page)), (paint(page, 5), names(page)))
+        page.click("#recipe-seg button[data-view='palette']")
+        page.locator(".paint-item", has_text="Kappa Listed").locator("button.paint-head").click()
+        page.locator(".paint-item", has_text="Kappa Listed").locator('.status-chip[data-status="empty"]').click()
+        open_shop(page)
+        check("taking it off with Your Palette's status buttons counts as dismissing too", paint(page, 13)["s"] == "empty" and paint(page, 13)["d"]
+              and "Kappa Listed" not in str(names(page)), (paint(page, 13), names(page)))
         page.reload()
         page.wait_for_function("() => typeof renderShopPanel === 'function'")
         leave_launch(page)
         open_shop(page)
         page.click("#shop-panel .shop-suggest-head")
-        check("after reopening the app, dismissed paints stay out", names(page) == ["Beta Needed"], names(page))
+        check("after reopening the app, dismissed paints stay out", names(page) == ["Beta Needed · Citadel"], names(page))
         page.evaluate("() => addToShoppingList(book.paints.find(x => x.id === 5), 'Colour Lab: Colour ideas')")
         check("adding it to the list yourself clears the dismissal", paint(page, 5)["s"] == "wishlist" and not paint(page, 5)["d"])
         row(page, "Beta Needed").locator(".shop-suggest-dismiss").click()
@@ -128,9 +145,28 @@ def main():
         print("\n--- 3. Backup and restore ---")
         saved = page.evaluate("JSON.parse(JSON.stringify(backupData()))")
         kept = {x["id"]: x.get("shopDismissed") for x in saved["recipes"]["paints"]}
-        check("the backup carries the dismissal", kept.get(1) is True and kept.get(2) is True and 5 not in [k for k, v in kept.items() if v], kept)
+        check("the backup carries the dismissal", kept.get(1) is True and kept.get(2) is True and kept.get(13) is True and not kept.get(5), kept)
         again = page.evaluate("(b) => cleanRecipeBook(b).paints.filter(p => p.shopDismissed === true).map(p => p.id).sort()", saved["recipes"])
-        check("it survives a restore", again == [1, 2], again)
+        check("it survives a restore", sorted(again) == [1, 2, 13], again)
+
+        print("\n--- 3b. Same name, another brand ---")
+        same = [P(8, "Abaddon Black", status="owned"), P(9, "Abaddon Black", brand="", status="notowned"),
+                P(10, "Mephiston Red", status="notowned"), P(11, "Mephiston Red", brand="", status="empty")]
+        load(page, paints=same, recipes=[t.rec(1, "Blue", "Armour", [8, 9, 10])], settings=SETTINGS)
+        open_shop(page)
+        page.click("#shop-panel .shop-suggest-head")
+        check("same-name paints are told apart by their brand", names(page) == ["Mephiston Red · Citadel", "Abaddon Black", "Mephiston Red"], names(page))
+        page.locator('#shop-panel .shop-suggest-item[data-paint="9"] .shop-suggest-add').click()
+        page.wait_for_timeout(150)
+        check("Add on a paint with no brand adds that paint, even when you own one of the same name in a brand",
+              paint(page, 9)["s"] == "wishlist" and paint(page, 8)["s"] == "owned" and basket(page) == "1", (paint(page, 9), paint(page, 8)))
+        page.locator('#shop-panel .shop-suggest-item[data-paint="11"] .shop-suggest-add').click()
+        page.wait_for_timeout(150)
+        check("and adds that paint, not a same-name paint of another brand", paint(page, 11)["s"] == "wishlist" and paint(page, 10)["s"] == "notowned"
+              and names(page) == ["Mephiston Red · Citadel"], (paint(page, 11), paint(page, 10), names(page)))
+        label = page.evaluate("""() => { const b = document.querySelector('#shop-panel .shop-suggest-dismiss');
+            return b.getAttribute('aria-labelledby').split(' ').map(id => id === b.id ? b.getAttribute('aria-label') : document.getElementById(id).textContent.trim()).join(' '); }""")
+        check("the Dismiss button's name has the brand too", label == "Dismiss Mephiston Red · Citadel", label)
         old = dict(saved["recipes"], paints=[{k: v for k, v in x.items() if k != "shopDismissed"} for x in saved["recipes"]["paints"]])
         old["paints"][0]["shopDismissed"] = "yes"
         back = page.evaluate("(b) => { const c = cleanRecipeBook(b); return { n: c.paints.length, any: c.paints.some(p => 'shopDismissed' in p) }; }", old)
@@ -155,7 +191,10 @@ def main():
         mine = page.evaluate("(n) => { const p = book.paints.find(x => x.name === n); return p ? { s: paintStatus(p), from: p.shopFrom } : null; }", name)
         check("Add puts it on the list from Colour Lab: Colour ideas, and the tag says On your shopping list",
               mine == {"s": "wishlist", "from": ["Colour Lab: Colour ideas"]} and r0.locator(".idea-tag").first.inner_text() == "On your shopping list"
-              and r0.locator(".shop-add-row .shop-onlist").count() == 1 and basket(page) == "1", (mine, r0.locator(".idea-tag").first.inner_text()))
+              and basket(page) == "1", (mine, r0.locator(".idea-tag").first.inner_text()))
+        check("the row says it once (the tag), and the focus moves to the tag", r0.inner_text().count("On your shopping list") == 1
+              and r0.locator(".shop-add-row").is_hidden() and page.evaluate("() => document.activeElement.classList.contains('idea-tag')"),
+              (r0.locator(".shop-add-row").is_hidden(), page.evaluate("() => document.activeElement.outerHTML.slice(0, 120)")))
         page.click("#toast-undo")
         page.wait_for_timeout(200)
         rows = page.locator("#cmp-lab-ideas .idea-list > li")
@@ -176,10 +215,13 @@ def main():
             load(page, paints=PAINTS[:5] + [P(7, LONG, status="empty")], recipes=[t.rec(1, "Blue", "Armour", [2])], settings=dict(SETTINGS, appearance=scheme))
             open_shop(page)
             page.click("#shop-panel .shop-suggest-head")
-            fit = page.evaluate("""() => [...document.querySelectorAll('#shop-panel .shop-suggest-item')].every(li => {
+            page.evaluate("() => document.fonts.ready")
+            fit = settled(page, """() => [...document.querySelectorAll('#shop-panel .shop-suggest-item')].every(li => {
                 const r = li.getBoundingClientRect(), t = li.querySelector('.shop-text').getBoundingClientRect(),
                       a = li.querySelector('.shop-suggest-add').getBoundingClientRect(), d = li.querySelector('.shop-suggest-dismiss').getBoundingClientRect();
-                return t.left >= r.left - 1 && t.right <= a.left + 1 && a.right <= d.left + 1 && d.right <= r.right + 1 && t.width > 60; })""")
+                return t.left >= r.left - 1 && t.right <= a.left + 1 && a.right <= d.left + 1 && d.right <= r.right + 1 && t.width > 60; })
+                && document.documentElement.scrollWidth <= document.documentElement.clientWidth
+                && [...document.querySelectorAll('#shop-panel button')].filter(b => b.offsetParent).every(b => { const q = b.getBoundingClientRect(); return q.height >= 44 && q.width >= 44; })""")
             check(f"{w}x{h} {scheme}: no sideways scroll, every button 44 px, names wrap and keep their place", no_sideways(page) and not small_taps(page) and fit,
                   (no_sideways(page), small_taps(page), fit))
         check("no page errors or pop-ups", not errors, errors)
