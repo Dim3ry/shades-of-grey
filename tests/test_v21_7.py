@@ -386,7 +386,7 @@ def main():
         # 4.7 Remove a step
         start(page); tab(page, "recipes")
         page.evaluate("() => openRecipe(1)"); page.wait_for_timeout(100)
-        page.locator("#recipe-page button", has_text="Edit").first.click(); page.wait_for_timeout(150)
+        page.click("#recipe-page .recipe-menu-button"); page.click("text=Edit steps and paints"); page.wait_for_timeout(150)   # RS1: Edit is a menu now
         page.locator("#recipe-page li.step-edit .step-line").first.click()   # v50: a step is one line until you open it
         page.click('button[aria-label="Remove step 1"]'); page.wait_for_timeout(150)
         check("remove step: asks the same thing", asks(page, "Remove step 1?"), box_text(page))
