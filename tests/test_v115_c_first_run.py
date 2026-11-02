@@ -44,8 +44,8 @@ def main():
 
         print("\n--- 1. Start page line and version ---")
         t.load(page, units=[unit(1)], launch=True)
-        line = page.inner_text("#start-line").strip()
-        check("the start page line is the agreed words", line == "Track your miniature painting", line)
+        line = page.text_content("#start-line").strip()   # text_content: the tagline is shown in capitals by CSS
+        check("the start page line is the agreed words", line == "Track. Paint. Learn.", line)   # AM1: George replaced chunk C's wording with the launch tagline
         check("it is 6 words or fewer", len(line.split()) <= 6)
         check("the line shows on the start page", page.evaluate(SHOWN, "#start-line"))
         check("the version is not shown on the start page", not page.evaluate(SHOWN, "#version-tag"))

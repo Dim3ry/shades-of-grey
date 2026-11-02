@@ -59,9 +59,9 @@ def main():
         check("the bar's fourth segment says Tools, and its tap name is Tools",
               texts(page, ".arc [data-tab]")[3] == "Tools" and page.get_attribute('.arc [data-tab="guides"]', "aria-label") == "Tools")
         check("the page heading says Tools and Settings", page.inner_text("#more-title").strip() == "Tools and Settings" and page.is_visible("#more-title"))
-        check("the switch is Guides, Settings, Help, Updates, with Guides selected first",
-              texts(page, "#more-seg button") == ["Guides", "Settings", "Help", "Updates"]
-              and page.evaluate("() => [...document.querySelectorAll('#more-seg button')].map(b => b.getAttribute('aria-selected')).join()") == "true,false,false,false")
+        check("the switch is About, Guides, Settings, Help, Updates, with Guides selected (AM1)",
+              texts(page, "#more-seg button") == ["About", "Guides", "Settings", "Help", "Updates"]   # AM1: About added first, Guides still the page Tools opens on
+              and page.evaluate("() => [...document.querySelectorAll('#more-seg button')].map(b => b.getAttribute('aria-selected')).join()") == "false,true,false,false,false")
         check("the cog is gone and the basket is still in the header",
               page.locator(".cog").count() == 0 and page.locator('[data-tab="settings"]').count() == 0 and page.locator(".app-actions #basket-button").count() == 1)
         check("no Compendium tab or view is left", page.locator('[data-tab="compendium"], #view-compendium').count() == 0 and "renderCompendium" not in app)
