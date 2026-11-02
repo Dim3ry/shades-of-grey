@@ -523,9 +523,8 @@ def main():
         check("…OK renames it on the unit", saved_units(page)[0]["faction"] == "Ultramarine Guard", saved_units(page)[0])
 
         # 4.18 Add a part to the list (type a name)
-        start(page); tab(page, "recipes")
-        page.evaluate("() => { settings.recipeView = 'recipes'; renderRecipes(); }"); page.wait_for_timeout(100)
-        page.locator("#recipe-lists summary").click(); page.wait_for_timeout(100)
+        start(page); tab(page, "settings")   # RS2: the lists moved from the recipes page to Settings, Recipe preferences
+        page.evaluate("() => { const b = document.querySelector('#card-fold-recipe-prefs-button'); if (b && b.getAttribute('aria-expanded') !== 'true') b.click(); }"); page.wait_for_timeout(100)
         page.locator('#part-chips button', has_text="+ Add part").click(); page.wait_for_timeout(150)
         check("+ Add part: asks the same thing", asks(page, "Name of the new part:") and box_kind(page) == "text", box_text(page))
         page.fill("#dialog-input", "Ignored"); no(page)

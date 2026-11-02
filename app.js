@@ -4643,6 +4643,7 @@
       renderDashboard();
       renderUnits();
       renderRecipes();
+      renderRecipePrefs();   // RS2
       if (settings.tab === "guides") renderGuides();   // v35: only while you are looking at it
       return ok;
     }
@@ -8522,7 +8523,8 @@
 
     // ----- The list of recipes -----
     function renderRecipeList() {
-      const partsUsed = uniqueSorted(book.recipes.map(r => r.part));
+      // RS2: a part you removed in Recipe preferences leaves the filter too; its recipes keep it and still show under All.
+      const partsUsed = uniqueSorted(book.recipes.map(r => r.part).filter(p => book.parts.some(v => sameText(v, p))));
       if (!partsUsed.includes(recipePartFilter)) recipePartFilter = "";
       fillSelect(partFilter, "parts", partsUsed, recipePartFilter);
       partFilter.classList.toggle("hidden", partsUsed.length < 2);
@@ -8585,22 +8587,39 @@
       if (recipeCanPaint && !shown.length) {
         recipeList.insertAdjacentHTML("beforeend", '<li class="empty">None yet. Mark paints you own on Your Palette.</li>');
       }
-      renderListChips("part-chips", "parts", "part");
-      renderListChips("technique-chips", "techniques", "technique");
     }
 
     partFilter.addEventListener("change", () => { recipePartFilter = partFilter.value; renderRecipeList(); });
     document.getElementById("new-recipe").addEventListener("click", () => startNewRecipe(null));
 
-    // The parts and techniques lists: ✕ to remove one, + to add one.
+    // RS2: the parts and techniques lists, now in Settings under Recipe preferences: ✕ to remove one (after a question, with Undo), + to add one.
+    // Recipes keep their own part and technique when it is removed here; the entry only leaves the editor's menus and the part filter.
+    function recipesUsingEntry(key, value) {
+      return book.recipes.filter(r => key === "parts" ? sameText(r.part, value) : r.steps.some(s => sameText(s.technique, value))).length;
+    }
+    function learnListEntry(key, value, alreadyHad) {
+      if (value && !book[key].some(v => sameText(v, value)) && !alreadyHad.some(v => sameText(v, value))) book[key].push(value);
+    }
+    function removeListEntry(key, word, value) {
+      const used = recipesUsingEntry(key, value);
+      askYesNo(`Remove ${value}? ${used ? `${plural(used, "recipe")} use${used === 1 ? "s" : ""} it.` : "No recipes use it."}`, () => {
+        const at = book[key].indexOf(value);
+        if (at < 0) return;
+        book[key].splice(at, 1);
+        commit(`Removed ${value}`, () => { if (!book[key].some(v => sameText(v, value))) book[key].splice(Math.min(at, book[key].length), 0, value); render(); }, "Undo", UNDO_SECONDS);
+      }, { yes: "Remove", danger: true });
+    }
+    function renderRecipePrefs() {
+      renderListChips("part-chips", "parts", "part");
+      renderListChips("technique-chips", "techniques", "technique");
+    }
     function renderListChips(boxId, key, word) {
       const box = document.getElementById(boxId);
       box.innerHTML = "";
       for (const value of book[key]) {
         box.appendChild(makeChip(`${value}  ✕`, false, () => {
           if (book[key].length <= 1) { notify(`Keep at least one ${word}.`); return; }
-          book[key] = book[key].filter(v => v !== value);
-          render();
+          removeListEntry(key, word, value);
         }));
         box.lastChild.setAttribute("aria-label", `Remove ${value}`);
       }
@@ -8615,6 +8634,11 @@
       });
       box.appendChild(add);
     }
+    document.getElementById("recipe-prefs-link").addEventListener("click", () => {
+      showTab("settings");
+      openCardFold("recipe-prefs");   // the card is shut until opened
+      document.getElementById("recipe-prefs-card").scrollIntoView({ block: "start" });
+    });
 
     // ----- Reading one recipe -----
     function renderRecipeView(recipe) {
@@ -10263,6 +10287,10 @@
         };
       });
       let recipe = d.id !== null ? recipeById(d.id) : null;
+      // RS2: a part or technique that is new to this recipe and not in the lists yet joins them (e.g. from a Colour idea). One the recipe
+      // already had, and you removed in Recipe preferences, stays on the recipe and is not put back.
+      learnListEntry("parts", d.part.trim(), recipe ? [recipe.part] : []);
+      for (const st of steps) learnListEntry("techniques", st.technique, recipe ? recipe.steps.map(x => x.technique) : []);
       if (recipe) {
         Object.assign(recipe, { name, part: d.part.trim(), notes: d.notes, steps });
         delete recipe.example;   // v24: you've changed it, so it's yours now
@@ -15324,6 +15352,7 @@
             });
             const partFor = partForHeading(part.name);   // RS4a
             if (partFor.isNew) book.parts.push(partFor.name);
+            for (const st of steps) learnListEntry("techniques", st.technique, []);   // RS2
             let name = part.name;
             if (book.recipes.some(r => sameText(r.name, name))) name = `${part.name} (${schemeName})`;
             const recipe = { id: Math.max(0, ...book.recipes.map(r => r.id)) + 1, name, part: partFor.name,
@@ -18863,11 +18892,11 @@
     addRecipeSchemeExplainers();   // S1
     markHelpFolds();   // v52
     foldCard(document.getElementById("faction-colours-card"), "faction-colours");   // v53
+    foldCard(document.getElementById("recipe-prefs-card"), "recipe-prefs");   // RS2
     foldCard(document.getElementById("brands-card"), "paint-brands");   // v53
     foldCard(document.getElementById("stages-card"), "stages");   // v54
     foldCard(document.getElementById("import-card"), "import");   // v54
     foldCard(document.getElementById("your-data-card"), "your-data");   // v54: Delete all units stays inside, unchanged
-    markFold(document.getElementById("recipe-lists"));   // v53: Parts and techniques
     markFold(document.getElementById("history-table-box"));   // v53: Show as a table
     render();
     bootSteps.draw = performance.now();   // Mo4a: the first draw is done

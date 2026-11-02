@@ -104,9 +104,7 @@ def run_pages(page, width, mode):
     page.wait_for_timeout(150)
     scan(page, f"{tag}, an open unit with Edit details open")
     tab(page, "recipes")
-    page.evaluate("() => { document.getElementById('recipe-lists').open = true; }")
-    page.wait_for_timeout(120)
-    scan(page, f"{tag}, Recipes with Parts and techniques open")
+    scan(page, f"{tag}, Recipes")   # RS2: Parts and techniques moved to Settings
     for view in ("palette", "shopping", "recipes"):
         page.evaluate("(v) => document.querySelector('#recipe-seg button[data-view=\"' + v + '\"]').click()", view)
         page.wait_for_timeout(200)
@@ -188,22 +186,9 @@ def main():
         page.set_viewport_size({"width": 390, "height": 844})
         w.load(page, paints=v52.paints_with_needs(), recipes=t.RECIPES, units=t.UNITS)
         tab(page, "recipes")
-        parts = "#recipe-lists > summary"
+        # RS2: the Parts and techniques fold left the recipes page (its chips are now in Settings, Recipe preferences), so its checks went too.
         info = lambda sel: page.evaluate("""(s) => { const e = document.querySelector(s); const d = e.parentElement; return { exp: e.getAttribute('aria-expanded'), open: d.open, tag: d.tagName, sum: e.tagName,
               after: getComputedStyle(e, '::after').content, h: Math.round(e.getBoundingClientRect().height), look: d.classList.contains('help-look') }; }""", sel)
-        i = info(parts)
-        check("Parts and techniques: still a native fold (details and summary) in the Help look, shut, aria-expanded false, 44 px, says More info",
-              i["tag"] == "DETAILS" and i["sum"] == "SUMMARY" and i["look"] and i["exp"] == "false" and not i["open"] and i["after"] == '"More info"' and i["h"] >= 44, i)
-        press(page, page.locator(parts))
-        i = info(parts)
-        check("tapping it opens it: aria-expanded true and the word turns to Less info", i["open"] and i["exp"] == "true" and i["after"] == '"Less info"', i)
-        page.evaluate("() => { document.getElementById('recipe-lists').open = false; }")
-        page.wait_for_timeout(100)
-        check("shutting it by code sets aria-expanded false", info(parts)["exp"] == "false")
-        page.evaluate("() => { document.getElementById('recipe-lists').open = true; }")
-        page.wait_for_timeout(100)
-        check("opening it by code sets aria-expanded true", info(parts)["exp"] == "true")
-        check("Parts and techniques still holds the part and technique chips", page.locator("#recipe-lists #part-chips .chip").count() > 0)
 
         tab(page, "units")
         toggle = page.locator("#toggle-add")
@@ -234,14 +219,7 @@ def main():
         press(page, page.locator(ideas))
         i = info(ideas)
         check("tapping Colour ideas opens it: aria-expanded true, Less info", i["open"] and i["exp"] == "true" and i["after"] == '"Less info"', i)
-        for mode in ("dark", "light"):
-            w.load(page, paints=v52.paints_with_needs(), recipes=t.RECIPES, units=t.UNITS, settings={"appearance": mode})
-            tab(page, "recipes")
-            c = page.evaluate("""() => { const s = document.querySelector('#recipe-lists > summary'); const a = getComputedStyle(s, '::after').color;
-                const d = document.createElement('div'); d.style.background = 'var(--card)'; document.body.appendChild(d); const bg = getComputedStyle(d).backgroundColor; d.remove();
-                const t = getComputedStyle(s).color; return [a, t, bg]; }""")
-            check(f"{mode}: the More info word and the title are readable on the card (4.5:1)",
-                  min(t.contrast(t.rgb(c[0]), t.rgb(c[2])), t.contrast(t.rgb(c[1]), t.rgb(c[2]))) >= 4.5, c)
+        # RS2: the dark and light contrast check of the Parts and techniques fold went with the fold.
 
         # ---------- 5. F6: Help starts closed ----------
         print("\n--- 5. Help starts closed ---")

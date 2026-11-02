@@ -148,9 +148,8 @@ def main():
         check("What can I paint now? shows only recipes you can paint", names == ["Blue armour"], names)
         check("no hint shows when the filter has statuses to use", page.locator("#can-paint-hint .more-info-button").count() == 0)
         page.locator("#can-paint-box .chip", has_text="What can I paint now?").click()
-        lists = page.locator("#recipe-lists")
-        lists.locator("summary").click()
-        check("v59: Parts and techniques has no note or More info inside it", lists.locator(".more-info-button").count() == 0)
+        # RS2: Parts and techniques moved to Settings, Recipe preferences; the recipes page no longer has the fold.
+        check("RS2: the recipes page has no Parts and techniques fold", page.locator("#recipe-lists").count() == 0)
 
         # ---------- 3. Reading a recipe ----------
         print("\n--- 3. Reading a recipe ---")
