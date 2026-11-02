@@ -18535,7 +18535,7 @@
 
     const CHANGELOG = [
       { version: "v122", date: "2 Nov 2026", changes: [
-        "New About page in Tools and Settings, with what Minifolio is and what it is for. The start page now says Track. Paint. Learn.",
+        "New About page in Tools and Settings, with what Minifolio is and what it is for. The start page has a new short line under the name.",
       ] },
       { version: "v121", date: "2 Nov 2026", changes: [
         "Parts and techniques moved to Settings, under Recipe preferences. Removing one now asks first and has Undo. Recipes keep the part or technique they use even if you remove it from the list.",
