@@ -55,7 +55,7 @@ def panel_tags(page):
 def ideas_rows(page):
     return page.evaluate("""() => [...document.querySelectorAll('#cmp-fold-ideas-panel > .idea-list > li')].map(li => ({
         name: li.querySelector('.idea-name').childNodes[0].textContent, brand: (li.querySelector('.idea-name small') || {}).textContent || '', tag: li.querySelector('.idea-tag').textContent,
-        fold: !!li.querySelector('.shop-more'), add: li.querySelectorAll('.shop-add button').length }))""")
+        fold: !!li.querySelector('.shop-more'), add: li.querySelectorAll('.shop-more .shop-add button').length }))""")   # F1: only the fold-out's own Add (the row now has one too)
 
 def open_ideas(page, paints, settings=None):
     load(page, paints=paints, settings=settings)
@@ -176,13 +176,14 @@ def main():
         rr = {r["name"]: r for r in ideas_rows(page)}
         check("in Colour ideas, a paint already on the list says On your shopping list", rr.get(listed_name, {}).get("tag") == LISTED and count_text(page) == "1", (list(rr.values())[:4], count_text(page)))
         page.locator("#cmp-fold-ideas-panel > .idea-list > li", has_text=listed_name).locator("summary").click()
-        shows = page.locator("#cmp-fold-ideas-panel > .idea-list > li", has_text=listed_name).locator(".shop-onlist").count()
-        adds = page.locator("#cmp-fold-ideas-panel > .idea-list > li", has_text=listed_name).locator(".shop-add button").count()
+        # F1: the row has its own Add slot now (Colour Lab's Colour ideas), so these look inside the fold-out only
+        shows = page.locator("#cmp-fold-ideas-panel > .idea-list > li", has_text=listed_name).locator(".shop-more .shop-onlist").count()
+        adds = page.locator("#cmp-fold-ideas-panel > .idea-list > li", has_text=listed_name).locator(".shop-more .shop-add button").count()
         check("and its fold-out shows no Add button (it says the same words)", shows == 1 and adds == 0, (shows, adds))
         pick = next(r for r in ideas_rows(page) if r["tag"] != LISTED)
         idx = [r["name"] for r in ideas_rows(page)].index(pick["name"])
         page.locator("#cmp-fold-ideas-panel > .idea-list > li").nth(idx).locator("summary").click()
-        page.locator("#cmp-fold-ideas-panel > .idea-list > li").nth(idx).locator(".shop-add button").click()
+        page.locator("#cmp-fold-ideas-panel > .idea-list > li").nth(idx).locator(".shop-more .shop-add button").click()   # F1: the fold-out's Add (the row has one too)
         page.wait_for_timeout(250)
         after = ideas_rows(page)[idx]
         check("after Add in Colour ideas, that row says On your shopping list and the basket goes from 1 to 2", after["tag"] == LISTED and count_text(page) == "2", (after, count_text(page)))

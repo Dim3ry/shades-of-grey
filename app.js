@@ -2025,6 +2025,7 @@
         if (key !== "low") delete paint.spare;
         if (!haveIt({ status: key })) delete paint.qty;
         if (key === "owned") delete paint.shopFrom;   // v40: owned paints are off the list, so they forget where they came from
+        if (key === "wishlist") delete paint.shopDismissed;   // F1: on the list again, so a later Remove or Empty can suggest it afresh
       } else {
         delete paint.status;
         delete paint.spare;
@@ -2180,6 +2181,7 @@
       if (!paint || paintStatus(paint) !== "wishlist") return;
       const from = Array.isArray(paint.shopFrom) ? paint.shopFrom.slice() : [];
       applyPaintStatus(paint, "notowned");
+      paint.shopDismissed = true;   // F1: taken off the list counts as dismissed, so it does not jump straight into Suggested
       if (!afterShopChange()) { showNotSaved(); return; }
       showToast(`Removed ${paint.name} from your shopping list`, () => {
         const back = book.paints.find(p => p.id === id);
@@ -2218,6 +2220,92 @@
         if (!afterShopChange()) { showNotSaved(); return; }
         showToast("Cleared the bought paints");
       }, { danger: true, yes: "Clear" });
+    }
+
+    // F1: Suggested, a closed fold-out under the list. It never puts anything on the list (v62 still holds): it shows Empty paints and
+    // Not owned paints that one of your own recipes uses, each with its own Add (addToShoppingList, source "Suggested") and Dismiss.
+    // Dismiss, and Remove on the list, set shopDismissed on the paint: it stays out until it goes on the list again (applyPaintStatus
+    // clears it at Wishlist). Example and made-up paints never show, as on the list. The basket counts only shoppingItems().
+    let suggestedOpen = false;   // closed until you open it (kept while the app is open, so Add and Dismiss do not shut it)
+    function suggestedItems() {
+      const used = new Set();
+      for (const r of book.recipes) if (r.example !== true) for (const s of r.steps) for (const sp of s.paints) used.add(sp.paint);
+      const out = [];
+      for (const p of book.paints) {
+        if (p.shopDismissed === true || isExamplePaint(p) || isMadeUpPaint(p)) continue;
+        const s = paintStatus(p);
+        if (s === "empty" || (s === "notowned" && used.has(p.id))) out.push({ paint: p, word: statusLabel(s) });
+      }
+      return out.sort((a, b) => (a.paint.brand || "￿").localeCompare(b.paint.brand || "￿") || a.paint.name.localeCompare(b.paint.name));
+    }
+    // After Add or Dismiss the panel is drawn again, so the focus goes to the next row's Add (or the fold-out's button, or the heading).
+    function focusSuggested(index) {
+      const adds = document.querySelectorAll("#shop-panel .shop-suggest-add");
+      const el = adds[Math.min(index, adds.length - 1)] || document.querySelector("#shop-panel .shop-suggest-head") || document.querySelector("#shop-panel h2");
+      if (el) { if (el.tagName === "H2") el.tabIndex = -1; el.focus(); }
+    }
+    function addSuggested(id, index) {
+      const paint = book.paints.find(p => p.id === id);
+      if (!paint || !addToShoppingList(paint, "Suggested")) return;
+      focusSuggested(index);
+    }
+    function dismissSuggested(id, index) {
+      const paint = book.paints.find(p => p.id === id);
+      if (!paint || paint.shopDismissed === true) return;
+      paint.shopDismissed = true;
+      if (!afterShopChange()) { showNotSaved(); return; }
+      focusSuggested(index);
+      showToast(`${paint.name} is no longer suggested`, () => {
+        const back = book.paints.find(p => p.id === id);
+        if (!back || back.shopDismissed !== true) return;
+        delete back.shopDismissed;
+        afterShopChange();
+      });
+    }
+    function buildSuggestedSection() {
+      const items = suggestedItems();
+      if (!items.length) return null;   // nothing qualifies: no fold-out at all
+      const box = document.createElement("div");
+      box.className = "shop-suggested";
+      const head = document.createElement("button");
+      head.type = "button";
+      head.className = "plain-button shop-suggest-head";
+      head.setAttribute("aria-expanded", String(suggestedOpen));
+      head.textContent = "Suggested";
+      const list = document.createElement("ul");
+      list.className = "shop-suggest-list";   // not "shop-list": that is the list itself
+      list.hidden = !suggestedOpen;
+      head.addEventListener("click", () => { suggestedOpen = !suggestedOpen; head.setAttribute("aria-expanded", String(suggestedOpen)); list.hidden = !suggestedOpen; });
+      items.forEach((x, index) => {
+        const li = document.createElement("li");
+        li.className = "shop-item shop-suggest-item";
+        li.dataset.paint = x.paint.id;
+        const text = document.createElement("span");
+        text.className = "shop-text";
+        const nameEl = document.createElement("span");
+        nameEl.textContent = x.paint.name + " ";
+        const word = document.createElement("small");
+        word.className = "shop-suggest-word";
+        word.textContent = x.word;
+        text.append(nameEl, word);
+        const add = document.createElement("button");
+        add.type = "button";
+        add.className = "plain-button shop-suggest-add";
+        add.textContent = "Add";
+        labelWithName(add, "", nameEl);   // "Add" then the paint's name
+        add.addEventListener("click", () => addSuggested(x.paint.id, index));
+        const dismiss = document.createElement("button");
+        dismiss.type = "button";
+        dismiss.className = "shop-suggest-dismiss";
+        dismiss.textContent = "✕";
+        dismiss.setAttribute("aria-label", "Dismiss");
+        labelWithName(dismiss, "", nameEl);   // "Dismiss" then the paint's name
+        dismiss.addEventListener("click", () => dismissSuggested(x.paint.id, index));
+        li.append(text, add, dismiss);
+        list.appendChild(li);
+      });
+      box.append(head, list);
+      return box;
     }
 
     // The list as plain text, one brand at a time (for copy as text).
@@ -2634,6 +2722,8 @@
         }
         const doneBox = buildBoughtSection();
         if (doneBox) lists.appendChild(doneBox);
+        const suggested = buildSuggestedSection();   // F1
+        if (suggested) lists.appendChild(suggested);
         const copy = document.createElement("button");
         copy.className = "primary-button layout-side shop-side-copy";
         copy.style.width = "100%";
@@ -2642,7 +2732,10 @@
         copy.addEventListener("click", () => copyText(shoppingText(shoppingItems()), "Shopping list"));
         card.appendChild(copy);
       }
-      if (!items.length) { const doneBox = buildBoughtSection(); if (doneBox) card.appendChild(doneBox); }
+      if (!items.length) {
+        const doneBox = buildBoughtSection(); if (doneBox) card.appendChild(doneBox);
+        const suggested = buildSuggestedSection(); if (suggested) card.appendChild(suggested);   // F1
+      }
       panel.appendChild(card);
     }
     // A1: the Bought section at the bottom of the list: closed to start with, named with its count. Open, it has Clear bought and each
@@ -3365,6 +3458,7 @@
         if (paint.brand !== rawBrand) tidied.add(paint.id);
         if (!PAINT_STATUS_KEYS.includes(paint.status)) delete paint.status;
         if (p.example !== true) delete paint.example;   // v24: only a real true counts
+        if (p.shopDismissed !== true) delete paint.shopDismissed;   // F1: dismissed from Suggested (optional, only a real true counts)
         if (paint.status !== "low" || paint.spare !== true) delete paint.spare;
         // v40: where a paint on the shopping list came from (a recipe or scheme name). Up to 5, each cut to 60 characters, plain text only.
         // A paint you own is not on the list, so it keeps no notes.
@@ -12236,7 +12330,8 @@
         if (shops) row.appendChild(shops);
         const toRecipe = buildPaintToRecipeRow(door, paint);   // v62
         if (toRecipe) row.appendChild(toRecipe);
-        const toList = door.listButton && !idea.hit.owned ? buildShopAddRow(paint, source) : null;   // v73: Mentor picks: Add to shopping list in plain view
+        // v73: Mentor picks: Add to shopping list in plain view. F1: Colour Lab's Colour ideas too (plainAdd), with its Shop links fold-out left as it was.
+        const toList = (door.listButton || door.plainAdd) && !idea.hit.owned ? buildShopAddRow(paint, source) : null;
         if (toList) row.appendChild(toList);
         if (idea.hit.alsoOwned) row.firstElementChild.after(alsoOwnedLine(idea.hit, door.addStep ? () => door.addStep(idea.hit.alsoOwned.paint, stepNote) : null, null, reason));   // v64: your best paint is a poor fit, so it comes second
         list.appendChild(row);
@@ -13905,7 +14000,7 @@
         const role = appendRolePicker(body, door, (key) => { st.role = key; redraw(`[data-role="${key}"]`); });
         const ideas = colourIdeas(null, base.colour, role);
         if (!ideas.length) say("No paints with a known colour to suggest yet. Add paints on Your Palette first.");
-        const built = buildIdeasList(door, ideas, base.colour, role);
+        const built = buildIdeasList(Object.assign({}, door, { plainAdd: true }), ideas, base.colour, role);   // F1: a visible Add on rows you do not own
         body.appendChild(built.list);
         if (ideas.length) {
           const head = `Colour ideas for ${role.note} with ${base.name}${base.brand ? ` (${base.brand})` : ""}`;
