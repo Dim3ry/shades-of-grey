@@ -16175,21 +16175,21 @@
     const FAINT_BELOW = 3;
     const tooFaintOnDark = (hex) => contrastRatio(hex, darkCard()) < FAINT_BELOW;
 
-    // ----- v47: Themes (Classic, Blueprint, Parchment Codex, Grim Forge, Paint Bench, Rulebook) -----
-    // settings.theme is one of these names; "classic" (the look before themes) is the default and the fallback.
+    // ----- v47: Themes (Classic, Parchment Codex, Grim Forge, Paint Bench) -----
+    // settings.theme is one of these names; "classic" is the default and the fallback.
+    // TH1: Blueprint and Rulebook were removed. A saved setting or a backup that still names one of them ends up on Classic.
     // Theme and Appearance are separate: the look you see is the theme in its dark or light version.
-    const THEMES = { classic: "Classic", blueprint: "Blueprint", parchment: "Parchment Codex", forge: "Grim Forge", bench: "Paint Bench", rulebook: "Rulebook" };
+    const THEMES = { classic: "Classic", parchment: "Parchment Codex", forge: "Grim Forge", bench: "Paint Bench" };
+    const RETIRED_THEMES = ["blueprint", "rulebook"];
     const goodTheme = (value) => typeof value === "string" && Object.prototype.hasOwnProperty.call(THEMES, value);
     const currentTheme = () => goodTheme(settings.theme) ? settings.theme : "classic";
     // Each theme's page and card colours in dark and light (the same as the THEMES section of index.html; a test checks).
     // Stage colours are made readable against these, so they stay readable in every theme.
     const THEME_SURFACES = {
       classic: { dark: { page: "#0b1220", card: "#141d2f" }, light: { page: "#e9eff6", card: "#f8fafc" } },
-      blueprint: { dark: { page: "#0c2c4f", card: "#0f3560" }, light: { page: "#f1f4f8", card: "#fbfcfe" } },
       parchment: { dark: { page: "#17120e", card: "#211a14" }, light: { page: "#d8c59a", card: "#e4d4ae" } },
       forge: { dark: { page: "#0e0e10", card: "#17171a" }, light: { page: "#cfcdc6", card: "#dedcd5" } },
-      bench: { dark: { page: "#111815", card: "#19231f" }, light: { page: "#cfe0d4", card: "#e1ece4" } },
-      rulebook: { dark: { page: "#181810", card: "#20201a" }, light: { page: "#c8c6a9", card: "#d5d3b8" } }
+      bench: { dark: { page: "#111815", card: "#19231f" }, light: { page: "#cfe0d4", card: "#e1ece4" } }
     };
     const darkCard = () => THEME_SURFACES[currentTheme()].dark.card;
     const lightCard = () => THEME_SURFACES[currentTheme()].light.card;
@@ -17201,6 +17201,7 @@
               if (unitsToo && !isList && goodAppearance(parsed.appearance)) settings.appearance = parsed.appearance;
               // v47: backups from v47 onwards hold the theme. Anything that isn't a known theme is ignored.
               if (unitsToo && !isList && goodTheme(parsed.theme)) settings.theme = parsed.theme;
+              else if (unitsToo && !isList && RETIRED_THEMES.includes(parsed.theme)) settings.theme = "classic";   // TH1: a removed theme becomes Classic
               // v48: and the paint brands you'd switched off (unknown brands are dropped).
               if (unitsToo && !isList && Array.isArray(parsed.brandsOff)) settings.brandsOff = cleanBrandsOff(parsed.brandsOff);
               // v20.1: Custom colours. Backups from before v20.1 don't have them, so yours stay.

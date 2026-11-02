@@ -117,7 +117,7 @@ def main():
 
         print("\n--- 6. Menu words ---")
         page.set_viewport_size({"width": 390, "height": 844})
-        for theme, scheme in (("forge", "light"), ("rulebook", "dark"), ("bench", "light")):
+        for theme, scheme in (("forge", "light"), ("classic", "dark"), ("bench", "light")):   # TH1: Rulebook was removed; Classic dark takes its place
             t.load(page, settings={"appearance": scheme, "theme": theme})
             rows = page.evaluate("""() => [...document.querySelectorAll('.arc [data-tab]')].map(btn => { const b = btn.getBoundingClientRect(); const rg = document.createRange();
               rg.selectNodeContents([...btn.childNodes].find(n => n.nodeType === 3 && n.textContent.trim())); const r = rg.getBoundingClientRect();

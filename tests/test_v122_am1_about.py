@@ -102,7 +102,7 @@ def main():
 
         print("\n--- 5. Contrast in every theme ---")
         bad = []
-        for theme in ["classic", "blueprint", "parchment", "forge", "bench", "rulebook"]:
+        for theme in ["classic", "parchment", "forge", "bench"]:   # TH1: Blueprint and Rulebook were removed, so four themes are left
             for mode in ["light", "dark"]:
                 start(page, theme=theme, appearance=mode)
                 c = page.evaluate(CONTRAST)

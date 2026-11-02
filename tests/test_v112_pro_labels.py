@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v24 as t
 
 results = []
-THEMES = ["classic", "blueprint", "parchment", "forge", "bench", "rulebook"]
+THEMES = ["classic", "parchment", "forge", "bench"]   # TH1: Blueprint and Rulebook were removed, so four themes are left
 
 def check(name, ok, detail=""):
     results.append(bool(ok))

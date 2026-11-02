@@ -19,7 +19,7 @@ def check(name, ok, detail=""):
     results.append(bool(ok))
     print(("PASS " if ok else "FAIL ") + name + ("" if ok else f"  -> {detail}"))
 
-THEMES = ["classic", "blueprint", "parchment", "forge", "bench", "rulebook"]
+THEMES = ["classic", "parchment", "forge", "bench"]   # TH1: Blueprint and Rulebook were removed, so four themes are left
 
 def start(page, w=390, h=844, launch=True):
     page.set_viewport_size({"width": w, "height": h})
