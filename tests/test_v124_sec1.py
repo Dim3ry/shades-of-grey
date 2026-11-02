@@ -3,11 +3,11 @@
 1. Photos: a backup can't store an SVG (or any type but JPEG, PNG and WebP) as a photo. Old-style photos are drawn
    again as a fresh JPEG when they move to the photo store; anything else is left out and counted in the restore message.
 2. Framing: with the _headers file's rules on the response (as Cloudflare sends them), another site can't show the
-   app inside its page, and the app still opens on its own.
+   app inside its page, while the app's own both-views.html still shows its two copies, and the app opens on its own.
 3. The HTML safety scan catches the lines the security test slipped past it.
 4. Long names from a backup or CSV file are cut to the typing limits; a very long name saved earlier is drawn quickly
    (cut short on screen, unchanged in storage); a broken address such as #% doesn't stop start-up; "constructor"
-   is never matched to a built-in like "Object".
+   is never matched to a built-in like "Object", and never breaks the Mentor.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import base64, json, os, sys
 from playwright.sync_api import sync_playwright
@@ -101,6 +101,9 @@ def main():
         fpage.wait_for_timeout(1500)
         inside = [f for f in fpage.frames if f.url.startswith(origin)]
         check("another site can't show the app inside its page", not inside, [f.url for f in fpage.frames])
+        fpage.goto(origin + "/both-views.html")
+        fpage.wait_for_function("() => [...document.querySelectorAll('iframe')].every(f => { try { return typeof f.contentWindow.showTab === 'function' } catch (e) { return false } })", timeout=15000)
+        check("the app's own both-views.html still shows both copies", len([f for f in fpage.frames if "/index.html" in f.url]) == 2, [f.url for f in fpage.frames])
         fpage.goto(url)
         app_ready(fpage)
         check("the app still opens on its own with those headers", fpage.evaluate("() => typeof showTab === 'function'"))
@@ -145,6 +148,10 @@ def main():
             showTab('constructor'); out.tab = settings.tab; return out; }""")
         check("'constructor', 'valueOf' and similar words never match a built-in such as Object",
               r["shorthand"] == [None, None, None] and not any(":Object" in m or "function" in m for m in r["match"]) and r["tab"] == "dashboard", r)
+
+        mentor = page.evaluate("""() => ['constructor armour', 'what colour goes with constructor', 'toString eyes'].map(q => {
+            try { return MinifolioMentor.mentorAnswer(q, { index: { entries: [] }, paints: [], colour: MinifolioColour }).kind } catch (e) { return 'ERR ' + e.message } })""")
+        check("the Mentor answers 'constructor' and 'toString' questions instead of failing", not any(k.startswith("ERR") for k in mentor), mentor)
 
         check("no page errors", not errors, errors[:5])
         check("no browser pop-ups", not popups, popups[:3])

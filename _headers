@@ -1,8 +1,9 @@
 # Response headers Cloudflare adds to every file of the site (SEC1).
 # frame-ancestors and X-Frame-Options: no other website may show Minifolio inside its own page.
+# 'self' and SAMEORIGIN still let the app's own pages do it (both-views.html shows two copies side by side).
 # The rest of the security policy stays in index.html's meta tag; this one rule can only come from the host.
 /*
-  Content-Security-Policy: frame-ancestors 'none'
-  X-Frame-Options: DENY
+  Content-Security-Policy: frame-ancestors 'self'
+  X-Frame-Options: SAMEORIGIN
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin

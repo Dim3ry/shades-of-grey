@@ -149,21 +149,23 @@
 
   // ---------- the colour words, the part words ----------
   // Colour words the wheel and the colour rules already use, each with a plain middle-of-the-family colour to start from.
-  const COLOUR_WORDS = {
+  // SEC1: both word lists are objects with nothing built in (Object.create(null)), so a typed word such as "constructor"
+  // or "toString" is never read as a colour or a part (it used to make the Mentor fail).
+  const COLOUR_WORDS = Object.assign(Object.create(null), {
     red: ["red", "#b3262c"], pink: ["pink", "#d9738c"], orange: ["orange", "#d9742a"], brown: ["brown", "#6e4a2a"], peach: ["orange", "#e8a67a"],
     yellow: ["yellow", "#e4c32a"], mustard: ["yellow", "#c49a1c"], bone: ["yellow", "#d8cfa8"], green: ["green", "#2f8a45"], olive: ["green", "#6b7a2c"],
     lime: ["green", "#8bc34a"], teal: ["blue", "#1f8a8a"], blue: ["blue", "#2a5fb3"], navy: ["blue", "#1c2f66"], purple: ["purple", "#6a3a9a"],
     violet: ["purple", "#7a4fc4"], lavender: ["purple", "#a58fd0"], white: ["white", "#f2f2f0"], grey: ["grey", "#808080"], gray: ["grey", "#808080"],
     black: ["black", "#14141a"], gold: ["metallic", "#c9a227"], silver: ["metallic", "#b4b8bd"], bronze: ["metallic", "#8c6a3a"],
-  };
+  });
   const COLOUR_LAB_NAME = { red: "Red", orange: "Orange", yellow: "Yellow", green: "Green", blue: "Blue", purple: "Purple", white: "Whites", grey: "Greys", black: "Blacks", metallic: "Metallics" };
   // Part words and their plain synonyms. The four parts are the Mentor tips' own.
-  const PART_WORDS = {
+  const PART_WORDS = Object.assign(Object.create(null), {
     armour: "armour", armor: "armour", plate: "armour", plating: "armour", hull: "armour", shell: "armour", cloak: "armour", robe: "armour",
     eye: "eyes", eyes: "eyes", glow: "eyes", lens: "eyes", visor: "eyes", lamp: "eyes", gem: "eyes",
     weapon: "weapon", blade: "weapon", sword: "weapon", gun: "weapon", axe: "weapon", spear: "weapon", hammer: "weapon", barrel: "weapon", staff: "weapon",
     base: "base", basing: "base", ground: "base", soil: "base", terrain: "base", rim: "base", groundwork: "base",
-  };
+  });
   const PART_NAME = { armour: "armour", eyes: "eyes", weapon: "the weapon", base: "the base" };
   // How each part picks colours: the same picks and boosts as the Picker (COLOUR_ROLES in app.js: armour, glow, weapon, base).
   const PART_ROLE = {
