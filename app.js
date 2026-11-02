@@ -18077,12 +18077,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL TEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=120".
+    // "?v=" number on ALL TEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=121".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v120";
+    const APP_VERSION = "v121";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -18533,6 +18533,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v121", date: "2 Nov 2026", changes: [
+        "Parts and techniques moved to Settings, under Recipe preferences. Removing one now asks first and has Undo. Recipes keep the part or technique they use even if you remove it from the list.",
+      ] },
       { version: "v120", date: "2 Nov 2026", changes: [
         "Pasting recipes no longer fills the Part list with near-duplicates. A heading in your notes uses a Part you already have (capitals, spaces and a trailing s are ignored). Only a heading with no match is added as a new Part, once. Quote marks left round a new paint's name are removed.",
       ] },

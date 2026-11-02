@@ -197,8 +197,8 @@ def main():
         check("all three are shut again when the app is opened afresh",
               all(page.locator(f"{card} > h2 > button.card-fold-button").get_attribute("aria-expanded") == "false" for key, card, inside in NEW_CARDS))
         folded = page.evaluate("() => [...document.querySelectorAll('#view-settings .card-fold')].map(c => c.id)")
-        check("five cards fold in all (Stages, Faction colours, Paint brands, Import, Your data), in the page's order",
-              folded == ["stages-card", "faction-colours-card", "brands-card", "import-card", "your-data-card"], folded)
+        check("six cards fold in all (Stages, Faction colours, Recipe preferences, Paint brands, Import, Your data), in the page's order",   # v121 (RS2): Recipe preferences joined the Settings cards, between Faction colours and Paint brands
+              folded == ["stages-card", "faction-colours-card", "recipe-prefs-card", "brands-card", "import-card", "your-data-card"], folded)
         stay = page.evaluate("""() => [...document.querySelectorAll('#view-settings > .card, #view-settings .card')].filter(c => c.getClientRects().length && !c.classList.contains('card-fold'))
                                  .map(c => (c.querySelector(':scope > h2') || { textContent: '' }).textContent.trim()).filter(Boolean)""")
         check("Backups, Appearance, Theme, Counting visits, Shop links and Colours are not folded and are in view",
