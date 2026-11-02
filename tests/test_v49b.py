@@ -145,7 +145,7 @@ def sweep(page, tag, results_out, seen):
     page.click('#cmp-starter-moods [data-mood="all"]')   # shows the 24 schemes (a browse list, which wraps)
     look("compendium, every fold open")
     page.click("#cmp-starter-view [data-view='combos']"); look("compendium, combinations")
-    tab(page, "settings"); page.evaluate("() => { const b = document.querySelector('#brands-card .card-fold-button'); if (b && b.getAttribute('aria-expanded') !== 'true') b.click(); }"); settle(page); look("settings")  # v53: Paint brands is a folded card
+    tab(page, "settings"); page.evaluate("() => { for (const sel of ['#brands-card', '#recipe-prefs-card']) { const b = document.querySelector(sel + ' .card-fold-button'); if (b && b.getAttribute('aria-expanded') !== 'true') b.click(); } }"); settle(page); look("settings")  # v53: Paint brands is a folded card
 
 def main():
     errors, csp, popups = [], [], []

@@ -246,6 +246,8 @@
     .plain-button:hover { border-color: var(--accent); }
     .primary-button { background: var(--accent); color: var(--on-accent); font-weight: 600; padding: 12px; min-height: 44px; }
     .danger-button { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 11px 14px; font-size: 14px; min-height: 44px; }
+    /* RS2: remove buttons in Recipe preferences keep a 44 px tap area */
+    #recipe-prefs-card .chip { min-height: 44px; }
     .link-button { background: transparent; color: var(--accent); padding: 10px 0; font-size: 14px; min-height: 44px; }   /* v53: was 37 */
     .button-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     /* v22: the backup buttons are the ones people most need to hit, so they are full 44 px targets. */
@@ -2942,15 +2944,10 @@
           <select id="part-filter" aria-label="Filter by part"></select>
         </div>
         <button class="plain-button" id="paste-recipes" style="width: 100%; margin-bottom: 12px;">Paste recipes from your notes</button>
+        <button class="link-button" id="recipe-prefs-link">Recipe preferences</button>
         <div class="chips" id="can-paint-box" style="margin: 0 0 6px;"></div>
         <div id="can-paint-hint" style="margin: 0 0 12px;"></div>
         <ul class="recipe-list" id="recipe-list"></ul>
-        <details class="card help-look" id="recipe-lists">
-          <summary>Parts and techniques</summary>
-          <div id="recipe-lists-info" style="margin-top: 6px;"></div>
-          <div class="panel-field">Parts<div class="chips chips-wrap" id="part-chips" style="margin-top: 0;"></div></div>
-          <div class="panel-field" style="margin-top: 12px;">Techniques<div class="chips chips-wrap" id="technique-chips" style="margin-top: 0;"></div></div>
-        </details>
       </div>
       <!-- One recipe, either to read or to edit. Filled in by JavaScript. -->
       <div id="recipe-page" class="layout-side hidden"></div>
@@ -3132,7 +3129,7 @@
             <li><strong>Apply to … units</strong> links a scheme's recipes to every unit in its faction that doesn't have them all yet. Recipes a unit already has stay linked.</li>
             <li>With <strong>New units … get these recipes automatically</strong> ticked, any unit you add to that faction later (by hand or by import) gets the scheme straight away.</li>
             <li>In a unit's details, the <strong>Link a recipe…</strong> menu also lists its faction's schemes. Deleting a scheme leaves its recipes and links alone.</li>
-            <li>Need a part or technique that isn't listed? Choose <strong>＋ Add a new…</strong> in the menu. Remove ones you don't use under <strong>Parts and techniques</strong>.</li>
+            <li>Need a part or technique that isn't listed? Choose <strong>＋ Add a new…</strong> in the menu. Remove ones you don't use in <strong>Settings</strong>, under <strong>Recipe preferences</strong>.</li>
           </ul>
         </details>
         <details id="help-paste">
@@ -3344,6 +3341,13 @@
         <p class="hint" id="faction-colour-hint"></p>
         <button class="primary-button hidden" id="use-suggested-colours" style="width: 100%; margin-bottom: 12px;"></button>
         <ul class="faction-colour-list" id="faction-colour-list"></ul>
+      </div>
+
+      <!-- RS2: the Parts and Techniques lists the recipe editor offers (they used to sit on the recipes page). Filled by renderRecipePrefs(). -->
+      <div class="card" id="recipe-prefs-card">
+        <h2>Recipe preferences</h2>
+        <div class="panel-field">Parts<div class="chips chips-wrap" id="part-chips" style="margin-top: 0;"></div></div>
+        <div class="panel-field" style="margin-top: 12px;">Techniques<div class="chips chips-wrap" id="technique-chips" style="margin-top: 0;"></div></div>
       </div>
 
       <!-- v48: Paint brands. One button per brand the app knows paints for (filled by app.js); a pressed button
