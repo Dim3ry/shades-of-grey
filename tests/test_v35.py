@@ -507,7 +507,8 @@ def main():
         page.click("#cmp-fold-ideas-panel > .share-row button:has-text('Save into a new recipe')")
         page.wait_for_timeout(350)
         steps = draft_steps(page)
-        check("Save into a new recipe… on the colour ideas makes three steps with the note 'Colour idea for eyes or glow'", len(steps) == 3 and all(s["note"] == "Colour idea for eyes or glow" and s["mix"] == 100 and s["coats"] == 1 for s in steps), steps)
+        # RS3a: the start paint (Macragge Blue) is now step 1 with no note, then the three ideas follow with the note
+        check("Save into a new recipe… on the colour ideas makes the start paint plus three steps with the note 'Colour idea for eyes or glow'", len(steps) == 4 and steps[0]["n"] == "Macragge Blue" and steps[0]["note"] == "" and all(s["note"] == "Colour idea for eyes or glow" and s["mix"] == 100 and s["coats"] == 1 for s in steps[1:]), steps)
         page.evaluate("() => { recipeDraft = null; }")
         open_comp(page)
         cmp_pick(page, "basing-chips", "snow")

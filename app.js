@@ -8827,7 +8827,8 @@
       entry("Duplicate", "plain-button", () => {
         const d = draftFrom(recipe);
         d.id = null;
-        d.name = `${recipe.name} (copy)`;
+        d.name = `${recipe.name} copy`;   // RS3a: the copy reads differently from the original
+        d.duplicate = true;               // RS3a: the editor titles it "Duplicate recipe"
         startRecipeDraft(d);
       });
       // v16: the recipe as text, in the format Paste recipes reads back.
@@ -9895,7 +9896,7 @@
       card.className = "card form-grid";
       const heading = document.createElement("h2");
       heading.style.margin = "0";
-      heading.textContent = d.id === null ? "New recipe" : "Edit recipe";
+      heading.textContent = d.id !== null ? "Edit recipe" : d.duplicate ? "Duplicate recipe" : "New recipe";
       card.appendChild(heading);
 
       const field = (text, control) => {
@@ -10322,32 +10323,32 @@
     // complementary, split, analogous, triad, accent, dark, mid, light). {Fam} / {fam} is the idea's colour word and {base}
     // the chosen colour's word, both from colourFamily. Paint and recipe names never go into a reason.
     const COLOUR_ROLES = [
-      { key: "glow",   label: "Eyes or glow", note: "eyes or glow", boost: { s: 0.85, l: [0.55, 0.65] }, picks: ["complementary", "split0", "split1"],
+      { key: "glow",   label: "Eyes or glow", note: "eyes or glow", part: "Eyes", boost: { s: 0.85, l: [0.55, 0.65] }, picks: ["complementary", "split0", "split1"],
         tip: "Keep eyes and glow the brightest, most saturated spot on the model. A small bright spot pulls the eye straight to it.",
         why: { complementary: "{Fam} is the opposite of {base}, so eyes in it stand out the most.",
                split: "{Fam} is almost opposite {base}. Eyes still stand out, with a softer feel.",
                accent: "Your colour is neutral, so {fam} eyes or glow stand out without clashing." } },
-      { key: "trim",   label: "Trim",         note: "trim",         boost: { s: 0.5,  l: [0.5, 0.7] },   picks: ["complementary", "analogous0", "light"],
+      { key: "trim",   label: "Trim",         note: "trim", part: "Trim",         boost: { s: 0.5,  l: [0.5, 0.7] },   picks: ["complementary", "analogous0", "light"],
         tip: "Use one trim colour all over the model so it looks planned. Trim looks best a little lighter or brighter than the armour next to it.",
         why: { complementary: "{Fam} is the opposite of {base}, so trim in it gives a bold, clear edge.",
                analogous: "{Fam} sits next to {base} on the colour wheel, so trim in it looks neat and calm.",
                light: "A pale trim lifts the edges of {base} and makes the shapes easy to read.",
                accent: "Your colour is neutral, so {fam} trim adds interest without clashing." } },
-      { key: "gems",   label: "Gems",         note: "gems",         boost: { s: 0.75, l: [0.4, 0.55] },  picks: ["triad0", "triad1", "complementary"],
+      { key: "gems",   label: "Gems",         note: "gems", part: "Gems",         boost: { s: 0.75, l: [0.4, 0.55] },  picks: ["triad0", "triad1", "complementary"],
         tip: "Gems are small, so make them bold. A tiny light dot on one side makes them look shiny.",
         why: { triad: "{Fam} is spaced evenly round the colour wheel from {base}, so gems in it are rich but don't clash.",
                complementary: "{Fam} is the opposite of {base}, so gems in it pop as small bright spots.",
                accent: "Your colour is neutral, so {fam} gems stand out without clashing." } },
-      { key: "weapon", label: "Weapon",       note: "weapon",       boost: { s: 0.3,  l: [0.35, 0.6] },  picks: ["mid", "dark", "analogous1"],
+      { key: "weapon", label: "Weapon",       note: "weapon", part: "Weapons",       boost: { s: 0.3,  l: [0.35, 0.6] },  picks: ["mid", "dark", "analogous1"],
         tip: "Keep the weapon calmer than the eyes and face, so the eye goes to them first. Dark or mid tones work well.",
         why: { mid: "A mid grey keeps the weapon calm next to {base}, so the eyes and face stay the focus.",
                dark: "A dark neutral keeps the weapon quiet next to {base}.",
                analogous: "{Fam} sits next to {base} on the colour wheel, so the weapon matches the rest of the model." } },
-      { key: "cloth",  label: "Cloth",        note: "cloth",        boost: { s: 0.35, l: [0.25, 0.5] },  picks: ["analogous0", "analogous1", "triad0"],
+      { key: "cloth",  label: "Cloth",        note: "cloth", part: "Cloth",        boost: { s: 0.35, l: [0.25, 0.5] },  picks: ["analogous0", "analogous1", "triad0"],
         tip: "Cloth looks best in a colour next to your main one. Keep it a little darker or duller than the armour so it doesn't compete.",
         why: { analogous: "{Fam} cloth sits next to {base} on the colour wheel, so it looks calm and matches.",
                triad: "{Fam} is spaced evenly round the colour wheel from {base}: lively cloth that doesn't clash." } },
-      { key: "base",   label: "Base",         note: "base",         boost: { s: 0.2,  l: [0.2, 0.4] },   picks: ["dark", "mid", "analogous0"],
+      { key: "base",   label: "Base",         note: "base", part: "Base",         boost: { s: 0.2,  l: [0.2, 0.4] },   picks: ["dark", "mid", "analogous0"],
         tip: "Keep the base darker and duller than the model, so the model stands out. Earth and grey tones rarely clash.",
         why: { dark: "A dark neutral base lets {base} on the model stand out.",
                mid: "A mid grey base is neutral, so it won't pull the eye away from {base}.",
@@ -12208,6 +12209,16 @@
       return tag;
     }
 
+    // RS3a: the part and name for a recipe saved from Colour ideas, e.g. "Eyes yellow glow": the part, the colour word of the first idea,
+    // and "glow" for eyes or glow. Other uses read "Trim gold", "Cloth red" and so on.
+    function colourIdeaRecipeMeta(role, ideas) {
+      const part = role.part || "";
+      const first = ideas[0] && ideas[0].hit && ideas[0].hit.paint;
+      const word = first ? String(MinifolioColour.colourFamily(first.colour) || "").split(" ").pop().toLowerCase() : "";
+      const bits = [part, /^[a-z]+$/.test(word) ? word : "", role.key === "glow" ? "glow" : ""].filter(Boolean);
+      return { part, name: bits.length > 1 ? bits.join(" ") : "" };
+    }
+
     function buildColourIdeasCard(d) {
       const card = document.createElement("details");
       card.className = "card colour-ideas help-look";   // v53: the Help look (More info / Less info)
@@ -12427,10 +12438,11 @@
     // so "Use in a recipe" on a single paint can say its own line and offer Undo. Everything else is shared with Save into a new recipe.
     function startRecipeFromCompendium(steps, after) {
       if (!steps || !steps.length) return;
+      const meta = steps.recipeMeta || null;   // RS3a: the part and name chosen with a Colour idea
       whenOkToLeaveDraft(() => {
         openRecipeId = null;
         const draft = {
-          id: null, name: "", part: recipePartFilter, notes: "", linkUnit: null,
+          id: null, name: meta ? meta.name : "", part: meta && meta.part ? meta.part : recipePartFilter, notes: "", linkUnit: null,
           steps: steps.map(x => draftStepFrom(x.paint, x.technique, x.coats, x.mix, x.note)),
           original: "",   // never equal to the draft, so Cancel asks first
         };
@@ -13841,7 +13853,8 @@
       }));
 
       if (!base) {
-        say("Choose a colour above and you get 3 paints that go with it. The parts below do not need one.", "colour-ideas-none");
+        // RS3a: with no paint to choose from the line points at nothing, so it is left out
+        if (all.length) say("Choose a colour above and you get 3 paints that go with it. The parts below do not need one.", "colour-ideas-none");
       } else {
         const role = appendRolePicker(body, door, (key) => { st.role = key; redraw(`[data-role="${key}"]`); });
         const ideas = colourIdeas(null, base.colour, role);
@@ -13850,7 +13863,10 @@
         body.appendChild(built.list);
         if (ideas.length) {
           const head = `Colour ideas for ${role.note} with ${base.name}${base.brand ? ` (${base.brand})` : ""}`;
-          const share = buildShareRow(door, "Colour ideas", [head, ...built.lines, COMPENDIUM_TEXT_FOOT], built.steps);
+          // RS3a: the start paint is step 1, the ideas follow, and the new recipe gets the part and a name that match the chosen use
+          const kept = [{ paint: base, technique: "", coats: 1, mix: 100, note: "" }, ...built.steps];
+          kept.recipeMeta = colourIdeaRecipeMeta(role, ideas);
+          const share = buildShareRow(door, "Colour ideas", [head, ...built.lines, COMPENDIUM_TEXT_FOOT], kept);
           if (share) body.appendChild(share);
         }
       }
@@ -13913,6 +13929,7 @@
       out.append(partLabel, chips);
       const chosen = [base, second].filter((p, i, list) => p && list.findIndex(q => q && choices.key(q) === choices.key(p)) === i);
       if (!chosen.length) {
+        if (!all.length) return out;   // RS3a: nothing above to choose from, so no line pointing at it
         const none = document.createElement("p");
         none.className = "hint";
         none.id = door.id("mentor-none");
