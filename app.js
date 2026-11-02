@@ -18013,12 +18013,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL TEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=117".
+    // "?v=" number on ALL TEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=118".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v117";
+    const APP_VERSION = "v118";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -18469,6 +18469,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v118", date: "2 Nov 2026", changes: [
+        "A recipe now has one small Edit button by its name. It opens a short list: edit the steps and paints, duplicate, copy as text or delete. Each step shows its paint and technique, for example Yriel Yellow, Layer. Used on is folded and shows how many units. A new Add to scheme button, next to Add to shopping list, lets you tick which schemes hold the recipe; changes apply when you press Done.",
+      ] },
       { version: "v117", date: "1 Nov 2026", changes: [
         "A grey square no longer flashes over the round Ask Mentor button, or the back arrow, basket and Mentor window buttons, when you tap them. The keyboard focus ring on Ask Mentor is now clearer.",
       ] },
