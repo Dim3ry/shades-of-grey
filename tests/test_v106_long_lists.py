@@ -1,5 +1,6 @@
 """X8d tests for Minifolio (long lists on a phone). New behaviour only:
-1. Guides > Techniques shows 30 rows first; Show more adds the next 30; search still finds an entry past the first page.
+1. A long Guides list shows 30 rows first; Show more adds the next 30; search still finds an entry past the first page.
+   (G2a: Techniques now opens on its topic groups, so the long list checked is a search result.)
 2. Detail recipes and Basing open on their first group (Body, Dry ground); All is still a choice.
 3. The Colour ideas card in the recipe editor shows its Detail recipes and Basing lists collapsed, and expands.
 4. Layout at 390 and 360: no sideways scroll, Show more is 44 px or more.
@@ -37,16 +38,18 @@ def main():
             t.load(page, launch=True, settings={"tab": "guides", "examplesChecked": True})
             print(f"\n--- {width} px, {scheme} ---")
             open_guides(page, True)
-            page.click('.guides-cats [data-cat="techniques"]')
-            rows = lambda: page.evaluate("() => document.querySelectorAll('.guides-main .guides-row').length")
-            check("Techniques shows 30 rows first", rows() == 30, rows())
+            # G2a: Techniques now opens on its topic groups (none longer than 30 entries), so the long list here is a search result,
+            # which uses the same rows and the same Show more
+            page.fill("#guides-search", "paint")
+            page.wait_for_selector(".guides-lower .guides-row[data-guide]")
+            rows = lambda: page.evaluate("() => document.querySelectorAll('.guides-lower .guides-row').length")
+            check("a long list (a search for 'paint') shows 30 rows first", rows() == 30, rows())
             page.click(".guides-more")
             check("Show more adds the next 30", rows() == 60, rows())
-            check("the focus moves to the first new row", page.evaluate("() => document.activeElement.classList.contains('guides-row') && document.activeElement.dataset.guide") == page.evaluate("() => document.querySelectorAll('.guides-main .guides-row')[30].dataset.guide"))
+            check("the focus moves to the first new row", page.evaluate("() => document.activeElement.classList.contains('guides-row') && document.activeElement.dataset.guide") == page.evaluate("() => document.querySelectorAll('.guides-lower .guides-row')[30].dataset.guide"))
             check("Show more is 44 px or more", page.evaluate("() => document.querySelector('.guides-more').getBoundingClientRect().height") >= 44)
             check("no sideways scroll", page.evaluate("() => document.documentElement.scrollWidth <= document.documentElement.clientWidth"))
             last = page.evaluate("() => { const l = knowledgeIndex().list({ category: 'techniques' }); return l[l.length - 1].title; }")
-            page.click("#guides-back")
             page.fill("#guides-search", last)
             check("search finds an entry beyond the first page", page.evaluate("(t) => [...document.querySelectorAll('.guides-lower .guides-row-title')].some(e => e.textContent === t)", last))
 

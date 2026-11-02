@@ -47,6 +47,7 @@ const APP_FILES = [
   "./basing-tips.js" + CODE_TAG,  // v33: the basing tips for Colour ideas
   "./mentor-tips.js" + CODE_TAG,  // v70: the Mentor tips library
   "./guides-data.js" + CODE_TAG,  // X3: the Guides library's guide entries and starter questions
+  "./guides-groups.js" + CODE_TAG,  // G2a: the Guides topic groups and See also links
   "./mentor-data.js" + CODE_TAG,  // X8b: Mentor matching data (synonyms, extra keywords, asked-as phrases)
   "./mentor-engine.js" + CODE_TAG,  // X6a: the Mentor answer engine (no screen yet)
   "./manifest.json",

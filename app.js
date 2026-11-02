@@ -4158,7 +4158,7 @@
     }
     tabButtons.forEach(b => b.addEventListener("click", () => {
       if (travelling) return;   // Mo4b: taps on the bar are ignored while the segments travel
-      if (b.dataset.tab === "guides") Object.assign(guidesState, { view: "home", cat: "", key: "", kind: "", missing: false });   // X3: the tab itself opens the category list
+      if (b.dataset.tab === "guides") Object.assign(guidesState, { view: "home", cat: "", group: "", key: "", kind: "", missing: false });   // X3: the tab itself opens the category list
       if (b.dataset.tab === "guides" || b.dataset.tab === "recipes") compendiumState.focus = null;   // v69: the tab itself opens the whole of Guides (X1: and the whole Colour Lab)
       // Tapping Recipes while already on it goes back to the list (unless you're mid-edit).
       if (b.dataset.tab === "recipes" && settings.tab === "recipes" && !recipeDraft && !launching) {
@@ -14083,8 +14083,53 @@
       }
       return knowledgeCache;
     }
-    // Where the Guides screen is: home (search and categories), a category, or one entry. Kept while the app is open, never saved.
-    const guidesState = { view: "home", cat: "", key: "", kind: "", query: "", missing: false };
+    // G2a: the topic groups of a section (guides-groups.js), worked out each time a list is shown, so nothing is stored. Groups are
+    // sorted A to Z, then the entries inside each group A to Z, and the numbers come from those places: the section's fixed place in
+    // GUIDE_CATEGORIES, then the group's place in its section, then the entry's place in its group (2.3.4). Links still use the key.
+    // Nothing disappears: an entry the mapping does not place goes in a last group, "Not yet grouped" (unplaced); a mapped key with no
+    // entry in that section is skipped (unknown); a key named twice counts once, in the first group (twice). Tests fail on all three.
+    const GUIDE_UNGROUPED = "Not yet grouped";
+    const guideByTitle = (a, b) => a.title.localeCompare(b.title, "en", { sensitivity: "base" }) || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0);
+    function guideSectionNumber(cat) {
+      const i = GUIDE_CATEGORIES.findIndex(c => c.key === cat);
+      return i < 0 ? "" : String(i + 1);
+    }
+    function guideGroupsOf(cat, kn = knowledgeIndex(), map) {
+      if (map === undefined) map = typeof GUIDE_GROUPS === "undefined" || !GUIDE_GROUPS ? {} : GUIDE_GROUPS.sections || {};
+      const entries = kn.list({ category: cat, kind: "guide" });
+      const byKey = new Map(entries.map(e => [e.key, e]));
+      const placed = new Set(), unknown = [], twice = [], groups = [];
+      for (const raw of Array.isArray(map[cat]) ? map[cat] : []) {
+        if (!raw || typeof raw.name !== "string" || !raw.name) continue;
+        const list = [];
+        for (const key of Array.isArray(raw.keys) ? raw.keys : []) {
+          const e = byKey.get(key);
+          if (!e) unknown.push(key);
+          else if (placed.has(key)) twice.push(key);
+          else { placed.add(key); list.push(e); }
+        }
+        if (list.length) groups.push({ name: raw.name, entries: list });
+      }
+      groups.sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
+      const unplaced = entries.filter(e => !placed.has(e.key));
+      if (unplaced.length) groups.push({ name: GUIDE_UNGROUPED, entries: unplaced });
+      const sec = guideSectionNumber(cat);
+      groups.forEach((gr, i) => {
+        gr.num = `${sec}.${i + 1}`;
+        gr.entries.sort(guideByTitle);
+        gr.nums = new Map(gr.entries.map((e, j) => [e.key, `${gr.num}.${j + 1}`]));
+      });
+      return { groups, unplaced: unplaced.map(e => e.key), unknown, twice };
+    }
+    // The group an entry sits in and its number, or null (Detail recipes, Basing, Mentor tips and starters have none here).
+    function guidePlace(e, kn = knowledgeIndex()) {
+      if (!e || e.kind !== "guide" || !e.category) return null;
+      const gr = guideGroupsOf(e.category, kn).groups.find(x => x.nums.has(e.key));
+      return gr ? { group: gr.name, num: gr.nums.get(e.key) } : null;
+    }
+    // Where the Guides screen is: home (search and categories), a category (its topic groups), one group, or one entry. Kept while the
+    // app is open, never saved. G2a: group is the name of the topic group being shown, or of the one the open entry sits in.
+    const guidesState = { view: "home", cat: "", group: "", key: "", kind: "", query: "", missing: false };
     function guidesPoint(e) {   // point the screen at one entry
       guidesState.missing = false;
       guidesState.key = e.key;
@@ -14098,6 +14143,8 @@
         guidesState.view = "entry";
         guidesState.cat = e.category;
       }
+      const place = guidePlace(e);   // G2a: Back from an entry goes to its topic group
+      guidesState.group = place ? place.group : "";
     }
     // A credit link is only made for a full web address that starts with the secure scheme; anything else shows as plain text.
     function safeCreditUrl(url) {
@@ -14111,7 +14158,7 @@
         recipeDraft = null;
         openRecipeId = null;
         const e = knowledgeIndex().get(String(key), kind);
-        Object.assign(guidesState, { view: "home", cat: "", key: "", kind: "", query: "", missing: false });
+        Object.assign(guidesState, { view: "home", cat: "", group: "", key: "", kind: "", query: "", missing: false });
         if (e) guidesPoint(e); else guidesState.missing = true;
         showTab("guides");
         const target = e && document.getElementById(e.id);
@@ -14137,7 +14184,12 @@
       const parts = libraryParts(door, redraw);
       const catName = (key) => (GUIDE_CATEGORIES.find(c => c.key === key) || {}).name || "";
       const shown = GUIDE_CATEGORIES.filter(c => kn.list({ category: c.key }).length);
-      if (g.view !== "home" && !(g.view === "entry" ? kn.get(g.key, g.kind) : shown.some(c => c.key === g.cat))) Object.assign(g, { view: "home", cat: "", key: "", kind: "" });
+      if (g.view !== "home" && !(g.view === "entry" ? kn.get(g.key, g.kind) : shown.some(c => c.key === g.cat))) Object.assign(g, { view: "home", cat: "", group: "", key: "", kind: "" });
+      // G2a: Colour basics, Techniques, Tools and prep and Problems show topic groups; Detail recipes and Basing keep their own controls
+      const grouped = (cat) => !!cat && cat !== "detail" && cat !== "basing" && shown.some(c => c.key === cat);
+      const groupsHere = grouped(g.cat) ? guideGroupsOf(g.cat, kn).groups : [];
+      const groupHere = groupsHere.find(x => x.name === g.group) || null;
+      if (g.view === "group" && !groupHere) Object.assign(g, { view: "category", group: "" });
 
       const wrap = document.createElement("div");
       wrap.className = "guides-split" + (g.view === "home" ? "" : " guides-has-main");
@@ -14148,15 +14200,18 @@
       wrap.append(nav, main);
       body.appendChild(wrap);
 
-      const row = (title, summary, onClick, current) => {
+      // G2a: a number (2.3.4) is a small grey span at the right of the first line, worked out when the list is drawn
+      const numSpan = (num) => Object.assign(document.createElement("span"), { className: "guides-num", textContent: num });
+      const row = (title, summary, onClick, current, num) => {
         const b = document.createElement("button");
         b.type = "button";
-        b.className = "guides-row";
+        b.className = "guides-row" + (num ? " guides-row-numbered" : "");
         if (current) b.setAttribute("aria-current", "true");
         const t = document.createElement("span");
         t.className = "guides-row-title";
         t.textContent = title;
         b.appendChild(t);
+        if (num) b.appendChild(numSpan(num));
         if (summary) {
           const s = document.createElement("span");
           s.className = "guides-row-summary";
@@ -14169,7 +14224,7 @@
       const openEntry = (e) => { guidesPoint(e); renderGuides(`#${e.id}`); };
       // X8d: long lists show 30 rows, "Show more" adds the next 30. Search always looks through the whole list.
       const PAGE = 30;
-      const entryRows = (list, pageKey) => {
+      const entryRows = (list, pageKey, numOf) => {
         const box = document.createElement("div");
         box.className = "guides-rows";
         if (!list.length) {
@@ -14182,7 +14237,7 @@
         let more = null;
         const add = (from, to) => {
           for (const e of list.slice(from, to)) {
-            const b = row(e.title, e.summary, () => openEntry(e));
+            const b = row(e.title, e.summary, () => openEntry(e), false, numOf ? numOf(e) : "");
             b.dataset.guide = e.key;
             b.dataset.kind = e.kind;
             if (more) box.insertBefore(b, more); else box.appendChild(b);
@@ -14231,7 +14286,7 @@
         list.className = "guides-rows guides-cats";
         for (const c of shown) {
           const b = row(c.name, "", () => {
-            Object.assign(g, { view: "category", cat: c.key, key: "", kind: "" });
+            Object.assign(g, { view: "category", cat: c.key, group: "", key: "", kind: "" });
             // X8d: Detail recipes and Basing open on their first group (Body, Dry ground); All is still one tap away
             if (c.key === "detail" && !compendiumState.detailGroup) compendiumState.detailGroup = DETAIL_GROUPS[0].key;
             if (c.key === "basing" && !compendiumState.basingGroup) compendiumState.basingGroup = BASING_GROUPS[0].key;
@@ -14240,7 +14295,7 @@
           const n = document.createElement("span");
           n.className = "guides-count";
           n.textContent = String(kn.list({ category: c.key }).length);
-          b.append(n, proTag());   // P1: the whole Guides section is Pro preview for now
+          b.append(n, proTag(), numSpan(guideSectionNumber(c.key)));   // P1: the whole Guides section is Pro preview for now   // G2a: then the section number
           list.appendChild(b);
         }
         lower.appendChild(list);
@@ -14266,12 +14321,18 @@
         back.type = "button";
         back.className = "plain-button guides-back";
         back.id = "guides-back";
-        const toCat = g.view === "entry" && g.cat && shown.some(c => c.key === g.cat);
-        back.textContent = toCat ? `Back to ${catName(g.cat)}` : "Back to Guides";
+        // G2a: an entry goes back to its topic group, a group to its section, a section to the home list
+        const toGroup = g.view === "entry" && grouped(g.cat) && groupHere;
+        const toCat = !toGroup && (g.view === "entry" || g.view === "group") && g.cat && shown.some(c => c.key === g.cat);
+        back.textContent = toGroup ? `Back to ${groupHere.name}` : toCat ? `Back to ${catName(g.cat)}` : "Back to Guides";
         back.addEventListener("click", () => {
-          if (toCat) Object.assign(g, { view: "category", key: "", kind: "" });
-          else Object.assign(g, { view: "home", cat: "", key: "", kind: "" });
-          renderGuides("#guides-search");
+          const from = g.view === "group" ? `[data-group="${CSS.escape(g.group)}"]` : g.view === "entry" && (toGroup || toCat) ? `[data-guide="${CSS.escape(g.key)}"]` : `[data-cat="${CSS.escape(g.cat)}"]`;
+          if (toGroup) Object.assign(g, { view: "group", key: "", kind: "" });
+          else if (toCat) Object.assign(g, { view: "category", group: "", key: "", kind: "" });
+          else Object.assign(g, { view: "home", cat: "", group: "", key: "", kind: "" });
+          renderGuides(from);
+          const body2 = document.getElementById("compendium-body");   // the row it came from is focused; if it is not on screen, the search box
+          if (body2 && !body2.contains(document.activeElement)) { const s = document.getElementById("guides-search"); if (s) s.focus(); }
         });
         main.appendChild(back);
         if (g.view === "category") {
@@ -14288,8 +14349,23 @@
             holder.appendChild(dropTitle(part()));
             main.appendChild(holder);
           } else {
-            main.appendChild(entryRows(kn.list({ category: g.cat }), "cat:" + g.cat));
+            // G2a: the section's topic groups, A to Z, each with its number (2.3)
+            const box = document.createElement("div");
+            box.className = "guides-rows guides-groups";
+            for (const gr of groupsHere) {
+              const b = row(gr.name, "", () => { Object.assign(g, { view: "group", group: gr.name, key: "", kind: "" }); renderGuides("#guides-back"); }, false, gr.num);
+              b.dataset.group = gr.name;
+              box.appendChild(b);
+            }
+            main.appendChild(box);
           }
+        } else if (g.view === "group") {
+          // G2a: one topic group's entries, A to Z, each with its number (2.3.4)
+          const h = document.createElement("h3");
+          h.className = "guides-title";
+          h.textContent = groupHere.name;
+          main.appendChild(h);
+          main.appendChild(entryRows(groupHere.entries, `grp:${g.cat}:${groupHere.name}`, (e) => groupHere.nums.get(e.key) || ""));
         } else {
           const e = kn.get(g.key, g.kind);
           const page = document.createElement("article");
@@ -14300,7 +14376,15 @@
           const h = document.createElement("h3");
           h.className = "guides-title";
           h.textContent = e.title;
-          page.appendChild(h);
+          const place = guidePlace(e, kn);   // G2a: the entry's number, small and grey at the top right of its header
+          if (place) {
+            const head = document.createElement("div");
+            head.className = "guides-entry-head";
+            head.append(h, numSpan(place.num));
+            page.appendChild(head);
+          } else {
+            page.appendChild(h);
+          }
           for (const para of e.body) {
             const p = document.createElement("p");
             p.textContent = para;

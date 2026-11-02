@@ -67,13 +67,13 @@ def main():
         guides(page)
         check("with no guide entries, only Detail recipes and Basing show, with counts",
               [x.replace("Pro preview", "").rstrip("0123456789") for x in texts(page, ".guides-cats .guides-row")] == ["Detail recipes", "Basing"]   # P1: each row ends with its Pro preview tag
-              and all(re.search(r"\d+Pro preview$", x) for x in texts(page, ".guides-cats .guides-row")), texts(page, ".guides-cats .guides-row"))
+              and all(re.search(r"\d+Pro preview\d$", x) for x in texts(page, ".guides-cats .guides-row")), texts(page, ".guides-cats .guides-row"))   # G2a: the section number (1 to 6) now ends the row
         check("no heading or sentence under the search box on the home list", page.locator(".guides-nav h3, .guides-nav p:not(.guides-free)").count() == 0)   # P1: the one line George asked for, "Free while in preview.", is allowed
         put(page, SAMPLES["guides"], SAMPLES["starters"])
         guides(page)
-        cats = [c.replace("Pro preview", "") for c in texts(page, ".guides-cats .guides-row")]   # P1: without the tag
+        # G2a: the row also ends with its section number now, so the name and the count are read from their own parts
+        shown = dict(page.evaluate("() => [...document.querySelectorAll('.guides-cats .guides-row')].map(b => [b.querySelector('.guides-row-title').textContent, +b.querySelector('.guides-count').textContent])"))
         n = page.evaluate("() => GUIDE_ENTRIES.length")
-        shown = {c.rstrip("0123456789"): int(re.sub(r"\D", "", c) or 0) for c in cats}
         have = page.evaluate("() => [...new Set(GUIDE_ENTRIES.map(e => e.category))]")
         names = {"colour-basics": "Colour basics", "techniques": "Techniques", "tools-prep": "Tools and prep", "problems": "Problems"}
         check("a category shows exactly when it has entries, and its number is the count",
@@ -81,8 +81,12 @@ def main():
         first_cat = page.evaluate("() => GUIDE_ENTRIES[0].category")
         page.click(f'.guides-cats [data-cat="{first_cat}"]')
         wait_settled(page)
+        # G2a: a category now lists its topic groups first (the sample entries are not in the mapping, so they sit in "Not yet grouped");
+        # one more tap opens the group's entries. The groups themselves are checked in test_v124_g2a.py.
+        page.click(".guides-main .guides-groups .guides-row")
+        wait_settled(page)
         rows = texts(page, ".guides-main .guides-row .guides-row-title")
-        check("a category lists its entries as rows with title and summary",
+        check("a category (G2a: one of its groups) lists its entries as rows with title and summary",
               len(rows) >= 1 and page.locator(".guides-main .guides-row-summary").count() == len(rows) and page.is_visible("#guides-back"), rows)
         check("on a phone the category list steps aside while one category shows", not page.is_visible(".guides-nav"))
         page.click(".guides-main .guides-row")
@@ -98,6 +102,8 @@ def main():
         page.click("#guides-back")
         wait_settled(page)
         check("Back goes to the category, then to the home list", page.locator(".guides-main .guides-row").count() >= 1 and page.inner_text("#guides-back").startswith("Back to"))
+        page.click("#guides-back")   # G2a: an entry goes back to its group, the group to its section, the section to the home list
+        wait_settled(page)
         page.click("#guides-back")
         wait_settled(page)
         check("the home list is back with the category buttons", page.locator(".guides-cats .guides-row").count() >= 2 and page.locator(".guides-main").inner_text() == "")
@@ -149,6 +155,7 @@ def main():
                     "credit": {"name": "<u>Name</u>", "url": "javascript:alert(3)"}}])
         guides(page)
         page.click('.guides-cats [data-cat="techniques"]')
+        page.click(".guides-main .guides-groups .guides-row")   # G2a: the section's groups come first
         page.click(".guides-main .guides-row")
         page.wait_for_selector(".guides-entry")
         made = page.evaluate("() => document.querySelectorAll('#compendium-body img, #compendium-body script, #compendium-body b, #compendium-body i, #compendium-body u').length")
