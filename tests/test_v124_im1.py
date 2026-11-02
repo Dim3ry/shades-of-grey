@@ -2,11 +2,12 @@
 1. date_added and date_stage: both accepted styles (2026-03-01 and 01/02/2026, day first), a stage date with no joined date,
    a joined date after the stage date, a date that is not a real day, a date in the future and another style are handled as
    the prompt says. The rows still come in, and the import check shows one line with how many rows lost a date and their row
-   numbers (spreadsheet numbering, blank rows counted). The units' history holds the dates, and the graph counts them on those days.
+   numbers (spreadsheet numbering, blank rows counted). Dates before 1980 (Excel's 01/01/1900) are left out. A stage changed in
+   the check keeps date_added and reaches that stage today. The units' history holds the dates, and the graph counts them on those days.
 2. A file without the date columns imports as before: joined today, history starts today.
 3. Undo straight after removes the dated units (and their dates).
 4. Export CSV writes date_added and date_stage (blank where there is none), and exporting then importing (Replace) gives the
-   same units and dates. The CSV template has the two columns with one row filled in.
+   same units and dates (also for a unit that used to track each model). The CSV template has the two columns with one row filled in.
 5. An Excel-style file (the invisible first character, CRLF line ends, day-first dates) of 500 rows reads correctly and quickly.
 6. 390x844 dark, 360x640 dark and light, 320 px light: the import check with the date line has no sideways scroll.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
@@ -76,14 +77,17 @@ def main():
                f"OtherStyle,Orks,,1,2/11/2026,\n"                              # row 8: not two-digit day first
                f"\n"                                                           # row 9: blank, still counted
                f"NoDates,Orks,,2,,\n"                                          # row 10
-               f"AddedOnly,Orks,{stages[1]},1,2026-07-07,\n").encode()         # row 11
+               f"AddedOnly,Orks,{stages[1]},1,2026-07-07,\n"                  # row 11
+               f"Ancient,Orks,,1,01/01/1900,\n"                                # row 12: Excel's empty-date value, before 1980
+               f"Changed,Orks,{stages[last]},1,2026-03-02,2026-04-15\n").encode()   # row 13: its stage is changed in the check
         brief = lambda: [(u["name"], u.get("added"), u.get("log")) for u in stored(page)]
         before = brief()
         import_csv(page, csv)
         summary = page.text_content("#review-summary")
         check("one line names the rows that lost a date, in spreadsheet row numbers",
-              "Dates left out on 4 rows: 5, 6, 7, 8." in summary, summary)
-        check("every row still comes in", page.locator("#review-list li").count() == 9)
+              "Dates left out on 5 rows: 5, 6, 7, 8, 12." in summary, summary)
+        check("every row still comes in", page.locator("#review-list li").count() == 11)
+        page.locator("#review-list li").nth(10).locator("select.stage-pick").select_option("1")
         go(page)
         by = {u["name"]: u for u in stored(page)}
         hist = lambda n: (by[n].get("added"), by[n].get("log"))
@@ -94,8 +98,10 @@ def main():
         check("date_added after date_stage: date_stage for both", hist("Swapped") == ("2026-06-01", [["2026-06-01", 1]]), hist("Swapped"))
         check("date_added alone: joined that day at its stage", hist("AddedOnly") == ("2026-07-07", [["2026-07-07", 1]]), hist("AddedOnly"))
         check("a bad, future or other-style date is left out: that unit joins today",
-              all(hist(n) == (TODAY, [[TODAY, 0]]) for n in ["BadDay", "Future", "OtherStyle", "NoDates"]),
-              [hist(n) for n in ["BadDay", "Future", "OtherStyle", "NoDates"]])
+              all(hist(n) == (TODAY, [[TODAY, 0]]) for n in ["BadDay", "Future", "OtherStyle", "NoDates", "Ancient"]),
+              [hist(n) for n in ["BadDay", "Future", "OtherStyle", "NoDates", "Ancient"]])
+        check("a stage changed in the check keeps date_added and reaches that stage today",
+              hist("Changed") == ("2026-03-02", [["2026-03-02", 0], [TODAY, 1]]), hist("Changed"))
         check("nothing extra is saved on the units", not any(k in u for u in by.values() for k in ("dateAdded", "dateStage", "stageGiven")))
         g = page.evaluate("""() => { const h = historyData(), on = (d) => h.valuesOn(dayNumber(d));
             return { first: h.first === dayNumber('2026-01-05'), a: on('2026-02-28'), b: on('2026-03-01'), c: on('2026-04-14'), d: on('2026-04-15'),
@@ -123,7 +129,10 @@ def main():
                   "added": "2026-03-01", "log": [["2026-03-01", 0], ["2026-03-20", 2], ["2026-04-15", last]]},
                  {"id": 3, "name": "No dates", "hobby": "40K", "faction": "Orks", "stage": 1, "count": 2, "log": []},
                  {"id": 4, "name": "Each", "hobby": "40K", "faction": "Orks", "stage": 1, "count": 2, "each": True, "stages": [1, 2],
-                  "added": "2026-02-01", "log": [["2026-02-01", 0], ["2026-02-03", 1, 0], ["2026-02-09", 1, 1], ["2026-02-20", 2, 1]]}]
+                  "added": "2026-02-01", "log": [["2026-02-01", 0], ["2026-02-03", 1, 0], ["2026-02-09", 1, 1], ["2026-02-20", 2, 1]]},
+                 # tracked each model, moved both to stage 2, then switched tracking off: the diary ends with per-model entries
+                 {"id": 5, "name": "Was each", "hobby": "40K", "faction": "Orks", "stage": 2, "count": 2,
+                  "added": "2026-02-01", "log": [["2026-02-01", 0], ["2026-02-05", 2, 0], ["2026-02-07", 2, 1]]}]
         t.load(page, units=units)
         text = download(page, "csv-export-button")
         lines = text.lstrip("﻿").split("\r\n")
@@ -131,13 +140,14 @@ def main():
         check("…with the joined day and the day it reached its stage", lines[2].endswith(",2026-03-01,2026-04-15"), lines[2])
         check("…blank when the app has no date", lines[3].endswith(",,"), lines[3])
         check("…and for a track-each-model unit, the day its slowest model got there", lines[4].endswith(",2026-02-01,2026-02-09"), lines[4])
+        check("…also for a unit that used to track each model", lines[5].endswith(",2026-02-01,2026-02-07"), lines[5])
         import_csv(page, text.encode("utf-8"), "minifolio.csv")
         go(page, replace=True)
         back = {u["name"]: (u.get("added"), u["stage"], u["count"]) for u in stored(page)}
         dates = page.evaluate("() => models.map(m => [m.name, stageReachedOn(m)])")
         check("export then import (Replace) gives the same units and dates",
-              back == {"Old unit": ("2026-01-05", 0, 1), 'Painted, "Best"': ("2026-03-01", last, 5), "No dates": (TODAY, 1, 2), "Each": ("2026-02-01", 1, 2)}, back)
-        check("…and the same stage dates", dict(dates) == {"Old unit": "2026-01-05", 'Painted, "Best"': "2026-04-15", "No dates": TODAY, "Each": "2026-02-09"}, dates)
+              back == {"Old unit": ("2026-01-05", 0, 1), 'Painted, "Best"': ("2026-03-01", last, 5), "No dates": (TODAY, 1, 2), "Each": ("2026-02-01", 1, 2), "Was each": ("2026-02-01", 2, 2)}, back)
+        check("…and the same stage dates", dict(dates) == {"Old unit": "2026-01-05", 'Painted, "Best"': "2026-04-15", "No dates": TODAY, "Each": "2026-02-09", "Was each": "2026-02-07"}, dates)
         tpl = download(page, "template-button").splitlines()
         filled = [l for l in tpl[1:] if not l.endswith(",,")]
         check("the template has the two columns and one row with dates filled in",

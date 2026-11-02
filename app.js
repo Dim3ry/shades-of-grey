@@ -17275,7 +17275,7 @@
 
     // IM1: a CSV date, as "2026-11-02" or day first "02/11/2026". Nothing else is read.
     // Gives "" for an empty cell, the date as "2026-11-02", or null for a date that can't be
-    // used (not a real day, another style, or later than today).
+    // used (not a real day, another style, before 1980 such as Excel's 01/01/1900, or later than today).
     function csvDate(text) {
       const t = String(text || "").trim();
       if (!t) return "";
@@ -17286,7 +17286,7 @@
       const day = new Date(Date.UTC(Number(y), Number(mo) - 1, Number(d)));
       if (day.getUTCFullYear() !== Number(y) || day.getUTCMonth() !== Number(mo) - 1 || day.getUTCDate() !== Number(d)) return null;
       const iso = `${y}-${mo}-${d}`;
-      return iso > todayISO() ? null : iso;
+      return iso < "1980-01-01" || iso > todayISO() ? null : iso;
     }
 
     // IM1: the day a unit reached the stage it is at now, from its diary (see logStage), or ""
@@ -17294,11 +17294,8 @@
     function stageReachedOn(m) {
       const log = Array.isArray(m.log) ? m.log : [];
       if (!log.length) return "";
-      if (!m.each) {
-        const last = log[log.length - 1];
-        return last[2] === undefined && last[1] === m.stage ? last[0] : "";
-      }
-      // Track-each-model: replay the diary and keep the day the slowest model got there.
+      // Replay the diary and keep the day the slowest model got there (a unit that once tracked
+      // each model keeps those per-model entries, so the replay is used for every unit).
       const st = new Array(m.count || 1).fill(log[0][1]);
       let was = null, since = "";
       for (const e of log) {
@@ -17315,7 +17312,7 @@
     function giveCsvDates(model, added, since) {
       if (!added) return;
       model.added = added;
-      model.log = since && since !== added ? [[added, 0], [since, model.stage]] : [[added, model.stage]];
+      model.log = since && since !== added && model.stage !== 0 ? [[added, 0], [since, model.stage]] : [[added, model.stage]];
     }
 
     // A stage number from a stage name (any capitals) or a number. Unknown = first stage.
@@ -17933,7 +17930,9 @@
             stage: c.stage,     // v60: each row's own stage and count
             count: c.count,
           });
-          giveCsvDates(unit, dateAdded, dateStage);   // IM1: a row with no dates keeps today, as before
+          // IM1: a row with no dates keeps today, as before. date_stage counts only if the unit ends at the
+          // stage the file named; a stage changed in the check (or an unknown one) is logged today.
+          giveCsvDates(unit, dateAdded, stageGiven && c.stage === m.row.stage ? dateStage : todayISO());
         });
 
         const parts = [];
