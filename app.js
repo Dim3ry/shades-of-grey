@@ -3113,6 +3113,20 @@
     // RS3b: opts.quick = the quick-add New recipe box (one recipe). There the word "then" also splits paints, a short line is never read as a
     // scheme or army name, lines with no heading have no part ("" instead of Whole model), and no line is guessed to be a section heading.
     // Paste recipes passes no opts and reads exactly as before.
+    // RS3b: in the quick box the word "then" (or ", then", "and then") splits paints like a comma, but not inside (brackets) or on a
+    // "Notes:" line, where it is part of a note ("(dry then glaze)").
+    function quickThen(line) {
+      if (/^\s*notes?\s*:/i.test(line)) return line;
+      let out = "", depth = 0, plain = "";
+      const flush = () => { out += plain.replace(/\s*,?\s+(?:and\s+)?then\s+/gi, ", "); plain = ""; };
+      for (const ch of line) {
+        if (ch === "(") { if (!depth) flush(); depth++; out += ch; continue; }
+        if (ch === ")" && depth) { depth--; out += ch; continue; }
+        if (depth) out += ch; else plain += ch;
+      }
+      flush();
+      return out;
+    }
     function parseRecipeText(text, opts) {
       candidateCache = null;
       candidateCache = matchCandidates();
@@ -3121,7 +3135,8 @@
     function readRecipeText(text, opts) {
       const quick = !!(opts && opts.quick);
       let lines = plainQuotes(String(text || "")).replace(/\r/g, "").replace(/\t/g, " ").split("\n");
-      if (quick) lines = lines.map(l => l.replace(/\s*,?\s+(?:and\s+)?then\s+/gi, ", "));
+      if (quick) lines = lines.map(quickThen);
+      let lineAt = 0;   // RS3b: the line being read, so the quick form can tell which line each step came from
       const factions = knownFactionNames();
       const schemes = [];
       let scheme = null, part = null, parent = null, blanks = 2;
@@ -3151,18 +3166,20 @@
             // "Vallejo express 50/50" then two paints: they're one mixed step.
             const mix = ctx.pendingMix;
             if (mix && step.paints.length === 1) {
-              if (!mix.step) { mix.step = { ...step, ratio: mix.ratio, paints: [] }; part.steps.push(mix.step); }
+              if (!mix.step) { mix.step = { ...step, ratio: mix.ratio, paints: [] }; if (quick) mix.step.line = lineAt; part.steps.push(mix.step); }
               else mix.step.source += `\n${step.source}`;
               mix.step.paints.push(step.paints[0]);
               if (mix.step.paints.length >= mix.n) ctx.pendingMix = null;
               continue;
             }
+            if (quick) step.line = lineAt;
             part.steps.push(step);
           }
         });
       };
 
       for (let i = 0; i < lines.length; i++) {
+        lineAt = i;
         const line = lines[i].trim();
         // v18: a line with no letters or numbers (a divider like "-----" or "***", or just an
         // emoji) is treated like a blank line.
@@ -8409,10 +8426,11 @@
     // any more (the question is in the app's own box), so it works like this: nothing to lose,
     // carries on straight away; otherwise it asks, and carries on only if you say yes.
     function whenOkToLeaveDraft(carryOn) {
+      if (recipeDraft && recipeDraft.quick) { clearTimeout(quickTimer); readQuickLines(recipeDraft); applyQuick(recipeDraft); }   // RS3b: typed just now
       if (!recipeDraft || draftSnapshot(recipeDraft) === recipeDraft.original) { carryOn(); return; }
       askYesNo("Discard the changes to the recipe you're writing?", carryOn, { danger: true });
     }
-    function draftSnapshot(d) { return JSON.stringify({ n: d.name, p: d.part, o: d.notes, s: d.steps }); }
+    function draftSnapshot(d) { return JSON.stringify({ n: d.name, p: d.part, o: d.notes, s: d.steps, t: d.quick ? d.quick.text : undefined }); }   // RS3b: t = the quick box
 
     function openRecipe(id) {
       whenOkToLeaveDraft(() => {
@@ -9898,11 +9916,14 @@
     // and Save. The lines are read by the paste reader (parseRecipeText with quick on). It is still a recipe draft (recipeDraft), so leaving
     // asks first and an unfinished one is kept like any other. d.quick holds the typed text and what was set by hand under More options:
     //   d.quick.text  the box     d.quick.name / d.quick.part  "" = built from the lines
-    //   d.quick.over[i]  step i's { technique, coats, brand, note } set by hand; a field that is undefined follows the lines
-    //   d.quick.read  the last reading of the box: { part, notes, steps } (null when the box is empty)
+    //   d.quick.over[key]  { technique, coats, brand, note } set by hand for one step; a field that is undefined follows the lines.
+    //                 key = the step's line id and its place in that line ("3:0"). Each line keeps its id while you type: a line typed
+    //                 above or below gets a new id, a changed line keeps its own, and a line that is gone takes what was set on it with it.
+    //   d.quick.ids / d.quick.lines  the id of each line of the box and the lines as last read
+    //   d.quick.read  the last reading of the box: { part, otherParts, notes, steps } (null when the box is empty)
     // d.name, d.part, d.notes and d.steps always hold the result, so Save, Cancel and the kept-draft code work as they do for the full editor.
-    // The step title (technique) set by hand is kept by step number, so it stays when that step's paint changes. Only a step nobody set
-    // by hand follows its paint (blank technique, guessed from the paints when shown, as everywhere else).
+    // So a step title (technique) set by hand stays with its line, also when that line's paint changes. Only a step nobody set by hand
+    // follows its paint (blank technique, guessed from the paints when shown, as everywhere else).
     // The full editor (Edit steps and paints, Duplicate, Colour ideas, a new recipe from a unit) is unchanged.
     const QUICK_WAIT_MS = 330;
     let quickTimer = null;
@@ -9910,7 +9931,7 @@
       whenOkToLeaveDraft(() => {
         openRecipeId = null;
         startRecipeDraft({ id: null, name: "", part: recipePartFilter, notes: "", linkUnit: null, steps: [],
-                           quick: { text: "", name: "", part: "", defaultPart: recipePartFilter, over: [], read: null } });
+                           quick: { text: "", name: "", part: "", defaultPart: recipePartFilter, over: {}, ids: [], lines: [], nextId: 1, read: null } });
         if (!recipeDraft || !recipeDraft.quick) return;   // a kept unfinished recipe was offered first instead
         showTab("recipes");
         const box = document.getElementById("quick-lines");
@@ -9922,16 +9943,46 @@
       const fits = (p) => sameText(p.name, name) && (!brand || sameText(p.brand, brand));
       return book.paints.some(fits) || searchedPaints.some(fits);
     }
+    // Gives each line of the box an id that follows it as the text changes. Lines that are the same before and after (the longest run in
+    // order) keep their ids; between two of those, changed lines are paired up in order and keep theirs; any extra new line gets a new id.
+    function quickLineIds(q) {
+      const before = q.lines, now = q.text.replace(/\r/g, "").split("\n");
+      const n = before.length, m = now.length;
+      const run = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+      for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) {
+        run[i][j] = before[i] === now[j] ? run[i + 1][j + 1] + 1 : Math.max(run[i + 1][j], run[i][j + 1]);
+      }
+      const ids = new Array(m);
+      let i = 0, j = 0, gone = [], fresh = [];   // in a gap between unchanged lines: the ids of lines gone, the new lines
+      const closeGap = () => { for (const k of fresh) ids[k] = gone.length ? gone.shift() : q.nextId++; gone = []; fresh = []; };
+      while (i < n && j < m) {
+        if (before[i] === now[j]) { closeGap(); ids[j] = q.ids[i]; i++; j++; }
+        else if (run[i + 1][j] >= run[i][j + 1]) gone.push(q.ids[i++]);
+        else fresh.push(j++);
+      }
+      while (i < n) gone.push(q.ids[i++]);
+      while (j < m) fresh.push(j++);
+      closeGap();
+      q.ids = ids;
+      q.lines = now;
+      const alive = new Set(ids.map(String));
+      for (const key of Object.keys(q.over)) if (!alive.has(key.split(":")[0])) delete q.over[key];
+    }
     // Reads the box into d.quick.read.
     function readQuickLines(d) {
       const q = d.quick;
+      quickLineIds(q);
       if (!q.text.trim()) { q.read = null; return; }
       const parsed = parseRecipeText(q.text, { quick: true });
-      const read = { part: "", notes: [], steps: [] };
+      const read = { part: "", otherParts: [], notes: [], steps: [] };
+      const perLine = new Map();
       for (const s of parsed.schemes) for (const part of s.parts) {
-        if (!read.part && part.name) read.part = partForHeading(part.name).name;   // RS4a: a Part you have, or the heading in the same style
+        const name = part.name ? partForHeading(part.name).name : "";   // RS4a: a Part you have, or the heading in the same style
+        if (!read.part && name) read.part = name;
+        else if (name && !sameText(name, read.part) && !read.otherParts.some(x => sameText(x, name))) read.otherParts.push(name);
         read.notes.push(...part.notes);
         for (const st of part.steps) read.steps.push({
+          key: (() => { const id = q.ids[st.line] || 0; const k = perLine.get(id) || 0; perLine.set(id, k + 1); return `${id}:${k}`; })(),
           technique: st.technique || "", coats: st.coats, ratio: st.ratio || "", note: st.note || "", optional: !!st.optional,
           paints: st.paints.filter(m => m.paint || m.typed).map(m => {
             const p = m.paint || { brand: "", name: m.typed, colour: DEFAULT_PAINT_COLOUR };
@@ -9959,15 +10010,15 @@
     }
     // Works out d.name, d.part, d.notes and d.steps from the last reading and what was set by hand.
     function applyQuick(d) {
-      const q = d.quick, read = q.read || { part: "", notes: [], steps: [] };
-      d.steps = read.steps.map((st, i) => {
-        const over = q.over[i] || {};
+      const q = d.quick, read = q.read || { part: "", otherParts: [], notes: [], steps: [] };
+      d.steps = read.steps.map(st => {
+        const over = q.over[st.key] || {};
         const brand = over.brand !== undefined && over.brand.trim() ? tidyBrand(over.brand) : null;
         const n = st.paints.length;
         const mixes = n > 1 ? (ratioPercents(st.ratio, n) || evenSplit(n)) : [100];
         return {
           technique: over.technique !== undefined ? over.technique : st.technique,
-          typedTechnique: st.technique,
+          typedTechnique: st.technique, key: st.key,
           coats: over.coats !== undefined ? cleanCount(over.coats) : st.coats,
           note: over.note !== undefined ? over.note : st.note,
           ratio: st.ratio, optional: st.optional,
@@ -10045,7 +10096,7 @@
       box.addEventListener("input", () => {
         q.text = box.value;
         clearTimeout(quickTimer);
-        if (!q.text.trim()) { q.read = null; applyQuick(d); drawQuick(); return; }
+        if (!q.text.trim()) { readQuickLines(d); applyQuick(d); drawQuick(); return; }
         quickTimer = setTimeout(() => {
           if (recipeDraft !== d) return;
           readQuickLines(d); applyQuick(d); drawQuick();
@@ -10095,7 +10146,7 @@
         name.textContent = st.paints.map(p => p.name).join(" + ") + (st.paints.length > 1 && st.ratio ? ` ${st.ratio}` : "");
         line.append(num, dots, name);
         // Only a technique the person gave (typed in the line, or set under More options) shows; a guess does not.
-        const typed = (d.quick.over[i] || {}).technique !== undefined ? st.technique : st.typedTechnique;
+        const typed = (d.quick.over[st.key] || {}).technique !== undefined ? st.technique : st.typedTechnique;
         if (typed) {
           const tech = document.createElement("span");
           tech.className = "quick-tech";
@@ -10113,6 +10164,14 @@
         list.appendChild(li);
       });
       preview.appendChild(list);
+      // One recipe has one part: lines under another part still join it, and this says so.
+      const others = d.quick.read ? d.quick.read.otherParts : [];
+      if (others.length && d.part) {
+        const one = document.createElement("p");
+        one.className = "quick-parts-note";
+        one.textContent = `One part per recipe. Using ${d.part}.`;
+        preview.appendChild(one);
+      }
     }
 
     // More options: the name, the part, and one set of fields per step (technique, coats, brand, note), like the full editor's.
@@ -10133,7 +10192,7 @@
       partLabel.append("Part it's for", partPick);
       fields.append(nameLabel, partLabel);
       d.steps.forEach((st, i) => {
-        const over = () => q.over[i] || (q.over[i] = {});
+        const over = () => q.over[st.key] || (q.over[st.key] = {});
         const group = document.createElement("div");
         group.className = "quick-step-fields";
         const title = document.createElement("p");
@@ -10161,7 +10220,7 @@
         const brand = document.createElement("input");
         brand.setAttribute("list", "brand-options");
         brand.dataset.key = `quick-${i}-brand`;
-        brand.value = (q.over[i] || {}).brand !== undefined ? q.over[i].brand : (st.paints[0] ? st.paints[0].brand : "");
+        brand.value = (q.over[st.key] || {}).brand !== undefined ? q.over[st.key].brand : (st.paints[0] ? st.paints[0].brand : "");
         brand.addEventListener("input", () => { over().brand = brand.value; changed(); });
         brandLabel.append("Brand", brand);
         const noteLabel = document.createElement("label");
@@ -10640,7 +10699,11 @@
       showDialog({
         mode: "pick", sheet: true, message: "Do you own these?", content: wrap, yes: "Done", no: "Skip",
         onDone: (answer) => {
-          if (answer !== true) return;
+          const toHeading = () => {   // the Save button has gone, so focus goes to the new recipe's heading, not the page
+            const h = recipePage.querySelector("h2");
+            if (h && !recipePage.classList.contains("hidden")) { h.tabIndex = -1; h.focus({ preventScroll: true }); }
+          };
+          if (answer !== true) { toHeading(); return; }
           const before = JSON.stringify(book);
           let changed = 0;
           for (const paint of paints.map(p => paintById(p.id)).filter(Boolean)) {
@@ -10648,6 +10711,7 @@
             else if (!ticked.has(paint.id) && haveIt(paint)) { applyPaintStatus(paint, ""); changed++; }
           }
           if (changed) commit("Palette updated", () => { book = cleanRecipeBook(JSON.parse(before)); render(); }, null, UNDO_SECONDS);
+          toHeading();
         },
       });
     }
