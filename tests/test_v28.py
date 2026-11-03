@@ -388,7 +388,7 @@ def main():
         print("\n--- 5. Tapping an idea adds a step ---")
         load(page)
         open_editor(page)
-        page.fill("#recipe-page input[placeholder^='e.g. Ultramarine']", "Blue armour")
+        page.fill("#recipe-page input[placeholder='e.g. Blue armour']:not(#quick-name)", "Blue armour")   # H: the hint was "e.g. Ultramarine blue armour" (a Games Workshop name)
         set_step_paint(page, 0, "Macragge Blue")
         open_panel(page)
         before = len(draft_paints(page))
@@ -405,7 +405,7 @@ def main():
         check("a message says which step was added", any("Added step 2" in n for n in notices), notices)
         check("the technique is left on Auto and the coats are 1",
               page.evaluate("() => { const s = recipeDraft.steps[recipeDraft.steps.length - 1]; return s.technique === '' && s.coats === 1; }"))
-        check("the recipe name typed earlier was kept", page.input_value("#recipe-page input[placeholder^='e.g. Ultramarine']") == "Blue armour")
+        check("the recipe name typed earlier was kept", page.input_value("#recipe-page input[placeholder='e.g. Blue armour']:not(#quick-name)") == "Blue armour")
         page.click("#recipe-page button.primary-button:has-text('Save recipe')")
         page.wait_for_timeout(300)
         saved = page.evaluate("""() => { const r = book.recipes[book.recipes.length - 1]; return { name: r.name, steps: r.steps.length,

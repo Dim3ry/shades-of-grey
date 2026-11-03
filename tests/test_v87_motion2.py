@@ -68,6 +68,12 @@ def main():
         print("\n--- 1. Stage change on the card ---")
         start(page)
         STAGES = page.evaluate("STAGES")
+        # MO6: the bottom menu now settles with a slow 800 ms fade after the tab tap (James asked for slow fades). Let that
+        # finish first; the check that nothing at all moves on the page is unchanged.
+        try:
+            page.wait_for_function("() => document.querySelector('.arc').getAnimations({ subtree: true }).length === 0", timeout=3000 * speed_factor())
+        except Exception:
+            pass
         check("nothing moves on a first load", moving(page) == 0 and page.evaluate("() => document.getAnimations().length") == 0)
         old_colour = page.evaluate("() => getComputedStyle(document.querySelector('li.unit[data-id=\"1\"]')).borderLeftColor")
         # T1: the tap and the first reading happen in ONE call. Before, a slow machine let the fade move on between the click and the
