@@ -131,7 +131,8 @@ def main():
             "mixes are copied as ratios (an even mix as 1:1)": ["Copy as text", "ratio", "1:1"],
             "dividers and emoji are ignored": ["Divider", "emoji", "skipped"],
             "the 20,000 character limit": ["20,000 characters"],
-            "'Do you own these?' with All / None / Let me pick": ["Do you own these?", "All", "None", "Let me pick"],
+            # RS4b: the paste's "Do you own these?" card became the "Mark these paints as Owned" tick box
+            "'Mark these paints as Owned' above Save": ["Mark these paints as Owned", "Untick"],
             "✕ to leave a step, part or note out": ["✕", "step", "part's name", "note", "Read again"],
             "✎ to change a step's technique, mix ratio or paints": ["✎", "technique", "mix ratio", "Change…", "paints"],
             "'and' between two paints": ["Bone and Pale Bone"],

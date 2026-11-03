@@ -552,23 +552,24 @@ def main():
         check("…OK adds it to the list and picks it for the step",
               "Zenithal" in page.evaluate("() => book.techniques") and page.evaluate("() => recipeDraft.steps[0].technique") == "Zenithal")
 
-        # 4.20 "Other…" on a paint the paste reader wasn't sure of (type a name)
+        # 4.20 RS4b: "Other…" (type a name) is gone from the paste check. A paint that matched nothing has "Pick a paint",
+        # which opens the paint list in the app's own pop-up.
         start(page); tab(page, "recipes")
         page.evaluate("() => startImport()"); page.wait_for_timeout(100)
-        page.fill("#import-text", "Test scheme\n\nArmour:\nIvory")
+        page.fill("#import-text", "Test scheme\n\nArmour:\nZorblax Goo")
         page.click("text=Read notes"); page.wait_for_timeout(300)
-        other = page.locator("#import-page .import-ask .chip, #import-page .import-ask button", has_text="Other…")
-        if other.count():
-            other.first.click(); page.wait_for_timeout(150)
-            check("paste check Other…: asks the same thing (with the name it didn't know)",
-                  asks(page, re.compile(r"^What is “.+”\? Type the paint's name:$")) and box_kind(page) == "text", box_text(page))
-            page.fill("#dialog-input", "Macragge Blue"); no(page)
-            check("…Cancel leaves the paint unanswered", page.locator("#import-page .import-ask button", has_text="Other: ").count() == 0)
-            page.locator("#import-page .import-ask button", has_text="Other…").first.click(); page.wait_for_timeout(150)
-            page.fill("#dialog-input", "Macragge Blue"); yes(page)
-            check("…OK picks that paint", page.locator("#import-page .import-ask button", has_text="Other: Macragge Blue").count() == 1)
+        pick = page.locator("#import-page .import-ask button", has_text="Pick a paint")
+        if pick.count():
+            pick.first.click(); page.wait_for_timeout(150)
+            check("paste check Pick a paint: the app's own box, naming the paint", asks(page, "Pick a paint for “Zorblax Goo”"), box_text(page))
+            yes(page)   # its one button is Cancel
+            check("…Cancel leaves it on Keep as typed", page.locator("#import-page .import-ask input[value=keep]").is_checked())
+            pick.first.click(); page.wait_for_timeout(150)
+            page.fill("#import-paint-pick", "Macragge Blue"); page.wait_for_timeout(150)
+            page.locator(".combo-option", has_text="Macragge Blue").first.click(); quiet(page)
+            check("…a tap on a paint picks it", not box_open(page) and page.locator("#import-page .import-ask input[value=picked]").is_checked())
         else:
-            check("paste check Other…: the note produced a paint to check", False, page.inner_text("#import-page")[:200])
+            check("paste check Pick a paint: the note produced a paint to check", False, page.inner_text("#import-page")[:200])
 
         # ---------- 5. Screenshots, colours, widths ----------
         print("\n--- 5. Screenshots, colours and widths ---")

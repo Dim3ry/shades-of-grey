@@ -7,7 +7,8 @@
    matches one you already have is joined to it (recipes use the one you had).
 
 2. "Do you own these? All / None / Let me pick" (item 4). Paints new to your palette, from a
-   paste import OR typed by hand in a recipe, get this choice. All is picked to start with
+   paste import OR typed by hand in a recipe, get this choice. (RS4b: in a paste import it is now the one
+   "Mark these paints as Owned" tick box above Save; section 2 below checks that.) All is picked to start with
    (they're saved as Owned). None saves them as Not owned (since v62 they no longer go on the shopping list by themselves).
    Let me pick lets you untap the ones you don't have.
 
@@ -141,75 +142,50 @@ def main():
         kantor = [p for p in saved_book(page).get("paints", []) if p["name"] == "Kantor Blue"]
         check("recipe editor: the saved paint's brand is 'Citadel'", [p["brand"] for p in kantor] == ["Citadel"], kantor)
 
-        # ---------- 2. "Do you own these?" in the paste import ----------
+        # ---------- 2. Owning the new paints in the paste import ----------
+        # RS4b: the "Do you own these? All / None / Let me pick" card in Paste recipes became one tick box above Save,
+        # "Mark these paints as Owned" (ticked to start). Unticked changes nothing about owning (it used to mark them Not owned),
+        # and there is no per-paint Let me pick in the paste any more, so those checks went.
         start(page)
         paste(page, NOTE)
-        own = page.locator("#import-own")
-        check("paste: the 'Do you own these?' card shows for new paints",
-              own.count() == 1 and own.is_visible() and "Do you own these?" in own.inner_text(),
-              own.inner_text() if own.count() else "no card")
-        check("paste: All is picked to start with", pressed(page, "#import-own [data-own=all]")
-              and not pressed(page, "#import-own [data-own=none]") and not pressed(page, "#import-own [data-own=pick]"))
-        check("paste: it counts the 2 new paints", "2 paints will be new" in own.text_content(), own.text_content())   # v50: the sentence is behind More info
+        tick = page.locator("#import-owned")
+        check("paste: the Owned tick shows for new paints, ticked to start",
+              tick.count() == 1 and tick.is_visible() and tick.get_attribute("aria-checked") == "true")
         page.click("#import-save")
         page.wait_for_timeout(150)
         st = statuses(page)
-        check("paste, All: both new paints are saved as Owned",
+        check("paste, ticked: both new paints are saved as Owned",
               st.get("Mephiston Red") == "owned" and st.get("Agrax Earthshade") == "owned", st)
 
         start(page)
         paste(page, NOTE)
-        page.click("#import-own [data-own=none]")
-        check("paste: tapping None picks None", pressed(page, "#import-own [data-own=none]")
-              and not pressed(page, "#import-own [data-own=all]"))
+        page.click("#import-owned")
         page.click("#import-save")
         page.wait_for_timeout(150)
         st = statuses(page)
-        check("paste, None: both new paints are saved as Not owned",
-              st.get("Mephiston Red") == "notowned" and st.get("Agrax Earthshade") == "notowned", st)
+        check("paste, unticked: the new paints get no status",
+              st.get("Mephiston Red") in ("", None) and st.get("Agrax Earthshade") in ("", None), st)
         shop = page.evaluate("shoppingItems().map(i => i.paint.name).sort()")
-        # v62 (chunk 2.2): nothing goes on the shopping list by itself any more, so Not owned paints wait for you to add them.
-        check("paste, None: Not owned paints are not put on the shopping list by themselves (v62)", shop == [], shop)
+        check("paste, unticked: nothing is put on the shopping list by itself (v62)", shop == [], shop)
 
-        start(page)
-        paste(page, NOTE)
-        page.click("#import-own [data-own=pick]")
-        chips = page.locator("#import-own .own-paint")
-        check("paste, Let me pick: one chip per new paint, all ticked to start",
-              chips.count() == 2 and all(chips.nth(i).get_attribute("aria-pressed") == "true" for i in range(2)),
-              chips.count())
-        page.click("#import-own .own-paint:has-text('Mephiston Red')")
-        check("paste, Let me pick: tapping a paint unticks it",
-              page.locator("#import-own .own-paint:has-text('Mephiston Red')").get_attribute("aria-pressed") == "false")
-        page.click("#import-save")
-        page.wait_for_timeout(150)
-        st = statuses(page)
-        check("paste, Let me pick: the untapped paint is Not owned, the other Owned",
-              st.get("Mephiston Red") == "notowned" and st.get("Agrax Earthshade") == "owned", st)
-
-        # Paints already in your palette aren't asked about, and keep their status.
+        # Paints already in your palette keep their status.
         start(page, {"paints": [paint(1, "Mephiston Red", status="wishlist")], "recipes": [], "schemes": [], "v15": True})
         paste(page, NOTE)
-        text = page.locator("#import-own").text_content()   # v50: the sentence is behind More info
-        check("paste: a paint you already have isn't listed", "1 paint will be new" in text, text)
-        page.click("#import-own [data-own=none]")
         page.click("#import-save")
         page.wait_for_timeout(150)
         st = statuses(page)
         check("paste: a paint you already have keeps its own status",
-              st.get("Mephiston Red") == "wishlist" and st.get("Agrax Earthshade") == "notowned", st)
+              st.get("Mephiston Red") == "wishlist" and st.get("Agrax Earthshade") == "owned", st)
 
-        # Nothing new: no card.
+        # Nothing new: no tick box.
         paste(page, NOTE)
-        check("paste: no new paints, no card", not page.locator("#import-own").is_visible())
+        check("paste: no new paints, no tick box", page.locator("#import-owned").count() == 0)
 
         # A paint name is shown as plain text, never as HTML.
         start(page)
         paste(page, "Test scheme\n\nCloak:\nMephiston Red\n<img src=x onerror=window.hacked=1>")
-        if page.locator("#import-own").is_visible():
-            page.click("#import-own [data-own=pick]")   # show the per-paint chips too
-        check("paste: paint names in the card are plain text, not HTML",
-              page.locator("#import-own img").count() == 0 and not page.evaluate("window.hacked === 1"))
+        check("paste: paint names in Check paints are plain text, not HTML",
+              page.locator(".import-check img").count() == 0 and not page.evaluate("window.hacked === 1"))
 
         # ---------- 3. "Do you own these?" for paints added by hand ----------
         start(page)

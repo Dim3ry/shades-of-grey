@@ -1,6 +1,6 @@
 """v16 tests for Shades of Grey (paste-import, shared paint matcher, copy as text, label scan, last backed up).
 Serve the repo folder with `python3 -m http.server 8765`, then run: python3 tests/test_v16.py <folder for screenshots>."""
-import json, os, sys
+import json, os, re, sys
 from playwright.sync_api import sync_playwright
 from launch_helpers import leave_launch
 import os as _os
@@ -26,9 +26,10 @@ V15_BOOK = {
 }
 
 # How George answers the questions the Keep note raises.
-ANSWERS = {"Bleck Templar": "Black Templar", "CM": "Contrast Medium", "Ice": "Basing material", "SS": "Screaming Skull",
+ANSWERS = {"Bleck Templar": "Black Templar", "CM": "Contrast Medium", "Ice": "Keep as typed", "SS": "Screaming Skull",
            "Khorn red": "Khorne Red", "gothor brown": "Gorthor Brown", "white": "White Primer",
            "blangels red": "Blood Angels Red", "ultramarine blue": "Ultramarines Blue"}
+# RS4b: the review no longer offers Basing material, so Ice is kept as typed.
 
 with sync_playwright() as pw:
     browser = pw.chromium.launch(args=["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"])
@@ -132,12 +133,13 @@ with sync_playwright() as pw:
         page.fill("#import-text", KEEP_NOTE)
         page.click("text=Read notes")
         page.wait_for_timeout(200)
-        check(f"{size}: unsure paints highlighted", page.locator(".import-paint.unsure").count() >= 9)
-        check(f"{size}: save blocked until answered", page.locator("#import-save").is_disabled() and "Pick 9 more paints" in page.locator("#import-save").text_content())
+        # RS4b: unsure paints now start on their best match, and nothing blocks Save (it used to say "Pick 9 more paints first").
+        check(f"{size}: unsure paints start on their best match", page.locator(".import-paint.unsure").count() == 0 and page.locator(".import-paint.resolved").count() >= 9)
+        check(f"{size}: Save ready before answering", page.locator("#import-save").is_enabled() and page.locator("#import-save").text_content() == "Save 24 recipes")
         page.screenshot(path=f"{SHOTS}/v16-{size}-import-preview.png", full_page=False)
         for typed, answer in ANSWERS.items():
-            row = page.locator(".import-ask", has=page.locator(".import-typed", has_text=f"“{typed}”"))
-            row.locator("button.chip", has_text=answer).first.click()
+            row = page.locator(".import-ask", has=page.locator(".import-typed", has_text=re.compile(f"^{re.escape(typed)}$")))   # RS4b: the typed text in bold, no quote marks
+            row.locator("label.import-option", has_text=answer).first.click()   # RS4b: radio options instead of chips
         check(f"{size}: all answered, Save shows count", page.locator("#import-save").text_content() == "Save 24 recipes", page.locator("#import-save").text_content())
         check(f"{size}: answers shown in preview", page.locator(".import-paint.resolved", has_text="CM → Contrast Medium").count() == 3)
         page.screenshot(path=f"{SHOTS}/v16-{size}-import-answered.png", full_page=True)
@@ -157,7 +159,7 @@ with sync_playwright() as pw:
         bases = [recipes[i] for i in schemes["T'au"]["recipes"] if recipes[i]["name"].startswith("Bases (")]
         check(f"{size}: duplicate name gets scheme added", len(bases) == 0 and any(recipes[i]["name"] == "Bases – Rocks" for i in schemes["T'au"]["recipes"]))
         ice = [p for p in saved["paints"] if p["name"] == "Ice"]
-        check(f"{size}: Ice saved as basing material", ice and ice[0].get("type") == "material", ice)
+        check(f"{size}: Ice kept as typed", ice and ice[0].get("type") != "material", ice)   # RS4b: Basing material is no longer offered
         check(f"{size}: new part name kept as written", [recipes[i]["part"] for i in schemes["Tyranids"]["recipes"] if recipes[i]["name"] == "Bases"] == ["Bases"])
         sh = saved["shorthand"]
         check(f"{size}: shorthand remembered", sh.get("cm", {}).get("name") == "Contrast Medium" and sh.get("ss", {}).get("name") == "Screaming Skull"

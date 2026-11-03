@@ -1,6 +1,6 @@
 """v17.1 tests for Shades of Grey (paste import defaults to Owned, quantity stepper).
 Serve the repo folder with `python3 -m http.server 8765`, then run: python3 tests/test_v17_1.py <folder for screenshots>."""
-import os, sys
+import os, re, sys
 from playwright.sync_api import sync_playwright
 from launch_helpers import leave_launch
 import os as _os
@@ -14,9 +14,10 @@ def check(name, ok, detail=""):
     results.append(bool(ok))
     print(("PASS " if ok else "FAIL ") + name + ("" if ok else f"  -> {detail}"))
 
-ANSWERS = {"Bleck Templar": "Black Templar", "CM": "Contrast Medium", "Ice": "Basing material", "SS": "Screaming Skull",
+ANSWERS = {"Bleck Templar": "Black Templar", "CM": "Contrast Medium", "Ice": "Keep as typed", "SS": "Screaming Skull",
            "Khorn red": "Khorne Red", "gothor brown": "Gorthor Brown", "white": "White Primer",
            "blangels red": "Blood Angels Red", "ultramarine blue": "Ultramarines Blue"}
+# RS4b: the review no longer offers Basing material, so Ice is kept as typed.
 V17_1_BOOK = {
     "v15": True, "parts": ["Whole model"], "techniques": ["Layer"],
     "paints": [{"id": 1, "brand": "Citadel", "name": "Nuln Oil", "colour": "#222222", "status": "owned", "owned": True}],
@@ -46,8 +47,8 @@ with sync_playwright() as pw:
     page.click("text=Read notes")
     page.wait_for_timeout(200)
     for typed, answer in ANSWERS.items():
-        row = page.locator(".import-ask", has=page.locator(".import-typed", has_text=f"“{typed}”"))
-        row.locator("button.chip", has_text=answer).first.click()
+        row = page.locator(".import-ask", has=page.locator(".import-typed", has_text=re.compile(f"^{re.escape(typed)}$")))   # RS4b: the typed text in bold, no quote marks
+        row.locator("label.import-option", has_text=answer).first.click()   # RS4b: radio options instead of chips
     page.click("#import-save")
     page.wait_for_timeout(300)
     check("import: opens on Your Palette to check", page.evaluate("settings.recipeView") == "palette")

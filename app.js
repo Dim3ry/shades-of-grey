@@ -15560,16 +15560,46 @@
       d.trimmed = false;   // v18d-1: no steps left out yet
       d.editing = null;    // v18d-2a: no step's editor open
       d.swapAt = -1;       // v18d-2b: no paint's Change… box open
-      d.groups = unsureMentions(d.parsed);
+      d.groups = importGroups(d.parsed);
       d.names = d.parsed.schemes.map(s => s.name || "Imported recipes");
+      d.markOwned = true;   // RS4b: "Mark these paints as Owned" starts ticked
       renderImport();
     }
 
-    // What a mention ends up as: the matched paint, or your answer for an unsure one.
+    // RS4b: the paints that get a card under "Check paints": one per distinct typed name, in paste order. A paint the reader was
+    // unsure of starts on its best match; a paint that matched nothing at all starts on Keep as typed. So every card already
+    // has an answer and Save works at once. recipes = how many recipes the name is used in. A paint changed with Change… is not asked.
+    const isAskedMention = (m) => m.fromTyped === undefined && (m.status === "unsure" || m.status === "new");
+    function importKeepPaint(g) {
+      return g.isNew && g.paint ? g.paint : { brand: "", name: tidyName(g.typed), colour: DEFAULT_PAINT_COLOUR };
+    }
+    function importGroups(parsed) {
+      const groups = new Map();
+      parsed.schemes.forEach((s, si) => s.parts.forEach((part, pi) => importSections(part).forEach((sec, xi) => {
+        for (const step of sec.steps) for (const m of step.paints) {
+          if (!isAskedMention(m)) continue;
+          const key = matchKey(m.typed);
+          if (!groups.has(key)) groups.set(key, { key, typed: m.typed, suggestions: [], count: 0, recipes: new Set(), choice: null,
+                                                  isNew: m.status === "new", paint: m.paint, picked: null });
+          const g = groups.get(key);
+          g.count++;
+          g.recipes.add(`${si}-${pi}-${xi}`);
+          for (const sug of m.suggestions || []) if (!g.suggestions.some(x => sameText(x.name, sug.name) && sameText(x.brand, sug.brand))) g.suggestions.push(sug);
+        }
+      })));
+      for (const g of groups.values()) {
+        g.recipes = g.recipes.size;
+        g.choice = g.suggestions.length ? { kind: "pick", opt: "s0", paint: g.suggestions[0], auto: true }
+                                        : { kind: "keep", opt: "keep", paint: importKeepPaint(g), auto: true };
+      }
+      return [...groups.values()];
+    }
+
+    // What a mention ends up as: the matched paint, or the answer on its card.
     function importPaintFor(mention) {
-      if (mention.status !== "unsure") return mention.paint;
+      if (!isAskedMention(mention)) return mention.paint;
       const g = importDraft.groups.find(x => x.key === matchKey(mention.typed));
-      return g && g.choice ? g.choice.paint : null;
+      return g && g.choice ? g.choice.paint : mention.paint;
     }
     const importCount = (d) => d.parsed ? d.parsed.schemes.reduce((n, s) => n + s.parts.reduce((m, p) => m + importSections(p).length, 0), 0) : 0;
 
@@ -15629,47 +15659,7 @@
       card.insertAdjacentHTML("beforeend", '<p class="hint import-remove-hint" style="margin: 12px 0 0;">' +
         'Tap ✎ to change a step, ✕ to leave something out. Read again brings everything back.</p>');
 
-      // 1. The paints it wasn't sure about. Nothing is picked for you.
-      const left = d.groups.filter(g => !g.choice).length;
-      if (d.groups.length) {
-        const check = document.createElement("div");
-        check.className = "card import-check";
-        const checkTitle = document.createElement("h2");   // v75: built with textContent, not innerHTML
-        checkTitle.textContent = `Check ${plural(d.groups.length, "paint")}`;
-        const checkHint = document.createElement("p");
-        checkHint.className = "hint";
-        checkHint.textContent = "Pick one each. Your answers are remembered.";
-        check.append(checkTitle, checkHint);
-        for (const g of d.groups) {
-          const row = document.createElement("div");
-          row.className = "import-ask" + (g.choice ? " answered" : "");
-          const label = document.createElement("div");
-          label.className = "import-typed";
-          label.textContent = `“${g.typed}”` + (g.count > 1 ? ` (${g.count} times)` : "");
-          const chips = document.createElement("div");
-          chips.className = "chips";
-          chips.style.marginTop = "6px";
-          const choose = (kind, paint) => { g.choice = { kind, paint }; renderImport(); };
-          const pressed = (kind, name) => !!g.choice && g.choice.kind === kind && (!name || sameText(g.choice.paint.name, name));
-          for (const s of g.suggestions) chips.appendChild(makeChip(s.name, pressed("pick", s.name), () => choose("pick", s)));
-          chips.appendChild(makeChip(`Keep “${tidyName(g.typed)}”`, pressed("keep"), () => choose("keep", { brand: "", name: tidyName(g.typed), colour: DEFAULT_PAINT_COLOUR })));
-          chips.appendChild(makeChip("Basing material", pressed("material"), () => choose("material", { brand: "", name: tidyName(g.typed), colour: DEFAULT_PAINT_COLOUR, type: "material" })));
-          const other = makeChip(g.choice && g.choice.kind === "other" ? `Other: ${g.choice.paint.name}` : "Other…", pressed("other"), () => {
-            askText(`What is “${g.typed}”? Type the paint's name:`, "", (answer) => {
-              const typed = (answer || "").trim();
-              if (!typed) return;
-              const m = matchPaint(typed);
-              const paint = m.paint || (m.suggestions[0] && sameText(matchKey(m.suggestions[0].name), matchKey(typed)) ? m.suggestions[0] : null)
-                            || { brand: "", name: tidyName(typed), colour: DEFAULT_PAINT_COLOUR };
-              choose("other", paint);
-            });
-          });
-          chips.appendChild(other);
-          row.append(label, chips);
-          check.appendChild(row);
-        }
-        importPage.appendChild(check);
-      }
+      importPage.appendChild(buildImportCheck(d));   // 1. RS4b: Check paints
 
       // 2. The preview: each scheme, its parts and their steps.
       d.parsed.schemes.forEach((scheme, si) => {
@@ -15765,7 +15755,8 @@
                 // v18d-2b: a paint you changed with ✎ shows what was pasted → what it is now.
                 span.className = "import-paint swapped";
                 span.textContent = `${m.fromTyped} → ${paint.name}` + (m.status === "new" ? " (new)" : "");
-              } else if (m.status === "unsure") {
+              } else if (m.status === "unsure" || (m.status === "new" && paint && importGroupFor(m) && importGroupFor(m).choice.kind !== "keep")) {
+                // RS4b: a paint that matched nothing and was then picked from the list shows "typed → picked" too.
                 span.className = paint ? "import-paint resolved" : "import-paint unsure";
                 span.textContent = paint ? `${m.typed} → ${paint.name}` : `${m.typed}?`;
               } else {
@@ -15786,20 +15777,196 @@
         importPage.appendChild(sc);
       });
 
-      // 3. v18c: "Do you own these?" for the paints new to your palette. All is picked to start with.
-      d.own = d.own || newOwnChoice();
-      const ownCard = buildOwnCard(d.own, () => importNewPaints(d));
-      ownCard.id = "import-own";
-      importPage.appendChild(ownCard);
+      // 3. RS4b: the bar fixed above the bottom menu: "Mark these paints as Owned" (replaces "Do you own these?" here) and Save.
+      importPage.appendChild(buildImportBar(d));
+    }
 
+    // ================= RS4b: CHECK PAINTS AND THE SAVE BAR =================
+    // "Check paints": one line with the numbers, the matched paints behind "Show the N matched", and a card only for each paint
+    // that needs a look (see importGroups). A card's choice applies everywhere that name is in the paste. Nothing blocks Save.
+    const importGroupFor = (m) => importDraft && importDraft.groups.find(x => x.key === matchKey(m.typed));
+    // The distinct paints the paste matched by itself (and ones changed with Change…), in paste order.
+    function importMatchedPaints(d) {
+      const out = [], seen = new Set();
+      for (const s of d.parsed.schemes) for (const part of s.parts) for (const step of part.steps.filter(isPaintStep)) for (const m of step.paints) {
+        if (isAskedMention(m) || !m.paint) continue;
+        const k = `${sameKey(tidyBrand(m.paint.brand))}|${sameKey(m.paint.name)}`;
+        if (!seen.has(k)) { seen.add(k); out.push(m.paint); }
+      }
+      return out;
+    }
+    // A paint's brand for the small text: its brand, or "Your palette" for one of your own paints with no brand.
+    const importBrandText = (p) => tidyBrand(p.brand) || (isInPalette(p) ? "Your palette" : "");
+    // A swatch, the name and the brand in smaller text (one matched paint, or one option on a card).
+    function importPaintLabel(p) {
+      const name = document.createElement("span");
+      name.className = "import-option-name";
+      name.textContent = p.name;
+      const brand = importBrandText(p);
+      if (brand) { const b = document.createElement("small"); b.className = "import-option-brand"; b.textContent = brand; name.append(" ", b); }
+      return [makeSwatch(p.colour || DEFAULT_PAINT_COLOUR), name];
+    }
+
+    function buildImportCheck(d) {
+      const matched = importMatchedPaints(d);
+      if (!matched.length && !d.groups.length) return document.createDocumentFragment();   // no paints in the paste at all
+      const card = document.createElement("div");
+      card.className = "card import-check";
+      const title = document.createElement("h2");
+      title.textContent = "Check paints";
+      const sum = document.createElement("p");
+      sum.className = "import-check-sum";
+      const n = d.groups.length;
+      sum.textContent = n ? `${plural(matched.length, "paint")} matched. ${n} ${n === 1 ? "needs" : "need"} a look.` : "All paints matched.";
+      card.append(title, sum);
+      if (matched.length) {
+        const toggle = document.createElement("button");
+        toggle.type = "button";
+        toggle.className = "plain-button import-matched-toggle";
+        toggle.id = "import-matched-toggle";
+        toggle.textContent = `${d.showMatched ? "Hide" : "Show"} the ${matched.length} matched`;
+        toggle.setAttribute("aria-expanded", String(!!d.showMatched));
+        toggle.setAttribute("aria-controls", "import-matched");
+        const list = document.createElement("ul");
+        list.id = "import-matched";
+        list.className = "import-matched";
+        list.hidden = !d.showMatched;
+        for (const p of matched) { const li = document.createElement("li"); li.append(...importPaintLabel(p)); list.appendChild(li); }
+        toggle.addEventListener("click", () => {
+          d.showMatched = !d.showMatched;
+          list.hidden = !d.showMatched;
+          toggle.textContent = `${d.showMatched ? "Hide" : "Show"} the ${matched.length} matched`;
+          toggle.setAttribute("aria-expanded", String(d.showMatched));
+        });
+        card.append(toggle, list);
+      }
+      d.groups.forEach((g, gi) => card.appendChild(buildImportAsk(d, g, gi)));
+      return card;
+    }
+
+    // One card: "You wrote" and the typed text, then the options as radio buttons (the best match, the second best, Keep as typed).
+    // With no match at all: Keep as typed and Pick a paint (the paint list in a pop-up); a paint picked there becomes an option.
+    function buildImportAsk(d, g, gi) {
+      const box = document.createElement("fieldset");
+      box.className = "import-ask";
+      box.dataset.typed = g.typed;
+      const legend = document.createElement("legend");
+      legend.className = "import-wrote";
+      const typed = document.createElement("b");
+      typed.className = "import-typed";
+      typed.textContent = g.typed;
+      legend.append("You wrote ", typed);
+      box.appendChild(legend);
+      if (g.recipes > 1) {
+        const where = document.createElement("small");
+        where.className = "import-where";
+        where.textContent = `in ${g.recipes} recipes`;
+        box.appendChild(where);
+      }
+      const options = g.suggestions.slice(0, 2).map((p, i) => ({ opt: `s${i}`, kind: "pick", paint: p }));
+      if (!g.suggestions.length && g.picked) options.push({ opt: "picked", kind: "other", paint: g.picked });
+      options.push({ opt: "keep", kind: "keep", paint: importKeepPaint(g) });
+      const list = document.createElement("div");
+      list.className = "import-options";
+      for (const o of options) {
+        const label = document.createElement("label");
+        label.className = "import-option";
+        const radio = document.createElement("input");
+        radio.type = "radio";
+        radio.name = `import-ask-${gi}`;
+        radio.id = `import-ask-${gi}-${o.opt}`;
+        radio.value = o.opt;
+        radio.checked = g.choice.opt === o.opt;
+        // A tap on the option a card started on counts as choosing it (no change event fires for an option already picked).
+        radio.addEventListener("click", () => { if (g.choice.opt === o.opt && g.choice.auto) g.choice = { ...g.choice, auto: false }; });
+        radio.addEventListener("change", () => {
+          if (!radio.checked) return;
+          g.choice = { kind: o.kind, opt: o.opt, paint: o.paint };   // you chose it (so a match you picked is remembered for next time)
+          renderImport();
+          const again = document.getElementById(radio.id);
+          if (again) again.focus({ preventScroll: true });
+        });
+        label.appendChild(radio);
+        if (o.opt === "keep") {
+          const name = document.createElement("span");
+          name.className = "import-option-name";
+          name.textContent = "Keep as typed";
+          label.appendChild(name);
+        } else label.append(...importPaintLabel(o.paint));
+        list.appendChild(label);
+      }
+      box.appendChild(list);
+      if (!g.suggestions.length) {
+        const pick = document.createElement("button");
+        pick.type = "button";
+        pick.className = "plain-button import-pick";
+        pick.id = `import-pick-${gi}`;
+        pick.textContent = "Pick a paint";
+        labelWithName(pick, "Pick a paint", typed);
+        pick.addEventListener("click", () => openImportPaintPicker(g, pick.id));
+        box.appendChild(pick);
+      }
+      return box;
+    }
+
+    // The paint list the app already has (the same one as Swap for a real paint), in the pop-up. A tap on a paint uses it at once.
+    function openImportPaintPicker(g, returnId) {
+      const choices = realPaintChoices();
+      const door = { state: {}, id: (name) => `import-paint-${name}` };
+      let chosen = null;
+      const wrap = document.createElement("div");
+      wrap.className = "import-paint-picker";
+      wrap.appendChild(buildSearchPicker(door, {
+        id: "pick", label: "Paint", one: "paint", placeholder: "Type or choose a paint", emptyPlaceholder: "No paints to choose from",
+        groups: choices.groups, value: "",
+        onPick: (value) => { chosen = choices.byKey.get(value) || null; if (chosen) acceptDialog(); },
+      }));
+      showDialog({
+        mode: "pick", message: `Pick a paint for “${g.typed}”`, content: wrap, yes: "Cancel",
+        onDone: () => {
+          if (!chosen || importDraft === null) return;
+          const paint = { brand: chosen.brand || "", name: chosen.name, colour: chosen.colour || DEFAULT_PAINT_COLOUR, type: chosen.type };
+          g.picked = paint;
+          g.choice = { kind: "other", opt: "picked", paint };
+          renderImport();
+          const back = document.getElementById(returnId);
+          if (back) back.focus({ preventScroll: true });
+        },
+      });
+      dialogYes.className = "plain-button";   // its one button is Cancel (a tap on a paint uses it), so it is not the bold one
+    }
+
+    function buildImportBar(d) {
+      const bar = document.createElement("div");
+      bar.className = "import-bar";
+      bar.id = "import-bar";
+      bar.setAttribute("role", "region");
+      bar.setAttribute("aria-label", "Save");
+      if (importNewPaints(d).length) {
+        const tick = document.createElement("button");
+        tick.type = "button";
+        tick.className = "pick-all import-owned";
+        tick.id = "import-owned";
+        tick.setAttribute("role", "checkbox");
+        tick.setAttribute("aria-checked", String(d.markOwned !== false));
+        const mark = document.createElement("span");
+        mark.className = "pick-box";
+        mark.setAttribute("aria-hidden", "true");
+        tick.append(mark, "Mark these paints as Owned");
+        tick.addEventListener("click", () => {
+          d.markOwned = d.markOwned === false;
+          tick.setAttribute("aria-checked", String(d.markOwned));
+        });
+        bar.appendChild(tick);
+      } else bar.classList.add("no-tick");
       const save = document.createElement("button");
       save.className = "primary-button";
       save.id = "import-save";
-      save.style.width = "100%";
-      save.disabled = left > 0;
-      save.textContent = left ? `Pick ${plural(left, "more paint")} first` : `Save ${plural(importCount(d), "recipe")}`;
+      const count = importCount(d);
+      save.textContent = count === 1 ? "Save recipe" : `Save ${plural(count, "recipe")}`;
       save.addEventListener("click", saveImport);
-      importPage.appendChild(save);
+      bar.appendChild(save);
+      return bar;
     }
 
     // ================= v18d-1: LEAVE A STEP OUT OF THE PASTE PREVIEW =================
@@ -15840,10 +16007,10 @@
     // Rebuilds the "Check N paints" list after steps are left out or put back, so a paint that
     // was only in a removed step stops holding up Save. Answers you'd already given are kept.
     function regroupImport(d, ...older) {
-      d.groups = unsureMentions(d.parsed);
+      d.groups = importGroups(d.parsed);   // RS4b
       for (const g of d.groups) for (const list of older) {
         const had = list.find(x => x.key === g.key && x.choice);
-        if (had) { g.choice = had.choice; break; }
+        if (had) { g.choice = had.choice; g.picked = had.picked || null; break; }
       }
     }
     // Takes out schemes left with no parts (and their names).
@@ -16285,7 +16452,8 @@
       // notes, so nothing is lost and you can try again. Before, the notes were thrown away
       // and it still said "Saved".
       const kept = changeAndSave(() => {
-        for (const g of d.groups) if (g.choice.kind === "pick" || g.choice.kind === "other") rememberShorthand(g.typed, g.choice.paint);
+        // RS4b: only a paint you chose yourself is remembered for next time (not the best match a card started on).
+        for (const g of d.groups) if ((g.choice.kind === "pick" && !g.choice.auto) || g.choice.kind === "other") rememberShorthand(g.typed, g.choice.paint);
         d.parsed.schemes.forEach((s, si) => {
           const schemeName = (d.names[si] || "").trim() || "Imported recipes";
           const ids = [];
@@ -16293,10 +16461,10 @@
             const steps = part.steps.map(step => {
               const paints = step.paints.map(importPaintFor).filter(Boolean).map(p => {
                 // v17.1: a paint new to your palette comes in as Owned (you're bringing your own list).
-                // v18c: unless you answered None, or untapped it, under "Do you own these?".
+                // RS4b: unless "Mark these paints as Owned" is unticked: then its status is left as it is (nothing about owning changes).
                 const known = isInPalette(p);
                 const paint = findOrAddPaint(p.brand || "", p.name, p.colour || DEFAULT_PAINT_COLOUR);
-                if (!known && paintStatus(paint) === "") applyPaintStatus(paint, ownsNewPaint(d.own, p) ? "owned" : "notowned");
+                if (!known && d.markOwned !== false && paintStatus(paint) === "") applyPaintStatus(paint, "owned");
                 if (!known) importNewIds.push(paint.id);
                 if (p.type === "material") paint.type = "material";
                 return paint;
