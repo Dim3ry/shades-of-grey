@@ -535,7 +535,9 @@ def main():
         page.locator("#recipe-page button.add-step").dispatch_event("click")   # v50: steps are folded, so the page is short and the tab bar can sit over this button
         page.wait_for_timeout(150)
         check("+ Add step still adds an empty step", page.locator(".step-edit").count() == n + 1)
-        set_step_paint(page, 0, "Brand New Paint X")
+        # UX1: the card now only asks about paints in the paint list (a made-up name such as "Brand New Paint X" is saved as
+        # Not owned without asking), so this uses a real paint that isn't in this test's palette.
+        set_step_paint(page, 0, "Mephiston Red")
         page.wait_for_timeout(150)
         check("the 'Do you own these?' card still appears for a paint that is new to your palette",
               page.locator("#recipe-own").count() == 1 and page.is_visible("#recipe-own"))

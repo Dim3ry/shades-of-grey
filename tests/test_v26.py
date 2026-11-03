@@ -448,9 +448,17 @@ def main():
         page.wait_for_timeout(250)
         page.click("#dialog-no")
         page.wait_for_timeout(250)
-        check("Not now: the same", page.evaluate("recipeDraft") is None and store_text(page) == old)
+        # UX1 (2 Nov user testing): Not now used to open nothing (a dead end). It now starts the new recipe and keeps the old
+        # draft for later, untouched. Escape (above) still starts nothing.
+        check("Not now: a new recipe opens and the old draft is exactly as it was",
+              page.evaluate("!!recipeDraft && !!recipeDraft.quick") and store_text(page) == old)
         page.wait_for_timeout(4800)
         check("a waiting draft is never touched, even after the safety timer has run", store_text(page) == old)
+        page.click("#recipe-page button:has-text('All recipes')")   # back to the list from the new (empty) recipe
+        page.wait_for_timeout(250)
+        if ask_open(page):
+            page.click("#dialog-yes")
+            page.wait_for_timeout(250)
         page.click("#new-recipe")
         page.wait_for_timeout(250)
         page.click("#dialog-yes")
