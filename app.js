@@ -27,6 +27,13 @@
     // entries is a list of [name, text] pairs. Returns false only if storage is FULL.
     let holdSaves = false;   // true while showing changes made in another window (see below)
     let saveFailing = false; // true while saving isn't working, so the red banner stays up
+    // DS1: the storage names (units and/or recipes) whose saved text couldn't be read at start-up. While any are listed,
+    // nothing is saved, so the original text stays exactly where it is until you choose Save it as a file or Start again
+    // (the banner's two buttons). Before DS1 the start-up save wrote the examples over it, and the only copy was lost.
+    let unreadableParts = [];
+    const unreadableText = {};   // the text each listed part held when it was read, so nothing that changes later is mistaken for it
+    const retiredIds = { units: 0, paints: 0 };   // DS1: see retire(), further down
+    function savedText(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
 
     // ----- Data version number (v18.3) -----
     // A number saved with your data (in the settings, and in backups) that says which "shape"
@@ -53,6 +60,7 @@
     }
     function writeTogether(entries) {
       if (holdSaves) return true;
+      if (unreadableParts.length) return false;   // DS1: never write over saved data that couldn't be read
       // v18.3: newer data saved by a newer version of the app? Don't overwrite it.
       if (!checkDataVersion()) return false;
       const before = [];
@@ -94,6 +102,19 @@
         if (retry) retry.textContent = "Reload";
         const backup = document.getElementById("banner-backup");
         if (backup) backup.classList.add("hidden");
+      } else if (unreadableParts.length) {
+        // DS1: one line and two buttons: Save it as a file, Start again (see the banner buttons further down).
+        const text = document.getElementById("save-banner-text");
+        if (text) {
+          if (!bannerUsual) bannerUsual = [...text.childNodes].map(n => n.cloneNode(true));
+          const strong = document.createElement("strong");
+          strong.textContent = unreadableMessage();
+          text.replaceChildren(strong);
+        }
+        const backup = document.getElementById("banner-backup");
+        if (backup) backup.textContent = "Save it as a file";
+        const retry = document.getElementById("banner-retry");
+        if (retry) retry.textContent = "Start again";
       }
       banner.classList.remove("hidden");
     }
@@ -101,6 +122,26 @@
       saveFailing = false;
       const banner = document.getElementById("save-banner");
       if (banner) banner.classList.add("hidden");
+    }
+    // DS1: the banner's own words and buttons, put back once the unreadable data has been dealt with.
+    let bannerUsual = null;
+    function unreadableMessage() {
+      const what = unreadablePartsWords(unreadableParts);
+      return `Your saved ${what} couldn't be read, so saving is paused.`;
+    }
+    function unreadablePartsWords(parts) {
+      const words = [];
+      if (parts.includes(STORAGE_KEY)) words.push("units");
+      if (parts.includes(RECIPES_KEY)) words.push("recipes");
+      return words.join(" and ") || "data";
+    }
+    function usualSaveBanner() {
+      const text = document.getElementById("save-banner-text");
+      if (text && bannerUsual) text.replaceChildren(...bannerUsual.map(n => n.cloneNode(true)));
+      const backup = document.getElementById("banner-backup");
+      if (backup) backup.textContent = "Save backup";
+      const retry = document.getElementById("banner-retry");
+      if (retry) retry.textContent = "Try again";
     }
 
     // ================= SETTINGS AND STAGES =================
@@ -208,13 +249,17 @@
         if (Array.isArray(savedUnits)) {
           // old position -> new position
           const move = [0, 1, 2, 3, 4, 6, 5];
-          for (const u of savedUnits) if (Number.isInteger(u.stage) && move[u.stage] !== undefined) u.stage = move[u.stage];
-          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(savedUnits)); } catch (ignored) {}
+          for (const u of savedUnits) if (u && Number.isInteger(u.stage) && move[u.stage] !== undefined) u.stage = move[u.stage];
         }
         settings.stages = STAGES = DEFAULT_STAGES.slice();
         settings.doneFrom = 5;
         upgradedStages = true;
-        try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (ignored) {}
+        // DS1: units and settings are written together, through the data-version check (before DS1 the units were written
+        // directly, so an out-of-date copy of the app could write over newer data).
+        writeTogether([
+          ...(Array.isArray(savedUnits) ? [[STORAGE_KEY, JSON.stringify(savedUnits)]] : []),
+          [SETTINGS_KEY, JSON.stringify(settings)],
+        ]);
       }
     }
     // v68: "Painted with issues" becomes "Needs touch-ups" for anyone on the v3 to v61 default stages.
@@ -2161,6 +2206,57 @@
       return items.sort((a, b) => (a.paint.brand || "￿").localeCompare(b.paint.brand || "￿") || a.paint.name.localeCompare(b.paint.name));
     }
 
+    // DS1: Undo by difference. bookUndo(before) is called right AFTER a change to the recipe book (before = JSON.stringify(book)
+    // from just before it). The function it returns puts back only what that change did: paints, recipes, schemes and bought
+    // entries it added are taken out, ones it removed come back where they were, and ones it changed get their old version
+    // back. Anything else changed while the Undo message was up (a Status chip, say) is kept. Before DS1 these Undos put the
+    // whole book back from the snapshot, which quietly undid those other changes too.
+    // The ids of things a change with a live Undo took away (units, paints) are never given to anything new (see retiredIds
+    // at the top), so the Undo can always put them back under their own id, with every link that points at them.
+    function retire(kind, was, done) {
+      const kept = new Set(done.map(x => x.id));
+      for (const x of was) if (!kept.has(x.id) && Number.isInteger(x.id)) retiredIds[kind] = Math.max(retiredIds[kind], x.id);
+    }
+    // One list (a = before the change, b = just after it, now = as it is): what the change added goes, what it removed comes
+    // back in its place, what it changed gets its old version back. Everything else in now stays as it is.
+    function undoListChange(a, b, now) {
+      const aById = new Map((a || []).map(x => [x.id, x])), bById = new Map((b || []).map(x => [x.id, x]));
+      let list = (now || []).filter(x => !(bById.has(x.id) && !aById.has(x.id)));
+      list = list.map(x => aById.has(x.id) && bById.has(x.id) && JSON.stringify(aById.get(x.id)) !== JSON.stringify(bById.get(x.id))
+        ? aById.get(x.id) : x);
+      (a || []).forEach((x, i) => {
+        if (!bById.has(x.id) && !list.some(y => y.id === x.id)) list.splice(Math.min(i, list.length), 0, x);
+      });
+      return list;
+    }
+    function bookUndo(beforeText) {
+      const was = JSON.parse(beforeText);
+      const done = JSON.parse(JSON.stringify(book));
+      retire("paints", was.paints || [], done.paints || []);
+      return () => {
+        const now = JSON.parse(JSON.stringify(book));
+        const byId = (list) => list === undefined || (Array.isArray(list) && list.every(x => x && typeof x === "object" && x.id !== undefined));
+        for (const key of new Set([...Object.keys(was), ...Object.keys(done)])) {
+          const a = was[key], b = done[key];
+          if (JSON.stringify(a) === JSON.stringify(b)) continue;   // this change didn't touch it
+          if (!(byId(a) && byId(b) && byId(now[key]))) {           // not a list of things with ids: put it back whole
+            if (a === undefined) delete now[key]; else now[key] = a;
+            continue;
+          }
+          const list = undoListChange(a, b, now[key]);
+          if (list.length || a !== undefined) now[key] = list; else delete now[key];
+        }
+        book = cleanRecipeBook(now);
+      };
+    }
+    // The same for the units list (Delete all, an import): units added since the change are kept.
+    function unitsUndo(beforeText) {
+      const was = JSON.parse(beforeText);
+      const done = JSON.parse(JSON.stringify(models));
+      retire("units", was, done);
+      return () => { models = undoListChange(was, done, models); };
+    }
+
     // A1: taking an item off the list, and the Bought tick. Both work on the paint's status, so they behave the same for a paint that came
     // from the Compendium, from a recipe or from your own Wishlist tap. Each Undo puts back only that one paint (not the whole book),
     // so ticking several items quickly cannot undo the others.
@@ -2322,11 +2418,12 @@
       if (haveIt(mine)) return false;                            // you own it: nothing to add
       applyPaintStatus(mine, "wishlist");
       noteShopSource(mine, source || "Colour suggestion");        // v40
+      const undo = bookUndo(before);                              // DS1
       const ok = save();
       if (!recipeDraft) renderRecipes();                          // keep the (hidden) palette and shopping lists up to date; never rebuild an open recipe editor
       updateBasket();                                             // v40
       updateShopFoldouts();
-      if (ok) showToast(`Added ${mine.name} to your shopping list`, () => { book = cleanRecipeBook(JSON.parse(before)); render(); updateShopFoldouts(); });
+      if (ok) showToast(`Added ${mine.name} to your shopping list`, () => { undo(); render(); updateShopFoldouts(); });
       else showNotSaved();
       return true;
     }
@@ -2378,13 +2475,14 @@
         noteShopSource(mine, source || "Scheme");
         added++;
       }
+      const undo = bookUndo(before);   // DS1
       const ok = save();
       if (!recipeDraft) renderRecipes();
       updateBasket();
       updateShopFoldouts();
       if (ok) {
         showToast(`Added ${plural(added, "paint")} to your shopping list`, () => {
-          book = cleanRecipeBook(JSON.parse(before));
+          undo();
           render(); updateBasket(); updateShopFoldouts();
           notify(`Took ${plural(added, "paint")} off your shopping list again.`);
         });
@@ -3341,8 +3439,9 @@
         saved = localStorage.getItem(RECIPES_KEY);
         return cleanRecipeBook(saved ? JSON.parse(saved) : null);
       } catch (error) {
-        // Damaged data: tuck it away under another name so it's never lost.
-        try { if (saved) localStorage.setItem(RECIPES_KEY + "-unreadable", saved); } catch (ignored) {}
+        // DS1: damaged data stays exactly where it is, and saving pauses until you choose what to do (see unreadableParts).
+        if (saved && !unreadableParts.includes(RECIPES_KEY)) unreadableParts.push(RECIPES_KEY);
+        if (saved) unreadableText[RECIPES_KEY] = saved;
         return cleanRecipeBook(null);
       }
     }
@@ -3512,9 +3611,11 @@
         if (Array.isArray(parsed)) return cleanModels(parsed);
         throw new Error("Saved data isn't a list");
       } catch (error) {
-        // Damaged data: tuck the original away under another name so it's never lost.
-        try { if (saved) localStorage.setItem(STORAGE_KEY + "-unreadable", saved); } catch (ignored) {}
-        return cleanModels(EXAMPLES);
+        // DS1: damaged data stays exactly where it is, and saving pauses until you choose what to do (see unreadableParts).
+        // No examples are shown in its place, so the screen doesn't look like your units were replaced.
+        if (saved && !unreadableParts.includes(STORAGE_KEY)) unreadableParts.push(STORAGE_KEY);
+        if (saved) unreadableText[STORAGE_KEY] = saved;
+        return saved ? [] : cleanModels(EXAMPLES);
       }
     }
 
@@ -3584,6 +3685,21 @@
       return cleaned;
     }
 
+    // DS1: a box that saves half a second after you stop typing (a unit's notes). flushFieldSave() saves straight away if one
+    // is waiting; it runs when the app goes to the background or the page is left, because switching apps on a phone doesn't
+    // leave the box, and the phone may close the page before the half second is up.
+    let fieldSaveTimer = null;
+    function saveFieldSoon() {
+      clearTimeout(fieldSaveTimer);
+      fieldSaveTimer = setTimeout(flushFieldSave, 500);
+    }
+    function flushFieldSave() {
+      if (fieldSaveTimer === null) return;
+      clearTimeout(fieldSaveTimer);
+      fieldSaveTimer = null;
+      save();
+    }
+
     // saveAll() saves units, recipes and settings TOGETHER (all or nothing, see
     // writeTogether at the top). It reports back: true if it worked (or storage is
     // switched off), false if storage is FULL, in which case the red banner shows.
@@ -3622,7 +3738,7 @@
     const FULL_MESSAGE = "Storage on this device is full, so that change couldn't be saved and nothing has changed. " +
       "Please save a backup, then free some space (for example delete photos or units you no longer need).";
     // v18.3: the right "not saved" message: newer data from a newer version, or full storage.
-    function fullMessage() { return dataTooNew ? TOO_NEW_MESSAGE : FULL_MESSAGE; }
+    function fullMessage() { return dataTooNew ? TOO_NEW_MESSAGE : unreadableParts.length ? unreadableMessage() : FULL_MESSAGE; }
 
     // ================= SMALL HELPERS =================
 
@@ -3642,7 +3758,7 @@
     function modelCount(list) { return list.reduce((total, m) => total + (m.count || 1), 0); }
 
     // A fresh ID, one higher than the highest in use.
-    function nextId() { return models.reduce((highest, m) => Math.max(highest, m.id), 0) + 1; }
+    function nextId() { return models.reduce((highest, m) => Math.max(highest, m.id), retiredIds.units) + 1; }   // DS1: retiredIds
 
     // Blank removed, duplicates removed (that's what a Set does), sorted A-Z.
     function uniqueSorted(values) {
@@ -4681,6 +4797,7 @@
       "but will be lost when the app closes. Save a backup, then free some space.";
     function showNotSaved(message) {
       if (dataTooNew) { showToast(TOO_NEW_MESSAGE, () => location.reload(), "Reload", 12); return; }
+      if (unreadableParts.length) { showToast(`Not saved. ${unreadableMessage()}`, null, null, 8); return; }   // DS1: the banner has the choices
       showToast(message || NOT_SAVED_MESSAGE, () => document.getElementById("export-button").click(), "Save backup", 12);
     }
     function commit(message, undo, buttonLabel, seconds) {
@@ -6446,11 +6563,9 @@
       const note = document.createElement("textarea");
       note.placeholder = "e.g. blue armour, black wash, gold trim";
       note.value = model.note || "";
-      let noteTimer;
       note.addEventListener("input", () => {
         model.note = note.value;
-        clearTimeout(noteTimer);
-        noteTimer = setTimeout(save, 500);
+        saveFieldSoon();   // DS1: also saved at once if the app goes to the background first (see flushFieldSave)
       });
       note.addEventListener("blur", save);
       noteLabel.appendChild(note);
@@ -6727,7 +6842,7 @@
         const kept = JSON.stringify({ stage: model.stage, stages: model.stages, log: model.log });
         const moving = stageBefore(model);
         model.stages.forEach((s, i) => { if (movable(s)) setStage(model, s + (direction > 0 ? 1 : -1), i); });
-        redrawWithStageMotion(moving, direction, render);
+        if (!redrawWithStageMotion(moving, direction, render)) { showNotSaved(); return; }   // DS1: no "moved" message if it wasn't saved
         showToast(`All of ${displayName(model)} ${direction > 0 ? "up" : "back"} one stage`, () => {
           const unit = models.find(m => m.id === id);
           if (!unit) return;
@@ -6748,7 +6863,7 @@
       const snapshot = JSON.stringify({ stage: model.stage, stages: model.stages, log: model.log });
       const moving = stageBefore(model, model.each ? index : undefined);
       setStage(model, after, model.each ? index : undefined);
-      redrawWithStageMotion(moving, direction, render);
+      if (!redrawWithStageMotion(moving, direction, render)) { showNotSaved(); return; }   // DS1
       const who = model.each ? `${displayName(model)}, model ${index + 1}` : displayName(model);
       showToast(`${who} → ${STAGES[after]}`, () => {
         const unit = models.find(m => m.id === id);
@@ -7480,7 +7595,12 @@
       if (!model.photos.length) delete model.photos;
       if (wasCover) delete model.coverPhoto;
       pendingPhotoDeletes.add(id);
-      render();
+      if (!render()) {
+        // DS1: not saved, so no "Photo deleted" message, and the file stays (the saved unit still shows it).
+        pendingPhotoDeletes.delete(id);
+        showNotSaved();
+        return;
+      }
       const seconds = UNDO_SECONDS;
       showToast("Photo deleted", () => {
         model.photos = model.photos || [];
@@ -7982,7 +8102,8 @@
       dialogButtons.classList.toggle("single", show);
       dialogState = { cfg, opener: document.activeElement };
       dialogBackdrop.classList.remove("hidden");
-      const first = text ? dialogInput : show ? dialogArea : pick ? (dialogPick.querySelector("input, button") || dialogYes) : dialogYes;
+      // DS1: a danger question starts on the safe answer, so Enter, Space or a held key can't confirm it by accident.
+      const first = text ? dialogInput : show ? dialogArea : pick ? (dialogPick.querySelector("input, button") || dialogYes) : cfg.danger ? dialogNo : dialogYes;
       first.focus();
       if (text || show) first.select();
       queueBackCheck();   // so the phone's Back button can close it
@@ -8289,7 +8410,7 @@
       let paint = book.paints.find(p => sameText(p.name, name) && (!brand || sameText(p.brand, brand)));
       if (!paint) {
         const known = searchedPaints.find(k => sameText(k.name, name) && (!brand || sameText(k.brand, brand)));
-        paint = { id: Math.max(0, ...book.paints.map(p => p.id)) + 1, brand: brand || (known ? known.brand : ""),
+        paint = { id: Math.max(retiredIds.paints, ...book.paints.map(p => p.id)) + 1, brand: brand || (known ? known.brand : ""),
                   name, colour: known ? known.colour : DEFAULT_PAINT_COLOUR };
         if (MATERIAL_WORDS.test(name)) paint.type = "material";   // v15
         book.paints.push(paint);
@@ -9735,7 +9856,8 @@
       if (!from || !into || from === into) return;
       const before = JSON.stringify(book);
       joinPaints(from, into);
-      commit(`Merged ${from.name} into ${into.name}`, () => { book = cleanRecipeBook(JSON.parse(before)); render(); });   // v18c-3
+      const undo = bookUndo(before);   // DS1
+      commit(`Merged ${from.name} into ${into.name}`, () => { undo(); render(); });   // v18c-3
     }
 
     // v58: "Swap for a real paint": a made-up example paint is replaced by a real one in every recipe, and leaves your palette.
@@ -9748,7 +9870,8 @@
       if (into === from) return;
       delete into.example;
       joinPaints(from, into);
-      commit(`Swapped ${from.name} for ${into.name}`, () => { book = cleanRecipeBook(JSON.parse(before)); render(); });
+      const undo = bookUndo(before);   // DS1
+      commit(`Swapped ${from.name} for ${into.name}`, () => { undo(); render(); });
     }
     // The real paints you can swap to: your own palette (made-up ones left out) and then every brand in the built-in list,
     // the same groups as the Compendium's "Start from" box.
@@ -9774,7 +9897,8 @@
       repointShorthand(paint, null);
       openPaintIds.delete(paint.id);
       if (importReviewIds) importReviewIds = importReviewIds.filter(id => id !== paint.id);
-      commit(`Removed ${paint.name}`, () => { book = cleanRecipeBook(JSON.parse(before)); render(); });   // v18c-3
+      const undo = bookUndo(before);   // DS1
+      commit(`Removed ${paint.name}`, () => { undo(); render(); });   // v18c-3
     }
 
     // The Remove and Merge into… buttons at the bottom of an open paint.
@@ -12931,12 +13055,13 @@
       startRecipeFromCompendium([{ paint, technique: "", coats: 1, mix: 100, note: "" }], (draft) => {
         const before = JSON.stringify(book);
         const { added } = paintForRecipe(paint);
+        const undo = bookUndo(before);   // DS1
         if (added && !save()) { showNotSaved(); return; }
         if (added) { updateBasket(); updateShopFoldouts(); }
         showToast(`Started a new recipe with ${paint.name}.${added ? NOT_OWNED_NOTE : ""}`, () => {
           if (recipeDraft !== draft) { notify("Too late to undo: that recipe has moved on."); return; }
           recipeDraft = null;
-          if (added) book = cleanRecipeBook(JSON.parse(before));
+          if (added) undo();
           refreshAfterPaintChange();
           notify("Took that back.");
         }, "Undo", UNDO_SECONDS);
@@ -12965,8 +13090,9 @@
       }
       delete recipe.example;   // you have changed it, so it is yours now (same as saving an edit)
       const where = step ? `step ${stepIndex + 1}` : `a new step ${recipe.steps.length}`;
+      const undo = bookUndo(before);   // DS1
       commit(`Added ${paint.name} to ${recipe.name}, ${where}.${added ? NOT_OWNED_NOTE : ""}`, () => {
-        book = cleanRecipeBook(JSON.parse(before));
+        undo();
         refreshAfterPaintChange();
         notify("Took that back.");
       }, "Undo", UNDO_SECONDS);
@@ -12992,8 +13118,9 @@
       else recipe.steps.push({ technique: "", coats: 1, paints, ratio: blend.ratio, note: "", optional: false });
       delete recipe.example;
       const where = step ? `step ${stepIndex + 1}` : `a new step ${recipe.steps.length}`;
+      const undo = bookUndo(before);   // DS1
       commit(`Added the mix ${blend.ratio} to ${recipe.name}, ${where}.`, () => {
-        book = cleanRecipeBook(JSON.parse(before));
+        undo();
         refreshAfterPaintChange();
         notify("Took that back.");
       }, "Undo", UNDO_SECONDS);
@@ -15869,13 +15996,14 @@
         return;
       }
       importDraft = null;
+      const undo = bookUndo(before);   // DS1
       // v17.1: new paints open on Your Palette for a quick check, with every row expanded.
       importReviewIds = importNewIds.length ? importNewIds.slice() : null;
       importNewIds.forEach(id => openPaintIds.add(id));
       render();
       window.scrollTo(0, 0);
       showToast(`Saved ${plural(made.length, "scheme")} with ${plural(recipeCount, "recipe")}`, () => {
-        book = cleanRecipeBook(JSON.parse(before));
+        undo();
         render();
       });
     }
@@ -17093,14 +17221,30 @@
     //   { date: "2026-10-08", stages: [...], doneFrom, models: [...] }
     // Copies made before v14 are just the list of units; readSafetyCopy() reads both kinds.
     // keepSafetyCopy() returns false if there wasn't room, so the caller can STOP.
-    function keepSafetyCopy(suffix) {
+    // DS1: withBook keeps your recipe book in the SAME record ({ date, stages, doneFrom, models, book }), for the actions that
+    // replace recipes too (a restore with recipes, a recover with recipes). Units and recipes are written and cleared as one, so
+    // a copy can never pair one action's units with another's recipes. Before DS1 the recipes sat under their own name
+    // ("shades-of-grey-recipes" + suffix); that older copy is still read (see safetyCopyBook) and is removed whenever a new copy
+    // is kept under the same suffix, because it belonged to the copy being replaced.
+    function keepSafetyCopy(suffix, withBook) {
       const copy = { date: todayISO(), stages: STAGES, doneFrom: settings.doneFrom, models };
+      if (withBook) copy.book = book;
       try {
         localStorage.setItem(STORAGE_KEY + suffix, JSON.stringify(copy));
-        return true;
       } catch (error) {
         return false;   // no room (or storage switched off): the old copy, if any, is left as it was
       }
+      try { localStorage.removeItem(RECIPES_KEY + suffix); } catch (ignored) {}
+      return true;
+    }
+    // The recipe book that belongs with a safety copy: the one inside it (DS1), or an older separate copy. null if none.
+    function safetyCopyBook(copy, suffix) {
+      if (copy && copy.book && typeof copy.book === "object" && !Array.isArray(copy.book)) return copy.book;
+      try {
+        const old = JSON.parse(localStorage.getItem(RECIPES_KEY + suffix) || "null");
+        if (old && typeof old === "object" && !Array.isArray(old)) return old;
+      } catch (ignored) {}
+      return null;
     }
     function readSafetyCopy(suffix) {
       try {
@@ -17148,6 +17292,20 @@
       }
       const recipesCopy = readRecipesCopy();
       if (recipesCopy && (!recipesCopy.date || daysSince(recipesCopy.date) > SAFETY_DAYS)) forgetRecipesCopy();
+      // DS1: "-unreadable" copies get the same 30 days. Their date is in the settings (the copy itself is the text exactly as
+      // it was); a copy with no date (kept before DS1) is given today's.
+      const dates = { ...(settings.unreadableDates || {}) };
+      let changed = false;
+      for (const key of [STORAGE_KEY, RECIPES_KEY]) {
+        if (!savedText(key + "-unreadable")) { if (dates[key]) { delete dates[key]; changed = true; } continue; }
+        if (!dates[key]) { dates[key] = todayISO(); changed = true; }
+        else if (daysSince(dates[key]) > SAFETY_DAYS) {
+          try { localStorage.removeItem(key + "-unreadable"); } catch (ignored) {}
+          delete dates[key];
+          changed = true;
+        }
+      }
+      if (changed) { settings.unreadableDates = dates; saveSettings(); }
     }
 
     // The "Recover earlier data" list in Settings → Your data.
@@ -17188,20 +17346,41 @@
         li.append(text, button);
         list.appendChild(li);
       }
+      // DS1: text that couldn't be read (kept by Start again, or by versions before DS1). It can only be saved as a file.
+      for (const key of [STORAGE_KEY, RECIPES_KEY]) {
+        let raw = null;
+        try { raw = localStorage.getItem(key + "-unreadable"); } catch (ignored) {}
+        if (!raw) continue;
+        any = true;
+        const label = `Unreadable ${key === RECIPES_KEY ? "recipes" : "units"}`;
+        const li = document.createElement("li");
+        const text = document.createElement("span");
+        const date = (settings.unreadableDates || {})[key];
+        text.textContent = `${label}: ${Math.max(1, Math.round(raw.length / 1024))} KB` + (date ? `, saved ${shortDate(date)}` : "");
+        const button = document.createElement("button");
+        button.className = "plain-button";
+        button.textContent = "Save as file";
+        button.setAttribute("aria-label", `Save as file: ${label}`);
+        button.addEventListener("click", () => saveUnreadableAsFile([key], "-unreadable"));
+        li.append(text, button);
+        list.appendChild(li);
+      }
       document.getElementById("recover-card").classList.toggle("hidden", !any);
     }
 
     // v18.3: put back the recipes kept by a recipes-only restore. Units aren't touched.
     function recoverRecipesCopy() {
+      if (refusedWhilePaused()) return;   // DS1
       const copy = readRecipesCopy();
       if (!copy) { renderRecover(); return; }
       const restored = cleanRecipeBook(copy.book);
       askYesNo(`Replace your current ${plural(book.recipes.length, "recipe")} with the ${plural(restored.recipes.length, "recipe")} in this copy? (Your units stay as they are.)`, () => {
         const before = JSON.stringify(book);
-        if (!changeAndSave(() => { book = restored; })) { notify(fullMessage()); return; }
+        const linksBefore = unitRecipeLinks();   // DS1
+        if (!changeAndSave(() => { linkUnitsToBook(models, restored, book); book = restored; })) { notify(fullMessage()); return; }
         afterBigChange();
         showToast(`Recovered ${plural(book.recipes.length, "recipe")}`, () => {
-          if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(before)); })) { notify(fullMessage()); return; }
+          if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(before)); putUnitRecipeLinksBack(linksBefore); })) { notify(fullMessage()); return; }
           afterBigChange();
         }, "Undo", UNDO_SECONDS);
       }, { danger: true });
@@ -17210,6 +17389,7 @@
     // Swap your current units for a safety copy. Your current units are kept as a copy
     // themselves first ("Before your last Recover"), and Undo puts them straight back.
     function recoverSafetyCopy(suffix) {
+      if (refusedWhilePaused()) return;   // DS1
       const copy = readSafetyCopy(suffix);
       if (!copy) { renderRecover(); return; }
       const copyStages = goodStageList(copy.stages) ? renamedStageList(copy.stages.map(String)) : null;   // v62: renamed as on start-up
@@ -17218,11 +17398,11 @@
       if (copyStages) STAGES = copyStages;
       const units = cleanModels(copy.models);
       STAGES = currentStages;
-      const recipesCopy = (() => { try { return JSON.parse(localStorage.getItem(RECIPES_KEY + suffix) || "null"); } catch (e) { return null; } })();
+      const recipesCopy = safetyCopyBook(copy, suffix);   // DS1
       // v21.7: asks in the app's own box; the swap (and its Undo) happen when you say yes.
       askYesNo(`Replace your current ${plural(models.length, "unit")} with the ${plural(units.length, "unit")} in this copy` +
           (recipesCopy ? " (and its recipes)" : "") + "?", () => {
-        if (models.length && suffix !== "-before-recover" && !keepSafetyCopy("-before-recover")) {
+        if (models.length && suffix !== "-before-recover" && !keepSafetyCopy("-before-recover", !!recipesCopy)) {
           notify("There isn't room on this device to keep a copy of your current units first, so nothing has changed. Please save a backup first.");
           return;
         }
@@ -17230,6 +17410,7 @@
         const kept = changeAndSave(() => {
           models = units;
           if (recipesCopy) book = cleanRecipeBook(recipesCopy);
+          linkUnitsToBook(models, book, null);   // DS1: no unit keeps a link to a recipe that isn't in the book
           if (copyStages) {
             settings.stages = STAGES = copyStages;
             if (copy.doneFrom !== undefined) settings.doneFrom = copy.doneFrom;
@@ -17250,6 +17431,38 @@
           afterBigChange();
         }, "Undo", UNDO_SECONDS);
       }, { danger: true });
+    }
+
+    // DS1: after a recipe book is swapped (restore, recover), a unit's recipe links must point at recipes in the NEW book. A new
+    // book reuses ids 1, 2, 3..., so an old link would quietly show an unrelated recipe. With prev (the book being replaced), a
+    // link is matched by the recipe's name first; without it (the units came with this book), only links to ids in the book stay.
+    // Links with no match are dropped.
+    function linkUnitsToBook(list, next, prev) {
+      const nextRecipes = (next && Array.isArray(next.recipes)) ? next.recipes : [];
+      const prevRecipes = (prev && Array.isArray(prev.recipes)) ? prev.recipes : null;
+      for (const m of list) {
+        if (!m || !Array.isArray(m.recipes)) continue;
+        const out = [];
+        for (const id of m.recipes) {
+          let to = null;
+          if (prevRecipes) {
+            const was = prevRecipes.find(r => r.id === id);
+            const match = was && nextRecipes.find(r => sameText(r.name, was.name));
+            to = match ? match.id : null;
+          } else if (nextRecipes.some(r => r.id === id)) to = id;
+          if (to !== null && !out.includes(to)) out.push(to);
+        }
+        if (out.length) m.recipes = out; else delete m.recipes;
+      }
+    }
+    // Each unit's recipe links, so an Undo of a book swap can put them back.
+    function unitRecipeLinks() { return new Map(models.map(m => [m.id, Array.isArray(m.recipes) ? m.recipes.slice() : null])); }
+    function putUnitRecipeLinksBack(links) {
+      for (const m of models) {
+        if (!links.has(m.id)) continue;
+        const ids = links.get(m.id);
+        if (ids) m.recipes = ids.slice(); else delete m.recipes;
+      }
     }
 
     // Redraw everything after units, recipes or stages were swapped wholesale.
@@ -17279,6 +17492,11 @@
         const copy = readSafetyCopy(suffix);
         if (copy) for (const m of copy.models) for (const p of (m && m.photos) || []) if (p && p.id) safety.add(p.id);
       }
+      // DS1: photos named in units that couldn't be read (still saved, or kept as "-unreadable") are never spare. The text
+      // can't be read as a whole, so every photo id in it is picked out on its own.
+      for (const raw of [unreadableParts.includes(STORAGE_KEY) ? savedText(STORAGE_KEY) : null, savedText(STORAGE_KEY + "-unreadable")]) {
+        if (raw) for (const m of raw.matchAll(/"id":"([^"\\]+)"/g)) safety.add(m[1]);
+      }
       // v14: also read the units list as SAVED right now, in case the app is open in
       // another window that has just added a photo this window hasn't heard about yet.
       try {
@@ -17301,13 +17519,14 @@
         if (r.orphans.length) text += ` ${plural(r.orphans.length, "spare photo file")} (${sizeText(r.orphanBytes)}) no unit uses any more; Clean up photo storage removes ${r.orphans.length === 1 ? "it" : "them"}.`;
         if (r.safetyCount) text += ` ${plural(r.safetyCount, "more file")} belong to the safety copy kept by Delete all / Replace / Restore, and are kept.`;
         photoSummary.textContent = text;
-        cleanPhotosButton.disabled = !r.orphans.length;
+        cleanPhotosButton.disabled = !r.orphans.length || unreadableParts.length > 0;   // DS1: never while saving is paused
       } catch (error) {
         photoSummary.textContent = "Photo storage isn't available in this browser (for example in a private window).";
         cleanPhotosButton.disabled = true;
       }
     }
     cleanPhotosButton.addEventListener("click", async () => {
+      if (refusedWhilePaused()) return;   // DS1
       const r = await photoStoreReport();
       if (!r.orphans.length) { renderPhotoSummary(); return; }
       askYesNo(`Delete ${plural(r.orphans.length, "photo file")} that no unit uses? This frees about ${sizeText(r.orphanBytes)}.`, async () => {
@@ -17322,21 +17541,24 @@
       // v21.7: asks in the app's own box; everything below runs when you say yes.
       askYesNo(`Delete all ${plural(models.length, "unit")}? A copy is kept on this device for ${SAFETY_DAYS} days ` +
           `(Settings → Recover earlier data), but please save a backup first.`, () => {
-        if (!models.length) return;
+        if (!models.length || refusedWhilePaused()) return;   // DS1
         // v14: STOP if the safety copy can't be kept, rather than delete with no safety net.
         if (!keepSafetyCopy("-before-delete-all")) {
           notify("There isn't room on this device to keep a safety copy of your units, so nothing has been deleted. " +
                 "Please press Save backup first, then delete some photos or units you no longer need.");
           return;
         }
-        const before = models;
-        models = [];
+        const count = models.length;
+        const before = JSON.stringify(models);
+        // DS1: saved first; if that fails, nothing changes and the message says so (no "Deleted").
+        if (!changeAndSave(() => { models = []; })) { notify(fullMessage()); return; }
+        const undo = unitsUndo(before);   // DS1: Undo keeps units added since
         openIds.clear();
         clearFilters();
         render();
         renderSettings();
-        showToast(`Deleted ${plural(before.length, "unit")}`, () => {
-          models = before;
+        showToast(`Deleted ${plural(count, "unit")}`, () => {
+          undo();
           render();
           renderSettings();
         }, "Undo", UNDO_SECONDS);
@@ -17592,10 +17814,75 @@
       }
     });
 
+    // ----- DS1: saved data that couldn't be read -----
+    // Restore, Replace, Recover and Delete all would keep safety copies of what's on screen (nothing, while paused) over real
+    // ones, so they are refused before anything is touched.
+    function refusedWhilePaused() {
+      if (!unreadableParts.length) return false;
+      notify("Save the unreadable data as a file, or start again, first. Nothing has changed.");
+      return true;
+    }
+    // Save it as a file: the saved text exactly as it is (it can't be read as a backup, but nothing in it is lost).
+    // parts: storage names; each one present downloads as its own file.
+    function saveUnreadableAsFile(parts, suffix) {
+      parts.forEach((key, i) => {
+        let raw = null;
+        try { raw = localStorage.getItem(key + (suffix || "")); } catch (ignored) {}
+        if (raw === null) return;
+        const what = key === RECIPES_KEY ? "recipes" : "units";
+        setTimeout(() => downloadFile(`minifolio-unreadable-${what}-${todayISO()}.txt`, raw, "text/plain"), i * 600);
+      });
+    }
+    // Start again: asks first, then keeps a copy of the unreadable text under "-unreadable" (listed under Recover earlier data
+    // for 30 days) and starts the unreadable part empty. It only ever works on the text it read: if another window has saved
+    // since, this window catches up instead (see loadFromOtherWindow), and an older, different "-unreadable" copy is never
+    // written over.
+    function unreadableChanged(parts) { return parts.some(key => savedText(key) !== unreadableText[key]); }
+    function startAgainFromUnreadable() {
+      const parts = unreadableParts.slice();
+      if (unreadableChanged(parts)) { loadFromOtherWindow(); return; }
+      const canCopy = parts.every(key => { const old = savedText(key + "-unreadable"); return old === null || old === unreadableText[key]; });
+      const what = unreadablePartsWords(parts);
+      const finish = () => {
+        if (!unreadableParts.length) return;
+        if (unreadableChanged(parts)) { loadFromOtherWindow(); return; }
+        unreadableParts = [];
+        if (parts.includes(STORAGE_KEY)) models = [];
+        if (parts.includes(RECIPES_KEY)) { book = cleanRecipeBook(null); linkUnitsToBook(models, book, null); }
+        usualSaveBanner();
+        hideSaveProblem();
+        const ok = saveAll();
+        afterBigChange();
+        if (ok) showToast("Started again");
+        else showNotSaved();
+      };
+      askYesNo(`Start again without your saved ${what}? ` + (canCopy
+          ? `A copy is kept under Recover earlier data for ${SAFETY_DAYS} days.`
+          : "A copy can't be kept, so save it as a file first."), () => {
+        if (!unreadableParts.length) return;
+        if (unreadableChanged(parts)) { loadFromOtherWindow(); return; }
+        if (!canCopy) { finish(); return; }
+        let copied = true;
+        for (const key of parts) {
+          try {
+            localStorage.setItem(key + "-unreadable", unreadableText[key]);
+            settings.unreadableDates = { ...(settings.unreadableDates || {}), [key]: todayISO() };   // saved by finish()
+          } catch (error) { copied = false; }
+        }
+        if (copied) finish();
+        else askYesNo("There isn't room to keep a copy. Start again anyway? Save it as a file first if you might need it.",
+          finish, { danger: true, yes: "Start again" });
+      }, { danger: true, yes: "Start again" });
+    }
+
     // The red banner's buttons (v14).
-    document.getElementById("banner-backup").addEventListener("click", () => document.getElementById("export-button").click());
+    document.getElementById("banner-backup").addEventListener("click", () => {
+      if (unreadableParts.length && !dataTooNew) { saveUnreadableAsFile(unreadableParts); return; }   // DS1
+      document.getElementById("export-button").click();
+    });
     document.getElementById("banner-retry").addEventListener("click", () => {
       if (dataTooNew) { location.reload(); return; }
+      if (unreadableParts.length) { startAgainFromUnreadable(); return; }   // DS1
       if (saveAll()) showToast("Saved. Everything is up to date.");
       else notify("Still full. Please save a backup, then free some space (delete photos or units you no longer need).");
     });
@@ -17605,6 +17892,7 @@
     restoreFile.addEventListener("change", () => {
       const file = restoreFile.files[0];
       if (!file) return;
+      if (refusedWhilePaused()) { restoreFile.value = ""; return; }   // DS1
       // v19.1: refuse pictures and very large files before reading anything.
       const problem = fileProblem(file, "backup");
       if (problem) { restoreFile.value = ""; notify(problem); return; }
@@ -17669,19 +17957,25 @@
           + (photoCount ? ` It includes ${plural(photoCount, "photo")}.` : "");
         // v21.7: asks in the app's own box; the restore runs when you say yes.
         askYesNo(question, () => {
+          // Safety copies of what you had, listed under Recover earlier data. DS1: kept BEFORE anything else happens, and if
+          // there's no room the restore stops and nothing changes (before DS1 it went ahead, and Recover then offered an older
+          // copy as if it were this one). Units and recipes are kept in one record (see keepSafetyCopy).
+          // v18.3: a recipes-only restore keeps its own copy and gets an Undo button.
+          if (unitsToo ? !keepSafetyCopy("-before-restore", !!backupBook) : !keepRecipesCopy()) {
+            notify("There isn't room on this device to keep a safety copy of your data first, so nothing has changed. Please save a backup first.");
+            return;
+          }
+          const recipesBefore = unitsToo ? null : JSON.stringify(book);
+          const linksBefore = unitsToo ? null : unitRecipeLinks();   // DS1
           (photoFiles ? importPhotoFiles(photoFiles) : Promise.resolve(0)).then(async (imported) => {
-            // Safety copies of what you had (best effort), listed under Recover earlier data.
-            if (unitsToo) keepSafetyCopy("-before-restore");
-            if (unitsToo && backupBook) { try { localStorage.setItem(RECIPES_KEY + "-before-restore", JSON.stringify(book)); } catch (ignored) {} }
-            // v18.3: a recipes-only restore keeps its own copy (listed under Recover earlier data)
-            // and gets an Undo button.
-            if (!unitsToo) keepRecipesCopy();
-            const recipesBefore = unitsToo ? null : JSON.stringify(book);
 
             // v14: units, recipes, stages and colours are saved TOGETHER, or not at all.
             const kept = changeAndSave(() => {
               if (unitsToo) models = restored;
-              if (backupBook) book = backupBook;
+              // DS1: unit recipe links follow the book. Units from the backup go with the backup's book; your own units (a
+              // recipes-only restore) are matched to the new book by recipe name, and links with no match are dropped.
+              if (backupBook) { linkUnitsToBook(models, backupBook, unitsToo ? null : book); book = backupBook; }
+              else linkUnitsToBook(models, book, null);
               if (unitsToo && backupStages) {
                 settings.stages = STAGES = backupStages;
                 settings.doneFrom = parsed.doneFrom;
@@ -17726,7 +18020,7 @@
             } else {
               if (unitsToo) showToast("Backup restored" + (loweredCounts ? `. ${plural(loweredCounts, "count")} lowered to ${MAX_MODELS}` : ""));
               else showToast(`Recipes restored (${plural(book.recipes.length, "recipe")})`, () => {
-                if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(recipesBefore)); })) { notify(fullMessage()); return; }
+                if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(recipesBefore)); putUnitRecipeLinksBack(linksBefore); })) { notify(fullMessage()); return; }
                 afterBigChange();
                 showToast("Your recipes are back as they were");
               }, "Undo", UNDO_SECONDS);
@@ -18390,6 +18684,7 @@
       // v21.7: the "replace everything" question is asked in the app's own box; the rest runs
       // when you say yes (straight away for "add", or when there's nothing to replace).
       const run = () => {
+        if (refusedWhilePaused()) return;   // DS1
         if (reviewMode === "replace" && models.length) {
           // Keep a safety copy on the device. If there isn't room (photos take a lot of
           // space), stop rather than carry on with no safety net.
@@ -18400,35 +18695,39 @@
           }
         }
 
-        const before = models.map(m => ({ ...m }));   // a copy, so Undo can put everything back
-        if (reviewMode === "replace") {
-          models = [];
-          openIds.clear();
-        } else {
-          // Rename first, so new copies are numbered alongside them.
-          for (const r of renames) {
-            const unit = models.find(m => m.id === r.id);
-            if (unit) unit.name = r.to;
+        const before = JSON.stringify(models);   // DS1: Undo puts back only what the import changed (see unitsUndo)
+        // DS1: saved together; if that fails, nothing changes, the review stays open and the message says so.
+        const kept = changeAndSave(() => {
+          if (reviewMode === "replace") {
+            models = [];
+            openIds.clear();
+          } else {
+            // Rename first, so new copies are numbered alongside them.
+            for (const r of renames) {
+              const unit = models.find(m => m.id === r.id);
+              if (unit) unit.name = r.to;
+            }
+            for (const r of renames) { fixCopies(r.from, r.faction); fixCopies(r.to, r.faction); }
           }
-          for (const r of renames) { fixCopies(r.from, r.faction); fixCopies(r.to, r.faction); }
-        }
-        matched.forEach((m, i) => {
-          const c = choices[i];
-          if (!c.tick) return;
-          // Extra copies of a unit you have, where you chose to keep your name, use your name.
-          const useYours = reviewMode === "add" && m.match && c.keep === "yours";
-          const { stageGiven, dateAdded, dateStage, ...row } = m.row;   // stageGiven and the dates are only for the check, never saved as they are
-          const unit = addModel({
-            ...row,
-            name: useYours ? m.match.name : m.row.name,
-            stage: c.stage,     // v60: each row's own stage and count
-            count: c.count,
+          matched.forEach((m, i) => {
+            const c = choices[i];
+            if (!c.tick) return;
+            // Extra copies of a unit you have, where you chose to keep your name, use your name.
+            const useYours = reviewMode === "add" && m.match && c.keep === "yours";
+            const { stageGiven, dateAdded, dateStage, ...row } = m.row;   // stageGiven and the dates are only for the check, never saved as they are
+            const unit = addModel({
+              ...row,
+              name: useYours ? m.match.name : m.row.name,
+              stage: c.stage,     // v60: each row's own stage and count
+              count: c.count,
+            });
+            // IM1: a row with no dates keeps today, as before. date_stage counts only if the unit ends at the
+            // stage the file named; a stage changed in the check (or an unknown one) is logged today.
+            giveCsvDates(unit, dateAdded, stageGiven && c.stage === m.row.stage ? dateStage : todayISO());
           });
-          // IM1: a row with no dates keeps today, as before. date_stage counts only if the unit ends at the
-          // stage the file named; a stage changed in the check (or an unknown one) is logged today.
-          giveCsvDates(unit, dateAdded, stageGiven && c.stage === m.row.stage ? dateStage : todayISO());
         });
-
+        if (!kept) { notify(fullMessage()); return; }
+        const undo = unitsUndo(before);
         const parts = [];
         if (reviewMode === "replace") parts.push(`Replaced with ${plural(toAdd.length, "unit")}`);
         else {
@@ -18445,7 +18744,7 @@
         renderSettings();
         showTab("units");    // v19: after an import, show the units it brought in
         showToast(parts.join(", "), () => {
-          models = before;
+          undo();
           render();
           renderSettings();
         }, "Undo", UNDO_SECONDS);
@@ -18874,6 +19173,8 @@
       draftSyncTimer = setTimeout(syncDrafts, DRAFT_SYNC_MS);
     }
     for (const type of ["input", "change", "click", "keyup"]) document.addEventListener(type, queueDraftSync, true);
+    window.addEventListener("pagehide", flushFieldSave);   // DS1
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") flushFieldSave(); });
     window.addEventListener("pagehide", syncDrafts);
     document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") syncDrafts(); });
     setInterval(syncDrafts, DRAFT_SAFETY_MS);
@@ -19486,6 +19787,7 @@
     if (Object.prototype.hasOwnProperty.call(views, TAB_ALIASES[linkedTab] || linkedTab)) showTab(linkedTab);
     else { showTab(settings.tab); enterLaunch(); startLoadingRing(); }
     launchMotionReady = true;
+    if (unreadableParts.length) showSaveProblem();   // DS1: the start-up render() couldn't save; the banner says why
     if (upgradedStages) showToast("Stages updated: Parade ready added as the final stage", null, null, 8);
     else if (settingsUnreadable) showToast("Your settings couldn't be read, so they were reset. Your units kept their stages, and a copy of the old settings was kept.", null, null, 10);
 
@@ -19510,13 +19812,18 @@
       otherWindowTimer = setTimeout(loadFromOtherWindow, 150);
     });
     function loadFromOtherWindow() {
+      // DS1: saving paused because saved data couldn't be read? If that saved text is still the same, there's nothing new.
+      // If another window has saved since (say it pressed Start again), read everything again: the pause ends if it can
+      // be read now, and load() / loadRecipes() below list any part that still can't.
+      const wasPaused = unreadableParts.length > 0;
+      if (wasPaused && !unreadableChanged(unreadableParts)) return;
       let fresh = null;
       try { fresh = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "null"); } catch (ignored) {}
       const unitsText = (() => { try { return localStorage.getItem(STORAGE_KEY); } catch (e) { return null; } })();
       const recipesText = (() => { try { return localStorage.getItem(RECIPES_KEY); } catch (e) { return null; } })();
       // Nothing that matters changed (e.g. the other window only switched tabs)? Do nothing.
       const sameSettings = !fresh || withoutViewSettings(fresh) === withoutViewSettings(settings);
-      if (sameSettings && unitsText === JSON.stringify(models) && recipesText === JSON.stringify(book)) return;
+      if (!wasPaused && sameSettings && unitsText === JSON.stringify(models) && recipesText === JSON.stringify(book)) return;
 
       // v18.3: the other window is a NEWER version that saved newer data: stop saving here.
       if (fresh && Number(fresh.dataVersion) > DATA_VERSION) {
@@ -19533,6 +19840,7 @@
         fixDoneFrom();
         applyPalette(settings.palette);
       }
+      if (wasPaused) unreadableParts = [];
       if (unitsText) models = load();
       book = loadRecipes();
       // Drop anything open that no longer exists.
@@ -19548,8 +19856,21 @@
         holdSaves = false;
       }
       loadThumbs().catch(() => {});   // new photos added in the other window
+      if (unreadableParts.length) { showSaveProblem(); return; }   // DS1
+      if (wasPaused) { usualSaveBanner(); hideSaveProblem(); }      // DS1: readable again, so saving carries on
       showToast("Updated with changes from another window", null, null, 4);
     }
+
+    // DS1: a window coming back (from the browser's back-forward cache, a frozen tab, or the background) may have missed the
+    // other window's saves, and its next save would write its older units and recipes over them. So it checks the saved data
+    // first, the same way as when the other window saves. Skipped while this window has changes it couldn't save, so those
+    // stay on screen (unless saving is paused for unreadable data: then it checks whether another window has sorted it out).
+    function catchUpWithStorage() {
+      if (dataTooNew || (saveFailing && !unreadableParts.length)) return;
+      loadFromOtherWindow();
+    }
+    window.addEventListener("pageshow", (event) => { if (event.persisted) catchUpWithStorage(); });
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") catchUpWithStorage(); });
 
     // ================= v19: THE PHONE'S BACK BUTTON =================
     // Before v19, the phone's Back button (or a swipe back) left the app from anywhere,
