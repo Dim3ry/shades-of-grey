@@ -21415,12 +21415,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=128".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=129".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v128";
+    const APP_VERSION = "v129";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -21882,6 +21882,14 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v129", date: "3 Nov 2026", changes: [
+        "Mentor has new looks. Futuristic is a machined hub with an iris, Magical a cluster of crystals inside a slowly turning ring of stones, and Grounded a pool of paint. Tap Mentor in its window for a little surprise.",
+        "Opening the app shows the icon ring filling as it loads, then it becomes the start circle. The start circle and the bar change colour smoothly, the bar never disappears on the way down, and the chosen section's colour slides across.",
+        "Mentor's window opens more slowly out of its button, and its starter questions sit inside one Suggestions button.",
+        "Each look has its own fonts. Parchment Codex has more ink blots, Grim Forge has bolts, cogs and rust, and Paint Bench has brush strokes, smudges and a few stickers.",
+        "Guides has 99 new guides, recipes and basing tips, and many older ones are corrected. Back from a guide returns to the list you came from, in the same place.",
+        "On a wide screen the start circle shows on its own, and the back arrow sits beside the bar. Hints and Help use made-up names instead of real army and paint names.",
+      ]},
       { version: "v128", date: "3 Nov 2026", changes: [
         "Grim Forge is now blackened steel with brushed grain, soot, brass rivets and a forge orange, and bare steel in light mode.",
         "Paint Bench is a calmer hobby desk: lighter, warmer colours, a quieter cutting mat and paler masking tape.",
