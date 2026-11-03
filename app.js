@@ -2764,7 +2764,7 @@
       card.className = "card";
       const title = document.createElement("h2");
       title.textContent = "Shopping list";
-      title.style.fontSize = "18px";
+      title.style.fontSize = "1.125rem";   // UX1b: 18 px at normal text size
       // v81: from 900 px the shop bar and Copy as text sit in a side column and the brand lists in the main one (shop-split, layout-split).
       // Written in the phone order, so under 900 px nothing moves. head = heading + More info.
       const head = document.createElement("div");
@@ -2977,7 +2977,7 @@
       if (!ids.length) return;
       const title = document.createElement("h2");
       title.textContent = "Check your import";
-      title.style.fontSize = "18px";
+      title.style.fontSize = "1.125rem";   // UX1b: 18 px at normal text size
       const hint = document.createElement("p");
       hint.className = "hint";
       hint.style.margin = "0 0 10px";
@@ -9036,7 +9036,7 @@
       top.className = "card";
       const title = document.createElement("h2");
       title.textContent = recipe.name;
-      title.style.fontSize = "20px";
+      title.style.fontSize = "1.25rem";   // UX1b: 20 px at normal text size
       // RS1: one small Edit button by the title rolls out Edit steps and paints, Duplicate, Copy as text and Delete recipe.
       const titleRow = document.createElement("div");
       titleRow.className = "recipe-title-row";

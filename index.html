@@ -157,7 +157,7 @@
       --radius-card: 12px; --radius-control: 8px; --radius-box: 10px; --radius-small: 6px; --radius-bar: 2px;
       --border-width: 1px; --border-style: solid;
       --heading-weight: 700; --heading-transform: none; --heading-tracking: normal;
-      --heading-size: 16px; --wordmark-size: 24px; --body-size: 16px; --card-pad: 16px;
+      --heading-size: 1rem; --wordmark-size: 1.5rem; --body-size: 1rem; --card-pad: 16px;
       --card-shadow: none; --texture: none; --texture-size: auto; --frame: 1px solid var(--border); --rule: 0 solid transparent; --rule-gap: 0px;
     }
     /* Classic's own extra colours (the pre-theme ones; TH1 sets Classic's toast and basket colours in its own block). */
@@ -169,6 +169,12 @@
     :root[data-appearance="light"] .viewer, :root[data-appearance="light"] #scan-camera { color-scheme: dark; }
 
     * { box-sizing: border-box; }  /* makes widths include padding: far easier to reason about */
+
+    /* UX1b: text sizes are in rem, so they follow the text size set on the phone or in the browser. 1rem is the browser's normal
+       text size, 16 px unless it is changed, so at the normal size every rem below is the px size it used to be:
+       0.6875rem = 11px, 0.75rem = 12px, 0.8125rem = 13px, 0.875rem = 14px, 0.9375rem = 15px, 1rem = 16px, 1.125rem = 18px, 1.25rem = 20px.
+       (px = rem x 16.) Spacing, borders and icons stay in px. The menu bar, the start circle and the basket pill keep px text too,
+       because each is a fixed drawn shape that bigger text would spill out of. */
 
     body {
       margin: 0;
@@ -201,7 +207,7 @@
       box-shadow: var(--card-shadow);
     }
 
-    .hint { color: var(--muted); font-size: 13px; margin: 0 0 10px; line-height: 1.4; }
+    .hint { color: var(--muted); font-size: 0.8125rem; margin: 0 0 10px; line-height: 1.4; }
     .empty { color: var(--muted); text-align: center; padding: 24px 0; }
 
     button { font: inherit; border-radius: var(--radius-control); border: none; cursor: pointer; }
@@ -209,7 +215,7 @@
 
     input, select, textarea {
       font: inherit;
-      font-size: 16px;        /* 16px or bigger stops phones zooming in when you type */
+      font-size: 1rem;        /* 16px or bigger stops phones zooming in when you type */
       background: var(--background);
       color: var(--text);
       border: var(--border-width) var(--border-style) var(--border);
@@ -232,15 +238,15 @@
       color: var(--text);
       border: var(--border-width) var(--border-style) var(--border);
       padding: 11px 14px;
-      font-size: 14px;
+      font-size: 0.875rem;
       min-height: 44px;       /* v53: every base button is a full 44 px target (was 41) */
     }
     .plain-button:hover { border-color: var(--accent); }
     .primary-button { background: var(--accent-fill, var(--accent)); color: var(--on-accent); font-weight: 600; padding: 12px; min-height: 44px; }
-    .danger-button { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 11px 14px; font-size: 14px; min-height: 44px; }
+    .danger-button { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 11px 14px; font-size: 0.875rem; min-height: 44px; }
     /* RS2: remove buttons in Recipe preferences keep a 44 px tap area */
     #recipe-prefs-card .chip { min-height: 44px; }
-    .link-button { background: transparent; color: var(--accent); padding: 10px 0; font-size: 14px; min-height: 44px; }   /* v53: was 37 */
+    .link-button { background: transparent; color: var(--accent); padding: 10px 0; font-size: 0.875rem; min-height: 44px; }   /* v53: was 37 */
     .button-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     /* v22: the backup buttons are the ones people most need to hit, so they are full 44 px targets. */
     #backup-card .plain-button { min-height: 44px; }
@@ -430,8 +436,8 @@
 
     /* ----- Dashboard ----- */
     .headline { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-    .big { font-size: 40px; font-weight: 700; color: var(--done-colour); }
-    .of { color: var(--muted); font-size: 14px; }
+    .big { font-size: 2.5rem; font-weight: 700; color: var(--done-colour); }
+    .of { color: var(--muted); font-size: 0.875rem; }
 
     .groups { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
     .group-button {
@@ -440,9 +446,9 @@
       color: var(--muted);
       padding: 12px;
       text-align: left;
-      font-size: 13px;
+      font-size: 0.8125rem;
     }
-    .group-button strong { display: block; font-size: 22px; color: var(--text); }
+    .group-button strong { display: block; font-size: 1.375rem; color: var(--text); }
 
     .chart-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
     .chart-row svg { flex-shrink: 0; margin: 0 auto; }
@@ -455,7 +461,7 @@
       background: none;
       color: var(--text);
       padding: 7px 4px;
-      font-size: 14px;
+      font-size: 0.875rem;
       text-align: left;
       min-height: 44px;   /* v53: the stage bars on the Dashboard were 31 px */
     }
@@ -464,7 +470,7 @@
 
     /* Progress over time. The two line colours are checked for colour-blind safety
        against the card colour; each line also has a legend and an end label. */
-    .legend-row { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+    .legend-row { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.8125rem; color: var(--muted); margin-bottom: 8px; }
     .legend-key { display: inline-flex; align-items: center; gap: 6px; }
     .legend-key i { display: inline-block; width: 16px; height: 3px; border-radius: var(--radius-bar); background: var(--key); }
     .history-wrap { position: relative; }
@@ -474,7 +480,7 @@
     .chart-tip {
       position: absolute; top: 4px; pointer-events: none; z-index: 2;
       background: var(--background); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-control);
-      padding: 8px 10px; font-size: 13px; line-height: 1.5; white-space: nowrap;
+      padding: 8px 10px; font-size: 0.8125rem; line-height: 1.5; white-space: nowrap;
       box-shadow: 0 4px 14px var(--shadow);
     }
     .chart-tip strong { display: block; margin-bottom: 2px; }
@@ -482,7 +488,7 @@
     .chart-tip b { font-variant-numeric: tabular-nums; margin-left: auto; padding-left: 12px; }
     .history-table { max-height: 240px; overflow-y: auto; margin-top: 8px; }
     #history-table-box > summary { display: flex; align-items: center; min-height: 44px; }   /* v82: 44 px on every screen size (was wide screens only) */
-    .history-table table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+    .history-table table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
     .history-table th, .history-table td { padding: 6px 4px; border-bottom: 1px solid var(--border); text-align: right; }
     .history-table th:first-child, .history-table td:first-child { text-align: left; }
     .history-table th { color: var(--muted); font-weight: 500; position: sticky; top: 0; background: var(--card); }
@@ -502,8 +508,8 @@
     .palette-bar[data-hue="neutral"] { --bar: #8b95a5; }
     .palette-bar.is-gap { outline: 2px solid var(--text); outline-offset: -2px; }
     .palette-bar.is-empty { background: transparent; outline: 2px dashed var(--text); }
-    .palette-gap { font-size: 13px; color: var(--text); line-height: 1.2; }
-    .palette-lines { display: flex; flex-direction: column; gap: 4px; font-size: 15px; }
+    .palette-gap { font-size: 0.8125rem; color: var(--text); line-height: 1.2; }
+    .palette-lines { display: flex; flex-direction: column; gap: 4px; font-size: 0.9375rem; }
     .palette-lines span { overflow-wrap: anywhere; }
     .ach-circles { display: flex; gap: 14px; }
     .ach-circles i { width: 44px; height: 44px; border-radius: 50%; border: 2px dashed var(--muted); box-sizing: border-box; }
@@ -516,9 +522,9 @@
       display: grid;
       justify-items: center;
       gap: 6px;
-      font-size: 14px;
+      font-size: 0.875rem;
     }
-    .faction-button small { color: var(--muted); font-size: 12px; }
+    .faction-button small { color: var(--muted); font-size: 0.75rem; }
 
     /* ----- Faction colours (v8) -----
        --faction-colour is set by JavaScript on anything belonging to a coloured faction.
@@ -549,7 +555,7 @@
     .faction-colour-row input[type=color].unset { opacity: 0.45; outline: 2px dashed var(--muted); outline-offset: -4px; }
     .faction-colour-text { display: grid; min-width: 0; }
     .faction-colour-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .faction-colour-text small { color: var(--muted); font-size: 12px; }
+    .faction-colour-text small { color: var(--muted); font-size: 0.75rem; }
     /* v20.1: Custom stage colours. One row per stage, laid out like the faction colours. */
     .custom-colour-list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
     .custom-colour-row {
@@ -560,10 +566,10 @@
     .custom-colour-row input[type=color] { width: 44px; height: 44px; padding: 3px; cursor: pointer; }
     .custom-colour-text { display: grid; min-width: 0; }
     .custom-colour-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--stage-colour, var(--text)); }
-    .custom-colour-text small { color: var(--muted); font-size: 12px; }
+    .custom-colour-text small { color: var(--muted); font-size: 0.75rem; }
     .custom-colour-text small.faint { color: var(--caution); font-weight: 600; }
     .faction-colour-buttons { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; }
-    .faction-colour-buttons .plain-button { padding: 8px 12px; min-height: 44px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+    .faction-colour-buttons .plain-button { padding: 8px 12px; min-height: 44px; font-size: 0.8125rem; display: inline-flex; align-items: center; gap: 6px; }
     .faction-colour-buttons .swatch { width: 12px; height: 12px; }
     @media (min-width: 700px) {
       .faction-colour-row { grid-template-columns: 44px 1fr auto; }
@@ -607,7 +613,7 @@
     .select-bar-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .select-bar-top .hint { margin: 0; flex: 1; min-width: 0; }
     .select-bar-top .link-button { min-height: 44px; }
-    .select-bar .stage-pick { font-size: 16px; font-weight: 600; }
+    .select-bar .stage-pick { font-size: 1rem; font-weight: 600; }
     .select-bar .stage-pick:disabled { opacity: 0.55; }
     .filter-summary { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 0 2px 10px; }
     .filter-summary .hint { margin: 0; }
@@ -658,7 +664,7 @@
       border: var(--border-width) var(--border-style) var(--border);
       border-left: 4px solid var(--chip-colour, var(--border));
       padding: 11px 14px;
-      font-size: 13px;
+      font-size: 0.8125rem;
       min-height: 44px;       /* v53: was 40 */
       min-width: 44px;        /* v53: the short "All" chip was 36 wide */
       border-radius: 999px;   /* pill shape */
@@ -695,9 +701,9 @@
       cursor: pointer;
       user-select: none;
     }
-    .name { font-size: 16px; font-weight: 600; }
-    .details { margin-top: 2px; font-size: 13px; color: var(--muted); }
-    .stage { margin-top: 6px; font-size: 13px; font-weight: 600; color: var(--stage-colour); }
+    .name { font-size: 1rem; font-weight: 600; }
+    .details { margin-top: 2px; font-size: 0.8125rem; color: var(--muted); }
+    .stage { margin-top: 6px; font-size: 0.8125rem; font-weight: 600; color: var(--stage-colour); }
     .pips { display: flex; gap: 3px; margin-top: 6px; }
     .pip { height: 4px; flex: 1; border-radius: var(--radius-bar); background: var(--border); }
     .pip.filled { background: var(--stage-colour); }
@@ -710,13 +716,13 @@
     .each-row { display: flex; align-items: center; gap: 8px; min-height: 60px; padding: 6px 8px;
                 border: var(--border-width) var(--border-style) var(--border); border-left: 4px solid var(--stage-colour); border-radius: var(--radius-control); }
     .each-row.simple { min-height: 56px; padding-top: 4px; padding-bottom: 4px; }
-    .each-name { flex: 1 1 0; min-width: 0; display: block; font-size: 14px; color: var(--text); }
+    .each-name { flex: 1 1 0; min-width: 0; display: block; font-size: 0.875rem; color: var(--text); }
     .each-label { display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     /* v21.8: "Today", "Yesterday" or "Since 7 Oct" under the model's name. */
-    .each-since { display: block; font-size: 12px; color: var(--muted); line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .each-since { display: block; font-size: 0.75rem; color: var(--muted); line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .each-step { display: flex; align-items: center; gap: 4px; flex: none; }
     .each-mid { width: 88px; flex: none; display: grid; gap: 4px; justify-items: center; text-align: center; }
-    .each-stage-name { font-size: 13px; font-weight: 700; color: var(--stage-colour); overflow-wrap: anywhere; line-height: 1.15; }
+    .each-stage-name { font-size: 0.8125rem; font-weight: 700; color: var(--stage-colour); overflow-wrap: anywhere; line-height: 1.15; }
     .each-mid .pips { margin-top: 0; width: 100%; }
     .each-back, .each-up { width: 44px; height: 44px; flex: none; padding: 0; display: inline-flex; align-items: center; justify-content: center;
                            border-radius: var(--radius-control); }
@@ -728,7 +734,7 @@
     .each-group-head { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 48px; padding: 0 8px; text-align: left;
                        background: transparent; color: var(--text); border: 0; border-top: var(--border-width) var(--border-style) var(--border); border-radius: 0; }
     .each-group-stage { font-weight: 700; color: var(--stage-colour); }
-    .each-group-count { flex: 1; font-size: 13px; color: var(--muted); }
+    .each-group-count { flex: 1; font-size: 0.8125rem; color: var(--muted); }
     /* M2: the Detailed / Simple switch above the unit list. */
     .rows-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
     .rows-switch .plain-button { min-height: 44px; padding: 8px 12px; }
@@ -739,7 +745,7 @@
     /* v21: "Jump to stage" menus (unit details, each model, the Add form). The stage's
        colour shows as a stripe on the left, like the stage chips. */
     .stage-pick { min-height: 44px; width: 100%; border-left: 4px solid var(--stage-colour, var(--border)); }
-    .stage-pick-label { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
+    .stage-pick-label { display: grid; gap: 6px; font-size: 0.8125rem; color: var(--muted); }
 
     /* v21: the "These are examples" card. */
     .examples-card p { margin: 0 0 10px; }
@@ -768,7 +774,7 @@
     .unit-head .details-toggle { flex-shrink: 0; min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; gap: 2px; border: 0; background: transparent; color: var(--accent); font-weight: 600; padding: 0 4px 0 8px; }
     .stepper { flex: 1 1 100%; display: flex; align-items: center; gap: 12px; }
     .step-mid { flex: 1; min-width: 0; text-align: center; overflow-wrap: anywhere; }
-    .step-mid .stage { margin-top: 0; font-size: 15px; }
+    .step-mid .stage { margin-top: 0; font-size: 0.9375rem; }
     .step-back, .up-button {
       width: 52px; height: 52px; flex-shrink: 0; padding: 0;
       display: inline-flex; align-items: center; justify-content: center;
@@ -781,7 +787,7 @@
     .paints-row { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 4px 10px; text-align: left;
       background: transparent; color: var(--text); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-control); }
     .paints-preview { display: flex; gap: 4px; }
-    .paints-label { flex: 1; font-size: 15px; }
+    .paints-label { flex: 1; font-size: 0.9375rem; }
     .paints-grid { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
     .paints-grid .swatch { width: 28px; height: 28px; }
 
@@ -794,18 +800,18 @@
       display: grid;
       gap: 12px;
     }
-    .panel label { font-size: 13px; color: var(--muted); display: grid; gap: 6px; }
+    .panel label { font-size: 0.8125rem; color: var(--muted); display: grid; gap: 6px; }
     /* v61: Track models separately / Track as one batch, under the stage. */
     .panel .track-each { justify-self: start; }
     .panel .check-label {
       display: flex; align-items: center; gap: 10px;
-      align-self: end; min-height: 46px; color: var(--text); font-size: 15px;
+      align-self: end; min-height: 46px; color: var(--text); font-size: 0.9375rem;
     }
     .check-label input { width: 22px; height: 22px; accent-color: var(--accent); }
     /* v27: the Counting visits tick box (outside the unit panel, so it needs its own row style). */
-    #counting-card .count-label { display: flex; align-items: center; gap: 10px; min-height: 44px; color: var(--text); font-size: 15px; }
+    #counting-card .count-label { display: flex; align-items: center; gap: 10px; min-height: 44px; color: var(--text); font-size: 0.9375rem; }
     /* v39: the Shop links tick box, the same look as Counting visits */
-    #shoplinks-card .shoplinks-label { display: flex; align-items: center; gap: 10px; min-height: 44px; color: var(--text); font-size: 15px; }
+    #shoplinks-card .shoplinks-label { display: flex; align-items: center; gap: 10px; min-height: 44px; color: var(--text); font-size: 0.9375rem; }
     .photo { width: 100%; max-height: 320px; object-fit: cover; border-radius: var(--radius-control); }
     .panel-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
     .panel-buttons .danger-button { margin-left: auto; }
@@ -815,13 +821,13 @@
     .edit-details summary {
       display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px;
       min-height: 44px; box-sizing: border-box; padding: 10px 0;
-      color: var(--accent); font-size: 15px; font-weight: 600; cursor: pointer;
+      color: var(--accent); font-size: 0.9375rem; font-weight: 600; cursor: pointer;
     }
-    .edit-details-hint { font-size: 12px; font-weight: 400; color: var(--muted); }
+    .edit-details-hint { font-size: 0.75rem; font-weight: 400; color: var(--muted); }
     .edit-details-body { display: grid; gap: 12px; padding: 4px 0 6px; }
 
     /* ----- Photo gallery / progress timeline (v11) ----- */
-    .gallery { display: grid; gap: 8px; font-size: 13px; color: var(--muted); }
+    .gallery { display: grid; gap: 8px; font-size: 0.8125rem; color: var(--muted); }
     .gallery .hint { margin: 0; }
     .gallery select { flex: 1 1 180px; }
     /* The strip scrolls sideways; each photo "snaps" into place as you swipe. */
@@ -845,15 +851,15 @@
       .photo-tile img { position: absolute; inset: 0; }
     }
     .cover-badge {
-      position: absolute; left: 4px; top: 4px; font-size: 11px; font-weight: 600;
+      position: absolute; left: 4px; top: 4px; font-size: 0.6875rem; font-weight: 600;
       background: var(--badge-bg); color: var(--accent); border-radius: var(--radius-small); padding: 2px 6px;
     }
     .photo-caption { display: grid; grid-template-columns: auto 1fr; column-gap: 6px; align-items: center; line-height: 1.3; }
     .photo-caption .dot, .viewer-caption .dot {
       width: 10px; height: 10px; border-radius: 50%; background: var(--stage-colour); display: inline-block;
     }
-    .photo-stage { color: var(--text); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .photo-caption small { grid-column: 2; font-size: 11px; }
+    .photo-stage { color: var(--text); font-size: 0.75rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .photo-caption small { grid-column: 2; font-size: 0.6875rem; }
 
     /* ----- The full-screen photo viewer ----- */
     .viewer {
@@ -864,9 +870,9 @@
       overflow-y: auto;
     }
     .viewer.hidden { display: none; }
-    .viewer-top { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 14px; margin-bottom: 8px; }
+    .viewer-top { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 0.875rem; margin-bottom: 8px; }
     .viewer-close {
-      margin-left: auto; width: 44px; height: 44px; font-size: 20px;
+      margin-left: auto; width: 44px; height: 44px; font-size: 1.25rem;
       background: var(--card); color: var(--text); border: var(--border-width) var(--border-style) var(--border);
     }
     .viewer-body { width: 100%; max-width: 960px; margin: 0 auto; display: grid; gap: 12px; }
@@ -876,14 +882,14 @@
     @media (min-width: 700px) { .viewer-stage { height: min(62vh, 640px); } }
     .viewer-stage img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: var(--radius-control); user-select: none; }
     .viewer-arrow {
-      position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 64px; font-size: 26px;
+      position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 64px; font-size: 1.625rem;
       background: var(--arrow-bg); color: var(--text); border: var(--border-width) var(--border-style) var(--border);
     }
     .viewer-arrow.prev { left: 0; }
     .viewer-arrow.next { right: 0; }
-    .viewer-caption { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: 15px; flex-wrap: wrap; }
+    .viewer-caption { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: 0.9375rem; flex-wrap: wrap; }
     .viewer-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .viewer-form label { font-size: 13px; color: var(--muted); display: grid; gap: 6px; }
+    .viewer-form label { font-size: 0.8125rem; color: var(--muted); display: grid; gap: 6px; }
     .viewer-form .wide { grid-column: 1 / -1; }
     /* Before / after: side by side on wide screens, one above the other on phones. */
     .compare-pair { display: grid; grid-template-columns: 1fr; gap: 12px; }
@@ -893,12 +899,12 @@
                            background: var(--card); border-radius: var(--radius-control); overflow: hidden; }
     @media (min-width: 640px) { .compare-side .frame { height: min(60vh, 560px); } }
     .compare-side img { max-width: 100%; max-height: 100%; object-fit: contain; }
-    .compare-label { font-size: 13px; color: var(--muted); }
+    .compare-label { font-size: 0.8125rem; color: var(--muted); }
     /* Slider view: the "after" picture sits on top of "before", cut off at the slider. */
     .slider-frame { position: relative; height: min(62vh, 640px); background: var(--card); border-radius: var(--radius-control); overflow: hidden; }
     .slider-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; user-select: none; }
     .slider-line { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); pointer-events: none; }
-    .slider-tag { position: absolute; top: 8px; font-size: 12px; padding: 2px 8px; border-radius: var(--radius-small);
+    .slider-tag { position: absolute; top: 8px; font-size: 0.75rem; padding: 2px 8px; border-radius: var(--radius-small);
                   background: var(--badge-bg); color: var(--accent); }
     .viewer input[type=range] { width: 100%; accent-color: var(--accent); }
     .switch-row { display: flex; gap: 8px; }
@@ -906,7 +912,7 @@
 
     /* ----- Settings ----- */
     details summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
-    details ul { padding-left: 20px; margin: 10px 0 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
+    details ul { padding-left: 20px; margin: 10px 0 0; color: var(--muted); font-size: 0.875rem; line-height: 1.5; }
     details li { margin-bottom: 6px; }
 
     ol.stage-list { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 8px; }
@@ -916,12 +922,12 @@
     .icon-button {
       width: 44px; height: 44px; flex-shrink: 0;
       background: transparent; color: var(--muted); border: var(--border-width) var(--border-style) var(--border);
-      font-size: 15px;
+      font-size: 0.9375rem;
     }
     @media (max-width: 400px) { .stage-row { gap: 4px; } }
     .icon-button.remove:hover { color: var(--danger); border-color: var(--danger); }
     .done-divider {
-      font-size: 12px; color: var(--done-colour); text-align: center;
+      font-size: 0.75rem; color: var(--done-colour); text-align: center;
       border-top: 1px dashed var(--done-colour); padding-top: 4px; margin-top: 2px;
     }
     .settings-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
@@ -940,7 +946,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      font-size: 14px;
+      font-size: 0.875rem;
       z-index: 20;
     }
     /* v21.6: notices can be long; a long word or file name wraps instead of pushing the page sideways. */
@@ -977,12 +983,12 @@
       box-shadow: 0 8px 28px var(--shadow);
       display: grid; gap: 14px;
     }
-    .dialog-message { margin: 0; font-size: 16px; line-height: 1.45; overflow-wrap: anywhere; white-space: pre-line; }
+    .dialog-message { margin: 0; font-size: 1rem; line-height: 1.45; overflow-wrap: anywhere; white-space: pre-line; }
     .dialog input, .dialog textarea { width: 100%; box-sizing: border-box; }
     .dialog textarea { min-height: 120px; resize: none; }
     .dialog-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .dialog-buttons.single { grid-template-columns: 1fr; }
-    .dialog-buttons button { min-height: 44px; padding: 10px 12px; font-size: 16px; overflow-wrap: anywhere; }
+    .dialog-buttons button { min-height: 44px; padding: 10px 12px; font-size: 1rem; overflow-wrap: anywhere; }
 
     /* ----- v65: the Similar paints pop-up (chunk 3.5a) -----
        The same box as the question box above, so it follows the theme and Light/Dark. Only the paint swatches have fixed colours.
@@ -992,16 +998,16 @@
     .similar { max-width: 480px; }
     .similar-head { display: flex; align-items: flex-start; gap: 10px; }
     .similar-heading { flex: 1; min-width: 0; }
-    .similar-label { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-    .similar-title { margin: 4px 0 0; font-size: 18px; line-height: 1.3; display: flex; align-items: center; gap: 8px; overflow-wrap: anywhere; }
+    .similar-label { margin: 0; font-size: 0.75rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    .similar-title { margin: 4px 0 0; font-size: 1.125rem; line-height: 1.3; display: flex; align-items: center; gap: 8px; overflow-wrap: anywhere; }
     .similar-shift { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
     .similar-shift button {
-      min-height: 44px; padding: 10px 6px; font-size: 15px;
+      min-height: 44px; padding: 10px 6px; font-size: 0.9375rem;
       background: var(--background); color: var(--text); border: var(--border-width) var(--border-style) var(--border);
     }
     .similar-shift button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); font-weight: 700; }
     .similar-card { display: grid; gap: 10px; min-width: 0; }
-    .similar-card h3 { margin: 0; font-size: 15px; }
+    .similar-card h3 { margin: 0; font-size: 0.9375rem; }
     .similar-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
     .similar-row {
       display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 10px; min-width: 0;
@@ -1009,17 +1015,17 @@
     }
     .similar-text { display: grid; gap: 2px; min-width: 0; }
     .similar-name { overflow-wrap: anywhere; line-height: 1.3; }
-    .similar-name small { display: block; color: var(--muted); font-size: 12px; }
-    .similar-fit { font-size: 13px; color: var(--muted); }
+    .similar-name small { display: block; color: var(--muted); font-size: 0.75rem; }
+    .similar-fit { font-size: 0.8125rem; color: var(--muted); }
     .similar-add { grid-column: 2; justify-self: start; min-height: 44px; max-width: 100%; }
     .similar-add[aria-disabled="true"] { opacity: .75; cursor: default; }
-    .similar-own { grid-column: 2; font-size: 13px; color: var(--muted); }
+    .similar-own { grid-column: 2; font-size: 0.8125rem; color: var(--muted); }
     /* v66 (chunk 3.5b-1): Best match and Your closest. Tabs below 700 px, side by side from 700 px (the script uses the same width). */
     .similar-cards { display: grid; gap: 14px; min-width: 0; }
     .similar-card.is-off { display: none; }
     .similar-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .similar-tabs button {
-      min-height: 44px; padding: 10px 6px; font-size: 15px;
+      min-height: 44px; padding: 10px 6px; font-size: 0.9375rem;
       background: var(--background); color: var(--text); border: var(--border-width) var(--border-style) var(--border);
     }
     .similar-tabs button[aria-selected="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); font-weight: 700; }
@@ -1027,7 +1033,7 @@
       .similar.two { max-width: 760px; }
       .similar.two .similar-cards { grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
     }
-    .similar-none, .similar-note { margin: 0; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+    .similar-none, .similar-note { margin: 0; font-size: 0.8125rem; color: var(--muted); overflow-wrap: anywhere; }
     /* ----- Mix2: Try mixing, in Your closest ----- */
     .mix-blends { display: grid; gap: 10px; min-width: 0; }
     .mix-blends:empty { display: none; }
@@ -1038,7 +1044,7 @@
     .mix-title { margin: 0; line-height: 1.3; overflow-wrap: anywhere; }
     .mix-swatches { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .mix-blend .mix-swatch { width: 28px; height: 28px; }
-    .mix-sign { color: var(--muted); font-size: 14px; }
+    .mix-sign { color: var(--muted); font-size: 0.875rem; }
     .mix-add { justify-self: start; min-height: 44px; max-width: 100%; }
 
     /* ----- v14: banners at the top of the screen ----- */
@@ -1049,49 +1055,49 @@
       background: linear-gradient(var(--bad-wash), var(--bad-wash)), var(--card);   /* v53: theme variables (was fixed reds) */
       color: var(--text); border-bottom: 2px solid var(--danger);
       padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
-      display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 14px;
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 0.875rem;
     }
     .save-banner p { margin: 0; flex: 1 1 260px; }
-    .save-banner button { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 8px 12px; min-height: 44px; font-size: 14px; }
+    .save-banner button { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 8px 12px; min-height: 44px; font-size: 0.875rem; }
     /* Blue notice card (window updated / iPhone warning). */
     .notice-card { border-color: var(--accent); }
     .notice-card p { margin: 0 0 10px; }
     .recover-list { list-style: none; padding: 0; margin: 8px 0 12px; display: grid; gap: 8px; }
     .recover-list li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .recover-list span { flex: 1 1 200px; color: var(--muted); font-size: 14px; }
+    .recover-list span { flex: 1 1 200px; color: var(--muted); font-size: 0.875rem; }
 
     /* The small version number beside the title, shown on every tab. */
-    .version-tag { font-size: 12px; font-weight: 500; color: var(--muted); vertical-align: middle; margin-left: 6px; }
+    .version-tag { font-size: 0.75rem; font-weight: 500; color: var(--muted); vertical-align: middle; margin-left: 6px; }
 
     /* ----- Import review ----- */
     .review { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); display: grid; gap: 12px; }
     .mode-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .mode-button {
       background: var(--background); color: var(--text); border: var(--border-width) var(--border-style) var(--border);
-      padding: 12px; text-align: left; display: grid; gap: 4px; font-size: 14px;
+      padding: 12px; text-align: left; display: grid; gap: 4px; font-size: 0.875rem;
     }
-    .mode-button small { color: var(--muted); font-size: 12px; }
+    .mode-button small { color: var(--muted); font-size: 0.75rem; }
     .mode-button[aria-checked="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
     .mode-button[data-mode="replace"][aria-checked="true"] { border-color: var(--danger); box-shadow: inset 0 0 0 1px var(--danger); }
     .review-tools { display: flex; gap: 16px; }
     .review-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
     .review-row {
       display: grid; gap: 6px; padding: 8px 10px; border-radius: var(--radius-control);
-      background: var(--background); border: var(--border-width) var(--border-style) var(--border); font-size: 14px;
+      background: var(--background); border: var(--border-width) var(--border-style) var(--border); font-size: 0.875rem;
     }
     .review-row.clash { border-color: var(--caution); }
     .review-row label { display: flex; gap: 10px; align-items: center; cursor: pointer; }
     .review-row input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--accent); flex-shrink: 0; }
-    .review-row .meta { color: var(--muted); font-size: 12px; }
-    .review-row .tag { font-size: 11px; padding: 2px 6px; border-radius: 999px; border: var(--border-width) var(--border-style) var(--border); color: var(--muted); margin-left: auto; white-space: nowrap; }
+    .review-row .meta { color: var(--muted); font-size: 0.75rem; }
+    .review-row .tag { font-size: 0.6875rem; padding: 2px 6px; border-radius: 999px; border: var(--border-width) var(--border-style) var(--border); color: var(--muted); margin-left: auto; white-space: nowrap; }
     .review-row.clash .tag { color: var(--caution); border-color: var(--caution); }
-    .review-row select { font-size: 14px; padding: 7px; }
+    .review-row select { font-size: 0.875rem; padding: 7px; }
     .review-row.off { opacity: 0.5; }
     /* v60: each row's own model count and stage. */
     .review-row-edit { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center; }
-    .review-count { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; }
-    .review-count input { width: 72px; min-height: 44px; font-size: 16px; padding: 6px 8px; }
-    .review-row .stage-pick { font-size: 16px; padding: 7px; min-width: 0; }
+    .review-count { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 0.8125rem; }
+    .review-count input { width: 72px; min-height: 44px; font-size: 1rem; padding: 6px 8px; }
+    .review-row .stage-pick { font-size: 1rem; padding: 7px; min-width: 0; }
     .review-set-all {
       position: sticky; top: 0; z-index: 3; display: grid; gap: 8px;
       padding: 8px 0; background: var(--card); border-bottom: 1px solid var(--border);
@@ -1102,9 +1108,9 @@
     .help details { border-top: 1px solid var(--border); padding: 2px 0; }
     .help details:first-child { border-top: none; padding-top: 0; }
     .help details:last-child { padding-bottom: 0; }
-    .help summary { font-size: 16px; color: var(--accent); padding: 10px 0; min-height: 44px; box-sizing: border-box; }
+    .help summary { font-size: 1rem; color: var(--accent); padding: 10px 0; min-height: 44px; box-sizing: border-box; }
     .help details[open] { padding-bottom: 12px; }
-    .help ol, .help ul { padding-left: 20px; margin: 10px 0 0; color: var(--text); font-size: 15px; line-height: 1.55; }
+    .help ol, .help ul { padding-left: 20px; margin: 10px 0 0; color: var(--text); font-size: 0.9375rem; line-height: 1.55; }
     .help li { margin-bottom: 6px; }
     /* LG1 (wave v124): the Font licences link sits on its own line in About, so it gets a full 44 px tap height. */
     #about-fonts a { display: inline-flex; align-items: center; min-height: 44px; }
@@ -1112,9 +1118,9 @@
     /* ----- Updates tab ----- */
     .release { border-top: 1px solid var(--border); padding-top: 12px; margin-top: 12px; }
     .release:first-child { border-top: none; padding-top: 0; margin-top: 0; }
-    .release h3 { margin: 0; font-size: 15px; color: var(--accent); }
-    .release .date { color: var(--muted); font-size: 13px; margin-left: 8px; font-weight: 400; }
-    .release ul { margin: 8px 0 0; padding-left: 20px; color: var(--text); font-size: 14px; line-height: 1.5; }
+    .release h3 { margin: 0; font-size: 0.9375rem; color: var(--accent); }
+    .release .date { color: var(--muted); font-size: 0.8125rem; margin-left: 8px; font-weight: 400; }
+    .release ul { margin: 8px 0 0; padding-left: 20px; color: var(--text); font-size: 0.875rem; line-height: 1.5; }
 
     /* ----- Recipes tab ----- */
     ul.recipe-list { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 10px; }
@@ -1132,8 +1138,8 @@
     li.recipe-card > .recipe-item { border: 0; border-radius: var(--radius-card); background: transparent; padding: 14px 0 6px 14px; min-height: 44px; }
     li.recipe-card > .more-info { padding-left: 10px; }
     li.recipe-card .more-info-panel { padding: 0 0 8px 4px; }
-    li.recipe-card .meta { margin: 0; font-size: 13px; color: var(--muted); }
-    .recipe-status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+    li.recipe-card .meta { margin: 0; font-size: 0.8125rem; color: var(--muted); }
+    .recipe-status { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8125rem; color: var(--muted); }
 
     /* Painting schemes (v9). A scheme card isn't one big button (it has buttons inside),
        so it doesn't light up on hover. Its faction colour shows as a top bar and tint. */
@@ -1145,7 +1151,7 @@
     .scheme-item .meta .faction-dot { width: 10px; height: 10px; vertical-align: -1px; margin-right: 6px; }
     .scheme-item .recipe-links { margin-top: 2px; }
     /* S2: example label (plain text above the name) and the recipes nested inside a scheme card */
-    .example-label { font-size: 13px; color: var(--muted); }
+    .example-label { font-size: 0.8125rem; color: var(--muted); }
     .scheme-recipes { display: grid; gap: 6px; margin-left: 10px; padding-left: 10px; border-left: 3px solid var(--border); }
     .scheme-recipe-row {
       display: grid; gap: 2px; width: 100%; min-height: 44px; padding: 8px 12px; text-align: left; min-width: 0;
@@ -1153,24 +1159,24 @@
     }
     .scheme-recipe-row:hover { border-color: var(--accent); }
     .scheme-recipe-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
-    .scheme-recipe-name { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    .scheme-recipe-name { font-weight: 600; font-size: 0.9375rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
     .scheme-recipe-row .swatches { flex-wrap: nowrap; flex: none; }
     .scheme-recipe-row .swatch { width: 14px; height: 14px; }
-    .scheme-recipe-meta { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .scheme-recipe-meta { font-size: 0.8125rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .scheme-show-all { justify-self: start; min-height: 44px; padding: 0 12px; }
     .scheme-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
     .scheme-buttons button { padding: 10px 14px; min-height: 44px; }
     .scheme-buttons .primary-button { flex: 1; }
     .scheme-form { display: grid; gap: 10px; }
     .scheme-form h2 { margin: 0; }
-    .scheme-form label:not(.check-label) { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
+    .scheme-form label:not(.check-label) { display: grid; gap: 6px; font-size: 0.8125rem; color: var(--muted); }
     .scheme-form .hint { margin: -4px 0 0; }
     .scheme-recipe-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
     .scheme-recipe-list label { display: flex; align-items: center; gap: 10px; padding: 8px 4px; min-height: 44px; cursor: pointer; }
     .scheme-recipe-list .scheme-recipe-name { flex: 1; }
-    .scheme-recipe-list small { color: var(--muted); font-size: 12px; }
+    .scheme-recipe-list small { color: var(--muted); font-size: 0.75rem; }
     .scheme-recipe-list .swatch { width: 14px; height: 14px; }
-    .recipe-item .meta { font-size: 13px; color: var(--muted); }
+    .recipe-item .meta { font-size: 0.8125rem; color: var(--muted); }
     .swatches { display: flex; gap: 4px; flex-wrap: wrap; }
     /* A small circle of paint colour. --swatch is set by JavaScript. */
     .swatch {
@@ -1178,13 +1184,13 @@
       background: var(--swatch); border: 1px solid var(--swatch-edge);
     }
     /* v55: plain text, no fill and no round border (the part name on a recipe) */
-    .part-tag { display: block; margin-top: 2px; font-size: 13px; color: var(--muted); }
-    .recipe-notes { white-space: pre-wrap; margin: 12px 0 0; line-height: 1.5; font-size: 15px; }
+    .part-tag { display: block; margin-top: 2px; font-size: 0.8125rem; color: var(--muted); }
+    .recipe-notes { white-space: pre-wrap; margin: 12px 0 0; line-height: 1.5; font-size: 0.9375rem; }
     ol.recipe-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
     ol.recipe-steps > li { border-left: 3px solid var(--accent); padding: 2px 0 2px 12px; }
     .step-title { font-weight: 600; }
-    .step-title small { color: var(--muted); font-weight: 400; font-size: 13px; }
-    .paint-line { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-top: 6px; }
+    .step-title small { color: var(--muted); font-weight: 400; font-size: 0.8125rem; }
+    .paint-line { display: flex; align-items: center; gap: 8px; font-size: 0.875rem; margin-top: 6px; }
     .paint-line .mix { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
     .paint-line .brand { color: var(--muted); }
 
@@ -1192,7 +1198,7 @@
     .recipe-links { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
     .recipe-chip {
       background: var(--background); color: var(--text); border: var(--border-width) var(--border-style) var(--border);
-      border-radius: 999px; padding: 7px 12px; font-size: 13px; min-height: 44px;   /* v53: Open recipe / Go to chips were 36 */
+      border-radius: 999px; padding: 7px 12px; font-size: 0.8125rem; min-height: 44px;   /* v53: Open recipe / Go to chips were 36 */
       display: inline-flex; align-items: center; gap: 6px; text-align: left;
     }
     .recipe-chip:hover { border-color: var(--accent); }
@@ -1207,30 +1213,30 @@
       border-radius: 0 999px 999px 0; padding: 0 12px; min-height: 44px; min-width: 44px;   /* v53: Unlink was 36 by 36 */
     }
     .linked .unlink:hover { color: var(--danger); }
-    .panel-field { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
+    .panel-field { display: grid; gap: 6px; font-size: 0.8125rem; color: var(--muted); }
 
     /* The Recipes | Your Palette switch at the top of the Recipes tab */
     .seg {
       display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; margin-bottom: 12px;
       background: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card);
     }
-    .seg button { background: none; color: var(--muted); padding: 10px; font-size: 15px; min-height: 44px; }
+    .seg button { background: none; color: var(--muted); padding: 10px; font-size: 0.9375rem; min-height: 44px; }
     .seg button[aria-selected="true"] { background: var(--accent-fill, var(--accent)); color: var(--on-accent); font-weight: 600; }
     .more-title { margin: 0 0 8px; }   /* X2: the page heading above the Guides / Settings / Help / Updates switch */
     #more-seg { grid-template-columns: repeat(5, 1fr); gap: 2px; }   /* X2: Guides added; AM1: About added (five pages) */
-    #more-seg button { padding: 10px 2px; font-size: 14px; }
-    @media (max-width: 380px) { #more-seg button { font-size: 13px; } }   /* AM1: five pages must fit 320 px */
+    #more-seg button { padding: 10px 2px; font-size: 0.875rem; }
+    @media (max-width: 380px) { #more-seg button { font-size: 0.8125rem; } }   /* AM1: five pages must fit 320 px */
     /* v40: the Recipes tab's switch has four parts now (Recipes, Schemes, Your Palette, Shopping), so each is a little narrower */
     #recipe-seg { grid-template-columns: repeat(4, 1fr); gap: 2px; }
-    #recipe-seg button { padding: 10px 2px; font-size: 14px; }
-    @media (max-width: 420px) { #recipe-seg button { font-size: 13px; } }
+    #recipe-seg button { padding: 10px 2px; font-size: 0.875rem; }
+    @media (max-width: 420px) { #recipe-seg button { font-size: 0.8125rem; } }
     /* X1: five parts now (Colour Lab added). A long name may wrap onto a second line instead of being cut. */
     #recipe-seg { grid-template-columns: repeat(5, 1fr); }
     #recipe-seg button { line-height: 1.15; overflow-wrap: anywhere; }
-    @media (max-width: 420px) { #recipe-seg button { font-size: 12px; } }
+    @media (max-width: 420px) { #recipe-seg button { font-size: 0.75rem; } }
     /* X1: Colour Lab's second row of section buttons (same look as the switch above, wrapping so each name stays on one line) */
     #lab-seg { display: flex; flex-wrap: wrap; }
-    #lab-seg button { flex: 1 1 auto; padding: 10px 12px; font-size: 14px; }
+    #lab-seg button { flex: 1 1 auto; padding: 10px 12px; font-size: 0.875rem; }
     #colourlab-body .wheel-block { border-bottom: 0; padding-bottom: 0; }
     #colourlab-body .shop-idle-button { min-height: 44px; }
     .pro-row { display: flex; justify-content: flex-end; margin-bottom: 8px; }   /* P1: the Pro preview tag on its own row at the top of a Colour Lab section */
@@ -1252,7 +1258,7 @@
     .status-marker.s-empty { color: var(--bad); }
     .status-marker.s-wishlist { color: var(--wish); }
     .status-marker.s-notowned { color: var(--grey-status); }
-    .status-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0 0 10px; font-size: 13px; color: var(--muted); }
+    .status-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0 0 10px; font-size: 0.8125rem; color: var(--muted); }
     .legend-item { display: inline-flex; align-items: center; gap: 6px; }
     ul.paint-list.swatch-grid { grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 8px; }
     .swatch-cell { display: grid; justify-items: center; }
@@ -1275,7 +1281,7 @@
 
     /* The recipe editor */
     .form-grid { display: grid; gap: 12px; }
-    .form-grid label, .step-edit label { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
+    .form-grid label, .step-edit label { display: grid; gap: 6px; font-size: 0.8125rem; color: var(--muted); }
     ol.step-edits { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
     .step-edit {
       background: var(--background); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-box);
@@ -1286,7 +1292,7 @@
     .step-edit .row { grid-template-columns: 1fr 88px; }
     /* v15: a step's note and "optional" tick, and the mix ratio box. */
     .step-edit .row.step-extra { grid-template-columns: 1fr auto; }
-    .step-edit .check-label { display: flex; align-items: center; gap: 8px; align-self: end; min-height: 46px; color: var(--text); font-size: 15px; }
+    .step-edit .check-label { display: flex; align-items: center; gap: 8px; align-self: end; min-height: 46px; color: var(--text); font-size: 0.9375rem; }
     .step-edit .check-label input { width: 22px; height: 22px; }
     /* v50: an optional step is shown by a dashed bar (the text keeps its full contrast). */
     ol.recipe-steps > li.optional-step { border-left-style: dashed; }
@@ -1299,7 +1305,7 @@
     .step-line .swatch { width: 14px; height: 14px; }
     .step-line .have-mark { margin-left: 0; }
     /* v62: a step with no paint says "No paint" on its line, and the recipe's one button for its missing paints */
-    .step-no-paint { flex: none; font-size: 13px; font-weight: 400; color: var(--muted); }
+    .step-no-paint { flex: none; font-size: 0.8125rem; font-weight: 400; color: var(--muted); }
     .recipe-shop-add { width: 100%; margin-top: 12px; }
     /* v62: "Do you own these?" names the paints it means */
     .own-check .own-names { margin: 0 0 8px; overflow-wrap: anywhere; }
@@ -1309,10 +1315,10 @@
     .step-body[hidden] { display: none; }
     .step-body .paint-line { margin-top: 0; }
     .step-options .more-info-panel { padding-top: 4px; }
-    .step-facts { margin: 0; color: var(--muted); font-size: 14px; }
+    .step-facts { margin: 0; color: var(--muted); font-size: 0.875rem; }
     .have-key { margin: 0 0 10px; }
     .add-step { width: 100%; min-height: 44px; border-color: var(--accent); color: var(--accent); font-weight: 600; }
-    .step-note { margin: 4px 0 0; color: var(--muted); font-size: 14px; font-style: italic; }
+    .step-note { margin: 4px 0 0; color: var(--muted); font-size: 0.875rem; font-style: italic; }
     /* v16: Paste recipes preview and pot scan */
     /* RS4b: Check paints (the summary line, Show the N matched, one card per paint that needs a look) and the Save bar that stays above the bottom menu */
     .import-check-sum { margin: 0 0 8px; }
@@ -1321,13 +1327,13 @@
     .import-matched[hidden] { display: none; }
     .import-matched li, .import-option { display: flex; align-items: center; gap: 10px; min-width: 0; }
     .import-option-name { min-width: 0; overflow-wrap: anywhere; }
-    .import-option-brand { color: var(--muted); font-size: 12px; }
+    .import-option-brand { color: var(--muted); font-size: 0.75rem; }
     .import-ask { margin: 12px 0 0; padding: 12px; border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-box); min-width: 0; }
-    .import-wrote { padding: 0 4px; color: var(--muted); font-size: 14px; }
+    .import-wrote { padding: 0 4px; color: var(--muted); font-size: 0.875rem; }
     .import-typed { font-weight: 700; color: var(--text); overflow-wrap: anywhere; }
-    .import-where { display: block; margin: 0 0 4px; color: var(--muted); font-size: 12px; }
+    .import-where { display: block; margin: 0 0 4px; color: var(--muted); font-size: 0.75rem; }
     .import-options { display: grid; gap: 2px; }
-    .import-option { min-height: 44px; padding: 4px 6px; border-radius: var(--radius-control); cursor: pointer; font-size: 14px; }
+    .import-option { min-height: 44px; padding: 4px 6px; border-radius: var(--radius-control); cursor: pointer; font-size: 0.875rem; }
     .import-option input[type="radio"] { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--accent-fill, var(--accent)); }
     .import-option:has(input:checked) { background: var(--note-wash, transparent); font-weight: 600; }
     .import-option:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
@@ -1347,15 +1353,15 @@
       body.typing:has(#import-page:not(.hidden) .import-bar) .toast { bottom: calc(140px + env(safe-area-inset-bottom)); }
     }
     .import-part { font-weight: 600; color: var(--accent); margin: 14px 0 4px; }
-    .import-steps { margin: 0; padding-left: 22px; font-size: 14px; line-height: 1.5; }
+    .import-steps { margin: 0; padding-left: 22px; font-size: 0.875rem; line-height: 1.5; }
     .import-steps li { margin-bottom: 4px; }
     /* v18d-1: a step's words, with its ✕ (leave it out) on the right */
     .import-line { display: flex; align-items: flex-start; gap: 8px; }
     .import-line-body { flex: 1; min-width: 0; overflow-wrap: anywhere; }
     /* v75: 44 px tap targets (were 32 px) */
-    .import-remove { width: 44px; height: 44px; min-width: 44px; flex-shrink: 0; font-size: 13px; border-radius: var(--radius-control); margin-top: -8px; }
+    .import-remove { width: 44px; height: 44px; min-width: 44px; flex-shrink: 0; font-size: 0.8125rem; border-radius: var(--radius-control); margin-top: -8px; }
     /* v18d-2a: ✎ (change a step), ✕ on a part's name and on a part note, and the small step editor */
-    .import-edit, .import-drop-part, .import-drop-note { width: 44px; height: 44px; min-width: 44px; flex-shrink: 0; padding: 0; font-size: 13px; border-radius: var(--radius-control); margin-top: -8px; }
+    .import-edit, .import-drop-part, .import-drop-note { width: 44px; height: 44px; min-width: 44px; flex-shrink: 0; padding: 0; font-size: 0.8125rem; border-radius: var(--radius-control); margin-top: -8px; }
     .import-edit[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
     .import-part-line { display: flex; align-items: center; gap: 8px; margin: 14px 0 4px; }
     .import-part-line .import-part { flex: 1; min-width: 0; margin: 0; overflow-wrap: anywhere; }
@@ -1363,17 +1369,17 @@
     .import-note-line { display: flex; align-items: flex-start; gap: 8px; margin: 4px 0 0; }
     .import-note-line .step-note { flex: 1; min-width: 0; margin: 0; overflow-wrap: anywhere; }
     .import-step-editor { margin: 6px 0 8px; padding: 10px; border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-box); display: grid; gap: 8px; }
-    .import-step-editor label { display: grid; gap: 4px; color: var(--muted); font-size: 14px; }
+    .import-step-editor label { display: grid; gap: 4px; color: var(--muted); font-size: 0.875rem; }
     .import-step-editor select, .import-step-editor input { width: 100%; background: var(--card); }
     .import-ratio-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
-    .import-ratio-warning { margin: 0; color: var(--warn); font-size: 13px; }
+    .import-ratio-warning { margin: 0; color: var(--warn); font-size: 0.8125rem; }
     /* v18d-2b: swap a paint in the step editor (one row per paint, and a small box to type the new one) */
     .import-swap-list { display: grid; gap: 6px; }
-    .import-swap-title { color: var(--muted); font-size: 14px; }
+    .import-swap-title { color: var(--muted); font-size: 0.875rem; }
     .import-swap-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
-    .import-swap-name { min-width: 0; overflow-wrap: anywhere; color: var(--text); font-size: 14px; }
+    .import-swap-name { min-width: 0; overflow-wrap: anywhere; color: var(--text); font-size: 0.875rem; }
     .import-swap-name small { color: var(--muted); }
-    .import-swap, .import-swap-use, .import-swap-cancel { padding: 6px 12px; min-height: 44px; font-size: 13px; }   /* v53: was 36 */
+    .import-swap, .import-swap-use, .import-swap-cancel { padding: 6px 12px; min-height: 44px; font-size: 0.8125rem; }   /* v53: was 36 */
     .import-swap-box { display: grid; gap: 6px; padding: 8px; border: 1px dashed var(--accent); border-radius: var(--radius-control); }
     .import-swap-buttons { display: flex; gap: 8px; }
     .import-paint.swapped { color: var(--accent); }
@@ -1395,7 +1401,7 @@
     .status-chip { border-color: var(--chip-colour); }
     .status-chip[aria-pressed="true"] { background: var(--chip-colour); color: var(--chip-on); border-color: var(--chip-colour); }
     .status-row { margin-top: 12px; }
-    .status-pill { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 999px; font-size: 12px; border: 1px solid; vertical-align: middle; white-space: nowrap; }
+    .status-pill { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 999px; font-size: 0.75rem; border: 1px solid; vertical-align: middle; white-space: nowrap; }
     .status-pill.s-owned { color: var(--good); border-color: var(--good); }
     .status-pill.s-low { color: var(--warn); border-color: var(--warn); }
     .status-pill.s-empty { color: var(--bad); border-color: var(--bad); }
@@ -1414,20 +1420,20 @@
     .colour-ideas > summary::after { content: "\25BE"; color: var(--muted); }
     .colour-ideas[open] > summary::after { content: "\25B4"; }
     /* P1: "Pro preview" is a plain text tag at the right end of a row: small spaced capitals in the accent colour, no fill, border or icon. */
-    .pro-pill { flex: none; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+    .pro-pill { flex: none; font-size: 0.6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
     .ideas-body { display: grid; gap: 12px; margin-top: 10px; }
     .ideas-body .hint { margin: 0; }
     .shop-head { margin-bottom: 4px; }   /* v81: what More info's own bottom margin gave before the heading and More info were wrapped */
     .compendium-folds { display: grid; gap: 12px; }   /* v81: same spacing as before the two parts were wrapped */
-    .idea-label { margin: 0; font-size: 13px; color: var(--muted); }
+    .idea-label { margin: 0; font-size: 0.8125rem; color: var(--muted); }
     /* v72: Mentor tips under the Ask the Mentor picks */
     .mentor-tips { display: grid; gap: 6px; }
     .mentor-tip-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
     .mentor-tip { border-left: 3px solid var(--accent); padding: 2px 0 2px 12px; min-width: 0; }
-    .mentor-tip-advice { margin: 0; font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
-    .mentor-tip-colours { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; color: var(--muted); }
+    .mentor-tip-advice { margin: 0; font-size: 0.875rem; line-height: 1.4; overflow-wrap: anywhere; }
+    .mentor-tip-colours { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 0.8125rem; color: var(--muted); }
     .mentor-tip-colours li { display: flex; align-items: center; gap: 6px; }
-    .mentor-tip-credit { margin: 4px 0 0; font-size: 13px; }
+    .mentor-tip-credit { margin: 4px 0 0; font-size: 0.8125rem; }
     .mentor-tip-credit a { display: inline-flex; align-items: center; min-height: 44px; overflow-wrap: anywhere; }
     .idea-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
     button.idea, button.idea-pick { display: flex; gap: 12px; align-items: flex-start; width: 100%; min-height: 44px; padding: 10px 12px; text-align: left; font: inherit; color: var(--text); background: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card); cursor: pointer; }
@@ -1438,19 +1444,19 @@
     .idea-name { font-weight: 600; overflow-wrap: anywhere; }
     .idea-name small { margin-left: 6px; font-weight: 400; color: var(--muted); }
     /* v55: the status is the word itself, in plain text (no fill, no round border). The colour only adds to the word. */
-    .idea-tag { justify-self: start; font-size: 13px; font-weight: 600; white-space: nowrap; }
+    .idea-tag { justify-self: start; font-size: 0.8125rem; font-weight: 600; white-space: nowrap; }
     .idea-tag.own { color: var(--good); }
     .idea-tag.near { color: var(--warn); }
     .idea-tag.none { color: var(--grey-status); }
     .idea-status { display: flex; flex-wrap: wrap; gap: 4px 10px; }   /* v64: the ownership tag and the fit label on one line */
-    .idea-fit { font-size: 13px; font-weight: 600; white-space: nowrap; color: var(--text); }
+    .idea-fit { font-size: 0.8125rem; font-weight: 600; white-space: nowrap; color: var(--text); }
     .idea-also { color: var(--text); display: flex; gap: 12px; align-items: center; margin: 6px 0 0 12px; padding-top: 6px; border-top: 1px dashed var(--border); }
     .idea-also .swatch { width: 24px; height: 24px; flex: none; }
     .idea-also .idea-text { flex: 1; }
-    .idea-also-add { min-height: 44px; padding: 0 8px; font: inherit; font-size: 13px; color: var(--accent); background: none; border: 0; cursor: pointer; }
-    .idea-why { font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
-    .idea-note { font-size: 13px; color: var(--muted); }
-    .idea-add { font-size: 13px; color: var(--accent); }
+    .idea-also-add { min-height: 44px; padding: 0 8px; font: inherit; font-size: 0.8125rem; color: var(--accent); background: none; border: 0; cursor: pointer; }
+    .idea-why { font-size: 0.875rem; line-height: 1.4; overflow-wrap: anywhere; }
+    .idea-note { font-size: 0.8125rem; color: var(--muted); }
+    .idea-add { font-size: 0.8125rem; color: var(--accent); }
     /* v35: the Compendium has no recipe to add to, so its rows are plain boxes (same look as the tappable rows, no hover or pointer) */
     .idea-static { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; text-align: left; color: var(--text); background: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card); }
     .idea-static .swatch { width: 32px; height: 32px; flex: none; margin-top: 2px; }
@@ -1465,7 +1471,7 @@
        Cool, slightly deep colours so it sits well on the dark theme; the open slice gets the accent outline. */
     .wheel-block { display: grid; gap: 10px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
     .wheel-hint { margin: 0; font-weight: 600; text-align: center; }
-    .wheel-caption { margin: 0; font-size: 13px; color: var(--muted); text-align: center; }
+    .wheel-caption { margin: 0; font-size: 0.8125rem; color: var(--muted); text-align: center; }
     .wheel-svg { display: block; width: 100%; max-width: 320px; height: auto; margin: 0 auto; touch-action: manipulation; }
     .wheel-seg { stroke: var(--card); stroke-width: 4; cursor: pointer; outline: none; -webkit-tap-highlight-color: transparent; }
     .wheel-seg:hover { filter: brightness(1.12); }
@@ -1487,42 +1493,42 @@
     .wheel-sub-seg:hover .wheel-zoom-seg { filter: brightness(1.12); }
     .wheel-sub-seg[aria-pressed="true"] .wheel-zoom-seg, .wheel-sub-seg:focus-visible .wheel-zoom-seg { stroke: var(--accent); stroke-width: 5; }
     .wheel-chip { stroke: var(--border); stroke-width: 1; }
-    .wheel-label { fill: var(--text); font-size: 15px; font-weight: 600; }
+    .wheel-label { fill: var(--text); font-size: 0.9375rem; font-weight: 600; }
     .wheel-sub-seg[aria-pressed="true"] .wheel-label { fill: var(--accent); }
     .wheel-sub-seg:focus-visible .wheel-label { fill: var(--accent); text-decoration: underline; }
     .wheel-back-disc { fill: var(--card); stroke: var(--border); stroke-width: 2; }
     .wheel-back-seg:hover .wheel-back-disc { stroke: var(--accent); }
     .wheel-back-seg:focus-visible .wheel-back-disc { stroke: var(--accent); stroke-width: 3; }
-    .wheel-back-text { fill: var(--text); font-size: 16px; font-weight: 600; }
+    .wheel-back-text { fill: var(--text); font-size: 1rem; font-weight: 600; }
     .wheel-block .wheel-back { justify-self: center; min-height: 44px; }
     .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
     .wheel-detail { display: grid; gap: 10px; padding-top: 12px; border-top: 1px solid var(--border); }
     .wheel-detail .hint { margin: 0; overflow-wrap: anywhere; }
     .wheel-detail .plain-button { min-height: 44px; justify-self: start; }
-    .wheel-sub { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
+    .wheel-sub { margin: 4px 0 0; font-size: 0.875rem; color: var(--muted); }
     /* v38: paint links. A paint row in the wheel's lists is a button (same look as before) that opens a short panel under it. The panel is
        plain boxes: a faint accent wash and border so you can see which paint it belongs to, then the same shared rows inside. */
     button.idea-link { cursor: pointer; }
     button.idea-link:hover { border-color: var(--accent); }
     button.idea-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-    .idea-open { font-size: 13px; color: var(--accent); }
+    .idea-open { font-size: 0.8125rem; color: var(--accent); }
     .idea-open::after { content: " \25BE"; }
     button.idea-link[aria-expanded="true"] { border-color: var(--accent); }
     button.idea-link[aria-expanded="true"] .idea-open::after { content: " \25B4"; }
     .paint-panel { display: grid; gap: 10px; margin-top: 8px; padding: 12px; min-width: 0; border: 1px solid var(--accent); border-radius: var(--radius-card); background: var(--accent-wash); scroll-margin-bottom: 96px; }
     .paint-panel .hint { margin: 0; overflow-wrap: anywhere; }
-    .paint-panel-title { margin: 0; font-size: 15px; overflow-wrap: anywhere; }
+    .paint-panel-title { margin: 0; font-size: 0.9375rem; overflow-wrap: anywhere; }
     /* v62: Ideas for this (under a paint in a recipe step and in Your Palette) and the paint's ideas at the top of the Compendium */
     .plain-button.ideas-for { display: block; width: fit-content; max-width: 100%; margin: 6px 0 8px; }
     .ideas-focus { margin-bottom: 14px; }
     .ideas-focus .paint-panel { margin-top: 0; }
     .ideas-open { display: block; margin-top: 8px; }
-    .paint-panel-label { margin: 4px 0 0; font-size: 13px; font-weight: 600; color: var(--muted); }
+    .paint-panel-label { margin: 4px 0 0; font-size: 0.8125rem; font-weight: 600; color: var(--muted); }
     .paint-panel .share-row .plain-button { min-height: 44px; }
     /* v39: the closed "Shop links" fold-out under a suggested paint you do not own. Small and quiet: the colour suggestion above it comes first.
        Plain text buttons and links only (no logos). Uses the same colour variables, so dark and light follow the theme. */
     .shop-more { margin: 4px 0 0; min-width: 0; }
-    .shop-more > summary { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; font-size: 13px; font-weight: 400; color: var(--muted); cursor: pointer; list-style: none; border-radius: var(--radius-box); }
+    .shop-more > summary { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; font-size: 0.8125rem; font-weight: 400; color: var(--muted); cursor: pointer; list-style: none; border-radius: var(--radius-box); }
     .shop-more > summary::-webkit-details-marker { display: none; }
     .shop-more > summary::after { content: "\25BE"; }
     .shop-more[open] > summary { color: var(--accent); }
@@ -1530,10 +1536,10 @@
     .shop-more > summary:hover { color: var(--text); }
     .shop-more > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .shop-body { display: grid; gap: 10px; min-width: 0; padding: 4px 12px 10px; }
-    .shop-body .hint { margin: 0; font-size: 13px; overflow-wrap: anywhere; }
+    .shop-body .hint { margin: 0; font-size: 0.8125rem; overflow-wrap: anywhere; }
     .shop-add .plain-button { min-height: 44px; }
     .shop-add-row { margin-top: 8px; min-width: 0; }   /* v73: Add to shopping list on a Mentor pick */
-    .shop-onlist { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; color: var(--muted); }
+    .shop-onlist { display: inline-flex; align-items: center; min-height: 44px; font-size: 0.875rem; color: var(--muted); }
     .shop-onlist:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .shop-links { display: flex; flex-wrap: wrap; gap: 8px; }
     .shop-links a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; color: var(--text); text-decoration: none; background: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-box); overflow-wrap: anywhere; }
@@ -1541,7 +1547,7 @@
     .shop-links a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     /* v37: the folding parts of the Compendium. Each heading is a full-width button; the panel under it is empty and hidden until opened. */
     .fold { display: grid; gap: 10px; }
-    .fold-head { margin: 0; font-size: 16px; }
+    .fold-head { margin: 0; font-size: 1rem; }
     .fold-button { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 48px; padding: 10px 14px; text-align: left; font: inherit; font-weight: 600; color: var(--text); background: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card); cursor: pointer; }
     .fold-button:hover { border-color: var(--accent); }
     .fold-button[aria-expanded="true"] { border-color: var(--accent); }
@@ -1566,7 +1572,7 @@
     .fold-panel[hidden] { display: none; }
     /* v49: "More info": a plain text button with the detail under it. Used wherever a page had long explanations. */
     .more-info { display: grid; gap: 4px; min-width: 0; }
-    .more-info-button { display: inline-flex; align-items: center; gap: 6px; justify-self: start; min-height: 44px; padding: 0 4px; font: inherit; font-size: 14px; color: var(--accent); background: transparent; border: 0; cursor: pointer; }
+    .more-info-button { display: inline-flex; align-items: center; gap: 6px; justify-self: start; min-height: 44px; padding: 0 4px; font: inherit; font-size: 0.875rem; color: var(--accent); background: transparent; border: 0; cursor: pointer; }
     .more-info-button:hover { text-decoration: underline; }
     .more-info-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .more-info-button .fold-mark { margin-right: 0; }
@@ -1580,15 +1586,15 @@
        "More info" or "Less info" and the arrow) from the same rules: the folds just carry the class help-look. Nothing else about them changes. */
     .help summary, .help-look > summary { display: flex; align-items: center; gap: 10px; list-style: none; color: var(--text); }
     .help summary::-webkit-details-marker, .help-look > summary::-webkit-details-marker { display: none; }
-    .help summary::after, .help-look > summary::after { content: "More info"; order: 1; margin-left: auto; font-size: 14px; font-weight: 400; color: var(--accent); }
+    .help summary::after, .help-look > summary::after { content: "More info"; order: 1; margin-left: auto; font-size: 0.875rem; font-weight: 400; color: var(--accent); }
     .help details[open] > summary::after, .help-look[open] > summary::after { content: "Less info"; }
     .help summary::before, .help-look > summary::before { content: ""; order: 2; flex: none; width: 10px; height: 10px; border-right: 2px solid var(--accent); border-bottom: 2px solid var(--accent); transform: rotate(45deg) translate(-2px, -2px); transition: transform .15s; }
     .help details[open] > summary::before, .help-look[open] > summary::before { transform: rotate(-135deg) translate(-2px, -2px); }
     .help summary:focus-visible, .help-look > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-    .help-look > summary { min-height: 44px; box-sizing: border-box; padding: 10px 0; font-size: 16px; font-weight: 600; cursor: pointer; }
+    .help-look > summary { min-height: 44px; box-sizing: border-box; padding: 10px 0; font-size: 1rem; font-weight: 600; cursor: pointer; }
     .help-look > summary h2 { margin: 0; }
     .more-info[hidden] { display: none; }
-    .idea-more .more-info-button { font-size: 13px; }
+    .idea-more .more-info-button { font-size: 0.8125rem; }
     /* v49: the Compendium's action row: equal-width buttons across the card, and the shopping list fold-out as a full-width button */
     .fold-panel .share-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .fold-panel .share-row .plain-button { width: 100%; }
@@ -1603,7 +1609,7 @@
     [aria-checked="mixed"] > .pick-box { background: var(--accent-fill, var(--accent)); border-color: var(--accent-fill, var(--accent)); }
     [aria-checked="mixed"] > .pick-box::after { content: ""; position: absolute; left: 4px; top: 9px; width: 12px; height: 0; border-top: 2.5px solid var(--on-accent); }
     .pick-tick:hover .pick-box, .pick-all:hover .pick-box { border-color: var(--accent); }
-    .pick-all { justify-content: flex-start; gap: 0; min-height: 44px; padding: 0 12px 0 0; font-size: 14px; border-radius: var(--radius-control); }
+    .pick-all { justify-content: flex-start; gap: 0; min-height: 44px; padding: 0 12px 0 0; font-size: 0.875rem; border-radius: var(--radius-control); }
     .pick-all > .pick-box { margin: 0 12px 0 13px; }
     .pick-all[aria-disabled="true"] { color: var(--muted); cursor: default; }
     .pick-all[aria-disabled="true"] > .pick-box { border-color: var(--border); }
@@ -1613,8 +1619,8 @@
     .pick-add { width: 100%; min-height: 48px; }
     /* v49: the greyed-out shopping list button, shown while nothing is picked */
     .shop-idle { display: grid; gap: 2px; justify-items: start; }
-    .shop-idle .hint { margin: 0; font-size: 13px; }
-    .shop-idle-button { min-height: 40px; padding: 8px 14px; font-size: 13px; color: var(--muted); background: transparent; border-color: var(--border); cursor: default; }
+    .shop-idle .hint { margin: 0; font-size: 0.8125rem; }
+    .shop-idle-button { min-height: 40px; padding: 8px 14px; font-size: 0.8125rem; color: var(--muted); background: transparent; border-color: var(--border); cursor: default; }
     .shop-idle-button:hover { border-color: var(--border); }
     .fold-panel > .faction-history, .fold-panel > .starter-schemes, .fold-panel > .detail-recipes, .fold-panel > .basing-tips { border-top: 0; padding-top: 0; }
     /* v37: the Themes | Combinations switch: two equal buttons side by side */
@@ -1622,7 +1628,7 @@
     .view-switch .chip { justify-content: center; min-height: 44px; max-width: none; }
     /* v37 part 2: the search boxes. A box you type in with a list under it (Start from, Faction), and a plain search box above a list of buttons. */
     .combo, .list-search { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
-    .combo-label { font-size: 13px; color: var(--muted); }
+    .combo-label { font-size: 0.8125rem; color: var(--muted); }
     .combo-row { display: flex; gap: 8px; align-items: stretch; }
     .combo-input { flex: 1 1 0; width: 0; min-width: 0; min-height: 44px; }   /* width 0 so the box never makes its row wider than the screen */
     .combo-input::placeholder { color: var(--muted); opacity: 1; }
@@ -1636,35 +1642,35 @@
     .combo-list { position: relative; list-style: none; margin: 0; padding: 4px; max-height: 288px; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
                   background: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-box); }
     .combo-list[hidden] { display: none; }
-    .combo-group { padding: 8px 10px 4px; font-size: 12px; font-weight: 600; letter-spacing: .02em; color: var(--muted); }
-    .combo-option { min-height: 44px; display: flex; align-items: center; padding: 8px 10px; border-radius: var(--radius-control); font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; cursor: pointer; }
+    .combo-group { padding: 8px 10px 4px; font-size: 0.75rem; font-weight: 600; letter-spacing: .02em; color: var(--muted); }
+    .combo-option { min-height: 44px; display: flex; align-items: center; padding: 8px 10px; border-radius: var(--radius-control); font-size: 0.9375rem; line-height: 1.3; overflow-wrap: anywhere; cursor: pointer; }
     .combo-option:hover { background: var(--accent-wash); }
     .combo-option[aria-selected="true"] { font-weight: 600; color: var(--accent); }
     .combo-option.is-active { background: var(--accent-wash); outline: 2px solid var(--accent); outline-offset: -2px; }
     .combo-status, .list-search-status { margin: 0; min-height: 1.4em; }
     .list-search-status:empty { display: none; }
     /* v29: the tip for the chosen role, and "Does this scheme hang together?" */
-    .role-tip { margin: 0; padding: 8px 12px; border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; background: var(--accent-wash); font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
+    .role-tip { margin: 0; padding: 8px 12px; border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; background: var(--accent-wash); font-size: 0.875rem; line-height: 1.4; overflow-wrap: anywhere; }
     .role-tip strong { color: var(--accent); }
     /* v30: your faction history and the starter schemes (rows outside the main three ideas are "idea-pick", same look) */
     .faction-history, .starter-schemes, .detail-recipes, .basing-tips { display: grid; gap: 10px; padding-top: 12px; border-top: 1px solid var(--border); }
     .faction-history .hint, .starter-schemes .hint, .detail-recipes .hint, .basing-tips .hint { margin: 0; overflow-wrap: anywhere; }
     /* v33: basing tips. The materials and how-to steps are plain lists that are only shown, never added to a recipe. */
-    .basing-sub { margin: 0; font-size: 14px; color: var(--muted); }
-    .basing-list { margin: 0; padding-left: 22px; display: grid; gap: 6px; font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
+    .basing-sub { margin: 0; font-size: 0.875rem; color: var(--muted); }
+    .basing-list { margin: 0; padding-left: 22px; display: grid; gap: 6px; font-size: 0.875rem; line-height: 1.4; overflow-wrap: anywhere; }
     .starter-summary { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
     /* v31: the mood buttons above the scheme buttons reuse .chip and .chips (still 40 px tall); a little less side padding so all five fit on one line at 360 px */
     .mood-chips { gap: 6px; }
     .mood-chips .chip { padding: 11px 8px; }
     .scheme-check { display: grid; gap: 10px; padding-top: 12px; border-top: 1px solid var(--border); }
-    .scheme-title { margin: 0; font-size: 16px; }
+    .scheme-title { margin: 0; font-size: 1rem; }
     .scheme-check .plain-button { min-height: 44px; justify-self: start; }
     .scheme-result { display: grid; gap: 10px; }
     .scheme-result .hint { margin: 0; }
     .scheme-verdict { margin: 0; font-weight: 600; }
     .scheme-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
     .scheme-list li { display: grid; gap: 4px; }
-    .scheme-what { font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
+    .scheme-what { font-size: 0.875rem; line-height: 1.4; overflow-wrap: anywhere; }
     .shop-brand { font-weight: 600; color: var(--accent); margin: 12px 0 4px; }
     .shop-list { margin: 0; padding-left: 20px; line-height: 1.6; }
     .shop-list small { color: var(--muted); }
@@ -1694,7 +1700,7 @@
     .shop-suggest-list[hidden] { display: none; }
     .shop-suggest-word { color: var(--muted); white-space: nowrap; }
     .shop-suggest-add { flex: none; min-height: 44px; padding: 8px 12px; }
-    .shop-suggest-dismiss { flex: none; width: 44px; height: 44px; padding: 0; background: transparent; border: 0; color: var(--muted); font-size: 15px; }
+    .shop-suggest-dismiss { flex: none; width: 44px; height: 44px; padding: 0; background: transparent; border: 0; color: var(--muted); font-size: 0.9375rem; }
     .shop-suggest-dismiss:hover { color: var(--text); }
     .shop-suggest-dismiss:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
     /* RS1: the recipe page. Edit menu by the title, named steps, folded Used on, and the Add to scheme picker. */
@@ -1724,11 +1730,11 @@
     .scheme-picker-row .pick-slot, .scheme-picker-row .pick-tick { margin: 0; }
     .scheme-picker-name { flex: 1; min-width: 0; padding: 8px 0; overflow-wrap: anywhere; cursor: pointer; }
     /* RS3b: the quick New recipe form (one box, a read-only preview, More options, a full-width Save) and the "Do you own these?" sheet. */
-    .quick-recipe .quick-lines { min-height: 112px; font-size: 16px; }
+    .quick-recipe .quick-lines { min-height: 112px; font-size: 1rem; }
     .quick-preview { display: grid; gap: 8px; }
     .quick-preview[hidden] { display: none; }
-    .quick-meta { margin: 0; display: flex; flex-wrap: wrap; gap: 2px 16px; font-size: 15px; overflow-wrap: anywhere; }
-    .quick-meta-label { color: var(--muted); font-size: 13px; }
+    .quick-meta { margin: 0; display: flex; flex-wrap: wrap; gap: 2px 16px; font-size: 0.9375rem; overflow-wrap: anywhere; }
+    .quick-meta-label { color: var(--muted); font-size: 0.8125rem; }
     .quick-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
     .quick-row { border: 1px solid var(--border); border-radius: var(--radius-control); padding: 8px 10px; }
     .quick-row.quick-unknown { border: 2px solid var(--caution); padding: 7px 9px; }
@@ -1736,9 +1742,9 @@
     .quick-num { flex: none; color: var(--muted); font-variant-numeric: tabular-nums; }
     .quick-swatches { display: inline-flex; gap: 3px; flex: none; }
     .quick-name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-    .quick-tech { flex: none; color: var(--muted); font-size: 14px; }
-    .quick-unknown-note { margin: 4px 0 0; font-size: 13px; }
-    .quick-parts-note { margin: 0; font-size: 13px; color: var(--muted); }
+    .quick-tech { flex: none; color: var(--muted); font-size: 0.875rem; }
+    .quick-unknown-note { margin: 4px 0 0; font-size: 0.8125rem; }
+    .quick-parts-note { margin: 0; font-size: 0.8125rem; color: var(--muted); }
     .quick-fields { display: grid; gap: 12px; padding-top: 8px; }
     .quick-step-fields { display: grid; gap: 8px; border-top: 1px solid var(--border); padding-top: 10px; }
     .quick-step-title { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
@@ -1755,7 +1761,7 @@
     /* v19.1: the "Buy these" bar at the top of the shopping list */
     .buy-bar { margin: 0 0 14px; padding: 10px 12px; border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-box);
                background: linear-gradient(to right, var(--accent-wash), transparent 80%), var(--card); }
-    .buy-bar h3 { margin: 0 0 8px; font-size: 15px; color: var(--accent); }
+    .buy-bar h3 { margin: 0 0 8px; font-size: 0.9375rem; color: var(--accent); }
     /* v49: .buy-shops is one row, like .chips (see there) */
     .buy-shops button { min-height: 44px; }
     .buy-shops button[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
@@ -1763,11 +1769,11 @@
     .buy-links li { border-top: 1px solid var(--border); }
     .buy-links a { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px;
                    color: var(--text); text-decoration: none; }
-    .buy-links a span:last-child { color: var(--accent); white-space: nowrap; font-size: 14px; }
-    .buy-bar .hint { margin: 8px 0 0; font-size: 13px; }
+    .buy-links a span:last-child { color: var(--accent); white-space: nowrap; font-size: 0.875rem; }
+    .buy-bar .hint { margin: 8px 0 0; font-size: 0.8125rem; }
     /* v17.1: how many you have */
-    .qty-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; color: var(--text); font-size: 15px; }
-    .qty-step { width: 44px; min-height: 44px; padding: 0; font-size: 20px; }
+    .qty-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; color: var(--text); font-size: 0.9375rem; }
+    .qty-step { width: 44px; min-height: 44px; padding: 0; font-size: 1.25rem; }
     .qty-count { min-width: 28px; text-align: center; font-weight: 600; }
     /* v16.1: camera view for scanning a pot label */
     #scan-camera { position: fixed; inset: 0; z-index: 100; background: var(--camera-bg); display: flex; flex-direction: column;
@@ -1776,7 +1782,7 @@
     .cam-frame video { width: 100%; height: 100%; object-fit: cover; display: block; }
     .cam-box { position: absolute; left: 8%; right: 8%; top: 40%; height: 20%; border: 3px solid var(--accent);
                border-radius: var(--radius-box); box-shadow: 0 0 0 9999px var(--camera-shade); }
-    .cam-tip { color: var(--text); font-size: 14px; text-align: center; margin: 12px 0; }
+    .cam-tip { color: var(--text); font-size: 0.875rem; text-align: center; margin: 12px 0; }
     .cam-buttons { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
     /* One paint: colour, name and ✕ on top; brand and mix % underneath. */
     .paint-edit {
@@ -1789,7 +1795,7 @@
     .paint-edit .paint-brand { grid-area: brand; }
     .paint-edit .mix-box { grid-area: mix; display: flex; align-items: center; gap: 4px; color: var(--muted); }
     .paint-edit .remove { grid-area: remove; height: 44px; }
-    .mix-warning { color: var(--caution); font-size: 13px; margin: 0; }
+    .mix-warning { color: var(--caution); font-size: 0.8125rem; margin: 0; }
 
 
     /* ----- v77: THE WIDE-SCREEN BREAKPOINT (this comment is the one place it is written down) -----
@@ -1839,9 +1845,9 @@
 
       /* U4a: the menu bar stays at the bottom, full size and centred; the header is the only thing at the top. */
       .app-bar { height: 69px; margin: 0 -32px 24px; padding: 0 32px var(--rule-gap); }
-      .app-bar h1 { font-size: calc(var(--wordmark-size) + 6px); }
+      .app-bar h1 { font-size: calc(var(--wordmark-size) + 0.375rem); }
       .card { padding: calc(var(--card-pad) + 6px); }
-      h2 { font-size: calc(var(--heading-size) + 2px); }
+      h2 { font-size: calc(var(--heading-size) + 0.125rem); }
 
       /* Dashboard: the headline across the top, then stages and factions side by side. */
       #view-dashboard:not(.hidden) {
@@ -1855,15 +1861,15 @@
       #view-dashboard:has(#faction-grid > :nth-child(4)) :is(#stage-card, #faction-card) { grid-column: 1 / -1; }
       #view-dashboard:has(#faction-grid > :nth-child(4)) #stage-card .chart-row { justify-content: center; gap: 48px; }
       #view-dashboard:has(#faction-grid > :nth-child(4)) #stage-card .legend { flex: 0 1 420px; }
-      .big { font-size: 56px; }
-      .of { font-size: 16px; }
-      .group-button { padding: 16px 18px; font-size: 15px; }
-      .group-button strong { font-size: 28px; }
+      .big { font-size: 3.5rem; }
+      .of { font-size: 1rem; }
+      .group-button { padding: 16px 18px; font-size: 0.9375rem; }
+      .group-button strong { font-size: 1.75rem; }
       #overall-chart svg { width: 240px; height: 240px; }
-      .legend button { font-size: 16px; padding: 9px 4px; }
+      .legend button { font-size: 1rem; padding: 9px 4px; }
       .faction-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; }
       .faction-grid svg { width: 120px; height: 120px; }
-      .faction-button { font-size: 16px; padding: 16px 10px; }
+      .faction-button { font-size: 1rem; padding: 16px 10px; }
 
       /* Units: cards in columns instead of one long list. */
       ul.units {
@@ -1875,8 +1881,8 @@
       #filter-card:not(.hidden) { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); column-gap: 12px; align-items: center; }
       #filter-card > #group-chips { margin-top: 0; }
       #filter-card > #stage-chips { grid-column: 1 / -1; }
-      .name { font-size: 18px; }
-      .details, .stage { font-size: 14px; }
+      .name { font-size: 1.125rem; }
+      .details, .stage { font-size: 0.875rem; }
 
       /* Settings: two columns of cards. */
       #view-settings:not(.hidden) { columns: 2; column-gap: 18px; }
@@ -1897,7 +1903,7 @@
       #recipe-split.layout-split .recipe-item[aria-current="true"] { outline: 2px solid var(--accent); outline-offset: -2px; }
       /* R3b-2: a recipe opened on its own (from Schemes or Your Palette) fills the page instead of a 780 px strip with empty space beside it; the unit names inside a chip are 12 px, not 10.8 px. */
       #recipe-page:not(.editing) { max-width: none; }
-      .recipe-chip small { font-size: 12px; }
+      .recipe-chip small { font-size: 0.75rem; }
       /* v79: beside the open units the list is one column; the side pane stays in view under the tab bar and scrolls on its own. */
       #unit-split.layout-split ul.units { grid-template-columns: 1fr; }
       #unit-split.layout-split > .layout-side:not(.hidden), #palette-split.layout-split > .layout-side:not(.hidden) {
@@ -1911,7 +1917,7 @@
       .unit-side-card .paint-head { min-width: 0; }
       .unit-side-card { margin-bottom: 0; }
       .unit-side-card .card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
-      .unit-side-card h2 { margin: 0; font-size: 18px; overflow-wrap: anywhere; }
+      .unit-side-card h2 { margin: 0; font-size: 1.125rem; overflow-wrap: anywhere; }
       .unit-side-card .plain-button { min-height: 44px; flex-shrink: 0; }
       .seg { max-width: 480px; }
       ul.paint-list { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; align-items: start; }
@@ -1945,9 +1951,9 @@
       --heading-weight: 400;
       --heading-transform: none;
       --heading-tracking: .01em;
-      --heading-size: 23px;
-      --wordmark-size: 38px;
-      --body-size: 17px;
+      --heading-size: 1.4375rem;
+      --wordmark-size: 2.375rem;
+      --body-size: 1.0625rem;
       --card-pad: 16px;
       --button-font: var(--font-heading);
       --button-weight: 400;
@@ -2062,9 +2068,9 @@
       --heading-weight: 600;
       --heading-transform: uppercase;
       --heading-tracking: .07em;
-      --heading-size: 24px;
-      --wordmark-size: 40px;
-      --body-size: 16px;
+      --heading-size: 1.5rem;
+      --wordmark-size: 2.5rem;
+      --body-size: 1rem;
       --card-pad: 16px;
       --button-font: var(--font-heading);
       --button-weight: 600;
@@ -2169,9 +2175,9 @@
       --heading-weight: 700;
       --heading-transform: uppercase;
       --heading-tracking: .05em;
-      --heading-size: 17px;
-      --wordmark-size: 38px;
-      --body-size: 16px;
+      --heading-size: 1.0625rem;
+      --wordmark-size: 2.375rem;
+      --body-size: 1rem;
       --card-pad: 16px;
       --button-font: var(--font-heading);
       --button-weight: 700;
@@ -2317,11 +2323,11 @@
        readers). Paint swatches are circles already. The main button sits a touch crooked. */
     [data-t="bench"] .card h2 {
       display: inline-block; background: #e3d6a6; color: #2b2616;
-      font-family: 'Permanent Marker', 'Comic Sans MS', cursive; font-weight: 400; font-size: 16px;
+      font-family: 'Permanent Marker', 'Comic Sans MS', cursive; font-weight: 400; font-size: 1rem;
       text-transform: none; letter-spacing: 0; padding: 3px 14px; transform: rotate(-1.2deg);
       clip-path: polygon(0 0, 100% 0, 98% 25%, 100% 50%, 98% 75%, 100% 100%, 0 100%, 2% 75%, 0 50%, 2% 25%);
     }
-    @media (min-width: 900px) { [data-t="bench"] .card h2 { font-size: 17px; } }
+    @media (min-width: 900px) { [data-t="bench"] .card h2 { font-size: 1.0625rem; } }
     [data-t="bench"] .primary-button { transform: rotate(-0.6deg); }
 
     /* ----- v47: the Theme buttons in Settings -----
@@ -2345,7 +2351,7 @@
       background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-small);
       color: var(--heading-colour); font-family: var(--font-heading); font-weight: var(--heading-weight);
       text-transform: var(--heading-transform); letter-spacing: var(--heading-tracking);
-      font-size: 13px; line-height: 1.05; text-align: center; overflow-wrap: normal; hyphens: manual;
+      font-size: 0.8125rem; line-height: 1.05; text-align: center; overflow-wrap: normal; hyphens: manual;
     }
     .theme-swatch .ts-bar { display: block; height: 7px; border-radius: var(--radius-bar); background: var(--accent-fill, var(--accent)); flex: none; }
     .theme-swatch[aria-pressed="true"] { outline: 3px solid var(--page-accent); outline-offset: 2px; }
@@ -2353,13 +2359,13 @@
     .theme-swatch[aria-pressed="true"]:focus-visible { outline-style: double; outline-width: 5px; }
     /* Each square's small touches, matching its theme. */
     .theme-swatch[data-t="classic"] .ts-card { font-weight: 700; color: var(--accent); }
-    .theme-swatch[data-t="parchment"] .ts-card { border-width: 3px; border-style: double; font-size: 13px; line-height: 1; }
+    .theme-swatch[data-t="parchment"] .ts-card { border-width: 3px; border-style: double; font-size: 0.8125rem; line-height: 1; }
     .theme-swatch[data-t="parchment"] .ts-card::first-letter { color: var(--first-letter); font-size: 1.3em; }
-    .theme-swatch[data-t="forge"] .ts-card { border-width: 2px; box-shadow: inset 0 0 0 2px var(--background); font-size: 17px; letter-spacing: .05em; line-height: .95; }
+    .theme-swatch[data-t="forge"] .ts-card { border-width: 2px; box-shadow: inset 0 0 0 2px var(--background); font-size: 1.0625rem; letter-spacing: .05em; line-height: .95; }
     .theme-swatch[data-t="bench"] .ts-card { background: transparent; border: 0; padding: 0; }
     .theme-swatch[data-t="bench"] .ts-name {
       display: inline-block; background: #e3d6a6; color: #2b2616; padding: 3px 7px; transform: rotate(-2deg);
-      font-family: 'Permanent Marker', 'Comic Sans MS', cursive; font-weight: 400; font-size: 12px; line-height: 1.1; text-transform: none; letter-spacing: 0;
+      font-family: 'Permanent Marker', 'Comic Sans MS', cursive; font-weight: 400; font-size: 0.75rem; line-height: 1.1; text-transform: none; letter-spacing: 0;
       clip-path: polygon(0 0, 100% 0, 97% 25%, 100% 50%, 97% 75%, 100% 100%, 0 100%, 3% 75%, 0 50%, 3% 25%);
     }
     @media (forced-colors: active) { .theme-swatch[aria-pressed="true"] { outline-color: Highlight; } }
@@ -2520,12 +2526,12 @@
     .guides-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; min-height: 48px; width: 100%; padding: 8px 12px; text-align: left; font: inherit; color: var(--text); background-color: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card); cursor: pointer; }
     .guides-cats .guides-row { grid-template-columns: minmax(0, 1fr) auto auto; gap: 2px 8px; box-shadow: inset 3px 0 0 var(--accent); }   /* P1: thin accent bar on the left, title, count, then the Pro preview tag */
     .guides-cats .guides-row-title { white-space: normal; text-overflow: clip; overflow: visible; overflow-wrap: anywhere; }   /* P1: a long title wraps rather than being pushed off by the tag */
-    .guides-free { margin: 0; font-size: 13px; color: var(--muted); }
+    .guides-free { margin: 0; font-size: 0.8125rem; color: var(--muted); }
     .guides-row[aria-current="true"] { border-color: var(--accent); background-color: var(--accent-wash); box-shadow: inset 4px 0 0 var(--accent); }
     .guides-row-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .guides-row-summary { grid-column: 1; font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .guides-row-summary { grid-column: 1; font-size: 0.8125rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .guides-count { grid-column: 2; grid-row: 1; color: var(--muted); font-variant-numeric: tabular-nums; }
-    .guides-title { margin: 0; font-size: 18px; overflow-wrap: anywhere; }
+    .guides-title { margin: 0; font-size: 1.125rem; overflow-wrap: anywhere; }
     .guides-entry { display: grid; gap: 10px; min-width: 0; }
     .guides-entry p { margin: 0; overflow-wrap: anywhere; }
     .guides-related { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -2534,7 +2540,7 @@
     .guides-entry:focus, .guides-main [tabindex="-1"]:focus { outline: none; }
     .guides-split.guides-has-main > .guides-nav { display: none; }
     /* G2a: Guides numbers (section 2, group 2.3, entry 2.3.4): small, grey, tabular, never wrapping, at the right of the row's first line. A numbered row's title wraps instead of being cut off. */
-    .guides-num { font-size: 13px; font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .guides-num { font-size: 0.8125rem; font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
     .guides-row-numbered { align-items: baseline; align-content: center; }
     .guides-row-numbered .guides-row-title { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
     .guides-row-numbered > .guides-num, .guides-cats .guides-row > .guides-num { grid-row: 1; }
@@ -2556,9 +2562,9 @@
     .mentor-backdrop { --mp-gap: max(56px, calc(env(safe-area-inset-top) + 12px)); position: fixed; inset: 0; z-index: 200; background: var(--scrim); display: flex; align-items: flex-end; justify-content: center; padding: 0 20px calc(var(--arc-h) + 12px); overscroll-behavior: contain; animation: mo-fade var(--motion-med) var(--motion-ease) both; }
     .mentor-window { position: relative; box-sizing: border-box; width: 100%; max-width: 380px; height: 260px; max-height: calc(100% - var(--mp-gap)); display: flex; gap: 12px; padding: 16px; color: var(--text); background-color: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: 18px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45); transform-origin: var(--mp-ox, 50%) var(--mp-oy, 100%); animation: mp-grow var(--motion-med) var(--motion-ease) both; }
     .mentor-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
-    .mentor-greeting { margin: 0; padding-top: 4px; font-size: 18px; font-weight: 600; line-height: 1.3; color: var(--accent); overflow-wrap: anywhere; }
-    .mentor-chip { flex: 0 1 auto; max-width: 100%; min-height: 44px; padding: 6px 16px; font: inherit; font-size: 15px; font-weight: 600; text-align: left; white-space: normal; overflow-wrap: anywhere; color: var(--accent); background-color: var(--card); border: 1px solid var(--accent); border-radius: 22px; cursor: pointer; }
-    .mentor-input { flex: 1; min-width: 0; height: 48px; box-sizing: border-box; padding: 0 12px; font: inherit; font-size: 16px; color: var(--text); background-color: var(--background); border: 1px solid var(--border); border-radius: 12px; }
+    .mentor-greeting { margin: 0; padding-top: 4px; font-size: 1.125rem; font-weight: 600; line-height: 1.3; color: var(--accent); overflow-wrap: anywhere; }
+    .mentor-chip { flex: 0 1 auto; max-width: 100%; min-height: 44px; padding: 6px 16px; font: inherit; font-size: 0.9375rem; font-weight: 600; text-align: left; white-space: normal; overflow-wrap: anywhere; color: var(--accent); background-color: var(--card); border: 1px solid var(--accent); border-radius: 22px; cursor: pointer; }
+    .mentor-input { flex: 1; min-width: 0; height: 48px; box-sizing: border-box; padding: 0 12px; font: inherit; font-size: 1rem; color: var(--text); background-color: var(--background); border: 1px solid var(--border); border-radius: 12px; }
     .mentor-input:disabled { opacity: 0.55; }
     /* X6b: the conversation. The scroll box holds the greeting and the messages; the chips sit under it (one line, scrolling sideways, no scroll bar); the typing box is at the bottom. */
     .mentor-scroll { position: relative; flex: 0 1 auto; min-height: 0; padding-bottom: 6px; overflow-y: auto; overscroll-behavior: contain; }   /* A1: 6 px so the last chip is not cut by the edge */
@@ -2578,16 +2584,16 @@
     .mentor-msg { min-width: 0; display: grid; gap: 8px; animation: mo-fade var(--motion-fast) var(--motion-ease) both; }
     .mentor-msgs:not(:empty) { margin-top: 10px; }
     .mentor-me { justify-items: end; }
-    .mentor-me p { margin: 0; max-width: 85%; padding: 8px 12px; font-size: 15px; line-height: 1.35; overflow-wrap: anywhere; white-space: pre-wrap; color: var(--text); background-color: var(--accent-wash); border: 1px solid var(--border); border-radius: 14px; }
-    .mentor-lead { margin: 0; font-size: 15px; line-height: 1.4; overflow-wrap: anywhere; }
+    .mentor-me p { margin: 0; max-width: 85%; padding: 8px 12px; font-size: 0.9375rem; line-height: 1.35; overflow-wrap: anywhere; white-space: pre-wrap; color: var(--text); background-color: var(--accent-wash); border: 1px solid var(--border); border-radius: 14px; }
+    .mentor-lead { margin: 0; font-size: 0.9375rem; line-height: 1.4; overflow-wrap: anywhere; }
     .mentor-reply .idea-list { gap: 8px; }
-    .mentor-sources-label { margin: 0; font-size: 13px; color: var(--muted); }
+    .mentor-sources-label { margin: 0; font-size: 0.8125rem; color: var(--muted); }
     .mentor-sources { display: grid; gap: 6px; justify-items: start; }
-    .mentor-source { max-width: 100%; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px; font: inherit; font-size: 14px; text-align: left; color: var(--accent); background-color: var(--card); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; }
+    .mentor-source { max-width: 100%; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px; font: inherit; font-size: 0.875rem; text-align: left; color: var(--accent); background-color: var(--card); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; }
     .mentor-source span:last-child { min-width: 0; overflow-wrap: anywhere; }
     .mentor-chips-in { padding-bottom: 2px; }
     /* E: "Did you mean" above its one chip, in the same quiet style as the Sources label */
-    .mentor-dym { margin: 0; font-size: 13px; color: var(--muted); }
+    .mentor-dym { margin: 0; font-size: 0.8125rem; color: var(--muted); }
     .mentor-chatting { height: min(720px, calc(100% - var(--mp-gap))); }   /* D: taller on a phone: all the room below the status bar and above the bottom bar, up to 720 px on a big screen (was 480). The 56 px at the top is where a notice shows, so it never sits over a button. */
     .mentor-chatting .mentor-col { padding-top: 40px; }
     .mentor-chatting .mentor-scroll { flex: 1 1 auto; }
@@ -2601,7 +2607,7 @@
     .mp-ring { transform-box: fill-box; transform-origin: center; animation: mp-turn 40s linear infinite; }
     .mp-wake { transform-box: fill-box; transform-origin: center; animation: mp-lens 160ms var(--motion-ease) var(--motion-med) both; }
     .mp-look { animation: mp-glance 6s ease-in-out infinite; }
-    .mentor-close { position: absolute; top: 6px; right: 6px; width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1; color: var(--muted); background-color: transparent; border: 0; border-radius: 12px; cursor: pointer; }
+    .mentor-close { position: absolute; top: 6px; right: 6px; width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1rem; line-height: 1; color: var(--muted); background-color: transparent; border: 0; border-radius: 12px; cursor: pointer; }
     /* D: Back to start. Top left of the window, shown only in the chat view. Same press as the back arrow (Mo1). */
     .mentor-back { position: absolute; top: 6px; left: 6px; width: 44px; height: 44px; padding: 0; display: none; align-items: center; justify-content: center; overflow: hidden; color: var(--muted); background-color: transparent; border: 0; border-radius: 12px; cursor: pointer; transition: translate var(--motion-fast) var(--motion-ease), scale var(--motion-fast) var(--motion-ease), filter var(--motion-fast) var(--motion-ease); }
     .mentor-chatting .mentor-back { display: flex; }
