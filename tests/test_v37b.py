@@ -176,9 +176,10 @@ def main():
         # v75: removed check "Help says Start from and Faction": Help's tab line is now one short sentence (v75, HELP-3), so it no longer describes the Compendium
         mark_a, mark_b = app.index("v37 part 2: SEARCH"), app.index("v37: the other way to browse the starter schemes")
         new_code = app[mark_a:mark_b] + app[app.index("const WHEEL_TINT_C"):app.index("function wheelTone(")]
+        # v125: RS4b's "Pick a paint" pop-up in Paste recipes reuses buildSearchPicker, so it now has at least 3 users (4 at v125), not exactly 3.
         check("each shared builder is defined once and used by every box: buildSearchPicker (Start from, Faction), buildListSearch (three lists), wheelSub",
               all(app.count(f"function {n}(") == 1 for n in ["buildSearchPicker", "buildListSearch", "wheelSub", "wheelTint", "searchNorm", "searchMatches", "groupAllowsNow"])
-              and app.count("appendChild(buildSearchPicker(door") == 3 and app.count("appendChild(buildListSearch(door") == 3)
+              and app.count("appendChild(buildSearchPicker(door") >= 3 and app.count("appendChild(buildListSearch(door") == 3)
         check("the door flag is the switch: the Compendium door has search, the recipe card's door does not, and the door comment names it",
               re.search(r"fold: true, short: true, switcher: true, search: true", app) is not None and "search        (v37 part 2, Compendium only)" in app
               and "door.search" in app and not re.search(r"search:\s*true", app[app.index("function appendLibraryParts"):app.index("function appendRolePicker")]))
