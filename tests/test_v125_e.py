@@ -4,8 +4,9 @@
    split words), questions Mentor must not answer, app questions, colour questions and starters. Seven questions on the list need the
    phrase and synonym data of a later chunk (MF1) and are left out here: water, clothes, a small room, photos, a first model, streaky.
 2. The bands: a weak match that needed a typo fix is "maybe" with the corrected question; a clear match, or an entry's own title, has no "Did you mean".
-   Everyday words are never repaired ("bread" is not "break"); a real slip still is.
-3. The window: "Did you mean" and one chip that asks the corrected question; the chip and its line go once it is asked.
+   Everyday words are never repaired ("bread" is not "break"); a real slip still is, never into a colour word when another fits.
+   Painting questions with an app word in them ("install magnets", "pro painters", "backup weapon") never get the app's answer.
+3. The window: "Did you mean" and one chip that asks the corrected question, answered plainly (no second chip); the chip and its line go.
 4. "I do not know that yet.": one line, the starter chips under it, the window stays open with the box ready; an empty box adds nothing.
 5. Layout at 390x844 dark, 360x640 light and 320x568 dark: the line never sits over a chip, chips 44 px or more, no sideways scroll.
 6. Nothing typed is stored.
@@ -55,7 +56,13 @@ LIST = {
         ("the of it", "none", "none"), ("best pizza near me", "none", "none"), ("what is the capital of france", "none", "none"),
         ("how do I fix my wifi", "none", "none"), ("", "none", "none"), ("comment peindre une figurine", "none", "none"),
     ],
+    # painting questions that use an app word: never the app's answer (a review found these answered as app questions)
+    "painting, not app": [(q, "", "notapp") for q in (
+        "how do i install magnets in a tank", "how do I install a magnet", "how to install leds in terrain", "how do i paint an internet cable",
+        "how do i paint a backup weapon", "how do pro painters work so fast", "what do pro painters do to save time",
+        "how do i save my collection from dust", "how do i store my collection", "how much do pro painters charge", "is this primer free of solvents")],
     "app": [
+        ("how do I back up", "app:backup", "app"), ("how do i back up my models", "app:backup", "app"), ("is it free", "app:price", "app"),
         ("is minifolio free?", "app:price", "app"), ("how do i back up my data", "app:backup", "app"),
         ("does mentor send my questions anywhere", "app:privacy", "app"), ("do i need an account", "app:privacy", "app"),
         ("does it work offline", "app:install", "app"), ("are you ai", "app:mentor", "app"), ("how do i report a bug", "app:feedback", "app"),
@@ -74,6 +81,8 @@ def passes(a, want, how):
     ws = want.split("|")
     if how in ("none", "colour"):
         return a["kind"] == how
+    if how == "notapp":
+        return a["kind"] != "app"
     if how == "app":
         return a["kind"] == "app" and a["app"] == want
     if a["kind"] != "answer":
@@ -118,30 +127,36 @@ def main():
             check(f"{group}: {len(rows) - len(bad)}/{len(rows)} give the right answer", not bad, bad)
 
         print("\n--- 2. Bands and repairs ---")
-        weak, clear, none, bread, slip, title = page.evaluate(ASK, ["basecaot tips", "how do I thin my paint", "asdf qwerty", "bread chess website", "shadign recesses", "Base coating"])
+        weak, clear, none, bread, slip, title, brokn, cannon, mortage, magnet = page.evaluate(ASK, ["basecaot tips", "how do I thin my paint", "asdf qwerty",
+            "bread chess website", "shadign recesses", "Base coating", "my brush is brokn", "how do i paint a cannon", "how do i pay my mortage", "how do i install magnets in a tank"])
         check("a weak match that needed a typo fix is 'maybe', with the corrected question", weak["band"] == "maybe" and weak["dym"] == "Basecoat tips", weak)
         check("a clear match answers straight away, with no 'Did you mean'", clear["band"] == "clear" and not clear["dym"], clear)
         check("no answer: the lead is 'I do not know that yet.' and the starter questions come with it",
               none["kind"] == "none" and none["lead"] == "I do not know that yet.", none)
         check("everyday words are never repaired or split (bread, chess, website)", bread["kind"] == "none" and not bread["fixes"], bread)
         check("a real slip in a hobby word is still repaired", slip["kind"] == "answer" and slip["fixes"] == [["shadign", "shading"]], slip)
-        check("asking an entry's own title (a tapped 'Did you mean' chip) is clear", title["band"] == "clear" and title["keys"][:1] == ["base-coating"], title)
+        check("asking an entry's own title is clear", title["band"] == "clear" and title["keys"][:1] == ["base-coating"], title)
+        check("of two repairs just as close, not a colour word ('brokn' is broken, not brown)", brokn["fixes"] == [["brokn", "broken"]], brokn)
+        check("hobby words no entry uses are not repaired, and a slip of an everyday word is not split",
+              not cannon["fixes"] and not mortage["fixes"] and cannon["kind"] != "colour", [cannon, mortage])
+        check("installing magnets is a painting question (magnetising), not the app's install answer", magnet["kind"] == "answer" and magnet["keys"][:1] == ["magnetising"], magnet)
 
         print("\n--- 3. Did you mean ---")
         open_it(page)
-        ask(page, "blendign tips")
+        ask(page, "basecaot tips")
         r = last_reply(page)
         order = r.evaluate("b => [...b.children].map(c => c.className)")
         check("the reply starts with the line 'Did you mean' and then one chip", r.locator(".mentor-dym").inner_text() == "Did you mean"
               and order[:2] == ["mentor-dym", "mentor-chips mentor-chips-in mentor-dym-chips"] and r.locator(".mentor-dym-chips .mentor-chip").count() == 1, order)
         check("the chip is the corrected question, then the answer and its sources follow",
-              r.locator(".mentor-dym-chips .mentor-chip").inner_text() == "Blending tips" and r.locator(".mentor-source").count() >= 1, order)
+              r.locator(".mentor-dym-chips .mentor-chip").inner_text() == "Basecoat tips" and r.locator(".mentor-source").count() >= 1, order)
         check("'Did you mean' never sits over a chip", not page.evaluate(OVERLAP))
-        check("the answer is announced with the question it read", page.locator(".mentor-window [role=status]").inner_text().startswith("Did you mean Blending tips? "))
+        check("the answer is announced with the question it read", page.locator(".mentor-window [role=status]").inner_text().startswith("Did you mean Basecoat tips? "))
         m = page.locator(".mentor-msg").count()
         r.locator(".mentor-dym-chips .mentor-chip").click()
-        check("tapping the chip asks the corrected question", page.locator(".mentor-msg").count() == m + 2 and page.locator(".mentor-me").last.inner_text() == "Blending tips")
-        check("the new answer is clear (no 'Did you mean') and the used chip and its line are gone",
+        check("tapping the chip asks the corrected question", page.locator(".mentor-msg").count() == m + 2 and page.locator(".mentor-me").last.inner_text() == "Basecoat tips")
+        # "Basecoat tips" typed on its own is still a weak match; from the chip it is a yes, so it is answered plainly
+        check("the chip's question is answered clearly (no second 'Did you mean') and the used chip and its line are gone",
               last_reply(page).locator(".mentor-dym").count() == 0 and page.locator(".mentor-dym").count() == 0 and last_reply(page).locator(".mentor-source").count() >= 1)
 
         print("\n--- 4. I do not know ---")
@@ -164,7 +179,7 @@ def main():
         check("an empty box adds nothing and the window stays open", page.locator(".mentor-msg").count() == m and page.locator(".mentor-window").count() == 1)
 
         print("\n--- 5. Layout ---")
-        for (w, h, dark), typo in zip(((390, 844, True), (360, 640, False), (320, 568, True)), ("basecaot tips", "shadign tips", "layring tips")):
+        for (w, h, dark), typo in zip(((390, 844, True), (360, 640, False), (320, 568, True)), ("blendign tips", "shadign tips", "layring tips")):
             page.set_viewport_size({"width": w, "height": h})
             page.evaluate("(d) => document.documentElement.setAttribute('data-appearance', d ? 'dark' : 'light')", dark)
             name = f"{w}x{h} {'dark' if dark else 'light'}"
@@ -178,7 +193,7 @@ def main():
 
         print("\n--- 6. Nothing stored ---")
         stored = page.evaluate("() => Object.keys(localStorage).map(k => localStorage.getItem(k)).join(' ')")
-        check("nothing typed is stored", "blendign" not in stored and "basecaot" not in stored and "asdf" not in stored)
+        check("nothing typed is stored", "basecaot" not in stored and "shadign" not in stored and "asdf" not in stored)
         check("no page errors", not errors, errors)
         check("no browser pop-ups", not dialogs, dialogs)
         browser.close()

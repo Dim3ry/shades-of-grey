@@ -12,6 +12,7 @@
 //   tips    the Mentor tips (MENTOR_TIPS), for their suggested colours. Optional, falls back to the page's MENTOR_TIPS
 //   colour  the colour maths (MinifolioColour). Optional, falls back to the page's
 //   ideas   optional: ideas(baseHex, part) returning [ { wanted, relation, hit } ], so the screen can hand over its own Picker code
+//   confirmed  optional (E): true when the question is a tapped "Did you mean" chip; the answer is then clear, with no second chip
 //   data    optional: the extra words (MENTOR_DATA from mentor-data.js). Falls back to the page's MENTOR_DATA; with none, the
 //           engine works from the entries alone, as before
 // Returns { kind: "answer" | "colour" | "none" | "app", lead, sources: [ { type, key, label, colour? } ] (up to 3), picks?, suggestions? }.
@@ -97,7 +98,7 @@
   // are left out, because a known word is never repaired anyway, and so are the few that are one slip from a word every painter types
   // ("pain", "waiter", "contract": a phone often makes those out of "paint", "water" and "contrast"). Compared by stem, so "pancake" and
   // "pancakes" are one word. Two halves of a split word are still joined ("ba sing" is basing).
-  const NEVER_REPAIR = new Set(("account actor address africa agency airline airport album amazing america android annual antivirus anxiety anybody apartment " +
+  const NEVER_REPAIR_WORDS = ("account actor address africa agency airline airport album amazing america android annual antivirus anxiety anybody apartment " +
     "appointment april article asia asleep asteroid attack august aunt australia author awake award aware awful bacon baker bakery " +
     "banana barber barn baseball basketball bathroom bean beautiful beef beer believe bench bicycle bike bill biology birth birthday " +
     "biscuit bitcoin blog boat born bought bowl boyfriend brave brazil bread breakfast brew bride brother brought budget bulb burger " +
@@ -129,7 +130,13 @@
     "toast today toddler tokyo tomato tomorrow tonight toothpaste topic tornado total tour tourist tower trade traffic trainers truck " +
     "truth tuesday twitter ugly umbrella uncle union universe university upon upset urgent vacation vacuum valley vegetable virus visa " +
     "vitamins vodka voice vote voting wales wallet wallpaper wealth website wedding wednesday west whale whisky wife wifi wish " +
-    "witch women wonder wonderful worker workout wrestling writer yesterday yoga yoghurt york youtube").split(" ").map(stem));
+    "witch women wonder wonderful worker workout wrestling writer yesterday yoga yoghurt york youtube").split(" ");
+  const NEVER_REPAIR = new Set(NEVER_REPAIR_WORDS.map(stem));
+  // E: hobby words no entry uses yet. They are known words: never repaired ("cannon" is not "cannot", "tower" is not "power") and not
+  // counted as words from another subject. Generic words only, never a brand or faction name.
+  const HOBBY_WORDS = ("cannon cannons titan titans regiment regiments priest priests cowboy cowboys samurai ninja ninjas viking vikings roman romans " +
+    "gladiator gladiators bug bugs cyborg cyborgs mutant mutants lich necromancer archer archers chariot chariots catapult catapults siege " +
+    "wargame wargames wargaming boardgame boardgames tower towers orc orcs").split(" ");
 
   // ---------- words ----------
   const FILLER = new Set(("a an the i me my we you your our it its is are am be do does did can could should would will to of for on in at " +
@@ -295,6 +302,7 @@
     const weightOf = (w) => weights.get(w) || rare;
     // a keyword phrase counts by the average weight of its words, but never below WEIGHT.phraseMin
     for (const r of rows) r.keywordWords = new Set(r.phrases.flat());
+    for (const r of rows) r.words = new Set([...r.title, ...r.summary, ...r.keywordWords, ...r.ask.flatMap((a) => a.words)]);   // E: for the repair tie-break
     for (const r of rows) r.phraseWeight = r.phrases.map((p) => Math.max(WEIGHT.phraseMin, p.reduce((t, w) => t + weightOf(w), 0) / p.length));
     // X8b (d): which phrases use each word, and each phrase's size (its words' weights squared, added up, square-rooted)
     const askIndex = new Map();
@@ -305,6 +313,7 @@
     const seen = new Set(vocab);   // X8b (f): every word in any entry, bodies too
     for (const r of rows) for (const w of r.body) seen.add(w);
     const unseenPower = UNSEEN_POWER * Math.min(1, seen.size / UNSEEN_VOCAB);   // X8b (f)
+    const big = seen.size >= UNSEEN_VOCAB;
     const surface = new Map();
     for (const [s, m] of forms) surface.set(s, [...m.entries()].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))[0][0]);
     const plain = new Map();   // E: every plain word of a title, summary, keyword or phrase -> its stem, for typo repair
@@ -316,6 +325,7 @@
       if (to.length !== 1 || FILLER.has(to[0])) continue;
       for (const v of g.slice(1)) if (/^[a-z]+$/.test(v) && !plain.has(v) && !FILLER.has(v)) plain.set(v, stem(to[0]));
     }
+    if (big) for (const w of HOBBY_WORDS) { seen.add(stem(w)); if (!plain.has(w)) plain.set(w, stem(w)); }   // E: known, so never repaired
     for (const w of FILLER) if (w.length >= TYPO.short && !plain.has(w)) plain.set(w, "");   // a slip in "painting" or "colour" is put right too (and then left out)
     const hit = { rows, vocab: [...vocab].sort(), weightOf, askIndex, syn, seen, unseenPower, df, surface, plain, near: new Map() };
     cache.set(entries, { data, hit });
@@ -347,7 +357,7 @@
   function nearestKnown(w, prep) {
     if (w.length < TYPO.short || !/^[a-z]+$/.test(w)) return null;
     const max = w.length >= TYPO.long ? 2 : 1;
-    let best = null;
+    let best = null, ties = [];
     const oneStems = new Set();
     for (const [v, vs] of prep.plain) {
       if (Math.abs(v.length - w.length) > max || v.length < 3) continue;
@@ -358,11 +368,13 @@
       if (d > max || (d === 2 && !sameFirst)) continue;
       if (d === 1) oneStems.add(vs || v);
       const df = vs === "" ? Infinity : prep.df.get(vs) || 0;   // filler words are the commonest of all
-      if (!best || d < best.d || (d === best.d && (df > best.df || (df === best.df && v < best.v)))) best = { v, d, df };
+      if (!best || d < best.d) { best = { v, d, df }; ties = []; }
+      if (d === best.d) ties.push({ v, df, colour: !!COLOUR_WORDS[v] });
     }
     if (!best) return null;
     if (w.length === TYPO.short && (best.d !== 1 || oneStems.size !== 1)) return null;   // a 4-letter word: only when exactly one word fits
-    return best.v;
+    // E: every word as close as the best, commonest first (then alphabetical, so it is repeatable); repairWords picks one by context
+    return ties.sort((a, b) => b.df - a.df || (a.v < b.v ? -1 : 1));
   }
   // Before E (and still, for an index with few everyday words, where an unknown word is more often a real word than a slip: the same
   // reasoning as UNSEEN_VOCAB): a word not known is read as the one known stem a single slip away, 5 letters or more, same first letter.
@@ -375,6 +387,25 @@
     });
   }
   const everyday = (w) => NEVER_REPAIR.has(stem(w));
+  // E: one slip from an everyday word, for words of 5 letters or more ("mortage" is mortgage, not "mor tage")
+  const nearEveryday = (w) => w.length >= 5 && NEVER_REPAIR_WORDS.some((e) => Math.abs(e.length - w.length) <= 2 && slips(w, e, 1) <= 1);
+  // E: of several words just as close: one that is not a colour word (a slip read as a colour would send the question to the colour
+  // rules: "brokn" is broken, not brown), then the one that shares the most entries with the question's other words, then the commonest.
+  function pickRepair(ties, x, words, prep) {
+    if (!ties || !ties.length) return null;
+    if (ties.length === 1) return ties[0].v;
+    const others = words.filter((y) => y !== x && !FILLER.has(y) && isKnownWord(y, prep)).map(stem);
+    const together = (t) => {
+      if (!others.length) return 0;
+      const st = prep.plain.get(t.v) || stem(t.v);
+      let n = 0;
+      for (const r of prep.rows) if (r.words && r.words.has(st) && others.some((o) => r.words.has(o))) n++;
+      return n;
+    };
+    const scored = ties.map((t, i) => ({ t, i, n: together(t) }));
+    scored.sort((a, b) => (a.t.colour - b.t.colour) || b.n - a.n || a.i - b.i);
+    return scored[0].t.v;
+  }
   function repairWords(words, prep) {
     const fixes = [];
     const vocabHas = (s) => prep.df.has(s);
@@ -391,13 +422,15 @@
     for (const x of w) {
       if (isKnownWord(x, prep) || x.length < TYPO.short || everyday(x)) { out.push(x); continue; }   // E: an everyday word stays as typed
       if (!prep.near.has(x)) prep.near.set(x, nearestKnown(x, prep));   // the same slip is worked out once per index
-      const v = prep.near.get(x);
+      const v = pickRepair(prep.near.get(x), x, w, prep);
       if (v) { fixes.push([x, v]); out.push(v); continue; }
+      if (nearEveryday(x)) { out.push(x); continue; }   // E: a slip of an everyday word ("mortage") is never split into two
       // a joined pair: both halves known, at least one a real topic word ("wetpalette", "usefor")
       let split = null;
       for (let i = 2; i <= x.length - 2; i++) {
         const a = x.slice(0, i), b = x.slice(i);
-        const ka = FILLER.has(a) || (a.length >= 3 && prep.seen.has(stem(a))), kb = FILLER.has(b) || (b.length >= 3 && prep.seen.has(stem(b)));
+        // E: each half a plain word of the entries (or a filler word), not a word found only in some body text
+        const ka = FILLER.has(a) || (a.length >= 3 && prep.plain.has(a)), kb = FILLER.has(b) || (b.length >= 3 && prep.plain.has(b));
         if (!ka || !kb || !(vocabHas(stem(a)) || vocabHas(stem(b)))) continue;
         const m = Math.min(a.length, b.length);
         if (!split || m > split.m) split = { a, b, m };
@@ -651,32 +684,48 @@
   }
 
   // ---------- E: questions about the app itself (from Help) ----------
-  // Matched on plain words before anything else. A topic answers when the question has one of its "alone" words, or one of its "with"
-  // words together with a word that names the app (APP_NAMES) or, for "you", a question to Mentor itself. One slip is allowed in words of
-  // five letters or more. These are the only answers not taken from an entry, so each says only what Help says.
-  const APP_NAMES = ["minifolio", "app", "application", "paint picker", "pro version", "pro", "browser", "my data", "my units", "my collection"];
+  // Matched on plain words, and answered only when the question is clearly about the app AND no guide fits clearly (see mentorAnswer).
+  // Clearly about the app means one of:
+  //   an "alone" phrase, which only means the app ("back up my data", "work offline", "report a bug");
+  //   a "with" word together with a word that names the app (APP_NAMES: "is minifolio free", "does the app sync");
+  //   an "only" word in a question with nothing else in it but small words and the person's own things ("is it free", "how do I back up",
+  //   "how do I back up my models"). "how do I install magnets" or "is this primer free of solvents" has other words, so it is a painting question;
+  //   for "you", a "you" word ("are you a bot").
+  // One slip is allowed in words of five letters or more. These are the only answers not taken from an entry, so each says only what the app says.
+  const APP_NAMES = ["minifolio", "app", "the app", "this app", "paint picker", "pro version", "browser", "my data"];
   const APP_TOPICS = [   // in this order: the first that fits answers
-    { key: "app:price", label: "Help: About", alone: ["subscription", "subscriptions", "premium", "in app purchases", "pay to use mentor", "is mentor free"],
-      with: ["free", "cost", "costs", "price", "pricing", "pay", "paid", "purchase", "purchases", "money", "charge", "fee", "how much"],
-      lead: "Minifolio is free while in preview. There are no adverts and no account." },
-    { key: "app:backup", label: "Help: Your data and backups", alone: ["backup", "backups", "csv", "new phone", "export my", "restore a backup", "clear my browser", "lose my units", "lose my data"],
-      with: ["back up", "export", "restore", "transfer", "lose", "save", "move"],
+    { key: "app:price", label: "Help: About", alone: ["in app purchases", "pay to use mentor", "is mentor free"],
+      with: ["free", "cost", "costs", "price", "pricing", "pay", "paid", "purchase", "purchases", "money", "charge", "fee", "how much", "subscription", "premium"],
+      only: ["free", "cost", "costs", "price", "pricing", "pay", "paid", "money", "subscription", "premium"],
+      lead: "Features marked Pro preview are free while in preview, and nothing is locked. There are no adverts and no account." },
+    { key: "app:backup", label: "Help: Your data and backups", alone: ["back up my data", "backup my data", "export my data", "restore a backup", "restore my backup", "save a backup", "lose my data", "clear my browser", "new phone", "csv"],
+      with: ["back up", "backup", "backups", "export", "restore", "transfer", "lose", "save", "move"],
+      only: ["back up", "backup", "backups", "export", "restore", "transfer"],
       lead: "Everything is saved on this device only, so use Settings, Backups, Save backup now and then. Restore backup brings it back, also on a new phone." },
-    { key: "app:install", label: "Help: Installing on your phone", alone: ["offline", "internet", "install", "home screen", "homescreen", "app store", "play store"],
-      with: ["android", "iphone", "update", "download", "phone", "work", "works"],
+    { key: "app:install", label: "Help: Installing on your phone", alone: ["work offline", "works offline", "use it offline", "without internet", "without wifi", "no internet", "install the app", "install minifolio", "add to home screen", "home screen", "homescreen", "app store", "play store"],
+      with: ["install", "offline", "internet", "android", "iphone", "update", "download", "phone", "work", "works"],
+      only: ["install", "offline", "internet", "download"],
       lead: "Minifolio works with no internet once it has loaded. To install it, open it in Chrome and choose Add to Home screen, or on an iPhone use Safari's Share button and Add to Home Screen." },
     { key: "app:mentor", label: "Help: Getting started", alone: ["chatgpt", "chatbot", "who are you", "what can you do", "are you ai", "are you an ai", "are you a bot", "are you real", "real person", "are you human", "is mentor ai", "mentor work", "mentor works"],
-      with: ["ai", "work", "works", "bot", "robot", "human"], you: ["ai", "bot", "chatbot", "human"],
+      with: ["ai", "work", "works", "bot", "robot", "human"], you: ["ai", "bot", "chatbot", "human"], only: ["ai"],
       lead: "Mentor answers painting questions from the app's own Guides and colour rules. It isn't AI, it runs on this device and works offline." },
-    { key: "app:feedback", label: "Help: Updates and feedback", alone: ["give feedback", "report a bug", "found a bug", "contact the developer", "suggest a feature", "made this app", "who made this"],
-      with: ["feedback", "bug", "contact", "developer", "feature", "made", "suggest"],
+    { key: "app:feedback", label: "Help: Updates and feedback", alone: ["give feedback", "report a bug", "found a bug", "contact the developer", "suggest a feature", "made this app", "who made this app"],
+      with: ["feedback", "bug", "contact", "developer", "feature", "made", "suggest"], only: ["feedback", "developer"],
       lead: "Use Give feedback under Settings, Updates to report a problem or suggest something." },
-    { key: "app:privacy", label: "Help: Privacy", alone: ["privacy", "cookies", "account", "accounts", "login", "log in", "sign up", "sign in", "sync", "tracking me", "who can see", "does mentor send", "mentor send"],
-      with: ["private", "data", "sell", "collect", "cloud", "upload", "uploaded", "see", "send", "sent", "stored"], you: ["sell", "collect", "data", "private"],
+    { key: "app:privacy", label: "Help: Privacy", alone: ["privacy", "cookies", "sign up", "sign in", "log in", "login", "tracking me", "who can see", "does mentor send", "mentor send", "delete my data", "need an account", "my account"],
+      with: ["private", "data", "sell", "collect", "cloud", "upload", "uploaded", "see", "send", "sent", "stored", "sync", "account", "accounts"],
+      you: ["sell", "collect", "data", "private"], only: ["account", "accounts", "sync", "private", "tracking", "cloud", "upload", "uploaded"],
       lead: "Your units, photos, recipes and paints stay on this device. There is no account and no cloud copy, and what you type to Mentor is not sent anywhere." },
   ];
+  // Words an app question may hold besides its topic: small words, and the person's own things ("back up my models"). Not hobby words.
+  const APP_SMALL = new Set(("a an the i me my we you your our it its is are am be do does did can could should would will to of for on in at by with and or " +
+    "if so how what why when where which who please help about get got make some any this that these those there just really very want need like " +
+    "tell show know whats hows was were been has have had im ive id dont doesnt didnt cant wont isnt hi hello hey thanks also too than then from " +
+    "into as up still ever use using much all everything stuff things models units collection recipes schemes photos paints list lists progress settings " +
+    "pls plz please thx u ur lol ok okay so basically um anyone where anywhere else my mine hey guys quick question random noob sorry dumb one").split(" "));
+  const PAINTING_WORDS = new Set("paint painting painted paints miniature miniatures mini minis figure figures colour colours color colors brush brushes".split(" "));
   const APP_WORDS = new Set(["you", "it", "this", "the", "my", "is", "do", "to", "for", "how", "can", "i"]);
-  for (const t of APP_TOPICS) for (const p of [...t.alone, ...t.with]) for (const w of p.split(" ")) APP_WORDS.add(w);
+  for (const t of APP_TOPICS) for (const p of [...t.alone, ...t.with, ...t.only]) for (const w of p.split(" ")) APP_WORDS.add(w);
   for (const p of APP_NAMES) for (const w of p.split(" ")) APP_WORDS.add(w);
   // one slip only in words of five letters or more: shorter words (free, cost, data, made, save, sell) have too many real neighbours
   const appLike = (a, b) => a === b || (Math.min(a.length, b.length) >= 5 && oneAway(a, b));
@@ -696,18 +745,23 @@
       }
       if (cut) words.push(w[i].slice(0, cut), w[i].slice(cut)); else words.push(w[i]);
     }
+    const used = new Set();   // the places of the words an app phrase matched (for rest, below)
     const has = (list, exact) => !!list && list.some((p) => {
       const ps = p.split(" ");
-      for (let i = 0; i + ps.length <= words.length; i++) if (ps.every((x, j) => (exact ? words[i + j] === x : appLike(words[i + j], x)))) return true;
+      for (let i = 0; i + ps.length <= words.length; i++) {
+        if (ps.every((x, j) => (exact ? words[i + j] === x : appLike(words[i + j], x)))) { ps.forEach((_, j) => used.add(i + j)); return true; }
+      }
       return false;
     });
     const named = has(APP_NAMES);
-    // "is it free", "do i have to pay for this": "it" or "this" may mean the app, for the price only, and only if no guide fits (see mentorAnswer)
-    const maybeNamed = words.length <= 8 && (words.includes("it") || words.includes("this"));
+    // nothing in the question but app words and small words: "is it free", "how do I back up my models"
+    const bare = words.length > 0 && words.every((x) => APP_SMALL.has(x) || isAppWord(x));
     const toYou = words.includes("you");
     for (const t of APP_TOPICS) {
+      // sure: a phrase that only means the app, or the app named; a guide must then fit strongly to win (see mentorAnswer)
       const sure = has(t.alone) || (named && has(t.with)) || (toYou && has(t.you, true));
-      if (sure || (maybeNamed && t.key === "app:price" && has(t.with, true))) return { kind: "app", lead: t.lead, sources: [], band: "clear", app: t.key, label: t.label, weak: !sure };
+      // rest: the question's other words (not app words, not small words), which a guide must fit on its own to win over a sure app answer
+      if (sure || (bare && has(t.only))) return { kind: "app", lead: t.lead, sources: [], band: "clear", app: t.key, label: t.label, sure, rest: words.filter((x, i) => !used.has(i) && !APP_SMALL.has(x) && !isAppWord(x)) };
     }
     return null;
   }
@@ -735,10 +789,19 @@
     const C = ctx.colour || root.MinifolioColour;
     // X8b: the extra words, if any (the context's own, else the page's MENTOR_DATA from mentor-data.js)
     const data = ctx.data !== undefined ? ctx.data : (typeof MENTOR_DATA === "undefined" ? null : MENTOR_DATA);
-    const app = appAnswer(text);   // E: a question about the app itself
-    if (app && !app.weak) return app;
     const found = lookup(text, index, false, data);
-    if (app && !(found.hits[0] && found.hits[0].score >= BAND.clear)) { delete app.weak; return app; }
+    // E: a question about the app itself, unless a guide fits clearly (a painting question never gets the app's answer)
+    // A guide that fits from BAND.clear wins. When the question names the app or uses a phrase that only means the app, the guide must
+    // fit the other words on their own, and a painting word left over ("give feedback on my painting") makes it a painting question.
+    const app = appAnswer(text);
+    if (app && !found.starter) {
+      const rest = app.rest;
+      // (the same bar as any answer: a guide found only through a typo fix must reach BAND.clearFixed)
+      const bar = (f) => (f.hits[0] ? f.hits[0].score : 0) >= (f.fixes && f.fixes.length ? BAND.clearFixed : BAND.clear);
+      const guideWins = app.sure ? rest.some((x) => PAINTING_WORDS.has(x)) || bar(lookup(rest.join(" "), index, false, data)) : bar(found);
+      delete app.sure; delete app.rest;
+      if (!guideWins) return app;
+    }
     const read = readColourQuestion(text, prepared(index.entries, data).syn);
 
     // a starter question maps straight to its targets
@@ -770,7 +833,8 @@
       const fixed = found.fixes.length > 0;
       // the very title of the best entry (a "Did you mean" chip that was tapped, say) is clear: there is nothing better to offer
       const asTitle = !fixed && rawWords(text).join(" ") === rawWords(keep[0].e.title).join(" ");
-      const band = asTitle || top.score >= (fixed ? BAND.clearFixed : BAND.clear) ? "clear" : "maybe";
+      // E: context.confirmed: the question came from a tapped "Did you mean" chip, so the person has said yes: answer it plainly
+      const band = ctx.confirmed || asTitle || top.score >= (fixed ? BAND.clearFixed : BAND.clear) ? "clear" : "maybe";
       const out = { kind: "answer", lead, sources: keep.map((h) => source(h.e)), score: top.score, band };
       if (band === "maybe") out.didYouMean = fixed ? correctedQuestion(text, found.fixes) : keep[0].e.title;
       if (fixed) out.fixes = found.fixes.map(([a, b]) => [a, b]);

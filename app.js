@@ -4530,9 +4530,10 @@
       return knowledgeIndex().list({ kind: "starter" }).map(e => e.title).filter(t => t && !mentorUsed.has(t.toLowerCase()));
     }
     // Ask the engine. The Paint Picker's own colour code does the picks (ctx.ideas), so they are exactly the Paint Picker's.
-    function mentorAsk(text) {
+    function mentorAsk(text, confirmed) {
       let pick = null;
       const answer = MinifolioMentor.mentorAnswer(text, {
+        confirmed: !!confirmed,   // E: a tapped "Did you mean" chip is answered plainly, with no second chip
         index: knowledgeIndex(),
         paints: colourIdeaPool(),
         tips: typeof MENTOR_TIPS === "undefined" ? [] : MENTOR_TIPS,
@@ -4619,7 +4620,7 @@
         dym.textContent = "Did you mean";
         const row = document.createElement("div");
         row.className = "mentor-chips mentor-chips-in mentor-dym-chips";
-        row.appendChild(mentorChip(m.didYouMean, () => mentorSend(m.didYouMean, true)));
+        row.appendChild(mentorChip(m.didYouMean, () => mentorSend(m.didYouMean, true, true)));
         box.append(dym, row);
       }
       const lead = document.createElement("p");
@@ -4673,8 +4674,8 @@
       state.chips.replaceChildren(state.pickerChip, ...mentorStarters().map(t => mentorChip(t, () => mentorSend(t, true))));
     }
 
-    // Send what the box holds (or the text of a chip). Returns false when there was nothing to send.
-    function mentorSend(raw, fromChip) {
+    // Send what the box holds (or the text of a chip). Returns false when there was nothing to send. E: confirmed is true for a "Did you mean" chip.
+    function mentorSend(raw, fromChip, confirmed) {
       const state = mentorState;
       const text = String(raw == null ? "" : raw).trim().slice(0, MENTOR_MAX_LENGTH);
       if (!state || !text) return false;
@@ -4688,7 +4689,7 @@
       }
       let reply;
       try {
-        const { answer, pick } = mentorAsk(text);
+        const { answer, pick } = mentorAsk(text, confirmed);
         // E: no answer: one line, and the starter questions that share the most words with it under it (the engine's suggestions)
         reply = answer.kind === "none"
           ? { who: "mentor", text: mentorPhrase(MENTOR_PHRASES.unsure, "I do not know that yet."), sources: [], suggestions: answer.suggestions || [] }
