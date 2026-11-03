@@ -55,8 +55,8 @@
        (applyAppearance in app.js) takes over once the app starts.
        U6b: mentor-looks.js (the Mentor orb's three looks and five states, plain data: MENTOR_LOOKS and MENTOR_LOOKS_CSS) loads
        just before it, so early.js can put the chosen look and its styles on the page before the first frame (LR1). -->
-  <script src="mentor-looks.js?v=126"></script>
-  <script src="early.js?v=126"></script>
+  <script src="mentor-looks.js?v=127"></script>
+  <script src="early.js?v=127"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -367,9 +367,12 @@
     }
     :is(body.launching, .mo-ring) .arc [data-tab] { padding: 0; gap: 4px; background-color: color-mix(in srgb, var(--accent-fill, var(--accent)) 14%, var(--card)); color: var(--text); font-size: 13px; line-height: 16px; font-weight: 400; }
     :is(body.launching, .mo-ring) .arc .icon { font-size: 32px; color: var(--accent); }
-    :is(body.launching, .mo-ring) .arc [data-tab="dashboard"] { left: 25.10px; top: 10.10px; width: 167.10px; height: 167.10px; clip-path: path('M163.96 0.00 A170 170 0 0 0 0.00 163.96 L89.95 167.10 A80 80 0 0 1 167.10 89.95 Z'); }
-    :is(body.launching, .mo-ring) .arc [data-tab="units"] { left: 197.79px; top: 10.10px; width: 167.10px; height: 167.10px; clip-path: path('M167.10 163.96 A170 170 0 0 0 3.14 0.00 L0.00 89.95 A80 80 0 0 1 77.16 167.10 Z'); }
-    :is(body.launching, .mo-ring) .arc [data-tab="recipes"] { left: 25.10px; top: 182.79px; width: 167.10px; height: 167.10px; clip-path: path('M0.00 3.14 A170 170 0 0 0 163.96 167.10 L167.10 77.16 A80 80 0 0 1 89.95 0.00 Z'); }
+    /* MN1: the circle's order matches the bar's (James, 3 Nov): Models top left, Painting top right, Dashboard bottom left, Tools bottom right. The bar
+       reads Dashboard, Models, Painting, Tools with Models and Painting raised in the middle, so on the travel (Mo4b, Mo4c) the top two go to the raised
+       middle pieces, the bottom two go down and out to the low ends, and no piece crosses another. Each segment keeps its icon, label, colour and size. */
+    :is(body.launching, .mo-ring) .arc [data-tab="units"] { left: 25.10px; top: 10.10px; width: 167.10px; height: 167.10px; clip-path: path('M163.96 0.00 A170 170 0 0 0 0.00 163.96 L89.95 167.10 A80 80 0 0 1 167.10 89.95 Z'); }
+    :is(body.launching, .mo-ring) .arc [data-tab="recipes"] { left: 197.79px; top: 10.10px; width: 167.10px; height: 167.10px; clip-path: path('M167.10 163.96 A170 170 0 0 0 3.14 0.00 L0.00 89.95 A80 80 0 0 1 77.16 167.10 Z'); }
+    :is(body.launching, .mo-ring) .arc [data-tab="dashboard"] { left: 25.10px; top: 182.79px; width: 167.10px; height: 167.10px; clip-path: path('M0.00 3.14 A170 170 0 0 0 163.96 167.10 L167.10 77.16 A80 80 0 0 1 89.95 0.00 Z'); }
     :is(body.launching, .mo-ring) .arc [data-tab="guides"] { left: 197.79px; top: 182.79px; width: 167.10px; height: 167.10px; clip-path: path('M3.14 167.10 A170 170 0 0 0 167.10 3.14 L77.16 0.00 A80 80 0 0 1 0.00 77.16 Z'); }
     body.launching .mentor-orb {
       left: 133px; top: 118px; width: 124px; height: 124px; padding: 0; justify-content: center; gap: 4px; font-size: 14px; line-height: 18px;
@@ -1212,6 +1215,37 @@
     .scheme-recipe-list .scheme-recipe-name { flex: 1; }
     .scheme-recipe-list small { color: var(--muted); font-size: 0.75rem; }
     .scheme-recipe-list .swatch { width: 14px; height: 14px; }
+    /* RS5: scheme form: Faction row with Change, Search recipes, recipes grouped by part (52 px rows, 24 px boxes), the same-faction note and a full-width Save */
+    .scheme-faction { display: grid; gap: 4px; }
+    .scheme-faction-row { display: flex; align-items: center; gap: 10px; min-height: 52px; }
+    .scheme-faction-text { flex: 1; min-width: 0; display: grid; gap: 2px; }
+    .scheme-faction-label { font-size: 0.8125rem; color: var(--muted); }
+    .scheme-faction-value { font-size: 1rem; font-weight: 600; overflow-wrap: anywhere; }
+    .scheme-faction-value.is-blank { font-weight: 400; color: var(--muted); }
+    .scheme-faction-row .plain-button { flex: none; min-height: 44px; min-width: 44px; padding: 0 14px; align-self: end; }
+    .scheme-faction-text + .plain-button { align-self: center; }
+    .scheme-form .scheme-faction-edit { flex: 1; min-width: 0; }
+    .scheme-form .scheme-faction .hint { margin: 0; }
+    .scheme-faction-error { margin: 0; color: var(--danger); font-size: 0.875rem; font-weight: 600; }
+    .scheme-faction.has-error input { border-color: var(--danger); }
+    .scheme-recipe-search { width: 100%; box-sizing: border-box; margin: 0 0 6px; }
+    .scheme-group[hidden] { display: none; }
+    .scheme-group + .scheme-group { margin-top: 6px; }
+    .scheme-group-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--border); }
+    .scheme-group-head h3 { margin: 0; font-size: 0.9375rem; min-width: 0; overflow-wrap: anywhere; }
+    .scheme-group-all { flex: none; min-height: 44px; min-width: 44px; padding: 0 12px; margin: 4px 0; }
+    .scheme-recipe-list label.scheme-pick-row { min-height: 52px; padding: 4px 4px 4px 0; box-sizing: border-box; color: var(--text); }
+    .scheme-pick-row input { flex: none; width: 24px; height: 24px; margin: 0 0 0 10px; }
+    .scheme-pick-row .scheme-recipe-name { overflow-wrap: anywhere; }
+    .scheme-bottom { display: grid; gap: 10px; margin-top: 12px; }
+    .scheme-clash { display: grid; gap: 4px; border: 2px solid var(--caution); border-radius: var(--radius-box); padding: 10px 12px; }
+    .scheme-clash p { margin: 0; overflow-wrap: anywhere; }
+    .scheme-bottom .check-label { display: flex; align-items: center; gap: 10px; min-height: 44px; color: var(--text); font-size: 0.9375rem; cursor: pointer; }
+    .scheme-bottom .check-label input { flex: none; width: 24px; height: 24px; }
+    .scheme-save { width: 100%; min-height: 48px; }
+    .scheme-more-buttons { display: flex; gap: 10px; }
+    .scheme-more-buttons button { flex: 1; min-height: 44px; }
+    #recipe-prefs-card .scheme-faction-switch { display: flex; align-items: center; gap: 10px; min-height: 44px; margin-top: 12px; color: var(--text); font-size: 0.9375rem; cursor: pointer; }
     .recipe-item .meta { font-size: 0.8125rem; color: var(--muted); }
     .swatches { display: flex; gap: 4px; flex-wrap: wrap; }
     /* A small circle of paint colour. --swatch is set by JavaScript. */
@@ -1703,6 +1737,12 @@
     .combo-option.is-active { background: var(--accent-wash); outline: 2px solid var(--accent); outline-offset: -2px; }
     .combo-status, .list-search-status { margin: 0; min-height: 1.4em; }
     .list-search-status:empty { display: none; }
+    /* F2: Start from in Colour ideas: your own paints as swatches (colour dot and name) that wrap onto lines, then More paints */
+    .start-swatches { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+    .start-swatches > .start-swatch { display: inline-flex; align-items: center; gap: 8px; flex: 0 1 auto; max-width: 100%; min-width: 44px; min-height: 44px;
+                                      padding: 8px 14px 8px 10px; border-radius: 14px; text-align: left; line-height: 1.25; white-space: normal; }
+    .start-swatch-name { min-width: 0; overflow-wrap: anywhere; }
+    .start-swatches > .start-more { min-height: 44px; padding: 0 14px; }
     /* v29: the tip for the chosen role, and "Does this scheme hang together?" */
     .role-tip { margin: 0; padding: 8px 12px; border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; background: var(--accent-wash); font-size: 0.875rem; line-height: 1.4; overflow-wrap: anywhere; }
     .role-tip strong { color: var(--accent); }
@@ -1757,6 +1797,28 @@
     .shop-suggest-dismiss { flex: none; width: 44px; height: 44px; padding: 0; background: transparent; border: 0; color: var(--muted); font-size: 0.9375rem; }
     .shop-suggest-dismiss:hover { color: var(--text); }
     .shop-suggest-dismiss:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+    /* L1: the closed Where to buy fold-out (under a Guides entry, a Basing tip or a Mentor answer; the same quiet look as Shop links), one product type per row (name, shop links that wrap, Add), and the Gear section on the shopping list (it uses the paint rows' own classes) */
+    .where-buy { margin: 8px 0 0; min-width: 0; }
+    .where-buy > summary { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; font-size: 0.8125rem; font-weight: 400; color: var(--muted); cursor: pointer; list-style: none; border-radius: var(--radius-box); }
+    .where-buy > summary::-webkit-details-marker { display: none; }
+    .where-buy > summary::after { content: "\25BE"; }
+    .where-buy[open] > summary { color: var(--accent); }
+    .where-buy[open] > summary::after { content: "\25B4"; }
+    .where-buy > summary:hover { color: var(--text); }
+    .where-buy > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .where-buy-body { display: grid; gap: 10px; min-width: 0; padding: 4px 12px 10px; }
+    .where-buy-body .hint { margin: 0; font-size: 0.8125rem; overflow-wrap: anywhere; }
+    .where-buy-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+    .where-buy-item { display: grid; gap: 6px; min-width: 0; }
+    .where-buy-name { font-weight: 600; overflow-wrap: anywhere; }
+    .where-buy-links { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+    .where-buy-links a { display: inline-flex; align-items: center; min-height: 44px; max-width: 100%; box-sizing: border-box; padding: 0 14px; color: var(--text); text-decoration: none; background: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-box); overflow-wrap: anywhere; }
+    .where-buy-links a:hover { border-color: var(--accent); }
+    .where-buy-links a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .where-buy-add .plain-button { min-height: 44px; }
+    .mentor-reply .where-buy { margin: 0; }
+    .mentor-reply .where-buy > summary { padding: 0; }
+    .mentor-reply .where-buy-body { padding: 4px 0 4px; }
     /* RS1: the recipe page. Edit menu by the title, named steps, folded Used on, and the Add to scheme picker. */
     .recipe-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
     .recipe-title-row h2 { flex: 1; min-width: 0; overflow-wrap: anywhere; }
@@ -2607,15 +2669,23 @@
     .seg.guides-order { grid-template-columns: repeat(2, 1fr); margin: 0; }
     .guides-seealso { display: grid; justify-items: start; }
     .guides-seealso-link { max-width: 100%; text-align: left; overflow-wrap: anywhere; }
+    /* G3: numbers on the Detail recipes and Basing chips in Guides (the title, then the small grey number, which never wraps or drops to a line of its own), and the Filters button that folds the group buttons away (its arrow points down when they show, right when folded) */
+    .chip.g3-num-chip { display: inline-flex; align-items: baseline; justify-content: center; gap: 6px; }
+    .g3-num-chip > .g3-chip-title { min-width: 0; }
+    .g3-num-chip > .guides-num { flex: none; font-size: 0.75rem; }
+    .chip.g3-num-chip[aria-pressed="true"] > .guides-num { color: inherit; }
+    .chips.g3-filter-row[hidden] { display: none; }
+    .g3-filters .fold-mark { transform: rotate(-45deg) translate(-1px, -1px); }
+    .g3-filters[aria-expanded="true"] .fold-mark { transform: rotate(45deg) translate(-2px, -2px); }
     @media (min-width: 900px) {
       .guides-split.guides-has-main { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 18px; align-items: start; }
       .guides-split.guides-has-main > .guides-nav { display: grid; }
     }
-    /* X5: the Mentor pop-up window. It grows from the round button (--mp-ox and --mp-oy are set by app.js from the button's position).
-       Only transform and opacity move. Reduced motion is handled by the single block above (no animation at all). No resting transform on any tap target. */
-    .mentor-backdrop { --mp-gap: max(56px, calc(env(safe-area-inset-top) + 12px)); position: fixed; inset: 0; z-index: 200; background: var(--scrim); display: flex; align-items: flex-end; justify-content: center; padding: 0 20px calc(var(--arc-h) + 12px); overscroll-behavior: contain; animation: mo-fade var(--motion-med) var(--motion-ease) both; }
-    .mentor-window { position: relative; box-sizing: border-box; width: 100%; max-width: 380px; height: 260px; max-height: calc(100% - var(--mp-gap)); display: flex; gap: 12px; padding: 16px; color: var(--text); background-color: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: 18px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45); transform-origin: var(--mp-ox, 50%) var(--mp-oy, 100%); animation: mp-grow var(--motion-med) var(--motion-ease) both; }
-    .mentor-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+    /* X5: the Mentor pop-up window. MW1: it opens out of the round button (app.js plays the move; see "MW1:" below).
+       No resting transform on any tap target. */
+    .mentor-backdrop { --mp-gap: max(56px, calc(env(safe-area-inset-top) + 12px)); position: fixed; inset: 0; z-index: 200; display: flex; align-items: flex-end; justify-content: center; padding: 0 20px calc(var(--arc-h) + 12px); overscroll-behavior: contain; }
+    .mentor-window { position: relative; box-sizing: border-box; width: 100%; max-width: 380px; height: 260px; max-height: calc(100% - var(--mp-gap)); display: flex; flex-direction: column; gap: 6px; padding: 16px; color: var(--text); background-color: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: 18px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45); }
+    .mentor-col { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
     .mentor-greeting { margin: 0; padding-top: 4px; font-size: 1.125rem; font-weight: 600; line-height: 1.3; color: var(--accent); overflow-wrap: anywhere; }
     .mentor-chip { flex: 0 1 auto; max-width: 100%; min-height: 44px; padding: 6px 16px; font: inherit; font-size: 0.9375rem; font-weight: 600; text-align: left; white-space: normal; overflow-wrap: anywhere; color: var(--accent); background-color: var(--card); border: 1px solid var(--accent); border-radius: 22px; cursor: pointer; }
     .mentor-input { flex: 1; min-width: 0; height: 48px; box-sizing: border-box; padding: 0 12px; font: inherit; font-size: 1rem; color: var(--text); background-color: var(--background); border: 1px solid var(--border); border-radius: 12px; }
@@ -2649,15 +2719,11 @@
     /* E: "Did you mean" above its one chip, in the same quiet style as the Sources label */
     .mentor-dym { margin: 0; font-size: 0.8125rem; color: var(--muted); }
     .mentor-chatting { height: min(720px, calc(100% - var(--mp-gap))); }   /* D: taller on a phone: all the room below the status bar and above the bottom bar, up to 720 px on a big screen (was 480). The 56 px at the top is where a notice shows, so it never sits over a button. */
-    .mentor-chatting .mentor-col { padding-top: 40px; }
     .mentor-chatting .mentor-scroll { flex: 1 1 auto; }
-    .mentor-chatting .mentor-orbbox { position: absolute; top: 8px; right: 56px; width: 40px; height: 40px; }
-    .mentor-chatting .mp-orb { width: 40px; height: 40px; }
     body.typing .mentor-backdrop { padding-bottom: 12px; }
     body.mentor-open .toast { z-index: 210; bottom: auto; top: 12px; }
     body.mentor-open .toast:not(.hidden) { animation-name: mo-fade; }   /* D: at the top it fades in instead of sliding up from below, so it never passes over the X or Back on the way */   /* a notice from a row in the window shows at the top, clear of every button in it */
-    .mentor-orbbox { flex: none; width: 72px; display: flex; align-items: center; justify-content: center; }
-    .mp-orb { width: 68px; height: 68px; animation: mp-float 4s ease-in-out infinite; }
+    .mp-orb { animation: mp-float 4s ease-in-out infinite; }
     /* U6b: the window's orb is the chosen look (its box has the class ml-live, so the look's own slow motion runs there and nowhere else); a mood swaps
        the drawing inside the same box, so nothing around it moves. The old lens orb's wake, glance and turn are gone with it. */
     .mentor-orbbox svg { pointer-events: none; }
@@ -2668,10 +2734,25 @@
     .mentor-back svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .mentor-back:active { translate: 0 1px; scale: 0.97; filter: brightness(0.92); }
     .mentor-back:focus-visible, .mentor-close:focus-visible, .mentor-chip:focus-visible, .mentor-send:focus-visible, .mentor-source:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
-    .mentor-backdrop.mentor-closing { animation: mo-fade var(--motion-fast) var(--motion-ease) reverse both; }
-    .mentor-closing .mentor-window { animation: mp-grow var(--motion-fast) var(--motion-ease) reverse both; }
-    @keyframes mp-grow { from { opacity: 0; transform: scale(0.2); } to { opacity: 1; transform: none; } }
     @keyframes mp-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+    /* MW1: Mentor opens out of its sphere, and the orb sits above the chat (James, 3 Nov).
+       The orb is centred at the top of the window, above the greeting, the starter questions and the box: 88 px on the start view, 48 px once the
+       conversation starts (app.js shrinks it smoothly between the two). The same stacked layout at every width: the window is never wider than 380 px.
+       Opening: app.js grows the round button's circle into the window. .mp-skin is that circle's colour and look (the button's accent fill and its
+       highlight); the window's clip-path opens from the button's box to the window's own rounded box while the orb travels from the button to its
+       place, then the skin fades away and the words fade in. Closing is the same move backwards into the button. Only transform, opacity and
+       clip-path move. The dim layer behind is its own ::before, so its fade never fades the circle. Reduced motion: no growing and no travel;
+       app.js fades the whole thing in quickly instead and it goes at once on closing (the block above stops every CSS animation). */
+    .mentor-backdrop::before { content: ""; position: absolute; inset: 0; background: var(--scrim); pointer-events: none; animation: mo-fade var(--motion-med) var(--motion-ease) both; }
+    .mentor-backdrop.mentor-closing::before { animation: mo-fade var(--motion-med) var(--motion-ease) reverse both; }
+    .mentor-window { --mp-orb: 88px; }
+    .mentor-chatting { --mp-orb: 48px; }
+    .mentor-orbbox { position: relative; flex: none; align-self: center; width: var(--mp-orb); height: var(--mp-orb); margin-top: -6px; display: flex; align-items: center; justify-content: center; }
+    .mentor-chatting .mentor-orbbox { margin-top: -12px; }
+    .mp-orb { width: 100%; height: 100%; }
+    .mentor-window:not(.mentor-chatting) .mentor-greeting { text-align: center; }
+    .mp-skin { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0;   /* the shadow covers the border without widening the window's scroll area */
+      box-shadow: 0 0 0 var(--border-width, 1px) var(--accent-fill, var(--accent)); background-color: var(--accent-fill, var(--accent)); background-image: radial-gradient(circle var(--mp-hr, 57px) at var(--mp-hx, 35%) var(--mp-hy, 30%), rgba(255, 255, 255, 0.35), transparent); }
   </style>
 </head>
 
@@ -3135,6 +3216,7 @@
             <li id="help-recipe-shop">Missing paints are not put on the shopping list by themselves. Every recipe has an <strong>Add to shopping list</strong> button under its steps. It adds the real paints you don't own (never the made-up example paints) and says how many. Undo takes them off again. It is greyed out when there is nothing to add.</li>
             <li id="help-shop-tick">On the Shopping list, tick a paint when you have bought it: it moves to <strong>Bought</strong> at the bottom and is marked Owned in Your Palette. Open Bought to tap <strong>Add back</strong>, or <strong>Clear bought</strong> to forget the list. <strong>Remove</strong> takes a paint off the list. Both have an Undo.</li>
             <li id="help-shop-suggested">Under the list, <strong>Suggested</strong> shows your Empty paints and the Not owned paints your recipes use. Nothing goes on the list by itself: tap <strong>Add</strong> to put one there, or <strong>✕</strong> to stop suggesting it. A paint you remove from the list is not suggested again either, until you add it again. Suggested only shows when there is something in it.</li>
+            <li id="help-shop-gear">Some Guides pages, Basing tips and Mentor answers have a <strong>Where to buy</strong> fold-out. It lists the things you need (such as a wet palette), each with plain search links to the shops and <strong>Add to shopping list</strong>. Added things go in a <strong>Gear</strong> section under your paints, saying which guide they came from. Tick one when you have bought it, or <strong>Remove</strong> it; both have an Undo. Gear counts in the basket and in Copy as text. Settings → Shop links hides the links but not the Add button.</li>
             <li id="help-shop"><strong>Shopping list</strong> (in Your Palette) lists only the paints you put there: your Wishlist paints and anything added with an <strong>Add to shopping list</strong> button, grouped by brand. Nothing is added by itself, not even a paint a recipe needs or one that is empty or running low. <strong>Buy these</strong> at the top has a button for each shop that sells them (Firestorm Games, Wayland Games, Element Games, and The Army Painter for Army Painter paints). Tap a shop for one search link per paint; each opens that shop's own search in a new tab. They're plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop. The link searches for the paint's name, so the results can include other brands' paints with the same name: check you've got the right pot before you buy.</li>
             <li id="help-wide-shop">On a wide screen, the shop links and <strong>Copy as text</strong> sit beside the paints on the Shopping list, and the Guides sections use the full width.</li>
             <li id="help-shop-links"><strong>Shop links on suggested paints</strong> (Pro preview): under a suggested paint you don't own, in the colour wheel's paint panel and in <strong>Colour ideas</strong> (in a recipe and in Colour Lab), tap <strong>Shop links</strong> to open a small fold-out. It has <strong>Add to shopping list</strong> (Undo is offered) and a plain search link for each shop that sells the paint. Paints you own show nothing. They're plain links, the same as in Buy these: Minifolio isn't paid for them, and only the paint's name goes to the shop. To hide every shop link and shop button, including Buy these, untick <strong>Settings → Shop links</strong>. Your shopping list stays. In Colour Lab's <strong>Colour ideas</strong>, <strong>Add to shopping list</strong> sits on the row of a paint you don't own instead, so its Shop links fold-out has only the links, and that button stays when Shop links is off, because it only adds to your own list.</li>
@@ -3145,13 +3227,14 @@
             <li id="help-paint-to-recipe">In <strong>Colour Lab</strong>, a colour idea, and a colour wheel paint once you open it, has <strong>Use in a recipe</strong> and <strong>Add to a recipe</strong>. Use in a recipe starts a new recipe with that paint in step 1. Add to a recipe lets you choose a recipe, then one of its steps or a new step, and saves it straight away. Both have an <strong>Undo</strong>. A paint that is not in Your Palette is added as <strong>Not owned</strong>, so it reaches your shopping list once a recipe uses it.</li>
             <li id="help-similar-paints">In <strong>Colour Lab</strong>, those same paints also have <strong>Similar paints</strong>. It opens a pop-up with <strong>Best match</strong>: up to three paints from different brands, closest first, whether or not you own them, each with its fit. <strong>Lighter</strong> and <strong>Darker</strong> look for a lighter or darker colour. <strong>Your closest</strong> shows the nearest paints you own, with the same fit; it is left out when your closest paint is already the best match, and says so when none of your paints is close. When none is close, it may also show <strong>Try mixing</strong>: one or two blends of two paints you own, with the parts to use, next to the colour you want. It is a rough guess from screen colours, so test it on a palette first. <strong>Add to recipe step</strong> puts the two paints and the ratio into a recipe step, with an <strong>Undo</strong>. Metallics, washes, shades, Contrast, glazes and other special paints are never mixed. On a phone the two cards are tabs (<strong>Best</strong> and <strong>Yours</strong>, with the arrow keys); on a wider screen they sit side by side. A paint you do not own can go on your shopping list, with an <strong>Undo</strong>. Varnishes, mediums, thinners and other paints that are not colours are never offered.</li>
             <li id="help-ask-mentor"><strong>Paint Picker</strong> (Pro preview): in <strong>Painting → Colour Lab</strong>, or from the <strong>Paint Picker</strong> chip in <strong>Mentor</strong>. Choose a <strong>Base colour</strong>, a <strong>Second colour</strong> if you like, and a <strong>Part</strong> (Armour, Eyes, Weapon or Base). Under each colour you get up to three paints that go with it for that part, with the reason, and your own paints come first. A paint of yours that is a poor match says <strong>Yours, poor fit</strong>. Under the picks are tips for that part, each with its colours and, where it has one, a link to the creator it credits. Each paint row has <strong>Use in a recipe</strong>, <strong>Add to a recipe</strong> and <strong>Similar paints</strong>, and a paint you do not own also has <strong>Add to shopping list</strong> and <strong>Shop links</strong>. Each one says what it did and has an <strong>Undo</strong>. The picks are kept only while the app is open.</li>
-            <li id="help-guides"><strong>Guides</strong> (in Tools): type in the search box, or tap a category to see its topic groups, then a group to see its entries, then tap one to open it. Category, group and entry rows end with a small number made from their place in A to Z order (2.3.4 is category 2, group 3, entry 4). Related entries are buttons at the bottom of an entry, and <strong>Back</strong> goes up one level. Categories with nothing in them are left out. Long lists show 30 rows at a time: <strong>Show more</strong> adds the next 30, and search looks through them all. <strong>Detail recipes</strong> and <strong>Basing</strong> open on their first group, with <strong>All</strong> one tap away, and have the same buttons as before, including Add to shopping list.</li>
+            <li id="help-guides"><strong>Guides</strong> (in Tools): type in the search box, or tap a category to see its topic groups, then a group to see its entries, then tap one to open it. Category, group and entry rows end with a small number made from their place in A to Z order (2.3.4 is category 2, group 3, entry 4). Related entries are buttons at the bottom of an entry, and <strong>Back</strong> goes up one level. Categories with nothing in them are left out. Long lists show 30 rows at a time: <strong>Show more</strong> adds the next 30, and search looks through them all. <strong>Detail recipes</strong> and <strong>Basing</strong> open on their first group, with <strong>All</strong> one tap away, and have the same buttons as before, including Add to shopping list. Their groups and entries are numbered the same way, and <strong>Filters</strong> folds the row of group buttons away or shows it again.</li>
             <li id="help-safety">Guides and Mentor give general hobby tips, not professional safety advice. Always follow the maker's label and safety sheet.</li>
             <li id="help-compendium-ticks">In <strong>Colour Lab</strong> and <strong>Guides</strong>, tick the paints you want from a colour plan or detail recipe, or press <strong>Select all</strong>. <strong>Add to shopping list</strong> is grey until you tick something, then adds only the ticked paints. A paint you own, or that is already on the list, shows a mark instead of a tick box. <strong>Copy as text</strong> and <strong>Save into a new recipe</strong> use the ticked paints, or all of them if none is ticked.</li>
-            <li><strong>Schemes</strong> (top of the Painting tab) group the recipes you use for one faction, e.g. "My Blue Army" = armour, trim, lenses and base. Press <strong>+ New scheme</strong>, name it, type the faction and tick its recipes.</li>
+            <li><strong>Schemes</strong> (top of the Painting tab) group the recipes you use for one faction, e.g. "My Blue Army" = armour, trim, lenses and base. Press <strong>+ New scheme</strong>, name it and tick its recipes. The faction is filled in from the recipes you tick when they agree (or the last faction you used): <strong>Change</strong> picks another. <strong>Search recipes</strong> narrows the list, and <strong>Select all</strong> ticks a whole part.</li>
             <li>A scheme card lists its recipes as rows (name, part, steps, colour dots). Tap a row to open that recipe. A scheme with more than 3 recipes shows the first 3: tap <strong>Show all</strong> for the rest.</li>
             <li><strong>Apply to … units</strong> links a scheme's recipes to every unit in its faction that doesn't have them all yet. Recipes a unit already has stay linked.</li>
-            <li>With <strong>New units … get these recipes automatically</strong> ticked, any unit you add to that faction later (by hand or by import) gets the scheme straight away.</li>
+            <li>With <strong>New units … get these recipes automatically</strong> ticked, any unit you add to that faction later (by hand or by import) gets the scheme straight away. Only one scheme per faction does this: if another already does, the form says so, and <strong>Use this scheme for new units instead</strong> moves it to this one.</li>
+            <li>Turn off <strong>Ask for a faction on schemes</strong> in <strong>Settings</strong>, under <strong>Recipe preferences</strong>, to make schemes without a faction. They never go onto new units by themselves; apply one to a unit from its <strong>Link a recipe…</strong> menu.</li>
             <li>In a unit's details, the <strong>Link a recipe…</strong> menu also lists its faction's schemes. Deleting a scheme leaves its recipes and links alone.</li>
             <li>Need a part or technique that isn't listed? Choose <strong>＋ Add a new…</strong> in the menu. Remove ones you don't use in <strong>Settings</strong>, under <strong>Recipe preferences</strong>.</li>
           </ul>
@@ -3382,6 +3465,8 @@
         <h2>Recipe preferences</h2>
         <div class="panel-field">Parts<div class="chips chips-wrap" id="part-chips" style="margin-top: 0;"></div></div>
         <div class="panel-field" style="margin-top: 12px;">Techniques<div class="chips chips-wrap" id="technique-chips" style="margin-top: 0;"></div></div>
+        <!-- RS5: on by default; off hides the Faction row on the scheme form. -->
+        <label class="check-label scheme-faction-switch"><input type="checkbox" id="ask-scheme-faction" checked> Ask for a faction on schemes</label>
       </div>
 
       <!-- v48: Paint brands. One button per brand the app knows paints for (filled by app.js); a pressed button
@@ -3524,7 +3609,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=126" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=127" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -3537,15 +3622,16 @@
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks.
        G2a: guides-groups.js (the Guides topic groups, plain data) loads after guides-data.js. It only adds one
        name, GUIDE_GROUPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=126"></script>
-  <script src="schemes.js?v=126"></script>
-  <script src="detail-recipes.js?v=126"></script>
-  <script src="basing-tips.js?v=126"></script>
-  <script src="mentor-tips.js?v=126"></script>
-  <script src="guides-data.js?v=126"></script>
-  <script src="guides-groups.js?v=126"></script>
-  <script src="mentor-data.js?v=126"></script>
-  <script src="mentor-engine.js?v=126"></script>
-  <script src="app.js?v=126"></script>
+  <script src="colour.js?v=127"></script>
+  <script src="schemes.js?v=127"></script>
+  <script src="detail-recipes.js?v=127"></script>
+  <script src="basing-tips.js?v=127"></script>
+  <script src="mentor-tips.js?v=127"></script>
+  <script src="guides-data.js?v=127"></script>
+  <script src="guides-groups.js?v=127"></script>
+  <script src="mentor-data.js?v=127"></script>
+  <script src="mentor-engine.js?v=127"></script>
+  <script src="where-to-buy.js?v=127"></script>
+  <script src="app.js?v=127"></script>
 </body>
 </html>

@@ -2347,12 +2347,183 @@
       if (!quiet && paint) showToast(`${paint.name} is back on your shopping list`);
     }
     function clearBought() {
-      const n = boughtItems().length;
-      askYesNo(`Clear ${plural(n, "bought paint")} from this list for good? They stay Owned in Your Palette.`, () => {
+      const n = boughtItems().length, g = gearBought().length;   // L1: bought Gear is cleared too (it is deleted: Gear lives only on this list)
+      const question = g ? `Clear ${plural(n + g, "bought item")} from this list for good?${n ? " Paints stay Owned in Your Palette." : ""}`
+        : `Clear ${plural(n, "bought paint")} from this list for good? They stay Owned in Your Palette.`;
+      askYesNo(question, () => {
         delete book.bought;
+        if (g) { book.gear = gearList().filter(x => x.bought !== true); if (!book.gear.length) delete book.gear; }
         if (!afterShopChange()) { showNotSaved(); return; }
-        showToast("Cleared the bought paints");
+        showToast(g ? "Cleared the bought items" : "Cleared the bought paints");
       }, { danger: true, yes: "Clear" });
+    }
+
+    // ----- L1: Gear on the shopping list -----
+    // A product type (a wet palette, matt varnish) put on the list from a Where to buy row. It is not a paint: it lives in book.gear
+    // (see cleanRecipeBook), one item per product type, and remembers the title of the Guides entry it came from. On the list it has
+    // its own Gear section under the paints, with a Bought tick and Remove like a paint's; ticked Gear goes to Bought. The basket and
+    // Copy as text count it; the Buy these shop buttons stay paint-only. There is no box for typing your own Gear.
+    function gearId(name) { return String(name || "").trim().toLowerCase(); }
+    function gearList() { return Array.isArray(book.gear) ? book.gear : []; }
+    function gearItems() { return gearList().filter(g => g.bought !== true); }   // on the list
+    function gearBought() { return gearList().filter(g => g.bought === true); }  // in Bought
+    function gearListed(name) { const id = gearId(name); return gearItems().some(g => g.id === id); }
+    function gearLabel(name) { const t = String(name || "").trim(); return t.charAt(0).toUpperCase() + t.slice(1); }   // "wet palette" shows as "Wet palette"
+    function setGear(list) { if (list.length) book.gear = list; else delete book.gear; }
+    // Add one product type. Already on the list: says so and adds nothing. In Bought: it comes back onto the list. Undo puts it back as it was.
+    function addGear(type, from) {
+      const name = String(type || "").trim().slice(0, 60);
+      if (!name) return false;
+      const id = gearId(name), label = gearLabel(name);
+      const had = gearList().find(g => g.id === id);
+      if (had && had.bought !== true) { notify(`${label} is already on your shopping list.`); return false; }
+      const wasBought = !!had;
+      if (had) delete had.bought;
+      else {
+        const item = { id, name };
+        const where = String(from || "").trim().slice(0, 60);
+        if (where) item.from = where;
+        setGear(gearList().concat(item));
+      }
+      const ok = save();
+      if (!recipeDraft) renderRecipes();   // keep the (hidden) shopping list up to date; never rebuild an open recipe editor
+      updateBasket();
+      updateShopFoldouts();
+      if (ok) showToast(`Added ${label} to your shopping list`, () => {
+        const g = gearList().find(x => x.id === id);
+        if (!g || g.bought === true) return;
+        if (wasBought) g.bought = true; else setGear(gearList().filter(x => x !== g));
+        afterShopChange();
+      });
+      else showNotSaved();
+      return true;
+    }
+    function removeGear(id) {
+      const list = gearList(), at = list.findIndex(g => g.id === id);
+      if (at < 0 || list[at].bought === true) return;
+      const item = list[at];
+      setGear(list.filter(g => g !== item));   // Gear lives only on this list, so Remove deletes it
+      if (!afterShopChange()) { showNotSaved(); return; }
+      showToast(`Removed ${gearLabel(item.name)} from your shopping list`, () => {
+        if (gearList().some(g => g.id === id)) return;
+        const now = gearList().slice();
+        now.splice(Math.min(at, now.length), 0, item);
+        setGear(now);
+        afterShopChange();
+      });
+    }
+    function tickGearBought(id) {
+      const g = gearItems().find(x => x.id === id);
+      if (!g) return;
+      g.bought = true;
+      if (!afterShopChange()) { showNotSaved(); return; }
+      showToast(`Bought ${gearLabel(g.name)}`, () => addGearBack(id, true));
+    }
+    function addGearBack(id, quiet) {
+      const g = gearBought().find(x => x.id === id);
+      if (!g) return;
+      delete g.bought;
+      if (!afterShopChange()) { showNotSaved(); return; }
+      if (!quiet) showToast(`${gearLabel(g.name)} is back on your shopping list`);
+    }
+
+    // ----- L1: Where to buy -----
+    // A quiet closed fold-out under a Guides entry's text (and under a Basing tip, and under a Mentor answer whose best source is that
+    // entry) when where-to-buy.js lists products for it. Each product type has plain search links, one per shop that sells every brand
+    // (SHOPS, shopsFor and shopLink, so the search words are the product type only and the shop table's empty extra slot is left alone),
+    // and an Add to shopping list button that puts it on the list as Gear. Settings -> Shop links hides the links (and their note) as it
+    // does everywhere; the Add button only writes to your own list, so it stays.
+    // The Shop links fold-out's plain-links words, with "the product type" for "the paint's name" (a function: SHOP_PLAIN_WORDS is set further down)
+    function gearPlainWords() { return SHOP_PLAIN_WORDS.replace("the paint's name", "the product type"); }
+    function whereToBuyTypes(key, kind) {
+      if (typeof WHERE_TO_BUY === "undefined" || !WHERE_TO_BUY || !hasOwn(WHERE_TO_BUY, String(key))) return [];
+      const x = WHERE_TO_BUY[key];
+      if (!x || x.kind !== kind || !Array.isArray(x.types)) return [];
+      const out = [];
+      for (const t of x.types) { const s = String(t ?? "").trim(); if (s && !out.some(o => gearId(o) === gearId(s))) out.push(s); }
+      return out;
+    }
+    // The fold-outs you opened stay open when the page is drawn again (an Undo redraws Guides). Memory only; opening another entry clears it.
+    const whereBuyOpen = new Set();
+    // Returns null when the entry has no products. from = the entry's title, remembered on the Gear item.
+    function buildWhereToBuy(key, kind, from) {
+      const types = whereToBuyTypes(key, kind);
+      if (!types.length) return null;
+      const box = document.createElement("details");
+      box.className = "where-buy";
+      box.dataset.whereBuy = key;
+      box.open = whereBuyOpen.has(kind + ":" + key);
+      box.addEventListener("toggle", () => { if (box.open) whereBuyOpen.add(kind + ":" + key); else whereBuyOpen.delete(kind + ":" + key); });
+      const summary = document.createElement("summary");
+      summary.textContent = "Where to buy";
+      const body = document.createElement("div");
+      body.className = "where-buy-body";
+      const list = document.createElement("ul");
+      list.className = "where-buy-list";
+      const shops = shopLinksOn() ? shopsFor([{ paint: { name: types[0], brand: "" } }]).map(x => x.shop) : [];   // the shops that sell every brand
+      const slots = [];
+      for (const type of types) {
+        const li = document.createElement("li");
+        li.className = "where-buy-item";
+        li.dataset.gear = gearId(type);
+        const name = document.createElement("span");
+        name.className = "where-buy-name";
+        name.textContent = gearLabel(type);
+        li.appendChild(name);
+        if (shops.length) {
+          const links = document.createElement("div");
+          links.className = "where-buy-links";
+          for (const shop of shops) {
+            const a = document.createElement("a");
+            a.href = shopLink(shop, { name: type, brand: "" });   // the product type only, never a brand
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";   // the shop isn't told which page sent you
+            a.textContent = `${shop.name} ↗`;
+            labelWithName(a, `Search ${shop.name} for`, name);
+            a.setAttribute("aria-describedby", opensSiteId());
+            links.appendChild(a);
+          }
+          li.appendChild(links);
+        }
+        const slot = document.createElement("div");
+        slot.className = "where-buy-add";
+        slot.redrawAdd = () => {
+          slot.replaceChildren();
+          if (gearListed(type)) {
+            const done = document.createElement("span");
+            done.className = "shop-onlist";
+            done.tabIndex = -1;
+            done.textContent = "On your shopping list";
+            slot.appendChild(done);
+            return;
+          }
+          const add = document.createElement("button");
+          add.type = "button";
+          add.className = "plain-button";
+          add.textContent = "Add to shopping list";
+          labelWithName(add, "", name);   // "Add to shopping list" then the product type
+          add.addEventListener("click", () => {
+            if (!addGear(type, from)) return;
+            const done = slot.querySelector(".shop-onlist");
+            if (done) done.focus();
+          });
+          slot.appendChild(add);
+        };
+        slot.redrawAdd();
+        slots.push(slot);
+        li.appendChild(slot);
+        list.appendChild(li);
+      }
+      body.appendChild(list);
+      if (shops.length) {
+        const note = document.createElement("p");
+        note.className = "hint";
+        note.textContent = gearPlainWords();
+        body.appendChild(note);
+      }
+      box.redrawAdd = () => slots.forEach(s => s.redrawAdd());   // updateShopFoldouts: the buttons follow the list (after Add, Remove and Undo)
+      box.append(summary, body);
+      return box;
     }
 
     // F1: Suggested, a closed fold-out under the list. It never puts anything on the list (v62 still holds): it shows Empty paints and
@@ -2442,7 +2613,8 @@
     }
 
     // The list as plain text, one brand at a time (for copy as text).
-    function shoppingText(items) {
+    // L1: then the Gear on the list under its own heading (gear: the Gear items, the ones on the list unless given).
+    function shoppingText(items, gear = gearItems()) {
       const groups = new Map();
       for (const i of items) {
         const brand = i.paint.brand || "No brand";
@@ -2456,7 +2628,12 @@
         for (const i of groups.get(brand)) lines.push(`- ${i.paint.name}${i.from && i.from.length ? ` (from ${i.from.join(", ")})` : ""}`);
         lines.push("");
       }
-      if (!items.length) lines.push("Nothing to buy.");
+      if (gear.length) {
+        lines.push("Gear");
+        for (const g of gear) lines.push(`- ${gearLabel(g.name)}${g.from ? ` (from ${g.from})` : ""}`);
+        lines.push("");
+      }
+      if (!items.length && !gear.length) lines.push("Nothing to buy.");
       return lines.join("\n").trimEnd();
     }
 
@@ -2556,7 +2733,7 @@
     let similarState = null;   // v65: null, or the open Similar paints pop-up (see openSimilarPaints)
     function updateShopFoldouts() {
       if (similarState) similarState.refresh();   // v65: the pop-up's buttons follow the list too (after Add and after Undo)
-      for (const el of document.querySelectorAll(".shop-more, .shop-add-row")) if (el.redrawAdd) el.redrawAdd();   // v73: and the Mentor picks' own button
+      for (const el of document.querySelectorAll(".shop-more, .shop-add-row, .where-buy")) if (el.redrawAdd) el.redrawAdd();   // v73: and the Mentor picks' own button. L1: and Where to buy
       for (const el of document.querySelectorAll(".idea-tag")) {   // v41: the row tags the Compendium watches
         if (!el.shopPaint) continue;
         const t = shopListTag(el.shopPaint, el.shopTag);
@@ -2775,6 +2952,8 @@
       const panel = document.getElementById("shop-panel");
       panel.replaceChildren();
       const items = shoppingItems();
+      const gear = gearItems();   // L1: Gear on the list, in its own section under the paints
+      const any = items.length > 0 || gear.length > 0;
       const card = document.createElement("div");
       card.className = "card";
       const title = document.createElement("h2");
@@ -2786,7 +2965,7 @@
       head.className = "shop-head";
       head.append(title);
       card.append(head);
-      if (!items.length) {
+      if (!any) {
         const empty = document.createElement("p");
         empty.className = "hint";
         empty.style.margin = "0 0 10px";
@@ -2797,9 +2976,10 @@
         const notes = [];
         const sub = document.createElement("p");
         sub.className = "hint";
-        sub.textContent = `${plural(items.length, "paint")} to get.`;
+        sub.textContent = !gear.length ? `${plural(items.length, "paint")} to get.`
+          : !items.length ? `${plural(gear.length, "gear item")} to get.` : `${plural(items.length, "paint")} and ${plural(gear.length, "gear item")} to get.`;
         notes.push(sub);
-        if (shopLinksOn()) {
+        if (shopLinksOn() && items.length) {
           const shops = document.createElement("p");
           shops.className = "hint";
           shops.textContent = SHOP_PLAIN_WORDS;
@@ -2809,9 +2989,9 @@
         more.classList.add("shop-more-info");
         head.append(more);
       }
-      if (items.length) {
+      if (any) {
         card.classList.add("shop-split", "layout-split");
-        if (shopLinksOn()) {
+        if (shopLinksOn() && items.length) {   // L1: the Buy these shop buttons stay paint-only
           const bar = buildBuyBar(items);   // v19.1: shop links at the top (v39: unless Settings -> Shop links is off)
           bar.classList.add("shop-side-buy", "layout-side");
           card.appendChild(bar);
@@ -2874,6 +3054,7 @@
           }
           lists.append(brandHead, list);
         }
+        if (gear.length) lists.append(...buildGearSection(gear));   // L1
         const doneBox = buildBoughtSection();
         if (doneBox) lists.appendChild(doneBox);
         const suggested = buildSuggestedSection();   // F1
@@ -2886,7 +3067,7 @@
         copy.addEventListener("click", () => copyText(shoppingText(shoppingItems()), "Shopping list"));
         card.appendChild(copy);
       }
-      if (!items.length) {
+      if (!any) {
         const doneBox = buildBoughtSection(); if (doneBox) card.appendChild(doneBox);
         const suggested = buildSuggestedSection(); if (suggested) card.appendChild(suggested);   // F1
       }
@@ -2894,16 +3075,67 @@
     }
     // A1: the Bought section at the bottom of the list: closed to start with, named with its count. Open, it has Clear bought and each
     // paint with Add back. Nothing here when nothing has been ticked.
+    // L1: the Gear section under the paints: a small heading like a brand's, then one row per item with the tick box, the name and
+    // where it came from, and Remove, built like a paint's row (the same classes, so it looks and wraps the same).
+    function buildGearSection(gear) {
+      const head = document.createElement("div");
+      head.className = "shop-brand shop-gear-head";
+      head.textContent = "Gear";
+      const list = document.createElement("ul");
+      list.className = "shop-list shop-gear-list";
+      for (const g of gear) {
+        const li = document.createElement("li");
+        li.className = "shop-item shop-gear-item";
+        li.dataset.gear = g.id;
+        const tick = document.createElement("button");
+        tick.type = "button";
+        tick.className = "pick-tick shop-tick";
+        tick.setAttribute("role", "checkbox");
+        tick.setAttribute("aria-checked", "false");
+        const box = document.createElement("span");
+        box.className = "pick-box";
+        box.setAttribute("aria-hidden", "true");
+        tick.appendChild(box);
+        tick.addEventListener("click", () => {
+          if (li.classList.contains("shop-ticking")) return;
+          li.classList.add("shop-ticking");
+          tick.setAttribute("aria-checked", "true");
+          setTimeout(() => tickGearBought(g.id), SHOP_TICK_PAUSE);
+        });
+        const text = document.createElement("span");
+        text.className = "shop-text";
+        const nameEl = document.createElement("span");
+        nameEl.textContent = gearLabel(g.name) + " ";
+        text.appendChild(nameEl);
+        if (g.from) {
+          const src = document.createElement("small");
+          src.className = "shop-from";
+          src.textContent = "from " + g.from;
+          text.appendChild(src);
+        }
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "plain-button shop-remove";
+        remove.textContent = "Remove";
+        labelWithName(remove, "", nameEl);
+        remove.addEventListener("click", () => removeGear(g.id));
+        labelWithName(tick, "", nameEl);
+        li.append(tick, text, remove);
+        list.appendChild(li);
+      }
+      return [head, list];
+    }
     function buildBoughtSection() {
       const done = boughtItems();
-      if (!done.length) return null;
+      const doneGear = gearBought();   // L1: ticked Gear sits here too, after the paints
+      if (!done.length && !doneGear.length) return null;
       const box = document.createElement("div");
       box.className = "shop-bought";
       const head = document.createElement("button");
       head.type = "button";
       head.className = "plain-button shop-bought-head";
       head.setAttribute("aria-expanded", String(boughtOpen));
-      head.textContent = `Bought · ${done.length}`;
+      head.textContent = `Bought · ${done.length + doneGear.length}`;
       const body = document.createElement("div");
       body.className = "shop-bought-body";
       body.hidden = !boughtOpen;
@@ -2930,6 +3162,22 @@
         li.append(text, back);
         list.appendChild(li);
       }
+      for (const g of doneGear) {   // L1
+        const li = document.createElement("li");
+        li.className = "shop-item shop-gear-item";
+        li.dataset.gear = g.id;
+        const text = document.createElement("span");
+        text.className = "shop-text";
+        text.textContent = gearLabel(g.name);
+        const back = document.createElement("button");
+        back.type = "button";
+        back.className = "plain-button shop-addback";
+        back.textContent = "Add back";
+        labelWithName(back, "", text);
+        back.addEventListener("click", () => addGearBack(g.id));
+        li.append(text, back);
+        list.appendChild(li);
+      }
       body.append(clear, list);
       box.append(head, body);
       return box;
@@ -2942,7 +3190,8 @@
     // pill gives one small pop (skipped for people who ask their phone for less motion).
     let basketShown = -1;
     function updateBasket() {
-      const n = shoppingItems().length;
+      const paintsN = shoppingItems().length, gearN = gearItems().length;   // L1: Gear on the list counts too (Bought does not)
+      const n = paintsN + gearN;
       basketButton.classList.toggle("hidden", n === 0);
       if (n !== basketShown) {
         const NS = "http://www.w3.org/2000/svg";
@@ -2968,7 +3217,7 @@
         }
         basketShown = n;
       }
-      basketButton.setAttribute("aria-label", `Shopping list, ${plural(n, "paint")}. Tap to open it.`);
+      basketButton.setAttribute("aria-label", `Shopping list, ${plural(paintsN, "paint")}${gearN ? ` and ${plural(gearN, "gear item")}` : ""}. Tap to open it.`);
     }
     basketButton.addEventListener("click", () => {
       if (importDraft) { showToast("Close Paste recipes first, then tap the basket."); return; }
@@ -3744,8 +3993,22 @@
         }
         bought.push({ id, prev: PAINT_STATUS_KEYS.includes(b.prev) ? b.prev : "wishlist", from: from.slice(0, 5) });
       }
+      // L1: Gear on the shopping list: [{ id: the product type in lower case, name: the product type, from: the Guides entry's title,
+      // bought: true once ticked }]. One item per product type. Optional: absent from older books and backups (then there is none),
+      // and kept off the book when empty, so DATA_VERSION does not change. Plain text only, each cut to 60 characters.
+      const gear = [];
+      for (const g of Array.isArray(src.gear) ? src.gear : []) {
+        const name = g && typeof g === "object" ? String(g.name ?? "").trim().slice(0, 60) : "";
+        if (!name || gear.some(o => o.id === gearId(name))) continue;
+        const item = { id: gearId(name), name };
+        const from = String(g.from ?? "").trim().slice(0, 60);
+        if (from) item.from = from;
+        if (g.bought === true) item.bought = true;
+        gear.push(item);
+      }
       const cleaned = { parts, techniques, paints: keptPaints, recipes, schemes, shorthand, v15: true };
       if (bought.length) cleaned.bought = bought;
+      if (gear.length) cleaned.gear = gear;
       return cleaned;
     }
 
@@ -4296,10 +4559,16 @@
       for (const it of items) Object.assign(it, { last: {}, bgAt: blend(it.k0.bg, it.k1.bg), colorAt: blend(it.k0.color, it.k1.color), iconAt: blend(it.k0.icon, it.k1.icon) });
       const N = 24;
       const r2 = (v) => Math.round(v * 100) / 100;
+      // MN1: on the way back the soft bounce carries Dashboard and Tools a little past their places, towards each other under the Mentor button,
+      // and the circle's gaps are only 4 degrees, so they would overlap there for a few frames. Only on the way back, each piece's turn past its
+      // place is capped at 1.5 degrees (the clock, the easing and everything else in the bounce are unchanged; Models and Painting never reach the cap).
+      const SWAY = 1.5 * Math.PI / 180;
+      for (const it of items) it.sway = SWAY / Math.max(1e-6, Math.abs(it.elo - it.slo), Math.abs(it.ehi - it.shi));
       function render(p, pop) {
         const q = Math.min(1, Math.max(0, p)), out = TRAVEL_SPREAD * Math.sin(Math.PI * q) / sb;
         for (const it of items) {
-          const lo = L(it.slo, it.elo, p), hi = L(it.shi, it.ehi, p), ro = L(it.ro[0], it.ro[1], p), ri = L(it.ri[0], it.ri[1], p);
+          const pa = back && p > 1 ? 1 + Math.min(p - 1, it.sway) : p;   // MN1: the turn's progress (see SWAY)
+          const lo = L(it.slo, it.elo, pa), hi = L(it.shi, it.ehi, pa), ro = L(it.ro[0], it.ro[1], p), ri = L(it.ri[0], it.ri[1], p);
           const mid = (lo + hi) / 2, off = out + (it.chosen ? TRAVEL_POP * Math.sin(Math.PI * pop) / sb : 0);
           const dx = Math.cos(mid) * off, dy = Math.sin(mid) * off;
           const cx = L(CR[0], CB[0], p) + dx - x0, cy = L(CR[1], CB[1], p) + dy - y0;
@@ -4432,11 +4701,11 @@
       const moving = canMove();
       if (window.minifolioRing) window.minifolioRing.app = true;   // early.js stops lighting it; from here this does
       const p0 = window.minifolioRing ? window.minifolioRing.progress : 0;
-      // A2: the ring turns clockwise from the top, so the segments arrive clockwise from the top left: Dashboard, Models, Tools, Painting.
-      // Only this arrival order changes; the segments stay where they are (the menu's own order is Dashboard, Models, Painting, Tools).
+      // A2: the ring turns clockwise from the top, so the segments arrive clockwise from the top left. MN1: with the new places that is
+      // Models, Painting, Tools, Dashboard. Only this arrival order changes; the menu's own order (and keyboard order) is Dashboard, Models, Painting, Tools.
       const byName = {};
       for (const b of arcEl.querySelectorAll("[data-tab]")) byName[b.dataset.tab] = b;
-      const wedges = ["dashboard", "units", "guides", "recipes"].map(n => byName[n]);
+      const wedges = ["units", "recipes", "guides", "dashboard"].map(n => byName[n]);
       wedges.forEach(w => w.classList.add("ring-hold"));
       document.body.classList.add("ring-loading");
       const stepAt = [() => bootSteps.data, () => bootSteps.draw, () => bootSteps.load];
@@ -4654,13 +4923,82 @@
       if (MENTOR_MOOD_MS[mood]) state.moodTimer = setTimeout(() => { if (mentorState === state) mentorMood("neutral"); }, MENTOR_MOOD_MS[mood]);
     }
 
-    // The window grows from the button: the origin is the button's centre, measured on screen, so it works wherever the button is.
-    function setMentorOrigin(win, opener) {
-      if (!opener || !opener.isConnected) return;
-      // offsetLeft and offsetTop ignore the grow itself (the window is already part-way scaled when this runs); its box fills the screen from the corner.
-      const b = opener.getBoundingClientRect();
-      win.style.setProperty("--mp-ox", `${Math.round(b.left + b.width / 2 - win.offsetLeft)}px`);
-      win.style.setProperty("--mp-oy", `${Math.round(b.top + b.height / 2 - win.offsetTop)}px`);
+    // ---- MW1: Mentor opens out of its sphere (James, 3 Nov) ----
+    // The round button's circle grows into the window: the window is drawn in its place at once, then its clip-path opens from the button's
+    // box (a circle: round = half the button) to the window's own rounded box while a translate carries it from the button up to its place.
+    // The skin (.mp-skin: the button's colour and highlight) covers it on the way and fades once the shape has arrived; only then do the
+    // words fade in. The orb travels from the button's drawing to its place above the greeting in the same move: its translate takes away
+    // the window's own, so on screen it goes in a straight line, and its scale starts at the button's drawing size. Closing plays the same
+    // frames backwards into the button. Only transform, opacity and clip-path move, so no frame lays the page out again.
+    // Reduced motion: no growing and no travel; the window fades in quickly and goes at once on closing.
+    const MENTOR_OPEN_MS = 320;
+    const MENTOR_CLOSE_MS = 240;
+    const MENTOR_SHAPE_AT = 0.7;          // the part of the move the shape takes; the skin and the words cross-fade in the rest
+    const MENTOR_MOVE_EASE = "cubic-bezier(0.3, 0, 0.2, 1)";
+    const MENTOR_SHADOW = 64;             // the clip opens this far past the window at the end, so its shadow shows before the clip is dropped
+    const mentorReduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // The frames of the move, measured now (the window at its resting place and size), or null when there is no round button on screen to grow from.
+    function mentorMoveFrames(state) {
+      const { win, opener, orbBox, skin } = state;
+      const b = opener && opener.isConnected ? opener.getBoundingClientRect() : null;
+      if (!b || b.width < 1 || b.height < 1) return null;
+      const w = win.getBoundingClientRect();
+      const px = (n) => `${Math.round(n * 10) / 10}px`;
+      // the button's box inside the window (kept inside it), and the translate that puts that spot over the button on screen
+      const lx = Math.min(Math.max(b.left - w.left, 0), Math.max(w.width - b.width, 0));
+      const ly = Math.min(Math.max(b.top - w.top, 0), Math.max(w.height - b.height, 0));
+      const dx = b.left - w.left - lx, dy = b.top - w.top - ly;
+      const radius = parseFloat(getComputedStyle(win).borderTopLeftRadius) || 0;
+      const from = `inset(${px(ly)} ${px(w.width - lx - b.width)} ${px(w.height - ly - b.height)} ${px(lx)} round ${px(Math.min(b.width, b.height) / 2)})`;
+      // the skin's highlight sits where the button's does (35% across, 30% down, fading out over 57% of its width)
+      skin.style.setProperty("--mp-hx", px(lx + b.width * 0.35));
+      skin.style.setProperty("--mp-hy", px(ly + b.height * 0.3));
+      skin.style.setProperty("--mp-hr", px(b.width * 0.57));
+      const frames = {
+        win: [{ transform: `translate(${px(dx)}, ${px(dy)})`, clipPath: from, easing: MENTOR_MOVE_EASE },
+          { transform: "translate(0px, 0px)", clipPath: `inset(0px round ${px(radius)})`, offset: MENTOR_SHAPE_AT },
+          { transform: "translate(0px, 0px)", clipPath: `inset(-${MENTOR_SHADOW}px round ${px(radius + MENTOR_SHADOW)})` }],
+        skin: [{ opacity: 1 }, { opacity: 1, offset: MENTOR_SHAPE_AT }, { opacity: 0 }],
+        words: [{ opacity: 0 }, { opacity: 0, offset: MENTOR_SHAPE_AT }, { opacity: 1 }],
+        orb: null,
+      };
+      const icon = opener.querySelector("svg"), drawing = orbBox.querySelector("svg");
+      const o = orbBox.getBoundingClientRect();
+      if (icon && drawing && o.width) {
+        const s = icon.getBoundingClientRect();
+        const units = (el, fallback) => (el.viewBox && el.viewBox.baseVal && el.viewBox.baseVal.width) || fallback;
+        const scale = (s.width / units(icon, 166.67)) / (o.width / units(drawing, 150));   // the same drawing size as on the button
+        const tx = s.left + s.width / 2 - (o.left + o.width / 2) - dx, ty = s.top + s.height / 2 - (o.top + o.height / 2) - dy;
+        frames.orb = [{ transform: `translate(${px(tx)}, ${px(ty)}) scale(${Math.round(scale * 1000) / 1000})`, easing: MENTOR_MOVE_EASE },
+          { transform: "translate(0px, 0px) scale(1)", offset: MENTOR_SHAPE_AT }, { transform: "translate(0px, 0px) scale(1)" }];
+      }
+      return frames;
+    }
+    // Plays the move on the window, its skin, its words and its orb (backwards when closing). Returns the window's own animation.
+    function mentorPlayMove(state, frames, closing) {
+      const timing = { duration: closing ? MENTOR_CLOSE_MS : MENTOR_OPEN_MS, direction: closing ? "reverse" : "normal", fill: closing ? "forwards" : "none" };
+      const words = [...state.win.children].filter(el => el !== state.skin && el !== state.orbBox);
+      const played = [state.win.animate(frames.win, timing), state.skin.animate(frames.skin, timing), ...words.map(el => el.animate(frames.words, timing))];
+      if (frames.orb) played.push(state.orbBox.animate(frames.orb, timing));
+      state.moves = played;
+      return played[0];
+    }
+    // Reduced motion, or no button to grow from: a quick fade of the whole window and its dim layer.
+    function mentorFadeIn(state) {
+      state.moves = [state.backdrop.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 120, easing: "linear" })];
+    }
+    // MW1: the orb shrinks (or grows back) smoothly when the window changes between its start view and the chat view. Measured before and after;
+    // the drawing itself is moved and scaled from where it was (added to its float), so the box keeps its size and place for everything else.
+    function mentorOrbBefore(state) {
+      return state.orbBox.getBoundingClientRect();
+    }
+    function mentorOrbSettle(state, a) {
+      if (mentorReduced() || !a || !a.width) return;
+      const b = state.orbBox.getBoundingClientRect(), drawing = state.orbBox.querySelector("svg");
+      if (!drawing || !b.width || (Math.abs(a.width - b.width) < 0.5 && Math.abs(a.top - b.top) < 0.5 && Math.abs(a.left - b.left) < 0.5)) return;
+      const dx = a.left + a.width / 2 - (b.left + b.width / 2), dy = a.top + a.height / 2 - (b.top + b.height / 2);
+      drawing.animate([{ transform: `translate(${Math.round(dx)}px, ${Math.round(dy)}px) scale(${Math.round(a.width / b.width * 1000) / 1000})`, easing: MENTOR_MOVE_EASE },
+        { transform: "translate(0px, 0px) scale(1)" }], { duration: 240, composite: "add" });
     }
 
     // ---- X6b: typing, chips and answers ----
@@ -4675,7 +5013,7 @@
       const answer = MinifolioMentor.mentorAnswer(text, {
         confirmed: !!confirmed,   // E: a tapped "Did you mean" chip is answered plainly, with no second chip
         index: knowledgeIndex(),
-        paints: colourIdeaPool(),
+        paints: colourIdeaSuggestPool(),   // F2: no primers or inks, so a blend under a pick never uses one either
         tips: typeof MENTOR_TIPS === "undefined" ? [] : MENTOR_TIPS,
         ideas: (hex, part) => { pick = { hex, part }; return colourIdeas(null, hex, mentorRole(part)); },
       });
@@ -4824,6 +5162,11 @@
           list.appendChild(b);
         }
         box.append(label, list);
+        // L1: when the best source is an entry with products, the same closed Where to buy fold-out as on its Guides page, under the sources
+        const best = m.sources[0], kind = best && MENTOR_SOURCE_KIND[best.type];
+        const e = kind && (kind === "guide" || kind === "basing") ? knowledgeIndex().get(best.key, kind) : null;
+        const buy = e ? buildWhereToBuy(e.key, e.kind, e.title) : null;
+        if (buy) { buy.classList.add("mentor-buy"); box.appendChild(buy); }
       }
       const ask = (m.suggestions || []).filter(s => s && s.text && !mentorUsed.has(String(s.text).toLowerCase()));
       if (ask.length) {
@@ -4875,6 +5218,7 @@
       } catch (ignored) {
         reply = { who: "mentor", text: mentorUnsureLine(), sources: [], suggestions: [] };
       }
+      const orbWas = mentorOrbBefore(state);   // MW1: where the orb was, so it can shrink smoothly into the chat view
       const mine = { who: "me", text };
       mentorMessages.push(mine, reply);
       mentorLastAt = Date.now();
@@ -4886,6 +5230,7 @@
       state.status.textContent = reply.didYouMean ? `Did you mean ${String(reply.didYouMean).replace(/[?.!]+$/, "")}? ${reply.text}` : reply.text;   // announced politely; the rows themselves are not read out unprompted
       mentorDrawChips(state);
       mentorMood(mood);
+      mentorOrbSettle(state, orbWas);
       state.scroll.scrollTop = first.offsetTop - 4;
       if (fromChip) state.scroll.focus({ preventScroll: true });   // the chip that was tapped is gone, and a chip must not open the keyboard
       else state.input.focus({ preventScroll: true });
@@ -4999,27 +5344,31 @@
       orbBox.className = "mentor-orbbox ml-live";   // U6b: the look's own slow motion runs here only
       orbBox.dataset.mood = "neutral";
       orbBox.appendChild(buildMentorOrb("neutral"));
-      win.append(back, col, orbBox, close);
+      const skin = document.createElement("div");   // MW1: the round button's colour, over the window while it grows
+      skin.className = "mp-skin";
+      skin.setAttribute("aria-hidden", "true");
+      win.append(skin, back, orbBox, col, close);   // MW1: the orb above the greeting, the chips and the box
       backdrop.appendChild(win);
       document.body.appendChild(backdrop);
       document.body.classList.add("mentor-open");
 
-      const state = { backdrop, win, opener, scroll, msgs, chips, pickerChip, input, status, orbBox, mood: "neutral", moodTimer: 0, prevOverflow: document.body.style.overflow };
+      const state = { backdrop, win, opener, scroll, msgs, chips, pickerChip, input, status, orbBox, skin, moves: [], mood: "neutral", moodTimer: 0, prevOverflow: document.body.style.overflow };
       mentorState = state;
       for (const m of mentorMessages) msgs.appendChild(mentorBuildMessage(m));   // the conversation so far, if the window was closed and opened again
       if (mentorMessages.length) win.classList.add("mentor-chatting");
       mentorDrawChips(state);
-      setMentorOrigin(win, opener);
       if (mentorMessages.length) scroll.scrollTop = scroll.scrollHeight;
       document.body.style.overflow = "hidden";   // the page behind does not scroll
       close.addEventListener("click", () => closeMentor());
       back.addEventListener("click", () => {
+        const orbWas = mentorOrbBefore(state);   // MW1
         mentorClear();
         msgs.replaceChildren();
         win.classList.remove("mentor-chatting");
         status.textContent = "";
         input.value = "";
         mentorDrawChips(state);
+        mentorOrbSettle(state, orbWas);   // MW1: the orb grows back to its start size
         scroll.scrollTop = 0;
         pickerChip.focus({ preventScroll: true });   // the first thing in the start view
       });
@@ -5048,6 +5397,10 @@
       }
       close.focus({ preventScroll: true });
       mentorWarmUp();
+      // MW1: the move starts in this same frame, so the window is never seen at full size before it grows
+      const frames = mentorReduced() ? null : mentorMoveFrames(state);
+      if (frames) mentorPlayMove(state, frames, false);
+      else mentorFadeIn(state);
     }
 
     // restoreFocus is false when the chip closes it, because focus then goes on to the Paint Picker.
@@ -5068,12 +5421,22 @@
       if (restoreFocus && opener && opener.isConnected) { try { opener.focus({ preventScroll: true }); } catch (ignored) {} }
       let finished = false;
       const done = () => { if (finished) return; finished = true; backdrop.remove(); if (after) after(); };
-      if (getComputedStyle(win).animationName === "none") done();   // reduce motion: it simply disappears
+      // MW1: the same move backwards, into the round button. Closed while it is still opening: the opening simply turns round from where it is.
+      const opening = state.moves.filter(a => a.playState === "running");
+      let frames = null;
+      if (!mentorReduced() && !opening.length) {
+        for (const a of state.win.getAnimations({ subtree: true })) if (!a.animationName && !a.transitionProperty) a.cancel();   // a chat-view orb settle still going (CSS motion is left alone)
+        frames = mentorMoveFrames(state);
+      }
+      if (mentorReduced() || (!opening.length && !frames)) done();   // reduce motion (or no button on screen): it simply disappears
       else {
-        setMentorOrigin(win, opener);
         backdrop.classList.add("mentor-closing");
-        win.addEventListener("animationend", (event) => { if (event.target === win) done(); });
-        setTimeout(done, 600);   // safety net if the browser never reports the end
+        let main;
+        if (opening.length) { for (const a of opening) { a.effect.updateTiming({ fill: "both" }); a.reverse(); } main = state.moves[0]; }   // held at the button until it is taken away
+        else main = mentorPlayMove(state, frames, true);
+        main.addEventListener("finish", done);
+        main.addEventListener("cancel", done);
+        setTimeout(done, MENTOR_CLOSE_MS + 400);   // safety net if the browser never reports the end
       }
       queueBackCheck();
     }
@@ -6997,8 +7360,9 @@
       book.recipes.filter(r => !linkedRecipes.includes(r))
         .sort((a, b) => a.name.localeCompare(b.name))
         .forEach(r => recipePicker.add(new Option(r.part ? `${r.name} (${r.part})` : r.name, r.id)));
-      // This faction's painting schemes that the unit doesn't fully have yet.
-      for (const scheme of schemesFor(model.faction)) {
+      // This faction's painting schemes that the unit doesn't fully have yet. RS5: schemes with no faction are listed for every unit,
+      // so they can still be applied by hand.
+      for (const scheme of [...schemesFor(model.faction), ...book.schemes.filter(s => !String(s.faction || "").trim())]) {
         if (scheme.recipes.some(id => recipeById(id) && !(model.recipes || []).includes(id))) {
           recipePicker.add(new Option(`Apply scheme: ${scheme.name}`, `scheme:${scheme.id}`));
         }
@@ -9209,7 +9573,16 @@
       staleTabs.delete("settings");   // DS2: drawn now (see render)
       renderListChips("part-chips", "parts", "part");
       renderListChips("technique-chips", "techniques", "technique");
+      document.getElementById("ask-scheme-faction").checked = schemeFactionAsked();   // RS5
     }
+    // RS5: the "Ask for a faction on schemes" tick box (see schemeFactionAsked).
+    if (settings.schemeFactionOff !== undefined && typeof settings.schemeFactionOff !== "boolean") delete settings.schemeFactionOff;
+    document.getElementById("ask-scheme-faction").addEventListener("change", (e) => {
+      settings.schemeFactionOff = !e.target.checked;
+      saveSettings();
+      if (schemeDraft && settings.schemeFactionOff) { schemeDraft.editingFaction = false; schemeDraft.factionError = false; }
+      if (schemeDraft) renderSchemeEditor();
+    });
     function renderListChips(boxId, key, word) {
       const box = document.getElementById(boxId);
       box.innerHTML = "";
@@ -9702,7 +10075,7 @@
         meta.className = "meta";
         if (colour) { const dot = makeSwatch(colour); dot.classList.add("faction-dot"); meta.appendChild(dot); }
         const recipes = schemeRecipes(scheme);
-        meta.append([scheme.faction, plural(recipes.length, "recipe"), scheme.auto ? "new units get it" : ""]
+        meta.append([scheme.faction, plural(recipes.length, "recipe"), scheme.auto && scheme.faction ? "new units get it" : ""]
           .filter(Boolean).join(" · "));
 
         // S2: the scheme's recipes as nested rows (name, then part and steps, with colour dots). More than 3: the first 3 and "Show all N".
@@ -9727,7 +10100,8 @@
         const missing = unitsMissing(scheme);
         const status = document.createElement("div");
         status.className = "meta";
-        status.textContent = !units.length ? `No ${scheme.faction} units yet.`
+        status.textContent = !scheme.faction ? ""   // RS5: a scheme with no faction (Ask for a faction on schemes off) has no units of its own
+          : !units.length ? `No ${scheme.faction} units yet.`
           : !recipes.length ? "Add some recipes to this scheme."
           : !missing.length ? (units.length === 1 ? `The 1 unit in ${scheme.faction} has it.` : `All ${units.length} units in ${scheme.faction} have it.`)
           : `${units.length - missing.length} of ${plural(units.length, "unit")} in ${scheme.faction} have it.`;
@@ -9764,11 +10138,54 @@
       }
     }
 
+    // RS5: Settings, Recipe preferences, "Ask for a faction on schemes". On by default: settings.schemeFactionOff, and only an explicit
+    // true means off (a saved setting, not in backups). Off hides the Faction row on the scheme form. A scheme with no faction has never
+    // attached to new units (schemesFor("") is empty), and that stays so; it can still be applied to a unit by hand.
+    function schemeFactionAsked() { return settings.schemeFactionOff !== true; }
+    // RS5: recipes keep no faction of their own, so a recipe's factions are those of the units it is linked to and of the other schemes
+    // that hold it.
+    function recipeFactions(id, skipSchemeId) {
+      const found = new Map();
+      const add = (f) => { const text = String(f || "").trim(); if (text && !found.has(sameKey(text))) found.set(sameKey(text), text); };
+      for (const m of models) if ((m.recipes || []).includes(id)) add(m.faction);
+      for (const s of book.schemes) if (s.id !== skipSchemeId && s.recipes.includes(id)) add(s.faction);
+      return found;
+    }
+    // The one faction the ticked recipes agree on, or "" (none of them has one, or they point at more than one).
+    function factionFromRecipes(ids, skipSchemeId) {
+      let key = null, name = "";
+      for (const id of ids) {
+        const found = recipeFactions(id, skipSchemeId);
+        if (!found.size) continue;
+        if (found.size > 1) return "";
+        const [k, v] = [...found][0];
+        if (key !== null && k !== key) return "";
+        if (key === null) { key = k; name = v; }
+      }
+      return name;
+    }
+    // Fill in the faction for the person (until they choose one): from the ticked recipes, otherwise the last faction used, otherwise blank.
+    function fillSchemeFaction(d) {
+      if (d.factionChosen || !schemeFactionAsked()) return;
+      const fromRecipes = factionFromRecipes(d.recipes, d.id);
+      d.fromRecipes = !!fromRecipes;
+      d.faction = fromRecipes || (typeof settings.lastFaction === "string" ? settings.lastFaction.trim() : "");
+    }
+    // The other schemes in this faction that attach to new units ("auto"). Saving would leave two attaching, so the form warns.
+    function schemeClashes(d) {
+      const faction = d.faction.trim();
+      return faction ? book.schemes.filter(s => s.id !== d.id && s.auto && sameText(s.faction, faction)) : [];
+    }
+
     // Open the scheme editor: a COPY is edited, and nothing changes until Save.
     function startScheme(scheme, faction, recipeIds) {   // RS1: recipeIds = recipes already ticked in a new scheme
       schemeDraft = scheme
         ? { id: scheme.id, name: scheme.name, faction: scheme.faction, auto: scheme.auto, recipes: scheme.recipes.slice() }
         : { id: null, name: "", faction: faction || "", auto: true, recipes: recipeIds ? recipeIds.slice() : [] };
+      // RS5: a saved or given faction is kept; a blank one is filled in. takeOver = the same-faction note's tick box.
+      Object.assign(schemeDraft, { factionChosen: !!schemeDraft.faction.trim(), fromRecipes: false, takeOver: false,
+                                   search: "", editingFaction: false, factionError: false });
+      fillSchemeFaction(schemeDraft);
       schemeDraft.original = schemeSnapshot(schemeDraft);
       settings.recipeView = "schemes";
       saveSettings();
@@ -9776,7 +10193,7 @@
       renderRecipes();
       showTab("recipes");
     }
-    function schemeSnapshot(d) { return JSON.stringify([d.name, d.faction, d.auto, d.recipes]); }
+    function schemeSnapshot(d) { return JSON.stringify([d.name, d.faction, d.auto, d.recipes, d.takeOver]); }
     function closeScheme(askFirst) {
       const leave = () => {
         schemeDraft = null;
@@ -9791,6 +10208,8 @@
     }
     document.getElementById("new-scheme").addEventListener("click", () => startScheme(null));
 
+    // RS5: the scheme form, the same for New and Edit. Card 1: name and the Faction row. Card 2: Search recipes and the recipes grouped
+    // by part. Below both: the same-faction note (or the "new units" tick box) and a full-width Save with the live recipe count.
     function renderSchemeEditor() {
       const d = schemeDraft;
       schemePage.innerHTML = "";
@@ -9800,7 +10219,7 @@
       back.addEventListener("click", () => closeScheme(true));
       schemePage.appendChild(back);
 
-      // Name, faction and the "new units get it" switch.
+      // Name and the Faction row.
       const top = document.createElement("div");
       top.className = "card scheme-form";
       const title = document.createElement("h2");
@@ -9812,100 +10231,269 @@
       nameBox.value = d.name;
       nameBox.addEventListener("input", () => { d.name = nameBox.value; });
       nameLabel.appendChild(nameBox);
+      top.append(title, nameLabel);
 
-      const factionLabel = document.createElement("label");
-      factionLabel.textContent = "Faction";
-      const factionBox = document.createElement("input");
-      factionBox.placeholder = "e.g. Ultramarines";
-      factionBox.setAttribute("list", "faction-options");   // suggests your existing factions
-      factionBox.value = d.faction;
-      const factionNote = document.createElement("p");
-      factionNote.className = "hint";
-      const updateNote = () => {
-        const n = d.faction.trim() ? models.filter(m => sameText(m.faction, d.faction)).length : 0;
-        factionNote.textContent = !d.faction.trim() ? "Which faction is this scheme for?"
-          : n ? `${plural(n, "unit")}.` : "No units yet.";
+      // The Faction row: the faction as text with Change. Change turns it into a box that suggests your factions.
+      const factionWrap = document.createElement("div");
+      factionWrap.className = "scheme-faction";
+      const drawFaction = () => {
+        factionWrap.replaceChildren();
+        const showError = d.factionError && !d.faction.trim();
+        factionWrap.classList.toggle("has-error", showError);
+        const row = document.createElement("div");
+        row.className = "scheme-faction-row";
+        if (d.editingFaction) {
+          const label = document.createElement("label");
+          label.className = "scheme-faction-edit";
+          label.textContent = "Faction";
+          const box = document.createElement("input");
+          box.setAttribute("list", "faction-options");   // suggests your existing factions
+          box.setAttribute("autocomplete", "off");
+          box.value = d.faction;
+          box.addEventListener("input", () => {
+            d.faction = box.value; d.factionChosen = true; d.fromRecipes = false;
+            drawBottom();
+          });
+          const finish = () => {
+            d.faction = box.value.trim(); d.factionChosen = true; d.fromRecipes = false; d.editingFaction = false;
+            drawFaction(); drawBottom();
+          };
+          box.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); finish(); } });
+          label.appendChild(box);
+          const done = document.createElement("button");
+          done.type = "button";
+          done.className = "plain-button";
+          done.textContent = "Done";
+          done.addEventListener("click", finish);
+          row.append(label, done);
+        } else {
+          const text = document.createElement("div");
+          text.className = "scheme-faction-text";
+          const label = document.createElement("span");
+          label.className = "scheme-faction-label";
+          label.textContent = "Faction";
+          const value = document.createElement("span");
+          value.className = "scheme-faction-value" + (d.faction.trim() ? "" : " is-blank");
+          value.textContent = d.faction.trim() || "None";
+          text.append(label, value);
+          const change = document.createElement("button");
+          change.type = "button";
+          change.className = "plain-button";
+          change.textContent = "Change";
+          change.setAttribute("aria-label", "Change faction");
+          change.addEventListener("click", () => {
+            d.editingFaction = true;
+            drawFaction();
+            const box = factionWrap.querySelector("input");
+            if (box) box.focus();
+          });
+          row.append(text, change);
+        }
+        factionWrap.appendChild(row);
+        if (d.fromRecipes && d.faction.trim() && !d.editingFaction) {
+          const from = document.createElement("p");
+          from.className = "hint";
+          from.textContent = "From the recipes you picked";
+          factionWrap.appendChild(from);
+        }
+        if (showError) {
+          const error = document.createElement("p");
+          error.className = "scheme-faction-error";
+          error.setAttribute("role", "alert");
+          error.textContent = "Pick the faction this scheme is for.";
+          factionWrap.appendChild(error);
+        }
       };
-      factionBox.addEventListener("input", () => { d.faction = factionBox.value; updateNote(); });
-      updateNote();
-      factionLabel.appendChild(factionBox);
-
-      const autoLabel = document.createElement("label");
-      autoLabel.className = "check-label";
-      const autoBox = document.createElement("input");
-      autoBox.type = "checkbox";
-      autoBox.checked = d.auto;
-      autoBox.addEventListener("change", () => { d.auto = autoBox.checked; });
-      autoLabel.append(autoBox, "New units added in this faction get these recipes automatically");
-
-      top.append(title, nameLabel, factionLabel, factionNote, autoLabel);
+      if (schemeFactionAsked()) top.appendChild(factionWrap);
       schemePage.appendChild(top);
 
-      // The recipes: tick the ones in this scheme.
+      // The recipes: Search recipes, then one group per part (book.parts order, then other parts, then "No part").
       const pick = document.createElement("div");
       pick.className = "card";
       const pickTitle = document.createElement("h2");
       pickTitle.textContent = "Recipes in this scheme";
       pick.appendChild(pickTitle);
+      const groupViews = [];
+      const onTicks = () => {
+        fillSchemeFaction(d);
+        drawFaction();
+        drawBottom();
+        for (const g of groupViews) g.draw();
+      };
       if (!book.recipes.length) {
         const none = document.createElement("p");
         none.className = "hint";
         none.textContent = "No recipes yet.";
         pick.appendChild(none);
       } else {
-        const listEl = document.createElement("ul");
-        listEl.className = "scheme-recipe-list";
-        const byPart = book.recipes.slice().sort((a, b) =>
-          (a.part || "~").localeCompare(b.part || "~") || a.name.localeCompare(b.name));
-        for (const recipe of byPart) {
-          const row = document.createElement("li");
+        const search = document.createElement("input");
+        search.type = "search";
+        search.className = "scheme-recipe-search";
+        search.placeholder = "Search recipes";
+        search.setAttribute("aria-label", "Search recipes");
+        search.setAttribute("autocomplete", "off");
+        search.value = d.search || "";
+        pick.appendChild(search);
+
+        const groups = new Map();   // part key -> { name, recipes }
+        const sorted = book.recipes.slice().sort((a, b) => a.name.localeCompare(b.name));
+        for (const recipe of sorted) {
+          const part = String(recipe.part || "").trim();
+          const key = part ? sameKey(part) : "";
+          if (!groups.has(key)) groups.set(key, { name: part || "No part", recipes: [] });
+          groups.get(key).recipes.push(recipe);
+        }
+        const order = (key) => { const at = book.parts.findIndex(p => sameKey(p) === key); return at < 0 ? book.parts.length : at; };
+        const keys = [...groups.keys()].sort((a, b) =>
+          (a === "") - (b === "") || order(a) - order(b) || groups.get(a).name.localeCompare(groups.get(b).name));
+
+        for (const key of keys) {
+          const group = groups.get(key);
+          const section = document.createElement("section");
+          section.className = "scheme-group";
+          const head = document.createElement("div");
+          head.className = "scheme-group-head";
+          const heading = document.createElement("h3");
+          heading.textContent = group.name;
+          const all = document.createElement("button");
+          all.type = "button";
+          all.className = "plain-button scheme-group-all";
+          head.append(heading, all);
+          const listEl = document.createElement("ul");
+          listEl.className = "scheme-recipe-list";
+          const rows = group.recipes.map(recipe => {
+            const row = document.createElement("li");
+            const label = document.createElement("label");
+            label.className = "check-label scheme-pick-row";
+            const box = document.createElement("input");
+            box.type = "checkbox";
+            box.checked = d.recipes.includes(recipe.id);
+            box.addEventListener("change", () => {
+              d.recipes = box.checked ? [...d.recipes, recipe.id] : d.recipes.filter(id => id !== recipe.id);
+              onTicks();
+            });
+            label.append(box);
+            const colours = recipeColours(recipe);
+            if (colours.length) label.append(makeSwatch(colours[0]));
+            const text = document.createElement("span");
+            text.className = "scheme-recipe-name";
+            text.textContent = recipe.name;
+            label.append(text);
+            row.appendChild(label);
+            listEl.appendChild(row);
+            return { row, box, recipe };
+          });
+          const shown = () => rows.filter(r => !r.row.hidden);
+          const view = {
+            section, rows,
+            draw() {
+              const visible = shown();
+              const full = visible.length && visible.every(r => d.recipes.includes(r.recipe.id));
+              all.textContent = full ? "Clear" : "Select all";
+              all.setAttribute("aria-label", `${full ? "Clear" : "Select all"} ${group.name}`);
+              for (const r of rows) r.box.checked = d.recipes.includes(r.recipe.id);
+            },
+          };
+          // Select all ticks every recipe the search leaves in view in this group; Clear unticks them.
+          all.addEventListener("click", () => {
+            const visible = shown();
+            const full = visible.every(r => d.recipes.includes(r.recipe.id));
+            const ids = visible.map(r => r.recipe.id);
+            d.recipes = full ? d.recipes.filter(id => !ids.includes(id)) : [...d.recipes, ...ids.filter(id => !d.recipes.includes(id))];
+            onTicks();
+          });
+          section.append(head, listEl);
+          pick.appendChild(section);
+          groupViews.push(view);
+        }
+        const noMatch = document.createElement("p");
+        noMatch.className = "hint";
+        noMatch.textContent = "No recipes match.";
+        pick.appendChild(noMatch);
+        const filter = () => {
+          const q = sameKey(search.value);
+          let any = false;
+          for (const g of groupViews) {
+            for (const r of g.rows) r.row.hidden = !!q && !sameKey(r.recipe.name).includes(q) && !sameKey(r.recipe.part).includes(q);
+            g.section.hidden = !g.rows.some(r => !r.row.hidden);
+            if (!g.section.hidden) any = true;
+            g.draw();
+          }
+          noMatch.hidden = any;
+        };
+        search.addEventListener("input", () => { d.search = search.value; filter(); });
+        filter();
+      }
+      schemePage.appendChild(pick);
+
+      // Below both cards: the same-faction note or the "new units" tick box, then Save (full width), then Cancel and Delete.
+      const bottom = document.createElement("div");
+      bottom.className = "scheme-bottom";
+      const drawBottom = () => {
+        bottom.replaceChildren();
+        const clashes = schemeClashes(d);
+        if (clashes.length) {
+          const note = document.createElement("div");
+          note.className = "scheme-clash";
+          const line = document.createElement("p");
+          const names = clashes.map(s => s.name);
+          const who = names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+          line.textContent = `${who} already ${names.length === 1 ? "applies" : "apply"} to new ${clashes[0].faction} units.`;
           const label = document.createElement("label");
           label.className = "check-label";
           const box = document.createElement("input");
           box.type = "checkbox";
-          box.checked = d.recipes.includes(recipe.id);
-          box.addEventListener("change", () => {
-            d.recipes = box.checked ? [...d.recipes, recipe.id] : d.recipes.filter(id => id !== recipe.id);
-          });
-          const colours = recipeColours(recipe);
-          label.append(box);
-          if (colours.length) label.append(makeSwatch(colours[0]));
-          const text = document.createElement("span");
-          text.className = "scheme-recipe-name";
-          text.textContent = recipe.name;
-          label.append(text);
-          if (recipe.part) {
-            const part = document.createElement("small");
-            part.textContent = recipe.part;
-            label.append(part);
-          }
-          row.appendChild(label);
-          listEl.appendChild(row);
+          box.checked = d.takeOver;
+          box.addEventListener("change", () => { d.takeOver = box.checked; });
+          label.append(box, "Use this scheme for new units instead");
+          note.append(line, label);
+          bottom.appendChild(note);
+        } else if (d.faction.trim()) {
+          const autoLabel = document.createElement("label");
+          autoLabel.className = "check-label";
+          const autoBox = document.createElement("input");
+          autoBox.type = "checkbox";
+          autoBox.checked = d.auto;
+          autoBox.addEventListener("change", () => { d.auto = autoBox.checked; });
+          autoLabel.append(autoBox, "New units added in this faction get these recipes automatically");
+          bottom.appendChild(autoLabel);
         }
-        pick.appendChild(listEl);
-      }
-      schemePage.appendChild(pick);
+        const saveButton = document.createElement("button");
+        saveButton.className = "primary-button scheme-save";
+        saveButton.textContent = `Save scheme (${plural(d.recipes.filter(id => recipeById(id)).length, "recipe")})`;
+        saveButton.addEventListener("click", saveScheme);
+        const more = document.createElement("div");
+        more.className = "scheme-more-buttons";
+        const cancel = document.createElement("button");
+        cancel.className = "plain-button";
+        cancel.textContent = "Cancel";
+        cancel.addEventListener("click", () => closeScheme(true));
+        more.appendChild(cancel);
+        if (d.id !== null) {
+          const del = document.createElement("button");
+          del.className = "danger-button";
+          del.textContent = "Delete";
+          del.addEventListener("click", () => deleteScheme(d.id));
+          more.appendChild(del);
+        }
+        bottom.append(saveButton, more);
+      };
+      drawFaction();
+      drawBottom();
+      schemePage.appendChild(bottom);
+    }
 
-      const buttons = document.createElement("div");
-      buttons.className = "settings-actions";
-      const saveButton = document.createElement("button");
-      saveButton.className = "primary-button";
-      saveButton.style.flex = "1";
-      saveButton.textContent = "Save scheme";
-      saveButton.addEventListener("click", saveScheme);
-      const cancel = document.createElement("button");
-      cancel.className = "plain-button";
-      cancel.textContent = "Cancel";
-      cancel.addEventListener("click", () => closeScheme(true));
-      buttons.append(saveButton, cancel);
-      if (d.id !== null) {
-        const del = document.createElement("button");
-        del.className = "danger-button";
-        del.textContent = "Delete";
-        del.addEventListener("click", () => deleteScheme(d.id));
-        buttons.appendChild(del);
-      }
-      schemePage.appendChild(buttons);
+    // RS5: Save with no faction (while "Ask for a faction on schemes" is on) asks on the Faction row itself, scrolled into view.
+    function askSchemeFaction() {
+      const d = schemeDraft;
+      d.editingFaction = true;
+      d.factionError = true;
+      renderSchemeEditor();
+      const wrap = schemePage.querySelector(".scheme-faction");
+      if (!wrap) return;
+      wrap.scrollIntoView({ block: "center" });
+      const box = wrap.querySelector("input");
+      if (box) box.focus({ preventScroll: true });
     }
 
     function saveScheme() {
@@ -9913,16 +10501,21 @@
       const name = d.name.trim();
       let faction = d.faction.trim();
       if (!name) { notify("Give the scheme a name."); return; }
-      if (!faction) { notify("Pick the faction this scheme is for."); return; }
+      if (!faction && schemeFactionAsked()) { askSchemeFaction(); return; }
       // Match the spelling your units already use, so "ultramarines" finds "Ultramarines".
-      const existing = models.find(m => sameText(m.faction, faction));
+      const existing = faction ? models.find(m => sameText(m.faction, faction)) : null;
       if (existing) faction = existing.faction;
+      // RS5: another scheme in this faction already attaches to new units. Ticked: this one does and the others stop (they are kept,
+      // and Apply still works). Unticked: this one is saved without attaching. Only the existing "auto" field changes; no unit changes.
+      const clashes = schemeClashes(d);
+      const auto = clashes.length ? d.takeOver : d.auto;
+      if (clashes.length && d.takeOver) for (const other of clashes) other.auto = false;
       let scheme = d.id === null ? null : book.schemes.find(s => s.id === d.id);
       if (!scheme) {
         scheme = { id: Math.max(0, ...book.schemes.map(s => s.id)) + 1 };
         book.schemes.push(scheme);
       }
-      Object.assign(scheme, { name, faction, auto: d.auto, recipes: d.recipes.filter(id => recipeById(id)) });
+      Object.assign(scheme, { name, faction, auto, recipes: d.recipes.filter(id => recipeById(id)) });
       delete scheme.example;   // v44: saved with the editor, so it's yours now, not an example
       schemeDraft = null;
       // Offer to apply it straight away to units that don't have it all yet.
@@ -11451,6 +12044,24 @@
       return [...book.paints, ...searchedPaints.filter(k => !have.has(sameKey(k.name)))];
     }
 
+    // F2: primers and inks are never suggested as a colour idea, whatever the part. The paint's type decides when it has one (the
+    // built-in lists have none, and a paint of yours only has one if a backup or an import gave it one); otherwise its name does, with
+    // the same words the app already reads elsewhere (technique guessing, blends): "primer", Pro Acryl's "PRIME", a Citadel "... Spray"
+    // (their sprays are primers), "ink" or "inks" as a word ("Pink" is not one), and Scale75's Inktense inks. A paint whose type and
+    // name say neither is allowed: nothing is guessed from its colour or brand. Only the suggestions use this; Your Palette, recipes,
+    // the shopping list and the Start from list keep every paint.
+    const PRIMER_INK_TYPE = /\b(primers?|inks?)\b/i;
+    const PRIMER_INK_NAME = /\bprimers?\b|\bprime\b|\bspray$|\binks?\b|^inktense\b/i;
+    function isPrimerOrInk(paint) {
+      if (!paint) return false;
+      if (typeof paint.type === "string" && paint.type.trim()) return PRIMER_INK_TYPE.test(paint.type);
+      return PRIMER_INK_NAME.test(String(paint.name || "").trim());
+    }
+    // The paints a colour idea may suggest: colourIdeaPool without primers and inks (Colour ideas, the Paint Picker and Mentor's colour answers).
+    function colourIdeaSuggestPool() {
+      return colourIdeaPool().filter(p => !isPrimerOrInk(p));
+    }
+
     // v64: the Opposite of a colour darker than this lightness (0 to 1) is lifted to it, with at least this much saturation (colour wheel panel only).
     const OPPOSITE_DARK_LIFT = { l: 0.45, s: 0.55 };
 
@@ -11504,7 +12115,7 @@
       const C = MinifolioColour;
       const harmony = C.harmonies(baseHex);
       if (!harmony) return [];
-      const pool = colourIdeaPool();
+      const pool = colourIdeaSuggestPool();   // F2: never a primer or an ink
       const skip = [baseHex];
       // v35: in the Compendium there is no recipe (d is null), so only the chosen colour itself is left out
       if (d) for (const s of d.steps) for (const p of s.paints) if (MinifolioColour.isHex(p.colour)) skip.push(p.colour);
@@ -12338,6 +12949,10 @@
     // The box you type in, with its list. o = { id, label, groups: [{ label, options: [{ value, text }] }], value, one (what one option is, for
     // the count: "paint"), placeholder, onPick(value, focusSelector) }. The list shows only some of the options at first (60) and adds more as
     // you scroll or press the down arrow, so 500+ paints stay quick on a phone.
+    // F2: Enter (the phone keyboard's Done key) picks the first match once something is typed, not only when one match is left.
+    // Two options, used by Start from in Colour ideas: lead(openList) returns an element shown between the label and the box (the
+    // owned-paint swatches); openList() opens the full list with the focus in the box. clickOpens: false means a tap in the box does
+    // not open the list by itself (typing, the down arrow, the button next to the box or openList do).
     function buildSearchPicker(door, o) {
       const CHUNK = 60;
       const options = [];
@@ -12409,7 +13024,12 @@
       status.className = "hint combo-status";
       status.setAttribute("role", "status");
       status.setAttribute("aria-live", "polite");
-      wrap.append(label, row, list, status);
+      wrap.append(label);
+      if (o.lead) {
+        const lead = o.lead(() => { if (input.disabled) return; input.focus(); open(); });
+        if (lead) wrap.appendChild(lead);
+      }
+      wrap.append(row, list, status);
 
       let isOpen = false, typed = false, active = -1, rendered = 0, matched = options, viewListener = null;
       const addOptions = () => {
@@ -12513,7 +13133,7 @@
       input.addEventListener("input", () => { typed = true; if (!isOpen) open(); else refill(); clear.hidden = true; });
       input.addEventListener("click", () => {
         const first = !isOpen;
-        open();
+        if (o.clickOpens !== false) open();
         if (first && chosenText && input.value === chosenText) input.select();   // so typing replaces the paint that is chosen
       });
       input.addEventListener("keydown", (e) => {
@@ -12525,7 +13145,7 @@
           e.preventDefault();
           setActive(active + (e.key === "PageDown" ? 8 : -8));
         } else if (e.key === "Enter" && isOpen) {
-          const i = active >= 0 ? active : matched.length === 1 ? 0 : -1;
+          const i = active >= 0 ? active : matched.length === 1 || (typed && matched.length && searchNorm(input.value)) ? 0 : -1;   // F2: or the first match
           if (i >= 0) { e.preventDefault(); choose(matched[i], true); }
         } else if (e.key === "Escape" && (isOpen || input.value !== chosenText)) {
           e.preventDefault();
@@ -12798,18 +13418,21 @@
       groups.setAttribute("role", "group");
       groups.setAttribute("aria-label", "Show detail recipes by group");
       const activeGroup = groupValue(door, DETAIL_GROUPS, st.detailGroup);
-      for (const g of groupButtons(door, DETAIL_GROUPS)) {
+      const nums = door.guides ? guideListNumbers("detail") : null;   // G3: in Guides, groups and recipes A to Z, each with its number
+      for (const g of groupButtons(door, nums ? nums.sortGroups(DETAIL_GROUPS) : DETAIL_GROUPS)) {
         const chip = makeChip(g.name, g.key === activeGroup, () => onGroup(groupNext(door, g.key, activeGroup), g.key));
         chip.dataset.detailGroup = g.key || "all";
+        if (nums) guideNumberChip(chip, g.name, nums.groups.get(g.key));
         groups.appendChild(chip);
       }
       const chips = document.createElement("div");
       chips.className = "chips chips-wrap";   // v49: a list to browse, so it wraps (the group buttons above are one row)
       chips.id = door.id("detail-chips");
       chips.style.marginTop = "0";
-      for (const r of detailRecipesShown(st, door)) {
+      for (const r of nums ? nums.sort(detailRecipesShown(st, door)) : detailRecipesShown(st, door)) {
         const chip = makeChip(r.name, r.key === st.detail, () => onPick(r.key === st.detail ? "" : r.key, r.key));
         chip.dataset.detail = r.key;
+        if (nums) guideNumberChip(chip, r.name, nums.entries.get(r.key));
         chips.appendChild(chip);
       }
       box.append(title, compactRows(door) ? buildMoreInfo([hint], { state: infoState(door, "detail-hint"), id: door.id("detail-hint-panel"), label: "detail recipes" }) : hint);
@@ -12821,6 +13444,7 @@
           rebuild: (text) => { onSearch(text); return buildDetailRecipes(door, onPick, onGroup, onSearch); },
         }));
       }
+      if (door.guides) box.appendChild(guideFiltersButton(st, "detail", groups));   // G3: Filters folds the group buttons away
       box.appendChild(groups);
       if (!(door.short && !activeGroup && !q) && (!q || chips.childElementCount)) { box.appendChild(chips); const m = collapseChips(door, st, "detail", chips); if (m) box.appendChild(m); }
       const recipe = detailRecipesShown(st, door).find(r => r.key === st.detail);
@@ -13001,18 +13625,21 @@
       groups.setAttribute("role", "group");
       groups.setAttribute("aria-label", "Show basing tips by group");
       const activeGroup = groupValue(door, BASING_GROUPS, st.basingGroup);
-      for (const g of groupButtons(door, BASING_GROUPS)) {
+      const nums = door.guides ? guideListNumbers("basing") : null;   // G3: in Guides, groups and tips A to Z, each with its number
+      for (const g of groupButtons(door, nums ? nums.sortGroups(BASING_GROUPS) : BASING_GROUPS)) {
         const chip = makeChip(g.name, g.key === activeGroup, () => onGroup(groupNext(door, g.key, activeGroup), g.key));
         chip.dataset.basingGroup = g.key || "all";
+        if (nums) guideNumberChip(chip, g.name, nums.groups.get(g.key));
         groups.appendChild(chip);
       }
       const chips = document.createElement("div");
       chips.className = "chips chips-wrap";   // v49: a list to browse, so it wraps (the group buttons above are one row)
       chips.id = door.id("basing-chips");
       chips.style.marginTop = "0";
-      for (const t of basingTipsShown(st, door)) {
+      for (const t of nums ? nums.sort(basingTipsShown(st, door)) : basingTipsShown(st, door)) {
         const chip = makeChip(t.name, t.key === st.basing, () => onPick(t.key === st.basing ? "" : t.key, t.key));
         chip.dataset.basing = t.key;
+        if (nums) guideNumberChip(chip, t.name, nums.entries.get(t.key));
         chips.appendChild(chip);
       }
       box.append(title, compactRows(door) ? buildMoreInfo([hint], { state: infoState(door, "basing-hint"), id: door.id("basing-hint-panel"), label: "basing tips" }) : hint);
@@ -13024,6 +13651,7 @@
           rebuild: (text) => { onSearch(text); return buildBasingTips(door, onPick, onGroup, onSearch); },
         }));
       }
+      if (door.guides) box.appendChild(guideFiltersButton(st, "basing", groups));   // G3: Filters folds the group buttons away
       box.appendChild(groups);
       if (!(door.short && !activeGroup && !q) && (!q || chips.childElementCount)) { box.appendChild(chips); const m = collapseChips(door, st, "basing", chips); if (m) box.appendChild(m); }
       const tip = basingTipsShown(st, door).find(t => t.key === st.basing);
@@ -13041,6 +13669,8 @@
       howTitle.textContent = "How to build it";
       box.append(summary, matTitle, basingPlainList("ul", door.id("basing-materials"), tip.materials),
                  howTitle, basingPlainList("ol", door.id("basing-howto"), tip.howto));
+      const buy = door.whereToBuy ? buildWhereToBuy(tip.key, "basing", tip.name) : null;   // L1: in Guides, under the tip's text (not in the recipe card)
+      if (buy) box.appendChild(buy);
       // the words for "Copy as text" (built as we go; the materials and how-to are only ever shown or copied, never put in a recipe)
       const lines = [`Basing tip: ${tip.name}`, tip.summary, "", "What you need:", ...tip.materials.map(m => `- ${m}`),
                      "", "How to build it:", ...tip.howto.map((h, i) => `${i + 1}. ${h}`)];
@@ -13460,6 +14090,7 @@
         shopSource: () => "Colour Lab: Colour ideas",   // v41: what the shopping list remembers for Add buttons in Colour ideas (X1: was "Compendium: ...")
         listMarks: true,   // v41: a paint already on the shopping list says "On your shopping list" on its row
         schemeShop: true,  // v42, v51: Starter schemes, Your schemes and Detail recipes get tick boxes, Select all and "Add to shopping list" (buildPick)
+        whereToBuy: true,  // L1: a Basing tip with products gets the closed Where to buy fold-out
         share: { copy: (text, what) => copyText(text, what, "Paste it anywhere."), startRecipe: startRecipeFromCompendium },
         factions: () => new Map(chosen ? [[factionKey(chosen), chosen]] : []),
         factionPick: { names, onChange: (key, focus) => { st.faction = key; redrawLibrary(focus || `#${compendiumId("faction-history-pick")}`); } },
@@ -14886,10 +15517,14 @@
       if (!base) st.base = "";
       // v37 part 2: a box you type in, with the paints in a list under it that narrows as you type (and can still be scrolled)
       const pickGroups = compendiumPickGroups(choices);
+      // F2: your own paints first, as swatches under the heading; the long list only opens when you type or tap More paints
+      const swatches = startFromSwatches(choices.own);
       body.appendChild(buildSearchPicker(door, {
         id: "colour-ideas-base", label: "Start from", one: "paint", placeholder: "Type or choose a paint",
         emptyPlaceholder: "No paints with a colour yet",
-        groups: pickGroups, value: st.base,
+        groups: pickGroups, value: st.base, clickOpens: !swatches.length,
+        lead: swatches.length ? (openList) => buildStartSwatches(door, swatches, choices, st.base, choices.own.length > swatches.length, openList,
+          (value) => { st.base = value; redraw(`[data-start-swatch="${CSS.escape(value)}"]`); }) : null,
         onPick: (value, focus) => { st.base = value; redraw(focus); },
       }));
 
@@ -14925,6 +15560,50 @@
       return groups;
     }
 
+    // F2: the owned paints shown as swatches under Start from: up to 12, the ones used in the most recipe steps first (the paints you
+    // really paint with), then the rest in name order (the order of the list). own is choices.own (owned, with a real colour, by name).
+    const START_SWATCHES = 12;
+    function startFromSwatches(own) {
+      const uses = new Map();
+      for (const r of book.recipes) for (const s of r.steps) for (const sp of s.paints) uses.set(sp.paint, (uses.get(sp.paint) || 0) + 1);
+      return own.map((p, i) => ({ p, i, n: uses.get(p.id) || 0 })).sort((a, b) => b.n - a.n || a.i - b.i).slice(0, START_SWATCHES).map(x => x.p);
+    }
+    // The swatch buttons (a colour dot and the name, 44 px, wrapping onto lines), then More paints when you own more than are shown.
+    // The chosen paint's button is pressed (aria-pressed, filled and bold, as other chosen chips). A tap chooses it, as the list does.
+    function buildStartSwatches(door, paints, choices, chosenKey, more, openList, onPick) {
+      const box = document.createElement("div");
+      box.className = "start-swatches";
+      box.id = door.id("start-swatches");
+      box.setAttribute("role", "group");
+      box.setAttribute("aria-labelledby", door.id("colour-ideas-base-label"));
+      for (const p of paints) {
+        const key = choices.key(p);
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "chip start-swatch";
+        b.dataset.startSwatch = key;
+        b.setAttribute("aria-pressed", String(key === chosenKey));
+        const name = document.createElement("span");
+        name.className = "start-swatch-name";
+        name.textContent = p.name;
+        b.append(makeSwatch(p.colour), name);
+        if (p.brand) b.append(hiddenName(` (${p.brand})`));   // v127: the brand is read out from hidden text, never an aria-label built from the name (v55)
+        b.addEventListener("click", () => onPick(key));
+        box.appendChild(b);
+      }
+      if (more) {
+        const m = document.createElement("button");
+        m.type = "button";
+        m.className = "plain-button start-more";
+        m.id = door.id("start-more");
+        m.textContent = "More paints";
+        m.setAttribute("aria-controls", door.id("colour-ideas-base-list"));
+        m.addEventListener("click", openList);
+        box.appendChild(m);
+      }
+      return box;
+    }
+
     // ---- v71: ASK THE MENTOR (Compendium, Pro preview) ----
     // Pick a base colour, a second colour and a part (armour, eyes, weapon or base) and get paint picks for that part, each with its reason.
     // It reuses the colour ideas above: colourIdeas() finds paints that go with a colour for a part (your own paints first, a poor fit
@@ -14950,12 +15629,13 @@
       if (!base) st.mentorBase = "";
       if (!second) st.mentorSecond = "";
       const groups = compendiumPickGroups(choices);
-      const picker = (id, label, field) => out.appendChild(buildSearchPicker(door, {
-        id, label, one: "paint", placeholder: "Type or choose a paint", emptyPlaceholder: "No paints with a colour yet",
+      // F2: each box has its own hint. Either colour alone gives picks, so the Second colour's hint says it is optional.
+      const picker = (id, label, field, placeholder) => out.appendChild(buildSearchPicker(door, {
+        id, label, one: "paint", placeholder, emptyPlaceholder: "No paints with a colour yet",
         groups, value: st[field], onPick: (value, focus) => { st[field] = value; redraw(focus); },
       }));
-      picker("mentor-base", "Base colour", "mentorBase");
-      picker("mentor-second", "Second colour", "mentorSecond");
+      picker("mentor-base", "Base colour", "mentorBase", "Choose your main paint");
+      picker("mentor-second", "Second colour", "mentorSecond", "Optional second paint");
       const partLabel = document.createElement("p");
       partLabel.className = "idea-label";
       partLabel.textContent = "Part";
@@ -15129,6 +15809,60 @@
       for (const c of GUIDE_CATEGORIES) for (const gr of guideGroupsOf(c.key, kn).groups) for (const [k, n] of gr.nums) out.set(k, n);
       return out;
     }
+    // G3: Detail recipes and Basing keep their own groups (DETAIL_GROUPS, BASING_GROUPS) and get the same kind of numbers as the other
+    // sections, worked out each time the list is drawn and never stored: the section's place in GUIDE_CATEGORIES, then the group's place
+    // A to Z (3.2), then the entry's place A to Z inside its group (3.2.5). Keys and links are unchanged. An entry whose group is not in
+    // the group list gets no number. sort(list) puts recipes or tips in number order (anything unnumbered last, in the order given).
+    function guideListNumbers(cat) {
+      const out = { groups: new Map(), entries: new Map() };
+      const src = cat === "detail" && typeof DETAIL_GROUPS !== "undefined" && typeof DETAIL_RECIPES !== "undefined" ? [DETAIL_GROUPS, DETAIL_RECIPES]
+        : cat === "basing" && typeof BASING_GROUPS !== "undefined" && typeof BASING_TIPS !== "undefined" ? [BASING_GROUPS, BASING_TIPS] : [[], []];
+      const sec = guideSectionNumber(cat);
+      const byName = (a, b) => guideByTitle({ title: String(a.name), key: a.key }, { title: String(b.name), key: b.key });
+      const rank = new Map(), groupRank = new Map();
+      if (sec) [...src[0]].sort(byName).forEach((g, i) => {
+        const num = `${sec}.${i + 1}`;
+        out.groups.set(g.key, num);
+        groupRank.set(g.key, i);
+        src[1].filter(x => x.group === g.key).sort(byName).forEach((x, j) => { out.entries.set(x.key, `${num}.${j + 1}`); rank.set(x.key, rank.size); });
+      });
+      const by = (ranks) => (list) => list.map((x, i) => [x, ranks.has(x.key) ? ranks.get(x.key) : Infinity, i]).sort((a, b) => a[1] - b[1] || a[2] - b[2]).map(p => p[0]);
+      out.sort = by(rank);
+      out.sortGroups = by(groupRank);
+      return out;
+    }
+    // G3: a chip with its number at the right (the title, then the same small grey span as the Guides rows). The number never wraps.
+    function guideNumberChip(chip, title, num) {
+      if (!num) return chip;
+      const t = document.createElement("span");
+      t.className = "g3-chip-title";
+      t.textContent = title;
+      chip.replaceChildren(t, Object.assign(document.createElement("span"), { className: "guides-num", textContent: num }));
+      chip.classList.add("g3-num-chip");
+      return chip;
+    }
+    // G3: the small Filters button over the group buttons of Detail recipes and Basing in Guides. It folds that row away and shows it
+    // again (shown at first). The chosen group still filters while the row is folded. Like More info and the Units Filters, the open or
+    // folded state is kept only while the app is open (in the door's state), never saved.
+    function guideFiltersButton(st, name, row) {
+      const shut = st.filtersShut || (st.filtersShut = {});
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "more-info-button g3-filters";
+      b.id = row.id + "-toggle";
+      b.setAttribute("aria-controls", row.id);
+      const text = document.createElement("span");
+      text.textContent = "Filters";
+      const mark = document.createElement("span");
+      mark.className = "fold-mark";
+      mark.setAttribute("aria-hidden", "true");
+      b.append(text, mark);
+      row.classList.add("g3-filter-row");
+      const show = () => { b.setAttribute("aria-expanded", String(!shut[name])); row.hidden = !!shut[name]; };
+      b.addEventListener("click", () => { shut[name] = !shut[name]; show(); });
+      show();
+      return b;
+    }
     // G2b: the See also entries of one entry (guides-groups.js), up to 3, in the order given. A key that is not in the library,
     // the entry's own key or a key named twice is skipped, so a wrong key never shows a dead link.
     function guideSeeAlso(e, kn = knowledgeIndex()) {
@@ -15146,6 +15880,7 @@
     // G2b: order is how the home list shows when nothing is typed: "topics" (the sections) or "az" (every entry A to Z).
     const guidesState = { view: "home", cat: "", group: "", key: "", kind: "", query: "", missing: false, order: "topics" };
     function guidesPoint(e) {   // point the screen at one entry
+      whereBuyOpen.clear();   // L1: a Where to buy fold-out starts closed on every entry you open
       guidesState.missing = false;
       guidesState.key = e.key;
       guidesState.kind = e.kind;
@@ -15194,7 +15929,7 @@
         return;
       }
       const g = guidesState, kn = knowledgeIndex();
-      const door = compendiumDoor();
+      const door = Object.assign(compendiumDoor(), { guides: true });   // G3: Detail recipes and Basing show numbers and the Filters button here only
       const redraw = (selector) => renderGuides(selector);
       const parts = libraryParts(door, redraw);
       const catName = (key) => (GUIDE_CATEGORIES.find(c => c.key === key) || {}).name || "";
@@ -15435,6 +16170,8 @@
             p.textContent = para;
             page.appendChild(p);
           }
+          const buy = buildWhereToBuy(e.key, e.kind, e.title);   // L1: under the entry's text, closed (only for entries in where-to-buy.js)
+          if (buy) page.appendChild(buy);
           // G2b: See also, a quiet row under the text: a small heading, then up to 3 entry titles as links, each opening through openGuide
           const also = guideSeeAlso(e, kn);
           if (also.length) {
@@ -19991,12 +20728,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL TWELVE script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, app), e.g. "app.js?v=126".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=127".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v126";
+    const APP_VERSION = "v127";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -20458,6 +21195,13 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v127", date: "3 Nov 2026", changes: [
+        "Ask Mentor now opens out of its round button, and Mentor sits larger above the questions. The start circle's four sections match the bar: Models and Painting on top, Dashboard and Tools below.",
+        "Guides: entries that need something to buy have a Where to buy fold-out with plain shop searches and Add to shopping list. Gear has its own section on the shopping list.",
+        "Colour Lab: Start from shows your own paints first, Done picks the first match as you type, and colour ideas never suggest a primer or an ink.",
+        "The scheme form fills in the faction from your recipes, has Search recipes, groups recipes by part with Select all, and says when another scheme already goes onto new units in that faction.",
+        "Guides: Detail recipes and Basing have numbers like the other sections, and a Filters button folds their group buttons away.",
+      ]},
       { version: "v126", date: "3 Nov 2026", changes: [
         "Mentor has three looks to choose from in Settings: Futuristic, Magical and Grounded. In its window it shows when it is thinking, pleased, unsure or finished.",
         "The app no longer looks frozen while it opens: the start circle and its ring show straight away and fill up as the app loads.",
