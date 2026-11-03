@@ -1,5 +1,6 @@
 """X8 tests for Minifolio (the knowledge base is imported). New behaviour only:
-1. The Guides home list shows every category with its real count (602 guides in four categories, 137 detail recipes, 60 basing tips),
+1. The Guides home list shows every category with its real count (602 guides in four categories, 137 detail recipes, 60 basing tips;
+   KR4 made it 614 guides and 143 detail recipes, see COUNTS),
    and there are 20 starter questions.
 2. Three sample guides (one each from Colour basics, Techniques and Problems) open from Guides: title, body, related buttons.
 3. One new detail recipe and one new basing tip (from knowledge-base/data) open under Detail recipes and Basing with their steps.
@@ -14,7 +15,10 @@ from launch_helpers import wait_settled, tap_tab
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "..", "knowledge-base", "data")
-COUNTS = {"Colour basics": 81, "Techniques": 316, "Detail recipes": 137, "Basing": 60, "Tools and prep": 155, "Problems": 50}
+# KR4: the gap-fill pack (knowledge-base/data/k8-kr4-guides.json, k9-kr4-detail-recipes.json) added 12 guides and 6 detail recipes,
+# so the real counts went up: Colour basics 81 to 85, Techniques 316 to 318, Tools and prep 155 to 160, Problems 50 to 51,
+# Detail recipes 137 to 143. The check is unchanged: the home list must show each category's real count.
+COUNTS = {"Colour basics": 85, "Techniques": 318, "Detail recipes": 143, "Basing": 60, "Tools and prep": 160, "Problems": 51}
 results = []
 
 def check(name, ok, detail=""):

@@ -1979,5 +1979,65 @@
   "contrast paint skin",
   "batch painting skin",
   "simple flesh"
+ ],
+ "brown-hair": [
+  "brown hair",
+  "brunette",
+  "brown beard",
+  "dark brown hair",
+  "light brown hair",
+  "hair colour",
+  "chestnut hair",
+  "brown moustache"
+ ],
+ "red-and-ginger-hair": [
+  "red hair",
+  "ginger hair",
+  "auburn hair",
+  "ginger beard",
+  "red beard",
+  "copper hair",
+  "strawberry blonde",
+  "redhead"
+ ],
+ "black-hair": [
+  "black hair",
+  "dark hair",
+  "black beard",
+  "jet black hair",
+  "glossy hair",
+  "shiny hair",
+  "black moustache",
+  "raven hair"
+ ],
+ "chestnut-horse-coat": [
+  "chestnut horse",
+  "red horse",
+  "brown horse",
+  "sorrel horse",
+  "horse coat",
+  "horse colours",
+  "glossy horse",
+  "pony"
+ ],
+ "bay-horse-coat": [
+  "bay horse",
+  "brown horse with black mane",
+  "horse black legs",
+  "dark bay",
+  "knight horse",
+  "cavalry horse",
+  "horse mane",
+  "warhorse"
+ ],
+ "dapple-grey-horse-coat": [
+  "dapple grey horse",
+  "dappled horse",
+  "grey horse",
+  "white horse",
+  "pale horse",
+  "spotted horse",
+  "silver horse",
+  "horse dapples"
  ]
 }
