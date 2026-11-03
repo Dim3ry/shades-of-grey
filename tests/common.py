@@ -17,6 +17,18 @@ def node_command():
         pass
     return "node"
 
+
+def speed_factor():
+    """T6: how much slower this machine is than the one the time budget was recorded on (1 to 3), as measured by tests/run_all.py's
+    speed check at the start of the run and handed over as SOG_SPEED_FACTOR. A file run on its own, without the runner, gets 1.
+    For the few checks that time the app in milliseconds: the limits were set on the reference machine, so a machine measured
+    2.3 times slower, with other test files running beside it, gets 2.3 times the limit. A real slowdown still fails."""
+    import os
+    try:
+        return max(1.0, min(3.0, float(os.environ.get("SOG_SPEED_FACTOR", "1"))))
+    except ValueError:
+        return 1.0
+
 def click_card_chip(page, selector):
     """Click a recipe or tip chip in the recipe editor's Colour ideas card.
     X8d (v106): that card shows only the first 12 chips of a long list, with a Show all button under it. A chip past

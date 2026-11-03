@@ -133,6 +133,9 @@ for (let n = 0; n < 7; n++) { const list = catBig.slice(); const c0 = process.hr
 colourRuns.sort((x, y) => x - y);
 const colourMs = colourRuns[Math.floor(colourRuns.length / 2)];
 console.error(JSON.stringify({ median_ms: +median.toFixed(3), worst_ms: +worst.toFixed(3), first_call_ms: +firstCall.toFixed(2), colour_path_4000_paints_ms: +colourMs.toFixed(2), colour_path_runs_ms: colourRuns.map((x) => +x.toFixed(2)) }));
-check("a question against 500 entries is quick (median of 60 under 5 ms here; the 30 ms slow-processor number is measured by hand)", median < 5, { median, worst });
-check("the colour path with a 4000-paint catalogue is quick too (median of 7 under 60 ms here)", colourMs < 60, { median: colourMs, runs: colourRuns });
+// T6: SPEED is the test runner's speed check for this machine (1 when run alone): the limits were set on the reference machine, so a
+// machine measured 2.3 times slower, with other test files running beside it, gets 2.3 times the limit. A real slowdown still fails.
+const SPEED = Math.max(1, Math.min(3, Number(process.env.SOG_SPEED_FACTOR) || 1));
+check("a question against 500 entries is quick (median of 60 under 5 ms here; the 30 ms slow-processor number is measured by hand)", median < 5 * SPEED, { median, worst, SPEED });
+check("the colour path with a 4000-paint catalogue is quick too (median of 7 under 60 ms here)", colourMs < 60 * SPEED, { median: colourMs, runs: colourRuns, SPEED });
 console.log(JSON.stringify({ out, rows, speed: { median, worst, firstCall, colourMs } }));

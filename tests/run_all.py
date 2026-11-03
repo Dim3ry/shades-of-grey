@@ -105,6 +105,7 @@ def calibrate(jobs):
 
 
 FACTOR_MIN, FACTOR_MAX = 0.8, 3.0   # a very fast machine is not allowed to tighten the limits by more than 20%, a very slow one loosens them by 3x at most
+SPEED_FACTOR = 1.0   # T6: set by main() from the speed check and handed to each test file as SOG_SPEED_FACTOR
 
 
 def time_factor(budget, measured):
@@ -197,6 +198,7 @@ def run_one(path, port):
     watch = os.path.join(HERE, "csp_watch")
     env = dict(os.environ, SOG_PORT=str(port), SOG_CSP_LOG=csp_log,
                PYTHONPATH=watch + os.pathsep + os.environ.get("PYTHONPATH", ""))
+    env.setdefault("SOG_SPEED_FACTOR", f"{SPEED_FACTOR:.2f}")   # T6: for the few in-page speed checks, see tests/common.py speed_factor()
     started = time.time()
     problems = []
     try:
@@ -260,6 +262,8 @@ def main():
     lint = lint_sources(budget)
     measured = calibrate(args.jobs)   # before any test starts, so the tests do not slow it down
     factor = time_factor(budget, measured)
+    global SPEED_FACTOR
+    SPEED_FACTOR = factor
     total_factor = factor   # the speed check already includes how many cores share the jobs
     print(f"Speed check: {measured:.2f} s with {args.jobs} at once (reference {budget.get('calibration_seconds', 'not recorded')}), "
           f"{os.cpu_count()} cores. Time limits x{factor:.2f}.", flush=True)

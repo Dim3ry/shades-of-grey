@@ -361,6 +361,11 @@ def main():
         page.wait_for_timeout(200)
         page.click("#dialog-yes")
         wait_gone(page, "recipe")
+        # T6: the editor slides away before it is hidden; on a busy machine the check could look while it was still going
+        try:
+            page.locator(NAME_BOX).wait_for(state="hidden", timeout=5000)
+        except Exception:
+            pass   # the check below then fails and says so
         check("answering Yes closes the editor and the draft goes", not page.locator(NAME_BOX).is_visible() and store_text(page) is None)
         # Paste: leave with yes / no
         start_paste(page)
