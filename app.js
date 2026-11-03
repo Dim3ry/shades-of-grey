@@ -14825,9 +14825,29 @@
       const gr = guideGroupsOf(e.category, kn).groups.find(x => x.nums.has(e.key));
       return gr ? { group: gr.name, num: gr.nums.get(e.key) } : null;
     }
+    // G2b: every guide entry's number in one map (key to 2.3.4), worked out the same way as the grouped browse, for lists that mix
+    // sections (A to Z and search). Only guide entries have numbers; a detail recipe or basing tip with the same key gets none.
+    function guideNumbers(kn = knowledgeIndex()) {
+      const out = new Map();
+      for (const c of GUIDE_CATEGORIES) for (const gr of guideGroupsOf(c.key, kn).groups) for (const [k, n] of gr.nums) out.set(k, n);
+      return out;
+    }
+    // G2b: the See also entries of one entry (guides-groups.js), up to 3, in the order given. A key that is not in the library,
+    // the entry's own key or a key named twice is skipped, so a wrong key never shows a dead link.
+    function guideSeeAlso(e, kn = knowledgeIndex()) {
+      const map = typeof GUIDE_GROUPS === "undefined" || !GUIDE_GROUPS || !GUIDE_GROUPS.seeAlso ? {} : GUIDE_GROUPS.seeAlso;
+      const keys = e && e.kind === "guide" && Object.prototype.hasOwnProperty.call(map, e.key) && Array.isArray(map[e.key]) ? map[e.key] : [];
+      const out = [];
+      for (const k of keys) {
+        const r = typeof k === "string" && k !== e.key ? kn.get(k) : null;
+        if (r && r !== e && !out.includes(r)) out.push(r);
+      }
+      return out.slice(0, 3);
+    }
     // Where the Guides screen is: home (search and categories), a category (its topic groups), one group, or one entry. Kept while the
     // app is open, never saved. G2a: group is the name of the topic group being shown, or of the one the open entry sits in.
-    const guidesState = { view: "home", cat: "", group: "", key: "", kind: "", query: "", missing: false };
+    // G2b: order is how the home list shows when nothing is typed: "topics" (the sections) or "az" (every entry A to Z).
+    const guidesState = { view: "home", cat: "", group: "", key: "", kind: "", query: "", missing: false, order: "topics" };
     function guidesPoint(e) {   // point the screen at one entry
       guidesState.missing = false;
       guidesState.key = e.key;
@@ -14976,10 +14996,36 @@
       input.value = g.query;
       const lower = document.createElement("div");
       lower.className = "guides-lower";
+      // G2b: search results and the A to Z list show each entry's grouped-browse number (worked out once per drawing, when needed)
+      let numbers = null;
+      const numOf = (e) => (e.kind === "guide" ? (numbers = numbers || guideNumbers(kn)).get(e.key) || "" : "");
       const drawLower = () => {
         lower.replaceChildren();
         const q = g.query.trim();
-        if (q) { lower.appendChild(entryRows(kn.search(q), "q:" + q)); return; }
+        if (q) { lower.appendChild(entryRows(kn.search(q), "q:" + q, numOf)); return; }
+        // G2b: Topics (the sections) or A to Z (every entry of every section in one list), a two-part switch like the others in the app
+        const seg = document.createElement("div");
+        seg.className = "seg guides-order";
+        seg.setAttribute("role", "tablist");
+        seg.setAttribute("aria-label", "Guides order");
+        for (const [k, text] of [["topics", "Topics"], ["az", "A to Z"]]) {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.setAttribute("role", "tab");
+          b.setAttribute("aria-selected", String(g.order === k));
+          b.dataset.order = k;
+          b.textContent = text;
+          b.addEventListener("click", () => { g.order = k; renderGuides(`[data-order="${k}"]`); });
+          seg.appendChild(b);
+        }
+        lower.appendChild(seg);
+        if (g.order === "az") {
+          const all = kn.entries.filter(e => (e.kind === "guide" || e.kind === "detail" || e.kind === "basing") && shown.some(c => c.key === e.category));
+          const box = entryRows(all.sort(guideByTitle), "az", numOf);
+          box.classList.add("guides-az");
+          lower.appendChild(box);
+          return;
+        }
         const list = document.createElement("div");
         list.className = "guides-rows guides-cats";
         for (const c of shown) {
@@ -15091,6 +15137,29 @@
             const p = document.createElement("p");
             p.textContent = para;
             page.appendChild(p);
+          }
+          // G2b: See also, a quiet row under the text: a small heading, then up to 3 entry titles as links, each opening through openGuide
+          const also = guideSeeAlso(e, kn);
+          if (also.length) {
+            const box = document.createElement("div");
+            box.className = "guides-seealso";
+            box.setAttribute("role", "group");
+            box.setAttribute("aria-labelledby", "guides-seealso-label");
+            const h = document.createElement("p");
+            h.className = "similar-label";
+            h.id = "guides-seealso-label";
+            h.textContent = "See also";
+            box.appendChild(h);
+            for (const r of also) {
+              const b = document.createElement("button");
+              b.type = "button";
+              b.className = "link-button guides-seealso-link";
+              b.dataset.seeAlso = r.key;
+              b.textContent = r.title;
+              b.addEventListener("click", () => openGuide(r.key));
+              box.appendChild(b);
+            }
+            page.appendChild(box);
           }
           const rel = e.related.map(k => kn.get(k)).filter(Boolean);
           if (rel.length) {
