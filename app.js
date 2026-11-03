@@ -19893,10 +19893,16 @@
     //   settings.backupNudgeNextAfter  "2026-11-06"  after Not now: not before this day
     // v18.3: a plain "2026-10-10" date is read as midnight in YOUR time zone (not world time),
     // so "a day since" and "a week since" line up with the dates the app writes.
+    // v126: a plain date counts whole calendar days, plus the part of today gone by on the wall clock, so a 23- or 25-hour day at a
+    // clock change never moves "10 days ago" to 11 (or "yesterday" to "today"). Full timestamps still count real elapsed time.
     function daysSince(isoDate) {
       if (!isoDate) return Infinity;
-      const when = /^\d{4}-\d{2}-\d{2}$/.test(isoDate) ? new Date(isoDate + "T00:00:00") : new Date(isoDate);
-      return (Date.now() - when.getTime()) / 86400000;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) {
+        const [y, m, d] = isoDate.split("-").map(Number), now = new Date();
+        const whole = Math.round((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - Date.UTC(y, m - 1, d)) / 86400000);
+        return whole + (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) / 86400;
+      }
+      return (Date.now() - new Date(isoDate).getTime()) / 86400000;
     }
     const BACKUP_NUDGE_UNITS = 5;
     const BACKUP_NUDGE_RECIPES = 1;
@@ -19985,12 +19991,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL ELEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, app), e.g. "app.js?v=125".
+    // "?v=" number on ALL TWELVE script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, app), e.g. "app.js?v=126".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v125";
+    const APP_VERSION = "v126";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -20452,6 +20458,13 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v126", date: "3 Nov 2026", changes: [
+        "Mentor has three looks to choose from in Settings: Futuristic, Magical and Grounded. In its window it shows when it is thinking, pleased, unsure or finished.",
+        "The app no longer looks frozen while it opens: the start circle and its ring show straight away and fill up as the app loads.",
+        "Mentor understands more everyday ways of asking, such as paint water, paint on your clothes, fumes, lumpy or streaky paint, photos and a first model.",
+        "CSV import reads files split by semicolons or tabs and a Status column, and its messages stay until you close them. Text follows your phone's text size, labels no longer break on small screens, and Skip to content is the first Tab stop.",
+        "Quicker taps: only the section you are looking at is redrawn. The storage line counts everything the app keeps, a full phone offers to remove safety copies, and the offline copy no longer grows or keeps a broken font. \"Last backup\" now counts days correctly around the clock change.",
+      ]},
       { version: "v125", date: "3 Nov 2026", changes: [
         "Mentor copes with typing slips, offers Did you mean when it is not sure, says when it does not know, and answers simple questions about the app.",
         "Paste recipes: Check paints shows one card for each paint that needs a look, nothing stops you saving, and a tick box sets whether new paints are marked Owned.",
