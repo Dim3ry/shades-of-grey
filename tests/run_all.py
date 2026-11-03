@@ -53,7 +53,9 @@ VERSION_WORDS = re.compile(r"APP_VERSION|sw\.js|\?v=|CHANGELOG|DATA_VERSION|git 
 RUN_ALONE = []
 
 # Failures that also happen on main (see CLAUDE.md). --rerun-failed names them but never counts them as cleared.
-KNOWN_FAILURES = ("test_colour_engine.py", "test_v21_7.py")
+# T6 (3 Nov): emptied. test_colour_engine passes wherever Node.js is installed (and tests/common.py node_command() also finds the copy
+# of Node inside Playwright), and test_v21_7 passed in every full run of 3 Nov. Add a file here only with a reason in a comment.
+KNOWN_FAILURES = ()
 
 # --quick always runs these, besides the newest three versions:
 #  - test_version_plumbing, the one test that checks the version number, the script tags, sw.js and the Updates entry,
