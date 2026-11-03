@@ -8922,14 +8922,20 @@
     const lqSettle = () => { for (const a of lqSliding) a.finish(); lqSliding.clear(); };
     document.addEventListener("keydown", lqSettle, true);
     const lqPanelOf = (button) => button.getAttribute("aria-controls") ? document.getElementById(button.getAttribute("aria-controls")) : button.nextElementSibling;
-    // what comes after the panel on the page, near the screen: its later siblings, then its parents' later siblings, up to the section
-    function lqFollowers(el) {
+    // what comes after the panel on the page, near the screen: its later siblings, then its parents' later siblings, up to the section.
+    // A very tall one (the whole Models list) is not moved as one piece (the browser would have to draw all of it again for the slide):
+    // its parts near the screen move instead (the parts further away are off the screen, where a jump is not seen). reach = how far
+    // below the screen something can be and still come into view (a closing panel's height).
+    function lqFollowers(el, reach) {
       const out = [];
+      const add = (s, depth) => {
+        const r = s.getBoundingClientRect();
+        if (!(r.height > 0 && r.top < innerHeight + reach && r.bottom > 0)) return;
+        if (r.height > innerHeight * 1.5 && depth < 3 && s.children.length) { for (const c of s.children) add(c, depth + 1); return; }
+        out.push([s, r.top, s.parentElement, [...s.parentElement.children].indexOf(s)]);   // (where it sat, in case the list is drawn again)
+      };
       for (let n = el; n && n.parentElement && !n.matches("main, body, main > section"); n = n.parentElement) {
-        for (let s = n.nextElementSibling; s; s = s.nextElementSibling) {
-          const r = s.getBoundingClientRect();
-          if (r.height > 0 && r.top < innerHeight + 100 && r.bottom > 0) out.push([s, r.top]);
-        }
+        for (let s = n.nextElementSibling; s; s = s.nextElementSibling) add(s, 0);
       }
       return out;
     }
@@ -8940,7 +8946,8 @@
       if (!button || button.matches(LQ_FOLD_SKIP) || !lqOn()) return;
       const panel = lqPanelOf(button);
       if (!panel) return;
-      lqFold = { button, id: panel.id, panel, shown: lqShown(panel), after: lqFollowers(panel) };
+      const shown = lqShown(panel);
+      lqFold = { button, id: panel.id, panel, shown, after: lqFollowers(panel, 100 + (shown ? panel.getBoundingClientRect().height : 0)) };
     }, true);
     document.addEventListener("click", () => {
       const f = lqFold;
@@ -8951,8 +8958,9 @@
       const opened = !f.shown && lqShown(panel), closed = f.shown && !lqShown(panel);
       if (!opened && !closed) return;
       const timing = { duration: motionMs("--motion-med"), easing: "linear" };
-      for (const [el, top] of f.after) {
-        if (!el.isConnected || el.getAnimations().length) continue;
+      for (const [was, top, parent, at] of f.after) {
+        const el = was.isConnected ? was : parent.isConnected ? parent.children[at] : null;   // a list drawn again: the row now in that place
+        if (!el || el.getAnimations().length) continue;
         const dy = top - el.getBoundingClientRect().top;
         if (Math.abs(dy) > 1 && Math.abs(dy) < innerHeight) lqSliding.add(lqAnim(el, [{ transform: `translateY(${dy}px)` }, { transform: "none" }], timing));
       }
@@ -8961,11 +8969,12 @@
     });
 
     // LQ1 (LQ6): moving between the pages inside one section (the Painting switch, the Colour Lab parts, a Guides list or entry) was an
-    // instant swap; the new page now fades up into place. Not between the Tools pages (About, Guides, Settings, Help, Updates): those keep
+    // instant swap; the new page now fades in. Not between the Tools pages (About, Guides, Settings, Help, Updates): those keep
     // Mo3a's instant switch (James, 3 Nov).
     function lqFadeIn(el) {
       if (!lqOn() || !el || !el.isConnected || el.closest(".hidden, [hidden]")) return;   // (no measuring here, so the tap does not wait for a layout)
-      lqAnim(el, [{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: motionMs("--motion-med"), easing: "linear" });
+      // (a fade in place: the sweep's 6 px rise is left out, so nothing moves under a finger and every size reads exactly during the fade)
+      lqAnim(el, [{ opacity: 0 }, { opacity: 1 }], { duration: motionMs("--motion-med"), easing: "linear" });
     }
     let lqGuides = null;   // where Guides was when a tap inside it began
     const lqGuidesAt = () => [guidesState.view, guidesState.cat, guidesState.group, guidesState.key].join("|");

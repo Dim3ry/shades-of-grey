@@ -76,19 +76,23 @@ def main():
         print("\n--- 2. A fold-out: what is below slides ---")
         page.evaluate("scrollTo(0, 0)")
         page.click("#toggle-filters")
-        list_anims = page.evaluate(ANIMS, ["#unit-split", False]) or []
-        first = page.evaluate("""() => { const a = document.getElementById('unit-split').getAnimations()[0]; const h = document.getElementById('filter-card').getBoundingClientRect().height;
+        # the list below moves as one piece, or (a long list) its cards near the screen move
+        list_anims = page.evaluate(ANIMS, ["#unit-split", True]) or page.evaluate("""() => document.getElementById('unit-split').getAnimations({ subtree: true })
+            .map(a => a.effect.getKeyframes().flatMap(k => Object.keys(k).filter(x => x === 'transform')))""")
+        first = page.evaluate("""() => { const a = document.getElementById('unit-split').getAnimations({ subtree: true }).find(x => x.effect.getKeyframes()[0].transform);
+            const h = document.getElementById('filter-card').getBoundingClientRect().height;
             return a ? [a.effect.getKeyframes()[0].transform, Math.round(h)] : null; }""")
         panel_anims = page.evaluate(ANIMS, ["#filter-card", False]) or []
-        check("the list below the opened Filters slides by transform", any("transform" in a for a in list_anims), list_anims)
+        check("the list below the opened Filters slides by transform", first is not None, list_anims)
         check("the list starts from where it was (moved back by the panel's height, so no one-frame jump)",
               first and first[0].startswith("translateY(-") and abs(abs(float(first[0][11:-3])) - first[1]) < 30, first)
         check("the Filters panel unrolls with clip-path", any("clipPath" in a for a in panel_anims), panel_anims)
         page.wait_for_timeout(450)
-        rest = page.evaluate("() => [getComputedStyle(document.getElementById('unit-split')).transform, document.getElementById('unit-split').getAnimations().length]")
-        check("once it ends, nothing is left with a transform", rest == ["none", 0], rest)
+        rest = page.evaluate("""() => [[document.getElementById('unit-split'), ...document.querySelectorAll('#unit-list > li')].filter(e => getComputedStyle(e).transform !== 'none').length,
+            document.getElementById('unit-split').getAnimations({ subtree: true }).filter(a => a.effect.getKeyframes().some(k => k.transform)).length]""")
+        check("once it ends, nothing is left with a transform", rest == [0, 0], rest)
         page.click("#toggle-filters")
-        check("closing slides the list back up too", any("transform" in a for a in (page.evaluate(ANIMS, ["#unit-split", False]) or [])))
+        check("closing slides the list back up too", page.evaluate("() => document.getElementById('unit-split').getAnimations({ subtree: true }).some(a => a.effect.getKeyframes().some(k => k.transform))"))
         page.wait_for_timeout(450)
 
         print("\n--- 3. The Undo message and the question box leave smoothly ---")

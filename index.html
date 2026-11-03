@@ -2707,6 +2707,7 @@
     details { interpolate-size: allow-keywords; }
     details::details-content { block-size: 0; overflow-y: clip; transition: block-size var(--motion-med) var(--motion-ease), content-visibility var(--motion-med) var(--motion-ease) allow-discrete; }
     details[open]::details-content { block-size: auto; transition: block-size var(--motion-med) var(--motion-ease); }   /* opening: the text is there at once (only closing keeps it while the space shrinks) */
+    .mentor-window details::details-content { transition: none; }   /* not inside the Mentor window (MW1 owns its motion) */
     /* Chevrons (LQ11): the fold arrows turn on the shared motion clock (they had their own .15s). */
     .fold-mark, .combo-mark, .help summary::before, .help-look > summary::before { transition-duration: var(--motion-fast); transition-timing-function: var(--motion-ease); }
     /* Shopping tick (LQ10): the tick draws itself on (short stroke, then long), and the box gives a small pop. */
