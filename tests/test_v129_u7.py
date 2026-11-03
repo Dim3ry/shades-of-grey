@@ -120,11 +120,13 @@ def main():
             want = WANT_T.get(theme, got["dark"][3:])
             check(f"{theme}: --mentor-t1 to --mentor-t3 are set, the same in light and dark ({', '.join(want)})",
                   got["dark"][:3] == got["light"][:3] == [w.lower() for w in want], got)
-        # a stand-in for LR1's ring (the real one is gone once the app has loaded), so its five strokes can be read in any theme
-        STROKES = """() => { const NS = 'http://www.w3.org/2000/svg', box = document.createElement('div'), svg = document.createElementNS(NS, 'svg'); box.className = 'mo-load';
-            for (let i = 0; i < 5; i++) { const c = document.createElementNS(NS, 'circle'); c.setAttribute('class', 'lr-s' + i); svg.appendChild(c); }
+        # v129: MO6 replaced LR1's ring with the loading screen's icon ring (.mo6-load .mo6-ring), which draws round 7's own segments (.ml-segs .ml-k0
+        # to .ml-k4). A stand-in of that ring (the real one is gone once the app has loaded), so its five strokes can be read in any theme.
+        STROKES = """() => { const NS = 'http://www.w3.org/2000/svg', box = document.createElement('div'), svg = document.createElementNS(NS, 'svg'); box.className = 'mo-load mo6-load';
+            svg.setAttribute('class', 'mo6-ring mo6-icon'); const g = document.createElementNS(NS, 'g'); g.setAttribute('class', 'ml-segs'); svg.appendChild(g);
+            for (let i = 0; i < 5; i++) { const c = document.createElementNS(NS, 'circle'); c.setAttribute('class', 'ml-k' + i); g.appendChild(c); }
             box.appendChild(svg); document.body.appendChild(box);
-            const lr = [0, 1, 2, 3, 4].map(i => getComputedStyle(box.querySelector('.lr-s' + i)).stroke); box.remove();
+            const lr = [0, 1, 2, 3, 4].map(i => getComputedStyle(box.querySelector('.ml-k' + i)).stroke); box.remove();
             const ring = [0, 1, 2, 3, 4].map(i => getComputedStyle(document.querySelector('#mentor-button .ml-segs .ml-k' + i)).stroke);
             return { lr, ring }; }"""
         same = []
@@ -134,11 +136,11 @@ def main():
                 s = page.evaluate(STROKES)
                 same.append(s["lr"] == s["ring"] and len(set(s["lr"])) == 5)
         check("the loading ring's five segments are the round button's ring colours, in every theme, light and dark", all(same), same)
-        lr_src = {m.group(1): m.group(2) for m in re.finditer(r"\.mo-load \.lr-s(\d) \{ stroke: (.*?); stroke-dasharray", html)}
-        check("LR1's five strokes are the theme colours (t3, t2, half t2 and half dot, dot, t1)", lr_src == {
-            "0": "var(--mentor-t3, var(--mentor-rim))", "1": "var(--mentor-t2, var(--mentor-b))",
-            "2": "color-mix(in srgb, var(--mentor-t2, var(--mentor-b)) 50%, var(--mentor-dot, var(--mentor-core)))",
-            "3": "var(--mentor-dot, var(--mentor-core))", "4": "var(--mentor-t1, var(--mentor-a))"}, lr_src)
+        # v129: LR1's own strokes went with MO6; the loading screen in index.html now draws round 7's five segments itself
+        load_html = html[html.find('class="mo-load mo6-load"'):]
+        load_html = load_html[:load_html.find("</div>")]
+        check("the loading screen draws round 7's five ring segments (ml-k0 to ml-k4), so it has the theme colours (t3, t2, half t2 and half dot, dot, t1)",
+              all(f"ml-k{i}" in load_html for i in range(5)) and "ml-segs" in load_html, load_html[:200])
         page.evaluate(SET, ["forge", "dark"])
         before = page.evaluate(STROKES)
         page.evaluate("() => { settings.palette = 'greyscale'; applyPalette('greyscale'); }")
