@@ -6661,7 +6661,7 @@
       refreshSelectBar(visible);
 
       renderUnitSide(visible);   // v79
-      if (models.length === 0 || visible.length === 0) { stopUnitQueue(); list.innerHTML = ""; }
+      if (models.length === 0 || visible.length === 0) { stopUnitQueue(); list.replaceChildren(); }
       if (models.length === 0) {
         // v19: a brand-new collection gets the import buttons right here.
         list.innerHTML = '<li class="empty" id="units-empty">No units yet.<div class="button-grid">' +
@@ -15735,7 +15735,7 @@
         name.className = "start-swatch-name";
         name.textContent = p.name;
         b.append(makeSwatch(p.colour), name);
-        if (p.brand) b.append(hiddenName(` (${p.brand})`));   // v127: the brand is read out from hidden text, never an aria-label built from the name (v55)
+        // v128: the swatch's name is its paint name alone (no aria-label built from the name, v55; no brand text in Colour Lab, v35)
         b.addEventListener("click", () => onPick(key));
         box.appendChild(b);
       }
