@@ -55,8 +55,8 @@
        (applyAppearance in app.js) takes over once the app starts.
        U6b: mentor-looks.js (the Mentor orb's three looks and five states, plain data: MENTOR_LOOKS and MENTOR_LOOKS_CSS) loads
        just before it, so early.js can put the chosen look and its styles on the page before the first frame (LR1). -->
-  <script src="mentor-looks.js?v=127"></script>
-  <script src="early.js?v=127"></script>
+  <script src="mentor-looks.js?v=128"></script>
+  <script src="early.js?v=128"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -304,7 +304,7 @@
     .mentor-orb {
       left: 145px; top: 82px; width: 100px; height: 100px; padding: 9px 0 0; border-radius: 50%;
       display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 3px;
-      background-color: var(--accent-fill, var(--accent)); background-image: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.35) 0%, transparent 60%);
+      background-color: var(--accent-fill, var(--accent)); background-image: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.35) 0%, transparent 34%);   /* TH5: the shine stops above the label (it ended at 60%, under "Ask Mentor", which dropped light label text below 4.5:1) */
       color: var(--on-accent); font-size: 13px; font-weight: 700; line-height: 16px;
       box-shadow: 0 0 28px color-mix(in srgb, var(--accent-fill, var(--accent)) 50%, transparent);
     }
@@ -330,8 +330,8 @@
        wet sheen on the Grounded paint. */
     :root { --mentor-s0: #64748b; --mentor-s1: #6366f1; --mentor-s2: #38bdf8; --mentor-s3: #22d3ee; --mentor-s4: #a7f3d0; --mentor-dot: #7dd3fc; --mentor-glint: #ffffff; }
     :root[data-t="parchment"] { --mentor-dot: #dc6575; }
-    :root[data-t="forge"] { --mentor-dot: #d5583e; }
-    :root[data-t="bench"] { --mentor-dot: #e4c968; }
+    :root[data-t="forge"] { --mentor-dot: #e8642c; }   /* TH2: the new forge orange */
+    :root[data-t="bench"] { --mentor-dot: #cdbd89; }
     .mentor-look-chips .chip { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; }
     .mentor-look-chips .ml-orb { width: 24px; height: 24px; flex: none; }   /* v126: 24 px keeps the chip at the one-line height (28 made it 52 px, a stretched pill) */
 
@@ -2091,7 +2091,7 @@
       --text: #e8dcc0;
       --muted: #a79877;
       --accent: #dc6575;
-      --accent-fill: #b8303c;   /* TH3: deeper red ink for large fills; the lighter --accent stays for text */
+      --accent-fill: #be313e;   /* TH3: deeper red ink for large fills; the lighter --accent stays for text. TH5: a touch lighter (was #b8303c), so a filled button or a pressed chip reaches 3:1 on the cards (cream text on it stays 4.6:1) */
       --on-accent: #f3e7c6;
       --heading-colour: #dc6575;
       --wordmark-colour: #e8dcc0;
@@ -2192,89 +2192,105 @@
       --button-weight: 600;
       --button-transform: uppercase;
       --button-tracking: .07em;
-      --texture-size: auto;
+      /* TH2: worn, scratched steel, shared by light and dark (each mode sets its own shade, scratch and brushed-grain layers). Soot and the forge
+         glow are gradients sized to the screen; the scratches (383 x 541) and the brushed grain (240 x 240) are two small inline SVG tiles. */
+      --texture: var(--forge-shade), var(--forge-scratch), var(--forge-brush);
+      --texture-size: 100% 100vh, 100% 100vh, 100% 100vh, 383px 541px, 240px 240px;
+      /* TH2: a domed rivet (drawn in its own square, so it scales with the square) and the faint sheen of a steel plate */
+      --rivet: radial-gradient(circle closest-side at 42% 40%, var(--rivet-hi) 0 14%, var(--rivet-a) 38%, var(--rivet-b) 78%, var(--rivet-edge) 90%, #0000 100%);
+      --plate: linear-gradient(var(--plate-hi), #0000 40%, #0000 60%, var(--plate-lo));
     }
     [data-t="forge"][data-m="dark"] {
-      --background: #0e0e10;
-      --card: #17171a;
-      --track: #0c0c0e;
-      --border: #636370;
-      --text: #dcd8cf;
-      --muted: #8f8c84;
-      --accent: #d5583e;
-      --on-accent: #130d0b;
-      --heading-colour: #dcd8cf;
-      --wordmark-colour: #dcd8cf;
-      --danger: #f07a6a;
+      --background: #0d0f11;
+      --card: #16191c;
+      --track: #0b0c0e;
+      --border: #6c717a;
+      --text: #dddbd5;
+      --muted: #9c9a93;
+      --accent: #e8642c;
+      --on-accent: #140b06;
+      --heading-colour: #dddbd5;
+      --wordmark-colour: #dddbd5;
+      --danger: #ff5d73;
       --shadow: rgba(0, 0, 0, 0.45);
-      --badge-bg: rgba(23, 23, 26, 0.85);
-      --accent-wash: rgba(213, 88, 62, 0.08);
-      --accent-wash-hover: rgba(213, 88, 62, 0.05);
-      --note: #c9a66b;
-      --note-wash: rgba(201, 166, 107, 0.18);
-      --good: #7fbf6a;
-      --good-wash: rgba(127, 191, 106, 0.12);
-      --bad: #f07a6a;
-      --bad-wash: rgba(240, 122, 106, 0.1);
-      --warn: #e8cf7a;
-      --caution: #e89a3c;
-      --wish: #8fb0d8;
-      --grey-status: #9a978f;
-      --chip-on: #130d0b;
-      --toast-action: #a8321d;
-      --series-added: #8fb0d8;
-      --series-painted: #7fbf6a;
-      --toast-ring: rgba(213, 88, 62, 0.45);
+      --badge-bg: rgba(22, 25, 28, 0.85);
+      --accent-wash: rgba(232, 100, 44, 0.08);
+      --accent-wash-hover: rgba(232, 100, 44, 0.05);
+      --note: #6fc3b5;
+      --note-wash: rgba(111, 195, 181, 0.16);
+      --good: #80c56b;
+      --good-wash: rgba(128, 197, 107, 0.12);
+      --bad: #ff5d73;
+      --bad-wash: rgba(255, 93, 115, 0.1);
+      --warn: #ece37f;
+      --caution: #f7a63c;
+      --wish: #93b3db;
+      --grey-status: #9e9c96;
+      --chip-on: #140b06;
+      --toast-action: #a33d14;
+      --series-added: #93b3db;
+      --series-painted: #80c56b;
+      --toast-ring: rgba(232, 100, 44, 0.45);
       --basket-deep: #000000;
-      --first-letter: #d5583e;
+      --first-letter: #e8642c;
       color-scheme: dark;
-      --card-shadow: inset 0 0 0 1px #000, inset 0 0 0 4px #1f1f24;
-      --rule: 3px solid #2a2a30;
-      --frame: 2px solid #26262b;
+      --card-shadow: inset 0 1px 0 rgba(255,255,255,.07), inset 0 0 0 1px #000, inset 0 0 0 4px #1c1f23;
+      --rule: 3px solid var(--brass);
+      --frame: 2px solid var(--brass);
       --swatch-edge: rgba(255, 255, 255, 0.25);
       --wordmark-shadow: 0 2px 0 #000;
-      --texture: repeating-linear-gradient(135deg, rgba(255,255,255,.02) 0 2px, transparent 2px 7px), radial-gradient(ellipse at 15% 0%, rgba(196,69,43,.10), transparent 55%);
+      --brass: #a98d58;
+      --rivet-hi: #f0dca6; --rivet-a: #b8975a; --rivet-b: #6e5530; --rivet-edge: rgba(0,0,0,.75);
+      --plate-hi: rgba(255,255,255,.03); --plate-lo: rgba(0,0,0,.14);
+      --forge-shade: radial-gradient(ellipse 75% 45% at 12% 0%, rgba(232,100,44,.09), #0000 70%), radial-gradient(ellipse at 50% 42%, #0000 50%, rgba(0,0,0,.5) 100%), linear-gradient(90deg, rgba(0,0,0,.35), #0000 18px, #0000 calc(100% - 18px), rgba(0,0,0,.35));
+      --forge-scratch: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='383' height='541' fill='none' stroke-linecap='round'%3E%3Cdefs%3E%3Cpath id='s' d='M14 52L131 21M40 61L118 42M222 98L371 141M300 121L352 136M60 230Q140 214 205 262M318 300L240 372M20 410L162 446M35 419L120 441M250 470L372 452M150 331L176 322M96 140L104 168M340 20L372 66'/%3E%3Cpath id='t' d='M70 92l22-6M74 99l15-4M181 40l9 30M262 200l40 12M110 300l-30 18M203 401l28-9M331 231l20 30M30 500l50-14M150 160l-6 24M290 520l-34-21'/%3E%3C/defs%3E%3Cuse href='%23s' stroke='%23000' stroke-opacity='.45' stroke-width='1.2'/%3E%3Cuse href='%23s' x='-.7' y='-.7' stroke='%23fff' stroke-opacity='.06' stroke-width='.7'/%3E%3Cuse href='%23t' stroke='%23000' stroke-opacity='.3'/%3E%3Cuse href='%23t' x='-.6' y='-.6' stroke='%23fff' stroke-opacity='.045' stroke-width='.6'/%3E%3C/svg%3E");
+      --forge-brush: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='b' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.004 .5' numOctaves='3' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.85 0 0 0 0 0.88 0 0 0 0 0.92 1.2 0 0 0 -.55'/%3E%3C/filter%3E%3Cfilter id='g' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' seed='9' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.4 0 0 0 -.7'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23b)' opacity='.14'/%3E%3Crect width='240' height='240' filter='url(%23g)' opacity='.6'/%3E%3C/svg%3E");
     }
     [data-t="forge"][data-m="light"] {
-      --background: #cfcdc6;
-      --card: #dedcd5;
-      --track: #bdbbb3;
-      --border: #1a1a1d;
-      --text: #17171a;
-      --muted: #55534d;
-      --accent: #9f2f1b;
-      --on-accent: #f2eee6;
-      --heading-colour: #17171a;
-      --wordmark-colour: #17171a;
-      --danger: #9b1c1c;
-      --shadow: rgba(23, 23, 26, 0.18);
-      --badge-bg: rgba(222, 220, 213, 0.92);
-      --accent-wash: rgba(159, 47, 27, 0.09);
-      --accent-wash-hover: rgba(159, 47, 27, 0.05);
-      --note: #6b4f1f;
-      --note-wash: rgba(107, 79, 31, 0.1);
-      --good: #2f5f1f;
-      --good-wash: rgba(47, 95, 31, 0.1);
-      --bad: #9b1c1c;
-      --bad-wash: rgba(155, 28, 28, 0.08);
-      --warn: #6b5200;
-      --caution: #854700;
-      --wish: #24508a;
-      --grey-status: #55534d;
-      --chip-on: #f2eee6;
-      --toast-action: #e07a5f;
-      --series-added: #24508a;
-      --series-painted: #2f5f1f;
-      --toast-ring: rgba(159, 47, 27, 0.45);
-      --basket-deep: #17171a;
-      --first-letter: #9f2f1b;
+      --background: #cdd1d5;
+      --card: #dde1e5;
+      --track: #bfc4c9;
+      --border: #25282c;
+      --text: #14171a;
+      --muted: #4d5054;
+      --accent: #8f2f09;
+      --on-accent: #f4efe8;
+      --heading-colour: #14171a;
+      --wordmark-colour: #14171a;
+      --danger: #9e1037;
+      --shadow: rgba(20, 23, 26, 0.18);
+      --badge-bg: rgba(221, 225, 229, 0.92);
+      --accent-wash: rgba(143, 47, 9, 0.09);
+      --accent-wash-hover: rgba(143, 47, 9, 0.05);
+      --note: #1a594f;
+      --note-wash: rgba(26, 89, 79, 0.1);
+      --good: #285a1a;
+      --good-wash: rgba(40, 90, 26, 0.1);
+      --bad: #9e1037;
+      --bad-wash: rgba(158, 16, 55, 0.08);
+      --warn: #575100;
+      --caution: #704600;
+      --wish: #254f8d;
+      --grey-status: #4d5054;
+      --chip-on: #f4efe8;
+      --toast-action: #f08a5a;
+      --series-added: #254f8d;
+      --series-painted: #285a1a;
+      --toast-ring: rgba(143, 47, 9, 0.45);
+      --basket-deep: #14171a;
+      --first-letter: #8f2f09;
       color-scheme: light;
-      --card-shadow: inset 0 0 0 1px rgba(255,255,255,.5), inset 0 0 0 4px rgba(0,0,0,.07);
-      --rule: 3px solid #1a1a1d;
-      --frame: 2px solid #1a1a1d;
-      --swatch-edge: rgba(23, 23, 26, 0.35);
+      --card-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 0 0 1px rgba(255,255,255,.35), inset 0 0 0 4px rgba(0,0,0,.06);
+      --rule: 3px solid var(--brass);
+      --frame: 2px solid var(--brass);
+      --swatch-edge: rgba(20, 23, 26, 0.35);
       --wordmark-shadow: none;
-      --texture: repeating-linear-gradient(135deg, rgba(0,0,0,.03) 0 2px, transparent 2px 7px), radial-gradient(ellipse at 15% 0%, rgba(168,50,29,.10), transparent 55%);
+      --brass: #82682b;
+      --rivet-hi: #f6ebcc; --rivet-a: #a88a4c; --rivet-b: #75592a; --rivet-edge: rgba(0,0,0,.3);
+      --plate-hi: rgba(255,255,255,.35); --plate-lo: rgba(0,0,0,.035);
+      --forge-shade: radial-gradient(ellipse 75% 45% at 12% 0%, rgba(176,60,20,.05), #0000 70%), radial-gradient(ellipse 120% 90% at 50% 30%, #0000 60%, rgba(40,46,54,.08) 100%), linear-gradient(rgba(255,255,255,.14), #0000 35%);
+      --forge-scratch: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='383' height='541' fill='none' stroke-linecap='round'%3E%3Cpath d='M14 52L131 21M40 61L118 42M222 98L371 141M300 121L352 136M60 230Q140 214 205 262M318 300L240 372M20 410L162 446M35 419L120 441M250 470L372 452M150 331L176 322M96 140L104 168M340 20L372 66' stroke='%23fff' stroke-opacity='.65' stroke-width='.9'/%3E%3Cpath d='M70 92l22-6M74 99l15-4M181 40l9 30M262 200l40 12M110 300l-30 18M203 401l28-9M331 231l20 30M30 500l50-14M150 160l-6 24M290 520l-34-21' stroke='%23fff' stroke-opacity='.5' stroke-width='.7'/%3E%3C/svg%3E");
+      --forge-brush: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='b' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.004 .5' numOctaves='3' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.12 0 0 0 0 0.15 1.2 0 0 0 -.55'/%3E%3C/filter%3E%3Cfilter id='g' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' seed='9' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1.4 0 0 0 -.7'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23b)' opacity='.09'/%3E%3Crect width='240' height='240' filter='url(%23g)' opacity='.35'/%3E%3C/svg%3E");
     }
     [data-t="bench"] {
       --font-heading: 'Big Shoulders Stencil', 'Allerta Stencil', 'Arial Narrow', sans-serif;
@@ -2299,87 +2315,90 @@
       --button-weight: 700;
       --button-transform: uppercase;
       --button-tracking: .05em;
-      --texture-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px;
+      /* TH4: the plain hobby desk. The cutting-mat grid (fine lines every 20 px, a stronger line every 100 px) and, last, a warm cork tint
+         that fades out within 12 px of the left and right edges, so it stays in the 16 px page margin and never sits behind text. */
+      --texture-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px, auto;
+      --grid-line: 1px;   /* the fine lines; half a pixel on sharp screens (see "TH4:" below) */
     }
     [data-t="bench"][data-m="dark"] {
-      --background: #111815;
-      --card: #19231f;
-      --track: #0e1411;
-      --border: #547164;
-      --text: #dfe7e2;
-      --muted: #8aa096;
-      --accent: #e4c968;
-      --on-accent: #221d0a;
-      --heading-colour: #dfe7e2;
-      --wordmark-colour: #e4c968;
-      --danger: #f2928a;
+      --background: #20251f;
+      --card: #292f28;
+      --track: #181c17;
+      --border: #859382;
+      --text: #e8e9e0;
+      --muted: #abb1a2;
+      --accent: #cdbd89;
+      --on-accent: #24200f;
+      --heading-colour: #e8e9e0;
+      --wordmark-colour: #cdbd89;
+      --danger: #f0978e;
       --shadow: rgba(0, 0, 0, 0.45);
-      --badge-bg: rgba(25, 35, 31, 0.85);
-      --accent-wash: rgba(228, 201, 104, 0.08);
-      --accent-wash-hover: rgba(228, 201, 104, 0.05);
-      --note: #7fc8d6;
-      --note-wash: rgba(127, 200, 214, 0.18);
-      --good: #7fd69a;
-      --good-wash: rgba(127, 214, 154, 0.12);
-      --bad: #f2928a;
-      --bad-wash: rgba(242, 146, 138, 0.1);
-      --warn: #f3dd8b;
-      --caution: #f0a64a;
-      --wish: #8cc4f0;
-      --grey-status: #9aaba3;
-      --chip-on: #221d0a;
-      --toast-action: #7a5c00;
-      --series-added: #8cc4f0;
-      --series-painted: #7fd69a;
-      --toast-ring: rgba(228, 201, 104, 0.45);
+      --badge-bg: rgba(41, 47, 40, 0.85);
+      --accent-wash: rgba(205, 189, 137, 0.08);
+      --accent-wash-hover: rgba(205, 189, 137, 0.05);
+      --note: #86c7d2;
+      --note-wash: rgba(134, 199, 210, 0.18);
+      --good: #86d096;
+      --good-wash: rgba(134, 208, 150, 0.12);
+      --bad: #f0978e;
+      --bad-wash: rgba(240, 151, 142, 0.1);
+      --warn: #fae242;
+      --caution: #f2a04c;
+      --wish: #94c1ec;
+      --grey-status: #abb1a2;
+      --chip-on: #24200f;
+      --toast-action: #5b4f1a;
+      --series-added: #94c1ec;
+      --series-painted: #86d096;
+      --toast-ring: rgba(205, 189, 137, 0.45);
       --basket-deep: #000000;
-      --first-letter: #e4c968;
+      --first-letter: #cdbd89;
       color-scheme: dark;
-      --card-shadow: 0 3px 8px rgba(0,0,0,.4);
-      --rule: 2px dashed var(--border);
-      --frame: 1px solid #263630;
+      --card-shadow: 0 1px 2px rgba(0,0,0,.3);
+      --rule: 1px dashed var(--border);
+      --frame: 1px solid #3a4238;
       --swatch-edge: rgba(255, 255, 255, 0.25);
-      --texture: linear-gradient(rgba(190,225,205,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(190,225,205,.06) 1px, transparent 1px), linear-gradient(rgba(190,225,205,.11) 1px, transparent 1px), linear-gradient(90deg, rgba(190,225,205,.11) 1px, transparent 1px);
+      --texture: linear-gradient(rgba(225,232,212,.03) var(--grid-line), transparent var(--grid-line)), linear-gradient(90deg, rgba(225,232,212,.03) var(--grid-line), transparent var(--grid-line)), linear-gradient(rgba(225,232,212,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(225,232,212,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(150,108,62,.16), transparent 12px, transparent calc(100% - 12px), rgba(150,108,62,.16));
     }
     [data-t="bench"][data-m="light"] {
-      --background: #cfe0d4;
-      --card: #e1ece4;
-      --track: #bcd0c3;
-      --border: #62846f;
-      --text: #14231b;
-      --muted: #4a6455;
-      --accent: #7a5c00;
-      --on-accent: #fff6d6;
-      --heading-colour: #14231b;
-      --wordmark-colour: #7a5c00;
-      --danger: #a3261c;
-      --shadow: rgba(20, 35, 27, 0.18);
-      --badge-bg: rgba(225, 236, 228, 0.92);
-      --accent-wash: rgba(122, 92, 0, 0.09);
-      --accent-wash-hover: rgba(122, 92, 0, 0.05);
-      --note: #1f5f6a;
-      --note-wash: rgba(31, 95, 106, 0.1);
-      --good: #1f6a3a;
-      --good-wash: rgba(31, 106, 58, 0.1);
-      --bad: #a3261c;
-      --bad-wash: rgba(163, 38, 28, 0.08);
-      --warn: #6e5000;
-      --caution: #8a4300;
-      --wish: #24508a;
-      --grey-status: #4a6455;
-      --chip-on: #fff6d6;
-      --toast-action: #e4c968;
-      --series-added: #24508a;
-      --series-painted: #1f6a3a;
-      --toast-ring: rgba(122, 92, 0, 0.45);
-      --basket-deep: #14231b;
-      --first-letter: #7a5c00;
+      --background: #e0e4d8;
+      --card: #eef0e7;
+      --track: #d2d7c8;
+      --border: #626c5f;
+      --text: #1b221b;
+      --muted: #475245;
+      --accent: #5b4f1a;
+      --on-accent: #fbf6e4;
+      --heading-colour: #1b221b;
+      --wordmark-colour: #5b4f1a;
+      --danger: #95261c;
+      --shadow: rgba(27, 34, 27, 0.18);
+      --badge-bg: rgba(238, 240, 231, 0.92);
+      --accent-wash: rgba(91, 79, 26, 0.09);
+      --accent-wash-hover: rgba(91, 79, 26, 0.05);
+      --note: #1d5761;
+      --note-wash: rgba(29, 87, 97, 0.1);
+      --good: #1d5a32;
+      --good-wash: rgba(29, 90, 50, 0.1);
+      --bad: #95261c;
+      --bad-wash: rgba(149, 38, 28, 0.08);
+      --warn: #603c00;
+      --caution: #823a00;
+      --wish: #245089;
+      --grey-status: #475245;
+      --chip-on: #fbf6e4;
+      --toast-action: #cdbd89;
+      --series-added: #245089;
+      --series-painted: #1d5a32;
+      --toast-ring: rgba(91, 79, 26, 0.45);
+      --basket-deep: #1b221b;
+      --first-letter: #5b4f1a;
       color-scheme: light;
-      --card-shadow: 0 3px 8px rgba(20,50,35,.18);
-      --rule: 2px dashed var(--border);
-      --frame: 1px solid #8fb09c;
-      --swatch-edge: rgba(20, 35, 27, 0.35);
-      --texture: linear-gradient(rgba(20,60,40,.10) 1px, transparent 1px), linear-gradient(90deg, rgba(20,60,40,.10) 1px, transparent 1px), linear-gradient(rgba(20,60,40,.18) 1px, transparent 1px), linear-gradient(90deg, rgba(20,60,40,.18) 1px, transparent 1px);
+      --card-shadow: 0 1px 2px rgba(60,55,30,.14);
+      --rule: 1px dashed var(--border);
+      --frame: 1px solid #b4bca9;
+      --swatch-edge: rgba(27, 34, 27, 0.35);
+      --texture: linear-gradient(rgba(40,55,30,.035) var(--grid-line), transparent var(--grid-line)), linear-gradient(90deg, rgba(40,55,30,.035) var(--grid-line), transparent var(--grid-line)), linear-gradient(rgba(40,55,30,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(40,55,30,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(140,98,52,.2), transparent 12px, transparent calc(100% - 12px), rgba(140,98,52,.2));
     }
     /* ----- v47: what every theme except Classic adds (Classic's own touches are in its TH1 block) ----- */
     /* :where() keeps these as weak as the plain rules, so the app's own special cases still win. */
@@ -2434,17 +2453,56 @@
 
     /* Grim Forge: the bevel (in the card shadow) and heavy borders, plus a hard shadow under the title in dark. */
     [data-t="forge"] h1 { text-shadow: var(--wordmark-shadow, none); }
+    /* TH2: worn steel and brass. The steel (--texture) is drawn once on a fixed layer behind the page, so scrolling does not repaint it; the header and the
+       fade behind the bar show the same steel, measured from the top of the screen (as Parchment Codex does). Cards and unit rows are steel plates with a
+       brass rivet in each corner, inside their padding; the main button has a small bevel. No filters or blend modes on the page's elements. */
+    [data-t="forge"] body { background-image: none; background-attachment: scroll; }
+    [data-t="forge"] body::before {
+      content: ""; position: fixed; top: 0; left: 0; right: 0; height: 100vh; z-index: -1; pointer-events: none; will-change: transform;
+      background-image: var(--texture); background-size: var(--texture-size);
+    }
+    [data-t="forge"] .app-bar { background-image: var(--texture); background-size: var(--texture-size); }
+    @media (min-width: 640px) { [data-t="forge"] .app-bar { background-attachment: fixed; } }
+    [data-t="forge"] .tabs::before {
+      --fade-h: calc((230px + var(--arc-lift)) * var(--arc-scale) + env(safe-area-inset-bottom));   /* the same height as .tabs::before above */
+      background-color: var(--background); background-image: var(--texture); background-size: var(--texture-size);
+      background-position: 0 calc(var(--fade-h) - 100vh); background-position: 0 calc(var(--fade-h) - 100dvh);
+      -webkit-mask-image: linear-gradient(transparent, #000 60%); mask-image: linear-gradient(transparent, #000 60%);
+    }
+    [data-t="forge"] body.launching .tabs::before { -webkit-mask-image: none; mask-image: none; }   /* the start page draws its own glow there */
+    :where([data-t="forge"]) :is(.card, li.unit) {
+      background-image: var(--rivet), var(--rivet), var(--rivet), var(--rivet), var(--plate); background-repeat: no-repeat;
+      background-size: 9px 9px, 9px 9px, 9px 9px, 9px 9px, 100% 100%;
+      background-position: left 3px top 3px, right 3px top 3px, left 3px bottom 3px, right 3px bottom 3px, 0 0;
+    }
+    :where([data-t="forge"][data-m="light"]) :is(.card, li.unit) { background-size: 8px 8px, 8px 8px, 8px 8px, 8px 8px, 100% 100%; }   /* quieter rivets in light */
+    [data-t="forge"] .primary-button { box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inset 0 -2px 0 rgba(0,0,0,.28); }
+    .theme-swatch[data-t="forge"] { background-image: var(--forge-scratch), var(--forge-brush); background-size: 383px 541px, 240px 240px; }
+    .theme-swatch[data-t="forge"] .ts-card {
+      background-image: var(--rivet), var(--rivet), var(--rivet), var(--rivet); background-repeat: no-repeat; background-size: 5px 5px;
+      background-position: left 3px top 3px, right 3px top 3px, left 3px bottom 3px, right 3px bottom 3px;
+    }
+    @media print {
+      [data-t="forge"] body::before { content: none; }
+      [data-t="forge"] :is(.app-bar, .card, li.unit), [data-t="forge"] .tabs::before { background-image: none; }
+    }
 
     /* Paint Bench: card titles are strips of masking tape with marker writing on them (still real headings for screen
-       readers). Paint swatches are circles already. The main button sits a touch crooked. */
+       readers). Paint swatches are circles already.
+       TH4: the tape is paler, with faint crepe crinkles across it and a soft sheen (gradients only, under the marker text at 9:1 or more).
+       A plain heading sits a touch crooked; a heading that holds a button (the folding Settings cards) and the main button stay straight. */
+    [data-t="bench"] { --tape: linear-gradient(rgba(255,255,255,.22), rgba(255,255,255,0) 45%, rgba(110,90,40,.06)), repeating-linear-gradient(92deg, rgba(110,90,40,.07) 0 1px, transparent 1px 3px, rgba(110,90,40,.04) 3px 4px, transparent 4px 7px), #e4d9b6; }
     [data-t="bench"] .card h2 {
-      display: inline-block; background: #e3d6a6; color: #2b2616;
+      display: inline-block; background: var(--tape); color: #2b2616;
       font-family: 'Permanent Marker', 'Comic Sans MS', cursive; font-weight: 400; font-size: 1rem;
-      text-transform: none; letter-spacing: 0; padding: 3px 14px; transform: rotate(-1.2deg);
+      text-transform: none; letter-spacing: 0; padding: 3px 14px; transform: rotate(-0.8deg);
       clip-path: polygon(0 0, 100% 0, 98% 25%, 100% 50%, 98% 75%, 100% 100%, 0 100%, 2% 75%, 0 50%, 2% 25%);
     }
+    [data-t="bench"] .card h2:has(button, a, input, select) { transform: none; }
     @media (min-width: 900px) { [data-t="bench"] .card h2 { font-size: 1.0625rem; } }
-    [data-t="bench"] .primary-button { transform: rotate(-0.6deg); }
+    @media (min-resolution: 2dppx) { [data-t="bench"] { --grid-line: .5px; } }   /* TH4: the fine grid lines are a hairline on a sharp phone screen */
+    /* TH4: on the pale light desk the start circle's segments (and the Mentor ring's) take a little more of the accent, so the circle stands off the page */
+    [data-t="bench"][data-m="light"] :is(body.launching, .mo-ring) .arc [data-tab] { background-color: color-mix(in srgb, var(--accent-fill, var(--accent)) 24%, var(--card)); }
 
     /* ----- v47: the Theme buttons in Settings -----
        One row of squares. Each square is a tiny page in its own theme (page colour and texture, a card, a button
@@ -2480,7 +2538,7 @@
     .theme-swatch[data-t="forge"] .ts-card { border-width: 2px; box-shadow: inset 0 0 0 2px var(--background); font-size: 1.0625rem; letter-spacing: .05em; line-height: .95; }
     .theme-swatch[data-t="bench"] .ts-card { background: transparent; border: 0; padding: 0; }
     .theme-swatch[data-t="bench"] .ts-name {
-      display: inline-block; background: #e3d6a6; color: #2b2616; padding: 3px 7px; transform: rotate(-2deg);
+      display: inline-block; background: var(--tape); color: #2b2616; padding: 3px 7px;
       font-family: 'Permanent Marker', 'Comic Sans MS', cursive; font-weight: 400; font-size: 0.75rem; line-height: 1.1; text-transform: none; letter-spacing: 0;
       clip-path: polygon(0 0, 100% 0, 97% 25%, 100% 50%, 97% 75%, 100% 100%, 0 100%, 3% 75%, 0 50%, 3% 25%);
     }
@@ -2537,6 +2595,8 @@
       background-position: left 2px top 2px, left 2px top 2px, right 2px top 2px, right 2px top 2px, left 2px bottom 2px, left 2px bottom 2px, right 2px bottom 2px, right 2px bottom 2px;
       background-repeat: no-repeat;
     }
+    /* TH5: the hint inside an empty text box uses the look's own muted colour, as the paint boxes already do; the browser's grey was under 4.5:1 in every look */
+    ::placeholder { color: var(--muted); opacity: 1; }
     /* Chunk B: the round back arrow at the bottom left, beside the bar (look from the chosen mockup, colours from the app's own names). 44 px wide and high.
        Hidden on the start page, while the loading ring or the travel plays, while the Mentor pop-up is open and while a text box has the cursor (the bar steps aside too);
        it fades in again when they end. */
@@ -2569,7 +2629,7 @@
     .ripple { position: absolute; width: 10px; height: 10px; margin: -5px; border-radius: 50%; background: currentColor; opacity: 0; pointer-events: none; animation: mo-ripple calc(var(--motion-slow) + 80ms) var(--motion-ease); }
     @keyframes mo-ripple { from { transform: scale(1); opacity: 0.35; } to { transform: scale(36); opacity: 0; } }
     /* 2. Chips: the accent fill sweeps across when switched on. To / Done / Repaint also get a tick; the stage chips do not, because a tick would widen them and change how their row fits. */
-    .chip { background-image: linear-gradient(var(--accent), var(--accent)); background-repeat: no-repeat; background-size: 0% 100%; transition: background-size var(--motion-med) var(--motion-ease), color var(--motion-fast) var(--motion-ease), background-color 0s linear var(--motion-med); }   /* the real accent colour lands as the sweep ends, so contrast checks and themes see it */
+    .chip { background-image: linear-gradient(var(--accent-fill, var(--accent)), var(--accent-fill, var(--accent))); background-repeat: no-repeat; background-size: 0% 100%; transition: background-size var(--motion-med) var(--motion-ease), color var(--motion-fast) var(--motion-ease), background-color 0s linear var(--motion-med); }   /* the real accent colour lands as the sweep ends, so contrast checks and themes see it. TH5: the sweep paints the fill colour, as buttons do (in Parchment Codex dark it painted the lighter text crimson, under cream text at 2.8:1) */
     .chip[aria-pressed="true"] { background-size: 100% 100%; }
     .chip.sweep { background-size: 0% 100%; background-color: var(--background); color: var(--muted); }   /* a freshly drawn chip that was just switched on starts empty, then fills */
     #group-chips .chip::before { content: "\2713"; display: inline-block; width: 0; overflow: hidden; opacity: 0; vertical-align: bottom; transition: width var(--motion-med) var(--motion-ease), opacity var(--motion-med) var(--motion-ease); }
@@ -3609,7 +3669,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=127" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=128" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -3622,16 +3682,16 @@
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks.
        G2a: guides-groups.js (the Guides topic groups, plain data) loads after guides-data.js. It only adds one
        name, GUIDE_GROUPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=127"></script>
-  <script src="schemes.js?v=127"></script>
-  <script src="detail-recipes.js?v=127"></script>
-  <script src="basing-tips.js?v=127"></script>
-  <script src="mentor-tips.js?v=127"></script>
-  <script src="guides-data.js?v=127"></script>
-  <script src="guides-groups.js?v=127"></script>
-  <script src="mentor-data.js?v=127"></script>
-  <script src="mentor-engine.js?v=127"></script>
-  <script src="where-to-buy.js?v=127"></script>
-  <script src="app.js?v=127"></script>
+  <script src="colour.js?v=128"></script>
+  <script src="schemes.js?v=128"></script>
+  <script src="detail-recipes.js?v=128"></script>
+  <script src="basing-tips.js?v=128"></script>
+  <script src="mentor-tips.js?v=128"></script>
+  <script src="guides-data.js?v=128"></script>
+  <script src="guides-groups.js?v=128"></script>
+  <script src="mentor-data.js?v=128"></script>
+  <script src="mentor-engine.js?v=128"></script>
+  <script src="where-to-buy.js?v=128"></script>
+  <script src="app.js?v=128"></script>
 </body>
 </html>

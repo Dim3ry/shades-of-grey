@@ -138,7 +138,7 @@ def main():
             const fadeTop = tabs.getBoundingClientRect().bottom - parseFloat(F.height);
             return { layer: [parseFloat(L.top), h(L), parseFloat(L.height)], bar: [bar.getBoundingClientRect().top + parseFloat(B.backgroundPositionY), h(B)],
                      fade: [fadeTop + parseFloat(F.backgroundPositionY), h(F)], same: L.backgroundImage === B.backgroundImage && B.backgroundImage === F.backgroundImage,
-                     body: getComputedStyle(document.body).backgroundImage, card: getComputedStyle(document.querySelector('li.unit')).backgroundImage }; }""")
+                     body: getComputedStyle(document.body).backgroundImage, card: getComputedStyle(document.querySelector('li.unit')).backgroundImage, img: L.backgroundImage }; }""")
         tops = [line["layer"][0], line["bar"][0], line["fade"][0]]
         heights = [line["layer"][1], line["layer"][2], line["bar"][1], line["fade"][1]]
         check("the page layer, the header and the fade show the same paper, all measured from the top of the screen at the same height",
@@ -185,8 +185,11 @@ def main():
             s.append(d); const a = getComputedStyle(d).color; d.remove(); return [s.dataset.t, getComputedStyle(s.querySelector('.ts-bar')).backgroundColor, a]; })""")
         check("Parchment dark: the other themes' squares keep their own accent on their bar", len(bars) >= 4 and all(f == a for k, f, a in bars if k != "parchment"), bars)
         t.load(page, units=UNITS, settings={"theme": "forge", "appearance": "light", "examplesChecked": True})
-        other = page.evaluate("() => ({ layer: getComputedStyle(document.body, '::before').content, bar: getComputedStyle(document.querySelector('.app-bar')).backgroundImage })")
-        check("Grim Forge gets no paper layer and a plain header", other["layer"] == "none" and other["bar"] == "none", other)
+        # TH2 (v128): Grim Forge now draws its own steel on the same kind of fixed layer and header, so this checks it does not get Parchment's paper
+        # (it used to check that Grim Forge had no layer and a plain header at all; tests/test_v128_th2.py covers the steel itself).
+        other = page.evaluate("() => ({ layer: getComputedStyle(document.body, '::before').backgroundImage, bar: getComputedStyle(document.querySelector('.app-bar')).backgroundImage })")
+        check("Grim Forge does not get Parchment's paper on its layer or header", other["layer"] != line["img"] and other["bar"] != line["img"]
+              and "baseFrequency='.65'" not in other["layer"] + other["bar"], {k: v[:80] for k, v in other.items()})
         check("no font or picture loads from another site", not outside, outside)
         browser.close()
 
