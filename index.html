@@ -2614,6 +2614,20 @@
     @media (max-width: 899.98px) { body.typing .back-menu { visibility: hidden; opacity: 0; pointer-events: none; transition: none; } }
     @media (hover: hover) { .back-menu:hover { translate: 0 -2px; } }
     .back-menu:active { translate: 0 1px; scale: 0.97; filter: brightness(0.92); }
+    /* WS1: wide screens (900 px and over) only, the same shapes placed and sized better; phones are unchanged.
+       1. The start circle: the Dashboard's wide grid rule (#view-dashboard:not(.hidden), an id) beat the start page's "hide every section",
+          so on a cold start the Dashboard's cards showed through and behind the circle. Hidden there now, as on a phone.
+       2. The last card stops as far above the bar as on a phone: the bar's height plus 24 px (it was 170 px, 2 px short of the bar since A1 raised it 14 px).
+       3. An open unit's or paint's side pane (R2b, R2c): only its room at the end changes. It runs down under the bar like the page does, so its own
+          scroll now ends with the same room as the page, and its last row (Delete, More info) can be scrolled clear of the bar and its fade.
+       4. The round back arrow sits beside the bar, in the same place against the bar as on a 390 px phone (8 px in from the bar's left edge),
+          instead of in the far bottom corner of the window (267 px from the bar at 900 px wide, 777 px at 1920). */
+    @media (min-width: 900px) {
+      body.launching #view-dashboard:not(.hidden) { display: none; }
+      body { padding-bottom: calc(var(--arc-h) + 24px); }
+      #unit-split.layout-split > .layout-side:not(.hidden), #palette-split.layout-split > .layout-side:not(.hidden) { padding-bottom: calc(var(--arc-h) + 8px); }
+      .back-menu { left: calc(50% - 187px); }
+    }
 
     .hidden { display: none !important; }
 
