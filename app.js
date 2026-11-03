@@ -20728,12 +20728,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL TWELVE script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, app), e.g. "app.js?v=126".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=127".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v126";
+    const APP_VERSION = "v127";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -21195,6 +21195,13 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v127", date: "3 Nov 2026", changes: [
+        "Ask Mentor now opens out of its round button, and Mentor sits larger above the questions. The start circle's four sections match the bar: Models and Painting on top, Dashboard and Tools below.",
+        "Guides: entries that need something to buy have a Where to buy fold-out with plain shop searches and Add to shopping list. Gear has its own section on the shopping list.",
+        "Colour Lab: Start from shows your own paints first, Done picks the first match as you type, and colour ideas never suggest a primer or an ink.",
+        "The scheme form fills in the faction from your recipes, has Search recipes, groups recipes by part with Select all, and says when another scheme already goes onto new units in that faction.",
+        "Guides: Detail recipes and Basing have numbers like the other sections, and a Filters button folds their group buttons away.",
+      ]},
       { version: "v126", date: "3 Nov 2026", changes: [
         "Mentor has three looks to choose from in Settings: Futuristic, Magical and Grounded. In its window it shows when it is thinking, pleased, unsure or finished.",
         "The app no longer looks frozen while it opens: the start circle and its ring show straight away and fill up as the app loads.",
