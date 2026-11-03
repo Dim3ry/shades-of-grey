@@ -18258,7 +18258,7 @@
     const THEME_SURFACES = {
       classic: { dark: { page: "#0b1220", card: "#141d2f" }, light: { page: "#e9eff6", card: "#f8fafc" } },
       parchment: { dark: { page: "#17120e", card: "#211a14" }, light: { page: "#d8c59a", card: "#e4d4ae" } },
-      forge: { dark: { page: "#0e0e10", card: "#17171a" }, light: { page: "#cfcdc6", card: "#dedcd5" } },
+      forge: { dark: { page: "#0d0f11", card: "#16191c" }, light: { page: "#cdd1d5", card: "#dde1e5" } },
       bench: { dark: { page: "#111815", card: "#19231f" }, light: { page: "#cfe0d4", card: "#e1ece4" } }
     };
     const darkCard = () => THEME_SURFACES[currentTheme()].dark.card;
