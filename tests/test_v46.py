@@ -295,7 +295,8 @@ def main():
             for name in ("Zero stage", "Middle stage", "Finished stage"):
                 li = page.locator("li.unit", has_text=name)
                 btn = li.locator(".up-button")
-                rows[name] = page.evaluate("""([n]) => { const li = [...document.querySelectorAll('li.unit')].find(x => x.textContent.includes(n));
+                rows[name] = page.evaluate("""([n]) => { const find = () => [...document.querySelectorAll('li.unit')].find(x => x.textContent.includes(n));
+                    let li = find(); if (li.classList.contains('compact')) { li.querySelector('.info').click(); li = find(); }   // MC1: open the card first (its stepper is inside)
                     const b = li.querySelector('.up-button'); const cs = getComputedStyle(b); const st = getComputedStyle(li.querySelector('.stage'));
                     return { text: b.textContent, colour: cs.color, border: cs.borderTopColor, bg: cs.backgroundColor, opacity: cs.opacity,
                              disabled: b.disabled, stage: st.color }; }""", [name])
@@ -311,7 +312,7 @@ def main():
             check(f"{appearance}: the stage name keeps the stage's own colour (different for each stage, not the accent)",
                   rgb(z["stage"]) != accent and rgb(z["stage"]) != rgb(mid["stage"]), (z["stage"], mid["stage"]))
             check(f"{appearance}: pressing the new unit's ▲ still moves it up a stage",
-                  page.evaluate("() => { const li = [...document.querySelectorAll('li.unit')].find(x => x.textContent.includes('Zero stage')); li.querySelector('.up-button').click(); return models.find(m => m.name === 'Zero stage').stage; }") == 1)
+                  page.evaluate("() => { const find = () => [...document.querySelectorAll('li.unit')].find(x => x.textContent.includes('Zero stage')); let li = find(); if (li.classList.contains('compact')) { li.querySelector('.info').click(); li = find(); } li.querySelector('.up-button').click(); return models.find(m => m.name === 'Zero stage').stage; }") == 1)
             shot(page, f"v46-up-arrow-{appearance}-390.png")
 
         # ---------- 5. Send full backup with photos to... ----------

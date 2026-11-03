@@ -98,7 +98,7 @@ def run_pages(page, width, mode):
     page.wait_for_timeout(150)
     scan(page, f"{tag}, Units with Add unit open")
     page.evaluate("() => document.getElementById('toggle-add').click()")
-    page.evaluate("() => document.querySelector('#view-units li.unit .info').click()")
+    page.evaluate("() => { document.querySelector('#view-units li.unit .info').click(); document.querySelector('#view-units li.unit .details-toggle').click(); }")   # MC1: open the card, then its Details (one tap on the name did that before MC1)
     page.wait_for_timeout(250)
     page.evaluate("() => { const d = document.querySelector('#view-units details.edit-details'); if (d) d.open = true; }")
     page.wait_for_timeout(150)
@@ -199,7 +199,7 @@ def main():
         press(page, toggle)
         check("pressing Close puts it back: Add unit, aria-expanded false", toggle.inner_text().strip() == "+ Add unit" and toggle.get_attribute("aria-expanded") == "false")
 
-        page.evaluate("() => document.querySelector('#view-units li.unit .info').click()")
+        page.evaluate("() => { document.querySelector('#view-units li.unit .info').click(); document.querySelector('#view-units li.unit .details-toggle').click(); }")   # MC1: open the card, then its Details (one tap on the name did that before MC1)
         page.wait_for_timeout(250)
         edit = "#view-units details.edit-details > summary"
         i = info(edit)

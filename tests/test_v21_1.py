@@ -23,6 +23,7 @@ from playwright.sync_api import sync_playwright
 from launch_helpers import quiet, open_settings, tap_tab
 from launch_helpers import leave_launch
 from dialog_watch import DialogAnswers
+from common import open_unit_card   # MC1: unit cards start closed
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}/"
@@ -289,7 +290,10 @@ def main():
         page.wait_for_timeout(80)
         check("Cancel closes select mode", not selecting(page) and ticks(page) == 0)
         check("Cancel changes nothing", {u["id"]: keep(u) for u in units(page)} == before)
-        check("the ▲ buttons are back", page.locator("#view-units .up-button").count() == 4)
+        # MC1: the cards come back closed (compact), so the ▲ buttons show once a card is opened (before MC1 every card showed one)
+        check("the cards are back, closed", page.locator("#view-units li.unit.compact").count() == 4)
+        open_unit_card(page, card(1))
+        check("the ▲ buttons are back", page.locator("#view-units .up-button").count() == 1)
         page.click("#toggle-select")
         page.click(card(1) + " .info")
         page.wait_for_timeout(120)

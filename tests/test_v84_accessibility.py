@@ -12,6 +12,7 @@ from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
+from common import open_unit_card   # MC1: unit cards start closed
 
 load, no_sideways = t.load, t.no_sideways
 results = []
@@ -68,7 +69,8 @@ def main():
         page.wait_for_timeout(200)
 
         print("\n--- 3 and 4. Edit details and the names on the card ---")
-        for uid in (1, 2):
+        for uid in (1, 2):   # MC1: one card is open at a time, so opening card 2 closes card 1 (both stayed open before MC1)
+            open_unit_card(page, f"li.unit[data-id='{uid}']")
             card(page, uid).locator(".details-toggle").click()
             page.wait_for_timeout(200)
         summ = card(page, 2).locator("summary", has_text="Edit details")
@@ -89,6 +91,7 @@ def main():
             for width in (390, 360):
                 page.set_viewport_size({"width": width, "height": 800})
                 start([SOLO, MIXED], settings={"appearance": scheme})
+                open_unit_card(page, "li.unit[data-id='2']")   # MC1: the Details button is inside the opened card
                 card(page, 2).locator(".details-toggle").click()
                 page.wait_for_timeout(200)
                 card(page, 2).locator("summary", has_text="Edit details").click()

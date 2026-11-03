@@ -23,6 +23,7 @@ from playwright.sync_api import sync_playwright
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from launch_helpers import leave_launch, open_settings, tap_tab
 from dialog_watch import DialogAnswers
+from common import open_unit_details   # MC1: unit cards start closed
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}/"
@@ -189,7 +190,7 @@ def main():
         # ---------- 5. Photos ----------
         print("\n--- 5. Photos ---")
         tab(page, "units")
-        page.click('#view-units li.unit[data-id="1"] .info')
+        open_unit_details(page, '#view-units li.unit[data-id="1"]')   # MC1: open the card, then its Details (a tap on the name did both before MC1)
         page.wait_for_timeout(200)
         picker = page.locator('#view-units input[type="file"][accept="image/*"]').first
         picker.set_input_files(files=[{"name": "army.png", "mimeType": "image/png", "buffer": png(300, 200)}])

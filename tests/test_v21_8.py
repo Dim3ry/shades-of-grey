@@ -25,6 +25,7 @@ from playwright.sync_api import sync_playwright
 from launch_helpers import quiet, open_settings, tap_tab
 from launch_helpers import app_ready
 from launch_helpers import leave_launch
+from common import open_unit_details   # MC1: unit cards start closed
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}/"
@@ -111,11 +112,9 @@ def toast(page):
 
 def open_unit(page, uid):
     """Make sure unit `uid`'s details are open (a tap on a name toggles, so only tap if it's shut)."""
-    info = f'#view-units li.unit[data-id="{uid}"] .info'
-    # A3: open or shut now shows on the Details button (the name area is no longer a button with aria-expanded).
-    if page.get_attribute(info.replace(" .info", " .details-toggle"), "aria-expanded") != "true":
-        page.click(info)
-        quiet(page)
+    # MC1: a tap on a unit now opens its card, and its Details button opens the details (before MC1 a tap on the name did that)
+    open_unit_details(page, f'#view-units li.unit[data-id="{uid}"]')
+    quiet(page)
 
 def tabs_hidden(page):
     return page.evaluate("() => getComputedStyle(document.querySelector('.tabs')).display === 'none'")

@@ -6831,7 +6831,7 @@
         id: model.id,
         title: displayName(model),
         closeLabel: `Close ${displayName(model)}`,
-        onClose: () => { openIds.delete(model.id); editOpenIds.delete(model.id); render(); },
+        onClose: () => { openIds.delete(model.id); editOpenIds.delete(model.id); if (openCardId === model.id) openCardId = null; render(); },   // MC1: its list card closes too
         body: () => buildPanel(model),
       })));
     }

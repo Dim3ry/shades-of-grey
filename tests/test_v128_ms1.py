@@ -17,6 +17,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import test_v31 as t
 from launch_helpers import wait_settled, _FINISH_BAR
+from common import open_unit_card   # MC1: unit cards start closed
 
 results = []
 
@@ -54,7 +55,7 @@ ARRIVE = """(sel) => new Promise(done => {
     const cards = () => list.querySelectorAll(':scope > li.unit');
     document.querySelector(sel).click();
     const first = cards().length, max = typeof firstScreenCards === 'function' ? firstScreenCards() : 0;
-    const toggle = list.querySelector('li.unit .details-toggle');
+    const toggle = list.querySelector('li.unit .info[role="button"]');   // MC1: a closed card is one button (it has no Details button until opened)
     if (toggle) toggle.focus();
     const focused = !!toggle && document.activeElement === toggle;
     const frames = [];
@@ -117,6 +118,8 @@ def main():
         check("the page height stays the same while scrolling to the end", len(r["hs"]) == 1, r["hs"])
 
         print("\n--- 1. A redraw builds again only what changed ---")
+        open_unit_card(page, 'li.unit[data-id="152"]')   # MC1: the stepper is inside the opened card
+        wait_settled(page)
         before = page.evaluate("""() => { const li = document.querySelector('li.unit[data-id="152"]');
             window.scrollTo(0, 0); window.scrollTo(0, li.getBoundingClientRect().top + scrollY - 250);
             return li.getBoundingClientRect().top; }""")
@@ -155,6 +158,7 @@ def main():
             return { same: JSON.stringify(ids) === JSON.stringify(want), n: ids.length,
                      colour: document.querySelector('li.unit[data-id="9"]').style.getPropertyValue('--faction-colour') }; }""")
         check("a new faction colour rebuilds exactly the cards of that faction, in its colour", r["same"] and r["n"] == 38 and r["colour"] == "#22aa66", r)
+        open_unit_card(page, 'li.unit[data-id="4"]')   # MC1: recipe buttons show on an open card; it is opened before the rename, so the redraw must update it
         page.evaluate("() => { recipeById(101).name = 'Armour blue renamed'; render(); }")
         chip = page.evaluate("""() => document.querySelector('li.unit[data-id="4"] .recipe-chip').textContent""")
         check("a recipe's new name reaches the cards that link it", "Armour blue renamed" in chip, chip)
@@ -207,7 +211,7 @@ def main():
         print("\n--- 4. Wide screen: the side pane ---")
         page.set_viewport_size({"width": 1280, "height": 800})
         load(page, 60, "units", False)
-        page.locator('li.unit[data-id="5"] .details-toggle').click()
+        open_unit_card(page, 'li.unit[data-id="5"]')   # MC1: on a wide screen a tap on the closed card opens the side pane, as the Details button did
         wait_settled(page)
         r = page.evaluate("""() => ({ side: [...document.querySelectorAll('#unit-side .unit-side-card')].map(c => c.dataset.id),
             current: document.querySelector('li.unit[data-id="5"]').getAttribute('aria-current') })""")

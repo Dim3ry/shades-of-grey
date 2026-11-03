@@ -29,6 +29,21 @@ def speed_factor():
     except ValueError:
         return 1.0
 
+def open_unit_card(page, card):
+    """MC1 (v130): a unit card starts closed (compact: name, game, army and stage only). Older tests that tap its stepper, its recipe
+    buttons or its Details button open the card first with this. `card` is a CSS selector for the li.unit; nothing happens if it is
+    already open. Only one card is open at a time, so opening this one closes any other."""
+    page.evaluate("(sel) => { const c = document.querySelector(sel); if (c && c.classList.contains('compact')) c.querySelector('.info').click(); }", card)
+    page.wait_for_selector(card + ":not(.compact) .details-toggle", state="attached")
+
+def open_unit_details(page, card):
+    """MC1 (v130): before MC1 a tap on a unit's name opened its Details; now it opens the card. This opens the card, then its
+    Details (if they are not open already). `card` is a CSS selector for the li.unit."""
+    open_unit_card(page, card)
+    if page.get_attribute(card + " .details-toggle", "aria-expanded") != "true":
+        page.click(card + " .details-toggle")
+
+
 def click_card_chip(page, selector):
     """Click a recipe or tip chip in the recipe editor's Colour ideas card.
     X8d (v106): that card shows only the first 12 chips of a long list, with a Show all button under it. A chip past

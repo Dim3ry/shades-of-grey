@@ -15,6 +15,7 @@ from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
+from common import open_unit_card   # MC1: unit cards start closed
 
 load, no_sideways = t.load, t.no_sideways
 results = []
@@ -30,6 +31,9 @@ FIRST = {"id": 2, "name": "First stage", "hobby": "40K", "stage": 0, "count": 1,
 LAST = {"id": 3, "name": "Last stage", "hobby": "40K", "stage": 7, "count": 1, "added": "2026-10-01", "log": [["2026-10-01", 7]]}
 EACH = {"id": 4, "name": "Each squad", "hobby": "40K", "stage": 1, "count": 3, "each": True, "stages": [1, 4, 7], "added": "2026-10-01", "log": [["2026-10-01", 1]]}
 UNITS = [BATCH, FIRST, LAST, EACH]
+
+def open_card(page, uid):
+    open_unit_card(page, f"li.unit[data-id='{uid}']")   # MC1: the stepper, recipe buttons and Details are inside the opened card
 
 def card(page, uid):
     return page.locator(f"li.unit[data-id='{uid}']")
@@ -58,6 +62,7 @@ def main():
         print("\n--- 1. The card ---")
         start()
         STAGES = page.evaluate("STAGES")
+        open_card(page, 1)
         c = card(page, 1)
         check("header shows the name, the model count and a Details button",
               "Batch squad" in c.inner_text() and "5 models" in c.inner_text() and c.locator(".details-toggle").inner_text().strip() == "Details")
@@ -81,11 +86,14 @@ def main():
         check("back moves the unit down one stage", saved(page, 1)["stage"] == 1, saved(page, 1))
         undo(page)
         check("Undo puts it back again", saved(page, 1) == before, saved(page, 1))
+        open_card(page, 2)
         check("back is off at the first stage", card(page, 2).locator(".step-back").is_disabled() and not card(page, 2).locator(".up-button").is_disabled())
+        open_card(page, 3)
         check("up is off at the last stage", card(page, 3).locator(".up-button").is_disabled() and not card(page, 3).locator(".step-back").is_disabled())
 
         print("\n--- 3. Tracked model by model ---")
         before = saved(page, 4)
+        open_card(page, 4)
         card(page, 4).locator(".step-back").click()
         page.wait_for_timeout(250)
         check("back moves every model down one, the one at the start stays", saved(page, 4)["stages"] == [0, 3, 6], saved(page, 4))
@@ -93,6 +101,7 @@ def main():
         check("Undo restores every model and the diary", saved(page, 4) == before, saved(page, 4))
 
         print("\n--- 4. Details ---")
+        open_card(page, 1)
         c = card(page, 1)
         c.locator(".details-toggle").click()
         page.wait_for_timeout(250)
@@ -113,10 +122,12 @@ def main():
         page.wait_for_timeout(250)
         check("Hide shuts the panel", card(page, 1).locator(".panel").count() == 0)
 
+        open_card(page, 2)
         card(page, 2).locator(".details-toggle").click()
         page.wait_for_timeout(250)
         check("a unit with no paints has no Paints row", card(page, 2).locator(".panel").count() == 1 and card(page, 2).locator(".paints-row").count() == 0)
 
+        open_card(page, 4)
         card(page, 4).locator(".details-toggle").click()
         page.wait_for_timeout(250)
         card(page, 4).locator(".each-list .each-up").first.click()
@@ -127,7 +138,7 @@ def main():
         for width in (900, 1280, 1920):
             page.set_viewport_size({"width": width, "height": 900})
             start()
-            card(page, 1).locator(".details-toggle").click()
+            open_card(page, 1)   # MC1: from 900 px a tap on the closed card opens it and the side pane (its Details button did that before MC1)
             page.wait_for_timeout(300)
             side = page.locator("#unit-side")
             check(f"{width} px: Details opens the side pane with Jump to stage and Paints",
@@ -140,14 +151,16 @@ def main():
             for width in (390, 360):
                 page.set_viewport_size({"width": width, "height": 800})
                 start(settings={"appearance": scheme})
+                open_card(page, 1)
                 card(page, 1).locator(".details-toggle").click()
                 page.wait_for_timeout(250)
                 card(page, 1).locator(".paints-row").click()
                 page.wait_for_timeout(250)
+                # MC1: only the open card has these buttons (back, up, Details and Paints: 4; before MC1 every card had the first three)
                 sizes = page.evaluate("""() => [...document.querySelectorAll('li.unit .step-back, li.unit .up-button, li.unit .details-toggle, li.unit .paints-row')]
                     .map(e => { const r = e.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; })""")
                 check(f"{width} px {scheme}: no sideways scroll, back, up, Details and Paints are 44 px or more",
-                      no_sideways(page) and len(sizes) >= 12 and all(a >= 44 and b >= 44 for a, b in sizes), sizes)
+                      no_sideways(page) and len(sizes) == 4 and all(a >= 44 and b >= 44 for a, b in sizes), sizes)
 
         check("no page errors", not errors, errors)
         check("no browser pop-ups", not dialogs, dialogs)

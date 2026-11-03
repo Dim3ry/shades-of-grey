@@ -14,6 +14,7 @@ import os, re, sys, time
 from playwright.sync_api import sync_playwright
 from launch_helpers import quiet
 from launch_helpers import leave_launch
+from common import open_unit_card, open_unit_details   # MC1: unit cards start closed
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
@@ -53,7 +54,7 @@ def undo(page):
     page.wait_for_timeout(250)
 
 def open_details(page, uid):
-    page.click(f"li.unit[data-id='{uid}'] .details-toggle")
+    open_unit_details(page, f"li.unit[data-id='{uid}']")   # MC1: open the card first; its Details button is inside
     quiet(page)
 
 def main():
@@ -170,8 +171,9 @@ def main():
         simple = page.evaluate("""() => { const rows = [...document.querySelectorAll('li.unit .each-list li')];
             return { n: rows.length, since: rows.filter(r => r.querySelector('.each-since')).length, pips: rows.filter(r => r.querySelector('.pips')).length,
                      names: rows.filter(r => r.querySelector('.each-stage-name')).length, h: Math.max(...rows.map(r => r.getBoundingClientRect().height)) }; }""")
+        # MC1: one card is open at a time, so one unit's rows are showing here (three units' were before MC1)
         check("no date line and no bar, but the stage name and buttons stay; rows are shorter",
-              simple["n"] >= 9 and simple["since"] == 0 and simple["pips"] == 0 and simple["names"] == simple["n"] and simple["h"] <= 58, simple)
+              simple["n"] >= 3 and simple["since"] == 0 and simple["pips"] == 0 and simple["names"] == simple["n"] and simple["h"] <= 58, simple)
         check("the choice is saved as a setting", page.evaluate("JSON.parse(localStorage.getItem('shades-of-grey-settings')).modelRows") == "simple")
         check("it applies to every card at once", page.locator("li.unit .each-list li .each-since, li.unit .each-list li .pips").count() == 0
               and page.locator("li.unit[data-id='5'] .each-list li").count() == 3)
@@ -223,9 +225,8 @@ def main():
             for width in (390, 360):
                 page.set_viewport_size({"width": width, "height": 900})
                 start(units=[unit(1, "Squad", [0, TOP, 1, 3], log=[[jan2, 0]]), BIG], settings={"appearance": scheme, "modelRows": "detailed"})
-                open_details(page, 1)
-                open_details(page, 3)
-                geo = page.evaluate("""() => {
+                # MC1: one card is open at a time, so unit 1's rows are measured, then unit 3's (before MC1 both were open together)
+                measure = lambda: page.evaluate("""() => {
                     const R = e => { const r = e.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; };
                     const rows = [...document.querySelectorAll('li.unit .each-list li')], ends = [STAGES[0], STAGES[STAGES.length - 1]];
                     return { btn: rows.flatMap(r => [...r.querySelectorAll('button')].map(R)),
@@ -234,13 +235,18 @@ def main():
                                      && r.scrollWidth <= r.clientWidth + 1; }),
                              heads: [...document.querySelectorAll('.each-group-head')].map(R),
                              sw: [...document.querySelectorAll('#model-rows-switch button')].map(R) }; }""")
+                open_details(page, 1)
+                g1 = measure()
+                open_details(page, 3)
+                g3 = measure()
+                geo = { "btn": g1["btn"] + g3["btn"], "fit": g1["fit"] and g3["fit"], "heads": g3["heads"], "sw": g1["sw"] }
                 ok = (no_sideways(page) and len(geo["btn"]) >= 8 and all(a >= 44 and b >= 44 for a, b in geo["btn"] + geo["sw"])
                       and all(b >= 44 for a, b in geo["heads"]) and geo["heads"])
                 check(f"{width} px {scheme}: no sideways scroll, tap targets 44 px or more, Unassembled and {STAGES[TOP]} fit", ok and geo["fit"], geo)
         for width in (900, 1280, 1920):
             page.set_viewport_size({"width": width, "height": 900})
             start(units=[unit(1, "Squad", [0, TOP, 1, 3], log=[[jan2, 0]])])
-            card(page, 1).locator(".details-toggle").click()
+            open_unit_card(page, "li.unit[data-id='1']")   # MC1: from 900 px a tap on the closed card opens the side pane (its Details button did before MC1)
             page.wait_for_timeout(300)
             fit = page.evaluate("""() => { const side = document.getElementById('unit-side');
                 return side.offsetParent !== null && [...side.querySelectorAll('.each-list li')].length === 4 &&
