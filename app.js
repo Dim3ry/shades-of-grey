@@ -2347,12 +2347,183 @@
       if (!quiet && paint) showToast(`${paint.name} is back on your shopping list`);
     }
     function clearBought() {
-      const n = boughtItems().length;
-      askYesNo(`Clear ${plural(n, "bought paint")} from this list for good? They stay Owned in Your Palette.`, () => {
+      const n = boughtItems().length, g = gearBought().length;   // L1: bought Gear is cleared too (it is deleted: Gear lives only on this list)
+      const question = g ? `Clear ${plural(n + g, "bought item")} from this list for good?${n ? " Paints stay Owned in Your Palette." : ""}`
+        : `Clear ${plural(n, "bought paint")} from this list for good? They stay Owned in Your Palette.`;
+      askYesNo(question, () => {
         delete book.bought;
+        if (g) { book.gear = gearList().filter(x => x.bought !== true); if (!book.gear.length) delete book.gear; }
         if (!afterShopChange()) { showNotSaved(); return; }
-        showToast("Cleared the bought paints");
+        showToast(g ? "Cleared the bought items" : "Cleared the bought paints");
       }, { danger: true, yes: "Clear" });
+    }
+
+    // ----- L1: Gear on the shopping list -----
+    // A product type (a wet palette, matt varnish) put on the list from a Where to buy row. It is not a paint: it lives in book.gear
+    // (see cleanRecipeBook), one item per product type, and remembers the title of the Guides entry it came from. On the list it has
+    // its own Gear section under the paints, with a Bought tick and Remove like a paint's; ticked Gear goes to Bought. The basket and
+    // Copy as text count it; the Buy these shop buttons stay paint-only. There is no box for typing your own Gear.
+    function gearId(name) { return String(name || "").trim().toLowerCase(); }
+    function gearList() { return Array.isArray(book.gear) ? book.gear : []; }
+    function gearItems() { return gearList().filter(g => g.bought !== true); }   // on the list
+    function gearBought() { return gearList().filter(g => g.bought === true); }  // in Bought
+    function gearListed(name) { const id = gearId(name); return gearItems().some(g => g.id === id); }
+    function gearLabel(name) { const t = String(name || "").trim(); return t.charAt(0).toUpperCase() + t.slice(1); }   // "wet palette" shows as "Wet palette"
+    function setGear(list) { if (list.length) book.gear = list; else delete book.gear; }
+    // Add one product type. Already on the list: says so and adds nothing. In Bought: it comes back onto the list. Undo puts it back as it was.
+    function addGear(type, from) {
+      const name = String(type || "").trim().slice(0, 60);
+      if (!name) return false;
+      const id = gearId(name), label = gearLabel(name);
+      const had = gearList().find(g => g.id === id);
+      if (had && had.bought !== true) { notify(`${label} is already on your shopping list.`); return false; }
+      const wasBought = !!had;
+      if (had) delete had.bought;
+      else {
+        const item = { id, name };
+        const where = String(from || "").trim().slice(0, 60);
+        if (where) item.from = where;
+        setGear(gearList().concat(item));
+      }
+      const ok = save();
+      if (!recipeDraft) renderRecipes();   // keep the (hidden) shopping list up to date; never rebuild an open recipe editor
+      updateBasket();
+      updateShopFoldouts();
+      if (ok) showToast(`Added ${label} to your shopping list`, () => {
+        const g = gearList().find(x => x.id === id);
+        if (!g || g.bought === true) return;
+        if (wasBought) g.bought = true; else setGear(gearList().filter(x => x !== g));
+        afterShopChange();
+      });
+      else showNotSaved();
+      return true;
+    }
+    function removeGear(id) {
+      const list = gearList(), at = list.findIndex(g => g.id === id);
+      if (at < 0 || list[at].bought === true) return;
+      const item = list[at];
+      setGear(list.filter(g => g !== item));   // Gear lives only on this list, so Remove deletes it
+      if (!afterShopChange()) { showNotSaved(); return; }
+      showToast(`Removed ${gearLabel(item.name)} from your shopping list`, () => {
+        if (gearList().some(g => g.id === id)) return;
+        const now = gearList().slice();
+        now.splice(Math.min(at, now.length), 0, item);
+        setGear(now);
+        afterShopChange();
+      });
+    }
+    function tickGearBought(id) {
+      const g = gearItems().find(x => x.id === id);
+      if (!g) return;
+      g.bought = true;
+      if (!afterShopChange()) { showNotSaved(); return; }
+      showToast(`Bought ${gearLabel(g.name)}`, () => addGearBack(id, true));
+    }
+    function addGearBack(id, quiet) {
+      const g = gearBought().find(x => x.id === id);
+      if (!g) return;
+      delete g.bought;
+      if (!afterShopChange()) { showNotSaved(); return; }
+      if (!quiet) showToast(`${gearLabel(g.name)} is back on your shopping list`);
+    }
+
+    // ----- L1: Where to buy -----
+    // A quiet closed fold-out under a Guides entry's text (and under a Basing tip, and under a Mentor answer whose best source is that
+    // entry) when where-to-buy.js lists products for it. Each product type has plain search links, one per shop that sells every brand
+    // (SHOPS, shopsFor and shopLink, so the search words are the product type only and the shop table's empty extra slot is left alone),
+    // and an Add to shopping list button that puts it on the list as Gear. Settings -> Shop links hides the links (and their note) as it
+    // does everywhere; the Add button only writes to your own list, so it stays.
+    // The Shop links fold-out's plain-links words, with "the product type" for "the paint's name" (a function: SHOP_PLAIN_WORDS is set further down)
+    function gearPlainWords() { return SHOP_PLAIN_WORDS.replace("the paint's name", "the product type"); }
+    function whereToBuyTypes(key, kind) {
+      if (typeof WHERE_TO_BUY === "undefined" || !WHERE_TO_BUY || !hasOwn(WHERE_TO_BUY, String(key))) return [];
+      const x = WHERE_TO_BUY[key];
+      if (!x || x.kind !== kind || !Array.isArray(x.types)) return [];
+      const out = [];
+      for (const t of x.types) { const s = String(t ?? "").trim(); if (s && !out.some(o => gearId(o) === gearId(s))) out.push(s); }
+      return out;
+    }
+    // The fold-outs you opened stay open when the page is drawn again (an Undo redraws Guides). Memory only; opening another entry clears it.
+    const whereBuyOpen = new Set();
+    // Returns null when the entry has no products. from = the entry's title, remembered on the Gear item.
+    function buildWhereToBuy(key, kind, from) {
+      const types = whereToBuyTypes(key, kind);
+      if (!types.length) return null;
+      const box = document.createElement("details");
+      box.className = "where-buy";
+      box.dataset.whereBuy = key;
+      box.open = whereBuyOpen.has(kind + ":" + key);
+      box.addEventListener("toggle", () => { if (box.open) whereBuyOpen.add(kind + ":" + key); else whereBuyOpen.delete(kind + ":" + key); });
+      const summary = document.createElement("summary");
+      summary.textContent = "Where to buy";
+      const body = document.createElement("div");
+      body.className = "where-buy-body";
+      const list = document.createElement("ul");
+      list.className = "where-buy-list";
+      const shops = shopLinksOn() ? shopsFor([{ paint: { name: types[0], brand: "" } }]).map(x => x.shop) : [];   // the shops that sell every brand
+      const slots = [];
+      for (const type of types) {
+        const li = document.createElement("li");
+        li.className = "where-buy-item";
+        li.dataset.gear = gearId(type);
+        const name = document.createElement("span");
+        name.className = "where-buy-name";
+        name.textContent = gearLabel(type);
+        li.appendChild(name);
+        if (shops.length) {
+          const links = document.createElement("div");
+          links.className = "where-buy-links";
+          for (const shop of shops) {
+            const a = document.createElement("a");
+            a.href = shopLink(shop, { name: type, brand: "" });   // the product type only, never a brand
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";   // the shop isn't told which page sent you
+            a.textContent = `${shop.name} ↗`;
+            labelWithName(a, `Search ${shop.name} for`, name);
+            a.setAttribute("aria-describedby", opensSiteId());
+            links.appendChild(a);
+          }
+          li.appendChild(links);
+        }
+        const slot = document.createElement("div");
+        slot.className = "where-buy-add";
+        slot.redrawAdd = () => {
+          slot.replaceChildren();
+          if (gearListed(type)) {
+            const done = document.createElement("span");
+            done.className = "shop-onlist";
+            done.tabIndex = -1;
+            done.textContent = "On your shopping list";
+            slot.appendChild(done);
+            return;
+          }
+          const add = document.createElement("button");
+          add.type = "button";
+          add.className = "plain-button";
+          add.textContent = "Add to shopping list";
+          labelWithName(add, "", name);   // "Add to shopping list" then the product type
+          add.addEventListener("click", () => {
+            if (!addGear(type, from)) return;
+            const done = slot.querySelector(".shop-onlist");
+            if (done) done.focus();
+          });
+          slot.appendChild(add);
+        };
+        slot.redrawAdd();
+        slots.push(slot);
+        li.appendChild(slot);
+        list.appendChild(li);
+      }
+      body.appendChild(list);
+      if (shops.length) {
+        const note = document.createElement("p");
+        note.className = "hint";
+        note.textContent = gearPlainWords();
+        body.appendChild(note);
+      }
+      box.redrawAdd = () => slots.forEach(s => s.redrawAdd());   // updateShopFoldouts: the buttons follow the list (after Add, Remove and Undo)
+      box.append(summary, body);
+      return box;
     }
 
     // F1: Suggested, a closed fold-out under the list. It never puts anything on the list (v62 still holds): it shows Empty paints and
@@ -2442,7 +2613,8 @@
     }
 
     // The list as plain text, one brand at a time (for copy as text).
-    function shoppingText(items) {
+    // L1: then the Gear on the list under its own heading (gear: the Gear items, the ones on the list unless given).
+    function shoppingText(items, gear = gearItems()) {
       const groups = new Map();
       for (const i of items) {
         const brand = i.paint.brand || "No brand";
@@ -2456,7 +2628,12 @@
         for (const i of groups.get(brand)) lines.push(`- ${i.paint.name}${i.from && i.from.length ? ` (from ${i.from.join(", ")})` : ""}`);
         lines.push("");
       }
-      if (!items.length) lines.push("Nothing to buy.");
+      if (gear.length) {
+        lines.push("Gear");
+        for (const g of gear) lines.push(`- ${gearLabel(g.name)}${g.from ? ` (from ${g.from})` : ""}`);
+        lines.push("");
+      }
+      if (!items.length && !gear.length) lines.push("Nothing to buy.");
       return lines.join("\n").trimEnd();
     }
 
@@ -2556,7 +2733,7 @@
     let similarState = null;   // v65: null, or the open Similar paints pop-up (see openSimilarPaints)
     function updateShopFoldouts() {
       if (similarState) similarState.refresh();   // v65: the pop-up's buttons follow the list too (after Add and after Undo)
-      for (const el of document.querySelectorAll(".shop-more, .shop-add-row")) if (el.redrawAdd) el.redrawAdd();   // v73: and the Mentor picks' own button
+      for (const el of document.querySelectorAll(".shop-more, .shop-add-row, .where-buy")) if (el.redrawAdd) el.redrawAdd();   // v73: and the Mentor picks' own button. L1: and Where to buy
       for (const el of document.querySelectorAll(".idea-tag")) {   // v41: the row tags the Compendium watches
         if (!el.shopPaint) continue;
         const t = shopListTag(el.shopPaint, el.shopTag);
@@ -2775,6 +2952,8 @@
       const panel = document.getElementById("shop-panel");
       panel.replaceChildren();
       const items = shoppingItems();
+      const gear = gearItems();   // L1: Gear on the list, in its own section under the paints
+      const any = items.length > 0 || gear.length > 0;
       const card = document.createElement("div");
       card.className = "card";
       const title = document.createElement("h2");
@@ -2786,7 +2965,7 @@
       head.className = "shop-head";
       head.append(title);
       card.append(head);
-      if (!items.length) {
+      if (!any) {
         const empty = document.createElement("p");
         empty.className = "hint";
         empty.style.margin = "0 0 10px";
@@ -2797,9 +2976,10 @@
         const notes = [];
         const sub = document.createElement("p");
         sub.className = "hint";
-        sub.textContent = `${plural(items.length, "paint")} to get.`;
+        sub.textContent = !gear.length ? `${plural(items.length, "paint")} to get.`
+          : !items.length ? `${plural(gear.length, "gear item")} to get.` : `${plural(items.length, "paint")} and ${plural(gear.length, "gear item")} to get.`;
         notes.push(sub);
-        if (shopLinksOn()) {
+        if (shopLinksOn() && items.length) {
           const shops = document.createElement("p");
           shops.className = "hint";
           shops.textContent = SHOP_PLAIN_WORDS;
@@ -2809,9 +2989,9 @@
         more.classList.add("shop-more-info");
         head.append(more);
       }
-      if (items.length) {
+      if (any) {
         card.classList.add("shop-split", "layout-split");
-        if (shopLinksOn()) {
+        if (shopLinksOn() && items.length) {   // L1: the Buy these shop buttons stay paint-only
           const bar = buildBuyBar(items);   // v19.1: shop links at the top (v39: unless Settings -> Shop links is off)
           bar.classList.add("shop-side-buy", "layout-side");
           card.appendChild(bar);
@@ -2874,6 +3054,7 @@
           }
           lists.append(brandHead, list);
         }
+        if (gear.length) lists.append(...buildGearSection(gear));   // L1
         const doneBox = buildBoughtSection();
         if (doneBox) lists.appendChild(doneBox);
         const suggested = buildSuggestedSection();   // F1
@@ -2886,7 +3067,7 @@
         copy.addEventListener("click", () => copyText(shoppingText(shoppingItems()), "Shopping list"));
         card.appendChild(copy);
       }
-      if (!items.length) {
+      if (!any) {
         const doneBox = buildBoughtSection(); if (doneBox) card.appendChild(doneBox);
         const suggested = buildSuggestedSection(); if (suggested) card.appendChild(suggested);   // F1
       }
@@ -2894,16 +3075,67 @@
     }
     // A1: the Bought section at the bottom of the list: closed to start with, named with its count. Open, it has Clear bought and each
     // paint with Add back. Nothing here when nothing has been ticked.
+    // L1: the Gear section under the paints: a small heading like a brand's, then one row per item with the tick box, the name and
+    // where it came from, and Remove, built like a paint's row (the same classes, so it looks and wraps the same).
+    function buildGearSection(gear) {
+      const head = document.createElement("div");
+      head.className = "shop-brand shop-gear-head";
+      head.textContent = "Gear";
+      const list = document.createElement("ul");
+      list.className = "shop-list shop-gear-list";
+      for (const g of gear) {
+        const li = document.createElement("li");
+        li.className = "shop-item shop-gear-item";
+        li.dataset.gear = g.id;
+        const tick = document.createElement("button");
+        tick.type = "button";
+        tick.className = "pick-tick shop-tick";
+        tick.setAttribute("role", "checkbox");
+        tick.setAttribute("aria-checked", "false");
+        const box = document.createElement("span");
+        box.className = "pick-box";
+        box.setAttribute("aria-hidden", "true");
+        tick.appendChild(box);
+        tick.addEventListener("click", () => {
+          if (li.classList.contains("shop-ticking")) return;
+          li.classList.add("shop-ticking");
+          tick.setAttribute("aria-checked", "true");
+          setTimeout(() => tickGearBought(g.id), SHOP_TICK_PAUSE);
+        });
+        const text = document.createElement("span");
+        text.className = "shop-text";
+        const nameEl = document.createElement("span");
+        nameEl.textContent = gearLabel(g.name) + " ";
+        text.appendChild(nameEl);
+        if (g.from) {
+          const src = document.createElement("small");
+          src.className = "shop-from";
+          src.textContent = "from " + g.from;
+          text.appendChild(src);
+        }
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "plain-button shop-remove";
+        remove.textContent = "Remove";
+        labelWithName(remove, "", nameEl);
+        remove.addEventListener("click", () => removeGear(g.id));
+        labelWithName(tick, "", nameEl);
+        li.append(tick, text, remove);
+        list.appendChild(li);
+      }
+      return [head, list];
+    }
     function buildBoughtSection() {
       const done = boughtItems();
-      if (!done.length) return null;
+      const doneGear = gearBought();   // L1: ticked Gear sits here too, after the paints
+      if (!done.length && !doneGear.length) return null;
       const box = document.createElement("div");
       box.className = "shop-bought";
       const head = document.createElement("button");
       head.type = "button";
       head.className = "plain-button shop-bought-head";
       head.setAttribute("aria-expanded", String(boughtOpen));
-      head.textContent = `Bought · ${done.length}`;
+      head.textContent = `Bought · ${done.length + doneGear.length}`;
       const body = document.createElement("div");
       body.className = "shop-bought-body";
       body.hidden = !boughtOpen;
@@ -2930,6 +3162,22 @@
         li.append(text, back);
         list.appendChild(li);
       }
+      for (const g of doneGear) {   // L1
+        const li = document.createElement("li");
+        li.className = "shop-item shop-gear-item";
+        li.dataset.gear = g.id;
+        const text = document.createElement("span");
+        text.className = "shop-text";
+        text.textContent = gearLabel(g.name);
+        const back = document.createElement("button");
+        back.type = "button";
+        back.className = "plain-button shop-addback";
+        back.textContent = "Add back";
+        labelWithName(back, "", text);
+        back.addEventListener("click", () => addGearBack(g.id));
+        li.append(text, back);
+        list.appendChild(li);
+      }
       body.append(clear, list);
       box.append(head, body);
       return box;
@@ -2942,7 +3190,8 @@
     // pill gives one small pop (skipped for people who ask their phone for less motion).
     let basketShown = -1;
     function updateBasket() {
-      const n = shoppingItems().length;
+      const paintsN = shoppingItems().length, gearN = gearItems().length;   // L1: Gear on the list counts too (Bought does not)
+      const n = paintsN + gearN;
       basketButton.classList.toggle("hidden", n === 0);
       if (n !== basketShown) {
         const NS = "http://www.w3.org/2000/svg";
@@ -2968,7 +3217,7 @@
         }
         basketShown = n;
       }
-      basketButton.setAttribute("aria-label", `Shopping list, ${plural(n, "paint")}. Tap to open it.`);
+      basketButton.setAttribute("aria-label", `Shopping list, ${plural(paintsN, "paint")}${gearN ? ` and ${plural(gearN, "gear item")}` : ""}. Tap to open it.`);
     }
     basketButton.addEventListener("click", () => {
       if (importDraft) { showToast("Close Paste recipes first, then tap the basket."); return; }
@@ -3744,8 +3993,22 @@
         }
         bought.push({ id, prev: PAINT_STATUS_KEYS.includes(b.prev) ? b.prev : "wishlist", from: from.slice(0, 5) });
       }
+      // L1: Gear on the shopping list: [{ id: the product type in lower case, name: the product type, from: the Guides entry's title,
+      // bought: true once ticked }]. One item per product type. Optional: absent from older books and backups (then there is none),
+      // and kept off the book when empty, so DATA_VERSION does not change. Plain text only, each cut to 60 characters.
+      const gear = [];
+      for (const g of Array.isArray(src.gear) ? src.gear : []) {
+        const name = g && typeof g === "object" ? String(g.name ?? "").trim().slice(0, 60) : "";
+        if (!name || gear.some(o => o.id === gearId(name))) continue;
+        const item = { id: gearId(name), name };
+        const from = String(g.from ?? "").trim().slice(0, 60);
+        if (from) item.from = from;
+        if (g.bought === true) item.bought = true;
+        gear.push(item);
+      }
       const cleaned = { parts, techniques, paints: keptPaints, recipes, schemes, shorthand, v15: true };
       if (bought.length) cleaned.bought = bought;
+      if (gear.length) cleaned.gear = gear;
       return cleaned;
     }
 
@@ -4824,6 +5087,11 @@
           list.appendChild(b);
         }
         box.append(label, list);
+        // L1: when the best source is an entry with products, the same closed Where to buy fold-out as on its Guides page, under the sources
+        const best = m.sources[0], kind = best && MENTOR_SOURCE_KIND[best.type];
+        const e = kind && (kind === "guide" || kind === "basing") ? knowledgeIndex().get(best.key, kind) : null;
+        const buy = e ? buildWhereToBuy(e.key, e.kind, e.title) : null;
+        if (buy) { buy.classList.add("mentor-buy"); box.appendChild(buy); }
       }
       const ask = (m.suggestions || []).filter(s => s && s.text && !mentorUsed.has(String(s.text).toLowerCase()));
       if (ask.length) {
@@ -13271,6 +13539,8 @@
       howTitle.textContent = "How to build it";
       box.append(summary, matTitle, basingPlainList("ul", door.id("basing-materials"), tip.materials),
                  howTitle, basingPlainList("ol", door.id("basing-howto"), tip.howto));
+      const buy = door.whereToBuy ? buildWhereToBuy(tip.key, "basing", tip.name) : null;   // L1: in Guides, under the tip's text (not in the recipe card)
+      if (buy) box.appendChild(buy);
       // the words for "Copy as text" (built as we go; the materials and how-to are only ever shown or copied, never put in a recipe)
       const lines = [`Basing tip: ${tip.name}`, tip.summary, "", "What you need:", ...tip.materials.map(m => `- ${m}`),
                      "", "How to build it:", ...tip.howto.map((h, i) => `${i + 1}. ${h}`)];
@@ -13690,6 +13960,7 @@
         shopSource: () => "Colour Lab: Colour ideas",   // v41: what the shopping list remembers for Add buttons in Colour ideas (X1: was "Compendium: ...")
         listMarks: true,   // v41: a paint already on the shopping list says "On your shopping list" on its row
         schemeShop: true,  // v42, v51: Starter schemes, Your schemes and Detail recipes get tick boxes, Select all and "Add to shopping list" (buildPick)
+        whereToBuy: true,  // L1: a Basing tip with products gets the closed Where to buy fold-out
         share: { copy: (text, what) => copyText(text, what, "Paste it anywhere."), startRecipe: startRecipeFromCompendium },
         factions: () => new Map(chosen ? [[factionKey(chosen), chosen]] : []),
         factionPick: { names, onChange: (key, focus) => { st.faction = key; redrawLibrary(focus || `#${compendiumId("faction-history-pick")}`); } },
@@ -15376,6 +15647,7 @@
     // G2b: order is how the home list shows when nothing is typed: "topics" (the sections) or "az" (every entry A to Z).
     const guidesState = { view: "home", cat: "", group: "", key: "", kind: "", query: "", missing: false, order: "topics" };
     function guidesPoint(e) {   // point the screen at one entry
+      whereBuyOpen.clear();   // L1: a Where to buy fold-out starts closed on every entry you open
       guidesState.missing = false;
       guidesState.key = e.key;
       guidesState.kind = e.kind;
@@ -15665,6 +15937,8 @@
             p.textContent = para;
             page.appendChild(p);
           }
+          const buy = buildWhereToBuy(e.key, e.kind, e.title);   // L1: under the entry's text, closed (only for entries in where-to-buy.js)
+          if (buy) page.appendChild(buy);
           // G2b: See also, a quiet row under the text: a small heading, then up to 3 entry titles as links, each opening through openGuide
           const also = guideSeeAlso(e, kn);
           if (also.length) {

@@ -1788,6 +1788,28 @@
     .shop-suggest-dismiss { flex: none; width: 44px; height: 44px; padding: 0; background: transparent; border: 0; color: var(--muted); font-size: 0.9375rem; }
     .shop-suggest-dismiss:hover { color: var(--text); }
     .shop-suggest-dismiss:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+    /* L1: the closed Where to buy fold-out (under a Guides entry, a Basing tip or a Mentor answer; the same quiet look as Shop links), one product type per row (name, shop links that wrap, Add), and the Gear section on the shopping list (it uses the paint rows' own classes) */
+    .where-buy { margin: 8px 0 0; min-width: 0; }
+    .where-buy > summary { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; font-size: 0.8125rem; font-weight: 400; color: var(--muted); cursor: pointer; list-style: none; border-radius: var(--radius-box); }
+    .where-buy > summary::-webkit-details-marker { display: none; }
+    .where-buy > summary::after { content: "\25BE"; }
+    .where-buy[open] > summary { color: var(--accent); }
+    .where-buy[open] > summary::after { content: "\25B4"; }
+    .where-buy > summary:hover { color: var(--text); }
+    .where-buy > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .where-buy-body { display: grid; gap: 10px; min-width: 0; padding: 4px 12px 10px; }
+    .where-buy-body .hint { margin: 0; font-size: 0.8125rem; overflow-wrap: anywhere; }
+    .where-buy-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+    .where-buy-item { display: grid; gap: 6px; min-width: 0; }
+    .where-buy-name { font-weight: 600; overflow-wrap: anywhere; }
+    .where-buy-links { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+    .where-buy-links a { display: inline-flex; align-items: center; min-height: 44px; max-width: 100%; box-sizing: border-box; padding: 0 14px; color: var(--text); text-decoration: none; background: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-box); overflow-wrap: anywhere; }
+    .where-buy-links a:hover { border-color: var(--accent); }
+    .where-buy-links a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .where-buy-add .plain-button { min-height: 44px; }
+    .mentor-reply .where-buy { margin: 0; }
+    .mentor-reply .where-buy > summary { padding: 0; }
+    .mentor-reply .where-buy-body { padding: 4px 0 4px; }
     /* RS1: the recipe page. Edit menu by the title, named steps, folded Used on, and the Add to scheme picker. */
     .recipe-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
     .recipe-title-row h2 { flex: 1; min-width: 0; overflow-wrap: anywhere; }
@@ -3166,6 +3188,7 @@
             <li id="help-recipe-shop">Missing paints are not put on the shopping list by themselves. Every recipe has an <strong>Add to shopping list</strong> button under its steps. It adds the real paints you don't own (never the made-up example paints) and says how many. Undo takes them off again. It is greyed out when there is nothing to add.</li>
             <li id="help-shop-tick">On the Shopping list, tick a paint when you have bought it: it moves to <strong>Bought</strong> at the bottom and is marked Owned in Your Palette. Open Bought to tap <strong>Add back</strong>, or <strong>Clear bought</strong> to forget the list. <strong>Remove</strong> takes a paint off the list. Both have an Undo.</li>
             <li id="help-shop-suggested">Under the list, <strong>Suggested</strong> shows your Empty paints and the Not owned paints your recipes use. Nothing goes on the list by itself: tap <strong>Add</strong> to put one there, or <strong>✕</strong> to stop suggesting it. A paint you remove from the list is not suggested again either, until you add it again. Suggested only shows when there is something in it.</li>
+            <li id="help-shop-gear">Some Guides pages, Basing tips and Mentor answers have a <strong>Where to buy</strong> fold-out. It lists the things you need (such as a wet palette), each with plain search links to the shops and <strong>Add to shopping list</strong>. Added things go in a <strong>Gear</strong> section under your paints, saying which guide they came from. Tick one when you have bought it, or <strong>Remove</strong> it; both have an Undo. Gear counts in the basket and in Copy as text. Settings → Shop links hides the links but not the Add button.</li>
             <li id="help-shop"><strong>Shopping list</strong> (in Your Palette) lists only the paints you put there: your Wishlist paints and anything added with an <strong>Add to shopping list</strong> button, grouped by brand. Nothing is added by itself, not even a paint a recipe needs or one that is empty or running low. <strong>Buy these</strong> at the top has a button for each shop that sells them (Firestorm Games, Wayland Games, Element Games, and The Army Painter for Army Painter paints). Tap a shop for one search link per paint; each opens that shop's own search in a new tab. They're plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop. The link searches for the paint's name, so the results can include other brands' paints with the same name: check you've got the right pot before you buy.</li>
             <li id="help-wide-shop">On a wide screen, the shop links and <strong>Copy as text</strong> sit beside the paints on the Shopping list, and the Guides sections use the full width.</li>
             <li id="help-shop-links"><strong>Shop links on suggested paints</strong> (Pro preview): under a suggested paint you don't own, in the colour wheel's paint panel and in <strong>Colour ideas</strong> (in a recipe and in Colour Lab), tap <strong>Shop links</strong> to open a small fold-out. It has <strong>Add to shopping list</strong> (Undo is offered) and a plain search link for each shop that sells the paint. Paints you own show nothing. They're plain links, the same as in Buy these: Minifolio isn't paid for them, and only the paint's name goes to the shop. To hide every shop link and shop button, including Buy these, untick <strong>Settings → Shop links</strong>. Your shopping list stays. In Colour Lab's <strong>Colour ideas</strong>, <strong>Add to shopping list</strong> sits on the row of a paint you don't own instead, so its Shop links fold-out has only the links, and that button stays when Shop links is off, because it only adds to your own list.</li>
@@ -3580,6 +3603,7 @@
   <script src="guides-groups.js?v=126"></script>
   <script src="mentor-data.js?v=126"></script>
   <script src="mentor-engine.js?v=126"></script>
+  <script src="where-to-buy.js?v=126"></script>
   <script src="app.js?v=126"></script>
 </body>
 </html>
