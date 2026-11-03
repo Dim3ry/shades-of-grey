@@ -304,7 +304,7 @@
     .mentor-orb {
       left: 145px; top: 82px; width: 100px; height: 100px; padding: 9px 0 0; border-radius: 50%;
       display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 3px;
-      background-color: var(--accent-fill, var(--accent)); background-image: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.35) 0%, transparent 60%);
+      background-color: var(--accent-fill, var(--accent)); background-image: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.35) 0%, transparent 34%);   /* TH5: the shine stops above the label (it ended at 60%, under "Ask Mentor", which dropped light label text below 4.5:1) */
       color: var(--on-accent); font-size: 13px; font-weight: 700; line-height: 16px;
       box-shadow: 0 0 28px color-mix(in srgb, var(--accent-fill, var(--accent)) 50%, transparent);
     }
@@ -2091,7 +2091,7 @@
       --text: #e8dcc0;
       --muted: #a79877;
       --accent: #dc6575;
-      --accent-fill: #b8303c;   /* TH3: deeper red ink for large fills; the lighter --accent stays for text */
+      --accent-fill: #be313e;   /* TH3: deeper red ink for large fills; the lighter --accent stays for text. TH5: a touch lighter (was #b8303c), so a filled button or a pressed chip reaches 3:1 on the cards (cream text on it stays 4.6:1) */
       --on-accent: #f3e7c6;
       --heading-colour: #dc6575;
       --wordmark-colour: #e8dcc0;
@@ -2595,6 +2595,8 @@
       background-position: left 2px top 2px, left 2px top 2px, right 2px top 2px, right 2px top 2px, left 2px bottom 2px, left 2px bottom 2px, right 2px bottom 2px, right 2px bottom 2px;
       background-repeat: no-repeat;
     }
+    /* TH5: the hint inside an empty text box uses the look's own muted colour, as the paint boxes already do; the browser's grey was under 4.5:1 in every look */
+    ::placeholder { color: var(--muted); opacity: 1; }
     /* Chunk B: the round back arrow at the bottom left, beside the bar (look from the chosen mockup, colours from the app's own names). 44 px wide and high.
        Hidden on the start page, while the loading ring or the travel plays, while the Mentor pop-up is open and while a text box has the cursor (the bar steps aside too);
        it fades in again when they end. */
@@ -2627,7 +2629,7 @@
     .ripple { position: absolute; width: 10px; height: 10px; margin: -5px; border-radius: 50%; background: currentColor; opacity: 0; pointer-events: none; animation: mo-ripple calc(var(--motion-slow) + 80ms) var(--motion-ease); }
     @keyframes mo-ripple { from { transform: scale(1); opacity: 0.35; } to { transform: scale(36); opacity: 0; } }
     /* 2. Chips: the accent fill sweeps across when switched on. To / Done / Repaint also get a tick; the stage chips do not, because a tick would widen them and change how their row fits. */
-    .chip { background-image: linear-gradient(var(--accent), var(--accent)); background-repeat: no-repeat; background-size: 0% 100%; transition: background-size var(--motion-med) var(--motion-ease), color var(--motion-fast) var(--motion-ease), background-color 0s linear var(--motion-med); }   /* the real accent colour lands as the sweep ends, so contrast checks and themes see it */
+    .chip { background-image: linear-gradient(var(--accent-fill, var(--accent)), var(--accent-fill, var(--accent))); background-repeat: no-repeat; background-size: 0% 100%; transition: background-size var(--motion-med) var(--motion-ease), color var(--motion-fast) var(--motion-ease), background-color 0s linear var(--motion-med); }   /* the real accent colour lands as the sweep ends, so contrast checks and themes see it. TH5: the sweep paints the fill colour, as buttons do (in Parchment Codex dark it painted the lighter text crimson, under cream text at 2.8:1) */
     .chip[aria-pressed="true"] { background-size: 100% 100%; }
     .chip.sweep { background-size: 0% 100%; background-color: var(--background); color: var(--muted); }   /* a freshly drawn chip that was just switched on starts empty, then fills */
     #group-chips .chip::before { content: "\2713"; display: inline-block; width: 0; overflow: hidden; opacity: 0; vertical-align: bottom; transition: width var(--motion-med) var(--motion-ease), opacity var(--motion-med) var(--motion-ease); }
