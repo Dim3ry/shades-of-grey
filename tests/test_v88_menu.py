@@ -153,8 +153,10 @@ def main():
         page.evaluate("() => { document.dispatchEvent(new Event('pointerdown')); document.activeElement.blur(); }")
         page.wait_for_timeout(100)
         check("the bar stays hidden while a press is still held", page.evaluate("document.body.classList.contains('typing')"))
+        # UX1: after the press ends the bar now also waits for the tap's click (on a touch screen the cursor leaves the box only then,
+        # and the bar came back under the finger), or half a second when no click comes, as with this bare pointerup.
         page.evaluate("() => document.dispatchEvent(new Event('pointerup'))")
-        page.wait_for_timeout(100)
+        page.wait_for_timeout(650)
         check("…and comes back once the press ends", not page.evaluate("document.body.classList.contains('typing')"))
 
         print("\n--- 8. Narrow phones, dark and light ---")

@@ -121,15 +121,18 @@ check("in an index with few different words, unknown words count for little (it 
 
 // ---- 7. the same shape, the same answer ----
 const shapes = fx.questions.map(([q]) => ask(q));
-const allowed = new Set(["kind", "lead", "sources", "picks", "suggestions"]);
-check("the answer has the same shape as before (no new fields)", shapes.every((r) => Object.keys(r).every((k) => allowed.has(k))), shapes.map((r) => Object.keys(r)).find((k) => k.some((x) => !allowed.has(x))));
+// E: an answer now also says how sure it is (score, band, and in the "maybe" band didYouMean; fixes when a typo was repaired), and an
+// app question answers with kind "app" (app, label). Those are the only new fields, so this check names them; it was "no new fields".
+const allowed = new Set(["kind", "lead", "sources", "picks", "suggestions", "score", "band", "didYouMean", "fixes", "app", "label"]);
+check("the answer has the same shape as before, plus only E's fields (how sure it is)", shapes.every((r) => Object.keys(r).every((k) => allowed.has(k))), shapes.map((r) => Object.keys(r)).find((k) => k.some((x) => !allowed.has(x))));
 check("the same question gives the same answer with MENTOR_DATA", JSON.stringify(shapes) === JSON.stringify(fx.questions.map(([q]) => ask(q))), 1);
 // Two rows answer differently once MENTOR_DATA is on the page, on purpose and in the open:
 //  - "muddy ground": both mud (George's original tip) and dry-mud-ground (X8's) are right. Without the data his check finds
 //    dry-mud-ground first (the fixture says so since X8); with the data's phrases it finds mud.
 //  - "how tall is a tree": the data's phrase bank knows "tree" from the scenery guides, so it answers trees-from-twigs instead of none.
 //    That is a near-miss answer to an off-topic question, the kind the pack's report counts (17 of 40 off-topic questions answer).
-const WITH_DATA = { "muddy ground": ["answer", ["mud", "dry-mud-ground"]], "how tall is a tree": ["answer", ["trees-from-twigs"]] };
+// E: ASK.points went from 10 to 15, so "muddy ground" now finds wet-muddy-ground (KR4's guide) first: as right as the other two.
+const WITH_DATA = { "muddy ground": ["answer", ["mud", "dry-mud-ground", "wet-muddy-ground"]], "how tall is a tree": ["answer", ["trees-from-twigs"]] };
 const table = fx.questions.filter(([, , kind]) => kind !== "colour").map(([q, want, kind]) => {
   const r = ask(q); const first = r.sources[0];
   const alt = WITH_DATA[q];

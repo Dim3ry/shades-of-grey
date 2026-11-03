@@ -4154,7 +4154,8 @@
       const cs = getComputedStyle(b), ics = getComputedStyle(b.querySelector(".icon")), svg = getComputedStyle(b.querySelector(".icon svg"));
       return { bg: cs.backgroundColor, color: cs.color, icon: ics.color, weight: parseFloat(cs.fontWeight), fs: parseFloat(cs.fontSize), lh: parseFloat(cs.lineHeight),
                ifs: parseFloat(ics.fontSize), gap: parseFloat(cs.rowGap) || 0, stroke: parseFloat(svg.strokeWidth),
-               pl: parseFloat(cs.paddingLeft), pr: parseFloat(cs.paddingRight), pt: parseFloat(cs.paddingTop), pb: parseFloat(cs.paddingBottom) };
+               pl: parseFloat(cs.paddingLeft), pr: parseFloat(cs.paddingRight), pt: parseFloat(cs.paddingTop), pb: parseFloat(cs.paddingBottom),
+               font: { fontFamily: cs.fontFamily, fontStyle: cs.fontStyle, letterSpacing: cs.letterSpacing, textTransform: cs.textTransform, fontSizeAdjust: cs.fontSizeAdjust } };
     }
     // Call BEFORE the state changes (the circle is still drawn).
     function travelStart(first, from) {
@@ -4221,17 +4222,53 @@
         const c = document.createElement("div");
         c.className = "c";
         const icon = it.src.querySelector(".icon").cloneNode(true);
-        c.appendChild(icon);
-        c.appendChild(document.createTextNode(segs[it.tab].label));
+        const text = document.createElement("span");
+        text.className = "t";
+        text.textContent = segs[it.tab].label;
+        c.append(icon, text);
+        // SM1 (Smooth1): the label and icon are laid out at the start sizes and then only scaled and moved (transform), so the frames of the travel
+        // do not lay out text again (animating font-size, line-height and gap did, on almost every frame). Half way, where the weight already
+        // switches, they are laid out once more at the end sizes, so the first and the last frame are drawn exactly like the real segments.
+        const k0 = it.k0;
+        Object.assign(c.style, { fontSize: k0.fs + "px", lineHeight: k0.lh + "px", fontWeight: String(k0.weight) });
+        // SM1 (Smooth5): the copies sit outside <body>, so they did not get the segment's own font (they were drawn in the browser's default serif
+        // font for the 1.5 s, which jumped at the start and the end); they now use exactly the segment's font, case and letter spacing.
+        Object.assign(c.style, k0.font);
+        icon.style.fontSize = k0.ifs + "px";
+        if (it.k1.weight !== k0.weight || it.k1.fs !== k0.fs) {   // the end font, drawn invisibly from the first frame, so the switch half way needs no new font
+          const warm = document.createElement("span");
+          warm.className = "t warm";
+          warm.textContent = text.textContent;
+          Object.assign(warm.style, { fontWeight: String(it.k1.weight), fontSize: it.k1.fs + "px" });
+          c.appendChild(warm);
+        }
         w.appendChild(c);
         arc.appendChild(w);
-        Object.assign(it, { w, c, icon, svg: icon.querySelector("svg") });
+        Object.assign(it, { w, c, icon, text, svg: icon.querySelector("svg") });
       }
       const ms = motionMs("--motion-travel");
       const ease = getComputedStyle(document.documentElement).getPropertyValue("--motion-travel-ease").trim() || "ease-in-out";
       const L = (a, b, t) => a + (b - a) * t;
       const mix = (a, b, q) => `color-mix(in srgb, ${a} ${Math.round((1 - q) * 1000) / 10}%, ${b})`;
+      // SM1 (Smooth6): the same colour blend as color-mix(in srgb, ...) (premultiplied), worked out here from the two measured colours, so each frame
+      // hands the browser a plain rgba() instead of a color-mix() to resolve; a colour that is the same at both ends is never written again.
+      // A theme colour made with color-mix() is reported as color(srgb r g b / a), with 0 to 1 channels; it is read the same way.
+      const rgbaOf = (s) => { const m = /^(rgba?\(|color\(srgb\s)([^)]*)\)$/.exec(s); if (!m) return null; const v = m[2].split(/[\s,/]+/).filter(Boolean).map(Number);
+        const k = m[1].startsWith("color") ? 255 : 1;
+        return v.length >= 3 && v.every(Number.isFinite) ? [v[0] * k, v[1] * k, v[2] * k, v.length > 3 ? v[3] : 1] : null; };
+      const blend = (a, b) => {
+        if (a === b) return () => a;
+        const A = rgbaOf(a), B = rgbaOf(b);
+        if (!A || !B) return (q) => mix(a, b, q);
+        return (q) => { const al = A[3] * (1 - q) + B[3] * q; if (al <= 0) return "rgba(0, 0, 0, 0)";
+          const ch = (i) => Math.round((A[i] * A[3] * (1 - q) + B[i] * B[3] * q) / al * 100) / 100;
+          return `rgba(${ch(0)}, ${ch(1)}, ${ch(2)}, ${Math.round(al * 1000) / 1000})`; };
+      };
+      const put = (it, el, prop, value) => { const key = prop + (el === it.w ? "w" : el === it.c ? "c" : el === it.icon ? "i" : el === it.text ? "t" : "s");
+        if (it.last[key] !== value) { it.last[key] = value; el.style[prop] = value; } };
+      for (const it of items) Object.assign(it, { last: {}, bgAt: blend(it.k0.bg, it.k1.bg), colorAt: blend(it.k0.color, it.k1.color), iconAt: blend(it.k0.icon, it.k1.icon) });
       const N = 24;
+      const r2 = (v) => Math.round(v * 100) / 100;
       function render(p, pop) {
         const q = Math.min(1, Math.max(0, p)), out = TRAVEL_SPREAD * Math.sin(Math.PI * q) / sb;
         for (const it of items) {
@@ -4239,19 +4276,26 @@
           const mid = (lo + hi) / 2, off = out + (it.chosen ? TRAVEL_POP * Math.sin(Math.PI * pop) / sb : 0);
           const dx = Math.cos(mid) * off, dy = Math.sin(mid) * off;
           const cx = L(CR[0], CB[0], p) + dx - x0, cy = L(CR[1], CB[1], p) + dy - y0;
-          const pts = [];
-          for (let i = 0; i <= N; i++) { const t = L(lo, hi, i / N); pts.push(`${(cx + ro * Math.cos(t)).toFixed(2)}px ${(cy + ro * Math.sin(t)).toFixed(2)}px`); }
-          for (let i = N; i >= 0; i--) { const t = L(lo, hi, i / N); pts.push(`${(cx + ri * Math.cos(t)).toFixed(2)}px ${(cy + ri * Math.sin(t)).toFixed(2)}px`); }
+          let pts = "";
+          for (let i = 0; i <= N; i++) { const t = L(lo, hi, i / N); pts += `${r2(cx + ro * Math.cos(t))}px ${r2(cy + ro * Math.sin(t))}px,`; }
+          for (let i = N; i >= 0; i--) { const t = L(lo, hi, i / N); pts += `${r2(cx + ri * Math.cos(t))}px ${r2(cy + ri * Math.sin(t))}px${i ? "," : ""}`; }
           const k0 = it.k0, k1 = it.k1;
-          it.w.style.clipPath = `polygon(${pts.join(",")})`;
-          it.w.style.backgroundColor = mix(k0.bg, k1.bg, q);
-          const c = it.c.style;
-          c.transform = `translate(${(L(it.c0[0], it.c1[0], p) + dx - x0).toFixed(2)}px, ${(L(it.c0[1], it.c1[1], p) + dy - y0).toFixed(2)}px) translate(-50%, -50%)`;
-          c.color = mix(k0.color, k1.color, q);
-          c.fontSize = L(k0.fs, k1.fs, p) + "px"; c.lineHeight = L(k0.lh, k1.lh, p) + "px"; c.gap = L(k0.gap, k1.gap, p) + "px";
-          c.fontWeight = q < 0.5 ? k0.weight : k1.weight;
-          it.icon.style.fontSize = L(k0.ifs, k1.ifs, p) + "px"; it.icon.style.color = mix(k0.icon, k1.icon, q);
-          it.svg.style.strokeWidth = L(k0.stroke, k1.stroke, q);
+          put(it, it.w, "clipPath", `polygon(${pts})`);
+          put(it, it.w, "backgroundColor", it.bgAt(q));
+          put(it, it.c, "transform", `translate(${r2(L(it.c0[0], it.c1[0], p) + dx - x0)}px, ${r2(L(it.c0[1], it.c1[1], p) + dy - y0)}px)`);
+          put(it, it.c, "color", it.colorAt(q));
+          // SM1 (Smooth1): the same sizes as before (font size, line height, gap and icon size blended on the clock), drawn with transform only:
+          // the icon and the label each sit centred on their own line of the column, scaled from the sizes they are laid out at (b).
+          const fs = L(k0.fs, k1.fs, p), lh = L(k0.lh, k1.lh, p), gap = L(k0.gap, k1.gap, p), ifs = L(k0.ifs, k1.ifs, p);
+          const top = -(ifs + gap + lh) / 2, b = q < 0.5 ? k0 : k1;   // b: the start's sizes, then (from half way) the end's
+          put(it, it.c, "fontSize", b.fs + "px");
+          put(it, it.c, "lineHeight", b.lh + "px");
+          put(it, it.c, "fontWeight", String(b.weight));
+          put(it, it.icon, "fontSize", b.ifs + "px");
+          put(it, it.icon, "transform", `translate(0px, ${r2(top + ifs / 2)}px) scale(${Math.round(ifs / b.ifs * 10000) / 10000}) translate(-50%, -50%)`);
+          put(it, it.text, "transform", `translate(0px, ${r2(top + ifs + gap + lh / 2)}px) scale(${Math.round(fs / b.fs * 10000) / 10000}) translate(-50%, -50%)`);
+          put(it, it.icon, "color", it.iconAt(q));
+          put(it, it.svg, "strokeWidth", String(L(k0.stroke, k1.stroke, q)));
         }
       }
       render(0, 0);
@@ -4469,14 +4513,14 @@
     const MENTOR_PHRASES = {
       greeting: ["How can I help?", "What are you painting?", "Ready when you are."],
       picker: ["Let's find some paints.", "Welcome back. Pick a colour and a part."],   // not shown yet
-      thinking: [], answer: [], unsure: ["I could not find that yet."], finished: [], actions: [],   // X6b fills unsure; the rest wait for X9
+      thinking: [], answer: [], unsure: ["I do not know that yet."], finished: [], actions: [],   // X6b fills unsure (E: one plain line); the rest wait for X9
     };
     const MENTOR_TYPING = true;    // X6b: the text box is on (one line to switch it off)
     const MENTOR_MAX_LENGTH = 300;
     const MENTOR_MAX_MESSAGES = 30;
     const MENTOR_IDLE_MINUTES = 30;   // D: after this long without a message (yours or Mentor's), the window opens at its start. The one place to change it.
     let mentorLastAt = 0;          // D: the app's clock (Date.now) when the last message was added; kept in memory only, like the messages
-    const mentorMessages = [];     // { who: "me" | "mentor", text, sources, suggestions, pick }: the last 30, kept only while the app is open
+    const mentorMessages = [];     // { who: "me" | "mentor", text, sources, suggestions, pick, didYouMean }: the last 30, kept only while the app is open
     const mentorUsed = new Set();  // questions already asked (lower case): a starter chip with the same words drops out of the row
     let mentorWarm = false;
     let mentorState = null;        // null, or { backdrop, win, opener, onKey } while the window is open
@@ -4530,9 +4574,10 @@
       return knowledgeIndex().list({ kind: "starter" }).map(e => e.title).filter(t => t && !mentorUsed.has(t.toLowerCase()));
     }
     // Ask the engine. The Paint Picker's own colour code does the picks (ctx.ideas), so they are exactly the Paint Picker's.
-    function mentorAsk(text) {
+    function mentorAsk(text, confirmed) {
       let pick = null;
       const answer = MinifolioMentor.mentorAnswer(text, {
+        confirmed: !!confirmed,   // E: a tapped "Did you mean" chip is answered plainly, with no second chip
         index: knowledgeIndex(),
         paints: colourIdeaPool(),
         tips: typeof MENTOR_TIPS === "undefined" ? [] : MENTOR_TIPS,
@@ -4611,6 +4656,17 @@
         return box;
       }
       box.className = "mentor-msg mentor-reply";
+      // E: a weaker match (the engine's band "maybe") starts with one line, "Did you mean", and one chip: the question as Mentor read it
+      // (typos put right) or the best entry's title. The chip asks it. Once that question has been asked, the line and chip go.
+      if (m.didYouMean && !mentorUsed.has(String(m.didYouMean).toLowerCase())) {
+        const dym = document.createElement("p");
+        dym.className = "mentor-dym";
+        dym.textContent = "Did you mean";
+        const row = document.createElement("div");
+        row.className = "mentor-chips mentor-chips-in mentor-dym-chips";
+        row.appendChild(mentorChip(m.didYouMean, () => mentorSend(m.didYouMean, true, true)));
+        box.append(dym, row);
+      }
       const lead = document.createElement("p");
       lead.className = "mentor-lead";
       lead.textContent = m.text;
@@ -4662,8 +4718,8 @@
       state.chips.replaceChildren(state.pickerChip, ...mentorStarters().map(t => mentorChip(t, () => mentorSend(t, true))));
     }
 
-    // Send what the box holds (or the text of a chip). Returns false when there was nothing to send.
-    function mentorSend(raw, fromChip) {
+    // Send what the box holds (or the text of a chip). Returns false when there was nothing to send. E: confirmed is true for a "Did you mean" chip.
+    function mentorSend(raw, fromChip, confirmed) {
       const state = mentorState;
       const text = String(raw == null ? "" : raw).trim().slice(0, MENTOR_MAX_LENGTH);
       if (!state || !text) return false;
@@ -4672,16 +4728,18 @@
         if (!mentorUsed.has(c.textContent.toLowerCase())) continue;
         const row = c.parentElement;
         c.remove();
+        if (row.classList.contains("mentor-dym-chips") && row.previousElementSibling && row.previousElementSibling.classList.contains("mentor-dym")) row.previousElementSibling.remove();   // E: "Did you mean" goes with its chip
         if (!row.children.length) row.remove();
       }
       let reply;
       try {
-        const { answer, pick } = mentorAsk(text);
+        const { answer, pick } = mentorAsk(text, confirmed);
+        // E: no answer: one line, and the starter questions that share the most words with it under it (the engine's suggestions)
         reply = answer.kind === "none"
-          ? { who: "mentor", text: mentorPhrase(MENTOR_PHRASES.unsure, "I could not find that yet."), sources: [], suggestions: answer.suggestions || [] }
-          : { who: "mentor", text: answer.lead, sources: answer.sources || [], pick };
+          ? { who: "mentor", text: mentorPhrase(MENTOR_PHRASES.unsure, "I do not know that yet."), sources: [], suggestions: answer.suggestions || [] }
+          : { who: "mentor", text: answer.lead, sources: answer.sources || [], pick, didYouMean: answer.band === "maybe" && answer.didYouMean ? answer.didYouMean : "" };
       } catch (ignored) {
-        reply = { who: "mentor", text: mentorPhrase(MENTOR_PHRASES.unsure, "I could not find that yet."), sources: [], suggestions: [] };
+        reply = { who: "mentor", text: mentorPhrase(MENTOR_PHRASES.unsure, "I do not know that yet."), sources: [], suggestions: [] };
       }
       const mine = { who: "me", text };
       mentorMessages.push(mine, reply);
@@ -4691,7 +4749,7 @@
       while (mentorMessages.length > MENTOR_MAX_MESSAGES) mentorMessages.shift();
       while (state.msgs.children.length > mentorMessages.length) state.msgs.firstElementChild.remove();
       state.win.classList.add("mentor-chatting");
-      state.status.textContent = reply.text;   // announced politely; the rows themselves are not read out unprompted
+      state.status.textContent = reply.didYouMean ? `Did you mean ${String(reply.didYouMean).replace(/[?.!]+$/, "")}? ${reply.text}` : reply.text;   // announced politely; the rows themselves are not read out unprompted
       mentorDrawChips(state);
       state.scroll.scrollTop = first.offsetTop - 4;
       if (fromChip) state.scroll.focus({ preventScroll: true });   // the chip that was tapped is gone, and a chip must not open the keyboard
@@ -6219,7 +6277,11 @@
         const panelNow = wasOpen ? document.querySelector(`li.unit[data-id="${model.id}"] > .panel`) : null;
         const heightNow = panelNow ? panelNow.offsetHeight : 0;
         if (wasOpen) { openIds.delete(model.id); editOpenIds.delete(model.id); paintsOpenIds.delete(model.id); } else openIds.add(model.id);
-        render();
+        // SM1 (Smooth4): opening or closing Details changes only this card (nothing is saved and no other card or section changes), so on a phone
+        // only this card is drawn again; the side pane on a wide screen still takes the full redraw.
+        const card = !unitWide.matches && [...list.children].find(li => li.dataset.id === String(model.id));
+        if (card) card.replaceWith(buildCard(model));
+        else render();
         animatePanel(model.id, !wasOpen, heightNow);   // Mo2
       };
       info.addEventListener("click", toggle);
@@ -6259,7 +6321,13 @@
     }
 
     // A3: a small chevron drawn in the text colour (so it follows every theme). dir: "left", "right", "down", "up".
+    // SM1 (Smooth3): each chevron is drawn once and then copied (a Models list redraw makes three per card, so 900 for 300 units).
+    const chevronCache = {};
     function chevron(dir) {
+      if (!chevronCache[dir]) chevronCache[dir] = makeChevron(dir);
+      return chevronCache[dir].cloneNode(true);
+    }
+    function makeChevron(dir) {
       const NS = "http://www.w3.org/2000/svg";
       const svg = document.createElementNS(NS, "svg");
       svg.setAttribute("viewBox", "0 0 24 24");
@@ -8284,7 +8352,7 @@
         try { opener.focus({ preventScroll: true }); } catch (ignored) {}
       }
       queueBackCheck();
-      state.cfg.onDone(answer);
+      state.cfg.onDone(answer, !!state.noButton);
     }
     // What Back, Escape and the "No" / "Cancel" button do.
     function cancelDialog() {
@@ -8301,7 +8369,8 @@
       finishDialog(mode === "text" ? dialogInput.value : true);
     }
     dialogYes.addEventListener("click", acceptDialog);
-    dialogNo.addEventListener("click", cancelDialog);
+    // UX1: the No button itself (not Escape or Back) is told apart, so "Not now" can mean "go on without it".
+    dialogNo.addEventListener("click", () => { if (dialogState) dialogState.noButton = true; cancelDialog(); });
     // Escape = no. Enter = yes (unless a button has the focus: then Enter presses that button).
     // Tab stays inside the box. Written to run first, so nothing else sees these keys.
     document.addEventListener("keydown", (event) => {
@@ -8335,7 +8404,11 @@
       const opts = options || {};
       showDialog({
         mode: "yesno", message, yes: opts.yes, no: opts.no, danger: !!opts.danger,
-        onDone: (ok) => { if (ok) onYes(); else if (opts.onNo) opts.onNo(); },
+        onDone: (ok, noButton) => {
+          if (ok) onYes();
+          else if (noButton && opts.onNoButton) opts.onNoButton();   // UX1
+          else if (opts.onNo) opts.onNo();
+        },
       });
     }
     function askText(message, initial, onDone, options) {
@@ -10176,23 +10249,27 @@
       };
     }
 
-    function startRecipeDraft(draft) {
-      if (draftWaiting("recipe")) return;   // v26: a kept unfinished recipe is offered first
+    // UX1: after() runs once the new draft is open, also when it opens later from "Not now".
+    function startRecipeDraft(draft, after) {
+      // v26: a kept unfinished recipe is offered first
+      if (!draftNotNow.recipe && draftWaiting("recipe", () => startRecipeDraft(draft, after || (() => showTab("recipes"))))) return;
       // (a recipe brought back by Keep going already knows what "unchanged" means)
       if (typeof draft.original !== "string") draft.original = draftSnapshot(draft);
       recipeDraft = draft;
       renderRecipes();
       window.scrollTo(0, 0);
+      if (after) after();
     }
 
     // linkUnit: the unit to link it to when saved (when started from a unit), or null.
     function startNewRecipe(linkUnit) {
       whenOkToLeaveDraft(() => {
         openRecipeId = null;
-        startRecipeDraft({ id: null, name: "", part: recipePartFilter, notes: "", linkUnit, steps: [blankStep()] });
-        showTab("recipes");
-        const nameBox = recipePage.querySelector("input");
-        if (nameBox) nameBox.focus();
+        startRecipeDraft({ id: null, name: "", part: recipePartFilter, notes: "", linkUnit, steps: [blankStep()] }, () => {
+          showTab("recipes");
+          const nameBox = recipePage.querySelector("input");
+          if (nameBox) nameBox.focus();
+        });
       });
     }
 
@@ -10216,11 +10293,12 @@
       whenOkToLeaveDraft(() => {
         openRecipeId = null;
         startRecipeDraft({ id: null, name: "", part: recipePartFilter, notes: "", linkUnit: null, steps: [],
-                           quick: { text: "", name: "", part: "", defaultPart: recipePartFilter, over: {}, ids: [], lines: [], nextId: 1, read: null } });
-        if (!recipeDraft || !recipeDraft.quick) return;   // a kept unfinished recipe was offered first instead
-        showTab("recipes");
-        const box = document.getElementById("quick-lines");
-        if (box) box.focus();
+                           quick: { text: "", name: "", part: "", defaultPart: recipePartFilter, over: {}, ids: [], lines: [], nextId: 1, read: null } }, () => {
+          // UX1: also runs when a kept unfinished recipe was offered first and you chose Not now
+          showTab("recipes");
+          const box = document.getElementById("quick-lines");
+          if (box) box.focus();
+        });
       });
     }
     // Is this paint in the paint list (yours or the app's)? The same test findOrAddPaint uses, so a paint that is not would be kept as typed.
@@ -10913,7 +10991,9 @@
             const known = isInPalette(fresh);
             const paint = findOrAddPaint(p.brand, p.name, p.colour);
             if (d.quick) { if (p.known && !p.material && !askOwn.includes(paint)) askOwn.push(paint); }
-            else if (!known && paintStatus(paint) === "") applyPaintStatus(paint, ownsNewPaint(d.own, fresh) ? "owned" : "notowned");
+            // UX1: a name that isn't in the paint list (a typo, or one you made up) is kept as typed with no status, as the quick form
+            // and Paste recipes do: never Owned, and it can still go on the shopping list.
+            else if (!known && paintStatus(paint) === "" && inPaintList(fresh)) applyPaintStatus(paint, ownsNewPaint(d.own, fresh) ? "owned" : "notowned");
             return { paint: paint.id, mix: cleanMix(p.mix) };
           });
         return {
@@ -13187,12 +13267,12 @@
           steps: steps.map(x => draftStepFrom(x.paint, x.technique, x.coats, x.mix, x.note)),
           original: "",   // never equal to the draft, so Cancel asks first
         };
-        startRecipeDraft(draft);
-        if (recipeDraft !== draft) return;   // a kept unfinished recipe was offered first instead
-        if (settings.recipeView === "colourlab") settings.recipeView = "recipes";   // X1: the new recipe belongs to the Recipes list, as it did from the Compendium
-        showTab("recipes");
-        if (after) after(draft);
-        else notify(`Started a new recipe with ${plural(steps.length, "step")}. Give it a name and press Save recipe.`);
+        startRecipeDraft(draft, () => {   // UX1: also after Not now, when a kept unfinished recipe was offered first
+          if (settings.recipeView === "colourlab") settings.recipeView = "recipes";   // X1: the new recipe belongs to the Recipes list, as it did from the Compendium
+          showTab("recipes");
+          if (after) after(draft);
+          else notify(`Started a new recipe with ${plural(steps.length, "step")}. Give it a name and press Save recipe.`);
+        });
       });
     }
 
@@ -15340,14 +15420,34 @@
     function knownPaintName(name) {
       return book.paints.some(p => sameText(p.name, name)) || searchedPaints.some(p => sameText(p.name, name));
     }
+    // UX1: only paints in the paint list are asked about. Any other name is kept as typed, with no status.
     function draftNewPaints(d) {
       const list = [];
       for (const s of d.steps) for (const p of s.paints) {
         if (typingPaints.has(p) && !knownPaintName(String(p.name || "").trim())) continue;
+        if (!inPaintList(p)) continue;
         addNewPaint(list, p);
       }
       return list;
     }
+    // UX1: is this name ({ brand, name }) a paint in the paint list (any brand you have switched on or off)?
+    // Materials such as water or varnish count, so they keep the question.
+    function inPaintList(p) {
+      const name = String(p.name || "").trim();
+      const brand = tidyBrand(p.brand);
+      if (MATERIAL_WORDS.test(name)) return true;
+      if (!paintListBrands) {   // made once: each paint name in the paint list, with its brands
+        paintListBrands = new Map();
+        for (const k of KNOWN_PAINTS) {
+          const key = sameKey(k.name);
+          if (!paintListBrands.has(key)) paintListBrands.set(key, []);
+          paintListBrands.get(key).push(sameKey(k.brand));
+        }
+      }
+      const brands = paintListBrands.get(sameKey(name));
+      return !!brands && (!brand || brands.includes(sameKey(brand)));
+    }
+    let paintListBrands = null;
 
     // The card: "Do you own these? All / None / Let me pick". getPaints() lists the new paints now.
     // It only redraws itself, so the boxes you're typing in elsewhere on the page aren't disturbed.
@@ -15460,16 +15560,46 @@
       d.trimmed = false;   // v18d-1: no steps left out yet
       d.editing = null;    // v18d-2a: no step's editor open
       d.swapAt = -1;       // v18d-2b: no paint's Change… box open
-      d.groups = unsureMentions(d.parsed);
+      d.groups = importGroups(d.parsed);
       d.names = d.parsed.schemes.map(s => s.name || "Imported recipes");
+      d.markOwned = true;   // RS4b: "Mark these paints as Owned" starts ticked
       renderImport();
     }
 
-    // What a mention ends up as: the matched paint, or your answer for an unsure one.
+    // RS4b: the paints that get a card under "Check paints": one per distinct typed name, in paste order. A paint the reader was
+    // unsure of starts on its best match; a paint that matched nothing at all starts on Keep as typed. So every card already
+    // has an answer and Save works at once. recipes = how many recipes the name is used in. A paint changed with Change… is not asked.
+    const isAskedMention = (m) => m.fromTyped === undefined && (m.status === "unsure" || m.status === "new");
+    function importKeepPaint(g) {
+      return g.isNew && g.paint ? g.paint : { brand: "", name: tidyName(g.typed), colour: DEFAULT_PAINT_COLOUR };
+    }
+    function importGroups(parsed) {
+      const groups = new Map();
+      parsed.schemes.forEach((s, si) => s.parts.forEach((part, pi) => importSections(part).forEach((sec, xi) => {
+        for (const step of sec.steps) for (const m of step.paints) {
+          if (!isAskedMention(m)) continue;
+          const key = matchKey(m.typed);
+          if (!groups.has(key)) groups.set(key, { key, typed: m.typed, suggestions: [], count: 0, recipes: new Set(), choice: null,
+                                                  isNew: m.status === "new", paint: m.paint, picked: null });
+          const g = groups.get(key);
+          g.count++;
+          g.recipes.add(`${si}-${pi}-${xi}`);
+          for (const sug of m.suggestions || []) if (!g.suggestions.some(x => sameText(x.name, sug.name) && sameText(x.brand, sug.brand))) g.suggestions.push(sug);
+        }
+      })));
+      for (const g of groups.values()) {
+        g.recipes = g.recipes.size;
+        g.choice = g.suggestions.length ? { kind: "pick", opt: "s0", paint: g.suggestions[0], auto: true }
+                                        : { kind: "keep", opt: "keep", paint: importKeepPaint(g), auto: true };
+      }
+      return [...groups.values()];
+    }
+
+    // What a mention ends up as: the matched paint, or the answer on its card.
     function importPaintFor(mention) {
-      if (mention.status !== "unsure") return mention.paint;
+      if (!isAskedMention(mention)) return mention.paint;
       const g = importDraft.groups.find(x => x.key === matchKey(mention.typed));
-      return g && g.choice ? g.choice.paint : null;
+      return g && g.choice ? g.choice.paint : mention.paint;
     }
     const importCount = (d) => d.parsed ? d.parsed.schemes.reduce((n, s) => n + s.parts.reduce((m, p) => m + importSections(p).length, 0), 0) : 0;
 
@@ -15529,47 +15659,7 @@
       card.insertAdjacentHTML("beforeend", '<p class="hint import-remove-hint" style="margin: 12px 0 0;">' +
         'Tap ✎ to change a step, ✕ to leave something out. Read again brings everything back.</p>');
 
-      // 1. The paints it wasn't sure about. Nothing is picked for you.
-      const left = d.groups.filter(g => !g.choice).length;
-      if (d.groups.length) {
-        const check = document.createElement("div");
-        check.className = "card import-check";
-        const checkTitle = document.createElement("h2");   // v75: built with textContent, not innerHTML
-        checkTitle.textContent = `Check ${plural(d.groups.length, "paint")}`;
-        const checkHint = document.createElement("p");
-        checkHint.className = "hint";
-        checkHint.textContent = "Pick one each. Your answers are remembered.";
-        check.append(checkTitle, checkHint);
-        for (const g of d.groups) {
-          const row = document.createElement("div");
-          row.className = "import-ask" + (g.choice ? " answered" : "");
-          const label = document.createElement("div");
-          label.className = "import-typed";
-          label.textContent = `“${g.typed}”` + (g.count > 1 ? ` (${g.count} times)` : "");
-          const chips = document.createElement("div");
-          chips.className = "chips";
-          chips.style.marginTop = "6px";
-          const choose = (kind, paint) => { g.choice = { kind, paint }; renderImport(); };
-          const pressed = (kind, name) => !!g.choice && g.choice.kind === kind && (!name || sameText(g.choice.paint.name, name));
-          for (const s of g.suggestions) chips.appendChild(makeChip(s.name, pressed("pick", s.name), () => choose("pick", s)));
-          chips.appendChild(makeChip(`Keep “${tidyName(g.typed)}”`, pressed("keep"), () => choose("keep", { brand: "", name: tidyName(g.typed), colour: DEFAULT_PAINT_COLOUR })));
-          chips.appendChild(makeChip("Basing material", pressed("material"), () => choose("material", { brand: "", name: tidyName(g.typed), colour: DEFAULT_PAINT_COLOUR, type: "material" })));
-          const other = makeChip(g.choice && g.choice.kind === "other" ? `Other: ${g.choice.paint.name}` : "Other…", pressed("other"), () => {
-            askText(`What is “${g.typed}”? Type the paint's name:`, "", (answer) => {
-              const typed = (answer || "").trim();
-              if (!typed) return;
-              const m = matchPaint(typed);
-              const paint = m.paint || (m.suggestions[0] && sameText(matchKey(m.suggestions[0].name), matchKey(typed)) ? m.suggestions[0] : null)
-                            || { brand: "", name: tidyName(typed), colour: DEFAULT_PAINT_COLOUR };
-              choose("other", paint);
-            });
-          });
-          chips.appendChild(other);
-          row.append(label, chips);
-          check.appendChild(row);
-        }
-        importPage.appendChild(check);
-      }
+      importPage.appendChild(buildImportCheck(d));   // 1. RS4b: Check paints
 
       // 2. The preview: each scheme, its parts and their steps.
       d.parsed.schemes.forEach((scheme, si) => {
@@ -15665,7 +15755,8 @@
                 // v18d-2b: a paint you changed with ✎ shows what was pasted → what it is now.
                 span.className = "import-paint swapped";
                 span.textContent = `${m.fromTyped} → ${paint.name}` + (m.status === "new" ? " (new)" : "");
-              } else if (m.status === "unsure") {
+              } else if (m.status === "unsure" || (m.status === "new" && paint && importGroupFor(m) && importGroupFor(m).choice.kind !== "keep")) {
+                // RS4b: a paint that matched nothing and was then picked from the list shows "typed → picked" too.
                 span.className = paint ? "import-paint resolved" : "import-paint unsure";
                 span.textContent = paint ? `${m.typed} → ${paint.name}` : `${m.typed}?`;
               } else {
@@ -15686,20 +15777,196 @@
         importPage.appendChild(sc);
       });
 
-      // 3. v18c: "Do you own these?" for the paints new to your palette. All is picked to start with.
-      d.own = d.own || newOwnChoice();
-      const ownCard = buildOwnCard(d.own, () => importNewPaints(d));
-      ownCard.id = "import-own";
-      importPage.appendChild(ownCard);
+      // 3. RS4b: the bar fixed above the bottom menu: "Mark these paints as Owned" (replaces "Do you own these?" here) and Save.
+      importPage.appendChild(buildImportBar(d));
+    }
 
+    // ================= RS4b: CHECK PAINTS AND THE SAVE BAR =================
+    // "Check paints": one line with the numbers, the matched paints behind "Show the N matched", and a card only for each paint
+    // that needs a look (see importGroups). A card's choice applies everywhere that name is in the paste. Nothing blocks Save.
+    const importGroupFor = (m) => importDraft && importDraft.groups.find(x => x.key === matchKey(m.typed));
+    // The distinct paints the paste matched by itself (and ones changed with Change…), in paste order.
+    function importMatchedPaints(d) {
+      const out = [], seen = new Set();
+      for (const s of d.parsed.schemes) for (const part of s.parts) for (const step of part.steps.filter(isPaintStep)) for (const m of step.paints) {
+        if (isAskedMention(m) || !m.paint) continue;
+        const k = `${sameKey(tidyBrand(m.paint.brand))}|${sameKey(m.paint.name)}`;
+        if (!seen.has(k)) { seen.add(k); out.push(m.paint); }
+      }
+      return out;
+    }
+    // A paint's brand for the small text: its brand, or "Your palette" for one of your own paints with no brand.
+    const importBrandText = (p) => tidyBrand(p.brand) || (isInPalette(p) ? "Your palette" : "");
+    // A swatch, the name and the brand in smaller text (one matched paint, or one option on a card).
+    function importPaintLabel(p) {
+      const name = document.createElement("span");
+      name.className = "import-option-name";
+      name.textContent = p.name;
+      const brand = importBrandText(p);
+      if (brand) { const b = document.createElement("small"); b.className = "import-option-brand"; b.textContent = brand; name.append(" ", b); }
+      return [makeSwatch(p.colour || DEFAULT_PAINT_COLOUR), name];
+    }
+
+    function buildImportCheck(d) {
+      const matched = importMatchedPaints(d);
+      if (!matched.length && !d.groups.length) return document.createDocumentFragment();   // no paints in the paste at all
+      const card = document.createElement("div");
+      card.className = "card import-check";
+      const title = document.createElement("h2");
+      title.textContent = "Check paints";
+      const sum = document.createElement("p");
+      sum.className = "import-check-sum";
+      const n = d.groups.length;
+      sum.textContent = n ? `${plural(matched.length, "paint")} matched. ${n} ${n === 1 ? "needs" : "need"} a look.` : "All paints matched.";
+      card.append(title, sum);
+      if (matched.length) {
+        const toggle = document.createElement("button");
+        toggle.type = "button";
+        toggle.className = "plain-button import-matched-toggle";
+        toggle.id = "import-matched-toggle";
+        toggle.textContent = `${d.showMatched ? "Hide" : "Show"} the ${matched.length} matched`;
+        toggle.setAttribute("aria-expanded", String(!!d.showMatched));
+        toggle.setAttribute("aria-controls", "import-matched");
+        const list = document.createElement("ul");
+        list.id = "import-matched";
+        list.className = "import-matched";
+        list.hidden = !d.showMatched;
+        for (const p of matched) { const li = document.createElement("li"); li.append(...importPaintLabel(p)); list.appendChild(li); }
+        toggle.addEventListener("click", () => {
+          d.showMatched = !d.showMatched;
+          list.hidden = !d.showMatched;
+          toggle.textContent = `${d.showMatched ? "Hide" : "Show"} the ${matched.length} matched`;
+          toggle.setAttribute("aria-expanded", String(d.showMatched));
+        });
+        card.append(toggle, list);
+      }
+      d.groups.forEach((g, gi) => card.appendChild(buildImportAsk(d, g, gi)));
+      return card;
+    }
+
+    // One card: "You wrote" and the typed text, then the options as radio buttons (the best match, the second best, Keep as typed).
+    // With no match at all: Keep as typed and Pick a paint (the paint list in a pop-up); a paint picked there becomes an option.
+    function buildImportAsk(d, g, gi) {
+      const box = document.createElement("fieldset");
+      box.className = "import-ask";
+      box.dataset.typed = g.typed;
+      const legend = document.createElement("legend");
+      legend.className = "import-wrote";
+      const typed = document.createElement("b");
+      typed.className = "import-typed";
+      typed.textContent = g.typed;
+      legend.append("You wrote ", typed);
+      box.appendChild(legend);
+      if (g.recipes > 1) {
+        const where = document.createElement("small");
+        where.className = "import-where";
+        where.textContent = `in ${g.recipes} recipes`;
+        box.appendChild(where);
+      }
+      const options = g.suggestions.slice(0, 2).map((p, i) => ({ opt: `s${i}`, kind: "pick", paint: p }));
+      if (!g.suggestions.length && g.picked) options.push({ opt: "picked", kind: "other", paint: g.picked });
+      options.push({ opt: "keep", kind: "keep", paint: importKeepPaint(g) });
+      const list = document.createElement("div");
+      list.className = "import-options";
+      for (const o of options) {
+        const label = document.createElement("label");
+        label.className = "import-option";
+        const radio = document.createElement("input");
+        radio.type = "radio";
+        radio.name = `import-ask-${gi}`;
+        radio.id = `import-ask-${gi}-${o.opt}`;
+        radio.value = o.opt;
+        radio.checked = g.choice.opt === o.opt;
+        // A tap on the option a card started on counts as choosing it (no change event fires for an option already picked).
+        radio.addEventListener("click", () => { if (g.choice.opt === o.opt && g.choice.auto) g.choice = { ...g.choice, auto: false }; });
+        radio.addEventListener("change", () => {
+          if (!radio.checked) return;
+          g.choice = { kind: o.kind, opt: o.opt, paint: o.paint };   // you chose it (so a match you picked is remembered for next time)
+          renderImport();
+          const again = document.getElementById(radio.id);
+          if (again) again.focus({ preventScroll: true });
+        });
+        label.appendChild(radio);
+        if (o.opt === "keep") {
+          const name = document.createElement("span");
+          name.className = "import-option-name";
+          name.textContent = "Keep as typed";
+          label.appendChild(name);
+        } else label.append(...importPaintLabel(o.paint));
+        list.appendChild(label);
+      }
+      box.appendChild(list);
+      if (!g.suggestions.length) {
+        const pick = document.createElement("button");
+        pick.type = "button";
+        pick.className = "plain-button import-pick";
+        pick.id = `import-pick-${gi}`;
+        pick.textContent = "Pick a paint";
+        labelWithName(pick, "Pick a paint", typed);
+        pick.addEventListener("click", () => openImportPaintPicker(g, pick.id));
+        box.appendChild(pick);
+      }
+      return box;
+    }
+
+    // The paint list the app already has (the same one as Swap for a real paint), in the pop-up. A tap on a paint uses it at once.
+    function openImportPaintPicker(g, returnId) {
+      const choices = realPaintChoices();
+      const door = { state: {}, id: (name) => `import-paint-${name}` };
+      let chosen = null;
+      const wrap = document.createElement("div");
+      wrap.className = "import-paint-picker";
+      wrap.appendChild(buildSearchPicker(door, {
+        id: "pick", label: "Paint", one: "paint", placeholder: "Type or choose a paint", emptyPlaceholder: "No paints to choose from",
+        groups: choices.groups, value: "",
+        onPick: (value) => { chosen = choices.byKey.get(value) || null; if (chosen) acceptDialog(); },
+      }));
+      showDialog({
+        mode: "pick", message: `Pick a paint for “${g.typed}”`, content: wrap, yes: "Cancel",
+        onDone: () => {
+          if (!chosen || importDraft === null) return;
+          const paint = { brand: chosen.brand || "", name: chosen.name, colour: chosen.colour || DEFAULT_PAINT_COLOUR, type: chosen.type };
+          g.picked = paint;
+          g.choice = { kind: "other", opt: "picked", paint };
+          renderImport();
+          const back = document.getElementById(returnId);
+          if (back) back.focus({ preventScroll: true });
+        },
+      });
+      dialogYes.className = "plain-button";   // its one button is Cancel (a tap on a paint uses it), so it is not the bold one
+    }
+
+    function buildImportBar(d) {
+      const bar = document.createElement("div");
+      bar.className = "import-bar";
+      bar.id = "import-bar";
+      bar.setAttribute("role", "region");
+      bar.setAttribute("aria-label", "Save");
+      if (importNewPaints(d).length) {
+        const tick = document.createElement("button");
+        tick.type = "button";
+        tick.className = "pick-all import-owned";
+        tick.id = "import-owned";
+        tick.setAttribute("role", "checkbox");
+        tick.setAttribute("aria-checked", String(d.markOwned !== false));
+        const mark = document.createElement("span");
+        mark.className = "pick-box";
+        mark.setAttribute("aria-hidden", "true");
+        tick.append(mark, "Mark these paints as Owned");
+        tick.addEventListener("click", () => {
+          d.markOwned = d.markOwned === false;
+          tick.setAttribute("aria-checked", String(d.markOwned));
+        });
+        bar.appendChild(tick);
+      } else bar.classList.add("no-tick");
       const save = document.createElement("button");
       save.className = "primary-button";
       save.id = "import-save";
-      save.style.width = "100%";
-      save.disabled = left > 0;
-      save.textContent = left ? `Pick ${plural(left, "more paint")} first` : `Save ${plural(importCount(d), "recipe")}`;
+      const count = importCount(d);
+      save.textContent = count === 1 ? "Save recipe" : `Save ${plural(count, "recipe")}`;
       save.addEventListener("click", saveImport);
-      importPage.appendChild(save);
+      bar.appendChild(save);
+      return bar;
     }
 
     // ================= v18d-1: LEAVE A STEP OUT OF THE PASTE PREVIEW =================
@@ -15740,10 +16007,10 @@
     // Rebuilds the "Check N paints" list after steps are left out or put back, so a paint that
     // was only in a removed step stops holding up Save. Answers you'd already given are kept.
     function regroupImport(d, ...older) {
-      d.groups = unsureMentions(d.parsed);
+      d.groups = importGroups(d.parsed);   // RS4b
       for (const g of d.groups) for (const list of older) {
         const had = list.find(x => x.key === g.key && x.choice);
-        if (had) { g.choice = had.choice; break; }
+        if (had) { g.choice = had.choice; g.picked = had.picked || null; break; }
       }
     }
     // Takes out schemes left with no parts (and their names).
@@ -16185,7 +16452,8 @@
       // notes, so nothing is lost and you can try again. Before, the notes were thrown away
       // and it still said "Saved".
       const kept = changeAndSave(() => {
-        for (const g of d.groups) if (g.choice.kind === "pick" || g.choice.kind === "other") rememberShorthand(g.typed, g.choice.paint);
+        // RS4b: only a paint you chose yourself is remembered for next time (not the best match a card started on).
+        for (const g of d.groups) if ((g.choice.kind === "pick" && !g.choice.auto) || g.choice.kind === "other") rememberShorthand(g.typed, g.choice.paint);
         d.parsed.schemes.forEach((s, si) => {
           const schemeName = (d.names[si] || "").trim() || "Imported recipes";
           const ids = [];
@@ -16193,10 +16461,10 @@
             const steps = part.steps.map(step => {
               const paints = step.paints.map(importPaintFor).filter(Boolean).map(p => {
                 // v17.1: a paint new to your palette comes in as Owned (you're bringing your own list).
-                // v18c: unless you answered None, or untapped it, under "Do you own these?".
+                // RS4b: unless "Mark these paints as Owned" is unticked: then its status is left as it is (nothing about owning changes).
                 const known = isInPalette(p);
                 const paint = findOrAddPaint(p.brand || "", p.name, p.colour || DEFAULT_PAINT_COLOUR);
-                if (!known && paintStatus(paint) === "") applyPaintStatus(paint, ownsNewPaint(d.own, p) ? "owned" : "notowned");
+                if (!known && d.markOwned !== false && paintStatus(paint) === "") applyPaintStatus(paint, "owned");
                 if (!known) importNewIds.push(paint.id);
                 if (p.type === "material") paint.type = "material";
                 return paint;
@@ -18492,19 +18760,147 @@
         /^(\d{1,4})\s*[x×]\s+(.+)$/i,                                                        // 10x Boyz
         /^(.+?)\s*[x×]\s*(\d{1,4})$/i,                                                       // Boyz x10
         /^(.+?)\s*[([]\s*(\d{1,4})\s*(?:[x×]|models?|minis?|miniatures?)?\s*[)\]]$/i,         // Boyz (10), Boyz [10x], Boyz (10 models)
-        /^(.+?)[\s,:–-]+(\d{1,4})\s*(?:models?|minis?|miniatures?)$/i,                        // Boyz - 10 models
+        /^(.+?)[\s,:–—-]+(\d{1,4})\s*(?:models?|minis?|miniatures?)$/i,                        // Boyz - 10 models
         /^(\d{1,4})\s+([A-Za-z].*)$/,                                                         // 10 Boyz
       ];
       for (const [i, pattern] of patterns.entries()) {
         const found = name.match(pattern);
         if (!found) continue;
         const numberFirst = i === 0 || i === 4;
-        const rest = (numberFirst ? found[2] : found[1]).trim().replace(/[\s,:–-]+$/, "");
+        const rest = (numberFirst ? found[2] : found[1]).trim().replace(/[\s,:–—-]+$/, "");
         const n = Number(numberFirst ? found[1] : found[2]);
         // "Squad 0" or a name that is only a number isn't a count.
         if (n >= 1 && /[A-Za-z]/.test(rest)) return { name: rest, count: Math.min(n, MAX_MODELS) };
       }
       return { name, count: null };
+    }
+
+    // UX1: the reading below is split into small steps that each look at one line, with
+    // no pattern that can loop back on itself, so even a very long paste reads at once.
+    // A line longer than LIST_LINE_MAX is never read (it is listed under "Not read").
+    const LIST_LINE_MAX = 300;
+    const LIST_TEXT_MAX = 50000;   // the paste box holds at most this many characters
+    // Section headings in lists copied from other list builders. Only skipped in a list
+    // that has points in it, so a typed "HQ" line still comes in as a unit.
+    const LIST_HEADINGS = new Set(["character", "characters", "battleline", "other", "other datasheets",
+      "dedicated transport", "dedicated transports", "hq", "troops", "elites", "fast attack", "heavy support",
+      "flyer", "flyers", "lord of war", "lords of war", "fortification", "fortifications", "epic hero",
+      "epic heroes", "allied units", "transport", "transports", "infantry", "vehicle", "vehicles",
+      "monster", "monsters", "beast", "beasts", "mounted", "swarm", "configuration", "no force org slot"]);
+    // Game sizes. "Strike Force (2000 points)" names the size, not a unit.
+    const LIST_SIZES = new Set(["combat patrol", "incursion", "strike force", "onslaught", "boarding action"]);
+
+    // UX1: the points at the end of a line, in the ways list builders write them:
+    //   "Captain (80 points)", "Intercessors [180pts]", "Assault Intercessors - 75 points",
+    //   "Infiltrators (5) ........ 100", "Lieutenant x1 (75 pts)", "Blood Claws x10 — 135 pts"
+    // Gives back the line without them, and whether there were any.
+    const TRIM_END = /[\s.,:–—-]+$/;
+    function stripPoints(text) {
+      let t = text.trim();
+      const close = t.slice(-1);
+      if (close === ")" || close === "]") {
+        const open = t.lastIndexOf(close === ")" ? "(" : "[");
+        if (open !== -1 && /^\s*[\d,]+\s*(?:points?|pts?)\s*$/i.test(t.slice(open + 1, -1))) {
+          return { name: t.slice(0, open).trim().replace(TRIM_END, ""), points: true };
+        }
+      }
+      // "- 75 points", "75pts" or "....... 100" at the end
+      const words = t.match(/[\d,]+\s*(?:points?|pts?)$/i);
+      if (words && words.index > 0) return { name: t.slice(0, words.index).trim().replace(TRIM_END, ""), points: true };
+      const leaders = t.match(/\.{3,}\s*[\d,]+$/);
+      if (leaders) return { name: t.slice(0, leaders.index).trim(), points: true };
+      return { name: t, points: false };
+    }
+
+    // UX1: one unit line of a list: bullets, a "Char1:" label, points and ": wargear" after the
+    // name taken off, then the model count read from the name. "Captain [95pts]: Master-crafted
+    // bolt rifle" and "Char1: 1x Logan Grimnar (110 pts): Warlord" read as 1 model; "Boyz: 10 models"
+    // still reads as 10 Boyz. Points are never kept, wherever they were on the line.
+    function readListLine(line) {
+      const bare = line.trim().replace(/^[•*·–—-]\s*/, "").trim().replace(/^char\d{1,3}\s*:\s*/i, "");
+      const first = stripPoints(bare);
+      let unit = first.name;
+      const colon = unit.indexOf(":");
+      if (colon > 0 && !/^\d{1,4}\s*(?:models?|minis?|miniatures?)?$/i.test(unit.slice(colon + 1).trim())) {
+        unit = unit.slice(0, colon).trim();
+      }
+      const second = stripPoints(unit);
+      const name = second.name.replace(/[([]\s*[\d,]+\s*(?:points?|pts?)\s*[)\]]/gi, " ").replace(/\s{2,}/g, " ").trim();
+      return { ...countInName(name), points: first.points || second.points };
+    }
+
+    // UX1: header lines of other list builders: "Battle Size: Strike Force", "Detachment: ...",
+    // "+ WARLORD: Char1: ...". They are never units.
+    const LIST_HEADER_KEYS = new Set(["battle size", "detachment", "detachment rule", "detachment rules", "show/hide options",
+      "faction", "faction keyword", "faction keywords", "total", "total army points", "warlord", "enhancement",
+      "enhancements", "number of units", "secondary", "secondaries", "army roster", "points", "game type", "configuration",
+      "army", "list", "chapter", "subfaction", "sub-faction", "army faction", "player", "name", "rules", "mission"]);
+    function listHeader(line) {
+      const key = line.trim().replace(/^\+\s*/, "").match(/^([A-Za-z][A-Za-z /'&-]{0,30}?)\s*:/);
+      return !!key && LIST_HEADER_KEYS.has(key[1].toLowerCase());
+    }
+
+    // UX1: is this line a heading, the list's size, a total or a footer, rather than a unit?
+    function listFrame(line, rosterStyle) {
+      const t = line.trim();
+      const bare = stripPoints(t).name.toLowerCase().replace(/:$/, "").trim();
+      if (/^(?:exported|created) with/i.test(t) || /^total\b/i.test(t) || /detachment points?\)?$/i.test(t)) return true;
+      if (/^[+=#]/.test(t)) return true;                               // "++ Army Roster ... ++", "## Character", "+ Configuration +"
+      if (/^[A-Z][A-Z\s&'-]+$/.test(t) && t.length > 3) return true;   // "CHARACTERS" is a heading
+      if (LIST_SIZES.has(bare) || listHeader(t)) return true;
+      return rosterStyle && LIST_HEADINGS.has(bare);
+    }
+
+    // UX1: the faction named in a list builder's top line,
+    //   "++ Army Roster (Imperium - Space Marines) [2,000pts] ++"  ->  "Space Marines"
+    // or on a line such as "Faction: Orks" or "+ FACTION KEYWORD: Imperium - Space Wolves".
+    // Gives back the faction and the line it came from ("" and -1 if there isn't one).
+    function rosterFaction(lines) {
+      for (let i = 0; i < lines.length; i++) {
+        const raw = lines[i];
+        if (raw.length > LIST_LINE_MAX) continue;
+        const t = raw.trim();
+        let found = "";
+        if (/^\+\+.*\+\+$/.test(t)) {
+          const open = t.indexOf("("), close = t.indexOf(")", open);
+          if (open !== -1 && close > open) found = t.slice(open + 1, close);
+        } else {
+          const label = t.match(/^(?:\+\s*)?faction(?: keywords?)?\s*:\s*(.+)$/i);
+          if (label) found = label[1];
+        }
+        const parts = found.split(/\s+[-–—]\s+/).map(x => x.trim()).filter(Boolean);
+        if (parts.length) return { faction: parts[parts.length - 1], line: i };
+      }
+      return { faction: "", line: -1 };
+    }
+
+    // UX1: the words of a model name, so "Intercessor Sergeant" and "Intercessors" can be
+    // compared. Plurals ending in s or z don't matter ("Boyz" and "Boy", "Boss" and "Bos").
+    const modelWord = (w) => w.length > 3 ? w.replace(/[sz]$/, "") : w;
+    // Squad leaders' titles across the factions (each through the same plural trim).
+    const LEADER_WORDS = new Set(["sergeant", "sarge", "leader", "champion", "boss", "nob", "exarch", "superior",
+      "alpha", "sybarite", "hekatrix", "klaivex", "aspiring", "shas'ui", "shasui", "shas'vre", "shasvre", "veteran", "brother",
+      "runtherd", "justicar", "theyn", "hesyr", "princeps", "prime", "huntmaster", "gunner", "icon", "bearer"].map(modelWord));
+    function modelWords(name) {
+      return plainQuotes(name).toLowerCase().split(/[^a-z0-9']+/)
+        .map(modelWord)
+        .filter(w => w && !FILLER_WORDS.has(w));
+    }
+    // UX1: bullet lines with no lines under them, under one unit. The Warhammer app puts
+    // deeper bullets under a model, but a copied or tidied list often loses them, so
+    // "Intercessor Squad / • 1x Sergeant / • 9x Intercessor" counted as 1 model. A flat line
+    // is a model when every word of it is in the unit's name or is a leader's title, so
+    // "1x Master-crafted boltgun" under "Captain" is still wargear.
+    function flatModels(unitName, flat) {
+      const own = new Set(modelWords(unitName));
+      let total = 0, named = false;
+      for (const f of flat) {
+        const words = modelWords(f.name);
+        if (!words.length || !words.every(w => own.has(w) || LEADER_WORDS.has(w))) continue;
+        if (words.some(w => own.has(w))) named = true;
+        total += f.count;
+      }
+      return named ? total : 0;
     }
 
     // v60: a list with no "(N points)" lines, typed or copied from elsewhere, such as
@@ -18515,64 +18911,147 @@
     // Each line not indented under another becomes a unit (bullets and dashes in front are fine).
     // Only used when at least one line has a count, so a random paste isn't turned into units.
     // A first line with no count, followed by lines that have one, is taken as the list's name.
+    // UX1: also reads lists from other list builders (New Recruit, BattleScribe and the like:
+    // "10x Intercessors [180pts]", "Char1: 1x Logan Grimnar (110 pts): ...", "Infiltrators (5) ... 100",
+    // "++ Army Roster (Imperium - Space Marines) ++"). Lines under a unit (indented, "•" in a list with
+    // points, or BattleScribe's ". " lines) are its models or wargear. Every other line that isn't a
+    // unit (headings, settings, totals, anything it can't make out) is listed under "Not read".
     function parsePlainList(lines) {
-      const cleaned = lines
-        .filter(l => l.trim() !== "" && !/^\s{2,}|^\t/.test(l))      // indented lines are wargear
-        .map(l => l.trim().replace(/^[•*·–-]\s*/, "").trim())
-        .filter(l => l && !/^exported with/i.test(l) && !/\((\d+)\s*(?:points?|pts)\)\s*$/i.test(l)
-          && !(/^[A-Z\s]+$/.test(l) && l.length > 3));                // "CHARACTERS" is a heading, not a unit
-      const read = cleaned.map(countInName);
-      if (!read.some(r => r.count)) return null;
+      const notRead = [];
+      const usable = (i) => lines[i].trim() !== "" && lines[i].length <= LIST_LINE_MAX;
+      const rosterStyle = lines.some(l => l.length <= LIST_LINE_MAX && stripPoints(l).points);
+      const isSub = (l) => /^(?: {2,}|\t)/.test(l) || /^\s*\.+\s/.test(l) || (rosterStyle && /^\s*•/.test(l));
+      const { faction, line: factionAt } = rosterFaction(lines);
+      const header = lines.findIndex(l => l.length <= LIST_LINE_MAX && /^\+\+.*\+\+$/.test(l.trim()));
+      const quiet = (i) => i === factionAt || i === header || /^[+=\-\s]+$/.test(lines[i].trim())
+        || /^(?:exported|created) with/i.test(lines[i].trim()) || (/^\+\+.*\+\+$/.test(lines[i].trim()) && /total/i.test(lines[i]));
+      // A unit's name should start with a letter or a count, and not still hold a colon or points.
+      const looksWrong = (r) => !/[A-Za-z]/.test(r.name) || !/^[A-Za-z0-9'"(]/.test(r.name) || /:|\b\d+\s*(?:pts?|points?)\b/i.test(r.name);
+      const read = [];
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].trim() === "") continue;
+        if (!usable(i)) { notRead.push(i + 1); continue; }
+        if (isSub(lines[i])) {
+          if (!read.length) notRead.push(i + 1);   // a model or wargear line with no unit above it
+          continue;
+        }
+        if (quiet(i)) continue;
+        if (listFrame(lines[i], rosterStyle)) { notRead.push(i + 1); continue; }
+        const r = readListLine(lines[i]);
+        if (looksWrong(r)) { notRead.push(i + 1); continue; }
+        // Its model lines: "• 9x Intercessor", ". Blood Claw Pack Leader: Bolt pistol" (no count is 1).
+        // Deeper lines ("..", or indented under them) are wargear.
+        const flat = [];
+        let top = null;
+        for (let j = i + 1; j < lines.length && (lines[j].trim() === "" || (usable(j) && isSub(lines[j]))); j++) {
+          if (lines[j].trim() === "") { if (lines[j + 1] !== undefined && lines[j + 1].trim() !== "" && !isSub(lines[j + 1])) break; continue; }
+          const sub = lines[j].match(/^(\s*)([•.*·–—-]*)\s*(.*)$/);
+          const depth = sub[1].replace(/\t/g, "  ").length + (sub[2].startsWith(".") ? sub[2].length * 2 : 0);
+          if (top === null) top = depth;
+          if (depth > top) continue;
+          const text = sub[3].split(":")[0].trim();
+          const child = text.match(/^(\d{1,4})\s*[x×]\s+(.+)$/i);
+          if (child) flat.push({ count: Number(child[1]), name: child[2] });
+          else if (sub[2].startsWith(".") && /[A-Za-z]/.test(text)) flat.push({ count: 1, name: text });
+        }
+        read.push({ ...r, models: flatModels(r.name, flat), line: i + 1 });
+      }
+      if (!read.some(r => r.count || r.points || r.models)) {
+        // UX1: it looked like a list from a list builder, but no unit in it could be read: say which lines.
+        return rosterStyle || header !== -1 ? { listName: "Pasted list", faction, units: [], notRead: notRead.sort((x, y) => x - y) } : null;
+      }
       let listName = "Pasted list";
-      if (read.length > 1 && !read[0].count) listName = read.shift().name;
-      return { listName, faction: "", units: read.map(r => ({ name: r.name, count: r.count || 1 })) };
+      if (header !== -1) listName = lines[header].trim().replace(/^\+\+\s*|\s*\+\+$/g, "").replace(/\s*[([].*$/, "").replace(/^\++$/, "") || listName;
+      else if (read.length > 1 && !read[0].count && !read[0].models) listName = read.shift().name;
+      return {
+        listName, faction,
+        units: read.map(r => ({ name: r.name, count: Math.min(r.count || r.models || 1, MAX_MODELS) })),
+        notRead: notRead.sort((x, y) => x - y),
+      };
+    }
+
+    // UX1: "(N points)" at the end of a line, read without a regular expression that can
+    // loop (the old one froze the page on a long line). The name before it, or null.
+    function appUnitName(line) {
+      const t = line.trim();
+      if (t.slice(-1) !== ")") return null;
+      const open = t.lastIndexOf("(");
+      if (open < 1 || !/^\s*\d+\s*(?:points?|pts)\s*$/i.test(t.slice(open + 1, -1))) return null;
+      return t.slice(0, open).trim() || null;
     }
 
     function parseWarhammerList(text) {
-      const lines = plainQuotes(text).replace(/\r/g, "").split("\n");
-      const unitPattern = /^\s*(.+?)\s*\((\d+)\s*(?:points?|pts)\)\s*$/i;
+      const lines = plainQuotes(String(text || "").slice(0, LIST_TEXT_MAX)).replace(/\r/g, "").split("\n");
       const bulletPattern = /^(\s*)•\s*(.*)$/;
       const nonEmpty = lines.map((l, i) => i).filter(i => lines[i].trim() !== "");
       if (!nonEmpty.length) return null;
+      const short = (i) => lines[i].length <= LIST_LINE_MAX;
+      const unitName = (i) => short(i) ? appUnitName(lines[i]) : null;
+      const isBullet = (i) => short(i) && bulletPattern.test(lines[i]);
+      // UX1: a Warhammer app list has "Name (N points)" lines with "•" bullets under them.
+      // Anything else (typed lists, other list builders) is read line by line instead.
+      // It starts with the list's own "Name (N points)" line (other list builders' "++ Army Roster" or "+ FACTION" lines don't).
+      const appStyle = !!unitName(nonEmpty[0]) && nonEmpty.some((i, n) => unitName(i) && n + 1 < nonEmpty.length && isBullet(nonEmpty[n + 1]));
+      if (!appStyle) return parsePlainList(lines);
 
       // The first line is the list's name; the next non-empty line is the faction.
       const first = nonEmpty[0];
-      const listName = (lines[first].match(unitPattern) || [])[1] || lines[first].trim();
-      const factionLine = nonEmpty[1] !== undefined ? lines[nonEmpty[1]].trim() : "";
-      const faction = unitPattern.test(factionLine) ? "" : factionLine;
+      const listName = unitName(first) || lines[first].trim().slice(0, LIST_LINE_MAX);
+      const factionLine = nonEmpty[1] !== undefined && short(nonEmpty[1]) ? lines[nonEmpty[1]].trim() : "";
+      const faction = factionLine && !appUnitName(factionLine) ? factionLine : "";
       const startAt = faction ? 2 : 1;   // no faction line? then line 2 may already be a unit
 
       const units = [];
+      const notRead = [];
       let current = null;
       for (let n = startAt; n < nonEmpty.length; n++) {
-        const line = lines[nonEmpty[n]];
+        const i = nonEmpty[n];
+        const line = lines[i];
+        if (!short(i)) { notRead.push(i + 1); continue; }
         if (/^exported with/i.test(line.trim())) break;
-        const unitMatch = line.match(unitPattern);
+        const name = unitName(i);
         // A real unit always has bullet lines under it. This skips lines like
         // "Strike Force (2000 points)", which also end in points.
-        const followedByBullet = n + 1 < nonEmpty.length && bulletPattern.test(lines[nonEmpty[n + 1]]);
+        const followedByBullet = n + 1 < nonEmpty.length && isBullet(nonEmpty[n + 1]);
         // v60: "10x Boyz (170 points)" or "Boyz x10 (170 points)" says the count itself,
         // so it is a unit even with no bullet lines under it.
-        const stated = unitMatch ? countInName(unitMatch[1]) : null;
-        if (unitMatch && !bulletPattern.test(line) && (followedByBullet || stated.count)) {
+        const stated = name ? countInName(name) : null;
+        if (name && !bulletPattern.test(line) && (followedByBullet || stated.count)) {
           // Only the NAME is kept. The points are deliberately thrown away (v14): the app
           // never stores points, as they're Games Workshop's data.
-          current = { name: stated.name, models: 0, stated: stated.count };
+          current = { name: stated.name, models: 0, stated: stated.count, flat: [] };
           units.push(current);
           continue;
         }
         const bullet = line.match(bulletPattern);
-        if (!current || !bullet) continue;
-        const countMatch = bullet[2].match(/^(\d+)x\s+/);
+        if (!bullet) {
+          // UX1: a line that is not a bullet, heading or wargear (indented) used to be
+          // dropped without a word. Read it as a unit if it says a count or points.
+          if (/^\s/.test(line) || listFrame(line, true) || !current) continue;
+          const r = readListLine(line);
+          if ((r.count || r.points) && /[A-Za-z]/.test(r.name)) {
+            current = { name: r.name, models: 0, stated: r.count, flat: [] };
+            units.push(current);
+          } else notRead.push(i + 1);
+          continue;
+        }
+        if (!current) continue;
+        const countMatch = bullet[2].match(/^(\d+)x\s+(.*)$/);
         if (!countMatch) continue;
         // Look at the next line: is it a bullet indented further than this one?
-        const nextLine = n + 1 < nonEmpty.length ? lines[nonEmpty[n + 1]] : "";
-        const nextBullet = nextLine.match(bulletPattern);
+        const nextBullet = n + 1 < nonEmpty.length && short(nonEmpty[n + 1]) ? lines[nonEmpty[n + 1]].match(bulletPattern) : null;
         if (nextBullet && nextBullet[1].length > bullet[1].length) current.models += Number(countMatch[1]);
+        else if (!current.models) current.flat.push({ count: Number(countMatch[1]), name: countMatch[2], indent: bullet[1].length });
       }
       // v60: a count on the unit's own line wins over the model lines, as the person wrote it.
-      for (const u of units) { u.count = Math.min(u.stated || u.models || 1, MAX_MODELS); delete u.stated; }
-      if (units.length) return { listName, faction, units };
+      // UX1: with no deeper bullets at all, flat model lines are counted (see flatModels).
+      for (const u of units) {
+        const top = u.flat.length ? Math.min(...u.flat.map(f => f.indent)) : 0;
+        const flat = u.models ? 0 : flatModels(u.name, u.flat.filter(f => f.indent === top));
+        u.count = Math.min(u.stated || u.models || flat || 1, MAX_MODELS);
+        delete u.stated; delete u.flat;
+      }
+      if (units.length) return { listName, faction, units, notRead: notRead.sort((x, y) => x - y) };
       return parsePlainList(lines);
     }
 
@@ -18613,6 +19092,7 @@
     const reviewBox = document.getElementById("review");
     const reviewTitle = document.getElementById("review-title");
     const reviewSummary = document.getElementById("review-summary");
+    const reviewNotRead = document.getElementById("review-not-read");
     const reviewModeBox = document.getElementById("review-mode");
     const modeButtons = reviewBox.querySelectorAll(".mode-button");
     const reviewWhFields = document.getElementById("review-wh-fields");
@@ -18748,6 +19228,12 @@
         summary += ` Your current ${plural(models.length, "unit")} will be removed first. You can Undo straight after.`;
       }
       reviewSummary.textContent = summary;
+      // UX1: lines of a pasted list that couldn't be read are named, never dropped silently.
+      const notRead = incoming.notRead || [];
+      reviewNotRead.classList.toggle("hidden", !notRead.length);
+      reviewNotRead.textContent = !notRead.length ? "" : `Not read: ${notRead.length === 1 ? "line" : "lines"} ` +
+        notRead.slice(0, 10).join(", ") + (notRead.length > 10 ? ` and ${notRead.length - 10} more` : "") +
+        (incoming.cut ? `. Lists are cut at ${LIST_TEXT_MAX.toLocaleString("en-GB")} characters.` : ".");
       renderSetAll();
 
       const have = matched.filter(m => m.match && m.kind !== "close").length;
@@ -19002,8 +19488,19 @@
       if (opening) { closeReview(); whText.focus(); }
     });
 
+    // UX1: the paste box holds LIST_TEXT_MAX characters (a long paste froze the page).
+    whText.addEventListener("input", () => {
+      if (whText.value.length >= LIST_TEXT_MAX) notify(`The list box holds up to ${LIST_TEXT_MAX.toLocaleString("en-GB")} characters, so the rest was left out.`);
+    });
+
     document.getElementById("wh-read").addEventListener("click", () => {
       const list = parseWarhammerList(whText.value);
+      if (list && !list.units.length) {   // UX1: a list builder's list with nothing in it that reads as a unit
+        const nr = list.notRead;
+        notify("No units could be read from that list, so nothing was added." + (!nr.length ? "" : ` Not read: ${nr.length === 1 ? "line" : "lines"} ` +
+          nr.slice(0, 10).join(", ") + (nr.length > 10 ? ` and ${nr.length - 10} more.` : ".")));
+        return;
+      }
       if (!list) {
         notify("That doesn't look like a list exported from the Warhammer app. Each unit should be a name followed by its points, e.g. \"Lictor (60 points)\", or a count, e.g. \"10x Boyz\".");
         return;
@@ -19017,6 +19514,8 @@
         source: "wh",
         title: `"${list.listName}"`,
         rows: list.units.map(u => ({ name: u.name, count: u.count })),
+        notRead: list.notRead || [],
+        cut: whText.value.length >= LIST_TEXT_MAX,
       });
     });
 
@@ -19176,12 +19675,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL ELEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, app), e.g. "app.js?v=124".
+    // "?v=" number on ALL ELEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, app), e.g. "app.js?v=125".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v124";
+    const APP_VERSION = "v125";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -19531,12 +20030,21 @@
     }
     // Starting a new draft while an old one waits would quietly replace it, so the app asks first.
     // Returns true if the new thing must wait.
-    function draftWaiting(kind) {
+    // UX1: for a recipe, "Not now" starts the new one (startAnyway) and the old one stays kept for later, untouched.
+    // The kept-recipe card is hidden while the question is up, so it isn't asked twice; Escape puts it back.
+    function draftWaiting(kind, startAnyway) {
       if (!draftOffers[kind]) return false;
+      if (kind === "recipe") fillDraftCard("recipe", false);
       askYesNo(`You have an unfinished ${DRAFT_NAMES[kind]} kept from earlier. Keep going with it first?`,
-        () => keepDraft(kind), { yes: "Keep going", no: "Not now" });
+        () => keepDraft(kind), {
+          yes: "Keep going", no: "Not now",
+          onNo: () => { if (kind === "recipe") renderRecipes(); },
+          onNoButton: startAnyway ? () => { draftNotNow[kind] = true; try { startAnyway(); } finally { draftNotNow[kind] = false; } }
+            : () => { if (kind === "recipe") renderRecipes(); },
+        });
       return true;
     }
+    const draftNotNow = { unit: false, recipe: false, paste: false };   // UX1: true while "Not now" starts the new one
     loadKeptDrafts();
 
     // ================= v27: COUNTING VISITS (anonymous, no cookies) =================
@@ -19634,6 +20142,12 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v125", date: "3 Nov 2026", changes: [
+        "Mentor copes with typing slips, offers Did you mean when it is not sure, says when it does not know, and answers simple questions about the app.",
+        "Paste recipes: Check paints shows one card for each paint that needs a look, nothing stops you saving, and a tick box sets whether new paints are marked Owned.",
+        "Army lists pasted from list builders read their units, counts and faction properly, and lines that can't be read are listed. A paint typed in the recipe editor that the app does not know gets no status.",
+        "The first tap on a button near the bottom bar now works, Not now on a kept recipe opens the new recipe, and the start circle's labels keep their font as they move into the bar.",
+      ]},
       { version: "v124", date: "3 Nov 2026", changes: [
         "Safer saving: if your saved units or recipes can't be read, saving pauses instead of replacing them, so you can save them as a file or start again. Recover keeps units and recipes together, a restore stops if there's no room for its safety copy, Undo takes back only its own change, and the offline copy never mixes old and new versions.",
         "Safety fixes: a backup can only bring in JPEG, PNG or WebP photos, other websites can no longer show Minifolio inside their pages, very long names are cut to the usual limit, and a broken web address no longer stops the app starting.",
@@ -20227,12 +20741,21 @@
     // U4a: while a mouse or finger is held down, the bar and the message stay where they are when the cursor leaves a text box. Pressing a button takes the cursor out of
     // the text box on the way down, and the message (it rises above the taller menu bar) could jump under the pointer before it is
     // released, so the press would land on the message instead of the button. The check is made just after the press ends.
-    let pressing = false, pressGuard = 0;
+    // UX1: on a touch screen the cursor leaves the text box after the finger lifts, just before the tap's click. The bar came back
+    // in that moment, under the finger, and the click was lost (the first tap on "+ Add step" did nothing). So after a press ends,
+    // the bar waits until its click has been handled (or half a second, when no click comes, such as after a scroll).
+    let pressing = false, pressGuard = 0, releasing = false, releaseGuard = 0;
+    const endRelease = () => { releasing = false; clearTimeout(releaseGuard); updateTyping(); };
     document.addEventListener("pointerdown", () => { pressing = true; clearTimeout(pressGuard); pressGuard = setTimeout(() => { pressing = false; updateTyping(); }, 3000); }, true);
-    for (const type of ["pointerup", "pointercancel"]) document.addEventListener(type, () => { pressing = false; clearTimeout(pressGuard); setTimeout(updateTyping, 0); }, true);
+    for (const type of ["pointerup", "pointercancel"]) document.addEventListener(type, () => {
+      pressing = false; clearTimeout(pressGuard);
+      releasing = true; clearTimeout(releaseGuard); releaseGuard = setTimeout(endRelease, 500);
+      setTimeout(updateTyping, 0);
+    }, true);
+    document.addEventListener("click", () => { if (releasing) setTimeout(endRelease, 0); }, true);
     function updateTyping() {
       const typing = isTextBox(document.activeElement);
-      if (pressing && !typing) return;   // only leaving "typing" waits; starting it is at once
+      if ((pressing || releasing) && !typing) return;   // only leaving "typing" waits; starting it is at once
       document.body.classList.toggle("typing", typing);
     }
     // Focus moves in and out of boxes; "focusout" is checked a moment later, once we can see

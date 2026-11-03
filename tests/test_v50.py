@@ -268,7 +268,8 @@ def main():
         check("the examples card: opening shows the explanation", "stays yours" in ex.locator(".hint").inner_text())
         t.load(page, paints=PAINTS, recipes=RECIPES, units=UNITS)
         t.open_editor(page)
-        page.fill('[data-key="step-0-paint-0"]', "Brand New Paint"); page.keyboard.press("Tab"); page.wait_for_timeout(250)
+        # UX1: the card only asks about paints in the paint list now, so a real paint that isn't in this palette ("Brand New Paint" before)
+        page.fill('[data-key="step-0-paint-0"]', "Mephiston Red"); page.keyboard.press("Tab"); page.wait_for_timeout(250)
         own = page.locator("#recipe-own")
         check("Do you own these?: All, None and Let me pick show; the explanation is behind More info",
               own.locator(".chip").count() == 3 and own.locator(".more-info-button").count() == 1 and not own.locator(".hint").first.is_visible(), own.inner_text())

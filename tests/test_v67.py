@@ -142,25 +142,28 @@ def main():
         t.add_step(page)
         box2 = page.locator('[data-key="step-1-paint-0"]')
         box2.click()
-        box2.press_sequentially("Zqx Test Paint")
+        # UX1: the card only asks about paints in the paint list now (a made-up name is saved as Not owned without asking),
+        # so these use real paints that aren't in this palette, where they used to use made-up names.
+        box2.press_sequentially("Mephiston Re")
         page.wait_for_timeout(150)
         check("a new name not yet finished (box still in use) does not bring the card up", page.locator("#recipe-own").is_hidden())
+        box2.press_sequentially("d")
         t.blur(page)
         check("leaving the box brings it up", page.locator("#recipe-own").is_visible())
-        check("…and the card names the paint", "Zqx Test Paint" in page.inner_text("#recipe-own .own-names"), page.inner_text("#recipe-own"))
+        check("…and the card names the paint", "Mephiston Red" in page.inner_text("#recipe-own .own-names"), page.inner_text("#recipe-own"))
         t.add_step(page)
         box3 = page.locator('[data-key="step-2-paint-0"]')
         box3.click()
-        box3.press_sequentially("Qzx Other Paint")
+        box3.press_sequentially("Averland Sunset")
         page.click('#recipe-own .chip[data-own="none"]')   # this tap also leaves the box, which adds the second paint
         page.wait_for_timeout(200)
         check("a tap on None lands even though leaving the box added a paint at that moment",
               page.get_attribute('#recipe-own .chip[data-own="none"]', "aria-pressed") == "true" and page.evaluate("recipeDraft.own.mode") == "none")
         names = page.inner_text("#recipe-own .own-names")
-        check("…and the card names both new paints, not the one you already had", "Zqx Test Paint" in names and "Qzx Other Paint" in names and "Macragge" not in names, names)
+        check("…and the card names both new paints, not the one you already had", "Mephiston Red" in names and "Averland Sunset" in names and "Macragge" not in names, names)
         page.click("#recipe-page button.primary-button:has-text('Save recipe')")
         page.wait_for_timeout(300)
-        check("None saves both as Not owned", by_name(page, "Zqx Test Paint")["status"] == "notowned" and by_name(page, "Qzx Other Paint")["status"] == "notowned")
+        check("None saves both as Not owned", by_name(page, "Mephiston Red")["status"] == "notowned" and by_name(page, "Averland Sunset")["status"] == "notowned")
         check("…the paint you already had stays Owned", by_name(page, "Macragge Blue")["status"] == "owned")
         check("…and nothing goes on the shopping list by itself", list_names(page) == [], list_names(page))
 

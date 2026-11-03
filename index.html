@@ -50,7 +50,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=124"></script>
+  <script src="early.js?v=125"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -386,7 +386,10 @@
     .mo-tr::before { display: none; }
     .mo-tr .arc { pointer-events: none; }
     .mo-tr .w { position: absolute; }
-    .mo-tr .c { position: absolute; left: 0; top: 0; display: flex; flex-direction: column; align-items: center; text-align: center; white-space: nowrap; }
+    .mo-tr .c { position: absolute; left: 0; top: 0; width: 0; height: 0; text-align: center; white-space: nowrap; }
+    /* SM1: the travel copies' icon and label are placed and sized with transform only (see travelRun), so the travel never lays out text */
+    .mo-tr .c > * { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+    .mo-tr .c > .warm { visibility: hidden; }
     .mo-tr .icon { display: inline-flex; line-height: 1; }
     .mo-tr .icon svg { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
     body.mo-travelling .tabs .arc > [data-tab] { opacity: 0; pointer-events: none; }
@@ -1311,9 +1314,38 @@
     .add-step { width: 100%; min-height: 44px; border-color: var(--accent); color: var(--accent); font-weight: 600; }
     .step-note { margin: 4px 0 0; color: var(--muted); font-size: 14px; font-style: italic; }
     /* v16: Paste recipes preview and pot scan */
-    .import-ask { padding: 10px 0; border-top: 1px solid var(--border); }
-    .import-ask.answered .import-typed { color: var(--muted); }
-    .import-typed { font-weight: 600; color: var(--note); }
+    /* RS4b: Check paints (the summary line, Show the N matched, one card per paint that needs a look) and the Save bar that stays above the bottom menu */
+    .import-check-sum { margin: 0 0 8px; }
+    .import-matched-toggle { width: 100%; min-height: 44px; text-align: left; }
+    .import-matched { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+    .import-matched[hidden] { display: none; }
+    .import-matched li, .import-option { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .import-option-name { min-width: 0; overflow-wrap: anywhere; }
+    .import-option-brand { color: var(--muted); font-size: 12px; }
+    .import-ask { margin: 12px 0 0; padding: 12px; border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-box); min-width: 0; }
+    .import-wrote { padding: 0 4px; color: var(--muted); font-size: 14px; }
+    .import-typed { font-weight: 700; color: var(--text); overflow-wrap: anywhere; }
+    .import-where { display: block; margin: 0 0 4px; color: var(--muted); font-size: 12px; }
+    .import-options { display: grid; gap: 2px; }
+    .import-option { min-height: 44px; padding: 4px 6px; border-radius: var(--radius-control); cursor: pointer; font-size: 14px; }
+    .import-option input[type="radio"] { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--accent-fill, var(--accent)); }
+    .import-option:has(input:checked) { background: var(--note-wash, transparent); font-weight: 600; }
+    .import-option:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .import-pick { width: 100%; min-height: 44px; margin-top: 6px; }
+    .import-bar {
+      position: sticky; bottom: calc(var(--arc-h) + 8px); z-index: 11;   /* sticks above the menu while the page scrolls, and keeps the page's width */
+      margin: 12px 0 0; display: grid; gap: 6px; padding: 8px 10px 10px;
+      background: var(--card); border: 1px solid var(--accent); border-radius: var(--radius-card); box-shadow: 0 6px 20px var(--shadow);
+    }
+    .import-bar .import-owned { width: 100%; padding-left: 0; }
+    .import-bar .import-owned > .pick-box { margin-left: 10px; }
+    .import-bar #import-save { width: 100%; min-height: 48px; }
+    body:has(#import-page:not(.hidden) .import-bar) .toast { bottom: calc(var(--arc-h) + 136px); }
+    body:has(#import-page:not(.hidden) .import-bar.no-tick) .toast { bottom: calc(var(--arc-h) + 86px); }
+    @media (max-width: 899.98px) {
+      body.typing .import-bar { bottom: calc(12px + env(safe-area-inset-bottom)); }
+      body.typing:has(#import-page:not(.hidden) .import-bar) .toast { bottom: calc(140px + env(safe-area-inset-bottom)); }
+    }
     .import-part { font-weight: 600; color: var(--accent); margin: 14px 0 4px; }
     .import-steps { margin: 0; padding-left: 22px; font-size: 14px; line-height: 1.5; }
     .import-steps li { margin-bottom: 4px; }
@@ -2554,6 +2586,8 @@
     .mentor-source { max-width: 100%; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px; font: inherit; font-size: 14px; text-align: left; color: var(--accent); background-color: var(--card); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; }
     .mentor-source span:last-child { min-width: 0; overflow-wrap: anywhere; }
     .mentor-chips-in { padding-bottom: 2px; }
+    /* E: "Did you mean" above its one chip, in the same quiet style as the Sources label */
+    .mentor-dym { margin: 0; font-size: 13px; color: var(--muted); }
     .mentor-chatting { height: min(720px, calc(100% - var(--mp-gap))); }   /* D: taller on a phone: all the room below the status bar and above the bottom bar, up to 720 px on a big screen (was 480). The 56 px at the top is where a notice shows, so it never sits over a button. */
     .mentor-chatting .mentor-col { padding-top: 40px; }
     .mentor-chatting .mentor-scroll { flex: 1 1 auto; }
@@ -2925,7 +2959,7 @@
             <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
           </ol>
           <p id="help-tabs" style="margin: 8px 0 0;">The bar at the bottom has four sections around the round <strong>Ask Mentor</strong> button: <strong>Dashboard</strong>, <strong>Models</strong>, <strong>Painting</strong> and <strong>Tools</strong>. The one you are in is lit. <strong>Tools</strong> opens <strong>Tools and Settings</strong>: <strong>About</strong>, <strong>Guides</strong>, <strong>Settings</strong>, <strong>Help</strong> and <strong>Updates</strong>. The shopping basket sits at the top right once your list has a paint. The app opens on a <strong>start page</strong>: the same four sections in a circle around Ask Mentor. Tap the round arrow at the bottom left, or the <strong>Minifolio</strong> title, to come back to it. Switching to another app and back leaves you where you were.</p>
-          <p id="help-mentor" style="margin: 8px 0 0;"><strong>Mentor:</strong> tap <strong>Ask Mentor</strong> to open a small window over whatever you are on. Type a question or tap a chip. Mentor answers from <strong>Guides</strong> and the colour rules, with a <strong>Sources</strong> row; a source opens that guide, recipe, tip or colour. The <strong>Paint Picker</strong> chip takes you to <strong>Painting → Colour Lab</strong>. Close the window with the cross, a tap outside it, Escape or Back; Ask Mentor brings the chat back. Mentor runs on this device. What you type is not sent anywhere and is not stored, and the chat is cleared when the app reloads or after a while without use.</p>
+          <p id="help-mentor" style="margin: 8px 0 0;"><strong>Mentor:</strong> tap <strong>Ask Mentor</strong> to open a small window over whatever you are on. Type a question or tap a chip. Mentor answers from <strong>Guides</strong> and the colour rules, with a <strong>Sources</strong> row; a source opens that guide, recipe, tip or colour. It puts small typing slips right. When it is not sure, it shows <strong>Did you mean</strong> with the question as it read it; tap that to ask it. When it has no answer, it says <strong>I do not know that yet.</strong> and shows some starter questions. It also answers simple questions about the app, such as price, backups and privacy. The <strong>Paint Picker</strong> chip takes you to <strong>Painting → Colour Lab</strong>. Close the window with the cross, a tap outside it, Escape or Back; Ask Mentor brings the chat back. Mentor runs on this device. What you type is not sent anywhere and is not stored, and the chat is cleared when the app reloads or after a while without use.</p>
           <p id="help-back" style="margin: 8px 0 0;">The phone's <strong>Back</strong> button closes what's open first, one thing per press: a question box (it counts as No), a photo, the camera, a recipe, the paste box. Then it goes to the Dashboard. On the Dashboard, with nothing open, it leaves the app.</p>
         </details>
         <details>
@@ -2939,7 +2973,7 @@
             <li id="help-track-each"><strong>Track models separately:</strong> for painting a unit one model at a time. Tap a unit with more than one model to open its details, then press <strong>Track models separately</strong> under its stage. Each model gets its own row with a back button, its stage name and an up button, and when they differ, the card shows how many are at each stage. With units tracked this way, the Models tab has a <strong>Detailed</strong> / <strong>Simple</strong> switch: Detailed adds the date line and a thin progress bar to every row, Simple leaves them out. A unit of more than 8 models groups its rows by stage; tap a stage to open or close its models. <strong>Track as one batch</strong> goes back: if the models are at different stages, the app asks first, then puts them all at the stage of the furthest-behind model. Both have an <strong>Undo</strong>. It works for units of up to 100 models, and one-model units don't have the button.</li>
             <li id="help-jump-stage"><strong>Jump to a stage:</strong> press <strong>Details</strong> on a unit and pick a stage from <strong>Jump to stage</strong>, to go straight to any stage (forwards or back). The right arrow on the card moves the whole unit up one stage and the left arrow moves it back one, even on a unit tracked model by model (each model moves). If you track each model separately, the buttons on a model's row move that one model a stage, and <strong>Move all models to stage</strong> moves them all at once. Every jump has an <strong>Undo</strong>.</li>
             <li id="help-model-dates"><strong>When did it get there?</strong> If you track each model separately, each model says under its name when it reached its stage: <strong>Today</strong>, <strong>Yesterday</strong>, or <strong>Since 7 Oct</strong> (with the year added for an earlier year). Hold or long-press the date to see it in full. A model with no date shown has no record of when it moved. The Simple view leaves the dates out.</li>
-            <li id="help-unfinished-work"><strong>Unfinished work is kept:</strong> if the page reloads or the app closes while you are part-way through adding a unit (the name box has something in it), writing a recipe, or pasting notes into Paste recipes, the app keeps what you had. Next time you open the Models or Painting tab, a card says <strong>We kept your unfinished…</strong>. <strong>Keep going</strong> puts it all back. <strong>Discard</strong> asks first, then throws it away for good (there is no Undo). Nothing opens by itself, and a kept draft is never replaced by accident: if you try to start a new one first, the app asks (for a unit, + Add unit takes you to the card instead). It goes when you press Add or Save, or Cancel and say yes. It stays on this device and is not in your backups.</li>
+            <li id="help-unfinished-work"><strong>Unfinished work is kept:</strong> if the page reloads or the app closes while you are part-way through adding a unit (the name box has something in it), writing a recipe, or pasting notes into Paste recipes, the app keeps what you had. Next time you open the Models or Painting tab, a card says <strong>We kept your unfinished…</strong>. <strong>Keep going</strong> puts it all back. <strong>Discard</strong> asks first, then throws it away for good (there is no Undo). Nothing opens by itself, and a kept draft is never replaced by accident: if you try to start a new one first, the app asks (for a unit, + Add unit takes you to the card instead). For a recipe, <strong>Not now</strong> starts the new one and keeps the unfinished one for later. Only one unfinished recipe is kept, so the new one is not kept until you finish or discard the older one. It goes when you press Add or Save, or Cancel and say yes. It stays on this device and is not in your backups.</li>
             <li id="help-typing"><strong>Typing:</strong> while the cursor is in a text box, the menu bar at the bottom hides so it can't sit on your keyboard. Tap somewhere else and it comes back.</li>
             <li id="help-move-many"><strong>Move several units at once:</strong> on the Models tab press <strong>Select</strong>. Each unit gets a tick box (tapping a unit ticks it). Tick the ones you want, or press <strong>Select all shown</strong> to tick every unit your filters are showing. Then pick a stage from <strong>Move … to stage</strong> in the bar at the bottom. Units tracked model by model have all their models moved. One <strong>Undo</strong> puts every unit back as it was, diary included. <strong>Cancel</strong>, the phone's Back button or leaving the tab stops selecting without changing anything.</li>
             <li>Tap a unit's name to open its details: its <strong>stage</strong>, photos, paint recipes and paint notes, then <strong>back a stage</strong> and delete. On a wide screen they open in a pane beside the list, where you can keep several open and press <strong>Close</strong> on each.</li>
@@ -3035,7 +3069,7 @@
             <li>At the bottom of an open paint: <strong>Remove</strong> deletes a paint no recipe uses (a paint that's still in a recipe can't be removed). <strong>Merge into…</strong> joins it to another paint, handy for a typo twin like "Deep Bluee": its recipes move to the paint you pick, and that paint keeps its own name and brand. Both have Undo.</li>
             <li><strong>Scan a paint pot</strong> (in Your Palette) reads the paint's name from its label with the camera and suggests matches. The reading happens on your phone; the photo is never sent anywhere. The first scan loads the label reader (about 11 MB) from Minifolio's own site, and after that scanning works with no internet. Leaving the app, or closing the scan panel, switches the camera off.</li>
             <li id="help-scan-brands"><strong>Brands the scanner knows:</strong> Citadel, Warhammer Tone Pro (each colour in its five tones, like Carmine Blades 1 to 5), Vallejo, The Army Painter, Pro Acryl, AK Interactive, Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World (about 4,000 paints), and every paint already in Your Palette. <strong>Settings → Paint brands</strong> switches brands on or off: a brand that's off isn't suggested, matched or used in Colour ideas. Your own paints always are. On a Vallejo pot it also reads the <strong>code number</strong> (like 72.021), which picks the exact paint even if the name is hard to read. Other brands still work: if the scanner doesn't know the name, type it in. The same lists help when you paste recipes from your notes. Where two brands share a name (like "Black"), you're asked which one. The colours for these brands are close guesses, so tap a paint to fix its colour.</li>
-            <li>Typed a paint into a recipe that isn't in Your Palette yet? Above <strong>Save recipe</strong>, <strong>Do you own these?</strong> asks about the new paints: <strong>All</strong> (Owned), <strong>None</strong> (Not owned) or <strong>Let me pick</strong> (tap a paint to untick it). The card names the paints it means. A paint name only counts once it matches a known paint or you leave the box. Save stops and says so if a step has a brand but no paint name, and a step with no paint says <strong>No paint</strong> on its line.</li>
+            <li>Typed a paint into a recipe that isn't in Your Palette yet? Above <strong>Save recipe</strong>, <strong>Do you own these?</strong> asks about the new paints that are in the paint list: <strong>All</strong> (Owned), <strong>None</strong> (Not owned) or <strong>Let me pick</strong> (tap a paint to untick it). The card names the paints it means. A paint name only counts once it matches a known paint or you leave the box. A name that isn't in the paint list (a typo, say) is kept as typed with no status, and can still go on the shopping list. Save stops and says so if a step has a brand but no paint name, and a step with no paint says <strong>No paint</strong> on its line.</li>
             <li id="help-recipe-shop">Missing paints are not put on the shopping list by themselves. Every recipe has an <strong>Add to shopping list</strong> button under its steps. It adds the real paints you don't own (never the made-up example paints) and says how many. Undo takes them off again. It is greyed out when there is nothing to add.</li>
             <li id="help-shop-tick">On the Shopping list, tick a paint when you have bought it: it moves to <strong>Bought</strong> at the bottom and is marked Owned in Your Palette. Open Bought to tap <strong>Add back</strong>, or <strong>Clear bought</strong> to forget the list. <strong>Remove</strong> takes a paint off the list. Both have an Undo.</li>
             <li id="help-shop-suggested">Under the list, <strong>Suggested</strong> shows your Empty paints and the Not owned paints your recipes use. Nothing goes on the list by itself: tap <strong>Add</strong> to put one there, or <strong>✕</strong> to stop suggesting it. A paint you remove from the list is not suggested again either, until you add it again. Suggested only shows when there is something in it.</li>
@@ -3068,11 +3102,11 @@
             <li id="help-faction-part">A line with just a faction name (<strong>Blue Army</strong>) starts that faction's scheme. A faction followed by a part (<strong>Blue Army armour</strong>, <strong>Green Army cloak</strong>) starts that scheme and that part, so it isn't mistaken for a paint with a similar name.</li>
             <li>Divider lines (<strong>-----</strong>, <strong>***</strong>, <strong>===</strong>) and lines with only emoji are skipped, like blank lines. Words the app can't read as a paint (say, in another alphabet) are kept as a note.</li>
             <li>Up to <strong>20,000 characters</strong> are read at once (a few pages of notes). If yours is longer, the preview says so: paste the rest separately.</li>
-            <li>Not sure about a paint (like "CM")? <strong>Check … paints</strong> asks what you meant. The app remembers your answer for next time.</li>
+            <li id="help-check-paints"><strong>Check paints</strong> says how many paints matched and how many need a look. <strong>Show the … matched</strong> lists the matched ones. A paint it is not sure about (like "CM") gets a card with its best match already picked, the second best, and <strong>Keep as typed</strong>. A paint it does not know at all starts on Keep as typed, and <strong>Pick a paint</strong> lets you choose one from the paint list. One card per name: your choice counts everywhere that name is in the paste. A paint you choose yourself is remembered for next time. Nothing has to be answered before Save.</li>
             <li><strong>✕</strong> next to a step, a part's name or a note leaves it out of the paste. Each has Undo. This only changes the preview, not your notes, so <strong>Read again</strong> brings everything back.</li>
             <li>A short line the app can't match to a paint, with paints under it (like <strong>Heraldry</strong>), is guessed to be a <strong>section heading</strong>. The paints under it become their own recipe named after it. Tap <strong>✎</strong> and set <strong>This line is</strong> to a paint step, a section heading or Ignore.</li>
             <li><strong>✎</strong> on a step lets you change it before saving: its <strong>technique</strong>, its <strong>mix ratio</strong> (<strong>Clear</strong> makes it an even mix), or <strong>Change…</strong> any of its <strong>paints</strong> to a different one. Only that step changes, and each change has Undo.</li>
-            <li>If the paste has paints that aren't in Your Palette yet, <strong>Do you own these?</strong> sits above Save: <strong>All</strong> (Owned), <strong>None</strong> (Not owned) or <strong>Let me pick</strong>.</li>
+            <li>If the paste has paints that aren't in Your Palette yet, <strong>Mark these paints as Owned</strong> sits above Save, ticked to start with. Untick it to add the recipes without changing what you own. The Save button stays above the menu bar while you scroll.</li>
             <li><strong>Copy as text</strong> on a recipe writes it out in the same style, so you can share it or paste it back. Mixes are copied with their ratio (an even mix is written <strong>1:1</strong>), so they come back the same.</li>
           </ul>
         </details>
@@ -3080,7 +3114,7 @@
           <summary>Importing (CSV and army lists)</summary>
           <ul>
             <li><strong>From the Warhammer app:</strong> open a list, tap Export, copy it as text, then on the Models tab tap <strong>+ Add unit → Paste army list</strong> (it's also in Settings), paste it and press Read list. Only unit names and model counts are kept: points, wargear and rules text are thrown away.</li>
-            <li id="help-typed-list">A list typed by hand works too: one unit per line with its count, such as <strong>10x Boyz</strong>, <strong>Boyz x10</strong> or <strong>Boyz (10 models)</strong>. A unit with no count comes in as 1 model.</li>
+            <li id="help-typed-list">A list typed by hand works too: one unit per line with its count, such as <strong>10x Boyz</strong>, <strong>Boyz x10</strong> or <strong>Boyz (10 models)</strong>. A unit with no count comes in as 1 model. Lists from other list builders work too, such as <strong>10x Intercessors [180pts]</strong>. Any line that can't be read is listed by its line number in the check.</li>
             <li><strong>From a spreadsheet:</strong> save it as CSV with the columns name, game, faction, stage, nickname, count, repaint, notes, date_added, date_stage, then use <strong>Import CSV</strong> (under + Add unit, or in Settings). <strong>CSV template</strong> in Settings gives you an example file.</li>
             <li id="help-csv-checks">The first line of the CSV must be the column titles, and one must be <strong>name</strong>. The other columns are found by their titles, so they can be in any order or left out. A file without a name column, a picture, an Excel file that isn't saved as CSV, or a file over 2 MB is refused with a message, and nothing changes.</li>
             <li id="help-csv-dates"><strong>date_added</strong> is the day a unit joined your collection and <strong>date_stage</strong> the day it reached its stage, read day first (UK style, 02/11/2026) or as YYYY-MM-DD (2026-11-02). The progress graph then shows it on those days. A unit with only date_stage uses it for both. A date in another style, before 1980 or in the future is left out but the unit still comes in. If you change a unit's stage in the check, it reached that stage today. A date_added later than date_stage is replaced by date_stage. The check lists the rows where either happened. <strong>Export CSV</strong> writes both dates.</li>
@@ -3303,7 +3337,7 @@
             In the Warhammer app, open a list, tap Export, then Copy as text. Paste it below.
             Only unit names and model counts are kept; points and wargear are ignored.
           </p>
-          <textarea id="wh-text" placeholder="Paste your exported list here" aria-label="Army list"></textarea>
+          <textarea id="wh-text" placeholder="Paste your exported list here" aria-label="Army list" maxlength="50000"></textarea>
           <button class="primary-button" id="wh-read">Read list</button>
         </div>
 
@@ -3312,6 +3346,7 @@
         <div id="review" class="hidden review">
           <h2 id="review-title" style="margin: 0;">Check your import</h2>
           <p class="hint" id="review-summary" style="margin: 0;"></p>
+          <p class="hint hidden" id="review-not-read" style="margin: 0;"></p>
 
           <div id="review-mode">
             <p class="hint" style="margin: 0 0 6px;">What should this import do?</p>
@@ -3418,7 +3453,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=124" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=125" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -3431,15 +3466,15 @@
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks.
        G2a: guides-groups.js (the Guides topic groups, plain data) loads after guides-data.js. It only adds one
        name, GUIDE_GROUPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=124"></script>
-  <script src="schemes.js?v=124"></script>
-  <script src="detail-recipes.js?v=124"></script>
-  <script src="basing-tips.js?v=124"></script>
-  <script src="mentor-tips.js?v=124"></script>
-  <script src="guides-data.js?v=124"></script>
-  <script src="guides-groups.js?v=124"></script>
-  <script src="mentor-data.js?v=124"></script>
-  <script src="mentor-engine.js?v=124"></script>
-  <script src="app.js?v=124"></script>
+  <script src="colour.js?v=125"></script>
+  <script src="schemes.js?v=125"></script>
+  <script src="detail-recipes.js?v=125"></script>
+  <script src="basing-tips.js?v=125"></script>
+  <script src="mentor-tips.js?v=125"></script>
+  <script src="guides-data.js?v=125"></script>
+  <script src="guides-groups.js?v=125"></script>
+  <script src="mentor-data.js?v=125"></script>
+  <script src="mentor-engine.js?v=125"></script>
+  <script src="app.js?v=125"></script>
 </body>
 </html>
