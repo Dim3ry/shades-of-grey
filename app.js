@@ -19675,12 +19675,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL ELEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, app), e.g. "app.js?v=124".
+    // "?v=" number on ALL ELEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, app), e.g. "app.js?v=125".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v124";
+    const APP_VERSION = "v125";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -20142,6 +20142,12 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v125", date: "3 Nov 2026", changes: [
+        "Mentor copes with typing slips, offers Did you mean when it is not sure, says when it does not know, and answers simple questions about the app.",
+        "Paste recipes: Check paints shows one card for each paint that needs a look, nothing stops you saving, and a tick box sets whether new paints are marked Owned.",
+        "Army lists pasted from list builders read their units, counts and faction properly, and lines that can't be read are listed. A paint typed in the recipe editor that the app does not know gets no status.",
+        "The first tap on a button near the bottom bar now works, Not now on a kept recipe opens the new recipe, and the start circle's labels keep their font as they move into the bar.",
+      ]},
       { version: "v124", date: "3 Nov 2026", changes: [
         "Safer saving: if your saved units or recipes can't be read, saving pauses instead of replacing them, so you can save them as a file or start again. Recover keeps units and recipes together, a restore stops if there's no room for its safety copy, Undo takes back only its own change, and the offline copy never mixes old and new versions.",
         "Safety fixes: a backup can only bring in JPEG, PNG or WebP photos, other websites can no longer show Minifolio inside their pages, very long names are cut to the usual limit, and a broken web address no longer stops the app starting.",
