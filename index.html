@@ -168,9 +168,6 @@
       --heading-size: 16px; --wordmark-size: 24px; --body-size: 16px; --card-pad: 16px;
       --card-shadow: none; --texture: none; --texture-size: auto; --frame: 1px solid var(--border); --rule: 0 solid transparent; --rule-gap: 0px;
     }
-    /* TH3: large accent fills (buttons, the open segment, the Mentor button) use --accent-fill. Every theme scope (the page, each Theme square, the photo
-       viewer and the camera) sets it back to its own accent, so only Parchment Codex, which sets a deeper red for dark, looks any different. */
-    [data-t], .viewer, #scan-camera { --accent-fill: var(--accent); }
     /* Classic's own extra colours (the old ones, so nothing changes). */
     :root, .viewer, #scan-camera, .theme-swatch[data-t="classic"] {
       --on-accent: var(--background); --track: var(--background); --heading-colour: var(--text); --wordmark-colour: var(--accent);
@@ -2439,6 +2436,9 @@
 
     /* Parchment Codex: an illuminated first letter, a double line on the open tab, and numbers in italic. */
     [data-t="parchment"] h1::first-letter { font-size: 1.45em; color: var(--first-letter); }
+    /* TH3: large accent fills (buttons, the open segment, the Mentor button) use --accent-fill. Every theme scope (the page, each Theme square, the photo
+       viewer and the camera) sets it back to its own accent, so only Parchment Codex, which sets a deeper red for dark, looks any different. */
+    [data-t], .viewer, #scan-camera { --accent-fill: var(--accent); }
     /* TH3: red ink on parchment. The paper (--texture) is drawn once on a fixed layer behind the page, so scrolling does not repaint it; the header and the fade behind the bar show the same paper; some cards get one small corner stain inside their padding.
        The layer, the header and the fade all size the paper by 100vh (the tall, fixed viewport) and measure it from the top of the screen, so on a phone the stains line up and stay put when the browser bar slides away. */
     [data-t="parchment"] body { background-image: none; background-attachment: scroll; }
