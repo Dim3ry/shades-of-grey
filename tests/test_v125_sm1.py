@@ -93,8 +93,10 @@ def travel_checks(page, theme):
     two = {k: {p: r["values"][k].get(p, 0) for p in sizes} for k in ("c", "icon", "t")}
     check(f"{theme}: label and icon are laid out at two sizes only (start, then end from half way), not a new one every frame",
           all(n <= 2 for k in two.values() for n in k.values()), two)
-    check(f"{theme}: the label only moves and scales (transform is the only thing that changes on it)",
-          set(ch["t"]) <= {"transform"} and ch["t"].get("transform", 0) >= 8, ch["t"])
+    # v129 (MO6): the lit piece's label switched from plain to bold in one frame half way; it now crossfades from its start look to its end look,
+    # so the labels may also change opacity (still never a size, so no new layout)
+    check(f"{theme}: the label only moves and scales (transform is the only thing that changes on it, plus MO6's crossfade opacity)",
+          set(ch["t"]) <= {"transform", "opacity"} and ch["t"].get("transform", 0) >= 8, ch["t"])
     check(f"{theme}: the icon changes only its transform and colour (plus one size switch)",
           set(ch["icon"]) <= {"transform", "color", "font-size"} and ch["icon"].get("transform", 0) >= 8, ch["icon"])
     check(f"{theme}: colours are plain rgba(), never color-mix()", r["colours"] and not any("color-mix" in c for c in r["colours"]), r["colours"][:3])

@@ -4386,13 +4386,18 @@
       root.setProperty("--ring-cy", Math.round(top + room / 2) + "px");
     }
     function enterLaunch() {
+      endFill();   // MO6: a lit piece still sliding ends first
       const move = launchMoveStart("bar");
+      const page = move ? pageOutSnap() : null;   // MO6: measured before the state changes
+      if (move) ghostOut(document.getElementById("version-tag"));   // MO6: the version number fades out (it went in one frame)
       launching = true;
       document.body.classList.add("launching");
       tabButtons.forEach(b => b.removeAttribute("aria-current"));   // nothing is chosen yet
+      if (page) move.pageOut = pageOutRun(page, TRAVEL_BACK_AT);   // MO6: the page fades out while the bar waits (it went in one frame)
       window.scrollTo(0, 0);
       fitLaunch();
       launchMoveRun(move);
+      if (move) fadeWordIn(document.getElementById("start-line"), TRAVEL_BACK_AT);   // MO6: and the start page's line fades in once the page has gone
       if (!move && launchMotionReady && reducedMotion() && Element.prototype.animate) {   // Mo4c: reduced motion, bar to circle: no travel, just a short fade
         document.querySelector(".tabs").animate([{ opacity: 0 }, { opacity: 1 }], { duration: motionMs("--motion-fast"), easing: "linear" });
       }
@@ -4447,17 +4452,37 @@
                pl: parseFloat(cs.paddingLeft), pr: parseFloat(cs.paddingRight), pt: parseFloat(cs.paddingTop), pb: parseFloat(cs.paddingBottom),
                font: { fontFamily: cs.fontFamily, fontStyle: cs.fontStyle, letterSpacing: cs.letterSpacing, textTransform: cs.textTransform, fontSizeAdjust: cs.fontSizeAdjust } };
     }
+    // MO6: the round Mentor button's inner look, in its own pixels: where its drawing sits and how big, the label's size, and its glow. The circle's
+    // button and the bar's differ (124 px with the drawing centred, 100 px with it at the top), and the travel only scaled the bar's look, so at the
+    // start the drawing and the label jumped about 9 px and the glow halved in one frame. The travel now blends these too (see orbAt in travelRun).
+    function orbLook() {
+      const cs = getComputedStyle(orbEl), svg = orbEl.querySelector("svg"), r = orbEl.getBoundingClientRect();
+      const k = orbEl.offsetWidth ? r.width / orbEl.offsetWidth : 1, s = svg ? svg.getBoundingClientRect() : null;
+      return { w: orbEl.offsetWidth, shadow: cs.boxShadow, gap: parseFloat(cs.rowGap) || 0, fs: parseFloat(cs.fontSize), lh: parseFloat(cs.lineHeight),
+               top: s ? (s.top - r.top) / k : 0, size: s ? s.width / k : 0 };
+    }
+    // MO6: where a segment's icon and label really are on the page (their centres). The copies placed them by sums from the sizes, which left them
+    // up to a pixel off the real ones, so they jumped a little at the hand-over; the travel now blends from the real places to the real places.
+    function wordsAt(b) {
+      const icon = b.querySelector(".icon"), text = [...b.childNodes].find(n => n.nodeType === 3 && n.textContent.trim());
+      if (!icon || !text) return null;
+      const range = document.createRange();
+      range.selectNodeContents(text);
+      const i = icon.getBoundingClientRect(), t = range.getBoundingClientRect();
+      return { i: [i.left + i.width / 2, i.top + i.height / 2], t: [t.left + t.width / 2, t.top + t.height / 2] };
+    }
     // Call BEFORE the state changes (the circle is still drawn).
     function travelStart(first, from) {
+      endFill();   // MO6: a lit piece still sliding ends first (its inline look would be measured otherwise)
       const segs = {};
       for (const b of arcEl.querySelectorAll("[data-tab]")) {
         const r = b.getBoundingClientRect(), d = clipOf(b);
         if (!d || !r.width) return null;
-        segs[b.dataset.tab] = { rect: r, sc: r.width / b.offsetWidth, d, look: segLook(b), label: b.textContent,
+        segs[b.dataset.tab] = { rect: r, sc: r.width / b.offsetWidth, d, look: segLook(b), label: b.textContent, words: wordsAt(b),
                                 left: b.offsetLeft, top: b.offsetTop, w: b.offsetWidth, h: b.offsetHeight, chosen: b.getAttribute("aria-current") === "page" };
       }
       // the Mentor button's centre in the bar's own pixels (only meaningful when the bar is what is showing now)
-      return { from, first, segs, barC: [orbEl.offsetLeft + orbEl.offsetWidth / 2, orbEl.offsetTop + orbEl.offsetHeight / 2] };
+      return { from, first, segs, orb: orbLook(), barC: [orbEl.offsetLeft + orbEl.offsetWidth / 2, orbEl.offsetTop + orbEl.offsetHeight / 2] };
     }
     // Call AFTER the state has changed (the bar is drawn). Returns false (and draws nothing) if something cannot be measured.
     function travelRun(move) {
@@ -4473,7 +4498,7 @@
       layer.appendChild(arc);
       document.documentElement.appendChild(layer);
       const ar = (back ? arc : arcEl).getBoundingClientRect(), sb = ar.width / (back ? arc : arcEl).offsetWidth;
-      const last = orbBox();
+      const last = orbBox(), O1 = orbLook();   // MO6: the button's end look, read here with the rest (before anything is drawn, so no second layout)
       if (!ar.width || !last.w) { layer.remove(); return false; }
       const TAU = Math.PI * 2;
       const loc = (x, y) => [(x - ar.left) / sb, (y - ar.top) / sb];   // page position -> the bar's own pixels
@@ -4496,9 +4521,12 @@
         now.sc = now.rect.width / now.w;
         const A = back ? barEnd(s, CR) : circleEnd(s, CR), Z = back ? circleEnd(now, CB) : barEnd(now, CB);
         const sh = Math.round(((A.lo + A.hi) / 2 - (Z.lo + Z.hi) / 2) / TAU) * TAU;   // the shortest way round
+        // MO6: how far the real icon and label sit from where the sums below put them, at each end (see wordsAt); blended on the clock
+        const off = (k, c, w) => { if (!w) return [0, 0, 0, 0]; const top = c[1] - (k.ifs + k.gap + k.lh) / 2, i = loc(w.i[0], w.i[1]), t = loc(w.t[0], w.t[1]);
+          return [i[0] - c[0], i[1] - (top + k.ifs / 2), t[0] - c[0], t[1] - (top + k.ifs + k.gap + k.lh / 2)].map(v => Math.abs(v) < 6 ? v : 0); };
         items.push({
           tab: b.dataset.tab, chosen: !back && b.getAttribute("aria-current") === "page", slo: A.lo - sh, shi: A.hi - sh, elo: Z.lo, ehi: Z.hi,
-          ro: [A.ro, Z.ro], ri: [A.ri, Z.ri], c0: A.c, c1: Z.c, k0: A.look, k1: Z.look, src: b,
+          ro: [A.ro, Z.ro], ri: [A.ri, Z.ri], c0: A.c, c1: Z.c, k0: A.look, k1: Z.look, src: b, e0: off(A.look, A.c, s.words), e1: off(Z.look, Z.c, wordsAt(b)),
         });
       }
       // one drawing area for all four (covers the circle, the bar and the overshoot), in the bar's own pixels
@@ -4525,16 +4553,20 @@
         // font for the 1.5 s, which jumped at the start and the end); they now use exactly the segment's font, case and letter spacing.
         Object.assign(c.style, k0.font);
         icon.style.fontSize = k0.ifs + "px";
+        let warm = null;
         if (it.k1.weight !== k0.weight || it.k1.fs !== k0.fs) {   // the end font, drawn invisibly from the first frame, so the switch half way needs no new font
-          const warm = document.createElement("span");
+          warm = document.createElement("span");
           warm.className = "t warm";
           warm.textContent = text.textContent;
           Object.assign(warm.style, { fontWeight: String(it.k1.weight), fontSize: it.k1.fs + "px" });
           c.appendChild(warm);
         }
+        // MO6: a label whose weight changes (the lit piece: bold in the bar, plain in the circle) switched from one weight to the other in a single
+        // frame half way. It now crossfades: the start look and the end look (the warm copy above, shown) are both drawn, each at its own size.
+        if (warm && it.k1.weight !== k0.weight) { it.cross = true; Object.assign(warm.style, { visibility: "visible", opacity: "0", lineHeight: it.k1.lh + "px" }); }
         w.appendChild(c);
         arc.appendChild(w);
-        Object.assign(it, { w, c, icon, text, svg: icon.querySelector("svg") });
+        Object.assign(it, { w, c, icon, text, warm, svg: icon.querySelector("svg") });
       }
       const ms = motionMs("--motion-travel");
       const ease = getComputedStyle(document.documentElement).getPropertyValue("--motion-travel-ease").trim() || "ease-in-out";
@@ -4554,7 +4586,7 @@
           const ch = (i) => Math.round((A[i] * A[3] * (1 - q) + B[i] * B[3] * q) / al * 100) / 100;
           return `rgba(${ch(0)}, ${ch(1)}, ${ch(2)}, ${Math.round(al * 1000) / 1000})`; };
       };
-      const put = (it, el, prop, value) => { const key = prop + (el === it.w ? "w" : el === it.c ? "c" : el === it.icon ? "i" : el === it.text ? "t" : "s");
+      const put = (it, el, prop, value) => { const key = prop + (el === it.w ? "w" : el === it.c ? "c" : el === it.icon ? "i" : el === it.text ? "t" : el === it.warm ? "m" : "s");
         if (it.last[key] !== value) { it.last[key] = value; el.style[prop] = value; } };
       for (const it of items) Object.assign(it, { last: {}, bgAt: blend(it.k0.bg, it.k1.bg), colorAt: blend(it.k0.color, it.k1.color), iconAt: blend(it.k0.icon, it.k1.icon) });
       const N = 24;
@@ -4564,6 +4596,31 @@
       // place is capped at 1.5 degrees (the clock, the easing and everything else in the bounce are unchanged; Models and Painting never reach the cap).
       const SWAY = 1.5 * Math.PI / 180;
       for (const it of items) it.sway = SWAY / Math.max(1e-6, Math.abs(it.elo - it.slo), Math.abs(it.ehi - it.shi));
+      // MO6: the Mentor button's inside on the same clock. Its move scales the end look (from first.w / last.w), so a start value v is drawn as
+      // v * rel in the end look's pixels; each value blends from there to its end value, and the glow's size and colour blend the same way.
+      // Its inline values are taken away at the end, so the last frame is the real button exactly.
+      const O0 = move.orb, rel = O0 && O0.w ? O1.w / O0.w : 1, orbSvg = orbEl.querySelector("svg");
+      const shadowOf = (s) => { const m = /^(rgba?\([^)]*\)|color\([^)]*\))\s+(-?[\d.]+)px\s+(-?[\d.]+)px\s+([\d.]+)px/.exec(s || ""); return m ? { c: m[1], b: parseFloat(m[4]) } : null; };
+      const sh0 = O0 && shadowOf(O0.shadow), sh1 = shadowOf(O1.shadow), shAt = sh0 && sh1 ? blend(sh0.c, sh1.c) : null;
+      const orbLast = {};
+      const orbPut = (el, prop, value) => { const key = prop + (el === orbEl ? "o" : "s"); if (orbLast[key] !== value) { orbLast[key] = value; el.style[prop] = value; } };
+      function orbAt(p) {
+        if (!O0) return;
+        const v = (a, b) => r2(L(a * rel, b, p));
+        orbPut(orbEl, "justifyContent", "flex-start");
+        orbPut(orbEl, "paddingTop", Math.max(0, v(O0.top, O1.top)) + "px");
+        // the drawing keeps its own (end) size and is scaled from its top centre; the gap under it makes up the difference, so the label sits right
+        const size = O1.size ? Math.max(1, v(O0.size, O1.size)) : 0;
+        orbPut(orbEl, "rowGap", Math.max(0, r2(v(O0.gap, O1.gap) + (size ? size - O1.size : 0))) + "px");
+        orbPut(orbEl, "fontSize", v(O0.fs, O1.fs) + "px");
+        orbPut(orbEl, "lineHeight", v(O0.lh, O1.lh) + "px");
+        if (orbSvg && size) { orbPut(orbSvg, "transformOrigin", "50% 0px"); orbPut(orbSvg, "transform", `scale(${Math.round(size / O1.size * 10000) / 10000})`); }
+        if (shAt) orbPut(orbEl, "boxShadow", `0px 0px ${Math.max(0, v(sh0.b, sh1.b))}px 0px ${shAt(Math.min(1, Math.max(0, p)))}`);
+      }
+      function orbClear() {
+        for (const k of ["justifyContent", "paddingTop", "rowGap", "fontSize", "lineHeight", "boxShadow"]) orbEl.style[k] = "";
+        if (orbSvg) { orbSvg.style.transform = ""; orbSvg.style.transformOrigin = ""; }
+      }
       function render(p, pop) {
         const q = Math.min(1, Math.max(0, p)), out = TRAVEL_SPREAD * Math.sin(Math.PI * q) / sb;
         for (const it of items) {
@@ -4584,28 +4641,43 @@
           // the icon and the label each sit centred on their own line of the column, scaled from the sizes they are laid out at (b).
           const fs = L(k0.fs, k1.fs, p), lh = L(k0.lh, k1.lh, p), gap = L(k0.gap, k1.gap, p), ifs = L(k0.ifs, k1.ifs, p);
           const top = -(ifs + gap + lh) / 2, b = q < 0.5 ? k0 : k1;   // b: the start's sizes, then (from half way) the end's
-          put(it, it.c, "fontSize", b.fs + "px");
-          put(it, it.c, "lineHeight", b.lh + "px");
-          put(it, it.c, "fontWeight", String(b.weight));
+          const tb = it.cross ? k0 : b;   // MO6: a crossfaded label keeps its start look all the way; its end look is the warm copy
+          put(it, it.c, "fontSize", tb.fs + "px");
+          put(it, it.c, "lineHeight", tb.lh + "px");
+          put(it, it.c, "fontWeight", String(tb.weight));
           put(it, it.icon, "fontSize", b.ifs + "px");
-          put(it, it.icon, "transform", `translate(0px, ${r2(top + ifs / 2)}px) scale(${Math.round(ifs / b.ifs * 10000) / 10000}) translate(-50%, -50%)`);
-          put(it, it.text, "transform", `translate(0px, ${r2(top + ifs + gap + lh / 2)}px) scale(${Math.round(fs / b.fs * 10000) / 10000}) translate(-50%, -50%)`);
+          const e = [0, 1, 2, 3].map(i => L(it.e0[i], it.e1[i], p));   // MO6: the real places at each end (see wordsAt)
+          put(it, it.icon, "transform", `translate(${r2(e[0])}px, ${r2(top + ifs / 2 + e[1])}px) scale(${Math.round(ifs / b.ifs * 10000) / 10000}) translate(-50%, -50%)`);
+          put(it, it.text, "transform", `translate(${r2(e[2])}px, ${r2(top + ifs + gap + lh / 2 + e[3])}px) scale(${Math.round(fs / tb.fs * 10000) / 10000}) translate(-50%, -50%)`);
+          if (it.cross) {   // MO6: the weight crossfades over the middle of the travel (0.3 to 0.7 of the way)
+            const x = Math.min(1, Math.max(0, (q - 0.3) / 0.4)), m = Math.round(x * x * (3 - 2 * x) * 1000) / 1000;
+            put(it, it.warm, "transform", `translate(${r2(e[2])}px, ${r2(top + ifs + gap + lh / 2 + e[3])}px) scale(${Math.round(fs / k1.fs * 10000) / 10000}) translate(-50%, -50%)`);
+            put(it, it.warm, "opacity", String(m));
+            put(it, it.text, "opacity", String(Math.round((1 - m) * 1000) / 1000));
+          }
           put(it, it.icon, "color", it.iconAt(q));
           put(it, it.svg, "strokeWidth", String(L(k0.stroke, k1.stroke, q)));
         }
+        orbAt(p);
       }
       render(0, 0);
       document.body.classList.add("mo-travelling");   // the real segments: see-through and not tappable until the travel ends
       travelling = true;
+      // MO6: the bar's fade and the circle's glow, drawn under the copies (the real bar's fade is hidden while the travel runs; see "MO6:" in the CSS)
+      const looks = ["mo6-fade", "mo6-glow"].map(k => { const el = document.createElement("div"); el.className = "tabs " + k; el.inert = true;
+        el.setAttribute("aria-hidden", "true"); document.documentElement.insertBefore(el, layer); return el; });
       // the real Mentor button, from its circle place to the bar's, on the same clock
       const wait = back ? { delay: TRAVEL_BACK_AT, fill: "backwards" } : {};   // Mo4c: on the way back the bar copies and the Mentor button hold still first
       const timing = { duration: ms, easing: ease, ...wait };
       const dx = (first.x - last.x) / last.scale, dy = (first.y - last.y) / last.scale;
       const clock = layer.animate([{ opacity: 1 }, { opacity: 1 }], timing);   // the one clock the drawing follows (it reads this animation's own progress)
       const pop = layer.animate([{ opacity: 1 }, { opacity: 1 }], { duration: TRAVEL_POP_MS, delay: back ? TRAVEL_BACK_AT + ms : ms, easing: "linear" });   // the lit segment's small push outward as it lands
+      // the fade and the glow crossfade over the travel (the fade alone used to fade in, the glow went at once); they hold their end through the landing
+      const fadeT = { duration: ms, easing: "linear", ...wait, fill: "both" };
       const anims = [clock, pop,
         orbEl.animate([{ transform: `translate(${dx}px, ${dy}px) scale(${first.w / last.w})` }, { transform: "none" }], timing),
-        document.querySelector(".tabs").animate([{ opacity: 0 }, { opacity: 1 }], { duration: ms, easing: "linear", pseudoElement: "::before", ...wait })];
+        looks[0].animate([{ opacity: back ? 1 : 0 }, { opacity: back ? 0 : 1 }], fadeT),
+        looks[1].animate([{ opacity: back ? 0 : 1 }, { opacity: back ? 1 : 0 }], fadeT)];
       move.anims = anims;
       let raf = 0, live = true;
       const frame = () => {
@@ -4619,7 +4691,10 @@
         live = false; cancelAnimationFrame(raf);
         anims.forEach(a => a.cancel());
         if (move.fade) move.fade.cancel();
+        if (move.pageOut) move.pageOut();
         layer.remove();
+        looks.forEach(el => el.remove());
+        orbClear();
         document.body.classList.remove("mo-travelling");
         travelling = false;
       };
@@ -4675,34 +4750,206 @@
     const barOf = (name) => (MORE_PAGES.includes(name) ? "guides" : name);   // the bar segment a page belongs to (Settings, Help and Updates are in the fourth)
     function canMove() { return !reducedMotion() && !!Element.prototype.animate; }
 
+    // MO6: WORDS AND THE PAGE LEAVE SMOOTHLY WITH THE TRAVEL. The start page's line, the version number and the page under the bar used to appear or go
+    // in a single frame when the start circle and the bar traded places. Only the look changes; the app's state is already the new one.
+    // ghostOut: call BEFORE the words are hidden. A copy of them (no id, inert, hidden from screen readers) fades out where they were, then goes.
+    function ghostOut(el) {
+      if (!el || !canMove()) return null;
+      const r = el.getBoundingClientRect();
+      if (!r.width || !r.height) return null;
+      const cs = getComputedStyle(el), g = el.cloneNode(true);
+      g.removeAttribute("id");
+      g.className = "mo6-ghost";
+      g.inert = true;
+      g.setAttribute("aria-hidden", "true");
+      for (const k of ["fontFamily", "fontSize", "fontWeight", "fontStyle", "lineHeight", "letterSpacing", "textTransform", "textAlign", "textShadow", "color", "whiteSpace"]) g.style[k] = cs[k];
+      Object.assign(g.style, { left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px" });
+      document.documentElement.appendChild(g);
+      g.animate([{ opacity: 1 }, { opacity: 0 }], { duration: motionMs("--motion-med"), easing: "linear", fill: "forwards" }).onfinish = () => g.remove();
+      return g;
+    }
+    // ... and words that have just appeared fade in.
+    function fadeWordIn(el, delay) {
+      if (!el || !canMove()) return;   // (no layout read here: it runs right after a move has drawn its first frame)
+      el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: motionMs("--motion-med"), delay: delay || 0, easing: "linear", fill: "backwards" });
+    }
+    // The page on the way back to the start circle: measured BEFORE the state changes (what is on screen under the header), then each part is held
+    // where it was (fixed, inert, hidden from screen readers) and fades out while the bar waits, then is put back as it was (hidden by the start page).
+    function pageOutSnap() {
+      const list = [];
+      for (const el of document.querySelectorAll("main > :not(.app-bar)")) {
+        const r = el.getBoundingClientRect();
+        if (!r.width || !r.height || r.bottom <= 0 || r.top >= window.innerHeight) continue;
+        list.push({ el, r, display: getComputedStyle(el).display });
+      }
+      return list;
+    }
+    function pageOutRun(list, ms) {
+      const PROPS = ["display", "position", "top", "left", "width", "margin", "z-index", "pointer-events"];
+      const kept = list.map(({ el, r, display }) => {
+        const was = { inert: el.inert, hidden: el.getAttribute("aria-hidden"), style: PROPS.map(k => [k, el.style.getPropertyValue(k), el.style.getPropertyPriority(k)]) };
+        const set = { display, position: "fixed", top: r.top + "px", left: r.left + "px", width: r.width + "px", margin: "0px", "z-index": "1", "pointer-events": "none" };
+        for (const k of PROPS) el.style.setProperty(k, set[k], "important");
+        el.inert = true;
+        el.setAttribute("aria-hidden", "true");
+        const anim = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: ms, easing: "linear", fill: "forwards" });
+        return { el, was, anim };
+      });
+      let over = false;
+      const end = () => {
+        if (over) return;
+        over = true;
+        for (const { el, was, anim } of kept) {
+          anim.cancel();
+          for (const [k, v, pri] of was.style) { if (v) el.style.setProperty(k, v, pri); else el.style.removeProperty(k); }
+          el.inert = was.inert;
+          if (was.hidden === null) el.removeAttribute("aria-hidden"); else el.setAttribute("aria-hidden", was.hidden);
+        }
+      };
+      if (kept.length) kept[0].anim.onfinish = end; else over = true;
+      return end;
+    }
+
+    // MO6: THE LIT PIECE SLIDES. Switching sections, the accent fill of the bar used to jump from the old piece to the new one in one frame. Now one
+    // fill (a slice of the band) slides along the arc from the old piece to the new one, turning about the band's centre and taking the new piece's
+    // span, over the section switch's own time (--motion-med); it passes over the pieces in between, and each piece's words and icon take the lit
+    // colours (and the bold weight once it is half covered) as it passes. It is drawn inside each piece (a conic slice in its own background), so
+    // it shows only on the pieces, never in the gaps or over the Mentor button. The state (aria-current) changes at once as before; only the look
+    // follows, and at the end the inline look goes, so the last frame is the real bar exactly. A new switch while it slides starts from where the
+    // fill is. Reduced motion: a short crossfade of the fill (--motion-fast) instead of the slide.
+    let fillState = null;
+    function endFill() {
+      const f = fillState;
+      if (!f) return;
+      fillState = null;
+      cancelAnimationFrame(f.raf);
+      if (f.clock) f.clock.cancel();
+      for (const b of tabButtons) {
+        for (const k of ["backgroundColor", "backgroundImage", "color", "fontWeight"]) b.style[k] = "";
+        const svg = b.querySelector(".icon svg");
+        if (svg) svg.style.strokeWidth = "";
+      }
+    }
+    // the band's centre in the bar's own pixels, and a piece's span round it in degrees clockwise from 12 o'clock
+    const bandCentre = () => [orbEl.offsetLeft + orbEl.offsetWidth / 2, orbEl.offsetTop + orbEl.offsetHeight / 2];
+    function pieceSpan(b, c) {
+      const d = clipOf(b);
+      if (!d) return null;
+      const z = slicePath(d), deg = (p) => Math.atan2(b.offsetLeft + p[0] - c[0], -(b.offsetTop + p[1] - c[1])) * 180 / Math.PI;
+      const a = deg(z.p0), e = deg(z.p1);
+      return [Math.min(a, e), Math.max(a, e)];
+    }
+    const pieceLook = (b) => { const cs = getComputedStyle(b), svg = b.querySelector(".icon svg");
+      return { bg: cs.backgroundColor, color: cs.color, weight: cs.fontWeight, stroke: svg ? parseFloat(getComputedStyle(svg).strokeWidth) : 0 }; };
+    // Call BEFORE aria-current changes. Returns null when there is nothing to slide (no lit piece, the same piece, or the bar is not drawn).
+    function fillSnap(toTab) {
+      if (launching || travelling || !launchMotionReady || !Element.prototype.animate) { endFill(); return null; }
+      const pieces = [...tabButtons], to = pieces.find(b => b.dataset.tab === toTab);
+      const now = fillState;
+      const lit = now ? now.to : pieces.find(b => b.getAttribute("aria-current") === "page");
+      if (!to || !lit || lit === to) { endFill(); return null; }
+      if (!arcEl.getClientRects().length || !to.offsetWidth) { endFill(); return null; }
+      const c = bandCentre(), spans = new Map(pieces.map(b => [b, pieceSpan(b, c)]));
+      if (pieces.some(b => !spans.get(b))) { endFill(); return null; }
+      let looks, from;
+      if (now) { looks = now.looks; from = now.at(); }   // a switch while it slides: from where the fill is now, with the looks it measured
+      else { looks = { lit: pieceLook(lit), plain: pieceLook(to) }; const s = spans.get(lit); from = [s[0] - 1.5, s[1] + 1.5]; }
+      endFill();
+      // the band's centre in each piece's own box, read now while nothing has changed (reading it after the switch would lay the page out twice)
+      const at = new Map(pieces.map(b => [b, [Math.round((c[0] - b.offsetLeft) * 100) / 100, Math.round((c[1] - b.offsetTop) * 100) / 100]]));
+      return { pieces, to, from, spans, c, at, looks, fromPiece: lit };
+    }
+    function fillRun(snap) {
+      const { pieces, to, from, spans, c, looks } = snap;
+      const s = spans.get(to), end = [s[0] - 1.5, s[1] + 1.5];   // 1.5 degrees past each end: the edges fall in the gaps, so the piece is fully lit
+      const slide = canMove(), ms = motionMs(slide ? "--motion-med" : "--motion-fast") || 1;
+      const rgba = (col, a) => { const m = /^rgba?\(([^)]*)\)$/.exec(col); if (!m) return col; const v = m[1].split(/[\s,/]+/).filter(Boolean).map(Number);
+        return `rgba(${v[0]}, ${v[1]}, ${v[2]}, ${Math.round((v.length > 3 ? v[3] : 1) * a * 1000) / 1000})`; };
+      const mixCol = (a, b, q) => { const A = /^rgba?\(([^)]*)\)$/.exec(a), B = /^rgba?\(([^)]*)\)$/.exec(b); if (!A || !B) return q < 0.5 ? a : b;
+        const x = A[1].split(/[\s,/]+/).filter(Boolean).map(Number), y = B[1].split(/[\s,/]+/).filter(Boolean).map(Number);
+        return `rgb(${[0, 1, 2].map(i => Math.round(x[i] + (y[i] - x[i]) * q)).join(", ")})`; };
+      const L = (a, b, t) => a + (b - a) * t, r2 = (v) => Math.round(v * 100) / 100;
+      const state = fillState = { to, looks, raf: 0, q: 0, at: () => slide ? [L(from[0], end[0], state.q), L(from[1], end[1], state.q)] : end };
+      const last = new Map();
+      const put = (el, prop, v) => { const k = last.get(el) || {}; if (k[prop] !== v) { k[prop] = v; last.set(el, k); el.style[prop] = v; } };
+      function draw(q) {
+        state.q = q;
+        const [lo, hi] = state.at();
+        for (const b of pieces) {
+          const [a, e] = spans.get(b);
+          // how much of this piece the fill covers (slide), or how strongly it shows there (crossfade)
+          let cover, alpha = 1, slo = lo, shi = hi;
+          if (slide) cover = Math.max(0, Math.min(hi, e) - Math.max(lo, a)) / Math.max(1e-6, e - a);
+          else { cover = b === to ? q : b === snap.fromPiece ? 1 - q : 0; alpha = cover; [slo, shi] = spans.get(b); slo -= 1.5; shi += 1.5; }
+          cover = Math.min(1, cover);
+          const [cx, cy] = snap.at.get(b), span = r2(shi - slo);
+          put(b, "backgroundColor", looks.plain.bg);
+          put(b, "backgroundImage", cover > 0 && alpha > 0 && span > 0
+            ? `conic-gradient(from ${r2(slo)}deg at ${cx}px ${cy}px, ${rgba(looks.lit.bg, alpha)} 0deg ${span}deg, rgba(0, 0, 0, 0) ${span}deg)` : "none");
+          put(b, "color", mixCol(looks.plain.color, looks.lit.color, cover));
+          put(b, "fontWeight", cover >= 0.5 ? looks.lit.weight : looks.plain.weight);
+          const svg = b.querySelector(".icon svg");
+          if (svg) put(svg, "strokeWidth", String(r2(L(looks.plain.stroke, looks.lit.stroke, cover))));
+        }
+      }
+      draw(0);
+      // the clock the drawing follows (an animation that changes nothing, like the travel's), so the move shows in getAnimations and can be finished
+      // It holds its end (fill forwards) so the last frame drawn is the end exactly; the next frame hands over to the real bar.
+      const clock = state.clock = arcEl.animate([{ opacity: 1 }, { opacity: 1 }], { duration: ms, easing: "linear", fill: "forwards" });
+      const frame = () => {
+        if (fillState !== state) return;
+        if (state.ended) { endFill(); return; }
+        const q = clock.effect.getComputedTiming().progress;
+        draw(q == null ? 1 : q);
+        if (clock.playState === "finished") state.ended = true;
+        state.raf = requestAnimationFrame(frame);
+      };
+      state.raf = requestAnimationFrame(frame);
+    }
+
     // Mo4a: THE LOADING RING (a fresh page load only; the start circle is never redrawn when the app returns from the background, so neither is this).
-    // LR1: the ring is now in index.html, so it shows (faint, with a slow sweep) from the first frame, and early.js lights it as the script files
-    // arrive (window.minifolioRing). Here Mo4a's three real start-up steps (bootSteps above) take it on from wherever that got to: each step lights
-    // its third of what is left once the step is done and the one before has filled, and takes at least 400 ms to fill, so the ring still shows for
-    // 1.2 s at least once the app runs and waits for the page to finish loading if that is later (but gives up after 5 s). The four segments are
-    // hidden and appear one by one over this part; they and the Mentor button can be tapped once it is full. With the Futuristic look the ring is the
-    // orb's own five segments, with Magical or Grounded Mo4a's three arcs (the drawing is early.js's minifolioRing.draw, so both files light it the same way).
-    // Reduced motion (or no animation support): no sweep or turning, and no minimum time: the ring lights in whole steps as each step is done, the
-    // segments simply appear, and it goes as soon as it is full. Opening a section ends it at once; opening the app on a section takes it away at once.
+    // LR1: the ring is in index.html, so it shows from the first frame, and early.js lights it as the script files arrive (window.minifolioRing). Here
+    // Mo4a's three real start-up steps (bootSteps above) take it on from wherever that got to: each step lights its third of what is left once the step
+    // is done and the one before has filled, and takes at least 400 ms to fill, so the ring still shows for 1.2 s at least once the app runs and waits
+    // for the page to finish loading if that is later (but gives up after 5 s). The drawing is early.js's minifolioRing.draw, so both light it the same way.
+    // MO6: the ring is now the loading screen: the app icon's ring in the middle of a plain screen (.mo6-load, the first thing in index.html's <body>),
+    // the same picture as the phone's own launch screen, with every Mentor look. The start circle is drawn underneath meanwhile, its four segments held
+    // back. When the ring is full it hands over (handOver): the ring moves and shrinks onto the round Ask Mentor button's orb, the screen fades, the
+    // button grows in round it and the four segments grow out of the middle one after another, clockwise from the top left (Models, Painting, Tools,
+    // Dashboard). With the Futuristic look the ring lands exactly on the button's own drawing (same drawing, colours blending from the icon's to yours);
+    // with Magical or Grounded the ring fades into that look's drawing as it lands. Nothing can be tapped until the hand-over is done.
+    // Reduced motion (or no animation support): no sheen and no minimum time: the ring lights in whole steps as each step is done, then the screen fades
+    // out over the circle (no movement). Opening a section ends it at once; opening the app on a section fades the screen away over the section.
     const RING_FILL_MS = 400;
+    const HAND_MS = 720, HAND_GROW_MS = 480, HAND_STAGGER = 80, HAND_EASE = "cubic-bezier(.2,.8,.2,1)";   // MO6: the hand-over
     let ringState = null;
     function ringDraw(p) { return window.minifolioRing ? window.minifolioRing.draw(p) : p; }
-    // The ring as index.html drew it, before the app took it over: taken away at once (the app opened on a section, or the ring cannot run).
+    // MO6: the loading screen stops being a progress bar at once (so nothing is left waiting on it) and fades out over ms (0: at once).
+    function fadeLoadBox(box, ms) {
+      if (!box || !box.isConnected) return;
+      box.classList.remove("mo-load");
+      box.removeAttribute("role");
+      box.setAttribute("aria-hidden", "true");
+      box.classList.add("mo6-leaving");
+      if (!ms || !Element.prototype.animate) { box.remove(); return; }
+      const from = parseFloat(getComputedStyle(box).opacity);   // from where it is (it may be part way through a fade already)
+      box.animate([{ opacity: Number.isFinite(from) ? from : 1 }, { opacity: 0 }], { duration: ms, easing: "linear", fill: "forwards" }).onfinish = () => box.remove();
+    }
+    // The screen as index.html drew it, before the app took it over: the app opened on a section (or the ring cannot run). It fades away over the section.
     function dropBootRing() {
       if (window.minifolioRing) window.minifolioRing.app = true;
-      for (const n of arcEl.querySelectorAll(".mo-load, .lr-sweep")) n.remove();
+      fadeLoadBox(document.querySelector(".mo6-load.mo-load"), motionMs("--motion-med"));
       for (const w of arcEl.querySelectorAll(".ring-hold")) w.classList.remove("ring-hold");
       document.body.classList.remove("ring-loading");
     }
     function startLoadingRing() {
-      const svg = arcEl.querySelector(".mo-load");
-      if (!svg || !launching || ringState) { dropBootRing(); return; }
-      const sweep = arcEl.querySelector(".lr-sweep");
+      const box = document.querySelector(".mo6-load.mo-load");
+      if (!box || !launching || ringState) { dropBootRing(); return; }
       const moving = canMove();
       if (window.minifolioRing) window.minifolioRing.app = true;   // early.js stops lighting it; from here this does
       const p0 = window.minifolioRing ? window.minifolioRing.progress : 0;
-      // A2: the ring turns clockwise from the top, so the segments arrive clockwise from the top left. MN1: with the new places that is
-      // Models, Painting, Tools, Dashboard. Only this arrival order changes; the menu's own order (and keyboard order) is Dashboard, Models, Painting, Tools.
+      // A2: the segments arrive clockwise from the top left. MN1: with the new places that is Models, Painting, Tools, Dashboard. Only this arrival
+      // order changes; the menu's own order (and keyboard order) is Dashboard, Models, Painting, Tools.
       const byName = {};
       for (const b of arcEl.querySelectorAll("[data-tab]")) byName[b.dataset.tab] = b;
       const wedges = ["units", "recipes", "guides", "dashboard"].map(n => byName[n]);
@@ -4710,8 +4957,7 @@
       document.body.classList.add("ring-loading");
       const stepAt = [() => bootSteps.data, () => bootSteps.draw, () => bootSteps.load];
       const t0 = performance.now(), ends = [0, 0, 0], starts = [0, 0, 0];
-      let revealed = 0, raf = 0;
-      const state = ringState = { svg, sweep, wedges, stop() { cancelAnimationFrame(raf); } };
+      const state = ringState = { box, wedges, anims: [], raf: 0, handed: false, stop() { cancelAnimationFrame(state.raf); } };
       function step(now) {
         // when each step starts to fill: it is done and the one before has filled (the load step also gives up after 5 s)
         let part = 0;
@@ -4725,36 +4971,79 @@
           part += (starts[i] ? Math.min(1, Math.max(0, (now - starts[i]) / RING_FILL_MS)) : 0) / 3;
         }
         ringDraw(p0 + (1 - p0) * part);
-        while (revealed < 4 && part >= (revealed + 1) / 4 - 0.02) {
-          const w = wedges[revealed++];
-          w.classList.remove("ring-hold");
-          if (moving) w.animate([{ opacity: 0, transform: "scale(0.86)" }, { opacity: 1, transform: "scale(1)" }], { duration: 520, easing: "cubic-bezier(.2,.8,.2,1)" });
-        }
-        if (part >= 0.999) { finish(); return; }
-        raf = requestAnimationFrame(step);
-      }
-      function finish() {
-        if (ringState !== state) return;
-        wedges.forEach(w => w.classList.remove("ring-hold"));
-        document.body.classList.remove("ring-loading");   // tappable from here
-        ringDraw(1);
-        if (!moving) { setTimeout(() => { if (ringState === state) endLoadingRing(); }, 300); return; }   // the full ring shows for a moment; the circle works already
-        const fade = { duration: 700, easing: "ease-out", fill: "forwards" };
-        const out = svg.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(1.12)" }], fade);
-        if (sweep) sweep.animate([{ opacity: 1 }, { opacity: 0 }], fade);
-        out.onfinish = () => { if (ringState === state) endLoadingRing(); };
+        if (part >= 0.999) { handOver(state); return; }
+        state.raf = requestAnimationFrame(step);
       }
       step(performance.now());
+    }
+    // MO6: the loading screen becomes the start circle's centre.
+    function handOver(state) {
+      if (ringState !== state) return;
+      ringDraw(1);
+      const { box, wedges } = state;
+      const ring = box.querySelector(".mo6-ring"), bg = box.querySelector(".mo6-bg"), sheen = box.querySelector(".lr-sweep");
+      const target = orbEl.querySelector("svg");
+      const r0 = ring && ring.getBoundingClientRect(), r1 = target && target.getBoundingClientRect(), ob = orbEl.getBoundingClientRect();
+      state.handed = true;
+      box.classList.add("mo6-handing");   // the screen no longer takes taps,
+      document.body.classList.remove("ring-loading");   // and the circle does, as soon as the ring is full (as before), so a start is as quick to use
+      const end = () => { if (ringState === state) { state.landed = true; endLoadingRing(); } };
+      if (!canMove() || !r0 || !r0.width || !r1 || !r1.width || !ob.width) {   // reduced motion: no movement; the screen fades out over the whole circle
+        wedges.forEach(w => w.classList.remove("ring-hold"));
+        const a = box.animate([{ opacity: 1 }, { opacity: 0 }], { duration: motionMs("--motion-med") || 1, easing: "linear", fill: "forwards" });
+        state.screenAnims = [a];
+        a.onfinish = end;
+        return;
+      }
+      const k = r1.width / r0.width, dx = r1.left + r1.width / 2 - (r0.left + r0.width / 2), dy = r1.top + r1.height / 2 - (r0.top + r0.height / 2);
+      state.screenAnims = [];   // the loading screen's own moves (held, not undone, if a tap cuts the hand-over short)
+      box.style.setProperty("--mo6-ms", HAND_MS + "ms");
+      document.body.classList.add("mo6-handing");
+      ring.classList.remove("mo6-icon");   // its colours, widths and glows blend to the orb's own over the move (CSS transitions over --mo6-ms)
+      const T = { duration: HAND_MS, easing: HAND_EASE, fill: "forwards" };
+      const moveRing = (ring.parentElement || ring).animate([{ transform: "none" }, { transform: `translate(${dx}px, ${dy}px) scale(${k})` }], T);   // the ring and its sheen together
+      state.screenAnims.push(moveRing, bg.animate([{ opacity: 1 }, { opacity: 0 }], { duration: HAND_MS, easing: "ease-out", fill: "forwards" }));
+      if (sheen) state.screenAnims.push(sheen.animate([{ opacity: 1 }, { opacity: 0 }], { duration: motionMs("--motion-med"), easing: "linear", fill: "forwards" }));
+      if (currentMentorLook() !== "futuristic") {   // another look: the icon ring fades into that look's drawing as it lands
+        state.screenAnims.push(ring.animate([{ opacity: 1 }, { opacity: 0 }], { duration: HAND_MS / 2, delay: HAND_MS / 2, easing: "linear", fill: "both" }));
+      }
+      // the round button grows in round its drawing (its centre stays put, so the ring lands on it)
+      const os = orbEl.offsetWidth ? ob.width / orbEl.offsetWidth : 1;
+      orbEl.style.transformOrigin = `${Math.round((r1.left + r1.width / 2 - ob.left) / os * 100) / 100}px ${Math.round((r1.top + r1.height / 2 - ob.top) / os * 100) / 100}px`;
+      state.anims.push(orbEl.animate([{ transform: "scale(0.55)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: HAND_MS, easing: HAND_EASE }));
+      // the four segments grow out of the circle's middle, one after another
+      const cx = orbEl.offsetLeft + orbEl.offsetWidth / 2, cy = orbEl.offsetTop + orbEl.offsetHeight / 2, t0 = performance.now();
+      let shown = 0, landed = false, grown = null;
+      const maybeEnd = () => { if (landed && grown && grown.playState === "finished") end(); };
+      const tick = (now) => {
+        if (ringState !== state) return;
+        while (shown < wedges.length && now - t0 >= shown * HAND_STAGGER) {
+          const w = wedges[shown++];
+          w.style.transformOrigin = `${cx - w.offsetLeft}px ${cy - w.offsetTop}px`;
+          w.classList.remove("ring-hold");
+          const a = w.animate([{ opacity: 0, transform: "scale(0.6)" }, { opacity: 1, transform: "none" }], { duration: HAND_GROW_MS, easing: HAND_EASE });
+          state.anims.push(a);
+          if (shown === wedges.length) { grown = a; a.onfinish = maybeEnd; }
+        }
+        if (shown < wedges.length) state.raf = requestAnimationFrame(tick);
+      };
+      tick(t0);
+      moveRing.onfinish = () => { landed = true; maybeEnd(); };
     }
     function endLoadingRing() {
       const r = ringState;
       if (!r) return;
       ringState = null;
       r.stop();
-      r.svg.remove();   // the ring is gone, along with its progress bar role
-      if (r.sweep) r.sweep.remove();
-      r.wedges.forEach(w => { w.classList.remove("ring-hold"); w.getAnimations().forEach(a => a.finish()); });
-      document.body.classList.remove("ring-loading");
+      r.anims.forEach(a => a.cancel());   // the circle and the button: at their end (the travel that follows a tap measures them)
+      r.wedges.forEach(w => { w.classList.remove("ring-hold"); w.style.transformOrigin = ""; });
+      orbEl.style.transformOrigin = "";
+      document.body.classList.remove("ring-loading", "mo6-handing");
+      if (r.landed) r.box.remove();   // the hand-over is done: the ring is the button's own drawing now
+      else {   // still loading (a section opened by code), or a tap cut the hand-over short: the screen holds where it is and goes quickly
+        (r.screenAnims || []).forEach(a => a.pause());
+        fadeLoadBox(r.box, motionMs("--motion-fast"));
+      }
     }
 
 
@@ -4771,6 +5060,8 @@
       if (move !== "slide" && before !== name) endMove();
       endLoadingRing();   // Mo4a: leaving the start circle ends the loading ring at once
       const leaving = launching ? launchMoveStart("ring") : (endLaunchMove(), null);
+      if (leaving) ghostOut(document.getElementById("start-line"));   // MO6: the start page's line fades out (it went in one frame)
+      const fill = !launching && before !== null ? fillSnap(barOf(name)) : null;   // MO6: the lit piece, measured before it changes
       if (launching) { launching = false; document.body.classList.remove("launching"); }
       if (name !== "units" && selectMode) closeSelect();   // v21.1: leaving Units ends select mode
       drawIfStale(name);   // DS2: a section that changed while out of sight is drawn before it shows (see render)
@@ -4791,7 +5082,9 @@
         if (b.dataset.tab === mainTab) b.setAttribute("aria-current", "page");
         else b.removeAttribute("aria-current");
       });
+      if (fill) fillRun(fill);   // MO6: the lit colour slides from the old piece to the new one
       launchMoveRun(leaving);
+      if (leaving) fadeWordIn(document.getElementById("version-tag"));   // MO6: the version number fades in
       moreSeg.classList.toggle("hidden", !MORE_PAGES.includes(name));
       moreTitle.classList.toggle("hidden", !MORE_PAGES.includes(name));
       moreSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.page === name)));

@@ -14,6 +14,7 @@ from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
+from launch_helpers import wait_settled
 
 load, no_sideways = t.load, t.no_sideways
 results = []
@@ -81,6 +82,7 @@ def main():
 
         print("\n--- 3. The lit segment ---")
         page.click(seg("recipes"))
+        wait_settled(page)   # v129 (MO6): the lit colour now slides to the new piece over the switch (it jumped at once); the look is checked once it lands
         lit = page.evaluate("() => [...document.querySelectorAll('.tabs button[data-tab]')].map(b => [b.dataset.tab, b.getAttribute('aria-current'), getComputedStyle(b).fontWeight, getComputedStyle(b).backgroundColor])")
         on = [r for r in lit if r[1] == "page"]
         off = [r for r in lit if r[1] != "page"]

@@ -89,6 +89,7 @@ def main():
         check("nothing left over", page.evaluate(TIDY))
         load(page, units=UNITS)
         page.evaluate("() => showTab('recipes')")   # the straight-to-section reference
+        settle(page)   # v129 (MO6): the lit colour now slides to the new piece (it jumped there at once), so the reference is taken once it has landed
         ref = page.evaluate(BAR)
         load(page, units=UNITS, launch=True)
         page.evaluate(TAP, "recipes")
@@ -116,6 +117,7 @@ def main():
             page.emulate_media(color_scheme=scheme)
             load(page, units=UNITS)
             page.evaluate("() => showTab('guides')")
+            settle(page)   # v129 (MO6): as above, the lit colour slides in
             ref = page.evaluate(BAR)
             load(page, units=UNITS, launch=True)
             r = page.evaluate(TAP, "guides")

@@ -153,12 +153,14 @@ def main():
         page.set_viewport_size({"width": 390, "height": 900})
         tap(page, "units")
         tap(page, "guides")   # X2: the fourth segment
-        check("sections switch with no animation and no layer", page.evaluate("() => document.getAnimations().length") == 0
+        # v129 (MO6): with reduced motion the bar's lit colour now crossfades briefly to the new piece (its clock is an animation on the bar
+        # itself, which moves nothing); the sections themselves still switch with no animation and no layer
+        check("sections switch with no animation and no layer", page.evaluate("() => document.getAnimations().filter(a => a.effect.target !== document.querySelector('nav.tabs .arc')).length") == 0
               and page.evaluate("() => document.querySelectorAll('.mo-out').length") == 0)
         load(page, units=UNITS, recipes=[RECIPE])
         tap(page, "recipes")
         page.click(".recipe-item")
-        check("a recipe opens with no animation", page.evaluate("() => document.getAnimations().length") == 0
+        check("a recipe opens with no animation", page.evaluate("() => document.getAnimations().filter(a => a.effect.target !== document.querySelector('nav.tabs .arc')).length") == 0   # v129: as above
               and page.evaluate("() => !document.getElementById('recipe-page').classList.contains('hidden')"))
         page.emulate_media(reduced_motion="no-preference")
 
