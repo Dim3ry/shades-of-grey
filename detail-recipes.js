@@ -141,12 +141,12 @@ const DETAIL_RECIPES = [
       { technique: "Dry brush", coats: 1, mix: 100, look: "a light flesh", hex: "#e2bfae", note: "A lighter pass over the panel centres, letting the first colour show." },
       { technique: "Layer", coats: 1, mix: 100, look: "a dark purple", hex: "#5a2e5c", note: "Run neat into the corners where skin meets bone and over the veins." },
     ] },
-  { key: "iridescent-insect-wings", group: "body", name: "Iridescent insect wings", summary: "Fly wings from a white base glazed in soft bands of purple, green and yellow",
+  { key: "iridescent-insect-wings", group: "body", name: "Iridescent insect wings", summary: "Fly wings from a white top, a purple wash and dabbed rings of green, yellow and pink",
     steps: [
-      { technique: "Base coat", coats: 1, mix: 100, look: "a white", hex: "#f4f4f2", note: "A smooth white over each wing so the glazes glow." },
-      { technique: "Wash", coats: 1, mix: 40, look: "a purple", hex: "#5a2e6e", note: "Thinned into the recesses to mark out the veins and cells." },
-      { technique: "Glaze", coats: 2, mix: 30, look: "a bright green", hex: "#8ad44a", note: "Thin bands of green, yellow and pink with medium, the colours meeting softly." },
-      { technique: "Edge highlight", coats: 1, mix: 100, look: "a bright white", hex: "#ffffff", note: "Fine touches on the raised veins and leading edge to bring the wing back up." },
+      { technique: "Base coat", coats: 1, mix: 100, look: "a white", hex: "#f4f4f2", note: "On the top of each wing and its veins, leaving the lower part darker." },
+      { technique: "Wash", coats: 1, mix: 40, look: "a purple", hex: "#5a2e6e", note: "All over, moved about so it marks the veins and cells without pooling." },
+      { technique: "Stipple", coats: 2, mix: 100, look: "a bright green", hex: "#8ad44a", note: "Green in the middle, then green and yellow, yellow and pink, and pink at the edge." },
+      { technique: "Edge highlight", coats: 1, mix: 100, look: "a bright white", hex: "#ffffff", note: "Thin on the edges and torn tips, then dab a little colour back so it is not chalky." },
     ] },
   { key: "natural-eyes", group: "body", name: "Natural eyes", summary: "Painted eyes with a dark rim, a soft white eyeball, a dark iris and a tiny glint",
     steps: [

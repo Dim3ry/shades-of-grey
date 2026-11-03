@@ -1164,7 +1164,7 @@
       "key": "iridescent-insect-wings",
       "group": "body",
       "name": "Iridescent insect wings",
-      "summary": "Fly wings from a white base glazed in soft bands of purple, green and yellow",
+      "summary": "Fly wings from a white top, a purple wash and dabbed rings of green, yellow and pink",
       "steps": [
         {
           "technique": "Base coat",
@@ -1172,7 +1172,7 @@
           "mix": 100,
           "look": "a white",
           "hex": "#f4f4f2",
-          "note": "A smooth white over each wing so the glazes glow."
+          "note": "On the top of each wing and its veins, leaving the lower part darker."
         },
         {
           "technique": "Wash",
@@ -1180,15 +1180,15 @@
           "mix": 40,
           "look": "a purple",
           "hex": "#5a2e6e",
-          "note": "Thinned into the recesses to mark out the veins and cells."
+          "note": "All over, moved about so it marks the veins and cells without pooling."
         },
         {
-          "technique": "Glaze",
+          "technique": "Stipple",
           "coats": 2,
-          "mix": 30,
+          "mix": 100,
           "look": "a bright green",
           "hex": "#8ad44a",
-          "note": "Thin bands of green, yellow and pink with medium, the colours meeting softly."
+          "note": "Green in the middle, then green and yellow, yellow and pink, and pink at the edge."
         },
         {
           "technique": "Edge highlight",
@@ -1196,7 +1196,7 @@
           "mix": 100,
           "look": "a bright white",
           "hex": "#ffffff",
-          "note": "Fine touches on the raised veins and leading edge to bring the wing back up."
+          "note": "Thin on the edges and torn tips, then dab a little colour back so it is not chalky."
         }
       ]
     },

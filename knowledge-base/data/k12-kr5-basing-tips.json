@@ -4,54 +4,62 @@
       "key": "jungle-floor",
       "group": "plants",
       "name": "Jungle floor",
-      "summary": "Dark wet earth crowded with ferns, broad leaves and tall grasses in deep greens",
+      "summary": "Dark damp earth in mixed browns, leaf litter and plants, with green creeping over it all",
       "materials": [
-        "Fine dark soil or sand and white glue",
-        "Laser cut paper ferns and broad leaves",
-        "A small chunk of bark or cork for a root or rock",
-        "Dried grass stalks or tall tufts",
-        "A few dried flowers for colour",
-        "A toothpick for bending leaves"
+        "Clumpy texture paste, or grit mixed into white glue and filler",
+        "White glue thinned with a little water",
+        "Very fine green scatter and grit in two sizes",
+        "Loose tea leaves crumbled small, for leaf litter",
+        "Tufts, paper ferns or cut down aquarium plants",
+        "A little green brown pigment for dry patches"
       ],
       "howto": [
-        "Glue soil round a bark chunk, paint it dark brown and leave the dips a little shiny so the ground looks damp.",
-        "Paint the paper plants while still in their frame, in mixed greens with a touch of blue, using thin paint sparingly.",
-        "Cut them out slowly, then glue ferns first, then broad leaves, then tall grasses, in thick clumps.",
-        "Bend and twist every leaf with a toothpick so none sit flat, and use them to hide the join round the feet.",
-        "Glaze thin brown where stems meet the ground so they look rooted, and add a few dried flowers for colour."
+        "Spread clumpy paste over the base without worrying about gaps, and push the feet in while it is soft.",
+        "Brush on watery glue and sprinkle fine green scatter rather than grass, then grit and crumbled tea as leaf litter.",
+        "Glue plants on before priming, leaving room for the feet, and varnish after priming to lock loose bits.",
+        "Wash green over the brown and brown over the green, always pooling it round the foot of each plant.",
+        "Dot thin purple brown in low spots as wet mud and dust pigment on dry patches, so the earth shows several browns."
       ],
       "paintSteps": [
         {
           "technique": "Base coat",
-          "coats": 2,
+          "coats": 1,
           "mix": 100,
           "look": "a dark wet earth",
           "hex": "#3b2c1d",
-          "note": "The ground first, as dark damp soil."
+          "note": "Brown round the edge with a deep green down the middle, as the jungle floor gets little light."
         },
         {
-          "technique": "Base coat",
+          "technique": "Dry brush",
           "coats": 1,
           "mix": 100,
-          "look": "a deep dark green",
-          "hex": "#2e3b26",
-          "note": "On the plants while still in the frame, so the paper stays stiff."
+          "look": "a pale sand",
+          "hex": "#c9b48a",
+          "note": "Lightly over everything, the plants most, to pick out their texture."
         },
         {
-          "technique": "Layer",
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 60,
+          "look": "a murky green",
+          "hex": "#3d5a2a",
+          "note": "Dabbed into the green and over into the brown, as moss and mud run together."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 60,
+          "look": "an earth brown",
+          "hex": "#4a3524",
+          "note": "Over the brown and the plant stems, so packet plants stop looking fake."
+        },
+        {
+          "technique": "Edge highlight",
           "coats": 1,
           "mix": 100,
-          "look": "a mid green",
-          "hex": "#4f6a34",
-          "note": "Patches on the leaves, some with a little blue mixed in."
-        },
-        {
-          "technique": "Glaze",
-          "coats": 1,
-          "mix": 30,
-          "look": "a thin earth brown",
-          "hex": "#5a4630",
-          "note": "Round the stems where the plants meet the soil."
+          "look": "a bright yellow green",
+          "hex": "#b5d334",
+          "note": "Along leaf edges with the side of the brush, where a slip just looks natural."
         }
       ]
     },
