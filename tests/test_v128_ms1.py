@@ -1,10 +1,10 @@
-﻿"""MS1 tests for Minifolio (Models opens without the first-frame stall). New behaviour only, and nothing here depends on the machine's speed:
+"""MS1 tests for Minifolio (Models opens without the first-frame stall). New behaviour only, and nothing here depends on the machine's speed:
 1. A redraw on Models builds again only the cards that changed: a stage tap, a rename or Undo rebuilds that one card and every other card
    stays the same element; a filter shows the right cards and keeps the ones it showed before; a faction colour or a recipe's new name
    still reaches the cards that show it.
 2. Arriving on Models with motion (the start circle's travel, the slide from the Dashboard) puts only the first screen of cards (and a
    margin) in the page in the tap's frame. The rest arrive over the next frames, in order and below the ones already there, and all
-   of them are in before the travel ends; nothing on screen moves meanwhile, the first card can take keyboard focus at once, and a
+   of them are in by the time the travel (or slide) ends; nothing on screen moves meanwhile, the first card can take keyboard focus at once, and a
    wheel turn puts the rest in at once. Reduced motion draws the whole list at once (and has no travel).
 3. With 300 cards of mixed shapes: the page height is steady while scrolling, a stage tap keeps the tapped card in place, and goToUnit
    finds and centres a card that was not drawn yet.
@@ -66,7 +66,7 @@ ARRIVE = """(sel) => new Promise(done => {
         else done({ first, max, focused, frames, ids: [...cards()].map(li => +li.dataset.id),
                     want: models.filter(isVisible).map(m => m.id), height: innerHeight });
     };
-    requestAnimationFrame(step);
+    queueMicrotask(() => requestAnimationFrame(step));   // after the app has asked for its own frames, as anything waiting for the travel does
 })"""
 
 def arrival_checks(page, label, sel, total, travel):
@@ -78,7 +78,8 @@ def arrival_checks(page, label, sel, total, travel):
     full = next((i for i, x in enumerate(f) if x["n"] == total), None)
     check(f"{label}: the rest arrive over later frames", full is not None and full >= 1 and len({x["n"] for x in f}) >= 3, [x["n"] for x in f][:30])
     if travel:
-        check(f"{label}: every card is in before the travel ends", full is not None and f[full]["travel"], [(x["n"], x["travel"]) for x in f][-12:])
+        ended = next((i for i, x in enumerate(f) if i > 0 and not x["travel"]), None)
+        check(f"{label}: every card is in by the time the travel ends", ended is not None and f[ended]["n"] == total, [(x["n"], x["travel"]) for x in f][-12:])
     else:
         ended = next((i for i, x in enumerate(f) if i > 0 and not x["arriving"]), None)
         check(f"{label}: every card is in by the end of the slide", ended is not None and f[ended]["n"] == total, [(x["n"], x["arriving"]) for x in f][-12:])

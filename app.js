@@ -6682,12 +6682,13 @@
     //    a stage tap, a rename, a tick or Details rebuilds that one card, and the others stay in the page as they are. A card with its
     //    Details open on a phone, or one just added, is always built fresh (as before).
     // 2. When Models arrives with motion (the start circle's travel, the slide or fade from another section), only the cards for the first
-    //    screen and a margin go in at once; the rest follow over the next frames, all before the arrival's own animation ends, and at once
-    //    if you touch, click, scroll with a wheel or use a key, or something looks for a card further down (unitsUpTo). New cards only ever
+    //    screen and a margin go in at once; the rest follow a few at a time over the next frames while the travel (or the slide) runs, and
+    //    whatever is left goes in at once when it ends, or straight away if you touch, click, turn a wheel or use a key, or something looks for
+    //    a card further down (unitsUpTo). New cards only ever
     //    go below the ones already there, so nothing on screen moves. With no motion (reduced motion) the whole list goes in at once.
     const unitCards = new Map();   // unit id -> { model, key, el }
     let unitQueue = null;          // while the list is arriving: { rest (units still to go in, in order), raf, last, n, start }
-    const UNIT_PIECES_MAX_MS = 2000;   // a list still arriving after this long goes in whole
+    const UNIT_PIECES_MAX_MS = 3000;   // a list still arriving after this long goes in whole (the travel is 1.5 s)
     // How many cards fill a screen and a margin: a card is 120 px or taller, so a screen's height of cards and one more (9 on a 390x844
     // phone, which shows 5 under the filters). From 900 px the cards sit in columns at least 360 px wide, so there are that many more.
     // The size is read on start and on resize only: reading it in the tap would make the browser lay out the whole list there and then.
@@ -6748,7 +6749,9 @@
       setUnitCards(visible.slice(0, now).map(m => cardFor(m, shared)));
       if (now >= visible.length) { stopUnitQueue(); return; }
       if (unitQueue) { unitQueue.rest = visible.slice(now); return; }
-      unitQueue = { rest: visible.slice(now), raf: requestAnimationFrame(unitQueueStep), last: 0, n: 4, start: performance.now(), travel: arriving === "travel" };
+      const q = unitQueue = { rest: visible.slice(now), raf: 0, last: 0, n: 4, start: performance.now(), travel: arriving === "travel" };
+      // The frames are asked for once the tap has been handled, so in every frame this runs after the travel's own step (see unitQueueStep).
+      queueMicrotask(() => { if (unitQueue === q) q.raf = requestAnimationFrame(unitQueueStep); });
     }
     function stopUnitQueue() {
       if (unitQueue) cancelAnimationFrame(unitQueue.raf);
@@ -6763,8 +6766,10 @@
       list.appendChild(part);
       if (!q.rest.length) stopUnitQueue();
     }
-    // One frame of the arrival. It asks for the next frame before anything else, so in every frame it runs before anything asked for later
-    // (a check waiting for the arrival to end sees the whole list). The tap's own frame adds nothing, so the travel or the slide starts on time.
+    // One frame of the arrival. The tap's own frame adds nothing, so the travel or the slide starts on time. Then a few cards each frame,
+    // spread over the time the motion has left. Whatever is left when the motion is over goes in at once: in the frame the travel ends
+    // (this runs after the travel's own step in each frame, and before anything that waits for the travel to end) or the frame after
+    // the page's slide or fade. It asks for its next frame first, so it keeps its place in that order.
     function unitQueueStep(time) {
       const q = unitQueue;
       if (!q) return;
@@ -6779,11 +6784,12 @@
         const t = a.effect && a.effect.getComputedTiming();
         if (t && (a.playState === "running" || a.playState === "pending")) left = Math.max(left, t.endTime - (t.localTime || 0));
       }
-      const frames = Math.floor(left / Math.max(gap, 16)) - 1;   // frames left, keeping one to spare
-      const late = frames < 1 || performance.now() - q.start > UNIT_PIECES_MAX_MS;
+      const moving = (q.travel && travelling) || views.units.getAnimations().some(a => a.playState === "running" || a.playState === "pending");
+      if (!moving || performance.now() - q.start > UNIT_PIECES_MAX_MS) { appendUnitCards(Infinity); return; }
+      const frames = Math.max(1, Math.floor(left / Math.max(gap, 16)) - 1);   // frames left, keeping one to spare
       // Spread evenly over the frames left, but never more than three frames' worth at once: on a slow phone a big batch makes the next
-      // frame late too, which would only make the batches bigger. Whatever is left when the motion ends goes in then.
-      appendUnitCards(late ? Infinity : Math.min(Math.max(q.n, Math.ceil(q.rest.length / frames)), q.n * 3));
+      // frame late too, which would only make the batches bigger.
+      appendUnitCards(Math.min(Math.max(q.n, Math.ceil(q.rest.length / frames)), q.n * 3));
     }
     // Everything in now: a person reaching for the page, or something about to look further down the list.
     function finishUnitCards() { if (unitQueue) appendUnitCards(Infinity); }
