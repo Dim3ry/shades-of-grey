@@ -57,6 +57,14 @@ def main():
         check("colours only from --mentor names: no hex, rgb or hsl", not re.search(r"#[0-9a-fA-F]{3,6}\b|rgba?\(|hsla?\(", src)
               and all(v.startswith("--mentor-") for v in re.findall(r"var\((--[\w-]+)", src)))
         check("no scripts or event attributes inside the drawings", not re.search(r"<script|\son[a-z]+\s*=", src, re.I))
+        # James's tweaks (3 Nov, afternoon)
+        stars = page.evaluate("""() => ['neutral','thinking','pleased','unsure','finished'].map(s => { const g = minifolioLook.svg('magical', s);
+            return [g.querySelectorAll('.ml-swirl, .ml-dotline').length, g.querySelectorAll('.ml-stars .ml-star').length]; })""")
+        check("Magical: the swirl lines are gone, and every state has a few tiny stars (fewer for Unsure, more for Pleased)",
+              all(a == 0 for a, _ in stars) and stars[3][1] < stars[0][1] < stars[2][1] and all(2 <= n <= 7 for _, n in stars), stars)
+        drop = page.evaluate("""() => { const n = minifolioLook.svg('grounded', 'neutral').querySelector('path.ml-dot'), f = minifolioLook.svg('grounded', 'finished');
+            const ring = f.querySelector('.ml-dotring'); return [ring && ring.tagName, ring && ring.getAttribute('d') === n.getAttribute('d'), getComputedStyle(document.body).color && 1]; }""")
+        check("Grounded Finished: a hollow paint drop (the drop the other states use, as an outline), not a hollow circle", drop[0] == "path" and drop[1], drop)
 
         print("\n--- 2. The script ---")
         phrases = page.evaluate("() => MENTOR_PHRASES")
@@ -123,6 +131,9 @@ def main():
             seen = {"open": page.evaluate(MOOD)}
             page.wait_for_function("() => document.querySelector('.mentor-orbbox').dataset.mood === 'neutral'", timeout=6000)
             seen["ready"] = page.evaluate(MOOD)
+            tw = page.evaluate("""() => { const shown = e => !!e && getComputedStyle(e).display !== 'none';
+                return [shown(document.querySelector('.mentor-orbbox .ml-stars')), shown(document.querySelector('#mentor-button .ml-stars')),
+                        [...document.querySelectorAll('.mentor-orbbox .ml-star')].some(s => s.getAnimations().some(a => a.animationName === 'ml-twinkle'))]; }""")
             ask(page, "how do I thin paint"); seen["clear"] = page.evaluate(MOOD)
             size0 = page.locator(".mentor-orbbox").bounding_box()
             ask(page, "basecaot tips"); seen["dym"] = page.evaluate(MOOD)
@@ -137,6 +148,8 @@ def main():
             check(f"{look}: Thinking while getting ready, then neutral; Pleased, Unsure (Did you mean and no answer) and Finished (thanks, bye)",
                   all(seen[k][0] == v and f"ml-{v}" in seen[k][1] and f"ml-{look}" in seen[k][1] for k, v in want.items()), seen)
             check(f"{look}: the round button never shows a mood", "ml-neutral" in button and f"ml-{look}" in button, button)
+            if look == "magical":
+                check("Magical: the stars twinkle in the window at rest; the round button leaves them out (it never moves)", tw == [True, False, True], tw)
             if look == "futuristic":
                 check("the orb's box keeps its size when the mood changes", size1 and size0 and abs(size0["width"] - size1["width"]) < 1 and abs(size0["height"] - size1["height"]) < 1, (size0, size1))
                 check("no answer twice in a row: E's line first, then a different unsure line", first_none == "I do not know that yet."
@@ -171,6 +184,11 @@ def main():
             ask(rp, q)
             shapes.append(rp.evaluate("() => [document.querySelector('.mentor-orbbox').getAnimations({ subtree: true }).length, document.querySelector('.mentor-orbbox svg').innerHTML]"))
         check("Pleased, Unsure and Finished: nothing moves, and each is a different shape", all(a == 0 for a, _ in shapes) and len({s for _, s in shapes}) == 3)
+        still = rp.evaluate("""() => { settings.mentorLook = 'magical'; applyMentorLook(); return ['pleased', 'unsure'].map(m => { mentorMood(m);
+            const st = [...document.querySelectorAll('.mentor-orbbox .ml-star')];
+            return [st.length, st.every(s => s.getAnimations().length === 0), +getComputedStyle(st[0]).opacity]; }); }""")
+        check("Magical stars with reduce motion: still, at a fixed opacity, and more and brighter for Pleased than Unsure",
+              all(x[1] for x in still) and still[0][0] > still[1][0] and still[0][2] > still[1][2] > 0, still)
         rm.close()
 
         print("\n--- 6. Colours and sizes ---")
