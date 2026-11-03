@@ -2974,6 +2974,60 @@
     "cold weather",
     "hot weather"
    ]
+  },
+  {
+   "canonical": "ferrule",
+   "variants": [
+    "ferule",
+    "ferrel",
+    "ferral",
+    "metal collar",
+    "brush collar"
+   ]
+  },
+  {
+   "canonical": "horse",
+   "variants": [
+    "pony",
+    "ponies",
+    "stallion",
+    "stallions",
+    "mare",
+    "mares",
+    "warhorse",
+    "warhorses"
+   ]
+  },
+  {
+   "canonical": "dapple",
+   "variants": [
+    "dappled",
+    "dapples",
+    "dappling"
+   ]
+  },
+  {
+   "canonical": "cure",
+   "variants": [
+    "curing",
+    "cured",
+    "cures"
+   ]
+  },
+  {
+   "canonical": "discontinued",
+   "variants": [
+    "discontinue",
+    "no longer made",
+    "out of production"
+   ]
+  },
+  {
+   "canonical": "colour lab",
+   "variants": [
+    "colourlab",
+    "colorlab"
+   ]
   }
  ]
 }
