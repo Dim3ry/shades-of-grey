@@ -6505,7 +6505,10 @@
       });
     }
     // Rows are redrawn all over the app, so watch the page for new buttons rather than calling this from every render.
-    new MutationObserver(fitChipRows).observe(document.body, { childList: true, subtree: true });
+    // MS1: except unit cards going into or out of the Models list: a card with its Details shut holds no row of buttons, and while the
+    // list arrives a few cards a frame, fitting every row again each frame cost more than the cards themselves.
+    const onlyUnitCards = (r) => r.target === list && [...r.addedNodes].every(n => n.nodeType === 1 && n.matches("li.unit") && !n.querySelector(CHIP_ROWS));
+    new MutationObserver((records) => { if (!records.every(onlyUnitCards)) fitChipRows(); }).observe(document.body, { childList: true, subtree: true });
     window.addEventListener("resize", fitChipRows);
     let tappedRow = null;   // A1: the row of buttons tapped just now, forgotten on the next tap elsewhere
     document.addEventListener("click", (event) => { tappedRow = event.target.closest ? event.target.closest(CHIP_ROWS) : null; fitChipRows(); }, true);   // a pressed button turns bold, which can change what fits
@@ -6748,7 +6751,11 @@
       const now = arriving || unitQueue ? Math.min(visible.length, Math.max(firstScreenCards(), placed)) : visible.length;
       setUnitCards(visible.slice(0, now).map(m => cardFor(m, shared)));
       if (now >= visible.length) { stopUnitQueue(); return; }
-      if (unitQueue) { unitQueue.rest = visible.slice(now); return; }
+      if (unitQueue) {
+        unitQueue.rest = visible.slice(now);
+        if (arriving) Object.assign(unitQueue, { last: 0, start: performance.now(), travel: arriving === "travel" });   // a new arrival: its own motion
+        return;
+      }
       const q = unitQueue = { rest: visible.slice(now), raf: 0, last: 0, n: 4, start: performance.now(), travel: arriving === "travel" };
       // The frames are asked for once the tap has been handled, so in every frame this runs after the travel's own step (see unitQueueStep).
       queueMicrotask(() => { if (unitQueue === q) q.raf = requestAnimationFrame(unitQueueStep); });
@@ -6776,15 +6783,20 @@
       q.raf = requestAnimationFrame(unitQueueStep);
       const gap = q.last ? time - q.last : 0;
       q.last = time;
-      if (!gap) { q.until = q.start + (q.travel ? motionMs("--motion-travel") : 0); return; }
+      if (!gap) {   // read once: the travel's length, and the page's fade or slide (asking the page for its animations makes it work out its styles)
+        q.until = q.start + (q.travel ? motionMs("--motion-travel") : 0);
+        q.anims = views.units.getAnimations();
+        return;
+      }
       q.n = gap <= 24 ? Math.min(Math.ceil(q.n * 1.5), 48) : gap > 50 ? Math.max(2, q.n >> 1) : q.n;   // more cards in a frame while frames are quick
       // How long the arrival still runs: the travel (while it lasts) or the page's own fade or slide, whichever ends later.
       let left = q.travel && travelling ? q.until - performance.now() : 0;
-      for (const a of views.units.getAnimations()) {
+      const running = q.anims.filter(a => a.playState === "running" || a.playState === "pending");
+      for (const a of running) {
         const t = a.effect && a.effect.getComputedTiming();
-        if (t && (a.playState === "running" || a.playState === "pending")) left = Math.max(left, t.endTime - (t.localTime || 0));
+        if (t) left = Math.max(left, t.endTime - (t.localTime || 0));
       }
-      const moving = (q.travel && travelling) || views.units.getAnimations().some(a => a.playState === "running" || a.playState === "pending");
+      const moving = (q.travel && travelling) || running.length > 0;
       if (!moving || performance.now() - q.start > UNIT_PIECES_MAX_MS) { appendUnitCards(Infinity); return; }
       const frames = Math.max(1, Math.floor(left / Math.max(gap, 16)) - 1);   // frames left, keeping one to spare
       // Spread evenly over the frames left, but never more than three frames' worth at once: on a slow phone a big batch makes the next
