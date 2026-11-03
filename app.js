@@ -5117,7 +5117,7 @@
     }));
 
     // ================= X5: THE MENTOR POP-UP =================
-    // The round Ask Mentor button opens a small window over whatever is showing. It has a greeting, a Paint Picker chip, a text box that is
+    // The round Ask Mentor button opens a small window over whatever is showing. It has a greeting, a Suggestions pill (MW2: Paint Picker and the starter questions), a text box that is
     // text box (X6b: it works), and the orb. Nothing typed or shown is stored or sent: mentorMessages lives only while the app is open.
     // Stock phrases live in one place so later chunks can fill the empty lists.
     // U6b: the lists are James's script (chunk U6): one plain sentence each, eight words or fewer, UK spelling, no exclamation marks.
@@ -5522,8 +5522,108 @@
       return b;
     }
 
-    function mentorDrawChips(state) {
-      state.chips.replaceChildren(state.pickerChip, ...mentorStarters().map(t => mentorChip(t, () => mentorSend(t, true))));
+    // ---- MW2: Mentor's starter questions sit inside one Suggestions pill (James, 3 Nov) ----
+    // One closed pill, "Suggestions", is the last thing in the conversation's scroll box: under the greeting on the start view, and under the
+    // latest answer once the chat has started (each answer is added above it, so there is only ever one). Tapping it unrolls a list of plain
+    // rows: Paint Picker, then the starter questions not yet asked (after an "I do not know" answer, not the ones that answer already shows).
+    // A row asks its question, as a chip did, and the list closes. The page is laid out once per open or close: the rows unroll by clip-path,
+    // and whatever moved (on the start view the window grows upward from the box, so its top edge, the orb, Back, Close and the greeting;
+    // in the chat view the conversation, scrolled so the rows show) glides there by transform, on the --motion-med and --motion-ease tokens.
+    // Closing plays the same frames backwards, then lays the page out again. Reduced motion, or the window still opening: at once.
+    // Escape closes the list before the window; focus goes to the first row on open and back to the pill on close.
+    function mentorSuggestRows() {
+      const last = mentorMessages[mentorMessages.length - 1];
+      const shown = new Set(last && last.who === "mentor" ? (last.suggestions || []).map(s => String(s && s.text || "").toLowerCase()) : []);
+      return mentorStarters().filter(t => !shown.has(t.toLowerCase()));
+    }
+    function mentorRow(text, onClick) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "mentor-row";
+      b.textContent = text;
+      b.addEventListener("click", onClick);
+      return b;
+    }
+    // Fills the list and closes it at once (after an answer, Back, or when the window opens).
+    function mentorDrawSuggest(state) {
+      mentorSuggestSettle(state);
+      state.suggestOpen = false;
+      state.pill.setAttribute("aria-expanded", "false");
+      state.list.hidden = true;
+      state.list.inert = false;
+      state.win.classList.remove("mentor-suggesting");
+      state.list.replaceChildren(mentorRow("Paint Picker", () => { closeMentor(false); goToPaintPicker(); }),
+        ...mentorSuggestRows().map(t => mentorRow(t, () => mentorSend(t, true))));
+    }
+    // A fold still moving ends where it was going (a new tap, an answer, Back).
+    function mentorSuggestSettle(state) {
+      const f = state.fold;
+      if (!f) return;
+      state.fold = null;
+      for (const a of f.anims) a.cancel();
+      f.end(true);   // cut short: an opening list is not scrolled into room afterwards
+    }
+    // A small phone's start view: once the list has opened, if fewer than three rows show under the pill, the greeting scrolls away (smoothly,
+    // after the unroll, so nothing passes under the orb) until the pill is at the top of the conversation.
+    function mentorSuggestRoom(state, smooth) {
+      const { win, scroll, pill, list } = state;
+      if (win.classList.contains("mentor-chatting") || list.hidden) return;
+      const room = scroll.getBoundingClientRect().bottom - list.getBoundingClientRect().top;
+      const top = pill.offsetTop - 4;
+      if (room >= 132 || top <= scroll.scrollTop) return;
+      if (smooth && !mentorReduced()) scroll.scrollTo({ top, behavior: "smooth" }); else scroll.scrollTop = top;
+    }
+    function mentorFoldTiming() {
+      const css = getComputedStyle(document.documentElement);
+      return { duration: parseFloat(css.getPropertyValue("--motion-med")) || 240, easing: css.getPropertyValue("--motion-ease").trim() || "linear" };
+    }
+    function mentorSuggestSet(state, open) {
+      if (!!state.suggestOpen === open) return;
+      mentorSuggestSettle(state);
+      const { win, scroll, pill, list } = state;
+      state.suggestOpen = open;
+      pill.setAttribute("aria-expanded", String(open));
+      const show = (on) => { list.hidden = !on; win.classList.toggle("mentor-suggesting", on); };
+      const still = mentorReduced() || !win.animate || state.moves.some(a => a.playState === "running");
+      const movers = still ? [] : [state.orbBox, state.back, state.close, state.greeting, state.msgs, pill].filter(el => el.getClientRects().length);
+      const tops = () => movers.map(el => el.getBoundingClientRect().top);
+      const before = tops(), winBefore = win.getBoundingClientRect().top, scrolled = scroll.scrollTop;
+      if (open) {
+        show(true);
+        list.inert = false;
+        // chat view: the rows in view, scrolled down until the last row shows, or until the pill reaches the top of the conversation if they
+        // do not all fit. (The start view is not scrolled here: the window grows upward instead, so the orb, the greeting and the pill move as
+        // one; on a small phone mentorSuggestRoom scrolls the greeting away once the unroll is over.)
+        const want = Math.min(pill.offsetTop - 4, list.offsetTop + list.offsetHeight + 6 - scroll.clientHeight);
+        if (win.classList.contains("mentor-chatting") && want > scroll.scrollTop) scroll.scrollTop = want;
+      } else {
+        list.inert = true;   // rolling up: its rows can no longer be reached
+        show(false);         // laid out closed for a moment, to measure where everything goes; put back below while it rolls up
+      }
+      if (still) { if (!open) list.inert = false; else mentorSuggestRoom(state, false); return; }
+      const after = tops(), winAfter = win.getBoundingClientRect().top;
+      if (!open) { show(true); scroll.scrollTop = scrolled; }
+      // closedTop - openTop for each piece: how far it sits below its open place when the list is closed
+      const shift = movers.map((el, i) => open ? before[i] - after[i] : after[i] - before[i]);
+      const grow = open ? winBefore - winAfter : winAfter - winBefore;
+      const timing = Object.assign(mentorFoldTiming(), { fill: open ? "none" : "forwards" });
+      const play = (el, closedLook, openLook) => el.animate(open ? [closedLook, openLook] : [openLook, closedLook], timing);
+      const px = (n) => `${Math.round(n * 10) / 10}px`;
+      const pillShift = shift[movers.indexOf(pill)] || 0;
+      const anims = [play(list, { clipPath: "inset(0px 0px 100% 0px)", transform: `translateY(${px(pillShift)})` }, { clipPath: "inset(0px 0px 0px 0px)", transform: "translateY(0px)" })];
+      movers.forEach((el, i) => { if (Math.abs(shift[i]) > 0.5) anims.push(play(el, { transform: `translateY(${px(shift[i])})` }, { transform: "translateY(0px)" })); });
+      if (Math.abs(grow) > 0.5) {
+        const r = px(parseFloat(getComputedStyle(win).borderTopLeftRadius) || 0);
+        anims.push(play(win, { clipPath: `inset(${px(grow)} 0px 0px 0px round ${r})` }, { clipPath: `inset(0px 0px 0px 0px round ${r})` }));
+      }
+      const f = { anims, end: open ? (cut) => { if (!cut) mentorSuggestRoom(state, true); } : () => { show(false); list.inert = false; } };
+      state.fold = f;
+      anims[0].addEventListener("finish", () => {
+        if (state.fold !== f) return;
+        state.fold = null;
+        f.end();   // closing: laid out closed in the same step its frames are taken away, so nothing jumps
+        for (const a of anims) a.cancel();
+      });
     }
 
     // Send what the box holds (or the text of a chip). Returns false when there was nothing to send. E: confirmed is true for a "Did you mean" chip.
@@ -5564,7 +5664,7 @@
       while (state.msgs.children.length > mentorMessages.length) state.msgs.firstElementChild.remove();
       state.win.classList.add("mentor-chatting");
       state.status.textContent = reply.didYouMean ? `Did you mean ${String(reply.didYouMean).replace(/[?.!]+$/, "")}? ${reply.text}` : reply.text;   // announced politely; the rows themselves are not read out unprompted
-      mentorDrawChips(state);
+      mentorDrawSuggest(state);   // MW2: one closed Suggestions pill, now under this answer
       mentorMood(mood);
       mentorOrbSettle(state, orbWas);
       state.scroll.scrollTop = first.offsetTop - 4;
@@ -5631,14 +5731,34 @@
       greeting.textContent = returning ? mentorPhrase(MENTOR_PHRASES.returning, "Welcome back.") : mentorPhrase(MENTOR_PHRASES.greeting, "How can I help?");
       const msgs = document.createElement("div");
       msgs.className = "mentor-msgs";
-      scroll.append(greeting, msgs);
+      // MW2: the Suggestions pill and its list of rows (closed), after the conversation
+      const suggest = document.createElement("div");
+      suggest.className = "mentor-suggest-box";
+      const pill = document.createElement("button");
+      pill.type = "button";
+      pill.className = "mentor-suggest";
+      pill.setAttribute("aria-expanded", "false");
+      pill.setAttribute("aria-controls", "mentor-suggest-list");
+      const pillText = document.createElement("span");
+      pillText.textContent = "Suggestions";
+      const chevron = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      chevron.setAttribute("viewBox", "0 0 24 24");
+      chevron.setAttribute("aria-hidden", "true");
+      chevron.setAttribute("focusable", "false");
+      const chevronPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      chevronPath.setAttribute("d", "M6 9l6 6 6-6");
+      chevron.appendChild(chevronPath);
+      pill.append(pillText, chevron);
+      const list = document.createElement("div");
+      list.className = "mentor-rows";
+      list.id = "mentor-suggest-list";
+      list.hidden = true;
+      suggest.append(pill, list);
+      scroll.append(greeting, msgs, suggest);
       const status = document.createElement("p");
       status.className = "sr-only";
       status.setAttribute("role", "status");
       status.setAttribute("aria-live", "polite");
-      const chips = document.createElement("div");
-      chips.className = "mentor-chips";
-      const pickerChip = mentorChip("Paint Picker", () => { closeMentor(false); goToPaintPicker(); });
       const form = document.createElement("form");
       form.className = "mentor-form";
       form.noValidate = true;
@@ -5674,7 +5794,7 @@
       arrow.appendChild(shape);
       send.appendChild(arrow);
       form.append(input, send);
-      col.append(scroll, chips, form, status);
+      col.append(scroll, form, status);
 
       const orbBox = document.createElement("div");
       orbBox.className = "mentor-orbbox ml-live";   // U6b: the look's own slow motion runs here only
@@ -5690,11 +5810,16 @@
       document.body.appendChild(backdrop);
       document.body.classList.add("mentor-open");
 
-      const state = { backdrop, win, opener, scroll, msgs, chips, pickerChip, input, status, orbBox, skin, moves: [], mood: "neutral", moodTimer: 0, prevOverflow: document.body.style.overflow };
+      const state = { backdrop, win, opener, scroll, msgs, greeting, pill, list, back, close, input, status, orbBox, skin, moves: [], mood: "neutral", moodTimer: 0, prevOverflow: document.body.style.overflow };
       mentorState = state;
       for (const m of mentorMessages) msgs.appendChild(mentorBuildMessage(m));   // the conversation so far, if the window was closed and opened again
       if (mentorMessages.length) win.classList.add("mentor-chatting");
-      mentorDrawChips(state);
+      mentorDrawSuggest(state);
+      pill.addEventListener("click", () => {   // MW2
+        const open = !state.suggestOpen;
+        mentorSuggestSet(state, open);
+        if (open && list.firstElementChild) list.firstElementChild.focus({ preventScroll: true });
+      });
       if (mentorMessages.length) scroll.scrollTop = scroll.scrollHeight;
       document.body.style.overflow = "hidden";   // the page behind does not scroll
       close.addEventListener("click", () => closeMentor());
@@ -5705,16 +5830,17 @@
         win.classList.remove("mentor-chatting");
         status.textContent = "";
         input.value = "";
-        mentorDrawChips(state);
+        mentorDrawSuggest(state);
         mentorOrbSettle(state, orbWas);   // MW1: the orb grows back to its start size
         scroll.scrollTop = 0;
-        pickerChip.focus({ preventScroll: true });   // the first thing in the start view
+        pill.focus({ preventScroll: true });   // the first thing in the start view (MW2: the Suggestions pill)
       });
       form.addEventListener("submit", (event) => { event.preventDefault(); if (mentorSend(input.value, false)) input.value = ""; });
       backdrop.addEventListener("click", (event) => { if (event.target === backdrop) closeMentor(); });
       state.onKey = (event) => {
         if (event.key === "Escape") {
           event.preventDefault(); event.stopPropagation();
+          if (state.suggestOpen) { mentorSuggestSet(state, false); pill.focus({ preventScroll: true }); return; }   // MW2: the list closes first
           closeMentor();
         } else if (event.key === "Tab") {
           const all = [...win.querySelectorAll("button, input, select, summary, a[href]")].filter(b => !b.disabled && b.tabIndex >= 0 && b.getClientRects().length);

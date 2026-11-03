@@ -4,6 +4,7 @@
 2. The Guides search box is full width and typing in it filters the guides.
 3. Mentor first screen: the orb does not sit on any starter question, and no question is cut off sideways.
 4. Mentor chat: the question pills wrap (nothing runs off the right edge) and the strip is no taller than a third of the screen.
+   (MW2, v129: the strip became one Suggestions pill whose rows open in the conversation; the checks follow it.)
 5. Bottom of the screen: the whole Ask Mentor label is on screen and the last card scrolls clear of the menu (390x844, 360x640, 320x568).
 6. Menu words are not cut at the slanted edge (three themes, light and dark). The last Sources chip is not cut by the strip below.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
@@ -22,7 +23,7 @@ def check(name, ok, detail=""):
 
 def open_mentor_window(page):
     page.click("#mentor-button")
-    page.wait_for_selector(".mentor-window .mentor-chip")
+    page.wait_for_selector(".mentor-window .mentor-suggest")   # MW2 (v129): the Suggestions pill (it was the Paint Picker chip)
     page.wait_for_timeout(700)   # the window finishes growing
 
 def main():
@@ -57,9 +58,13 @@ def main():
         print("\n--- 3. Mentor first screen ---")
         t.load(page)
         open_mentor_window(page)
+        # MW2 (v129): the starter questions are rows inside the Suggestions pill now (they were a strip of chips), so the pill is opened
+        # (at once: the unroll is finished) and its rows are what is checked
+        page.click(".mentor-suggest")
+        page.evaluate("() => document.querySelector('.mentor-window').getAnimations({ subtree: true }).filter(a => !a.animationName && !a.transitionProperty).forEach(a => a.finish())")
         r = page.evaluate("""() => { const o = document.querySelector('.mentor-orbbox').getBoundingClientRect();
-          const chips = document.querySelector('.mentor-chips');
-          const rows = [...chips.querySelectorAll('.mentor-chip')].map(c => c.getBoundingClientRect());
+          const chips = document.querySelector('.mentor-rows');
+          const rows = [document.querySelector('.mentor-suggest'), ...chips.querySelectorAll('.mentor-row')].map(c => c.getBoundingClientRect());
           return { overlap: rows.some(c => c.right > o.left && c.left < o.right && c.bottom > o.top && c.top < o.bottom && c.height > 0),
                    sideways: chips.scrollWidth > chips.clientWidth + 1,
                    greeting: document.querySelector('.mentor-greeting').getBoundingClientRect().height > 10,
@@ -79,15 +84,20 @@ def main():
             page.keyboard.press("Enter")
             page.wait_for_selector(".mentor-source")
             page.wait_for_timeout(500)
-            r = page.evaluate("""() => { const c = document.querySelector('.mentor-chips');
-              const s = document.querySelector('.mentor-scroll'); s.scrollTop = s.scrollHeight;
-              const sr = s.getBoundingClientRect(); const src = [...document.querySelectorAll('.mentor-source')].pop().getBoundingClientRect();
-              return { sideways: c.scrollWidth > c.clientWidth + 1, tall: c.getBoundingClientRect().height / window.innerHeight,
-                       wraps: [...c.querySelectorAll('.mentor-chip')].every(x => x.getBoundingClientRect().right <= c.getBoundingClientRect().right + 1),
-                       gap: sr.bottom - src.bottom, page: document.documentElement.scrollWidth <= window.innerWidth + 1 }; }""")
-            check(f"{w}x{h}: pills do not run off the side", not r["sideways"] and r["wraps"], r)
-            check(f"{w}x{h}: the strip is no taller than a third of the screen", r["tall"] <= 0.34, r)
-            check(f"{w}x{h}: the last Sources chip clears the edge below it", r["gap"] >= 3, r)
+            # MW2 (v129): the strip of question pills under the conversation is gone: one closed Suggestions pill sits under the answer, and its
+            # rows open inside the conversation. So "the strip is no taller than a third of the screen" became "nothing but one pill, one line high",
+            # and the sideways check reads the opened rows. The edge check now reads the pill, the last thing in the conversation (after the Sources).
+            r = page.evaluate("""() => { const s = document.querySelector('.mentor-scroll'); s.scrollTop = s.scrollHeight;
+              const pill = document.querySelectorAll('.mentor-suggest'), sr = s.getBoundingClientRect(), b = pill[0].getBoundingClientRect();
+              return { pills: pill.length, strip: document.querySelectorAll('.mentor-col > .mentor-chips').length, tall: pill[0].getBoundingClientRect().height,
+                       gap: sr.bottom - b.bottom, page: document.documentElement.scrollWidth <= window.innerWidth + 1 }; }""")
+            page.click(".mentor-suggest")
+            page.evaluate("() => document.querySelector('.mentor-window').getAnimations({ subtree: true }).filter(a => !a.animationName && !a.transitionProperty).forEach(a => a.finish())")
+            r.update(page.evaluate("""() => { const s = document.querySelector('.mentor-scroll'), c = s.getBoundingClientRect();
+              return { sideways: s.scrollWidth > s.clientWidth + 1, wraps: [...document.querySelectorAll('.mentor-row')].every(x => x.getBoundingClientRect().right <= c.right + 1) }; }"""))
+            check(f"{w}x{h}: the question rows do not run off the side", not r["sideways"] and r["wraps"], r)
+            check(f"{w}x{h}: no strip of pills, only one Suggestions pill one line high", r["pills"] == 1 and r["strip"] == 0 and r["tall"] <= 60, r)
+            check(f"{w}x{h}: the last thing under the Sources (the Suggestions pill) clears the edge below it", r["gap"] >= 3, r)
             check(f"{w}x{h}: no sideways scroll", r["page"], r)
             page.keyboard.press("Escape")
             page.wait_for_timeout(400)

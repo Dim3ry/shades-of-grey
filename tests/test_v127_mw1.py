@@ -118,12 +118,14 @@ def main():
         check("the round button stays where it is and shows no mood", after["box"] == before["box"] and "ml-neutral" in after["look"], (before, after))
 
         print("\n--- 2. The orb above the chat ---")
-        g, chips, form = rect(page, ".mentor-greeting"), rect(page, ".mentor-col > .mentor-chips"), rect(page, ".mentor-form")
+        # MW2 (v129): the strip of starter chips became one Suggestions pill, centred under the greeting, so the chip strip's box here became the
+        # pill's, and "the chips use the window's full width" became "the pill is centred" (the box still uses the full width)
+        g, chips, form = rect(page, ".mentor-greeting"), rect(page, ".mentor-suggest"), rect(page, ".mentor-form")
         ow = orb[2] - orb[0]
         check("the orb is larger than before (68 px), 84 to 96 px", 84 <= ow <= 96, ow)
-        check("the orb sits above the greeting, the chips and the box", orb[3] <= g[1] + 0.5 and g[3] <= chips[1] + 0.5 and chips[3] <= form[1] + 0.5, (orb, g, chips, form))
+        check("the orb sits above the greeting, the Suggestions pill and the box", orb[3] <= g[1] + 0.5 and g[3] <= chips[1] + 0.5 and chips[3] <= form[1] + 0.5, (orb, g, chips, form))
         check("the orb is centred in the window", abs(centre(orb)[0] - centre(win)[0]) < 1.5, (orb, win))
-        check("the chips and the box use the window's full width", chips[0] - win[0] < 20 and win[2] - chips[2] < 20 and form[2] - form[0] > win[2] - win[0] - 40, (chips, form, win))
+        check("the pill is centred and the box uses the window's full width", abs(centre(chips)[0] - centre(win)[0]) < 1.5 and form[2] - form[0] > win[2] - win[0] - 40, (chips, form, win))
         shrink = page.evaluate(ORB_MOVE, "how do I thin paint")
         check("in the chat view the orb shrinks smoothly (it starts from its old size)", len(shrink) == 1 and "scale(1." in shrink[0], shrink)
         page.wait_for_function("() => document.querySelector('.mentor-orbbox svg').getAnimations().every(a => a.animationName)")

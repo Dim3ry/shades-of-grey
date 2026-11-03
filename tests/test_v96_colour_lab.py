@@ -73,7 +73,7 @@ def main():
         print("\n--- 3. Links ---")
         t.main_tab(page, "dashboard")
         page.click("#mentor-button")
-        page.click(".mentor-chip")   # X5: the button opens the Mentor window; its Paint Picker chip opens Colour Lab
+        page.click(".mentor-suggest"); page.click(".mentor-row >> nth=0")   # MW2 (v129): Paint Picker is the first row inside the Suggestions pill (was a chip). X5: the button opens the Mentor window; its Paint Picker chip opens Colour Lab
         page.wait_for_selector("#cmp-lab-picker")
         check("Ask Mentor button's Paint Picker chip opens Painting > Colour Lab > Paint Picker", page.evaluate("() => [settings.tab, settings.recipeView, compendiumState.lab].join()") == "recipes,colourlab,picker")
         seed = {"parts": ["Whole model"], "techniques": ["Layer"], "schemes": [], "shorthand": {}, "v15": True, "recipes": [],
