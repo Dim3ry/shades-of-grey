@@ -83,7 +83,7 @@ def main():
 
         print("\n--- 4. Keyboard ring follows the circle, 3:1, six themes x dark and light ---")
         bad = []
-        for theme in ("classic", "blueprint", "parchment", "forge", "bench", "rulebook"):
+        for theme in ("classic", "parchment", "forge", "bench"):   # TH1: Blueprint and Rulebook were removed, so four themes are left
             for mode in ("dark", "light"):
                 page.evaluate("([th, m]) => { document.documentElement.dataset.t = th; document.documentElement.dataset.m = m; }", [theme, mode])
                 page.evaluate("() => document.activeElement && document.activeElement.blur()")

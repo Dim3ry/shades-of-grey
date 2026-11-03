@@ -39,7 +39,7 @@ def check(name, ok, detail=""):
     results.append(bool(ok))
     print(("PASS " if ok else "FAIL ") + name + ("" if ok else f"  -> {detail}"))
 
-THEMES = ["classic", "blueprint", "parchment", "forge", "bench", "rulebook"]
+THEMES = ["classic", "parchment", "forge", "bench"]   # TH1: Blueprint and Rulebook were removed, so four themes are left
 UNITS = [{"id": i + 1, "name": f"Squad {i + 1}", "hobby": "Skirmish", "faction": "Gloom Legion" if i % 2 else "Bright Host",
           "stage": st, "count": 1, "added": "2026-09-01", "log": [["2026-09-01", 0], ["2026-09-1" + str(i), st]], "repaint": i == 3}
          for i, st in enumerate([0, 1, 2, 3, 4, 5, 6, 7])]

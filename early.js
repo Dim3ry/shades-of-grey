@@ -10,11 +10,9 @@
 try {
   const PAGE_COLOURS = {
     classic: { dark: "#0b1220", light: "#e9eff6" },
-    blueprint: { dark: "#0c2c4f", light: "#f1f4f8" },
     parchment: { dark: "#17120e", light: "#d8c59a" },
     forge: { dark: "#0e0e10", light: "#cfcdc6" },
     bench: { dark: "#111815", light: "#cfe0d4" },
-    rulebook: { dark: "#181810", light: "#c8c6a9" },
   };
   const saved = JSON.parse(localStorage.getItem("shades-of-grey-settings") || "{}") || {};
   const choice = saved.appearance;

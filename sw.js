@@ -26,8 +26,8 @@ function isOcrFile(url) {
 }
 // v47: the theme fonts (fonts/*.woff2) are kept in their own store too, also NOT cleared on updates. A font is
 // saved the first time the app uses it (when you choose a theme, or see its name on the Theme buttons), and after
-// that it comes from the saved copy, so a chosen theme looks right offline. Nothing is saved at install, so
-// people who keep Classic never download any of them.
+// that it comes from the saved copy, so a chosen theme looks right offline. Nothing is saved at install.
+// (TH1: Classic uses one small font too, so it is saved the first time the app opens.)
 const FONT_CACHE = "shades-of-grey-fonts";
 function isFontFile(url) {
   return url.origin === self.location.origin && /\/fonts\/[a-z0-9-]+\.woff2$/.test(url.pathname);

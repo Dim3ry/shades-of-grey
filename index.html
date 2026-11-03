@@ -131,34 +131,26 @@
       color-scheme: light;
     }
     /* v47: the theme fonts. Our own files only (the security policy allows fonts from minifolio.app and nowhere else).
-       Latin subset, woff2. A browser downloads a font only when something on screen uses it, so Classic downloads none,
+       Latin subset, woff2. A browser downloads a font only when something on screen uses it (TH1: Classic now uses Oxanium, set in its TH1 block),
        and sw.js keeps each one after its first use so a chosen theme works offline. Licences: fonts/LICENSES.md. */
-    @font-face { font-family: 'Barlow Condensed'; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/barlow-condensed-latin-500-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-    @font-face { font-family: 'Barlow Condensed'; font-style: normal; font-weight: 600; font-display: swap; src: url(fonts/barlow-condensed-latin-600-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
     @font-face { font-family: 'Barlow'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/barlow-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
     @font-face { font-family: 'Barlow'; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/barlow-latin-500-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
     @font-face { font-family: 'Barlow'; font-style: normal; font-weight: 600; font-display: swap; src: url(fonts/barlow-latin-600-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
     @font-face { font-family: 'Barlow Semi Condensed'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/barlow-semi-condensed-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
     @font-face { font-family: 'Barlow Semi Condensed'; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/barlow-semi-condensed-latin-500-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
     @font-face { font-family: 'Big Shoulders Stencil'; font-style: normal; font-weight: 700; font-display: swap; src: url(fonts/big-shoulders-stencil-latin-700-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-    @font-face { font-family: 'Courier Prime'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/courier-prime-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-    @font-face { font-family: 'Courier Prime'; font-style: normal; font-weight: 700; font-display: swap; src: url(fonts/courier-prime-latin-700-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
     @font-face { font-family: 'DM Mono'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/dm-mono-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
     @font-face { font-family: 'DM Mono'; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/dm-mono-latin-500-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
     @font-face { font-family: 'EB Garamond'; font-style: italic; font-weight: 400; font-display: swap; src: url(fonts/eb-garamond-latin-400-italic.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
     @font-face { font-family: 'EB Garamond'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/eb-garamond-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
     @font-face { font-family: 'EB Garamond'; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/eb-garamond-latin-500-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-    @font-face { font-family: 'IBM Plex Sans Condensed'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/ibm-plex-sans-condensed-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-    @font-face { font-family: 'IBM Plex Sans Condensed'; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/ibm-plex-sans-condensed-latin-500-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
     @font-face { font-family: 'IM Fell English'; font-style: italic; font-weight: 400; font-display: swap; src: url(fonts/im-fell-english-latin-400-italic.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
     @font-face { font-family: 'IM Fell English'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/im-fell-english-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
     @font-face { font-family: 'Permanent Marker'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/permanent-marker-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-    @font-face { font-family: 'Share Tech Mono'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/share-tech-mono-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-    @font-face { font-family: 'Special Elite'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/special-elite-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
     @font-face { font-family: 'Teko'; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/teko-latin-500-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
     @font-face { font-family: 'Teko'; font-style: normal; font-weight: 600; font-display: swap; src: url(fonts/teko-latin-600-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
 
-    /* v47: the theme "structure" tokens. These are Classic's values (the look before themes), so Classic is unchanged.
+    /* v47: the theme "structure" tokens. These are the pre-theme values; the photo viewer and the camera keep them. TH1: Classic's own fonts and corners are in its TH1 block.
        The other themes set their own in the THEMES section near the end. The photo viewer and the camera always keep these. */
     :root, [data-t="classic"], .viewer, #scan-camera {
       --font-heading: system-ui, sans-serif; --font-body: system-ui, sans-serif; --font-num: inherit; --num-style: normal;
@@ -168,7 +160,7 @@
       --heading-size: 16px; --wordmark-size: 24px; --body-size: 16px; --card-pad: 16px;
       --card-shadow: none; --texture: none; --texture-size: auto; --frame: 1px solid var(--border); --rule: 0 solid transparent; --rule-gap: 0px;
     }
-    /* Classic's own extra colours (the old ones, so nothing changes). */
+    /* Classic's own extra colours (the pre-theme ones; TH1 sets Classic's toast and basket colours in its own block). */
     :root, .viewer, #scan-camera, .theme-swatch[data-t="classic"] {
       --on-accent: var(--background); --track: var(--background); --heading-colour: var(--text); --wordmark-colour: var(--accent);
       --basket-deep: #1e3a8a; --toast-ring: rgba(125, 211, 252, 0.45);
@@ -192,7 +184,7 @@
 
     main { max-width: 640px; margin: 0 auto; }
 
-    /* v47: headings follow the theme (see THEMES below). Classic's values are the old ones: system font, bold, 24 px / 16 px, accent title. */
+    /* v47: headings follow the theme (see THEMES below). Classic: 24 px / 16 px, accent title (TH1: in Oxanium). */
     h1 { margin: 0 0 16px; padding-bottom: var(--rule-gap); border-bottom: var(--rule); font-size: var(--wordmark-size); color: var(--wordmark-colour);
          font-family: var(--font-heading); font-weight: var(--heading-weight); text-transform: var(--heading-transform); letter-spacing: var(--heading-tracking); }
     h1 .version-tag { font-family: var(--font-body); text-transform: none; letter-spacing: normal; }
@@ -1899,118 +1891,11 @@
     #units-import #wh-panel.hidden + .review { margin-top: 0; padding-top: 0; border-top: 0; }
     .empty .button-grid { margin: 14px auto 0; max-width: 340px; text-align: left; }
 
-    /* ===== v47: THEMES (Blueprint, Parchment Codex, Grim Forge, Paint Bench, Rulebook) =====
+    /* ===== v47: THEMES (Parchment Codex, Grim Forge, Paint Bench; TH1 removed Blueprint and Rulebook) =====
        Final look = theme x mode. The page carries data-t (theme) and data-m (dark or light), set by early.js
        before the first paint and by applyTheme in app.js. The small theme buttons in Settings carry their own
        data-t and data-m, so each one shows its own theme. Values come from minifolio-themes-spec.md; anything
        changed for contrast is listed in the pull request for v47. */
-    [data-t="blueprint"] {
-      --font-heading: 'Barlow Condensed', 'Arial Narrow', sans-serif;
-      --font-body: 'IBM Plex Sans Condensed', 'Arial Narrow', system-ui, sans-serif;
-      --font-num: 'Share Tech Mono', ui-monospace, monospace;
-      --num-style: normal;
-      --radius-card: 0px;
-      --radius-control: 0px;
-      --radius-box: 0px;
-      --radius-small: 0px;
-      --radius-bar: 0px;
-      --border-width: 1px;
-      --border-style: solid;
-      --heading-weight: 600;
-      --heading-transform: uppercase;
-      --heading-tracking: .16em;
-      --heading-size: 19px;
-      --wordmark-size: 32px;
-      --body-size: 16px;
-      --card-pad: 18px;
-      --button-font: var(--font-heading);
-      --button-weight: 600;
-      --button-transform: uppercase;
-      --button-tracking: .12em;
-      --texture-size: 16px 16px, 16px 16px, 80px 80px, 80px 80px;
-    }
-    [data-t="blueprint"][data-m="dark"] {
-      --background: #0c2c4f;
-      --card: #0f3560;
-      --track: #0a2444;
-      --border: #7fb2e5;
-      --text: #e8f2ff;
-      --muted: #92b8df;
-      --accent: #f4f9ff;
-      --on-accent: #0c2c4f;
-      --heading-colour: #f4f9ff;
-      --wordmark-colour: #f4f9ff;
-      --danger: #ffa3a3;
-      --shadow: rgba(0, 0, 0, 0.45);
-      --badge-bg: rgba(15, 53, 96, 0.85);
-      --accent-wash: rgba(244, 249, 255, 0.08);
-      --accent-wash-hover: rgba(244, 249, 255, 0.05);
-      --note: #8fe3ff;
-      --note-wash: rgba(143, 227, 255, 0.18);
-      --good: #6ee7b7;
-      --good-wash: rgba(110, 231, 183, 0.12);
-      --bad: #ffa3a3;
-      --bad-wash: rgba(255, 163, 163, 0.1);
-      --warn: #fde68a;
-      --caution: #fbbf24;
-      --wish: #b8dcff;
-      --grey-status: #a9bfd6;
-      --chip-on: #0c2c4f;
-      --toast-action: #1d4f91;
-      --series-added: #fbbf24;
-      --series-painted: #6ee7b7;
-      --toast-ring: rgba(244, 249, 255, 0.45);
-      --basket-deep: #000000;
-      --first-letter: #f4f9ff;
-      color-scheme: dark;
-      --inner-outline: rgba(127, 178, 229, 0.35);
-      --frame: 1px solid var(--border);
-      --rule: 1px solid var(--border);
-      --card-shadow: none;
-      --swatch-edge: #7fb2e5;
-      --texture: linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px), linear-gradient(rgba(255,255,255,.10) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.10) 1px, transparent 1px);
-    }
-    [data-t="blueprint"][data-m="light"] {
-      --background: #f1f4f8;
-      --card: #fbfcfe;
-      --track: #e3e9f1;
-      --border: #1d4f91;
-      --text: #0d2a4d;
-      --muted: #4c6a8c;
-      --accent: #1d4f91;
-      --on-accent: #ffffff;
-      --heading-colour: #0d2a4d;
-      --wordmark-colour: #0d2a4d;
-      --danger: #b42318;
-      --shadow: rgba(13, 42, 77, 0.18);
-      --badge-bg: rgba(251, 252, 254, 0.92);
-      --accent-wash: rgba(29, 79, 145, 0.09);
-      --accent-wash-hover: rgba(29, 79, 145, 0.05);
-      --note: #0b6e8a;
-      --note-wash: rgba(11, 110, 138, 0.1);
-      --good: #11704f;
-      --good-wash: rgba(17, 112, 79, 0.1);
-      --bad: #b42318;
-      --bad-wash: rgba(180, 35, 24, 0.08);
-      --warn: #7a5300;
-      --caution: #9a4a00;
-      --wish: #1d5fbf;
-      --grey-status: #55697f;
-      --chip-on: #ffffff;
-      --toast-action: #9fd0ff;
-      --series-added: #9a4a00;
-      --series-painted: #11704f;
-      --toast-ring: rgba(29, 79, 145, 0.45);
-      --basket-deep: #0d2a4d;
-      --first-letter: #1d4f91;
-      color-scheme: light;
-      --inner-outline: rgba(29, 79, 145, 0.35);
-      --frame: 1px solid var(--border);
-      --rule: 1px solid var(--border);
-      --card-shadow: none;
-      --swatch-edge: #1d4f91;
-      --texture: linear-gradient(rgba(29,79,145,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(29,79,145,.08) 1px, transparent 1px), linear-gradient(rgba(29,79,145,.15) 1px, transparent 1px), linear-gradient(90deg, rgba(29,79,145,.15) 1px, transparent 1px);
-    }
     [data-t="parchment"] {
       --font-heading: 'IM Fell English', 'Palatino Linotype', Georgia, serif;
       --font-body: 'EB Garamond', Georgia, serif;
@@ -2328,115 +2213,7 @@
       --swatch-edge: rgba(20, 35, 27, 0.35);
       --texture: linear-gradient(rgba(20,60,40,.10) 1px, transparent 1px), linear-gradient(90deg, rgba(20,60,40,.10) 1px, transparent 1px), linear-gradient(rgba(20,60,40,.18) 1px, transparent 1px), linear-gradient(90deg, rgba(20,60,40,.18) 1px, transparent 1px);
     }
-    [data-t="rulebook"] {
-      --font-heading: 'Special Elite', 'Courier New', monospace;
-      --font-body: 'Courier Prime', 'Courier New', monospace;
-      --font-num: 'Courier Prime', 'Courier New', monospace;
-      --num-style: normal;
-      --num-weight: 700;
-      --radius-card: 3px 6px 4px 7px;
-      --radius-control: 255px 14px 225px 14px / 14px 225px 14px 255px;
-      --radius-box: 3px 6px 4px 7px;
-      --radius-small: 3px 6px 4px 7px;
-      --radius-bar: 2px;
-      --border-width: 2px;
-      --border-style: solid;
-      --heading-weight: 400;
-      --heading-transform: uppercase;
-      --heading-tracking: .04em;
-      --heading-size: 17px;
-      --wordmark-size: 30px;
-      --body-size: 16px;
-      --card-pad: 16px;
-      --button-font: var(--font-heading);
-      --button-weight: 400;
-      --button-transform: uppercase;
-      --button-tracking: .04em;
-      --texture-size: auto;
-    }
-    [data-t="rulebook"][data-m="dark"] {
-      --background: #181810;
-      --card: #20201a;
-      --track: #121209;
-      --border: #8c8a68;
-      --text: #dad4b6;
-      --muted: #9a9778;
-      --accent: #d6653d;
-      --on-accent: #1a1209;
-      --heading-colour: #d96330;
-      --wordmark-colour: #d6653d;
-      --danger: #f08a7a;
-      --shadow: rgba(0, 0, 0, 0.45);
-      --badge-bg: rgba(32, 32, 26, 0.85);
-      --accent-wash: rgba(214, 101, 61, 0.08);
-      --accent-wash-hover: rgba(214, 101, 61, 0.05);
-      --note: #9fb8c4;
-      --note-wash: rgba(159, 184, 196, 0.18);
-      --good: #8fc46a;
-      --good-wash: rgba(143, 196, 106, 0.12);
-      --bad: #f08a7a;
-      --bad-wash: rgba(240, 138, 122, 0.1);
-      --warn: #e8cf7a;
-      --caution: #f0a050;
-      --wish: #8fb5e8;
-      --grey-status: #a3a08a;
-      --chip-on: #1a1209;
-      --toast-action: #8a3412;
-      --series-added: #8fb5e8;
-      --series-painted: #8fc46a;
-      --toast-ring: rgba(214, 101, 61, 0.45);
-      --basket-deep: #000000;
-      --first-letter: #d6653d;
-      color-scheme: dark;
-      --card-shadow: 3px 3px 0 rgba(0,0,0,.5);
-      --hard-shadow: rgba(0, 0, 0, 0.5);
-      --rule: 3px solid #8c8a68;
-      --frame: 3px solid #8c8a68;
-      --swatch-edge: #8c8a68;
-      --texture: repeating-linear-gradient(45deg, rgba(255,240,200,.03) 0 1px, transparent 1px 4px), repeating-linear-gradient(-45deg, rgba(255,240,200,.025) 0 1px, transparent 1px 5px), linear-gradient(82deg, transparent 47%, rgba(255,240,200,.04) 48%, transparent 50%), radial-gradient(circle at 78% 22%, rgba(201,83,42,.10), transparent 24%);
-    }
-    [data-t="rulebook"][data-m="light"] {
-      --background: #c8c6a9;
-      --card: #d5d3b8;
-      --track: #bcba9c;
-      --border: #1f1f17;
-      --text: #1d1d16;
-      --muted: #53533e;
-      --accent: #89391a;
-      --on-accent: #efe9d0;
-      --heading-colour: #89391a;
-      --wordmark-colour: #89391a;
-      --danger: #9b1c1c;
-      --shadow: rgba(29, 29, 22, 0.18);
-      --badge-bg: rgba(213, 211, 184, 0.92);
-      --accent-wash: rgba(137, 57, 26, 0.09);
-      --accent-wash-hover: rgba(137, 57, 26, 0.05);
-      --note: #3d5566;
-      --note-wash: rgba(61, 85, 102, 0.1);
-      --good: #2f5c1f;
-      --good-wash: rgba(47, 92, 31, 0.1);
-      --bad: #9b1c1c;
-      --bad-wash: rgba(155, 28, 28, 0.08);
-      --warn: #664e00;
-      --caution: #754700;
-      --wish: #234e8a;
-      --grey-status: #525246;
-      --chip-on: #efe9d0;
-      --toast-action: #f0a070;
-      --series-added: #234e8a;
-      --series-painted: #2f5d1f;
-      --toast-ring: rgba(137, 57, 26, 0.45);
-      --basket-deep: #1d1d16;
-      --first-letter: #89391a;
-      color-scheme: light;
-      --card-shadow: 3px 3px 0 rgba(29,29,22,.25);
-      --hard-shadow: rgba(29, 29, 22, 0.35);
-      --rule: 3px solid #1f1f17;
-      --frame: 3px solid #1f1f17;
-      --swatch-edge: #1f1f17;
-      --texture: repeating-linear-gradient(45deg, rgba(0,0,0,.045) 0 1px, transparent 1px 4px), repeating-linear-gradient(-45deg, rgba(0,0,0,.035) 0 1px, transparent 1px 5px), linear-gradient(82deg, transparent 47%, rgba(0,0,0,.07) 48%, transparent 50%), radial-gradient(circle at 78% 22%, rgba(90,50,10,.14), transparent 22%);
-    }
-    /* ----- v47: what every theme except Classic adds (Classic keeps the old look exactly) ----- */
+    /* ----- v47: what every theme except Classic adds (Classic's own touches are in its TH1 block) ----- */
     /* :where() keeps these as weak as the plain rules, so the app's own special cases still win. */
     :where(:root:not([data-t="classic"])) body { background-attachment: fixed; }
     :where(:root:not([data-t="classic"])) h2 { color: var(--heading-colour); }
@@ -2450,15 +2227,9 @@
     }
     :where(:root:not([data-t="classic"])) .swatch { border-color: var(--swatch-edge); }
     /* Condensed and small-eyed display fonts are drawn a little larger, so their words are as easy to read as before. */
-    [data-t="blueprint"] { --button-adjust: 0.5; --rule-gap: 8px; }
     [data-t="forge"] { --button-adjust: 0.55; --rule-gap: 8px; }
     [data-t="bench"] { --button-adjust: 0.52; --rule-gap: 8px; }
-    [data-t="rulebook"] { --button-adjust: none; --rule-gap: 8px; }
     [data-t="parchment"] { --button-adjust: none; --rule-gap: 8px; }
-
-    /* Blueprint: a second thin line inside each card, and dashed outlines on the plain buttons. */
-    [data-t="blueprint"] .card { outline: 1px solid var(--inner-outline); outline-offset: -6px; }
-    [data-t="blueprint"] .plain-button { border-style: dashed; }
 
     /* Parchment Codex: an illuminated first letter, a double line on the open tab, and numbers in italic. */
     [data-t="parchment"] h1::first-letter { font-size: 1.45em; color: var(--first-letter); }
@@ -2476,10 +2247,6 @@
     }
     @media (min-width: 900px) { [data-t="bench"] .card h2 { font-size: 17px; } }
     [data-t="bench"] .primary-button { transform: rotate(-0.6deg); }
-
-    /* Rulebook: a hard offset shadow under the main button, and thicker rings round the paint swatches. */
-    [data-t="rulebook"] .primary-button { box-shadow: 3px 3px 0 var(--hard-shadow); }
-    [data-t="rulebook"] .swatch { border-width: 2px; }
 
     /* ----- v47: the Theme buttons in Settings -----
        One row of squares. Each square is a tiny page in its own theme (page colour and texture, a card, a button
@@ -2510,7 +2277,6 @@
     .theme-swatch[aria-pressed="true"]:focus-visible { outline-style: double; outline-width: 5px; }
     /* Each square's small touches, matching its theme. */
     .theme-swatch[data-t="classic"] .ts-card { font-weight: 700; color: var(--accent); }
-    .theme-swatch[data-t="blueprint"] .ts-card { outline: 1px solid var(--inner-outline); outline-offset: -3px; font-size: 12px; letter-spacing: .08em; }
     .theme-swatch[data-t="parchment"] .ts-card { border-width: 3px; border-style: double; font-size: 13px; line-height: 1; }
     .theme-swatch[data-t="parchment"] .ts-card::first-letter { color: var(--first-letter); font-size: 1.3em; }
     .theme-swatch[data-t="forge"] .ts-card { border-width: 2px; box-shadow: inset 0 0 0 2px var(--background); font-size: 17px; letter-spacing: .05em; line-height: .95; }
@@ -2520,9 +2286,59 @@
       font-family: 'Permanent Marker', 'Comic Sans MS', cursive; font-weight: 400; font-size: 12px; line-height: 1.1; text-transform: none; letter-spacing: 0;
       clip-path: polygon(0 0, 100% 0, 97% 25%, 100% 50%, 97% 75%, 100% 100%, 0 100%, 3% 75%, 0 50%, 3% 25%);
     }
-    .theme-swatch[data-t="rulebook"] .ts-card { border-width: 2px; border-color: var(--border); font-size: 12px; letter-spacing: .02em; }
-    .theme-swatch[data-t="rulebook"] .ts-bar { box-shadow: 2px 2px 0 var(--hard-shadow); }
     @media (forced-colors: active) { .theme-swatch[aria-pressed="true"] { outline-color: Highlight; } }
+    /* TH1: Classic is the cold sci-fi look (ice cyan accent, Oxanium for headings and numbers, steel panel lines with small corner marks drawn in CSS); the photo viewer and the camera keep the colours set at the top of this file. */
+    @font-face { font-family: 'Oxanium'; font-style: normal; font-weight: 600; font-display: swap; src: url(fonts/oxanium-latin-600-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    :root[data-t="classic"], .theme-swatch[data-t="classic"] {
+      --font-heading: 'Oxanium', 'Bahnschrift', 'DIN Alternate', 'Arial Narrow', system-ui, sans-serif;
+      --font-num: 'Oxanium', 'Bahnschrift', 'DIN Alternate', 'Arial Narrow', system-ui, sans-serif;
+      --heading-weight: 600; --heading-tracking: .02em;
+      --radius-card: 6px; --radius-box: 6px; --radius-control: 6px; --radius-small: 4px;
+      --border: #4968a0;
+      --accent: #5fe0ea;
+      --accent-wash: rgba(95, 224, 234, 0.08);
+      --accent-wash-hover: rgba(95, 224, 234, 0.05);
+      --note: #9098ff;
+      --note-wash: rgba(144, 152, 255, 0.18);
+      --good: #7ddc8a;
+      --good-wash: rgba(125, 220, 138, 0.12);
+      --series-added: #93c5fd; --series-painted: #7ddc8a;
+      --toast-action: #065f69;
+      --toast-ring: rgba(95, 224, 234, 0.45);
+      --basket-deep: #0e4a57;
+      --panel-mark: var(--accent);
+      --pill-edge: #22304a;
+    }
+    :root[data-t="classic"][data-appearance="light"], .theme-swatch[data-t="classic"][data-m="light"] {
+      --border: #6c89ab;
+      --accent: #06707b;
+      --accent-wash: rgba(6, 112, 123, 0.09);
+      --accent-wash-hover: rgba(6, 112, 123, 0.05);
+      --note: #4a46c8;
+      --note-wash: rgba(74, 70, 200, 0.10);
+      --good: #1f7a36;
+      --good-wash: rgba(31, 122, 54, 0.10);
+      --caution: #8a5200;
+      --series-added: #1d4ed8; --series-painted: #1f7a36;
+      --toast-action: #5fe0ea;
+      --toast-ring: rgba(6, 112, 123, 0.45);
+      --basket-deep: #0e4a57;
+      --pill-edge: #c4d0de;
+    }
+    :where(:root[data-t="classic"]) .chip { border-left-color: var(--chip-colour, var(--pill-edge)); }
+    :where(:root[data-t="classic"]) :is(.big, .legend .num, .group-button strong, .qty-count, .paint-line .mix, .history-table td, .chart-tip b) { font-family: var(--font-num); }
+    :where(:root[data-t="classic"]) .card {
+      background-image: linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark));
+      background-size: 10px 2px, 2px 10px, 10px 2px, 2px 10px, 10px 2px, 2px 10px, 10px 2px, 2px 10px;
+      background-position: left 3px top 3px, left 3px top 3px, right 3px top 3px, right 3px top 3px, left 3px bottom 3px, left 3px bottom 3px, right 3px bottom 3px, right 3px bottom 3px;
+      background-repeat: no-repeat;
+    }
+    .theme-swatch[data-t="classic"] .ts-card {
+      background-image: linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark));
+      background-size: 6px 1px, 1px 6px, 6px 1px, 1px 6px, 6px 1px, 1px 6px, 6px 1px, 1px 6px;
+      background-position: left 2px top 2px, left 2px top 2px, right 2px top 2px, right 2px top 2px, left 2px bottom 2px, left 2px bottom 2px, right 2px bottom 2px, right 2px bottom 2px;
+      background-repeat: no-repeat;
+    }
     /* Chunk B: the round back arrow at the bottom left, beside the bar (look from the chosen mockup, colours from the app's own names). 44 px wide and high.
        Hidden on the start page, while the loading ring or the travel plays, while the Mentor pop-up is open and while a text box has the cursor (the bar steps aside too);
        it fades in again when they end. */
@@ -3110,7 +2926,7 @@
           <summary>Appearance (light and dark) and stage colours</summary>
           <ul>
             <li>Choose how the app looks in <strong>Settings → Appearance</strong>: <strong>Dark</strong> (the usual look), <strong>Light</strong>, or <strong>Match my phone</strong>, which follows your phone's own dark mode setting and switches when your phone does.</li>
-            <li><strong>Settings → Theme</strong> changes the whole look: colours, lettering, corners and borders. Choose <strong>Classic</strong> (the usual look), <strong>Blueprint</strong>, <strong>Parchment Codex</strong>, <strong>Grim Forge</strong>, <strong>Paint Bench</strong> or <strong>Rulebook</strong>. Each square shows what its theme looks like. Every theme has a dark and a light version, chosen by Appearance.</li>
+            <li><strong>Settings → Theme</strong> changes the whole look: colours, lettering, corners and borders. Choose <strong>Classic</strong> (the usual look), <strong>Parchment Codex</strong>, <strong>Grim Forge</strong> or <strong>Paint Bench</strong>. Each square shows what its theme looks like. Every theme has a dark and a light version, chosen by Appearance.</li>
             <li><strong>Settings → Colours</strong> picks the colour set for your stages: Ice, Frost, Greyscale, Colour-blind friendly, <strong>Forge</strong> (warm: ember red through amber and gold to cream), or <strong>Custom</strong>.</li>
             <li><strong>Custom</strong> lets you pick a colour for each stage. It starts from the set you had. Tap a stage's colour square to change it; the whole app updates as you go.</li>
             <li>A colour that's too faint to read on the dark cards gets a <strong>⚠ warning</strong> under its stage. You can still keep it.</li>
@@ -3365,11 +3181,9 @@
         <h2>Theme</h2>
         <div class="theme-row" role="group" aria-label="Theme">
           <button type="button" class="theme-swatch" data-theme-choice="classic" data-t="classic" data-m="dark" aria-pressed="true"><span class="ts-card"><span class="ts-name">Classic</span></span><span class="ts-bar"></span></button>
-          <button type="button" class="theme-swatch" data-theme-choice="blueprint" data-t="blueprint" data-m="dark" aria-pressed="false"><span class="ts-card"><span class="ts-name">Blueprint</span></span><span class="ts-bar"></span></button>
           <button type="button" class="theme-swatch" data-theme-choice="parchment" data-t="parchment" data-m="dark" aria-pressed="false"><span class="ts-card"><span class="ts-name">Parchment Codex</span></span><span class="ts-bar"></span></button>
           <button type="button" class="theme-swatch" data-theme-choice="forge" data-t="forge" data-m="dark" aria-pressed="false"><span class="ts-card"><span class="ts-name">Grim Forge</span></span><span class="ts-bar"></span></button>
           <button type="button" class="theme-swatch" data-theme-choice="bench" data-t="bench" data-m="dark" aria-pressed="false"><span class="ts-card"><span class="ts-name">Paint Bench</span></span><span class="ts-bar"></span></button>
-          <button type="button" class="theme-swatch" data-theme-choice="rulebook" data-t="rulebook" data-m="dark" aria-pressed="false"><span class="ts-card"><span class="ts-name">Rulebook</span></span><span class="ts-bar"></span></button>
         </div>
       </div>
 
