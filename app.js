@@ -6420,6 +6420,9 @@
 
     // Which units have their details panel open. Not saved.
     const openIds = new Set();
+    // MC1: the one unit whose card is open (stepper, recipes and the Details fold showing); every other card is the closed, compact one.
+    // Not saved. See cardOpen.
+    let openCardId = null;
     const unitSplit = document.getElementById("unit-split");   // v79
     const unitSide = document.getElementById("unit-side");
     // v23: units whose folded "Edit details" section is open. Not saved: only for this visit.
@@ -6706,11 +6709,12 @@
       return JSON.stringify([selectMode, isLight(), unitWide.matches, STAGES, document.documentElement.dataset.t || ""]);
     }
     // Everything a card shows, as one string; null means "never use this card again" (Details open on a phone, or just added).
+    // MC1: whether the card is open or closed is part of it, so a kept card is never shown in the wrong state.
     // The unit itself is compared whole, so any change to it counts; an old-style photo counts by its length and end only.
     function cardKey(model, shared) {
       if (model.id === justAddedId || (openIds.has(model.id) && !selectMode && !unitWide.matches)) return null;
       const photo = hasPhoto(model) ? (model.photo ? "old" : thumbUrls.get((mainPhoto(model) || {}).id) || "") : "";
-      return JSON.stringify([model, shared, selectMode && ticked.has(model.id), openIds.has(model.id), factionColour(model.faction), photo,
+      return JSON.stringify([model, shared, selectMode && ticked.has(model.id), openIds.has(model.id), cardOpen(model), factionColour(model.faction), photo,   // MC1: open or closed
         recipesOf(model).map(r => [r.id, r.name, recipeColours(r)[0] || ""])],
         (k, v) => (k === "photo" && typeof v === "string" ? v.length + v.slice(-40) : v));
     }
@@ -6946,7 +6950,9 @@
         item.style.setProperty("--prev-colour", `var(--stage-${motion.fromStage})`);
       }
       const part = stageParts(model, motion);
+      const opened = cardOpen(model);   // MC1
       if (selectMode) info.append(name, details, part.stage, part.pips);
+      else if (!opened) return closedCard(model, item, head, info, name, details, part, isOpen);   // MC1: the compact card
       else info.append(name, details);
       const toggle = () => {
         if (selectMode) { toggleTick(model.id); return; }   // v21.1: in select mode a tap ticks
@@ -6955,6 +6961,7 @@
         const panelNow = wasOpen ? document.querySelector(`li.unit[data-id="${model.id}"] > .panel`) : null;
         const heightNow = panelNow ? panelNow.offsetHeight : 0;
         if (wasOpen) { openIds.delete(model.id); editOpenIds.delete(model.id); paintsOpenIds.delete(model.id); } else openIds.add(model.id);
+        if (!unitWide.matches) openCardId = model.id;   // MC1: shutting Details leaves the card itself open
         // SM1 (Smooth4): opening or closing Details changes only this card (nothing is saved and no other card or section changes), so on a phone
         // only this card is drawn again; the side pane on a wide screen still takes the full redraw.
         const card = !unitWide.matches && [...list.children].find(li => li.dataset.id === String(model.id));
@@ -6962,10 +6969,17 @@
         else render();
         animatePanel(model.id, !wasOpen, heightNow);   // Mo2
       };
-      info.addEventListener("click", toggle);
-      info.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") { event.preventDefault(); toggle(); }
-      });
+      if (selectMode) {
+        info.addEventListener("click", toggle);
+        info.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") { event.preventDefault(); toggle(); }
+        });
+      } else {
+        // MC1: in an open card the header (photo, name, game and army) closes the card again; the Details button keeps its own job.
+        // (Before MC1 a tap on the name opened the Details; the card being open now plays that part.)
+        cardButton(info, model, true);
+        head.addEventListener("click", (event) => { if (!event.target.closest(".details-toggle")) setCardOpen(model.id, false); });
+      }
       head.appendChild(info);
 
       // v21.1: while selecting, the stepper and the recipe buttons step aside so a tap can't
@@ -6996,6 +7010,119 @@
       if (isOpen && unitWide.matches) item.setAttribute("aria-current", "true");
       else if (isOpen) item.appendChild(buildPanel(model));
       return item;
+    }
+
+    // ----- MC1: COMPACT CARDS THAT OPEN ON A TAP -----
+    // A closed card shows the unit's name, game, army (faction, with its colour dot) and stage (in words, with a small strip), and is one
+    // tap target. A tap (or Enter or Space) opens it to the full card: the stepper, the recipe buttons and the Details fold, working as
+    // before. A tap on an open card's header closes it. One card is open at a time: opening another closes the first, with its Details.
+    // From 900 px a tap also opens the unit in the side pane, as a tap on a card did before.
+    // A unit whose Details are open on a phone always shows its card open (goToUnit, and Undo after a delete, which puts its Details back).
+    function cardOpen(model) {
+      return !selectMode && (openCardId === model.id || (openIds.has(model.id) && !unitWide.matches));
+    }
+    // The card's text area as one button: its name read as "name, game, army, stage", and whether it is open.
+    function cardButton(info, model, expanded) {
+      info.setAttribute("role", "button");
+      info.tabIndex = 0;
+      info.setAttribute("aria-expanded", String(expanded));
+      const stage = stageSummary(model).replace(/ · /g, ", ") + (model.repaint ? ", repaint" : "");
+      info.setAttribute("aria-label", [displayName(model), model.hobby, model.faction, stage].filter(Boolean).join(", "));
+      info.addEventListener("keydown", (event) => {
+        if (event.target !== info || (event.key !== "Enter" && event.key !== " ")) return;
+        event.preventDefault();
+        setCardOpen(model.id, !expanded);
+      });
+    }
+    // The closed card: the header row only (photo, then name over game and army, beside the stage over its strip).
+    function closedCard(model, item, head, info, name, details, part, inPane) {
+      item.classList.add("compact");
+      const sum = document.createElement("div");
+      sum.className = "unit-sum";
+      sum.append(part.stage, part.pips);
+      info.append(name, details, sum);
+      cardButton(info, model, false);
+      head.appendChild(info);
+      item.appendChild(head);
+      item.addEventListener("click", () => setCardOpen(model.id, true));   // anywhere on the card
+      if (inPane && unitWide.matches) item.setAttribute("aria-current", "true");   // v79: open in the side pane
+      return item;
+    }
+    function unitCardEl(id) { return list.querySelector(`:scope > li.unit[data-id="${id}"]`); }
+    // Open (or close) one unit's card. On a phone only the cards that change are drawn again (like SM1's Details); from 900 px the side
+    // pane changes too, so it takes the full redraw. The tapped card keeps its place on the screen and keeps keyboard focus.
+    function setCardOpen(id, open) {
+      const model = models.find(m => m.id === id);
+      if (!model || selectMode) return;
+      const wide = unitWide.matches;
+      const changed = new Set([id]);
+      const shut = (other) => { openIds.delete(other); editOpenIds.delete(other); paintsOpenIds.delete(other); };
+      if (open) {
+        if (openCardId !== null && openCardId !== id) changed.add(openCardId);
+        if (!wide) for (const other of openIds) if (other !== id) changed.add(other);
+        openCardId = id;
+        if (wide) openIds.add(id);   // the side pane opens with it
+        else for (const other of changed) if (other !== id) shut(other);   // the card that was open closes, with its Details
+      } else {
+        if (openCardId === id) openCardId = null;
+        shut(id);
+      }
+      const before = cardSpots();
+      const was = unitCardEl(id);
+      const top = was ? was.getBoundingClientRect().top : null;
+      const split = unitSplit.classList.contains("layout-split");
+      if (wide) render();
+      else {
+        const shared = sharedCardKey();
+        for (const other of changed) {
+          const unit = models.find(m => m.id === other);
+          const el = unitCardEl(other);
+          if (unit && el) el.replaceWith(cardFor(unit, shared, true));   // MS1: and kept for the next redraw
+        }
+      }
+      const now = unitCardEl(id);
+      if (!now) return;
+      if (top !== null) {
+        const drift = now.getBoundingClientRect().top - top;
+        if (Math.abs(drift) > 1) window.scrollBy(0, drift);
+      }
+      const button = now.querySelector(".info[role='button']");
+      if (button) button.focus({ preventScroll: true });
+      if (split === unitSplit.classList.contains("layout-split")) glideCards(before, new Set([...changed].map(String)));
+    }
+    // Where each card near the screen is, before a card opens or closes (one layout, read once).
+    function cardSpots() {
+      const spots = new Map();
+      if (reducedMotion() || !Element.prototype.animate) return spots;
+      const h = window.innerHeight;
+      for (const li of list.children) {
+        if (!li.dataset.id) continue;
+        const r = li.getBoundingClientRect();
+        if (r.bottom > -h && r.top < 2 * h) spots.set(li.dataset.id, r);
+      }
+      return spots;
+    }
+    // The opened card unrolls (clip-path) and the cards around it move from where they were to where they are now (transform), so
+    // nothing jumps. Only cards on the screen move; nothing is left behind at rest. Reduce motion: nothing moves.
+    function glideCards(before, changed) {
+      if (!before.size) return;
+      const ms = motionMs("--motion-med");
+      const ease = getComputedStyle(document.documentElement).getPropertyValue("--motion-ease").trim() || "linear";
+      const h = window.innerHeight;
+      for (const li of list.children) {
+        const was = before.get(li.dataset.id);
+        if (!was) continue;
+        const r = li.getBoundingClientRect();
+        if ((r.bottom < 0 || r.top > h) && (was.bottom < 0 || was.top > h)) continue;   // off the screen before and after
+        const from = {}, to = {};
+        const dx = was.left - r.left, dy = was.top - r.top;
+        if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) { from.transform = `translate(${dx}px, ${dy}px)`; to.transform = "translate(0px, 0px)"; }
+        if (changed.has(li.dataset.id) && r.height > was.height + 0.5) {
+          from.clipPath = `inset(0px 0px ${r.height - was.height}px 0px)`;
+          to.clipPath = "inset(0px 0px 0px 0px)";
+        }
+        if (from.transform || from.clipPath) li.animate([from, to], { duration: ms, easing: ease });
+      }
     }
 
     // A3: a small chevron drawn in the text colour (so it follows every theme). dir: "left", "right", "down", "up".
@@ -9528,6 +9655,7 @@
       clearFilters();
       openIds.clear();
       openIds.add(id);
+      openCardId = id;   // MC1: its card opens too (and the one that was open closes)
       render();
       showTab("units");
       unitsUpTo(id);   // MS1: the list may still be arriving
