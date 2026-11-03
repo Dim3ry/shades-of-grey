@@ -53,6 +53,7 @@ const APP_FILES = [
   "./guides-groups.js" + CODE_TAG,  // G2a: the Guides topic groups and See also links
   "./mentor-data.js" + CODE_TAG,  // X8b: Mentor matching data (synonyms, extra keywords, asked-as phrases)
   "./mentor-engine.js" + CODE_TAG,  // X6a: the Mentor answer engine (no screen yet)
+  "./where-to-buy.js" + CODE_TAG,  // L1: what to buy for some Guides entries (the Where to buy fold-outs)
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png",
