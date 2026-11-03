@@ -6781,7 +6781,9 @@
       }
       const frames = Math.floor(left / Math.max(gap, 16)) - 1;   // frames left, keeping one to spare
       const late = frames < 1 || performance.now() - q.start > UNIT_PIECES_MAX_MS;
-      appendUnitCards(late ? Infinity : Math.max(q.n, Math.ceil(q.rest.length / frames)));   // spread evenly over the frames left
+      // Spread evenly over the frames left, but never more than three frames' worth at once: on a slow phone a big batch makes the next
+      // frame late too, which would only make the batches bigger. Whatever is left when the motion ends goes in then.
+      appendUnitCards(late ? Infinity : Math.min(Math.max(q.n, Math.ceil(q.rest.length / frames)), q.n * 3));
     }
     // Everything in now: a person reaching for the page, or something about to look further down the list.
     function finishUnitCards() { if (unitQueue) appendUnitCards(Infinity); }
