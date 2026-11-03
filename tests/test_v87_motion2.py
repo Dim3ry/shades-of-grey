@@ -14,6 +14,7 @@ from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
+from common import speed_factor
 
 load, no_sideways = t.load, t.no_sideways
 results = []
@@ -46,6 +47,15 @@ def moving(page):
     """Everything the app has marked as moving, anywhere on the page."""
     return page.evaluate("() => document.querySelectorAll('.mo-stage, .mo-row, .mo-slide, .mo-pip').length")
 
+def wait_still(page, panel_open=None, timeout=5000):
+    """T6: wait (up to 5 s) until nothing is marked as moving and nothing runs in the unit list, instead of a fixed pause. On a busy
+    machine the fixed pause sometimes ended before the motion did. Something that never stops still fails the check that follows."""
+    try:
+        page.wait_for_function("""() => !document.querySelector('.mo-stage, .mo-row, .mo-slide, .mo-pip, .panel-ghost')
+            && document.querySelector('ul.units').getAnimations({ subtree: true }).length === 0""", timeout=timeout)
+    except Exception:
+        pass
+
 def main():
     errors, dialogs = [], []
     with sync_playwright() as p:
@@ -72,34 +82,35 @@ def main():
         check("up pulses a ring once", "mo-up" in info["cls"] and info["ring"] == "mo-ring", info)
         check("the stripe starts in the old stage colour", info["stripe"] == old_colour, (info["stripe"], old_colour))
         check("the bar segments follow one another", info["pips"] == len(STAGES) and len(set(info["delays"])) == len(STAGES), info["delays"])
-        page.wait_for_timeout(1100)
+        wait_still(page)   # T6: was a fixed 1.1 s pause
         check("everything is put away afterwards", moving(page) == 0 and running(page) == 0)
-        card(page, 1).locator(".step-back").click()
-        during = page.evaluate("""() => ({ other: document.querySelector('li.unit[data-id="2"]').className, mine: document.querySelector('li.unit[data-id="1"]').className,
+        # T6: tap and read in one call, as T1 did above
+        during = page.evaluate("""() => { document.querySelector('li.unit[data-id="1"] .step-back').click(); return { other: document.querySelector('li.unit[data-id="2"]').className, mine: document.querySelector('li.unit[data-id="1"]').className,
             ring: getComputedStyle(document.querySelector('li.unit[data-id="1"]'), '::after').animationName,
-            out: getComputedStyle(document.querySelector('li.unit[data-id="1"] .stage'), '::before').animationName })""")
+            out: getComputedStyle(document.querySelector('li.unit[data-id="1"] .stage'), '::before').animationName }; }""")
         check("back slides the names the other way, has no ring, and only that unit moves",
               "mo-back" in during["mine"] and "mo-up" not in during["mine"] and during["ring"] == "none"
               and during["out"] == "mo-name-out-down" and "mo-" not in during["other"], during)
-        page.wait_for_timeout(1000)
+        wait_still(page)   # T6: was a fixed 1 s pause
 
         print("\n--- 2. A model row ---")
         open_btn = card(page, 4).locator(".details-toggle")
         open_btn.click()
-        page.wait_for_timeout(500)
-        card(page, 4).locator(".each-up").first.click()
-        row = page.evaluate("""() => { const li = document.querySelector('li.unit[data-id="4"]'); const rows = [...li.querySelectorAll('.each-row')];
+        wait_still(page)   # T6: was a fixed 0.5 s pause
+        # T6: tap and read in one call
+        row = page.evaluate("""() => { document.querySelector('li.unit[data-id="4"] .each-up').click();
+            const li = document.querySelector('li.unit[data-id="4"]'); const rows = [...li.querySelectorAll('.each-row')];
             return { moved: rows.map(r => r.classList.contains('mo-row')), card: li.className, ring: getComputedStyle(rows[0], '::after').animationName,
                      name: rows[0].querySelector('.each-stage-name').textContent, was: rows[0].querySelector('.each-stage-name').dataset.from }; }""")
         check("only the tapped row moves: its name slides, the card does not pulse",
               row["moved"] == [True, False, False] and "mo-stage" not in row["card"] and row["name"] == STAGES[2] and row["was"] == STAGES[1], row)
-        page.wait_for_timeout(1000)
+        wait_still(page)   # T6: was a fixed 1 s pause
         check("…and it is put away afterwards", moving(page) == 0)
 
         print("\n--- 3. Details opens and closes ---")
         start(page, units=[BATCH, OTHER])
-        card(page, 1).locator(".details-toggle").click()
-        a = page.evaluate("""() => { const pn = document.querySelector('li.unit[data-id="1"] > .panel');
+        # T6: tap and read in one call
+        a = page.evaluate("""() => { document.querySelector('li.unit[data-id="1"] .details-toggle').click(); const pn = document.querySelector('li.unit[data-id="1"] > .panel');
             const sw = pn.querySelectorAll('.paints-preview .swatch'); const as = pn.getAnimations();
             return { panel: as.length, overflow: pn.style.overflow, swatches: sw.length, popping: [...sw].filter(s => s.getAnimations().length).length }; }""")
         check("the panel grows (clipped while it does) and the swatches pop in", a["panel"] >= 1 and a["overflow"] == "hidden" and a["swatches"] == 6 and a["popping"] == 6, a)
@@ -111,14 +122,15 @@ def main():
             return { n: sw.length, ends: [...sw].map(s => s.getAnimations().map(a => { const t = a.effect.getComputedTiming(); return t.delay + t.duration; })).flat() }; }""")
         check("30 paints in the unit's recipe: the six shown pop one after another, all over in under 300 ms",
               total["n"] == 6 and total["ends"] and max(total["ends"]) < 300 and len(set(total["ends"])) == 6, total)
-        page.wait_for_timeout(400)
+        wait_still(page)   # T6: was a fixed 0.4 s pause
         at_rest = page.evaluate("() => document.querySelector('li.unit[data-id=\"1\"] > .panel').style.overflow") + "|" + str(running(page))
         check("at rest the panel is not clipped and nothing is running", at_rest == "|0", at_rest)
-        card(page, 1).locator(".details-toggle").click()
-        closing = page.evaluate("""() => ({ panels: document.querySelectorAll('li.unit[data-id="1"] > .panel').length, ghost: document.querySelectorAll('li.unit[data-id="1"] > .panel-ghost').length,
-            hidden: document.querySelector('.panel-ghost')?.getAttribute('aria-hidden') })""")
+        # T6: tap and read in one call
+        closing = page.evaluate("""() => { document.querySelector('li.unit[data-id="1"] .details-toggle').click();
+            return { panels: document.querySelectorAll('li.unit[data-id="1"] > .panel').length, ghost: document.querySelectorAll('li.unit[data-id="1"] > .panel-ghost').length,
+            hidden: document.querySelector('.panel-ghost')?.getAttribute('aria-hidden') }; }""")
         check("closing: the panel is gone at once; a hidden spacer shrinks away", closing == {"panels": 0, "ghost": 1, "hidden": "true"}, closing)
-        page.wait_for_timeout(500)
+        wait_still(page)   # T6: was a fixed 0.5 s pause
         check("…and the spacer removes itself", page.locator(".panel-ghost").count() == 0)
 
         print("\n--- 4. Only a tapped change moves ---")
@@ -157,7 +169,9 @@ def main():
             const b = document.querySelector('li.unit[data-id="5"] .details-toggle'); const t2 = performance.now(); b.click(); const t3 = performance.now();
             return { stage: Math.round(t1 - t0), toggle: Math.round(t3 - t2) }; }""")
         print("   measured:", cost)
-        check("100 models: the stage change and closing Details each take well under half a second", cost["stage"] < 500 and cost["toggle"] < 500, cost)
+        # T6: half a second on the reference machine, scaled by the runner's speed check for a slower or busier one (common.speed_factor)
+        limit = 500 * speed_factor()
+        check("100 models: the stage change and closing Details each take well under half a second", cost["stage"] < limit and cost["toggle"] < limit, (cost, limit))
 
         print("\n--- 7. Layout ---")
         for width in (390, 360):

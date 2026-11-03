@@ -6,6 +6,7 @@ storage or network, and speed. The entries come from the app's own loader and da
 (tests/mentor_engine_fixture.json, built from knowledge-base/samples). One page check: the script loads in the app without errors."""
 import json, os, subprocess, sys
 from playwright.sync_api import sync_playwright
+from common import node_command
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.realpath(os.path.join(HERE, ".."))
@@ -18,7 +19,9 @@ def check(name, ok, detail=""):
 
 def main():
     print("--- 1. The engine, in Node ---")
-    run = subprocess.run(["node", os.path.join(HERE, "mentor_engine_check.js")], capture_output=True, text=True, cwd=ROOT)
+    # T6: node_command() also finds the Node that comes with Playwright, and the output is read as UTF-8 (Windows)
+    run = subprocess.run([node_command(), os.path.join(HERE, "mentor_engine_check.js")], capture_output=True, text=True, cwd=ROOT,
+                         encoding="utf-8", errors="replace")
     try:
         data = json.loads(run.stdout)
     except ValueError:

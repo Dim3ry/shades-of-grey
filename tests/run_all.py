@@ -53,7 +53,9 @@ VERSION_WORDS = re.compile(r"APP_VERSION|sw\.js|\?v=|CHANGELOG|DATA_VERSION|git 
 RUN_ALONE = []
 
 # Failures that also happen on main (see CLAUDE.md). --rerun-failed names them but never counts them as cleared.
-KNOWN_FAILURES = ("test_colour_engine.py", "test_v21_7.py")
+# T6 (3 Nov): emptied. test_colour_engine passes wherever Node.js is installed (and tests/common.py node_command() also finds the copy
+# of Node inside Playwright), and test_v21_7 passed in every full run of 3 Nov. Add a file here only with a reason in a comment.
+KNOWN_FAILURES = ()
 
 # --quick always runs these, besides the newest three versions:
 #  - test_version_plumbing, the one test that checks the version number, the script tags, sw.js and the Updates entry,
@@ -61,8 +63,12 @@ KNOWN_FAILURES = ("test_colour_engine.py", "test_v21_7.py")
 #  - test_html_safety, a fast scan of every source file for unsafe HTML
 ALWAYS = ["test_html_safety", "test_version_plumbing"]
 
+# T6: the server's waiting line for new connections is 128 long, not Python's default of 5. With 8 test files loading pages at once, a
+# short line filled up and Windows turned the extra connections away ("net::ERR_CONNECTION_REFUSED" in test_v26, test_v28 and
+# test_v52 on 3 Nov, which then passed alone). Linux makes them wait instead, which is why it was not seen there.
 SERVER = ("import sys; from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler as H; "
-          "ThreadingHTTPServer(('127.0.0.1', int(sys.argv[1])), H).serve_forever()")
+          "S = type('S', (ThreadingHTTPServer,), {'request_queue_size': 128, 'daemon_threads': True}); "
+          "S(('127.0.0.1', int(sys.argv[1])), H).serve_forever()")
 
 
 def free_port():
@@ -101,6 +107,7 @@ def calibrate(jobs):
 
 
 FACTOR_MIN, FACTOR_MAX = 0.8, 3.0   # a very fast machine is not allowed to tighten the limits by more than 20%, a very slow one loosens them by 3x at most
+SPEED_FACTOR = 1.0   # T6: set by main() from the speed check and handed to each test file as SOG_SPEED_FACTOR
 
 
 def time_factor(budget, measured):
@@ -193,6 +200,7 @@ def run_one(path, port):
     watch = os.path.join(HERE, "csp_watch")
     env = dict(os.environ, SOG_PORT=str(port), SOG_CSP_LOG=csp_log,
                PYTHONPATH=watch + os.pathsep + os.environ.get("PYTHONPATH", ""))
+    env.setdefault("SOG_SPEED_FACTOR", f"{SPEED_FACTOR:.2f}")   # T6: for the few in-page speed checks, see tests/common.py speed_factor()
     started = time.time()
     problems = []
     try:
@@ -256,6 +264,8 @@ def main():
     lint = lint_sources(budget)
     measured = calibrate(args.jobs)   # before any test starts, so the tests do not slow it down
     factor = time_factor(budget, measured)
+    global SPEED_FACTOR
+    SPEED_FACTOR = factor
     total_factor = factor   # the speed check already includes how many cores share the jobs
     print(f"Speed check: {measured:.2f} s with {args.jobs} at once (reference {budget.get('calibration_seconds', 'not recorded')}), "
           f"{os.cpu_count()} cores. Time limits x{factor:.2f}.", flush=True)

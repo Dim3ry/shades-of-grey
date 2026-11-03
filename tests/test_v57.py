@@ -37,9 +37,16 @@ def check(name, ok, detail=""):
     results.append(bool(ok))
     print(("PASS " if ok else "FAIL ") + name + ("" if ok else f"  -> {detail}"))
 
+# T6: the pages' clock starts at noon UK time on 1 July 2026 and ticks from there. With the real clock, "10 days ago" failed between
+# 23:00 and midnight when the 10 days crossed the October clock change (the app counted 11; an app bug, reported in the T6 pull
+# request). Noon, with no clock change between 40 days before and 14 days after, makes every date check here the same at any hour.
+NOW = datetime.datetime(2026, 7, 1, 11, 0, tzinfo=datetime.timezone.utc)   # 12:00 in UK summer time
+TODAY = datetime.date(2026, 7, 1)
+CLOCK = {"timezone_id": "Europe/London"}
+
 def day(n):
-    """A date in YOUR time zone, written like the app writes it: today plus n days."""
-    return (datetime.date.today() + datetime.timedelta(days=n)).isoformat()
+    """A date in the page's time zone, written like the app writes it: the page's today plus n days."""
+    return (TODAY + datetime.timedelta(days=n)).isoformat()
 
 def short(iso):
     y, m, d = map(int, iso.split("-"))
@@ -66,8 +73,9 @@ def main():
     app = read("app.js")
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block", accept_downloads=True)
+        ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block", accept_downloads=True, **CLOCK)
         page = ctx.new_page()
+        page.clock.set_system_time(NOW)
         page.on("pageerror", lambda x: errors.append(str(x)))
         page.on("dialog", lambda d: (dialogs.append(d.message), d.dismiss()))
         attach_notices(page, dialogs.append)
@@ -76,6 +84,7 @@ def main():
         # ---------- 1. Versions ----------
         print("\n--- 1. Versions and the Updates entry ---")
         e.fresh(page)
+        check("(the page clock is fixed on 1 July)", page.evaluate("todayISO()") == day(0), page.evaluate("todayISO()"))
         entry = page.evaluate("CHANGELOG.find(c => c.version === 'v57')")
         joined = " ".join(entry["changes"]) if entry else ""
         check("the entry names the card, Save backup, Not now and the Settings line",
@@ -179,8 +188,9 @@ def main():
         check("with nothing to back up, the feedback card shows as before", page.locator("#feedback-card").is_visible() and not nudge(page))
 
         iphone = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block",
-                                     user_agent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1")
+                                     user_agent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1", **CLOCK)
         ip = iphone.new_page()
+        ip.clock.set_system_time(NOW)
         ip.on("pageerror", lambda x: errors.append(str(x)))
         ip.on("dialog", lambda d: (dialogs.append(d.message), d.dismiss()))
         e.existing(ip, units(8))

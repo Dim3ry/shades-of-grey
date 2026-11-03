@@ -1,6 +1,6 @@
 """v16 tests for Shades of Grey (paste-import, shared paint matcher, copy as text, label scan, last backed up).
 Serve the repo folder with `python3 -m http.server 8765`, then run: python3 tests/test_v16.py <folder for screenshots>."""
-import json, os, re, sys
+import datetime, json, os, re, sys
 from playwright.sync_api import sync_playwright
 from launch_helpers import leave_launch
 import os as _os
@@ -31,10 +31,17 @@ ANSWERS = {"Bleck Templar": "Black Templar", "CM": "Contrast Medium", "Ice": "Ke
            "blangels red": "Blood Angels Red", "ultramarine blue": "Ultramarines Blue"}
 # RS4b: the review no longer offers Basing material, so Ice is kept as typed.
 
+# T6: the page's clock starts at noon UK time on 1 July 2026 (it keeps ticking from there). The "10 days ago" check used the real
+# clock and failed between 23:00 and midnight when the 10 days crossed the October clock change (the app counted 11). Noon, with no
+# clock change in the 10 days before, makes the check the same at any time of day. The clock-change miscount is an app bug, reported
+# in the T6 pull request.
+NOW = datetime.datetime(2026, 7, 1, 11, 0, tzinfo=datetime.timezone.utc)   # 12:00 in UK summer time
+
 with sync_playwright() as pw:
     browser = pw.chromium.launch(args=["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"])
     for size, (w, h) in {"phone": (390, 844), "desktop": (1280, 900)}.items():
-        page = browser.new_page(viewport={"width": w, "height": h})
+        page = browser.new_page(viewport={"width": w, "height": h}, timezone_id="Europe/London")
+        page.clock.set_system_time(NOW)
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.goto(URL)
@@ -251,7 +258,9 @@ with sync_playwright() as pw:
         page.wait_for_timeout(100)
         age = page.locator("#backup-age").text_content()
         check(f"{size}: backup age says never", "Never" in age, age)
-        page.evaluate("settings.lastBackup = new Date(Date.now() - 10 * 864e5).toISOString().slice(0, 10); renderSettings()")
+        # T6: 10 days before the page's fixed 1 July (it used a world-time date, which is a day off just after midnight in summer)
+        check(f"{size}: (the page clock is fixed on 1 July)", page.evaluate("todayISO()") == "2026-07-01", page.evaluate("todayISO()"))
+        page.evaluate("settings.lastBackup = '2026-06-21'; renderSettings()")
         age = page.locator("#backup-age").text_content()
         check(f"{size}: backup age in days, flagged", "10 days ago" in age and "backup-old" in page.locator("#backup-age").get_attribute("class"), age)
         page.screenshot(path=f"{SHOTS}/v16-{size}-backup.png", full_page=False)

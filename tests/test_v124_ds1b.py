@@ -4,7 +4,7 @@
 3. An error from the host (500) gets the saved copy of the page; a redirect is followed.
 4. Offline after that, the page and its code are still one version.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
-import os, re, sys
+import os, re, sys, time
 from urllib.parse import urlparse
 from playwright.sync_api import sync_playwright
 
@@ -53,8 +53,19 @@ def main():
 
         # 2. A newer page whose code files arrive.
         ctx.unroute(newer_code)
+        # T6: the offline helper waits at most 4 s (its PAGE_WAIT_MS) for the new page and all its code files; after that it shows
+        # the saved page on purpose (a slow connection) and keeps fetching, so the next load is the new one. On a busy machine the
+        # fetching alone took longer than 4 s and this check saw the old version. So: the newer page on this load, or, only when this
+        # load really waited the 4 s, on the next one. A helper that never uses the newer page still fails.
+        started = time.time()
         page.reload(); app_ready(page)
-        check("newer page with code files that arrive: the newer page is used", tags(page) == ["9999"], tags(page))
+        waited = time.time() - started
+        first = tags(page)
+        if first != ["9999"] and waited >= 4:
+            print(f"   (the newer page took longer than the helper's 4 s wait here: this load took {waited:.1f} s; loading again)")
+            page.wait_for_timeout(1000)
+            page.reload(); app_ready(page)
+        check("newer page with code files that arrive: the newer page is used", tags(page) == ["9999"], (first, tags(page), round(waited, 1)))
         check("…with its own code", page.evaluate("[...document.scripts].every(s => !s.src || s.src.endsWith('v=9999') || !/\\.js/.test(s.src))")
               and page.evaluate("typeof models") == "object")
 
