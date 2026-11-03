@@ -4154,7 +4154,8 @@
       const cs = getComputedStyle(b), ics = getComputedStyle(b.querySelector(".icon")), svg = getComputedStyle(b.querySelector(".icon svg"));
       return { bg: cs.backgroundColor, color: cs.color, icon: ics.color, weight: parseFloat(cs.fontWeight), fs: parseFloat(cs.fontSize), lh: parseFloat(cs.lineHeight),
                ifs: parseFloat(ics.fontSize), gap: parseFloat(cs.rowGap) || 0, stroke: parseFloat(svg.strokeWidth),
-               pl: parseFloat(cs.paddingLeft), pr: parseFloat(cs.paddingRight), pt: parseFloat(cs.paddingTop), pb: parseFloat(cs.paddingBottom) };
+               pl: parseFloat(cs.paddingLeft), pr: parseFloat(cs.paddingRight), pt: parseFloat(cs.paddingTop), pb: parseFloat(cs.paddingBottom),
+               font: { fontFamily: cs.fontFamily, fontStyle: cs.fontStyle, letterSpacing: cs.letterSpacing, textTransform: cs.textTransform, fontSizeAdjust: cs.fontSizeAdjust } };
     }
     // Call BEFORE the state changes (the circle is still drawn).
     function travelStart(first, from) {
@@ -4221,17 +4222,53 @@
         const c = document.createElement("div");
         c.className = "c";
         const icon = it.src.querySelector(".icon").cloneNode(true);
-        c.appendChild(icon);
-        c.appendChild(document.createTextNode(segs[it.tab].label));
+        const text = document.createElement("span");
+        text.className = "t";
+        text.textContent = segs[it.tab].label;
+        c.append(icon, text);
+        // SM1 (Smooth1): the label and icon are laid out at the start sizes and then only scaled and moved (transform), so the frames of the travel
+        // do not lay out text again (animating font-size, line-height and gap did, on almost every frame). Half way, where the weight already
+        // switches, they are laid out once more at the end sizes, so the first and the last frame are drawn exactly like the real segments.
+        const k0 = it.k0;
+        Object.assign(c.style, { fontSize: k0.fs + "px", lineHeight: k0.lh + "px", fontWeight: String(k0.weight) });
+        // SM1 (Smooth5): the copies sit outside <body>, so they did not get the segment's own font (they were drawn in the browser's default serif
+        // font for the 1.5 s, which jumped at the start and the end); they now use exactly the segment's font, case and letter spacing.
+        Object.assign(c.style, k0.font);
+        icon.style.fontSize = k0.ifs + "px";
+        if (it.k1.weight !== k0.weight || it.k1.fs !== k0.fs) {   // the end font, drawn invisibly from the first frame, so the switch half way needs no new font
+          const warm = document.createElement("span");
+          warm.className = "t warm";
+          warm.textContent = text.textContent;
+          Object.assign(warm.style, { fontWeight: String(it.k1.weight), fontSize: it.k1.fs + "px" });
+          c.appendChild(warm);
+        }
         w.appendChild(c);
         arc.appendChild(w);
-        Object.assign(it, { w, c, icon, svg: icon.querySelector("svg") });
+        Object.assign(it, { w, c, icon, text, svg: icon.querySelector("svg") });
       }
       const ms = motionMs("--motion-travel");
       const ease = getComputedStyle(document.documentElement).getPropertyValue("--motion-travel-ease").trim() || "ease-in-out";
       const L = (a, b, t) => a + (b - a) * t;
       const mix = (a, b, q) => `color-mix(in srgb, ${a} ${Math.round((1 - q) * 1000) / 10}%, ${b})`;
+      // SM1 (Smooth6): the same colour blend as color-mix(in srgb, ...) (premultiplied), worked out here from the two measured colours, so each frame
+      // hands the browser a plain rgba() instead of a color-mix() to resolve; a colour that is the same at both ends is never written again.
+      // A theme colour made with color-mix() is reported as color(srgb r g b / a), with 0 to 1 channels; it is read the same way.
+      const rgbaOf = (s) => { const m = /^(rgba?\(|color\(srgb\s)([^)]*)\)$/.exec(s); if (!m) return null; const v = m[2].split(/[\s,/]+/).filter(Boolean).map(Number);
+        const k = m[1].startsWith("color") ? 255 : 1;
+        return v.length >= 3 && v.every(Number.isFinite) ? [v[0] * k, v[1] * k, v[2] * k, v.length > 3 ? v[3] : 1] : null; };
+      const blend = (a, b) => {
+        if (a === b) return () => a;
+        const A = rgbaOf(a), B = rgbaOf(b);
+        if (!A || !B) return (q) => mix(a, b, q);
+        return (q) => { const al = A[3] * (1 - q) + B[3] * q; if (al <= 0) return "rgba(0, 0, 0, 0)";
+          const ch = (i) => Math.round((A[i] * A[3] * (1 - q) + B[i] * B[3] * q) / al * 100) / 100;
+          return `rgba(${ch(0)}, ${ch(1)}, ${ch(2)}, ${Math.round(al * 1000) / 1000})`; };
+      };
+      const put = (it, el, prop, value) => { const key = prop + (el === it.w ? "w" : el === it.c ? "c" : el === it.icon ? "i" : el === it.text ? "t" : "s");
+        if (it.last[key] !== value) { it.last[key] = value; el.style[prop] = value; } };
+      for (const it of items) Object.assign(it, { last: {}, bgAt: blend(it.k0.bg, it.k1.bg), colorAt: blend(it.k0.color, it.k1.color), iconAt: blend(it.k0.icon, it.k1.icon) });
       const N = 24;
+      const r2 = (v) => Math.round(v * 100) / 100;
       function render(p, pop) {
         const q = Math.min(1, Math.max(0, p)), out = TRAVEL_SPREAD * Math.sin(Math.PI * q) / sb;
         for (const it of items) {
@@ -4239,19 +4276,26 @@
           const mid = (lo + hi) / 2, off = out + (it.chosen ? TRAVEL_POP * Math.sin(Math.PI * pop) / sb : 0);
           const dx = Math.cos(mid) * off, dy = Math.sin(mid) * off;
           const cx = L(CR[0], CB[0], p) + dx - x0, cy = L(CR[1], CB[1], p) + dy - y0;
-          const pts = [];
-          for (let i = 0; i <= N; i++) { const t = L(lo, hi, i / N); pts.push(`${(cx + ro * Math.cos(t)).toFixed(2)}px ${(cy + ro * Math.sin(t)).toFixed(2)}px`); }
-          for (let i = N; i >= 0; i--) { const t = L(lo, hi, i / N); pts.push(`${(cx + ri * Math.cos(t)).toFixed(2)}px ${(cy + ri * Math.sin(t)).toFixed(2)}px`); }
+          let pts = "";
+          for (let i = 0; i <= N; i++) { const t = L(lo, hi, i / N); pts += `${r2(cx + ro * Math.cos(t))}px ${r2(cy + ro * Math.sin(t))}px,`; }
+          for (let i = N; i >= 0; i--) { const t = L(lo, hi, i / N); pts += `${r2(cx + ri * Math.cos(t))}px ${r2(cy + ri * Math.sin(t))}px${i ? "," : ""}`; }
           const k0 = it.k0, k1 = it.k1;
-          it.w.style.clipPath = `polygon(${pts.join(",")})`;
-          it.w.style.backgroundColor = mix(k0.bg, k1.bg, q);
-          const c = it.c.style;
-          c.transform = `translate(${(L(it.c0[0], it.c1[0], p) + dx - x0).toFixed(2)}px, ${(L(it.c0[1], it.c1[1], p) + dy - y0).toFixed(2)}px) translate(-50%, -50%)`;
-          c.color = mix(k0.color, k1.color, q);
-          c.fontSize = L(k0.fs, k1.fs, p) + "px"; c.lineHeight = L(k0.lh, k1.lh, p) + "px"; c.gap = L(k0.gap, k1.gap, p) + "px";
-          c.fontWeight = q < 0.5 ? k0.weight : k1.weight;
-          it.icon.style.fontSize = L(k0.ifs, k1.ifs, p) + "px"; it.icon.style.color = mix(k0.icon, k1.icon, q);
-          it.svg.style.strokeWidth = L(k0.stroke, k1.stroke, q);
+          put(it, it.w, "clipPath", `polygon(${pts})`);
+          put(it, it.w, "backgroundColor", it.bgAt(q));
+          put(it, it.c, "transform", `translate(${r2(L(it.c0[0], it.c1[0], p) + dx - x0)}px, ${r2(L(it.c0[1], it.c1[1], p) + dy - y0)}px)`);
+          put(it, it.c, "color", it.colorAt(q));
+          // SM1 (Smooth1): the same sizes as before (font size, line height, gap and icon size blended on the clock), drawn with transform only:
+          // the icon and the label each sit centred on their own line of the column, scaled from the sizes they are laid out at (b).
+          const fs = L(k0.fs, k1.fs, p), lh = L(k0.lh, k1.lh, p), gap = L(k0.gap, k1.gap, p), ifs = L(k0.ifs, k1.ifs, p);
+          const top = -(ifs + gap + lh) / 2, b = q < 0.5 ? k0 : k1;   // b: the start's sizes, then (from half way) the end's
+          put(it, it.c, "fontSize", b.fs + "px");
+          put(it, it.c, "lineHeight", b.lh + "px");
+          put(it, it.c, "fontWeight", String(b.weight));
+          put(it, it.icon, "fontSize", b.ifs + "px");
+          put(it, it.icon, "transform", `translate(0px, ${r2(top + ifs / 2)}px) scale(${Math.round(ifs / b.ifs * 10000) / 10000}) translate(-50%, -50%)`);
+          put(it, it.text, "transform", `translate(0px, ${r2(top + ifs + gap + lh / 2)}px) scale(${Math.round(fs / b.fs * 10000) / 10000}) translate(-50%, -50%)`);
+          put(it, it.icon, "color", it.iconAt(q));
+          put(it, it.svg, "strokeWidth", String(L(k0.stroke, k1.stroke, q)));
         }
       }
       render(0, 0);
@@ -6219,7 +6263,11 @@
         const panelNow = wasOpen ? document.querySelector(`li.unit[data-id="${model.id}"] > .panel`) : null;
         const heightNow = panelNow ? panelNow.offsetHeight : 0;
         if (wasOpen) { openIds.delete(model.id); editOpenIds.delete(model.id); paintsOpenIds.delete(model.id); } else openIds.add(model.id);
-        render();
+        // SM1 (Smooth4): opening or closing Details changes only this card (nothing is saved and no other card or section changes), so on a phone
+        // only this card is drawn again; the side pane on a wide screen still takes the full redraw.
+        const card = !unitWide.matches && [...list.children].find(li => li.dataset.id === String(model.id));
+        if (card) card.replaceWith(buildCard(model));
+        else render();
         animatePanel(model.id, !wasOpen, heightNow);   // Mo2
       };
       info.addEventListener("click", toggle);
@@ -6259,7 +6307,13 @@
     }
 
     // A3: a small chevron drawn in the text colour (so it follows every theme). dir: "left", "right", "down", "up".
+    // SM1 (Smooth3): each chevron is drawn once and then copied (a Models list redraw makes three per card, so 900 for 300 units).
+    const chevronCache = {};
     function chevron(dir) {
+      if (!chevronCache[dir]) chevronCache[dir] = makeChevron(dir);
+      return chevronCache[dir].cloneNode(true);
+    }
+    function makeChevron(dir) {
       const NS = "http://www.w3.org/2000/svg";
       const svg = document.createElementNS(NS, "svg");
       svg.setAttribute("viewBox", "0 0 24 24");

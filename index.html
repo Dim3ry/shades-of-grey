@@ -386,7 +386,10 @@
     .mo-tr::before { display: none; }
     .mo-tr .arc { pointer-events: none; }
     .mo-tr .w { position: absolute; }
-    .mo-tr .c { position: absolute; left: 0; top: 0; display: flex; flex-direction: column; align-items: center; text-align: center; white-space: nowrap; }
+    .mo-tr .c { position: absolute; left: 0; top: 0; width: 0; height: 0; text-align: center; white-space: nowrap; }
+    /* SM1: the travel copies' icon and label are placed and sized with transform only (see travelRun), so the travel never lays out text */
+    .mo-tr .c > * { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+    .mo-tr .c > .warm { visibility: hidden; }
     .mo-tr .icon { display: inline-flex; line-height: 1; }
     .mo-tr .icon svg { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
     body.mo-travelling .tabs .arc > [data-tab] { opacity: 0; pointer-events: none; }
@@ -2465,6 +2468,10 @@
     @keyframes mo-ring { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--stage-colour) 55%, transparent); } to { box-shadow: 0 0 0 12px transparent; } }
     /* 2. Details: JS grows and shrinks the panel and pops the swatches; the blank space left behind while closing is only a spacer. */
     .panel-ghost { flex-basis: 100%; box-sizing: border-box; overflow: hidden; border-top: 1px solid var(--border); pointer-events: none; }
+    /* SM1: the Models list skips the style, layout and drawing work for cards that are off screen, so redrawing or sliding a list of
+       hundreds of units costs about what one screenful costs. Nothing on screen looks different: an off-screen card keeps its last drawn height
+       (a 132 px card, 106 px inside its padding and border, before it has been drawn once), and the clip margin leaves room for the stage-up ring and focus rings. */
+    li.unit { content-visibility: auto; contain-intrinsic-size: auto 106px; overflow-clip-margin: 16px; }
     /* One reduced-motion rule for everything above (Mo1 and Mo2; the swatch and panel movement JavaScript starts also checks the setting) and the basket pop: no movement at all. */
     /* Mo3a: moving between screens. While two screens trade places, the old one is a see-through layer on top (it keeps its "hidden" class so the
        app's state is already the new one). The box is positioned only for the move; sideways overflow is clipped so the page never scrolls sideways. */
