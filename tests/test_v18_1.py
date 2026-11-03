@@ -74,8 +74,9 @@ def main():
         note = page.locator("#unofficial-note")
         check("the unofficial note is on the Updates tab", note.count() == 1)
         check("the note is visible", note.is_visible())
-        check("the note says unofficial and not affiliated",
-              note.inner_text().strip() == "Unofficial fan-made app. Not affiliated with Games Workshop or any paint maker.",
+        # LG1 (v124): the short note now says "or endorsed by", to match the full notice in About.
+        check("the note says unofficial and not affiliated or endorsed",
+              note.inner_text().strip() == "Unofficial fan-made app. Not affiliated with or endorsed by Games Workshop or any paint maker.",
               note.inner_text())
         check("the note sits under the version note",
               page.evaluate("document.getElementById('version-note').nextElementSibling.id") == "unofficial-note")
