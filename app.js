@@ -5394,14 +5394,20 @@
     // growing. That builds the engine's word tables before the first real question.
     // MO6: wait (ms) is how long to leave it: the window's opening move (the reading stalls the page for up to a second on a slow phone, and it fell in
     // the middle of the open, so the open stuttered); it was always 400 ms.
+    // MO6 (v129 fix): the reading never lands on another move either. If the window was closed before it read, it reads on the next open instead
+    // (closing and then tapping the back arrow straight away put the stall in the travel back to the start circle, which then jumped part way); and
+    // while the start circle and the bar travel, or the lit piece slides, it waits until they are done.
     function mentorWarmUp(wait) {
       if (mentorWarm || typeof MinifolioMentor === "undefined") return;
       mentorWarm = true;
       mentorMood("thinking");   // U6b: Mentor is reading its notes
-      setTimeout(() => {
+      const read = () => {
+        if (!mentorState) { mentorWarm = false; return; }
+        if (travelling || fillState) { setTimeout(read, 200); return; }
         try { MinifolioMentor.mentorAnswer("hello", { index: knowledgeIndex(), paints: [], tips: [] }); } catch (ignored) {}
         if (mentorState && mentorState.mood === "thinking") mentorMood("neutral");
-      }, Math.max(400, wait || 0));
+      };
+      setTimeout(read, Math.max(400, wait || 0));
     }
 
     let mentorDoors = 0;
