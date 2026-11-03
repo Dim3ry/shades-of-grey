@@ -166,7 +166,9 @@ def main():
         home(page)
         page.click('.guides-cats [data-cat="detail"]')
         page.wait_for_selector(".guides-main .detail-recipes")
-        check("Detail recipes keeps its own controls, with no numbers yet", page.locator(".guides-main .guides-num").count() == 0)
+        # G3 (v127) gave Detail recipes and Basing their numbers (on their own chips), so "with no numbers yet" became "not topic-group rows";
+        # their numbers and the Filters button are tested in test_v127_g3.py
+        check("Detail recipes keeps its own controls, not topic-group rows", page.locator(".guides-main .guides-row").count() == 0)
 
         # openGuide from another screen: the entry, its number, Back to its group (Mentor source links call openGuide too; test_v103 checks those)
         key = "preparing-resin-models"
