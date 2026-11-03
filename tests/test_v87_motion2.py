@@ -14,7 +14,7 @@ from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
-from common import speed_factor
+from common import speed_factor, open_unit_card   # MC1: unit cards start closed
 
 load, no_sideways = t.load, t.no_sideways
 results = []
@@ -30,6 +30,10 @@ OTHER = {"id": 2, "name": "Other squad", "hobby": "40K", "stage": 3, "count": 5,
 EACH = {"id": 4, "name": "Each squad", "hobby": "40K", "stage": 1, "count": 3, "each": True, "stages": [1, 4, 4], "added": "2026-10-01", "log": [["2026-10-01", 1]]}
 HUGE = {"id": 5, "name": "Huge unit", "hobby": "40K", "stage": 0, "count": 100, "each": True, "stages": [i % 6 for i in range(100)], "added": "2026-10-01", "log": [["2026-10-01", 0]]}
 UNITS = [BATCH, OTHER, EACH]
+
+def open_card(page, uid):
+    open_unit_card(page, f"li.unit[data-id='{uid}']")   # MC1: the stepper and Details are inside the opened card
+    wait_still(page)   # the cards' own opening glide is over
 
 def card(page, uid):
     return page.locator(f"li.unit[data-id='{uid}']")
@@ -75,6 +79,7 @@ def main():
         except Exception:
             pass
         check("nothing moves on a first load", moving(page) == 0 and page.evaluate("() => document.getAnimations().length") == 0)
+        open_card(page, 1)
         old_colour = page.evaluate("() => getComputedStyle(document.querySelector('li.unit[data-id=\"1\"]')).borderLeftColor")
         # T1: the tap and the first reading happen in ONE call. Before, a slow machine let the fade move on between the click and the
         # reading, so "starts in the old colour" sometimes read a colour part-way. The check itself is unchanged.
@@ -100,6 +105,7 @@ def main():
         wait_still(page)   # T6: was a fixed 1 s pause
 
         print("\n--- 2. A model row ---")
+        open_card(page, 4)
         open_btn = card(page, 4).locator(".details-toggle")
         open_btn.click()
         wait_still(page)   # T6: was a fixed 0.5 s pause
@@ -115,6 +121,7 @@ def main():
 
         print("\n--- 3. Details opens and closes ---")
         start(page, units=[BATCH, OTHER])
+        open_card(page, 1)
         # T6: tap and read in one call
         a = page.evaluate("""() => { document.querySelector('li.unit[data-id="1"] .details-toggle').click(); const pn = document.querySelector('li.unit[data-id="1"] > .panel');
             const sw = pn.querySelectorAll('.paints-preview .swatch'); const as = pn.getAnimations();
@@ -157,6 +164,7 @@ def main():
         rctx = browser.new_context(viewport={"width": 390, "height": 900}, service_workers="block", reduced_motion="reduce")
         rp = rctx.new_page()
         start(rp, units=[BATCH, OTHER])
+        open_card(rp, 1)
         card(rp, 1).locator(".up-button").click()
         r1 = rp.evaluate("() => ({ marked: document.querySelectorAll('.mo-stage, .mo-slide, .mo-pip').length, running: document.getAnimations().length })")
         check("a stage change has no movement and no animation at all", r1 == {"marked": 0, "running": 0}, r1)
@@ -169,6 +177,7 @@ def main():
 
         print("\n--- 6. A unit with 100 models ---")
         start(page, units=[HUGE])
+        open_card(page, 5)
         card(page, 5).locator(".details-toggle").click()
         page.wait_for_timeout(500)
         cost = page.evaluate("""() => { const t0 = performance.now(); changeStage(5, 1); const t1 = performance.now();
@@ -185,7 +194,9 @@ def main():
                 c2 = browser.new_context(viewport={"width": width, "height": 900}, service_workers="block", color_scheme=scheme)
                 p2 = c2.new_page()
                 start(p2)
+                open_card(p2, 1)
                 card(p2, 1).locator(".up-button").click()
+                open_card(p2, 4)
                 card(p2, 4).locator(".details-toggle").click()
                 p2.wait_for_timeout(1200)
                 small = p2.evaluate("""() => [...document.querySelectorAll('li.unit .step-back, li.unit .up-button, li.unit .details-toggle, li.unit .each-back, li.unit .each-up')]

@@ -20,6 +20,7 @@ Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run 
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
 from launch_helpers import quiet
+from common import open_unit_details   # MC1: unit cards start closed
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
@@ -54,11 +55,9 @@ def stored(page, uid):
     return next((u for u in units if u["id"] == uid), None)
 
 def open_unit(page, uid):
-    info = f"{card(uid)} .info"
-    # A3: open or shut now shows on the Details button (the name area is no longer a button with aria-expanded).
-    if page.get_attribute(info.replace(" .info", " .details-toggle"), "aria-expanded") != "true":
-        page.click(info)
-        quiet(page)
+    # MC1: a tap on a unit now opens its card, and its Details button opens the details (before MC1 a tap on the name did that)
+    open_unit_details(page, card(uid))
+    quiet(page)
 
 def track(page, uid):
     return page.locator(f"{card(uid)} .panel button.track-each")
@@ -101,6 +100,7 @@ def main():
 
         # ---------- 3. Turn on, Undo ----------
         print("\n--- 3. On, and Undo ---")
+        open_unit(page, 1)   # MC1: opening units 2 and 3 closed unit 1 (one card is open at a time)
         before = stored(page, 1)
         track(page, 1).click()
         page.wait_for_timeout(300)
@@ -124,6 +124,7 @@ def main():
         tap_undo(page)
         check("Undo turns per-model tracking back on", stored(page, 1).get("each") is True)
 
+        open_unit(page, 3)   # MC1: unit 1 is the open card now (one card is open at a time)
         before = stored(page, 3)
         track(page, 3).click()
         page.wait_for_timeout(300)
@@ -166,14 +167,17 @@ def main():
                 print(f"\n--- 7. {tag} ---")
                 page.set_viewport_size({"width": width, "height": 780})
                 t.load(page, units=UNITS, settings=dict(SETTINGS, appearance=appearance))
-                open_unit(page, 1)
-                open_unit(page, 3)
-                check(f"{tag}: no sideways scroll", not page.evaluate("document.documentElement.scrollWidth > document.documentElement.clientWidth"))
-                sizes = page.evaluate("""() => [...document.querySelectorAll('button.track-each')].map(b => { const r = b.getBoundingClientRect();
+                # MC1: one card is open at a time, so unit 1's button is measured, then unit 3's (both were open together before MC1)
+                measure = lambda: page.evaluate("""() => [...document.querySelectorAll('button.track-each')].map(b => { const r = b.getBoundingClientRect();
                     return [Math.round(r.height), r.right <= document.documentElement.clientWidth]; })""")
-                check(f"{tag}: both buttons are 44 px or more and fit on screen", len(sizes) == 2 and all(h >= 44 and fits for h, fits in sizes), sizes)
+                open_unit(page, 1)
+                sizes = measure()
                 os.makedirs(os.path.join(HERE, "screenshots"), exist_ok=True)
                 page.locator(card(1)).screenshot(path=os.path.join(HERE, "screenshots", f"v61-track-{appearance}-{width}.png"))
+                open_unit(page, 3)
+                sizes += measure()
+                check(f"{tag}: no sideways scroll", not page.evaluate("document.documentElement.scrollWidth > document.documentElement.clientWidth"))
+                check(f"{tag}: both buttons are 44 px or more and fit on screen", len(sizes) == 2 and all(h >= 44 and fits for h, fits in sizes), sizes)
 
         # ---------- 8. Safety ----------
         print("\n--- 8. Safety ---")

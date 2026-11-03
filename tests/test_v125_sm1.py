@@ -14,6 +14,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import test_v31 as t
 from launch_helpers import wait_settled, _FINISH_BAR
+from common import open_unit_card   # MC1: unit cards start closed
 
 results = []
 
@@ -136,6 +137,8 @@ def main():
             return { hs: [...new Set(hs)], kinds: heights.size, n: document.querySelectorAll('li.unit').length }; }""")
         check("the cards really are of mixed heights", r["kinds"] >= 3 and r["n"] == 150, r)
         check("the page height stays the same while scrolling to the end", len(r["hs"]) == 1, r["hs"])
+        open_unit_card(page, 'li.unit[data-id="122"]')   # MC1: the stepper is inside the opened card
+        wait_settled(page)
         before = page.evaluate("""() => { const li = document.querySelector('li.unit[data-id="122"]');
             window.scrollTo(0, 0); window.scrollTo(0, li.getBoundingClientRect().top + scrollY - 200);
             return li.getBoundingClientRect().top; }""")
@@ -155,14 +158,17 @@ def main():
         wait_settled(page)
 
         print("\n--- 3. Details on a phone redraws one card ---")
+        open_unit_card(page, 'li.unit[data-id="3"]')   # MC1: the Details button is inside the opened card
+        wait_settled(page)
         r = page.evaluate(TOGGLE, "3")
         check("opening Details: only that card is drawn again", r["fresh"] == ["3"] and r["total"] == 150, r)
         check("its Details panel is open", r["panel"], r)
         wait_settled(page)
         r = page.evaluate(TOGGLE, "3")
         check("closing Details: only that card is drawn again, panel shut", r["fresh"] == ["3"] and not r["panel"], r)
-        svg = page.evaluate("""() => [1, 2, 149].map(id => document.querySelectorAll('li.unit[data-id="' + id + '"] svg').length)""")
-        check("every card still has its own chevrons (drawn once, then copied)", svg[0] > 0 and len(set(svg)) == 1, svg)
+        # MC1: closed cards show no buttons, so no chevrons; the open card (3) has its three (Back, Up and Details)
+        svg = page.evaluate("""() => [3, 1, 2, 149].map(id => document.querySelectorAll('li.unit[data-id="' + id + '"] svg').length)""")
+        check("the open card still has its own chevrons (drawn once, then copied)", svg[0] == 3 and svg[1:] == [0, 0, 0], svg)
         check("no sideways scroll on Models", page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"))
 
         check("no page errors", not errors, errors)

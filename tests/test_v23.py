@@ -23,6 +23,7 @@ from launch_helpers import quiet, tap_tab
 from launch_helpers import app_ready
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from launch_helpers import leave_launch
+from common import open_unit_details   # MC1: unit cards start closed
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}/"
@@ -110,11 +111,9 @@ def card(uid):
     return f'#view-units li.unit[data-id="{uid}"]'
 
 def open_unit(page, uid):
-    info = f'{card(uid)} .info'
-    # A3: open or shut now shows on the Details button (the name area is no longer a button with aria-expanded).
-    if page.get_attribute(info.replace(" .info", " .details-toggle"), "aria-expanded") != "true":
-        page.click(info)
-        quiet(page)
+    # MC1: a tap on a unit now opens its card, and its Details button opens the details (before MC1 a tap on the name did that)
+    open_unit_details(page, card(uid))
+    quiet(page)
 
 def fold(uid):
     return f'{card(uid)} .panel details.edit-details'
@@ -186,6 +185,7 @@ def main():
         check("a one-model unit has the same order as a batch unit, without the v61 Track button",
               order(page, 3) == ["stage", "photos", "recipes", "notes", "edit", "buttons"], order(page, 3))
         check("the fold holds the same boxes for a one-model unit (v61: no Track tick in it)", folded_labels(page, 3) == FOLDED, folded_labels(page, 3))
+        open_unit(page, 1)   # MC1: opening units 2 and 3 closed unit 1 (one card is open at a time)
         top = page.evaluate("""(sel) => { const p = document.querySelector(sel);
             const y = (q) => p.querySelector(q).getBoundingClientRect().top;
             return [y('select.jump-stage'), y('.gallery'), y('.panel-field:not(.gallery)'), y('textarea'), y('details.edit-details')]; }""",
@@ -249,10 +249,8 @@ def main():
         page.wait_for_timeout(200)
         open_unit(page, 2)
         check("each unit has its own fold: unit 2's is still closed", not fold_open(page, 2))
-        page.click(f'{card(1)} .info')   # close unit 1
-        page.wait_for_timeout(250)
-        page.click(f'{card(1)} .info')   # open it again
-        page.wait_for_timeout(250)
+        # MC1: opening unit 2 closed unit 1 (one card is open at a time; before MC1 its name was tapped twice here), so open it again
+        open_unit(page, 1)
         check("closing a unit and opening it again finds the fold shut", not fold_open(page, 1))
         # Keyboard: Enter and Space on the heading.
         page.focus(f'{fold(1)} > summary')

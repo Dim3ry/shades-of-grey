@@ -19,6 +19,7 @@ from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
+from common import open_unit_card   # MC1: unit cards start closed
 
 load, no_sideways = t.load, t.no_sideways
 results = []
@@ -34,6 +35,9 @@ EACH = {"id": 3, "name": "Each squad", "hobby": "40K", "faction": "Orks", "stage
 
 def unit(page, uid):
     return page.evaluate("(i) => { const m = models.find(x => x.id === i); return { stage: m.stage, stages: m.stages, log: m.log }; }", uid)
+
+def open_card(page, uid):
+    open_unit_card(page, f"li.unit[data-id='{uid}']")   # MC1: the stepper and Details are inside the opened card
 
 def card(page, uid):
     return page.locator(f"li.unit[data-id='{uid}']")
@@ -61,6 +65,7 @@ def main():
         last = page.evaluate("STAGES.length - 1")
         before = unit(page, 1)
         # A3: the stage button (the arrows icon) is gone; Jump to stage is the menu in the unit's Details.
+        open_card(page, 1)
         card(page, 1).locator(".details-toggle").click()
         card(page, 1).locator("select.jump-stage").select_option(str(last))
         page.wait_for_timeout(250)
@@ -70,12 +75,14 @@ def main():
         check("Undo puts stage and diary back exactly", unit(page, 1) == before, unit(page, 1))
 
         print("\n--- 2. The arrow on a batch unit ---")
+        open_card(page, 2)
         card(page, 2).locator(".up-button").click()
         page.wait_for_timeout(250)
         check("the batch unit moves up one stage", unit(page, 2)["stage"] == 3, unit(page, 2))
 
         print("\n--- 3. The arrow on a model-by-model unit ---")
         before = unit(page, 3)
+        open_card(page, 3)
         card(page, 3).locator(".up-button").click()
         page.wait_for_timeout(250)
         now = unit(page, 3)
@@ -85,10 +92,12 @@ def main():
 
         print("\n--- 4. Everything at the top ---")
         start(units=[{**EACH, "stages": [7, 7, 7], "stage": 7}])
+        open_card(page, 3)
         check("the arrow is switched off", card(page, 3).locator(".up-button").is_disabled())
 
         print("\n--- 5. Jump on a model-by-model unit ---")
         start()
+        open_card(page, 3)
         card(page, 3).locator(".details-toggle").click()
         card(page, 3).locator("select.jump-stage").select_option("3")
         page.wait_for_timeout(250)
@@ -99,6 +108,7 @@ def main():
             for w in [390, 360]:
                 page.set_viewport_size({"width": w, "height": 780})
                 start(settings={"appearance": scheme})
+                open_card(page, 1)   # MC1: the arrows show on an open card
                 sizes = page.evaluate("""() => [...document.querySelectorAll('li.unit .step-back, li.unit .up-button')]
                     .map(e => { const r = e.getBoundingClientRect(); return [r.width, r.height]; })""")
                 check(f"{w} px {scheme}: no sideways scroll, back and up buttons 44 px or more",
