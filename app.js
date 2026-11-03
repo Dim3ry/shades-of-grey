@@ -5231,14 +5231,36 @@
       return svg;
     }
     // U7 (James, 3 Nov): a tap on the orb in the open window plays the look's one-off move, then the orb carries on in its mood: Futuristic flashes
-    // four of its six bolts, picked at random each time; Magical's stone ring spins once; Grounded sends six paint drops out of the pool. The moves
+    // four of its six bolts, picked at random each time; Magical's stone ring spins once; Grounded sends six paint drops out of the pool (U7c: each
+    // tap a random direction and colour per drop, and twice as far). The moves
     // are in mentor-looks.js (ml-tap on the drawing, ml-picked on the bolts). The orb box is not a button: it stays hidden from screen readers, never
     // takes focus from the text box, and a tap opens, closes and asks nothing. A tap while a move plays is ignored. With reduced motion (or
     // .ml-still) the CSS plays nothing, so a tap does nothing. The round button and the start circle have no tap move.
     const MENTOR_TAP_BOLTS = 4;
+    // U7c (James, 3 Nov, late: "random in colour (still the same avatar colours), random in direction, and travel further"): before each tap,
+    // Grounded's six drops are sent new ways. The circle is cut into sixths, turned by one random amount for the whole set, and each drop flies
+    // somewhere in the middle two thirds of its own sixth, so they reach all the way round and never bunch (always at least 20 degrees apart).
+    // Each drop takes one of the drawing's own paint colours at random (the theme's t1, t2 and t3, its dot, and the blobs' mix of t2 and dot),
+    // never the same as the drop before it. Only the drop's holder turns (the rotate in its transform); the distance is in mentor-looks.js.
+    const MENTOR_TAP_PAINTS = ["ml-g-green", "ml-g-spiral", "ml-g-stone", "ml-g-corein", "ml-g-blob"];
+    function mentorScatterDrops(svg) {
+      const drops = [...svg.querySelectorAll(".ml-spl")];
+      const slice = 360 / (drops.length || 1), turn = Math.random() * 360;
+      let last = "";
+      drops.forEach((drop, i) => {
+        const holder = drop.parentElement, at = holder.getAttribute("transform") || "";
+        const angle = (turn + (i + 0.5) * slice + (Math.random() - 0.5) * slice * 2 / 3) % 360;
+        if (/rotate\(/.test(at)) holder.setAttribute("transform", at.replace(/rotate\([-\d.]+/, `rotate(${angle.toFixed(1)}`));
+        const paints = MENTOR_TAP_PAINTS.filter(p => p !== last);
+        last = paints[Math.floor(Math.random() * paints.length)];
+        drop.classList.remove(...MENTOR_TAP_PAINTS);
+        drop.classList.add(last);
+      });
+    }
     function mentorOrbTap(state) {
       const svg = state.orbBox.querySelector("svg");
       if (!svg || state.tapping) return;
+      mentorScatterDrops(svg);
       const bolts = [...svg.querySelectorAll(".ml-bolt")];
       for (let i = bolts.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [bolts[i], bolts[j]] = [bolts[j], bolts[i]]; }
       const picked = bolts.slice(0, MENTOR_TAP_BOLTS);
