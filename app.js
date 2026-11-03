@@ -8839,11 +8839,17 @@
 
     // LQ1 (LQ3, LQ7): a pop-up that closes is hidden at once, exactly as before; a see-through copy of it (no ids, cannot be tapped or
     // read by a screen reader) plays the way out where it was, then goes.
+    // A copy keeps only its look: no id, data-, aria- or role attributes (nothing that looks for the real thing finds a copy)
+    // (light: only ids and data-, for a list row whose look hangs on its aria- states, such as a ticked box)
+    function lqStrip(root, light) {
+      for (const n of [root, ...root.querySelectorAll("*")]) {
+        for (const a of [...n.attributes]) if (a.name === "id" || a.name.startsWith("data-") || (!light && (a.name === "role" || a.name === "name" || a.name === "for" || a.name.startsWith("aria-")))) n.removeAttribute(a.name);
+      }
+      return root;
+    }
     function lqGhostOut(el, frames, ms, inner) {
       if (!lqOn() || !el || !el.isConnected || el.classList.contains("hidden") || !el.getClientRects().length) return;
-      const ghost = el.cloneNode(true);
-      ghost.removeAttribute("id");
-      ghost.querySelectorAll("[id]").forEach(n => n.removeAttribute("id"));
+      const ghost = lqStrip(el.cloneNode(true));
       ghost.classList.remove("draining");
       ghost.classList.add("lq-ghost");
       ghost.setAttribute("aria-hidden", "true");
@@ -8896,9 +8902,7 @@
         layer.setAttribute("aria-hidden", "true");
         layer.inert = true;
         layer.style.cssText = "position: fixed; left: 0; top: 0; width: 0; height: 0; margin: 0; padding: 0; border: 0; overflow: visible; z-index: 5;";
-        const ghost = old.el.cloneNode(true);
-        ghost.removeAttribute("id");
-        ghost.querySelectorAll("[id]").forEach(n => n.removeAttribute("id"));
+        const ghost = lqStrip(old.el.cloneNode(true), true);
         ghost.style.cssText = old.look;   // its own look, as it was drawn in its list
         Object.assign(ghost.style, { position: "fixed", margin: "0", boxSizing: "border-box", left: old.r.left + "px", top: old.r.top + "px",
           width: old.r.width + "px", height: old.r.height + "px" });
@@ -9059,9 +9063,7 @@
     const lqChipRuns = new Set();
     const lqChipEnd = () => { for (const run of [...lqChipRuns]) run(); };
     function lqChipCopy(el) {   // a copy of a chip as it looks now (only switched-on ones are copied). A tick before the label (To do, Done,
-      const c = el.cloneNode(true);   // Repaint) is left out of the copy: it goes at once, as before, and the copy's label sits where the chip's now is
-      c.removeAttribute("id");
-      c.querySelectorAll("[id]").forEach(n => n.removeAttribute("id"));
+      const c = lqStrip(el.cloneNode(true));   // Repaint) is left out of the copy: it goes at once, as before, and the copy's label sits where the chip's now is
       c.classList.remove("sweep", "lq-press");
       c.style.cssText = lqChipLook(el);
       return c;
