@@ -2371,12 +2371,10 @@
   "rigging"
  ],
  "natural-eyes": [
-  "eyes",
-  "painting eyes",
+  "natural eyes",
   "eye whites",
   "pupils",
   "iris",
-  "face eyes",
   "human eyes",
   "realistic eyes"
  ],
@@ -2481,14 +2479,12 @@
   "mud and planks"
  ],
  "river-bed": [
-  "river",
-  "river bed",
+  "riverbed",
   "stream",
   "riverbank",
   "pebbles",
   "shallow water",
-  "creek",
-  "river base"
+  "creek"
  ],
  "autumn-leaf-litter": [
   "autumn",
