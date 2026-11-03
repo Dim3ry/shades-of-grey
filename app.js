@@ -6997,8 +6997,9 @@
       book.recipes.filter(r => !linkedRecipes.includes(r))
         .sort((a, b) => a.name.localeCompare(b.name))
         .forEach(r => recipePicker.add(new Option(r.part ? `${r.name} (${r.part})` : r.name, r.id)));
-      // This faction's painting schemes that the unit doesn't fully have yet.
-      for (const scheme of schemesFor(model.faction)) {
+      // This faction's painting schemes that the unit doesn't fully have yet. RS5: schemes with no faction are listed for every unit,
+      // so they can still be applied by hand.
+      for (const scheme of [...schemesFor(model.faction), ...book.schemes.filter(s => !String(s.faction || "").trim())]) {
         if (scheme.recipes.some(id => recipeById(id) && !(model.recipes || []).includes(id))) {
           recipePicker.add(new Option(`Apply scheme: ${scheme.name}`, `scheme:${scheme.id}`));
         }
@@ -9209,7 +9210,16 @@
       staleTabs.delete("settings");   // DS2: drawn now (see render)
       renderListChips("part-chips", "parts", "part");
       renderListChips("technique-chips", "techniques", "technique");
+      document.getElementById("ask-scheme-faction").checked = schemeFactionAsked();   // RS5
     }
+    // RS5: the "Ask for a faction on schemes" tick box (see schemeFactionAsked).
+    if (settings.schemeFactionOff !== undefined && typeof settings.schemeFactionOff !== "boolean") delete settings.schemeFactionOff;
+    document.getElementById("ask-scheme-faction").addEventListener("change", (e) => {
+      settings.schemeFactionOff = !e.target.checked;
+      saveSettings();
+      if (schemeDraft && settings.schemeFactionOff) { schemeDraft.editingFaction = false; schemeDraft.factionError = false; }
+      if (schemeDraft) renderSchemeEditor();
+    });
     function renderListChips(boxId, key, word) {
       const box = document.getElementById(boxId);
       box.innerHTML = "";
@@ -9702,7 +9712,7 @@
         meta.className = "meta";
         if (colour) { const dot = makeSwatch(colour); dot.classList.add("faction-dot"); meta.appendChild(dot); }
         const recipes = schemeRecipes(scheme);
-        meta.append([scheme.faction, plural(recipes.length, "recipe"), scheme.auto ? "new units get it" : ""]
+        meta.append([scheme.faction, plural(recipes.length, "recipe"), scheme.auto && scheme.faction ? "new units get it" : ""]
           .filter(Boolean).join(" · "));
 
         // S2: the scheme's recipes as nested rows (name, then part and steps, with colour dots). More than 3: the first 3 and "Show all N".
@@ -9727,7 +9737,8 @@
         const missing = unitsMissing(scheme);
         const status = document.createElement("div");
         status.className = "meta";
-        status.textContent = !units.length ? `No ${scheme.faction} units yet.`
+        status.textContent = !scheme.faction ? ""   // RS5: a scheme with no faction (Ask for a faction on schemes off) has no units of its own
+          : !units.length ? `No ${scheme.faction} units yet.`
           : !recipes.length ? "Add some recipes to this scheme."
           : !missing.length ? (units.length === 1 ? `The 1 unit in ${scheme.faction} has it.` : `All ${units.length} units in ${scheme.faction} have it.`)
           : `${units.length - missing.length} of ${plural(units.length, "unit")} in ${scheme.faction} have it.`;
@@ -9764,11 +9775,54 @@
       }
     }
 
+    // RS5: Settings, Recipe preferences, "Ask for a faction on schemes". On by default: settings.schemeFactionOff, and only an explicit
+    // true means off (a saved setting, not in backups). Off hides the Faction row on the scheme form. A scheme with no faction has never
+    // attached to new units (schemesFor("") is empty), and that stays so; it can still be applied to a unit by hand.
+    function schemeFactionAsked() { return settings.schemeFactionOff !== true; }
+    // RS5: recipes keep no faction of their own, so a recipe's factions are those of the units it is linked to and of the other schemes
+    // that hold it.
+    function recipeFactions(id, skipSchemeId) {
+      const found = new Map();
+      const add = (f) => { const text = String(f || "").trim(); if (text && !found.has(sameKey(text))) found.set(sameKey(text), text); };
+      for (const m of models) if ((m.recipes || []).includes(id)) add(m.faction);
+      for (const s of book.schemes) if (s.id !== skipSchemeId && s.recipes.includes(id)) add(s.faction);
+      return found;
+    }
+    // The one faction the ticked recipes agree on, or "" (none of them has one, or they point at more than one).
+    function factionFromRecipes(ids, skipSchemeId) {
+      let key = null, name = "";
+      for (const id of ids) {
+        const found = recipeFactions(id, skipSchemeId);
+        if (!found.size) continue;
+        if (found.size > 1) return "";
+        const [k, v] = [...found][0];
+        if (key !== null && k !== key) return "";
+        if (key === null) { key = k; name = v; }
+      }
+      return name;
+    }
+    // Fill in the faction for the person (until they choose one): from the ticked recipes, otherwise the last faction used, otherwise blank.
+    function fillSchemeFaction(d) {
+      if (d.factionChosen || !schemeFactionAsked()) return;
+      const fromRecipes = factionFromRecipes(d.recipes, d.id);
+      d.fromRecipes = !!fromRecipes;
+      d.faction = fromRecipes || (typeof settings.lastFaction === "string" ? settings.lastFaction.trim() : "");
+    }
+    // The other schemes in this faction that attach to new units ("auto"). Saving would leave two attaching, so the form warns.
+    function schemeClashes(d) {
+      const faction = d.faction.trim();
+      return faction ? book.schemes.filter(s => s.id !== d.id && s.auto && sameText(s.faction, faction)) : [];
+    }
+
     // Open the scheme editor: a COPY is edited, and nothing changes until Save.
     function startScheme(scheme, faction, recipeIds) {   // RS1: recipeIds = recipes already ticked in a new scheme
       schemeDraft = scheme
         ? { id: scheme.id, name: scheme.name, faction: scheme.faction, auto: scheme.auto, recipes: scheme.recipes.slice() }
         : { id: null, name: "", faction: faction || "", auto: true, recipes: recipeIds ? recipeIds.slice() : [] };
+      // RS5: a saved or given faction is kept; a blank one is filled in. takeOver = the same-faction note's tick box.
+      Object.assign(schemeDraft, { factionChosen: !!schemeDraft.faction.trim(), fromRecipes: false, takeOver: false,
+                                   search: "", editingFaction: false, factionError: false });
+      fillSchemeFaction(schemeDraft);
       schemeDraft.original = schemeSnapshot(schemeDraft);
       settings.recipeView = "schemes";
       saveSettings();
@@ -9776,7 +9830,7 @@
       renderRecipes();
       showTab("recipes");
     }
-    function schemeSnapshot(d) { return JSON.stringify([d.name, d.faction, d.auto, d.recipes]); }
+    function schemeSnapshot(d) { return JSON.stringify([d.name, d.faction, d.auto, d.recipes, d.takeOver]); }
     function closeScheme(askFirst) {
       const leave = () => {
         schemeDraft = null;
@@ -9791,6 +9845,8 @@
     }
     document.getElementById("new-scheme").addEventListener("click", () => startScheme(null));
 
+    // RS5: the scheme form, the same for New and Edit. Card 1: name and the Faction row. Card 2: Search recipes and the recipes grouped
+    // by part. Below both: the same-faction note (or the "new units" tick box) and a full-width Save with the live recipe count.
     function renderSchemeEditor() {
       const d = schemeDraft;
       schemePage.innerHTML = "";
@@ -9800,7 +9856,7 @@
       back.addEventListener("click", () => closeScheme(true));
       schemePage.appendChild(back);
 
-      // Name, faction and the "new units get it" switch.
+      // Name and the Faction row.
       const top = document.createElement("div");
       top.className = "card scheme-form";
       const title = document.createElement("h2");
@@ -9812,100 +9868,269 @@
       nameBox.value = d.name;
       nameBox.addEventListener("input", () => { d.name = nameBox.value; });
       nameLabel.appendChild(nameBox);
+      top.append(title, nameLabel);
 
-      const factionLabel = document.createElement("label");
-      factionLabel.textContent = "Faction";
-      const factionBox = document.createElement("input");
-      factionBox.placeholder = "e.g. Ultramarines";
-      factionBox.setAttribute("list", "faction-options");   // suggests your existing factions
-      factionBox.value = d.faction;
-      const factionNote = document.createElement("p");
-      factionNote.className = "hint";
-      const updateNote = () => {
-        const n = d.faction.trim() ? models.filter(m => sameText(m.faction, d.faction)).length : 0;
-        factionNote.textContent = !d.faction.trim() ? "Which faction is this scheme for?"
-          : n ? `${plural(n, "unit")}.` : "No units yet.";
+      // The Faction row: the faction as text with Change. Change turns it into a box that suggests your factions.
+      const factionWrap = document.createElement("div");
+      factionWrap.className = "scheme-faction";
+      const drawFaction = () => {
+        factionWrap.innerHTML = "";
+        const showError = d.factionError && !d.faction.trim();
+        factionWrap.classList.toggle("has-error", showError);
+        const row = document.createElement("div");
+        row.className = "scheme-faction-row";
+        if (d.editingFaction) {
+          const label = document.createElement("label");
+          label.className = "scheme-faction-edit";
+          label.textContent = "Faction";
+          const box = document.createElement("input");
+          box.setAttribute("list", "faction-options");   // suggests your existing factions
+          box.setAttribute("autocomplete", "off");
+          box.value = d.faction;
+          box.addEventListener("input", () => {
+            d.faction = box.value; d.factionChosen = true; d.fromRecipes = false;
+            drawBottom();
+          });
+          const finish = () => {
+            d.faction = box.value.trim(); d.factionChosen = true; d.fromRecipes = false; d.editingFaction = false;
+            drawFaction(); drawBottom();
+          };
+          box.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); finish(); } });
+          label.appendChild(box);
+          const done = document.createElement("button");
+          done.type = "button";
+          done.className = "plain-button";
+          done.textContent = "Done";
+          done.addEventListener("click", finish);
+          row.append(label, done);
+        } else {
+          const text = document.createElement("div");
+          text.className = "scheme-faction-text";
+          const label = document.createElement("span");
+          label.className = "scheme-faction-label";
+          label.textContent = "Faction";
+          const value = document.createElement("span");
+          value.className = "scheme-faction-value" + (d.faction.trim() ? "" : " is-blank");
+          value.textContent = d.faction.trim() || "None";
+          text.append(label, value);
+          const change = document.createElement("button");
+          change.type = "button";
+          change.className = "plain-button";
+          change.textContent = "Change";
+          change.setAttribute("aria-label", "Change faction");
+          change.addEventListener("click", () => {
+            d.editingFaction = true;
+            drawFaction();
+            const box = factionWrap.querySelector("input");
+            if (box) box.focus();
+          });
+          row.append(text, change);
+        }
+        factionWrap.appendChild(row);
+        if (d.fromRecipes && d.faction.trim() && !d.editingFaction) {
+          const from = document.createElement("p");
+          from.className = "hint";
+          from.textContent = "From the recipes you picked";
+          factionWrap.appendChild(from);
+        }
+        if (showError) {
+          const error = document.createElement("p");
+          error.className = "scheme-faction-error";
+          error.setAttribute("role", "alert");
+          error.textContent = "Pick the faction this scheme is for.";
+          factionWrap.appendChild(error);
+        }
       };
-      factionBox.addEventListener("input", () => { d.faction = factionBox.value; updateNote(); });
-      updateNote();
-      factionLabel.appendChild(factionBox);
-
-      const autoLabel = document.createElement("label");
-      autoLabel.className = "check-label";
-      const autoBox = document.createElement("input");
-      autoBox.type = "checkbox";
-      autoBox.checked = d.auto;
-      autoBox.addEventListener("change", () => { d.auto = autoBox.checked; });
-      autoLabel.append(autoBox, "New units added in this faction get these recipes automatically");
-
-      top.append(title, nameLabel, factionLabel, factionNote, autoLabel);
+      if (schemeFactionAsked()) top.appendChild(factionWrap);
       schemePage.appendChild(top);
 
-      // The recipes: tick the ones in this scheme.
+      // The recipes: Search recipes, then one group per part (book.parts order, then other parts, then "No part").
       const pick = document.createElement("div");
       pick.className = "card";
       const pickTitle = document.createElement("h2");
       pickTitle.textContent = "Recipes in this scheme";
       pick.appendChild(pickTitle);
+      const groupViews = [];
+      const onTicks = () => {
+        fillSchemeFaction(d);
+        drawFaction();
+        drawBottom();
+        for (const g of groupViews) g.draw();
+      };
       if (!book.recipes.length) {
         const none = document.createElement("p");
         none.className = "hint";
         none.textContent = "No recipes yet.";
         pick.appendChild(none);
       } else {
-        const listEl = document.createElement("ul");
-        listEl.className = "scheme-recipe-list";
-        const byPart = book.recipes.slice().sort((a, b) =>
-          (a.part || "~").localeCompare(b.part || "~") || a.name.localeCompare(b.name));
-        for (const recipe of byPart) {
-          const row = document.createElement("li");
+        const search = document.createElement("input");
+        search.type = "search";
+        search.className = "scheme-recipe-search";
+        search.placeholder = "Search recipes";
+        search.setAttribute("aria-label", "Search recipes");
+        search.setAttribute("autocomplete", "off");
+        search.value = d.search || "";
+        pick.appendChild(search);
+
+        const groups = new Map();   // part key -> { name, recipes }
+        const sorted = book.recipes.slice().sort((a, b) => a.name.localeCompare(b.name));
+        for (const recipe of sorted) {
+          const part = String(recipe.part || "").trim();
+          const key = part ? sameKey(part) : "";
+          if (!groups.has(key)) groups.set(key, { name: part || "No part", recipes: [] });
+          groups.get(key).recipes.push(recipe);
+        }
+        const order = (key) => { const at = book.parts.findIndex(p => sameKey(p) === key); return at < 0 ? book.parts.length : at; };
+        const keys = [...groups.keys()].sort((a, b) =>
+          (a === "") - (b === "") || order(a) - order(b) || groups.get(a).name.localeCompare(groups.get(b).name));
+
+        for (const key of keys) {
+          const group = groups.get(key);
+          const section = document.createElement("section");
+          section.className = "scheme-group";
+          const head = document.createElement("div");
+          head.className = "scheme-group-head";
+          const heading = document.createElement("h3");
+          heading.textContent = group.name;
+          const all = document.createElement("button");
+          all.type = "button";
+          all.className = "plain-button scheme-group-all";
+          head.append(heading, all);
+          const listEl = document.createElement("ul");
+          listEl.className = "scheme-recipe-list";
+          const rows = group.recipes.map(recipe => {
+            const row = document.createElement("li");
+            const label = document.createElement("label");
+            label.className = "check-label scheme-pick-row";
+            const box = document.createElement("input");
+            box.type = "checkbox";
+            box.checked = d.recipes.includes(recipe.id);
+            box.addEventListener("change", () => {
+              d.recipes = box.checked ? [...d.recipes, recipe.id] : d.recipes.filter(id => id !== recipe.id);
+              onTicks();
+            });
+            label.append(box);
+            const colours = recipeColours(recipe);
+            if (colours.length) label.append(makeSwatch(colours[0]));
+            const text = document.createElement("span");
+            text.className = "scheme-recipe-name";
+            text.textContent = recipe.name;
+            label.append(text);
+            row.appendChild(label);
+            listEl.appendChild(row);
+            return { row, box, recipe };
+          });
+          const shown = () => rows.filter(r => !r.row.hidden);
+          const view = {
+            section, rows,
+            draw() {
+              const visible = shown();
+              const full = visible.length && visible.every(r => d.recipes.includes(r.recipe.id));
+              all.textContent = full ? "Clear" : "Select all";
+              all.setAttribute("aria-label", `${full ? "Clear" : "Select all"} ${group.name}`);
+              for (const r of rows) r.box.checked = d.recipes.includes(r.recipe.id);
+            },
+          };
+          // Select all ticks every recipe the search leaves in view in this group; Clear unticks them.
+          all.addEventListener("click", () => {
+            const visible = shown();
+            const full = visible.every(r => d.recipes.includes(r.recipe.id));
+            const ids = visible.map(r => r.recipe.id);
+            d.recipes = full ? d.recipes.filter(id => !ids.includes(id)) : [...d.recipes, ...ids.filter(id => !d.recipes.includes(id))];
+            onTicks();
+          });
+          section.append(head, listEl);
+          pick.appendChild(section);
+          groupViews.push(view);
+        }
+        const noMatch = document.createElement("p");
+        noMatch.className = "hint";
+        noMatch.textContent = "No recipes match.";
+        pick.appendChild(noMatch);
+        const filter = () => {
+          const q = sameKey(search.value);
+          let any = false;
+          for (const g of groupViews) {
+            for (const r of g.rows) r.row.hidden = !!q && !sameKey(r.recipe.name).includes(q) && !sameKey(r.recipe.part).includes(q);
+            g.section.hidden = !g.rows.some(r => !r.row.hidden);
+            if (!g.section.hidden) any = true;
+            g.draw();
+          }
+          noMatch.hidden = any;
+        };
+        search.addEventListener("input", () => { d.search = search.value; filter(); });
+        filter();
+      }
+      schemePage.appendChild(pick);
+
+      // Below both cards: the same-faction note or the "new units" tick box, then Save (full width), then Cancel and Delete.
+      const bottom = document.createElement("div");
+      bottom.className = "scheme-bottom";
+      const drawBottom = () => {
+        bottom.innerHTML = "";
+        const clashes = schemeClashes(d);
+        if (clashes.length) {
+          const note = document.createElement("div");
+          note.className = "scheme-clash";
+          const line = document.createElement("p");
+          const names = clashes.map(s => s.name);
+          const who = names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+          line.textContent = `${who} already ${names.length === 1 ? "applies" : "apply"} to new ${clashes[0].faction} units.`;
           const label = document.createElement("label");
           label.className = "check-label";
           const box = document.createElement("input");
           box.type = "checkbox";
-          box.checked = d.recipes.includes(recipe.id);
-          box.addEventListener("change", () => {
-            d.recipes = box.checked ? [...d.recipes, recipe.id] : d.recipes.filter(id => id !== recipe.id);
-          });
-          const colours = recipeColours(recipe);
-          label.append(box);
-          if (colours.length) label.append(makeSwatch(colours[0]));
-          const text = document.createElement("span");
-          text.className = "scheme-recipe-name";
-          text.textContent = recipe.name;
-          label.append(text);
-          if (recipe.part) {
-            const part = document.createElement("small");
-            part.textContent = recipe.part;
-            label.append(part);
-          }
-          row.appendChild(label);
-          listEl.appendChild(row);
+          box.checked = d.takeOver;
+          box.addEventListener("change", () => { d.takeOver = box.checked; });
+          label.append(box, "Use this scheme for new units instead");
+          note.append(line, label);
+          bottom.appendChild(note);
+        } else if (d.faction.trim()) {
+          const autoLabel = document.createElement("label");
+          autoLabel.className = "check-label";
+          const autoBox = document.createElement("input");
+          autoBox.type = "checkbox";
+          autoBox.checked = d.auto;
+          autoBox.addEventListener("change", () => { d.auto = autoBox.checked; });
+          autoLabel.append(autoBox, "New units added in this faction get these recipes automatically");
+          bottom.appendChild(autoLabel);
         }
-        pick.appendChild(listEl);
-      }
-      schemePage.appendChild(pick);
+        const saveButton = document.createElement("button");
+        saveButton.className = "primary-button scheme-save";
+        saveButton.textContent = `Save scheme (${plural(d.recipes.filter(id => recipeById(id)).length, "recipe")})`;
+        saveButton.addEventListener("click", saveScheme);
+        const more = document.createElement("div");
+        more.className = "scheme-more-buttons";
+        const cancel = document.createElement("button");
+        cancel.className = "plain-button";
+        cancel.textContent = "Cancel";
+        cancel.addEventListener("click", () => closeScheme(true));
+        more.appendChild(cancel);
+        if (d.id !== null) {
+          const del = document.createElement("button");
+          del.className = "danger-button";
+          del.textContent = "Delete";
+          del.addEventListener("click", () => deleteScheme(d.id));
+          more.appendChild(del);
+        }
+        bottom.append(saveButton, more);
+      };
+      drawFaction();
+      drawBottom();
+      schemePage.appendChild(bottom);
+    }
 
-      const buttons = document.createElement("div");
-      buttons.className = "settings-actions";
-      const saveButton = document.createElement("button");
-      saveButton.className = "primary-button";
-      saveButton.style.flex = "1";
-      saveButton.textContent = "Save scheme";
-      saveButton.addEventListener("click", saveScheme);
-      const cancel = document.createElement("button");
-      cancel.className = "plain-button";
-      cancel.textContent = "Cancel";
-      cancel.addEventListener("click", () => closeScheme(true));
-      buttons.append(saveButton, cancel);
-      if (d.id !== null) {
-        const del = document.createElement("button");
-        del.className = "danger-button";
-        del.textContent = "Delete";
-        del.addEventListener("click", () => deleteScheme(d.id));
-        buttons.appendChild(del);
-      }
-      schemePage.appendChild(buttons);
+    // RS5: Save with no faction (while "Ask for a faction on schemes" is on) asks on the Faction row itself, scrolled into view.
+    function askSchemeFaction() {
+      const d = schemeDraft;
+      d.editingFaction = true;
+      d.factionError = true;
+      renderSchemeEditor();
+      const wrap = schemePage.querySelector(".scheme-faction");
+      if (!wrap) return;
+      wrap.scrollIntoView({ block: "center" });
+      const box = wrap.querySelector("input");
+      if (box) box.focus({ preventScroll: true });
     }
 
     function saveScheme() {
@@ -9913,16 +10138,21 @@
       const name = d.name.trim();
       let faction = d.faction.trim();
       if (!name) { notify("Give the scheme a name."); return; }
-      if (!faction) { notify("Pick the faction this scheme is for."); return; }
+      if (!faction && schemeFactionAsked()) { askSchemeFaction(); return; }
       // Match the spelling your units already use, so "ultramarines" finds "Ultramarines".
-      const existing = models.find(m => sameText(m.faction, faction));
+      const existing = faction ? models.find(m => sameText(m.faction, faction)) : null;
       if (existing) faction = existing.faction;
+      // RS5: another scheme in this faction already attaches to new units. Ticked: this one does and the others stop (they are kept,
+      // and Apply still works). Unticked: this one is saved without attaching. Only the existing "auto" field changes; no unit changes.
+      const clashes = schemeClashes(d);
+      const auto = clashes.length ? d.takeOver : d.auto;
+      if (clashes.length && d.takeOver) for (const other of clashes) other.auto = false;
       let scheme = d.id === null ? null : book.schemes.find(s => s.id === d.id);
       if (!scheme) {
         scheme = { id: Math.max(0, ...book.schemes.map(s => s.id)) + 1 };
         book.schemes.push(scheme);
       }
-      Object.assign(scheme, { name, faction, auto: d.auto, recipes: d.recipes.filter(id => recipeById(id)) });
+      Object.assign(scheme, { name, faction, auto, recipes: d.recipes.filter(id => recipeById(id)) });
       delete scheme.example;   // v44: saved with the editor, so it's yours now, not an example
       schemeDraft = null;
       // Offer to apply it straight away to units that don't have it all yet.
