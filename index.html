@@ -330,7 +330,7 @@
        wet sheen on the Grounded paint. */
     :root { --mentor-s0: #64748b; --mentor-s1: #6366f1; --mentor-s2: #38bdf8; --mentor-s3: #22d3ee; --mentor-s4: #a7f3d0; --mentor-dot: #7dd3fc; --mentor-glint: #ffffff; }
     :root[data-t="parchment"] { --mentor-dot: #dc6575; }
-    :root[data-t="forge"] { --mentor-dot: #d5583e; }
+    :root[data-t="forge"] { --mentor-dot: #e8642c; }   /* TH2: the new forge orange */
     :root[data-t="bench"] { --mentor-dot: #e4c968; }
     .mentor-look-chips .chip { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; }
     .mentor-look-chips .ml-orb { width: 24px; height: 24px; flex: none; }   /* v126: 24 px keeps the chip at the one-line height (28 made it 52 px, a stretched pill) */
@@ -2192,89 +2192,105 @@
       --button-weight: 600;
       --button-transform: uppercase;
       --button-tracking: .07em;
-      --texture-size: auto;
+      /* TH2: worn, scratched steel, shared by light and dark (each mode sets its own shade, scratch and brushed-grain layers). Soot and the forge
+         glow are gradients sized to the screen; the scratches (383 x 541) and the brushed grain (240 x 240) are two small inline SVG tiles. */
+      --texture: var(--forge-shade), var(--forge-scratch), var(--forge-brush);
+      --texture-size: 100% 100vh, 100% 100vh, 100% 100vh, 383px 541px, 240px 240px;
+      /* TH2: a domed rivet (drawn in its own square, so it scales with the square) and the faint sheen of a steel plate */
+      --rivet: radial-gradient(circle closest-side at 42% 40%, var(--rivet-hi) 0 14%, var(--rivet-a) 38%, var(--rivet-b) 78%, var(--rivet-edge) 90%, #0000 100%);
+      --plate: linear-gradient(var(--plate-hi), #0000 40%, #0000 60%, var(--plate-lo));
     }
     [data-t="forge"][data-m="dark"] {
-      --background: #0e0e10;
-      --card: #17171a;
-      --track: #0c0c0e;
-      --border: #636370;
-      --text: #dcd8cf;
-      --muted: #8f8c84;
-      --accent: #d5583e;
-      --on-accent: #130d0b;
-      --heading-colour: #dcd8cf;
-      --wordmark-colour: #dcd8cf;
-      --danger: #f07a6a;
+      --background: #0d0f11;
+      --card: #16191c;
+      --track: #0b0c0e;
+      --border: #6c717a;
+      --text: #dddbd5;
+      --muted: #9c9a93;
+      --accent: #e8642c;
+      --on-accent: #140b06;
+      --heading-colour: #dddbd5;
+      --wordmark-colour: #dddbd5;
+      --danger: #ff5d73;
       --shadow: rgba(0, 0, 0, 0.45);
-      --badge-bg: rgba(23, 23, 26, 0.85);
-      --accent-wash: rgba(213, 88, 62, 0.08);
-      --accent-wash-hover: rgba(213, 88, 62, 0.05);
-      --note: #c9a66b;
-      --note-wash: rgba(201, 166, 107, 0.18);
-      --good: #7fbf6a;
-      --good-wash: rgba(127, 191, 106, 0.12);
-      --bad: #f07a6a;
-      --bad-wash: rgba(240, 122, 106, 0.1);
-      --warn: #e8cf7a;
-      --caution: #e89a3c;
-      --wish: #8fb0d8;
-      --grey-status: #9a978f;
-      --chip-on: #130d0b;
-      --toast-action: #a8321d;
-      --series-added: #8fb0d8;
-      --series-painted: #7fbf6a;
-      --toast-ring: rgba(213, 88, 62, 0.45);
+      --badge-bg: rgba(22, 25, 28, 0.85);
+      --accent-wash: rgba(232, 100, 44, 0.08);
+      --accent-wash-hover: rgba(232, 100, 44, 0.05);
+      --note: #6fc3b5;
+      --note-wash: rgba(111, 195, 181, 0.16);
+      --good: #80c56b;
+      --good-wash: rgba(128, 197, 107, 0.12);
+      --bad: #ff5d73;
+      --bad-wash: rgba(255, 93, 115, 0.1);
+      --warn: #ece37f;
+      --caution: #f7a63c;
+      --wish: #93b3db;
+      --grey-status: #9e9c96;
+      --chip-on: #140b06;
+      --toast-action: #a33d14;
+      --series-added: #93b3db;
+      --series-painted: #80c56b;
+      --toast-ring: rgba(232, 100, 44, 0.45);
       --basket-deep: #000000;
-      --first-letter: #d5583e;
+      --first-letter: #e8642c;
       color-scheme: dark;
-      --card-shadow: inset 0 0 0 1px #000, inset 0 0 0 4px #1f1f24;
-      --rule: 3px solid #2a2a30;
-      --frame: 2px solid #26262b;
+      --card-shadow: inset 0 1px 0 rgba(255,255,255,.07), inset 0 0 0 1px #000, inset 0 0 0 4px #1c1f23;
+      --rule: 3px solid var(--brass);
+      --frame: 2px solid var(--brass);
       --swatch-edge: rgba(255, 255, 255, 0.25);
       --wordmark-shadow: 0 2px 0 #000;
-      --texture: repeating-linear-gradient(135deg, rgba(255,255,255,.02) 0 2px, transparent 2px 7px), radial-gradient(ellipse at 15% 0%, rgba(196,69,43,.10), transparent 55%);
+      --brass: #a98d58;
+      --rivet-hi: #f0dca6; --rivet-a: #b8975a; --rivet-b: #6e5530; --rivet-edge: rgba(0,0,0,.75);
+      --plate-hi: rgba(255,255,255,.03); --plate-lo: rgba(0,0,0,.14);
+      --forge-shade: radial-gradient(ellipse 75% 45% at 12% 0%, rgba(232,100,44,.09), #0000 70%), radial-gradient(ellipse at 50% 42%, #0000 50%, rgba(0,0,0,.5) 100%), linear-gradient(90deg, rgba(0,0,0,.35), #0000 18px, #0000 calc(100% - 18px), rgba(0,0,0,.35));
+      --forge-scratch: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='383' height='541' fill='none' stroke-linecap='round'%3E%3Cdefs%3E%3Cpath id='s' d='M14 52L131 21M40 61L118 42M222 98L371 141M300 121L352 136M60 230Q140 214 205 262M318 300L240 372M20 410L162 446M35 419L120 441M250 470L372 452M150 331L176 322M96 140L104 168M340 20L372 66'/%3E%3Cpath id='t' d='M70 92l22-6M74 99l15-4M181 40l9 30M262 200l40 12M110 300l-30 18M203 401l28-9M331 231l20 30M30 500l50-14M150 160l-6 24M290 520l-34-21'/%3E%3C/defs%3E%3Cuse href='%23s' stroke='%23000' stroke-opacity='.45' stroke-width='1.2'/%3E%3Cuse href='%23s' x='-.7' y='-.7' stroke='%23fff' stroke-opacity='.06' stroke-width='.7'/%3E%3Cuse href='%23t' stroke='%23000' stroke-opacity='.3'/%3E%3Cuse href='%23t' x='-.6' y='-.6' stroke='%23fff' stroke-opacity='.045' stroke-width='.6'/%3E%3C/svg%3E");
+      --forge-brush: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='b' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.004 .5' numOctaves='3' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.85 0 0 0 0 0.88 0 0 0 0 0.92 1.2 0 0 0 -.55'/%3E%3C/filter%3E%3Cfilter id='g' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' seed='9' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.4 0 0 0 -.7'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23b)' opacity='.14'/%3E%3Crect width='240' height='240' filter='url(%23g)' opacity='.6'/%3E%3C/svg%3E");
     }
     [data-t="forge"][data-m="light"] {
-      --background: #cfcdc6;
-      --card: #dedcd5;
-      --track: #bdbbb3;
-      --border: #1a1a1d;
-      --text: #17171a;
-      --muted: #55534d;
-      --accent: #9f2f1b;
-      --on-accent: #f2eee6;
-      --heading-colour: #17171a;
-      --wordmark-colour: #17171a;
-      --danger: #9b1c1c;
-      --shadow: rgba(23, 23, 26, 0.18);
-      --badge-bg: rgba(222, 220, 213, 0.92);
-      --accent-wash: rgba(159, 47, 27, 0.09);
-      --accent-wash-hover: rgba(159, 47, 27, 0.05);
-      --note: #6b4f1f;
-      --note-wash: rgba(107, 79, 31, 0.1);
-      --good: #2f5f1f;
-      --good-wash: rgba(47, 95, 31, 0.1);
-      --bad: #9b1c1c;
-      --bad-wash: rgba(155, 28, 28, 0.08);
-      --warn: #6b5200;
-      --caution: #854700;
-      --wish: #24508a;
-      --grey-status: #55534d;
-      --chip-on: #f2eee6;
-      --toast-action: #e07a5f;
-      --series-added: #24508a;
-      --series-painted: #2f5f1f;
-      --toast-ring: rgba(159, 47, 27, 0.45);
-      --basket-deep: #17171a;
-      --first-letter: #9f2f1b;
+      --background: #cdd1d5;
+      --card: #dde1e5;
+      --track: #bfc4c9;
+      --border: #25282c;
+      --text: #14171a;
+      --muted: #4d5054;
+      --accent: #8f2f09;
+      --on-accent: #f4efe8;
+      --heading-colour: #14171a;
+      --wordmark-colour: #14171a;
+      --danger: #9e1037;
+      --shadow: rgba(20, 23, 26, 0.18);
+      --badge-bg: rgba(221, 225, 229, 0.92);
+      --accent-wash: rgba(143, 47, 9, 0.09);
+      --accent-wash-hover: rgba(143, 47, 9, 0.05);
+      --note: #1a594f;
+      --note-wash: rgba(26, 89, 79, 0.1);
+      --good: #285a1a;
+      --good-wash: rgba(40, 90, 26, 0.1);
+      --bad: #9e1037;
+      --bad-wash: rgba(158, 16, 55, 0.08);
+      --warn: #575100;
+      --caution: #704600;
+      --wish: #254f8d;
+      --grey-status: #4d5054;
+      --chip-on: #f4efe8;
+      --toast-action: #f08a5a;
+      --series-added: #254f8d;
+      --series-painted: #285a1a;
+      --toast-ring: rgba(143, 47, 9, 0.45);
+      --basket-deep: #14171a;
+      --first-letter: #8f2f09;
       color-scheme: light;
-      --card-shadow: inset 0 0 0 1px rgba(255,255,255,.5), inset 0 0 0 4px rgba(0,0,0,.07);
-      --rule: 3px solid #1a1a1d;
-      --frame: 2px solid #1a1a1d;
-      --swatch-edge: rgba(23, 23, 26, 0.35);
+      --card-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 0 0 1px rgba(255,255,255,.35), inset 0 0 0 4px rgba(0,0,0,.06);
+      --rule: 3px solid var(--brass);
+      --frame: 2px solid var(--brass);
+      --swatch-edge: rgba(20, 23, 26, 0.35);
       --wordmark-shadow: none;
-      --texture: repeating-linear-gradient(135deg, rgba(0,0,0,.03) 0 2px, transparent 2px 7px), radial-gradient(ellipse at 15% 0%, rgba(168,50,29,.10), transparent 55%);
+      --brass: #82682b;
+      --rivet-hi: #f6ebcc; --rivet-a: #a88a4c; --rivet-b: #75592a; --rivet-edge: rgba(0,0,0,.3);
+      --plate-hi: rgba(255,255,255,.35); --plate-lo: rgba(0,0,0,.035);
+      --forge-shade: radial-gradient(ellipse 75% 45% at 12% 0%, rgba(176,60,20,.05), #0000 70%), radial-gradient(ellipse 120% 90% at 50% 30%, #0000 60%, rgba(40,46,54,.08) 100%), linear-gradient(rgba(255,255,255,.14), #0000 35%);
+      --forge-scratch: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='383' height='541' fill='none' stroke-linecap='round'%3E%3Cpath d='M14 52L131 21M40 61L118 42M222 98L371 141M300 121L352 136M60 230Q140 214 205 262M318 300L240 372M20 410L162 446M35 419L120 441M250 470L372 452M150 331L176 322M96 140L104 168M340 20L372 66' stroke='%23fff' stroke-opacity='.65' stroke-width='.9'/%3E%3Cpath d='M70 92l22-6M74 99l15-4M181 40l9 30M262 200l40 12M110 300l-30 18M203 401l28-9M331 231l20 30M30 500l50-14M150 160l-6 24M290 520l-34-21' stroke='%23fff' stroke-opacity='.5' stroke-width='.7'/%3E%3C/svg%3E");
+      --forge-brush: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='b' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.004 .5' numOctaves='3' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.12 0 0 0 0 0.15 1.2 0 0 0 -.55'/%3E%3C/filter%3E%3Cfilter id='g' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' seed='9' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1.4 0 0 0 -.7'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23b)' opacity='.09'/%3E%3Crect width='240' height='240' filter='url(%23g)' opacity='.35'/%3E%3C/svg%3E");
     }
     [data-t="bench"] {
       --font-heading: 'Big Shoulders Stencil', 'Allerta Stencil', 'Arial Narrow', sans-serif;
@@ -2434,6 +2450,39 @@
 
     /* Grim Forge: the bevel (in the card shadow) and heavy borders, plus a hard shadow under the title in dark. */
     [data-t="forge"] h1 { text-shadow: var(--wordmark-shadow, none); }
+    /* TH2: worn steel and brass. The steel (--texture) is drawn once on a fixed layer behind the page, so scrolling does not repaint it; the header and the
+       fade behind the bar show the same steel, measured from the top of the screen (as Parchment Codex does). Cards and unit rows are steel plates with a
+       brass rivet in each corner, inside their padding; the main button has a small bevel. No filters or blend modes on the page's elements. */
+    [data-t="forge"] body { background-image: none; background-attachment: scroll; }
+    [data-t="forge"] body::before {
+      content: ""; position: fixed; top: 0; left: 0; right: 0; height: 100vh; z-index: -1; pointer-events: none; will-change: transform;
+      background-image: var(--texture); background-size: var(--texture-size);
+    }
+    [data-t="forge"] .app-bar { background-image: var(--texture); background-size: var(--texture-size); }
+    @media (min-width: 640px) { [data-t="forge"] .app-bar { background-attachment: fixed; } }
+    [data-t="forge"] .tabs::before {
+      --fade-h: calc((230px + var(--arc-lift)) * var(--arc-scale) + env(safe-area-inset-bottom));   /* the same height as .tabs::before above */
+      background-color: var(--background); background-image: var(--texture); background-size: var(--texture-size);
+      background-position: 0 calc(var(--fade-h) - 100vh); background-position: 0 calc(var(--fade-h) - 100dvh);
+      -webkit-mask-image: linear-gradient(transparent, #000 60%); mask-image: linear-gradient(transparent, #000 60%);
+    }
+    [data-t="forge"] body.launching .tabs::before { -webkit-mask-image: none; mask-image: none; }   /* the start page draws its own glow there */
+    :where([data-t="forge"]) :is(.card, li.unit) {
+      background-image: var(--rivet), var(--rivet), var(--rivet), var(--rivet), var(--plate); background-repeat: no-repeat;
+      background-size: 9px 9px, 9px 9px, 9px 9px, 9px 9px, 100% 100%;
+      background-position: left 3px top 3px, right 3px top 3px, left 3px bottom 3px, right 3px bottom 3px, 0 0;
+    }
+    :where([data-t="forge"][data-m="light"]) :is(.card, li.unit) { background-size: 8px 8px, 8px 8px, 8px 8px, 8px 8px, 100% 100%; }   /* quieter rivets in light */
+    [data-t="forge"] .primary-button { box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inset 0 -2px 0 rgba(0,0,0,.28); }
+    .theme-swatch[data-t="forge"] { background-image: var(--forge-scratch), var(--forge-brush); background-size: 383px 541px, 240px 240px; }
+    .theme-swatch[data-t="forge"] .ts-card {
+      background-image: var(--rivet), var(--rivet), var(--rivet), var(--rivet); background-repeat: no-repeat; background-size: 5px 5px;
+      background-position: left 3px top 3px, right 3px top 3px, left 3px bottom 3px, right 3px bottom 3px;
+    }
+    @media print {
+      [data-t="forge"] body::before { content: none; }
+      [data-t="forge"] :is(.app-bar, .card, li.unit), [data-t="forge"] .tabs::before { background-image: none; }
+    }
 
     /* Paint Bench: card titles are strips of masking tape with marker writing on them (still real headings for screen
        readers). Paint swatches are circles already. The main button sits a touch crooked. */

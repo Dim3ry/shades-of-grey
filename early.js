@@ -11,7 +11,7 @@ try {
   const PAGE_COLOURS = {
     classic: { dark: "#0b1220", light: "#e9eff6" },
     parchment: { dark: "#17120e", light: "#d8c59a" },
-    forge: { dark: "#0e0e10", light: "#cfcdc6" },
+    forge: { dark: "#0d0f11", light: "#cdd1d5" },
     bench: { dark: "#111815", light: "#cfe0d4" },
   };
   const saved = JSON.parse(localStorage.getItem("shades-of-grey-settings") || "{}") || {};
