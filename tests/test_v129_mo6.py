@@ -1,14 +1,14 @@
 """MO6 tests for Minifolio (James, 3 Nov): no flashes in the start circle and the bar, the app icon's ring is the loading screen, and the lit
 section's colour slides along the bar. New behaviour only, and no timings (every check holds on a slow machine too):
-1. The first paint, before any script runs, is the loading screen: the page colour with the app icon's ring and centre dot in the middle, the size
-   and colours of the phone's own launch screen (installed, the screen is the manifest's background colour).
-2. Its five segments light clockwise from 12 o'clock and never go backwards; then the ring lands exactly on the round Ask Mentor button's drawing
-   while the four segments grow out one by one, clockwise from the top left.
+1. (JF1, v130: MO6's loading screen, the app icon's ring on a plain screen, is gone. James asked for LR1's ring back on 3 Nov, so the checks of
+   that screen went with it; tests/test_v126_lr1.py and tests/test_v108_loading_ring.py check LR1's ring, and tests/test_v130_jf1.py that no
+   loading screen is left.)
+2. At start-up the four segments still come in one by one, clockwise from the top left, with nothing changing in one frame.
 3. No colour, background, shadow, glow or visibility on the circle, the bar, the travelling copies, the Mentor button, the words or the ring changes
    by more than a small step between two frames during each move (computed styles sampled every frame; a longer frame allows a bigger step).
 4. The hand-over from the travelling copies to the real bar (and back) is the same picture: same colours, same places.
 5. The lit colour slides from the old piece to the new one through the pieces between and ends exactly on the new piece; reduced motion
-   crossfades it. Reduced motion: no movement on the loading screen either.
+   crossfades it. Reduced motion: nothing moves at start-up either.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
@@ -163,55 +163,23 @@ def main():
         page = ctx.new_page()
         page.on("pageerror", lambda x: errors.append(str(x) + " @ " + str(getattr(x, "stack", ""))[:400]))
 
-        print("--- 1. The first paint is the icon ring on the page colour ---")
-        body = html[html.find("\n<body") + 1:]
-        check("index.html draws the loading screen first in the page, before any script", 0 < body.find('class="mo-load mo6-load"') < body.find("<script") and body.find('class="mo-load mo6-load"') < body.find('<nav class="tabs"'))
-        check("installed, the screen is the manifest's background colour (the phone's own launch screen)", manifest.get("background_color") == "#0b1220"
-              and re.search(r"@media \(display-mode: standalone\) \{\s*\.mo6-bg \{ background-color: #0b1220; \}", html) is not None)
-        seed(page)
-        page.route("**/*.js*", lambda r: r.abort())
-        page.goto(t.URL, wait_until="domcontentloaded")
-        s = page.evaluate("""() => { const load = document.querySelector('.mo-load'), ring = load.querySelector('.mo6-ring'), r = ring.getBoundingClientRect(), b = load.getBoundingClientRect();
-            const segs = [...ring.querySelectorAll('.ml-segs circle')].map(c => getComputedStyle(c).stroke); const p = document.createElement('i'); document.body.appendChild(p); const want = ['var(--mentor-t3, var(--mentor-rim))', 'var(--mentor-t2, var(--mentor-b))', 'color-mix(in srgb, var(--mentor-t2, var(--mentor-b)) 50%, var(--mentor-dot, var(--mentor-core)))', 'var(--mentor-dot, var(--mentor-core))', 'var(--mentor-t1, var(--mentor-a))'].map(v => { p.style.color = v; return getComputedStyle(p).color; }); p.remove();
-            const k4 = ring.querySelector('.ml-segs .ml-k4'), w = parseFloat(getComputedStyle(k4).strokeWidth), rad = parseFloat(getComputedStyle(k4).r);
-            return { scripts: typeof settings + typeof MENTOR_LOOKS, cover: [b.left, b.top, b.width, b.height], page: getComputedStyle(load.querySelector('.mo6-bg')).backgroundColor,
-                     body: getComputedStyle(document.body).backgroundColor, centre: [r.left + r.width / 2 - innerWidth / 2, r.top + r.height / 2 - innerHeight / 2],
-                     across: (rad + w / 2) * 2 * r.width / 166.67, segs, dot: getComputedStyle(ring.querySelector('.ml-dot')).fill,
-                     z: +getComputedStyle(load).zIndex, want, dotWant: (() => { const q = document.createElement('i'); document.body.appendChild(q); q.style.color = 'var(--mentor-dot, var(--mentor-core))'; const v = getComputedStyle(q).color; q.remove(); return v; })(), held: [...document.querySelectorAll('.arc [data-tab]')].every(x => getComputedStyle(x).visibility === 'hidden') }; }""")
-        check("with every script blocked: it covers the whole screen in the page colour", s["scripts"] == "undefinedundefined" and s["cover"] == [0, 0, 390, 844] and s["page"] == s["body"] and s["z"] > 12, s)
-        check("the ring is in the middle of the screen, 132 px across like the phone's launch screen", abs(s["centre"][0]) < 0.5 and abs(s["centre"][1]) < 0.5 and abs(s["across"] - 132.2) < 1.5, s)
-        check("its five segments are round 7's ring colours and its centre dot the theme's dot", s["segs"] == s["want"] and s["dot"] == s["dotWant"] and s["dot"] == "rgb(125, 211, 252)", s)
-        check("the start circle is held back under it", s["held"])
-        page.unroute("**/*.js*")
-
-        print("\n--- 2. It lights clockwise, never backwards, then lands on the Mentor button ---")
-        ctx.add_init_script("""(() => { window.__lit = []; requestAnimationFrame(() => { if (window.__mo6t) window.__mo6t.start(); });
-            new MutationObserver(() => { const s = document.querySelector('.mo-load'); if (s) window.__lit.push([0, 1, 2, 3, 4].map(i => parseFloat(s.style.getPropertyValue('--l' + i) || '0'))); })
-              .observe(document, { attributes: true, subtree: true, attributeFilter: ['style'] }); })();""")
+        # 1. (JF1: MO6's loading screen checks went with the screen; see the note at the top)
+        print("\n--- 2. Start-up: the segments come in one by one, with no flashes ---")
+        # (JF1: LR1's ring is the loading ring again; its own lighting is checked in test_v126_lr1 and test_v108_loading_ring)
+        ctx.add_init_script("""(() => { requestAnimationFrame(() => { if (window.__mo6t) window.__mo6t.start(); }); })();""")
         seed(page)
         page.goto(t.URL)
         page.wait_for_function(SETTLED, timeout=15000)
         page.evaluate(RAF2)
         start = page.evaluate("() => window.__mo6t.stop()")
-        lit = page.evaluate("() => window.__lit")
-        check("the five segments only ever light up, ending all lit", lit and lit[-1] == [1, 1, 1, 1, 1] and all(all(b[i] >= a[i] - 1e-6 for i in range(5)) for a, b in zip(lit, lit[1:])), lit[-3:])
-        check("clockwise from 12 o'clock: a segment lights only once the one before is full", all(all(o[i + 1] <= 1e-6 or o[i] >= 1 - 1e-6 for i in range(4)) for o in lit))
-        boxes = [f for f in start if "ringBox" in f]
-        target = page.evaluate("() => { const r = document.querySelector('#mentor-button svg').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2, r.width]; }")
-        end = boxes[-1]["ringBox"] if boxes else None
-        check("the ring moves from the middle of the screen and lands exactly on the button's drawing", boxes and abs(boxes[0]["ringBox"][1] - 422) < 2 and end
-              and abs(end[0] - target[0]) < 1 and abs(end[1] - target[1]) < 1 and abs(end[2] - target[2]) < 1, (boxes[:1], end, target))
-        ring_end = [boxes[-1]["ring " + str(i)] for i in range(5)] if boxes else []
-        orb_cols = page.evaluate("() => [...document.querySelectorAll('#mentor-button .ml-segs circle')].map(c => getComputedStyle(c).stroke)")
-        check("...by then in the button drawing's own colours", boxes and len(orb_cols) == 5 and all(cdiff(a, col(b)) <= 1.5 for a, b in zip(ring_end, orb_cols)), (ring_end, orb_cols))
         order = []
         for f in start:
             for k in ("units", "recipes", "guides", "dashboard"):
                 if f.get("seen " + k, 0) > 0 and k not in order:
                     order.append(k)
-        check("the four segments grow out one after another, clockwise from the top left", order == ["units", "recipes", "guides", "dashboard"], order)
+        check("the four segments come in one after another, clockwise from the top left", order == ["units", "recipes", "guides", "dashboard"], order)
         bad = jumps(start)
-        check("start-up: no colour, glow or visibility changes in one frame (screen, ring, circle, button, words)", not bad, bad[:6])
+        check("start-up: no colour, glow or visibility changes in one frame (circle, button, words)", not bad, bad[:6])
 
         print("\n--- 3. The travel to the bar and back, the lit piece, the Mentor window ---")
         page.evaluate("() => document.querySelector('.tabs button[data-tab=units]').click()")
@@ -291,7 +259,7 @@ def main():
         sweep = rp.evaluate("() => { const s = document.querySelector('.lr-sweep'); return s ? getComputedStyle(s).display : 'gone'; }")
         rp.wait_for_function(SETTLED, timeout=15000)
         moved = rp.evaluate("() => { window.__stop = true; return window.__moved; }")
-        check("the loading screen: no sheen and nothing moves; the circle fades in under it", sweep in ("none", "gone") and not moved, (sweep, moved[:4]))
+        check("start-up: no sweep and nothing moves (JF1: LR1's ring, no longer MO6's loading screen)", sweep in ("none", "gone") and not moved, (sweep, moved[:4]))
         rp.evaluate("() => document.querySelector('.tabs button[data-tab=units]').click()")
         rp.wait_for_function(SETTLED, timeout=10000)
         rp.evaluate("""() => { window.__x = []; const b = [...document.querySelectorAll('nav.tabs .arc [data-tab]')];
@@ -312,20 +280,15 @@ def main():
         for (w, h, s) in ((320, 568, {"mentorLook": "magical", "theme": "forge", "appearance": "light"}), (1280, 800, {"theme": "bench"})):
             page.set_viewport_size({"width": w, "height": h})
             seed(page, s)
-            page.goto(t.URL, wait_until="commit")
-            page.wait_for_selector(".mo6-load .mo6-ring", state="attached")
-            page.wait_for_function("() => !!document.body")
-            r = page.evaluate("""() => { const r = document.querySelector('.mo6-ring').getBoundingClientRect();
-                return [Math.abs(r.left + r.width / 2 - innerWidth / 2) < 0.5 && Math.abs(r.top + r.height / 2 - innerHeight / 2) < 0.5, r.width,
-                        [...document.querySelectorAll('.mo6-load .ml-segs circle')].map(c => getComputedStyle(c).stroke)]; }""")
-            ring_want = page.evaluate(RING)
+            page.goto(t.URL)
             page.wait_for_function(SETTLED, timeout=15000)
             fit = page.evaluate("""() => { const o = document.getElementById('mentor-button').getBoundingClientRect(); return o.top >= 0 && o.bottom <= innerHeight && o.left >= 0 && o.right <= innerWidth
                 && document.documentElement.scrollWidth <= document.documentElement.clientWidth && (innerWidth >= 900 || [...document.querySelectorAll('main > section')].every(s => s.offsetParent === null)); }""")
-            check(f"{w}x{h}: the ring is in the middle of the screen at the same size, then the start circle shows whole, no sideways scroll (and on a phone nothing behind it)", r[0] and abs(r[1] - 157.5) < 0.5 and fit, (r[:2], fit))
+            # (JF1: the checks of MO6's loading screen ring in the middle of the screen went with it)
+            check(f"{w}x{h}: once loaded the start circle shows whole, no sideways scroll (and on a phone nothing behind it)", fit, fit)
             if s.get("mentorLook"):
-                check("Magical: the loading screen is the same icon ring, and it hands over to the Magical drawing in the button",
-                      r[2] == ring_want and page.evaluate("() => document.querySelector('#mentor-button svg').classList.contains('ml-magical') && getComputedStyle(document.querySelector('#mentor-button svg')).visibility === 'visible'"), r[2])
+                check("Magical: once loaded the button shows the Magical drawing",
+                      page.evaluate("() => document.querySelector('#mentor-button svg').classList.contains('ml-magical') && getComputedStyle(document.querySelector('#mentor-button svg')).visibility === 'visible'"))
         check("no page errors", not errors, errors[:3])
         browser.close()
     print(f"\n{sum(results)}/{len(results)} checks passed")
