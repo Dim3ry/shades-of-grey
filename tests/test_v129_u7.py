@@ -11,6 +11,10 @@
 5. James's tweaks to Magical (3 Nov, evening): no backing disc, a few solid faceted crystals, each its own size, lean and shade, a couple of
    loose shards, and the stone ring turning slowly (window only, steady, and on through a mood change).
 6. The moods can be told apart at 50 px in greyscale with motion off: every pair of states differs in at least 6% of pixels.
+7. James's second round (3 Nov, evening): one outline (every outlined edge in all three looks has the same colour, width and joins at 50, 64 and
+   88 px; Magical's outlines are drawn last in their groups and its inner lines share one thinner width); Magical's loose fragments vibrate, in the
+   window only; a tap on the window's orb plays the look's one-off move (Futuristic: four of six bolts at random; Magical: the ring spins once;
+   Grounded: six paint drops), keeps the focus in the text box, asks nothing and ignores a second tap while it plays; reduced motion plays none.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import io, itertools, os, re, sys
 from playwright.sync_api import sync_playwright
@@ -205,6 +209,66 @@ def main():
         page.evaluate("() => document.querySelector('.mentor-orbbox').classList.add('ml-still')")
         check("Magical: .ml-still stops the ring", page.evaluate(ORBIT) is None)
         page.evaluate("() => document.querySelector('.mentor-orbbox').classList.remove('ml-still')")
+
+        print("\n--- 7. James's second round: one outline, vibrating fragments, tap moves ---")
+        # every outlined edge: the same colour and width on screen in all three looks, at the button (50), the start circle (64) and the window (88)
+        ol = page.evaluate("""() => { const box = document.createElement('div'); document.body.appendChild(box);   /* still drawings: a drip mid-fall is scaled on purpose */ const out = {};
+            for (const l of ['futuristic', 'magical', 'grounded']) for (const px of [50, 64, 88]) {
+              const svg = minifolioLook.svg(l, 'neutral'); svg.style.width = svg.style.height = px + 'px'; box.replaceChildren(svg);
+              const sil = [...svg.querySelectorAll('.ml-sil')];
+              out[l + px] = [...new Set(sil.map(e => [getComputedStyle(e).stroke, Math.round(parseFloat(getComputedStyle(e).strokeWidth) * Math.hypot(e.getScreenCTM().a, e.getScreenCTM().b) * 1000) / 1000, getComputedStyle(e).strokeLinejoin].join(' ')))];
+              if (l === 'magical' && px === 88) {
+                const stroked = [...svg.querySelectorAll('*')].filter(e => !['svg', 'g'].includes(e.tagName) && getComputedStyle(e).stroke !== 'none');
+                out.inner = [...new Set(stroked.filter(e => !e.classList.contains('ml-sil')).map(e => e.getAttribute('class') + ' ' + getComputedStyle(e).strokeWidth))];
+                out.last = [...svg.querySelectorAll('.ml-m-line')].every(e => !e.nextElementSibling && getComputedStyle(e).fill === 'none');
+                out.lines = svg.querySelectorAll('.ml-m-line').length;
+              } }
+            box.remove(); return out; }""")
+        per = {k: v for k, v in ol.items() if k[-2:] in ("50", "64", "88")}
+        check("one outline: every outlined edge in all three looks has the same colour, width and round joins, at 50, 64 and 88 px",
+              all(len(v) == 1 for v in per.values()) and all(ol["futuristic" + s] == ol["magical" + s] == ol["grounded" + s] for s in ("50", "64", "88")), ol)
+        check("Magical: each outline is drawn last in its group (nothing covers half of it), and the inner lines are all one thinner width",
+              ol["last"] and ol["lines"] >= 25 and ol["inner"] == ["ml-crack 1.1px"], (ol["last"], ol["lines"], ol["inner"]))
+        fly = page.evaluate("""() => [...document.querySelectorAll('.mentor-orbbox .ml-fly')].map(f => { const a = f.getAnimations()[0];
+            return a ? [a.effect.getComputedTiming().duration, a.effect.getComputedTiming().iterations, a.effect.getTiming().delay] : null; })""")
+        check("Magical: every loose fragment vibrates quickly (under 0.6 s a cycle, endless), each at its own pace",
+              fly and all(f and f[0] < 600 and f[1] == float("inf") for f in fly) and len({(f[0], f[2]) for f in fly}) == len(fly), fly)
+        page.evaluate("() => { settings.mentorLook = 'magical'; applyMentorLook(); }")
+        check("Magical: the round button's fragments stay still", page.evaluate("() => [...document.querySelectorAll('#mentor-button .ml-fly')].every(f => f.getAnimations().length === 0)"))
+        TAP = """() => { const s = document.querySelector('.mentor-orbbox svg');
+            const anims = s.getAnimations({ subtree: true }).filter(a => (a.animationName || '').startsWith('ml-tap-'));
+            return { tap: s.classList.contains('ml-tap'), names: anims.map(a => a.animationName), durs: [...new Set(anims.map(a => a.effect.getComputedTiming().duration))],
+                     its: [...new Set(anims.map(a => a.effect.getComputedTiming().iterations))], picked: [...s.querySelectorAll('.ml-picked')].map(b => b.getAttribute('class')).sort().join(),
+                     bolts: s.querySelectorAll('.ml-bolt').length, focus: document.activeElement && document.activeElement.className, open: !!document.querySelector('.mentor-window'),
+                     msgs: document.querySelectorAll('.mentor-msg').length, mood: document.querySelector('.mentor-orbbox').dataset.mood }; }"""
+        page.wait_for_function("() => document.querySelector('.mentor-orbbox').dataset.mood === 'neutral'", timeout=6000)
+        page.focus(".mentor-input")
+        before = page.evaluate(TAP)
+        page.click(".mentor-orbbox")
+        a = page.evaluate(TAP)
+        check("Magical tap: the stone ring spins once (about 1.1 s), the text box keeps the focus, nothing is asked and the window stays open",
+              a["tap"] and a["names"] == ["ml-tap-spin"] and all(900 <= d <= 1200 for d in a["durs"]) and a["its"] == [1]
+              and "mentor-input" in (a["focus"] or "") and a["open"] and a["msgs"] == before["msgs"], a)
+        page.click(".mentor-orbbox")
+        check("a tap while the move plays is ignored (it does not start again)", len(page.evaluate(TAP)["names"]) == 1)
+        page.wait_for_function("() => !document.querySelector('.mentor-orbbox svg.ml-tap')", timeout=3000)
+        o2 = page.evaluate(ORBIT)
+        check("after the spin the ring carries on its slow turn and the mood is unchanged", o2 and o2["dur"] >= 30000 and page.evaluate(TAP)["mood"] == "neutral", o2)
+        picks = set()
+        page.evaluate("() => { settings.mentorLook = 'futuristic'; applyMentorLook(); }")
+        for _ in range(4):
+            page.click(".mentor-orbbox")
+            f = page.evaluate(TAP)
+            picks.add(f["picked"])
+            page.wait_for_function("() => !document.querySelector('.mentor-orbbox svg.ml-tap')", timeout=3000)
+        check("Futuristic tap: four of its six bolts flash at once (0.3 to 0.4 s), picked at random each time",
+              f["bolts"] >= 6 and f["picked"].count("ml-bolt") == 4 and f["names"] == ["ml-tap-zap"] * 4 and all(300 <= d <= 400 for d in f["durs"]) and len(picks) >= 2, (f, picks))
+        page.evaluate("() => { settings.mentorLook = 'grounded'; applyMentorLook(); }")
+        page.click(".mentor-orbbox")
+        g = page.evaluate(TAP)
+        check("Grounded tap: six paint drops fly out from the pool and fade (0.5 to 0.7 s)", g["names"] == ["ml-tap-drop"] * 6 and all(500 <= d <= 700 for d in g["durs"]), g)
+        page.wait_for_function("() => !document.querySelector('.mentor-orbbox svg.ml-tap')", timeout=3000)
+        check("the round button has no tap move", page.evaluate("() => !document.querySelector('#mentor-button .ml-tap, #mentor-button .ml-picked')"))
         page.keyboard.press("Escape")
         check("no page errors", not errors, errors[:3])
         ctx.close()
@@ -214,8 +278,11 @@ def main():
         rp = rm.new_page()
         t.load(rp, paints=[], settings={"examplesChecked": True, "mentorLook": "magical"}, launch=False)
         open_window(rp)
-        check("reduced motion: nothing in the window orb moves (Magical's ring included)",
+        check("reduced motion: nothing in the window orb moves (Magical's ring and fragments included)",
               rp.evaluate("() => document.querySelector('.mentor-orbbox').getAnimations({ subtree: true }).length") == 0)
+        rp.click(".mentor-orbbox")
+        check("reduced motion: a tap on the orb plays nothing and leaves nothing behind", rp.evaluate(
+            "() => document.querySelector('.mentor-orbbox').getAnimations({ subtree: true }).length === 0 && !document.querySelector('.mentor-orbbox .ml-tap, .mentor-orbbox .ml-picked') && !!document.querySelector('.mentor-window')"))
         rp.keyboard.press("Escape")
         rp.evaluate("""() => { const box = document.createElement('div'); box.id = 'u7-sheet';
             box.style.cssText = 'position:fixed;left:0;top:0;z-index:999;display:flex;flex-wrap:wrap;width:300px;gap:4px;background:var(--background)';

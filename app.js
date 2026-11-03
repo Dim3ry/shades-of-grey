@@ -4910,6 +4910,30 @@
       svg.classList.add("mp-orb");
       return svg;
     }
+    // U7 (James, 3 Nov): a tap on the orb in the open window plays the look's one-off move, then the orb carries on in its mood: Futuristic flashes
+    // four of its six bolts, picked at random each time; Magical's stone ring spins once; Grounded sends six paint drops out of the pool. The moves
+    // are in mentor-looks.js (ml-tap on the drawing, ml-picked on the bolts). The orb box is not a button: it stays hidden from screen readers, never
+    // takes focus from the text box, and a tap opens, closes and asks nothing. A tap while a move plays is ignored. With reduced motion (or
+    // .ml-still) the CSS plays nothing, so a tap does nothing. The round button and the start circle have no tap move.
+    const MENTOR_TAP_BOLTS = 4;
+    function mentorOrbTap(state) {
+      const svg = state.orbBox.querySelector("svg");
+      if (!svg || state.tapping) return;
+      const bolts = [...svg.querySelectorAll(".ml-bolt")];
+      for (let i = bolts.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [bolts[i], bolts[j]] = [bolts[j], bolts[i]]; }
+      const picked = bolts.slice(0, MENTOR_TAP_BOLTS);
+      for (const b of picked) b.classList.add("ml-picked");
+      svg.classList.add("ml-tap");
+      const done = () => {
+        svg.classList.remove("ml-tap");
+        for (const b of picked) b.classList.remove("ml-picked");
+        if (state.tapping === svg) state.tapping = null;
+      };
+      const played = svg.getAnimations({ subtree: true }).filter(a => typeof a.animationName === "string" && a.animationName.startsWith("ml-tap-"));
+      if (!played.length) { done(); return; }
+      state.tapping = svg;
+      Promise.allSettled(played.map(a => a.finished)).then(done);   // also settles if a mood swaps the drawing mid-move
+    }
     // U6b: MENTOR'S MOODS, in the window only. Thinking while Mentor reads its notes ready for the first question (mentorWarmUp: the one part
     // that takes a while, about 0.9 s on a slow phone; an answer itself comes at once, so the window has no moment to show Thinking then);
     // Pleased when a clear answer shows; Unsure when it does not know or asks "Did you mean"; Finished when you sign off with thanks or a goodbye.
@@ -5347,6 +5371,8 @@
       orbBox.className = "mentor-orbbox ml-live";   // U6b: the look's own slow motion runs here only
       orbBox.dataset.mood = "neutral";
       orbBox.appendChild(buildMentorOrb("neutral"));
+      orbBox.addEventListener("mousedown", (event) => event.preventDefault());   // U7: tapping the orb leaves the focus where it is (the text box)
+      orbBox.addEventListener("click", () => { if (mentorState && mentorState.orbBox === orbBox) mentorOrbTap(mentorState); });
       const skin = document.createElement("div");   // MW1: the round button's colour, over the window while it grows
       skin.className = "mp-skin";
       skin.setAttribute("aria-hidden", "true");
