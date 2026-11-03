@@ -193,7 +193,17 @@ def main():
         check("Magical: a few solid crystals (5 to 10), each with lit, shaded and tip facets", 5 <= m["n"] <= 10 and all(f == 3 for f in m["faces"]), m)
         check("Magical: no two crystals alike (each its own size and lean, uneven spacing, at least four shades)",
               m["sizes"] == m["n"] and m["leans"] >= m["n"] - 1 and m["gaps"] >= 4 and m["fills"] >= 4, m)
-        check("Magical: just a couple of loose shards (2 to 4)", 2 <= m["shards"] <= 4, m)
+        # James's third round (his picture): eight small fragments round the ring, where the first round had cut thirteen to three
+        check("Magical: about eight small loose fragments (6 to 10)", 6 <= m["shards"] <= 10, m)
+        ring = page.evaluate("""() => { const s = document.querySelector('.mentor-orbbox svg'), slabs = [...s.querySelectorAll('.ml-orbit [class^="ml-m-st"]')];
+            const boxes = slabs.map(e => e.getBBox()); let touching = 0;
+            const lines = [...s.querySelectorAll('.ml-orbit .ml-m-line')];
+            for (let i = 0; i < lines.length; i++) for (let j = i + 1; j < lines.length; j++) { const a = lines[i], b = lines[j], la = a.getTotalLength(), lb = b.getTotalLength();
+              for (let p = 0; p < la; p += 1.5) { const q = a.getPointAtLength(p); for (let r = 0; r < lb; r += 1.5) { const w = b.getPointAtLength(r); if (Math.hypot(q.x - w.x, q.y - w.y) < 2.2) { touching++; p = la; break; } } } }
+            return { n: slabs.length, fills: new Set(slabs.map(e => getComputedStyle(e).fill)).size, sides: s.querySelectorAll('.ml-orbit [class^="ml-m-sd"]').length,
+                     cracks: slabs.map(e => e.parentElement.querySelectorAll('.ml-crack').length), streaks: s.querySelectorAll('.ml-orbit .ml-m-hl').length, touching }; }""")
+        check("Magical: the ring is four chunky slabs in four colours, each with a side face, a streak and 2 to 5 cracks, and no two outlines touch",
+              ring["n"] == 4 and ring["fills"] == 4 and ring["sides"] == 4 and ring["streaks"] == 4 and all(2 <= k <= 5 for k in ring["cracks"]) and ring["touching"] == 0, ring)
         ORBIT = """() => { const g = document.querySelector('.mentor-orbbox .ml-orbit'); const a = g && g.getAnimations()[0];
             if (!a) return null; const tm = a.effect.getComputedTiming(), kf = a.effect.getKeyframes();
             return { name: a.animationName, dur: tm.duration, it: tm.iterations, ease: getComputedStyle(g).animationTimingFunction, end: kf[kf.length - 1].transform, p: tm.progress }; }"""
@@ -228,7 +238,7 @@ def main():
         check("one outline: every outlined edge in all three looks has the same colour, width and round joins, at 50, 64 and 88 px",
               all(len(v) == 1 for v in per.values()) and all(ol["futuristic" + s] == ol["magical" + s] == ol["grounded" + s] for s in ("50", "64", "88")), ol)
         check("Magical: each outline is drawn last in its group (nothing covers half of it), and the inner lines are all one thinner width",
-              ol["last"] and ol["lines"] >= 25 and ol["inner"] == ["ml-crack 1.1px"], (ol["last"], ol["lines"], ol["inner"]))
+              ol["last"] and ol["lines"] >= 20 and ol["inner"] == ["ml-crack 1.1px"], (ol["last"], ol["lines"], ol["inner"]))
         fly = page.evaluate("""() => [...document.querySelectorAll('.mentor-orbbox .ml-fly')].map(f => { const a = f.getAnimations()[0];
             return a ? [a.effect.getComputedTiming().duration, a.effect.getComputedTiming().iterations, a.effect.getTiming().delay] : null; })""")
         check("Magical: every loose fragment vibrates quickly (under 0.6 s a cycle, endless), each at its own pace",
