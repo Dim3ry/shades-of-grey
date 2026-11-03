@@ -19641,7 +19641,7 @@
         "Themes: Classic has a new cold sci-fi look, with an ice cyan accent, a technical font for titles and numbers, and thin panel lines with small corner marks. Blueprint and Rulebook have been removed; if you used one, the app now shows Classic.",
         "Parchment Codex now looks like red ink on old paper: crimson headings and buttons, a fine paper grain, a few ink blots and stained edges. In dark mode it is aged parchment by candlelight. Text stays as easy to read as before.",
         "Help now says that guides and Mentor give general hobby tips, so always follow the maker's label. Help > About links to the font licences, and the short note on this page now matches the full one.",
-        "Guides: a Topics | A to Z switch shows every guide in one alphabetical list. Search results show each guide's number. Some guides now end with See also links to related guides.",
+        "Guides: a Topics | A to Z switch shows every guide in one alphabetical list. Search results show each guide's number. Some guides now end with links to related guides.",
         "Guides has 12 new entries: painting blue, green, brown and grey, horses and mounts, how long to wait between coats, drying and curing times, split or hooked brush tips, a first-sessions path, using Colour Lab, mixing paints from different makers and matching a colour you have run out of. There are six new detail recipes too (brown, red and ginger, and black hair, and chestnut, bay and dapple grey horse coats), and Mentor can now answer questions on these topics.",
       ]},
       { version: "v123", date: "2 Nov 2026", changes: [
