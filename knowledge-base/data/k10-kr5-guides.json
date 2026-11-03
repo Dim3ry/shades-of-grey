@@ -566,11 +566,12 @@
       "key": "painting-insect-wings",
       "category": "techniques",
       "title": "Painting insect wings",
-      "summary": "Paint fly, wasp and dragonfly wings as thin, tinted, shimmering panels over white, with fine veins and a few bright edges.",
+      "summary": "Paint fly, wasp and dragonfly wings as shimmering panels: white where the light hits, a purple wash, and rings of dabbed colour.",
       "body": [
         "Insect wings are thin and glassy, so treat them as tinted panels catching light rather than solid skin. Paint them off the model where you can; they are fragile and easy to smudge.",
-        "For an iridescent fly wing, base the wing white. Glaze thin washes of violet, green, yellow and pink over it, each thinned with glaze medium, in patches that meet and blend rather than in neat bands. The white underneath makes the thin colours shimmer.",
-        "Finish with fine white highlights along the leading edge and on a few raised veins, then tidy any slips. Keep every colour thin; an opaque coat hides the white and kills the shimmer.",
+        "For an iridescent fly wing, paint white on the top of the wing where the light hits and leave the lower part darker, as light passes through there. Pick out the edges and veins in white too, then give the whole wing a purple wash, moving it about so it does not pool where you do not want it.",
+        "Set the sheen colours out on the palette in order. Dab a bright green into the middle of the wing, then a mix of green and yellow round it, then yellow and pink, then pink at the outer edge. Dabbing copies the spotty look of a real wing; thin glazes in soft patches work too. A touch of white helps a colour cover over the dark parts.",
+        "Finish with thin white along the top edge, the torn edges and where the cells meet, keeping it off the veins, then a second dabbed layer for texture and a few dots of bright white at the very top. Slim any veins you lost with the purple, and dab tiny bits of the sheen colours back round the white so it does not look chalky.",
         "For a colour-shift look, base a rich mid colour such as purple. Drybrush one hue from above, such as pinks, and another from below, such as deep blue then turquoise, and finish both sides with the same pale yellow.",
         "Veins: run a thin dark line along each sculpted vein on a pale wing, or a pale one on a dark wing, and keep them finer than you think. Edge torn ends with a light colour so the tear reads.",
         "Clear plastic wings: a coat of satin varnish works as a primer without clouding them. Tint them with inks and thin glazes so light still passes through, add the veins, and fix them with a tiny dot of glue.",
@@ -1098,6 +1099,7 @@
         "Most plastic figures are hollow inside the torso, so wires can run through it. Drill a hole just wide enough for the wires through the parts in between, such as along an arm to where the light sits, and feed the wires through before you glue.",
         "The battery and any switch need a home: a larger, deeper base, around 32 mm or more for a single figure, or a hollow piece of scenery such as a barrel, crate or building that can hide the wiring.",
         "Many hobby LEDs come with their wires ready to join. If yours do not, strip the ends and twist the matching wires together, and follow the kit's own instructions for which wire goes where.",
+        "Fix each tiny LED in its hole with a drop of super glue and a touch of accelerator. Where a wire will not fit, a line of conductive paint can carry the current instead. Slide a short heat shrink sleeve over each join and shrink it as its pack says, so bare wires cannot touch, and hold loose wires in place with tack while you fit them.",
         "Flickering LEDs suit torches, fires and forges, or faulty machines and warning lights. Pick the light colour to match the glow you plan to paint.",
         "Before priming, wrap the LED in a little foil held on with tack so it stays clean. Afterwards, paint the glow onto the nearby surfaces as you would for a painted light, so the real light and the painted one agree."
       ],
@@ -1163,9 +1165,10 @@
       "summary": "Most sticky, bulging or snapping resin prints come down to washing, curing, trapped resin or the resin itself.",
       "body": [
         "A print that still feels sticky or tacky after curing has uncured resin on its surface, and paint will not hold on it for long. Wash it again in strong isopropyl alcohol, or in water if the resin is a water-washable type. Swish or brush it so the liquid reaches every recess, then let it dry fully. Water left on it when it goes under the light dries as a white film.",
-        "Then give it more light. Strong midday sun takes roughly an hour; a curing lamp or station takes a few minutes, depending on the size of the print. Turn it so every side gets light, the underside of the base included. Air slows curing at the surface, so some painters cure prints sunk in a clear tub of water for a more even result.",
+        "Then give it more light. Strong midday sun takes roughly an hour, though weak winter sun may barely cure it; a curing lamp or station, even a nail lamp, takes a few minutes, depending on the size of the print. Turn it so every side gets light, the underside of the base included. Air slows curing at the surface, so some painters cure prints sunk in a clear tub of water for a more even result.",
         "A hollow print needs a drain hole. Without one, liquid resin stays trapped inside and never cures, and the air sealed in can expand under the curing light and push out a bulge. Hollowing in the slicer saves resin, but always add a drain hole so the liquid resin inside can run out.",
         "Prints that snap at ankles, spear tips and antennae are partly down to the resin. Standard resins are on the brittle side, and some blends add softer ingredients so the plastic flexes a little before it breaks. Shake the bottle well before every print, as the ingredients settle and an unmixed bottle prints less reliably. Handle thin parts gently.",
+        "Faint rings or contour lines on smooth curves come from the layers. A normal coat of primer and paint usually hides light ones. White resin glares and hides flaws, so a thin wash of brown or a solid colour primer first shows up nubs, pits and lines while you can still sand them.",
         "Glue printed resin with super glue; a slightly flexible type is less likely to snap at the joint. Pin heavy or long parts. A snapped spear or antenna is better replaced with metal rod, as in Replacing snapped spears, ankles and thin parts.",
         "Received a print rather than printed it? It should arrive washed and cured. If it feels tacky, wear gloves, then wash and cure it as above if you have the kit, or ask the maker for a replacement rather than painting over it.",
         "Wear nitrile gloves until a print is cured, and keep alcohol well away from heat, as it and its fumes catch fire easily. Never pour resin or used alcohol down the drain. Leave resin-soaked paper towels in the sun to harden before they go in the bin."
@@ -1180,7 +1183,7 @@
         "sticky resin print",
         "tacky 3d print",
         "resin print still sticky",
-        "under cured print",
+        "layer lines on print",
         "cure resin print",
         "white residue on print",
         "hollow print drain hole",
@@ -1199,7 +1202,7 @@
       "body": [
         "Part of the model left stuck to the vat film, or a loose blob in the resin, means that part was not held up. Usually an island, a part that starts printing before it joins the rest, had no support, or there were too few supports for the weight above them. Supports carry soft, part cured resin while it prints.",
         "Clear the vat before trying again. Cured flakes from a failed print float in the resin and ruin the next one. Cure a thin skin across the film, using the tank cleaning mode or one blank layer, and peel it out with the bits stuck to it, using a plastic tool, never metal. Looking after a resin printer covers this.",
-        "Toes, fingertips and other small tips that print short were not supported. A tip that starts printing in mid air has nothing to build on, so add a support under each one. A short tip can be rebuilt with putty, but it is easier to get the supports right.",
+        "Toes, fingertips and other small tips that print short were not supported. A tip that starts printing in mid air has nothing to build on, so add a support under each one. Automatic supports can miss them, so check every finger and toe yourself. A short tip can be rebuilt with putty, but it is easier to get the supports right.",
         "Pitting or rough marks across the back usually come from automatic supports on a model tipped back steeply. Tilting it back only about 10 degrees and adding supports by hand, stepping through the layers to catch every island, usually keeps that side clean. Put supports where the marks are easy to clean or will not show.",
         "Support marks with a rough texture can be reduced with fewer struts and smaller contact points where the slicer allows. Run supports from the build plate rather than from one part of the model to another, so they come off cleanly.",
         "Soft, blurry detail or prints that fail for no clear reason can be exposure. Every resin cures at its own speed, so run a small test print whenever you change resin and note the settings that work. Room temperature and a slack or scratched film affect prints too, so check those before blaming the settings.",

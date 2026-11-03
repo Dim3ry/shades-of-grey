@@ -17,6 +17,7 @@ from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
+from common import open_unit_details   # MC1: unit cards start closed
 
 load, no_sideways, unit = t.load, t.no_sideways, t.unit
 results = []
@@ -35,6 +36,7 @@ def state(page):
                  list: r('#unit-list'), pane: r('#unit-side') }; }""")
 
 def tap(page, name):
+    # MC1: a tap on a closed card opens it (and, from 900 px, its details in the pane, as before); on an open card's name it closes the card
     page.click(f'#unit-list li.unit:has-text("{name}") .info')
 
 def main():
@@ -53,7 +55,8 @@ def main():
             page.emulate_media(color_scheme=scheme)
             for width in (360, 390, 899):
                 page.set_viewport_size({"width": width, "height": 900})
-                tap(page, "Troop A")
+                # MC1: under 900 px a tap opens the card, and its Details button the details (one tap on the name did both before MC1)
+                open_unit_details(page, '#unit-list li.unit[data-id="1"]')   # Troop A
                 s = state(page)
                 check(f"{scheme} {width}: details inside the card, no pane", s["inline"] == 1 and not s["side"] and s["cards"] == 0, s)
                 check(f"{scheme} {width}: no sideways scroll", no_sideways(page))
@@ -86,8 +89,9 @@ def main():
         small = page.evaluate("""() => [...document.querySelectorAll('#unit-side button, #unit-list .up-button, #unit-list .info')]
             .filter(b => b.offsetParent && b.tagName === 'BUTTON').map(b => b.getBoundingClientRect().height).filter(h => h < 43.5)""")
         check("buttons in the pane and the list are 44 px or taller", not small, small)
-        tap(page, "Troop A")
-        tap(page, "Other")
+        # MC1: opening Troop B and Other closed Troop A's list card (one open at a time), so a tap there would open it again: close both in the pane
+        page.click('#unit-side .unit-side-card:has-text("Troop A") >> text=Close')
+        page.click('#unit-side .unit-side-card:has-text("Other") >> text=Close')
         s = state(page)
         check("closing all gives the list the full width back", not s["side"] and s["list"]["width"] > 1000, s)
 

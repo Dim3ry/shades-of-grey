@@ -20,6 +20,7 @@ from launch_helpers import quiet, open_settings, tap_tab
 from launch_helpers import leave_launch
 import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
 from dialog_watch import DialogAnswers
+from common import open_unit_details   # MC1: unit cards start closed
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}/"
@@ -91,7 +92,8 @@ def undo(page):
     page.wait_for_timeout(120)
 
 def open_unit(page, unit_id):
-    page.click(f'#view-units li.unit[data-id="{unit_id}"] .info')
+    # MC1: a tap on a unit now opens its card, and its Details button opens the details (before MC1 a tap on the name did that)
+    open_unit_details(page, f'#view-units li.unit[data-id="{unit_id}"]')
     page.wait_for_timeout(100)
 
 def card(page, unit_id):

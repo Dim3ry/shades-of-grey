@@ -27,6 +27,7 @@ from playwright.sync_api import sync_playwright
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from launch_helpers import leave_launch, open_settings, tap_tab
 from dialog_watch import DialogAnswers
+from common import open_unit_details   # MC1: unit cards start closed
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}/"
@@ -213,7 +214,7 @@ def main():
             shot(page, f"v21-4-tab-{name}.png")
         tab(page, "units")
         check("the units are shown", page.locator("#view-units li.unit").count() == 2)
-        page.click('#view-units li.unit[data-id="1"] .info')
+        open_unit_details(page, '#view-units li.unit[data-id="1"]')   # MC1: open the card, then its Details (a tap on the name did both before MC1)
         page.wait_for_timeout(200)
         check("a unit's details open (the app's code is running)", page.locator("#view-units .jump-stage").count() >= 1)
         context.close()

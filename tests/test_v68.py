@@ -26,6 +26,7 @@ import json, os, re, sys
 from playwright.sync_api import sync_playwright
 from launch_helpers import app_ready
 from launch_helpers import leave_launch
+from common import open_unit_card, open_unit_details   # MC1: unit cards start closed
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
@@ -99,6 +100,7 @@ def main():
 
         # ---------- 8. The ▲ from Battle ready ----------
         print("\n--- 8. ▲ from Battle ready ---")
+        open_unit_card(page, '#view-units li.unit[data-id="3"]')   # MC1: the stepper is inside the opened card
         up = page.locator('#view-units li.unit[data-id="3"] .up-button')
         check("▲ on a Battle ready unit names Needs touch-ups", "Needs touch-ups" in (up.get_attribute("aria-label") or ""), up.get_attribute("aria-label"))
         up.click()
@@ -179,7 +181,7 @@ def main():
                 print(f"\n--- 10. {tag} ---")
                 page.set_viewport_size({"width": width, "height": 780})
                 t.load(page, units=UNITS, settings=dict(SETTINGS, appearance=appearance))
-                page.click('#view-units li.unit[data-id="1"] .info')
+                open_unit_details(page, '#view-units li.unit[data-id="1"]')   # MC1: open the card, then its Details (a tap on the name did both before MC1)
                 page.wait_for_timeout(250)
                 check(f"{tag}: no sideways scroll", not page.evaluate("document.documentElement.scrollWidth > document.documentElement.clientWidth"))
 

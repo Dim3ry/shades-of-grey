@@ -154,7 +154,11 @@ def all_paint_texts(page):
 def main():
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
+        # CL2 (James, 3 Nov): pressing a colour in Colour Lab (the wheel, Start from) now morphs into the next set over about half a second, and
+        # this file presses them many times (each wait would sit through it, taking the file past its time allowance). Nothing here is about
+        # motion, so this page runs with Reduce motion on, the setting it was written for: the new set is drawn at once, exactly where the
+        # morph ends. The touch phone page below keeps motion on. test_v130_cl2.py checks the morph itself.
+        ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block", reduced_motion="reduce")
         page = ctx.new_page()
         errors, dialogs, requests = [], [], []
         page.on("pageerror", lambda e: errors.append(str(e)))

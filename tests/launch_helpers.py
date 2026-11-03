@@ -37,6 +37,8 @@ def leave_launch(page):
         page.evaluate(_TAP)
     page.evaluate(_FINISH_BAR)
     wait_settled(page)
+    # (v130 waited here for MO6's full-screen loading screen to fade away. JF1 took that screen out at James's request: LR1's ring is back, and
+    # leaving the start page removes it at once, so there is nothing left to wait for.)
 
 
 def open_settings(page):

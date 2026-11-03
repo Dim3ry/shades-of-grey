@@ -16,6 +16,7 @@ from playwright.sync_api import sync_playwright
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
 from launch_helpers import app_ready, leave_launch, quiet, tap_tab
+from common import open_unit_card   # MC1: unit cards start closed
 
 results = []
 
@@ -124,6 +125,7 @@ def main():
         tap_tab(page, "units"); quiet(page)
         before = page.text_content("#done-summary")
         page.evaluate("() => { document.querySelector('#overall-chart > *').__ds2 = true; document.querySelector('#recipe-list > li').__ds2 = true; }")
+        open_unit_card(page, '#unit-list li.unit[data-id="1"]')   # MC1: the stepper is inside the opened card
         mark(page, '#unit-list li.unit[data-id="2"]')
         page.click('#unit-list li.unit[data-id="1"] .up-button')
         quiet(page)
@@ -144,6 +146,7 @@ def main():
         check("jumping to a unit (goToUnit) draws Units first: the renamed unit is there, open",
               page.evaluate("(() => { const c = document.querySelector('#unit-list li.unit[data-id=\"4\"]'); return !!c && c.textContent.includes('Renamed squad') && !!c.querySelector('.panel'); })()"))
         page.evaluate("() => { book.recipes[0].name = 'Deep blue armour'; render(); }")
+        open_unit_card(page, '#unit-list li.unit[data-id="1"]')   # MC1: the recipe buttons are inside the opened card
         page.click('#unit-list li.unit[data-id="1"] .recipe-links button')
         quiet(page)
         check("a recipe link on a unit opens Recipes drawn with the change", "Deep blue armour" in page.text_content("#view-recipes"))
@@ -151,6 +154,7 @@ def main():
         # ---------- 3. Nickname box ----------
         print("\n--- 3. Nickname box ---")
         start(page, units(2), settings={**SETTINGS, "tab": "units"})
+        open_unit_card(page, '#unit-list li.unit[data-id="1"]')   # MC1: the Details button is inside the opened card
         page.click('#unit-list li.unit[data-id="1"] .details-toggle')
         quiet(page)
         nick = page.locator('#unit-list li.unit[data-id="1"] input[placeholder="e.g. The Gold Squad"]')

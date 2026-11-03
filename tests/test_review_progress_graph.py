@@ -19,6 +19,7 @@ from playwright.sync_api import sync_playwright
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from launch_helpers import app_ready, leave_launch, quiet, tap_tab
+from common import open_unit_card   # MC1: unit cards start closed
 
 PORT = os.environ.get("SOG_PORT", "8000")
 BASE = f"http://localhost:{PORT}"
@@ -81,6 +82,7 @@ def tap(page, uid, button, times, index=None):
     for _ in range(times):
         now = page.evaluate("([id, i]) => { const m = models.find(x => x.id === id); return i === null ? m.stage : m.stages[i]; }", [uid, index])
         if index is None:
+            open_unit_card(page, f'li.unit[data-id="{uid}"]')   # MC1: the stepper is inside the opened card
             page.click(f'li.unit[data-id="{uid}"] .{button}')
         else:
             page.click(f'button.each-{button}[data-each-row="{uid}:{index}"]')
@@ -89,6 +91,7 @@ def tap(page, uid, button, times, index=None):
         quiet(page)
 
 def open_details(page, uid):
+    open_unit_card(page, f'li.unit[data-id="{uid}"]')   # MC1: open the card first; its Details button is inside
     if page.get_attribute(f'li.unit[data-id="{uid}"] .details-toggle', "aria-expanded") != "true":
         page.click(f'li.unit[data-id="{uid}"] .details-toggle')
     page.wait_for_selector('button.each-up[data-each-row="%s:0"]' % uid)

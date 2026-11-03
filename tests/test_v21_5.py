@@ -21,6 +21,7 @@ from playwright.sync_api import sync_playwright
 from launch_helpers import app_ready, quiet, open_settings, tap_tab
 from launch_helpers import leave_launch
 from dialog_watch import DialogAnswers
+from common import open_unit_details   # MC1: unit cards start closed
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}/"
@@ -129,7 +130,8 @@ def in_view(page, selector):
         return r.top >= 0 && r.bottom <= bottom && r.height > 0; }""", selector)
 
 def open_unit(page, uid):
-    page.click(f'#view-units li.unit[data-id="{uid}"] .info')
+    # MC1: a tap on a unit now opens its card, and its Details button opens the details (before MC1 a tap on the name did that)
+    open_unit_details(page, f'#view-units li.unit[data-id="{uid}"]')
     page.wait_for_timeout(200)
 
 def delete_button(page, uid):
