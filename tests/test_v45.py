@@ -80,7 +80,8 @@ def main():
               "Unofficial fan-made app" in about and "Your data stays on this device" in about)
 
         print("\n--- 4. Settings page unchanged ---")
-        old = subprocess.run(["git", "show", "origin/main:index.html"], cwd=ROOT, capture_output=True, text=True).stdout
+        # T6: read git's output as UTF-8 (on Windows the default code page could not read it and printed an error)
+        old = subprocess.run(["git", "show", "origin/main:index.html"], cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace").stdout
         if old and version == "v45":   # v46 added a button to Settings, so this only applies while v45 is the newest
             check("the Settings page's own markup is the same as on main", settings_block(old) == settings_block(html))
         else:

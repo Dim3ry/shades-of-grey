@@ -1,5 +1,22 @@
 """Small helpers shared by several tests."""
 
+def node_command():
+    """T6: the Node.js program the .js checks run in (test_colour_engine, test_v101_mentor_engine, test_v105_mentor_words).
+    `node` when it is installed; otherwise the copy of Node that comes inside Playwright for Python, which every test needs anyway.
+    So those checks also run on a computer without Node.js installed, instead of always failing there."""
+    import os, shutil
+    found = shutil.which("node")
+    if found:
+        return found
+    try:
+        import playwright
+        bundled = os.path.join(os.path.dirname(playwright.__file__), "driver", "node.exe" if os.name == "nt" else "node")
+        if os.path.exists(bundled):
+            return bundled
+    except ImportError:
+        pass
+    return "node"
+
 def click_card_chip(page, selector):
     """Click a recipe or tip chip in the recipe editor's Colour ideas card.
     X8d (v106): that card shows only the first 12 chips of a long list, with a Show all button under it. A chip past

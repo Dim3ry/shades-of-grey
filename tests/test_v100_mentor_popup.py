@@ -122,8 +122,12 @@ def main():
         check("open 240 ms; lens wake 160 ms after a 240 ms delay", names.get("mp-grow", [0, 0])[1] == 240 and names.get("mp-lens", [0, 0, 0])[1:] == [160, 240], names)
         check("idle: float 4 s, glance 6 s, ring 40 s", names.get("mp-float", [0, 0])[1] == 4000 and names.get("mp-glance", [0, 0])[1] == 6000 and names.get("mp-turn", [0, 0])[1] == 40000, names)
         check("ring and lens are separate groups", page.locator(".mentor-window .mp-ring").count() == 1 and page.locator(".mentor-window .mp-wake .orb-lens").count() == 1)
+        # T6: the close animation is read the moment Escape is handled (a listener added after the app's own, on the same spot). Read
+        # afterwards, a busy machine could already have removed the 120 ms window, and the check saw None.
+        page.evaluate("""() => { window.__closing = 'not read'; document.addEventListener('keydown', () => { const w = document.querySelector('.mentor-window');
+            window.__closing = w ? w.getAnimations().map(a => [a.animationName, a.effect.getTiming().duration, a.effect.getTiming().direction]) : null; }, { capture: true, once: true }); }""")
         page.keyboard.press("Escape")
-        closing = page.evaluate("() => { const w = document.querySelector('.mentor-window'); return w ? w.getAnimations().map(a => [a.animationName, a.effect.getTiming().duration, a.effect.getTiming().direction]) : null; }")
+        closing = page.evaluate("() => window.__closing")
         check("close is the same grow in reverse, 120 ms", closing and ["mp-grow", 120, "reverse"] in closing, closing)
         closed(page)
         check("nothing keeps running once closed", page.evaluate("() => document.getAnimations().filter(a => String(a.animationName || '').startsWith('mp-')).length") == 0)

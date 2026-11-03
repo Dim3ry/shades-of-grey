@@ -16,6 +16,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or run this file on its own."""
 import os, re, subprocess, sys
 from playwright.sync_api import sync_playwright
+from common import node_command
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.realpath(os.path.join(HERE, ".."))
@@ -30,7 +31,9 @@ def read(name):
 
 def main():
     print("--- 1. The maths, in Node ---")
-    run = subprocess.run(["node", os.path.join(HERE, "colour_engine_check.js")], capture_output=True, text=True, cwd=ROOT)
+    # T6: node_command() also finds the Node that comes with Playwright, and the output is read as UTF-8 (Windows)
+    run = subprocess.run([node_command(), os.path.join(HERE, "colour_engine_check.js")], capture_output=True, text=True, cwd=ROOT,
+                         encoding="utf-8", errors="replace")
     print(run.stdout.strip())
     check("every Node check passed", run.returncode == 0, (run.stdout + run.stderr)[-600:])
 
