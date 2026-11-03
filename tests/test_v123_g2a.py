@@ -162,7 +162,9 @@ def main():
         page.click("#guides-back")
         wait_settled(page)
         f = page.evaluate("() => { const a = document.activeElement; return { key: a.dataset.guide || '', tag: a.tagName, shown: !!a.offsetParent, main: !!a.closest('.guides-main') }; }")
-        check("Back from a search result on a phone focuses that entry's row in its group (not a hidden search row)", f == {"key": hit, "tag": "BUTTON", "shown": True, "main": True}, f)
+        # UX2 (v129) changed this on purpose: Back from a search result now goes back to the search results (not the entry's group),
+        # so the focused row is that result in the search list, which is on screen again. test_v129_ux2.py checks the rest.
+        check("Back from a search result on a phone focuses that entry's row in the search results, on screen (not a hidden row)", f == {"key": hit, "tag": "BUTTON", "shown": True, "main": False}, f)
         home(page)
         page.click('.guides-cats [data-cat="detail"]')
         page.wait_for_selector(".guides-main .detail-recipes")

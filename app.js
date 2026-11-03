@@ -4805,7 +4805,7 @@
     }
     tabButtons.forEach(b => b.addEventListener("click", () => {
       if (travelling) return;   // Mo4b: taps on the bar are ignored while the segments travel
-      if (b.dataset.tab === "guides") Object.assign(guidesState, { view: "home", cat: "", group: "", key: "", kind: "", missing: false });   // X3: the tab itself opens the category list
+      if (b.dataset.tab === "guides") Object.assign(guidesState, { view: "home", cat: "", group: "", key: "", kind: "", missing: false, from: null });   // X3: the tab itself opens the category list
       if (b.dataset.tab === "guides" || b.dataset.tab === "recipes") compendiumState.focus = null;   // v69: the tab itself opens the whole of Guides (X1: and the whole Colour Lab)
       // Tapping Recipes while already on it goes back to the list (unless you're mid-edit).
       if (b.dataset.tab === "recipes" && settings.tab === "recipes" && !recipeDraft && !launching) {
@@ -15144,12 +15144,12 @@
         panel.insertBefore(list, share);
       };
       if (typeof DETAIL_RECIPES !== "undefined") part("Detail recipes with a similar colour", libraryLike(paint, DETAIL_RECIPES, r => r.steps), "detail", (r) => {
-        guidesState.query = ""; guidesPoint({ key: r.key, kind: "detail" });
+        guidesState.query = ""; guidesState.from = null; guidesPoint({ key: r.key, kind: "detail" });   // UX2: from Colour Lab, so Back goes to Guides
         showTab("guides");
         renderGuides(`[data-detail="${r.key}"]`);
       });
       if (typeof BASING_TIPS !== "undefined") part("Basing tips with a similar colour", libraryLike(paint, BASING_TIPS, t => t.paintSteps), "basing", (t) => {
-        guidesState.query = ""; guidesPoint({ key: t.key, kind: "basing" });
+        guidesState.query = ""; guidesState.from = null; guidesPoint({ key: t.key, kind: "basing" });
         showTab("guides");
         renderGuides(`[data-basing="${t.key}"]`);
       });
@@ -15878,7 +15878,29 @@
     // Where the Guides screen is: home (search and categories), a category (its topic groups), one group, or one entry. Kept while the
     // app is open, never saved. G2a: group is the name of the topic group being shown, or of the one the open entry sits in.
     // G2b: order is how the home list shows when nothing is typed: "topics" (the sections) or "az" (every entry A to Z).
-    const guidesState = { view: "home", cat: "", group: "", key: "", kind: "", query: "", missing: false, order: "topics" };
+    // UX2: from is where Back goes from an entry opened from a list (see guidesNote), or null.
+    const guidesState = { view: "home", cat: "", group: "", key: "", kind: "", query: "", missing: false, order: "topics", from: null };
+    // UX2: the list on screen when an entry is opened from one of its rows: search results, A to Z, a topic group, or (on a wide screen,
+    // where the list sits beside it) a section such as Detail recipes. It notes the screen, the search text and order, how far the page was
+    // scrolled, the row tapped, and the Detail recipes and Basing picks (their chosen group, recipe or tip, and search text), because opening
+    // one of those moves its own list to it. Back puts all of it back (the Filters fold-out is never touched, so it stays as it was).
+    // Links inside an entry (Related, See also) keep the note, so Back still goes to the list. Kept only while the app is open, never saved.
+    function guidesNote(row) {
+      const g = guidesState, st = compendiumState;
+      return { view: g.view, cat: g.cat, group: g.group, key: g.key, kind: g.kind, query: g.query, order: g.order, y: window.scrollY, row,
+        lib: { detail: st.detail, detailGroup: st.detailGroup, basing: st.basing, basingGroup: st.basingGroup, detailText: st.search.detail, basingText: st.search.basing } };
+    }
+    // UX2: after a section, a group or an entry opens, its Back button and title sit just under the menu bar, which stays on screen as you
+    // scroll (anything scrolled under it is hidden). The page only moves when Back is under the bar or the title is in the lower half.
+    function guidesShowTop() {
+      const main = document.querySelector("#compendium-body .guides-main");
+      const title = main && main.querySelector(".guides-title");
+      const bar = document.querySelector("main > .app-bar");
+      if (!title || !bar || !main.firstElementChild) return;
+      const under = bar.getBoundingClientRect().bottom, first = main.firstElementChild.getBoundingClientRect().top;
+      if (first >= under && title.getBoundingClientRect().bottom <= window.innerHeight / 2) return;
+      window.scrollTo(0, Math.max(0, window.scrollY + first - under - 8));
+    }
     function guidesPoint(e) {   // point the screen at one entry
       whereBuyOpen.clear();   // L1: a Where to buy fold-out starts closed on every entry you open
       guidesState.missing = false;
@@ -15908,11 +15930,13 @@
         recipeDraft = null;
         openRecipeId = null;
         const e = knowledgeIndex().get(String(key), kind);
-        Object.assign(guidesState, { view: "home", cat: "", group: "", key: "", kind: "", query: "", missing: false });
+        // UX2: a link from one entry to another (See also, or a Mentor link while an entry is open) keeps the way back to the list
+        const keep = settings.tab === "guides" && guidesState.view === "entry" && guidesState.from;
+        Object.assign(guidesState, { view: "home", cat: "", group: "", key: "", kind: "", query: keep ? guidesState.query : "", missing: false, from: keep || null });
         if (e) guidesPoint(e); else guidesState.missing = true;
         showTab("guides");
         const target = e && document.getElementById(e.id);
-        if (target) { target.scrollIntoView({ block: "start" }); target.focus({ preventScroll: true }); }
+        if (target) { target.focus({ preventScroll: true }); guidesShowTop(); }   // UX2: the title shows under the menu bar, not behind it
         const gone = !e && document.getElementById("guides-missing");   // X7: a retired key: the one calm line gets the focus
         if (gone) { gone.tabIndex = -1; gone.focus({ preventScroll: true }); }
       });
@@ -15934,7 +15958,7 @@
       const parts = libraryParts(door, redraw);
       const catName = (key) => (GUIDE_CATEGORIES.find(c => c.key === key) || {}).name || "";
       const shown = GUIDE_CATEGORIES.filter(c => kn.list({ category: c.key }).length);
-      if (g.view !== "home" && !(g.view === "entry" ? kn.get(g.key, g.kind) : shown.some(c => c.key === g.cat))) Object.assign(g, { view: "home", cat: "", group: "", key: "", kind: "" });
+      if (g.view !== "home" && !(g.view === "entry" ? kn.get(g.key, g.kind) : shown.some(c => c.key === g.cat))) Object.assign(g, { view: "home", cat: "", group: "", key: "", kind: "", from: null });
       // G2a: Colour basics, Techniques, Tools and prep and Problems show topic groups; Detail recipes and Basing keep their own controls
       const grouped = (cat) => !!cat && cat !== "detail" && cat !== "basing" && shown.some(c => c.key === cat);
       const groupsHere = grouped(g.cat) ? guideGroupsOf(g.cat, kn).groups : [];
@@ -15971,7 +15995,19 @@
         b.addEventListener("click", onClick);
         return b;
       };
-      const openEntry = (e) => { guidesPoint(e); renderGuides(`#${e.id}`); };
+      // UX2: a list row passes its own selector, and the list it sits in is noted for Back (guidesNote). On a wide screen an entry can be
+      // open beside the list: then the earlier note keeps its screen (or, with none, Back goes to the plain list) and takes the new row.
+      // A Related button passes none, so the note stays as it is.
+      const openEntry = (e, row) => {
+        if (row) {
+          const note = guidesNote(row);
+          if (g.view === "entry") Object.assign(note, g.from ? { view: g.from.view, cat: g.from.cat, group: g.from.group, key: g.from.key, kind: g.from.kind, lib: g.from.lib } : { view: "home", cat: "", group: "", key: "", kind: "" });
+          g.from = note;
+        }
+        guidesPoint(e);
+        renderGuides(`#${e.id}`);
+        guidesShowTop();
+      };
       // X8d: long lists show 30 rows, "Show more" adds the next 30. Search always looks through the whole list.
       const PAGE = 30;
       const entryRows = (list, pageKey, numOf) => {
@@ -15987,7 +16023,7 @@
         let more = null;
         const add = (from, to) => {
           for (const e of list.slice(from, to)) {
-            const b = row(e.title, e.summary, () => openEntry(e), false, numOf ? numOf(e) : "");
+            const b = row(e.title, e.summary, () => openEntry(e, `${b.closest(".guides-nav") ? ".guides-nav" : ".guides-main"} [data-guide="${CSS.escape(e.key)}"][data-kind="${e.kind}"]`), false, numOf ? numOf(e) : "");
             b.dataset.guide = e.key;
             b.dataset.kind = e.kind;
             if (more) box.insertBefore(b, more); else box.appendChild(b);
@@ -16062,11 +16098,12 @@
         list.className = "guides-rows guides-cats";
         for (const c of shown) {
           const b = row(c.name, "", () => {
-            Object.assign(g, { view: "category", cat: c.key, group: "", key: "", kind: "" });
+            Object.assign(g, { view: "category", cat: c.key, group: "", key: "", kind: "", from: null });   // UX2: a section goes back to Guides
             // X8d: Detail recipes and Basing open on their first group (Body, Dry ground); All is still one tap away
             if (c.key === "detail" && !compendiumState.detailGroup) compendiumState.detailGroup = DETAIL_GROUPS[0].key;
             if (c.key === "basing" && !compendiumState.basingGroup) compendiumState.basingGroup = BASING_GROUPS[0].key;
-            renderGuides(`[data-cat="${c.key}"]`); }, g.view !== "home" && g.cat === c.key);
+            renderGuides(`[data-cat="${c.key}"]`);
+            guidesShowTop(); }, g.view !== "home" && g.cat === c.key);
           b.dataset.cat = c.key;
           const n = document.createElement("span");
           n.className = "guides-count";
@@ -16098,10 +16135,28 @@
         back.className = "plain-button guides-back";
         back.id = "guides-back";
         // G2a: an entry goes back to its topic group, a group to its section, a section to the home list
+        // UX2: unless it was opened from a list (g.from): then Back goes to that list, named by what it is
+        const note = g.view === "entry" || g.view === "category" ? g.from : null;
         const toGroup = g.view === "entry" && grouped(g.cat) && groupHere;
         const toCat = !toGroup && (g.view === "entry" || g.view === "group") && g.cat && shown.some(c => c.key === g.cat);
-        back.textContent = toGroup ? `Back to ${groupHere.name}` : toCat ? `Back to ${catName(g.cat)}` : "Back to Guides";
+        back.textContent = note ? `Back to ${note.view === "group" ? note.group : note.view === "category" ? catName(note.cat) : g.query.trim() ? "results" : g.order === "az" ? "A to Z" : "Guides"}`
+          : toGroup ? `Back to ${groupHere.name}` : toCat ? `Back to ${catName(g.cat)}` : "Back to Guides";
         back.addEventListener("click", () => {
+          if (note) {   // UX2: the list as it was: same screen, same scroll, the Detail recipes and Basing picks, and the focus on the row you opened
+            const lib = note.lib, st = compendiumState;
+            Object.assign(g, { view: note.view, cat: note.cat, group: note.group, key: note.key, kind: note.kind, from: null });
+            Object.assign(st, { detail: lib.detail, detailGroup: lib.detailGroup, basing: lib.basing, basingGroup: lib.basingGroup });
+            st.search.detail = lib.detailText;
+            st.search.basing = lib.basingText;
+            renderGuides();
+            // (on a wide screen the search text or order can change while the entry is open: then the list is new, so it starts at its top)
+            const same = g.query === note.query && g.order === note.order;
+            const was = same && document.querySelector(`#compendium-body ${note.row}`);
+            window.scrollTo(0, same ? note.y : 0);
+            const next = [was, ...["guides-back", "guides-search"].map(id => document.getElementById(id))].find(x => x && x.offsetParent);
+            if (next) next.focus({ preventScroll: true });
+            return;
+          }
           // the row it came from: in the right-hand list for a group or an entry (a search result with the same key sits, hidden on a phone, in the left one)
           const from = g.view === "group" ? `.guides-main [data-group="${CSS.escape(g.group)}"]` : g.view === "entry" && (toGroup || toCat) ? `.guides-main [data-guide="${CSS.escape(g.key)}"]` : `.guides-cats [data-cat="${CSS.escape(g.cat)}"]`;
           if (toGroup) Object.assign(g, { view: "group", key: "", kind: "" });
@@ -16133,7 +16188,7 @@
             const box = document.createElement("div");
             box.className = "guides-rows guides-groups";
             for (const gr of groupsHere) {
-              const b = row(gr.name, "", () => { Object.assign(g, { view: "group", group: gr.name, key: "", kind: "" }); renderGuides("#guides-back"); }, false, gr.num);
+              const b = row(gr.name, "", () => { Object.assign(g, { view: "group", group: gr.name, key: "", kind: "", from: null }); renderGuides("#guides-back"); guidesShowTop(); }, false, gr.num);
               b.dataset.group = gr.name;
               box.appendChild(b);
             }
