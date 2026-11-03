@@ -128,6 +128,13 @@ def main():
         r = page.evaluate(TAP, '.tabs button[data-tab="units"]')
         check("bar hidden while typing: no move and no picture left behind", not r["orb"] and not r["ghost"], r)
         page.evaluate("() => document.body.classList.remove('typing')")
+        # LQ12 (v130+): this check used to pin no animation at all on the bar straight after typing ends. LQ8 is the approved change (James's
+        # MO6 notes: "never lose sight of the menu", fades "fluid and by design"): the bar now fades back in after typing. So the only animation
+        # allowed here is that fade, opacity only, on the bar itself; once it ends, everything else in this check is as strict as before.
+        fades = page.evaluate("""() => document.querySelector('.tabs').getAnimations({ subtree: true }).map(a => ({ on: a.effect.target.matches('nav.tabs, .tabs:not(.mo-tr):not(.mo-ghost)'),
+            props: [...new Set(a.effect.getKeyframes().flatMap(f => Object.keys(f).filter(k => !['offset', 'easing', 'composite', 'computedOffset'].includes(k))))] }))""")
+        check("after typing: at most the bar's own fade back in (opacity only)", all(f["on"] and f["props"] == ["opacity"] for f in fades) and len(fades) <= 1, fades)
+        page.evaluate("() => document.querySelector('.tabs').getAnimations().forEach(a => a.finish())")
         check("tidy afterwards", page.evaluate(TIDY))
 
         print("\n--- 6. Reduced motion ---")

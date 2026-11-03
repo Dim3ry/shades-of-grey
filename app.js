@@ -7567,14 +7567,27 @@
     }
     // The opened card unrolls (clip-path) and the cards around it move from where they were to where they are now (transform), so
     // nothing jumps. Only cards on the screen move; nothing is left behind at rest. Reduce motion: nothing moves.
-    function glideCards(before, changed) {
+    // LQ12 (LQ5 on Models): the one owner of the cards' motion, also for Delete and Undo. extra.gone: a deleted card (cardLeaving, read
+    // before the change) fades out where it was while the cards below glide up into the gap; extra.arrived: the id of a card that came
+    // back (Undo), which fades in where it lands while the cards below glide back down.
+    function glideCards(before, changed, extra) {
       if (!before.size) return;
+      const { gone, arrived } = extra || {};
       const ms = motionMs("--motion-med");
       const ease = getComputedStyle(document.documentElement).getPropertyValue("--motion-ease").trim() || "linear";
       const h = window.innerHeight;
+      // LQ12: every card is measured first and only then does anything start moving (starting a move between two measurements made the
+      // browser work out the page's styles again for each card).
+      const moves = [];
       for (const li of list.children) {
         const was = before.get(li.dataset.id);
-        if (!was) continue;
+        if (!was) {
+          if (arrived !== undefined && li.dataset.id === String(arrived)) {   // LQ12: the card Undo brought back fades in where it lands
+            const r = li.getBoundingClientRect();
+            if (r.bottom > 0 && r.top < h) moves.push([li, [{ opacity: 0 }, { opacity: 1 }]]);
+          }
+          continue;
+        }
         const r = li.getBoundingClientRect();
         if ((r.bottom < 0 || r.top > h) && (was.bottom < 0 || was.top > h)) continue;   // off the screen before and after
         const from = {}, to = {};
@@ -7584,8 +7597,38 @@
           from.clipPath = `inset(0px 0px ${r.height - was.height}px 0px)`;
           to.clipPath = "inset(0px 0px 0px 0px)";
         }
-        if (from.transform || from.clipPath) li.animate([from, to], { duration: ms, easing: ease });
+        if (from.transform || from.clipPath) moves.push([li, [from, to]]);
       }
+      for (const [li, frames] of moves) li.animate(frames, { duration: ms, easing: ease });
+      if (gone) cardGone(gone, ms, ease);
+    }
+    // LQ12: a card about to be deleted, read BEFORE the change (with cardSpots' spots): the card, where it is and its look while it is still in
+    // the list. null when it is off the screen (or nothing moves: Reduce motion gives no spots).
+    function cardLeaving(id, before) {
+      const el = unitCardEl(id), r = el && before.get(String(id));
+      if (!r || r.height <= 0 || r.bottom < 0 || r.top > window.innerHeight) return null;
+      return { el, r, look: lqLook(el) };   // (LQ1's helper: the card's own look, kept once it is out of the list)
+    }
+    // LQ12: the deleted card fades out where it was. It is the card itself, which the redraw took out of the list: it goes in a layer of its own
+    // outside the page (fixed, inert, hidden from screen readers; LQ1's .lq-ghost: no taps, no CSS animations) with no id or data- left
+    // (LQ1's lqStrip), so nothing that looks for a unit's card finds it, and goes when the fade ends.
+    function cardGone(g, ms, ease) {
+      const { el, r, look } = g;
+      if (el.isConnected) return;   // not taken out (nothing changed in the list): nothing to play
+      const layer = document.createElement("ul");
+      layer.className = "lq-ghost card-leaving";
+      layer.setAttribute("aria-hidden", "true");
+      layer.inert = true;
+      layer.style.cssText = "position: fixed; left: 0; top: 0; width: 0; height: 0; margin: 0; padding: 0; border: 0; overflow: visible; z-index: 5; list-style: none;";
+      lqStrip(el, true);
+      el.classList.remove("lq-press");
+      el.style.cssText += `; ${look}; position: fixed; margin: 0; box-sizing: border-box; left: ${r.left}px; top: ${r.top}px; width: ${r.width}px; height: ${r.height}px; transform: none;`;
+      layer.appendChild(el);
+      document.body.appendChild(layer);
+      const a = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: ms, easing: ease, fill: "forwards" });
+      const bye = () => layer.remove();
+      a.onfinish = a.oncancel = bye;
+      setTimeout(bye, ms + 300);
     }
 
     // A3: a small chevron drawn in the text colour (so it follows every theme). dir: "left", "right", "down", "up".
@@ -8863,11 +8906,20 @@
       const spot = models.indexOf(model);
       const wasOpen = openIds.has(id);
       const files = photoIds(model);
+      // LQ12 (LQ5 on Models): where the cards near the screen are, and the card that is leaving, read before anything changes. MS1's redraw
+      // below still takes out only this card; glideCards then fades it out where it was and the cards below glide up into the gap.
+      // From 900 px, the list and the side pane can change places (the pane closes with the unit): then the cards go round again in new
+      // columns and nothing glides, as when a card opens (MC1).
+      const isSplit = () => unitSplit.classList.contains("layout-split");
+      const glide = (spots, split, extra) => { if (split === isSplit()) glideCards(spots, new Set(), extra); };
+      const before = cardSpots(), split = isSplit();
+      const leaving = cardLeaving(id, before);
       models = models.filter(m => m !== model);
       openIds.delete(id);
       for (const f of files) pendingPhotoDeletes.add(f);
       const photosText = files.length ? ` and ${files.length === 1 ? "its photo" : "its " + files.length + " photos"}` : "";
       const saved = commit(`Deleted ${displayName(model)}${photosText}`, () => {
+        const back = cardSpots(), y = window.scrollY, backSplit = isSplit();   // LQ12: Undo glides the cards below back down and the card fades in where it lands
         if (!models.includes(model)) {
           // Very rare: a unit added since took this id number. Give this one a new number.
           if (models.some(m => m.id === model.id)) model.id = nextId();
@@ -8876,7 +8928,13 @@
         for (const f of files) pendingPhotoDeletes.delete(f);
         if (wasOpen) openIds.add(model.id);
         commit(`${displayName(model)} is back`);
+        // LQ12: a card taller than the screen, whose top was above it, came back above the screen (the browser keeps the card under the top
+        // of the screen still), so Undo showed nothing coming back. It goes back where it was before the delete, in sight.
+        const came = unitCardEl(model.id);
+        if (came && window.scrollY !== y && came.getBoundingClientRect().bottom <= 0) window.scrollTo(0, y);
+        glide(back, backSplit, { arrived: model.id });
       }, "Undo", UNDO_SECONDS);
+      glide(before, split, { gone: leaving });   // LQ12 (the change is on screen whether or not it saved)
       if (!saved) { for (const f of files) pendingPhotoDeletes.delete(f); return; }
       setTimeout(() => {
         for (const f of files) {
@@ -23027,8 +23085,30 @@
     function updateTyping() {
       const typing = isTextBox(document.activeElement);
       if ((pressing || releasing) && !typing) return;   // only leaving "typing" waits; starting it is at once
+      const was = document.body.classList.contains("typing");
       document.body.classList.toggle("typing", typing);
+      if (typing) barBackEnd();   // LQ12: starting to type again: the bar steps aside at once, as before
+      else if (was) barBackIn();
     }
+    // LQ12 (LQ8; James's MO6 notes: "never lose sight of the menu", fades and slow changes "fluid and by design"): when typing ends and the
+    // bar comes back (below 900 px, where it stepped aside), it fades in where it belongs instead of appearing in one frame. Opacity only, at
+    // MO6's slow pace (--motion-flow on its ease-out curve); it never moves or changes colour. MO6's rules for the bar: never while the start
+    // circle shows or travels, nor before the app has opened. Reduce motion: back at once. Typing again, the start circle or a travel
+    // starting ends the fade at once, so the bar is whole for them.
+    const barEl = arcEl.closest(".tabs");
+    const barStepsAside = window.matchMedia("(max-width: 899.98px)");
+    let barBack = null;
+    function barBackEnd() { if (barBack) { const a = barBack; barBack = null; a.cancel(); } }
+    function barBackIn() {
+      barBackEnd();
+      if (launching || travelling || !launchMotionReady || !canMove() || !barStepsAside.matches || !barEl) return;
+      const ease = getComputedStyle(document.documentElement).getPropertyValue("--motion-flow-ease").trim() || "ease-out";
+      const a = barBack = barEl.animate([{ opacity: 0 }, { opacity: 1 }], { duration: motionMs("--motion-flow") || 800, easing: ease, id: "bar-back" });
+      a.onfinish = () => { if (barBack === a) barBack = null; };
+    }
+    new MutationObserver(() => {
+      if (barBack && (launching || travelling || document.body.classList.contains("launching") || document.body.classList.contains("mo-travelling"))) barBackEnd();
+    }).observe(document.body, { attributes: true, attributeFilter: ["class"] });
     // Focus moves in and out of boxes; "focusout" is checked a moment later, once we can see
     // where the cursor went (so tapping from one text box to another doesn't flicker the bar).
     // A tap, a key or a menu choice is checked too, in case the box that had the cursor was
