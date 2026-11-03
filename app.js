@@ -9020,13 +9020,16 @@
       const a = from.getBoundingClientRect(), z = to.getBoundingClientRect();
       // which way the colour moves: across a row, or down or up when the switch has wrapped onto two rows
       const way = Math.abs(a.top - z.top) < 2 ? (z.left > a.left ? "right" : "left") : (z.top > a.top ? "down" : "up");
-      const SHUT = { right: "inset(0 100% 0 0)", left: "inset(0 0 0 100%)", down: "inset(0 0 100% 0)", up: "inset(100% 0 0 0)" };
-      const GONE = { right: "inset(0 0 0 100%)", left: "inset(0 100% 0 0)", down: "inset(100% 0 0 0)", up: "inset(0 0 100% 0)" };
+      // the fill's moving edge is rounded like the option itself
+      const rad = ` round ${Math.min(z.height / 2, parseFloat(getComputedStyle(to).borderTopLeftRadius) || 0)}px`;
+      const SHUT = { right: "inset(0 100% 0 0", left: "inset(0 0 0 100%", down: "inset(0 0 100% 0", up: "inset(100% 0 0 0" };
+      const GONE = { right: "inset(0 0 0 100%", left: "inset(0 100% 0 0", down: "inset(100% 0 0 0", up: "inset(0 0 100% 0" };
+      const FULL = "inset(0 0 0 0" + rad + ")";
       const root = getComputedStyle(document.documentElement);
       const timing = { duration: motionMs("--motion-fill") || motionMs("--motion-med"), easing: root.getPropertyValue("--motion-fill-ease").trim() || "ease-in-out",
         fill: "forwards", pseudoElement: "::after" };
       const anims = [];
-      for (const [el, frames] of [[from, [{ clipPath: "inset(0 0 0 0)" }, { clipPath: GONE[way] }]], [to, [{ clipPath: SHUT[way] }, { clipPath: "inset(0 0 0 0)" }]]]) {
+      for (const [el, frames] of [[from, [{ clipPath: FULL }, { clipPath: GONE[way] + rad + ")" }]], [to, [{ clipPath: SHUT[way] + rad + ")" }, { clipPath: FULL }]]]) {
         el.dataset.lqLabel = el.textContent.trim();
         el.classList.add("lq-fill");
         try { anims.push(lqAnim(el, frames, timing)); } catch (ignored) {}
@@ -9042,6 +9045,102 @@
       setTimeout(done, timing.duration + 400);   // in case the animation never runs
     });
 
+    // LQ1 (button sweep, James, 3 Nov): a chip switched on or off. Mo1's sweep drew the fill with a square leading edge and changed the label's
+    // colour on its own clock, so the label dipped in contrast while the edge crossed it. Now a copy of the chip in its switched-on look (its
+    // fill with its label) is uncovered from the left, or covered from the left when it goes off, with a clip whose leading edge follows the
+    // chip's rounded shape. The copy sits exactly over the chip, in a layer of its own outside the page (no ids, cannot be tapped, hidden
+    // from screen readers); under it the chip is drawn switched off. So wherever the fill is, the label on it is in the switched-on colours.
+    const LQ_CHIP_LOOK = [...LQ_LOOK, "line-height", "text-align", "letter-spacing", "text-transform", "white-space", "overflow-wrap", "font-size-adjust",
+      "box-sizing", "min-height", "align-content", "font-variant-numeric", "text-decoration"];
+    const lqChipLook = (el) => { const cs = getComputedStyle(el); return LQ_CHIP_LOOK.map(p => `${p}: ${cs.getPropertyValue(p)}`).join("; "); };
+    const LQ_OFF = { "background-color": 0, "background-size": 0, "color": 0, "border-top-color": 0, "border-right-color": 0, "border-bottom-color": 0, "border-left-color": 0 };
+    const lqOffLook = (el) => { const cs = getComputedStyle(el); return Object.fromEntries(Object.keys(LQ_OFF).map(k => [k, cs.getPropertyValue(k)])); };
+    let lqChipTap = null;
+    const lqChipRuns = new Set();
+    const lqChipEnd = () => { for (const run of [...lqChipRuns]) run(); };
+    function lqChipCopy(el) {   // a copy of a chip as it looks now (only switched-on ones are copied). A tick before the label (To do, Done,
+      const c = el.cloneNode(true);   // Repaint) is left out of the copy: it goes at once, as before, and the copy's label sits where the chip's now is
+      c.removeAttribute("id");
+      c.querySelectorAll("[id]").forEach(n => n.removeAttribute("id"));
+      c.classList.remove("sweep", "lq-press");
+      c.style.cssText = lqChipLook(el);
+      return c;
+    }
+    document.addEventListener("click", (event) => {
+      lqChipTap = null;
+      lqChipEnd();
+      const chip = event.target instanceof Element ? event.target.closest(".chip") : null;
+      if (!chip || !lqOn() || !chip.parentElement || chip.closest(".lq-ghost")) return;
+      const box = chip.parentElement;
+      // the tapped chip, and any chip beside it that is on now (a one-of choice switches that one off)
+      const recs = [...box.children].filter(c => c.classList.contains("chip") && (c === chip || c.getAttribute("aria-pressed") === "true")).slice(0, 8)
+        .map(c => { const on = c.getAttribute("aria-pressed") === "true"; return { key: c.textContent, on, copy: on ? lqChipCopy(c) : null, off: on ? null : lqOffLook(c) }; });
+      lqChipTap = { box, boxId: box.id, recs };
+    }, true);
+    document.addEventListener("click", () => {
+      const t = lqChipTap;
+      lqChipTap = null;
+      if (!t) return;
+      const box = t.box.isConnected ? t.box : t.boxId ? document.getElementById(t.boxId) : null;
+      if (!box || !lqShown(box)) return;
+      const chips = [...box.children].filter(c => c.classList.contains("chip"));
+      for (const rec of t.recs) {
+        const el = chips.find(c => c.textContent === rec.key);
+        if (!el || !lqShown(el)) continue;
+        const on = el.getAttribute("aria-pressed") === "true";
+        if (on === rec.on) continue;
+        let copy = rec.copy;
+        if (on) {   // switched on: copy the chip's switched-on look, then draw the chip switched off underneath while the copy is uncovered
+          el.classList.remove("sweep");
+          el.classList.add("lq-chip-snap", "lq-chip-hold");   // (hold first: its tick, if it has one, waits hidden until the fill is done)
+          copy = lqChipCopy(el);
+          for (const [k, v] of Object.entries(rec.off)) el.style.setProperty(k, v, "important");   // its own switched-off colours, exactly as they were
+          el.classList.remove("lq-chip-snap");
+        }
+        if (!copy) continue;
+        const r = el.getBoundingClientRect();
+        const rad = Math.min(r.height / 2, parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0) + "px";
+        const layer = document.createElement("div");
+        layer.className = "lq-ghost";
+        layer.setAttribute("aria-hidden", "true");
+        layer.inert = true;
+        layer.style.cssText = "position: absolute; left: 0; top: 0; width: 0; height: 0; margin: 0; padding: 0; border: 0; overflow: visible; z-index: 5;";
+        Object.assign(copy.style, { position: "absolute", margin: "0", boxSizing: "border-box", left: (r.left + scrollX) + "px", top: (r.top + scrollY) + "px",
+          width: r.width + "px", height: r.height + "px" });
+        layer.appendChild(copy);
+        document.body.appendChild(layer);
+        const shut = `inset(0 100% 0 0 round ${rad})`, open = `inset(0 0 0 0 round ${rad})`, gone = `inset(0 0 0 100% round ${rad})`;
+        const a = lqAnim(copy, on ? [{ clipPath: shut }, { clipPath: open }] : [{ clipPath: open }, { clipPath: gone }],
+          { duration: motionMs("--motion-med"), easing: getComputedStyle(document.documentElement).getPropertyValue("--motion-fill-ease").trim() || "ease-in-out", fill: "forwards" });
+        const done = () => {
+          if (!lqChipRuns.delete(done)) return;
+          if (el.classList.contains("lq-chip-hold")) {   // the chip takes its switched-on look in the same frame the copy goes, with no transition
+            el.classList.add("lq-chip-snap");
+            el.classList.remove("lq-chip-hold");
+            for (const k of Object.keys(LQ_OFF)) el.style.removeProperty(k);
+            void getComputedStyle(el).backgroundColor;
+            el.classList.remove("lq-chip-snap");
+          }
+          a.cancel();
+          layer.remove();
+        };
+        lqChipRuns.add(done);
+        a.addEventListener("finish", done, { once: true });
+        setTimeout(done, motionMs("--motion-med") + 400);
+      }
+    });
+
+    // LQ1 (button sweep): buttons now change colour smoothly (index.html "LQ1:"). A change of look or Light and dark changes every colour at
+    // once, which should be instant as before: so while the page's look changes, those colour changes do not play (one frame, then back).
+    function lqHush() {   // (applyPalette calls this first, so even a colour read straight after a change of look sees the new colour)
+      const root = document.documentElement;
+      if (root.classList.contains("lq-hush")) return;
+      root.classList.add("lq-hush");
+      requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove("lq-hush")));
+    }
+    new MutationObserver((records) => {   // and any other change of look
+      if (records.some(r => r.oldValue !== document.documentElement.getAttribute(r.attributeName))) lqHush();   // (set again to the same value: nothing changed)
+    }).observe(document.documentElement, { attributes: true, attributeOldValue: true, attributeFilter: ["data-t", "data-m", "data-appearance", "data-look", "style"] });
     // ----- The pop-up message with Undo -----
 
     const toast = document.getElementById("toast");
@@ -18707,6 +18806,7 @@
     // Sets --stage-0, --stage-1 ... so everything using them updates instantly.
     // v20: also sets light or dark first, because that changes the stage colours.
     function applyPalette(name) {
+      lqHush();   // LQ1: a change of look is instant, as before (no colour transitions while it lands)
       setAppearanceMark();
       // v20.1: your own colours when Custom is on.
       const colours = forShow(usingCustom() ? customColoursFor(STAGES.length) : stageColours(name, STAGES.length));

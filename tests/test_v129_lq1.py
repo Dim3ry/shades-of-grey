@@ -40,6 +40,22 @@ ANIMS = """([sel, pseudo]) => { const el = typeof sel === 'string' ? document.qu
 OURS = """() => ({ anims: document.getAnimations().filter(a => a.playState === 'running' || a.playState === 'paused').length,
     ghosts: document.querySelectorAll('.lq-ghost').length, fills: document.querySelectorAll('.lq-fill').length })"""
 
+# Button sweep (James, 3 Nov). Every kind of button on the screen: (a) no browser tap square; (b) its colour changes on a clock, not in one frame
+# (transitions present); (c) anything drawn in a ::before or ::after with a fill stays inside the rounded shape.
+KINDS = [".primary-button", ".plain-button", ".danger-button", ".link-button", ".chip", ".seg > button", ".step-back", ".up-button", ".group-button",
+         ".faction-button", ".recipe-item", ".recipe-chip", ".guides-row", ".swatch-tile", ".theme-swatch", ".more-info-button", ".card-fold-button"]
+SWEEP = """(kinds) => { const seen = {}, still = [], square = [], noTrans = [];
+    const tap = document.querySelectorAll('a, button, summary, label, [role=button], [role=tab], .chip');
+    for (const el of tap) if (el.getClientRects().length && getComputedStyle(el).webkitTapHighlightColor !== 'rgba(0, 0, 0, 0)') square.push(el.className || el.tagName);
+    for (const k of kinds) { const el = [...document.querySelectorAll(k)].find(e => e.getClientRects().length && !e.closest('.lq-ghost')); if (!el) continue; seen[k] = 1;
+      const cs = getComputedStyle(el), props = cs.transitionProperty.split(', '), durs = cs.transitionDuration.split(', ').map(parseFloat);
+      const colourOn = props.some((p, i) => /^(background-color|border-color|color|outline-color|background-size|all)$/.test(p) && (durs[i] ?? durs[durs.length - 1]) > 0);
+      if (!colourOn && k !== '.seg > button') noTrans.push(k);   // (a switch's fill and label change by clip-path, checked in part 5)
+      for (const ps of ['::before', '::after']) { const pc = getComputedStyle(el, ps); if (pc.content === 'none' || pc.content === 'normal') continue;
+        const filled = pc.backgroundColor !== 'rgba(0, 0, 0, 0)' || pc.backgroundImage !== 'none';
+        const clipped = /hidden|clip/.test(cs.overflow) || pc.borderTopLeftRadius === cs.borderTopLeftRadius || pc.position === 'static';
+        if (filled && !clipped) still.push(k + ps); } }
+    return { seen: Object.keys(seen), square: square.slice(0, 5), noTrans, unclipped: still }; }"""
 def touch(page, sel, kind):
     page.evaluate("""([s, k]) => { const el = document.querySelector(s); const r = el.getBoundingClientRect();
         el.dispatchEvent(new PointerEvent(k, { bubbles: true, cancelable: true, pointerType: 'touch', isPrimary: true, clientX: r.left + 5, clientY: r.top + 5 })); }""", [sel, kind])
@@ -141,10 +157,11 @@ def main():
             return { cls: o.classList.contains('lq-fill') && n.classList.contains('lq-fill'), old: kf(o), now: kf(n), label: n.dataset.lqLabel, text: n.textContent.trim(),
                      content: pa.content, afterColour: pa.color, afterBg: pa.backgroundColor, baseBg: getComputedStyle(n).backgroundColor,
                      view: (document.getElementById('scheme-view').getAnimations()[0] || {effect: {getKeyframes: () => []}}).effect.getKeyframes().map(k => k.opacity) }; }""", [0])
-        check("picking Schemes: the old option drains and the new one floods (clip-path on their fill)",
-              f["cls"] and f["old"] and f["now"] and f["old"][0][0] == "inset(0px)" and f["now"][0][-1] == "inset(0px)", f)
+        full = lambda s: s.startswith("inset(0px") and "100%" not in s and " round " in s
+        check("picking Schemes: the old option drains and the new one floods (clip-path on their fill, its edge rounded like the option)",
+              f["cls"] and f["old"] and f["now"] and full(f["old"][0][0]) and full(f["now"][0][-1]), f)
         check("the colour moves across: Schemes fills from the side nearest Recipes, Recipes empties towards it",
-              f["now"] and "100%" in f["now"][0][0].split()[1] and f["old"] and f["old"][0][-1].endswith("100%)"), f)
+              f["now"] and f["now"][0][0].split()[1] == "100%" and f["old"] and f["old"][0][-1].split()[3] == "100%", f)
         check("the fill carries the option's own label, hidden from screen readers", f["label"] == f["text"] and f["content"].endswith('/ ""') if f["content"] else False, f)
         page.wait_for_timeout(550)
         r = page.evaluate("""() => { const n = document.querySelector('#recipe-seg [data-view=schemes]'); const c = getComputedStyle(n);
@@ -197,9 +214,45 @@ def main():
             && dayLabel(d, false) === new Date(d * 86400000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }))""")
         check("the graph's date labels read exactly as before", same)
 
+        print("\n--- 10. Button sweep: no tap square, smooth and clipped colour changes ---")
+        seen, problems = set(), {"square": [], "noTrans": [], "unclipped": []}
+        for go in ("showTab('units')", "showTab('settings')"):
+            page.evaluate(go)
+            page.wait_for_timeout(350)
+            r = page.evaluate(SWEEP, KINDS)
+            seen.update(r["seen"])
+            for k in problems: problems[k] += r[k]
+        check("no tappable thing shows the browser's own square when pressed (tap highlight transparent)", not problems["square"], problems["square"])
+        check("every kind of button changes colour on a clock, not in a single frame", not problems["noTrans"] and len(seen) >= 8, [problems["noTrans"], sorted(seen)])
+        check("every fill drawn beside a button stays inside its rounded shape", not problems["unclipped"], problems["unclipped"])
+        page.evaluate("showTab('units')")
+        page.wait_for_timeout(350)
+        page.evaluate("() => { if (document.getElementById('filter-card').classList.contains('hidden')) document.getElementById('toggle-filters').click(); }")
+        page.wait_for_timeout(450)
+        page.tap("#group-chips .chip:nth-child(1)")
+        ch = page.evaluate("""() => { const g = document.querySelector('body > .lq-ghost > .chip'); const el = document.querySelector('#group-chips .chip:nth-child(1)');
+            const a = g && g.getAnimations()[0]; const k = a ? a.effect.getKeyframes().map(x => x.clipPath) : [];
+            return { ghost: !!g, aria: g && g.parentElement.getAttribute('aria-hidden'), ids: g ? g.querySelectorAll('[id]').length + (g.id ? 1 : 0) : -1, k,
+                     copyBg: g && getComputedStyle(g).backgroundColor, copyColour: g && getComputedStyle(g).color, baseBg: getComputedStyle(el).backgroundColor,
+                     focusRing: document.activeElement === el && el.matches(':focus-visible') }; }""")
+        page.wait_for_timeout(500)
+        fin = page.evaluate("""() => { const el = document.querySelector('#group-chips .chip:nth-child(1)'); const c = getComputedStyle(el);
+            return { on: el.getAttribute('aria-pressed'), bg: c.backgroundColor, colour: c.color, left: document.querySelectorAll('.lq-ghost, .lq-chip-hold').length,
+                     inline: el.getAttribute('style') || '' }; }""")
+        check("a chip switched on fills with a clip whose leading edge is rounded like the chip (a copy, hidden from screen readers)",
+              ch["ghost"] and ch["aria"] == "true" and ch["ids"] == 0 and len(ch["k"]) == 2 and all(" round " in x for x in ch["k"]) and "100%" in ch["k"][0], ch)
+        check("while it fills, the label on the fill is in the switched-on colours and the chip under it in its switched-off ones (so contrast never drops)",
+              fin["on"] == "true" and ch["copyBg"] == fin["bg"] and ch["copyColour"] == fin["colour"] and ch["baseBg"] != fin["bg"], [ch, fin])
+        check("when the fill ends the chip is back to its own look, with nothing left over", fin["left"] == 0 and "important" not in fin["inline"], fin)
+        check("a touch tap leaves no focus ring", not ch["focusRing"], ch)
+        page.evaluate("() => { settings.appearance = 'light'; applyPalette(settings.palette); }")
+        moving = page.evaluate("() => document.getAnimations().filter(a => a instanceof CSSTransition && a.playState === 'running').map(a => a.transitionProperty + ' ' + (a.effect.target.className || ''))")
+        check("a change of look (Light here) stays instant: no colour transitions play", not moving, moving[:5])
+        page.evaluate("() => { settings.appearance = 'dark'; applyPalette(settings.palette); }")
         print("\n--- 9. Reduce motion ---")
         page.emulate_media(reduced_motion="reduce")
-        page.wait_for_timeout(200)
+        page.evaluate("showTab('recipes')")
+        page.wait_for_timeout(300)
         steps = [("the Painting switch", lambda: page.click("#recipe-seg button[data-view=schemes]")),
                  ("a shopping row leaving", lambda: (page.click("#recipe-seg button[data-view=shopping]"), page.wait_for_timeout(200),
                                                      page.evaluate("document.querySelector('#shop-panel .shop-remove').click()"))),
@@ -213,6 +266,8 @@ def main():
             if o["anims"] or o["ghosts"] or o["fills"]:
                 moving.append([name, o])
         check("with Reduce motion on, none of them starts an animation", not moving, moving)
+        r = page.evaluate(SWEEP, KINDS)
+        check("with Reduce motion on, every kind of button changes colour at once (no transitions)", len(r["seen"]) >= 4 and set(r["noTrans"]) == set(r["seen"]) - {".seg > button"}, r)
         ctx.close()
         browser.close()
     check("no page errors", not errors, errors[:3])

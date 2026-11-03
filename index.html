@@ -2720,6 +2720,22 @@
     /* Switch fill (James, 3 Nov: "slow empty and slow fill"): while an in-section switch changes, the old and new options are drawn as not selected and their fill is a
        copy of the option in the selected colours (::after, the label read from data-lq-label and hidden from screen readers), which app.js uncovers or covers with
        clip-path. Wherever the fill is, its label is in the selected colours, so the contrast is the same as at rest. Gone when the change ends. */
+    /* Button sweep (James, 3 Nov): no browser square on a tap (the pressed look above shows instead), and every kind of button changes colour
+       smoothly and the same way: one clock per kind (--motion-fast for press, hover, border and ring changes; the fills use clip-path, see below),
+       never in a single frame. A change of look (Settings) stays instant: app.js puts .lq-hush on the page for that moment. */
+    html, :is(a, button, summary, label, input, select, textarea, [role="button"], [role="tab"], [role="checkbox"], [role="switch"], .chip, .seg > button) { -webkit-tap-highlight-color: transparent; }
+    .primary-button, .plain-button { transition: translate var(--motion-fast) var(--motion-ease), scale var(--motion-fast) var(--motion-ease), box-shadow var(--motion-med) var(--motion-ease),
+      filter var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease), background-color var(--motion-fast) var(--motion-ease), color var(--motion-fast) var(--motion-ease); }
+    :is(.danger-button, .link-button, .step-back, .up-button, .each-up, .each-back, .group-button, .faction-button, .recipe-item, .recipe-chip, .paint-head, .guides-row,
+        .scheme-recipe-row, .swatch-tile, .qty-step, .switch-row button, .buy-shops button, .similar-tabs button, .where-buy > summary, .shop-more > summary, .where-buy-links a,
+        .shop-suggest-dismiss, .unlink, .more-info-button, .card-fold-button, .step-line, .pick-box, .legend button, .mentor-chip) {
+      transition: filter var(--motion-fast) var(--motion-ease), background-color var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease),
+        color var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease), outline-color var(--motion-fast) var(--motion-ease); }
+    .theme-swatch { outline: 3px solid transparent; outline-offset: 2px; transition: filter var(--motion-fast) var(--motion-ease), outline-color var(--motion-fast) var(--motion-ease); }   /* the chosen look's ring fades in rather than popping */
+    .lq-hush, .lq-hush *, .lq-hush *::before, .lq-hush *::after { transition: none !important; }
+    /* A chip switched on or off (app.js): drawn switched off under a copy of its switched-on look, which a clip with a rounded edge uncovers or covers. */
+    .chip.lq-chip-hold, .chip.lq-chip-snap { transition: none !important; }
+    #group-chips .chip.lq-chip-hold.lq-chip-hold[aria-pressed]::before { width: 0; margin-right: 0; opacity: 0; }
     .seg > button.lq-fill.lq-fill { position: relative; background: none; color: var(--muted); }
     .seg > button.lq-fill::after { content: attr(data-lq-label); content: attr(data-lq-label) / ""; position: absolute; inset: 0; box-sizing: border-box; padding: inherit;
       display: flex; align-items: center; justify-content: center; text-align: center; border-radius: inherit; pointer-events: none;
