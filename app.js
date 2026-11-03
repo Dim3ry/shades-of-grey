@@ -18259,7 +18259,7 @@
       classic: { dark: { page: "#0b1220", card: "#141d2f" }, light: { page: "#e9eff6", card: "#f8fafc" } },
       parchment: { dark: { page: "#17120e", card: "#211a14" }, light: { page: "#d8c59a", card: "#e4d4ae" } },
       forge: { dark: { page: "#0d0f11", card: "#16191c" }, light: { page: "#cdd1d5", card: "#dde1e5" } },
-      bench: { dark: { page: "#111815", card: "#19231f" }, light: { page: "#cfe0d4", card: "#e1ece4" } }
+      bench: { dark: { page: "#20251f", card: "#292f28" }, light: { page: "#e0e4d8", card: "#eef0e7" } }
     };
     const darkCard = () => THEME_SURFACES[currentTheme()].dark.card;
     const lightCard = () => THEME_SURFACES[currentTheme()].light.card;

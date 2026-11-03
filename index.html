@@ -331,7 +331,7 @@
     :root { --mentor-s0: #64748b; --mentor-s1: #6366f1; --mentor-s2: #38bdf8; --mentor-s3: #22d3ee; --mentor-s4: #a7f3d0; --mentor-dot: #7dd3fc; --mentor-glint: #ffffff; }
     :root[data-t="parchment"] { --mentor-dot: #dc6575; }
     :root[data-t="forge"] { --mentor-dot: #e8642c; }   /* TH2: the new forge orange */
-    :root[data-t="bench"] { --mentor-dot: #e4c968; }
+    :root[data-t="bench"] { --mentor-dot: #cdbd89; }
     .mentor-look-chips .chip { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; }
     .mentor-look-chips .ml-orb { width: 24px; height: 24px; flex: none; }   /* v126: 24 px keeps the chip at the one-line height (28 made it 52 px, a stretched pill) */
 
@@ -2315,87 +2315,90 @@
       --button-weight: 700;
       --button-transform: uppercase;
       --button-tracking: .05em;
-      --texture-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px;
+      /* TH4: the plain hobby desk. The cutting-mat grid (fine lines every 20 px, a stronger line every 100 px) and, last, a warm cork tint
+         that fades out within 12 px of the left and right edges, so it stays in the 16 px page margin and never sits behind text. */
+      --texture-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px, auto;
+      --grid-line: 1px;   /* the fine lines; half a pixel on sharp screens (see "TH4:" below) */
     }
     [data-t="bench"][data-m="dark"] {
-      --background: #111815;
-      --card: #19231f;
-      --track: #0e1411;
-      --border: #547164;
-      --text: #dfe7e2;
-      --muted: #8aa096;
-      --accent: #e4c968;
-      --on-accent: #221d0a;
-      --heading-colour: #dfe7e2;
-      --wordmark-colour: #e4c968;
-      --danger: #f2928a;
+      --background: #20251f;
+      --card: #292f28;
+      --track: #181c17;
+      --border: #859382;
+      --text: #e8e9e0;
+      --muted: #abb1a2;
+      --accent: #cdbd89;
+      --on-accent: #24200f;
+      --heading-colour: #e8e9e0;
+      --wordmark-colour: #cdbd89;
+      --danger: #f0978e;
       --shadow: rgba(0, 0, 0, 0.45);
-      --badge-bg: rgba(25, 35, 31, 0.85);
-      --accent-wash: rgba(228, 201, 104, 0.08);
-      --accent-wash-hover: rgba(228, 201, 104, 0.05);
-      --note: #7fc8d6;
-      --note-wash: rgba(127, 200, 214, 0.18);
-      --good: #7fd69a;
-      --good-wash: rgba(127, 214, 154, 0.12);
-      --bad: #f2928a;
-      --bad-wash: rgba(242, 146, 138, 0.1);
-      --warn: #f3dd8b;
-      --caution: #f0a64a;
-      --wish: #8cc4f0;
-      --grey-status: #9aaba3;
-      --chip-on: #221d0a;
-      --toast-action: #7a5c00;
-      --series-added: #8cc4f0;
-      --series-painted: #7fd69a;
-      --toast-ring: rgba(228, 201, 104, 0.45);
+      --badge-bg: rgba(41, 47, 40, 0.85);
+      --accent-wash: rgba(205, 189, 137, 0.08);
+      --accent-wash-hover: rgba(205, 189, 137, 0.05);
+      --note: #86c7d2;
+      --note-wash: rgba(134, 199, 210, 0.18);
+      --good: #86d096;
+      --good-wash: rgba(134, 208, 150, 0.12);
+      --bad: #f0978e;
+      --bad-wash: rgba(240, 151, 142, 0.1);
+      --warn: #fae242;
+      --caution: #f2a04c;
+      --wish: #94c1ec;
+      --grey-status: #abb1a2;
+      --chip-on: #24200f;
+      --toast-action: #5b4f1a;
+      --series-added: #94c1ec;
+      --series-painted: #86d096;
+      --toast-ring: rgba(205, 189, 137, 0.45);
       --basket-deep: #000000;
-      --first-letter: #e4c968;
+      --first-letter: #cdbd89;
       color-scheme: dark;
-      --card-shadow: 0 3px 8px rgba(0,0,0,.4);
-      --rule: 2px dashed var(--border);
-      --frame: 1px solid #263630;
+      --card-shadow: 0 1px 2px rgba(0,0,0,.3);
+      --rule: 1px dashed var(--border);
+      --frame: 1px solid #3a4238;
       --swatch-edge: rgba(255, 255, 255, 0.25);
-      --texture: linear-gradient(rgba(190,225,205,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(190,225,205,.06) 1px, transparent 1px), linear-gradient(rgba(190,225,205,.11) 1px, transparent 1px), linear-gradient(90deg, rgba(190,225,205,.11) 1px, transparent 1px);
+      --texture: linear-gradient(rgba(225,232,212,.03) var(--grid-line), transparent var(--grid-line)), linear-gradient(90deg, rgba(225,232,212,.03) var(--grid-line), transparent var(--grid-line)), linear-gradient(rgba(225,232,212,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(225,232,212,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(150,108,62,.16), transparent 12px, transparent calc(100% - 12px), rgba(150,108,62,.16));
     }
     [data-t="bench"][data-m="light"] {
-      --background: #cfe0d4;
-      --card: #e1ece4;
-      --track: #bcd0c3;
-      --border: #62846f;
-      --text: #14231b;
-      --muted: #4a6455;
-      --accent: #7a5c00;
-      --on-accent: #fff6d6;
-      --heading-colour: #14231b;
-      --wordmark-colour: #7a5c00;
-      --danger: #a3261c;
-      --shadow: rgba(20, 35, 27, 0.18);
-      --badge-bg: rgba(225, 236, 228, 0.92);
-      --accent-wash: rgba(122, 92, 0, 0.09);
-      --accent-wash-hover: rgba(122, 92, 0, 0.05);
-      --note: #1f5f6a;
-      --note-wash: rgba(31, 95, 106, 0.1);
-      --good: #1f6a3a;
-      --good-wash: rgba(31, 106, 58, 0.1);
-      --bad: #a3261c;
-      --bad-wash: rgba(163, 38, 28, 0.08);
-      --warn: #6e5000;
-      --caution: #8a4300;
-      --wish: #24508a;
-      --grey-status: #4a6455;
-      --chip-on: #fff6d6;
-      --toast-action: #e4c968;
-      --series-added: #24508a;
-      --series-painted: #1f6a3a;
-      --toast-ring: rgba(122, 92, 0, 0.45);
-      --basket-deep: #14231b;
-      --first-letter: #7a5c00;
+      --background: #e0e4d8;
+      --card: #eef0e7;
+      --track: #d2d7c8;
+      --border: #626c5f;
+      --text: #1b221b;
+      --muted: #475245;
+      --accent: #5b4f1a;
+      --on-accent: #fbf6e4;
+      --heading-colour: #1b221b;
+      --wordmark-colour: #5b4f1a;
+      --danger: #95261c;
+      --shadow: rgba(27, 34, 27, 0.18);
+      --badge-bg: rgba(238, 240, 231, 0.92);
+      --accent-wash: rgba(91, 79, 26, 0.09);
+      --accent-wash-hover: rgba(91, 79, 26, 0.05);
+      --note: #1d5761;
+      --note-wash: rgba(29, 87, 97, 0.1);
+      --good: #1d5a32;
+      --good-wash: rgba(29, 90, 50, 0.1);
+      --bad: #95261c;
+      --bad-wash: rgba(149, 38, 28, 0.08);
+      --warn: #603c00;
+      --caution: #823a00;
+      --wish: #245089;
+      --grey-status: #475245;
+      --chip-on: #fbf6e4;
+      --toast-action: #cdbd89;
+      --series-added: #245089;
+      --series-painted: #1d5a32;
+      --toast-ring: rgba(91, 79, 26, 0.45);
+      --basket-deep: #1b221b;
+      --first-letter: #5b4f1a;
       color-scheme: light;
-      --card-shadow: 0 3px 8px rgba(20,50,35,.18);
-      --rule: 2px dashed var(--border);
-      --frame: 1px solid #8fb09c;
-      --swatch-edge: rgba(20, 35, 27, 0.35);
-      --texture: linear-gradient(rgba(20,60,40,.10) 1px, transparent 1px), linear-gradient(90deg, rgba(20,60,40,.10) 1px, transparent 1px), linear-gradient(rgba(20,60,40,.18) 1px, transparent 1px), linear-gradient(90deg, rgba(20,60,40,.18) 1px, transparent 1px);
+      --card-shadow: 0 1px 2px rgba(60,55,30,.14);
+      --rule: 1px dashed var(--border);
+      --frame: 1px solid #b4bca9;
+      --swatch-edge: rgba(27, 34, 27, 0.35);
+      --texture: linear-gradient(rgba(40,55,30,.035) var(--grid-line), transparent var(--grid-line)), linear-gradient(90deg, rgba(40,55,30,.035) var(--grid-line), transparent var(--grid-line)), linear-gradient(rgba(40,55,30,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(40,55,30,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(140,98,52,.2), transparent 12px, transparent calc(100% - 12px), rgba(140,98,52,.2));
     }
     /* ----- v47: what every theme except Classic adds (Classic's own touches are in its TH1 block) ----- */
     /* :where() keeps these as weak as the plain rules, so the app's own special cases still win. */
@@ -2485,15 +2488,21 @@
     }
 
     /* Paint Bench: card titles are strips of masking tape with marker writing on them (still real headings for screen
-       readers). Paint swatches are circles already. The main button sits a touch crooked. */
+       readers). Paint swatches are circles already.
+       TH4: the tape is paler, with faint crepe crinkles across it and a soft sheen (gradients only, under the marker text at 9:1 or more).
+       A plain heading sits a touch crooked; a heading that holds a button (the folding Settings cards) and the main button stay straight. */
+    [data-t="bench"] { --tape: linear-gradient(rgba(255,255,255,.22), rgba(255,255,255,0) 45%, rgba(110,90,40,.06)), repeating-linear-gradient(92deg, rgba(110,90,40,.07) 0 1px, transparent 1px 3px, rgba(110,90,40,.04) 3px 4px, transparent 4px 7px), #e4d9b6; }
     [data-t="bench"] .card h2 {
-      display: inline-block; background: #e3d6a6; color: #2b2616;
+      display: inline-block; background: var(--tape); color: #2b2616;
       font-family: 'Permanent Marker', 'Comic Sans MS', cursive; font-weight: 400; font-size: 1rem;
-      text-transform: none; letter-spacing: 0; padding: 3px 14px; transform: rotate(-1.2deg);
+      text-transform: none; letter-spacing: 0; padding: 3px 14px; transform: rotate(-0.8deg);
       clip-path: polygon(0 0, 100% 0, 98% 25%, 100% 50%, 98% 75%, 100% 100%, 0 100%, 2% 75%, 0 50%, 2% 25%);
     }
+    [data-t="bench"] .card h2:has(button, a, input, select) { transform: none; }
     @media (min-width: 900px) { [data-t="bench"] .card h2 { font-size: 1.0625rem; } }
-    [data-t="bench"] .primary-button { transform: rotate(-0.6deg); }
+    @media (min-resolution: 2dppx) { [data-t="bench"] { --grid-line: .5px; } }   /* TH4: the fine grid lines are a hairline on a sharp phone screen */
+    /* TH4: on the pale light desk the start circle's segments (and the Mentor ring's) take a little more of the accent, so the circle stands off the page */
+    [data-t="bench"][data-m="light"] :is(body.launching, .mo-ring) .arc [data-tab] { background-color: color-mix(in srgb, var(--accent-fill, var(--accent)) 24%, var(--card)); }
 
     /* ----- v47: the Theme buttons in Settings -----
        One row of squares. Each square is a tiny page in its own theme (page colour and texture, a card, a button
@@ -2529,7 +2538,7 @@
     .theme-swatch[data-t="forge"] .ts-card { border-width: 2px; box-shadow: inset 0 0 0 2px var(--background); font-size: 1.0625rem; letter-spacing: .05em; line-height: .95; }
     .theme-swatch[data-t="bench"] .ts-card { background: transparent; border: 0; padding: 0; }
     .theme-swatch[data-t="bench"] .ts-name {
-      display: inline-block; background: #e3d6a6; color: #2b2616; padding: 3px 7px; transform: rotate(-2deg);
+      display: inline-block; background: var(--tape); color: #2b2616; padding: 3px 7px;
       font-family: 'Permanent Marker', 'Comic Sans MS', cursive; font-weight: 400; font-size: 0.75rem; line-height: 1.1; text-transform: none; letter-spacing: 0;
       clip-path: polygon(0 0, 100% 0, 97% 25%, 100% 50%, 97% 75%, 100% 100%, 0 100%, 3% 75%, 0 50%, 3% 25%);
     }
