@@ -379,10 +379,48 @@
     body.launching .mentor-orb svg { width: 64px; height: 64px; }
     body.launching .toast { bottom: calc(12px + env(safe-area-inset-bottom)); }
 
-    /* Mo4a, LR1: the start circle's segments are held back (hidden and not tappable) while the app loads. MO6: the loading ring is no longer drawn
-       inside the circle; the loading screen is the app icon's ring on a plain screen (see "MO6:" below), and it hands over to the circle when done. */
+    /* Mo4a: the loading ring (a fresh load only), drawn inside .arc so it scales with the circle. Three arcs in the Mentor orb's own colours,
+       each over a faint full track, turning slowly while they fill; the segments stay hidden (and nothing can be tapped) until it is full.
+       JF1 (James, 3 Nov): this ring, LR1's, is the loading ring again. MO6 had replaced it with a full-screen loading screen; that is gone. */
+    .mo-load { position: absolute; left: 0; top: 0; width: 390px; height: 360px; overflow: visible; pointer-events: none; }
+    .mo-load-turn { transform-box: view-box; transform-origin: 195px 180px; animation: mo-ring-turn 4s var(--motion-ease) infinite; }
+    .mo-load circle { fill: none; }
+    .mo-load .t { stroke: var(--text); stroke-opacity: 0.14; stroke-width: 3; }
+    .mo-load .a { stroke-width: 4.5; stroke-linecap: round; }
+    .mo-load .a0 { stroke: var(--mentor-a); }
+    .mo-load .a1 { stroke: var(--mentor-b); }
+    .mo-load .a2 { stroke: var(--mentor-c); }
     .ring-hold { visibility: hidden; }
     body.ring-loading .arc > button { pointer-events: none; }
+    @keyframes mo-ring-turn { to { transform: rotate(360deg); } }
+    /* LR1: the loading ring is in the page itself (inside .arc below), so it shows from the very first frame, before any script has run. <body> starts with
+       "launching ring-loading" and the four segments with "ring-hold"; early.js lights the ring as each script file arrives, then app.js runs Mo4a's three
+       steps on the same ring and takes it away (or at once if the app opens on a section). With the Futuristic look (the default) the ring is the orb's
+       own five segments, the app icon's ring, at Mo4a's place (radius 71): each one goes from faint to full in turn, clockwise from 12 o'clock, over a dark
+       band (the orb's badge colour, so it reads in light mode too). Magical and Grounded keep Mo4a's three arcs (data-look on the page, set by early.js).
+       The slow sweep is a separate box turned by CSS alone, so it keeps moving even while the phone is busy reading a big script file.
+       Reduced motion: no sweep and no turning; the segments light up in whole steps. */
+    .mo-load .lr-three { display: none; }
+    :root[data-look="magical"] .mo-load .lr-three, :root[data-look="grounded"] .mo-load .lr-three { display: inline; }
+    :root[data-look="magical"] .mo-load .lr-five, :root[data-look="grounded"] .mo-load .lr-five { display: none; }
+    .mo-load .lr-back { stroke: var(--mentor-lens); stroke-width: 14; }
+    .mo-load .lr-s { stroke-width: 10; opacity: 0.2; }
+    /* U7: the five segments take the same theme colours as round 7's Futuristic ring (t3, t2, half t2 and half dot, dot, t1), so the ring hands over to
+       an orb of the same colours. Round 6's strokes (--mentor-s0 to --mentor-s4) are listed under SWITCHING BACK in mentor-looks.js. */
+    .mo-load .lr-s0 { stroke: var(--mentor-t3, var(--mentor-rim)); stroke-dasharray: 49.57 446.11; stroke-dashoffset: -3.1; }
+    .mo-load .lr-s1 { stroke: var(--mentor-t2, var(--mentor-b)); stroke-dasharray: 49.57 446.11; stroke-dashoffset: -58.86; }
+    .mo-load .lr-s2 { stroke: color-mix(in srgb, var(--mentor-t2, var(--mentor-b)) 50%, var(--mentor-dot, var(--mentor-core))); stroke-dasharray: 60.73 446.11; stroke-dashoffset: -114.63; }
+    .mo-load .lr-s3 { stroke: var(--mentor-dot, var(--mentor-core)); stroke-dasharray: 71.87 446.11; stroke-dashoffset: -181.54; }
+    .mo-load .lr-s4 { stroke: var(--mentor-t1, var(--mentor-a)); stroke-dasharray: 183.39 446.11; stroke-dashoffset: -259.61; }
+    .lr-sweep {
+      position: absolute; left: 115px; top: 100px; width: 160px; height: 160px; border-radius: 50%; pointer-events: none;
+      background: conic-gradient(transparent 0turn 0.78turn, color-mix(in srgb, var(--mentor-dot) 75%, transparent) 1turn);
+      -webkit-mask: radial-gradient(closest-side, transparent 81%, #000 82.5%, #000 95%, transparent 96.5%);
+      mask: radial-gradient(closest-side, transparent 81%, #000 82.5%, #000 95%, transparent 96.5%);
+      will-change: transform; animation: lr-sweep 2.4s linear infinite;
+    }
+    @keyframes lr-sweep { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .lr-sweep { display: none; } }
 
     /* Mo3b: while the start circle turns into the bar (or back), a picture of the old shape is drawn on top for a moment: .mo-ring is the circle's
        segments (the rules above also match it), .mo-ghost is the bar's. Both are inert and removed when the move ends. */
@@ -2870,64 +2908,16 @@
       *, *::before, *::after { animation: none !important; transition: none !important; }
       .ripple { display: none; }
     }
-    /* ===== MO6: no flashes in the start circle and the bar, the icon ring is the loading screen, the lit piece slides (James, 3 Nov) =====
-       1. THE LOADING SCREEN (the first thing in <body>, so it is the first frame, before any script has run): a plain screen in the page colour with the
-       app icon's segmented ring and centre dot in the middle, the size (132 px across) and place (the middle of the screen) of the phone's own launch
-       screen, which is the manifest icon (icon-512.png) on the manifest background colour (#0b1220). Installed (display-mode standalone) the screen is
-       that exact colour in every theme and in light mode, so the phone's screen and the app's first frame are the same picture; it blends into your
-       theme as it hands over. The ring is the Futuristic orb's own drawing (the ml-* classes, so it ends exactly as the orb), shown with the icon's
-       proportions and round 7's ring colours (mo6-icon, below). Each segment lights up (a glow round it) as the app loads, clockwise from 12 o'clock (--l0 to --l4, set by
-       early.js and app.js); a slow sheen goes round meanwhile (CSS alone, so it keeps moving while the phone is busy). When the app is ready, app.js moves
-       and shrinks the ring onto the round Ask Mentor button's orb while the screen fades and the start circle's four segments grow out round it.
-       Reduced motion: no sheen, the glows come in whole steps, then the circle fades in. */
-    .mo6-load { position: fixed; inset: 0; z-index: 30; }
-    .mo6-load.mo6-handing, .mo6-load.mo6-leaving { pointer-events: none; }
-    .mo6-bg { position: absolute; inset: 0; background-color: var(--background); }
-    .mo6-spot { position: absolute; left: 50%; top: 50%; width: 157.5px; height: 157.5px; margin: -78.75px 0 0 -78.75px; }
-    .mo6-ring { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; transform-origin: 50% 50%; }
-    .mo6-ring circle { transition: stroke var(--mo6-ms, 200ms) linear, fill var(--mo6-ms, 200ms) linear, opacity var(--mo6-ms, 200ms) linear, stroke-width var(--mo6-ms, 200ms) linear, r var(--mo6-ms, 200ms) linear; }
-    /* the five segments' colours, clockwise from 12 o'clock: round 7's Futuristic ring (U7: the theme's own colours, --mentor-t1 to t3; the fallbacks
-       are for before U7), so the ring is the round button's drawing when it lands. The gap is the icon's. */
-    .mo6-load .mo6-icon .ml-k0 { stroke: var(--mentor-t3, var(--mentor-rim)); }
-    .mo6-load .mo6-icon .ml-k1 { stroke: var(--mentor-t2, var(--mentor-b)); }
-    .mo6-load .mo6-icon .ml-k2 { stroke: color-mix(in srgb, var(--mentor-t2, var(--mentor-b)) 50%, var(--mentor-dot, var(--mentor-core))); }
-    .mo6-load .mo6-icon .ml-k3 { stroke: var(--mentor-dot, var(--mentor-core)); }
-    .mo6-load .mo6-icon .ml-k4 { stroke: var(--mentor-t1, var(--mentor-a)); }
-    .mo6-load .mo6-icon .ml-gap { stroke: #22304a; }
-    .mo6-load .mo6-icon .ml-dot { fill: var(--mentor-dot, var(--mentor-core)); r: 13.6px; }
-    .mo6-load .mo6-ring.mo6-icon :is(.ml-segs circle, .ml-gap, .ml-glow1 circle, .ml-glow2 circle, .ml-glow3 circle) { r: 60.2px; }
-    .mo6-load .mo6-ring.mo6-icon :is(.ml-segs circle, .ml-gap) { stroke-width: 19.5; }
-    /* a lit segment: a fine bright edge along its outside and a soft glow; the segment's own colour never changes, so it stays the icon */
-    .mo6-load .ml-k0 { --lit: var(--l0, 0); }
-    .mo6-load .ml-k1 { --lit: var(--l1, 0); }
-    .mo6-load .ml-k2 { --lit: var(--l2, 0); }
-    .mo6-load .ml-k3 { --lit: var(--l3, 0); }
-    .mo6-load .ml-k4 { --lit: var(--l4, 0); }
-    .mo6-load .mo6-icon { --boost: 1.8; }
-    .mo6-load .mo6-ring .ml-glow1 circle { opacity: calc(var(--lit) * 0.16 * var(--boost, 1)); }
-    .mo6-load .mo6-ring .ml-glow2 circle { opacity: calc(var(--lit) * 0.1 * var(--boost, 1)); }
-    .mo6-load .mo6-ring .ml-glow3 circle { opacity: calc(var(--lit) * 0.06 * var(--boost, 1)); }
-    .mo6-load .mo6-ring .mo6-rim circle { stroke: #ffffff; stroke-width: 1.8; r: 69px; opacity: 0; }
-    .mo6-load .mo6-ring.mo6-icon .mo6-rim circle { opacity: calc(var(--lit) * 0.6); }
-    @media (display-mode: standalone) {
-      .mo6-bg { background-color: #0b1220; }
-      .mo6-load .mo6-icon .ml-lens { fill: #0b1220; }
-    }
-    .mo6-load .lr-sweep {
-      position: absolute; left: 12.65px; top: 12.65px; width: 132.2px; height: 132.2px; border-radius: 50%; pointer-events: none;
-      background: conic-gradient(rgba(255, 255, 255, 0) 0turn 0.7turn, rgba(255, 255, 255, 0.3) 1turn);
-      -webkit-mask: radial-gradient(closest-side, transparent 71.4%, #000 72.6%, #000 98.8%, transparent 100%);
-      mask: radial-gradient(closest-side, transparent 71.4%, #000 72.6%, #000 98.8%, transparent 100%);
-      will-change: transform, opacity; animation: lr-sweep 2.4s linear infinite, mo6-fade-in 600ms linear both;
-    }
-    @keyframes lr-sweep { to { transform: rotate(360deg); } }
-    @keyframes mo6-fade-in { from { opacity: 0; } }
-    @media (prefers-reduced-motion: reduce) { .lr-sweep { display: none; } }
-    /* While the ring hands over with the Futuristic look, it is the orb: the button's own drawing waits underneath until the ring has landed on it. */
-    :root[data-look="futuristic"] body.mo6-handing #mentor-button > svg { visibility: hidden; }
-    /* (v129 fix) and the round button itself waits unseen under the screen until the hand-over grows it in (it showed for a frame at full strength
-       under the screen as that began to fade, then dropped to the hand-over's start) */
-    body.ring-loading #mentor-button { opacity: 0; }
+    /* ===== MO6: no flashes in the start circle and the bar, the lit piece slides (James, 3 Nov) =====
+       1. (JF1, James 3 Nov: MO6's full-screen loading screen, the app icon's ring in the middle of a plain screen, is gone. LR1's loading ring round
+       the start circle's centre is back; see "LR1:" near the top of the styles.) */
+    /* JF1: James's fixes (3 Nov). A tap on a segment of the start circle must not light anything where the bar will be. The tapped segment moves
+       into the bar at once (the copies travel down while the real bar waits see-through, see Mo4b), and the phone's own tap highlight (Android's
+       translucent blue over the tapped button) went with it: it is drawn above the page and ignores the button's see-through travel look, so a
+       blue bar piece showed where the bar would be. No tap highlight and no long-press text selection on the circle, the bar, the Mentor button or
+       the travelling copies (the keyboard ring is kept; Mo1 and LQ1 already give the pressed looks). */
+    nav.tabs, nav.tabs *, .mo-tr, .mo-tr *, #mentor-button { -webkit-tap-highlight-color: transparent; }
+    nav.tabs .arc > button { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
     /* 2. THE TRAVEL (Mo4b, Mo4c). The bar's fade and the circle's glow were drawn on the real bar, above the travelling copies: the copies sank into the
        fade as they landed and the real bar then appeared at once, and the circle's glow went out in one frame. While the travel runs the real bar's
        fade is hidden and app.js draws both looks under the copies (mo6-fade: the bar's, mo6-glow: the circle's, the same rules as the real ones),
@@ -3097,10 +3087,6 @@
 </head>
 
 <body class="launching ring-loading">
-  <!-- MO6: the loading screen, in the page from the first frame (see "MO6:" in the CSS): the app icon's ring and centre dot on a plain screen, the same
-       size, place and colours as the phone's own launch screen. early.js and then app.js light its five segments; when the app is ready it moves into
-       the start circle and becomes the round Ask Mentor button's orb. -->
-  <div class="mo-load mo6-load" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="mo6-bg"></span><span class="mo6-spot"><svg xmlns='http://www.w3.org/2000/svg' viewBox='16.67 16.67 166.67 166.67' class='mo6-ring mo6-icon ml-futuristic ml-neutral' aria-hidden='true' focusable='false'><circle class='ml-lens' cx='100' cy='100' r='70'/><g transform='translate(100 100) rotate(-90)' fill='none'><g class='ml-glow3'><circle class='ml-k0' r='59.5' pathLength='373.85'/><circle class='ml-k1' r='59.5' pathLength='373.85'/><circle class='ml-k2' r='59.5' pathLength='373.85'/><circle class='ml-k3' r='59.5' pathLength='373.85'/><circle class='ml-k4' r='59.5' pathLength='373.85'/></g><g class='ml-glow2'><circle class='ml-k0' r='59.5' pathLength='373.85'/><circle class='ml-k1' r='59.5' pathLength='373.85'/><circle class='ml-k2' r='59.5' pathLength='373.85'/><circle class='ml-k3' r='59.5' pathLength='373.85'/><circle class='ml-k4' r='59.5' pathLength='373.85'/></g><g class='ml-glow1'><circle class='ml-k0' r='59.5' pathLength='373.85'/><circle class='ml-k1' r='59.5' pathLength='373.85'/><circle class='ml-k2' r='59.5' pathLength='373.85'/><circle class='ml-k3' r='59.5' pathLength='373.85'/><circle class='ml-k4' r='59.5' pathLength='373.85'/></g><circle class='ml-gap' r='59.5' pathLength='373.85'/><g class='ml-segs'><circle class='ml-k0' r='59.5' pathLength='373.85'/><circle class='ml-k1' r='59.5' pathLength='373.85'/><circle class='ml-k2' r='59.5' pathLength='373.85'/><circle class='ml-k3' r='59.5' pathLength='373.85'/><circle class='ml-k4' r='59.5' pathLength='373.85'/></g><g class='mo6-rim'><circle class='ml-k0' r='69' pathLength='373.85'/><circle class='ml-k1' r='69' pathLength='373.85'/><circle class='ml-k2' r='69' pathLength='373.85'/><circle class='ml-k3' r='69' pathLength='373.85'/><circle class='ml-k4' r='69' pathLength='373.85'/></g></g><circle class='ml-lens' cx='100' cy='100' r='49.5'/><circle class='ml-dot' cx='100' cy='100' r='13'/></svg><span class="lr-sweep" aria-hidden="true"></span></span></div>
   <!-- UX1b: the first stop for the Tab key: jumps past the menu bar to the page's content (wired in app.js). Shown only while focused. -->
   <button type="button" class="skip-link" id="skip-link">Skip to content</button>
   <!-- v14: shown while saving isn't working (storage full). Stays until a save works. -->
@@ -3114,6 +3100,8 @@
        The numbers that shape it are in the CSS (".arc"). The fourth segment is Tools and Settings (Guides, Settings, Help, Updates); its short label is Tools. -->
   <nav class="tabs" aria-label="Sections">
     <div class="arc">
+      <!-- LR1: the loading ring, in the page from the first frame (see "LR1:" in the CSS). early.js and then app.js light it; app.js takes it away. -->
+      <svg class="mo-load" viewBox="0 0 390 360" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" focusable="false"><g class="lr-five" fill="none" transform="translate(195 180) rotate(-90)"><circle class="lr-back" r="71"/><circle class="lr-s lr-s0" r="71"/><circle class="lr-s lr-s1" r="71"/><circle class="lr-s lr-s2" r="71"/><circle class="lr-s lr-s3" r="71"/><circle class="lr-s lr-s4" r="71"/></g><g class="lr-three" fill="none"><g class="mo-load-turn"><circle class="t" cx="195" cy="180" r="71" stroke-dasharray="123.92 446.11" transform="rotate(-80 195 180)"/><circle class="a a0" cx="195" cy="180" r="71" stroke-dasharray="0 446.11" transform="rotate(-80 195 180)"/><circle class="t" cx="195" cy="180" r="71" stroke-dasharray="123.92 446.11" transform="rotate(40 195 180)"/><circle class="a a1" cx="195" cy="180" r="71" stroke-dasharray="0 446.11" transform="rotate(40 195 180)"/><circle class="t" cx="195" cy="180" r="71" stroke-dasharray="123.92 446.11" transform="rotate(160 195 180)"/><circle class="a a2" cx="195" cy="180" r="71" stroke-dasharray="0 446.11" transform="rotate(160 195 180)"/></g></g></svg><span class="lr-sweep" aria-hidden="true"></span>
       <button data-tab="dashboard" class="ring-hold"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>Dashboard</button>
       <button data-tab="units" class="ring-hold"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 7.9-8 9-4.8-1.1-8-4.5-8-9V6l8-3z"/></svg></span>Models</button>
       <button data-tab="recipes" class="ring-hold"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3.5 4.2 6 7.6 6 10.5a6 6 0 0 1-12 0C6 10.6 8.5 7.2 12 3z"/></svg></span>Painting</button>

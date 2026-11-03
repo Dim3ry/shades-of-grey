@@ -68,48 +68,37 @@ try {
   }
 } catch (ignored) {}
 
-// LR1: THE LOADING RING. It is in index.html, so it shows from the first frame. This lights it as the script files arrive: each one that has
-// loaded lights a little more of the first three fifths (the files are counted in the order index.html loads them; nothing changes that order).
-// app.js then takes it over (minifolioRing.app) for Mo4a's three steps, which light the rest. It never goes backwards. While a big file is still on
-// its way the ring holds and the CSS sheen keeps moving. Reduced motion: each segment lights only once it is whole (steps, no fading).
-// MO6: the ring is now the loading screen, the app icon's ring in the middle of a plain screen (see "MO6:" in the CSS of index.html), with every
-// look. Its five segments light (a glow and a bright edge, --l0 to --l4 on .mo6-load) clockwise from 12 o'clock; the segments' own colours never
-// change while it loads, so the ring stays the icon the phone showed. The circle's place is still fitted here (the same sum as fitLaunch in app.js), so the
-// start circle is ready under the screen when the ring hands over to it.
+// LR1: THE LOADING RING. It is in index.html, so it shows from the first frame (see "LR1:" in the CSS there). This lights it as the script files
+// arrive: each one that has loaded lights a little more of the first three fifths (the files are counted in the order index.html loads them; nothing
+// changes that order). app.js then takes it over (minifolioRing.app) for Mo4a's three steps, which light the rest. It never goes backwards.
+// While a big file is still on its way the ring holds and the CSS sweep keeps moving. Reduced motion: each segment lights only once it is whole
+// (steps, no fading). The circle's place is fitted here too, the same sum as fitLaunch in app.js, so it is in the right place before app.js runs.
+// JF1 (James, 3 Nov): this is LR1's ring again. MO6 had made it a full-screen loading screen (the app icon's ring in the middle of a plain
+// screen); James asked for this ring back, so that screen's code and styles are gone.
 try {
   const root = document.documentElement;
   const RING_FILES = 10;      // this file and the data files index.html loads after it and before app.js (colour.js to mentor-engine.js)
   const FILES_SHARE = 0.6;    // how much of the ring they light; Mo4a's three steps in app.js light the rest
+  const ARC = 123.92, CIRCLE = 446.11;   // Mo4a's three arcs (Magical and Grounded): 100 degrees each of the radius 71 circle
   const still = () => !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   const ring = window.minifolioRing = {
     progress: 0,
     app: false,   // set by app.js when it takes over
     draw(p) {
       ring.progress = Math.max(ring.progress, Math.min(1, p || 0));
-      const box = document.querySelector(".mo6-load.mo-load");
-      if (!box) return ring.progress;
+      const svg = document.querySelector(".tabs .mo-load");
+      if (!svg) return ring.progress;
       const whole = still();
-      for (let i = 0; i < 5; i++) {
-        const f = Math.min(1, Math.max(0, ring.progress * 5 - i));
-        box.style.setProperty("--l" + i, String(whole ? (f > 0.999 ? 1 : 0) : Math.round(f * 1000) / 1000));
-      }
-      box.setAttribute("aria-valuenow", String(Math.round(ring.progress * 100)));
+      const lit = (n, i) => {
+        const f = Math.min(1, Math.max(0, ring.progress * n - i));
+        return whole ? (f > 0.999 ? 1 : 0) : f;
+      };
+      svg.querySelectorAll(".lr-s").forEach((c, i) => { c.style.opacity = String(0.2 + 0.8 * lit(5, i)); });
+      svg.querySelectorAll(".lr-three .a").forEach((c, i) => c.setAttribute("stroke-dasharray", `${(ARC * lit(3, i)).toFixed(2)} ${CIRCLE}`));
+      svg.setAttribute("aria-valuenow", String(Math.round(ring.progress * 100)));
       return ring.progress;
     },
   };
-  // MO6: a safety net. If app.js never takes the screen over (it failed to start), the screen fades away 6 s after the page has loaded, so the
-  // page is never left covered.
-  window.addEventListener("load", () => setTimeout(() => {
-    const box = document.querySelector(".mo6-load");
-    if (!box || ring.app) return;
-    box.classList.remove("mo-load");
-    box.classList.add("mo6-leaving");
-    document.body.classList.remove("ring-loading");
-    document.querySelectorAll(".ring-hold").forEach((b) => b.classList.remove("ring-hold"));
-    box.style.transition = "opacity 240ms linear";
-    box.style.opacity = "0";
-    setTimeout(() => box.remove(), 300);
-  }, 6000));
   const fit = () => {
     const bar = document.querySelector(".app-bar");
     const top = bar ? bar.getBoundingClientRect().bottom : 57;   // 57: the header's height on a phone, until the header is on the page

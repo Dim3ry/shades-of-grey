@@ -5,7 +5,9 @@ New behaviour only:
    another; the four segments appear one by one and cannot be tapped until it is full; then the ring is gone and the circle works as before.
 2. No ring when the app is opened on a section or on a warm return (title button). (LR1, v126: with reduced motion the ring now lights in steps
    and goes as soon as it is full.)
-3. Leaving the circle while the ring runs removes it at once. Sizes, no sideways scroll, every theme in light and dark, a wide screen."""
+3. Leaving the circle while the ring runs removes it at once. Sizes, no sideways scroll, every theme in light and dark, a wide screen.
+JF1 (v130): James asked for LR1's ring back on 3 Nov (MO6's full-screen loading screen did not work for him), so the ring checks are LR1's again,
+as they were before MO6 changed them to follow its screen."""
 import os, sys
 from playwright.sync_api import sync_playwright
 
@@ -21,11 +23,11 @@ def check(name, ok, detail=""):
     print(("PASS " if ok else "FAIL ") + name + ("" if ok else f"  -> {detail}"))
 
 RING = "() => !!document.querySelector('.mo-load')"
-# one sample of the ring: aria, how lit each of its parts is (0 to 1 each), which segments are hidden / tappable
-# v129 (MO6): the ring is the loading screen's icon ring now, with five segments lit by --l0 to --l4 (it was Mo4a's three arcs, lit by their dash length)
+# one sample of the ring: aria, arc fill (0 to 1 each), which segments are hidden / tappable
 SAMPLE = """() => { const r = document.querySelector('.mo-load'); if (!r) return null;
+    const L = 2 * Math.PI * 71 * 100 / 360;
     return { role: r.getAttribute('role'), name: r.getAttribute('aria-label'), now: +r.getAttribute('aria-valuenow'),
-             arcs: [0, 1, 2, 3, 4].map(i => parseFloat(r.style.getPropertyValue('--l' + i) || '0')),
+             arcs: [...r.querySelectorAll('.a')].map(c => parseFloat(c.getAttribute('stroke-dasharray')) / L),
              hidden: [...document.querySelectorAll('.arc [data-tab]')].map(b => getComputedStyle(b).visibility === 'hidden'),
              tappable: [...document.querySelectorAll('.arc [data-tab]')].map(b => getComputedStyle(b).pointerEvents !== 'none') }; }"""
 # collect samples every frame from page load until the ring is gone
@@ -54,17 +56,15 @@ def main():
         s = page.evaluate(SAMPLE)
         check("a ring is there, role progressbar, named Loading, 0 to 100", s and s["role"] == "progressbar" and s["name"] == "Loading", s)
         check("no words are drawn by the ring (no text inside it)", page.evaluate("() => document.querySelector('.mo-load').textContent.trim() === ''"))
-        # v129 (MO6, James): the loading ring is no longer drawn round the Mentor button inside the circle; it is the loading screen, the app icon's
-        # ring in the middle of the screen (the circle is held back under it), and it uses the icon's own five colours while it loads
-        check("it sits in the middle of the screen (the loading screen), not round the Mentor button", page.evaluate("""() => {
-            const r = document.querySelector('.mo-load .mo6-ring').getBoundingClientRect();
-            return Math.abs((r.left + r.width / 2) - innerWidth / 2) < 1 && Math.abs((r.top + r.height / 2) - innerHeight / 2) < 1; }"""))
-        check("the five segments use round 7's Futuristic ring colours while it loads (U7: the theme's own, with fallbacks)", page.evaluate("""() => {
-            const p = document.createElement('i'); document.body.appendChild(p);
-            const want = ['var(--mentor-t3, var(--mentor-rim))', 'var(--mentor-t2, var(--mentor-b))', 'color-mix(in srgb, var(--mentor-t2, var(--mentor-b)) 50%, var(--mentor-dot, var(--mentor-core)))',
-                          'var(--mentor-dot, var(--mentor-core))', 'var(--mentor-t1, var(--mentor-a))'].map(v => { p.style.color = v; return getComputedStyle(p).color; });
-            p.remove();
-            return [0, 1, 2, 3, 4].every(i => getComputedStyle(document.querySelector('.mo-load .ml-segs .ml-k' + i)).stroke === want[i]); }"""))
+        check("it sits inside the circle: between the Mentor button and the segments' inner edge (radius 71 of 62 to 80)", page.evaluate("""() => {
+            const r = document.querySelector('.mo-load').getBoundingClientRect(), o = document.getElementById('mentor-button').getBoundingClientRect();
+            return Math.abs((r.left + r.width / 2) - (o.left + o.width / 2)) < 1 && Math.abs((r.top + r.height / 2) - (o.top + o.height / 2)) < 1; }"""))
+        # LR1 (v126): with the Futuristic look (the default) the ring is the orb's own five segments, not Mo4a's three arcs in the old orb's colours,
+        # and the slow movement is a sweep going round (2.4 s a turn) instead of the arcs turning (Magical and Grounded keep the three turning arcs;
+        # tests/test_v126_lr1.py checks those). So these two checks follow the Futuristic ring.
+        check("the five segments use the Mentor orb's own colours (the --mentor tokens)", page.evaluate("""() => {
+            const cs = i => getComputedStyle(document.querySelector('.mo-load .lr-s' + i)).stroke, orb = i => getComputedStyle(document.querySelector('#mentor-button .ml-segs .ml-k' + i)).stroke;
+            return [0, 1, 2, 3, 4].every(i => cs(i) === orb(i)); }"""))
         check("it moves slowly (an endless 2.4 s sweep)", page.evaluate("""() => { const a = document.querySelector('.lr-sweep').getAnimations()[0];
             return a && a.effect.getComputedTiming().iterations === Infinity && a.effect.getComputedTiming().duration === 2400; }"""))
         fresh(page)
@@ -73,12 +73,12 @@ def main():
         check("the ring was seen filling and then left (gone at the end)", len(live) > 5 and samples[-1] is None, len(samples))
         nows = [x[1]["now"] for x in live]
         check("aria-valuenow only ever rises", nows == sorted(nows) and nows[-1] >= 90, nows[-3:])
-        last = [i for i, x in enumerate(live) if x[1]["arcs"][3] > 0.99]
-        after = [i for i, x in enumerate(live) if x[1]["arcs"][4] > 0.01]
-        check("the parts light one after another (the last starts only after the one before is full)", last and after and after[0] >= last[0] - 1, (last[:1], after[:1]))
+        first_full = [i for i, x in enumerate(live) if x[1]["arcs"][0] > 0.99]
+        second_start = [i for i, x in enumerate(live) if x[1]["arcs"][1] > 0.01]
+        check("arcs fill one after another (the second starts only after the first is full)", first_full and second_start and second_start[0] >= first_full[0] - 1, (first_full[:1], second_start[:1]))
         counts = [sum(1 for h in x[1]["hidden"] if not h) for x in live]
         check("segments appear one by one (visible count goes 0, then up by 1 at a time to 4)", counts[0] == 0 and counts[-1] == 4 and all(b - a <= 1 for a, b in zip(counts, counts[1:])), counts[::6])
-        check("nothing can be tapped until the ring is full", all(not any(x[1]["tappable"]) for x in live[:-1] if x[1]["arcs"][4] < 0.99))
+        check("nothing can be tapped until the ring is full", all(not any(x[1]["tappable"]) for x in live[:-1] if x[1]["arcs"][2] < 0.99))
         check("shown for at least 1.2 s", live[-1][0] >= 1100, live[-1][0])
         page.wait_for_timeout(900)
         check("ring finished and removed: no ring in the page, circle still showing", page.evaluate("() => !document.querySelector('.mo-load') && document.body.classList.contains('launching') && !document.body.classList.contains('ring-loading')"))

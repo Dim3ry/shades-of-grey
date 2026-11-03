@@ -4934,48 +4934,35 @@
     }
 
     // Mo4a: THE LOADING RING (a fresh page load only; the start circle is never redrawn when the app returns from the background, so neither is this).
-    // LR1: the ring is in index.html, so it shows from the first frame, and early.js lights it as the script files arrive (window.minifolioRing). Here
-    // Mo4a's three real start-up steps (bootSteps above) take it on from wherever that got to: each step lights its third of what is left once the step
-    // is done and the one before has filled, and takes at least 400 ms to fill, so the ring still shows for 1.2 s at least once the app runs and waits
-    // for the page to finish loading if that is later (but gives up after 5 s). The drawing is early.js's minifolioRing.draw, so both light it the same way.
-    // MO6: the ring is now the loading screen: the app icon's ring in the middle of a plain screen (.mo6-load, the first thing in index.html's <body>),
-    // the same picture as the phone's own launch screen, with every Mentor look. The start circle is drawn underneath meanwhile, its four segments held
-    // back. When the ring is full it hands over (handOver): the ring moves and shrinks onto the round Ask Mentor button's orb, the screen fades, the
-    // button grows in round it and the four segments grow out of the middle one after another, clockwise from the top left (Models, Painting, Tools,
-    // Dashboard). With the Futuristic look the ring lands exactly on the button's own drawing (same drawing, colours blending from the icon's to yours);
-    // with Magical or Grounded the ring fades into that look's drawing as it lands. Nothing can be tapped until the hand-over is done.
-    // Reduced motion (or no animation support): no sheen and no minimum time: the ring lights in whole steps as each step is done, then the screen fades
-    // out over the circle (no movement). Opening a section ends it at once; opening the app on a section fades the screen away over the section.
+    // LR1: the ring is now in index.html, so it shows (faint, with a slow sweep) from the first frame, and early.js lights it as the script files
+    // arrive (window.minifolioRing). Here Mo4a's three real start-up steps (bootSteps above) take it on from wherever that got to: each step lights
+    // its third of what is left once the step is done and the one before has filled, and takes at least 400 ms to fill, so the ring still shows for
+    // 1.2 s at least once the app runs and waits for the page to finish loading if that is later (but gives up after 5 s). The four segments are
+    // hidden and appear one by one over this part; they and the Mentor button can be tapped once it is full. With the Futuristic look the ring is the
+    // orb's own five segments, with Magical or Grounded Mo4a's three arcs (the drawing is early.js's minifolioRing.draw, so both files light it the same way).
+    // Reduced motion (or no animation support): no sweep or turning, and no minimum time: the ring lights in whole steps as each step is done, the
+    // segments simply appear, and it goes as soon as it is full. Opening a section ends it at once; opening the app on a section takes it away at once.
+    // JF1 (James, 3 Nov): this is LR1's ring again, round the start circle's centre, as it was from v126 to v128. MO6 (v129) had made it a
+    // full-screen loading screen that handed over to the circle; James asked for this ring back, so that screen's code is gone.
     const RING_FILL_MS = 400;
-    const HAND_MS = 720, HAND_GROW_MS = 480, HAND_STAGGER = 80, HAND_EASE = "cubic-bezier(.2,.8,.2,1)";   // MO6: the hand-over
     let ringState = null;
     function ringDraw(p) { return window.minifolioRing ? window.minifolioRing.draw(p) : p; }
-    // MO6: the loading screen stops being a progress bar at once (so nothing is left waiting on it) and fades out over ms (0: at once).
-    function fadeLoadBox(box, ms) {
-      if (!box || !box.isConnected) return;
-      box.classList.remove("mo-load");
-      box.removeAttribute("role");
-      box.setAttribute("aria-hidden", "true");
-      box.classList.add("mo6-leaving");
-      if (!ms || !Element.prototype.animate) { box.remove(); return; }
-      const from = parseFloat(getComputedStyle(box).opacity);   // from where it is (it may be part way through a fade already)
-      box.animate([{ opacity: Number.isFinite(from) ? from : 1 }, { opacity: 0 }], { duration: ms, easing: "linear", fill: "forwards" }).onfinish = () => box.remove();
-    }
-    // The screen as index.html drew it, before the app took it over: the app opened on a section (or the ring cannot run). It fades away over the section.
+    // The ring as index.html drew it, before the app took it over: taken away at once (the app opened on a section, or the ring cannot run).
     function dropBootRing() {
       if (window.minifolioRing) window.minifolioRing.app = true;
-      fadeLoadBox(document.querySelector(".mo6-load.mo-load"), motionMs("--motion-med"));
+      for (const n of arcEl.querySelectorAll(".mo-load, .lr-sweep")) n.remove();
       for (const w of arcEl.querySelectorAll(".ring-hold")) w.classList.remove("ring-hold");
       document.body.classList.remove("ring-loading");
     }
     function startLoadingRing() {
-      const box = document.querySelector(".mo6-load.mo-load");
-      if (!box || !launching || ringState) { dropBootRing(); return; }
+      const svg = arcEl.querySelector(".mo-load");
+      if (!svg || !launching || ringState) { dropBootRing(); return; }
+      const sweep = arcEl.querySelector(".lr-sweep");
       const moving = canMove();
       if (window.minifolioRing) window.minifolioRing.app = true;   // early.js stops lighting it; from here this does
       const p0 = window.minifolioRing ? window.minifolioRing.progress : 0;
-      // A2: the segments arrive clockwise from the top left. MN1: with the new places that is Models, Painting, Tools, Dashboard. Only this arrival
-      // order changes; the menu's own order (and keyboard order) is Dashboard, Models, Painting, Tools.
+      // A2: the ring turns clockwise from the top, so the segments arrive clockwise from the top left. MN1: with the new places that is
+      // Models, Painting, Tools, Dashboard. Only this arrival order changes; the menu's own order (and keyboard order) is Dashboard, Models, Painting, Tools.
       const byName = {};
       for (const b of arcEl.querySelectorAll("[data-tab]")) byName[b.dataset.tab] = b;
       const wedges = ["units", "recipes", "guides", "dashboard"].map(n => byName[n]);
@@ -4983,7 +4970,8 @@
       document.body.classList.add("ring-loading");
       const stepAt = [() => bootSteps.data, () => bootSteps.draw, () => bootSteps.load];
       const t0 = performance.now(), ends = [0, 0, 0], starts = [0, 0, 0];
-      const state = ringState = { box, wedges, anims: [], raf: 0, handed: false, stop() { cancelAnimationFrame(state.raf); } };
+      let revealed = 0, raf = 0;
+      const state = ringState = { svg, sweep, wedges, stop() { cancelAnimationFrame(raf); } };
       function step(now) {
         // when each step starts to fill: it is done and the one before has filled (the load step also gives up after 5 s)
         let part = 0;
@@ -4997,79 +4985,36 @@
           part += (starts[i] ? Math.min(1, Math.max(0, (now - starts[i]) / RING_FILL_MS)) : 0) / 3;
         }
         ringDraw(p0 + (1 - p0) * part);
-        if (part >= 0.999) { handOver(state); return; }
-        state.raf = requestAnimationFrame(step);
+        while (revealed < 4 && part >= (revealed + 1) / 4 - 0.02) {
+          const w = wedges[revealed++];
+          w.classList.remove("ring-hold");
+          if (moving) w.animate([{ opacity: 0, transform: "scale(0.86)" }, { opacity: 1, transform: "scale(1)" }], { duration: 520, easing: "cubic-bezier(.2,.8,.2,1)" });
+        }
+        if (part >= 0.999) { finish(); return; }
+        raf = requestAnimationFrame(step);
+      }
+      function finish() {
+        if (ringState !== state) return;
+        wedges.forEach(w => w.classList.remove("ring-hold"));
+        document.body.classList.remove("ring-loading");   // tappable from here
+        ringDraw(1);
+        if (!moving) { setTimeout(() => { if (ringState === state) endLoadingRing(); }, 300); return; }   // the full ring shows for a moment; the circle works already
+        const fade = { duration: 700, easing: "ease-out", fill: "forwards" };
+        const out = svg.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(1.12)" }], fade);
+        if (sweep) sweep.animate([{ opacity: 1 }, { opacity: 0 }], fade);
+        out.onfinish = () => { if (ringState === state) endLoadingRing(); };
       }
       step(performance.now());
-    }
-    // MO6: the loading screen becomes the start circle's centre.
-    function handOver(state) {
-      if (ringState !== state) return;
-      ringDraw(1);
-      const { box, wedges } = state;
-      const ring = box.querySelector(".mo6-ring"), bg = box.querySelector(".mo6-bg"), sheen = box.querySelector(".lr-sweep");
-      const target = orbEl.querySelector("svg");
-      const r0 = ring && ring.getBoundingClientRect(), r1 = target && target.getBoundingClientRect(), ob = orbEl.getBoundingClientRect();
-      state.handed = true;
-      box.classList.add("mo6-handing");   // the screen no longer takes taps,
-      document.body.classList.remove("ring-loading");   // and the circle does, as soon as the ring is full (as before), so a start is as quick to use
-      const end = () => { if (ringState === state) { state.landed = true; endLoadingRing(); } };
-      if (!canMove() || !r0 || !r0.width || !r1 || !r1.width || !ob.width) {   // reduced motion: no movement; the screen fades out over the whole circle
-        wedges.forEach(w => w.classList.remove("ring-hold"));
-        const a = box.animate([{ opacity: 1 }, { opacity: 0 }], { duration: motionMs("--motion-med") || 1, easing: "linear", fill: "forwards" });
-        state.screenAnims = [a];
-        a.onfinish = end;
-        return;
-      }
-      const k = r1.width / r0.width, dx = r1.left + r1.width / 2 - (r0.left + r0.width / 2), dy = r1.top + r1.height / 2 - (r0.top + r0.height / 2);
-      state.screenAnims = [];   // the loading screen's own moves (held, not undone, if a tap cuts the hand-over short)
-      box.style.setProperty("--mo6-ms", HAND_MS + "ms");
-      document.body.classList.add("mo6-handing");
-      ring.classList.remove("mo6-icon");   // its colours, widths and glows blend to the orb's own over the move (CSS transitions over --mo6-ms)
-      const T = { duration: HAND_MS, easing: HAND_EASE, fill: "forwards" };
-      const moveRing = (ring.parentElement || ring).animate([{ transform: "none" }, { transform: `translate(${dx}px, ${dy}px) scale(${k})` }], T);   // the ring and its sheen together
-      state.screenAnims.push(moveRing, bg.animate([{ opacity: 1 }, { opacity: 0 }], { duration: HAND_MS, easing: "ease-out", fill: "forwards" }));
-      if (sheen) state.screenAnims.push(sheen.animate([{ opacity: 1 }, { opacity: 0 }], { duration: motionMs("--motion-med"), easing: "linear", fill: "forwards" }));
-      if (currentMentorLook() !== "futuristic") {   // another look: the icon ring fades into that look's drawing as it lands
-        state.screenAnims.push(ring.animate([{ opacity: 1 }, { opacity: 0 }], { duration: HAND_MS / 2, delay: HAND_MS / 2, easing: "linear", fill: "both" }));
-      }
-      // the round button grows in round its drawing (its centre stays put, so the ring lands on it)
-      const os = orbEl.offsetWidth ? ob.width / orbEl.offsetWidth : 1;
-      orbEl.style.transformOrigin = `${Math.round((r1.left + r1.width / 2 - ob.left) / os * 100) / 100}px ${Math.round((r1.top + r1.height / 2 - ob.top) / os * 100) / 100}px`;
-      state.anims.push(orbEl.animate([{ transform: "scale(0.55)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: HAND_MS, easing: HAND_EASE }));
-      // the four segments grow out of the circle's middle, one after another
-      const cx = orbEl.offsetLeft + orbEl.offsetWidth / 2, cy = orbEl.offsetTop + orbEl.offsetHeight / 2, t0 = performance.now();
-      let shown = 0, landed = false, grown = null;
-      const maybeEnd = () => { if (landed && grown && grown.playState === "finished") end(); };
-      const tick = (now) => {
-        if (ringState !== state) return;
-        while (shown < wedges.length && now - t0 >= shown * HAND_STAGGER) {
-          const w = wedges[shown++];
-          w.style.transformOrigin = `${cx - w.offsetLeft}px ${cy - w.offsetTop}px`;
-          w.classList.remove("ring-hold");
-          const a = w.animate([{ opacity: 0, transform: "scale(0.6)" }, { opacity: 1, transform: "none" }], { duration: HAND_GROW_MS, easing: HAND_EASE });
-          state.anims.push(a);
-          if (shown === wedges.length) { grown = a; a.onfinish = maybeEnd; }
-        }
-        if (shown < wedges.length) state.raf = requestAnimationFrame(tick);
-      };
-      tick(t0);
-      moveRing.onfinish = () => { landed = true; maybeEnd(); };
     }
     function endLoadingRing() {
       const r = ringState;
       if (!r) return;
       ringState = null;
       r.stop();
-      r.anims.forEach(a => a.cancel());   // the circle and the button: at their end (the travel that follows a tap measures them)
-      r.wedges.forEach(w => { w.classList.remove("ring-hold"); w.style.transformOrigin = ""; });
-      orbEl.style.transformOrigin = "";
-      document.body.classList.remove("ring-loading", "mo6-handing");
-      if (r.landed) r.box.remove();   // the hand-over is done: the ring is the button's own drawing now
-      else {   // still loading (a section opened by code), or a tap cut the hand-over short: the screen holds where it is and goes quickly
-        (r.screenAnims || []).forEach(a => a.pause());
-        fadeLoadBox(r.box, motionMs("--motion-fast"));
-      }
+      r.svg.remove();   // the ring is gone, along with its progress bar role
+      if (r.sweep) r.sweep.remove();
+      r.wedges.forEach(w => { w.classList.remove("ring-hold"); w.getAnimations().forEach(a => a.finish()); });
+      document.body.classList.remove("ring-loading");
     }
 
 
