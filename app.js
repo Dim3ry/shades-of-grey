@@ -4938,7 +4938,7 @@
       const answer = MinifolioMentor.mentorAnswer(text, {
         confirmed: !!confirmed,   // E: a tapped "Did you mean" chip is answered plainly, with no second chip
         index: knowledgeIndex(),
-        paints: colourIdeaPool(),
+        paints: colourIdeaSuggestPool(),   // F2: no primers or inks, so a blend under a pick never uses one either
         tips: typeof MENTOR_TIPS === "undefined" ? [] : MENTOR_TIPS,
         ideas: (hex, part) => { pick = { hex, part }; return colourIdeas(null, hex, mentorRole(part)); },
       });
@@ -11949,6 +11949,24 @@
       return [...book.paints, ...searchedPaints.filter(k => !have.has(sameKey(k.name)))];
     }
 
+    // F2: primers and inks are never suggested as a colour idea, whatever the part. The paint's type decides when it has one (the
+    // built-in lists have none, and a paint of yours only has one if a backup or an import gave it one); otherwise its name does, with
+    // the same words the app already reads elsewhere (technique guessing, blends): "primer", Pro Acryl's "PRIME", a Citadel "... Spray"
+    // (their sprays are primers), "ink" or "inks" as a word ("Pink" is not one), and Scale75's Inktense inks. A paint whose type and
+    // name say neither is allowed: nothing is guessed from its colour or brand. Only the suggestions use this; Your Palette, recipes,
+    // the shopping list and the Start from list keep every paint.
+    const PRIMER_INK_TYPE = /\b(primers?|inks?)\b/i;
+    const PRIMER_INK_NAME = /\bprimers?\b|\bprime\b|\bspray$|\binks?\b|^inktense\b/i;
+    function isPrimerOrInk(paint) {
+      if (!paint) return false;
+      if (typeof paint.type === "string" && paint.type.trim()) return PRIMER_INK_TYPE.test(paint.type);
+      return PRIMER_INK_NAME.test(String(paint.name || "").trim());
+    }
+    // The paints a colour idea may suggest: colourIdeaPool without primers and inks (Colour ideas, the Paint Picker and Mentor's colour answers).
+    function colourIdeaSuggestPool() {
+      return colourIdeaPool().filter(p => !isPrimerOrInk(p));
+    }
+
     // v64: the Opposite of a colour darker than this lightness (0 to 1) is lifted to it, with at least this much saturation (colour wheel panel only).
     const OPPOSITE_DARK_LIFT = { l: 0.45, s: 0.55 };
 
@@ -12002,7 +12020,7 @@
       const C = MinifolioColour;
       const harmony = C.harmonies(baseHex);
       if (!harmony) return [];
-      const pool = colourIdeaPool();
+      const pool = colourIdeaSuggestPool();   // F2: never a primer or an ink
       const skip = [baseHex];
       // v35: in the Compendium there is no recipe (d is null), so only the chosen colour itself is left out
       if (d) for (const s of d.steps) for (const p of s.paints) if (MinifolioColour.isHex(p.colour)) skip.push(p.colour);
@@ -12836,6 +12854,10 @@
     // The box you type in, with its list. o = { id, label, groups: [{ label, options: [{ value, text }] }], value, one (what one option is, for
     // the count: "paint"), placeholder, onPick(value, focusSelector) }. The list shows only some of the options at first (60) and adds more as
     // you scroll or press the down arrow, so 500+ paints stay quick on a phone.
+    // F2: Enter (the phone keyboard's Done key) picks the first match once something is typed, not only when one match is left.
+    // Two options, used by Start from in Colour ideas: lead(openList) returns an element shown between the label and the box (the
+    // owned-paint swatches); openList() opens the full list with the focus in the box. clickOpens: false means a tap in the box does
+    // not open the list by itself (typing, the down arrow, the button next to the box or openList do).
     function buildSearchPicker(door, o) {
       const CHUNK = 60;
       const options = [];
@@ -12907,7 +12929,12 @@
       status.className = "hint combo-status";
       status.setAttribute("role", "status");
       status.setAttribute("aria-live", "polite");
-      wrap.append(label, row, list, status);
+      wrap.append(label);
+      if (o.lead) {
+        const lead = o.lead(() => { if (input.disabled) return; input.focus(); open(); });
+        if (lead) wrap.appendChild(lead);
+      }
+      wrap.append(row, list, status);
 
       let isOpen = false, typed = false, active = -1, rendered = 0, matched = options, viewListener = null;
       const addOptions = () => {
@@ -13011,7 +13038,7 @@
       input.addEventListener("input", () => { typed = true; if (!isOpen) open(); else refill(); clear.hidden = true; });
       input.addEventListener("click", () => {
         const first = !isOpen;
-        open();
+        if (o.clickOpens !== false) open();
         if (first && chosenText && input.value === chosenText) input.select();   // so typing replaces the paint that is chosen
       });
       input.addEventListener("keydown", (e) => {
@@ -13023,7 +13050,7 @@
           e.preventDefault();
           setActive(active + (e.key === "PageDown" ? 8 : -8));
         } else if (e.key === "Enter" && isOpen) {
-          const i = active >= 0 ? active : matched.length === 1 ? 0 : -1;
+          const i = active >= 0 ? active : matched.length === 1 || (typed && matched.length && searchNorm(input.value)) ? 0 : -1;   // F2: or the first match
           if (i >= 0) { e.preventDefault(); choose(matched[i], true); }
         } else if (e.key === "Escape" && (isOpen || input.value !== chosenText)) {
           e.preventDefault();
@@ -15395,10 +15422,14 @@
       if (!base) st.base = "";
       // v37 part 2: a box you type in, with the paints in a list under it that narrows as you type (and can still be scrolled)
       const pickGroups = compendiumPickGroups(choices);
+      // F2: your own paints first, as swatches under the heading; the long list only opens when you type or tap More paints
+      const swatches = startFromSwatches(choices.own);
       body.appendChild(buildSearchPicker(door, {
         id: "colour-ideas-base", label: "Start from", one: "paint", placeholder: "Type or choose a paint",
         emptyPlaceholder: "No paints with a colour yet",
-        groups: pickGroups, value: st.base,
+        groups: pickGroups, value: st.base, clickOpens: !swatches.length,
+        lead: swatches.length ? (openList) => buildStartSwatches(door, swatches, choices, st.base, choices.own.length > swatches.length, openList,
+          (value) => { st.base = value; redraw(`[data-start-swatch="${CSS.escape(value)}"]`); }) : null,
         onPick: (value, focus) => { st.base = value; redraw(focus); },
       }));
 
@@ -15434,6 +15465,50 @@
       return groups;
     }
 
+    // F2: the owned paints shown as swatches under Start from: up to 12, the ones used in the most recipe steps first (the paints you
+    // really paint with), then the rest in name order (the order of the list). own is choices.own (owned, with a real colour, by name).
+    const START_SWATCHES = 12;
+    function startFromSwatches(own) {
+      const uses = new Map();
+      for (const r of book.recipes) for (const s of r.steps) for (const sp of s.paints) uses.set(sp.paint, (uses.get(sp.paint) || 0) + 1);
+      return own.map((p, i) => ({ p, i, n: uses.get(p.id) || 0 })).sort((a, b) => b.n - a.n || a.i - b.i).slice(0, START_SWATCHES).map(x => x.p);
+    }
+    // The swatch buttons (a colour dot and the name, 44 px, wrapping onto lines), then More paints when you own more than are shown.
+    // The chosen paint's button is pressed (aria-pressed, filled and bold, as other chosen chips). A tap chooses it, as the list does.
+    function buildStartSwatches(door, paints, choices, chosenKey, more, openList, onPick) {
+      const box = document.createElement("div");
+      box.className = "start-swatches";
+      box.id = door.id("start-swatches");
+      box.setAttribute("role", "group");
+      box.setAttribute("aria-labelledby", door.id("colour-ideas-base-label"));
+      for (const p of paints) {
+        const key = choices.key(p);
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "chip start-swatch";
+        b.dataset.startSwatch = key;
+        b.setAttribute("aria-pressed", String(key === chosenKey));
+        const name = document.createElement("span");
+        name.className = "start-swatch-name";
+        name.textContent = p.name;
+        b.append(makeSwatch(p.colour), name);
+        if (p.brand) b.setAttribute("aria-label", `${p.name} (${p.brand})`);
+        b.addEventListener("click", () => onPick(key));
+        box.appendChild(b);
+      }
+      if (more) {
+        const m = document.createElement("button");
+        m.type = "button";
+        m.className = "plain-button start-more";
+        m.id = door.id("start-more");
+        m.textContent = "More paints";
+        m.setAttribute("aria-controls", door.id("colour-ideas-base-list"));
+        m.addEventListener("click", openList);
+        box.appendChild(m);
+      }
+      return box;
+    }
+
     // ---- v71: ASK THE MENTOR (Compendium, Pro preview) ----
     // Pick a base colour, a second colour and a part (armour, eyes, weapon or base) and get paint picks for that part, each with its reason.
     // It reuses the colour ideas above: colourIdeas() finds paints that go with a colour for a part (your own paints first, a poor fit
@@ -15459,12 +15534,13 @@
       if (!base) st.mentorBase = "";
       if (!second) st.mentorSecond = "";
       const groups = compendiumPickGroups(choices);
-      const picker = (id, label, field) => out.appendChild(buildSearchPicker(door, {
-        id, label, one: "paint", placeholder: "Type or choose a paint", emptyPlaceholder: "No paints with a colour yet",
+      // F2: each box has its own hint. Either colour alone gives picks, so the Second colour's hint says it is optional.
+      const picker = (id, label, field, placeholder) => out.appendChild(buildSearchPicker(door, {
+        id, label, one: "paint", placeholder, emptyPlaceholder: "No paints with a colour yet",
         groups, value: st[field], onPick: (value, focus) => { st[field] = value; redraw(focus); },
       }));
-      picker("mentor-base", "Base colour", "mentorBase");
-      picker("mentor-second", "Second colour", "mentorSecond");
+      picker("mentor-base", "Base colour", "mentorBase", "Choose your main paint");
+      picker("mentor-second", "Second colour", "mentorSecond", "Optional second paint");
       const partLabel = document.createElement("p");
       partLabel.className = "idea-label";
       partLabel.textContent = "Part";

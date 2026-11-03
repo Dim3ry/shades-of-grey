@@ -65,7 +65,7 @@ ROWS_JS = """(sel) => [...document.querySelectorAll(sel)].map(b => ({
     note: (b.querySelector('.idea-note') || {}).textContent || '' }))"""
 # everything WE wrote on the Compendium (paint names, brands and the pickers are the user's or built-in names, so they are left out)
 SHOWN_JS = """() => { const c = document.getElementById('compendium-body').cloneNode(true);
-    c.querySelectorAll('.idea-name, select, #cmp-faction-history-for').forEach(e => e.remove());
+    c.querySelectorAll('.idea-name, select, #cmp-faction-history-for, .start-swatches').forEach(e => e.remove());   // F2: the Start from swatches are your own paint names (and brands), like .idea-name
     return c.innerText + ' ' + [...c.querySelectorAll('[aria-label], title')].map(e => e.getAttribute('aria-label') || e.textContent).join(' '); }"""
 
 def rows(page, sel):

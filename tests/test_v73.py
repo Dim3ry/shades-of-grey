@@ -100,7 +100,9 @@ def main():
         check("Add to shopping list is still there", page.locator(f"{ROWS} .shop-add-row button").count() >= 1)
 
         print("\n--- 4. Owned and made-up paints ---")
-        load(page)   # the usual palette: Macragge Blue and others are owned
+        # the usual palette: Macragge Blue and others are owned. F2: primers and inks are never suggested, and the made-up "Ink Sky" counts as an
+        # ink by its name, so it is given a plain type here (the type decides when there is one) to stay the owned pick this check needs.
+        load(page, paints=[dict(x, type="Layer") if x["name"] == "Ink Sky" else x for x in t.PAINTS])
         open_mentor(page)
         pick(page, "base", "Macragge")
         owned = [page.locator(ROWS).nth(i) for i in range(page.locator(ROWS).count()) if "You own this" in page.locator(ROWS).nth(i).inner_text()]

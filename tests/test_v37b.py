@@ -210,9 +210,11 @@ def main():
         tog = page.evaluate("""() => { const b = document.getElementById('cmp-colour-ideas-base-toggle'); return { tab: b.tabIndex, label: b.getAttribute('aria-label'), type: b.type, ctl: b.getAttribute('aria-controls') }; }""")
         check("a button next to it opens the list without typing (a finger or a screen reader); it is out of the Tab order (the keyboard uses the arrow keys)",
               tog == {"tab": -1, "label": "Show the list: Start from", "type": "button", "ctl": "cmp-colour-ideas-base-list"}, tog)
-        page.click(BASE)
+        # F2: with paints you own (14 here), Start from shows them as swatches and a tap in the box no longer opens the long list by itself;
+        # the More paints button opens it, with the focus in the box (test_v127_f2 checks the tap). The checks below are otherwise unchanged.
+        page.click("#cmp-start-more")
         page.wait_for_timeout(100)
-        check("tapping the box opens the list: aria-expanded true, the list shows, and the status says how many paints there are",
+        check("More paints opens the list: aria-expanded true, the list shows, and the status says how many paints there are",
               page.get_attribute(BASE, "aria-expanded") == "true" and page.is_visible(LIST) and status(page, STAT) == f"{len(texts)} paints. Type to narrow the list.", status(page, STAT))
         opts = page.evaluate("""() => [...document.querySelectorAll('#cmp-colour-ideas-base-list [role=option]')].map(o => ({ id: o.id, sel: o.getAttribute('aria-selected'),
             pos: o.getAttribute('aria-posinset'), size: o.getAttribute('aria-setsize'), value: o.dataset.value, h: o.getBoundingClientRect().height }))""")
@@ -328,12 +330,12 @@ def main():
               page.input_value(BASE) == "" and page.evaluate("() => compendiumState.base") == "" and page.locator("#cmp-colour-ideas-none").count() == 1
               and page.evaluate("() => document.activeElement.id") == "cmp-colour-ideas-base" and not page.is_visible(CLR))
         # outside tap and Tab close it
-        page.click(BASE)
+        page.click("#cmp-start-more")   # F2: (was a tap in the box) More paints opens the list now
         page.wait_for_timeout(60)
         page.click("#cmp-wheel-hint")
         page.wait_for_timeout(80)
         check("tapping anywhere outside closes the list", page.get_attribute(BASE, "aria-expanded") == "false" and not page.is_visible(LIST))
-        page.click(BASE)
+        page.click("#cmp-start-more")   # F2: (was a tap in the box) More paints opens the list with the focus in the box
         page.keyboard.press("Tab")
         page.wait_for_timeout(80)
         check("pressing Tab closes the list and moves on (the list never traps the keyboard)", page.get_attribute(BASE, "aria-expanded") == "false" and page.evaluate("() => document.activeElement.id") != "cmp-colour-ideas-base")
@@ -804,7 +806,7 @@ def main():
                 return { rows, tog: [tog.width, tog.height] }; }""")
             check(f"at {width} px every search box is at least 44 px tall, wider than 150 px, inside the card, with its buttons beside it, and the text is 16 px (so a phone does not zoom in)",
                   all(r["h"] >= 44 and r["w"] > 150 and r["inCard"] and r["fits"] and r["font"] >= 16 for r in geo["rows"]) and geo["tog"][0] >= 44 and geo["tog"][1] >= 44 and no_sideways(page), geo)
-            page.click(BASE)
+            page.click("#cmp-start-more")   # F2: with paints you own, a tap in the box no longer opens the long list; More paints does
             page.wait_for_timeout(100)
             lst = page.evaluate("""() => { const l = document.getElementById('cmp-colour-ideas-base-list').getBoundingClientRect(), card = document.querySelector('#view-guides .card').getBoundingClientRect();
                 return { h: l.height, in: l.left >= card.left - 0.5 && l.right <= card.right + 0.5, vh: window.innerHeight, scrolls: document.getElementById('cmp-colour-ideas-base-list').scrollHeight > document.getElementById('cmp-colour-ideas-base-list').clientHeight }; }""")
