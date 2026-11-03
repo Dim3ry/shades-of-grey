@@ -123,8 +123,9 @@ def main():
             const own = w.getAnimations().map(a => [a.effect.getTiming().duration, a.effect.getKeyframes().map(k => k.clipPath)]);
             return { anims, own }; }""")
         names = {a[0]: a for a in info["anims"]}
-        check("opens out of the button: the window's own move is a 320 ms clip-path (no mp-grow)", "mp-grow" not in names
-              and len(info["own"]) == 1 and info["own"][0][0] == 320 and str(info["own"][0][1][0]).startswith("inset("), info)
+        # v129 (MO6, James 3 Nov evening: "much slower so it feels fluid"): the move now takes --motion-flow, 800 ms (it was 320 ms)
+        check("opens out of the button: the window's own move is an 800 ms clip-path (no mp-grow)", "mp-grow" not in names
+              and len(info["own"]) == 1 and info["own"][0][0] == 800 and str(info["own"][0][1][0]).startswith("inset("), info)
         # U6b (v126): the window's orb is the chosen look (Futuristic here), so the old lens orb's wake, glance and 40 s ring turn are gone;
         # the whole-orb float stays, and the look's own motion runs (Thinking's slow 14 s turn while Mentor gets ready, then the 6 s glow)
         check("idle: float 4 s, and the look's own slow motion", names.get("mp-float", [0, 0])[1] == 4000
@@ -138,7 +139,8 @@ def main():
         page.keyboard.press("Escape")
         closing = page.evaluate("() => window.__closing") or page.evaluate("() => { const w = document.querySelector('.mentor-window'); return w ? w.getAnimations().map(a => [a.effect.getTiming().duration, a.effect.getTiming().direction]) : null; }")
         # MW1 (v127): closing is the same move backwards into the button, 240 ms (X5 shrank it with mp-grow in reverse in 120 ms)
-        check("close is the same move in reverse, 240 ms", closing and [240, "reverse"] in closing, closing)
+        # v129 (MO6): closing is two thirds of the open, 533 ms (it was 240 ms)
+        check("close is the same move in reverse, 533 ms", closing and [533, "reverse"] in closing, closing)
         closed(page)
         check("nothing keeps running once closed", page.evaluate("() => document.getAnimations().filter(a => String(a.animationName || '').startsWith('mp-')).length") == 0)
         rm = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block", reduced_motion="reduce")

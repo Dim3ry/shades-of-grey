@@ -4604,7 +4604,7 @@
       const sh0 = O0 && shadowOf(O0.shadow), sh1 = shadowOf(O1.shadow), shAt = sh0 && sh1 ? blend(sh0.c, sh1.c) : null;
       const orbLast = {};
       const orbPut = (el, prop, value) => { const key = prop + (el === orbEl ? "o" : "s"); if (orbLast[key] !== value) { orbLast[key] = value; el.style[prop] = value; } };
-      function orbAt(p) {
+      function orbAt(p, f) {
         if (!O0) return;
         const v = (a, b) => r2(L(a * rel, b, p));
         orbPut(orbEl, "justifyContent", "flex-start");
@@ -4615,13 +4615,17 @@
         orbPut(orbEl, "fontSize", v(O0.fs, O1.fs) + "px");
         orbPut(orbEl, "lineHeight", v(O0.lh, O1.lh) + "px");
         if (orbSvg && size) { orbPut(orbSvg, "transformOrigin", "50% 0px"); orbPut(orbSvg, "transform", `scale(${Math.round(size / O1.size * 10000) / 10000})`); }
-        if (shAt) orbPut(orbEl, "boxShadow", `0px 0px ${Math.max(0, v(sh0.b, sh1.b))}px 0px ${shAt(Math.min(1, Math.max(0, p)))}`);
+        if (shAt) orbPut(orbEl, "boxShadow", `0px 0px ${Math.max(0, v(sh0.b, sh1.b))}px 0px ${shAt(f)}`);
       }
       function orbClear() {
         for (const k of ["justifyContent", "paddingTop", "rowGap", "fontSize", "lineHeight", "boxShadow"]) orbEl.style[k] = "";
         if (orbSvg) { orbSvg.style.transform = ""; orbSvg.style.transformOrigin = ""; }
       }
-      function render(p, pop) {
+      // MO6 (James, 3 Nov evening: "a slow fade"): the colours (each piece's fill, words, icon and line weight, the lit label's bold, the button's glow)
+      // blend on f, the travel's own time (not its eased, overshooting progress) on the --motion-flow-ease curve, so the change is spread over the whole
+      // travel instead of happening in its quick middle.
+      const flow = curveOf(getComputedStyle(document.documentElement).getPropertyValue("--motion-flow-ease"));
+      function render(p, pop, f) {
         const q = Math.min(1, Math.max(0, p)), out = TRAVEL_SPREAD * Math.sin(Math.PI * q) / sb;
         for (const it of items) {
           const pa = back && p > 1 ? 1 + Math.min(p - 1, it.sway) : p;   // MN1: the turn's progress (see SWAY)
@@ -4634,9 +4638,9 @@
           for (let i = N; i >= 0; i--) { const t = L(lo, hi, i / N); pts += `${r2(cx + ri * Math.cos(t))}px ${r2(cy + ri * Math.sin(t))}px${i ? "," : ""}`; }
           const k0 = it.k0, k1 = it.k1;
           put(it, it.w, "clipPath", `polygon(${pts})`);
-          put(it, it.w, "backgroundColor", it.bgAt(q));
+          put(it, it.w, "backgroundColor", it.bgAt(f));
           put(it, it.c, "transform", `translate(${r2(L(it.c0[0], it.c1[0], p) + dx - x0)}px, ${r2(L(it.c0[1], it.c1[1], p) + dy - y0)}px)`);
-          put(it, it.c, "color", it.colorAt(q));
+          put(it, it.c, "color", it.colorAt(f));
           // SM1 (Smooth1): the same sizes as before (font size, line height, gap and icon size blended on the clock), drawn with transform only:
           // the icon and the label each sit centred on their own line of the column, scaled from the sizes they are laid out at (b).
           const fs = L(k0.fs, k1.fs, p), lh = L(k0.lh, k1.lh, p), gap = L(k0.gap, k1.gap, p), ifs = L(k0.ifs, k1.ifs, p);
@@ -4650,17 +4654,17 @@
           put(it, it.icon, "transform", `translate(${r2(e[0])}px, ${r2(top + ifs / 2 + e[1])}px) scale(${Math.round(ifs / b.ifs * 10000) / 10000}) translate(-50%, -50%)`);
           put(it, it.text, "transform", `translate(${r2(e[2])}px, ${r2(top + ifs + gap + lh / 2 + e[3])}px) scale(${Math.round(fs / tb.fs * 10000) / 10000}) translate(-50%, -50%)`);
           if (it.cross) {   // MO6: the weight crossfades over the middle of the travel (0.3 to 0.7 of the way)
-            const x = Math.min(1, Math.max(0, (q - 0.3) / 0.4)), m = Math.round(x * x * (3 - 2 * x) * 1000) / 1000;
+            const x = Math.min(1, Math.max(0, (f - 0.15) / 0.7)), m = Math.round(x * x * (3 - 2 * x) * 1000) / 1000;
             put(it, it.warm, "transform", `translate(${r2(e[2])}px, ${r2(top + ifs + gap + lh / 2 + e[3])}px) scale(${Math.round(fs / k1.fs * 10000) / 10000}) translate(-50%, -50%)`);
             put(it, it.warm, "opacity", String(m));
             put(it, it.text, "opacity", String(Math.round((1 - m) * 1000) / 1000));
           }
-          put(it, it.icon, "color", it.iconAt(q));
-          put(it, it.svg, "strokeWidth", String(L(k0.stroke, k1.stroke, q)));
+          put(it, it.icon, "color", it.iconAt(f));
+          put(it, it.svg, "strokeWidth", String(L(k0.stroke, k1.stroke, f)));
         }
-        orbAt(p);
+        orbAt(p, f);
       }
-      render(0, 0);
+      render(0, 0, 0);
       document.body.classList.add("mo-travelling");   // the real segments: see-through and not tappable until the travel ends
       travelling = true;
       // MO6: the bar's fade and the circle's glow, drawn under the copies (the real bar's fade is hidden while the travel runs; see "MO6:" in the CSS)
@@ -4683,7 +4687,8 @@
       const frame = () => {
         if (!live) return;
         const p = clock.effect.getComputedTiming().progress, u = pop.effect.getComputedTiming().progress;
-        render(p == null ? 1 : p, u || 0);
+        const lin = Math.min(1, Math.max(0, ((clock.currentTime || 0) - (back ? TRAVEL_BACK_AT : 0)) / ms));   // MO6: the travel's own time, 0 to 1
+        render(p == null ? 1 : p, u || 0, flow(lin));
         raf = requestAnimationFrame(frame);
       };
       raf = requestAnimationFrame(frame);
@@ -4812,7 +4817,7 @@
 
     // MO6: THE LIT PIECE SLIDES. Switching sections, the accent fill of the bar used to jump from the old piece to the new one in one frame. Now one
     // fill (a slice of the band) slides along the arc from the old piece to the new one, turning about the band's centre and taking the new piece's
-    // span, over the section switch's own time (--motion-med); it passes over the pieces in between, and each piece's words and icon take the lit
+    // span, at the slow pace (--motion-flow, 800 ms, ease-out; James asked for it slower than the 240 ms section switch); it passes over the pieces in between, and each piece's words and icon take the lit
     // colours (and the bold weight once it is half covered) as it passes. It is drawn inside each piece (a conic slice in its own background), so
     // it shows only on the pieces, never in the gaps or over the Mentor button. The state (aria-current) changes at once as before; only the look
     // follows, and at the end the inline look goes, so the last frame is the real bar exactly. A new switch while it slides starts from where the
@@ -4862,7 +4867,9 @@
     function fillRun(snap) {
       const { pieces, to, from, spans, c, looks } = snap;
       const s = spans.get(to), end = [s[0] - 1.5, s[1] + 1.5];   // 1.5 degrees past each end: the edges fall in the gaps, so the piece is fully lit
-      const slide = canMove(), ms = motionMs(slide ? "--motion-med" : "--motion-fast") || 1;
+      // (James, 3 Nov evening) the slide takes the slow pace, --motion-flow on its ease-out curve, so it reads as a designed move, not a jump
+      const slide = canMove(), ms = motionMs(slide ? "--motion-flow" : "--motion-fast") || 1;
+      const ease = slide ? (getComputedStyle(document.documentElement).getPropertyValue("--motion-flow-ease").trim() || "ease-out") : "linear";
       const rgba = (col, a) => { const m = /^rgba?\(([^)]*)\)$/.exec(col); if (!m) return col; const v = m[1].split(/[\s,/]+/).filter(Boolean).map(Number);
         return `rgba(${v[0]}, ${v[1]}, ${v[2]}, ${Math.round((v.length > 3 ? v[3] : 1) * a * 1000) / 1000})`; };
       const mixCol = (a, b, q) => { const A = /^rgba?\(([^)]*)\)$/.exec(a), B = /^rgba?\(([^)]*)\)$/.exec(b); if (!A || !B) return q < 0.5 ? a : b;
@@ -4895,7 +4902,7 @@
       draw(0);
       // the clock the drawing follows (an animation that changes nothing, like the travel's), so the move shows in getAnimations and can be finished
       // It holds its end (fill forwards) so the last frame drawn is the end exactly; the next frame hands over to the real bar.
-      const clock = state.clock = arcEl.animate([{ opacity: 1 }, { opacity: 1 }], { duration: ms, easing: "linear", fill: "forwards" });
+      const clock = state.clock = arcEl.animate([{ opacity: 1 }, { opacity: 1 }], { duration: ms, easing: ease, fill: "forwards" });
       const frame = () => {
         if (fillState !== state) return;
         if (state.ended) { endFill(); return; }
@@ -5224,10 +5231,16 @@
     // the window's own, so on screen it goes in a straight line, and its scale starts at the button's drawing size. Closing plays the same
     // frames backwards into the button. Only transform, opacity and clip-path move, so no frame lays the page out again.
     // Reduced motion: no growing and no travel; the window fades in quickly and goes at once on closing.
-    const MENTOR_OPEN_MS = 320;
-    const MENTOR_CLOSE_MS = 240;
-    const MENTOR_SHAPE_AT = 0.7;          // the part of the move the shape takes; the skin and the words cross-fade in the rest
-    const MENTOR_MOVE_EASE = "cubic-bezier(0.3, 0, 0.2, 1)";
+    // MO6 (James, 3 Nov evening: "much slower so it feels fluid"): the open takes --motion-flow (800 ms) on its ease-out curve, and closing is the same
+    // move back in two thirds of that (it was 320 ms and 240 ms). The button's colour (the skin) now fades into the window's own surface over most of the
+    // open (from a tenth of the way to 85%), while the shape opens, and the words fade in only near the end (from 75%).
+    const mentorOpenMs = () => motionMs("--motion-flow") || 800;
+    const mentorCloseMs = () => Math.round(mentorOpenMs() * 2 / 3);
+    const mentorFlowEase = () => getComputedStyle(document.documentElement).getPropertyValue("--motion-flow-ease").trim() || "ease-out";
+    const MENTOR_SHAPE_AT = 0.7;          // the part of the move the shape takes
+    const MENTOR_SKIN = [0.1, 0.85];      // MO6: the button's colour fades into the window's over this part of the move
+    const MENTOR_WORDS_AT = 0.75;         // MO6: the words fade in from here to the end
+    const MENTOR_MOVE_EASE = "cubic-bezier(0.3, 0, 0.2, 1)";   // (the orb's settle into the chat view keeps this one)
     const MENTOR_SHADOW = 64;             // the clip opens this far past the window at the end, so its shadow shows before the clip is dropped
     const mentorReduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     // The frames of the move, measured now (the window at its resting place and size), or null when there is no round button on screen to grow from.
@@ -5248,11 +5261,11 @@
       skin.style.setProperty("--mp-hy", px(ly + b.height * 0.3));
       skin.style.setProperty("--mp-hr", px(b.width * 0.57));
       const frames = {
-        win: [{ transform: `translate(${px(dx)}, ${px(dy)})`, clipPath: from, easing: MENTOR_MOVE_EASE },
+        win: [{ transform: `translate(${px(dx)}, ${px(dy)})`, clipPath: from, easing: mentorFlowEase() },
           { transform: "translate(0px, 0px)", clipPath: `inset(0px round ${px(radius)})`, offset: MENTOR_SHAPE_AT },
           { transform: "translate(0px, 0px)", clipPath: `inset(-${MENTOR_SHADOW}px round ${px(radius + MENTOR_SHADOW)})` }],
-        skin: [{ opacity: 1 }, { opacity: 1, offset: MENTOR_SHAPE_AT }, { opacity: 0 }],
-        words: [{ opacity: 0 }, { opacity: 0, offset: MENTOR_SHAPE_AT }, { opacity: 1 }],
+        skin: [{ opacity: 1 }, { opacity: 1, offset: MENTOR_SKIN[0], easing: mentorFlowEase() }, { opacity: 0, offset: MENTOR_SKIN[1] }, { opacity: 0 }],
+        words: [{ opacity: 0 }, { opacity: 0, offset: MENTOR_WORDS_AT }, { opacity: 1 }],
         orb: null,
       };
       const icon = opener.querySelector("svg"), drawing = orbBox.querySelector("svg");
@@ -5262,14 +5275,14 @@
         const units = (el, fallback) => (el.viewBox && el.viewBox.baseVal && el.viewBox.baseVal.width) || fallback;
         const scale = (s.width / units(icon, 166.67)) / (o.width / units(drawing, 150));   // the same drawing size as on the button
         const tx = s.left + s.width / 2 - (o.left + o.width / 2) - dx, ty = s.top + s.height / 2 - (o.top + o.height / 2) - dy;
-        frames.orb = [{ transform: `translate(${px(tx)}, ${px(ty)}) scale(${Math.round(scale * 1000) / 1000})`, easing: MENTOR_MOVE_EASE },
+        frames.orb = [{ transform: `translate(${px(tx)}, ${px(ty)}) scale(${Math.round(scale * 1000) / 1000})`, easing: mentorFlowEase() },
           { transform: "translate(0px, 0px) scale(1)", offset: MENTOR_SHAPE_AT }, { transform: "translate(0px, 0px) scale(1)" }];
       }
       return frames;
     }
     // Plays the move on the window, its skin, its words and its orb (backwards when closing). Returns the window's own animation.
     function mentorPlayMove(state, frames, closing) {
-      const timing = { duration: closing ? MENTOR_CLOSE_MS : MENTOR_OPEN_MS, direction: closing ? "reverse" : "normal", fill: closing ? "forwards" : "none" };
+      const timing = { duration: closing ? mentorCloseMs() : mentorOpenMs(), direction: closing ? "reverse" : "normal", fill: closing ? "forwards" : "none" };
       const words = [...state.win.children].filter(el => el !== state.skin && el !== state.orbBox);
       const played = [state.win.animate(frames.win, timing), state.skin.animate(frames.skin, timing), ...words.map(el => el.animate(frames.words, timing))];
       if (frames.orb) played.push(state.orbBox.animate(frames.orb, timing));
@@ -5351,14 +5364,16 @@
 
     // The first question after a new index takes about 0.9 s with the CPU slowed 4x (X8b, with mentor-data.js; about 0.2 s on a fast machine), so the window asks one empty question once it has finished
     // growing. That builds the engine's word tables before the first real question.
-    function mentorWarmUp() {
+    // MO6: wait (ms) is how long to leave it: the window's opening move (the reading stalls the page for up to a second on a slow phone, and it fell in
+    // the middle of the open, so the open stuttered); it was always 400 ms.
+    function mentorWarmUp(wait) {
       if (mentorWarm || typeof MinifolioMentor === "undefined") return;
       mentorWarm = true;
       mentorMood("thinking");   // U6b: Mentor is reading its notes
       setTimeout(() => {
         try { MinifolioMentor.mentorAnswer("hello", { index: knowledgeIndex(), paints: [], tips: [] }); } catch (ignored) {}
         if (mentorState && mentorState.mood === "thinking") mentorMood("neutral");
-      }, 400);
+      }, Math.max(400, wait || 0));
     }
 
     let mentorDoors = 0;
@@ -5689,7 +5704,7 @@
         mentorFit(state);
       }
       close.focus({ preventScroll: true });
-      mentorWarmUp();
+      mentorWarmUp(mentorReduced() ? 0 : mentorOpenMs() + 80);   // MO6: Mentor reads its notes once the window has opened, so the open runs smoothly
       // MW1: the move starts in this same frame, so the window is never seen at full size before it grows
       const frames = mentorReduced() ? null : mentorMoveFrames(state);
       if (frames) mentorPlayMove(state, frames, false);
@@ -5729,7 +5744,7 @@
         else main = mentorPlayMove(state, frames, true);
         main.addEventListener("finish", done);
         main.addEventListener("cancel", done);
-        setTimeout(done, MENTOR_CLOSE_MS + 400);   // safety net if the browser never reports the end
+        setTimeout(done, mentorCloseMs() + 400);   // safety net if the browser never reports the end
       }
       queueBackCheck();
     }
@@ -7213,6 +7228,19 @@
       pip.style.setProperty("--prev-colour", i <= motion.fromStage ? `var(--stage-${motion.fromStage})` : "var(--border)");
     }
     function motionMs(name) { return parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name)) || 0; }
+    // MO6: a cubic-bezier() easing (as written in the CSS tokens) as a function from time (0 to 1) to progress, for moves drawn frame by frame
+    function curveOf(text) {
+      const m = /cubic-bezier\(([^)]*)\)/.exec(text || ""), v = m ? m[1].split(",").map(Number) : [];
+      const [x1, y1, x2, y2] = v.length === 4 && v.every(Number.isFinite) ? v : [0, 0, 0.58, 1];
+      const B = (a, b, t) => 3 * a * t * (1 - t) * (1 - t) + 3 * b * t * t * (1 - t) + t * t * t;
+      return (x) => {
+        if (x <= 0) return 0;
+        if (x >= 1) return 1;
+        let lo = 0, hi = 1;
+        for (let i = 0; i < 22; i++) { const mid = (lo + hi) / 2; if (B(x1, x2, mid) < x) lo = mid; else hi = mid; }
+        return B(y1, y2, (lo + hi) / 2);
+      };
+    }
     // Mo2: put the movement classes away again a moment after the motion ends, so nothing is left behind at rest
     // (the old name must not stay in the page for a screen reader).
     let stageMotionTimer = null;

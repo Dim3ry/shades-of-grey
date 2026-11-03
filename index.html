@@ -107,7 +107,10 @@
     /* Mo1: every movement in the app takes its time and feel from these four values. Change them here and everything follows. */
     :root { --motion-fast: 120ms; --motion-med: 240ms; --motion-slow: 480ms; --motion-ease: linear;
       /* Mo4b: the travel of the start circle's segments into the bar (that travel only; everything else stays linear): 1.5 s, ease in and out with a small overshoot */
-      --motion-travel: 1500ms; --motion-travel-ease: cubic-bezier(0.65, 0, 0.3, 1.25); }
+      --motion-travel: 1500ms; --motion-travel-ease: cubic-bezier(0.65, 0, 0.3, 1.25);
+      /* MO6 (James, 3 Nov evening): the slow, fluid pace for the signature moves only (the Mentor window opening, the lit piece sliding in the bar, and
+         the curve of the colour fades on the travel above), so they read as designed, not instant. Ordinary taps, toasts and fold-outs keep the values above. */
+      --motion-flow: 800ms; --motion-flow-ease: cubic-bezier(0, 0, 0.58, 1); }
     :root[data-appearance="light"], .theme-swatch[data-t="classic"][data-m="light"] {
       --background: #e9eff6;  /* pale cool blue-grey page */
       --card: #f8fafc;        /* near-white boxes */
@@ -2661,6 +2664,10 @@
     }
     /* words that leave with a move (the start page's line, the version number) fade out as a copy of themselves (inert, hidden from screen readers) */
     .mo6-ghost { position: fixed; z-index: 13; margin: 0; pointer-events: none; }
+    /* 3. (James, 3 Nov evening) the Mentor window opens at the slow pace (--motion-flow, see app.js), so its dim layer fades in over the same time, and
+       out over the close's two thirds */
+    .mentor-backdrop::before { animation-duration: var(--motion-flow); animation-timing-function: var(--motion-flow-ease); }
+    .mentor-backdrop.mentor-closing::before { animation-duration: calc(var(--motion-flow) * 2 / 3); }
     /* the back arrow fades out (it vanished in one frame when the Mentor window opened or the start page came back) and in */
     .back-menu { transition: opacity var(--motion-med) var(--motion-ease), translate var(--motion-fast) var(--motion-ease), scale var(--motion-fast) var(--motion-ease), filter var(--motion-fast) var(--motion-ease); }
     body.launching .back-menu, body.mo-travelling .back-menu, body.mentor-open .back-menu { transition: opacity var(--motion-med) var(--motion-ease), visibility 0s linear var(--motion-med); }

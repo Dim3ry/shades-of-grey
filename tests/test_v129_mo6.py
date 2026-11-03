@@ -76,8 +76,10 @@ def jumps(frames):
     """Each channel, frame to frame: a step is too big when it is more than a small step and more than a smooth blend could make in that time
     (a whole colour swing in 110 ms, a whole fade in 100 ms, a glow of 28 px in 110 ms). While the loading screen covers everything, only it counts."""
     bad = []
-    for a, b in zip(frames, frames[1:]):
-        dt = max(1.0, b["t"] - a["t"])
+    # a style written in one frame can be read by the sampler in that frame or the next (whichever runs first), so each step is allowed the time
+    # of the two frames before it
+    for i, (a, b) in enumerate(zip(frames, frames[1:])):
+        dt = max(1.0, b["t"] - frames[max(0, i - 1)]["t"])
         covered = a.get("screen", 0) >= 0.99 and b.get("screen", 0) >= 0.99
         for k in set(a) & set(b):
             if k in ("t", "ringBox") or (covered and not (k.startswith("ring") or k == "screen")):
@@ -97,6 +99,11 @@ def jumps(frames):
             if d > limit:
                 bad.append((round(b["t"]), k, x, y, round(dt)))
     return bad
+
+def in_sight(frames):
+    """(James, 3 Nov evening: "we need to never lose sight of the menu") the frames where a piece of the menu, the travelling copy or the real one,
+    shows at less than 0.9."""
+    return [(round(f["t"]), k, f[k]) for f in frames for k in ("seen dashboard", "seen units", "seen recipes", "seen guides") if k in f and f[k] < 0.9]
 
 def seed(page, settings=None, units=None):
     page.goto(t.BASE + "manifest.json")
@@ -221,6 +228,7 @@ def main():
         frames = sample(page, "() => document.querySelector('.tabs button[data-tab=units]').click()", SETTLED)
         bad = jumps(frames)
         check("circle to bar: no colour, glow or visibility changes in one frame", not bad, bad[:6])
+        check("circle to bar: the menu never drops out of sight (all four pieces at 0.9 or more in every frame)", len(frames) > 10 and not in_sight(frames), in_sight(frames)[:6])
         check("...the travel ran (copies drawn) and the bar's fade and the circle's glow crossfaded under them", any("seen units" in f and 0 < f.get("bar fade", 0) < 1 for f in frames)
               and page.evaluate("() => !document.querySelector('html > .tabs')"))
 
@@ -254,6 +262,7 @@ def main():
         frames = sample(page, "() => document.getElementById('back-menu').click()", "() => document.body.classList.contains('launching') && " + SETTLED[6:])
         bad = jumps(frames)
         check("bar to circle: no colour, glow or visibility changes in one frame (the page fades out, the words cross)", not bad, bad[:6])
+        check("bar to circle: the menu never drops out of sight (all four pieces at 0.9 or more in every frame)", len(frames) > 10 and not in_sight(frames), in_sight(frames)[:6])
         check("...the page faded out over the wait instead of going at once", any(0.1 < f.get("page", 0) < 0.9 for f in frames))
         page.evaluate("() => document.querySelector('.tabs button[data-tab=recipes]').click()")
         page.wait_for_function(SETTLED, timeout=10000)
