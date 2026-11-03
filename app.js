@@ -10237,7 +10237,7 @@
       const factionWrap = document.createElement("div");
       factionWrap.className = "scheme-faction";
       const drawFaction = () => {
-        factionWrap.innerHTML = "";
+        factionWrap.replaceChildren();
         const showError = d.factionError && !d.faction.trim();
         factionWrap.classList.toggle("has-error", showError);
         const row = document.createElement("div");
@@ -10430,7 +10430,7 @@
       const bottom = document.createElement("div");
       bottom.className = "scheme-bottom";
       const drawBottom = () => {
-        bottom.innerHTML = "";
+        bottom.replaceChildren();
         const clashes = schemeClashes(d);
         if (clashes.length) {
           const note = document.createElement("div");
@@ -15587,7 +15587,7 @@
         name.className = "start-swatch-name";
         name.textContent = p.name;
         b.append(makeSwatch(p.colour), name);
-        if (p.brand) b.setAttribute("aria-label", `${p.name} (${p.brand})`);
+        if (p.brand) b.append(hiddenName(` (${p.brand})`));   // v127: the brand is read out from hidden text, never an aria-label built from the name (v55)
         b.addEventListener("click", () => onPick(key));
         box.appendChild(b);
       }

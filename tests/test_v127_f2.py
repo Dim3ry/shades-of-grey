@@ -54,7 +54,7 @@ def open_lab(page, lab):
     page.wait_for_timeout(100)
 
 def swatches(page):
-    return page.evaluate("() => [...document.querySelectorAll('#cmp-start-swatches .start-swatch')].map(b => ({ name: b.textContent, key: b.dataset.startSwatch, on: b.getAttribute('aria-pressed') }))")
+    return page.evaluate("() => [...document.querySelectorAll('#cmp-start-swatches .start-swatch')].map(b => ({ name: b.querySelector('.start-swatch-name').textContent, key: b.dataset.startSwatch, on: b.getAttribute('aria-pressed') }))")
 
 def idea_names(page, sel):
     return page.evaluate("(s) => [...document.querySelectorAll(s + ' .idea-list > li')].map(li => li.querySelector('.idea-name').childNodes[0].textContent)", sel)
