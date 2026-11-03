@@ -7,6 +7,7 @@ Unofficial fan-made app. Not affiliated with or endorsed by Games Workshop or an
 Citadel, Warhammer and faction and paint names are trademarks of Games Workshop Ltd; other paint
 brand names belong to their makers. They are used only to identify those products.
 
-© 2026 George Atter-Dimery. All rights reserved.
+© 2026 George Atter-Dimery. All rights reserved. The code and the knowledge base may not be copied or reused without permission (see `COPYRIGHT`).
+The fonts in the `fonts` folder are used under their own licences (see `fonts/LICENSES.md`).
 The pot-label reader in the `ocr` folder is the Tesseract engine and English data, used under the Apache License 2.0 (see `ocr/README.md`).
 The Vallejo, Army Painter, Pro Acryl, AK, Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World paint names (and some Citadel ones), colours and code numbers come from the open [miniature-paints](https://github.com/Arcturus5404/miniature-paints) list by Rick Fleuren, used under the MIT licence (see `LICENSE-paint-list.txt`).

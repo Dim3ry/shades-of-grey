@@ -1,0 +1,10 @@
+Copyright © 2026 George Atter-Dimery (Minifolio). All rights reserved.
+
+The source code, text, guides and data in this repository, including the knowledge base in `knowledge-base/`, may be viewed on GitHub but may not be copied, modified, redistributed or used to build another product without written permission.
+
+Exceptions, each under its own licence:
+- fonts in `fonts/` (SIL OFL 1.1 or Apache 2.0, see `fonts/LICENSES.md`);
+- the Tesseract engine and data in `ocr/` (Apache 2.0, see `ocr/LICENSE-tesseract.txt`);
+- paint names, colours and codes from Rick Fleuren's miniature-paints list (MIT, see `LICENSE-paint-list.txt`).
+
+Trade marks named in the app belong to their owners; see README.

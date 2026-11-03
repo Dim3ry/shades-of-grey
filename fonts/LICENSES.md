@@ -789,7 +789,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 ## IM Fell English
 
 ```
-Google Inc.
+Copyright (c) 2010, Igino Marini (mail@iginomarini.com)
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:
