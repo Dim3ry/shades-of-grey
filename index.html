@@ -2621,8 +2621,9 @@
 <body>
   <!-- v14: shown while saving isn't working (storage full). Stays until a save works. -->
   <div class="save-banner hidden" id="save-banner" role="alert">
-    <p id="save-banner-text"><strong>Changes aren't being saved.</strong> Storage on this device is full. Save a backup now, then free some space (delete photos or units you no longer need).</p>
+    <p id="save-banner-text"><strong>Changes aren't being saved.</strong> Storage on this device is full. Save a backup now, then free some space (units you no longer need, or the safety copies).</p>
     <button id="banner-backup">Save backup</button>
+    <button id="banner-copies" class="hidden">Remove safety copies</button>
     <button id="banner-retry">Try again</button>
   </div>
   <!-- U4a: the menu bar. Four segments around the round Mentor button; aria-current marks the segment you're in, for screen readers and for the CSS.

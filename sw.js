@@ -21,6 +21,11 @@ const CACHE_NAME = "shades-of-grey-" + VERSION;
 // who never scan don't download 11 MB.) ocr/ocr-worker.js itself is small and treated like any
 // other app file, so changes to it arrive with updates.
 const OCR_CACHE = "shades-of-grey-label-reader";
+// DS2: the version of the label-reader engine in the ocr folder (tesseract.js-core, see ocr/README.md). The engine's files keep
+// their names when it is updated, so the saved copies are labelled with this. A new number empties that store once (at the next
+// update), and the new engine is fetched the next time you scan. Change it whenever the files in the ocr folder are replaced.
+const OCR_ENGINE = "5.1.1";
+const OCR_ENGINE_LABEL = "./ocr/saved-engine-version";   // not a real file: a note kept in the store, holding OCR_ENGINE
 function isOcrFile(url) {
   return url.origin === self.location.origin && /\/ocr\/(tesseract-core[^/]*|eng\.traineddata)$/.test(url.pathname);
 }
@@ -31,6 +36,35 @@ function isOcrFile(url) {
 const FONT_CACHE = "shades-of-grey-fonts";
 function isFontFile(url) {
   return url.origin === self.location.origin && /\/fonts\/[a-z0-9-]+\.woff2$/.test(url.pathname);
+}
+// DS2: a font or label-reader file is only saved if it really is one. A weak signal or a wi-fi sign-in page can answer with
+// something else (a page of text, a cut-off file), and before DS2 that was saved and used for good. Each kind of file starts
+// with its own few letters ("wOF2" for a font, "\0asm" for the engine), and the others are checked for size and for not
+// being a web page. Saved copies that fail the check are removed when a new version takes over (see "activate").
+function goodSavedFile(url, blob) {
+  return blob.slice(0, 4).arrayBuffer().then((buffer) => {
+    const head = new Uint8Array(buffer);
+    const starts = (...bytes) => bytes.every((b, i) => head[i] === b);
+    const path = new URL(url).pathname;
+    if (/\.woff2$/.test(path)) return starts(0x77, 0x4f, 0x46, 0x32);                 // wOF2
+    if (/\.wasm$/.test(path)) return starts(0x00, 0x61, 0x73, 0x6d);                  // \0asm
+    if (/\.js$/.test(path)) return blob.size > 10000 && head[0] !== 0x3c;           // not "<" (a web page)
+    if (/eng\.traineddata$/.test(path)) return blob.size > 1000000 && head[0] !== 0x3c;
+    return false;
+  }, () => false);
+}
+// The address a font or label-reader file is saved under: without any "?..." on the end, so the store holds one copy per file.
+function savedFileKey(url) {
+  const key = new URL(url);
+  key.search = "";
+  key.hash = "";
+  return key.href;
+}
+function keepIfGood(cache, url, response) {
+  if (!response.ok) return Promise.resolve();
+  return response.clone().blob().then((blob) => goodSavedFile(url, blob).then((good) => good
+    ? cache.put(savedFileKey(url), new Response(blob, { status: response.status, statusText: response.statusText, headers: response.headers }))
+    : null)).catch(() => {});
 }
 
 // The files that make up the app. Saved as soon as the app is installed.
@@ -60,8 +94,10 @@ const APP_FILES = [
 ];
 
 // "install": runs once when this version of sw.js is first seen. Save the app files.
+// DS2: { cache: "reload" } fetches each file from the web itself, not from the browser's own short-term store, so a new version's
+// saved copy can't start with an older index.html (or ./) that the browser happened to be holding.
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_FILES)));
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_FILES.map((url) => new Request(url, { cache: "reload" })))));
   self.skipWaiting(); // start using this new version straight away
 });
 
@@ -76,9 +112,31 @@ self.addEventListener("activate", (event) => {
       .then((cache) => cache.keys().then((requests) => Promise.all(requests
         .filter((request) => new URL(request.url).origin !== self.location.origin)
         .map((request) => cache.delete(request)))))
+      .then(() => tidySavedFiles())   // DS2
       .then(() => self.clients.claim())
   );
 });
+
+// DS2: when a new version takes over: the label-reader store is emptied if it holds a different engine version (a store with no
+// note yet holds this one, 5.1.1, the only engine the app has used from its own folder), and saved fonts and engine files that are
+// not what they should be (see goodSavedFile) are removed, so the next use fetches them again.
+function tidySavedFiles() {
+  const label = new URL(OCR_ENGINE_LABEL, self.location.href).href;
+  const ocr = caches.open(OCR_CACHE).then((cache) => cache.match(label)
+    .then((note) => (note ? note.text() : OCR_ENGINE))
+    .then((saved) => saved === OCR_ENGINE ? null
+      : cache.keys().then((requests) => Promise.all(requests.map((request) => cache.delete(request)))))
+    .then(() => cache.put(label, new Response(OCR_ENGINE, { headers: { "Content-Type": "text/plain" } })))
+    .then(() => checkStore(cache, (url) => url !== label)));
+  const fonts = caches.open(FONT_CACHE).then((cache) => checkStore(cache, () => true));
+  return Promise.all([ocr, fonts]).catch(() => {});
+}
+function checkStore(cache, include) {
+  return cache.keys().then((requests) => Promise.all(requests.filter((request) => include(request.url)).map((request) =>
+    cache.match(request).then((saved) => (saved ? saved.blob() : null))
+      .then((blob) => (blob ? goodSavedFile(request.url, blob) : false))
+      .then((good) => (good && request.url === savedFileKey(request.url) ? null : cache.delete(request))))));
+}
 
 // "fetch": runs every time the app asks for a file. Network first, saved copy if offline.
 // Your units are NOT involved here: they live in the browser's storage, not in files.
@@ -91,12 +149,14 @@ self.addEventListener("fetch", (event) => {
 
   // Label-reader engine files never change, so use the saved copy first, else fetch and keep it.
   // v47: the same for the theme fonts (a font file never changes; a new font would get a new name).
+  // DS2: saved only if the file is what it should be (keepIfGood), and under its address without any "?..." (one copy per file).
   const fileUrl = new URL(event.request.url);
   if (isOcrFile(fileUrl) || isFontFile(fileUrl)) {
     event.respondWith(
-      caches.open(isFontFile(fileUrl) ? FONT_CACHE : OCR_CACHE).then((cache) => cache.match(event.request).then((saved) => saved ||
+      caches.open(isFontFile(fileUrl) ? FONT_CACHE : OCR_CACHE).then((cache) => cache.match(savedFileKey(event.request.url)).then((saved) => saved ||
         fetch(event.request).then((response) => {
-          if (response.ok) cache.put(event.request, response.clone());
+          const keeping = keepIfGood(cache, event.request.url, response);
+          try { event.waitUntil(keeping); } catch (ignored) {}
           return response;
         }))));
     return;
@@ -124,9 +184,15 @@ self.addEventListener("fetch", (event) => {
 });
 
 // Fetch from the web; a good answer from the app's own site is saved for next time (offline).
+// DS2: only for an address with no "?..." on the end, or this version's own "?v=" tag. Before DS2 every different "?..." was
+// saved as a copy of its own, so the store could grow without end (200 made-up addresses gave 200 more copies).
+function keepable(url) {
+  const u = new URL(url);
+  return u.origin === self.location.origin && (u.search === "" || u.search === CODE_TAG);
+}
 function fetchAndKeep(request) {
   return fetch(request).then((response) => {
-    if (response.ok && new URL(request.url).origin === self.location.origin) {
+    if (response.ok && keepable(request.url)) {
       const copy = response.clone();
       caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
     }
@@ -142,6 +208,17 @@ function fetchAndKeep(request) {
 // Offline after the first visit it works as before: the saved copy of the page (any "?..." on the address is ignored),
 // or the app itself.
 const PAGE_WAIT_MS = 4000;
+// DS2: the app's page is saved under its plain address ("./" or "./index.html", with any "?..." taken off), so the store keeps one
+// copy of it. Before DS2 each different "?..." (index.html?junk=1, ?junk=2...) was saved as a full copy of its own. Other pages
+// (null here) are not saved; offline they get the app's page, as before.
+function pageKey(url) {
+  const u = new URL(url);
+  const scope = new URL("./", self.location.href);
+  if (u.origin !== scope.origin || (u.pathname !== scope.pathname && u.pathname !== scope.pathname + "index.html")) return null;
+  u.search = "";
+  u.hash = "";
+  return u.href;
+}
 function savedPage(request) {
   return caches.open(CACHE_NAME).then((cache) => cache.match(request, { ignoreSearch: true })
     .then((saved) => saved || cache.match("./index.html")));
@@ -164,7 +241,7 @@ function pageResponse(request) {
     return response.clone().text()
       .then((text) => codeFilesSaved(text, request.url))
       .then(() => caches.open(CACHE_NAME))
-      .then((cache) => cache.put(request, response.clone()))
+      .then((cache) => { const key = pageKey(request.url); return key ? cache.put(key, response.clone()) : null; })
       .then(() => ({ response, good: true }), () => ({ response, good: false }));
   });
   const done = fromWeb.catch(() => null);
