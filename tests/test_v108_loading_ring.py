@@ -3,7 +3,8 @@
 New behaviour only:
 1. Fresh load: a ring (role progressbar, name "Loading", aria-valuenow rising) sits around the Mentor button; its three arcs fill one after
    another; the four segments appear one by one and cannot be tapped until it is full; then the ring is gone and the circle works as before.
-2. No ring when the app is opened on a section, on a warm return (title button), or with reduced motion (the circle shows at once).
+2. No ring when the app is opened on a section or on a warm return (title button). (LR1, v126: with reduced motion the ring now lights in steps
+   and goes as soon as it is full.)
 3. Leaving the circle while the ring runs removes it at once. Sizes, no sideways scroll, every theme in light and dark, a wide screen."""
 import os, sys
 from playwright.sync_api import sync_playwright
@@ -56,11 +57,14 @@ def main():
         check("it sits inside the circle: between the Mentor button and the segments' inner edge (radius 71 of 62 to 80)", page.evaluate("""() => {
             const r = document.querySelector('.mo-load').getBoundingClientRect(), o = document.getElementById('mentor-button').getBoundingClientRect();
             return Math.abs((r.left + r.width / 2) - (o.left + o.width / 2)) < 1 && Math.abs((r.top + r.height / 2) - (o.top + o.height / 2)) < 1; }"""))
-        check("the three arcs use the Mentor orb's own colours (the --mentor tokens)", page.evaluate("""() => {
-            const cs = n => getComputedStyle(document.querySelector('.mo-load .' + n)).stroke, orb = n => getComputedStyle(document.querySelector('.' + n)).stroke;
-            return cs('a0') === orb('orb-a') && cs('a1') === orb('orb-b') && cs('a2') === orb('orb-c'); }"""))
-        check("it turns slowly (an endless 4 s animation)", page.evaluate("""() => { const a = document.querySelector('.mo-load-turn').getAnimations()[0];
-            return a && a.effect.getComputedTiming().iterations === Infinity && a.effect.getComputedTiming().duration === 4000; }"""))
+        # LR1 (v126): with the Futuristic look (the default) the ring is the orb's own five segments, not Mo4a's three arcs in the old orb's colours,
+        # and the slow movement is a sweep going round (2.4 s a turn) instead of the arcs turning (Magical and Grounded keep the three turning arcs;
+        # tests/test_v126_lr1.py checks those). So these two checks follow the Futuristic ring.
+        check("the five segments use the Mentor orb's own colours (the --mentor tokens)", page.evaluate("""() => {
+            const cs = i => getComputedStyle(document.querySelector('.mo-load .lr-s' + i)).stroke, orb = i => getComputedStyle(document.querySelector('#mentor-button .ml-segs .ml-k' + i)).stroke;
+            return [0, 1, 2, 3, 4].every(i => cs(i) === orb(i)); }"""))
+        check("it moves slowly (an endless 2.4 s sweep)", page.evaluate("""() => { const a = document.querySelector('.lr-sweep').getAnimations()[0];
+            return a && a.effect.getComputedTiming().iterations === Infinity && a.effect.getComputedTiming().duration === 2400; }"""))
         fresh(page)
         samples = page.evaluate(WATCH)
         live = [x for x in samples if x]
@@ -93,7 +97,10 @@ def main():
         ctx2 = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block", reduced_motion="reduce")
         rp = ctx2.new_page()
         fresh(rp)
-        check("reduced motion: no ring, the circle and all segments show at once", rp.evaluate("() => !document.querySelector('.mo-load') && !document.querySelector('.ring-hold') && document.body.classList.contains('launching')"))
+        # LR1 (v126): with reduced motion the ring now shows too (lit in whole steps, nothing moving), so the app does not look frozen; it goes as
+        # soon as it is full (no minimum time), and then the circle and all segments show (was: no ring at all)
+        rp.wait_for_function("() => !document.querySelector('.mo-load')", timeout=6000)
+        check("reduced motion: once the ring is full it goes at once, and the circle and all segments show", rp.evaluate("() => !document.querySelector('.mo-load') && !document.querySelector('.ring-hold') && document.body.classList.contains('launching')"))
         ctx2.close()
 
         print("\n--- 3. Leaving while it runs ends it at once ---")

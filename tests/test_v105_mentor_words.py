@@ -10,6 +10,8 @@ One page check: the data file loads in the app and the engine uses it. No page e
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, subprocess, sys
 from playwright.sync_api import sync_playwright
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from common import node_command
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.environ.get("MINIFOLIO_ROOT") or (os.path.realpath(os.path.join(HERE, "..")) if os.path.exists(os.path.join(HERE, "..", "app.js")) else os.path.realpath(os.path.join(HERE, "..", "..")))
@@ -22,8 +24,9 @@ def check(name, ok, detail=""):
 
 def main():
     print("--- 1. The engine and its data, in Node ---")
-    run = subprocess.run(["node", os.path.join(HERE, "mentor_upgrade_check.js")], capture_output=True, text=True, cwd=ROOT,
-                         env=dict(os.environ, MINIFOLIO_ROOT=ROOT))
+    # T6: node_command() also finds the Node that comes with Playwright, and the output is read as UTF-8 (Windows)
+    run = subprocess.run([node_command(), os.path.join(HERE, "mentor_upgrade_check.js")], capture_output=True, text=True, cwd=ROOT,
+                         env=dict(os.environ, MINIFOLIO_ROOT=ROOT), encoding="utf-8", errors="replace")
     try:
         data = json.loads(run.stdout)
     except ValueError:

@@ -133,7 +133,8 @@ def main():
         load(page, paints=[])
         html = read("index.html")
         tags = re.findall(r'<script src="([^"]+)\?v=(\d+)"', html)
-        diff = subprocess.run(["git", "diff", "main", "--", "app.js"], cwd=ROOT, capture_output=True, text=True).stdout
+        # T6: read git's output as UTF-8 (on Windows the default code page could not read it and the file stopped here)
+        diff = subprocess.run(["git", "diff", "main", "--", "app.js"], cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace").stdout
         added = [l[1:] for l in diff.splitlines() if l.startswith("+") and not l.startswith("+++")]
         removed = [l[1:] for l in diff.splitlines() if l.startswith("-") and not l.startswith("---")]
         code_added = [re.sub(r"\s//\s.*$", "", l) for l in added if not l.strip().startswith("//")]

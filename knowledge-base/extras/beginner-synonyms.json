@@ -1300,10 +1300,10 @@
    ]
   },
   {
-   "canonical": "sprue goo",
+   "canonical": "liquid sprue",
    "variants": [
+    "sprue goo",
     "plastic goo",
-    "liquid sprue",
     "sprue glue"
    ]
   },
@@ -1829,18 +1829,22 @@
    ]
   },
   {
-   "canonical": "mineral spirits",
+   "canonical": "turpentine",
    "variants": [
+    "mineral spirits",
     "white spirit",
     "white spirits",
     "mineral spirit",
     "odourless mineral spirits",
     "odorless mineral spirits",
-    "turpentine",
     "turps",
     "oms",
     "odourless thinner",
-    "odorless thinner"
+    "odorless thinner",
+    "odourless spirits",
+    "odorless spirits",
+    "odourless spirit",
+    "odorless spirit"
    ]
   },
   {
@@ -1923,14 +1927,14 @@
    ]
   },
   {
-   "canonical": "sticky tack",
+   "canonical": "poster putty",
    "variants": [
+    "sticky tack",
     "blu tack",
     "blutack",
     "blu-tack",
     "blue tack",
     "bluetack",
-    "poster putty",
     "white tack",
     "sticky putty",
     "tack it"
@@ -2264,7 +2268,9 @@
     "odor",
     "odour",
     "odours",
-    "odors"
+    "odors",
+    "headache",
+    "headaches"
    ]
   },
   {
@@ -2342,12 +2348,19 @@
     "water cup",
     "rinse pot",
     "water jar",
-    "paint water",
     "rinse cup",
     "brush water",
     "dirty water",
     "water pots",
-    "rinse jar"
+    "rinse jar",
+    "paint water down",
+    "dirty paint water",
+    "used paint water",
+    "old paint water",
+    "my paint water",
+    "the paint water",
+    "paint water pot",
+    "paint water jar"
    ]
   },
   {
@@ -2390,7 +2403,12 @@
     "take photos",
     "taking photos",
     "take pictures",
-    "taking pictures"
+    "taking pictures",
+    "foto",
+    "fotos",
+    "photoes",
+    "piccies",
+    "pix"
    ]
   },
   {
@@ -2490,7 +2508,15 @@
     "starting out",
     "complete beginner",
     "total beginner",
-    "brand new to"
+    "brand new to",
+    "starter model",
+    "starter models",
+    "starter mini",
+    "starter minis",
+    "starter miniature",
+    "starter miniatures",
+    "starter figure",
+    "starter figures"
    ]
   },
   {
@@ -3027,6 +3053,313 @@
    "variants": [
     "colourlab",
     "colorlab"
+   ]
+  },
+  {
+   "canonical": "apparel",
+   "variants": [
+    "my clothes",
+    "my clothing",
+    "my shirt",
+    "my t shirt",
+    "my tshirt",
+    "my tee shirt",
+    "my top",
+    "my jeans",
+    "my trousers",
+    "my pants",
+    "my hoodie",
+    "my jumper",
+    "my sweater",
+    "my sweatshirt",
+    "my jacket",
+    "my sleeve",
+    "my sleeves",
+    "my dress",
+    "my skirt",
+    "my shorts",
+    "my socks",
+    "my uniform",
+    "my school uniform",
+    "my work clothes",
+    "paint on clothes",
+    "paint on clothing",
+    "acrylic on clothes",
+    "acrylic on clothing",
+    "acrylic on fabric",
+    "off clothes",
+    "out of clothes",
+    "from clothes",
+    "on jeans",
+    "out of jeans",
+    "work clothes",
+    "good clothes",
+    "off clothing",
+    "off shirt",
+    "off t shirt",
+    "off tshirt",
+    "off top",
+    "off jeans",
+    "off trousers",
+    "off pants",
+    "off hoodie",
+    "off jumper",
+    "off sweater",
+    "off sweatshirt",
+    "off jacket",
+    "off dress",
+    "off skirt",
+    "off a clothes",
+    "off a clothing",
+    "off a shirt",
+    "off a t shirt",
+    "off a tshirt",
+    "off a top",
+    "off a jeans",
+    "off a trousers",
+    "off a pants",
+    "off a hoodie",
+    "off a jumper",
+    "off a sweater",
+    "off a sweatshirt",
+    "off a jacket",
+    "off a dress",
+    "off a skirt",
+    "out of clothing",
+    "out of shirt",
+    "out of t shirt",
+    "out of tshirt",
+    "out of top",
+    "out of trousers",
+    "out of pants",
+    "out of hoodie",
+    "out of jumper",
+    "out of sweater",
+    "out of sweatshirt",
+    "out of jacket",
+    "out of dress",
+    "out of skirt",
+    "out of a clothes",
+    "out of a clothing",
+    "out of a shirt",
+    "out of a t shirt",
+    "out of a tshirt",
+    "out of a top",
+    "out of a jeans",
+    "out of a trousers",
+    "out of a pants",
+    "out of a hoodie",
+    "out of a jumper",
+    "out of a sweater",
+    "out of a sweatshirt",
+    "out of a jacket",
+    "out of a dress",
+    "out of a skirt",
+    "from clothing",
+    "from shirt",
+    "from t shirt",
+    "from tshirt",
+    "from top",
+    "from jeans",
+    "from trousers",
+    "from pants",
+    "from hoodie",
+    "from jumper",
+    "from sweater",
+    "from sweatshirt",
+    "from jacket",
+    "from dress",
+    "from skirt",
+    "from a clothes",
+    "from a clothing",
+    "from a shirt",
+    "from a t shirt",
+    "from a tshirt",
+    "from a top",
+    "from a jeans",
+    "from a trousers",
+    "from a pants",
+    "from a hoodie",
+    "from a jumper",
+    "from a sweater",
+    "from a sweatshirt",
+    "from a jacket",
+    "from a dress",
+    "from a skirt"
+   ]
+  },
+  {
+   "canonical": "laundry",
+   "variants": [
+    "in the wash",
+    "washing machine",
+    "hot wash",
+    "cold wash"
+   ]
+  },
+  {
+   "canonical": "spilled",
+   "variants": [
+    "spilt",
+    "spill",
+    "spills",
+    "spilling"
+   ]
+  },
+  {
+   "canonical": "ventilation",
+   "variants": [
+    "ventilated",
+    "ventilate",
+    "ventilating",
+    "fresh air",
+    "air flow",
+    "airflow",
+    "air circulation",
+    "open window",
+    "open a window",
+    "window open",
+    "windows open",
+    "no window",
+    "no windows",
+    "without a window",
+    "window shut",
+    "windows shut",
+    "window closed",
+    "windows closed",
+    "stuffy",
+    "extractor fan",
+    "no air",
+    "no fresh air"
+   ]
+  },
+  {
+   "canonical": "inhale",
+   "variants": [
+    "breathe in",
+    "breathing in",
+    "breathed in",
+    "breathe",
+    "inhaling",
+    "inhaled",
+    "lungs",
+    "lung"
+   ]
+  },
+  {
+   "canonical": "respirator",
+   "variants": [
+    "face mask",
+    "dust mask",
+    "particle mask",
+    "breathing mask",
+    "respirators"
+   ]
+  },
+  {
+   "canonical": "patchy",
+   "variants": [
+    "streaky"
+   ]
+  },
+  {
+   "canonical": "brush strokes",
+   "variants": [
+    "brush marks",
+    "brush streaks",
+    "brushstrokes",
+    "brush lines"
+   ]
+  },
+  {
+   "canonical": "pick",
+   "variants": [
+    "which model should",
+    "which model to",
+    "which mini should",
+    "which mini to",
+    "which miniature should",
+    "which miniature to",
+    "which figure should",
+    "which figure to",
+    "what model should",
+    "what model to",
+    "what mini should",
+    "what mini to",
+    "what miniature should",
+    "what miniature to",
+    "what figure should",
+    "what figure to",
+    "choose a model",
+    "choose a mini",
+    "choose a miniature",
+    "choose a figure",
+    "choose my model",
+    "choose my mini",
+    "choose my miniature",
+    "choose my figure",
+    "choose model",
+    "choose mini",
+    "choose miniature",
+    "choose figure",
+    "choosing a model",
+    "choosing a mini",
+    "choosing a miniature",
+    "choosing a figure",
+    "choosing my model",
+    "choosing my mini",
+    "choosing my miniature",
+    "choosing my figure",
+    "choosing model",
+    "choosing mini",
+    "choosing miniature",
+    "choosing figure"
+   ]
+  },
+  {
+   "canonical": "spilled apparel",
+   "variants": [
+    "spilled on clothes",
+    "spilled on clothing",
+    "spilled on jeans",
+    "spilled on trousers",
+    "spilt on clothes",
+    "spilt on clothing",
+    "spilt on jeans",
+    "spilt on trousers",
+    "spill on clothes",
+    "spill on clothing",
+    "spill on jeans",
+    "spill on trousers",
+    "spills on clothes",
+    "spills on clothing",
+    "spills on jeans",
+    "spills on trousers",
+    "splashed on clothes",
+    "splashed on clothing",
+    "splashed on jeans",
+    "splashed on trousers",
+    "dropped on clothes",
+    "dropped on clothing",
+    "dropped on jeans",
+    "dropped on trousers"
+   ]
+  },
+  {
+   "canonical": "stain apparel",
+   "variants": [
+    "stain on clothes",
+    "stain on clothing",
+    "stain on jeans",
+    "stain on trousers",
+    "stains on clothes",
+    "stains on clothing",
+    "stains on jeans",
+    "stains on trousers",
+    "stained clothes",
+    "stained clothing",
+    "stained jeans",
+    "stained trousers"
    ]
   }
  ]

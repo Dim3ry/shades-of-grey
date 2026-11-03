@@ -43,11 +43,19 @@
     // NEWER one, it stops saving and asks you to reload, so it can't damage that newer data.
     const DATA_VERSION = 2;   // v68: 2, for the "Needs touch-ups" rename (see V61_DEFAULT_STAGES)
     let dataTooNew = false;  // true once this copy has seen data from a newer version
+    // DS2: every save asks this, so the answer is kept with the settings text it came from, and the settings are read again
+    // (JSON.parse) only when that text has changed (another window, or this one saving new settings). Before DS2 every save,
+    // every key press included, read and parsed the whole settings text.
+    const storedVersionSeen = { text: undefined, n: 0 };
     function storedDataVersion() {
       try {
-        const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "null");
+        const text = localStorage.getItem(SETTINGS_KEY);
+        if (text === storedVersionSeen.text) return storedVersionSeen.n;
+        const saved = JSON.parse(text || "null");
         const n = saved && typeof saved === "object" ? Number(saved.dataVersion) : 0;
-        return Number.isFinite(n) ? n : 0;
+        storedVersionSeen.text = text;
+        storedVersionSeen.n = Number.isFinite(n) ? n : 0;
+        return storedVersionSeen.n;
       } catch (ignored) { return 0; }
     }
     function checkDataVersion() {
@@ -115,6 +123,13 @@
         if (backup) backup.textContent = "Save it as a file";
         const retry = document.getElementById("banner-retry");
         if (retry) retry.textContent = "Start again";
+      }
+      // DS2: storage full, and safety copies are taking some of the room: offer to remove them (it asks first).
+      const copies = document.getElementById("banner-copies");
+      if (copies) {
+        let offer = false;
+        try { offer = !dataTooNew && !unreadableParts.length && safetyCopyKeys().length > 0; } catch (ignored) {}   // not yet set up at start-up
+        copies.classList.toggle("hidden", !offer);
       }
       banner.classList.remove("hidden");
     }
@@ -2764,7 +2779,7 @@
       card.className = "card";
       const title = document.createElement("h2");
       title.textContent = "Shopping list";
-      title.style.fontSize = "18px";
+      title.style.fontSize = "1.125rem";   // UX1b: 18 px at normal text size
       // v81: from 900 px the shop bar and Copy as text sit in a side column and the brand lists in the main one (shop-split, layout-split).
       // Written in the phone order, so under 900 px nothing moves. head = heading + More info.
       const head = document.createElement("div");
@@ -2977,7 +2992,7 @@
       if (!ids.length) return;
       const title = document.createElement("h2");
       title.textContent = "Check your import";
-      title.style.fontSize = "18px";
+      title.style.fontSize = "1.125rem";   // UX1b: 18 px at normal text size
       const hint = document.createElement("p");
       hint.className = "hint";
       hint.style.margin = "0 0 10px";
@@ -3855,6 +3870,7 @@
     // writeTogether at the top). It reports back: true if it worked (or storage is
     // switched off), false if storage is FULL, in which case the red banner shows.
     function saveAll() {
+      if (fieldSaveTimer !== null) { clearTimeout(fieldSaveTimer); fieldSaveTimer = null; }   // DS2: this save covers a box's waiting one
       const ok = writeTogether([
         [STORAGE_KEY, JSON.stringify(models)],
         [RECIPES_KEY, JSON.stringify(book)],
@@ -3886,10 +3902,18 @@
       applyPalette(settings.palette);
       return false;
     }
+    // DS2: photos live in their own, much bigger store, so deleting one frees nothing here; the words about photos went.
     const FULL_MESSAGE = "Storage on this device is full, so that change couldn't be saved and nothing has changed. " +
-      "Please save a backup, then free some space (for example delete photos or units you no longer need).";
+      "Please save a backup, then free some space (for example units you no longer need, or the safety copies).";
     // v18.3: the right "not saved" message: newer data from a newer version, or full storage.
     function fullMessage() { return dataTooNew ? TOO_NEW_MESSAGE : unreadableParts.length ? unreadableMessage() : FULL_MESSAGE; }
+    // DS2: the same message, with a Remove safety copies button when storage is full and there are safety copies to remove.
+    function notifyFull() {
+      let offer = false;
+      try { offer = !dataTooNew && !unreadableParts.length && safetyCopyKeys().length > 0; } catch (ignored) {}
+      if (offer) showToast(FULL_MESSAGE, offerRemoveSafetyCopies, "Remove safety copies", 14);
+      else notify(fullMessage());
+    }
 
     // ================= SMALL HELPERS =================
 
@@ -4083,7 +4107,10 @@
     // and loading it again). Nothing here listens for the page being hidden or shown, so switching away and coming back never resets it.
     // While it shows, <body> has the class "launching" (the CSS hides the sections and draws the menu bar as a full circle).
     // The section you were in is kept underneath, so going to the launch page from the title and back loses nothing.
-    let launching = document.body.classList.contains("launching");
+    // LR1: <body> starts with "launching" in index.html, so the start circle and its loading ring show from the very first frame. The app takes the
+    // class off here and puts it back at the end of start-up (enterLaunch), unless the address names a section; nothing is drawn in between.
+    document.body.classList.remove("launching");
+    let launching = false;
     // The circle is drawn for a 390 px wide phone and centred in the space under the header; it shrinks (never grows) to fit the
     // width and the height.
     function fitLaunch() {
@@ -4380,24 +4407,31 @@
     function canMove() { return !reducedMotion() && !!Element.prototype.animate; }
 
     // Mo4a: THE LOADING RING (a fresh page load only; the start circle is never redrawn when the app returns from the background, so neither is this).
-    // Three arcs around the Mentor button, one per real start-up step (bootSteps above): each starts once its step is done and the one before
-    // has filled, and takes at least 400 ms to fill, so the ring shows for 1.2 s at least and waits for the page to finish loading if that is
-    // later (but gives up after 5 s). The four segments are hidden and appear one by one as it fills; they and the Mentor button can be tapped
-    // once it is full. Reduced motion (or no animation support): no ring at all, the circle shows at once. Opening a section ends it instantly.
-    const RING_R = 71, RING_C = 2 * Math.PI * RING_R, RING_ARC = RING_C * 100 / 360, RING_FILL_MS = 400;
+    // LR1: the ring is now in index.html, so it shows (faint, with a slow sweep) from the first frame, and early.js lights it as the script files
+    // arrive (window.minifolioRing). Here Mo4a's three real start-up steps (bootSteps above) take it on from wherever that got to: each step lights
+    // its third of what is left once the step is done and the one before has filled, and takes at least 400 ms to fill, so the ring still shows for
+    // 1.2 s at least once the app runs and waits for the page to finish loading if that is later (but gives up after 5 s). The four segments are
+    // hidden and appear one by one over this part; they and the Mentor button can be tapped once it is full. With the Futuristic look the ring is the
+    // orb's own five segments, with Magical or Grounded Mo4a's three arcs (the drawing is early.js's minifolioRing.draw, so both files light it the same way).
+    // Reduced motion (or no animation support): no sweep or turning, and no minimum time: the ring lights in whole steps as each step is done, the
+    // segments simply appear, and it goes as soon as it is full. Opening a section ends it at once; opening the app on a section takes it away at once.
+    const RING_FILL_MS = 400;
     let ringState = null;
+    function ringDraw(p) { return window.minifolioRing ? window.minifolioRing.draw(p) : p; }
+    // The ring as index.html drew it, before the app took it over: taken away at once (the app opened on a section, or the ring cannot run).
+    function dropBootRing() {
+      if (window.minifolioRing) window.minifolioRing.app = true;
+      for (const n of arcEl.querySelectorAll(".mo-load, .lr-sweep")) n.remove();
+      for (const w of arcEl.querySelectorAll(".ring-hold")) w.classList.remove("ring-hold");
+      document.body.classList.remove("ring-loading");
+    }
     function startLoadingRing() {
-      if (!launching || !canMove() || ringState) return;
-      const NS = "http://www.w3.org/2000/svg";
-      const mk = (parent, tag, attrs) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); parent.appendChild(n); return n; };
-      const svg = mk(arcEl, "svg", { class: "mo-load", viewBox: "0 0 390 360", role: "progressbar", "aria-label": "Loading", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": "0", focusable: "false" });
-      arcEl.insertBefore(svg, arcEl.firstChild);
-      const turn = mk(svg, "g", { class: "mo-load-turn" });
-      const arcs = [0, 1, 2].map(i => {
-        const rot = `rotate(${-80 + i * 120} 195 180)`;   // starts at -80, +40 and +160 degrees from the top; about 100 degrees each with 20 degree gaps
-        mk(turn, "circle", { class: "t", cx: 195, cy: 180, r: RING_R, "stroke-dasharray": `${RING_ARC} ${RING_C}`, transform: rot });
-        return mk(turn, "circle", { class: "a a" + i, cx: 195, cy: 180, r: RING_R, "stroke-dasharray": `0 ${RING_C}`, transform: rot });
-      });
+      const svg = arcEl.querySelector(".mo-load");
+      if (!svg || !launching || ringState) { dropBootRing(); return; }
+      const sweep = arcEl.querySelector(".lr-sweep");
+      const moving = canMove();
+      if (window.minifolioRing) window.minifolioRing.app = true;   // early.js stops lighting it; from here this does
+      const p0 = window.minifolioRing ? window.minifolioRing.progress : 0;
       // A2: the ring turns clockwise from the top, so the segments arrive clockwise from the top left: Dashboard, Models, Tools, Painting.
       // Only this arrival order changes; the segments stay where they are (the menu's own order is Dashboard, Models, Painting, Tools).
       const byName = {};
@@ -4408,36 +4442,40 @@
       const stepAt = [() => bootSteps.data, () => bootSteps.draw, () => bootSteps.load];
       const t0 = performance.now(), ends = [0, 0, 0], starts = [0, 0, 0];
       let revealed = 0, raf = 0;
-      const state = ringState = { svg, wedges, stop() { cancelAnimationFrame(raf); } };
+      const state = ringState = { svg, sweep, wedges, stop() { cancelAnimationFrame(raf); } };
       function step(now) {
-        // when each arc starts: its step is done and the one before has filled (the load step also gives up after 5 s)
-        let progress = 0;
+        // when each step starts to fill: it is done and the one before has filled (the load step also gives up after 5 s)
+        let part = 0;
         for (let i = 0; i < 3; i++) {
           const done = stepAt[i]() || (i === 2 && now - t0 > 5000 ? now : 0);
+          if (!moving) {   // reduced motion: a whole third as soon as the step (and the one before) is done
+            if (done && (i === 0 || starts[i - 1])) { starts[i] = 1; part += 1 / 3; }
+            continue;
+          }
           if (!starts[i] && done && (i === 0 || (ends[i - 1] && now >= ends[i - 1]))) { starts[i] = Math.max(done, i ? ends[i - 1] : t0); ends[i] = starts[i] + RING_FILL_MS; }
-          const f = starts[i] ? Math.min(1, Math.max(0, (now - starts[i]) / RING_FILL_MS)) : 0;
-          arcs[i].setAttribute("stroke-dasharray", `${RING_ARC * f} ${RING_C}`);
-          progress += f / 3;
+          part += (starts[i] ? Math.min(1, Math.max(0, (now - starts[i]) / RING_FILL_MS)) : 0) / 3;
         }
-        const pct = Math.round(progress * 100);
-        if (String(pct) !== svg.getAttribute("aria-valuenow")) svg.setAttribute("aria-valuenow", String(pct));
-        while (revealed < 4 && progress >= (revealed + 1) / 4 - 0.02) {
+        ringDraw(p0 + (1 - p0) * part);
+        while (revealed < 4 && part >= (revealed + 1) / 4 - 0.02) {
           const w = wedges[revealed++];
           w.classList.remove("ring-hold");
-          w.animate([{ opacity: 0, transform: "scale(0.86)" }, { opacity: 1, transform: "scale(1)" }], { duration: 520, easing: "cubic-bezier(.2,.8,.2,1)" });
+          if (moving) w.animate([{ opacity: 0, transform: "scale(0.86)" }, { opacity: 1, transform: "scale(1)" }], { duration: 520, easing: "cubic-bezier(.2,.8,.2,1)" });
         }
-        if (progress >= 0.999) { finish(); return; }
+        if (part >= 0.999) { finish(); return; }
         raf = requestAnimationFrame(step);
       }
       function finish() {
         if (ringState !== state) return;
         wedges.forEach(w => w.classList.remove("ring-hold"));
         document.body.classList.remove("ring-loading");   // tappable from here
-        svg.setAttribute("aria-valuenow", "100");
-        const out = svg.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(1.12)" }], { duration: 700, easing: "ease-out", fill: "forwards" });
+        ringDraw(1);
+        if (!moving) { setTimeout(() => { if (ringState === state) endLoadingRing(); }, 300); return; }   // the full ring shows for a moment; the circle works already
+        const fade = { duration: 700, easing: "ease-out", fill: "forwards" };
+        const out = svg.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(1.12)" }], fade);
+        if (sweep) sweep.animate([{ opacity: 1 }, { opacity: 0 }], fade);
         out.onfinish = () => { if (ringState === state) endLoadingRing(); };
       }
-      raf = requestAnimationFrame(step);
+      step(performance.now());
     }
     function endLoadingRing() {
       const r = ringState;
@@ -4445,6 +4483,7 @@
       ringState = null;
       r.stop();
       r.svg.remove();   // the ring is gone, along with its progress bar role
+      if (r.sweep) r.sweep.remove();
       r.wedges.forEach(w => { w.classList.remove("ring-hold"); w.getAnimations().forEach(a => a.finish()); });
       document.body.classList.remove("ring-loading");
     }
@@ -4465,6 +4504,7 @@
       const leaving = launching ? launchMoveStart("ring") : (endLaunchMove(), null);
       if (launching) { launching = false; document.body.classList.remove("launching"); }
       if (name !== "units" && selectMode) closeSelect();   // v21.1: leaving Units ends select mode
+      drawIfStale(name);   // DS2: a section that changed while out of sight is drawn before it shows (see render)
       for (const [key, view] of Object.entries(views)) view.classList.toggle("hidden", key !== name);
       if (move === "slide") {
         const dir = BAR_ORDER.indexOf(barOf(name)) > BAR_ORDER.indexOf(barOf(before)) ? 1 : -1;
@@ -4510,11 +4550,25 @@
     // The round Ask Mentor button opens a small window over whatever is showing. It has a greeting, a Paint Picker chip, a text box that is
     // text box (X6b: it works), and the orb. Nothing typed or shown is stored or sent: mentorMessages lives only while the app is open.
     // Stock phrases live in one place so later chunks can fill the empty lists.
+    // U6b: the lists are James's script (chunk U6): one plain sentence each, eight words or fewer, UK spelling, no exclamation marks.
+    // A list never gives the same line twice in a row (mentorPhrase).
     const MENTOR_PHRASES = {
-      greeting: ["How can I help?", "What are you painting?", "Ready when you are."],
-      picker: ["Let's find some paints.", "Welcome back. Pick a colour and a part."],   // not shown yet
-      thinking: [], answer: [], unsure: ["I do not know that yet."], finished: [], actions: [],   // X6b fills unsure (E: one plain line); the rest wait for X9
+      greeting: ["How can I help?", "What are you painting?", "Ready when you are.", "What's on the bench today?", "What would you like to know?",
+        "Ask me about paints or techniques.", "Tell me what you are working on.", "Pick a question or type your own."],
+      picker: ["Let's find some paints.", "Welcome back. Pick a colour and a part.", "Choose a colour to start."],   // not shown yet
+      thinking: ["One moment.", "Checking the tips.", "Looking through my notes.", "Still looking."],   // not shown: answers come at once (see mentorMood)
+      answer: ["Here is what I have.", "Here is what I found.", "This should help.", "Here is what the tips say.", "A good place to start.",
+        "This might help.", "Have a look at this.", "This is how I would approach it."],   // not shown yet: each answer starts with its own line
+      // the first is chunk E's line and the one Mentor uses; the others only follow it (see mentorUnsureLine)
+      unsure: ["I do not know that yet.", "I do not have tips on that yet.", "Nothing on that in my notes yet.", "That is outside what I know so far.",
+        "I cannot answer that one yet.", "Try asking it a different way."],
+      didYouMean: ["Did you mean", "Perhaps you meant", "Were you after"],   // not shown: the window keeps chunk E's "Did you mean"
+      thanks: ["You're welcome.", "Any time.", "No trouble at all.", "Good luck with the painting.", "Ask whenever you need to."],
+      returning: ["Welcome back.", "Back at the bench?", "Picking up where you left off?", "What are you working on now?", "What is next on the bench?"],
+      finished: ["Done for now.", "That covers it.", "Over to you.", "Come back any time.", "I will be here when you need me."],
+      actions: [],
     };
+    const MENTOR_UNSURE_MORE = MENTOR_PHRASES.unsure.slice(1);
     const MENTOR_TYPING = true;    // X6b: the text box is on (one line to switch it off)
     const MENTOR_MAX_LENGTH = 300;
     const MENTOR_MAX_MESSAGES = 30;
@@ -4533,29 +4587,71 @@
       });
     }
 
-    // The orb for the window: the same art as the round button, with the ring and the lens in their own groups so they can move.
-    function buildMentorOrb() {
-      const NS = "http://www.w3.org/2000/svg";
-      const el = (name, attrs, parent) => {
-        const node = document.createElementNS(NS, name);
-        for (const [k, v] of Object.entries(attrs || {})) node.setAttribute(k, v);
-        if (parent) parent.appendChild(node);
-        return node;
-      };
-      const svg = el("svg", { viewBox: "10 10 180 180", class: "mp-orb", "aria-hidden": "true", focusable: "false" });
-      const art = el("g", { transform: "translate(100 100) scale(1.2) translate(-100 -100)" }, svg);
-      el("circle", { class: "orb-bg", cx: 100, cy: 100, r: 74 }, art);
-      const ring = el("g", { class: "mp-ring" }, art);
-      const arcs = el("g", { fill: "none", "stroke-width": 15 }, ring);
-      for (const [cls, dash, rot] of [["orb-a", "111 253.4", 100], ["orb-c", "81 283.4", 10], ["orb-b", "56 308.4", -60], ["orb-dim", "51 313.4", -125]]) {
-        el("circle", { class: cls, cx: 100, cy: 100, r: 58, "stroke-dasharray": dash, transform: `rotate(${rot} 100 100)` }, arcs);
+    // ---- U6b: THE MENTOR LOOK (Settings > Mentor look: Futuristic, Magical or Grounded) ----
+    // James's drawings are in mentor-looks.js (MENTOR_LOOKS[look][state]; early.js puts their styles on the page and makes each drawing,
+    // minifolioLook.svg). The look is settings.mentorLook; missing or unknown means Futuristic, the default (saved settings, so DATA_VERSION stays 1).
+    // Like Shop links it is not in backups, so restoring a backup (old or new) leaves your look as it is.
+    // The round button (in the bar and in the middle of the start circle) always shows the look's neutral drawing; the moods are for the window only.
+    const MENTOR_LOOK_NAMES = { futuristic: "Futuristic", magical: "Magical", grounded: "Grounded" };
+    const goodMentorLook = (look) => typeof look === "string" && hasOwn(MENTOR_LOOK_NAMES, look) && !!window.minifolioLook && window.minifolioLook.known(look);
+    function currentMentorLook() { return goodMentorLook(settings.mentorLook) ? settings.mentorLook : "futuristic"; }
+    function mentorLookSvg(look, state) {
+      if (window.minifolioLook && window.minifolioLook.known(look)) return window.minifolioLook.svg(look, state);
+      return document.createElementNS("http://www.w3.org/2000/svg", "svg");   // mentor-looks.js did not load: an empty drawing
+    }
+    const mentorLookButtons = [...document.querySelectorAll("[data-mentor-look]")];
+    function showMentorLookChoice() {
+      const look = currentMentorLook();
+      for (const b of mentorLookButtons) b.setAttribute("aria-pressed", String(b.dataset.mentorLook === look));
+    }
+    // Puts the chosen look on the page: data-look (the start-up ring's CSS uses it), the round button, and the window's orb if it is open.
+    function applyMentorLook() {
+      const look = currentMentorLook();
+      document.documentElement.dataset.look = look;
+      if (window.minifolioLook) window.minifolioLook.styles();
+      const button = document.getElementById("mentor-button");
+      const old = button.querySelector("svg");
+      if (!old || !old.classList.contains("ml-" + look)) {
+        const fresh = mentorLookSvg(look, "neutral");
+        if (old) button.replaceChild(fresh, old); else button.prepend(fresh);
       }
-      const wake = el("g", { class: "mp-wake" }, art);
-      const look = el("g", { class: "mp-look" }, wake);
-      el("circle", { class: "orb-lens", cx: 100, cy: 100, r: 30, "stroke-width": 3 }, look);
-      el("circle", { class: "orb-core", cx: 100, cy: 100, r: 17 }, look);
-      el("circle", { cx: 95, cy: 94, r: 4, fill: "#ffffff", opacity: 0.85 }, look);
+      if (mentorState) mentorMood(mentorState.mood || "neutral", true);
+      showMentorLookChoice();
+    }
+    for (const b of mentorLookButtons) {
+      b.prepend(mentorLookSvg(b.dataset.mentorLook, "neutral"));   // each choice shows its own small orb
+      b.addEventListener("click", () => {
+        if (!goodMentorLook(b.dataset.mentorLook)) return;
+        settings.mentorLook = b.dataset.mentorLook;
+        saveSettings();
+        applyMentorLook();
+      });
+    }
+    if (settings.mentorLook !== undefined && !goodMentorLook(settings.mentorLook)) delete settings.mentorLook;
+    applyMentorLook();
+
+    // The orb for the window: the chosen look in one of its states (U6b). It is drawn 1.2 times larger in its box than in the round button, as
+    // before (the narrower viewBox), and its box (class ml-live) is the only place the look's own slow motion runs.
+    function buildMentorOrb(state) {
+      const svg = mentorLookSvg(currentMentorLook(), state || "neutral");
+      svg.setAttribute("viewBox", "25 25 150 150");
+      svg.classList.add("mp-orb");
       return svg;
+    }
+    // U6b: MENTOR'S MOODS, in the window only. Thinking while Mentor reads its notes ready for the first question (mentorWarmUp: the one part
+    // that takes a while, about 0.9 s on a slow phone; an answer itself comes at once, so the window has no moment to show Thinking then);
+    // Pleased when a clear answer shows; Unsure when it does not know or asks "Did you mean"; Finished when you sign off with thanks or a goodbye.
+    // Pleased and Finished go back to neutral after 2.5 s, Unsure after 4 s, Thinking once the notes are read. A mood only swaps the drawing
+    // inside the orb's box, which keeps its size, so nothing in the window moves. Reduced motion: the drawings still differ by shape and brightness.
+    const MENTOR_MOOD_MS = { pleased: 2500, finished: 2500, unsure: 4000 };
+    function mentorMood(mood, redraw) {
+      const state = mentorState;
+      if (!state) return;
+      clearTimeout(state.moodTimer);
+      if (redraw || state.mood !== mood || MENTOR_MOOD_MS[mood]) state.orbBox.replaceChildren(buildMentorOrb(mood));   // a repeat replays its settle
+      state.mood = mood;
+      state.orbBox.dataset.mood = mood;
+      if (MENTOR_MOOD_MS[mood]) state.moodTimer = setTimeout(() => { if (mentorState === state) mentorMood("neutral"); }, MENTOR_MOOD_MS[mood]);
     }
 
     // The window grows from the button: the origin is the button's centre, measured on screen, so it works wherever the button is.
@@ -4591,14 +4687,47 @@
       mentorUsed.clear();
       mentorLastAt = 0;
     }
-    const mentorPhrase = (list, fallback) => (list.length ? list[Math.floor(Math.random() * list.length)] : fallback);
+    // U6b: a stock line from one of the lists, never the one that list gave last time (when it has another).
+    const mentorLastPhrase = new Map();
+    function mentorPhrase(list, fallback) {
+      if (!list.length) return fallback;
+      const pool = list.length > 1 ? list.filter(line => line !== mentorLastPhrase.get(list)) : list;
+      const line = pool[Math.floor(Math.random() * pool.length)];
+      mentorLastPhrase.set(list, line);
+      return line;
+    }
+    // U6b: what Mentor says when it does not know: chunk E's "I do not know that yet.", unless that was Mentor's last line, so it never says
+    // the same thing twice in a row; then one of the other unsure lines.
+    function mentorUnsureLine() {
+      const plain = MENTOR_PHRASES.unsure[0];
+      const before = mentorMessages.length ? mentorMessages[mentorMessages.length - 1] : null;
+      return before && before.who === "mentor" && before.text === plain ? mentorPhrase(MENTOR_UNSURE_MORE, plain) : plain;
+    }
+    // U6b: a message that is only thanks or a goodbye ("thanks", "cheers", "that's all", "bye") ends the exchange. Mentor answers with a line from
+    // thanks (a thank-you) or finished (a goodbye) and its orb shows Finished. The engine is not asked: it reads "thanks" as a filler word.
+    // Returns "thanks", "finished" or "" (anything else, which is asked as usual).
+    const MENTOR_SIGN_OFF_WORDS = new Set(("thanks thank thankyou you u ty thx thanx cheers ta much very so a lot lots loads many again for that the help "
+      + "your this was is it helpful helps helped great perfect brilliant lovely nice cool ok okay right mentor mate anyway appreciated appreciate "
+      + "all done now bye goodbye good night see ya later that's thats i'm im").split(" "));
+    function mentorSignOff(text) {
+      const words = String(text).toLowerCase().replace(/’/g, "'").replace(/[^a-z' ]+/g, " ").trim().split(/\s+/).filter(Boolean);
+      if (!words.length || words.length > 10 || !words.every(w => MENTOR_SIGN_OFF_WORDS.has(w))) return "";
+      const plain = words.join(" ");
+      if (/\b(thanks|thank|thankyou|thx|thanx|ty|cheers|ta|appreciated?)\b/.test(plain)) return "thanks";
+      if (/\b(bye|goodbye|good night|see (you|ya)|later|that'?s all|that is all|that'?s it|all done|done for now|i'?m done)\b/.test(plain)) return "finished";
+      return "";
+    }
 
     // The first question after a new index takes about 0.9 s with the CPU slowed 4x (X8b, with mentor-data.js; about 0.2 s on a fast machine), so the window asks one empty question once it has finished
     // growing. That builds the engine's word tables before the first real question.
     function mentorWarmUp() {
       if (mentorWarm || typeof MinifolioMentor === "undefined") return;
       mentorWarm = true;
-      setTimeout(() => { try { MinifolioMentor.mentorAnswer("hello", { index: knowledgeIndex(), paints: [], tips: [] }); } catch (ignored) {} }, 400);
+      mentorMood("thinking");   // U6b: Mentor is reading its notes
+      setTimeout(() => {
+        try { MinifolioMentor.mentorAnswer("hello", { index: knowledgeIndex(), paints: [], tips: [] }); } catch (ignored) {}
+        if (mentorState && mentorState.mood === "thinking") mentorMood("neutral");
+      }, 400);
     }
 
     let mentorDoors = 0;
@@ -4731,15 +4860,20 @@
         if (row.classList.contains("mentor-dym-chips") && row.previousElementSibling && row.previousElementSibling.classList.contains("mentor-dym")) row.previousElementSibling.remove();   // E: "Did you mean" goes with its chip
         if (!row.children.length) row.remove();
       }
-      let reply;
-      try {
+      let reply, mood = "unsure";
+      const signOff = mentorSignOff(text);
+      if (signOff) {   // U6b: thanks or a goodbye: a short line back, and the orb shows Finished
+        reply = { who: "mentor", text: mentorPhrase(MENTOR_PHRASES[signOff], "Any time."), sources: [], suggestions: [] };
+        mood = "finished";
+      } else try {
         const { answer, pick } = mentorAsk(text, confirmed);
         // E: no answer: one line, and the starter questions that share the most words with it under it (the engine's suggestions)
         reply = answer.kind === "none"
-          ? { who: "mentor", text: mentorPhrase(MENTOR_PHRASES.unsure, "I do not know that yet."), sources: [], suggestions: answer.suggestions || [] }
+          ? { who: "mentor", text: mentorUnsureLine(), sources: [], suggestions: answer.suggestions || [] }
           : { who: "mentor", text: answer.lead, sources: answer.sources || [], pick, didYouMean: answer.band === "maybe" && answer.didYouMean ? answer.didYouMean : "" };
+        mood = answer.kind === "none" || reply.didYouMean ? "unsure" : "pleased";   // U6b
       } catch (ignored) {
-        reply = { who: "mentor", text: mentorPhrase(MENTOR_PHRASES.unsure, "I do not know that yet."), sources: [], suggestions: [] };
+        reply = { who: "mentor", text: mentorUnsureLine(), sources: [], suggestions: [] };
       }
       const mine = { who: "me", text };
       mentorMessages.push(mine, reply);
@@ -4751,6 +4885,7 @@
       state.win.classList.add("mentor-chatting");
       state.status.textContent = reply.didYouMean ? `Did you mean ${String(reply.didYouMean).replace(/[?.!]+$/, "")}? ${reply.text}` : reply.text;   // announced politely; the rows themselves are not read out unprompted
       mentorDrawChips(state);
+      mentorMood(mood);
       state.scroll.scrollTop = first.offsetTop - 4;
       if (fromChip) state.scroll.focus({ preventScroll: true });   // the chip that was tapped is gone, and a chip must not open the keyboard
       else state.input.focus({ preventScroll: true });
@@ -4777,7 +4912,9 @@
       win.setAttribute("aria-label", "Mentor");
 
       // D: a conversation left alone for MENTOR_IDLE_MINUTES is dropped before the window is drawn, so it opens at its start.
-      if (mentorMessages.length && Date.now() - mentorLastAt >= MENTOR_IDLE_MINUTES * 60000) mentorClear();
+      // U6b: and then it greets you with a line from returning ("Welcome back.") instead of greeting.
+      const returning = mentorMessages.length > 0 && Date.now() - mentorLastAt >= MENTOR_IDLE_MINUTES * 60000;
+      if (returning) mentorClear();
 
       const close = document.createElement("button");
       close.type = "button";
@@ -4810,7 +4947,7 @@
       scroll.setAttribute("aria-label", "Conversation");
       const greeting = document.createElement("p");
       greeting.className = "mentor-greeting";
-      greeting.textContent = mentorPhrase(MENTOR_PHRASES.greeting, "How can I help?");
+      greeting.textContent = returning ? mentorPhrase(MENTOR_PHRASES.returning, "Welcome back.") : mentorPhrase(MENTOR_PHRASES.greeting, "How can I help?");
       const msgs = document.createElement("div");
       msgs.className = "mentor-msgs";
       scroll.append(greeting, msgs);
@@ -4859,14 +4996,15 @@
       col.append(scroll, chips, form, status);
 
       const orbBox = document.createElement("div");
-      orbBox.className = "mentor-orbbox";
-      orbBox.appendChild(buildMentorOrb());
+      orbBox.className = "mentor-orbbox ml-live";   // U6b: the look's own slow motion runs here only
+      orbBox.dataset.mood = "neutral";
+      orbBox.appendChild(buildMentorOrb("neutral"));
       win.append(back, col, orbBox, close);
       backdrop.appendChild(win);
       document.body.appendChild(backdrop);
       document.body.classList.add("mentor-open");
 
-      const state = { backdrop, win, opener, scroll, msgs, chips, pickerChip, input, status, prevOverflow: document.body.style.overflow };
+      const state = { backdrop, win, opener, scroll, msgs, chips, pickerChip, input, status, orbBox, mood: "neutral", moodTimer: 0, prevOverflow: document.body.style.overflow };
       mentorState = state;
       for (const m of mentorMessages) msgs.appendChild(mentorBuildMessage(m));   // the conversation so far, if the window was closed and opened again
       if (mentorMessages.length) win.classList.add("mentor-chatting");
@@ -4892,7 +5030,9 @@
           event.preventDefault(); event.stopPropagation();
           closeMentor();
         } else if (event.key === "Tab") {
-          const stops = [...win.querySelectorAll("button, input, select, summary, a[href]")].filter(b => !b.disabled && b.tabIndex >= 0 && b.getClientRects().length);
+          const all = [...win.querySelectorAll("button, input, select, summary, a[href]")].filter(b => !b.disabled && b.tabIndex >= 0 && b.getClientRects().length);
+          // UX1b: the text box and Send come first, so one Tab from Close (where the window opens) reaches the box.
+          const stops = [...all.filter(b => form.contains(b)), ...all.filter(b => !form.contains(b))];
           const at = stops.indexOf(document.activeElement);
           const next = event.shiftKey ? (at <= 0 ? stops.length - 1 : at - 1) : (at < 0 || at === stops.length - 1 ? 0 : at + 1);
           event.preventDefault();
@@ -4915,6 +5055,7 @@
       const state = mentorState;
       if (!state) { if (after) after(); return; }
       mentorState = null;
+      clearTimeout(state.moodTimer);   // U6b
       document.removeEventListener("keydown", state.onKey, true);
       if (state.onView) {
         window.visualViewport.removeEventListener("resize", state.onView);
@@ -4991,12 +5132,35 @@
     // render() redraws the screen from the data. Change the data first, then render().
     // It saves first, so every change is saved from this one place.
     // Saves, then redraws everything. v18c-3: reports back true if the save worked.
+    // DS2: only the section on screen is drawn straight away. The other sections that show your data (Dashboard, Units, Recipes,
+    // and Recipe preferences in Settings) are noted in staleTabs and drawn when they are opened (showTab), before they appear,
+    // so what you see is always up to date. Before DS2 every tap rebuilt all of them: with 600 units, 1,500 paints and 300 recipes
+    // that was about a second on a slow phone, most of it for sections you couldn't see. Anything that jumps to another section
+    // (goToUnit, openRecipe, Mentor's links, the Back button) goes through showTab, so it is drawn first. A few small things
+    // outside one section stay up to date on every redraw: the basket count on the menu bar and the game and faction suggestions.
+    const staleTabs = new Set();
+    const DRAWN_TABS = ["dashboard", "units", "recipes", "settings"];
+    function shownTab() {
+      for (const [key, view] of Object.entries(views)) if (!view.classList.contains("hidden")) return key;
+      return tabAlias(settings.tab);
+    }
+    function drawTab(name) {
+      staleTabs.delete(name);
+      if (name === "dashboard") {
+        renderDashboard();
+        renderExamplesCards(); renderFeedbackCard(); renderBackupNudge();   // Dashboard cards that renderUnits used to draw for it
+      } else if (name === "units") renderUnits();
+      else if (name === "recipes") renderRecipes();
+      else if (name === "settings") renderRecipePrefs();   // RS2
+    }
+    // Draws a section now if it changed while it was out of sight. Returns nothing; safe to call for any name.
+    function drawIfStale(name) { if (staleTabs.has(name)) drawTab(name); }
     function render() {
       const ok = save();
-      renderDashboard();
-      renderUnits();
-      renderRecipes();
-      renderRecipePrefs();   // RS2
+      const shown = shownTab();
+      for (const name of DRAWN_TABS) { if (name === shown) drawTab(name); else staleTabs.add(name); }
+      if (shown !== "recipes") updateBasket();   // the basket on the menu bar (renderRecipes does it when Recipes is drawn)
+      if (shown !== "units") fillUnitLists();     // the game and faction suggestions (the scheme editor on Recipes uses them too)
       if (settings.tab === "guides") renderGuides();   // v35: only while you are looking at it
       return ok;
     }
@@ -6021,7 +6185,19 @@
 
     let stagesWereShown = false;   // Mo1
     let unitStagesOpen = false;   // v49: "Pick by stage" on the Units filters (kept while the app is open)
+    // Suggestions for the game/faction boxes in the add form, the edit panel and (factions) the scheme editor.
+    // DS2: on its own, so render() can keep them right while the Units tab is out of sight.
+    function fillUnitLists(games) {
+      const fillList = (id, values) => {
+        const dl = document.getElementById(id);
+        dl.innerHTML = "";
+        for (const v of values) { const o = document.createElement("option"); o.value = v; dl.appendChild(o); }
+      };
+      fillList("game-options", games || uniqueSorted(models.map(m => m.hobby)));
+      fillList("faction-options", uniqueSorted(models.map(m => m.faction)));
+    }
     function renderUnits() {
+      staleTabs.delete("units");   // DS2: drawn now (see render)
       // M2: the Detailed / Simple switch for model rows shows only while some unit is tracked model by model.
       modelRowsSwitch.classList.toggle("hidden", !models.some(m => m.each));
       for (const b of modelRowsSwitch.querySelectorAll("button")) b.setAttribute("aria-pressed", String((b.dataset.rows === "simple") === rowsSimple()));
@@ -6101,14 +6277,7 @@
         : `${plural(models.length, "unit")}, ${plural(modelCount(models), "model")}`;
       toggleFilters.textContent = `Filters${anyFilter ? " (" + activeCount + ")" : ""} ${filtersOpen ? "▴" : "▾"}`;
 
-      // Suggestions for the game/faction boxes in the add form and the edit panel.
-      const fillList = (id, values) => {
-        const dl = document.getElementById(id);
-        dl.innerHTML = "";
-        for (const v of values) { const o = document.createElement("option"); o.value = v; dl.appendChild(o); }
-      };
-      fillList("game-options", games);
-      fillList("faction-options", uniqueSorted(models.map(m => m.faction)));
+      fillUnitLists(games);
       fillStartStage();
       renderExamplesCards();
       renderFeedbackCard();   // v25
@@ -6750,13 +6919,15 @@
       }
 
       // Nickname: saves as you type ("input"), redraws when you leave the box ("change").
+      // DS2: like the notes box, it saves half a second after you stop typing (and at once if the app goes to the background).
+      // Before DS2 every key press saved everything, and any other open window redrew everything for each one.
       const nicknameLabel = document.createElement("label");
       nicknameLabel.textContent = "Nickname (optional)";
       const nickname = document.createElement("input");
       nickname.maxLength = UNIT_TEXT_MAX;   // SEC1: the same limit as the name
       nickname.placeholder = "e.g. The Gold Squad";
       nickname.value = model.nickname || "";
-      nickname.addEventListener("input", () => { model.nickname = nickname.value.trim(); save(); });
+      nickname.addEventListener("input", () => { model.nickname = nickname.value.trim(); saveFieldSoon(); });
       nickname.addEventListener("change", () => render());
       nicknameLabel.appendChild(nickname);
 
@@ -7175,6 +7346,11 @@
         putRecipesBack();   // after the units, so their links to the example recipes come back too
         render();
       }, "Undo", UNDO_SECONDS);
+      // UX1b: the card (and the button you pressed) has gone, so focus moves to the start of the page's content
+      // instead of dropping to the page itself. Checked again after the next frame, in case the redraw comes later.
+      const refocus = () => { const at = document.activeElement; if (!at || at === document.body || !at.isConnected) focusContentStart(); };
+      refocus();
+      requestAnimationFrame(() => setTimeout(refocus, 0));
     }
     // v56: keeps every example at once (units, recipes, schemes and paints), so no card is left on any tab.
     function keepExamples() {
@@ -7938,8 +8114,24 @@
       if (focusBeforeViewer && focusBeforeViewer.isConnected) focusBeforeViewer.focus();
     }
     document.getElementById("viewer-close").addEventListener("click", closeViewer);
+    // DS2: the viewer is a pop-up ("modal"), so Tab and Shift+Tab go round its own buttons and boxes only, as in the question box.
+    // Before DS2, Tab went on to the save banner and the menu bar behind it. A question asked from the viewer (Delete photo?) keeps
+    // its own Tab handling.
+    function viewerStops() {
+      return [...viewerBox.querySelectorAll("button, input, select, textarea, a[href]")]
+        .filter(el => !el.disabled && el.tabIndex >= 0 && el.getClientRects().length);
+    }
     document.addEventListener("keydown", (event) => {
       if (!viewer) return;
+      if (event.key === "Tab" && !dialogState) {
+        const stops = viewerStops();
+        if (!stops.length) return;
+        const at = stops.indexOf(document.activeElement);
+        const next = event.shiftKey ? (at <= 0 ? stops.length - 1 : at - 1) : (at < 0 || at === stops.length - 1 ? 0 : at + 1);
+        event.preventDefault();
+        stops[next].focus();
+        return;
+      }
       if (event.key === "Escape") { closeViewer(); return; }
       // Arrow keys move between photos, unless you're typing in a box.
       const typing = /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName);
@@ -7947,6 +8139,13 @@
         if (event.key === "ArrowLeft") moveViewer(-1);
         if (event.key === "ArrowRight") moveViewer(+1);
       }
+    });
+    // DS2: if focus lands outside the viewer some other way (a screen reader's own keys, say), it is brought back in. Not while a
+    // question box or a message's button is in use: the question box pulls focus to itself, and Undo on a message must still work.
+    document.addEventListener("focusin", (event) => {
+      if (!viewer || dialogState || viewerBox.contains(event.target) || event.target.closest("#toast, #dialog")) return;
+      const first = document.getElementById("viewer-close");
+      if (first) first.focus();
     });
 
     // Show the full-size picture in an <img>. Shows the small one first if the big one
@@ -8310,6 +8509,7 @@
     function showDialog(cfg) {
       if (dialogState) finishDialog(dialogState.cfg.mode === "text" ? null : false);   // a new question replaces the old one, which counts as "no"
       const text = cfg.mode === "text", show = cfg.mode === "show", pick = cfg.mode === "pick";
+      const notice = cfg.mode === "notice";   // UX1b: a message with one OK button, up until it's dismissed
       dialogMessage.textContent = cfg.message;
       dialogPick.replaceChildren();
       dialogPick.classList.toggle("hidden", !pick);
@@ -8321,14 +8521,14 @@
       dialogArea.classList.toggle("hidden", !show);
       dialogInput.value = text ? (cfg.initial || "") : "";
       dialogArea.value = show ? (cfg.initial || "") : "";
-      dialogYes.textContent = cfg.yes || (text ? "OK" : show ? "Close" : "Yes");
+      dialogYes.textContent = cfg.yes || (text || notice ? "OK" : show ? "Close" : "Yes");
       dialogNo.textContent = cfg.no || (text ? "Cancel" : "No");
       // A question about something destructive makes the safe answer the bold one.
       dialogYes.className = cfg.danger ? "danger-button" : "primary-button";
       dialogNo.className = cfg.danger ? "primary-button" : "plain-button";
-      dialogNo.classList.toggle("hidden", show || (pick && !cfg.no));   // (after the line above, which sets the whole class). RS3b: Skip
+      dialogNo.classList.toggle("hidden", show || notice || (pick && !cfg.no));   // (after the line above, which sets the whole class). RS3b: Skip
       dialogBackdrop.classList.toggle("dialog-sheet", !!cfg.sheet);   // RS3b: a sheet from the bottom of the screen
-      dialogButtons.classList.toggle("single", show);
+      dialogButtons.classList.toggle("single", show || notice);
       dialogState = { cfg, opener: document.activeElement };
       dialogBackdrop.classList.remove("hidden");
       // DS1: a danger question starts on the safe answer, so Enter, Space or a held key can't confirm it by accident.
@@ -8418,6 +8618,21 @@
     function showTextToCopy(message, text) {
       showDialog({ mode: "show", message, initial: text, onDone: () => {} });
     }
+    // UX1b: a message that stays until you press OK (a longer message, such as why a file was refused, can be read in full).
+    function showNotice(message) {
+      showDialog({ mode: "notice", message, onDone: () => {} });
+    }
+
+    // ----- UX1b: Skip to content -----
+    // The first stop for the Tab key on every page (shown only while it has the focus). It jumps past the menu bar
+    // (four segments, Ask Mentor and the back arrow) to the first control of the page you are on.
+    function focusContentStart() {
+      const header = document.querySelector("main > .app-bar");
+      const target = [...document.querySelector("main").querySelectorAll("button, a[href], input, select, textarea, summary, [tabindex]")]
+        .find(el => !header.contains(el) && el.tabIndex >= 0 && !el.disabled && el.getClientRects().length && !el.closest(".hidden, [hidden]"));
+      if (target) target.focus();
+    }
+    document.getElementById("skip-link").addEventListener("click", focusContentStart);
 
     // ----- Filters and the add form -----
 
@@ -8698,6 +8913,7 @@
     let schemeDraft = null;    // the painting scheme being edited (a copy), or null
 
     function renderRecipes() {
+      staleTabs.delete("recipes");   // DS2: drawn now (see render)
       updateBasket();   // v40: the basket count on the tab bar
       if (openRecipeId !== null && !recipeById(openRecipeId)) openRecipeId = null;
       // v16: Paste recipes fills the screen while it's open.
@@ -8990,6 +9206,7 @@
       }, { yes: "Remove", danger: true });
     }
     function renderRecipePrefs() {
+      staleTabs.delete("settings");   // DS2: drawn now (see render)
       renderListChips("part-chips", "parts", "part");
       renderListChips("technique-chips", "techniques", "technique");
     }
@@ -9036,7 +9253,7 @@
       top.className = "card";
       const title = document.createElement("h2");
       title.textContent = recipe.name;
-      title.style.fontSize = "20px";
+      title.style.fontSize = "1.25rem";   // UX1b: 20 px at normal text size
       // RS1: one small Edit button by the title rolls out Edit steps and paints, Duplicate, Copy as text and Delete recipe.
       const titleRow = document.createElement("div");
       titleRow.className = "recipe-title-row";
@@ -16695,10 +16912,6 @@
       for (const [re, brand] of LABEL_BRANDS) if (re.test(t)) return { brand, re };
       return null;
     }
-    function brandOnLabel(text) {
-      const hit = labelBrandHit(text);
-      return hit ? hit.brand : "";
-    }
     function wordLikeness(word, token) {
       const d = typoDistance(word, token, word.length);
       let same = 0;
@@ -17221,7 +17434,7 @@
           settings.stages = STAGES = names;
           fixDoneFrom();
         });
-        if (!kept) { notify(fullMessage()); renderSettings(); return; }
+        if (!kept) { notifyFull(); renderSettings(); return; }
         applyPalette(settings.palette);
         filters.stages = new Set();
         render();
@@ -17288,10 +17501,6 @@
     function customColoursFor(n) {
       const saved = Array.isArray(settings.customColours) ? settings.customColours : [];
       return stageColours(settings.palette, n).map((fallback, i) => goodHex(saved[i]) ? saved[i].toLowerCase() : fallback);
-    }
-    // The colours in use now (before light mode deepens them): yours, or the set's.
-    function chosenStageColours(n) {
-      return usingCustom() ? customColoursFor(n) : stageColours(settings.palette, n);
     }
     // How a colour reads on the dark cards. Under 3 is too faint for a stage's name to be
     // read easily. (Light mode deepens pale colours by itself, so light cards are fine.)
@@ -17470,6 +17679,8 @@
       const colours = forShow(usingCustom() ? customColoursFor(STAGES.length) : stageColours(name, STAGES.length));
       colours.forEach((colour, index) => document.documentElement.style.setProperty(`--stage-${index}`, colour));
       document.documentElement.style.setProperty("--done-colour", colours[colours.length - 1]);
+      // U6b: the Mentor orb's five ring segments are your colour set's own five colours, as stored (the orb is a dark badge in light mode too).
+      (usingCustom() ? customColoursFor(5) : stageColours(name, 5)).forEach((colour, index) => document.documentElement.style.setProperty(`--mentor-s${index}`, colour));
     }
 
     // v20: the Appearance buttons in Settings.
@@ -17666,13 +17877,12 @@
       startDraft();
       renderStageEditor();
       renderFactionColours();
-      let used = 0;
-      try { used = (localStorage.getItem(STORAGE_KEY) || "").length + (localStorage.getItem(RECIPES_KEY) || "").length; } catch (ignored) {}
+      const used = appStorageUsed();   // DS2: every name the app saves under, safety copies included
       const photos = models.reduce((sum, m) => sum + (m.photos || []).length + (m.photo ? 1 : 0), 0);
       const summary =
         `${plural(models.length, "unit")}, ${plural(modelCount(models), "model")}, ${plural(photos, "photo")}, ` +
         `${plural(book.recipes.length, "recipe")}. ` +
-        `Units and recipes use about ${Math.max(1, Math.round(used / 1024))} KB of roughly 5,000 KB. ` +
+        `Saved data, safety copies included, uses about ${Math.max(1, Math.round(used / 1024))} KB of roughly 5,000 KB. ` +
         (settings.lastBackup ? `Last backup: ${shortDate(settings.lastBackup)}.` : "No backup saved yet.") +
         (photos ? (settings.lastFullBackup ? ` Last backup with photos: ${shortDate(settings.lastFullBackup)}.` : " Your photos haven't been backed up yet.") : "");
       dataSummary.textContent = summary;
@@ -17779,6 +17989,45 @@
     function forgetSafetyCopy(suffix) {
       try { localStorage.removeItem(STORAGE_KEY + suffix); localStorage.removeItem(RECIPES_KEY + suffix); } catch (ignored) {}
     }
+
+    // ----- DS2: storage used, and removing the safety copies -----
+    // The browser keeps about 5 million characters for the app's saved data. Every name the app saves under starts with
+    // "mini-tracker-" or "shades-of-grey-", and all of them count: units, recipes, settings, drafts and the safety copies.
+    // (Before DS2 the Settings line counted only units and recipes, so it could say 1,562 KB while saving had stopped.)
+    function appStorageUsed() {
+      let used = 0;
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith("mini-tracker-") || key.startsWith("shades-of-grey-"))) used += key.length + (localStorage.getItem(key) || "").length;
+        }
+      } catch (ignored) {}
+      return used;
+    }
+    // The safety copies saved on this device right now (kept by Delete all, Replace, Restore and Recover). Text that couldn't be
+    // read ("-unreadable") is not one of them: it may be the only copy of something, so it is only ever removed by its 30 days.
+    function safetyCopyKeys() {
+      const keys = [];
+      for (const suffix of SAFETY_COPIES) keys.push(STORAGE_KEY + suffix, RECIPES_KEY + suffix);
+      keys.push(RECIPES_KEY + RECIPES_ONLY_COPY);
+      return keys.filter(key => savedText(key) !== null);
+    }
+    // Offered when a save fails because storage is full (the red banner, and the "couldn't be saved" message). It asks first.
+    function offerRemoveSafetyCopies() {
+      const keys = safetyCopyKeys();
+      if (!keys.length) { notify("There are no safety copies to remove."); return; }
+      const kb = Math.max(1, Math.round(keys.reduce((sum, key) => sum + key.length + (savedText(key) || "").length, 0) / 1024));
+      askYesNo(`Remove the safety copies kept on this device (about ${kb} KB)? Recover earlier data can't bring them back afterwards.`, () => {
+        for (const key of safetyCopyKeys()) { try { localStorage.removeItem(key); } catch (ignored) {} }
+        const wasFailing = saveFailing;
+        const ok = saveAll();
+        renderRecover();
+        if (settings.tab === "settings") renderSettings();
+        if (ok) showToast(wasFailing ? "Safety copies removed. Everything is saved." : "Safety copies removed. Please try again.");
+        else notify("Safety copies removed, but storage is still full. Please save a backup, then remove units you no longer need.");
+      }, { yes: "Remove", danger: true });
+    }
+    document.getElementById("banner-copies").addEventListener("click", offerRemoveSafetyCopies);
     // Run at start-up: copies older than 30 days are removed. Pre-v14 copies have no date,
     // so they're given today's date now (and are removed 30 days from now).
     function expireSafetyCopies() {
@@ -17879,10 +18128,10 @@
       askYesNo(`Replace your current ${plural(book.recipes.length, "recipe")} with the ${plural(restored.recipes.length, "recipe")} in this copy? (Your units stay as they are.)`, () => {
         const before = JSON.stringify(book);
         const linksBefore = unitRecipeLinks();   // DS1
-        if (!changeAndSave(() => { linkUnitsToBook(models, restored, book); book = restored; })) { notify(fullMessage()); return; }
+        if (!changeAndSave(() => { linkUnitsToBook(models, restored, book); book = restored; })) { notifyFull(); return; }
         afterBigChange();
         showToast(`Recovered ${plural(book.recipes.length, "recipe")}`, () => {
-          if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(before)); putUnitRecipeLinksBack(linksBefore); })) { notify(fullMessage()); return; }
+          if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(before)); putUnitRecipeLinksBack(linksBefore); })) { notifyFull(); return; }
           afterBigChange();
         }, "Undo", UNDO_SECONDS);
       }, { danger: true });
@@ -17919,7 +18168,7 @@
             fixDoneFrom();
           }
         });
-        if (!kept) { notify(fullMessage()); return; }
+        if (!kept) { notifyFull(); return; }
         afterBigChange();
         showToast(`Recovered ${plural(units.length, "unit")}`, () => {
           const back = changeAndSave(() => {
@@ -17929,7 +18178,7 @@
             settings.doneFrom = undoState.doneFrom;
             fixDoneFrom();
           });
-          if (!back) { notify(fullMessage()); return; }
+          if (!back) { notifyFull(); return; }
           afterBigChange();
         }, "Undo", UNDO_SECONDS);
       }, { danger: true });
@@ -17979,11 +18228,7 @@
       loadThumbs().catch(() => {});
     }
 
-    function sizeText(bytes) {
-      if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(1)} GB`;
-      if (bytes >= 1e6) return `${(bytes / 1e6).toFixed(1)} MB`;
-      return `${Math.max(1, Math.round(bytes / 1e3))} KB`;
-    }
+    // DS2: a first sizeText() (with GB) stood here. The one further down (with the file checks) was always the one used, so this went.
     // Look through every file in the photo store and sort them into in-use / spare.
     async function photoStoreReport() {
       const records = await photoStore("readonly", store => store.getAll());
@@ -18047,13 +18292,13 @@
         // v14: STOP if the safety copy can't be kept, rather than delete with no safety net.
         if (!keepSafetyCopy("-before-delete-all")) {
           notify("There isn't room on this device to keep a safety copy of your units, so nothing has been deleted. " +
-                "Please press Save backup first, then delete some photos or units you no longer need.");
+                "Please press Save backup first, then delete units you no longer need.");   // DS2: deleting photos frees nothing here
           return;
         }
         const count = models.length;
         const before = JSON.stringify(models);
         // DS1: saved first; if that fails, nothing changes and the message says so (no "Deleted").
-        if (!changeAndSave(() => { models = []; })) { notify(fullMessage()); return; }
+        if (!changeAndSave(() => { models = []; })) { notifyFull(); return; }
         const undo = unitsUndo(before);   // DS1: Undo keeps units added since
         openIds.clear();
         clearFilters();
@@ -18069,7 +18314,7 @@
 
     // ================= BACKUPS AND CSV =================
 
-    // Hands the browser some text and asks it to download it as a file.
+    // Hands the browser some text and asks it to download it as a file. (DS2: text can also be a Blob, as the full backup is.)
     function downloadFile(filename, text, type) {
       const blob = new Blob([text], { type });
       const link = document.createElement("a");
@@ -18132,16 +18377,27 @@
     // v46: the full backup (units, recipes and every photo) made into one piece of text, shared by
     // Save full backup with photos and Send full backup with photos to… so the file is the same either way.
     // No neat line breaks here: the file is big enough already.
+    // DS2: the file is put together as a Blob, piece by piece (the units and recipes, then one photo at a time), rather than as one
+    // piece of text. A few hundred photos made a string of 100 MB or more, which can crash a phone's tab. The file is exactly the
+    // same as before (the photos sit last, under "photoFiles"), so every backup still restores the same way. blob is the file.
     async function buildFullBackup() {
-      const backup = backupData();
-      backup.photoFiles = {};
+      const head = JSON.stringify(backupData());
+      let blob = new Blob([head.slice(0, -1), ',"photoFiles":{'], { type: "application/json" });
+      let parts = [];
+      const done = new Set();
       let missing = 0;
       for (const m of models) for (const id of photoIds(m)) {
+        if (done.has(id)) continue;   // a photo listed twice is written once, as JSON.stringify did
         const record = await getPhoto(id);
         if (!record) { missing++; continue; }
-        backup.photoFiles[id] = { full: await blobToDataUrl(record.full), thumb: await blobToDataUrl(record.thumb) };
+        const pair = { full: await blobToDataUrl(record.full), thumb: await blobToDataUrl(record.thumb) };
+        parts.push((done.size ? "," : "") + JSON.stringify(String(id)) + ":" + JSON.stringify(pair));
+        done.add(id);
+        // every few photos the waiting pieces go into the Blob, so only a handful of photos are ever held as text
+        if (parts.length >= 8) { blob = new Blob([blob, ...parts], { type: "application/json" }); parts = []; }
       }
-      return { text: JSON.stringify(backup), count: Object.keys(backup.photoFiles).length, missing };
+      blob = new Blob([blob, ...parts, "}}"], { type: "application/json" });
+      return { blob, count: done.size, missing };
     }
     function fullBackupName(today) { return `minifolio-full-backup-${today}.json`; }
     function noteFullBackupDone() {
@@ -18163,7 +18419,7 @@
       button.textContent = "Preparing backup…";
       try {
         const made = await buildFullBackup();
-        downloadFile(fullBackupName(todayISO()), made.text, "application/json");
+        downloadFile(fullBackupName(todayISO()), made.blob, "application/json");
         noteFullBackupDone();
         showToast(`Full backup saved with ${fullBackupWords(made)}`);
       } catch (error) {
@@ -18204,7 +18460,7 @@
         fullShareButton.textContent = "Preparing backup…";
         try {
           made = await buildFullBackup();
-          text = made.text;
+          text = made.blob;   // DS2: a Blob (the file's contents), not a string
           file = new File([text], fullBackupName(todayISO()), { type: "application/json" });
         } catch (error) {
           notify("Sorry, the full backup couldn't be made. Try Save backup (without photos) instead.");
@@ -18384,7 +18640,7 @@
       if (dataTooNew) { location.reload(); return; }
       if (unreadableParts.length) { startAgainFromUnreadable(); return; }   // DS1
       if (saveAll()) showToast("Saved. Everything is up to date.");
-      else notify("Still full. Please save a backup, then free some space (delete photos or units you no longer need).");
+      else notify("Still full. Please save a backup, then free some space (units you no longer need, or the safety copies).");   // DS2: not photos
     });
 
     const restoreFile = document.getElementById("restore-file");
@@ -18496,12 +18752,11 @@
               if (unitsToo && !isList && goodTheme(parsed.theme)) settings.theme = parsed.theme;
               else if (unitsToo && !isList && RETIRED_THEMES.includes(parsed.theme)) settings.theme = "classic";   // TH1: a removed theme becomes Classic
               // v48: and the paint brands you'd switched off (unknown brands are dropped).
-              if (unitsToo && !isList && Array.isArray(parsed.brandsOff)) settings.brandsOff = cleanBrandsOff(parsed.brandsOff);
-              // v20.1: Custom colours. Backups from before v20.1 don't have them, so yours stay.
+              if (unitsToo && !isList && Array.isArray(parsed.brandsOff)) settings.brandsOff = cleanBrandsOff(parsed.brandsOff);              // v20.1: Custom colours. Backups from before v20.1 don't have them, so yours stay.
               if (unitsToo && !isList && Array.isArray(parsed.customColours)) settings.customColours = cleanCustomColours(parsed.customColours);
               if (unitsToo && !isList && typeof parsed.useCustom === "boolean") settings.useCustom = parsed.useCustom;
             });
-            if (!kept) { notify(fullMessage()); return; }
+            if (!kept) { notifyFull(); return; }
             recipeDraft = null;
             openRecipeId = null;
             openIds.clear();
@@ -18526,7 +18781,7 @@
             } else {
               if (unitsToo) showToast("Backup restored" + restoreNotes.map(n => `. ${n}`).join(""));
               else showToast(`Recipes restored (${plural(book.recipes.length, "recipe")})`, () => {
-                if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(recipesBefore)); putUnitRecipeLinksBack(linksBefore); })) { notify(fullMessage()); return; }
+                if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(recipesBefore)); putUnitRecipeLinksBack(linksBefore); })) { notifyFull(); return; }
                 afterBigChange();
                 showToast("Your recipes are back as they were");
               }, "Undo", UNDO_SECONDS);
@@ -18538,9 +18793,25 @@
       });
     });
 
+    // UX1b: which mark separates the cells. Excel in much of Europe saves CSV files with semicolons
+    // (a comma is the decimal mark there), and some apps use tabs. The first line (the column titles)
+    // decides: the mark it uses most, outside quotes. A comma when it's a tie or there is none.
+    function csvSeparator(text) {
+      const counts = { ",": 0, ";": 0, "\t": 0 };
+      let insideQuotes = false;
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        if (char === '"') insideQuotes = !insideQuotes;
+        else if (!insideQuotes && char === "\n") { if (counts[","] + counts[";"] + counts["\t"]) break; }
+        else if (!insideQuotes && char in counts) counts[char]++;
+      }
+      return counts[";"] > counts[","] && counts[";"] >= counts["\t"] ? ";" : counts["\t"] > counts[","] ? "\t" : ",";
+    }
+
     // Turns CSV text into rows of cells. A value can contain a comma if it's wrapped in
     // quotes, e.g. "Boyz, mob 2", so we read one character at a time.
-    function parseCSV(text) {
+    // UX1b: sep is the mark between cells (see csvSeparator); a comma unless given.
+    function parseCSV(text, sep = ",") {
       const rows = [];
       let row = [];
       let cell = "";
@@ -18553,7 +18824,7 @@
           else cell += char;
         } else if (char === '"' && cell === "") {
           insideQuotes = true;       // a quote only opens a quoted value at the start of a cell
-        } else if (char === ",") {
+        } else if (char === sep) {
           row.push(cell); cell = "";
         } else if (char === "\n") {
           row.push(cell); row.line = rows.length + 1; rows.push(row); row = []; cell = "";
@@ -18625,6 +18896,37 @@
     const CSV_COLUMNS = { name: ["name", "unit", "unit name"], game: ["game", "hobby"], faction: ["faction", "army"],
       stage: ["stage"], nickname: ["nickname"], count: ["count", "models", "number"], repaint: ["repaint"], notes: ["notes", "note"],
       dateAdded: ["date_added", "date added"], dateStage: ["date_stage", "date stage"] };   // IM1: the two date columns
+    // UX1b: a "status" column is read as the stage when there is no "stage" column. Its words are matched to
+    // your stages: the stage's own name or number first, then the everyday words below for the app's own stage
+    // names (only when your list has that stage). "Painted", "done" and "finished" mean your first Done stage.
+    // Anything else is listed on the check screen and starts at the Set every row to stage.
+    const CSV_STATUS_TITLES = ["status", "state", "progress"];
+    const CSV_STATUS_WORDS = {
+      "Unassembled": ["unbuilt", "not built", "not started", "new", "in box", "in the box", "boxed", "on sprue", "on sprues", "on the sprue", "nib", "new in box", "unopened", "sealed", "to build", "pile of shame"],
+      "Part assembled": ["part built", "partly built", "partially built", "half built", "partly assembled", "partially assembled", "half assembled", "building", "being built"],
+      "Assembled": ["built", "constructed", "to prime", "ready to prime"],
+      "Primed": ["undercoated", "undercoat", "primer", "sprayed", "to paint", "ready to paint"],
+      "Part painted": ["part painted", "partly painted", "partially painted", "half painted", "started", "in progress", "wip", "work in progress", "painting", "being painted", "base coated", "basecoated", "basecoat", "base coat"],
+      "Battle ready": ["tabletop", "tabletop ready", "table ready", "tabletop standard", "game ready", "battle ready"],
+      "Needs touch-ups": ["touch up", "touch ups", "touchup", "touchups", "needs touch up", "needs touch ups", "needs touchup", "needs touchups", "needs work", "needs repair", "repair"],
+      "Parade ready": ["parade", "display", "display ready", "showcase", "competition ready"],
+    };
+    const CSV_DONE_WORDS = ["painted", "done", "finished", "complete", "completed", "fully painted"];
+    // The stage number for a status word, or -1 when it doesn't match.
+    function stageFromStatus(text) {
+      const word = String(text || "").toLowerCase().replace(/[-_/]+/g, " ").replace(/[.!]+$/, "").replace(/\s+/g, " ").trim();
+      if (!word) return -1;
+      const byName = STAGES.findIndex(s => s.toLowerCase().replace(/[-_/]+/g, " ") === word);
+      if (byName !== -1) return byName;
+      if (CSV_DONE_WORDS.includes(word)) return Math.min(Math.max(0, settings.doneFrom), STAGES.length - 1);
+      for (const [stage, words] of Object.entries(CSV_STATUS_WORDS)) {
+        if (!words.includes(word)) continue;
+        const i = STAGES.findIndex(s => s.toLowerCase() === stage.toLowerCase());
+        if (i !== -1) return i;
+      }
+      return -1;
+    }
+
     function csvToUnits(rows) {
       rows = rows.filter(cells => cells.some(c => String(c).trim()));
       const noName = 'This file has no "name" column, so Minifolio can\'t tell which column holds your unit names. ' +
@@ -18634,6 +18936,8 @@
       const titles = rows[0].map(c => plainQuotes(String(c)).trim().toLowerCase());
       const col = {};
       for (const [key, words] of Object.entries(CSV_COLUMNS)) col[key] = titles.findIndex(t => words.includes(t));
+      // UX1b: no "stage" column, so a "status" column is the stage (read with stageFromStatus below).
+      if (col.stage < 0) col.stage = titles.findIndex(t => CSV_STATUS_TITLES.includes(t));
       if (col.name < 0) return { problem: noName };
       const cell = (cells, key) => col[key] < 0 ? "" : String(cells[col[key]] || "").trim();
       const unknownStages = new Set();
@@ -18653,14 +18957,15 @@
         const stageText = cell(cells, "stage");
         const n = Number(stageText);
         const validNumber = stageText !== "" && Number.isInteger(n) && n >= 0 && n < STAGES.length;
-        if (stageText && !STAGES.some(s => s.toLowerCase() === stageText.toLowerCase()) && !validNumber) {
-          unknownStages.add(stageText);
-        }
+        // UX1b: a stage's own name first, then its number, then an everyday word ("primed", "painted", "WIP").
+        let stage = stageFromStatus(stageText);
+        if (stage === -1 && validNumber) stage = n;
+        if (stageText && stage === -1) unknownStages.add(stageText);
         units.push({
           name,
           hobby: cell(cells, "game"),
           faction: plainQuotes(cell(cells, "faction")),
-          stage: stageFromText(stageText),
+          stage: stage === -1 ? 0 : stage,
           // v60: only a stage the app knows counts as given; otherwise the row starts at the set-all stage.
           stageGiven: stageText !== "" && !unknownStages.has(stageText),
           nickname: cell(cells, "nickname"),
@@ -18684,14 +18989,16 @@
       if (!file) return;
       // v19.1: refuse pictures and very large files before reading anything.
       const problem = fileProblem(file, "csv");
-      if (problem) { csvFile.value = ""; notify(problem); return; }
+      // UX1b: why a file was refused stays on screen until you press OK (it used to go after a few seconds).
+      if (problem) { csvFile.value = ""; showNotice(problem); return; }
       readFile(file, (text) => {
         csvFile.value = "";
-        if (!looksLikeText(text)) { notify(`"${file.name}" isn't a CSV file (it isn't plain text). Nothing has changed.`); return; }
-        const read = csvToUnits(parseCSV(text.replace(/^﻿/, "")));   // ﻿: an invisible mark Excel adds
-        if (read.problem) { notify(read.problem); return; }
+        if (!looksLikeText(text)) { showNotice(`"${file.name}" isn't a CSV file (it isn't plain text). Nothing has changed.`); return; }
+        const clean = text.replace(/^﻿/, "");   // ﻿: an invisible mark Excel adds
+        const read = csvToUnits(parseCSV(clean, csvSeparator(clean)));   // UX1b: commas, semicolons or tabs
+        if (read.problem) { showNotice(read.problem); return; }
         const { units, unknownStages, datesLeftOut } = read;
-        if (!units.length) { notify("No units found in that file."); return; }
+        if (!units.length) { showNotice("No units found in that file. Nothing has changed."); return; }
         whPanel.classList.add("hidden");
         openReview({ source: "csv", title: `"${file.name}"`, rows: units, unknownStages: [...unknownStages], datesLeftOut });
       });
@@ -18714,8 +19021,11 @@
     // ================= EXPORT CSV =================
     // The same columns Import CSV reads, so a file can go out to Excel and back in again.
     // A value with a comma, quote or new line is wrapped in quotes ("" means a real quote).
+    // DS2: a value that starts with = + - @ (or a tab or carriage return) gets a ' in front, so a spreadsheet shows it as
+    // text rather than running it as a formula (a name pasted from an army list could start with one). Spreadsheets hide the '.
     function csvCell(value) {
-      const text = String(value === undefined || value === null ? "" : value);
+      let text = String(value === undefined || value === null ? "" : value);
+      if (/^[=+\-@\t\r]/.test(text)) text = "'" + text;
       return /[",\n\r]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
     }
     document.getElementById("csv-export-button").addEventListener("click", () => {
@@ -19450,7 +19760,7 @@
             giveCsvDates(unit, dateAdded, stageGiven && c.stage === m.row.stage ? dateStage : todayISO());
           });
         });
-        if (!kept) { notify(fullMessage()); return; }
+        if (!kept) { notifyFull(); return; }
         const undo = unitsUndo(before);
         const parts = [];
         if (reviewMode === "replace") parts.push(`Replaced with ${plural(toAdd.length, "unit")}`);
@@ -19583,10 +19893,16 @@
     //   settings.backupNudgeNextAfter  "2026-11-06"  after Not now: not before this day
     // v18.3: a plain "2026-10-10" date is read as midnight in YOUR time zone (not world time),
     // so "a day since" and "a week since" line up with the dates the app writes.
+    // v126: a plain date counts whole calendar days, plus the part of today gone by on the wall clock, so a 23- or 25-hour day at a
+    // clock change never moves "10 days ago" to 11 (or "yesterday" to "today"). Full timestamps still count real elapsed time.
     function daysSince(isoDate) {
       if (!isoDate) return Infinity;
-      const when = /^\d{4}-\d{2}-\d{2}$/.test(isoDate) ? new Date(isoDate + "T00:00:00") : new Date(isoDate);
-      return (Date.now() - when.getTime()) / 86400000;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) {
+        const [y, m, d] = isoDate.split("-").map(Number), now = new Date();
+        const whole = Math.round((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - Date.UTC(y, m - 1, d)) / 86400000);
+        return whole + (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) / 86400;
+      }
+      return (Date.now() - new Date(isoDate).getTime()) / 86400000;
     }
     const BACKUP_NUDGE_UNITS = 5;
     const BACKUP_NUDGE_RECIPES = 1;
@@ -19675,12 +19991,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL ELEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, app), e.g. "app.js?v=125".
+    // "?v=" number on ALL TWELVE script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, app), e.g. "app.js?v=126".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v125";
+    const APP_VERSION = "v126";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -20142,6 +20458,13 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v126", date: "3 Nov 2026", changes: [
+        "Mentor has three looks to choose from in Settings: Futuristic, Magical and Grounded. In its window it shows when it is thinking, pleased, unsure or finished.",
+        "The app no longer looks frozen while it opens: the start circle and its ring show straight away and fill up as the app loads.",
+        "Mentor understands more everyday ways of asking, such as paint water, paint on your clothes, fumes, lumpy or streaky paint, photos and a first model.",
+        "CSV import reads files split by semicolons or tabs and a Status column, and its messages stay until you close them. Text follows your phone's text size, labels no longer break on small screens, and Skip to content is the first Tab stop.",
+        "Quicker taps: only the section you are looking at is redrawn. The storage line counts everything the app keeps, a full phone offers to remove safety copies, and the offline copy no longer grows or keeps a broken font. \"Last backup\" now counts days correctly around the clock change.",
+      ]},
       { version: "v125", date: "3 Nov 2026", changes: [
         "Mentor copes with typing slips, offers Did you mean when it is not sure, says when it does not know, and answers simple questions about the app.",
         "Paste recipes: Check paints shows one card for each paint that needs a look, nothing stops you saving, and a tick box sets whether new paints are marked Owned.",
@@ -20548,7 +20871,7 @@
     // SEC1: a broken address such as "#%" can't be read; it then counts as no section named, instead of stopping start-up.
     let linkedTab = "";
     try { linkedTab = decodeURIComponent(location.hash.slice(1)); } catch (error) { linkedTab = ""; }
-    if (Object.prototype.hasOwnProperty.call(views, tabAlias(linkedTab))) showTab(linkedTab);
+    if (Object.prototype.hasOwnProperty.call(views, tabAlias(linkedTab))) { showTab(linkedTab); dropBootRing(); }   // LR1: no ring on a section
     else { showTab(settings.tab); enterLaunch(); startLoadingRing(); }
     launchMotionReady = true;
     if (unreadableParts.length) showSaveProblem();   // DS1: the start-up render() couldn't save; the banner says why
@@ -20603,6 +20926,7 @@
         STAGES = settings.stages.map(String);
         fixDoneFrom();
         applyPalette(settings.palette);
+        applyMentorLook();   // U6b: a look chosen in the other window
       }
       if (wasPaused) unreadableParts = [];
       if (unitsText) models = load();

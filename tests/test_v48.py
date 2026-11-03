@@ -122,7 +122,8 @@ def main():
         check("'Tone Pro Ta'unar Ochre 5' (brand written first, apostrophe) is found", got == ["sure", "Ta'unar Ochre 5"], got)
         got = page.evaluate("(t) => { const m = matchPaint(t); return [m.status, (m.suggestions || []).map(s => s.name)]; }", "Megaboss Yellow")
         check("'Megaboss Yellow' with no tone asks which tone (never picks one silently)", got[0] != "sure" and all(n.startswith("Megaboss Yellow ") for n in got[1]) and got[1], got)
-        check("a Tone Pro pot label is read as Tone Pro, not Citadel", page.evaluate("brandOnLabel('WARHAMMER TONE | PRO Games Workshop')") == "Warhammer Tone Pro")
+        # DS2: brandOnLabel() was used only by this test and was removed; labelBrandHit() is what the label reader uses
+        check("a Tone Pro pot label is read as Tone Pro, not Citadel", page.evaluate("(labelBrandHit('WARHAMMER TONE | PRO Games Workshop') || {}).brand") == "Warhammer Tone Pro")
 
         # ---------- 3. Finding paints ----------
         print("\n--- 3. Finding paints by name ---")
@@ -143,7 +144,7 @@ def main():
             split: splitBrand('Monument Hobbies Pure Black'), gsw: splitBrand('GSW Zima Blue') })""")
         check("'Monument Hobbies' now means the Pro Acryl paints", words["monument"] == "Pro Acryl" and words["split"]["brand"] == "Pro Acryl" and words["split"]["rest"] == "Pure Black", words)
         check("Formula P3, Tamiya and GSW are understood as brands", words["p3"] == "Formula P3" and words["tamiya"] == "Tamiya" and words["gsw"]["brand"] == "Green Stuff World", words)
-        labels = page.evaluate("""() => ['SCALE 75 SCALECOLOR', 'Formula P3 hobby paint', 'TAMIYA COLOR ACRYLIC PAINT', 'Two Thin Coats', 'GREEN STUFF WORLD', 'Monument Hobbies Pro Acryl', 'Citadel'].map(brandOnLabel)""")
+        labels = page.evaluate("""() => ['SCALE 75 SCALECOLOR', 'Formula P3 hobby paint', 'TAMIYA COLOR ACRYLIC PAINT', 'Two Thin Coats', 'GREEN STUFF WORLD', 'Monument Hobbies Pro Acryl', 'Citadel'].map(t => (labelBrandHit(t) || {}).brand || '')""")
         check("pot labels name the new brands", labels == ["Scale75", "Formula P3", "Tamiya", "Two Thin Coats", "Green Stuff World", "Pro Acryl", "Citadel"], labels)
         check("Formula P3 and Tamiya are in the brand menu", page.evaluate("COMMON_BRANDS.includes('Formula P3') && COMMON_BRANDS.includes('Tamiya')"))
 

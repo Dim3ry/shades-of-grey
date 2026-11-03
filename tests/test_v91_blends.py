@@ -13,6 +13,7 @@ from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
+from common import speed_factor
 
 no_sideways = t.no_sideways
 
@@ -212,8 +213,10 @@ def main():
             return { open, first, again: performance.now() - t2, single: c.yours ? c.yours.single : null, owned: book.paints.length - 1 }; }""")
         check("the search really ran (your closest was a Poor fit)", timing["single"] is not None, timing)
         print("  500 paints: pop-up opens in %.0f ms, first blend search %.0f ms, the same search again %.1f ms" % (timing["open"], timing["first"], timing["again"]))
-        check("the pop-up opens quickly (under 300 ms) and the blend search is not run on the way in", timing["open"] < 300, timing)
-        check("the blend search is cheap (under 1.5 s) and remembered (the repeat is instant)", timing["first"] < 1500 and timing["again"] < 20, timing)
+        # T6: the limits are for the reference machine, scaled by the runner's speed check for a slower or busier one (common.speed_factor)
+        k = speed_factor()
+        check("the pop-up opens quickly (under 300 ms) and the blend search is not run on the way in", timing["open"] < 300 * k, (timing, k))
+        check("the blend search is cheap (under 1.5 s) and remembered (the repeat is instant)", timing["first"] < 1500 * k and timing["again"] < 20 * k, (timing, k))
         page.keyboard.press("Escape")
 
         # ---------- 8. Errors ----------

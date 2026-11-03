@@ -19,7 +19,19 @@ if LOG:
     try:
         from playwright.sync_api._generated import Browser, BrowserContext
 
+        # T6: Playwright gives up on a page load, a click or a wait after 30 s. That is plenty on a normal machine, but with 8 files at once
+        # on a laptop measured 3 or more times slower (3 Nov), some first page loads took longer and the file stopped there. The runner's
+        # speed check (SOG_SPEED_FACTOR, 1 to 3) stretches those built-in limits the same way it stretches the file time limits.
+        # Waits a test gives its own timeout keep it; no check of the app's speed is changed by this.
+        try:
+            _SLOW = max(1.0, min(3.0, float(os.environ.get("SOG_SPEED_FACTOR", "1"))))
+        except ValueError:
+            _SLOW = 1.0
+
         def _watch(page):
+            if _SLOW > 1:
+                page.set_default_timeout(30000 * _SLOW)
+                page.set_default_navigation_timeout(30000 * _SLOW)
             def on_console(msg):
                 text = msg.text
                 # v21.4: a refused INLINE script has no address of its own, so the browser's message

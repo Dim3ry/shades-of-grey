@@ -2,7 +2,7 @@
 1. The round button opens a window (on the start circle and from each main section); greeting from the list; text box switched off; chip text.
 2. Dialog: focus goes in and stays in, X / scrim / Escape / Back close it and focus returns to the button; the page behind does not scroll.
 3. The Paint Picker chip closes it and lands on Painting > Colour Lab > Paint Picker.
-4. Motion: grows from the button's centre, lens wake, idle movement only while open; reduced motion has none.
+4. Motion: grows from the button's centre, idle movement only while open (U6b: the look's own motion, no lens wake); reduced motion has none.
 5. Nothing stored or sent. 360 and 390 px, dark and light, wide screen: inside the screen, taps 44 px or more.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, sys
@@ -13,7 +13,9 @@ import test_v24 as t
 from launch_helpers import quiet
 
 results = []
-GREETINGS = ["How can I help?", "What are you painting?", "Ready when you are."]
+# U6b (v126): James's script has eight greetings (the first three are these), so the list grew
+GREETINGS = ["How can I help?", "What are you painting?", "Ready when you are.", "What's on the bench today?", "What would you like to know?",
+             "Ask me about paints or techniques.", "Tell me what you are working on.", "Pick a question or type your own."]
 
 def check(name, ok, detail=""):
     results.append(bool(ok))
@@ -73,8 +75,9 @@ def main():
         inp = page.locator(".mentor-input")
         check("text box is on: enabled, Ask Mentor, full strength", inp.is_enabled() and inp.get_attribute("placeholder") == "Ask Mentor"
               and float(page.evaluate("() => getComputedStyle(document.querySelector('.mentor-input')).opacity")) == 1)
-        check("phrases object holds the lists for later chunks", page.evaluate(
-            "() => MENTOR_TYPING === true && MENTOR_PHRASES.picker.length === 2 && ['thinking','answer','finished','actions'].every(k => MENTOR_PHRASES[k].length === 0) && mentorMessages.length === 0"))
+        # U6b (v126): the lists are filled from James's script now (it was two picker lines and empty thinking, answer and finished lists)
+        check("phrases object holds the lists", page.evaluate(
+            "() => MENTOR_TYPING === true && ['greeting','picker','thinking','answer','unsure','finished','actions'].every(k => Array.isArray(MENTOR_PHRASES[k])) && mentorMessages.length === 0"))
         check("no 'the Mentor' in the window", "the Mentor" not in page.inner_text(".mentor-window"))
 
         print("\n--- 2. Dialog behaviour ---")
@@ -119,11 +122,18 @@ def main():
                      cx: b.left + b.width / 2 - w.offsetLeft, cy: b.top + b.height / 2 - w.offsetTop, anims }; }""")
         names = {a[0]: a for a in info["anims"]}
         check("grows from the button's centre (origin measured, not fixed)", abs(info["ox"] - info["cx"]) < 1.5 and abs(info["oy"] - info["cy"]) < 1.5, info)
-        check("open 240 ms; lens wake 160 ms after a 240 ms delay", names.get("mp-grow", [0, 0])[1] == 240 and names.get("mp-lens", [0, 0, 0])[1:] == [160, 240], names)
-        check("idle: float 4 s, glance 6 s, ring 40 s", names.get("mp-float", [0, 0])[1] == 4000 and names.get("mp-glance", [0, 0])[1] == 6000 and names.get("mp-turn", [0, 0])[1] == 40000, names)
-        check("ring and lens are separate groups", page.locator(".mentor-window .mp-ring").count() == 1 and page.locator(".mentor-window .mp-wake .orb-lens").count() == 1)
+        # U6b (v126): the window's orb is the chosen look (Futuristic here), so the old lens orb's wake, glance and 40 s ring turn are gone;
+        # the whole-orb float stays, and the look's own motion runs (Thinking's slow 14 s turn while Mentor gets ready, then the 6 s glow)
+        check("open 240 ms", names.get("mp-grow", [0, 0])[1] == 240, names)
+        check("idle: float 4 s, and the look's own slow motion", names.get("mp-float", [0, 0])[1] == 4000
+              and (names.get("ml-spin", [0, 0])[1] == 14000 or names.get("ml-glow", [0, 0])[1] in (3000, 6000)), names)
+        check("the orb is the Futuristic look, in its own box", page.locator(".mentor-window .mentor-orbbox.ml-live svg.ml-futuristic").count() == 1)
+        # T6: the close animation is read the moment Escape is handled (a listener added after the app's own, on the same spot). Read
+        # afterwards, a busy machine could already have removed the 120 ms window, and the check saw None.
+        page.evaluate("""() => { window.__closing = 'not read'; document.addEventListener('keydown', () => { const w = document.querySelector('.mentor-window');
+            window.__closing = w ? w.getAnimations().map(a => [a.animationName, a.effect.getTiming().duration, a.effect.getTiming().direction]) : null; }, { capture: true, once: true }); }""")
         page.keyboard.press("Escape")
-        closing = page.evaluate("() => { const w = document.querySelector('.mentor-window'); return w ? w.getAnimations().map(a => [a.animationName, a.effect.getTiming().duration, a.effect.getTiming().direction]) : null; }")
+        closing = page.evaluate("() => window.__closing")
         check("close is the same grow in reverse, 120 ms", closing and ["mp-grow", 120, "reverse"] in closing, closing)
         closed(page)
         check("nothing keeps running once closed", page.evaluate("() => document.getAnimations().filter(a => String(a.animationName || '').startsWith('mp-')).length") == 0)

@@ -140,9 +140,11 @@ def main():
         check("Dark is pressed to start with", pressed(page) == ["dark"], pressed(page))
         # v27: the Counting visits card now sits between them, and v39 added the Shop links card after it, so the check is
         # "before Colours, with only those two cards between". v47 added the Theme card straight after Appearance.
-        check("the Appearance card sits just above Colours (v27: with the Counting visits card between; v39: and the Shop links card; v47: and the Theme card)", page.evaluate("""() => {
+        # v126: U6b put the Mentor look card straight after Theme (the looks sit with the other appearance choices).
+        check("the Appearance card sits just above Colours (v27: with the Counting visits card between; v39: and the Shop links card; v47: and the Theme card; v126: and the Mentor look card)", page.evaluate("""() => {
             const a = document.getElementById('appearance-card'); let next = a.nextElementSibling;
             if (next && next.id === 'theme-card') next = next.nextElementSibling;
+            if (next && next.id === 'mentor-look-card') next = next.nextElementSibling;
             if (next && next.id === 'counting-card') next = next.nextElementSibling;
             if (next && next.id === 'shoplinks-card') next = next.nextElementSibling;
             return !!next && next.contains(document.getElementById('palette-select')); }"""))

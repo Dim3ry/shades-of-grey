@@ -1,5 +1,34 @@
 """Small helpers shared by several tests."""
 
+def node_command():
+    """T6: the Node.js program the .js checks run in (test_colour_engine, test_v101_mentor_engine, test_v105_mentor_words).
+    `node` when it is installed; otherwise the copy of Node that comes inside Playwright for Python, which every test needs anyway.
+    So those checks also run on a computer without Node.js installed, instead of always failing there."""
+    import os, shutil
+    found = shutil.which("node")
+    if found:
+        return found
+    try:
+        import playwright
+        bundled = os.path.join(os.path.dirname(playwright.__file__), "driver", "node.exe" if os.name == "nt" else "node")
+        if os.path.exists(bundled):
+            return bundled
+    except ImportError:
+        pass
+    return "node"
+
+
+def speed_factor():
+    """T6: how much slower this machine is than the one the time budget was recorded on (1 to 3), as measured by tests/run_all.py's
+    speed check at the start of the run and handed over as SOG_SPEED_FACTOR. A file run on its own, without the runner, gets 1.
+    For the few checks that time the app in milliseconds: the limits were set on the reference machine, so a machine measured
+    2.3 times slower, with other test files running beside it, gets 2.3 times the limit. A real slowdown still fails."""
+    import os
+    try:
+        return max(1.0, min(3.0, float(os.environ.get("SOG_SPEED_FACTOR", "1"))))
+    except ValueError:
+        return 1.0
+
 def click_card_chip(page, selector):
     """Click a recipe or tip chip in the recipe editor's Colour ideas card.
     X8d (v106): that card shows only the first 12 chips of a long list, with a Show all button under it. A chip past

@@ -28,10 +28,11 @@ def start(page, w=390, h=844, launch=True):
 def size(page, sel):
     return page.evaluate("(s) => { const r = document.querySelector(s).getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; }", sel)
 
+# U6b (v126): the orb is now James's Futuristic look (the app icon's ring): five ring segments (ml-k0 to ml-k4 in .ml-segs), the dark lens disc
+# (ml-lens) and the centre dot (ml-dot), instead of the old four arcs (orb-a, orb-b, orb-c, orb-dim), lens and core. The checks below follow it.
 PAINT_OF = """() => {
-    const c = k => getComputedStyle(document.querySelector('#mentor-button .' + k));
-    return { a: c('orb-a').stroke, b: c('orb-b').stroke, c: c('orb-c').stroke, dim: c('orb-dim').stroke,
-             bg: c('orb-bg').fill, lens: c('orb-lens').fill, core: c('orb-core').fill };
+    const c = s => getComputedStyle(document.querySelector('#mentor-button ' + s));
+    return { segs: [0, 1, 2, 3, 4].map(i => c('.ml-segs .ml-k' + i).stroke), lens: c('.ml-lens').fill, core: c('.ml-dot').fill };
 }"""
 
 def main():
@@ -47,8 +48,8 @@ def main():
         start(page)
         orb = page.locator("#mentor-button svg")
         check("one inline graphic in the button, hidden from screen readers", orb.count() == 1 and orb.get_attribute("aria-hidden") == "true")
-        check("four arcs and a lens", page.locator("#mentor-button svg .orb-a, #mentor-button svg .orb-b, #mentor-button svg .orb-c, #mentor-button svg .orb-dim").count() == 4
-              and page.locator("#mentor-button svg .orb-lens").count() == 1)
+        check("five ring segments, a lens and a dot (U6b: the Futuristic look)", page.locator("#mentor-button svg .ml-segs circle").count() == 5
+              and page.locator("#mentor-button svg .ml-lens").count() >= 1 and page.locator("#mentor-button svg .ml-dot").count() == 1)
         check("no image, no link to a file inside it", page.locator("#mentor-button img, #mentor-button image, #mentor-button use").count() == 0)
         check("the button keeps its name and is still the one component in the bar",
               page.get_attribute("#mentor-button", "aria-label") == "Ask Mentor" and page.locator(".tabs .arc #mentor-button").count() == 1)
@@ -79,9 +80,9 @@ def main():
                               " if (m === 'light') r.dataset.appearance = 'light'; else delete r.dataset.appearance; }", [theme, mode])
                 c = page.evaluate(PAINT_OF)
                 bar = page.evaluate("() => getComputedStyle(document.querySelector('#mentor-button')).backgroundColor")
-                arcs = {c["a"], c["b"], c["c"], c["dim"]}
-                ok = (len(arcs) == 4 and all(v not in ("none", "") for v in arcs) and c["lens"] != c["core"] and c["bg"] != bar and c["lens"] != "rgba(0, 0, 0, 0)")
-                check(f"{theme} {mode}: four different arcs, lens differs from its core, disc differs from the button", ok, (c, bar))
+                arcs = set(c["segs"])
+                ok = (len(arcs) == 5 and all(v not in ("none", "") for v in arcs) and c["lens"] != c["core"] and c["lens"] != bar and c["lens"] != "rgba(0, 0, 0, 0)")
+                check(f"{theme} {mode}: five different segments, lens differs from its dot, disc differs from the button", ok, (c, bar))
 
         print("\n--- 4. It still opens Ask the Mentor ---")
         start(page)

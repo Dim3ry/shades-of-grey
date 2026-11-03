@@ -86,6 +86,9 @@ REVIEWED = {
     "c996b8dc0922": "history table: counts, percentages and dates",
     # Paste recipes: a choice between two fixed sentences.
     "3ba0f487a0f3": "paste notice: one of two fixed sentences",
+    # U6b: the Mentor orb (early.js, minifolioLook.svg): one of James's fixed drawings from mentor-looks.js, chosen by a look and a state the
+    # app checks against MENTOR_LOOKS first. Never anything typed or imported.
+    "353f8092eea1": "Mentor orb: a fixed drawing from MENTOR_LOOKS",
 }
 
 
@@ -96,8 +99,7 @@ REVIEWED_URLS = {
     "78f75cb744d0": "shop link (shopping list)",
     "11baaa6a3e70": "shop link (paint panel)",
     # Drawing helpers: attribute names written out in the code that calls them (chart and icon shapes), never typed text.
-    "76f8e1b1d97b": "chart shape helper",
-    "4e02910d676a": "drawing helper",
+    # (U6b + LR1: the two helpers that drew the old Mentor orb and the old loading ring are gone, so their entries went too.)
     "7feb5ff72527": "svgEl helper",
     "908c1092b7d3": "status mark icon: a fixed list of attributes",
     "e39d72799718": "status mark icon: attributes from the fixed STATUS_MARKS table",

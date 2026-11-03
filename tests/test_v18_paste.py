@@ -18,6 +18,8 @@ python3 tests/test_v18_paste.py
 The port comes from the SOG_PORT environment variable, or 8765 if it isn't set."""
 import json, os, sys
 from playwright.sync_api import sync_playwright
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from common import speed_factor
 
 PORT = os.environ.get("SOG_PORT", "8765")
 BASE = f"http://localhost:{PORT}"
@@ -249,15 +251,18 @@ def main():
               any(st["ratio"] == "1:1" and st["paints"] == ["Baal Red", "CM"] for st in brains), brains)
         # T1: on a busy machine a whole batch of runs can be slowed together (a pause in the browser, not in the reader), so a batch that
         # misses is repeated, up to 5 batches. The limit is the same: some run must take under 200 ms. A reader that really is slow fails every batch.
+        # T6: 200 ms is for the machine the time budget was recorded on; the runner's speed check scales it for a slower or busier one
+        # (fastest of 25 still took 284 ms with 8 files running on a laptop measured 2.3 times slower, and 19 s alone passed).
+        limit = 200 * speed_factor()
         fastest = None
         for attempt in range(5):
             times = page.evaluate("""t => [1, 2, 3, 4, 5].map(() => {
                 const start = performance.now(); parseRecipeText(t); return performance.now() - start; })""", keep)
             fastest = min(times) if fastest is None else min(fastest, min(times))
-            if fastest < 200:
+            if fastest < limit:
                 break
             page.wait_for_timeout(500)
-        check("keep note: reading it takes under 200 ms", fastest < 200,
+        check(f"keep note: reading it takes under 200 ms (x{speed_factor():.2f} for this machine)", fastest < limit,
               f"fastest of the runs took {fastest:.0f} ms")
 
         errors = []

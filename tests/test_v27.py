@@ -347,7 +347,8 @@ def main():
                     const row = document.querySelector('#counting-card .count-label').getBoundingClientRect();
                     const box = document.getElementById('count-visits').getBoundingClientRect();
                     // v47: the Theme card now sits between Appearance and this card, so measure from the card just above.
-                    const ap = (document.getElementById('theme-card') || document.getElementById('appearance-card')).getBoundingClientRect();
+                    // v126: U6b's Mentor look card now sits after the Theme card, so measure from whichever of them is just above.
+                    const ap = (document.getElementById('mentor-look-card') || document.getElementById('theme-card') || document.getElementById('appearance-card')).getBoundingClientRect();
                     return { cl: c.left, cr: c.right, w: window.innerWidth, rowH: row.height, rowW: row.width, boxW: box.width, boxH: box.height,
                              apBottom: ap.bottom, cTop: c.top }; }""")
                 check(f"{tag}: the card is inside the screen", geo["cl"] >= 0 and geo["cr"] <= geo["w"] + 0.5, geo)
