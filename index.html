@@ -1103,6 +1103,8 @@
     .help details[open] { padding-bottom: 12px; }
     .help ol, .help ul { padding-left: 20px; margin: 10px 0 0; color: var(--text); font-size: 15px; line-height: 1.55; }
     .help li { margin-bottom: 6px; }
+    /* LG1 (wave v124): the Font licences link sits on its own line in About, so it gets a full 44 px tap height. */
+    #about-fonts a { display: inline-flex; align-items: center; min-height: 44px; }
 
     /* ----- Updates tab ----- */
     .release { border-top: 1px solid var(--border); padding-top: 12px; margin-top: 12px; }
@@ -2256,7 +2258,9 @@
       background-image: var(--texture); background-size: var(--paper-size);
     }
     [data-t="parchment"] .app-bar { background-image: var(--texture); background-size: var(--paper-size); }
-    @media (min-width: 673px) { [data-t="parchment"] .app-bar { background-attachment: fixed; } }
+    /* Wave v124: written at 640 px (one of the app's existing breakpoints) instead of 673 px. Up to 672 px the bar spans the whole screen from
+       its top left, so the paper looks the same either way; above that the page is centred and fixed keeps the bar's paper in line with the layer. */
+    @media (min-width: 640px) { [data-t="parchment"] .app-bar { background-attachment: fixed; } }
     [data-t="parchment"] .tabs::before {
       --fade-h: calc((230px + var(--arc-lift)) * var(--arc-scale) + env(safe-area-inset-bottom));   /* the same height as .tabs::before above */
       background-color: var(--background); background-image: var(--texture); background-size: var(--paper-size);
