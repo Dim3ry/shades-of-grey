@@ -4923,13 +4923,82 @@
       if (MENTOR_MOOD_MS[mood]) state.moodTimer = setTimeout(() => { if (mentorState === state) mentorMood("neutral"); }, MENTOR_MOOD_MS[mood]);
     }
 
-    // The window grows from the button: the origin is the button's centre, measured on screen, so it works wherever the button is.
-    function setMentorOrigin(win, opener) {
-      if (!opener || !opener.isConnected) return;
-      // offsetLeft and offsetTop ignore the grow itself (the window is already part-way scaled when this runs); its box fills the screen from the corner.
-      const b = opener.getBoundingClientRect();
-      win.style.setProperty("--mp-ox", `${Math.round(b.left + b.width / 2 - win.offsetLeft)}px`);
-      win.style.setProperty("--mp-oy", `${Math.round(b.top + b.height / 2 - win.offsetTop)}px`);
+    // ---- MW1: Mentor opens out of its sphere (James, 3 Nov) ----
+    // The round button's circle grows into the window: the window is drawn in its place at once, then its clip-path opens from the button's
+    // box (a circle: round = half the button) to the window's own rounded box while a translate carries it from the button up to its place.
+    // The skin (.mp-skin: the button's colour and highlight) covers it on the way and fades once the shape has arrived; only then do the
+    // words fade in. The orb travels from the button's drawing to its place above the greeting in the same move: its translate takes away
+    // the window's own, so on screen it goes in a straight line, and its scale starts at the button's drawing size. Closing plays the same
+    // frames backwards into the button. Only transform, opacity and clip-path move, so no frame lays the page out again.
+    // Reduced motion: no growing and no travel; the window fades in quickly and goes at once on closing.
+    const MENTOR_OPEN_MS = 320;
+    const MENTOR_CLOSE_MS = 240;
+    const MENTOR_SHAPE_AT = 0.7;          // the part of the move the shape takes; the skin and the words cross-fade in the rest
+    const MENTOR_MOVE_EASE = "cubic-bezier(0.3, 0, 0.2, 1)";
+    const MENTOR_SHADOW = 64;             // the clip opens this far past the window at the end, so its shadow shows before the clip is dropped
+    const mentorReduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // The frames of the move, measured now (the window at its resting place and size), or null when there is no round button on screen to grow from.
+    function mentorMoveFrames(state) {
+      const { win, opener, orbBox, skin } = state;
+      const b = opener && opener.isConnected ? opener.getBoundingClientRect() : null;
+      if (!b || b.width < 1 || b.height < 1) return null;
+      const w = win.getBoundingClientRect();
+      const px = (n) => `${Math.round(n * 10) / 10}px`;
+      // the button's box inside the window (kept inside it), and the translate that puts that spot over the button on screen
+      const lx = Math.min(Math.max(b.left - w.left, 0), Math.max(w.width - b.width, 0));
+      const ly = Math.min(Math.max(b.top - w.top, 0), Math.max(w.height - b.height, 0));
+      const dx = b.left - w.left - lx, dy = b.top - w.top - ly;
+      const radius = parseFloat(getComputedStyle(win).borderTopLeftRadius) || 0;
+      const from = `inset(${px(ly)} ${px(w.width - lx - b.width)} ${px(w.height - ly - b.height)} ${px(lx)} round ${px(Math.min(b.width, b.height) / 2)})`;
+      // the skin's highlight sits where the button's does (35% across, 30% down, fading out over 57% of its width)
+      skin.style.setProperty("--mp-hx", px(lx + b.width * 0.35));
+      skin.style.setProperty("--mp-hy", px(ly + b.height * 0.3));
+      skin.style.setProperty("--mp-hr", px(b.width * 0.57));
+      const frames = {
+        win: [{ transform: `translate(${px(dx)}, ${px(dy)})`, clipPath: from, easing: MENTOR_MOVE_EASE },
+          { transform: "translate(0px, 0px)", clipPath: `inset(0px round ${px(radius)})`, offset: MENTOR_SHAPE_AT },
+          { transform: "translate(0px, 0px)", clipPath: `inset(-${MENTOR_SHADOW}px round ${px(radius + MENTOR_SHADOW)})` }],
+        skin: [{ opacity: 1 }, { opacity: 1, offset: MENTOR_SHAPE_AT }, { opacity: 0 }],
+        words: [{ opacity: 0 }, { opacity: 0, offset: MENTOR_SHAPE_AT }, { opacity: 1 }],
+        orb: null,
+      };
+      const icon = opener.querySelector("svg"), drawing = orbBox.querySelector("svg");
+      const o = orbBox.getBoundingClientRect();
+      if (icon && drawing && o.width) {
+        const s = icon.getBoundingClientRect();
+        const units = (el, fallback) => (el.viewBox && el.viewBox.baseVal && el.viewBox.baseVal.width) || fallback;
+        const scale = (s.width / units(icon, 166.67)) / (o.width / units(drawing, 150));   // the same drawing size as on the button
+        const tx = s.left + s.width / 2 - (o.left + o.width / 2) - dx, ty = s.top + s.height / 2 - (o.top + o.height / 2) - dy;
+        frames.orb = [{ transform: `translate(${px(tx)}, ${px(ty)}) scale(${Math.round(scale * 1000) / 1000})`, easing: MENTOR_MOVE_EASE },
+          { transform: "translate(0px, 0px) scale(1)", offset: MENTOR_SHAPE_AT }, { transform: "translate(0px, 0px) scale(1)" }];
+      }
+      return frames;
+    }
+    // Plays the move on the window, its skin, its words and its orb (backwards when closing). Returns the window's own animation.
+    function mentorPlayMove(state, frames, closing) {
+      const timing = { duration: closing ? MENTOR_CLOSE_MS : MENTOR_OPEN_MS, direction: closing ? "reverse" : "normal", fill: closing ? "forwards" : "none" };
+      const words = [...state.win.children].filter(el => el !== state.skin && el !== state.orbBox);
+      const played = [state.win.animate(frames.win, timing), state.skin.animate(frames.skin, timing), ...words.map(el => el.animate(frames.words, timing))];
+      if (frames.orb) played.push(state.orbBox.animate(frames.orb, timing));
+      state.moves = played;
+      return played[0];
+    }
+    // Reduced motion, or no button to grow from: a quick fade of the whole window and its dim layer.
+    function mentorFadeIn(state) {
+      state.moves = [state.backdrop.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 120, easing: "linear" })];
+    }
+    // MW1: the orb shrinks (or grows back) smoothly when the window changes between its start view and the chat view. Measured before and after;
+    // the drawing itself is moved and scaled from where it was (added to its float), so the box keeps its size and place for everything else.
+    function mentorOrbBefore(state) {
+      return state.orbBox.getBoundingClientRect();
+    }
+    function mentorOrbSettle(state, a) {
+      if (mentorReduced() || !a || !a.width) return;
+      const b = state.orbBox.getBoundingClientRect(), drawing = state.orbBox.querySelector("svg");
+      if (!drawing || !b.width || (Math.abs(a.width - b.width) < 0.5 && Math.abs(a.top - b.top) < 0.5 && Math.abs(a.left - b.left) < 0.5)) return;
+      const dx = a.left + a.width / 2 - (b.left + b.width / 2), dy = a.top + a.height / 2 - (b.top + b.height / 2);
+      drawing.animate([{ transform: `translate(${Math.round(dx)}px, ${Math.round(dy)}px) scale(${Math.round(a.width / b.width * 1000) / 1000})`, easing: MENTOR_MOVE_EASE },
+        { transform: "translate(0px, 0px) scale(1)" }], { duration: 240, composite: "add" });
     }
 
     // ---- X6b: typing, chips and answers ----
@@ -5149,6 +5218,7 @@
       } catch (ignored) {
         reply = { who: "mentor", text: mentorUnsureLine(), sources: [], suggestions: [] };
       }
+      const orbWas = mentorOrbBefore(state);   // MW1: where the orb was, so it can shrink smoothly into the chat view
       const mine = { who: "me", text };
       mentorMessages.push(mine, reply);
       mentorLastAt = Date.now();
@@ -5160,6 +5230,7 @@
       state.status.textContent = reply.didYouMean ? `Did you mean ${String(reply.didYouMean).replace(/[?.!]+$/, "")}? ${reply.text}` : reply.text;   // announced politely; the rows themselves are not read out unprompted
       mentorDrawChips(state);
       mentorMood(mood);
+      mentorOrbSettle(state, orbWas);
       state.scroll.scrollTop = first.offsetTop - 4;
       if (fromChip) state.scroll.focus({ preventScroll: true });   // the chip that was tapped is gone, and a chip must not open the keyboard
       else state.input.focus({ preventScroll: true });
@@ -5273,27 +5344,31 @@
       orbBox.className = "mentor-orbbox ml-live";   // U6b: the look's own slow motion runs here only
       orbBox.dataset.mood = "neutral";
       orbBox.appendChild(buildMentorOrb("neutral"));
-      win.append(back, col, orbBox, close);
+      const skin = document.createElement("div");   // MW1: the round button's colour, over the window while it grows
+      skin.className = "mp-skin";
+      skin.setAttribute("aria-hidden", "true");
+      win.append(skin, back, orbBox, col, close);   // MW1: the orb above the greeting, the chips and the box
       backdrop.appendChild(win);
       document.body.appendChild(backdrop);
       document.body.classList.add("mentor-open");
 
-      const state = { backdrop, win, opener, scroll, msgs, chips, pickerChip, input, status, orbBox, mood: "neutral", moodTimer: 0, prevOverflow: document.body.style.overflow };
+      const state = { backdrop, win, opener, scroll, msgs, chips, pickerChip, input, status, orbBox, skin, moves: [], mood: "neutral", moodTimer: 0, prevOverflow: document.body.style.overflow };
       mentorState = state;
       for (const m of mentorMessages) msgs.appendChild(mentorBuildMessage(m));   // the conversation so far, if the window was closed and opened again
       if (mentorMessages.length) win.classList.add("mentor-chatting");
       mentorDrawChips(state);
-      setMentorOrigin(win, opener);
       if (mentorMessages.length) scroll.scrollTop = scroll.scrollHeight;
       document.body.style.overflow = "hidden";   // the page behind does not scroll
       close.addEventListener("click", () => closeMentor());
       back.addEventListener("click", () => {
+        const orbWas = mentorOrbBefore(state);   // MW1
         mentorClear();
         msgs.replaceChildren();
         win.classList.remove("mentor-chatting");
         status.textContent = "";
         input.value = "";
         mentorDrawChips(state);
+        mentorOrbSettle(state, orbWas);   // MW1: the orb grows back to its start size
         scroll.scrollTop = 0;
         pickerChip.focus({ preventScroll: true });   // the first thing in the start view
       });
@@ -5322,6 +5397,10 @@
       }
       close.focus({ preventScroll: true });
       mentorWarmUp();
+      // MW1: the move starts in this same frame, so the window is never seen at full size before it grows
+      const frames = mentorReduced() ? null : mentorMoveFrames(state);
+      if (frames) mentorPlayMove(state, frames, false);
+      else mentorFadeIn(state);
     }
 
     // restoreFocus is false when the chip closes it, because focus then goes on to the Paint Picker.
@@ -5342,12 +5421,22 @@
       if (restoreFocus && opener && opener.isConnected) { try { opener.focus({ preventScroll: true }); } catch (ignored) {} }
       let finished = false;
       const done = () => { if (finished) return; finished = true; backdrop.remove(); if (after) after(); };
-      if (getComputedStyle(win).animationName === "none") done();   // reduce motion: it simply disappears
+      // MW1: the same move backwards, into the round button. Closed while it is still opening: the opening simply turns round from where it is.
+      const opening = state.moves.filter(a => a.playState === "running");
+      let frames = null;
+      if (!mentorReduced() && !opening.length) {
+        for (const a of state.win.getAnimations({ subtree: true })) if (!a.animationName && !a.transitionProperty) a.cancel();   // a chat-view orb settle still going (CSS motion is left alone)
+        frames = mentorMoveFrames(state);
+      }
+      if (mentorReduced() || (!opening.length && !frames)) done();   // reduce motion (or no button on screen): it simply disappears
       else {
-        setMentorOrigin(win, opener);
         backdrop.classList.add("mentor-closing");
-        win.addEventListener("animationend", (event) => { if (event.target === win) done(); });
-        setTimeout(done, 600);   // safety net if the browser never reports the end
+        let main;
+        if (opening.length) { for (const a of opening) { a.effect.updateTiming({ fill: "both" }); a.reverse(); } main = state.moves[0]; }   // held at the button until it is taken away
+        else main = mentorPlayMove(state, frames, true);
+        main.addEventListener("finish", done);
+        main.addEventListener("cancel", done);
+        setTimeout(done, MENTOR_CLOSE_MS + 400);   // safety net if the browser never reports the end
       }
       queueBackCheck();
     }

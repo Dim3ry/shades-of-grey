@@ -149,7 +149,9 @@ def main():
         check("Use in a recipe leaves the window first, then starts the recipe", page.evaluate("() => settings.tab === 'recipes' && !!recipeDraft"))
 
         print("\n--- 4. Nothing stored or sent while talking ---")
-        page.evaluate("() => { showTab('dashboard'); window.__sets = 0; }")
+        # MW1 (v127): the window now takes 240 ms to close (was 120), so the recipe draft that Use in a recipe started (written 300 ms after
+        # the last tap) could land after the count was reset. It is written now, before counting; it is not a message.
+        page.evaluate("() => { showTab('dashboard'); syncDrafts(); window.__sets = 0; }")
         open_it(page)
         send_typed(page, "what goes with red")
         send_typed(page, "zzqx qwerty")

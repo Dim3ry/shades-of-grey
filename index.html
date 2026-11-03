@@ -2681,11 +2681,11 @@
       .guides-split.guides-has-main { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 18px; align-items: start; }
       .guides-split.guides-has-main > .guides-nav { display: grid; }
     }
-    /* X5: the Mentor pop-up window. It grows from the round button (--mp-ox and --mp-oy are set by app.js from the button's position).
-       Only transform and opacity move. Reduced motion is handled by the single block above (no animation at all). No resting transform on any tap target. */
-    .mentor-backdrop { --mp-gap: max(56px, calc(env(safe-area-inset-top) + 12px)); position: fixed; inset: 0; z-index: 200; background: var(--scrim); display: flex; align-items: flex-end; justify-content: center; padding: 0 20px calc(var(--arc-h) + 12px); overscroll-behavior: contain; animation: mo-fade var(--motion-med) var(--motion-ease) both; }
-    .mentor-window { position: relative; box-sizing: border-box; width: 100%; max-width: 380px; height: 260px; max-height: calc(100% - var(--mp-gap)); display: flex; gap: 12px; padding: 16px; color: var(--text); background-color: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: 18px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45); transform-origin: var(--mp-ox, 50%) var(--mp-oy, 100%); animation: mp-grow var(--motion-med) var(--motion-ease) both; }
-    .mentor-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+    /* X5: the Mentor pop-up window. MW1: it opens out of the round button (app.js plays the move; see "MW1:" below).
+       No resting transform on any tap target. */
+    .mentor-backdrop { --mp-gap: max(56px, calc(env(safe-area-inset-top) + 12px)); position: fixed; inset: 0; z-index: 200; display: flex; align-items: flex-end; justify-content: center; padding: 0 20px calc(var(--arc-h) + 12px); overscroll-behavior: contain; }
+    .mentor-window { position: relative; box-sizing: border-box; width: 100%; max-width: 380px; height: 260px; max-height: calc(100% - var(--mp-gap)); display: flex; flex-direction: column; gap: 6px; padding: 16px; color: var(--text); background-color: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: 18px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45); }
+    .mentor-col { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
     .mentor-greeting { margin: 0; padding-top: 4px; font-size: 1.125rem; font-weight: 600; line-height: 1.3; color: var(--accent); overflow-wrap: anywhere; }
     .mentor-chip { flex: 0 1 auto; max-width: 100%; min-height: 44px; padding: 6px 16px; font: inherit; font-size: 0.9375rem; font-weight: 600; text-align: left; white-space: normal; overflow-wrap: anywhere; color: var(--accent); background-color: var(--card); border: 1px solid var(--accent); border-radius: 22px; cursor: pointer; }
     .mentor-input { flex: 1; min-width: 0; height: 48px; box-sizing: border-box; padding: 0 12px; font: inherit; font-size: 1rem; color: var(--text); background-color: var(--background); border: 1px solid var(--border); border-radius: 12px; }
@@ -2719,15 +2719,11 @@
     /* E: "Did you mean" above its one chip, in the same quiet style as the Sources label */
     .mentor-dym { margin: 0; font-size: 0.8125rem; color: var(--muted); }
     .mentor-chatting { height: min(720px, calc(100% - var(--mp-gap))); }   /* D: taller on a phone: all the room below the status bar and above the bottom bar, up to 720 px on a big screen (was 480). The 56 px at the top is where a notice shows, so it never sits over a button. */
-    .mentor-chatting .mentor-col { padding-top: 40px; }
     .mentor-chatting .mentor-scroll { flex: 1 1 auto; }
-    .mentor-chatting .mentor-orbbox { position: absolute; top: 8px; right: 56px; width: 40px; height: 40px; }
-    .mentor-chatting .mp-orb { width: 40px; height: 40px; }
     body.typing .mentor-backdrop { padding-bottom: 12px; }
     body.mentor-open .toast { z-index: 210; bottom: auto; top: 12px; }
     body.mentor-open .toast:not(.hidden) { animation-name: mo-fade; }   /* D: at the top it fades in instead of sliding up from below, so it never passes over the X or Back on the way */   /* a notice from a row in the window shows at the top, clear of every button in it */
-    .mentor-orbbox { flex: none; width: 72px; display: flex; align-items: center; justify-content: center; }
-    .mp-orb { width: 68px; height: 68px; animation: mp-float 4s ease-in-out infinite; }
+    .mp-orb { animation: mp-float 4s ease-in-out infinite; }
     /* U6b: the window's orb is the chosen look (its box has the class ml-live, so the look's own slow motion runs there and nowhere else); a mood swaps
        the drawing inside the same box, so nothing around it moves. The old lens orb's wake, glance and turn are gone with it. */
     .mentor-orbbox svg { pointer-events: none; }
@@ -2738,10 +2734,25 @@
     .mentor-back svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .mentor-back:active { translate: 0 1px; scale: 0.97; filter: brightness(0.92); }
     .mentor-back:focus-visible, .mentor-close:focus-visible, .mentor-chip:focus-visible, .mentor-send:focus-visible, .mentor-source:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
-    .mentor-backdrop.mentor-closing { animation: mo-fade var(--motion-fast) var(--motion-ease) reverse both; }
-    .mentor-closing .mentor-window { animation: mp-grow var(--motion-fast) var(--motion-ease) reverse both; }
-    @keyframes mp-grow { from { opacity: 0; transform: scale(0.2); } to { opacity: 1; transform: none; } }
     @keyframes mp-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+    /* MW1: Mentor opens out of its sphere, and the orb sits above the chat (James, 3 Nov).
+       The orb is centred at the top of the window, above the greeting, the starter questions and the box: 88 px on the start view, 48 px once the
+       conversation starts (app.js shrinks it smoothly between the two). The same stacked layout at every width: the window is never wider than 380 px.
+       Opening: app.js grows the round button's circle into the window. .mp-skin is that circle's colour and look (the button's accent fill and its
+       highlight); the window's clip-path opens from the button's box to the window's own rounded box while the orb travels from the button to its
+       place, then the skin fades away and the words fade in. Closing is the same move backwards into the button. Only transform, opacity and
+       clip-path move. The dim layer behind is its own ::before, so its fade never fades the circle. Reduced motion: no growing and no travel;
+       app.js fades the whole thing in quickly instead and it goes at once on closing (the block above stops every CSS animation). */
+    .mentor-backdrop::before { content: ""; position: absolute; inset: 0; background: var(--scrim); pointer-events: none; animation: mo-fade var(--motion-med) var(--motion-ease) both; }
+    .mentor-backdrop.mentor-closing::before { animation: mo-fade var(--motion-med) var(--motion-ease) reverse both; }
+    .mentor-window { --mp-orb: 88px; }
+    .mentor-chatting { --mp-orb: 48px; }
+    .mentor-orbbox { position: relative; flex: none; align-self: center; width: var(--mp-orb); height: var(--mp-orb); margin-top: -6px; display: flex; align-items: center; justify-content: center; }
+    .mentor-chatting .mentor-orbbox { margin-top: -12px; }
+    .mp-orb { width: 100%; height: 100%; }
+    .mentor-window:not(.mentor-chatting) .mentor-greeting { text-align: center; }
+    .mp-skin { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0;   /* the shadow covers the border without widening the window's scroll area */
+      box-shadow: 0 0 0 var(--border-width, 1px) var(--accent-fill, var(--accent)); background-color: var(--accent-fill, var(--accent)); background-image: radial-gradient(circle var(--mp-hr, 57px) at var(--mp-hx, 35%) var(--mp-hy, 30%), rgba(255, 255, 255, 0.35), transparent); }
   </style>
 </head>
 
