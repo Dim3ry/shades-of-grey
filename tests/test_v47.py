@@ -296,7 +296,8 @@ def main():
                   and look["shadow"] == "none" and look["pad"] == "16px" and look["body"].startswith('"Chakra Petch"') and look["texture"] == "none"
                   and to_rgb(look["btnColour"]) == hexrgb(CLASSIC[mode]["--background"]) and look["btnWeight"] == "600", look)
             # TH6: Classic's body (Chakra Petch) and numbers (Azeret Mono) have their own fonts too
-            got = page.evaluate("[...document.fonts].filter(f => f.status === 'loaded').map(f => f.family)")
+            # v129: TH6's "<name> Fallback" faces are local() stand-ins with matched metrics (nothing is downloaded), so they are left out of the count
+            got = page.evaluate("[...document.fonts].filter(f => f.status === 'loaded' && !/ Fallback$/.test(f.family.replace(/\"/g, ''))).map(f => f.family.replace(/\"/g, ''))")
             check(f"Classic {mode}: only its own fonts (Oxanium, Chakra Petch, Azeret Mono) are downloaded", set(got) <= {"Oxanium", "Chakra Petch", "Azeret Mono"}, got)
 
         # ---------- 8. The photo viewer stays Classic dark ----------
