@@ -29,6 +29,12 @@ Checks:
 TH1 (2 Nov 2026): Blueprint and Rulebook were removed and Classic became the sci-fi look (ice cyan accent, Oxanium for titles
 and numbers, steel borders at 3:1, 6 px corners). The checks below that named those two themes, or said Classic is the v46 look,
 were updated to the four themes and the new Classic; tests/test_v124_th1.py covers the TH1 behaviour itself.
+TH6 (3 Nov 2026): every look has its own fonts (Classic: Oxanium, Chakra Petch, Azeret Mono; Grim Forge: Anton, Barlow; Parchment Codex:
+Grenze Gotisch, EB Garamond with lining figures; Paint Bench: Atkinson Hyperlegible, DM Mono, Permanent Marker on the tape, Big Shoulders
+Stencil for the name), each with a local fallback sized to match, and the Theme squares use four tiny files with only their names' letters.
+The font checks below that named the old fonts, counted the old files or said Classic's body text is the system font were updated to
+match; the files the looks no longer use stay in fonts/ until they are removed, so they are listed in RETIRED. tests/test_v129_th6.py
+covers the TH6 behaviour itself.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
@@ -40,6 +46,10 @@ import test_v31 as t     # the shared page helpers
 
 URL, read, shot, no_sideways, ROOT = t.URL, t.read, t.shot, t.no_sideways, t.ROOT
 results = []
+# TH6: font files no look uses any more. They stay on disk (and in fonts/LICENSES.md) until someone removes them.
+RETIRED = ["barlow-semi-condensed-latin-400-normal.woff2", "barlow-semi-condensed-latin-500-normal.woff2", "eb-garamond-latin-400-italic.woff2",
+           "eb-garamond-latin-400-normal.woff2", "eb-garamond-latin-500-normal.woff2", "im-fell-english-latin-400-italic.woff2",
+           "im-fell-english-latin-400-normal.woff2", "teko-latin-500-normal.woff2", "teko-latin-600-normal.woff2"]
 
 def check(name, ok, detail=""):
     results.append(bool(ok))
@@ -144,14 +154,20 @@ def main():
         print("\n--- 3. Fonts ---")
         urls = re.findall(r"url\(fonts/([\w-]+\.woff2)\)", style)
         on_disk = sorted(f for f in os.listdir(os.path.join(ROOT, "fonts")) if f.endswith(".woff2"))
-        check("every font file named in the page exists, and every file in fonts/ is used", sorted(urls) == on_disk and len(on_disk) == 17, (len(urls), len(on_disk)))
+        # TH6: 22 files in use (14 added, 9 retired but kept on disk, see RETIRED); before TH6 it was 17 files, all in use
+        check("every font file named in the page exists, and every file in fonts/ is used (apart from the retired ones)",
+              sorted(urls) == sorted(set(on_disk) - set(RETIRED)) and len(urls) == 22 and set(RETIRED) <= set(on_disk), (len(urls), len(on_disk)))
         check("every font file is a real woff2 and small (latin subset)",
               all(open(os.path.join(ROOT, "fonts", f), "rb").read(4) == b"wOF2" and os.path.getsize(os.path.join(ROOT, "fonts", f)) < 120_000 for f in on_disk))
-        check("every @font-face uses font-display: swap and the latin range",
-              style.count("@font-face") == 17 and style.count("font-display: swap") == 17 and style.count("unicode-range: U+0000-00FF") == 17)
+        # TH6: the four Theme-square files hold only their names' letters (no range needed), and the eleven fallbacks are the phone's own fonts (local(), no file)
+        faces = re.findall(r"@font-face \{[^}]*\}", style)
+        files, fallbacks = [f for f in faces if "url(fonts/" in f], [f for f in faces if "url(" not in f]
+        check("every @font-face file uses font-display: swap and the latin range (the name-only files apart); the rest are sized local fallbacks",
+              len(files) == 22 and all("font-display: swap" in f for f in files) and sum("unicode-range: U+0000-00FF" in f for f in files) == 18
+              and len(fallbacks) == 11 and all("local(" in f and "size-adjust" in f for f in fallbacks) and len(faces) == 33, (len(files), len(fallbacks)))
         licences = read("fonts/LICENSES.md")
         families = sorted(set(re.findall(r"font-family: '([^']+)'; font-style", style)))
-        check("fonts/LICENSES.md holds a licence for every family", all(f"## {f}" in licences for f in families) and len(families) == 9, families)   # TH1: 24 files and 13 families before; Oxanium added, five families removed
+        check("fonts/LICENSES.md holds a licence for every family", all(f"## {f}" in licences for f in families) and len(families) == 15, families)   # TH6: 9 families before   # TH1: 24 files and 13 families before; Oxanium added, five families removed
         stacks = [v for (th, md), b in table.items() if md is None for k, v in b.items() if k in ("--font-heading", "--font-body", "--font-num")]
         check("every theme font stack ends in a generic fallback", all(re.search(r"(sans-serif|serif|monospace|cursive)\s*$", s) for s in stacks), stacks)
         check("no font, stylesheet or script loads from another website", not re.search(r"(href|src)=\"https?://", html.replace("https://dim3ry.goatcounter.com", "")) and "@import" not in style)
@@ -193,11 +209,11 @@ def main():
               and len({s["top"] for s in squares}) == 1 and all(abs(s["w"] - s["h"]) < 1 and s["w"] >= 44 for s in squares), squares)
         check("the row sits right after the Appearance card", page.evaluate("document.getElementById('appearance-card').nextElementSibling.id") == "theme-card")
         fonts = page.evaluate("""() => [...document.querySelectorAll('#theme-card .ts-name')].map(n => getComputedStyle(n).fontFamily)""")
-        want = ["Oxanium", "IM Fell English", "Teko", "Permanent Marker"]   # TH1: Classic's name is in Oxanium
+        want = ["Oxanium Theme Name", "Grenze Gotisch Theme Name", "Anton Theme Name", "Permanent Marker Theme Name"]   # TH6: the title faces, cut down to each name's letters
         check("each name is written in its own theme's title font", all(w in f for w, f in zip(want, fonts)), fonts)
         page.evaluate("document.fonts.ready")
         page.wait_for_timeout(300)
-        loaded = page.evaluate("""() => ['600 16px Oxanium', '16px "IM Fell English"', '600 16px Teko', '16px "Permanent Marker"'].map(f => document.fonts.check(f))""")
+        loaded = page.evaluate("""() => ['700 16px "Oxanium Theme Name"', '16px "Grenze Gotisch Theme Name"', '600 16px "Anton Theme Name"', '16px "Permanent Marker Theme Name"'].map(f => document.fonts.check(f))""")
         check("those title fonts load from our own files", all(loaded), loaded)
         backs = page.evaluate("""() => [...document.querySelectorAll('#theme-card .theme-swatch')].map(b => getComputedStyle(b).backgroundColor)""")
         check("each square is drawn in its own theme (its own page colour, dark mode)",
@@ -212,7 +228,7 @@ def main():
             check(f"{NAMES[th]}: the page switches, only its square is pressed, it is saved, Appearance is untouched",
                   state["t"] == th and state["pressed"] == [th] and state["saved"] == th and state["appearance"] == "dark", state)
             check(f"{NAMES[th]}: the page colour and the phone's top bar follow the theme", to_rgb(state["bg"]) == hexrgb(surf["page"]) and state["bar"] == surf["page"], state)
-            title = ["Oxanium", "IM Fell English", "Teko", "Big Shoulders Stencil"][THEMES.index(th)]
+            title = ["Oxanium", "Grenze Gotisch", "Anton", "Big Shoulders Stencil"][THEMES.index(th)]   # TH6: new title faces for Parchment Codex and Grim Forge
             check(f"{NAMES[th]}: the title uses the theme's title font", title in state["h1"], state["h1"])
         page.reload(); page.wait_for_function("() => typeof APP_VERSION === 'string'")
         check("the chosen theme survives a reload", page.evaluate("document.documentElement.dataset.t") == "bench")
@@ -277,9 +293,11 @@ def main():
             check(f"Classic {mode}: title, cards, body and main button keep the v46 sizes and body font (TH1: Oxanium title at 600, 6 px corners)",
                   look["h1size"] == "24px" and look["h1font"].startswith("Oxanium") and look["h1weight"] == "600"
                   and to_rgb(look["h1colour"]) == hexrgb(CLASSIC[mode]["--accent"]) and look["radius"] == "6px" and look["border"] == "1px solid"
-                  and look["shadow"] == "none" and look["pad"] == "16px" and look["body"] == "system-ui, sans-serif" and look["texture"] == "none"
+                  and look["shadow"] == "none" and look["pad"] == "16px" and look["body"].startswith('"Chakra Petch"') and look["texture"] == "none"
                   and to_rgb(look["btnColour"]) == hexrgb(CLASSIC[mode]["--background"]) and look["btnWeight"] == "600", look)
-            check(f"Classic {mode}: only its own font (Oxanium) is downloaded", page.evaluate("[...document.fonts].filter(f => f.status === 'loaded').map(f => f.family)") in ([], ["Oxanium"]))
+            # TH6: Classic's body (Chakra Petch) and numbers (Azeret Mono) have their own fonts too
+            got = page.evaluate("[...document.fonts].filter(f => f.status === 'loaded').map(f => f.family)")
+            check(f"Classic {mode}: only its own fonts (Oxanium, Chakra Petch, Azeret Mono) are downloaded", set(got) <= {"Oxanium", "Chakra Petch", "Azeret Mono"}, got)
 
         # ---------- 8. The photo viewer stays Classic dark ----------
         print("\n--- 8. Photo viewer ---")
@@ -325,12 +343,14 @@ def main():
         sp.reload(); sp.wait_for_function("() => typeof APP_VERSION === 'string'")
         sp.evaluate("document.fonts.ready"); sp.wait_for_timeout(300)
         fonts_before = sp.evaluate("caches.open('shades-of-grey-fonts').then(c => c.keys()).then(k => k.map(r => r.url.split('/').pop()))")
-        check("only Classic's own font is saved while Classic is in use (Settings not opened; TH1: Classic uses Oxanium)", fonts_before == ["oxanium-latin-600-normal.woff2"], fonts_before)
+        classic_files = {"oxanium-latin-600-normal.woff2", "chakra-petch-latin-400-normal.woff2", "chakra-petch-latin-600-normal.woff2", "azeret-mono-latin-500-normal.woff2"}
+        check("only Classic's own fonts are saved while Classic is in use (Settings not opened; TH6: Oxanium, Chakra Petch, Azeret Mono)",
+              "oxanium-latin-600-normal.woff2" in fonts_before and set(fonts_before) <= classic_files, fonts_before)
         open_settings(sp); sp.click('[data-theme-choice="bench"]')
         sp.evaluate("document.fonts.ready"); sp.wait_for_timeout(800)
         saved = sp.evaluate("caches.open('shades-of-grey-fonts').then(c => c.keys()).then(k => k.map(r => r.url.split('/').pop()))")
         check("after choosing Paint Bench, its fonts are saved for offline use",
-              any("big-shoulders-stencil" in f for f in saved) and any("barlow-semi-condensed" in f for f in saved), saved)
+              any("big-shoulders-stencil" in f for f in saved) and any("atkinson-hyperlegible" in f for f in saved), saved)   # TH6: Atkinson Hyperlegible replaced Barlow Semi Condensed
         swctx.set_offline(True)
         sp.reload(); sp.wait_for_function("() => typeof APP_VERSION === 'string'")
         sp.evaluate("document.fonts.ready"); sp.wait_for_timeout(500)

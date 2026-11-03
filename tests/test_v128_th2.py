@@ -91,7 +91,8 @@ def steel_extremes(page, darkest):
     page.evaluate("els => els.forEach(e => e.remove())", [tag, tag2])
     in_cards = [extreme(cards, b, darkest) for b in boxes]
     pick = min if darkest else max
-    rule = page.evaluate("(() => { const r = document.querySelector('.app-bar').getBoundingClientRect(); return [0, r.bottom - 12, innerWidth, r.bottom + 6]; })()")
+    # TH6 (v129): hex bolts now hold the brass rule at both ends, in the 16 px page margins, so the steel beside the rule is measured between them
+    rule = page.evaluate("(() => { const r = document.querySelector('.app-bar').getBoundingClientRect(); return [16, r.bottom - 12, innerWidth - 16, r.bottom + 6]; })()")
     return (extreme(bare, (16, top, w - 16, bottom), darkest), (pick(in_cards, key=lum) if in_cards else None), len(boxes),
             extreme(bare, vt, darkest), extreme(bare, rule, darkest))
 

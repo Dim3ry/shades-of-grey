@@ -145,9 +145,10 @@ def main():
                 big = document.querySelector('.big'), body = getComputedStyle(document.body);
                 return { h1: h1.fontFamily, h2: h2.fontFamily, big: big ? getComputedStyle(big).fontFamily : 'none', body: body.fontFamily,
                          oxanium: document.fonts.check('600 16px Oxanium') }; }""")
-            check(f"{mode}: titles and numbers use Oxanium with a real fallback; body text stays the system font",
-                  look["h1"].startswith("Oxanium") and look["h2"].startswith("Oxanium") and look["big"].startswith("Oxanium")
-                  and look["h1"].rstrip().endswith("sans-serif") and look["body"] == "system-ui, sans-serif", look)
+            # TH6 (v129): Classic's body text is now Chakra Petch and its numbers Azeret Mono (each look has its own fonts); the titles stay Oxanium.
+            check(f"{mode}: titles use Oxanium with a real fallback; body text and numbers use Classic's own TH6 fonts",
+                  look["h1"].startswith("Oxanium") and look["h2"].startswith("Oxanium") and look["big"].startswith('"Azeret Mono"')
+                  and look["h1"].rstrip().endswith("sans-serif") and look["body"].startswith('"Chakra Petch"') and look["body"].rstrip().endswith("sans-serif"), look)
             check(f"{mode}: Oxanium has loaded", look["oxanium"])
             card = page.evaluate("""() => { const c = getComputedStyle(document.querySelector('#view-dashboard .card'));
                 return { img: c.backgroundImage, radius: c.borderTopLeftRadius, width: c.borderTopWidth, transform: c.transform, scale: c.scale }; }""")
