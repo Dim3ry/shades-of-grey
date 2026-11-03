@@ -90,10 +90,13 @@ def main():
         # X2: there is no cog; Settings, Help and Updates are pages of the fourth section, so switching between them (same section) is instant
         tap(page, "guides")
         wait_settled(page)
+        # LQ1 (v129): James asked on 3 Nov for the switch itself to "slow empty and slow fill" (the old option's fill drains while the new one's
+        # floods in, drawn on the switch's own buttons). The pages still do not move, so this now counts every animation except that fill.
+        NOT_FILL = "() => document.getAnimations().filter(a => !(a.effect && a.effect.target && a.effect.target.closest && a.effect.target.closest('#more-seg'))).length"
         page.click('#more-seg button[data-page="settings"]')
-        check("moving between the pages of Tools and Settings does not move", page.evaluate("() => document.getAnimations().length") == 0)
+        check("moving between the pages of Tools and Settings does not move", page.evaluate(NOT_FILL) == 0)
         page.click('#more-seg button[data-page="help"]')
-        check("Help does not move", page.evaluate("() => document.getAnimations().length") == 0)
+        check("Help does not move", page.evaluate(NOT_FILL) == 0)
         tap(page, "dashboard")
         wait_settled(page)
         f = page.evaluate("""() => { goToUnits({}); return document.getElementById('view-units').getAnimations().map(a => { const k = a.effect.getKeyframes()[0];

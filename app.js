@@ -2308,7 +2308,14 @@
       }
       return out.sort((a, c) => (a.paint.brand || "￿").localeCompare(c.paint.brand || "￿") || a.paint.name.localeCompare(c.paint.name));
     }
-    function afterShopChange() { const ok = render(); updateBasket(); updateShopFoldouts(); return ok; }
+    // LQ1 (LQ5): the rest of the list glides into place when a paint (or Gear item) is ticked, removed or put back
+    const LQ_SHOP_ROWS = ".shop-item, .shop-brand, .shop-bought-head, .shop-suggest-head, .shop-side-copy";
+    const lqShopKey = (el) => el.dataset.paint ? "p" + el.dataset.paint
+      : el.dataset.gear ? (el.closest(".shop-bought") ? "bg" : "g") + el.dataset.gear
+      : ([...el.classList].find(c => c.startsWith("shop-")) || el.tagName) + (el.matches(".shop-brand") ? ":" + el.textContent : "");
+    function afterShopChange() {
+      return lqFlip(() => document.getElementById("shop-panel"), LQ_SHOP_ROWS, lqShopKey, () => { const ok = render(); updateBasket(); updateShopFoldouts(); return ok; });
+    }
     function removeFromShoppingList(id) {
       const paint = book.paints.find(p => p.id === id);
       if (!paint || paintStatus(paint) !== "wishlist") return;
@@ -3015,6 +3022,7 @@
           for (const i of groups.get(brand)) {
             const li = document.createElement("li");
             li.className = "shop-item";
+            li.dataset.paint = i.paint.id;   // LQ1 (LQ5): so the row can be followed when the list is redrawn
             // A1: a tick box (44 px) that marks it bought, the name and where it came from, and Remove.
             const tick = document.createElement("button");
             tick.type = "button";
@@ -3150,6 +3158,7 @@
       for (const x of done) {
         const li = document.createElement("li");
         li.className = "shop-item";
+        li.dataset.paint = "b" + x.paint.id;   // LQ1 (LQ5)
         const text = document.createElement("span");
         text.className = "shop-text";
         text.textContent = x.paint.name + (x.paint.brand ? ` · ${x.paint.brand}` : "");
@@ -3299,8 +3308,18 @@
       const input = document.getElementById("palette-search");
       const box = document.getElementById("palette-search-result");
       if (!input || !box) return;
-      box.innerHTML = "";
+      // LQ1 (LQ9): the answer box grows or shrinks smoothly as you type, instead of the list below jumping up and down on every letter
+      const from = lqOn() && lqShown(box) ? box.getBoundingClientRect().height : null;
+      box.getAnimations().forEach(a => a.cancel());
+      box.replaceChildren();
       const typed = input.value.trim();
+      if (from !== null) queueMicrotask(() => {
+        const to = box.getBoundingClientRect().height;
+        if (Math.abs(to - from) < 2) return;
+        box.style.overflow = "hidden";
+        const a = lqAnim(box, [{ height: from + "px" }, { height: to + "px" }], { duration: motionMs("--motion-fast"), easing: "linear" });
+        a.onfinish = a.oncancel = () => { box.style.overflow = ""; };
+      });
       if (!typed) return;
       const m = matchPaint(typed);
       if (m.status === "sure" || m.status === "material" || m.status === "new") {
@@ -6177,16 +6196,22 @@
       const [y, m, d] = iso.split("-").map(Number);
       return Date.UTC(y, m - 1, d) / DAY_MS;
     }
+    // LQ1 (LQ12): the two date formats are made once and kept (making one for every date of the graph's table took most of the Dashboard's first frame)
+    const DAY_FORMATS = {};
     function dayLabel(day, withYear) {
-      return new Date(day * DAY_MS).toLocaleDateString("en-GB",
-        withYear ? { month: "short", year: "numeric", timeZone: "UTC" } : { day: "numeric", month: "short", timeZone: "UTC" });
+      const key = withYear ? "year" : "day";
+      const f = DAY_FORMATS[key] || (DAY_FORMATS[key] = new Intl.DateTimeFormat("en-GB",
+        withYear ? { month: "short", year: "numeric", timeZone: "UTC" } : { day: "numeric", month: "short", timeZone: "UTC" }));
+      return f.format(new Date(day * DAY_MS));
     }
 
     // How many of a unit's models were Done at the end of a given day.
     function doneOnDay(unit, day) {
       const st = unit.start.slice();
-      for (const e of unit.m.log) {
-        if (dayNumber(e[0]) > day) continue;
+      const log = unit.m.log;
+      for (let i = 0; i < log.length; i++) {
+        const e = log[i];
+        if (unit.days[i] > day) continue;   // LQ1 (LQ12): each diary date is read once (historyData), not again for every day of the graph
         if (e[2] === undefined) st.fill(e[1]);
         else if (e[2] < st.length) st[e[2]] = e[1];
       }
@@ -6207,8 +6232,9 @@
         // Where the diary starts: its first entry, or (with no diary) where the unit is now.
         const start = m.log.length ? new Array(m.count || 1).fill(m.log[0][1]) : stagesOf(m).slice();
         days.add(from);
-        for (const e of m.log) days.add(dayNumber(e[0]));
-        return { m, from, start, count: m.count || 1 };
+        const logDays = m.log.map(e => dayNumber(e[0]));   // LQ1 (LQ12)
+        for (const d of logDays) days.add(d);
+        return { m, from, start, count: m.count || 1, days: logDays };
       });
       const valuesOn = (day) => {
         let added = 0, done = 0;
@@ -8780,6 +8806,233 @@
       setTimeout(() => dot.remove(), 800);   // in case the animation never runs
     }, { passive: true });
 
+    // ================= LQ1: the liquid feel (from the 3 Nov smoothness sweep, tweaks LQ1 to LQ13) =================
+    // Nothing here changes what the app does or how it looks at rest; it only smooths how things arrive and leave. Only transform, opacity
+    // and clip-path move (plus the height of Help's folds and of the palette search's small answer box, and the switches' fill). Reduced
+    // motion: none of it runs. The CSS is in index.html under "LQ1:".
+    function lqOn() { return !reducedMotion() && !!Element.prototype.animate; }
+    const lqShown = (el) => !!el && el.isConnected && el.getClientRects().length > 0;
+    // Movement started inside a long redraw would already be part-way through when the first frame after it is drawn (and leap); so it
+    // waits, at its first step, for that frame and starts from there.
+    function lqAnim(el, frames, timing) { const a = el.animate(frames, timing); a.pause(); requestAnimationFrame(() => { if (a.playState === "paused") a.play(); }); return a; }
+
+    // LQ1 (press): the pressed look shows from the moment a finger touches, not only once it lifts (a phone's own :active often waits for
+    // the lift, so it arrived together with the result, after any redraw). Taken off when the finger lifts, or at once when the touch
+    // becomes a scroll. On iPhone :active also needs the page to listen for touches. Not the bar's segments, the start circle or the
+    // Mentor button (MO6 and MW1 own those).
+    const LQ_PRESS = ".primary-button, .plain-button, .back-menu, .step-back, .up-button, .each-up, .each-back, .pick-tick, .chip, .theme-swatch, .recipe-chip, "
+      + ".mentor-chip, .mentor-send, .mentor-close, .seg > button, .link-button, .danger-button, .more-info-button, .card-fold-button, .group-button, .home, "
+      + ".recipe-item, .paint-head, .guides-row, .scheme-recipe-row, .faction-button, .tile-link, .step-line, .check-label, summary, #stage-legend button, .wheel-seg";
+    let lqPressed = null;
+    const lqUnpress = () => { if (lqPressed) { lqPressed.classList.remove("lq-press"); lqPressed = null; } };
+    document.addEventListener("touchstart", () => {}, { passive: true });
+    document.addEventListener("pointerdown", (event) => {
+      lqUnpress();
+      if (event.pointerType === "mouse" || !(event.target instanceof Element)) return;   // a mouse already gets :active at once
+      const el = event.target.closest(LQ_PRESS);
+      if (!el || el.disabled || el.closest(".tabs, .arc, #mentor-button")) return;
+      lqPressed = el;
+      el.classList.add("lq-press");
+    }, { passive: true, capture: true });
+    document.addEventListener("pointercancel", lqUnpress, { passive: true, capture: true });
+    document.addEventListener("pointerup", lqUnpress, { passive: true, capture: true });   // from here the phone's own :active takes over
+
+    // LQ1 (LQ3, LQ7): a pop-up that closes is hidden at once, exactly as before; a see-through copy of it (no ids, cannot be tapped or
+    // read by a screen reader) plays the way out where it was, then goes.
+    function lqGhostOut(el, frames, ms, inner) {
+      if (!lqOn() || !el || !el.isConnected || el.classList.contains("hidden") || !el.getClientRects().length) return;
+      const ghost = el.cloneNode(true);
+      ghost.removeAttribute("id");
+      ghost.querySelectorAll("[id]").forEach(n => n.removeAttribute("id"));
+      ghost.classList.remove("draining");
+      ghost.classList.add("lq-ghost");
+      ghost.setAttribute("aria-hidden", "true");
+      ghost.inert = true;
+      el.after(ghost);
+      const timing = { duration: ms, easing: "linear", fill: "forwards" };
+      const anim = lqAnim(ghost, frames, timing);
+      if (inner && ghost.firstElementChild) lqAnim(ghost.firstElementChild, inner, timing);
+      const bye = () => ghost.remove();
+      anim.onfinish = anim.oncancel = bye;
+      setTimeout(bye, ms + 300);
+    }
+
+    // LQ1 (LQ5): when a row leaves a list or comes back, the rows around it glide to their new places (transform only) and the row that
+    // left fades where it was, instead of everything below jumping. change() does the real work (usually a redraw); rows are matched by
+    // key(el). Only rows on or near the screen are animated. (Used for the shopping list; the Models list waits for MS1.)
+    const LQ_LOOK = ["display", "flex-direction", "flex-wrap", "align-items", "justify-content", "gap", "grid-template-columns", "padding", "color", "font",
+      "background-color", "background-image", "border-top", "border-right", "border-bottom", "border-left", "border-radius", "box-shadow", "list-style"];
+    const lqLook = (el) => { const cs = getComputedStyle(el); return LQ_LOOK.map(p => `${p}: ${cs.getPropertyValue(p)}`).join("; "); };
+    function lqFlip(getList, rowSel, key, change) {
+      const list = getList();
+      if (!lqOn() || !list || !list.getClientRects().length) return change();
+      const near = (r) => r.height > 0 && r.bottom > -40 && r.top < innerHeight + 40;
+      const before = new Map(), order = [];
+      for (const el of list.querySelectorAll(rowSel)) {
+        if (el.closest(".lq-ghost")) continue;
+        const k = key(el); order.push(k);
+        const r = el.getBoundingClientRect();
+        const isNear = near(r);
+        before.set(k, { el, r, near: isNear, parent: el.parentElement, look: isNear ? lqLook(el) : "" });
+      }
+      const result = change();
+      const now = getList();
+      if (!now) return result;
+      const ms = motionMs("--motion-med");
+      const timing = { duration: ms, easing: "linear" };
+      const after = new Map();
+      for (const el of now.querySelectorAll(rowSel)) if (!el.closest(".lq-ghost")) after.set(key(el), el);
+      for (const [k, el] of after) {
+        const old = before.get(k), r = el.getBoundingClientRect();
+        if (!near(r) && !(old && old.near)) continue;
+        if (old) { const dy = old.r.top - r.top; if (Math.abs(dy) > 1 && Math.abs(dy) < innerHeight) lqAnim(el, [{ transform: `translateY(${dy}px)` }, { transform: "none" }], timing); }
+        else lqAnim(el, [{ opacity: 0, transform: "scale(0.97)" }, { opacity: 1, transform: "none" }], timing);
+      }
+      order.forEach((k) => {   // a row that left: a copy fades where it was. It sits in a layer of its own, outside the page (a bare list of
+        const old = before.get(k);   // the same kind, with no class or id), so nothing that looks for the list's rows finds it.
+        if (after.has(k) || !old.near || !old.parent) return;
+        const layer = document.createElement(old.parent.tagName);
+        layer.className = "lq-ghost";
+        layer.setAttribute("aria-hidden", "true");
+        layer.inert = true;
+        layer.style.cssText = "position: fixed; left: 0; top: 0; width: 0; height: 0; margin: 0; padding: 0; border: 0; overflow: visible; z-index: 5;";
+        const ghost = old.el.cloneNode(true);
+        ghost.removeAttribute("id");
+        ghost.querySelectorAll("[id]").forEach(n => n.removeAttribute("id"));
+        ghost.style.cssText = old.look;   // its own look, as it was drawn in its list
+        Object.assign(ghost.style, { position: "fixed", margin: "0", boxSizing: "border-box", left: old.r.left + "px", top: old.r.top + "px",
+          width: old.r.width + "px", height: old.r.height + "px" });
+        layer.appendChild(ghost);
+        document.body.appendChild(layer);
+        const a = lqAnim(ghost, [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(0.96)" }], { ...timing, fill: "forwards" });
+        a.onfinish = a.oncancel = () => layer.remove();
+        setTimeout(() => layer.remove(), ms + 300);
+      });
+      return result;
+    }
+
+    // LQ1 (LQ4): a fold-out opened by a button (aria-expanded) unrolls from the top, and what comes after it glides down to make room; when
+    // it closes, what came after glides back up, instead of everything below jumping. Only transform and clip-path move: the page is laid
+    // out once, as before, so a long list below costs nothing extra on each frame. The panel is the one the button names (aria-controls),
+    // or the element straight after it. Skipped where the panel already has its own motion (Details on a unit, the stage chips, Mentor,
+    // the <details> folds, which open their height in CSS) and for tabs and text boxes.
+    const LQ_FOLD_SKIP = '[role="tab"], [role="combobox"], input, summary, .details-toggle, #stage-chips-toggle, #mentor-button, .mentor-orb, .tabs *, .arc *, .mentor-backdrop *, .mentor-window *';
+    let lqFold = null;
+    const lqSliding = new Set();   // the slides still running: any new tap or key ends them first, so nothing measures a page that is still moving
+    const lqSettle = () => { for (const a of lqSliding) a.finish(); lqSliding.clear(); };
+    document.addEventListener("keydown", lqSettle, true);
+    const lqPanelOf = (button) => button.getAttribute("aria-controls") ? document.getElementById(button.getAttribute("aria-controls")) : button.nextElementSibling;
+    // what comes after the panel on the page, near the screen: its later siblings, then its parents' later siblings, up to the section
+    function lqFollowers(el) {
+      const out = [];
+      for (let n = el; n && n.parentElement && !n.matches("main, body, main > section"); n = n.parentElement) {
+        for (let s = n.nextElementSibling; s; s = s.nextElementSibling) {
+          const r = s.getBoundingClientRect();
+          if (r.height > 0 && r.top < innerHeight + 100 && r.bottom > 0) out.push([s, r.top]);
+        }
+      }
+      return out;
+    }
+    document.addEventListener("click", (event) => {
+      lqFold = null;
+      lqSettle();
+      const button = event.target instanceof Element ? event.target.closest("[aria-expanded]") : null;
+      if (!button || button.matches(LQ_FOLD_SKIP) || !lqOn()) return;
+      const panel = lqPanelOf(button);
+      if (!panel) return;
+      lqFold = { button, id: panel.id, panel, shown: lqShown(panel), after: lqFollowers(panel) };
+    }, true);
+    document.addEventListener("click", () => {
+      const f = lqFold;
+      lqFold = null;
+      if (!f) return;
+      const panel = (f.id && document.getElementById(f.id)) || (f.panel.isConnected ? f.panel : (f.button.isConnected ? lqPanelOf(f.button) : null));
+      if (!panel || panel.getAnimations().length) return;
+      const opened = !f.shown && lqShown(panel), closed = f.shown && !lqShown(panel);
+      if (!opened && !closed) return;
+      const timing = { duration: motionMs("--motion-med"), easing: "linear" };
+      for (const [el, top] of f.after) {
+        if (!el.isConnected || el.getAnimations().length) continue;
+        const dy = top - el.getBoundingClientRect().top;
+        if (Math.abs(dy) > 1 && Math.abs(dy) < innerHeight) lqSliding.add(lqAnim(el, [{ transform: `translateY(${dy}px)` }, { transform: "none" }], timing));
+      }
+      if (opened) lqSliding.add(lqAnim(panel, [{ clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0 0)" }], timing));
+      for (const a of lqSliding) a.addEventListener("finish", () => lqSliding.delete(a), { once: true });
+    });
+
+    // LQ1 (LQ6): moving between the pages inside one section (the Painting switch, the Colour Lab parts, a Guides list or entry) was an
+    // instant swap; the new page now fades up into place. Not between the Tools pages (About, Guides, Settings, Help, Updates): those keep
+    // Mo3a's instant switch (James, 3 Nov).
+    function lqFadeIn(el) {
+      if (!lqOn() || !el || !el.isConnected || el.closest(".hidden, [hidden]")) return;   // (no measuring here, so the tap does not wait for a layout)
+      lqAnim(el, [{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: motionMs("--motion-med"), easing: "linear" });
+    }
+    let lqGuides = null;   // where Guides was when a tap inside it began
+    const lqGuidesAt = () => [guidesState.view, guidesState.cat, guidesState.group, guidesState.key].join("|");
+    document.addEventListener("click", (event) => {
+      lqGuides = event.target instanceof Element && event.target.closest("#compendium-body") ? lqGuidesAt() : null;
+    }, true);
+    document.addEventListener("click", () => {
+      if (lqGuides !== null && lqGuidesAt() !== lqGuides) lqFadeIn(document.querySelector("#compendium-body .guides-main") || document.getElementById("compendium-body"));
+      lqGuides = null;
+    });
+
+    // LQ1 (switch fill, James, 3 Nov: "slow empty and slow fill"): in the in-section switches (.seg: Painting, Colour Lab, the Tools
+    // pages, Guides' Topics / A to Z) the old option's fill drains away while the new option's fill floods in, at the same time: the new
+    // one fills from the side nearest the old one and the old one empties towards the new one, so the colour reads as moving across.
+    // Each fill is a ::after copy of the option (the fill colour with the label in the selected colours) uncovered or covered with
+    // clip-path, over the option drawn as not selected; so wherever the fill is, the label on it is in the selected colours, and the
+    // contrast is never lower than at rest. The page under the switch changes as before. Not the bar, the start circle or the Mentor
+    // window. Reduced motion: an instant change, as before.
+    let lqSegTap = null;
+    const lqSegRuns = new Set();
+    const lqSegEnd = () => { for (const run of [...lqSegRuns]) run(); };
+    const lqSegButtons = (seg) => [...seg.children].filter(x => x.tagName === "BUTTON");
+    document.addEventListener("click", (event) => {
+      lqSegTap = null;
+      lqSegEnd();
+      const b = event.target instanceof Element ? event.target.closest(".seg > button") : null;
+      if (!b || !lqOn() || !(window.KeyframeEffect && "pseudoElement" in KeyframeEffect.prototype)) return;   // (older browsers: the instant change)
+      const seg = b.parentElement, buttons = lqSegButtons(seg);
+      const old = buttons.findIndex(x => x.getAttribute("aria-selected") === "true");
+      if (old < 0 || buttons[old] === b) return;
+      lqSegTap = { seg, id: seg.id, label: seg.getAttribute("aria-label"), old };
+    }, true);
+    document.addEventListener("click", () => {
+      const t = lqSegTap;
+      lqSegTap = null;
+      if (!t) return;
+      // the switch may have been drawn again (Guides draws its Topics / A to Z switch afresh): find the new one
+      const seg = t.seg.isConnected ? t.seg : t.id ? document.getElementById(t.id) : [...document.querySelectorAll(".seg")].find(s => s.getAttribute("aria-label") === t.label);
+      if (!seg || !lqShown(seg)) return;
+      const buttons = lqSegButtons(seg);
+      const to = buttons.find(x => x.getAttribute("aria-selected") === "true"), from = buttons[t.old];
+      if (!to || !from || to === from || !lqShown(to) || !lqShown(from)) return;
+      const a = from.getBoundingClientRect(), z = to.getBoundingClientRect();
+      // which way the colour moves: across a row, or down or up when the switch has wrapped onto two rows
+      const way = Math.abs(a.top - z.top) < 2 ? (z.left > a.left ? "right" : "left") : (z.top > a.top ? "down" : "up");
+      const SHUT = { right: "inset(0 100% 0 0)", left: "inset(0 0 0 100%)", down: "inset(0 0 100% 0)", up: "inset(100% 0 0 0)" };
+      const GONE = { right: "inset(0 0 0 100%)", left: "inset(0 100% 0 0)", down: "inset(100% 0 0 0)", up: "inset(0 0 100% 0)" };
+      const root = getComputedStyle(document.documentElement);
+      const timing = { duration: motionMs("--motion-fill") || motionMs("--motion-med"), easing: root.getPropertyValue("--motion-fill-ease").trim() || "ease-in-out",
+        fill: "forwards", pseudoElement: "::after" };
+      const anims = [];
+      for (const [el, frames] of [[from, [{ clipPath: "inset(0 0 0 0)" }, { clipPath: GONE[way] }]], [to, [{ clipPath: SHUT[way] }, { clipPath: "inset(0 0 0 0)" }]]]) {
+        el.dataset.lqLabel = el.textContent.trim();
+        el.classList.add("lq-fill");
+        try { anims.push(lqAnim(el, frames, timing)); } catch (ignored) {}
+      }
+      const done = () => {
+        if (!lqSegRuns.delete(done)) return;
+        for (const an of anims) an.cancel();
+        for (const el of [from, to]) { el.classList.remove("lq-fill"); delete el.dataset.lqLabel; }
+      };
+      lqSegRuns.add(done);
+      if (anims.length < 2) { done(); return; }
+      anims[1].addEventListener("finish", done, { once: true });
+      setTimeout(done, timing.duration + 400);   // in case the animation never runs
+    });
+
     // ----- The pop-up message with Undo -----
 
     const toast = document.getElementById("toast");
@@ -8802,7 +9055,7 @@
       toastUndo.classList.toggle("hidden", !undo);
       toast.classList.remove("hidden");
       clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => toast.classList.add("hidden"), (seconds || 4) * 1000);
+      toastTimer = setTimeout(hideToast, (seconds || 4) * 1000);   // LQ1 (LQ3)
       toastUntil = Date.now() + (seconds || 4) * 1000;
       // Mo1: the thin line along the bottom drains over the same time as the timer above (no second timer).
       toast.style.setProperty("--toast-life", (seconds || 4) + "s");
@@ -8813,6 +9066,11 @@
     // A2: a phone can freeze the page (screen off, another app on top) with the message's timer unfinished, and the
     // message was then still up when you came back, on whatever screen you opened next. So whenever the page wakes
     // up or the screen changes, a message past its time goes.
+    // LQ1 (LQ3): the message slides back down and fades as it goes (a copy plays that; the message itself is hidden at once, as before).
+    function hideToast() {
+      if (!toast.classList.contains("hidden") && !document.hidden) lqGhostOut(toast, [{ transform: "none", opacity: 1 }, { transform: "translateY(60%)", opacity: 0 }], motionMs("--motion-med"));
+      toast.classList.add("hidden");
+    }
     function expireToast() {
       if (!toast.classList.contains("hidden") && Date.now() >= toastUntil) {
         clearTimeout(toastTimer);
@@ -8827,7 +9085,7 @@
       // (e.g. "Apply to 3 units" shows "Applied…" with its own Undo).
       const action = undoAction;
       undoAction = null;
-      toast.classList.add("hidden");
+      hideToast();   // LQ1 (LQ3)
       if (action) action();
     });
 
@@ -8843,7 +9101,7 @@
     toast.addEventListener("click", (event) => {
       if (undoAction || event.target === toastUndo) return;   // a message with a button isn't hidden by a stray tap
       clearTimeout(toastTimer);
-      toast.classList.add("hidden");
+      hideToast();   // LQ1 (LQ3)
     });
 
     // ================= v21.7: THE IN-APP QUESTION BOX =================
@@ -8871,7 +9129,7 @@
     let dialogState = null;   // null, or { cfg, opener } while a question is showing
 
     function showDialog(cfg) {
-      if (dialogState) finishDialog(dialogState.cfg.mode === "text" ? null : false);   // a new question replaces the old one, which counts as "no"
+      if (dialogState) finishDialog(dialogState.cfg.mode === "text" ? null : false, true);   // a new question replaces the old one, which counts as "no" (LQ1, LQ7: no fade then)
       const text = cfg.mode === "text", show = cfg.mode === "show", pick = cfg.mode === "pick";
       const notice = cfg.mode === "notice";   // UX1b: a message with one OK button, up until it's dismissed
       dialogMessage.textContent = cfg.message;
@@ -8903,10 +9161,12 @@
     }
 
     // Close the box and hand back the answer (true/false, the typed text, or null).
-    function finishDialog(answer) {
+    function finishDialog(answer, replaced) {   // LQ1 (LQ7): replaced = a new question is taking its place
       const state = dialogState;
       if (!state) return;
       dialogState = null;
+      // LQ1 (LQ7): the box sinks a little and fades with its dim layer (a copy plays it; the box itself is hidden at once, as before)
+      if (!replaced) lqGhostOut(dialogBackdrop, [{ opacity: 1 }, { opacity: 0 }], motionMs("--motion-fast"), [{ transform: "none" }, { transform: "translateY(10px)" }]);
       dialogBackdrop.classList.add("hidden");
       dialogPick.replaceChildren();
       dialogInput.value = "";
@@ -9305,7 +9565,7 @@
       const wideSplit = onPage && recipeWide.matches && !["palette", "schemes", "shopping", "colourlab"].includes(settings.recipeView);
       // Mo3a: a recipe opening or closing from the Recipes list, by a tap. On a phone the list steps back and the detail slides in from the
       // right (closing reverses it); from 900 px, where the detail sits in the side pane, it is a short fade. Not from Palette, Schemes or Shopping.
-      let detailMove = null;
+      let detailMove = null, closeSnap = null;   // LQ1 (LQ2): closeSnap
       const wasPage = !recipePage.classList.contains("hidden");
       if (onPage !== wasPage && canMove() && settings.tab === "recipes" && !launching && !views.recipes.classList.contains("hidden")
           && !["palette", "schemes", "shopping", "colourlab"].includes(settings.recipeView)) {
@@ -9317,7 +9577,7 @@
           const snap = moveSnap(recipeSplit, recipeHome);   // the list stays on screen, dimmed, while the detail slides over it
           detailMove = () => moveRun(snap, sideways, recipePage, [{ transform: "translateX(100%)" }, { transform: "none" }], ms);
         } else if (!onPage) {
-          const snap = moveSnap(recipeSplit, recipePage);   // the detail slides away to the right and the list steps forward
+          const snap = closeSnap = moveSnap(recipeSplit, recipePage);   // the detail slides away to the right and the list steps forward (LQ1, LQ2: kept for Back)
           detailMove = () => moveRun(snap, [{ transform: "none", opacity: 1 }, { transform: "translateX(100%)", opacity: 1 }],
             recipeHome, [...sideways].reverse(), ms);
         }
@@ -9337,8 +9597,19 @@
       else if (onLab) renderColourLab();
       else renderRecipeList();
       if (wideSplit) renderRecipeList();
+      // LQ1 (LQ2): back from a recipe, the list is where you left it (the recipe sliding away stays where it was on screen)
+      lqListBack = false;
+      if (!onPage && wasPage && lqListPlace && lqListPlace.view === current) {
+        const y0 = window.scrollY;
+        window.scrollTo(0, lqListPlace.y);
+        if (closeSnap) closeSnap.top += window.scrollY - y0;
+        lqListBack = true;
+      }
+      if (!onPage) lqListPlace = null;
       if (detailMove) detailMove();
     }
+    var lqListPlace = null;   // LQ1 (LQ2): which list a recipe was opened from, and how far down it was
+    var lqListBack = false;   // LQ1 (LQ2): the last redraw put the list back where it was
 
     // v78: crossing 900 px with a recipe open moves it beside the list or back to full screen.
     recipeWide.addEventListener("change", () => {
@@ -9352,9 +9623,11 @@
 
     const recipeSeg = document.getElementById("recipe-seg");
     recipeSeg.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+      const was = settings.recipeView;   // LQ1 (LQ6)
       settings.recipeView = b.dataset.view;
       saveSettings();
       renderRecipes();
+      if (was !== b.dataset.view) lqFadeIn({ schemes: schemeView, colourlab: labView, palette: paletteView, shopping: shoppingView }[b.dataset.view] || recipeSplit);
     }));
 
     // Leaving the editor with unsaved changes? Check first. v21.7: it can't answer instantly
@@ -9369,6 +9642,9 @@
 
     function openRecipe(id) {
       whenOkToLeaveDraft(() => {
+        // LQ1 (LQ2): opened from a list on the Painting tab: remember where that list was, for Back
+        lqListPlace = settings.tab === "recipes" && openRecipeId === null && !recipeDraft && !views.recipes.classList.contains("hidden")
+          ? { view: settings.recipeView || "recipes", y: window.scrollY } : null;
         recipeDraft = null;
         openRecipeId = id;
         renderRecipes();
@@ -14744,7 +15020,18 @@
     const WHEEL_NOT_METAL = /\b(gold|golden|bronze|brass|copper|silver|steel)\s+(green|brown|blue|yellow|orange|red|olive|ochre)\b/i;   // "Bronze Green" is a green
 
     // Where a paint sits on the wheel: { seg, sub, L } (L = how light it is, 0 black to 100 white), or null when its colour is not known yet.
+    // LQ1 (LQ13): a paint's place is worked out once per colour, name and type and then remembered (the Colour Lab redraws every paint the app knows)
+    const wheelPlaceMemo = new Map();
     function wheelPlace(paint) {
+      if (!paint || typeof paint !== "object") return wheelPlaceNow(paint);
+      const sig = paint.colour + "|" + paint.name + "|" + paint.type;
+      if (wheelPlaceMemo.has(sig)) { const at = wheelPlaceMemo.get(sig); return at ? { ...at } : null; }
+      const at = wheelPlaceNow(paint);
+      if (wheelPlaceMemo.size > 20000) wheelPlaceMemo.clear();
+      wheelPlaceMemo.set(sig, at ? { ...at } : null);
+      return at;
+    }
+    function wheelPlaceNow(paint) {
       const C = MinifolioColour;
       if (!paint || paint.type === "material" || !colourIdeaIsReal(paint.colour)) return null;
       const hsl = C.hexToHsl(paint.colour), lab = C.hexToLab(paint.colour);
@@ -16275,7 +16562,7 @@
       b.setAttribute("role", "tab");
       b.dataset.lab = x.key;
       b.textContent = x.label;
-      b.addEventListener("click", () => { compendiumState.lab = x.key; renderColourLab(`[data-lab="${x.key}"]`); });
+      b.addEventListener("click", () => { const was = compendiumState.lab; compendiumState.lab = x.key; renderColourLab(`[data-lab="${x.key}"]`); if (was !== x.key) lqFadeIn(document.getElementById("colourlab-body")); });   // LQ1 (LQ6)
       labSeg.appendChild(b);
     }
     function renderColourLab(focusSelector) {
@@ -21745,7 +22032,7 @@
             window.scrollTo(0, 0);
           });
         };
-        if (openRecipeId !== null) return () => { openRecipeId = null; renderRecipes(); window.scrollTo(0, 0); };
+        if (openRecipeId !== null) return () => { openRecipeId = null; renderRecipes(); if (!lqListBack) window.scrollTo(0, 0); };   // LQ1 (LQ2): unless the list went back to its place
         if (schemeDraft && settings.recipeView === "schemes") return () => closeScheme(true);
       }
       if ((tab === "guides" || (tab === "recipes" && settings.recipeView === "colourlab")) && compendiumState.focus) return leaveIdeasFor;   // v69 (X1: also in Colour Lab): back to the recipe step or palette paint
