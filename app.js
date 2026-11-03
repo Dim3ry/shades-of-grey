@@ -19176,12 +19176,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL ELEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, app), e.g. "app.js?v=123".
+    // "?v=" number on ALL ELEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, app), e.g. "app.js?v=124".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v123";
+    const APP_VERSION = "v124";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -19634,6 +19634,16 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v124", date: "3 Nov 2026", changes: [
+        "Safer saving. If your saved units or recipes can't be read, the app no longer replaces them: saving pauses and you can save them as a file or start again (a copy is kept for 30 days). Recover earlier data keeps units and recipes together, a restore stops if there's no room for its safety copy, and Undo only takes back its own change. A recipes-only restore no longer links units to the wrong recipes. The offline copy never mixes old and new versions, and opens the saved copy when the site has a problem or is slow. Delete questions start on No, notes are saved when you switch apps, and a window you come back to picks up changes from another one.",
+        "Safety fixes. A backup can only bring in ordinary photos (JPEG, PNG or WebP); anything else is left out and the restore message says how many. Other websites can no longer show Minifolio inside their own pages. Very long names from a backup or file are cut to the usual limit, and a very long name saved earlier no longer slows the Models page. A broken web address no longer stops the app starting properly.",
+        "The shopping list has a closed Suggested section underneath. It shows your Empty paints and the Not owned paints your recipes use, each with Add and ✕. Nothing goes on the list unless you tap Add. ✕, or removing a paint from the list, stops it being suggested until you add it again. In Colour Lab's Colour ideas, Add to shopping list is now on the row of a paint you don't own, even with Shop links switched off. Shop links there holds just the links.",
+        "Themes: Classic has a new cold sci-fi look, with an ice cyan accent, a technical font for titles and numbers, and thin panel lines with small corner marks. Blueprint and Rulebook have been removed; if you used one, the app now shows Classic.",
+        "Parchment Codex now looks like red ink on old paper: crimson headings and buttons, a fine paper grain, a few ink blots and stained edges. In dark mode it is aged parchment by candlelight. Text stays as easy to read as before.",
+        "Help now says that guides and Mentor give general hobby tips, so always follow the maker's label. Help > About links to the font licences, and the short note on this page now matches the full one.",
+        "Guides: a Topics | A to Z switch shows every guide in one alphabetical list. Search results show each guide's number. Some guides now end with See also links to related guides.",
+        "Guides has 12 new entries: painting blue, green, brown and grey, horses and mounts, how long to wait between coats, drying and curing times, split or hooked brush tips, a first-sessions path, using Colour Lab, mixing paints from different makers and matching a colour you have run out of. There are six new detail recipes too (brown, red and ginger, and black hair, and chestnut, bay and dapple grey horse coats), and Mentor can now answer questions on these topics.",
+      ]},
       { version: "v123", date: "2 Nov 2026", changes: [
         "+ New recipe now opens a quick form: type or paste lines like Eyes: yriel yellow, then flash gitz yellow and check the preview. A paint the app does not know is outlined and kept as typed. More options holds the name, part and each step's technique, coats, brand and note, and a technique you pick there stays when you change the paint. After saving, Do you own these? lets you tick the paints you have.",
         "Import CSV can now read two optional dates for each unit: date_added (when it joined your collection) and date_stage (when it reached its stage), as 2026-11-02 or 02/11/2026. The progress graph then shows your collection's real history instead of starting on the day you imported. Export CSV and the CSV template have the two new columns too.",
