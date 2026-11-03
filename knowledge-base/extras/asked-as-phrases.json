@@ -393,7 +393,10 @@
   "base coating tips for beginners",
   "bright colours wont cover black primer",
   "basecoating over zenithal",
-  "solid even colour on a model"
+  "solid even colour on a model",
+  "streaky first coat",
+  "even coat with no streaks",
+  "my base colour looks uneven"
  ],
  "batch-assembly": [
   "build a unit faster",
@@ -1257,7 +1260,16 @@
   "lumps in my paint",
   "revive dried paint",
   "paint gone stringy",
-  "should i throw away old paint"
+  "should i throw away old paint",
+  "my paint is lumpy",
+  "lumpy paint",
+  "my paint has lumps in it",
+  "paint has bits in it",
+  "paint has gone clumpy",
+  "chunks in my paint pot",
+  "paint feels gritty",
+  "skin on top of my paint",
+  "lumps in the paint pot"
  ],
  "scratch-built-terrain": [
   "scratch build terrain",
@@ -1605,7 +1617,15 @@
   "gloss varnish puddle",
   "how to use water gel",
   "wet mud around a puddle",
-  "my puddle looks fake"
+  "my puddle looks fake",
+  "how do i paint water",
+  "painting water",
+  "how to paint water effects",
+  "paint a river or stream on a base",
+  "realistic water on a base",
+  "pond on a base",
+  "make water look deep and wet",
+  "lake or sea on a display base"
  ],
  "sandbags-and-low-walls": [
   "sandbags",
@@ -2361,7 +2381,17 @@
   "should i lick my brush",
   "ventilation",
   "sanding resin dust",
-  "spray paint indoors safe"
+  "spray paint indoors safe",
+  "paint in a small room with no window",
+  "is it safe to paint indoors",
+  "do i need ventilation to paint",
+  "fumes in a small room",
+  "painting without a window",
+  "health risks of painting",
+  "do i need a respirator",
+  "is paint smell harmful",
+  "breathing in fumes",
+  "harmful to my health"
  ],
  "inverted-edge-highlights": [
   "inverted edge highlights",
@@ -4089,7 +4119,15 @@
   "remove acrylic from clothes",
   "cold or hot water for paint stains",
   "paint on carpet",
-  "paint on clothing"
+  "paint on clothing",
+  "stop getting paint on my clothes",
+  "keep paint off my clothes",
+  "protect my clothes while painting",
+  "acrylic paint on my t-shirt",
+  "what to wear when painting",
+  "does acrylic stain clothes for good",
+  "dried paint on my clothes",
+  "paint splashed on my clothes"
  ],
  "painting-armies-efficiently": [
   "paint an army fast",
@@ -4269,7 +4307,15 @@
   "how many coats",
   "paint looks murky over black",
   "green wont cover",
-  "should i use thicker paint to cover"
+  "should i use thicker paint to cover",
+  "why is my paint streaky",
+  "streaky paint",
+  "my paint goes on streaky",
+  "streaks in my paint",
+  "paint coverage is bad",
+  "patchy coverage",
+  "streaky and see through",
+  "paint goes on thin and streaky"
  ],
  "preparing-metal-models": [
   "metal models",
@@ -7316,7 +7362,14 @@
   "photo box setup",
   "model looks dark in photos",
   "what light bulbs for photography",
-  "shadows in my photos"
+  "shadows in my photos",
+  "take good photos of my models",
+  "how to take pictures of miniatures",
+  "my photos of minis look bad",
+  "take nice photos of my painted models",
+  "photos of models with my phone",
+  "good lighting for photographing minis",
+  "photos to share online"
  ],
  "planning-a-kitbash": [
   "how do i plan a conversion",
@@ -8851,7 +8904,15 @@
   "choosing a model with crisp detail",
   "fun model to paint",
   "simple model to start with",
-  "should i paint a model i like"
+  "should i paint a model i like",
+  "good first model to buy",
+  "what should my first miniature be",
+  "which model should i buy first",
+  "best first model for a beginner",
+  "what should i start on",
+  "easy model for a beginner",
+  "first mini to buy",
+  "a model to learn on"
  ],
  "planning-large-models": [
   "big model",
