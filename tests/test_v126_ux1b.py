@@ -112,8 +112,8 @@ def main():
         check("Skip to content is the first Tab stop, shown while it has the focus (44 px tall)", first[0] == "skip-link" and first[1] >= 44 and first[2] > 44, first)
         page.keyboard.press("Enter")
         check("…and takes you past the menu bar to the page's first control", page.evaluate("document.activeElement.id") == "toggle-add", page.evaluate("document.activeElement.outerHTML.slice(0, 120)"))
-        check("the skip link takes no room and shows nothing when it doesn't have the focus",
-              page.evaluate("() => { const r = document.getElementById('skip-link').getBoundingClientRect(); return r.width <= 1 && r.height <= 1; }"))
+        check("the skip link waits above the top of the screen when it doesn't have the focus",
+              page.evaluate("() => document.getElementById('skip-link').getBoundingClientRect().bottom <= 0"))
         page.focus("#mentor-button")
         page.keyboard.press("Enter"); quiet(page)
         page.keyboard.press("Tab")
