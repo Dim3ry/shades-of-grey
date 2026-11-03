@@ -20876,12 +20876,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=127".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=128".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v127";
+    const APP_VERSION = "v128";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -21343,6 +21343,12 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v128", date: "3 Nov 2026", changes: [
+        "Grim Forge is now blackened steel with brushed grain, soot, brass rivets and a forge orange, and bare steel in light mode.",
+        "Paint Bench is a calmer hobby desk: lighter, warmer colours, a quieter cutting mat and paler masking tape.",
+        "Easier to read in every theme: hints inside empty boxes, pressed buttons in Parchment Codex dark and the label on the round Mentor button.",
+        "Models opens much faster on a long list, and a stage tap, a rename, a delete or an Undo now redraws only the card it changed.",
+      ]},
       { version: "v127", date: "3 Nov 2026", changes: [
         "Ask Mentor now opens out of its round button, and Mentor sits larger above the questions. The start circle's four sections match the bar: Models and Painting on top, Dashboard and Tools below.",
         "Guides: entries that need something to buy have a Where to buy fold-out with plain shop searches and Add to shopping list. Gear has its own section on the shopping list.",
