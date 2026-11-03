@@ -107,8 +107,9 @@ def main():
                      "Ultramarines Blue.", 'e.g. 40K"', 'e.g. Tyranids"', "e.g. Macragge Blue"]
         # T3b: one combined scan instead of ten (no other test scans index.html for these old names, so the scan stays, once)
         check("none of the old example names or hints is left in index.html", not [w for w in old_words if w in html], [w for w in old_words if w in html])
-        check("the Help lines about the Warhammer app import are still there (a plain statement of what it reads)",
-              "From the Warhammer app" in html and "Only unit names and model counts are kept" in html)
+        # H: Help now says "your army list app" (no Games Workshop app name in the app's own words; the trademark notice stays)
+        check("the Help lines about the army list import are still there (a plain statement of what it reads)",
+              "From your army list app" in html and "Only unit names and model counts are kept" in html)
         check("the unofficial wording is unchanged", "Unofficial fan-made app" in html and "not affiliated with or endorsed by Games Workshop" in html)
 
         # ---------- 4. Nothing saved changes ----------

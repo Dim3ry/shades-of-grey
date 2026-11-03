@@ -62,7 +62,7 @@ def main():
             order: [...document.querySelectorAll('#quick-lines, #quick-preview, .quick-more, #quick-save')].map(e => e.id || e.className.split(' ').pop()) })""")
         check("title New recipe, cursor in the box, label and example placeholder",
               form["title"] == "New recipe" and form["focus"] == "quick-lines" and form["label"] == "Type or paste lines"
-              and form["placeholder"] == "Eyes: yriel yellow, then flash gitz yellow", form)
+              and form["placeholder"] == "Eyes: bright yellow, then pale yellow", form)   # H: the example uses invented paints, not Games Workshop ones
         check("box, preview, More options (closed), then Save, in that order",
               form["order"] == ["quick-lines", "quick-preview", "quick-more", "quick-save"] and form["moreOpen"] == "false" and form["more"].startswith("More options"), form)
         pv = preview(page)

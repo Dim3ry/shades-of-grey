@@ -9552,7 +9552,7 @@
       const draw = () => {
         const text = document.createElement("span");
         text.className = "step-line-text";
-        // RS1: the recipe page also names the paints ("1. Yriel Yellow, Layer"); the editor passes no names and is unchanged.
+        // RS1: the recipe page also names the paints ("1. Bright yellow, Layer"); the editor passes no names and is unchanged.
         const names = o.paintNames ? o.paintNames() : "";
         text.textContent = `${o.number}. ${names ? names + ", " : ""}${o.technique()}`;
         if (o.paintNames) button.classList.add("step-line-named");
@@ -10375,7 +10375,7 @@
       const nameLabel = document.createElement("label");
       nameLabel.textContent = "Scheme name";
       const nameBox = document.createElement("input");
-      nameBox.placeholder = "e.g. My Ultramarines";
+      nameBox.placeholder = "e.g. My rust knights";
       nameBox.value = d.name;
       nameBox.addEventListener("input", () => { d.name = nameBox.value; });
       nameLabel.appendChild(nameBox);
@@ -11232,7 +11232,7 @@
     }
 
     // ----- RS3b: the quick New recipe form -----
-    // Painting > Recipes > + New recipe opens one box: type or paste lines ("Eyes: yriel yellow, then flash gitz yellow"), see a preview,
+    // Painting > Recipes > + New recipe opens one box: type or paste lines ("Eyes: bright yellow, then pale yellow"), see a preview,
     // and Save. The lines are read by the paste reader (parseRecipeText with quick on). It is still a recipe draft (recipeDraft), so leaving
     // asks first and an unfinished one is kept like any other. d.quick holds the typed text and what was set by hand under More options:
     //   d.quick.text  the box     d.quick.name / d.quick.part  "" = built from the lines
@@ -11381,7 +11381,7 @@
       const box = document.createElement("textarea");
       box.id = "quick-lines";
       box.className = "quick-lines";
-      box.placeholder = "Eyes: yriel yellow, then flash gitz yellow";
+      box.placeholder = "Eyes: bright yellow, then pale yellow";
       box.value = q.text;
       box.setAttribute("autocapitalize", "sentences");
       label.append("Type or paste lines", box);
@@ -11503,7 +11503,7 @@
       const nameLabel = document.createElement("label");
       const nameBox = document.createElement("input");
       nameBox.id = "quick-name";
-      nameBox.placeholder = d.name || "e.g. Ultramarine blue armour";
+      nameBox.placeholder = d.name || "e.g. Blue armour";
       nameBox.value = q.name;
       nameBox.addEventListener("input", () => { q.name = nameBox.value; changed(); });
       nameLabel.append("Recipe name", nameBox);
@@ -11618,7 +11618,7 @@
         return label;
       };
       const nameBox = document.createElement("input");
-      nameBox.placeholder = "e.g. Ultramarine blue armour";
+      nameBox.placeholder = "e.g. Blue armour";
       nameBox.value = d.name;
       nameBox.addEventListener("input", () => { d.name = nameBox.value; });
       card.appendChild(field("Recipe name", nameBox));
@@ -12048,6 +12048,8 @@
     // text (never as HTML), because they can be anything the user typed or pasted.
     let recipeIdeasCard = null;   // the card in the recipe editor, if it's open
     let colourIdeasState = { open: false, base: "whole", role: "glow", check: false, scheme: "", mood: "", detail: "", detailGroup: "", basing: "", basingGroup: "" };   // kept while the app is open
+    // H: "Compendium" in the comments and names below is the old tab. Its colour parts are now Colour Lab (in Painting) and its detail
+    // recipes and basing tips are Guides (in Tools and Settings). The names (compendiumState, compendiumDoor...) stay; the screen text never says it.
     // v35: the Compendium tab keeps its own picks (also only while the app is open), so what you pick there never changes the card in a recipe.
     // v36: wheel = the colour wheel part that is open ("" = none), wheelOthers = which parts also show paints you do not have yet.
     // v37: open = which of the five folding parts are open (all start closed). view = "themes" or "combos" (the Starter schemes switch),
@@ -15752,7 +15754,7 @@
       return box;
     }
 
-    // ---- v71: ASK THE MENTOR (Compendium, Pro preview) ----
+    // ---- v71: PAINT PICKER (first called Ask the Mentor, in the Compendium; now in Colour Lab, Pro preview) ----
     // Pick a base colour, a second colour and a part (armour, eyes, weapon or base) and get paint picks for that part, each with its reason.
     // It reuses the colour ideas above: colourIdeas() finds paints that go with a colour for a part (your own paints first, a poor fit
     // you own labelled "Yours, poor fit"), and buildIdeasList() draws them with the same rows, reasons and tags. Nothing new is stored
@@ -15808,7 +15810,7 @@
       }
       const role = mentorRole(st.mentorPart);
       // v73: the rows get three next steps. Use in a recipe and Add to a recipe (v62) and the Shop links fold-out come with the shared rows;
-      // listButton puts Add to shopping list in plain view, and the list remembers "Ask the Mentor" as the place the paint came from.
+      // listButton puts Add to shopping list in plain view, and the list remembers "Colour Lab: Paint Picker" as the place the paint came from.
       const pickDoor = Object.assign({}, door, { listButton: true, realOnly: true, shopSource: () => "Colour Lab: Paint Picker" });
       for (const paint of chosen) {
         const label = document.createElement("p");
@@ -16723,14 +16725,14 @@
       importIntro.className = "hint";
       const bold = (text) => { const b = document.createElement("b"); b.textContent = text; return b; };
       importIntro.append("Paste your notes (from Google Keep, Reddit, anywhere). Put each part on its own line ending in a colon, like ",
-        bold("Eyes:"), ", then one step per line, or several split by commas. Mixes like ", bold("2:1 Baal:CM"), " or ", bold("50/50"),
+        bold("Eyes:"), ", then one step per line, or several split by commas. Mixes like ", bold("2:1 Dark Red:CM"), " or ", bold("50/50"),
         " work too. You'll see a preview before anything is saved.");
       card.append(importHead, pageMoreInfo("paste-intro", [importIntro], { label: "Paste recipes" }));
       const box = document.createElement("textarea");
       box.id = "import-text";
       box.rows = 8;
       box.style.width = "100%";
-      box.placeholder = "Tyranids\n\nChitin:\nLuxion purple\nGenestealer purple (drybrush)\n\nTeeth:\nWraithbone, Agrax";
+      box.placeholder = "Bog goblins\n\nSkin:\nSwamp green\nPale green (drybrush)\n\nTeeth:\nBone, brown wash";
       box.setAttribute("aria-label", "Recipe notes to paste");
       box.value = d.text;
       box.addEventListener("input", () => { d.text = box.value; });
@@ -18077,7 +18079,7 @@
       });
 
       const typed = document.createElement("input");
-      typed.placeholder = "Or type a paint name, e.g. Macragge Blue";
+      typed.placeholder = "Or type a paint name";
       typed.setAttribute("aria-label", "Paint name");
       typed.id = "scan-typed";
       typed.value = st.typed;
@@ -19896,9 +19898,9 @@
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
       const template =
         "name,game,faction,stage,nickname,count,repaint,notes,date_added,date_stage\n" +
-        `Intercessors,40K,Ultramarines,${STAGES[0]},,5,no,,,\n` +
-        `Intercessors,40K,Ultramarines,${STAGES[Math.min(3, STAGES.length - 1)]},The Gold Squad,5,no,,,\n` +
-        `Redemptor Dreadnought,40K,Ultramarines,${last},,1,yes,"Magnetised, so can swap guns",${daysAgo(60)},${daysAgo(14)}\n`;
+        `Spearmen,Skirmish,Bone warband,${STAGES[0]},,5,no,,,\n` +
+        `Spearmen,Skirmish,Bone warband,${STAGES[Math.min(3, STAGES.length - 1)]},The Gold Squad,5,no,,,\n` +
+        `Bone giant,Skirmish,Bone warband,${last},,1,yes,"Magnetised, so can swap arms",${daysAgo(60)},${daysAgo(14)}\n`;   // H: invented names (was a Games Workshop unit and army)
       downloadFile("minifolio-template.csv", template, "text/csv");
     });
 
@@ -20437,7 +20439,7 @@
       const notes = [];
       if (adding && have) notes.push(`${plural(have, "unit")} already in your collection, so ${have === 1 ? "it starts" : "they start"} unticked.`);
       if (adding && spelling) notes.push(fromApp
-        ? `${spelling} will have ${spelling === 1 ? "its" : "their"} spelling updated to match the Warhammer app (e.g. capitals).`
+        ? `${spelling} will have ${spelling === 1 ? "its" : "their"} spelling updated to match the army list (e.g. capitals).`
         : `${spelling} differ only in capitals or hyphens; your spelling is kept.`);
       if (adding && possible) notes.push(`${possible} possible match${possible === 1 ? "" : "es"} highlighted in amber: check each one is really the same unit.`);
       reviewClashNote.textContent = notes.join(" ");
@@ -20697,7 +20699,7 @@
         return;
       }
       if (!list) {
-        notify("That doesn't look like a list exported from the Warhammer app. Each unit should be a name followed by its points, e.g. \"Lictor (60 points)\", or a count, e.g. \"10x Boyz\".");
+        notify("That doesn't look like an exported army list. Each line should be a unit name and its points, like \"Captain (60 points)\", or a count, like \"10x Goblins\".");
         return;
       }
       // Use the spelling of a faction you already have, and its game.
@@ -21380,7 +21382,7 @@
         "Guides has 12 new entries (such as painting blue, green, brown and grey, horses, drying times and using Colour Lab) and six new hair and horse coat detail recipes, and Mentor can answer questions on them.",
       ]},
       { version: "v123", date: "2 Nov 2026", changes: [
-        "+ New recipe now opens a quick form: type or paste lines like Eyes: yriel yellow, then flash gitz yellow and check the preview. A paint the app does not know is outlined and kept as typed. More options holds the name, part and each step's technique, coats, brand and note, and a technique you pick there stays when you change the paint. After saving, Do you own these? lets you tick the paints you have.",
+        "+ New recipe now opens a quick form: type or paste lines like Eyes: bright yellow, then pale yellow and check the preview. A paint the app does not know is outlined and kept as typed. More options holds the name, part and each step's technique, coats, brand and note, and a technique you pick there stays when you change the paint. After saving, Do you own these? lets you tick the paints you have.",
         "Import CSV can now read two optional dates for each unit: date_added (when it joined your collection) and date_stage (when it reached its stage), as 2026-11-02 or 02/11/2026. The progress graph then shows your collection's real history instead of starting on the day you imported. Export CSV and the CSV template have the two new columns too.",
         "Guides: Colour basics, Techniques, Tools and prep and Problems now open on topic groups, then the entries in each group, all in A to Z order. Each row has a small number (like 2.3.4) so you can find your place, and Back goes up one level at a time.",
       ]},
@@ -21397,13 +21399,13 @@
         "Duplicate recipe now has its own title and adds \"copy\" to the name. Saving Colour ideas into a new recipe now keeps your starting paint as step 1 and sets the part and a name.",
       ] },
       { version: "v118", date: "2 Nov 2026", changes: [
-        "A recipe now has one small Edit button by its name. It opens a short list: edit the steps and paints, duplicate, copy as text or delete. Each step shows its paint and technique, for example Yriel Yellow, Layer. Used on is folded and shows how many units. A new Add to scheme button, next to Add to shopping list, lets you tick which schemes hold the recipe; changes apply when you press Done.",
+        "A recipe now has one small Edit button by its name. It opens a short list: edit the steps and paints, duplicate, copy as text or delete. Each step shows its paint and technique, for example Bright yellow, Layer. Used on is folded and shows how many units. A new Add to scheme button, next to Add to shopping list, lets you tick which schemes hold the recipe; changes apply when you press Done.",
       ] },
       { version: "v117", date: "1 Nov 2026", changes: [
         "A grey square no longer flashes over the round Ask Mentor button, or the back arrow, basket and Mentor window buttons, when you tap them. The keyboard focus ring on Ask Mentor is now clearer.",
       ] },
       { version: "v116", date: "1 Nov 2026", changes: [
-        "Mentor now starts fresh after 30 minutes without use, and has a Back button (an arrow, top left) that takes you back to the start. The Mentor window is also taller on a phone, so more of the chat shows.",
+        "Mentor now starts fresh after 30 minutes without use, and has a Back button (an arrow, top left) that takes you back to the start. Mentor's window is also taller on a phone, so more of the chat shows.",
       ] },
       { version: "v115", date: "1 Nov 2026", changes: [
         "The start page now has a short line under the name and no longer shows the version number (it is still in Updates). Help starts with a card called 5 things to know. The Dashboard says what Done means, and the progress graph and Palette tiles stay out of the way until you have a unit or a paint. The Game and Faction boxes now select their text when you tap them, and have an x to clear them.",
@@ -21421,13 +21423,13 @@
         "Fixes: the Ask Mentor label is no longer cut off at the bottom, the last card scrolls clear of the menu, Mentor questions wrap instead of running off the side, the Guides search box is full width, and leftover sample tips are gone.",
       ] },
       { version: "v110", date: "31 Oct 2026", changes: [
-        "Tapping the Minifolio title now sends the bottom bar's four sections and the Mentor button travelling back up into the start circle, the same journey in reverse. With reduced motion on, it fades quickly instead.",
+        "Tapping the Minifolio title now sends the bottom bar's four sections and the Ask Mentor button travelling back up into the start circle, the same journey in reverse. With reduced motion on, it fades quickly instead.",
       ] },
       { version: "v109", date: "31 Oct 2026", changes: [
-        "Tapping a section on the start circle now sends the four sections and the Mentor button travelling down together into the bottom bar, and the section opens as they land. With reduced motion on, it swaps at once.",
+        "Tapping a section on the start circle now sends the four sections and the Ask Mentor button travelling down together into the bottom bar, and the section opens as they land. With reduced motion on, it swaps at once.",
       ] },
       { version: "v108", date: "31 Oct 2026", changes: [
-        "When you open the app fresh, a ring of three coloured arcs fills around the Mentor button on the start circle, and the four sections appear one by one as it fills. It takes about a second and a quarter. With reduced motion on, the circle shows at once.",
+        "When you open the app fresh, a ring of three coloured arcs fills around the Ask Mentor button on the start circle, and the four sections appear one by one as it fills. It takes about a second and a quarter. With reduced motion on, the circle shows at once.",
       ] },
       { version: "v107", date: "31 Oct 2026", changes: [
         "Help now describes the menu, Colour Lab, Guides and Mentor as they are today, and Help > Privacy says Mentor runs on your device: what you type is not sent or stored, and the chat is cleared when the app reloads.",
@@ -21445,7 +21447,7 @@
         "Mentor's sources now take you to the exact guide, recipe, tip or colour on the Colour Lab wheel.",
       ] },
       { version: "v102", date: "30 Oct 2026", changes: [
-        "Mentor now answers. Type a question or tap a chip in the Mentor window. Mentor replies from Guides and the colour rules, shows paint ideas with the usual buttons, and lists its sources. What you type is not saved or sent, and the last 30 messages are forgotten when you close the app.",
+        "Mentor now answers. Type a question or tap a chip in Mentor's window. Mentor replies from Guides and the colour rules, shows paint ideas with the usual buttons, and lists its sources. What you type is not saved or sent, and the last 30 messages are forgotten when you close the app.",
       ] },
       { version: "v101", date: "30 Oct 2026", changes: [
         "Mentor now has an answer engine behind the scenes. It finds the right guide, recipe or tip for a question, and suggests paints for a colour and a part of the model. You cannot see it yet; the typing box comes next.",
@@ -21460,16 +21462,16 @@
         "Guides is now a library. Search it, or pick a category (Colour basics, Techniques, Detail recipes, Basing, Tools and prep, Problems) and open an entry. Detail recipes and Basing work as before.",
       ] },
       { version: "v97", date: "30 Oct 2026", changes: [
-        "The fourth menu section is now Tools. It opens Tools and Settings, which has four pages: Guides (the detail recipes and basing tips that were in the Compendium), Settings, Help and Updates. The Compendium and the cog at the top are gone; the basket stays.",
+        "The fourth menu section is now Tools. It opens Tools and Settings, which has four pages: Guides (the detail recipes and basing tips, which moved here), Settings, Help and Updates. The cog at the top is gone; the basket stays.",
       ] },
       { version: "v96", date: "29 Oct 2026", changes: [
-        "Painting has a new Colour Lab. The colour wheel, Colour ideas, Colour plans, Colours you've used and the Picker moved there from the Compendium. The round Ask Mentor button opens the Picker. The Compendium keeps Detail recipes and Basing tips for now.",
+        "Painting has a new Colour Lab, with the colour wheel, Colour ideas, Colour plans, Colours you've used and the Picker. The round Ask Mentor button opens the Picker. Detail recipes and Basing tips stay where they were for now.",
       ] },
       { version: "v95", date: "29 Oct 2026", changes: [
         "Example recipes and schemes now say so above their name. A scheme card lists its recipes as rows you can tap, with the part, the steps and the colours. A scheme with more than 3 recipes has Show all.",
       ] },
       { version: "v94", date: "29 Oct 2026", changes: [
-        "The Compendium's Starter schemes are now called Colour plans, and Your schemes is now Colours you've used, so scheme only means a bundle of recipes. A new closed box, Recipe or scheme? What's the difference, is at the top of Painting > Recipes and Painting > Schemes, and in Help. Words only: your recipes, schemes and backups are untouched.",
+        "Starter schemes are now called Colour plans, and Your schemes is now Colours you've used, so scheme only means a bundle of recipes. A new closed box, Recipe or scheme? What's the difference, is at the top of Painting > Recipes and Painting > Schemes, and in Help. Words only: your recipes, schemes and backups are untouched.",
       ] },
       { version: "v93", date: "29 Oct 2026", changes: [
         "Tapping a section on the start circle now glides into the menu bar, and going back to the start page glides the other way. Nothing moves if your phone is set to reduce motion.",
@@ -21481,13 +21483,13 @@
         "Similar paints can now suggest a paint blend. When none of your paints is close, Your closest may show Try mixing: one or two mixes of two paints you own, with the parts to use, next to the colour you want. It is a rough guess from screen colours, so test it on a palette first. Add to recipe step puts the two paints and the ratio into a recipe step, with an Undo. Metallics, washes, shades, Contrast, glazes and other special paints are never mixed.",
       ] },
       { version: "v90", date: "28 Oct 2026", changes: [
-        "The round Ask Mentor button now shows the Mentor orb, matching your theme's colours.",
+        "The round Ask Mentor button now shows Mentor's orb, matching your theme's colours.",
       ] },
       { version: "v89", date: "28 Oct 2026", changes: [
         "The app now opens on a start page: your four sections in a circle around Ask Mentor. Tap one to go in, and tap the Minifolio title any time to come back to it. Switching to another app and back leaves you exactly where you were.",
       ] },
       { version: "v88", date: "28 Oct 2026", changes: [
-        "The menu is now a curved bar at the bottom around a round Ask Mentor button. The Units tab is now called Models. Settings is the cog at the top right, and the shopping basket sits beside it. Ask Mentor opens Ask the Mentor in the Compendium.",
+        "The menu is now a curved bar at the bottom around a round Ask Mentor button. The Units tab is now called Models. Settings is the cog at the top right, and the shopping basket sits beside it. Ask Mentor opens the Paint Picker.",
       ] },
       { version: "v87", date: "28 Oct 2026", changes: [
         "Unit cards now move a little when you change a stage: the stage name slides, the colours fade across and the card pulses once on the way up. Details opens and closes smoothly and the paint swatches pop in.",
@@ -21517,10 +21519,10 @@
         "Settings, Your data says Works offline once the app is ready without internet.",
       ]},
       { version: "v82", date: "28 Oct 2026", changes: [
-        "Wide screens: the Dashboard, the recipe page opened from Schemes, Paste recipes, the scheme editor and the Compendium wheel now use the space better. Show as a table is now an easy-to-tap size on phones too.",
+        "Wide screens: the Dashboard, the recipe page opened from Schemes, Paste recipes, the scheme editor and the colour wheel now use the space better. Show as a table is now an easy-to-tap size on phones too.",
       ]},
       { version: "v81", date: "27 Oct 2026", changes: [
-        "On a wide screen, the Shopping list now has the shop links and Copy as text on one side and the paints on the other, and the Compendium has the colour wheel on the left and its sections on the right. Phones are unchanged.",
+        "On a wide screen, the Shopping list now has the shop links and Copy as text on one side and the paints on the other, and Colour Lab has the colour wheel on the left and its sections on the right. Phones are unchanged.",
       ]},
       { version: "v80", date: "27 Oct 2026", changes: [
         "On a wide screen, Your Palette now opens a paint's details in a pane beside the list. You can keep several open at once and close each one. Phones are unchanged.",
@@ -21539,7 +21541,7 @@
         "If Restore backup lowers any unit's model count to the 999 limit, it now tells you how many were changed.",
       ]},
       { version: "v75", date: "27 Oct 2026", changes: [
-        "Less small print. Many hints are shorter or gone: on the Dashboard, shopping list, Colour ideas, the Compendium, the paint scanner, the paste-recipes preview, Settings (Backups, Import, Counting visits, Shop links) and Help. Nothing you can do has changed.",
+        "Less small print. Many hints are shorter or gone: on the Dashboard, shopping list, Colour ideas, Colour Lab, the paint scanner, the paste-recipes preview, Settings (Backups, Import, Counting visits, Shop links) and Help. Nothing you can do has changed.",
         "The notes on Counting visits and Shop links in Settings now just say On or Off. The full explanation is in Help, Privacy, which is split into three shorter points.",
         "The note under the Dashboard graph about units added before dates were recorded is shorter.",
         "The ✕ and ✎ buttons in the paste-recipes preview are now 44 px, big enough to tap easily, and screen readers read them with the step they belong to.",
@@ -21549,22 +21551,22 @@
         "The ▲ now does the same on every unit: it moves the whole unit up one stage. On a unit tracked model by model, every model moves up one. Both have an Undo.",
       ]},
       { version: "v73", date: "27 Oct 2026", changes: [
-        "Each paint pick in Ask the Mentor now has Add to shopping list in plain view, next to Use in a recipe, Add to a recipe and Similar paints. Each one says what it did and has an Undo.",
+        "Each paint pick in the Paint Picker now has Add to shopping list in plain view, next to Use in a recipe, Add to a recipe and Similar paints. Each one says what it did and has an Undo.",
         "Add to shopping list stays there even if you switch Shop links off in Settings. Paints you own and made-up example paints don't get it.",
       ]},
       { version: "v72", date: "27 Oct 2026", changes: [
-        "Ask the Mentor now shows tips for the part you chose under the paint picks, each with its colours and, where it has one, a link to the creator it credits. A tip about your chosen colour comes first.",
+        "The Paint Picker now shows tips for the part you chose under the paint picks, each with its colours and, where it has one, a link to the creator it credits. A tip about your chosen colour comes first.",
         "The tips there are samples for now. Real tips will replace them later.",
       ]},
       { version: "v71", date: "27 Oct 2026", changes: [
-        "Ask the Mentor (Pro preview): in the Compendium, choose a base colour, a second colour and a part (armour, eyes, weapon or base). You get paints that go with each colour for that part, with the reason. Your own paints come first, and a poor match you own says Yours, poor fit.",
+        "Paint Picker (Pro preview): in Colour Lab, choose a base colour, a second colour and a part (armour, eyes, weapon or base). You get paints that go with each colour for that part, with the reason. Your own paints come first, and a poor match you own says Yours, poor fit.",
         "Mentor tips will join these picks in the next update.",
       ]},
       { version: "v70", date: "26 Oct 2026", changes: [
         "Behind the scenes: a place for Mentor tips is ready, with three sample tips that only show the format. Nothing new to see yet.",
       ]},
       { version: "v69", date: "26 Oct 2026", changes: [
-        "Ideas for this: open a recipe step or a paint in Your Palette and tap Ideas for this. The Compendium opens with that paint's ideas at the top: colours that go with it, starter schemes, detail recipes and basing tips with a similar colour, using your paints first.",
+        "Ideas for this: open a recipe step or a paint in Your Palette and tap Ideas for this. Colour Lab opens with that paint's ideas at the top: colours that go with it, starter schemes, detail recipes and basing tips with a similar colour, using your paints first.",
         "Show steps or Show tip opens that detail recipe or basing tip in full. Back to recipe or Back to Your Palette takes you to the same place. A paint with no colour set has no button.",
       ]},
       { version: "v68", date: "26 Oct 2026", changes: [
@@ -21585,7 +21587,7 @@
         "On a phone the two cards are tabs, Best and Yours. On a wider screen they sit side by side and the pop-up is wider.",
       ]},
       { version: "v65", date: "25 Oct 2026", changes: [
-        "New Similar paints button on a paint in the Compendium. It opens a pop-up with Best match: up to three paints from different brands, closest first, whether or not you own them, each with its fit.",
+        "New Similar paints button on a paint in Colour Lab. It opens a pop-up with Best match: up to three paints from different brands, closest first, whether or not you own them, each with its fit.",
         "Lighter, Close and Darker at the top of the pop-up look for a lighter or darker colour. Close is the default.",
         "A paint you do not own can go on your shopping list from the pop-up, with an Undo. Paints that are not colours, such as varnishes, mediums and thinners, are never offered.",
       ]},
@@ -21596,11 +21598,11 @@
         "The sentences under suggested paints, such as Closest you own and Similar, not exact, have gone. Only the labels are left.",
       ]},
       { version: "v63", date: "24 Oct 2026", changes: [
-        "In the Compendium colour wheel, each group now shows 12 paints before Show all (it was 8).",
+        "In the Colour Lab colour wheel, each group now shows 12 paints before Show all (it was 8).",
         "After your own paints, paints from popular ranges come first, so the short list is not filled with brands you may not know. The rest are still there under Show all.",
       ]},
       { version: "v62", date: "24 Oct 2026", changes: [
-        "A paint in the Compendium (a colour idea, or a colour wheel paint once you open it) has two buttons. Use in a recipe starts a new recipe with that paint in step 1. Add to a recipe lets you pick a recipe, then one of its steps or a new step. Both have an Undo.",
+        "A paint in Colour Lab (a colour idea, or a colour wheel paint once you open it) has two buttons. Use in a recipe starts a new recipe with that paint in step 1. Add to a recipe lets you pick a recipe, then one of its steps or a new step. Both have an Undo.",
         "If the paint is not in Your Palette yet, it is added as Not owned, so it reaches your shopping list once a recipe uses it, and the message says so. Made-up example paints are not offered.",
       ]},
       { version: "v61", date: "24 Oct 2026", changes: [
@@ -21608,7 +21610,7 @@
         "The old tick for this in Edit details has gone, as the button does the same job.",
       ]},
       { version: "v60", date: "24 Oct 2026", changes: [
-        "Importing an army list now reads the model count written on a unit's line, such as 10x Boyz, Boyz x10 or Boyz (10 models), so units no longer land as 1 model. A list typed by hand, one unit per line, works too.",
+        "Importing an army list now reads the model count written on a unit's line, such as 10x Goblins, Goblins x10 or Goblins (10 models), so units no longer land as 1 model. A list typed by hand, one unit per line, works too.",
         "In the import check, every unit has its own model count and stage. Set every row to puts them all at one stage in one go, and stays in view on a long list. This works for Import CSV as well as army lists.",
         "A CSV file's stage column is used when it matches one of your stages.",
       ]},
@@ -21629,7 +21631,7 @@
         "Keep them now keeps all the examples as your own, so the These are examples card goes away on the Dashboard, Units, Recipes and Your Palette.",
       ]},
       { version: "v55", date: "20 Oct 2026", changes: [
-        "The small labels on recipes, Colour ideas and the Compendium are now plain text instead of rounded pills: the part name on a recipe, Fine, Look at this and Suggestion, and Pro preview. The words are the same.",
+        "The small labels on recipes, Colour ideas and Colour Lab are now plain text instead of rounded pills: the part name on a recipe, Fine, Look at this and Suggestion, and Pro preview. The words are the same.",
         "Screen readers now read a paint's own name on the buttons and boxes that act on it, such as Remove, More options, the colour box, Merge, Shop links and the swatch tiles, instead of a longer label that repeated the name.",
       ]},
       { version: "v54", date: "20 Oct 2026", changes: [
@@ -21650,10 +21652,10 @@
         "The Shopping list is tidier. Your paints, the Copy as text button and the basket count stay in view. The explanations (what the list holds, the no-statuses warning and how the shop buttons work) are behind one More info.",
         "Settings is tidier. Each card keeps its buttons and switches in view, and its explanation sits behind a More info. Backups stay big and easy to reach.",
         "On the Dashboard and Units, the note about the example units is behind More info.",
-        "Help topics use the same More info and Less info words and the same arrow. Help also has new lines for the Swatches switch and More options, the folded steps in recipes, and the Compendium tick boxes with Select all and Add to shopping list.",
+        "Help topics use the same More info and Less info words and the same arrow. Help also has new lines for the Swatches switch and More options, the folded steps in recipes, and the Colour Lab and Guides tick boxes with Select all and Add to shopping list.",
       ]},
       { version: "v51", date: "20 Oct 2026", changes: [
-        "In the Compendium, the paints in Starter schemes, Your schemes and Detail recipes now have a tick box on the left, and a Select all row above each list.",
+        "In Colour Lab and Guides, the paints in Starter schemes, Your schemes and Detail recipes now have a tick box on the left, and a Select all row above each list.",
         "Add to shopping list sits under the list. It is small and grey until you tick something, then it turns into a full-width button that shows how many paints it will add. It adds only the ticked paints, and one Undo takes them all off again.",
         "Copy as text and Save into a new recipe use the paints you ticked. If nothing is ticked they use all of them.",
         "Paints you own, or that are already on your shopping list, show their status mark where the tick box would be. Open More info on the row to see why.",
@@ -21665,14 +21667,14 @@
         "Have and Missing now use the same small tick and cross marks as Your Palette, with a one-line key. The What can I paint now? hint, the Parts and techniques note and the other long explanations on the Recipes tab are behind More info.",
       ]},
       { version: "v49", date: "19 Oct 2026", changes: [
-        "Less busy: long explanations now sit behind a small More info button. In the Compendium, each paint row has its own, and so does each page's introduction.",
+        "Less busy: long explanations now sit behind a small More info button. In Colour Lab and Guides, each paint row has its own, and so does each page's introduction.",
         "Your Palette has a List | Swatches switch. Swatches shows every paint as a small colour tile with a mark for its status (tick, half circle, ring, star, cross) and a key above. Tap a tile to open that paint. Name, brand, Merge and Remove are now under More options.",
-        "On Units, To do, Done and Repaint are three equal buttons, and the stages open underneath once you pick one (or tap Pick by stage). In the Compendium, the shopping list and Copy buttons stretch across the card, and the shopping list button is greyed out until you pick a scheme.",
+        "On Units, To do, Done and Repaint are three equal buttons, and the stages open underneath once you pick one (or tap Pick by stage). In Colour Lab and Guides, the shopping list and Copy buttons stretch across the card, and the shopping list button is greyed out until you pick a scheme.",
         "Groups of option buttons (paint status, the stage filters, Paint brands and the rest) now always sit on one row. When a group is too long for the screen, it scrolls sideways: a fade shows there are more, and your choice is always in view.",
         "Scanning a pot label works properly with all the new paints: every Vallejo code number is read (Model Air, Game Air, Mecha and the rest), Tamiya codes like XF-1 are read on Tamiya pots, and a Citadel label gives the same answer as before the new brands arrived.",
       ]},
       { version: "v48", date: "19 Oct 2026", changes: [
-        "About 2,800 more paints the app knows by name: Warhammer Tone Pro (all 30 colours in their five tones, like Carmine Blades 1 to 5), Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World, plus every range of Citadel, Vallejo, The Army Painter, Pro Acryl and AK Interactive (Speedpaint, Model Air, AK figures and more). They're suggested as you type, matched when you paste recipes or scan a pot, and used in Colour ideas.",
+        "About 2,800 more paints the app knows by name: Warhammer Tone Pro (all 30 colours in their five tones, 1 to 5), Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World, plus every range of Citadel, Vallejo, The Army Painter, Pro Acryl and AK Interactive (Speedpaint, Model Air, AK figures and more). They're suggested as you type, matched when you paste recipes or scan a pot, and used in Colour ideas.",
         "New in Settings: Paint brands. Switch off the brands you don't use, and their paints stop being suggested and matched. Your own paints are always included.",
       ]},
       { version: "v47", date: "19 Oct 2026", changes: [
@@ -21693,16 +21695,16 @@
         "New in Settings, under Your data: Restore example recipes. It adds the examples back for anyone, including people who started before, without changing your own recipes, schemes or paints and without adding any twice. The card on the Recipes tab then shows again.",
       ]},
       { version: "v43", date: "18 Oct 2026", changes: [
-        "The Compendium's colour wheel now opens up. Tap red, orange, yellow, green, blue or purple and the picture is redrawn as that colour's three groups (for example Deep reds, Reds and Pinks), each a big labelled segment with its name outside the ring. Tap a group to see its paints below the picture (yours first, dark to light, with Show all and Copy as text), and tap it again to close it.",
+        "The colour wheel now opens up. Tap red, orange, yellow, green, blue or purple and the picture is redrawn as that colour's three groups (for example Deep reds, Reds and Pinks), each a big labelled segment with its name outside the ring. Tap a group to see its paints below the picture (yours first, dark to light, with Show all and Copy as text), and tap it again to close it.",
         "To go back up, tap the Back button in the middle of the picture, the Back to all colours button under it, or press Escape. The grey middle (whites, greys, blacks and metallics) works as before. Which colour and group are open is kept while the app is open. Everything works with a keyboard and a screen reader, which says when the level changes.",
       ]},
       { version: "v42", date: "18 Oct 2026", changes: [
-        "In the Compendium, Starter schemes and Your schemes each have a small closed Shopping list heading under their paints. Open it and tap Add paints to shopping list to put every paint of that scheme you don't own on your shopping list in one go. Paints you own, or have running low, are left out, and paints already on the list are not added twice.",
+        "In Colour Lab, Starter schemes and Your schemes each have a small closed Shopping list heading under their paints. Open it and tap Add paints to shopping list to put every paint of that scheme you don't own on your shopping list in one go. Paints you own, or have running low, are left out, and paints already on the list are not added twice.",
         "Each paint remembers the scheme it came from (for example \"Scheme: <name>\"). The message says how many were added, and one Undo puts them all back. If nothing needed adding, it says so. It uses the same shopping list as everything else, and the basket count and \"On your shopping list\" marks stay right. It stays when Shop links is switched off, because it only adds to your own list.",
       ]},
       { version: "v41", date: "18 Oct 2026", changes: [
-        "The Compendium now remembers where a paint on your shopping list came from. Adding a paint from the colour wheel's matching colours says \"Compendium: Colour wheel\" and the colour part you were in (for example Blue). Adding from the Compendium's Colour ideas says \"Compendium: Colour ideas\". It is the same list the Recipes tab uses, and a paint is still on it once.",
-        "A paint that is already on your shopping list now says \"On your shopping list\" on its row in the Compendium (in the colour wheel's lists and matching colours, and in Colour ideas). It updates when you add a paint or tap Undo.",
+        "Your shopping list now remembers where a paint came from. Adding a paint from the colour wheel's matching colours says \"Colour Lab: Colour wheel\" and the colour part you were in (for example Blue). Adding from Colour ideas says \"Colour Lab: Colour ideas\". It is the same list the Recipes tab uses, and a paint is still on it once.",
+        "A paint that is already on your shopping list now says \"On your shopping list\" on its row in Colour Lab (in the colour wheel's lists and matching colours, and in Colour ideas). It updates when you add a paint or tap Undo.",
       ]},
     ];
 

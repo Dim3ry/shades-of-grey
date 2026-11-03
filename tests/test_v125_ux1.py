@@ -188,7 +188,7 @@ def main():
         print("\n--- 2. Typed paints are not marked Owned ---")
         t.load(page, paints=[], recipes=[], units=[], settings={"examplesChecked": True})
         t.open_editor(page)
-        page.fill('input[placeholder="e.g. Ultramarine blue armour"]', "Blue armour")
+        page.fill('input[placeholder="e.g. Blue armour"]', "Blue armour")   # H: the hint was "e.g. Ultramarine blue armour" (a Games Workshop name)
         t.set_step_paint(page, 0, "Macragge Blue")
         t.add_step(page)
         t.set_step_paint(page, 1, "macrag")
@@ -209,7 +209,7 @@ def main():
 
         print("\n--- 4. Not now starts the new recipe ---")
         t.open_editor(page)
-        page.fill('input[placeholder="e.g. Ultramarine blue armour"]', "Half written")
+        page.fill('input[placeholder="e.g. Blue armour"]', "Half written")
         page.wait_for_function("() => { try { return !!JSON.parse(localStorage.getItem('shades-of-grey-drafts')).recipe } catch (e) { return false } }")
         page.reload()
         t.app_ready(page)
