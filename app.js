@@ -350,6 +350,17 @@
     window.addEventListener("load", () => { bootSteps.load = performance.now(); });
     if (document.readyState === "complete") bootSteps.load = performance.now();
 
+    // A photo written as text must be a JPEG, PNG or WebP picture. Anything else, such as an SVG (a drawing that can
+    // carry code), is never kept as a photo: not on a unit, not from a backup's photo files (SEC1).
+    // Set before the first load() below, because cleanModels uses it.
+    const SAFE_PHOTO_TEXT = /^data:image\/(?:jpeg|png|webp);base64,/;
+    // SEC1: the longest single-line text kept from a backup, CSV file or army list, matching the typing limits:
+    // 80 for a unit's name, game, faction and nickname; 200 (the rename box) for recipe and scheme names.
+    // Text saved on this device before is left as it is.
+    const UNIT_TEXT_MAX = 80;
+    const BOOK_NAME_MAX = 200;
+    const SHOWN_NAME_MAX = 300;   // see shownText
+
     // All units live in this list. Each is a small bundle of facts (an "object").
     let models = load();
     bootSteps.data = performance.now();   // Mo4a: your saved units are read (the upgrades below are quick, in-memory checks)
@@ -1924,10 +1935,13 @@
       for (const c of out) if (c.mine) { c.key = matchKey(c.name); c.words = c.key.split(" "); }
       return out;
     }
+    // SEC1: true only for a key the object really holds, never for one every object has ("constructor", "toString").
+    function hasOwn(obj, key) { return obj != null && Object.prototype.hasOwnProperty.call(obj, key); }
+    // SEC1: hasOwn, so typing a word such as "constructor" or "toString" never finds a built-in part of every object.
     function shorthandFor(key) {
-      const saved = book.shorthand && book.shorthand[key];
+      const saved = book.shorthand && hasOwn(book.shorthand, key) && book.shorthand[key];
       if (saved) return saved;
-      const builtIn = BUILT_IN_SHORTHAND[key];
+      const builtIn = hasOwn(BUILT_IN_SHORTHAND, key) && BUILT_IN_SHORTHAND[key];
       return builtIn ? { brand: "Citadel", name: builtIn } : null;
     }
 
@@ -3578,7 +3592,7 @@
       const shorthand = {};
       if (src.shorthand && typeof src.shorthand === "object" && !Array.isArray(src.shorthand)) {
         for (const [k, v] of Object.entries(src.shorthand)) {
-          if (k && v && typeof v.name === "string" && v.name.trim()) shorthand[k] = { brand: tidyBrand(v.brand), name: v.name.trim() };
+          if (k && k !== "__proto__" && v && typeof v.name === "string" && v.name.trim()) shorthand[k] = { brand: tidyBrand(v.brand), name: v.name.trim() };
         }
       }
       // A1: the shopping list's Bought history: [{ id: paint id, prev: the status before the tick, from: where it came from }]. One entry per
@@ -3617,6 +3631,22 @@
         if (saved) unreadableText[STORAGE_KEY] = saved;
         return saved ? [] : cleanModels(EXAMPLES);
       }
+    }
+
+    function cutText(text, max) {
+      const s = String(text ?? "");
+      if (s.length <= max) return s;
+      return s.slice(0, max).replace(/[\uD800-\uDBFF]$/, "").trim();   // never leave half an emoji
+    }
+    function capUnitText(m) {
+      const out = { ...m };
+      for (const key of ["name", "hobby", "faction", "nickname"]) if (typeof m[key] === "string") out[key] = cutText(m[key], UNIT_TEXT_MAX);
+      return out;
+    }
+    function capBookText(book) {
+      for (const r of book.recipes) r.name = cutText(r.name, BOOK_NAME_MAX);
+      for (const s of book.schemes) { s.name = cutText(s.name, BOOK_NAME_MAX); s.faction = cutText(s.faction, UNIT_TEXT_MAX); }
+      return book;
     }
 
     // Checks every unit and repairs anything odd before the app uses it. Used for saved
@@ -3675,7 +3705,7 @@
         if (photos.length) model.photos = photos; else delete model.photos;
         // The cover photo (shown on the unit's card) must be one of its photos.
         if (!photos.some(p => p.id === m.coverPhoto)) delete model.coverPhoto;
-        if (typeof m.photo !== "string" || !m.photo.startsWith("data:image")) delete model.photo;
+        if (typeof m.photo !== "string" || !SAFE_PHOTO_TEXT.test(m.photo)) delete model.photo;   // SEC1: JPEG, PNG or WebP only
         if (Number.isInteger(model.id) && !usedIds.has(model.id)) usedIds.add(model.id);
         else model.id = null; // given a fresh one below
         cleaned.push(model);
@@ -3745,7 +3775,10 @@
     // A unit's proper name with its copy number: "Intercessors 2".
     function fullName(model) { return model.copy ? `${model.name} ${model.copy}` : model.name; }
     // The big name on a card: the nickname if there is one.
-    function displayName(model) { return model.nickname || fullName(model); }
+    // SEC1: a name thousands of characters long (only possible from data saved before the limits) is drawn cut short
+    // (SHOWN_NAME_MAX), because the browser takes seconds to lay out one that long. The saved name is not changed.
+    function shownText(text) { return text.length > SHOWN_NAME_MAX ? cutText(text, SHOWN_NAME_MAX) + "…" : text; }
+    function displayName(model) { return shownText(model.nickname || fullName(model)); }
 
     // Models in a unit: a whole number, at least 1.
     // v14: at most MAX_MODELS (999, set at the top). A huge number like 150,000 used to
@@ -4254,10 +4287,12 @@
 
     // how: "slide" only for a tap on a menu segment. Anything chosen by code (an import, a jump, the Mentor button) or leaving the
     // start page gets a short fade at most. Moving between the pages inside one section (Guides, Settings, Help, Updates) is an instant switch.
+    // SEC1: the section an old or short name stands for. hasOwn, so a word like "constructor" is never looked up as a built-in.
+    function tabAlias(name) { return hasOwn(TAB_ALIASES, name) ? TAB_ALIASES[name] : name; }
     function showTab(name, how) {
-      if (TAB_ALIASES[name]) name = TAB_ALIASES[name];
-      if (!views[name]) name = "dashboard";
-      const before = launching ? null : (views[TAB_ALIASES[settings.tab] || settings.tab] ? (TAB_ALIASES[settings.tab] || settings.tab) : null);
+      name = tabAlias(name);
+      if (!hasOwn(views, name)) name = "dashboard";
+      const before = launching ? null : (hasOwn(views, tabAlias(settings.tab)) ? tabAlias(settings.tab) : null);
       const move = canMove() && before !== name && (before === null || barOf(before) !== barOf(name)) ? (how === "slide" && before ? "slide" : "fade") : "";
       const snap = move === "slide" ? moveSnap(document.querySelector("main"), views[before]) : null;
       if (move !== "slide" && before !== name) endMove();
@@ -6028,7 +6063,7 @@
 
       const details = document.createElement("div");
       details.className = "details";
-      const realName = model.nickname ? fullName(model) : "";
+      const realName = model.nickname ? shownText(fullName(model)) : "";
       const size = model.count > 1 ? `${model.count} models` : "";
       details.textContent = [realName, size, model.hobby].filter(Boolean).join(" · ");
       if (model.faction) {
@@ -6529,6 +6564,7 @@
       const nicknameLabel = document.createElement("label");
       nicknameLabel.textContent = "Nickname (optional)";
       const nickname = document.createElement("input");
+      nickname.maxLength = UNIT_TEXT_MAX;   // SEC1: the same limit as the name
       nickname.placeholder = "e.g. The Gold Squad";
       nickname.value = model.nickname || "";
       nickname.addEventListener("input", () => { model.nickname = nickname.value.trim(); save(); });
@@ -7501,9 +7537,11 @@
       });
     }
     // Text pictures ("data:image/jpeg;base64,...") <-> blobs, for old photos and full backups.
+    // SEC1: only a JPEG, PNG or WebP picture is turned back into a blob; anything else is refused.
     function dataUrlToBlob(dataUrl) {
+      if (!SAFE_PHOTO_TEXT.test(dataUrl)) throw new Error("Not a photo type the app keeps");
       const [head, data] = dataUrl.split(",");
-      const type = (head.match(/^data:([^;,]+)/) || [])[1] || "image/jpeg";
+      const type = head.match(/^data:([^;,]+)/)[1];
       const binary = atob(data);
       const bytes = new Uint8Array(binary.length);
       for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
@@ -7642,8 +7680,10 @@
       let moved = 0;
       for (const m of models.filter(m => typeof m.photo === "string")) {
         try {
-          const full = dataUrlToBlob(m.photo);
-          const thumb = await resizeToBlob(await loadImage(full), 240, 0.75);
+          // SEC1: drawn again as a fresh JPEG, the same way as a photo you add, so only the picture itself is kept.
+          const img = await loadImage(dataUrlToBlob(m.photo));
+          const full = await resizeToBlob(img, 1200, 0.82);
+          const thumb = await resizeToBlob(img, 240, 0.75);
           const record = { id: newPhotoId(), full, thumb };
           await putPhoto(record);
           const check = await getPhoto(record.id);
@@ -17744,11 +17784,9 @@
     });
 
     // Put the pictures from a full backup into the photo store. Returns how many worked.
-    // Only ordinary photo types are accepted from a backup file. The app itself only ever saves
+    // Only ordinary photo types are accepted from a backup file (SAFE_PHOTO_TEXT). The app itself only ever saves
     // JPEG; PNG and WebP are allowed for older or hand-made backups. Anything else, such as an
-    // SVG (a drawing that can carry code), is skipped. The photo is only ever shown inside an
-    // <img>, where code can't run, so this is a second lock on a door that was already shut.
-    const SAFE_PHOTO_TEXT = /^data:image\/(?:jpeg|png|webp);base64,/;
+    // SVG (a drawing that can carry code), is skipped.
     async function importPhotoFiles(files) {
       let done = 0;
       for (const [id, pair] of Object.entries(files || {})) {
@@ -17933,12 +17971,12 @@
         // Clean the units against the backup's own stages, BEFORE touching your data.
         const currentStages = STAGES;
         if (backupStages) STAGES = backupStages;
-        const restored = cleanModels(backupModels);
+        const restored = cleanModels(backupModels).map(capUnitText);   // SEC1: names and other one-line text cut to the typing limits
         STAGES = currentStages;
         // v76: counts above the limit were lowered by cleanModels; count them so the end can say so.
         const loweredCounts = backupModels.filter(m => m && typeof m.name === "string" && m.name.trim() && parseInt(m.count, 10) > MAX_MODELS).length;
         // Backups from v5 onwards also hold recipes. Older ones don't, so your recipes stay.
-        const backupBook = !isList && parsed.recipes && typeof parsed.recipes === "object" ? cleanRecipeBook(parsed.recipes) : null;
+        const backupBook = !isList && parsed.recipes && typeof parsed.recipes === "object" ? capBookText(cleanRecipeBook(parsed.recipes)) : null;
         const hasRecipes = !!backupBook && (backupBook.recipes.length > 0 || backupBook.paints.length > 0 || backupBook.schemes.length > 0);
         // v14: a backup with recipes but no units is fine too: it replaces only your recipes.
         const unitsToo = restored.length > 0;
@@ -17948,6 +17986,11 @@
         }
         const photoFiles = !isList && parsed.photoFiles && typeof parsed.photoFiles === "object" ? parsed.photoFiles : null;
         const photoCount = photoFiles ? Object.keys(photoFiles).length : 0;
+        // SEC1: photos that aren't a JPEG, PNG or WebP picture are left out; count them so the end can say so.
+        const skippedPhotos = backupModels.filter(m => m && typeof m.photo === "string" && !SAFE_PHOTO_TEXT.test(m.photo)).length +
+          (photoFiles ? Object.values(photoFiles).filter(pair => !pair || typeof pair.full !== "string" || !SAFE_PHOTO_TEXT.test(pair.full)).length : 0);
+        const restoreNotes = [loweredCounts ? `${plural(loweredCounts, "count")} lowered to ${MAX_MODELS}` : "",
+          skippedPhotos ? `${plural(skippedPhotos, "photo")} left out: not a JPEG, PNG or WebP` : ""].filter(Boolean);
         const question = (!unitsToo
             ? `Replace your ${plural(book.recipes.length, "recipe")} with ${plural(backupBook.recipes.length, "recipe")} from the backup? (Your units stay as they are.)`
             : backupBook
@@ -18015,10 +18058,10 @@
             }
             if (missing) {
               notify(photoFiles
-                ? `Backup restored${loweredCounts ? ` (${plural(loweredCounts, "count")} lowered to ${MAX_MODELS})` : ""}, but ${missing} of ${plural(needed, "photo")} couldn't be loaded on this device (${imported} of ${photoCount} in the file worked), so they won't show. Keep the backup file safe: you can restore it again later, for example after freeing some space.`
-                : `Backup restored${loweredCounts ? ` (${plural(loweredCounts, "count")} lowered to ${MAX_MODELS})` : ""}, but this backup was saved without photos, so ${plural(missing, "photo")} won't show on this device. Keep the backup file safe. To bring photos across, use Save full backup with photos on the other device.`);
+                ? `Backup restored${restoreNotes.length ? ` (${restoreNotes.join("; ")})` : ""}, but ${missing} of ${plural(needed, "photo")} couldn't be loaded on this device (${imported} of ${photoCount} in the file worked), so they won't show. Keep the backup file safe: you can restore it again later, for example after freeing some space.`
+                : `Backup restored${restoreNotes.length ? ` (${restoreNotes.join("; ")})` : ""}, but this backup was saved without photos, so ${plural(missing, "photo")} won't show on this device. Keep the backup file safe. To bring photos across, use Save full backup with photos on the other device.`);
             } else {
-              if (unitsToo) showToast("Backup restored" + (loweredCounts ? `. ${plural(loweredCounts, "count")} lowered to ${MAX_MODELS}` : ""));
+              if (unitsToo) showToast("Backup restored" + restoreNotes.map(n => `. ${n}`).join(""));
               else showToast(`Recipes restored (${plural(book.recipes.length, "recipe")})`, () => {
                 if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(recipesBefore)); putUnitRecipeLinksBack(linksBefore); })) { notify(fullMessage()); return; }
                 afterBigChange();
@@ -18395,7 +18438,7 @@
     // The incoming rows with game/faction filled in (Warhammer lists take them from the boxes).
     function incomingRows() {
       if (incoming.source !== "wh") return incoming.rows;
-      return incoming.rows.map(r => ({ ...r, hobby: whGame.value.trim(), faction: whFaction.value.trim() }));
+      return incoming.rows.map(r => capUnitText({ ...r, hobby: whGame.value.trim(), faction: whFaction.value.trim() }));
     }
 
     // Pairs each incoming unit with one you already have, if any. Each of your units is
@@ -18456,7 +18499,7 @@
     let lastMatches = null;
 
     function openReview(data) {
-      incoming = data;
+      incoming = { ...data, rows: data.rows.map(capUnitText) };   // SEC1: names cut to the typing limits
       reviewMode = "add";
       const isWh = data.source === "wh";
       reviewTitle.textContent = isWh ? "Check your army list" : "Check your CSV import";
@@ -19783,8 +19826,10 @@
     showIphoneWarning();
     renderUpdates();
     // U4b: a fresh open shows the launch page, unless the address names a section (#dashboard, #units, #recipes, #guides, #settings, #help, #updates; the old #compendium opens Guides).
-    const linkedTab = decodeURIComponent(location.hash.slice(1));
-    if (Object.prototype.hasOwnProperty.call(views, TAB_ALIASES[linkedTab] || linkedTab)) showTab(linkedTab);
+    // SEC1: a broken address such as "#%" can't be read; it then counts as no section named, instead of stopping start-up.
+    let linkedTab = "";
+    try { linkedTab = decodeURIComponent(location.hash.slice(1)); } catch (error) { linkedTab = ""; }
+    if (Object.prototype.hasOwnProperty.call(views, tabAlias(linkedTab))) showTab(linkedTab);
     else { showTab(settings.tab); enterLaunch(); startLoadingRing(); }
     launchMotionReady = true;
     if (unreadableParts.length) showSaveProblem();   // DS1: the start-up render() couldn't save; the banner says why
