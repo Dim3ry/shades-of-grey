@@ -74,7 +74,11 @@ def main():
         print("\n--- 3. Chips ---")
         page.click("#toggle-filters")
         page.wait_for_timeout(200)
-        sweep = page.evaluate("() => { document.querySelector('#group-chips .chip').click(); const c = document.querySelector('#group-chips .chip[aria-pressed=\"true\"]'); return !!c && c.classList.contains('sweep'); }")
+        # LQ1 (v129): James asked on 3 Nov for the chip fill's square leading edge to go. The chip still starts empty and fills, with aria-pressed
+        # already true, but it is now drawn switched off (lq-chip-hold) under a copy of its switched-on look that a rounded clip uncovers, instead
+        # of Mo1's background sweep (the sweep class).
+        sweep = page.evaluate("""() => { document.querySelector('#group-chips .chip').click(); const c = document.querySelector('#group-chips .chip[aria-pressed="true"]');
+            return !!c && (c.classList.contains('sweep') || (c.classList.contains('lq-chip-hold') && !!document.querySelector('body > .lq-ghost > .chip'))); }""")
         check("a chip you switch on starts empty and fills (aria-pressed is already true)", sweep)
         page.wait_for_timeout(400)
         check("…then has the full fill and a tick",
