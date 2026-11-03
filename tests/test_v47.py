@@ -222,7 +222,7 @@ def main():
         state = page.evaluate("""() => ({ m: document.documentElement.dataset.m, squares: [...document.querySelectorAll('.theme-swatch')].map(b => b.dataset.m),
             bar: document.querySelector('meta[name=theme-color]').content })""")
         check("Light: the page and every square switch to light, the top bar to Paint Bench light",
-              state["m"] == "light" and set(state["squares"]) == {"light"} and state["bar"] == "#cfe0d4", state)
+              state["m"] == "light" and set(state["squares"]) == {"light"} and state["bar"] == "#e0e4d8", state)   # TH4: Paint Bench light is the lighter, warmer desk (#cfe0d4 before)
         page.click('[data-appearance-choice="auto"]')
         page.emulate_media(color_scheme="dark"); page.wait_for_timeout(150)
         check("Match my phone (phone dark): page and squares are dark", page.evaluate("document.documentElement.dataset.m") == "dark"
