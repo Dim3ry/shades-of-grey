@@ -128,8 +128,15 @@ def main():
         for look in LOOKS:
             # the same page each time: the look is switched and Mentor starts afresh, as on a new load (its notes not yet read)
             page.evaluate("(l) => { settings.mentorLook = l; applyMentorLook(); mentorWarm = false; mentorClear(); }", look)
+            # U7: Thinking lasts about 0.4 s from the end of the opening move, and reading it straight after the move left only a few ms to spare
+            # (round 7's bigger drawings made it miss often on a busy machine). So the first mood the orb takes after opening is recorded as it happens.
+            page.evaluate("""() => { window.__moods = []; window.__moodWatch && window.__moodWatch.disconnect();
+                window.__moodWatch = new MutationObserver(() => { const b = document.querySelector('.mentor-orbbox');
+                  if (b && b.dataset.mood) window.__moods.push([b.dataset.mood, b.querySelector('svg').getAttribute('class')]); });
+                window.__moodWatch.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['data-mood'] }); }""")
             open_window(page)
-            seen = {"open": page.evaluate(MOOD)}
+            page.wait_for_function("() => window.__moods.length > 0", timeout=6000)
+            seen = {"open": page.evaluate("() => { window.__moodWatch.disconnect(); return window.__moods[0]; }")}
             page.wait_for_function("() => document.querySelector('.mentor-orbbox').dataset.mood === 'neutral'", timeout=6000)
             seen["ready"] = page.evaluate(MOOD)
             # U7: round 7 has no stars; the window-only motion is checked on the look's own moving parts (Magical: the stone ring and the crystals)

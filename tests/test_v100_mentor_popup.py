@@ -128,8 +128,9 @@ def main():
         # U6b (v126): the window's orb is the chosen look (Futuristic here), so the old lens orb's wake, glance and 40 s ring turn are gone;
         # the whole-orb float stays, and the look's own motion runs (Thinking's slow 14 s turn while Mentor gets ready, then the 6 s glow)
         # U7 (round 7's drawings): the look's own motion has new names and timings (a 6.5 s bob, a blink, and so on), so this checks that some
-        # slow motion of the look's own (an ml- animation of 3 s or longer) runs alongside the float, not one named animation.
-        check("idle: float 4 s, and the look's own slow motion", names.get("mp-float", [0, 0])[1] == 4000
+        # slow motion of the look's own (an ml- animation of 3 s or longer) runs, not one named animation. U7 also took away the app's own 4 s float
+        # (mp-float): every round 7 look brings its own bob, and the two were stacked (the parent's decision), so the check is now that it is gone.
+        check("idle: the look's own slow motion, and no second float on top of it", "mp-float" not in names
               and any(k and k.startswith("ml-") and v[1] >= 3000 for k, v in names.items()), names)
         check("the orb is the Futuristic look, in its own box", page.locator(".mentor-window .mentor-orbbox.ml-live svg.ml-futuristic").count() == 1)
         page.wait_for_function("() => document.querySelector('.mentor-window').getAnimations().length === 0")   # MW1: opened in full first

@@ -10,7 +10,9 @@
 //        .mo-load .lr-s0 { stroke: var(--mentor-s0); ... }   .mo-load .lr-s1 { stroke: var(--mentor-s1); ... }
 //        .mo-load .lr-s2 { stroke: var(--mentor-s2); ... }   .mo-load .lr-s3 { stroke: var(--mentor-s3); ... }
 //        .mo-load .lr-s4 { stroke: var(--mentor-s4); ... }   (the dash lengths and offsets stay as they are)
-//   6. Bump the version (the ?v= numbers, sw.js VERSION, APP_VERSION and an Updates entry).
+//   6. index.html, by the "U7:" note in the Mentor window's styles: put back the window orb's own float,
+//        .mp-orb { animation: mp-float 4s ease-in-out infinite; }   (round 6 has no bob of its own; the mp-float keyframes are still there)
+//   7. Bump the version (the ?v= numbers, sw.js VERSION, APP_VERSION and an Updates entry).
 // The --mentor-t1 to --mentor-t3 lines in index.html can stay: round 6 ignores them. app.js still sets --mentor-s0 to --mentor-s4 (applyPalette).
 // The ring turn in app.js (buildMentorOrb sets the start of .ml-orbit's turn) does nothing for round 6, which has no .ml-orbit.
 //

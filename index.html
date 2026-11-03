@@ -2788,7 +2788,8 @@
     body.typing .mentor-backdrop { padding-bottom: 12px; }
     body.mentor-open .toast { z-index: 210; bottom: auto; top: 12px; }
     body.mentor-open .toast:not(.hidden) { animation-name: mo-fade; }   /* D: at the top it fades in instead of sliding up from below, so it never passes over the X or Back on the way */   /* a notice from a row in the window shows at the top, clear of every button in it */
-    .mp-orb { animation: mp-float 4s ease-in-out infinite; }
+    /* U7: the window orb no longer has the app's own 4 s float (.mp-orb { animation: mp-float 4s ease-in-out infinite; }): every round 7 look brings its
+       own bob, so the two were stacked. The keyframes below stay for round 6 (see SWITCHING BACK in mentor-looks.js). */
     /* U6b: the window's orb is the chosen look (its box has the class ml-live, so the look's own slow motion runs there and nowhere else); a mood swaps
        the drawing inside the same box, so nothing around it moves. The old lens orb's wake, glance and turn are gone with it. */
     .mentor-orbbox svg { pointer-events: none; }
