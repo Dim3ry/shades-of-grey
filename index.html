@@ -49,7 +49,10 @@
   <link rel="apple-touch-icon" href="icon-192.png">
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
-       (applyAppearance in app.js) takes over once the app starts. -->
+       (applyAppearance in app.js) takes over once the app starts.
+       U6b: mentor-looks.js (the Mentor orb's three looks and five states, plain data: MENTOR_LOOKS and MENTOR_LOOKS_CSS) loads
+       just before it, so early.js can put the chosen look and its styles on the page before the first frame (LR1). -->
+  <script src="mentor-looks.js?v=125"></script>
   <script src="early.js?v=125"></script>
 
   <style>
@@ -311,13 +314,17 @@
       --mentor-rim: var(--border); --mentor-core: var(--accent);
     }
     :root[data-m="light"] { --mentor-lens: var(--text); --mentor-rim: var(--muted); --mentor-core: var(--background); }
-    .orb-bg { fill: var(--mentor-bg); }
-    .orb-a { stroke: var(--mentor-a); }
-    .orb-b { stroke: var(--mentor-b); }
-    .orb-c { stroke: var(--mentor-c); }
-    .orb-dim { stroke: var(--mentor-dim); }
-    .orb-lens { fill: var(--mentor-lens); stroke: var(--mentor-rim); }
-    .orb-core { fill: var(--mentor-core); }
+    /* U6b: the orb is now one of James's three looks (mentor-looks.js; early.js puts its styles, MENTOR_LOOKS_CSS, on the page). Its extra colours:
+       --mentor-s0 to --mentor-s4 are the five ring segments, clockwise from 12 o'clock: your stage colour set's own five colours (app.js sets them in
+       applyPalette; these defaults are the Ice set, the app icon's colours, for the first frame before app.js has run). --mentor-dot is the centre
+       dot: each theme's dark accent, so it stays light on the dark badge in light mode too (Classic: the icon's ice blue). --mentor-glint is the
+       wet sheen on the Grounded paint. */
+    :root { --mentor-s0: #64748b; --mentor-s1: #6366f1; --mentor-s2: #38bdf8; --mentor-s3: #22d3ee; --mentor-s4: #a7f3d0; --mentor-dot: #7dd3fc; --mentor-glint: #ffffff; }
+    :root[data-t="parchment"] { --mentor-dot: #dc6575; }
+    :root[data-t="forge"] { --mentor-dot: #d5583e; }
+    :root[data-t="bench"] { --mentor-dot: #e4c968; }
+    .mentor-look-chips .chip { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; }
+    .mentor-look-chips .ml-orb { width: 28px; height: 28px; flex: none; }
 
     /* ----- U4b: the launch page (shown every time the app is opened fresh; app.js puts the class "launching" on <body class="launching">) -----
        The SAME menu bar and the SAME round Mentor button, drawn as a full circle in the middle of the screen: four quarter segments
@@ -375,6 +382,32 @@
     .ring-hold { visibility: hidden; }
     body.ring-loading .arc > button { pointer-events: none; }
     @keyframes mo-ring-turn { to { transform: rotate(360deg); } }
+    /* LR1: the loading ring is in the page itself (inside .arc below), so it shows from the very first frame, before any script has run. <body> starts with
+       "launching ring-loading" and the four segments with "ring-hold"; early.js lights the ring as each script file arrives, then app.js runs Mo4a's three
+       steps on the same ring and takes it away (or at once if the app opens on a section). With the Futuristic look (the default) the ring is the orb's
+       own five segments, the app icon's ring, at Mo4a's place (radius 71): each one goes from faint to full in turn, clockwise from 12 o'clock, over a dark
+       band (the orb's badge colour, so it reads in light mode too). Magical and Grounded keep Mo4a's three arcs (data-look on the page, set by early.js).
+       The slow sweep is a separate box turned by CSS alone, so it keeps moving even while the phone is busy reading a big script file.
+       Reduced motion: no sweep and no turning; the segments light up in whole steps. */
+    .mo-load .lr-three { display: none; }
+    :root[data-look="magical"] .mo-load .lr-three, :root[data-look="grounded"] .mo-load .lr-three { display: inline; }
+    :root[data-look="magical"] .mo-load .lr-five, :root[data-look="grounded"] .mo-load .lr-five { display: none; }
+    .mo-load .lr-back { stroke: var(--mentor-lens); stroke-width: 14; }
+    .mo-load .lr-s { stroke-width: 10; opacity: 0.2; }
+    .mo-load .lr-s0 { stroke: var(--mentor-s0); stroke-dasharray: 49.57 446.11; stroke-dashoffset: -3.1; }
+    .mo-load .lr-s1 { stroke: var(--mentor-s1); stroke-dasharray: 49.57 446.11; stroke-dashoffset: -58.86; }
+    .mo-load .lr-s2 { stroke: var(--mentor-s2); stroke-dasharray: 60.73 446.11; stroke-dashoffset: -114.63; }
+    .mo-load .lr-s3 { stroke: var(--mentor-s3); stroke-dasharray: 71.87 446.11; stroke-dashoffset: -181.54; }
+    .mo-load .lr-s4 { stroke: var(--mentor-s4); stroke-dasharray: 183.39 446.11; stroke-dashoffset: -259.61; }
+    .lr-sweep {
+      position: absolute; left: 115px; top: 100px; width: 160px; height: 160px; border-radius: 50%; pointer-events: none;
+      background: conic-gradient(transparent 0turn 0.78turn, color-mix(in srgb, var(--mentor-dot) 75%, transparent) 1turn);
+      -webkit-mask: radial-gradient(closest-side, transparent 81%, #000 82.5%, #000 95%, transparent 96.5%);
+      mask: radial-gradient(closest-side, transparent 81%, #000 82.5%, #000 95%, transparent 96.5%);
+      will-change: transform; animation: lr-sweep 2.4s linear infinite;
+    }
+    @keyframes lr-sweep { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .lr-sweep { display: none; } }
 
     /* Mo3b: while the start circle turns into the bar (or back), a picture of the old shape is drawn on top for a moment: .mo-ring is the circle's
        segments (the rules above also match it), .mo-ghost is the bar's. Both are inert and removed when the move ends. */
@@ -2551,7 +2584,7 @@
       .guides-split.guides-has-main { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 18px; align-items: start; }
       .guides-split.guides-has-main > .guides-nav { display: grid; }
     }
-    /* X5: the Mentor pop-up window. It grows from the round button (--mp-ox and --mp-oy are set by app.js from the button's position), then the orb's lens wakes.
+    /* X5: the Mentor pop-up window. It grows from the round button (--mp-ox and --mp-oy are set by app.js from the button's position).
        Only transform and opacity move. Reduced motion is handled by the single block above (no animation at all). No resting transform on any tap target. */
     .mentor-backdrop { --mp-gap: max(56px, calc(env(safe-area-inset-top) + 12px)); position: fixed; inset: 0; z-index: 200; background: var(--scrim); display: flex; align-items: flex-end; justify-content: center; padding: 0 20px calc(var(--arc-h) + 12px); overscroll-behavior: contain; animation: mo-fade var(--motion-med) var(--motion-ease) both; }
     .mentor-window { position: relative; box-sizing: border-box; width: 100%; max-width: 380px; height: 260px; max-height: calc(100% - var(--mp-gap)); display: flex; gap: 12px; padding: 16px; color: var(--text); background-color: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: 18px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45); transform-origin: var(--mp-ox, 50%) var(--mp-oy, 100%); animation: mp-grow var(--motion-med) var(--motion-ease) both; }
@@ -2598,9 +2631,9 @@
     body.mentor-open .toast:not(.hidden) { animation-name: mo-fade; }   /* D: at the top it fades in instead of sliding up from below, so it never passes over the X or Back on the way */   /* a notice from a row in the window shows at the top, clear of every button in it */
     .mentor-orbbox { flex: none; width: 72px; display: flex; align-items: center; justify-content: center; }
     .mp-orb { width: 68px; height: 68px; animation: mp-float 4s ease-in-out infinite; }
-    .mp-ring { transform-box: fill-box; transform-origin: center; animation: mp-turn 40s linear infinite; }
-    .mp-wake { transform-box: fill-box; transform-origin: center; animation: mp-lens 160ms var(--motion-ease) var(--motion-med) both; }
-    .mp-look { animation: mp-glance 6s ease-in-out infinite; }
+    /* U6b: the window's orb is the chosen look (its box has the class ml-live, so the look's own slow motion runs there and nowhere else); a mood swaps
+       the drawing inside the same box, so nothing around it moves. The old lens orb's wake, glance and turn are gone with it. */
+    .mentor-orbbox svg { pointer-events: none; }
     .mentor-close { position: absolute; top: 6px; right: 6px; width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1; color: var(--muted); background-color: transparent; border: 0; border-radius: 12px; cursor: pointer; }
     /* D: Back to start. Top left of the window, shown only in the chat view. Same press as the back arrow (Mo1). */
     .mentor-back { position: absolute; top: 6px; left: 6px; width: 44px; height: 44px; padding: 0; display: none; align-items: center; justify-content: center; overflow: hidden; color: var(--muted); background-color: transparent; border: 0; border-radius: 12px; cursor: pointer; transition: translate var(--motion-fast) var(--motion-ease), scale var(--motion-fast) var(--motion-ease), filter var(--motion-fast) var(--motion-ease); }
@@ -2611,14 +2644,11 @@
     .mentor-backdrop.mentor-closing { animation: mo-fade var(--motion-fast) var(--motion-ease) reverse both; }
     .mentor-closing .mentor-window { animation: mp-grow var(--motion-fast) var(--motion-ease) reverse both; }
     @keyframes mp-grow { from { opacity: 0; transform: scale(0.2); } to { opacity: 1; transform: none; } }
-    @keyframes mp-lens { from { transform: scaleY(0.1); } to { transform: none; } }
     @keyframes mp-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
-    @keyframes mp-glance { 0%, 100% { transform: translateX(0); } 30% { transform: translateX(-2px); } 65% { transform: translateX(2px); } }
-    @keyframes mp-turn { to { transform: rotate(360deg); } }
   </style>
 </head>
 
-<body>
+<body class="launching ring-loading">
   <!-- v14: shown while saving isn't working (storage full). Stays until a save works. -->
   <div class="save-banner hidden" id="save-banner" role="alert">
     <p id="save-banner-text"><strong>Changes aren't being saved.</strong> Storage on this device is full. Save a backup now, then free some space (delete photos or units you no longer need).</p>
@@ -2629,12 +2659,14 @@
        The numbers that shape it are in the CSS (".arc"). The fourth segment is Tools and Settings (Guides, Settings, Help, Updates); its short label is Tools. -->
   <nav class="tabs" aria-label="Sections">
     <div class="arc">
-      <button data-tab="dashboard"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>Dashboard</button>
-      <button data-tab="units"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 7.9-8 9-4.8-1.1-8-4.5-8-9V6l8-3z"/></svg></span>Models</button>
-      <button data-tab="recipes"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3.5 4.2 6 7.6 6 10.5a6 6 0 0 1-12 0C6 10.6 8.5 7.2 12 3z"/></svg></span>Painting</button>
-      <button data-tab="guides" aria-label="Tools"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.6 2.2c-.8.4-1.2 1-1.2 1.8M12 17h.01"/></svg></span>Tools</button>
+      <!-- LR1: the loading ring, in the page from the first frame (see "LR1:" in the CSS). early.js and then app.js light it; app.js takes it away. -->
+      <svg class="mo-load" viewBox="0 0 390 360" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" focusable="false"><g class="lr-five" fill="none" transform="translate(195 180) rotate(-90)"><circle class="lr-back" r="71"/><circle class="lr-s lr-s0" r="71"/><circle class="lr-s lr-s1" r="71"/><circle class="lr-s lr-s2" r="71"/><circle class="lr-s lr-s3" r="71"/><circle class="lr-s lr-s4" r="71"/></g><g class="lr-three" fill="none"><g class="mo-load-turn"><circle class="t" cx="195" cy="180" r="71" stroke-dasharray="123.92 446.11" transform="rotate(-80 195 180)"/><circle class="a a0" cx="195" cy="180" r="71" stroke-dasharray="0 446.11" transform="rotate(-80 195 180)"/><circle class="t" cx="195" cy="180" r="71" stroke-dasharray="123.92 446.11" transform="rotate(40 195 180)"/><circle class="a a1" cx="195" cy="180" r="71" stroke-dasharray="0 446.11" transform="rotate(40 195 180)"/><circle class="t" cx="195" cy="180" r="71" stroke-dasharray="123.92 446.11" transform="rotate(160 195 180)"/><circle class="a a2" cx="195" cy="180" r="71" stroke-dasharray="0 446.11" transform="rotate(160 195 180)"/></g></g></svg><span class="lr-sweep" aria-hidden="true"></span>
+      <button data-tab="dashboard" class="ring-hold"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>Dashboard</button>
+      <button data-tab="units" class="ring-hold"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 7.9-8 9-4.8-1.1-8-4.5-8-9V6l8-3z"/></svg></span>Models</button>
+      <button data-tab="recipes" class="ring-hold"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3.5 4.2 6 7.6 6 10.5a6 6 0 0 1-12 0C6 10.6 8.5 7.2 12 3z"/></svg></span>Painting</button>
+      <button data-tab="guides" class="ring-hold" aria-label="Tools"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.6 2.2c-.8.4-1.2 1-1.2 1.8M12 17h.01"/></svg></span>Tools</button>
       <!-- The round Ask Mentor button: one component, wired by app.js (it opens the Mentor pop-up). -->
-      <button type="button" class="mentor-orb" id="mentor-button" aria-label="Ask Mentor"><svg viewBox="16.67 16.67 166.67 166.67" aria-hidden="true" focusable="false"><g><circle class="orb-bg" cx="100" cy="100" r="74"/><g fill="none" stroke-width="15"><circle class="orb-a" cx="100" cy="100" r="58" stroke-dasharray="111 253.4" transform="rotate(100 100 100)"/><circle class="orb-c" cx="100" cy="100" r="58" stroke-dasharray="81 283.4" transform="rotate(10 100 100)"/><circle class="orb-b" cx="100" cy="100" r="58" stroke-dasharray="56 308.4" transform="rotate(-60 100 100)"/><circle class="orb-dim" cx="100" cy="100" r="58" stroke-dasharray="51 313.4" transform="rotate(-125 100 100)"/></g><circle class="orb-lens" cx="100" cy="100" r="30" stroke-width="3"/><circle class="orb-core" cx="100" cy="100" r="17"/><circle cx="95" cy="94" r="4" fill="#ffffff" opacity="0.85"/></g></svg>Ask Mentor</button>
+      <button type="button" class="mentor-orb" id="mentor-button" aria-label="Ask Mentor"><svg xmlns='http://www.w3.org/2000/svg' viewBox='16.67 16.67 166.67 166.67' class='ml-orb ml-futuristic ml-neutral' aria-hidden='true' focusable='false'><circle class='ml-lens' cx='100' cy='100' r='70'/><g class='ml-turn'><g transform='translate(100 100) rotate(-90)' fill='none'><g class='ml-glow3'><circle class='ml-k0' r='59.5'/><circle class='ml-k1' r='59.5'/><circle class='ml-k2' r='59.5'/><circle class='ml-k3' r='59.5'/><circle class='ml-k4' r='59.5'/></g><g class='ml-glow2'><circle class='ml-k0' r='59.5'/><circle class='ml-k1' r='59.5'/><circle class='ml-k2' r='59.5'/><circle class='ml-k3' r='59.5'/><circle class='ml-k4' r='59.5'/></g><g class='ml-glow1'><circle class='ml-k0' r='59.5'/><circle class='ml-k1' r='59.5'/><circle class='ml-k2' r='59.5'/><circle class='ml-k3' r='59.5'/><circle class='ml-k4' r='59.5'/></g><circle class='ml-gap' r='59.5'/><g class='ml-segs'><circle class='ml-k0' r='59.5'/><circle class='ml-k1' r='59.5'/><circle class='ml-k2' r='59.5'/><circle class='ml-k3' r='59.5'/><circle class='ml-k4' r='59.5'/></g></g></g><circle class='ml-lens' cx='100' cy='100' r='49.5'/><circle class='ml-dot' cx='100' cy='100' r='13'/></svg>Ask Mentor</button>
     </div>
   </nav>
   <!-- Chunk B: the round back arrow beside the bar. It does what the Minifolio title does (back to the start page); the name is the only text. -->
@@ -2959,7 +2991,7 @@
             <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
           </ol>
           <p id="help-tabs" style="margin: 8px 0 0;">The bar at the bottom has four sections around the round <strong>Ask Mentor</strong> button: <strong>Dashboard</strong>, <strong>Models</strong>, <strong>Painting</strong> and <strong>Tools</strong>. The one you are in is lit. <strong>Tools</strong> opens <strong>Tools and Settings</strong>: <strong>About</strong>, <strong>Guides</strong>, <strong>Settings</strong>, <strong>Help</strong> and <strong>Updates</strong>. The shopping basket sits at the top right once your list has a paint. The app opens on a <strong>start page</strong>: the same four sections in a circle around Ask Mentor. Tap the round arrow at the bottom left, or the <strong>Minifolio</strong> title, to come back to it. Switching to another app and back leaves you where you were.</p>
-          <p id="help-mentor" style="margin: 8px 0 0;"><strong>Mentor:</strong> tap <strong>Ask Mentor</strong> to open a small window over whatever you are on. Type a question or tap a chip. Mentor answers from <strong>Guides</strong> and the colour rules, with a <strong>Sources</strong> row; a source opens that guide, recipe, tip or colour. It puts small typing slips right. When it is not sure, it shows <strong>Did you mean</strong> with the question as it read it; tap that to ask it. When it has no answer, it says <strong>I do not know that yet.</strong> and shows some starter questions. It also answers simple questions about the app, such as price, backups and privacy. The <strong>Paint Picker</strong> chip takes you to <strong>Painting → Colour Lab</strong>. Close the window with the cross, a tap outside it, Escape or Back; Ask Mentor brings the chat back. Mentor runs on this device. What you type is not sent anywhere and is not stored, and the chat is cleared when the app reloads or after a while without use.</p>
+          <p id="help-mentor" style="margin: 8px 0 0;"><strong>Mentor:</strong> tap <strong>Ask Mentor</strong> to open a small window over whatever you are on. Type a question or tap a chip. Mentor answers from <strong>Guides</strong> and the colour rules, with a <strong>Sources</strong> row; a source opens that guide, recipe, tip or colour. It puts small typing slips right. When it is not sure, it shows <strong>Did you mean</strong> with the question as it read it; tap that to ask it. When it has no answer, it says <strong>I do not know that yet.</strong> and shows some starter questions. It also answers simple questions about the app, such as price, backups and privacy. Say thanks or goodbye and it signs off. In the window its orb shows when it is getting ready, has an answer, is not sure, or has signed off. <strong>Settings → Mentor look</strong> changes the orb: <strong>Futuristic</strong> (the app icon's ring), <strong>Magical</strong> or <strong>Grounded</strong>. The <strong>Paint Picker</strong> chip takes you to <strong>Painting → Colour Lab</strong>. Close the window with the cross, a tap outside it, Escape or Back; Ask Mentor brings the chat back. Mentor runs on this device. What you type is not sent anywhere and is not stored, and the chat is cleared when the app reloads or after a while without use.</p>
           <p id="help-back" style="margin: 8px 0 0;">The phone's <strong>Back</strong> button closes what's open first, one thing per press: a question box (it counts as No), a photo, the camera, a recipe, the paste box. Then it goes to the Dashboard. On the Dashboard, with nothing open, it leaves the app.</p>
         </details>
         <details>
@@ -3268,6 +3300,15 @@
           <button type="button" class="theme-swatch" data-theme-choice="parchment" data-t="parchment" data-m="dark" aria-pressed="false"><span class="ts-card"><span class="ts-name">Parchment Codex</span></span><span class="ts-bar"></span></button>
           <button type="button" class="theme-swatch" data-theme-choice="forge" data-t="forge" data-m="dark" aria-pressed="false"><span class="ts-card"><span class="ts-name">Grim Forge</span></span><span class="ts-bar"></span></button>
           <button type="button" class="theme-swatch" data-theme-choice="bench" data-t="bench" data-m="dark" aria-pressed="false"><span class="ts-card"><span class="ts-name">Paint Bench</span></span><span class="ts-bar"></span></button>
+        </div>
+      </div>
+      <!-- U6b: Mentor look. Three buttons, each with its own small orb (drawn by app.js); only one is pressed at a time. Saved as settings.mentorLook. -->
+      <div class="card" id="mentor-look-card">
+        <h2>Mentor look</h2>
+        <div class="chips mentor-look-chips" role="group" aria-label="Mentor look" style="margin-top: 0;">
+          <button type="button" class="chip" data-mentor-look="futuristic" aria-pressed="true">Futuristic</button>
+          <button type="button" class="chip" data-mentor-look="magical" aria-pressed="false">Magical</button>
+          <button type="button" class="chip" data-mentor-look="grounded" aria-pressed="false">Grounded</button>
         </div>
       </div>
 
