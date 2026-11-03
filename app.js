@@ -8284,7 +8284,7 @@
         try { opener.focus({ preventScroll: true }); } catch (ignored) {}
       }
       queueBackCheck();
-      state.cfg.onDone(answer);
+      state.cfg.onDone(answer, !!state.noButton);
     }
     // What Back, Escape and the "No" / "Cancel" button do.
     function cancelDialog() {
@@ -8301,7 +8301,8 @@
       finishDialog(mode === "text" ? dialogInput.value : true);
     }
     dialogYes.addEventListener("click", acceptDialog);
-    dialogNo.addEventListener("click", cancelDialog);
+    // UX1: the No button itself (not Escape or Back) is told apart, so "Not now" can mean "go on without it".
+    dialogNo.addEventListener("click", () => { if (dialogState) dialogState.noButton = true; cancelDialog(); });
     // Escape = no. Enter = yes (unless a button has the focus: then Enter presses that button).
     // Tab stays inside the box. Written to run first, so nothing else sees these keys.
     document.addEventListener("keydown", (event) => {
@@ -8335,7 +8336,11 @@
       const opts = options || {};
       showDialog({
         mode: "yesno", message, yes: opts.yes, no: opts.no, danger: !!opts.danger,
-        onDone: (ok) => { if (ok) onYes(); else if (opts.onNo) opts.onNo(); },
+        onDone: (ok, noButton) => {
+          if (ok) onYes();
+          else if (noButton && opts.onNoButton) opts.onNoButton();   // UX1
+          else if (opts.onNo) opts.onNo();
+        },
       });
     }
     function askText(message, initial, onDone, options) {
@@ -10176,23 +10181,27 @@
       };
     }
 
-    function startRecipeDraft(draft) {
-      if (draftWaiting("recipe")) return;   // v26: a kept unfinished recipe is offered first
+    // UX1: after() runs once the new draft is open, also when it opens later from "Not now".
+    function startRecipeDraft(draft, after) {
+      // v26: a kept unfinished recipe is offered first
+      if (!draftNotNow.recipe && draftWaiting("recipe", () => startRecipeDraft(draft, after || (() => showTab("recipes"))))) return;
       // (a recipe brought back by Keep going already knows what "unchanged" means)
       if (typeof draft.original !== "string") draft.original = draftSnapshot(draft);
       recipeDraft = draft;
       renderRecipes();
       window.scrollTo(0, 0);
+      if (after) after();
     }
 
     // linkUnit: the unit to link it to when saved (when started from a unit), or null.
     function startNewRecipe(linkUnit) {
       whenOkToLeaveDraft(() => {
         openRecipeId = null;
-        startRecipeDraft({ id: null, name: "", part: recipePartFilter, notes: "", linkUnit, steps: [blankStep()] });
-        showTab("recipes");
-        const nameBox = recipePage.querySelector("input");
-        if (nameBox) nameBox.focus();
+        startRecipeDraft({ id: null, name: "", part: recipePartFilter, notes: "", linkUnit, steps: [blankStep()] }, () => {
+          showTab("recipes");
+          const nameBox = recipePage.querySelector("input");
+          if (nameBox) nameBox.focus();
+        });
       });
     }
 
@@ -10216,11 +10225,12 @@
       whenOkToLeaveDraft(() => {
         openRecipeId = null;
         startRecipeDraft({ id: null, name: "", part: recipePartFilter, notes: "", linkUnit: null, steps: [],
-                           quick: { text: "", name: "", part: "", defaultPart: recipePartFilter, over: {}, ids: [], lines: [], nextId: 1, read: null } });
-        if (!recipeDraft || !recipeDraft.quick) return;   // a kept unfinished recipe was offered first instead
-        showTab("recipes");
-        const box = document.getElementById("quick-lines");
-        if (box) box.focus();
+                           quick: { text: "", name: "", part: "", defaultPart: recipePartFilter, over: {}, ids: [], lines: [], nextId: 1, read: null } }, () => {
+          // UX1: also runs when a kept unfinished recipe was offered first and you chose Not now
+          showTab("recipes");
+          const box = document.getElementById("quick-lines");
+          if (box) box.focus();
+        });
       });
     }
     // Is this paint in the paint list (yours or the app's)? The same test findOrAddPaint uses, so a paint that is not would be kept as typed.
@@ -10913,7 +10923,8 @@
             const known = isInPalette(fresh);
             const paint = findOrAddPaint(p.brand, p.name, p.colour);
             if (d.quick) { if (p.known && !p.material && !askOwn.includes(paint)) askOwn.push(paint); }
-            else if (!known && paintStatus(paint) === "") applyPaintStatus(paint, ownsNewPaint(d.own, fresh) ? "owned" : "notowned");
+            // UX1: a name that isn't in the paint list (a typo, or one you made up) is never marked Owned.
+            else if (!known && paintStatus(paint) === "") applyPaintStatus(paint, inPaintList(fresh) && ownsNewPaint(d.own, fresh) ? "owned" : "notowned");
             return { paint: paint.id, mix: cleanMix(p.mix) };
           });
         return {
@@ -13187,12 +13198,12 @@
           steps: steps.map(x => draftStepFrom(x.paint, x.technique, x.coats, x.mix, x.note)),
           original: "",   // never equal to the draft, so Cancel asks first
         };
-        startRecipeDraft(draft);
-        if (recipeDraft !== draft) return;   // a kept unfinished recipe was offered first instead
-        if (settings.recipeView === "colourlab") settings.recipeView = "recipes";   // X1: the new recipe belongs to the Recipes list, as it did from the Compendium
-        showTab("recipes");
-        if (after) after(draft);
-        else notify(`Started a new recipe with ${plural(steps.length, "step")}. Give it a name and press Save recipe.`);
+        startRecipeDraft(draft, () => {   // UX1: also after Not now, when a kept unfinished recipe was offered first
+          if (settings.recipeView === "colourlab") settings.recipeView = "recipes";   // X1: the new recipe belongs to the Recipes list, as it did from the Compendium
+          showTab("recipes");
+          if (after) after(draft);
+          else notify(`Started a new recipe with ${plural(steps.length, "step")}. Give it a name and press Save recipe.`);
+        });
       });
     }
 
@@ -15340,14 +15351,34 @@
     function knownPaintName(name) {
       return book.paints.some(p => sameText(p.name, name)) || searchedPaints.some(p => sameText(p.name, name));
     }
+    // UX1: only paints in the paint list are asked about. Any other name is saved as Not owned.
     function draftNewPaints(d) {
       const list = [];
       for (const s of d.steps) for (const p of s.paints) {
         if (typingPaints.has(p) && !knownPaintName(String(p.name || "").trim())) continue;
+        if (!inPaintList(p)) continue;
         addNewPaint(list, p);
       }
       return list;
     }
+    // UX1: is this name ({ brand, name }) a paint in the paint list (any brand you have switched on or off)?
+    // Materials such as water or varnish count, so they keep the question.
+    function inPaintList(p) {
+      const name = String(p.name || "").trim();
+      const brand = tidyBrand(p.brand);
+      if (MATERIAL_WORDS.test(name)) return true;
+      if (!paintListBrands) {   // made once: each paint name in the paint list, with its brands
+        paintListBrands = new Map();
+        for (const k of KNOWN_PAINTS) {
+          const key = sameKey(k.name);
+          if (!paintListBrands.has(key)) paintListBrands.set(key, []);
+          paintListBrands.get(key).push(sameKey(k.brand));
+        }
+      }
+      const brands = paintListBrands.get(sameKey(name));
+      return !!brands && (!brand || brands.includes(sameKey(brand)));
+    }
+    let paintListBrands = null;
 
     // The card: "Do you own these? All / None / Let me pick". getPaints() lists the new paints now.
     // It only redraws itself, so the boxes you're typing in elsewhere on the page aren't disturbed.
@@ -18507,6 +18538,115 @@
       return { name, count: null };
     }
 
+    // UX1: the reading below is split into small steps that each look at one line, with
+    // no pattern that can loop back on itself, so even a very long paste reads at once.
+    // A line longer than LIST_LINE_MAX is never read (it is listed under "Not read").
+    const LIST_LINE_MAX = 300;
+    const LIST_TEXT_MAX = 50000;   // the paste box holds at most this many characters
+    // Section headings in lists copied from other list builders. Only skipped in a list
+    // that has points in it, so a typed "HQ" line still comes in as a unit.
+    const LIST_HEADINGS = new Set(["character", "characters", "battleline", "other", "other datasheets",
+      "dedicated transport", "dedicated transports", "hq", "troops", "elites", "fast attack", "heavy support",
+      "flyer", "flyers", "lord of war", "lords of war", "fortification", "fortifications", "epic hero",
+      "epic heroes", "allied units", "transport", "transports", "infantry", "vehicle", "vehicles",
+      "monster", "monsters", "beast", "beasts", "mounted", "swarm", "configuration", "no force org slot"]);
+    // Game sizes. "Strike Force (2000 points)" names the size, not a unit.
+    const LIST_SIZES = new Set(["combat patrol", "incursion", "strike force", "onslaught", "boarding action"]);
+
+    // UX1: the points at the end of a line, in the ways list builders write them:
+    //   "Captain (80 points)", "Intercessors [180pts]", "Assault Intercessors - 75 points",
+    //   "Infiltrators (5) ........ 100", "Lieutenant x1 (75 pts)"
+    // Gives back the line without them, and whether there were any.
+    function stripPoints(text) {
+      let t = text.trim();
+      const close = t.slice(-1);
+      if (close === ")" || close === "]") {
+        const open = t.lastIndexOf(close === ")" ? "(" : "[");
+        if (open !== -1 && /^\s*[\d,]+\s*(?:points?|pts?)\s*$/i.test(t.slice(open + 1, -1))) {
+          return { name: t.slice(0, open).trim(), points: true };
+        }
+      }
+      // "- 75 points", "75pts" or "....... 100" at the end
+      const words = t.match(/[\d,]+\s*(?:points?|pts?)$/i);
+      if (words && words.index > 0) return { name: t.slice(0, words.index).trim().replace(/[\s.,:–-]+$/, ""), points: true };
+      const leaders = t.match(/\.{3,}\s*[\d,]+$/);
+      if (leaders) return { name: t.slice(0, leaders.index).trim(), points: true };
+      return { name: t, points: false };
+    }
+
+    // UX1: one unit line of a list: bullets, points and ": wargear" after the name taken off,
+    // then the model count read from the name. "Captain [95pts]: Master-crafted bolt rifle"
+    // reads as Captain; "Boyz: 10 models" still reads as 10 Boyz.
+    function readListLine(line) {
+      const bare = line.trim().replace(/^[•*·–-]\s*/, "").trim();
+      const first = stripPoints(bare);
+      let unit = first.name;
+      const colon = unit.indexOf(": ");
+      if (colon > 0 && !/^\d{1,4}\s*(?:models?|minis?|miniatures?)?$/i.test(unit.slice(colon + 2).trim())) {
+        unit = unit.slice(0, colon).trim();
+      }
+      const second = stripPoints(unit);
+      return { ...countInName(second.name), points: first.points || second.points };
+    }
+
+    // UX1: is this line a heading, the list's size or a total, rather than a unit?
+    function listFrame(line, rosterStyle) {
+      const t = line.trim();
+      const bare = stripPoints(t).name.toLowerCase().replace(/:$/, "").trim();
+      if (/^exported with/i.test(t) || /^total\b/i.test(t) || /detachment points?\)?$/i.test(t)) return true;
+      if (/^[+=]/.test(t)) return true;                                // "++ Army Roster ... ++", "== ... =="
+      if (/^[A-Z][A-Z\s&'-]+$/.test(t) && t.length > 3) return true;   // "CHARACTERS" is a heading
+      if (LIST_SIZES.has(bare)) return true;
+      return rosterStyle && LIST_HEADINGS.has(bare);
+    }
+
+    // UX1: the faction named in a list builder's top line,
+    //   "++ Army Roster (Imperium - Space Marines) [2,000pts] ++"  ->  "Space Marines"
+    // or on a line such as "Faction: Orks". "" if there isn't one.
+    function rosterFaction(lines) {
+      for (const raw of lines) {
+        if (raw.length > LIST_LINE_MAX) continue;
+        const t = raw.trim();
+        let found = "";
+        if (/^\+\+.*\+\+$/.test(t)) {
+          const open = t.indexOf("("), close = t.indexOf(")", open);
+          if (open !== -1 && close > open) found = t.slice(open + 1, close);
+        } else {
+          const label = t.match(/^(?:\+\s*)?faction(?: keywords?)?\s*:\s*(.+)$/i);
+          if (label) found = label[1];
+        }
+        const parts = found.split(/\s+[-–]\s+/).map(x => x.trim()).filter(Boolean);
+        if (parts.length) return parts[parts.length - 1];
+      }
+      return "";
+    }
+
+    // UX1: the words of a model name, so "Intercessor Sergeant" and "Intercessors" can be
+    // compared. Plurals ending in s or z don't matter ("Boyz" and "Boy").
+    const LEADER_WORDS = new Set(["sergeant", "sarge", "leader", "champion", "boss", "nob", "exarch", "superior",
+      "alpha", "sybarite", "hekatrix", "aspiring", "shas'ui", "shasui", "veteran", "brother"]);
+    function modelWords(name) {
+      return name.toLowerCase().split(/[^a-z0-9']+/)
+        .map(w => w.length > 3 ? w.replace(/[sz]$/, "") : w)
+        .filter(w => w && !FILLER_WORDS.has(w));
+    }
+    // UX1: bullet lines with no lines under them, under one unit. The Warhammer app puts
+    // deeper bullets under a model, but a copied or tidied list often loses them, so
+    // "Intercessor Squad / • 1x Sergeant / • 9x Intercessor" counted as 1 model. A flat line
+    // is a model when every word of it is in the unit's name or is a leader's title, so
+    // "1x Master-crafted boltgun" under "Captain" is still wargear.
+    function flatModels(unitName, flat) {
+      const own = new Set(modelWords(unitName));
+      let total = 0, named = false;
+      for (const f of flat) {
+        const words = modelWords(f.name);
+        if (!words.length || !words.every(w => own.has(w) || LEADER_WORDS.has(w))) continue;
+        if (words.some(w => own.has(w))) named = true;
+        total += f.count;
+      }
+      return named ? total : 0;
+    }
+
     // v60: a list with no "(N points)" lines, typed or copied from elsewhere, such as
     //   My Orks
     //   10x Boyz
@@ -18515,64 +18655,123 @@
     // Each line not indented under another becomes a unit (bullets and dashes in front are fine).
     // Only used when at least one line has a count, so a random paste isn't turned into units.
     // A first line with no count, followed by lines that have one, is taken as the list's name.
+    // UX1: also reads lists from other list builders ("10x Intercessors [180pts]",
+    // "Infiltrators (5) ........ 100", "++ Army Roster (Imperium - Space Marines) ++"),
+    // counts model lines indented under a unit, and lists every line it couldn't use.
     function parsePlainList(lines) {
-      const cleaned = lines
-        .filter(l => l.trim() !== "" && !/^\s{2,}|^\t/.test(l))      // indented lines are wargear
-        .map(l => l.trim().replace(/^[•*·–-]\s*/, "").trim())
-        .filter(l => l && !/^exported with/i.test(l) && !/\((\d+)\s*(?:points?|pts)\)\s*$/i.test(l)
-          && !(/^[A-Z\s]+$/.test(l) && l.length > 3));                // "CHARACTERS" is a heading, not a unit
-      const read = cleaned.map(countInName);
-      if (!read.some(r => r.count)) return null;
+      const notRead = [];
+      const isIndented = (l) => /^(?: {2,}|\t)/.test(l);
+      const usable = (i) => lines[i].trim() !== "" && lines[i].length <= LIST_LINE_MAX;
+      lines.forEach((l, i) => { if (l.length > LIST_LINE_MAX) notRead.push(i + 1); });
+      const rosterStyle = lines.some(l => l.length <= LIST_LINE_MAX && stripPoints(l).points);
+      const faction = rosterFaction(lines);
+      const read = [];
+      for (let i = 0; i < lines.length; i++) {
+        if (!usable(i) || isIndented(lines[i]) || listFrame(lines[i], rosterStyle)) continue;
+        const r = readListLine(lines[i]);
+        if (!/[A-Za-z]/.test(r.name)) { notRead.push(i + 1); continue; }
+        // Model lines indented under it: "• 9x Intercessor"
+        const flat = [];
+        for (let j = i + 1; j < lines.length && (!usable(j) ? lines[j].trim() === "" : isIndented(lines[j])); j++) {
+          if (!usable(j)) continue;
+          const child = lines[j].trim().replace(/^[•*·–-]\s*/, "").match(/^(\d{1,4})\s*[x×]\s+(.+)$/i);
+          if (child) flat.push({ count: Number(child[1]), name: child[2] });
+        }
+        read.push({ ...r, models: flatModels(r.name, flat), line: i + 1 });
+      }
+      if (!read.some(r => r.count || r.points || r.models)) return null;
       let listName = "Pasted list";
-      if (read.length > 1 && !read[0].count) listName = read.shift().name;
-      return { listName, faction: "", units: read.map(r => ({ name: r.name, count: r.count || 1 })) };
+      const header = lines.find(l => l.length <= LIST_LINE_MAX && /^\+\+.*\+\+$/.test(l.trim()));
+      if (header) listName = header.trim().replace(/^\+\+\s*|\s*\+\+$/g, "").replace(/\s*[([].*$/, "") || listName;
+      else if (read.length > 1 && !read[0].count && !read[0].models) listName = read.shift().name;
+      return {
+        listName, faction,
+        units: read.map(r => ({ name: r.name, count: Math.min(r.count || r.models || 1, MAX_MODELS) })),
+        notRead: notRead.sort((x, y) => x - y),
+      };
+    }
+
+    // UX1: "(N points)" at the end of a line, read without a regular expression that can
+    // loop (the old one froze the page on a long line). The name before it, or null.
+    function appUnitName(line) {
+      const t = line.trim();
+      if (t.slice(-1) !== ")") return null;
+      const open = t.lastIndexOf("(");
+      if (open < 1 || !/^\s*\d+\s*(?:points?|pts)\s*$/i.test(t.slice(open + 1, -1))) return null;
+      return t.slice(0, open).trim() || null;
     }
 
     function parseWarhammerList(text) {
-      const lines = plainQuotes(text).replace(/\r/g, "").split("\n");
-      const unitPattern = /^\s*(.+?)\s*\((\d+)\s*(?:points?|pts)\)\s*$/i;
+      const lines = plainQuotes(String(text || "").slice(0, LIST_TEXT_MAX)).replace(/\r/g, "").split("\n");
       const bulletPattern = /^(\s*)•\s*(.*)$/;
       const nonEmpty = lines.map((l, i) => i).filter(i => lines[i].trim() !== "");
       if (!nonEmpty.length) return null;
+      const short = (i) => lines[i].length <= LIST_LINE_MAX;
+      const unitName = (i) => short(i) ? appUnitName(lines[i]) : null;
+      const isBullet = (i) => short(i) && bulletPattern.test(lines[i]);
+      // UX1: a Warhammer app list has "Name (N points)" lines with "•" bullets under them.
+      // Anything else (typed lists, other list builders) is read line by line instead.
+      const appStyle = nonEmpty.some((i, n) => unitName(i) && n + 1 < nonEmpty.length && isBullet(nonEmpty[n + 1]));
+      if (!appStyle) return parsePlainList(lines);
 
       // The first line is the list's name; the next non-empty line is the faction.
       const first = nonEmpty[0];
-      const listName = (lines[first].match(unitPattern) || [])[1] || lines[first].trim();
-      const factionLine = nonEmpty[1] !== undefined ? lines[nonEmpty[1]].trim() : "";
-      const faction = unitPattern.test(factionLine) ? "" : factionLine;
+      const listName = unitName(first) || lines[first].trim().slice(0, LIST_LINE_MAX);
+      const factionLine = nonEmpty[1] !== undefined && short(nonEmpty[1]) ? lines[nonEmpty[1]].trim() : "";
+      const faction = factionLine && !appUnitName(factionLine) ? factionLine : "";
       const startAt = faction ? 2 : 1;   // no faction line? then line 2 may already be a unit
 
       const units = [];
+      const notRead = [];
       let current = null;
       for (let n = startAt; n < nonEmpty.length; n++) {
-        const line = lines[nonEmpty[n]];
+        const i = nonEmpty[n];
+        const line = lines[i];
+        if (!short(i)) { notRead.push(i + 1); continue; }
         if (/^exported with/i.test(line.trim())) break;
-        const unitMatch = line.match(unitPattern);
+        const name = unitName(i);
         // A real unit always has bullet lines under it. This skips lines like
         // "Strike Force (2000 points)", which also end in points.
-        const followedByBullet = n + 1 < nonEmpty.length && bulletPattern.test(lines[nonEmpty[n + 1]]);
+        const followedByBullet = n + 1 < nonEmpty.length && isBullet(nonEmpty[n + 1]);
         // v60: "10x Boyz (170 points)" or "Boyz x10 (170 points)" says the count itself,
         // so it is a unit even with no bullet lines under it.
-        const stated = unitMatch ? countInName(unitMatch[1]) : null;
-        if (unitMatch && !bulletPattern.test(line) && (followedByBullet || stated.count)) {
+        const stated = name ? countInName(name) : null;
+        if (name && !bulletPattern.test(line) && (followedByBullet || stated.count)) {
           // Only the NAME is kept. The points are deliberately thrown away (v14): the app
           // never stores points, as they're Games Workshop's data.
-          current = { name: stated.name, models: 0, stated: stated.count };
+          current = { name: stated.name, models: 0, stated: stated.count, flat: [] };
           units.push(current);
           continue;
         }
         const bullet = line.match(bulletPattern);
-        if (!current || !bullet) continue;
-        const countMatch = bullet[2].match(/^(\d+)x\s+/);
+        if (!bullet) {
+          // UX1: a line that is not a bullet, heading or wargear (indented) used to be
+          // dropped without a word. Read it as a unit if it says a count or points.
+          if (/^\s/.test(line) || listFrame(line, true) || !current) continue;
+          const r = readListLine(line);
+          if ((r.count || r.points) && /[A-Za-z]/.test(r.name)) {
+            current = { name: r.name, models: 0, stated: r.count, flat: [] };
+            units.push(current);
+          } else notRead.push(i + 1);
+          continue;
+        }
+        if (!current) continue;
+        const countMatch = bullet[2].match(/^(\d+)x\s+(.*)$/);
         if (!countMatch) continue;
         // Look at the next line: is it a bullet indented further than this one?
-        const nextLine = n + 1 < nonEmpty.length ? lines[nonEmpty[n + 1]] : "";
-        const nextBullet = nextLine.match(bulletPattern);
+        const nextBullet = n + 1 < nonEmpty.length && short(nonEmpty[n + 1]) ? lines[nonEmpty[n + 1]].match(bulletPattern) : null;
         if (nextBullet && nextBullet[1].length > bullet[1].length) current.models += Number(countMatch[1]);
+        else if (!current.models) current.flat.push({ count: Number(countMatch[1]), name: countMatch[2], indent: bullet[1].length });
       }
       // v60: a count on the unit's own line wins over the model lines, as the person wrote it.
-      for (const u of units) { u.count = Math.min(u.stated || u.models || 1, MAX_MODELS); delete u.stated; }
-      if (units.length) return { listName, faction, units };
+      // UX1: with no deeper bullets at all, flat model lines are counted (see flatModels).
+      for (const u of units) {
+        const top = u.flat.length ? Math.min(...u.flat.map(f => f.indent)) : 0;
+        const flat = u.models ? 0 : flatModels(u.name, u.flat.filter(f => f.indent === top));
+        u.count = Math.min(u.stated || u.models || flat || 1, MAX_MODELS);
+        delete u.stated; delete u.flat;
+      }
+      if (units.length) return { listName, faction, units, notRead: notRead.sort((x, y) => x - y) };
       return parsePlainList(lines);
     }
 
@@ -18613,6 +18812,7 @@
     const reviewBox = document.getElementById("review");
     const reviewTitle = document.getElementById("review-title");
     const reviewSummary = document.getElementById("review-summary");
+    const reviewNotRead = document.getElementById("review-not-read");
     const reviewModeBox = document.getElementById("review-mode");
     const modeButtons = reviewBox.querySelectorAll(".mode-button");
     const reviewWhFields = document.getElementById("review-wh-fields");
@@ -18748,6 +18948,12 @@
         summary += ` Your current ${plural(models.length, "unit")} will be removed first. You can Undo straight after.`;
       }
       reviewSummary.textContent = summary;
+      // UX1: lines of a pasted list that couldn't be read are named, never dropped silently.
+      const notRead = incoming.notRead || [];
+      reviewNotRead.classList.toggle("hidden", !notRead.length);
+      reviewNotRead.textContent = !notRead.length ? "" : `Not read: ${notRead.length === 1 ? "line" : "lines"} ` +
+        notRead.slice(0, 10).join(", ") + (notRead.length > 10 ? ` and ${notRead.length - 10} more` : "") +
+        (incoming.cut ? `. Lists are cut at ${LIST_TEXT_MAX.toLocaleString("en-GB")} characters.` : ".");
       renderSetAll();
 
       const have = matched.filter(m => m.match && m.kind !== "close").length;
@@ -19002,6 +19208,11 @@
       if (opening) { closeReview(); whText.focus(); }
     });
 
+    // UX1: the paste box holds LIST_TEXT_MAX characters (a long paste froze the page).
+    whText.addEventListener("input", () => {
+      if (whText.value.length >= LIST_TEXT_MAX) notify(`The list box holds up to ${LIST_TEXT_MAX.toLocaleString("en-GB")} characters, so the rest was left out.`);
+    });
+
     document.getElementById("wh-read").addEventListener("click", () => {
       const list = parseWarhammerList(whText.value);
       if (!list) {
@@ -19017,6 +19228,8 @@
         source: "wh",
         title: `"${list.listName}"`,
         rows: list.units.map(u => ({ name: u.name, count: u.count })),
+        notRead: list.notRead || [],
+        cut: whText.value.length >= LIST_TEXT_MAX,
       });
     });
 
@@ -19531,12 +19744,21 @@
     }
     // Starting a new draft while an old one waits would quietly replace it, so the app asks first.
     // Returns true if the new thing must wait.
-    function draftWaiting(kind) {
+    // UX1: for a recipe, "Not now" starts the new one (startAnyway) and the old one stays kept for later, untouched.
+    // The kept-recipe card is hidden while the question is up, so it isn't asked twice; Escape puts it back.
+    function draftWaiting(kind, startAnyway) {
       if (!draftOffers[kind]) return false;
+      if (kind === "recipe") fillDraftCard("recipe", false);
       askYesNo(`You have an unfinished ${DRAFT_NAMES[kind]} kept from earlier. Keep going with it first?`,
-        () => keepDraft(kind), { yes: "Keep going", no: "Not now" });
+        () => keepDraft(kind), {
+          yes: "Keep going", no: "Not now",
+          onNo: () => { if (kind === "recipe") renderRecipes(); },
+          onNoButton: startAnyway ? () => { draftNotNow[kind] = true; try { startAnyway(); } finally { draftNotNow[kind] = false; } }
+            : () => { if (kind === "recipe") renderRecipes(); },
+        });
       return true;
     }
+    const draftNotNow = { unit: false, recipe: false, paste: false };   // UX1: true while "Not now" starts the new one
     loadKeptDrafts();
 
     // ================= v27: COUNTING VISITS (anonymous, no cookies) =================
@@ -20227,12 +20449,21 @@
     // U4a: while a mouse or finger is held down, the bar and the message stay where they are when the cursor leaves a text box. Pressing a button takes the cursor out of
     // the text box on the way down, and the message (it rises above the taller menu bar) could jump under the pointer before it is
     // released, so the press would land on the message instead of the button. The check is made just after the press ends.
-    let pressing = false, pressGuard = 0;
+    // UX1: on a touch screen the cursor leaves the text box after the finger lifts, just before the tap's click. The bar came back
+    // in that moment, under the finger, and the click was lost (the first tap on "+ Add step" did nothing). So after a press ends,
+    // the bar waits until its click has been handled (or half a second, when no click comes, such as after a scroll).
+    let pressing = false, pressGuard = 0, releasing = false, releaseGuard = 0;
+    const endRelease = () => { releasing = false; clearTimeout(releaseGuard); updateTyping(); };
     document.addEventListener("pointerdown", () => { pressing = true; clearTimeout(pressGuard); pressGuard = setTimeout(() => { pressing = false; updateTyping(); }, 3000); }, true);
-    for (const type of ["pointerup", "pointercancel"]) document.addEventListener(type, () => { pressing = false; clearTimeout(pressGuard); setTimeout(updateTyping, 0); }, true);
+    for (const type of ["pointerup", "pointercancel"]) document.addEventListener(type, () => {
+      pressing = false; clearTimeout(pressGuard);
+      releasing = true; clearTimeout(releaseGuard); releaseGuard = setTimeout(endRelease, 500);
+      setTimeout(updateTyping, 0);
+    }, true);
+    document.addEventListener("click", () => { if (releasing) setTimeout(endRelease, 0); }, true);
     function updateTyping() {
       const typing = isTextBox(document.activeElement);
-      if (pressing && !typing) return;   // only leaving "typing" waits; starting it is at once
+      if ((pressing || releasing) && !typing) return;   // only leaving "typing" waits; starting it is at once
       document.body.classList.toggle("typing", typing);
     }
     // Focus moves in and out of boxes; "focusout" is checked a moment later, once we can see

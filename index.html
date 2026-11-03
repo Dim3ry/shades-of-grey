@@ -3080,7 +3080,7 @@
           <summary>Importing (CSV and army lists)</summary>
           <ul>
             <li><strong>From the Warhammer app:</strong> open a list, tap Export, copy it as text, then on the Models tab tap <strong>+ Add unit → Paste army list</strong> (it's also in Settings), paste it and press Read list. Only unit names and model counts are kept: points, wargear and rules text are thrown away.</li>
-            <li id="help-typed-list">A list typed by hand works too: one unit per line with its count, such as <strong>10x Boyz</strong>, <strong>Boyz x10</strong> or <strong>Boyz (10 models)</strong>. A unit with no count comes in as 1 model.</li>
+            <li id="help-typed-list">A list typed by hand works too: one unit per line with its count, such as <strong>10x Boyz</strong>, <strong>Boyz x10</strong> or <strong>Boyz (10 models)</strong>. A unit with no count comes in as 1 model. Lists from other list builders work too, such as <strong>10x Intercessors [180pts]</strong>. Any line that can't be read is listed by its line number in the check.</li>
             <li><strong>From a spreadsheet:</strong> save it as CSV with the columns name, game, faction, stage, nickname, count, repaint, notes, date_added, date_stage, then use <strong>Import CSV</strong> (under + Add unit, or in Settings). <strong>CSV template</strong> in Settings gives you an example file.</li>
             <li id="help-csv-checks">The first line of the CSV must be the column titles, and one must be <strong>name</strong>. The other columns are found by their titles, so they can be in any order or left out. A file without a name column, a picture, an Excel file that isn't saved as CSV, or a file over 2 MB is refused with a message, and nothing changes.</li>
             <li id="help-csv-dates"><strong>date_added</strong> is the day a unit joined your collection and <strong>date_stage</strong> the day it reached its stage, read day first (UK style, 02/11/2026) or as YYYY-MM-DD (2026-11-02). The progress graph then shows it on those days. A unit with only date_stage uses it for both. A date in another style, before 1980 or in the future is left out but the unit still comes in. If you change a unit's stage in the check, it reached that stage today. A date_added later than date_stage is replaced by date_stage. The check lists the rows where either happened. <strong>Export CSV</strong> writes both dates.</li>
@@ -3303,7 +3303,7 @@
             In the Warhammer app, open a list, tap Export, then Copy as text. Paste it below.
             Only unit names and model counts are kept; points and wargear are ignored.
           </p>
-          <textarea id="wh-text" placeholder="Paste your exported list here" aria-label="Army list"></textarea>
+          <textarea id="wh-text" placeholder="Paste your exported list here" aria-label="Army list" maxlength="50000"></textarea>
           <button class="primary-button" id="wh-read">Read list</button>
         </div>
 
@@ -3312,6 +3312,7 @@
         <div id="review" class="hidden review">
           <h2 id="review-title" style="margin: 0;">Check your import</h2>
           <p class="hint" id="review-summary" style="margin: 0;"></p>
+          <p class="hint hidden" id="review-not-read" style="margin: 0;"></p>
 
           <div id="review-mode">
             <p class="hint" style="margin: 0 0 6px;">What should this import do?</p>
