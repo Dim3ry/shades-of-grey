@@ -121,7 +121,7 @@ def main():
             browser_boxes.append(d.message)
             d.accept()
         page.on("dialog", on_dialog)
-        DialogAnswers(page)
+        answers = DialogAnswers(page)
 
         # ---------- 1. Versions and kept things ----------
         print("--- 1. Versions and kept things ---")
@@ -216,21 +216,28 @@ def main():
         check("…and nothing changed", untouched())
 
         # CSV
+        # UX1b (v126): a refused CSV file's message is now the app's own box with one OK button, which stays until it is
+        # pressed (the user testing found the long message went before it could be read). Same words; the box is read here.
         def csv_try(name, data, mime="text/csv"):
             seed(page, UNITS)
             tab(page, "settings")
+            answers.clear()
             page.set_input_files("#csv-file", files=[{"name": name, "mimeType": mime, "buffer": data}])
             page.wait_for_timeout(350)
 
+        def box_says(fragment):
+            said = answers.messages
+            return any(fragment in m for m in said), said
+
         csv_try("nonames.csv", b"unit_title,faction\nBoyz,Orks\n")
-        ok, t = says('no "name" column')
+        ok, t = box_says('no "name" column')
         check("CSV: no name column gets the same words", ok, t)
         csv_try("renamed.csv", png())
-        ok, t = says("isn't a CSV file")
+        ok, t = box_says("isn't a CSV file")
         check("CSV: a picture renamed to .csv is refused", ok, t)
         check("…and no review box opened, nothing changed", not page.is_visible("#review") and untouched())
         csv_try("titles-only.csv", b"name,faction\n")
-        ok, t = says("No units found in that file.")
+        ok, t = box_says("No units found in that file.")
         check("CSV: a file with only the title line says 'No units found in that file.'", ok, t)
         seed(page, [])
         tab(page, "settings")

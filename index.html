@@ -5,6 +5,9 @@
   <meta charset="UTF-8">
   <!-- Makes the page fit phone screens properly. Without it, phones zoom out. -->
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- UX1b: tells a phone browser that understands it (Chrome on Android) to apply the phone's text size setting to the page's
+       text sizes (which are in rem), instead of zooming the whole page. Browsers that don't know it ignore it. -->
+  <meta name="text-scale" content="scale">
   <!-- v21.2 (tightened in v21.4): the Content Security Policy ("CSP"). A list of what this page is allowed to load and run.
        If something tries to break those rules (for example a script from another website sneaking in),
        the browser refuses it. What each line allows:
@@ -1239,6 +1242,19 @@
     #lab-seg button { flex: 1 1 auto; padding: 10px 12px; font-size: 0.875rem; }
     #colourlab-body .wheel-block { border-bottom: 0; padding-bottom: 0; }
     #colourlab-body .shop-idle-button { min-height: 44px; }
+    /* UX1b: small screens and keyboard. The Painting and Tools switches never break a word: each part is at least 44 px wide and as wide as
+       its longest word, and when they can't all fit on one line (130% zoom, larger text) the last ones move to a second line. When they fit,
+       every part is the same width, as before. Below 300 px (a 360 px phone at 130% zoom) they sit three and two, so no part is alone on a line. */
+    #recipe-seg, #more-seg { display: flex; flex-wrap: wrap; }
+    #recipe-seg button, #more-seg button { flex: 1 1 44px; overflow-wrap: break-word; }
+    @media (max-width: 300px) { #recipe-seg button, #more-seg button { flex-basis: 30%; } }
+    .link-button { min-width: 44px; }
+    .review-row label { min-height: 44px; }
+    .clearable input:placeholder-shown { padding-right: 10px; }   /* the clear x is hidden while the box is empty, so the hint gets its room */
+    .skip-link { position: fixed; left: 8px; top: 8px; z-index: 300; min-height: 44px; padding: 10px 16px; font-size: 1rem; font-weight: 600;
+      color: var(--text); background-color: var(--card); border: 2px solid var(--accent); border-radius: var(--radius-control); }
+    .skip-link:not(:focus) { width: 1px; height: 1px; min-height: 0; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    body.launching .skip-link { display: none; }
     .pro-row { display: flex; justify-content: flex-end; margin-bottom: 8px; }   /* P1: the Pro preview tag on its own row at the top of a Colour Lab section */
 
     /* Your Palette */
@@ -2625,6 +2641,8 @@
 </head>
 
 <body>
+  <!-- UX1b: the first stop for the Tab key: jumps past the menu bar to the page's content (wired in app.js). Shown only while focused. -->
+  <button type="button" class="skip-link" id="skip-link">Skip to content</button>
   <!-- v14: shown while saving isn't working (storage full). Stays until a save works. -->
   <div class="save-banner hidden" id="save-banner" role="alert">
     <p id="save-banner-text"><strong>Changes aren't being saved.</strong> Storage on this device is full. Save a backup now, then free some space (delete photos or units you no longer need).</p>
@@ -2751,11 +2769,11 @@
       <!-- The add form starts hidden; the button above shows it. -->
       <form id="add-form" class="card hidden" style="display: grid; gap: 10px;">
         <div class="row" style="grid-template-columns: 1fr 76px;">
-          <input id="name-input" maxlength="80" placeholder="Unit name, e.g. Intercessors" aria-label="Unit name" required>
+          <input id="name-input" maxlength="80" placeholder="Unit name" aria-label="Unit name" required>
           <input id="count-input" type="number" min="1" max="999" value="1" aria-label="Number of models" title="Number of models">
         </div>
         <div class="row">
-          <span class="clearable"><input id="hobby-input" maxlength="80" placeholder="Game, e.g. Sci-fi" aria-label="Game" list="game-options"><button type="button" class="clear-x" id="clear-game" aria-label="Clear game"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>
+          <span class="clearable"><input id="hobby-input" maxlength="80" placeholder="Game" aria-label="Game" list="game-options"><button type="button" class="clear-x" id="clear-game" aria-label="Clear game"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>
           <span class="clearable"><input id="faction-input" maxlength="80" placeholder="Faction" aria-label="Faction" list="faction-options"><button type="button" class="clear-x" id="clear-faction" aria-label="Clear faction"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>
         </div>
         <!-- v21: start a unit at the stage it's really at, instead of tapping ▲ several times. -->
@@ -2873,7 +2891,7 @@
         </div>
         <div class="card hidden" id="import-review"></div>
         <div class="card">
-          <input id="palette-search" type="search" placeholder="Search or add a paint, e.g. Mid Blue"
+          <input id="palette-search" type="search" placeholder="Search or add a paint"
                  aria-label="Search or add a paint" autocomplete="off" style="width: 100%;">
           <div id="palette-search-result" style="margin-top: 8px;"></div>
         </div>
@@ -3121,11 +3139,11 @@
           <ul>
             <li><strong>From the Warhammer app:</strong> open a list, tap Export, copy it as text, then on the Models tab tap <strong>+ Add unit → Paste army list</strong> (it's also in Settings), paste it and press Read list. Only unit names and model counts are kept: points, wargear and rules text are thrown away.</li>
             <li id="help-typed-list">A list typed by hand works too: one unit per line with its count, such as <strong>10x Boyz</strong>, <strong>Boyz x10</strong> or <strong>Boyz (10 models)</strong>. A unit with no count comes in as 1 model. Lists from other list builders work too, such as <strong>10x Intercessors [180pts]</strong>. Any line that can't be read is listed by its line number in the check.</li>
-            <li><strong>From a spreadsheet:</strong> save it as CSV with the columns name, game, faction, stage, nickname, count, repaint, notes, date_added, date_stage, then use <strong>Import CSV</strong> (under + Add unit, or in Settings). <strong>CSV template</strong> in Settings gives you an example file.</li>
-            <li id="help-csv-checks">The first line of the CSV must be the column titles, and one must be <strong>name</strong>. The other columns are found by their titles, so they can be in any order or left out. A file without a name column, a picture, an Excel file that isn't saved as CSV, or a file over 2 MB is refused with a message, and nothing changes.</li>
+            <li><strong>From a spreadsheet:</strong> save it as CSV with the columns name, game, faction, stage, nickname, count, repaint, notes, date_added, date_stage, then use <strong>Import CSV</strong> (under + Add unit, or in Settings). <strong>CSV template</strong> in Settings gives you an example file. Cells can be split by commas or by semicolons (as Excel saves them in much of Europe).</li>
+            <li id="help-csv-checks">The first line of the CSV must be the column titles, and one must be <strong>name</strong>. The other columns are found by their titles, so they can be in any order or left out. A file without a name column, a picture, an Excel file that isn't saved as CSV, or a file over 2 MB is refused with a message that stays until you press OK, and nothing changes.</li>
             <li id="help-csv-dates"><strong>date_added</strong> is the day a unit joined your collection and <strong>date_stage</strong> the day it reached its stage, read day first (UK style, 02/11/2026) or as YYYY-MM-DD (2026-11-02). The progress graph then shows it on those days. A unit with only date_stage uses it for both. A date in another style, before 1980 or in the future is left out but the unit still comes in. If you change a unit's stage in the check, it reached that stage today. A date_added later than date_stage is replaced by date_stage. The check lists the rows where either happened. <strong>Export CSV</strong> writes both dates.</li>
             <li>Before anything changes, you choose <strong>Add to my collection</strong> or <strong>Replace my collection</strong>, and can untick any units you don't want.</li>
-            <li id="help-row-stage">Each unit in the check has its own <strong>model count</strong> and <strong>stage</strong>. <strong>Set every row to</strong> puts every unit at one stage in one go, then you can change single units. The tick only decides whether a unit comes in. A CSV stage that matches one of your stages is used; otherwise the unit starts at the Set every row to stage.</li>
+            <li id="help-row-stage">Each unit in the check has its own <strong>model count</strong> and <strong>stage</strong>. <strong>Set every row to</strong> puts every unit at one stage in one go, then you can change single units. The tick only decides whether a unit comes in. A CSV stage that matches one of your stages is used. A <strong>status</strong> column works too, and everyday words such as primed, WIP or painted are matched to your stages (painted, done and finished mean your first Done stage). Anything else is listed in the check, and the unit starts at the Set every row to stage.</li>
             <li>Units you already have start unticked. If one has a different name in the import, it's highlighted so you can pick which name to keep. The Warhammer app's name is the default.</li>
             <li>After an import, the <strong>Models</strong> tab opens so you can see what came in. Changed your mind? Press <strong>Undo</strong> straight after.</li>
           </ul>
@@ -3371,7 +3389,7 @@
             <p class="hint" style="margin: 0;">Game and faction for these units (check they match the spelling you use):</p>
             <div class="row">
               <label class="hint" style="margin: 0; display: grid; gap: 4px;">Game<input id="wh-game" maxlength="80" placeholder="e.g. Sci-fi"></label>
-              <label class="hint" style="margin: 0; display: grid; gap: 4px;">Faction<input id="wh-faction" maxlength="80" placeholder="e.g. Green army"></label>
+              <label class="hint" style="margin: 0; display: grid; gap: 4px;">Faction<input id="wh-faction" maxlength="80" placeholder="e.g. Elves"></label>
             </div>
           </div>
           <p class="hint" id="review-clash-note" style="margin: 0;"></p>

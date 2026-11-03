@@ -97,7 +97,8 @@ def main():
         # ---------- 3. The reworded hints and Help ----------
         print("\n--- 3. Hints and Help ---")
         hints = page.evaluate("""() => ['hobby-input','palette-search','wh-game','wh-faction'].map(id => document.getElementById(id).getAttribute('placeholder'))""")
-        check("the four box hints are plain", hints == ["Game, e.g. Sci-fi", "Search or add a paint, e.g. Mid Blue", "e.g. Sci-fi", "e.g. Green army"], hints)
+        # UX1b (v126): three hints were shortened so they fit their boxes on a 320 px phone (the user testing found them cut off).
+        check("the four box hints are plain", hints == ["Game", "Search or add a paint", "e.g. Sci-fi", "e.g. Elves"], hints)
         check("the box hints have no Games Workshop words", not any(dirty(h) for h in hints), hints)
         for sel in ["#help-example-recipes", "#help-faction-part"]:
             txt = page.evaluate("(s) => document.querySelector(s).textContent", sel)

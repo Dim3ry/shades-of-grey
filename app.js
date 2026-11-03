@@ -4892,7 +4892,9 @@
           event.preventDefault(); event.stopPropagation();
           closeMentor();
         } else if (event.key === "Tab") {
-          const stops = [...win.querySelectorAll("button, input, select, summary, a[href]")].filter(b => !b.disabled && b.tabIndex >= 0 && b.getClientRects().length);
+          const all = [...win.querySelectorAll("button, input, select, summary, a[href]")].filter(b => !b.disabled && b.tabIndex >= 0 && b.getClientRects().length);
+          // UX1b: the text box and Send come first, so one Tab from Close (where the window opens) reaches the box.
+          const stops = [...all.filter(b => form.contains(b)), ...all.filter(b => !form.contains(b))];
           const at = stops.indexOf(document.activeElement);
           const next = event.shiftKey ? (at <= 0 ? stops.length - 1 : at - 1) : (at < 0 || at === stops.length - 1 ? 0 : at + 1);
           event.preventDefault();
@@ -7175,6 +7177,11 @@
         putRecipesBack();   // after the units, so their links to the example recipes come back too
         render();
       }, "Undo", UNDO_SECONDS);
+      // UX1b: the card (and the button you pressed) has gone, so focus moves to the start of the page's content
+      // instead of dropping to the page itself. Checked again after the next frame, in case the redraw comes later.
+      const refocus = () => { const at = document.activeElement; if (!at || at === document.body || !at.isConnected) focusContentStart(); };
+      refocus();
+      requestAnimationFrame(() => setTimeout(refocus, 0));
     }
     // v56: keeps every example at once (units, recipes, schemes and paints), so no card is left on any tab.
     function keepExamples() {
@@ -8310,6 +8317,7 @@
     function showDialog(cfg) {
       if (dialogState) finishDialog(dialogState.cfg.mode === "text" ? null : false);   // a new question replaces the old one, which counts as "no"
       const text = cfg.mode === "text", show = cfg.mode === "show", pick = cfg.mode === "pick";
+      const notice = cfg.mode === "notice";   // UX1b: a message with one OK button, up until it's dismissed
       dialogMessage.textContent = cfg.message;
       dialogPick.replaceChildren();
       dialogPick.classList.toggle("hidden", !pick);
@@ -8321,14 +8329,14 @@
       dialogArea.classList.toggle("hidden", !show);
       dialogInput.value = text ? (cfg.initial || "") : "";
       dialogArea.value = show ? (cfg.initial || "") : "";
-      dialogYes.textContent = cfg.yes || (text ? "OK" : show ? "Close" : "Yes");
+      dialogYes.textContent = cfg.yes || (text || notice ? "OK" : show ? "Close" : "Yes");
       dialogNo.textContent = cfg.no || (text ? "Cancel" : "No");
       // A question about something destructive makes the safe answer the bold one.
       dialogYes.className = cfg.danger ? "danger-button" : "primary-button";
       dialogNo.className = cfg.danger ? "primary-button" : "plain-button";
-      dialogNo.classList.toggle("hidden", show || (pick && !cfg.no));   // (after the line above, which sets the whole class). RS3b: Skip
+      dialogNo.classList.toggle("hidden", show || notice || (pick && !cfg.no));   // (after the line above, which sets the whole class). RS3b: Skip
       dialogBackdrop.classList.toggle("dialog-sheet", !!cfg.sheet);   // RS3b: a sheet from the bottom of the screen
-      dialogButtons.classList.toggle("single", show);
+      dialogButtons.classList.toggle("single", show || notice);
       dialogState = { cfg, opener: document.activeElement };
       dialogBackdrop.classList.remove("hidden");
       // DS1: a danger question starts on the safe answer, so Enter, Space or a held key can't confirm it by accident.
@@ -8418,6 +8426,21 @@
     function showTextToCopy(message, text) {
       showDialog({ mode: "show", message, initial: text, onDone: () => {} });
     }
+    // UX1b: a message that stays until you press OK (a longer message, such as why a file was refused, can be read in full).
+    function showNotice(message) {
+      showDialog({ mode: "notice", message, onDone: () => {} });
+    }
+
+    // ----- UX1b: Skip to content -----
+    // The first stop for the Tab key on every page (shown only while it has the focus). It jumps past the menu bar
+    // (four segments, Ask Mentor and the back arrow) to the first control of the page you are on.
+    function focusContentStart() {
+      const header = document.querySelector("main > .app-bar");
+      const target = [...document.querySelector("main").querySelectorAll("button, a[href], input, select, textarea, summary, [tabindex]")]
+        .find(el => !header.contains(el) && el.tabIndex >= 0 && !el.disabled && el.getClientRects().length && !el.closest(".hidden, [hidden]"));
+      if (target) target.focus();
+    }
+    document.getElementById("skip-link").addEventListener("click", focusContentStart);
 
     // ----- Filters and the add form -----
 
@@ -18538,9 +18561,25 @@
       });
     });
 
+    // UX1b: which mark separates the cells. Excel in much of Europe saves CSV files with semicolons
+    // (a comma is the decimal mark there), and some apps use tabs. The first line (the column titles)
+    // decides: the mark it uses most, outside quotes. A comma when it's a tie or there is none.
+    function csvSeparator(text) {
+      const counts = { ",": 0, ";": 0, "\t": 0 };
+      let insideQuotes = false;
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        if (char === '"') insideQuotes = !insideQuotes;
+        else if (!insideQuotes && char === "\n") { if (counts[","] + counts[";"] + counts["\t"]) break; }
+        else if (!insideQuotes && char in counts) counts[char]++;
+      }
+      return counts[";"] > counts[","] && counts[";"] >= counts["\t"] ? ";" : counts["\t"] > counts[","] ? "\t" : ",";
+    }
+
     // Turns CSV text into rows of cells. A value can contain a comma if it's wrapped in
     // quotes, e.g. "Boyz, mob 2", so we read one character at a time.
-    function parseCSV(text) {
+    // UX1b: sep is the mark between cells (see csvSeparator); a comma unless given.
+    function parseCSV(text, sep = ",") {
       const rows = [];
       let row = [];
       let cell = "";
@@ -18553,7 +18592,7 @@
           else cell += char;
         } else if (char === '"' && cell === "") {
           insideQuotes = true;       // a quote only opens a quoted value at the start of a cell
-        } else if (char === ",") {
+        } else if (char === sep) {
           row.push(cell); cell = "";
         } else if (char === "\n") {
           row.push(cell); row.line = rows.length + 1; rows.push(row); row = []; cell = "";
@@ -18625,6 +18664,37 @@
     const CSV_COLUMNS = { name: ["name", "unit", "unit name"], game: ["game", "hobby"], faction: ["faction", "army"],
       stage: ["stage"], nickname: ["nickname"], count: ["count", "models", "number"], repaint: ["repaint"], notes: ["notes", "note"],
       dateAdded: ["date_added", "date added"], dateStage: ["date_stage", "date stage"] };   // IM1: the two date columns
+    // UX1b: a "status" column is read as the stage when there is no "stage" column. Its words are matched to
+    // your stages: the stage's own name or number first, then the everyday words below for the app's own stage
+    // names (only when your list has that stage). "Painted", "done" and "finished" mean your first Done stage.
+    // Anything else is listed on the check screen and starts at the Set every row to stage.
+    const CSV_STATUS_TITLES = ["status", "state", "progress"];
+    const CSV_STATUS_WORDS = {
+      "Unassembled": ["unbuilt", "not built", "not started", "new", "in box", "in the box", "boxed", "on sprue", "on sprues", "on the sprue", "nib", "new in box", "unopened", "sealed", "to build", "pile of shame"],
+      "Part assembled": ["part built", "partly built", "partially built", "half built", "partly assembled", "partially assembled", "half assembled", "building", "being built"],
+      "Assembled": ["built", "constructed", "to prime", "ready to prime"],
+      "Primed": ["undercoated", "undercoat", "primer", "sprayed", "to paint", "ready to paint"],
+      "Part painted": ["part painted", "partly painted", "partially painted", "half painted", "started", "in progress", "wip", "work in progress", "painting", "being painted", "base coated", "basecoated", "basecoat", "base coat"],
+      "Battle ready": ["tabletop", "tabletop ready", "table ready", "tabletop standard", "game ready", "battle ready"],
+      "Needs touch-ups": ["touch up", "touch ups", "touchup", "touchups", "needs touch up", "needs touch ups", "needs touchup", "needs touchups", "needs work", "needs repair", "repair"],
+      "Parade ready": ["parade", "display", "display ready", "showcase", "competition ready"],
+    };
+    const CSV_DONE_WORDS = ["painted", "done", "finished", "complete", "completed", "fully painted"];
+    // The stage number for a status word, or -1 when it doesn't match.
+    function stageFromStatus(text) {
+      const word = String(text || "").toLowerCase().replace(/[-_/]+/g, " ").replace(/[.!]+$/, "").replace(/\s+/g, " ").trim();
+      if (!word) return -1;
+      const byName = STAGES.findIndex(s => s.toLowerCase().replace(/[-_/]+/g, " ") === word);
+      if (byName !== -1) return byName;
+      if (CSV_DONE_WORDS.includes(word)) return Math.min(Math.max(0, settings.doneFrom), STAGES.length - 1);
+      for (const [stage, words] of Object.entries(CSV_STATUS_WORDS)) {
+        if (!words.includes(word)) continue;
+        const i = STAGES.findIndex(s => s.toLowerCase() === stage.toLowerCase());
+        if (i !== -1) return i;
+      }
+      return -1;
+    }
+
     function csvToUnits(rows) {
       rows = rows.filter(cells => cells.some(c => String(c).trim()));
       const noName = 'This file has no "name" column, so Minifolio can\'t tell which column holds your unit names. ' +
@@ -18634,6 +18704,8 @@
       const titles = rows[0].map(c => plainQuotes(String(c)).trim().toLowerCase());
       const col = {};
       for (const [key, words] of Object.entries(CSV_COLUMNS)) col[key] = titles.findIndex(t => words.includes(t));
+      // UX1b: no "stage" column, so a "status" column is the stage (read with stageFromStatus below).
+      if (col.stage < 0) col.stage = titles.findIndex(t => CSV_STATUS_TITLES.includes(t));
       if (col.name < 0) return { problem: noName };
       const cell = (cells, key) => col[key] < 0 ? "" : String(cells[col[key]] || "").trim();
       const unknownStages = new Set();
@@ -18653,14 +18725,15 @@
         const stageText = cell(cells, "stage");
         const n = Number(stageText);
         const validNumber = stageText !== "" && Number.isInteger(n) && n >= 0 && n < STAGES.length;
-        if (stageText && !STAGES.some(s => s.toLowerCase() === stageText.toLowerCase()) && !validNumber) {
-          unknownStages.add(stageText);
-        }
+        // UX1b: a stage's own name first, then its number, then an everyday word ("primed", "painted", "WIP").
+        let stage = stageFromStatus(stageText);
+        if (stage === -1 && validNumber) stage = n;
+        if (stageText && stage === -1) unknownStages.add(stageText);
         units.push({
           name,
           hobby: cell(cells, "game"),
           faction: plainQuotes(cell(cells, "faction")),
-          stage: stageFromText(stageText),
+          stage: stage === -1 ? 0 : stage,
           // v60: only a stage the app knows counts as given; otherwise the row starts at the set-all stage.
           stageGiven: stageText !== "" && !unknownStages.has(stageText),
           nickname: cell(cells, "nickname"),
@@ -18684,14 +18757,16 @@
       if (!file) return;
       // v19.1: refuse pictures and very large files before reading anything.
       const problem = fileProblem(file, "csv");
-      if (problem) { csvFile.value = ""; notify(problem); return; }
+      // UX1b: why a file was refused stays on screen until you press OK (it used to go after a few seconds).
+      if (problem) { csvFile.value = ""; showNotice(problem); return; }
       readFile(file, (text) => {
         csvFile.value = "";
-        if (!looksLikeText(text)) { notify(`"${file.name}" isn't a CSV file (it isn't plain text). Nothing has changed.`); return; }
-        const read = csvToUnits(parseCSV(text.replace(/^﻿/, "")));   // ﻿: an invisible mark Excel adds
-        if (read.problem) { notify(read.problem); return; }
+        if (!looksLikeText(text)) { showNotice(`"${file.name}" isn't a CSV file (it isn't plain text). Nothing has changed.`); return; }
+        const clean = text.replace(/^﻿/, "");   // ﻿: an invisible mark Excel adds
+        const read = csvToUnits(parseCSV(clean, csvSeparator(clean)));   // UX1b: commas, semicolons or tabs
+        if (read.problem) { showNotice(read.problem); return; }
         const { units, unknownStages, datesLeftOut } = read;
-        if (!units.length) { notify("No units found in that file."); return; }
+        if (!units.length) { showNotice("No units found in that file. Nothing has changed."); return; }
         whPanel.classList.add("hidden");
         openReview({ source: "csv", title: `"${file.name}"`, rows: units, unknownStages: [...unknownStages], datesLeftOut });
       });
