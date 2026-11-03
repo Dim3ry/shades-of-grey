@@ -84,10 +84,11 @@ def main():
               abs(cx - 195) < 1 and abs(cy - (head + (844 - head) / 2)) < 2 and 440 <= cy <= 460, (cx, cy, head))
         r = lambda d: d  # readability
         check("the ring is 340 px across: a tap 165 px out hits a segment, 175 px out hits nothing",
-              hit(page, cx - 118, cy - 118) == "dashboard" and hit(page, cx - 128, cy - 128) == "" and hit(page, cx + 118, cy + 118) == "guides")
+              hit(page, cx - 118, cy - 118) == "units" and hit(page, cx - 128, cy - 128) == "" and hit(page, cx + 118, cy + 118) == "guides")   # v127 (MN1): Models is top left now
         check("a tap on the round button (56 px from its centre) hits Ask Mentor, not a segment", hit(page, cx - 40, cy - 40) == "mentor-button")
-        check("segments sit top left, top right, bottom left, bottom right",
-              hit(page, cx - 90, cy - 90) == "dashboard" and hit(page, cx + 90, cy - 90) == "units" and hit(page, cx - 90, cy + 90) == "recipes" and hit(page, cx + 90, cy + 90) == "guides")
+        # v127 (MN1, James): the circle's order now matches the bar's: Models top left, Painting top right, Dashboard bottom left, Tools bottom right
+        check("segments sit Models top left, Painting top right, Dashboard bottom left, Tools bottom right",
+              hit(page, cx - 90, cy - 90) == "units" and hit(page, cx + 90, cy - 90) == "recipes" and hit(page, cx - 90, cy + 90) == "dashboard" and hit(page, cx + 90, cy + 90) == "guides")
         check("a tap in the gap on the vertical or the horizontal axis hits nothing",
               hit(page, cx, cy - 120) == "" and hit(page, cx - 120, cy) == "" and hit(page, cx + 120, cy) == "" and hit(page, cx, cy + 120) == "")
         check("the glow behind the circle uses a theme colour (a gradient on the layer behind it)",
@@ -103,7 +104,7 @@ def main():
         for s in SEGMENTS:
             start(page)
             cx, cy, _ = circle(page)
-            dx, dy = {"dashboard": (-90, -90), "units": (90, -90), "recipes": (-90, 90), "guides": (90, 90)}[s]
+            dx, dy = {"units": (-90, -90), "recipes": (90, -90), "dashboard": (-90, 90), "guides": (90, 90)}[s]   # v127 (MN1): the new places
             page.mouse.click(cx + dx, cy + dy)
             page.wait_for_timeout(150)
             ok = (not launching(page) and shown_sections(page) == [f"view-{s}"]
