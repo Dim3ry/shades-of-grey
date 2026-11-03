@@ -9913,6 +9913,9 @@
         setTimeout(done, motionMs("--motion-med") + 400);
       }
     });
+    // v130: the copy is placed in page pixels, so a window that narrows while it plays (a phone turned, a desktop window resized) would leave it
+    // where the chip used to be, past the new edge, and the page scrolled sideways until it ended. A resize ends the fill at once instead.
+    window.addEventListener("resize", lqChipEnd);
 
     // LQ1 (button sweep): buttons now change colour smoothly (index.html "LQ1:"). A change of look or Light and dark changes every colour at
     // once, which should be instant as before: so while the page's look changes, those colour changes do not play (one frame, then back).
@@ -22585,6 +22588,7 @@
         "Model cards are compact: each shows its name, game, army and stage. Tap a card to open it with the stage buttons, recipes and Details, and tap its header to close it. One card is open at a time.",
         "Buttons and chips dim the moment you touch them, change colour smoothly and keep their rounded shape when pressed. The square flash some phones drew on a tap is gone.",
         "Switches on Painting, Tools and Settings, Colour Lab and Guides now empty the old choice and fill the new one with colour.",
+        "In Colour Lab, pressing a colour on the wheel or in Start from slides the other colours in behind it, and the next set slides out from it. Back plays it in reverse.",
         "Fold-outs unroll and what is below slides down, the Undo message and questions fade away, and Back from a recipe keeps your place in the list. A deleted unit fades out while the cards below glide up, and Undo glides them back. With Reduce motion on, everything still happens at once.",
         "Opening the app shows the loading ring round the start circle again, filling as the app loads. The app icon is now Mentor.",
         "Tapping the start circle no longer flashes a blue square where the bar will be, and the bar fades back in after typing instead of popping.",
