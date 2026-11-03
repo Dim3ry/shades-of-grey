@@ -127,8 +127,10 @@ def main():
               and len(info["own"]) == 1 and info["own"][0][0] == 320 and str(info["own"][0][1][0]).startswith("inset("), info)
         # U6b (v126): the window's orb is the chosen look (Futuristic here), so the old lens orb's wake, glance and 40 s ring turn are gone;
         # the whole-orb float stays, and the look's own motion runs (Thinking's slow 14 s turn while Mentor gets ready, then the 6 s glow)
+        # U7 (round 7's drawings): the look's own motion has new names and timings (a 6.5 s bob, a blink, and so on), so this checks that some
+        # slow motion of the look's own (an ml- animation of 3 s or longer) runs alongside the float, not one named animation.
         check("idle: float 4 s, and the look's own slow motion", names.get("mp-float", [0, 0])[1] == 4000
-              and (names.get("ml-spin", [0, 0])[1] == 14000 or names.get("ml-glow", [0, 0])[1] in (3000, 6000)), names)
+              and any(k and k.startswith("ml-") and v[1] >= 3000 for k, v in names.items()), names)
         check("the orb is the Futuristic look, in its own box", page.locator(".mentor-window .mentor-orbbox.ml-live svg.ml-futuristic").count() == 1)
         page.wait_for_function("() => document.querySelector('.mentor-window').getAnimations().length === 0")   # MW1: opened in full first
         # T6: the close animation is read as soon as Escape has been handled (on a busy machine a read made afterwards could miss it);

@@ -4899,11 +4899,14 @@
     if (settings.mentorLook !== undefined && !goodMentorLook(settings.mentorLook)) delete settings.mentorLook;
     applyMentorLook();
 
-    // The orb for the window: the chosen look in one of its states (U6b). It is drawn 1.2 times larger in its box than in the round button, as
-    // before (the narrower viewBox), and its box (class ml-live) is the only place the look's own slow motion runs.
+    // The orb for the window: the chosen look in one of its states (U6b). Its box (class ml-live) is the only place the look's own slow motion runs.
+    // U7: drawn with the drawing's own viewBox (round 6 cropped it to "25 25 150 150" to zoom in; round 7's brackets and loose shards reach the
+    // edge, so the crop would cut them off). A mood swaps in a fresh drawing, so a part that keeps turning (.ml-orbit: Magical's stone ring) is
+    // started where the clock has it rather than at 0 degrees: the ring turns on through a mood instead of jumping back.
     function buildMentorOrb(state) {
       const svg = mentorLookSvg(currentMentorLook(), state || "neutral");
-      svg.setAttribute("viewBox", "25 25 150 150");
+      const at = `${-Math.round(performance.now()) / 1000}s`;
+      for (const turning of svg.querySelectorAll(".ml-orbit")) turning.style.animationDelay = at;
       svg.classList.add("mp-orb");
       return svg;
     }
@@ -4967,7 +4970,7 @@
       if (icon && drawing && o.width) {
         const s = icon.getBoundingClientRect();
         const units = (el, fallback) => (el.viewBox && el.viewBox.baseVal && el.viewBox.baseVal.width) || fallback;
-        const scale = (s.width / units(icon, 166.67)) / (o.width / units(drawing, 150));   // the same drawing size as on the button
+        const scale = (s.width / units(icon, 166.67)) / (o.width / units(drawing, 166.67));   // the same drawing size as on the button (U7: no crop, so both are 166.67)
         const tx = s.left + s.width / 2 - (o.left + o.width / 2) - dx, ty = s.top + s.height / 2 - (o.top + o.height / 2) - dy;
         frames.orb = [{ transform: `translate(${px(tx)}, ${px(ty)}) scale(${Math.round(scale * 1000) / 1000})`, easing: MENTOR_MOVE_EASE },
           { transform: "translate(0px, 0px) scale(1)", offset: MENTOR_SHAPE_AT }, { transform: "translate(0px, 0px) scale(1)" }];
