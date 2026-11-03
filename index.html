@@ -2854,7 +2854,11 @@
       transition: filter var(--motion-fast) var(--motion-ease), background-color var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease),
         color var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease), outline-color var(--motion-fast) var(--motion-ease); }
     .theme-swatch { outline: 3px solid transparent; outline-offset: 2px; transition: filter var(--motion-fast) var(--motion-ease), outline-color var(--motion-fast) var(--motion-ease); }   /* the chosen look's ring fades in rather than popping */
-    .lq-hush, .lq-hush *, .lq-hush *::before, .lq-hush *::after { transition: none !important; }
+    /* only LQ1's own colour clocks are hushed: the menu, the start circle, the ring and the Mentor button keep their own timing (MO6, MW1) */
+    .lq-hush :is(.primary-button, .plain-button, .danger-button, .link-button, .step-back, .up-button, .each-up, .each-back, .group-button, .faction-button, .recipe-item,
+        .recipe-chip, .paint-head, .guides-row, .scheme-recipe-row, .swatch-tile, .qty-step, .switch-row button, .buy-shops button, .similar-tabs button, .where-buy > summary,
+        .shop-more > summary, .where-buy-links a, .shop-suggest-dismiss, .unlink, .more-info-button, .card-fold-button, .step-line, .pick-box, .legend button, .mentor-chip,
+        .theme-swatch, .chip, .seg > button):not(.tabs *, .arc *, #mentor-button) { transition: none !important; }
     /* A chip switched on or off (app.js): drawn switched off under a copy of its switched-on look, which a clip with a rounded edge uncovers or covers. */
     .chip.lq-chip-hold, .chip.lq-chip-snap { transition: none !important; }
     #group-chips .chip.lq-chip-hold.lq-chip-hold[aria-pressed]::before { width: 0; margin-right: 0; opacity: 0; }

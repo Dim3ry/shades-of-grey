@@ -37,6 +37,10 @@ def leave_launch(page):
         page.evaluate(_TAP)
     page.evaluate(_FINISH_BAR)
     wait_settled(page)
+    # v130: MO6's loading screen (.mo6-load) fades away after the start (even with Reduce motion, where it is an opacity fade with no
+    # movement, as MO6 designed it). Tests that leave the start page want to be on the section, so they also wait for that screen to be
+    # gone; otherwise a check right after the load ("nothing animates") could catch its last 120 to 240 ms.
+    page.wait_for_function("() => !document.querySelector('.mo6-load')", timeout=10000)
 
 
 def open_settings(page):

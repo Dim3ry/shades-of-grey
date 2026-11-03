@@ -9676,7 +9676,8 @@
     // out once, as before, so a long list below costs nothing extra on each frame. The panel is the one the button names (aria-controls),
     // or the element straight after it. Skipped where the panel already has its own motion (Details on a unit, the stage chips, Mentor,
     // the <details> folds, which open their height in CSS) and for tabs and text boxes.
-    const LQ_FOLD_SKIP = '[role="tab"], [role="combobox"], input, summary, .details-toggle, #stage-chips-toggle, #mentor-button, .mentor-orb, .tabs *, .arc *, .mentor-backdrop *, .mentor-window *';
+    const LQ_FOLD_SKIP = '[role="tab"], [role="combobox"], input, summary, .details-toggle, #stage-chips-toggle, #mentor-button, .mentor-orb, .tabs *, .arc *, .mentor-backdrop *, .mentor-window *, '
+      + '#unit-list li.unit *, #unit-side *';   // MC1 (v130) owns a unit card's opening and closing (its own unroll and glideCards), Mo2 its Details
     let lqFold = null;
     const lqSliding = new Set();   // the slides still running: any new tap or key ends them first, so nothing measures a page that is still moving
     const lqSettle = () => { for (const a of lqSliding) a.finish(); lqSliding.clear(); };
@@ -9898,7 +9899,7 @@
     }
     new MutationObserver((records) => {   // and any other change of look
       if (records.some(r => r.oldValue !== document.documentElement.getAttribute(r.attributeName))) lqHush();   // (set again to the same value: nothing changed)
-    }).observe(document.documentElement, { attributes: true, attributeOldValue: true, attributeFilter: ["data-t", "data-m", "data-appearance", "data-look", "style"] });
+    }).observe(document.documentElement, { attributes: true, attributeOldValue: true, attributeFilter: ["data-t", "data-m", "data-appearance", "data-look"] });   // (not "style": the stage colours come through applyPalette, and MO6 sets its own values there)
     // ----- The pop-up message with Undo -----
 
     const toast = document.getElementById("toast");

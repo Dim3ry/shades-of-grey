@@ -17,6 +17,7 @@ from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
+from common import open_unit_card
 
 results = []
 
@@ -77,6 +78,8 @@ def main():
         page.wait_for_timeout(300)
 
         print("\n--- 1. Pressed look from the touch ---")
+        open_unit_card(page, "#unit-list > li.unit:nth-child(2)")   # MC1 (v130): cards start closed; the stage arrows are in the open card
+        page.wait_for_timeout(400)
         sel = "#unit-list > li.unit:nth-child(2) .up-button"
         touch(page, sel, "pointerdown")
         st = page.evaluate("s => { const el = document.querySelector(s); const c = getComputedStyle(el); return [el.classList.contains('lq-press'), c.filter, c.transform, c.scale, c.translate]; }", sel)
