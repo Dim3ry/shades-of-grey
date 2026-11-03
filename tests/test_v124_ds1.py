@@ -81,15 +81,42 @@ def main():
         check("Save it as a file downloads the saved text as it is",
               saved_file.suggested_filename.startswith("minifolio-unreadable-units") and open(saved_file.path()).read() == damaged,
               saved_file.suggested_filename)
+        # While paused, Restore is refused before any safety copy is touched.
+        page.evaluate("localStorage.setItem('mini-tracker-models-before-restore', JSON.stringify({ date: todayISO(), models: [{ id: 9, name: 'Kept', stage: 0 }] }))")
+        old_copy = stored(page, UNITS + "-before-restore")
+        page.set_input_files("#restore-file", files=[{"name": "b.json", "mimeType": "application/json",
+                                                       "buffer": json.dumps([{"id": 1, "name": "X", "stage": 0}]).encode()}])
+        page.wait_for_timeout(400)
+        check("while paused, Restore is refused with one message", "unreadable data as a file" in page.text_content("#toast")
+              and not page.is_visible("#dialog-yes"), page.text_content("#toast"))
+        check("…and the earlier safety copy is untouched", stored(page, UNITS + "-before-restore") == old_copy and stored(page, UNITS) == damaged)
+        page.evaluate("renderSettings()"); page.wait_for_timeout(300)
+        check("…and Clean up photo storage is off", page.evaluate("document.getElementById('clean-photos').disabled"))
+        # A second window, also paused.
+        other = ctx.new_page()
+        other.on("pageerror", lambda e: errors.append(str(e)))
+        other.goto(t.URL); app_ready(other); leave_launch(other)
+        check("a second window is paused too", other.is_visible("#save-banner") and other.evaluate("unreadableParts.length") == 1)
         page.click("#banner-retry"); quiet(page)
-        check("Start again asks first, with focus on the safe answer",
-              page.is_visible("#dialog-yes") and page.evaluate("document.activeElement.id") == "dialog-no")
+        check("Start again asks first, with focus on the safe answer, before keeping any copy",
+              page.is_visible("#dialog-yes") and page.evaluate("document.activeElement.id") == "dialog-no"
+              and stored(page, UNITS + "-unreadable") is None)
         page.click("#dialog-yes"); quiet(page)
         check("…then saving works again and the banner goes", not banner.is_visible() and stored(page, UNITS) == "[]")
         check("…and a copy is kept under -unreadable", stored(page, UNITS + "-unreadable") == damaged)
         page.evaluate("renderSettings()")
         row = page.locator("#recover-list li", has_text="Unreadable units")
-        check("…listed under Recover earlier data with Save as file", row.count() == 1 and row.locator("button").text_content() == "Save as file")
+        check("…listed under Recover earlier data with its date and Save as file", row.count() == 1
+              and "saved" in row.text_content() and row.locator("button").text_content() == "Save as file", row.text_content() if row.count() else "")
+        page.evaluate("() => { models.push({ id: 1, name: 'Started again', stage: 0, count: 1, hobby: '', faction: '' }); render(); }")
+        other.wait_for_function("() => unreadableParts.length === 0 && models.length === 1", timeout=5000)
+        check("the second window catches up: no longer paused, banner gone", not other.is_visible("#save-banner")
+              and other.evaluate("models.map(m => m.name)") == ["Started again"])
+        other.evaluate("() => { models.push({ id: 2, name: 'Second window', stage: 0, count: 1, hobby: '', faction: '' }); render(); }")
+        check("…its next save keeps the first window's units and the unreadable copy",
+              [u["name"] for u in json.loads(stored(page, UNITS))] == ["Started again", "Second window"]
+              and stored(page, UNITS + "-unreadable") == damaged)
+        other.close()
 
         # 2. Recover keeps units and recipes together.
         start(page, units=[{"id": 1, "name": "A unit", "stage": 0}], recipes=book(["RA"]))
@@ -136,6 +163,20 @@ def main():
             document.getElementById('toast-undo').click();
             return { back: book.paints.findIndex(x => x.name === 'Mephiston Red'), other: paintStatus(book.paints.find(x => x.name === 'Abaddon Black')) }; }""")
         check("Undo of Remove puts the paint back in its place and keeps the other change", r == {"back": 0, "other": "wishlist"}, r)
+        r = page.evaluate("""() => {
+            const red = findOrAddPaint('Citadel', 'Evil Sunz Scarlet', '#c01411');
+            book.recipes.push({ id: 1, name: 'Red armour', steps: [{ technique: '', coats: 1, paints: [{ paint: red.id, mix: 100 }], ratio: '', note: '', optional: false }] });
+            book = cleanRecipeBook(book); render();
+            const from = book.paints.find(x => x.name === 'Evil Sunz Scarlet'), into = book.paints.find(x => x.name === 'Mephiston Red');
+            const oldId = from.id;
+            mergePaintInto(from, into);
+            const fresh = findOrAddPaint('Citadel', 'Brand New Paint', '#ffffff'); render();
+            document.getElementById('toast-undo').click();
+            const back = book.paints.find(x => x.name === 'Evil Sunz Scarlet');
+            return { newId: fresh.id !== oldId, backId: back && back.id === oldId, link: book.recipes[0].steps[0].paints[0].paint === oldId,
+                     kept: book.paints.some(x => x.name === 'Brand New Paint') }; }""")
+        check("a paint added after a merge never takes the merged paint's id", r["newId"], r)
+        check("…so Undo brings the paint back with its recipe link, and keeps the new paint", r["backId"] and r["link"] and r["kept"], r)
 
         # 4. Recipes-only restore and unit links.
         start(page, units=[{"id": 1, "name": "Intercessors", "stage": 0, "recipes": [1]}, {"id": 2, "name": "Skeletons", "stage": 0, "recipes": [2]}],
@@ -172,6 +213,19 @@ def main():
         check("Delete all starts on the safe answer", page.evaluate("document.activeElement.id") == "dialog-no")
         page.keyboard.press("Enter"); quiet(page)
         check("…so Enter keeps the units", page.evaluate("models.length") == len(units) and not page.is_visible("#dialog-yes"))
+        # Delete all: Undo keeps a unit added since; a failed save changes nothing.
+        r = page.evaluate("""() => { document.getElementById('delete-all').click(); document.getElementById('dialog-yes').click();
+            addModel({ name: 'Added after', hobby: '', faction: '' }); render();
+            document.getElementById('toast-undo').click();
+            return { n: models.length, after: models.some(m => m.name === 'Added after'), ids: new Set(models.map(m => m.id)).size }; }""")
+        check("Undo of Delete all brings the units back and keeps one added since", r == {"n": len(units) + 1, "after": True, "ids": len(units) + 1}, r)
+        r = page.evaluate("""() => { const real = Storage.prototype.setItem;
+            Storage.prototype.setItem = function (k, v) { if (k === 'mini-tracker-models') throw new DOMException('full', 'QuotaExceededError'); return real.call(this, k, v); };
+            document.getElementById('delete-all').click(); document.getElementById('dialog-yes').click();
+            Storage.prototype.setItem = real;
+            return { n: models.length, toast: document.getElementById('toast').textContent }; }""")
+        check("Delete all that can't be saved changes nothing and says so", r["n"] == len(units) + 1 and "couldn't be saved" in r["toast"]
+              and "Deleted" not in r["toast"], r)
 
         # 7. Back-forward cache and background.
         start(page, units=[{"id": 1, "name": "Mine", "stage": 0}], recipes=book([]))

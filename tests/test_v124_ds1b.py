@@ -1,7 +1,7 @@
 """Chunk DS1 tests for Minifolio, part 2: the offline helper (the service worker) serves one version of the app at a time.
 1. A newer page whose code files can't be fetched is not run with the older code: the saved page (and its code) is used.
 2. A newer page whose code files can be fetched is used, with its own code.
-3. An error from the host (500) gets the saved copy of the page.
+3. An error from the host (500) gets the saved copy of the page; a redirect is followed.
 4. Offline after that, the page and its code are still one version.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, re, sys
@@ -64,6 +64,13 @@ def main():
         page.reload(); app_ready(page)
         check("a 500 from the host: the saved copy of the page opens", page.title() == "Minifolio" and page.evaluate("typeof models") == "object",
               page.title())
+
+        # 3b. A redirect from the host is followed, not treated as an error.
+        ctx.unroute(is_page)
+        ctx.route(is_page, lambda route: route.fulfill(status=302, headers={"Location": "/index.html"}) if "go=1" in route.request.url
+                  else route.continue_())
+        page.goto(t.BASE + "?go=1"); app_ready(page)
+        check("a redirect from the host is followed", page.url.endswith("/index.html") and page.evaluate("typeof models") == "object", page.url)
 
         # 4. Offline afterwards.
         ctx.unroute(is_page)

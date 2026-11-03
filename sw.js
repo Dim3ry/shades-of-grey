@@ -115,7 +115,8 @@ self.addEventListener("fetch", (event) => {
     ? caches.match(event.request).then((saved) => saved || fetchAndKeep(event.request))
     : fetchAndKeep(event.request).then(
         // DS1: the web answered with an error (404, 500, 503...) and there is a saved copy? Use the saved copy.
-        (response) => response.ok ? response : caches.match(event.request).then((saved) => saved || response),
+        (response) => response.ok || response.type === "opaqueredirect" ? response
+          : caches.match(event.request).then((saved) => saved || response),
         // No internet: the saved copy of exactly this file, if there is one. (v21.4: a missing script or picture just
         // fails, rather than being handed the page by mistake.)
         () => caches.match(event.request).then((saved) => saved || Response.error())));
@@ -156,6 +157,8 @@ function codeFilesSaved(pageText, pageUrl) {
 }
 function pageResponse(request) {
   const fromWeb = fetch(request).then((response) => {
+    // A redirect (a page load gets it as an "opaqueredirect" answer) is fine: the browser follows it. Not saved.
+    if (response.type === "opaqueredirect") return { response, good: true };
     if (!response.ok) return { response, good: false };
     return response.clone().text()
       .then((text) => codeFilesSaved(text, request.url))
