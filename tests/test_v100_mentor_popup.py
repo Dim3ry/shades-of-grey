@@ -2,7 +2,7 @@
 1. The round button opens a window (on the start circle and from each main section); greeting from the list; text box switched off; chip text.
 2. Dialog: focus goes in and stays in, X / scrim / Escape / Back close it and focus returns to the button; the page behind does not scroll.
 3. The Paint Picker chip closes it and lands on Painting > Colour Lab > Paint Picker.
-4. Motion: grows from the button's centre, idle movement only while open (U6b: the look's own motion, no lens wake); reduced motion has none.
+4. Motion: opens out of the button (MW1), idle movement only while open (U6b: the look's own motion, no lens wake); reduced motion has none.
 5. Nothing stored or sent. 360 and 390 px, dark and light, wide screen: inside the screen, taps 44 px or more.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, sys
@@ -116,21 +116,25 @@ def main():
         print("\n--- 4. Motion ---")
         t.main_tab(page, "dashboard")
         page.click("#mentor-button")
-        info = page.evaluate("""() => { const w = document.querySelector('.mentor-window'), b = document.getElementById('mentor-button').getBoundingClientRect(), r = w.getBoundingClientRect();
-            const anims = w.getAnimations({subtree: true}).map(a => [a.animationName, a.effect.getTiming().duration, a.effect.getTiming().delay]);
-            return { ox: parseFloat(w.style.getPropertyValue('--mp-ox')), oy: parseFloat(w.style.getPropertyValue('--mp-oy')),
-                     cx: b.left + b.width / 2 - w.offsetLeft, cy: b.top + b.height / 2 - w.offsetTop, anims }; }""")
+        # MW1 (v127): the X5 grow from the button's centre (mp-grow, --mp-ox/--mp-oy, 240 ms) became the round button's circle opening out into
+        # the window (app.js plays it: a clip-path and a translate, 320 ms); test_v127_mw1 checks where it starts and ends.
+        info = page.evaluate("""() => { const w = document.querySelector('.mentor-window');
+            const anims = w.getAnimations({subtree: true}).map(a => [a.animationName || null, a.effect.getTiming().duration, a.effect.getTiming().delay]);
+            const own = w.getAnimations().map(a => [a.effect.getTiming().duration, a.effect.getKeyframes().map(k => k.clipPath)]);
+            return { anims, own }; }""")
         names = {a[0]: a for a in info["anims"]}
-        check("grows from the button's centre (origin measured, not fixed)", abs(info["ox"] - info["cx"]) < 1.5 and abs(info["oy"] - info["cy"]) < 1.5, info)
+        check("opens out of the button: the window's own move is a 320 ms clip-path (no mp-grow)", "mp-grow" not in names
+              and len(info["own"]) == 1 and info["own"][0][0] == 320 and str(info["own"][0][1][0]).startswith("inset("), info)
         # U6b (v126): the window's orb is the chosen look (Futuristic here), so the old lens orb's wake, glance and 40 s ring turn are gone;
         # the whole-orb float stays, and the look's own motion runs (Thinking's slow 14 s turn while Mentor gets ready, then the 6 s glow)
-        check("open 240 ms", names.get("mp-grow", [0, 0])[1] == 240, names)
         check("idle: float 4 s, and the look's own slow motion", names.get("mp-float", [0, 0])[1] == 4000
               and (names.get("ml-spin", [0, 0])[1] == 14000 or names.get("ml-glow", [0, 0])[1] in (3000, 6000)), names)
         check("the orb is the Futuristic look, in its own box", page.locator(".mentor-window .mentor-orbbox.ml-live svg.ml-futuristic").count() == 1)
+        page.wait_for_function("() => document.querySelector('.mentor-window').getAnimations().length === 0")   # MW1: opened in full first
         page.keyboard.press("Escape")
-        closing = page.evaluate("() => { const w = document.querySelector('.mentor-window'); return w ? w.getAnimations().map(a => [a.animationName, a.effect.getTiming().duration, a.effect.getTiming().direction]) : null; }")
-        check("close is the same grow in reverse, 120 ms", closing and ["mp-grow", 120, "reverse"] in closing, closing)
+        closing = page.evaluate("() => { const w = document.querySelector('.mentor-window'); return w ? w.getAnimations().map(a => [a.effect.getTiming().duration, a.effect.getTiming().direction]) : null; }")
+        # MW1 (v127): closing is the same move backwards into the button, 240 ms (X5 shrank it with mp-grow in reverse in 120 ms)
+        check("close is the same move in reverse, 240 ms", closing and [240, "reverse"] in closing, closing)
         closed(page)
         check("nothing keeps running once closed", page.evaluate("() => document.getAnimations().filter(a => String(a.animationName || '').startsWith('mp-')).length") == 0)
         rm = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block", reduced_motion="reduce")
