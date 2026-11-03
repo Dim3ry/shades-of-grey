@@ -6,6 +6,7 @@ import os, subprocess, sys, tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import run_all
+from common import speed_factor
 
 bad = 0
 
@@ -28,8 +29,9 @@ def runner(files, *args):
         for name, body in files.items():
             with open(os.path.join(d, name), "w") as f:
                 f.write(body)
+        # T6: 120 s on a normal machine, stretched by the runner's speed check (it timed out on a laptop measured 3+ times slower)
         run = subprocess.run([sys.executable, os.path.join(HERE, "run_all.py"), "--jobs", "2", *args],
-                             env=dict(os.environ, SOG_TESTS_DIR=d), capture_output=True, text=True, timeout=120)
+                             env=dict(os.environ, SOG_TESTS_DIR=d), capture_output=True, text=True, timeout=120 * speed_factor())
         return run.returncode, run.stdout
 
 
