@@ -4469,14 +4469,14 @@
     const MENTOR_PHRASES = {
       greeting: ["How can I help?", "What are you painting?", "Ready when you are."],
       picker: ["Let's find some paints.", "Welcome back. Pick a colour and a part."],   // not shown yet
-      thinking: [], answer: [], unsure: ["I could not find that yet."], finished: [], actions: [],   // X6b fills unsure; the rest wait for X9
+      thinking: [], answer: [], unsure: ["I do not know that yet."], finished: [], actions: [],   // X6b fills unsure (E: one plain line); the rest wait for X9
     };
     const MENTOR_TYPING = true;    // X6b: the text box is on (one line to switch it off)
     const MENTOR_MAX_LENGTH = 300;
     const MENTOR_MAX_MESSAGES = 30;
     const MENTOR_IDLE_MINUTES = 30;   // D: after this long without a message (yours or Mentor's), the window opens at its start. The one place to change it.
     let mentorLastAt = 0;          // D: the app's clock (Date.now) when the last message was added; kept in memory only, like the messages
-    const mentorMessages = [];     // { who: "me" | "mentor", text, sources, suggestions, pick }: the last 30, kept only while the app is open
+    const mentorMessages = [];     // { who: "me" | "mentor", text, sources, suggestions, pick, didYouMean }: the last 30, kept only while the app is open
     const mentorUsed = new Set();  // questions already asked (lower case): a starter chip with the same words drops out of the row
     let mentorWarm = false;
     let mentorState = null;        // null, or { backdrop, win, opener, onKey } while the window is open
@@ -4530,9 +4530,10 @@
       return knowledgeIndex().list({ kind: "starter" }).map(e => e.title).filter(t => t && !mentorUsed.has(t.toLowerCase()));
     }
     // Ask the engine. The Paint Picker's own colour code does the picks (ctx.ideas), so they are exactly the Paint Picker's.
-    function mentorAsk(text) {
+    function mentorAsk(text, confirmed) {
       let pick = null;
       const answer = MinifolioMentor.mentorAnswer(text, {
+        confirmed: !!confirmed,   // E: a tapped "Did you mean" chip is answered plainly, with no second chip
         index: knowledgeIndex(),
         paints: colourIdeaPool(),
         tips: typeof MENTOR_TIPS === "undefined" ? [] : MENTOR_TIPS,
@@ -4611,6 +4612,17 @@
         return box;
       }
       box.className = "mentor-msg mentor-reply";
+      // E: a weaker match (the engine's band "maybe") starts with one line, "Did you mean", and one chip: the question as Mentor read it
+      // (typos put right) or the best entry's title. The chip asks it. Once that question has been asked, the line and chip go.
+      if (m.didYouMean && !mentorUsed.has(String(m.didYouMean).toLowerCase())) {
+        const dym = document.createElement("p");
+        dym.className = "mentor-dym";
+        dym.textContent = "Did you mean";
+        const row = document.createElement("div");
+        row.className = "mentor-chips mentor-chips-in mentor-dym-chips";
+        row.appendChild(mentorChip(m.didYouMean, () => mentorSend(m.didYouMean, true, true)));
+        box.append(dym, row);
+      }
       const lead = document.createElement("p");
       lead.className = "mentor-lead";
       lead.textContent = m.text;
@@ -4662,8 +4674,8 @@
       state.chips.replaceChildren(state.pickerChip, ...mentorStarters().map(t => mentorChip(t, () => mentorSend(t, true))));
     }
 
-    // Send what the box holds (or the text of a chip). Returns false when there was nothing to send.
-    function mentorSend(raw, fromChip) {
+    // Send what the box holds (or the text of a chip). Returns false when there was nothing to send. E: confirmed is true for a "Did you mean" chip.
+    function mentorSend(raw, fromChip, confirmed) {
       const state = mentorState;
       const text = String(raw == null ? "" : raw).trim().slice(0, MENTOR_MAX_LENGTH);
       if (!state || !text) return false;
@@ -4672,16 +4684,18 @@
         if (!mentorUsed.has(c.textContent.toLowerCase())) continue;
         const row = c.parentElement;
         c.remove();
+        if (row.classList.contains("mentor-dym-chips") && row.previousElementSibling && row.previousElementSibling.classList.contains("mentor-dym")) row.previousElementSibling.remove();   // E: "Did you mean" goes with its chip
         if (!row.children.length) row.remove();
       }
       let reply;
       try {
-        const { answer, pick } = mentorAsk(text);
+        const { answer, pick } = mentorAsk(text, confirmed);
+        // E: no answer: one line, and the starter questions that share the most words with it under it (the engine's suggestions)
         reply = answer.kind === "none"
-          ? { who: "mentor", text: mentorPhrase(MENTOR_PHRASES.unsure, "I could not find that yet."), sources: [], suggestions: answer.suggestions || [] }
-          : { who: "mentor", text: answer.lead, sources: answer.sources || [], pick };
+          ? { who: "mentor", text: mentorPhrase(MENTOR_PHRASES.unsure, "I do not know that yet."), sources: [], suggestions: answer.suggestions || [] }
+          : { who: "mentor", text: answer.lead, sources: answer.sources || [], pick, didYouMean: answer.band === "maybe" && answer.didYouMean ? answer.didYouMean : "" };
       } catch (ignored) {
-        reply = { who: "mentor", text: mentorPhrase(MENTOR_PHRASES.unsure, "I could not find that yet."), sources: [], suggestions: [] };
+        reply = { who: "mentor", text: mentorPhrase(MENTOR_PHRASES.unsure, "I do not know that yet."), sources: [], suggestions: [] };
       }
       const mine = { who: "me", text };
       mentorMessages.push(mine, reply);
@@ -4691,7 +4705,7 @@
       while (mentorMessages.length > MENTOR_MAX_MESSAGES) mentorMessages.shift();
       while (state.msgs.children.length > mentorMessages.length) state.msgs.firstElementChild.remove();
       state.win.classList.add("mentor-chatting");
-      state.status.textContent = reply.text;   // announced politely; the rows themselves are not read out unprompted
+      state.status.textContent = reply.didYouMean ? `Did you mean ${String(reply.didYouMean).replace(/[?.!]+$/, "")}? ${reply.text}` : reply.text;   // announced politely; the rows themselves are not read out unprompted
       mentorDrawChips(state);
       state.scroll.scrollTop = first.offsetTop - 4;
       if (fromChip) state.scroll.focus({ preventScroll: true });   // the chip that was tapped is gone, and a chip must not open the keyboard
