@@ -5,7 +5,7 @@
    A tap on the open card's header closes it.
 3. The open card's stepper works in one tap, and a stage change draws only that card again; a redraw keeps the open card open
    and the closed ones closed (MS1's cardKey knows which is open).
-4. goToUnit opens its card (and Details) and scrolls to it.
+4. goToUnit opens its card (and Details) and scrolls to it. Undo after deleting a unit from its open card brings it back open.
 5. Keyboard: Enter opens, focus stays on the card, Tab reaches the buttons inside, Space closes.
 6. Motion: the opened card unrolls (clip-path) and the cards below move (transform), nothing is left at rest; Reduce motion: no animation.
 7. Wide screen (1280 px): a tap opens the unit in the side pane, as before, and the other list cards stay compact.
@@ -133,6 +133,17 @@ def main():
         check("goToUnit opens its card with its Details", open_ids(page) == [11] and r["panel"], (open_ids(page), r))
         check("…and scrolls it onto the screen", r["top"] < r["h"] and r["bottom"] > 0, r)
         page.locator(card(11) + " .name").click()
+        settle(page)
+        page.locator(card(8)).click()
+        settle(page)
+        page.locator(card(8) + " .details-toggle").click()
+        page.locator(card(8) + " .panel button.danger-button", has_text="Delete").last.click()
+        page.click("#dialog-yes")
+        check("Delete from an open card takes it out", page.locator(card(8)).count() == 0 and open_ids(page) == [])
+        page.click("#toast-undo")
+        settle(page)
+        check("…and Undo brings it back open, with its Details", open_ids(page) == [8] and page.locator(card(8) + " > .panel").count() == 1, open_ids(page))
+        page.locator(card(8) + " .name").click()
         settle(page)
 
         print("\n--- 5. Keyboard ---")

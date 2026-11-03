@@ -6568,6 +6568,7 @@
     }
     function renderUnits(how) {
       staleTabs.delete("units");   // DS2: drawn now (see render)
+      if (openCardId !== null && !models.some(m => m.id === openCardId)) openCardId = null;   // MC1: a deleted unit's card (a new unit may get its number)
       // M2: the Detailed / Simple switch for model rows shows only while some unit is tracked model by model.
       modelRowsSwitch.classList.toggle("hidden", !models.some(m => m.each));
       for (const b of modelRowsSwitch.querySelectorAll("button")) b.setAttribute("aria-pressed", String((b.dataset.rows === "simple") === rowsSimple()));
