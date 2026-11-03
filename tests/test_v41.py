@@ -127,7 +127,8 @@ def main():
 
         open_ideas(page, h.JUST_BLUE)
         r0 = ideas_rows(page)
-        check("Compendium Colour ideas show unowned paints with a closed shop fold-out (as before)", len(r0) >= 3 and all(r["fold"] and r["add"] == 1 for r in r0), r0)
+        # F1: the one Add is now on the row, outside the fold-out (ideas_rows counts every Add in the row)
+        check("Compendium Colour ideas show unowned paints with a closed shop fold-out and one Add", len(r0) >= 3 and all(r["fold"] and r["add"] == 1 for r in r0), r0)
         page.locator("#cmp-fold-ideas-panel > .idea-list > li .shop-more > summary").first.click()
         page.locator("#cmp-fold-ideas-panel > .idea-list > li .shop-add button").first.click()
         page.wait_for_timeout(250)
@@ -178,7 +179,8 @@ def main():
         page.locator("#cmp-fold-ideas-panel > .idea-list > li", has_text=listed_name).locator("summary").click()
         shows = page.locator("#cmp-fold-ideas-panel > .idea-list > li", has_text=listed_name).locator(".shop-onlist").count()
         adds = page.locator("#cmp-fold-ideas-panel > .idea-list > li", has_text=listed_name).locator(".shop-add button").count()
-        check("and its fold-out shows no Add button (it says the same words)", shows == 1 and adds == 0, (shows, adds))
+        # F1: the Add sits on the row now (the fold-out keeps only its links), and once listed the row's tag says it, so the words are not repeated
+        check("and its row shows no Add button and does not repeat the words", shows == 0 and adds == 0, (shows, adds))
         pick = next(r for r in ideas_rows(page) if r["tag"] != LISTED)
         idx = [r["name"] for r in ideas_rows(page)].index(pick["name"])
         page.locator("#cmp-fold-ideas-panel > .idea-list > li").nth(idx).locator("summary").click()

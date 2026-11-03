@@ -2084,6 +2084,7 @@
         if (key !== "low") delete paint.spare;
         if (!haveIt({ status: key })) delete paint.qty;
         if (key === "owned") delete paint.shopFrom;   // v40: owned paints are off the list, so they forget where they came from
+        if (key === "wishlist") delete paint.shopDismissed;   // F1: on the list again, so a later Remove or Empty can suggest it afresh
       } else {
         delete paint.status;
         delete paint.spare;
@@ -2091,6 +2092,14 @@
         delete paint.shopFrom;   // v40
         paint.owned = false;
       }
+    }
+
+    // F1: a status set with the status buttons. Taking a paint off the shopping list this way (Wishlist to Empty, Not owned or no status)
+    // counts as dismissing it, as Remove on the list does, so it does not jump into Suggested. Owned and Running low need no dismissal.
+    function setStatusByHand(paint, key) {
+      const was = paintStatus(paint);
+      applyPaintStatus(paint, key);
+      if (was === "wishlist" && key !== "wishlist" && !haveIt(paint)) paint.shopDismissed = true;
     }
 
     // The status buttons in a paint's details. Tap one to set it; tap it again to clear it.
@@ -2106,7 +2115,7 @@
       const current = paintStatus(paint);
       for (const s of PAINT_STATUSES) {
         const chip = makeChip(s.label, current === s.key, () => {
-          applyPaintStatus(paint, current === s.key ? "" : s.key);
+          setStatusByHand(paint, current === s.key ? "" : s.key);   // F1
           render();
         }, s.colour);
         chip.classList.add("status-chip");
@@ -2290,6 +2299,7 @@
       if (!paint || paintStatus(paint) !== "wishlist") return;
       const from = Array.isArray(paint.shopFrom) ? paint.shopFrom.slice() : [];
       applyPaintStatus(paint, "notowned");
+      paint.shopDismissed = true;   // F1: taken off the list counts as dismissed, so it does not jump straight into Suggested
       if (!afterShopChange()) { showNotSaved(); return; }
       showToast(`Removed ${paint.name} from your shopping list`, () => {
         const back = book.paints.find(p => p.id === id);
@@ -2328,6 +2338,92 @@
         if (!afterShopChange()) { showNotSaved(); return; }
         showToast("Cleared the bought paints");
       }, { danger: true, yes: "Clear" });
+    }
+
+    // F1: Suggested, a closed fold-out under the list. It never puts anything on the list (v62 still holds): it shows Empty paints and
+    // Not owned paints that one of your own recipes uses, each with its own Add (addToShoppingList, source "Suggested") and Dismiss.
+    // Dismiss, and Remove on the list, set shopDismissed on the paint: it stays out until it goes on the list again (applyPaintStatus
+    // clears it at Wishlist). Example and made-up paints never show, as on the list. The basket counts only shoppingItems().
+    let suggestedOpen = false;   // closed until you open it (kept while the app is open, so Add and Dismiss do not shut it)
+    function suggestedItems() {
+      const used = new Set();
+      for (const r of book.recipes) if (r.example !== true) for (const s of r.steps) for (const sp of s.paints) used.add(sp.paint);
+      const out = [];
+      for (const p of book.paints) {
+        if (p.shopDismissed === true || isExamplePaint(p) || isMadeUpPaint(p)) continue;
+        const s = paintStatus(p);
+        if (s === "empty" || (s === "notowned" && used.has(p.id))) out.push({ paint: p, word: statusLabel(s) });
+      }
+      return out.sort((a, b) => (a.paint.brand || "￿").localeCompare(b.paint.brand || "￿") || a.paint.name.localeCompare(b.paint.name));
+    }
+    // After Add or Dismiss the panel is drawn again, so the focus goes to the next row's Add (or the fold-out's button, or the heading).
+    function focusSuggested(index) {
+      const adds = document.querySelectorAll("#shop-panel .shop-suggest-add");
+      const el = adds[Math.min(index, adds.length - 1)] || document.querySelector("#shop-panel .shop-suggest-head") || document.querySelector("#shop-panel h2");
+      if (el) { if (el.tagName === "H2") el.tabIndex = -1; el.focus(); }
+    }
+    function addSuggested(id, index) {
+      const paint = book.paints.find(p => p.id === id);
+      if (!paint || !addToShoppingList(paint, "Suggested")) return;
+      focusSuggested(index);
+    }
+    function dismissSuggested(id, index) {
+      const paint = book.paints.find(p => p.id === id);
+      if (!paint || paint.shopDismissed === true) return;
+      paint.shopDismissed = true;
+      if (!afterShopChange()) { showNotSaved(); return; }
+      focusSuggested(index);
+      showToast(`${paint.name} is no longer suggested`, () => {
+        const back = book.paints.find(p => p.id === id);
+        if (!back || back.shopDismissed !== true) return;
+        delete back.shopDismissed;
+        afterShopChange();
+      });
+    }
+    function buildSuggestedSection() {
+      const items = suggestedItems();
+      if (!items.length) return null;   // nothing qualifies: no fold-out at all
+      const box = document.createElement("div");
+      box.className = "shop-suggested";
+      const head = document.createElement("button");
+      head.type = "button";
+      head.className = "plain-button shop-suggest-head";
+      head.setAttribute("aria-expanded", String(suggestedOpen));
+      head.textContent = "Suggested";
+      const list = document.createElement("ul");
+      list.className = "shop-suggest-list";   // not "shop-list": that is the list itself
+      list.hidden = !suggestedOpen;
+      head.addEventListener("click", () => { suggestedOpen = !suggestedOpen; head.setAttribute("aria-expanded", String(suggestedOpen)); list.hidden = !suggestedOpen; });
+      items.forEach((x, index) => {
+        const li = document.createElement("li");
+        li.className = "shop-item shop-suggest-item";
+        li.dataset.paint = x.paint.id;
+        const text = document.createElement("span");
+        text.className = "shop-text";
+        const nameEl = document.createElement("span");
+        nameEl.textContent = x.paint.name + (String(x.paint.brand || "").trim() ? ` · ${x.paint.brand}` : "") + " ";   // the brand tells same-name paints apart
+        const word = document.createElement("small");
+        word.className = "shop-suggest-word";
+        word.textContent = x.word;
+        text.append(nameEl, word);
+        const add = document.createElement("button");
+        add.type = "button";
+        add.className = "plain-button shop-suggest-add";
+        add.textContent = "Add";
+        labelWithName(add, "", nameEl);   // "Add" then the paint's name
+        add.addEventListener("click", () => addSuggested(x.paint.id, index));
+        const dismiss = document.createElement("button");
+        dismiss.type = "button";
+        dismiss.className = "shop-suggest-dismiss";
+        dismiss.textContent = "✕";
+        dismiss.setAttribute("aria-label", "Dismiss");
+        labelWithName(dismiss, "", nameEl);   // "Dismiss" then the paint's name
+        dismiss.addEventListener("click", () => dismissSuggested(x.paint.id, index));
+        li.append(text, add, dismiss);
+        list.appendChild(li);
+      });
+      box.append(head, list);
+      return box;
     }
 
     // The list as plain text, one brand at a time (for copy as text).
@@ -2428,7 +2524,8 @@
     }
     function addToShoppingList(paint, source) {
       const before = JSON.stringify(book);
-      const mine = findOrAddPaint(paint.brand, paint.name, "");   // "" = leave a colour you already picked alone
+      // F1: a paint from Your Palette itself (Suggested) is used as it is, so a same-name paint of another brand is never picked instead
+      const mine = book.paints.includes(paint) ? paint : findOrAddPaint(paint.brand, paint.name, "");   // "" = leave a colour you already picked alone
       if (haveIt(mine)) return false;                            // you own it: nothing to add
       applyPaintStatus(mine, "wishlist");
       noteShopSource(mine, source || "Colour suggestion");        // v40
@@ -2517,11 +2614,15 @@
     }
     // v73: the "Add to shopping list" button for one paint, or "On your shopping list" once it is there. who = the hidden line holding the
     // paint's name. Shared by the Shop links fold-out and the Mentor picks. redrawAdd() makes it follow the list (after Add and after Undo).
-    function buildShopAddSlot(paint, source, who) {
+    // F1: tagged = the row's own tag already says "On your shopping list", so once listed the slot is left empty (no second copy of the
+    // words) and the focus goes to that tag.
+    function buildShopAddSlot(paint, source, who, tagged) {
       const addSlot = document.createElement("div");
       addSlot.className = "shop-add";
       addSlot.redrawAdd = () => {
         addSlot.replaceChildren();
+        addSlot.hidden = false;
+        if (onShoppingList(paint) && tagged) { addSlot.hidden = true; return null; }
         if (onShoppingList(paint)) {
           const done = document.createElement("span");
           done.className = "shop-onlist";
@@ -2535,7 +2636,20 @@
         add.className = "plain-button";
         add.textContent = "Add to shopping list";
         labelWithName(add, "", who);   // v55: "Add to shopping list" (its own words) then the paint's name
-        add.addEventListener("click", () => { if (addToShoppingList(paint, source)) { const done = addSlot.querySelector(".shop-onlist"); if (done) done.focus(); } });
+        add.addEventListener("click", () => {
+          // F1: Colour Lab is drawn again after Add, so the tag is found again by its place (which list, which row)
+          const li = tagged && tagged.closest("ul.idea-list > li");
+          const lists = [...document.querySelectorAll("ul.idea-list")];
+          const where = li ? [lists.indexOf(li.parentElement), [...li.parentElement.children].indexOf(li)] : null;
+          if (!addToShoppingList(paint, source)) return;
+          let done = addSlot.querySelector(".shop-onlist") || (tagged && tagged.isConnected ? tagged : null);
+          if (!done && where) {
+            const again = document.querySelectorAll("ul.idea-list")[where[0]];
+            const tag = again && again.children[where[1]] && again.children[where[1]].querySelector(".idea-tag");
+            if (tag) { tag.tabIndex = -1; done = tag; }
+          }
+          if (done) done.focus();
+        });
         addSlot.appendChild(add);
         return add;
       };
@@ -2549,13 +2663,14 @@
       const mine = palettePaintFor(paint);
       return !(mine && (isExamplePaint(mine) || isMadeUpPaint(mine) || haveIt(mine))) && !isMadeUpPaint(paint);
     }
-    function buildShopAddRow(paint, source) {
+    function buildShopAddRow(paint, source, tagged) {
       if (!paint || !String(paint.name || "").trim() || !realPaintForShop(paint)) return null;
       const row = document.createElement("div");
       row.className = "shop-add-row";
       const who = hiddenName(paint.name);
-      const slot = buildShopAddSlot(paint, source, who);
-      row.redrawAdd = slot.redrawAdd;
+      const slot = buildShopAddSlot(paint, source, who, tagged);
+      row.redrawAdd = () => { const el = slot.redrawAdd(); row.hidden = slot.hidden; return el; };   // F1: an empty slot hides its row too
+      row.hidden = slot.hidden;
       row.append(slot, who);
       return row;
     }
@@ -2746,6 +2861,8 @@
         }
         const doneBox = buildBoughtSection();
         if (doneBox) lists.appendChild(doneBox);
+        const suggested = buildSuggestedSection();   // F1
+        if (suggested) lists.appendChild(suggested);
         const copy = document.createElement("button");
         copy.className = "primary-button layout-side shop-side-copy";
         copy.style.width = "100%";
@@ -2754,7 +2871,10 @@
         copy.addEventListener("click", () => copyText(shoppingText(shoppingItems()), "Shopping list"));
         card.appendChild(copy);
       }
-      if (!items.length) { const doneBox = buildBoughtSection(); if (doneBox) card.appendChild(doneBox); }
+      if (!items.length) {
+        const doneBox = buildBoughtSection(); if (doneBox) card.appendChild(doneBox);
+        const suggested = buildSuggestedSection(); if (suggested) card.appendChild(suggested);   // F1
+      }
       panel.appendChild(card);
     }
     // A1: the Bought section at the bottom of the list: closed to start with, named with its count. Open, it has Clear bought and each
@@ -2900,7 +3020,7 @@
         const chip = makeChip(s.label, current === s.key, () => {
           const paint = found() || findOrAddPaint(p.brand || "", p.name, p.colour || DEFAULT_PAINT_COLOUR);
           if (p.type === "material") paint.type = "material";
-          applyPaintStatus(paint, current === s.key ? "" : s.key);
+          setStatusByHand(paint, current === s.key ? "" : s.key);   // F1
           render();
         }, s.colour);
         chip.classList.add("status-chip");
@@ -3500,6 +3620,7 @@
         if (paint.brand !== rawBrand) tidied.add(paint.id);
         if (!PAINT_STATUS_KEYS.includes(paint.status)) delete paint.status;
         if (p.example !== true) delete paint.example;   // v24: only a real true counts
+        if (p.shopDismissed !== true) delete paint.shopDismissed;   // F1: dismissed from Suggested (optional, only a real true counts)
         if (paint.status !== "low" || paint.spare !== true) delete paint.spare;
         // v40: where a paint on the shopping list came from (a recipe or scheme name). Up to 5, each cut to 60 characters, plain text only.
         // A paint you own is not on the list, so it keeps no notes.
@@ -12802,11 +12923,15 @@
         // v39: a paint you do not own gets the small closed "Shop links" fold-out under its row (door.shops; the row itself is unchanged)
         const source = door.shopSource ? door.shopSource() : "";
         const real = !door.realOnly || realPaintForShop(paint) || onShoppingList(paint);   // v73: Mentor picks: no shop actions for a made-up example paint
-        const shops = door.shops && real ? buildShopFoldout(paint, idea.hit.owned, source, !!door.listButton) : null;
+        // v73: Mentor picks: Add to shopping list in plain view. F1: Colour Lab's Colour ideas too (plainAdd). One Add per row: when the row
+        // has its own, the Shop links fold-out keeps only its links.
+        const tagEl = door.plainAdd && door.listMarks ? row.querySelector(".idea-tag") : null;   // F1: Colour Lab's tag says it once
+        if (tagEl) tagEl.tabIndex = -1;
+        const toList = (door.listButton || door.plainAdd) && !idea.hit.owned ? buildShopAddRow(paint, source, tagEl) : null;
+        const shops = door.shops && real ? buildShopFoldout(paint, idea.hit.owned, source, !!door.listButton || !!toList) : null;
         if (shops) row.appendChild(shops);
         const toRecipe = buildPaintToRecipeRow(door, paint);   // v62
         if (toRecipe) row.appendChild(toRecipe);
-        const toList = door.listButton && !idea.hit.owned ? buildShopAddRow(paint, source) : null;   // v73: Mentor picks: Add to shopping list in plain view
         if (toList) row.appendChild(toList);
         if (idea.hit.alsoOwned) row.firstElementChild.after(alsoOwnedLine(idea.hit, door.addStep ? () => door.addStep(idea.hit.alsoOwned.paint, stepNote) : null, null, reason));   // v64: your best paint is a poor fit, so it comes second
         list.appendChild(row);
@@ -14478,7 +14603,7 @@
         const role = appendRolePicker(body, door, (key) => { st.role = key; redraw(`[data-role="${key}"]`); });
         const ideas = colourIdeas(null, base.colour, role);
         if (!ideas.length) say("No paints with a known colour to suggest yet. Add paints on Your Palette first.");
-        const built = buildIdeasList(door, ideas, base.colour, role);
+        const built = buildIdeasList(Object.assign({}, door, { plainAdd: true }), ideas, base.colour, role);   // F1: a visible Add on rows you do not own
         body.appendChild(built.list);
         if (ideas.length) {
           const head = `Colour ideas for ${role.note} with ${base.name}${base.brand ? ` (${base.brand})` : ""}`;
