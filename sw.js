@@ -6,10 +6,13 @@
 //   1. Online?  Fetch the newest version from the web, and save a fresh copy.
 //   2. Offline? Use the saved copy instead.
 // So updates show up as soon as you're online, and offline it still works.
+// DS1: one version at a time. The app's code files (named with "?v=" and the version) come from the saved copy first, and a
+// new page is only used once its own code files are saved. An error from the web, or a page that takes more than about
+// 4 seconds, gets the saved copy instead (see pageResponse at the bottom).
 //
 // WHEN YOU UPLOAD A NEW VERSION: change the number below (v1 -> v2 -> v3...).
 // That tells the phone to throw away the old saved copy and start a new one.
-const VERSION = "v123";
+const VERSION = "v124";
 const CACHE_NAME = "shades-of-grey-" + VERSION;
 // The pot-label reader's big files (the engine and its English data, about 11 MB) are kept in
 // their own store that ISN'T cleared on updates, so they're only fetched once.
@@ -23,8 +26,8 @@ function isOcrFile(url) {
 }
 // v47: the theme fonts (fonts/*.woff2) are kept in their own store too, also NOT cleared on updates. A font is
 // saved the first time the app uses it (when you choose a theme, or see its name on the Theme buttons), and after
-// that it comes from the saved copy, so a chosen theme looks right offline. Nothing is saved at install, so
-// people who keep Classic never download any of them.
+// that it comes from the saved copy, so a chosen theme looks right offline. Nothing is saved at install.
+// (TH1: Classic uses one small font too, so it is saved the first time the app opens.)
 const FONT_CACHE = "shades-of-grey-fonts";
 function isFontFile(url) {
   return url.origin === self.location.origin && /\/fonts\/[a-z0-9-]+\.woff2$/.test(url.pathname);
@@ -99,23 +102,77 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Got a good answer from the web: keep a copy for next time we're offline.
-        if (response.ok && new URL(event.request.url).origin === self.location.origin) {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-        }
-        return response;
-      })
-      .catch(() =>
-        // No internet: look for a saved copy. A page request with no saved copy falls back to the
-        // app itself. (v21.4: only PAGE requests do that. A missing script or picture just fails,
-        // rather than being handed the page by mistake.)
-        caches.match(event.request, { ignoreSearch: true })
-          .then((saved) => saved || (event.request.mode === "navigate"
-            ? caches.match("./index.html")
-            : Response.error())))
-  );
+  // DS1: page loads have their own rules (see pageResponse below). The app's code files (their addresses end in "?v=" and the
+  // version) never change under the same address, so a saved copy is used first, matched EXACTLY: before DS1 a missing
+  // "app.js?v=123" could be answered with the saved "app.js?v=122", and a new page ran with old code.
+  if (event.request.mode === "navigate") {
+    const answer = pageResponse(event.request);
+    event.respondWith(answer.response);
+    event.waitUntil(answer.done);
+    return;
+  }
+  const versioned = fileUrl.origin === self.location.origin && fileUrl.searchParams.has("v");
+  event.respondWith(versioned
+    ? caches.match(event.request).then((saved) => saved || fetchAndKeep(event.request))
+    : fetchAndKeep(event.request).then(
+        // DS1: the web answered with an error (404, 500, 503...) and there is a saved copy? Use the saved copy.
+        (response) => response.ok || response.type === "opaqueredirect" ? response
+          : caches.match(event.request).then((saved) => saved || response),
+        // No internet: the saved copy of exactly this file, if there is one. (v21.4: a missing script or picture just
+        // fails, rather than being handed the page by mistake.)
+        () => caches.match(event.request).then((saved) => saved || Response.error())));
 });
+
+// Fetch from the web; a good answer from the app's own site is saved for next time (offline).
+function fetchAndKeep(request) {
+  return fetch(request).then((response) => {
+    if (response.ok && new URL(request.url).origin === self.location.origin) {
+      const copy = response.clone();
+      caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+    }
+    return response;
+  });
+}
+
+// ----- DS1: page loads (the "navigate" requests) -----
+// The page from the web is used only if every code file it names is saved too (they're fetched and saved first if not), so
+// the page and its code are always the same version. If that fails, if the web answers with an error, or if nothing has
+// come after PAGE_WAIT_MS on a slow connection, the saved page is used instead (and the code files saved with it).
+// With nothing saved yet (the very first visit) it waits for the web, whatever it says.
+// Offline after the first visit it works as before: the saved copy of the page (any "?..." on the address is ignored),
+// or the app itself.
+const PAGE_WAIT_MS = 4000;
+function savedPage(request) {
+  return caches.open(CACHE_NAME).then((cache) => cache.match(request, { ignoreSearch: true })
+    .then((saved) => saved || cache.match("./index.html")));
+}
+function codeFilesSaved(pageText, pageUrl) {
+  const files = [...pageText.matchAll(/<script[^>]*\ssrc="([^"]+)"/g)]
+    .map((m) => new URL(m[1], pageUrl))
+    .filter((url) => url.origin === self.location.origin && url.searchParams.has("v"));
+  return caches.open(CACHE_NAME).then((cache) => Promise.all(files.map((url) => caches.match(url.href).then((saved) => saved ||
+    fetch(url.href).then((response) => {
+      if (!response.ok) throw new Error("not saved");
+      return cache.put(url.href, response);
+    })))));
+}
+function pageResponse(request) {
+  const fromWeb = fetch(request).then((response) => {
+    // A redirect (a page load gets it as an "opaqueredirect" answer) is fine: the browser follows it. Not saved.
+    if (response.type === "opaqueredirect") return { response, good: true };
+    if (!response.ok) return { response, good: false };
+    return response.clone().text()
+      .then((text) => codeFilesSaved(text, request.url))
+      .then(() => caches.open(CACHE_NAME))
+      .then((cache) => cache.put(request, response.clone()))
+      .then(() => ({ response, good: true }), () => ({ response, good: false }));
+  });
+  const done = fromWeb.catch(() => null);
+  const timer = new Promise((resolve) => setTimeout(() => resolve(null), PAGE_WAIT_MS));
+  const response = Promise.race([done, timer]).then((result) => {
+    if (result && result.good) return result.response;
+    return savedPage(request).then((saved) => saved ||
+      done.then((late) => (late ? late.response : Response.error())));
+  });
+  return { response, done };
+}

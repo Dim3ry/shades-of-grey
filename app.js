@@ -27,6 +27,13 @@
     // entries is a list of [name, text] pairs. Returns false only if storage is FULL.
     let holdSaves = false;   // true while showing changes made in another window (see below)
     let saveFailing = false; // true while saving isn't working, so the red banner stays up
+    // DS1: the storage names (units and/or recipes) whose saved text couldn't be read at start-up. While any are listed,
+    // nothing is saved, so the original text stays exactly where it is until you choose Save it as a file or Start again
+    // (the banner's two buttons). Before DS1 the start-up save wrote the examples over it, and the only copy was lost.
+    let unreadableParts = [];
+    const unreadableText = {};   // the text each listed part held when it was read, so nothing that changes later is mistaken for it
+    const retiredIds = { units: 0, paints: 0 };   // DS1: see retire(), further down
+    function savedText(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
 
     // ----- Data version number (v18.3) -----
     // A number saved with your data (in the settings, and in backups) that says which "shape"
@@ -53,6 +60,7 @@
     }
     function writeTogether(entries) {
       if (holdSaves) return true;
+      if (unreadableParts.length) return false;   // DS1: never write over saved data that couldn't be read
       // v18.3: newer data saved by a newer version of the app? Don't overwrite it.
       if (!checkDataVersion()) return false;
       const before = [];
@@ -94,6 +102,19 @@
         if (retry) retry.textContent = "Reload";
         const backup = document.getElementById("banner-backup");
         if (backup) backup.classList.add("hidden");
+      } else if (unreadableParts.length) {
+        // DS1: one line and two buttons: Save it as a file, Start again (see the banner buttons further down).
+        const text = document.getElementById("save-banner-text");
+        if (text) {
+          if (!bannerUsual) bannerUsual = [...text.childNodes].map(n => n.cloneNode(true));
+          const strong = document.createElement("strong");
+          strong.textContent = unreadableMessage();
+          text.replaceChildren(strong);
+        }
+        const backup = document.getElementById("banner-backup");
+        if (backup) backup.textContent = "Save it as a file";
+        const retry = document.getElementById("banner-retry");
+        if (retry) retry.textContent = "Start again";
       }
       banner.classList.remove("hidden");
     }
@@ -101,6 +122,26 @@
       saveFailing = false;
       const banner = document.getElementById("save-banner");
       if (banner) banner.classList.add("hidden");
+    }
+    // DS1: the banner's own words and buttons, put back once the unreadable data has been dealt with.
+    let bannerUsual = null;
+    function unreadableMessage() {
+      const what = unreadablePartsWords(unreadableParts);
+      return `Your saved ${what} couldn't be read, so saving is paused.`;
+    }
+    function unreadablePartsWords(parts) {
+      const words = [];
+      if (parts.includes(STORAGE_KEY)) words.push("units");
+      if (parts.includes(RECIPES_KEY)) words.push("recipes");
+      return words.join(" and ") || "data";
+    }
+    function usualSaveBanner() {
+      const text = document.getElementById("save-banner-text");
+      if (text && bannerUsual) text.replaceChildren(...bannerUsual.map(n => n.cloneNode(true)));
+      const backup = document.getElementById("banner-backup");
+      if (backup) backup.textContent = "Save backup";
+      const retry = document.getElementById("banner-retry");
+      if (retry) retry.textContent = "Try again";
     }
 
     // ================= SETTINGS AND STAGES =================
@@ -208,13 +249,17 @@
         if (Array.isArray(savedUnits)) {
           // old position -> new position
           const move = [0, 1, 2, 3, 4, 6, 5];
-          for (const u of savedUnits) if (Number.isInteger(u.stage) && move[u.stage] !== undefined) u.stage = move[u.stage];
-          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(savedUnits)); } catch (ignored) {}
+          for (const u of savedUnits) if (u && Number.isInteger(u.stage) && move[u.stage] !== undefined) u.stage = move[u.stage];
         }
         settings.stages = STAGES = DEFAULT_STAGES.slice();
         settings.doneFrom = 5;
         upgradedStages = true;
-        try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (ignored) {}
+        // DS1: units and settings are written together, through the data-version check (before DS1 the units were written
+        // directly, so an out-of-date copy of the app could write over newer data).
+        writeTogether([
+          ...(Array.isArray(savedUnits) ? [[STORAGE_KEY, JSON.stringify(savedUnits)]] : []),
+          [SETTINGS_KEY, JSON.stringify(settings)],
+        ]);
       }
     }
     // v68: "Painted with issues" becomes "Needs touch-ups" for anyone on the v3 to v61 default stages.
@@ -304,6 +349,17 @@
     const bootSteps = { data: 0, draw: 0, load: 0 };
     window.addEventListener("load", () => { bootSteps.load = performance.now(); });
     if (document.readyState === "complete") bootSteps.load = performance.now();
+
+    // A photo written as text must be a JPEG, PNG or WebP picture. Anything else, such as an SVG (a drawing that can
+    // carry code), is never kept as a photo: not on a unit, not from a backup's photo files (SEC1).
+    // Set before the first load() below, because cleanModels uses it.
+    const SAFE_PHOTO_TEXT = /^data:image\/(?:jpeg|png|webp);base64,/;
+    // SEC1: the longest single-line text kept from a backup, CSV file or army list, matching the typing limits:
+    // 80 for a unit's name, game, faction and nickname; 200 (the rename box) for recipe and scheme names.
+    // Text saved on this device before is left as it is.
+    const UNIT_TEXT_MAX = 80;
+    const BOOK_NAME_MAX = 200;
+    const SHOWN_NAME_MAX = 300;   // see shownText
 
     // All units live in this list. Each is a small bundle of facts (an "object").
     let models = load();
@@ -1879,10 +1935,13 @@
       for (const c of out) if (c.mine) { c.key = matchKey(c.name); c.words = c.key.split(" "); }
       return out;
     }
+    // SEC1: true only for a key the object really holds, never for one every object has ("constructor", "toString").
+    function hasOwn(obj, key) { return obj != null && Object.prototype.hasOwnProperty.call(obj, key); }
+    // SEC1: hasOwn, so typing a word such as "constructor" or "toString" never finds a built-in part of every object.
     function shorthandFor(key) {
-      const saved = book.shorthand && book.shorthand[key];
+      const saved = book.shorthand && hasOwn(book.shorthand, key) && book.shorthand[key];
       if (saved) return saved;
-      const builtIn = BUILT_IN_SHORTHAND[key];
+      const builtIn = hasOwn(BUILT_IN_SHORTHAND, key) && BUILT_IN_SHORTHAND[key];
       return builtIn ? { brand: "Citadel", name: builtIn } : null;
     }
 
@@ -2025,6 +2084,7 @@
         if (key !== "low") delete paint.spare;
         if (!haveIt({ status: key })) delete paint.qty;
         if (key === "owned") delete paint.shopFrom;   // v40: owned paints are off the list, so they forget where they came from
+        if (key === "wishlist") delete paint.shopDismissed;   // F1: on the list again, so a later Remove or Empty can suggest it afresh
       } else {
         delete paint.status;
         delete paint.spare;
@@ -2032,6 +2092,14 @@
         delete paint.shopFrom;   // v40
         paint.owned = false;
       }
+    }
+
+    // F1: a status set with the status buttons. Taking a paint off the shopping list this way (Wishlist to Empty, Not owned or no status)
+    // counts as dismissing it, as Remove on the list does, so it does not jump into Suggested. Owned and Running low need no dismissal.
+    function setStatusByHand(paint, key) {
+      const was = paintStatus(paint);
+      applyPaintStatus(paint, key);
+      if (was === "wishlist" && key !== "wishlist" && !haveIt(paint)) paint.shopDismissed = true;
     }
 
     // The status buttons in a paint's details. Tap one to set it; tap it again to clear it.
@@ -2047,7 +2115,7 @@
       const current = paintStatus(paint);
       for (const s of PAINT_STATUSES) {
         const chip = makeChip(s.label, current === s.key, () => {
-          applyPaintStatus(paint, current === s.key ? "" : s.key);
+          setStatusByHand(paint, current === s.key ? "" : s.key);   // F1
           render();
         }, s.colour);
         chip.classList.add("status-chip");
@@ -2161,6 +2229,57 @@
       return items.sort((a, b) => (a.paint.brand || "￿").localeCompare(b.paint.brand || "￿") || a.paint.name.localeCompare(b.paint.name));
     }
 
+    // DS1: Undo by difference. bookUndo(before) is called right AFTER a change to the recipe book (before = JSON.stringify(book)
+    // from just before it). The function it returns puts back only what that change did: paints, recipes, schemes and bought
+    // entries it added are taken out, ones it removed come back where they were, and ones it changed get their old version
+    // back. Anything else changed while the Undo message was up (a Status chip, say) is kept. Before DS1 these Undos put the
+    // whole book back from the snapshot, which quietly undid those other changes too.
+    // The ids of things a change with a live Undo took away (units, paints) are never given to anything new (see retiredIds
+    // at the top), so the Undo can always put them back under their own id, with every link that points at them.
+    function retire(kind, was, done) {
+      const kept = new Set(done.map(x => x.id));
+      for (const x of was) if (!kept.has(x.id) && Number.isInteger(x.id)) retiredIds[kind] = Math.max(retiredIds[kind], x.id);
+    }
+    // One list (a = before the change, b = just after it, now = as it is): what the change added goes, what it removed comes
+    // back in its place, what it changed gets its old version back. Everything else in now stays as it is.
+    function undoListChange(a, b, now) {
+      const aById = new Map((a || []).map(x => [x.id, x])), bById = new Map((b || []).map(x => [x.id, x]));
+      let list = (now || []).filter(x => !(bById.has(x.id) && !aById.has(x.id)));
+      list = list.map(x => aById.has(x.id) && bById.has(x.id) && JSON.stringify(aById.get(x.id)) !== JSON.stringify(bById.get(x.id))
+        ? aById.get(x.id) : x);
+      (a || []).forEach((x, i) => {
+        if (!bById.has(x.id) && !list.some(y => y.id === x.id)) list.splice(Math.min(i, list.length), 0, x);
+      });
+      return list;
+    }
+    function bookUndo(beforeText) {
+      const was = JSON.parse(beforeText);
+      const done = JSON.parse(JSON.stringify(book));
+      retire("paints", was.paints || [], done.paints || []);
+      return () => {
+        const now = JSON.parse(JSON.stringify(book));
+        const byId = (list) => list === undefined || (Array.isArray(list) && list.every(x => x && typeof x === "object" && x.id !== undefined));
+        for (const key of new Set([...Object.keys(was), ...Object.keys(done)])) {
+          const a = was[key], b = done[key];
+          if (JSON.stringify(a) === JSON.stringify(b)) continue;   // this change didn't touch it
+          if (!(byId(a) && byId(b) && byId(now[key]))) {           // not a list of things with ids: put it back whole
+            if (a === undefined) delete now[key]; else now[key] = a;
+            continue;
+          }
+          const list = undoListChange(a, b, now[key]);
+          if (list.length || a !== undefined) now[key] = list; else delete now[key];
+        }
+        book = cleanRecipeBook(now);
+      };
+    }
+    // The same for the units list (Delete all, an import): units added since the change are kept.
+    function unitsUndo(beforeText) {
+      const was = JSON.parse(beforeText);
+      const done = JSON.parse(JSON.stringify(models));
+      retire("units", was, done);
+      return () => { models = undoListChange(was, done, models); };
+    }
+
     // A1: taking an item off the list, and the Bought tick. Both work on the paint's status, so they behave the same for a paint that came
     // from the Compendium, from a recipe or from your own Wishlist tap. Each Undo puts back only that one paint (not the whole book),
     // so ticking several items quickly cannot undo the others.
@@ -2180,6 +2299,7 @@
       if (!paint || paintStatus(paint) !== "wishlist") return;
       const from = Array.isArray(paint.shopFrom) ? paint.shopFrom.slice() : [];
       applyPaintStatus(paint, "notowned");
+      paint.shopDismissed = true;   // F1: taken off the list counts as dismissed, so it does not jump straight into Suggested
       if (!afterShopChange()) { showNotSaved(); return; }
       showToast(`Removed ${paint.name} from your shopping list`, () => {
         const back = book.paints.find(p => p.id === id);
@@ -2218,6 +2338,92 @@
         if (!afterShopChange()) { showNotSaved(); return; }
         showToast("Cleared the bought paints");
       }, { danger: true, yes: "Clear" });
+    }
+
+    // F1: Suggested, a closed fold-out under the list. It never puts anything on the list (v62 still holds): it shows Empty paints and
+    // Not owned paints that one of your own recipes uses, each with its own Add (addToShoppingList, source "Suggested") and Dismiss.
+    // Dismiss, and Remove on the list, set shopDismissed on the paint: it stays out until it goes on the list again (applyPaintStatus
+    // clears it at Wishlist). Example and made-up paints never show, as on the list. The basket counts only shoppingItems().
+    let suggestedOpen = false;   // closed until you open it (kept while the app is open, so Add and Dismiss do not shut it)
+    function suggestedItems() {
+      const used = new Set();
+      for (const r of book.recipes) if (r.example !== true) for (const s of r.steps) for (const sp of s.paints) used.add(sp.paint);
+      const out = [];
+      for (const p of book.paints) {
+        if (p.shopDismissed === true || isExamplePaint(p) || isMadeUpPaint(p)) continue;
+        const s = paintStatus(p);
+        if (s === "empty" || (s === "notowned" && used.has(p.id))) out.push({ paint: p, word: statusLabel(s) });
+      }
+      return out.sort((a, b) => (a.paint.brand || "￿").localeCompare(b.paint.brand || "￿") || a.paint.name.localeCompare(b.paint.name));
+    }
+    // After Add or Dismiss the panel is drawn again, so the focus goes to the next row's Add (or the fold-out's button, or the heading).
+    function focusSuggested(index) {
+      const adds = document.querySelectorAll("#shop-panel .shop-suggest-add");
+      const el = adds[Math.min(index, adds.length - 1)] || document.querySelector("#shop-panel .shop-suggest-head") || document.querySelector("#shop-panel h2");
+      if (el) { if (el.tagName === "H2") el.tabIndex = -1; el.focus(); }
+    }
+    function addSuggested(id, index) {
+      const paint = book.paints.find(p => p.id === id);
+      if (!paint || !addToShoppingList(paint, "Suggested")) return;
+      focusSuggested(index);
+    }
+    function dismissSuggested(id, index) {
+      const paint = book.paints.find(p => p.id === id);
+      if (!paint || paint.shopDismissed === true) return;
+      paint.shopDismissed = true;
+      if (!afterShopChange()) { showNotSaved(); return; }
+      focusSuggested(index);
+      showToast(`${paint.name} is no longer suggested`, () => {
+        const back = book.paints.find(p => p.id === id);
+        if (!back || back.shopDismissed !== true) return;
+        delete back.shopDismissed;
+        afterShopChange();
+      });
+    }
+    function buildSuggestedSection() {
+      const items = suggestedItems();
+      if (!items.length) return null;   // nothing qualifies: no fold-out at all
+      const box = document.createElement("div");
+      box.className = "shop-suggested";
+      const head = document.createElement("button");
+      head.type = "button";
+      head.className = "plain-button shop-suggest-head";
+      head.setAttribute("aria-expanded", String(suggestedOpen));
+      head.textContent = "Suggested";
+      const list = document.createElement("ul");
+      list.className = "shop-suggest-list";   // not "shop-list": that is the list itself
+      list.hidden = !suggestedOpen;
+      head.addEventListener("click", () => { suggestedOpen = !suggestedOpen; head.setAttribute("aria-expanded", String(suggestedOpen)); list.hidden = !suggestedOpen; });
+      items.forEach((x, index) => {
+        const li = document.createElement("li");
+        li.className = "shop-item shop-suggest-item";
+        li.dataset.paint = x.paint.id;
+        const text = document.createElement("span");
+        text.className = "shop-text";
+        const nameEl = document.createElement("span");
+        nameEl.textContent = x.paint.name + (String(x.paint.brand || "").trim() ? ` · ${x.paint.brand}` : "") + " ";   // the brand tells same-name paints apart
+        const word = document.createElement("small");
+        word.className = "shop-suggest-word";
+        word.textContent = x.word;
+        text.append(nameEl, word);
+        const add = document.createElement("button");
+        add.type = "button";
+        add.className = "plain-button shop-suggest-add";
+        add.textContent = "Add";
+        labelWithName(add, "", nameEl);   // "Add" then the paint's name
+        add.addEventListener("click", () => addSuggested(x.paint.id, index));
+        const dismiss = document.createElement("button");
+        dismiss.type = "button";
+        dismiss.className = "shop-suggest-dismiss";
+        dismiss.textContent = "✕";
+        dismiss.setAttribute("aria-label", "Dismiss");
+        labelWithName(dismiss, "", nameEl);   // "Dismiss" then the paint's name
+        dismiss.addEventListener("click", () => dismissSuggested(x.paint.id, index));
+        li.append(text, add, dismiss);
+        list.appendChild(li);
+      });
+      box.append(head, list);
+      return box;
     }
 
     // The list as plain text, one brand at a time (for copy as text).
@@ -2318,15 +2524,17 @@
     }
     function addToShoppingList(paint, source) {
       const before = JSON.stringify(book);
-      const mine = findOrAddPaint(paint.brand, paint.name, "");   // "" = leave a colour you already picked alone
+      // F1: a paint from Your Palette itself (Suggested) is used as it is, so a same-name paint of another brand is never picked instead
+      const mine = book.paints.includes(paint) ? paint : findOrAddPaint(paint.brand, paint.name, "");   // "" = leave a colour you already picked alone
       if (haveIt(mine)) return false;                            // you own it: nothing to add
       applyPaintStatus(mine, "wishlist");
       noteShopSource(mine, source || "Colour suggestion");        // v40
+      const undo = bookUndo(before);                              // DS1
       const ok = save();
       if (!recipeDraft) renderRecipes();                          // keep the (hidden) palette and shopping lists up to date; never rebuild an open recipe editor
       updateBasket();                                             // v40
       updateShopFoldouts();
-      if (ok) showToast(`Added ${mine.name} to your shopping list`, () => { book = cleanRecipeBook(JSON.parse(before)); render(); updateShopFoldouts(); });
+      if (ok) showToast(`Added ${mine.name} to your shopping list`, () => { undo(); render(); updateShopFoldouts(); });
       else showNotSaved();
       return true;
     }
@@ -2378,13 +2586,14 @@
         noteShopSource(mine, source || "Scheme");
         added++;
       }
+      const undo = bookUndo(before);   // DS1
       const ok = save();
       if (!recipeDraft) renderRecipes();
       updateBasket();
       updateShopFoldouts();
       if (ok) {
         showToast(`Added ${plural(added, "paint")} to your shopping list`, () => {
-          book = cleanRecipeBook(JSON.parse(before));
+          undo();
           render(); updateBasket(); updateShopFoldouts();
           notify(`Took ${plural(added, "paint")} off your shopping list again.`);
         });
@@ -2405,11 +2614,15 @@
     }
     // v73: the "Add to shopping list" button for one paint, or "On your shopping list" once it is there. who = the hidden line holding the
     // paint's name. Shared by the Shop links fold-out and the Mentor picks. redrawAdd() makes it follow the list (after Add and after Undo).
-    function buildShopAddSlot(paint, source, who) {
+    // F1: tagged = the row's own tag already says "On your shopping list", so once listed the slot is left empty (no second copy of the
+    // words) and the focus goes to that tag.
+    function buildShopAddSlot(paint, source, who, tagged) {
       const addSlot = document.createElement("div");
       addSlot.className = "shop-add";
       addSlot.redrawAdd = () => {
         addSlot.replaceChildren();
+        addSlot.hidden = false;
+        if (onShoppingList(paint) && tagged) { addSlot.hidden = true; return null; }
         if (onShoppingList(paint)) {
           const done = document.createElement("span");
           done.className = "shop-onlist";
@@ -2423,7 +2636,20 @@
         add.className = "plain-button";
         add.textContent = "Add to shopping list";
         labelWithName(add, "", who);   // v55: "Add to shopping list" (its own words) then the paint's name
-        add.addEventListener("click", () => { if (addToShoppingList(paint, source)) { const done = addSlot.querySelector(".shop-onlist"); if (done) done.focus(); } });
+        add.addEventListener("click", () => {
+          // F1: Colour Lab is drawn again after Add, so the tag is found again by its place (which list, which row)
+          const li = tagged && tagged.closest("ul.idea-list > li");
+          const lists = [...document.querySelectorAll("ul.idea-list")];
+          const where = li ? [lists.indexOf(li.parentElement), [...li.parentElement.children].indexOf(li)] : null;
+          if (!addToShoppingList(paint, source)) return;
+          let done = addSlot.querySelector(".shop-onlist") || (tagged && tagged.isConnected ? tagged : null);
+          if (!done && where) {
+            const again = document.querySelectorAll("ul.idea-list")[where[0]];
+            const tag = again && again.children[where[1]] && again.children[where[1]].querySelector(".idea-tag");
+            if (tag) { tag.tabIndex = -1; done = tag; }
+          }
+          if (done) done.focus();
+        });
         addSlot.appendChild(add);
         return add;
       };
@@ -2437,13 +2663,14 @@
       const mine = palettePaintFor(paint);
       return !(mine && (isExamplePaint(mine) || isMadeUpPaint(mine) || haveIt(mine))) && !isMadeUpPaint(paint);
     }
-    function buildShopAddRow(paint, source) {
+    function buildShopAddRow(paint, source, tagged) {
       if (!paint || !String(paint.name || "").trim() || !realPaintForShop(paint)) return null;
       const row = document.createElement("div");
       row.className = "shop-add-row";
       const who = hiddenName(paint.name);
-      const slot = buildShopAddSlot(paint, source, who);
-      row.redrawAdd = slot.redrawAdd;
+      const slot = buildShopAddSlot(paint, source, who, tagged);
+      row.redrawAdd = () => { const el = slot.redrawAdd(); row.hidden = slot.hidden; return el; };   // F1: an empty slot hides its row too
+      row.hidden = slot.hidden;
       row.append(slot, who);
       return row;
     }
@@ -2634,6 +2861,8 @@
         }
         const doneBox = buildBoughtSection();
         if (doneBox) lists.appendChild(doneBox);
+        const suggested = buildSuggestedSection();   // F1
+        if (suggested) lists.appendChild(suggested);
         const copy = document.createElement("button");
         copy.className = "primary-button layout-side shop-side-copy";
         copy.style.width = "100%";
@@ -2642,7 +2871,10 @@
         copy.addEventListener("click", () => copyText(shoppingText(shoppingItems()), "Shopping list"));
         card.appendChild(copy);
       }
-      if (!items.length) { const doneBox = buildBoughtSection(); if (doneBox) card.appendChild(doneBox); }
+      if (!items.length) {
+        const doneBox = buildBoughtSection(); if (doneBox) card.appendChild(doneBox);
+        const suggested = buildSuggestedSection(); if (suggested) card.appendChild(suggested);   // F1
+      }
       panel.appendChild(card);
     }
     // A1: the Bought section at the bottom of the list: closed to start with, named with its count. Open, it has Clear bought and each
@@ -2788,7 +3020,7 @@
         const chip = makeChip(s.label, current === s.key, () => {
           const paint = found() || findOrAddPaint(p.brand || "", p.name, p.colour || DEFAULT_PAINT_COLOUR);
           if (p.type === "material") paint.type = "material";
-          applyPaintStatus(paint, current === s.key ? "" : s.key);
+          setStatusByHand(paint, current === s.key ? "" : s.key);   // F1
           render();
         }, s.colour);
         chip.classList.add("status-chip");
@@ -3341,8 +3573,9 @@
         saved = localStorage.getItem(RECIPES_KEY);
         return cleanRecipeBook(saved ? JSON.parse(saved) : null);
       } catch (error) {
-        // Damaged data: tuck it away under another name so it's never lost.
-        try { if (saved) localStorage.setItem(RECIPES_KEY + "-unreadable", saved); } catch (ignored) {}
+        // DS1: damaged data stays exactly where it is, and saving pauses until you choose what to do (see unreadableParts).
+        if (saved && !unreadableParts.includes(RECIPES_KEY)) unreadableParts.push(RECIPES_KEY);
+        if (saved) unreadableText[RECIPES_KEY] = saved;
         return cleanRecipeBook(null);
       }
     }
@@ -3387,6 +3620,7 @@
         if (paint.brand !== rawBrand) tidied.add(paint.id);
         if (!PAINT_STATUS_KEYS.includes(paint.status)) delete paint.status;
         if (p.example !== true) delete paint.example;   // v24: only a real true counts
+        if (p.shopDismissed !== true) delete paint.shopDismissed;   // F1: dismissed from Suggested (optional, only a real true counts)
         if (paint.status !== "low" || paint.spare !== true) delete paint.spare;
         // v40: where a paint on the shopping list came from (a recipe or scheme name). Up to 5, each cut to 60 characters, plain text only.
         // A paint you own is not on the list, so it keeps no notes.
@@ -3479,7 +3713,7 @@
       const shorthand = {};
       if (src.shorthand && typeof src.shorthand === "object" && !Array.isArray(src.shorthand)) {
         for (const [k, v] of Object.entries(src.shorthand)) {
-          if (k && v && typeof v.name === "string" && v.name.trim()) shorthand[k] = { brand: tidyBrand(v.brand), name: v.name.trim() };
+          if (k && k !== "__proto__" && v && typeof v.name === "string" && v.name.trim()) shorthand[k] = { brand: tidyBrand(v.brand), name: v.name.trim() };
         }
       }
       // A1: the shopping list's Bought history: [{ id: paint id, prev: the status before the tick, from: where it came from }]. One entry per
@@ -3512,10 +3746,28 @@
         if (Array.isArray(parsed)) return cleanModels(parsed);
         throw new Error("Saved data isn't a list");
       } catch (error) {
-        // Damaged data: tuck the original away under another name so it's never lost.
-        try { if (saved) localStorage.setItem(STORAGE_KEY + "-unreadable", saved); } catch (ignored) {}
-        return cleanModels(EXAMPLES);
+        // DS1: damaged data stays exactly where it is, and saving pauses until you choose what to do (see unreadableParts).
+        // No examples are shown in its place, so the screen doesn't look like your units were replaced.
+        if (saved && !unreadableParts.includes(STORAGE_KEY)) unreadableParts.push(STORAGE_KEY);
+        if (saved) unreadableText[STORAGE_KEY] = saved;
+        return saved ? [] : cleanModels(EXAMPLES);
       }
+    }
+
+    function cutText(text, max) {
+      const s = String(text ?? "");
+      if (s.length <= max) return s;
+      return s.slice(0, max).replace(/[\uD800-\uDBFF]$/, "").trim();   // never leave half an emoji
+    }
+    function capUnitText(m) {
+      const out = { ...m };
+      for (const key of ["name", "hobby", "faction", "nickname"]) if (typeof m[key] === "string") out[key] = cutText(m[key], UNIT_TEXT_MAX);
+      return out;
+    }
+    function capBookText(book) {
+      for (const r of book.recipes) r.name = cutText(r.name, BOOK_NAME_MAX);
+      for (const s of book.schemes) { s.name = cutText(s.name, BOOK_NAME_MAX); s.faction = cutText(s.faction, UNIT_TEXT_MAX); }
+      return book;
     }
 
     // Checks every unit and repairs anything odd before the app uses it. Used for saved
@@ -3574,7 +3826,7 @@
         if (photos.length) model.photos = photos; else delete model.photos;
         // The cover photo (shown on the unit's card) must be one of its photos.
         if (!photos.some(p => p.id === m.coverPhoto)) delete model.coverPhoto;
-        if (typeof m.photo !== "string" || !m.photo.startsWith("data:image")) delete model.photo;
+        if (typeof m.photo !== "string" || !SAFE_PHOTO_TEXT.test(m.photo)) delete model.photo;   // SEC1: JPEG, PNG or WebP only
         if (Number.isInteger(model.id) && !usedIds.has(model.id)) usedIds.add(model.id);
         else model.id = null; // given a fresh one below
         cleaned.push(model);
@@ -3582,6 +3834,21 @@
       let next = Math.max(0, ...usedIds) + 1;
       for (const model of cleaned) if (model.id === null) model.id = next++;
       return cleaned;
+    }
+
+    // DS1: a box that saves half a second after you stop typing (a unit's notes). flushFieldSave() saves straight away if one
+    // is waiting; it runs when the app goes to the background or the page is left, because switching apps on a phone doesn't
+    // leave the box, and the phone may close the page before the half second is up.
+    let fieldSaveTimer = null;
+    function saveFieldSoon() {
+      clearTimeout(fieldSaveTimer);
+      fieldSaveTimer = setTimeout(flushFieldSave, 500);
+    }
+    function flushFieldSave() {
+      if (fieldSaveTimer === null) return;
+      clearTimeout(fieldSaveTimer);
+      fieldSaveTimer = null;
+      save();
     }
 
     // saveAll() saves units, recipes and settings TOGETHER (all or nothing, see
@@ -3622,14 +3889,17 @@
     const FULL_MESSAGE = "Storage on this device is full, so that change couldn't be saved and nothing has changed. " +
       "Please save a backup, then free some space (for example delete photos or units you no longer need).";
     // v18.3: the right "not saved" message: newer data from a newer version, or full storage.
-    function fullMessage() { return dataTooNew ? TOO_NEW_MESSAGE : FULL_MESSAGE; }
+    function fullMessage() { return dataTooNew ? TOO_NEW_MESSAGE : unreadableParts.length ? unreadableMessage() : FULL_MESSAGE; }
 
     // ================= SMALL HELPERS =================
 
     // A unit's proper name with its copy number: "Intercessors 2".
     function fullName(model) { return model.copy ? `${model.name} ${model.copy}` : model.name; }
     // The big name on a card: the nickname if there is one.
-    function displayName(model) { return model.nickname || fullName(model); }
+    // SEC1: a name thousands of characters long (only possible from data saved before the limits) is drawn cut short
+    // (SHOWN_NAME_MAX), because the browser takes seconds to lay out one that long. The saved name is not changed.
+    function shownText(text) { return text.length > SHOWN_NAME_MAX ? cutText(text, SHOWN_NAME_MAX) + "…" : text; }
+    function displayName(model) { return shownText(model.nickname || fullName(model)); }
 
     // Models in a unit: a whole number, at least 1.
     // v14: at most MAX_MODELS (999, set at the top). A huge number like 150,000 used to
@@ -3642,7 +3912,7 @@
     function modelCount(list) { return list.reduce((total, m) => total + (m.count || 1), 0); }
 
     // A fresh ID, one higher than the highest in use.
-    function nextId() { return models.reduce((highest, m) => Math.max(highest, m.id), 0) + 1; }
+    function nextId() { return models.reduce((highest, m) => Math.max(highest, m.id), retiredIds.units) + 1; }   // DS1: retiredIds
 
     // Blank removed, duplicates removed (that's what a Set does), sorted A-Z.
     function uniqueSorted(values) {
@@ -4138,10 +4408,12 @@
 
     // how: "slide" only for a tap on a menu segment. Anything chosen by code (an import, a jump, the Mentor button) or leaving the
     // start page gets a short fade at most. Moving between the pages inside one section (Guides, Settings, Help, Updates) is an instant switch.
+    // SEC1: the section an old or short name stands for. hasOwn, so a word like "constructor" is never looked up as a built-in.
+    function tabAlias(name) { return hasOwn(TAB_ALIASES, name) ? TAB_ALIASES[name] : name; }
     function showTab(name, how) {
-      if (TAB_ALIASES[name]) name = TAB_ALIASES[name];
-      if (!views[name]) name = "dashboard";
-      const before = launching ? null : (views[TAB_ALIASES[settings.tab] || settings.tab] ? (TAB_ALIASES[settings.tab] || settings.tab) : null);
+      name = tabAlias(name);
+      if (!hasOwn(views, name)) name = "dashboard";
+      const before = launching ? null : (hasOwn(views, tabAlias(settings.tab)) ? tabAlias(settings.tab) : null);
       const move = canMove() && before !== name && (before === null || barOf(before) !== barOf(name)) ? (how === "slide" && before ? "slide" : "fade") : "";
       const snap = move === "slide" ? moveSnap(document.querySelector("main"), views[before]) : null;
       if (move !== "slide" && before !== name) endMove();
@@ -4681,6 +4953,7 @@
       "but will be lost when the app closes. Save a backup, then free some space.";
     function showNotSaved(message) {
       if (dataTooNew) { showToast(TOO_NEW_MESSAGE, () => location.reload(), "Reload", 12); return; }
+      if (unreadableParts.length) { showToast(`Not saved. ${unreadableMessage()}`, null, null, 8); return; }   // DS1: the banner has the choices
       showToast(message || NOT_SAVED_MESSAGE, () => document.getElementById("export-button").click(), "Save backup", 12);
     }
     function commit(message, undo, buttonLabel, seconds) {
@@ -5911,7 +6184,7 @@
 
       const details = document.createElement("div");
       details.className = "details";
-      const realName = model.nickname ? fullName(model) : "";
+      const realName = model.nickname ? shownText(fullName(model)) : "";
       const size = model.count > 1 ? `${model.count} models` : "";
       details.textContent = [realName, size, model.hobby].filter(Boolean).join(" · ");
       if (model.faction) {
@@ -6412,6 +6685,7 @@
       const nicknameLabel = document.createElement("label");
       nicknameLabel.textContent = "Nickname (optional)";
       const nickname = document.createElement("input");
+      nickname.maxLength = UNIT_TEXT_MAX;   // SEC1: the same limit as the name
       nickname.placeholder = "e.g. The Gold Squad";
       nickname.value = model.nickname || "";
       nickname.addEventListener("input", () => { model.nickname = nickname.value.trim(); save(); });
@@ -6446,11 +6720,9 @@
       const note = document.createElement("textarea");
       note.placeholder = "e.g. blue armour, black wash, gold trim";
       note.value = model.note || "";
-      let noteTimer;
       note.addEventListener("input", () => {
         model.note = note.value;
-        clearTimeout(noteTimer);
-        noteTimer = setTimeout(save, 500);
+        saveFieldSoon();   // DS1: also saved at once if the app goes to the background first (see flushFieldSave)
       });
       note.addEventListener("blur", save);
       noteLabel.appendChild(note);
@@ -6727,7 +6999,7 @@
         const kept = JSON.stringify({ stage: model.stage, stages: model.stages, log: model.log });
         const moving = stageBefore(model);
         model.stages.forEach((s, i) => { if (movable(s)) setStage(model, s + (direction > 0 ? 1 : -1), i); });
-        redrawWithStageMotion(moving, direction, render);
+        if (!redrawWithStageMotion(moving, direction, render)) { showNotSaved(); return; }   // DS1: no "moved" message if it wasn't saved
         showToast(`All of ${displayName(model)} ${direction > 0 ? "up" : "back"} one stage`, () => {
           const unit = models.find(m => m.id === id);
           if (!unit) return;
@@ -6748,7 +7020,7 @@
       const snapshot = JSON.stringify({ stage: model.stage, stages: model.stages, log: model.log });
       const moving = stageBefore(model, model.each ? index : undefined);
       setStage(model, after, model.each ? index : undefined);
-      redrawWithStageMotion(moving, direction, render);
+      if (!redrawWithStageMotion(moving, direction, render)) { showNotSaved(); return; }   // DS1
       const who = model.each ? `${displayName(model)}, model ${index + 1}` : displayName(model);
       showToast(`${who} → ${STAGES[after]}`, () => {
         const unit = models.find(m => m.id === id);
@@ -7386,9 +7658,11 @@
       });
     }
     // Text pictures ("data:image/jpeg;base64,...") <-> blobs, for old photos and full backups.
+    // SEC1: only a JPEG, PNG or WebP picture is turned back into a blob; anything else is refused.
     function dataUrlToBlob(dataUrl) {
+      if (!SAFE_PHOTO_TEXT.test(dataUrl)) throw new Error("Not a photo type the app keeps");
       const [head, data] = dataUrl.split(",");
-      const type = (head.match(/^data:([^;,]+)/) || [])[1] || "image/jpeg";
+      const type = head.match(/^data:([^;,]+)/)[1];
       const binary = atob(data);
       const bytes = new Uint8Array(binary.length);
       for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
@@ -7480,7 +7754,12 @@
       if (!model.photos.length) delete model.photos;
       if (wasCover) delete model.coverPhoto;
       pendingPhotoDeletes.add(id);
-      render();
+      if (!render()) {
+        // DS1: not saved, so no "Photo deleted" message, and the file stays (the saved unit still shows it).
+        pendingPhotoDeletes.delete(id);
+        showNotSaved();
+        return;
+      }
       const seconds = UNDO_SECONDS;
       showToast("Photo deleted", () => {
         model.photos = model.photos || [];
@@ -7522,8 +7801,10 @@
       let moved = 0;
       for (const m of models.filter(m => typeof m.photo === "string")) {
         try {
-          const full = dataUrlToBlob(m.photo);
-          const thumb = await resizeToBlob(await loadImage(full), 240, 0.75);
+          // SEC1: drawn again as a fresh JPEG, the same way as a photo you add, so only the picture itself is kept.
+          const img = await loadImage(dataUrlToBlob(m.photo));
+          const full = await resizeToBlob(img, 1200, 0.82);
+          const thumb = await resizeToBlob(img, 240, 0.75);
           const record = { id: newPhotoId(), full, thumb };
           await putPhoto(record);
           const check = await getPhoto(record.id);
@@ -7982,7 +8263,8 @@
       dialogButtons.classList.toggle("single", show);
       dialogState = { cfg, opener: document.activeElement };
       dialogBackdrop.classList.remove("hidden");
-      const first = text ? dialogInput : show ? dialogArea : pick ? (dialogPick.querySelector("input, button") || dialogYes) : dialogYes;
+      // DS1: a danger question starts on the safe answer, so Enter, Space or a held key can't confirm it by accident.
+      const first = text ? dialogInput : show ? dialogArea : pick ? (dialogPick.querySelector("input, button") || dialogYes) : cfg.danger ? dialogNo : dialogYes;
       first.focus();
       if (text || show) first.select();
       queueBackCheck();   // so the phone's Back button can close it
@@ -8289,7 +8571,7 @@
       let paint = book.paints.find(p => sameText(p.name, name) && (!brand || sameText(p.brand, brand)));
       if (!paint) {
         const known = searchedPaints.find(k => sameText(k.name, name) && (!brand || sameText(k.brand, brand)));
-        paint = { id: Math.max(0, ...book.paints.map(p => p.id)) + 1, brand: brand || (known ? known.brand : ""),
+        paint = { id: Math.max(retiredIds.paints, ...book.paints.map(p => p.id)) + 1, brand: brand || (known ? known.brand : ""),
                   name, colour: known ? known.colour : DEFAULT_PAINT_COLOUR };
         if (MATERIAL_WORDS.test(name)) paint.type = "material";   // v15
         book.paints.push(paint);
@@ -9735,7 +10017,8 @@
       if (!from || !into || from === into) return;
       const before = JSON.stringify(book);
       joinPaints(from, into);
-      commit(`Merged ${from.name} into ${into.name}`, () => { book = cleanRecipeBook(JSON.parse(before)); render(); });   // v18c-3
+      const undo = bookUndo(before);   // DS1
+      commit(`Merged ${from.name} into ${into.name}`, () => { undo(); render(); });   // v18c-3
     }
 
     // v58: "Swap for a real paint": a made-up example paint is replaced by a real one in every recipe, and leaves your palette.
@@ -9748,7 +10031,8 @@
       if (into === from) return;
       delete into.example;
       joinPaints(from, into);
-      commit(`Swapped ${from.name} for ${into.name}`, () => { book = cleanRecipeBook(JSON.parse(before)); render(); });
+      const undo = bookUndo(before);   // DS1
+      commit(`Swapped ${from.name} for ${into.name}`, () => { undo(); render(); });
     }
     // The real paints you can swap to: your own palette (made-up ones left out) and then every brand in the built-in list,
     // the same groups as the Compendium's "Start from" box.
@@ -9774,7 +10058,8 @@
       repointShorthand(paint, null);
       openPaintIds.delete(paint.id);
       if (importReviewIds) importReviewIds = importReviewIds.filter(id => id !== paint.id);
-      commit(`Removed ${paint.name}`, () => { book = cleanRecipeBook(JSON.parse(before)); render(); });   // v18c-3
+      const undo = bookUndo(before);   // DS1
+      commit(`Removed ${paint.name}`, () => { undo(); render(); });   // v18c-3
     }
 
     // The Remove and Merge into… buttons at the bottom of an open paint.
@@ -12638,11 +12923,15 @@
         // v39: a paint you do not own gets the small closed "Shop links" fold-out under its row (door.shops; the row itself is unchanged)
         const source = door.shopSource ? door.shopSource() : "";
         const real = !door.realOnly || realPaintForShop(paint) || onShoppingList(paint);   // v73: Mentor picks: no shop actions for a made-up example paint
-        const shops = door.shops && real ? buildShopFoldout(paint, idea.hit.owned, source, !!door.listButton) : null;
+        // v73: Mentor picks: Add to shopping list in plain view. F1: Colour Lab's Colour ideas too (plainAdd). One Add per row: when the row
+        // has its own, the Shop links fold-out keeps only its links.
+        const tagEl = door.plainAdd && door.listMarks ? row.querySelector(".idea-tag") : null;   // F1: Colour Lab's tag says it once
+        if (tagEl) tagEl.tabIndex = -1;
+        const toList = (door.listButton || door.plainAdd) && !idea.hit.owned ? buildShopAddRow(paint, source, tagEl) : null;
+        const shops = door.shops && real ? buildShopFoldout(paint, idea.hit.owned, source, !!door.listButton || !!toList) : null;
         if (shops) row.appendChild(shops);
         const toRecipe = buildPaintToRecipeRow(door, paint);   // v62
         if (toRecipe) row.appendChild(toRecipe);
-        const toList = door.listButton && !idea.hit.owned ? buildShopAddRow(paint, source) : null;   // v73: Mentor picks: Add to shopping list in plain view
         if (toList) row.appendChild(toList);
         if (idea.hit.alsoOwned) row.firstElementChild.after(alsoOwnedLine(idea.hit, door.addStep ? () => door.addStep(idea.hit.alsoOwned.paint, stepNote) : null, null, reason));   // v64: your best paint is a poor fit, so it comes second
         list.appendChild(row);
@@ -12931,12 +13220,13 @@
       startRecipeFromCompendium([{ paint, technique: "", coats: 1, mix: 100, note: "" }], (draft) => {
         const before = JSON.stringify(book);
         const { added } = paintForRecipe(paint);
+        const undo = bookUndo(before);   // DS1
         if (added && !save()) { showNotSaved(); return; }
         if (added) { updateBasket(); updateShopFoldouts(); }
         showToast(`Started a new recipe with ${paint.name}.${added ? NOT_OWNED_NOTE : ""}`, () => {
           if (recipeDraft !== draft) { notify("Too late to undo: that recipe has moved on."); return; }
           recipeDraft = null;
-          if (added) book = cleanRecipeBook(JSON.parse(before));
+          if (added) undo();
           refreshAfterPaintChange();
           notify("Took that back.");
         }, "Undo", UNDO_SECONDS);
@@ -12965,8 +13255,9 @@
       }
       delete recipe.example;   // you have changed it, so it is yours now (same as saving an edit)
       const where = step ? `step ${stepIndex + 1}` : `a new step ${recipe.steps.length}`;
+      const undo = bookUndo(before);   // DS1
       commit(`Added ${paint.name} to ${recipe.name}, ${where}.${added ? NOT_OWNED_NOTE : ""}`, () => {
-        book = cleanRecipeBook(JSON.parse(before));
+        undo();
         refreshAfterPaintChange();
         notify("Took that back.");
       }, "Undo", UNDO_SECONDS);
@@ -12992,8 +13283,9 @@
       else recipe.steps.push({ technique: "", coats: 1, paints, ratio: blend.ratio, note: "", optional: false });
       delete recipe.example;
       const where = step ? `step ${stepIndex + 1}` : `a new step ${recipe.steps.length}`;
+      const undo = bookUndo(before);   // DS1
       commit(`Added the mix ${blend.ratio} to ${recipe.name}, ${where}.`, () => {
-        book = cleanRecipeBook(JSON.parse(before));
+        undo();
         refreshAfterPaintChange();
         notify("Took that back.");
       }, "Undo", UNDO_SECONDS);
@@ -14311,7 +14603,7 @@
         const role = appendRolePicker(body, door, (key) => { st.role = key; redraw(`[data-role="${key}"]`); });
         const ideas = colourIdeas(null, base.colour, role);
         if (!ideas.length) say("No paints with a known colour to suggest yet. Add paints on Your Palette first.");
-        const built = buildIdeasList(door, ideas, base.colour, role);
+        const built = buildIdeasList(Object.assign({}, door, { plainAdd: true }), ideas, base.colour, role);   // F1: a visible Add on rows you do not own
         body.appendChild(built.list);
         if (ideas.length) {
           const head = `Colour ideas for ${role.note} with ${base.name}${base.brand ? ` (${base.brand})` : ""}`;
@@ -14533,9 +14825,29 @@
       const gr = guideGroupsOf(e.category, kn).groups.find(x => x.nums.has(e.key));
       return gr ? { group: gr.name, num: gr.nums.get(e.key) } : null;
     }
+    // G2b: every guide entry's number in one map (key to 2.3.4), worked out the same way as the grouped browse, for lists that mix
+    // sections (A to Z and search). Only guide entries have numbers; a detail recipe or basing tip with the same key gets none.
+    function guideNumbers(kn = knowledgeIndex()) {
+      const out = new Map();
+      for (const c of GUIDE_CATEGORIES) for (const gr of guideGroupsOf(c.key, kn).groups) for (const [k, n] of gr.nums) out.set(k, n);
+      return out;
+    }
+    // G2b: the See also entries of one entry (guides-groups.js), up to 3, in the order given. A key that is not in the library,
+    // the entry's own key or a key named twice is skipped, so a wrong key never shows a dead link.
+    function guideSeeAlso(e, kn = knowledgeIndex()) {
+      const map = typeof GUIDE_GROUPS === "undefined" || !GUIDE_GROUPS || !GUIDE_GROUPS.seeAlso ? {} : GUIDE_GROUPS.seeAlso;
+      const keys = e && e.kind === "guide" && Object.prototype.hasOwnProperty.call(map, e.key) && Array.isArray(map[e.key]) ? map[e.key] : [];
+      const out = [];
+      for (const k of keys) {
+        const r = typeof k === "string" && k !== e.key ? kn.get(k) : null;
+        if (r && r !== e && !out.includes(r)) out.push(r);
+      }
+      return out.slice(0, 3);
+    }
     // Where the Guides screen is: home (search and categories), a category (its topic groups), one group, or one entry. Kept while the
     // app is open, never saved. G2a: group is the name of the topic group being shown, or of the one the open entry sits in.
-    const guidesState = { view: "home", cat: "", group: "", key: "", kind: "", query: "", missing: false };
+    // G2b: order is how the home list shows when nothing is typed: "topics" (the sections) or "az" (every entry A to Z).
+    const guidesState = { view: "home", cat: "", group: "", key: "", kind: "", query: "", missing: false, order: "topics" };
     function guidesPoint(e) {   // point the screen at one entry
       guidesState.missing = false;
       guidesState.key = e.key;
@@ -14684,10 +14996,36 @@
       input.value = g.query;
       const lower = document.createElement("div");
       lower.className = "guides-lower";
+      // G2b: search results and the A to Z list show each entry's grouped-browse number (worked out once per drawing, when needed)
+      let numbers = null;
+      const numOf = (e) => (e.kind === "guide" ? (numbers = numbers || guideNumbers(kn)).get(e.key) || "" : "");
       const drawLower = () => {
         lower.replaceChildren();
         const q = g.query.trim();
-        if (q) { lower.appendChild(entryRows(kn.search(q), "q:" + q)); return; }
+        if (q) { lower.appendChild(entryRows(kn.search(q), "q:" + q, numOf)); return; }
+        // G2b: Topics (the sections) or A to Z (every entry of every section in one list), a two-part switch like the others in the app
+        const seg = document.createElement("div");
+        seg.className = "seg guides-order";
+        seg.setAttribute("role", "tablist");
+        seg.setAttribute("aria-label", "Guides order");
+        for (const [k, text] of [["topics", "Topics"], ["az", "A to Z"]]) {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.setAttribute("role", "tab");
+          b.setAttribute("aria-selected", String(g.order === k));
+          b.dataset.order = k;
+          b.textContent = text;
+          b.addEventListener("click", () => { g.order = k; renderGuides(`[data-order="${k}"]`); });
+          seg.appendChild(b);
+        }
+        lower.appendChild(seg);
+        if (g.order === "az") {
+          const all = kn.entries.filter(e => (e.kind === "guide" || e.kind === "detail" || e.kind === "basing") && shown.some(c => c.key === e.category));
+          const box = entryRows(all.sort(guideByTitle), "az", numOf);
+          box.classList.add("guides-az");
+          lower.appendChild(box);
+          return;
+        }
         const list = document.createElement("div");
         list.className = "guides-rows guides-cats";
         for (const c of shown) {
@@ -14799,6 +15137,29 @@
             const p = document.createElement("p");
             p.textContent = para;
             page.appendChild(p);
+          }
+          // G2b: See also, a quiet row under the text: a small heading, then up to 3 entry titles as links, each opening through openGuide
+          const also = guideSeeAlso(e, kn);
+          if (also.length) {
+            const box = document.createElement("div");
+            box.className = "guides-seealso";
+            box.setAttribute("role", "group");
+            box.setAttribute("aria-labelledby", "guides-seealso-label");
+            const h = document.createElement("p");
+            h.className = "similar-label";
+            h.id = "guides-seealso-label";
+            h.textContent = "See also";
+            box.appendChild(h);
+            for (const r of also) {
+              const b = document.createElement("button");
+              b.type = "button";
+              b.className = "link-button guides-seealso-link";
+              b.dataset.seeAlso = r.key;
+              b.textContent = r.title;
+              b.addEventListener("click", () => openGuide(r.key));
+              box.appendChild(b);
+            }
+            page.appendChild(box);
           }
           const rel = e.related.map(k => kn.get(k)).filter(Boolean);
           if (rel.length) {
@@ -15869,13 +16230,14 @@
         return;
       }
       importDraft = null;
+      const undo = bookUndo(before);   // DS1
       // v17.1: new paints open on Your Palette for a quick check, with every row expanded.
       importReviewIds = importNewIds.length ? importNewIds.slice() : null;
       importNewIds.forEach(id => openPaintIds.add(id));
       render();
       window.scrollTo(0, 0);
       showToast(`Saved ${plural(made.length, "scheme")} with ${plural(recipeCount, "recipe")}`, () => {
-        book = cleanRecipeBook(JSON.parse(before));
+        undo();
         render();
       });
     }
@@ -16669,21 +17031,21 @@
     const FAINT_BELOW = 3;
     const tooFaintOnDark = (hex) => contrastRatio(hex, darkCard()) < FAINT_BELOW;
 
-    // ----- v47: Themes (Classic, Blueprint, Parchment Codex, Grim Forge, Paint Bench, Rulebook) -----
-    // settings.theme is one of these names; "classic" (the look before themes) is the default and the fallback.
+    // ----- v47: Themes (Classic, Parchment Codex, Grim Forge, Paint Bench) -----
+    // settings.theme is one of these names; "classic" is the default and the fallback.
+    // TH1: Blueprint and Rulebook were removed. A saved setting or a backup that still names one of them ends up on Classic.
     // Theme and Appearance are separate: the look you see is the theme in its dark or light version.
-    const THEMES = { classic: "Classic", blueprint: "Blueprint", parchment: "Parchment Codex", forge: "Grim Forge", bench: "Paint Bench", rulebook: "Rulebook" };
+    const THEMES = { classic: "Classic", parchment: "Parchment Codex", forge: "Grim Forge", bench: "Paint Bench" };
+    const RETIRED_THEMES = ["blueprint", "rulebook"];
     const goodTheme = (value) => typeof value === "string" && Object.prototype.hasOwnProperty.call(THEMES, value);
     const currentTheme = () => goodTheme(settings.theme) ? settings.theme : "classic";
     // Each theme's page and card colours in dark and light (the same as the THEMES section of index.html; a test checks).
     // Stage colours are made readable against these, so they stay readable in every theme.
     const THEME_SURFACES = {
       classic: { dark: { page: "#0b1220", card: "#141d2f" }, light: { page: "#e9eff6", card: "#f8fafc" } },
-      blueprint: { dark: { page: "#0c2c4f", card: "#0f3560" }, light: { page: "#f1f4f8", card: "#fbfcfe" } },
       parchment: { dark: { page: "#17120e", card: "#211a14" }, light: { page: "#d8c59a", card: "#e4d4ae" } },
       forge: { dark: { page: "#0e0e10", card: "#17171a" }, light: { page: "#cfcdc6", card: "#dedcd5" } },
-      bench: { dark: { page: "#111815", card: "#19231f" }, light: { page: "#cfe0d4", card: "#e1ece4" } },
-      rulebook: { dark: { page: "#181810", card: "#20201a" }, light: { page: "#c8c6a9", card: "#d5d3b8" } }
+      bench: { dark: { page: "#111815", card: "#19231f" }, light: { page: "#cfe0d4", card: "#e1ece4" } }
     };
     const darkCard = () => THEME_SURFACES[currentTheme()].dark.card;
     const lightCard = () => THEME_SURFACES[currentTheme()].light.card;
@@ -17093,14 +17455,30 @@
     //   { date: "2026-10-08", stages: [...], doneFrom, models: [...] }
     // Copies made before v14 are just the list of units; readSafetyCopy() reads both kinds.
     // keepSafetyCopy() returns false if there wasn't room, so the caller can STOP.
-    function keepSafetyCopy(suffix) {
+    // DS1: withBook keeps your recipe book in the SAME record ({ date, stages, doneFrom, models, book }), for the actions that
+    // replace recipes too (a restore with recipes, a recover with recipes). Units and recipes are written and cleared as one, so
+    // a copy can never pair one action's units with another's recipes. Before DS1 the recipes sat under their own name
+    // ("shades-of-grey-recipes" + suffix); that older copy is still read (see safetyCopyBook) and is removed whenever a new copy
+    // is kept under the same suffix, because it belonged to the copy being replaced.
+    function keepSafetyCopy(suffix, withBook) {
       const copy = { date: todayISO(), stages: STAGES, doneFrom: settings.doneFrom, models };
+      if (withBook) copy.book = book;
       try {
         localStorage.setItem(STORAGE_KEY + suffix, JSON.stringify(copy));
-        return true;
       } catch (error) {
         return false;   // no room (or storage switched off): the old copy, if any, is left as it was
       }
+      try { localStorage.removeItem(RECIPES_KEY + suffix); } catch (ignored) {}
+      return true;
+    }
+    // The recipe book that belongs with a safety copy: the one inside it (DS1), or an older separate copy. null if none.
+    function safetyCopyBook(copy, suffix) {
+      if (copy && copy.book && typeof copy.book === "object" && !Array.isArray(copy.book)) return copy.book;
+      try {
+        const old = JSON.parse(localStorage.getItem(RECIPES_KEY + suffix) || "null");
+        if (old && typeof old === "object" && !Array.isArray(old)) return old;
+      } catch (ignored) {}
+      return null;
     }
     function readSafetyCopy(suffix) {
       try {
@@ -17148,6 +17526,20 @@
       }
       const recipesCopy = readRecipesCopy();
       if (recipesCopy && (!recipesCopy.date || daysSince(recipesCopy.date) > SAFETY_DAYS)) forgetRecipesCopy();
+      // DS1: "-unreadable" copies get the same 30 days. Their date is in the settings (the copy itself is the text exactly as
+      // it was); a copy with no date (kept before DS1) is given today's.
+      const dates = { ...(settings.unreadableDates || {}) };
+      let changed = false;
+      for (const key of [STORAGE_KEY, RECIPES_KEY]) {
+        if (!savedText(key + "-unreadable")) { if (dates[key]) { delete dates[key]; changed = true; } continue; }
+        if (!dates[key]) { dates[key] = todayISO(); changed = true; }
+        else if (daysSince(dates[key]) > SAFETY_DAYS) {
+          try { localStorage.removeItem(key + "-unreadable"); } catch (ignored) {}
+          delete dates[key];
+          changed = true;
+        }
+      }
+      if (changed) { settings.unreadableDates = dates; saveSettings(); }
     }
 
     // The "Recover earlier data" list in Settings → Your data.
@@ -17188,20 +17580,41 @@
         li.append(text, button);
         list.appendChild(li);
       }
+      // DS1: text that couldn't be read (kept by Start again, or by versions before DS1). It can only be saved as a file.
+      for (const key of [STORAGE_KEY, RECIPES_KEY]) {
+        let raw = null;
+        try { raw = localStorage.getItem(key + "-unreadable"); } catch (ignored) {}
+        if (!raw) continue;
+        any = true;
+        const label = `Unreadable ${key === RECIPES_KEY ? "recipes" : "units"}`;
+        const li = document.createElement("li");
+        const text = document.createElement("span");
+        const date = (settings.unreadableDates || {})[key];
+        text.textContent = `${label}: ${Math.max(1, Math.round(raw.length / 1024))} KB` + (date ? `, saved ${shortDate(date)}` : "");
+        const button = document.createElement("button");
+        button.className = "plain-button";
+        button.textContent = "Save as file";
+        button.setAttribute("aria-label", `Save as file: ${label}`);
+        button.addEventListener("click", () => saveUnreadableAsFile([key], "-unreadable"));
+        li.append(text, button);
+        list.appendChild(li);
+      }
       document.getElementById("recover-card").classList.toggle("hidden", !any);
     }
 
     // v18.3: put back the recipes kept by a recipes-only restore. Units aren't touched.
     function recoverRecipesCopy() {
+      if (refusedWhilePaused()) return;   // DS1
       const copy = readRecipesCopy();
       if (!copy) { renderRecover(); return; }
       const restored = cleanRecipeBook(copy.book);
       askYesNo(`Replace your current ${plural(book.recipes.length, "recipe")} with the ${plural(restored.recipes.length, "recipe")} in this copy? (Your units stay as they are.)`, () => {
         const before = JSON.stringify(book);
-        if (!changeAndSave(() => { book = restored; })) { notify(fullMessage()); return; }
+        const linksBefore = unitRecipeLinks();   // DS1
+        if (!changeAndSave(() => { linkUnitsToBook(models, restored, book); book = restored; })) { notify(fullMessage()); return; }
         afterBigChange();
         showToast(`Recovered ${plural(book.recipes.length, "recipe")}`, () => {
-          if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(before)); })) { notify(fullMessage()); return; }
+          if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(before)); putUnitRecipeLinksBack(linksBefore); })) { notify(fullMessage()); return; }
           afterBigChange();
         }, "Undo", UNDO_SECONDS);
       }, { danger: true });
@@ -17210,6 +17623,7 @@
     // Swap your current units for a safety copy. Your current units are kept as a copy
     // themselves first ("Before your last Recover"), and Undo puts them straight back.
     function recoverSafetyCopy(suffix) {
+      if (refusedWhilePaused()) return;   // DS1
       const copy = readSafetyCopy(suffix);
       if (!copy) { renderRecover(); return; }
       const copyStages = goodStageList(copy.stages) ? renamedStageList(copy.stages.map(String)) : null;   // v62: renamed as on start-up
@@ -17218,11 +17632,11 @@
       if (copyStages) STAGES = copyStages;
       const units = cleanModels(copy.models);
       STAGES = currentStages;
-      const recipesCopy = (() => { try { return JSON.parse(localStorage.getItem(RECIPES_KEY + suffix) || "null"); } catch (e) { return null; } })();
+      const recipesCopy = safetyCopyBook(copy, suffix);   // DS1
       // v21.7: asks in the app's own box; the swap (and its Undo) happen when you say yes.
       askYesNo(`Replace your current ${plural(models.length, "unit")} with the ${plural(units.length, "unit")} in this copy` +
           (recipesCopy ? " (and its recipes)" : "") + "?", () => {
-        if (models.length && suffix !== "-before-recover" && !keepSafetyCopy("-before-recover")) {
+        if (models.length && suffix !== "-before-recover" && !keepSafetyCopy("-before-recover", !!recipesCopy)) {
           notify("There isn't room on this device to keep a copy of your current units first, so nothing has changed. Please save a backup first.");
           return;
         }
@@ -17230,6 +17644,7 @@
         const kept = changeAndSave(() => {
           models = units;
           if (recipesCopy) book = cleanRecipeBook(recipesCopy);
+          linkUnitsToBook(models, book, null);   // DS1: no unit keeps a link to a recipe that isn't in the book
           if (copyStages) {
             settings.stages = STAGES = copyStages;
             if (copy.doneFrom !== undefined) settings.doneFrom = copy.doneFrom;
@@ -17250,6 +17665,38 @@
           afterBigChange();
         }, "Undo", UNDO_SECONDS);
       }, { danger: true });
+    }
+
+    // DS1: after a recipe book is swapped (restore, recover), a unit's recipe links must point at recipes in the NEW book. A new
+    // book reuses ids 1, 2, 3..., so an old link would quietly show an unrelated recipe. With prev (the book being replaced), a
+    // link is matched by the recipe's name first; without it (the units came with this book), only links to ids in the book stay.
+    // Links with no match are dropped.
+    function linkUnitsToBook(list, next, prev) {
+      const nextRecipes = (next && Array.isArray(next.recipes)) ? next.recipes : [];
+      const prevRecipes = (prev && Array.isArray(prev.recipes)) ? prev.recipes : null;
+      for (const m of list) {
+        if (!m || !Array.isArray(m.recipes)) continue;
+        const out = [];
+        for (const id of m.recipes) {
+          let to = null;
+          if (prevRecipes) {
+            const was = prevRecipes.find(r => r.id === id);
+            const match = was && nextRecipes.find(r => sameText(r.name, was.name));
+            to = match ? match.id : null;
+          } else if (nextRecipes.some(r => r.id === id)) to = id;
+          if (to !== null && !out.includes(to)) out.push(to);
+        }
+        if (out.length) m.recipes = out; else delete m.recipes;
+      }
+    }
+    // Each unit's recipe links, so an Undo of a book swap can put them back.
+    function unitRecipeLinks() { return new Map(models.map(m => [m.id, Array.isArray(m.recipes) ? m.recipes.slice() : null])); }
+    function putUnitRecipeLinksBack(links) {
+      for (const m of models) {
+        if (!links.has(m.id)) continue;
+        const ids = links.get(m.id);
+        if (ids) m.recipes = ids.slice(); else delete m.recipes;
+      }
     }
 
     // Redraw everything after units, recipes or stages were swapped wholesale.
@@ -17279,6 +17726,11 @@
         const copy = readSafetyCopy(suffix);
         if (copy) for (const m of copy.models) for (const p of (m && m.photos) || []) if (p && p.id) safety.add(p.id);
       }
+      // DS1: photos named in units that couldn't be read (still saved, or kept as "-unreadable") are never spare. The text
+      // can't be read as a whole, so every photo id in it is picked out on its own.
+      for (const raw of [unreadableParts.includes(STORAGE_KEY) ? savedText(STORAGE_KEY) : null, savedText(STORAGE_KEY + "-unreadable")]) {
+        if (raw) for (const m of raw.matchAll(/"id":"([^"\\]+)"/g)) safety.add(m[1]);
+      }
       // v14: also read the units list as SAVED right now, in case the app is open in
       // another window that has just added a photo this window hasn't heard about yet.
       try {
@@ -17301,13 +17753,14 @@
         if (r.orphans.length) text += ` ${plural(r.orphans.length, "spare photo file")} (${sizeText(r.orphanBytes)}) no unit uses any more; Clean up photo storage removes ${r.orphans.length === 1 ? "it" : "them"}.`;
         if (r.safetyCount) text += ` ${plural(r.safetyCount, "more file")} belong to the safety copy kept by Delete all / Replace / Restore, and are kept.`;
         photoSummary.textContent = text;
-        cleanPhotosButton.disabled = !r.orphans.length;
+        cleanPhotosButton.disabled = !r.orphans.length || unreadableParts.length > 0;   // DS1: never while saving is paused
       } catch (error) {
         photoSummary.textContent = "Photo storage isn't available in this browser (for example in a private window).";
         cleanPhotosButton.disabled = true;
       }
     }
     cleanPhotosButton.addEventListener("click", async () => {
+      if (refusedWhilePaused()) return;   // DS1
       const r = await photoStoreReport();
       if (!r.orphans.length) { renderPhotoSummary(); return; }
       askYesNo(`Delete ${plural(r.orphans.length, "photo file")} that no unit uses? This frees about ${sizeText(r.orphanBytes)}.`, async () => {
@@ -17322,21 +17775,24 @@
       // v21.7: asks in the app's own box; everything below runs when you say yes.
       askYesNo(`Delete all ${plural(models.length, "unit")}? A copy is kept on this device for ${SAFETY_DAYS} days ` +
           `(Settings → Recover earlier data), but please save a backup first.`, () => {
-        if (!models.length) return;
+        if (!models.length || refusedWhilePaused()) return;   // DS1
         // v14: STOP if the safety copy can't be kept, rather than delete with no safety net.
         if (!keepSafetyCopy("-before-delete-all")) {
           notify("There isn't room on this device to keep a safety copy of your units, so nothing has been deleted. " +
                 "Please press Save backup first, then delete some photos or units you no longer need.");
           return;
         }
-        const before = models;
-        models = [];
+        const count = models.length;
+        const before = JSON.stringify(models);
+        // DS1: saved first; if that fails, nothing changes and the message says so (no "Deleted").
+        if (!changeAndSave(() => { models = []; })) { notify(fullMessage()); return; }
+        const undo = unitsUndo(before);   // DS1: Undo keeps units added since
         openIds.clear();
         clearFilters();
         render();
         renderSettings();
-        showToast(`Deleted ${plural(before.length, "unit")}`, () => {
-          models = before;
+        showToast(`Deleted ${plural(count, "unit")}`, () => {
+          undo();
           render();
           renderSettings();
         }, "Undo", UNDO_SECONDS);
@@ -17522,11 +17978,9 @@
     });
 
     // Put the pictures from a full backup into the photo store. Returns how many worked.
-    // Only ordinary photo types are accepted from a backup file. The app itself only ever saves
+    // Only ordinary photo types are accepted from a backup file (SAFE_PHOTO_TEXT). The app itself only ever saves
     // JPEG; PNG and WebP are allowed for older or hand-made backups. Anything else, such as an
-    // SVG (a drawing that can carry code), is skipped. The photo is only ever shown inside an
-    // <img>, where code can't run, so this is a second lock on a door that was already shut.
-    const SAFE_PHOTO_TEXT = /^data:image\/(?:jpeg|png|webp);base64,/;
+    // SVG (a drawing that can carry code), is skipped.
     async function importPhotoFiles(files) {
       let done = 0;
       for (const [id, pair] of Object.entries(files || {})) {
@@ -17592,10 +18046,75 @@
       }
     });
 
+    // ----- DS1: saved data that couldn't be read -----
+    // Restore, Replace, Recover and Delete all would keep safety copies of what's on screen (nothing, while paused) over real
+    // ones, so they are refused before anything is touched.
+    function refusedWhilePaused() {
+      if (!unreadableParts.length) return false;
+      notify("Save the unreadable data as a file, or start again, first. Nothing has changed.");
+      return true;
+    }
+    // Save it as a file: the saved text exactly as it is (it can't be read as a backup, but nothing in it is lost).
+    // parts: storage names; each one present downloads as its own file.
+    function saveUnreadableAsFile(parts, suffix) {
+      parts.forEach((key, i) => {
+        let raw = null;
+        try { raw = localStorage.getItem(key + (suffix || "")); } catch (ignored) {}
+        if (raw === null) return;
+        const what = key === RECIPES_KEY ? "recipes" : "units";
+        setTimeout(() => downloadFile(`minifolio-unreadable-${what}-${todayISO()}.txt`, raw, "text/plain"), i * 600);
+      });
+    }
+    // Start again: asks first, then keeps a copy of the unreadable text under "-unreadable" (listed under Recover earlier data
+    // for 30 days) and starts the unreadable part empty. It only ever works on the text it read: if another window has saved
+    // since, this window catches up instead (see loadFromOtherWindow), and an older, different "-unreadable" copy is never
+    // written over.
+    function unreadableChanged(parts) { return parts.some(key => savedText(key) !== unreadableText[key]); }
+    function startAgainFromUnreadable() {
+      const parts = unreadableParts.slice();
+      if (unreadableChanged(parts)) { loadFromOtherWindow(); return; }
+      const canCopy = parts.every(key => { const old = savedText(key + "-unreadable"); return old === null || old === unreadableText[key]; });
+      const what = unreadablePartsWords(parts);
+      const finish = () => {
+        if (!unreadableParts.length) return;
+        if (unreadableChanged(parts)) { loadFromOtherWindow(); return; }
+        unreadableParts = [];
+        if (parts.includes(STORAGE_KEY)) models = [];
+        if (parts.includes(RECIPES_KEY)) { book = cleanRecipeBook(null); linkUnitsToBook(models, book, null); }
+        usualSaveBanner();
+        hideSaveProblem();
+        const ok = saveAll();
+        afterBigChange();
+        if (ok) showToast("Started again");
+        else showNotSaved();
+      };
+      askYesNo(`Start again without your saved ${what}? ` + (canCopy
+          ? `A copy is kept under Recover earlier data for ${SAFETY_DAYS} days.`
+          : "A copy can't be kept, so save it as a file first."), () => {
+        if (!unreadableParts.length) return;
+        if (unreadableChanged(parts)) { loadFromOtherWindow(); return; }
+        if (!canCopy) { finish(); return; }
+        let copied = true;
+        for (const key of parts) {
+          try {
+            localStorage.setItem(key + "-unreadable", unreadableText[key]);
+            settings.unreadableDates = { ...(settings.unreadableDates || {}), [key]: todayISO() };   // saved by finish()
+          } catch (error) { copied = false; }
+        }
+        if (copied) finish();
+        else askYesNo("There isn't room to keep a copy. Start again anyway? Save it as a file first if you might need it.",
+          finish, { danger: true, yes: "Start again" });
+      }, { danger: true, yes: "Start again" });
+    }
+
     // The red banner's buttons (v14).
-    document.getElementById("banner-backup").addEventListener("click", () => document.getElementById("export-button").click());
+    document.getElementById("banner-backup").addEventListener("click", () => {
+      if (unreadableParts.length && !dataTooNew) { saveUnreadableAsFile(unreadableParts); return; }   // DS1
+      document.getElementById("export-button").click();
+    });
     document.getElementById("banner-retry").addEventListener("click", () => {
       if (dataTooNew) { location.reload(); return; }
+      if (unreadableParts.length) { startAgainFromUnreadable(); return; }   // DS1
       if (saveAll()) showToast("Saved. Everything is up to date.");
       else notify("Still full. Please save a backup, then free some space (delete photos or units you no longer need).");
     });
@@ -17605,6 +18124,7 @@
     restoreFile.addEventListener("change", () => {
       const file = restoreFile.files[0];
       if (!file) return;
+      if (refusedWhilePaused()) { restoreFile.value = ""; return; }   // DS1
       // v19.1: refuse pictures and very large files before reading anything.
       const problem = fileProblem(file, "backup");
       if (problem) { restoreFile.value = ""; notify(problem); return; }
@@ -17645,12 +18165,12 @@
         // Clean the units against the backup's own stages, BEFORE touching your data.
         const currentStages = STAGES;
         if (backupStages) STAGES = backupStages;
-        const restored = cleanModels(backupModels);
+        const restored = cleanModels(backupModels).map(capUnitText);   // SEC1: names and other one-line text cut to the typing limits
         STAGES = currentStages;
         // v76: counts above the limit were lowered by cleanModels; count them so the end can say so.
         const loweredCounts = backupModels.filter(m => m && typeof m.name === "string" && m.name.trim() && parseInt(m.count, 10) > MAX_MODELS).length;
         // Backups from v5 onwards also hold recipes. Older ones don't, so your recipes stay.
-        const backupBook = !isList && parsed.recipes && typeof parsed.recipes === "object" ? cleanRecipeBook(parsed.recipes) : null;
+        const backupBook = !isList && parsed.recipes && typeof parsed.recipes === "object" ? capBookText(cleanRecipeBook(parsed.recipes)) : null;
         const hasRecipes = !!backupBook && (backupBook.recipes.length > 0 || backupBook.paints.length > 0 || backupBook.schemes.length > 0);
         // v14: a backup with recipes but no units is fine too: it replaces only your recipes.
         const unitsToo = restored.length > 0;
@@ -17660,6 +18180,11 @@
         }
         const photoFiles = !isList && parsed.photoFiles && typeof parsed.photoFiles === "object" ? parsed.photoFiles : null;
         const photoCount = photoFiles ? Object.keys(photoFiles).length : 0;
+        // SEC1: photos that aren't a JPEG, PNG or WebP picture are left out; count them so the end can say so.
+        const skippedPhotos = backupModels.filter(m => m && typeof m.photo === "string" && !SAFE_PHOTO_TEXT.test(m.photo)).length +
+          (photoFiles ? Object.values(photoFiles).filter(pair => !pair || typeof pair.full !== "string" || !SAFE_PHOTO_TEXT.test(pair.full)).length : 0);
+        const restoreNotes = [loweredCounts ? `${plural(loweredCounts, "count")} lowered to ${MAX_MODELS}` : "",
+          skippedPhotos ? `${plural(skippedPhotos, "photo")} left out: not a JPEG, PNG or WebP` : ""].filter(Boolean);
         const question = (!unitsToo
             ? `Replace your ${plural(book.recipes.length, "recipe")} with ${plural(backupBook.recipes.length, "recipe")} from the backup? (Your units stay as they are.)`
             : backupBook
@@ -17669,19 +18194,25 @@
           + (photoCount ? ` It includes ${plural(photoCount, "photo")}.` : "");
         // v21.7: asks in the app's own box; the restore runs when you say yes.
         askYesNo(question, () => {
+          // Safety copies of what you had, listed under Recover earlier data. DS1: kept BEFORE anything else happens, and if
+          // there's no room the restore stops and nothing changes (before DS1 it went ahead, and Recover then offered an older
+          // copy as if it were this one). Units and recipes are kept in one record (see keepSafetyCopy).
+          // v18.3: a recipes-only restore keeps its own copy and gets an Undo button.
+          if (unitsToo ? !keepSafetyCopy("-before-restore", !!backupBook) : !keepRecipesCopy()) {
+            notify("There isn't room on this device to keep a safety copy of your data first, so nothing has changed. Please save a backup first.");
+            return;
+          }
+          const recipesBefore = unitsToo ? null : JSON.stringify(book);
+          const linksBefore = unitsToo ? null : unitRecipeLinks();   // DS1
           (photoFiles ? importPhotoFiles(photoFiles) : Promise.resolve(0)).then(async (imported) => {
-            // Safety copies of what you had (best effort), listed under Recover earlier data.
-            if (unitsToo) keepSafetyCopy("-before-restore");
-            if (unitsToo && backupBook) { try { localStorage.setItem(RECIPES_KEY + "-before-restore", JSON.stringify(book)); } catch (ignored) {} }
-            // v18.3: a recipes-only restore keeps its own copy (listed under Recover earlier data)
-            // and gets an Undo button.
-            if (!unitsToo) keepRecipesCopy();
-            const recipesBefore = unitsToo ? null : JSON.stringify(book);
 
             // v14: units, recipes, stages and colours are saved TOGETHER, or not at all.
             const kept = changeAndSave(() => {
               if (unitsToo) models = restored;
-              if (backupBook) book = backupBook;
+              // DS1: unit recipe links follow the book. Units from the backup go with the backup's book; your own units (a
+              // recipes-only restore) are matched to the new book by recipe name, and links with no match are dropped.
+              if (backupBook) { linkUnitsToBook(models, backupBook, unitsToo ? null : book); book = backupBook; }
+              else linkUnitsToBook(models, book, null);
               if (unitsToo && backupStages) {
                 settings.stages = STAGES = backupStages;
                 settings.doneFrom = parsed.doneFrom;
@@ -17695,6 +18226,7 @@
               if (unitsToo && !isList && goodAppearance(parsed.appearance)) settings.appearance = parsed.appearance;
               // v47: backups from v47 onwards hold the theme. Anything that isn't a known theme is ignored.
               if (unitsToo && !isList && goodTheme(parsed.theme)) settings.theme = parsed.theme;
+              else if (unitsToo && !isList && RETIRED_THEMES.includes(parsed.theme)) settings.theme = "classic";   // TH1: a removed theme becomes Classic
               // v48: and the paint brands you'd switched off (unknown brands are dropped).
               if (unitsToo && !isList && Array.isArray(parsed.brandsOff)) settings.brandsOff = cleanBrandsOff(parsed.brandsOff);
               // v20.1: Custom colours. Backups from before v20.1 don't have them, so yours stay.
@@ -17721,12 +18253,12 @@
             }
             if (missing) {
               notify(photoFiles
-                ? `Backup restored${loweredCounts ? ` (${plural(loweredCounts, "count")} lowered to ${MAX_MODELS})` : ""}, but ${missing} of ${plural(needed, "photo")} couldn't be loaded on this device (${imported} of ${photoCount} in the file worked), so they won't show. Keep the backup file safe: you can restore it again later, for example after freeing some space.`
-                : `Backup restored${loweredCounts ? ` (${plural(loweredCounts, "count")} lowered to ${MAX_MODELS})` : ""}, but this backup was saved without photos, so ${plural(missing, "photo")} won't show on this device. Keep the backup file safe. To bring photos across, use Save full backup with photos on the other device.`);
+                ? `Backup restored${restoreNotes.length ? ` (${restoreNotes.join("; ")})` : ""}, but ${missing} of ${plural(needed, "photo")} couldn't be loaded on this device (${imported} of ${photoCount} in the file worked), so they won't show. Keep the backup file safe: you can restore it again later, for example after freeing some space.`
+                : `Backup restored${restoreNotes.length ? ` (${restoreNotes.join("; ")})` : ""}, but this backup was saved without photos, so ${plural(missing, "photo")} won't show on this device. Keep the backup file safe. To bring photos across, use Save full backup with photos on the other device.`);
             } else {
-              if (unitsToo) showToast("Backup restored" + (loweredCounts ? `. ${plural(loweredCounts, "count")} lowered to ${MAX_MODELS}` : ""));
+              if (unitsToo) showToast("Backup restored" + restoreNotes.map(n => `. ${n}`).join(""));
               else showToast(`Recipes restored (${plural(book.recipes.length, "recipe")})`, () => {
-                if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(recipesBefore)); })) { notify(fullMessage()); return; }
+                if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(recipesBefore)); putUnitRecipeLinksBack(linksBefore); })) { notify(fullMessage()); return; }
                 afterBigChange();
                 showToast("Your recipes are back as they were");
               }, "Undo", UNDO_SECONDS);
@@ -18101,7 +18633,7 @@
     // The incoming rows with game/faction filled in (Warhammer lists take them from the boxes).
     function incomingRows() {
       if (incoming.source !== "wh") return incoming.rows;
-      return incoming.rows.map(r => ({ ...r, hobby: whGame.value.trim(), faction: whFaction.value.trim() }));
+      return incoming.rows.map(r => capUnitText({ ...r, hobby: whGame.value.trim(), faction: whFaction.value.trim() }));
     }
 
     // Pairs each incoming unit with one you already have, if any. Each of your units is
@@ -18162,7 +18694,7 @@
     let lastMatches = null;
 
     function openReview(data) {
-      incoming = data;
+      incoming = { ...data, rows: data.rows.map(capUnitText) };   // SEC1: names cut to the typing limits
       reviewMode = "add";
       const isWh = data.source === "wh";
       reviewTitle.textContent = isWh ? "Check your army list" : "Check your CSV import";
@@ -18390,6 +18922,7 @@
       // v21.7: the "replace everything" question is asked in the app's own box; the rest runs
       // when you say yes (straight away for "add", or when there's nothing to replace).
       const run = () => {
+        if (refusedWhilePaused()) return;   // DS1
         if (reviewMode === "replace" && models.length) {
           // Keep a safety copy on the device. If there isn't room (photos take a lot of
           // space), stop rather than carry on with no safety net.
@@ -18400,35 +18933,39 @@
           }
         }
 
-        const before = models.map(m => ({ ...m }));   // a copy, so Undo can put everything back
-        if (reviewMode === "replace") {
-          models = [];
-          openIds.clear();
-        } else {
-          // Rename first, so new copies are numbered alongside them.
-          for (const r of renames) {
-            const unit = models.find(m => m.id === r.id);
-            if (unit) unit.name = r.to;
+        const before = JSON.stringify(models);   // DS1: Undo puts back only what the import changed (see unitsUndo)
+        // DS1: saved together; if that fails, nothing changes, the review stays open and the message says so.
+        const kept = changeAndSave(() => {
+          if (reviewMode === "replace") {
+            models = [];
+            openIds.clear();
+          } else {
+            // Rename first, so new copies are numbered alongside them.
+            for (const r of renames) {
+              const unit = models.find(m => m.id === r.id);
+              if (unit) unit.name = r.to;
+            }
+            for (const r of renames) { fixCopies(r.from, r.faction); fixCopies(r.to, r.faction); }
           }
-          for (const r of renames) { fixCopies(r.from, r.faction); fixCopies(r.to, r.faction); }
-        }
-        matched.forEach((m, i) => {
-          const c = choices[i];
-          if (!c.tick) return;
-          // Extra copies of a unit you have, where you chose to keep your name, use your name.
-          const useYours = reviewMode === "add" && m.match && c.keep === "yours";
-          const { stageGiven, dateAdded, dateStage, ...row } = m.row;   // stageGiven and the dates are only for the check, never saved as they are
-          const unit = addModel({
-            ...row,
-            name: useYours ? m.match.name : m.row.name,
-            stage: c.stage,     // v60: each row's own stage and count
-            count: c.count,
+          matched.forEach((m, i) => {
+            const c = choices[i];
+            if (!c.tick) return;
+            // Extra copies of a unit you have, where you chose to keep your name, use your name.
+            const useYours = reviewMode === "add" && m.match && c.keep === "yours";
+            const { stageGiven, dateAdded, dateStage, ...row } = m.row;   // stageGiven and the dates are only for the check, never saved as they are
+            const unit = addModel({
+              ...row,
+              name: useYours ? m.match.name : m.row.name,
+              stage: c.stage,     // v60: each row's own stage and count
+              count: c.count,
+            });
+            // IM1: a row with no dates keeps today, as before. date_stage counts only if the unit ends at the
+            // stage the file named; a stage changed in the check (or an unknown one) is logged today.
+            giveCsvDates(unit, dateAdded, stageGiven && c.stage === m.row.stage ? dateStage : todayISO());
           });
-          // IM1: a row with no dates keeps today, as before. date_stage counts only if the unit ends at the
-          // stage the file named; a stage changed in the check (or an unknown one) is logged today.
-          giveCsvDates(unit, dateAdded, stageGiven && c.stage === m.row.stage ? dateStage : todayISO());
         });
-
+        if (!kept) { notify(fullMessage()); return; }
+        const undo = unitsUndo(before);
         const parts = [];
         if (reviewMode === "replace") parts.push(`Replaced with ${plural(toAdd.length, "unit")}`);
         else {
@@ -18445,7 +18982,7 @@
         renderSettings();
         showTab("units");    // v19: after an import, show the units it brought in
         showToast(parts.join(", "), () => {
-          models = before;
+          undo();
           render();
           renderSettings();
         }, "Undo", UNDO_SECONDS);
@@ -18639,12 +19176,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL ELEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, app), e.g. "app.js?v=123".
+    // "?v=" number on ALL ELEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, app), e.g. "app.js?v=124".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v123";
+    const APP_VERSION = "v124";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -18874,6 +19411,8 @@
       draftSyncTimer = setTimeout(syncDrafts, DRAFT_SYNC_MS);
     }
     for (const type of ["input", "change", "click", "keyup"]) document.addEventListener(type, queueDraftSync, true);
+    window.addEventListener("pagehide", flushFieldSave);   // DS1
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") flushFieldSave(); });
     window.addEventListener("pagehide", syncDrafts);
     document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") syncDrafts(); });
     setInterval(syncDrafts, DRAFT_SAFETY_MS);
@@ -19095,6 +19634,16 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v124", date: "3 Nov 2026", changes: [
+        "Safer saving: if your saved units or recipes can't be read, saving pauses instead of replacing them, so you can save them as a file or start again. Recover keeps units and recipes together, a restore stops if there's no room for its safety copy, Undo takes back only its own change, and the offline copy never mixes old and new versions.",
+        "Safety fixes: a backup can only bring in JPEG, PNG or WebP photos, other websites can no longer show Minifolio inside their pages, very long names are cut to the usual limit, and a broken web address no longer stops the app starting.",
+        "The shopping list has a closed Suggested section with your Empty paints and the Not owned paints your recipes use, each with Add and ✕. In Colour Lab's Colour ideas, Add to shopping list is now on the row of a paint you don't own.",
+        "Themes: Classic has a cold sci-fi look with an ice cyan accent, a technical font and thin panel lines. Blueprint and Rulebook are gone; if you used one, the app now shows Classic.",
+        "Parchment Codex now looks like red ink on old paper, with grain, ink blots and stained edges. In dark mode it is aged parchment by candlelight.",
+        "Help says guides and Mentor give general hobby tips, so always follow the maker's label. Help > About links to the font licences.",
+        "Guides: a Topics | A to Z switch shows every guide in one list, search results show each guide's number, and some guides end with links to related guides.",
+        "Guides has 12 new entries (such as painting blue, green, brown and grey, horses, drying times and using Colour Lab) and six new hair and horse coat detail recipes, and Mentor can answer questions on them.",
+      ]},
       { version: "v123", date: "2 Nov 2026", changes: [
         "+ New recipe now opens a quick form: type or paste lines like Eyes: yriel yellow, then flash gitz yellow and check the preview. A paint the app does not know is outlined and kept as typed. More options holds the name, part and each step's technique, coats, brand and note, and a technique you pick there stays when you change the paint. After saving, Do you own these? lets you tick the paints you have.",
         "Import CSV can now read two optional dates for each unit: date_added (when it joined your collection) and date_stage (when it reached its stage), as 2026-11-02 or 02/11/2026. The progress graph then shows your collection's real history instead of starting on the day you imported. Export CSV and the CSV template have the two new columns too.",
@@ -19482,10 +20031,13 @@
     showIphoneWarning();
     renderUpdates();
     // U4b: a fresh open shows the launch page, unless the address names a section (#dashboard, #units, #recipes, #guides, #settings, #help, #updates; the old #compendium opens Guides).
-    const linkedTab = decodeURIComponent(location.hash.slice(1));
-    if (Object.prototype.hasOwnProperty.call(views, TAB_ALIASES[linkedTab] || linkedTab)) showTab(linkedTab);
+    // SEC1: a broken address such as "#%" can't be read; it then counts as no section named, instead of stopping start-up.
+    let linkedTab = "";
+    try { linkedTab = decodeURIComponent(location.hash.slice(1)); } catch (error) { linkedTab = ""; }
+    if (Object.prototype.hasOwnProperty.call(views, tabAlias(linkedTab))) showTab(linkedTab);
     else { showTab(settings.tab); enterLaunch(); startLoadingRing(); }
     launchMotionReady = true;
+    if (unreadableParts.length) showSaveProblem();   // DS1: the start-up render() couldn't save; the banner says why
     if (upgradedStages) showToast("Stages updated: Parade ready added as the final stage", null, null, 8);
     else if (settingsUnreadable) showToast("Your settings couldn't be read, so they were reset. Your units kept their stages, and a copy of the old settings was kept.", null, null, 10);
 
@@ -19510,13 +20062,18 @@
       otherWindowTimer = setTimeout(loadFromOtherWindow, 150);
     });
     function loadFromOtherWindow() {
+      // DS1: saving paused because saved data couldn't be read? If that saved text is still the same, there's nothing new.
+      // If another window has saved since (say it pressed Start again), read everything again: the pause ends if it can
+      // be read now, and load() / loadRecipes() below list any part that still can't.
+      const wasPaused = unreadableParts.length > 0;
+      if (wasPaused && !unreadableChanged(unreadableParts)) return;
       let fresh = null;
       try { fresh = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "null"); } catch (ignored) {}
       const unitsText = (() => { try { return localStorage.getItem(STORAGE_KEY); } catch (e) { return null; } })();
       const recipesText = (() => { try { return localStorage.getItem(RECIPES_KEY); } catch (e) { return null; } })();
       // Nothing that matters changed (e.g. the other window only switched tabs)? Do nothing.
       const sameSettings = !fresh || withoutViewSettings(fresh) === withoutViewSettings(settings);
-      if (sameSettings && unitsText === JSON.stringify(models) && recipesText === JSON.stringify(book)) return;
+      if (!wasPaused && sameSettings && unitsText === JSON.stringify(models) && recipesText === JSON.stringify(book)) return;
 
       // v18.3: the other window is a NEWER version that saved newer data: stop saving here.
       if (fresh && Number(fresh.dataVersion) > DATA_VERSION) {
@@ -19533,6 +20090,7 @@
         fixDoneFrom();
         applyPalette(settings.palette);
       }
+      if (wasPaused) unreadableParts = [];
       if (unitsText) models = load();
       book = loadRecipes();
       // Drop anything open that no longer exists.
@@ -19548,8 +20106,21 @@
         holdSaves = false;
       }
       loadThumbs().catch(() => {});   // new photos added in the other window
+      if (unreadableParts.length) { showSaveProblem(); return; }   // DS1
+      if (wasPaused) { usualSaveBanner(); hideSaveProblem(); }      // DS1: readable again, so saving carries on
       showToast("Updated with changes from another window", null, null, 4);
     }
+
+    // DS1: a window coming back (from the browser's back-forward cache, a frozen tab, or the background) may have missed the
+    // other window's saves, and its next save would write its older units and recipes over them. So it checks the saved data
+    // first, the same way as when the other window saves. Skipped while this window has changes it couldn't save, so those
+    // stay on screen (unless saving is paused for unreadable data: then it checks whether another window has sorted it out).
+    function catchUpWithStorage() {
+      if (dataTooNew || (saveFailing && !unreadableParts.length)) return;
+      loadFromOtherWindow();
+    }
+    window.addEventListener("pageshow", (event) => { if (event.persisted) catchUpWithStorage(); });
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") catchUpWithStorage(); });
 
     // ================= v19: THE PHONE'S BACK BUTTON =================
     // Before v19, the phone's Back button (or a swipe back) left the app from anywhere,

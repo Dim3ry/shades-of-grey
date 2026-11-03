@@ -113,7 +113,9 @@ def run(viewport, label):
         m = stored(); s = stored("shades-of-grey-settings")
         check(f"{label} 1e restore with full storage changes nothing", len(m) == 303 and s["stages"] == DEFAULT and all(u["stage"] == 7 for u in m),
               (len(m), s["stages"]))
-        check(f"{label} 1f restore with full storage explained", any("full" in d for d in dialogs), dialogs)
+        # DS1: a restore now stops earlier, when there's no room for its safety copy, and says so in those words
+        # ("There isn't room ... nothing has changed"); before DS1 it went on and failed at the save ("full").
+        check(f"{label} 1f restore with full storage explained", any("full" in d or "isn't room" in d for d in dialogs), dialogs)
 
         # ---------- 8. Photo stage labels follow a stage edit (no quota) ----------
         seed([{"id": 1, "name": "Captain", "hobby": "40K", "faction": "Ultramarines", "stage": 5, "count": 1,

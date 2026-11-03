@@ -130,9 +130,10 @@ def main():
         seed(page)
         check("a new user gets dark (no light mark)", mark(page) == "", mark(page))
         check("dark page colour is the same deep navy as before", background(page) == DARK_BG, background(page))
+        # TH1: Classic became the sci-fi look, so its border (steel panel lines at 3:1) and accent (ice cyan) changed on purpose; the rest are the v20 colours.
         check("dark base colours unchanged", page.evaluate("""() => { const s = getComputedStyle(document.documentElement);
             return ['--background','--card','--border','--text','--muted','--accent','--danger'].map(k => s.getPropertyValue(k).trim()); }""")
-              == ["#0b1220", "#141d2f", "#22304a", "#dbe4f0", "#8193ad", "#7dd3fc", "#f87171"])
+              == ["#0b1220", "#141d2f", "#4968a0", "#dbe4f0", "#8193ad", "#5fe0ea", "#f87171"])
         tab(page, "settings")
         check("Settings has the three Appearance choices",
               page.locator("#appearance-card [data-appearance-choice]").all_inner_texts() == ["Dark", "Light", "Match my phone"])

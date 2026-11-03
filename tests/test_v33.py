@@ -61,7 +61,8 @@ def check(name, ok, detail=""):
 REQUIRED = ["sand", "snow", "grass", "mud", "rock", "cracked earth", "rubble", "lava", "gravel", "moss", "ash", "ice"]
 GROUPS = ["ground", "cold", "plants", "stone"]
 TIP_COUNT = 60       # X8: the 12 tips of v33 plus 48 from knowledge-base/data/k4-basing-tips.json (was 12)
-DETAIL_COUNT = 137   # X8: the 18 detail recipes of v32 plus 119 from knowledge-base/data/k3-detail-recipes.json (was 18)
+DETAIL_COUNT = 143   # X8: the 18 detail recipes of v32 plus 119 from knowledge-base/data/k3-detail-recipes.json (was 18)
+                     # KR4: plus 6 Body recipes (hair and horse coats) from k9-kr4-detail-recipes.json (was 137)
 SHOWN_JS = """() => [...document.querySelectorAll('#basing-tips > .scheme-title, #basing-tips > .hint, #basing-tips .chip, #basing-summary, #basing-tips .basing-sub, #basing-tips .basing-list li, #basing-no-paint, #basing-none, #basing-add-all, #basing-list .idea-why, #basing-list .idea-tag, #basing-list .idea-note, #basing-list .idea-add')].map(e => e.textContent).join('\\n')"""
 # brand and product words that must not appear in anything we wrote for the tips
 BRAND_WORDS = re.compile(r"\b(citadel|vallejo|army painter|scale ?75|tamiya|ak interactive|woodland scenics|gale force|green stuff|milliput|vaseline|polyfilla|"

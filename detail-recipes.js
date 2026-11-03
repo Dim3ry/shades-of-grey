@@ -63,7 +63,7 @@ const DETAIL_RECIPES = [
       { technique: "Layer", coats: 1, mix: 100, look: "a bright red", hex: "#c0281f", note: "Leave the middle of the freshest drops brighter." },
       { technique: "Edge highlight", coats: 1, mix: 100, look: "a light orange-red", hex: "#e8553e", note: "A tiny dot on top of a drop looks like a wet shine." },
     ] },
-  // X8 start: new Body entries from k3-detail-recipes.json. kb_import.py writes this block, so re-run it rather than editing here.
+  // X8 start: new Body entries from k3-detail-recipes.json, k9-kr4-detail-recipes.json. kb_import.py writes this block, so re-run it rather than editing here.
   { key: "aged-dirty-bone", group: "body", name: "Aged dirty bone", summary: "Old stained bone and skulls built up from olive brown, then dirtied with a wash of green-brown",
     steps: [
       { technique: "Base coat", coats: 2, mix: 100, look: "a dull olive brown", hex: "#5a5a3a", note: "Two thin, even coats over a black or dark undercoat." },
@@ -301,6 +301,48 @@ const DETAIL_RECIPES = [
       { technique: "Glaze", coats: 1, mix: 35, look: "a blue grey", hex: "#7d8790", note: "Over the back and tail for a cooler, deeper tone, or a sepia for cream fur." },
       { technique: "Dry brush", coats: 1, mix: 100, look: "a bright white", hex: "#ffffff", note: "A light pass over everything picks out the hairs and hides patchiness." },
     ] },
+  { key: "brown-hair", group: "body", name: "Brown hair", summary: "Warm mid brown hair with dark roots and soft tan strands",
+    steps: [
+      { technique: "Base coat", coats: 2, mix: 100, look: "a dark brown", hex: "#4a3122", note: "Two coats, thinned, keeping a clean line where the hair meets the skin." },
+      { technique: "Wash", coats: 1, mix: 50, look: "a deep brown", hex: "#2e1d14", note: "Let it settle between the strands and keep it off the face." },
+      { technique: "Layer", coats: 1, mix: 100, look: "a mid brown", hex: "#7a5236", note: "Long strokes along the strands, leaving the roots and partings dark." },
+      { technique: "Edge highlight", coats: 1, mix: 100, look: "a light tan", hex: "#b08a63", note: "Fine lines on the strand tops round the crown and fringe only." },
+    ] },
+  { key: "red-and-ginger-hair", group: "body", name: "Red and ginger hair", summary: "Auburn to ginger hair kept warm, from a red brown base up to soft orange strands",
+    steps: [
+      { technique: "Base coat", coats: 2, mix: 100, look: "a red brown", hex: "#6e3320", note: "Cover all of the hair in smooth, even coats." },
+      { technique: "Shade", coats: 1, mix: 40, look: "a deep red brown", hex: "#3f1a12", note: "Into the deepest strands and the hairline, not over everything." },
+      { technique: "Layer", coats: 1, mix: 100, look: "a copper orange", hex: "#b5602e", note: "Along the raised strands, more of it for ginger and less for auburn." },
+      { technique: "Edge highlight", coats: 1, mix: 100, look: "a pale peach", hex: "#e3a77c", note: "A few strand tips only, as bright orange or yellow looks false." },
+    ] },
+  { key: "black-hair", group: "body", name: "Black hair", summary: "Shiny black hair from an off black with cool blue grey strands",
+    steps: [
+      { technique: "Base coat", coats: 2, mix: 100, look: "an off black", hex: "#1c1d22", note: "A softened black leaves room for the highlights to show." },
+      { technique: "Layer", coats: 1, mix: 100, look: "a dark blue grey", hex: "#33394a", note: "Broad strands across the crown and wherever the light falls." },
+      { technique: "Layer", coats: 1, mix: 100, look: "a mid blue grey", hex: "#5c6680", note: "Thinner, shorter strands inside the first band." },
+      { technique: "Glaze", coats: 1, mix: 30, look: "a blue black", hex: "#151821", note: "Thinned over the whole area to soften the steps and add a sheen." },
+    ] },
+  { key: "chestnut-horse-coat", group: "body", name: "Chestnut horse coat", summary: "An even red brown horse coat with warm, glossy highlights on the muscles",
+    steps: [
+      { technique: "Base coat", coats: 2, mix: 100, look: "a red brown", hex: "#7a3e22", note: "Over the whole horse, mane and tail included." },
+      { technique: "Wash", coats: 1, mix: 60, look: "a dark brown", hex: "#3a2216", note: "All over the coat, lifting any pools on the flanks before they dry." },
+      { technique: "Layer", coats: 1, mix: 100, look: "a warm orange brown", hex: "#a8592c", note: "Shoulder, hip, neck and top of the head, leaving the belly darker." },
+      { technique: "Layer", coats: 1, mix: 100, look: "a light chestnut", hex: "#c97f4a", note: "Small patches on the tops of the muscles for a glossy coat." },
+    ] },
+  { key: "bay-horse-coat", group: "body", name: "Bay horse coat", summary: "A rich brown horse with a black mane, tail and lower legs",
+    steps: [
+      { technique: "Base coat", coats: 2, mix: 100, look: "a rich red brown", hex: "#5c3220", note: "Over the body and head, and do not worry about the legs yet." },
+      { technique: "Wash", coats: 1, mix: 50, look: "a dark brown", hex: "#2f1c13", note: "Over the brown to deepen the gaps between the muscles." },
+      { technique: "Layer", coats: 1, mix: 100, look: "a warm mid brown", hex: "#8a5434", note: "Back over the shoulder, hip and neck, leaving the shadows dark." },
+      { technique: "Base coat", coats: 2, mix: 100, look: "a near black", hex: "#1d1b1a", note: "Mane, tail and the legs below the knees, painted last to cover any slips." },
+    ] },
+  { key: "dapple-grey-horse-coat", group: "body", name: "Dapple grey horse coat", summary: "A pale grey horse with soft round dapples and a darker head and legs",
+    steps: [
+      { technique: "Base coat", coats: 2, mix: 100, look: "a mid grey", hex: "#7c7f84", note: "Over the whole horse, as this grey shows between the dapples." },
+      { technique: "Stipple", coats: 1, mix: 100, look: "a light grey", hex: "#b9bcbf", note: "Small rounded patches over the body with thin gaps of mid grey between." },
+      { technique: "Layer", coats: 1, mix: 100, look: "a near white", hex: "#e4e4e0", note: "Inside the dapples on the tops of the muscles only." },
+      { technique: "Glaze", coats: 1, mix: 30, look: "a dark grey", hex: "#45484d", note: "Thinned over the muzzle, lower legs and mane to darken them." },
+    ] },
   // X8 end
 
   // ---------- Metal ----------
@@ -346,7 +388,7 @@ const DETAIL_RECIPES = [
       { technique: "Layer", coats: 1, mix: 100, look: "a mid steel", hex: "#8d939b", note: "Raised areas only." },
       { technique: "Edge highlight", coats: 1, mix: 100, look: "a bright silver", hex: "#d6dae0", note: "A thin line on the edges and one small dot on each corner." },
     ] },
-  // X8 start: new Metal entries from k3-detail-recipes.json. kb_import.py writes this block, so re-run it rather than editing here.
+  // X8 start: new Metal entries from k3-detail-recipes.json, k9-kr4-detail-recipes.json. kb_import.py writes this block, so re-run it rather than editing here.
   { key: "aged-bronze", group: "metal", name: "Aged bronze", summary: "Dark old bronze with brass edges and green verdigris in the recesses",
     steps: [
       { technique: "Base coat", coats: 2, mix: 100, look: "a dark bronze", hex: "#5e4a30", note: "Thin coats over a black or grey undercoat, each left to dry fully." },
@@ -551,7 +593,7 @@ const DETAIL_RECIPES = [
       { technique: "Dry brush", coats: 1, mix: 100, look: "a faint brown", hex: "#6b5a4a", note: "A very light touch around the edge of the burn." },
       { technique: "Glaze", coats: 1, mix: 20, look: "a warm orange-brown", hex: "#9a5a24", note: "Just a faint tint at the outer edge, like heat staining." },
     ] },
-  // X8 start: new Materials entries from k3-detail-recipes.json. kb_import.py writes this block, so re-run it rather than editing here.
+  // X8 start: new Materials entries from k3-detail-recipes.json, k9-kr4-detail-recipes.json. kb_import.py writes this block, so re-run it rather than editing here.
   { key: "black-bodysuit", group: "material", name: "Black bodysuit", summary: "Deep black undersuit with crisp grey edges from an off black and a wash of black",
     steps: [
       { technique: "Base coat", coats: 2, mix: 100, look: "an off black", hex: "#1e1f21", note: "Two thin, even coats with a large brush, tidying slips later." },
@@ -839,7 +881,7 @@ const DETAIL_RECIPES = [
       { technique: "Layer", coats: 1, mix: 100, look: "a pale blue", hex: "#8fc4f2", note: "A thin curve along the bottom edge, as light passing through." },
       { technique: "Edge highlight", coats: 1, mix: 100, look: "a near-white", hex: "#f4faff", note: "One tiny dot and a short line in the top corner for the reflection." },
     ] },
-  // X8 start: new Light entries from k3-detail-recipes.json. kb_import.py writes this block, so re-run it rather than editing here.
+  // X8 start: new Light entries from k3-detail-recipes.json, k9-kr4-detail-recipes.json. kb_import.py writes this block, so re-run it rather than editing here.
   { key: "blue-energy-glow", group: "light", name: "Blue energy glow", summary: "A cold blue glow for energy blades and magic",
     steps: [
       { technique: "Dry brush", coats: 1, mix: 100, look: "a mid blue", hex: "#3d7fc4", note: "Start subtle around the source, and a white undercoat on the source itself makes it glow." },

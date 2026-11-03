@@ -26,6 +26,9 @@ Checks:
 10. Service worker: fonts are kept after first use and survive an update; nothing is saved at install.
 11. Phone widths (390 and 360): nothing scrolls sideways in any theme; the Theme row scrolls on its own.
 12. No page errors, no browser pop-ups, no CSP errors.
+TH1 (2 Nov 2026): Blueprint and Rulebook were removed and Classic became the sci-fi look (ice cyan accent, Oxanium for titles
+and numbers, steel borders at 3:1, 6 px corners). The checks below that named those two themes, or said Classic is the v46 look,
+were updated to the four themes and the new Classic; tests/test_v124_th1.py covers the TH1 behaviour itself.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
@@ -42,8 +45,8 @@ def check(name, ok, detail=""):
     results.append(bool(ok))
     print(("PASS " if ok else "FAIL ") + name + ("" if ok else f"  -> {detail}"))
 
-THEMES = ["classic", "blueprint", "parchment", "forge", "bench", "rulebook"]
-NAMES = {"classic": "Classic", "blueprint": "Blueprint", "parchment": "Parchment Codex", "forge": "Grim Forge", "bench": "Paint Bench", "rulebook": "Rulebook"}
+THEMES = ["classic", "parchment", "forge", "bench"]   # TH1: Blueprint and Rulebook were removed
+NAMES = {"classic": "Classic", "parchment": "Parchment Codex", "forge": "Grim Forge", "bench": "Paint Bench"}
 NEW = THEMES[1:]
 COLOUR_TOKENS = ["--background", "--card", "--track", "--border", "--text", "--muted", "--accent", "--on-accent", "--heading-colour",
                  "--wordmark-colour", "--danger", "--shadow", "--badge-bg", "--accent-wash", "--accent-wash-hover", "--note", "--note-wash",
@@ -53,8 +56,9 @@ COLOUR_TOKENS = ["--background", "--card", "--track", "--border", "--text", "--m
 STRUCTURE_TOKENS = ["--font-heading", "--font-body", "--font-num", "--num-style", "--radius-card", "--radius-control", "--radius-box",
                     "--radius-small", "--radius-bar", "--border-width", "--border-style", "--heading-weight", "--heading-transform",
                     "--heading-tracking", "--heading-size", "--wordmark-size", "--body-size", "--card-pad", "--texture-size"]
-CLASSIC = {"dark": {"--background": "#0b1220", "--card": "#141d2f", "--border": "#22304a", "--text": "#dbe4f0", "--accent": "#7dd3fc"},
-           "light": {"--background": "#e9eff6", "--card": "#f8fafc", "--border": "#c4d0de", "--text": "#0f1b2d", "--accent": "#0369a1"}}
+# TH1: Classic keeps the v46 page, card and text colours; its border and accent are the TH1 ones.
+CLASSIC = {"dark": {"--background": "#0b1220", "--card": "#141d2f", "--border": "#4968a0", "--text": "#dbe4f0", "--accent": "#5fe0ea"},
+           "light": {"--background": "#e9eff6", "--card": "#f8fafc", "--border": "#6c89ab", "--text": "#0f1b2d", "--accent": "#06707b"}}
 
 def hexrgb(h):
     h = h.strip().lstrip("#"); return [int(h[i:i + 2], 16) for i in (0, 2, 4)]
@@ -121,7 +125,8 @@ def main():
             missing = [k for k in STRUCTURE_TOKENS if k not in table.get((th, None), {})]
             check(f"{NAMES[th]}: every structure token is defined", not missing, missing)
             for mode in ("dark", "light"):
-                missing = [k for k in COLOUR_TOKENS if k not in table.get((th, mode), {})]
+                # TH3: a theme may set a token once for both modes in its shared block (Parchment Codex draws one --texture from per-mode ink colours)
+                missing = [k for k in COLOUR_TOKENS if k not in table.get((th, mode), {}) and k not in table.get((th, None), {})]
                 check(f"{NAMES[th]} {mode}: every colour token is defined", not missing, missing)
         classic_struct = re.search(r':root, \[data-t="classic"\], \.viewer, #scan-camera \{(.*?)\n    \}', style, re.S)
         missing = [k for k in STRUCTURE_TOKENS if not classic_struct or k + ":" not in classic_struct.group(1)]
@@ -133,27 +138,27 @@ def main():
             for md in ("dark", "light"):
                 ok = ok and table[(th, md)]["--background"] == pages[th][md] and table[(th, md)]["--card"] == surf[th][md]["card"]
         check("page and card colours agree between index.html, early.js and app.js", ok and pages["classic"]["dark"] == "#0b1220", pages)
-        check("early.js and app.js know the same six themes", sorted(pages) == sorted(THEMES) == sorted(page.evaluate("Object.keys(THEMES)")))
+        check("early.js and app.js know the same four themes", sorted(pages) == sorted(THEMES) == sorted(page.evaluate("Object.keys(THEMES)")))
 
         # ---------- 3. Fonts ----------
         print("\n--- 3. Fonts ---")
         urls = re.findall(r"url\(fonts/([\w-]+\.woff2)\)", style)
         on_disk = sorted(f for f in os.listdir(os.path.join(ROOT, "fonts")) if f.endswith(".woff2"))
-        check("every font file named in the page exists, and every file in fonts/ is used", sorted(urls) == on_disk and len(on_disk) == 24, (len(urls), len(on_disk)))
+        check("every font file named in the page exists, and every file in fonts/ is used", sorted(urls) == on_disk and len(on_disk) == 17, (len(urls), len(on_disk)))
         check("every font file is a real woff2 and small (latin subset)",
               all(open(os.path.join(ROOT, "fonts", f), "rb").read(4) == b"wOF2" and os.path.getsize(os.path.join(ROOT, "fonts", f)) < 120_000 for f in on_disk))
         check("every @font-face uses font-display: swap and the latin range",
-              style.count("@font-face") == 24 and style.count("font-display: swap") == 24 and style.count("unicode-range: U+0000-00FF") == 24)
+              style.count("@font-face") == 17 and style.count("font-display: swap") == 17 and style.count("unicode-range: U+0000-00FF") == 17)
         licences = read("fonts/LICENSES.md")
         families = sorted(set(re.findall(r"font-family: '([^']+)'; font-style", style)))
-        check("fonts/LICENSES.md holds a licence for every family", all(f"## {f}" in licences for f in families) and len(families) == 13, families)
+        check("fonts/LICENSES.md holds a licence for every family", all(f"## {f}" in licences for f in families) and len(families) == 9, families)   # TH1: 24 files and 13 families before; Oxanium added, five families removed
         stacks = [v for (th, md), b in table.items() if md is None for k, v in b.items() if k in ("--font-heading", "--font-body", "--font-num")]
         check("every theme font stack ends in a generic fallback", all(re.search(r"(sans-serif|serif|monospace|cursive)\s*$", s) for s in stacks), stacks)
         check("no font, stylesheet or script loads from another website", not re.search(r"(href|src)=\"https?://", html.replace("https://dim3ry.goatcounter.com", "")) and "@import" not in style)
 
         # ---------- 4. goodTheme and the saved setting ----------
         print("\n--- 4. The setting ---")
-        check("goodTheme accepts the six themes", page.evaluate("THEMES_OK = Object.keys(THEMES).every(goodTheme)"))
+        check("goodTheme accepts the four themes", page.evaluate("THEMES_OK = Object.keys(THEMES).every(goodTheme)"))
         bad = page.evaluate("""() => ['', 'Blueprint', 'BLUEPRINT', 'neon', '__proto__', 'constructor', 'toString', 'hasOwnProperty', null, undefined, 5, {}, []]
                                .filter(v => goodTheme(v)).map(String)""")
         check("goodTheme refuses wrong names, lookalikes, built-in names and non-text", bad == [], bad)
@@ -183,16 +188,16 @@ def main():
         tab(page, "settings")
         squares = page.evaluate("""() => [...document.querySelectorAll('#theme-card .theme-swatch')].map(b => ({ k: b.dataset.themeChoice, text: b.textContent.trim(),
             type: b.type, w: b.getBoundingClientRect().width, h: b.getBoundingClientRect().height, top: Math.round(b.getBoundingClientRect().top) }))""")
-        check("six square buttons in one row, Classic first, each labelled with its theme's name",
+        check("four square buttons in one row, Classic first, each labelled with its theme's name",
               [s["k"] for s in squares] == THEMES and all(s["text"] == NAMES[s["k"]] for s in squares)
               and len({s["top"] for s in squares}) == 1 and all(abs(s["w"] - s["h"]) < 1 and s["w"] >= 44 for s in squares), squares)
         check("the row sits right after the Appearance card", page.evaluate("document.getElementById('appearance-card').nextElementSibling.id") == "theme-card")
         fonts = page.evaluate("""() => [...document.querySelectorAll('#theme-card .ts-name')].map(n => getComputedStyle(n).fontFamily)""")
-        want = ["system-ui", "Barlow Condensed", "IM Fell English", "Teko", "Permanent Marker", "Special Elite"]
+        want = ["Oxanium", "IM Fell English", "Teko", "Permanent Marker"]   # TH1: Classic's name is in Oxanium
         check("each name is written in its own theme's title font", all(w in f for w, f in zip(want, fonts)), fonts)
         page.evaluate("document.fonts.ready")
         page.wait_for_timeout(300)
-        loaded = page.evaluate("""() => ['600 16px "Barlow Condensed"', '16px "IM Fell English"', '600 16px Teko', '16px "Permanent Marker"', '16px "Special Elite"'].map(f => document.fonts.check(f))""")
+        loaded = page.evaluate("""() => ['600 16px Oxanium', '16px "IM Fell English"', '600 16px Teko', '16px "Permanent Marker"'].map(f => document.fonts.check(f))""")
         check("those title fonts load from our own files", all(loaded), loaded)
         backs = page.evaluate("""() => [...document.querySelectorAll('#theme-card .theme-swatch')].map(b => getComputedStyle(b).backgroundColor)""")
         check("each square is drawn in its own theme (its own page colour, dark mode)",
@@ -207,29 +212,29 @@ def main():
             check(f"{NAMES[th]}: the page switches, only its square is pressed, it is saved, Appearance is untouched",
                   state["t"] == th and state["pressed"] == [th] and state["saved"] == th and state["appearance"] == "dark", state)
             check(f"{NAMES[th]}: the page colour and the phone's top bar follow the theme", to_rgb(state["bg"]) == hexrgb(surf["page"]) and state["bar"] == surf["page"], state)
-            title = ["system-ui", "Barlow Condensed", "IM Fell English", "Teko", "Big Shoulders Stencil", "Special Elite"][THEMES.index(th)]
+            title = ["Oxanium", "IM Fell English", "Teko", "Big Shoulders Stencil"][THEMES.index(th)]
             check(f"{NAMES[th]}: the title uses the theme's title font", title in state["h1"], state["h1"])
         page.reload(); page.wait_for_function("() => typeof APP_VERSION === 'string'")
-        check("the chosen theme survives a reload", page.evaluate("document.documentElement.dataset.t") == "rulebook")
+        check("the chosen theme survives a reload", page.evaluate("document.documentElement.dataset.t") == "bench")
         # modes: the squares and the page follow Appearance, and Match my phone
         tab(page, "settings")
         page.click('[data-appearance-choice="light"]')
         state = page.evaluate("""() => ({ m: document.documentElement.dataset.m, squares: [...document.querySelectorAll('.theme-swatch')].map(b => b.dataset.m),
             bar: document.querySelector('meta[name=theme-color]').content })""")
-        check("Light: the page and every square switch to light, the top bar to Rulebook light",
-              state["m"] == "light" and set(state["squares"]) == {"light"} and state["bar"] == "#c8c6a9", state)
+        check("Light: the page and every square switch to light, the top bar to Paint Bench light",
+              state["m"] == "light" and set(state["squares"]) == {"light"} and state["bar"] == "#cfe0d4", state)
         page.click('[data-appearance-choice="auto"]')
         page.emulate_media(color_scheme="dark"); page.wait_for_timeout(150)
         check("Match my phone (phone dark): page and squares are dark", page.evaluate("document.documentElement.dataset.m") == "dark"
               and set(page.evaluate("[...document.querySelectorAll('.theme-swatch')].map(b => b.dataset.m)")) == {"dark"})
         page.emulate_media(color_scheme="light"); page.wait_for_timeout(150)
         check("Match my phone (phone light): page and squares switch to light, theme kept",
-              page.evaluate("document.documentElement.dataset.m") == "light" and page.evaluate("document.documentElement.dataset.t") == "rulebook"
+              page.evaluate("document.documentElement.dataset.m") == "light" and page.evaluate("document.documentElement.dataset.t") == "bench"
               and set(page.evaluate("[...document.querySelectorAll('.theme-swatch')].map(b => b.dataset.m)")) == {"light"})
         page.emulate_media(color_scheme="dark")
         # keyboard
-        page.focus('[data-theme-choice="blueprint"]'); page.keyboard.press("Enter")
-        check("a square works from the keyboard", page.evaluate("document.documentElement.dataset.t") == "blueprint")
+        page.focus('[data-theme-choice="parchment"]'); page.keyboard.press("Enter")
+        check("a square works from the keyboard", page.evaluate("document.documentElement.dataset.t") == "parchment")
 
         # ---------- 6. Contrast in every theme and mode ----------
         print("\n--- 6. Contrast ---")
@@ -246,7 +251,8 @@ def main():
                 check(f"{NAMES[th]} {mode}: every text colour reads at 4.5:1 on the page and the cards", not low, low)
                 check(f"{NAMES[th]} {mode}: borders reach 3:1 on the page and the cards",
                       min(contrast(g("--border"), bg), contrast(g("--border"), card)) >= 3, (g("--border"), bg, card))
-                check(f"{NAMES[th]} {mode}: button text reads at 4.5:1 on the accent", contrast(g("--on-accent"), g("--accent")) >= 4.5, (g("--on-accent"), g("--accent")))
+                # TH3: buttons are filled with --accent-fill (the accent itself in every theme but Parchment Codex dark, which uses a deeper red)
+                check(f"{NAMES[th]} {mode}: button text reads at 4.5:1 on the accent fill", contrast(g("--on-accent"), g("--accent-fill")) >= 4.5, (g("--on-accent"), g("--accent-fill")))
                 check(f"{NAMES[th]} {mode}: the toast's Undo reads at 4.5:1 on the toast", contrast(g("--toast-action"), g("--text")) >= 4.5)
                 check(f"{NAMES[th]} {mode}: both graph lines reach 3:1 on the cards and differ",
                       min(contrast(g("--series-added"), card), contrast(g("--series-painted"), card)) >= 3 and g("--series-added") != g("--series-painted"))
@@ -258,30 +264,30 @@ def main():
                 check(f"{NAMES[th]} {mode}: every stage colour reads at 4.5:1 on this theme's {'cards' if mode == 'dark' else 'page'}", not faint, faint)
 
         # ---------- 7. Classic is unchanged ----------
-        print("\n--- 7. Classic is unchanged ---")
+        print("\n--- 7. Classic (TH1: the sci-fi look; page, cards, text and sizes as before) ---")
         for mode in ("dark", "light"):
             fresh(page, settings={"appearance": mode})
             got = {n: var(page, n) for n in CLASSIC[mode]}
-            check(f"Classic {mode}: the base colours are the v46 ones", all(to_rgb(got[n]) == hexrgb(v) for n, v in CLASSIC[mode].items()), got)
+            check(f"Classic {mode}: the base colours are the v46 page, card and text with the TH1 border and accent", all(to_rgb(got[n]) == hexrgb(v) for n, v in CLASSIC[mode].items()), got)
             look = page.evaluate("""() => { const h1 = getComputedStyle(document.querySelector('h1')), card = getComputedStyle(document.querySelector('.card')),
                 body = getComputedStyle(document.body), btn = getComputedStyle(document.querySelector('.primary-button'));
                 return { h1size: h1.fontSize, h1font: h1.fontFamily, h1colour: h1.color, h1weight: h1.fontWeight, radius: card.borderTopLeftRadius,
                          border: card.borderTopWidth + ' ' + card.borderTopStyle, shadow: card.boxShadow, pad: card.paddingTop, body: body.fontFamily,
                          texture: body.backgroundImage, btnColour: btn.color, btnFont: btn.fontFamily, btnWeight: btn.fontWeight }; }""")
-            check(f"Classic {mode}: title, cards, body and main button are the v46 sizes, fonts and colours",
-                  look["h1size"] == "24px" and look["h1font"] == "system-ui, sans-serif" and look["h1weight"] == "700"
-                  and to_rgb(look["h1colour"]) == hexrgb(CLASSIC[mode]["--accent"]) and look["radius"] == "12px" and look["border"] == "1px solid"
+            check(f"Classic {mode}: title, cards, body and main button keep the v46 sizes and body font (TH1: Oxanium title at 600, 6 px corners)",
+                  look["h1size"] == "24px" and look["h1font"].startswith("Oxanium") and look["h1weight"] == "600"
+                  and to_rgb(look["h1colour"]) == hexrgb(CLASSIC[mode]["--accent"]) and look["radius"] == "6px" and look["border"] == "1px solid"
                   and look["shadow"] == "none" and look["pad"] == "16px" and look["body"] == "system-ui, sans-serif" and look["texture"] == "none"
                   and to_rgb(look["btnColour"]) == hexrgb(CLASSIC[mode]["--background"]) and look["btnWeight"] == "600", look)
-            check(f"Classic {mode}: no theme font is downloaded", page.evaluate("[...document.fonts].filter(f => f.status === 'loaded').length") == 0)
+            check(f"Classic {mode}: only its own font (Oxanium) is downloaded", page.evaluate("[...document.fonts].filter(f => f.status === 'loaded').map(f => f.family)") in ([], ["Oxanium"]))
 
         # ---------- 8. The photo viewer stays Classic dark ----------
         print("\n--- 8. Photo viewer ---")
-        for th in ("parchment", "rulebook"):
+        for th in ("parchment", "classic"):   # TH1: Rulebook was removed; Classic's own colours changed but the viewer keeps the old ones
             for mode in ("dark", "light"):
                 fresh(page, settings={"theme": th, "appearance": mode})
                 vals = {n: var(page, n, ".viewer") for n in ("--background", "--card", "--text", "--accent")}
-                check(f"{NAMES[th]} {mode}: the photo viewer keeps the Classic dark colours",
+                check(f"{NAMES[th]} {mode}: the photo viewer keeps the old Classic dark colours",
                       to_rgb(vals["--background"]) == hexrgb("#0b1220") and to_rgb(vals["--card"]) == hexrgb("#141d2f") and to_rgb(vals["--accent"]) == hexrgb("#7dd3fc"), vals)
 
         # ---------- 9. Backups ----------
@@ -317,8 +323,9 @@ def main():
         sp.wait_for_function("() => navigator.serviceWorker && navigator.serviceWorker.controller", timeout=15000)
         leave_launch(sp)   # U4b: tap through the start page
         sp.reload(); sp.wait_for_function("() => typeof APP_VERSION === 'string'")
-        fonts_before = sp.evaluate("caches.open('shades-of-grey-fonts').then(c => c.keys()).then(k => k.length)")
-        check("nothing is saved in the font store while Classic is in use (Settings not opened)", fonts_before == 0, fonts_before)
+        sp.evaluate("document.fonts.ready"); sp.wait_for_timeout(300)
+        fonts_before = sp.evaluate("caches.open('shades-of-grey-fonts').then(c => c.keys()).then(k => k.map(r => r.url.split('/').pop()))")
+        check("only Classic's own font is saved while Classic is in use (Settings not opened; TH1: Classic uses Oxanium)", fonts_before == ["oxanium-latin-600-normal.woff2"], fonts_before)
         open_settings(sp); sp.click('[data-theme-choice="bench"]')
         sp.evaluate("document.fonts.ready"); sp.wait_for_timeout(800)
         saved = sp.evaluate("caches.open('shades-of-grey-fonts').then(c => c.keys()).then(k => k.map(r => r.url.split('/').pop()))")
@@ -354,7 +361,7 @@ def main():
         page.set_viewport_size({"width": 1280, "height": 900})
         fresh(page, settings={"theme": "parchment"})
         tab(page, "settings")
-        check("on a laptop all six squares fit without scrolling",
+        check("on a laptop all four squares fit without scrolling",
               page.evaluate("() => { const r = document.querySelector('.theme-row'); return r.scrollWidth <= r.clientWidth + 1; }"))
         page.set_viewport_size({"width": 390, "height": 844})
 
