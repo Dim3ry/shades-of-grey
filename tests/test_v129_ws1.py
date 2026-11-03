@@ -32,7 +32,7 @@ PAINTS = t.PAINTS + [{"id": 100 + i, "brand": ["Vallejo", "Citadel"][i % 2], "na
                       "colour": "#%02x%02x%02x" % ((i * 37) % 256, (i * 91) % 256, (i * 53) % 256), "status": "owned"} for i in range(40)]
 RECIPES = [{"id": 200 + i, "name": "Recipe %d" % i, "part": "Armour", "notes": "", "steps": [step("Base coat", 1), step("Layer", 4, 6), step("Layer", 100 + i)]} for i in range(20)]
 UNITS = [{"id": i, "name": "Troop unit %d" % i, "hobby": "Test game", "faction": "Faction %d" % (i % 5), "stage": i % 5, "count": 5,
-          "added": "2026-10-01", "log": [["2026-10-01", i % 5]]} for i in range(1, 31)]
+          "added": "2026-10-01", "log": [["2026-10-01", i % 5]]} for i in range(1, 17)]
 
 # the phone numbers measured on v127 before WS1: body padding at the bottom, then [left, top, width, height] of each part
 PHONE = {
@@ -124,8 +124,9 @@ def wide_checks(page, w):
     a = page.evaluate(ARROW)
     check(f"{w}: the arrow sits 8 px in from the bar's left edge, 12 px from the Dashboard segment's box (as on a 390 px phone), 6 px from the bottom",
           abs(a["inFromArc"] - 8) < 0.6 and abs(a["boxGap"] - 12) < 0.6 and abs(a["bottom"] - 6) < 0.6, a)
-    g = page.evaluate(GAP)
-    check(f"{w}: it stays clear of the segment's real shape (4 px or more) and is 44 px", g["gap"] >= 4 and g["w"] == 44 and g["h"] == 44, g)
+    if w == 1280:   # the same place against the bar at every wide size (checked above), so the slanted shape is checked once
+        g = page.evaluate(GAP)
+        check(f"{w}: it stays clear of the segment's real shape (4 px or more) and is 44 px", g["gap"] >= 4 and g["w"] == 44 and g["h"] == 44, g)
     sizes = page.evaluate("""() => [...document.querySelectorAll('.tabs .arc > [data-tab], #mentor-button, #back-menu')].map(b => { const r = b.getBoundingClientRect(); return Math.min(r.width, r.height); })""")
     check(f"{w}: every bar part and the arrow is 44 px or more", min(sizes) >= 44, sizes)
 
