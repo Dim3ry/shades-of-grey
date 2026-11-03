@@ -4773,7 +4773,8 @@
       const leaving = launching ? launchMoveStart("ring") : (endLaunchMove(), null);
       if (launching) { launching = false; document.body.classList.remove("launching"); }
       if (name !== "units" && selectMode) closeSelect();   // v21.1: leaving Units ends select mode
-      drawIfStale(name);   // DS2: a section that changed while out of sight is drawn before it shows (see render)
+      if (name === "units" && move) unitsArrive(!!leaving);   // MS1: Models arriving with motion goes in pieces (see placeUnitCards)
+      else drawIfStale(name);   // DS2: a section that changed while out of sight is drawn before it shows (see render)
       for (const [key, view] of Object.entries(views)) view.classList.toggle("hidden", key !== name);
       if (move === "slide") {
         const dir = BAR_ORDER.indexOf(barOf(name)) > BAR_ORDER.indexOf(barOf(before)) ? 1 : -1;
@@ -6504,7 +6505,10 @@
       });
     }
     // Rows are redrawn all over the app, so watch the page for new buttons rather than calling this from every render.
-    new MutationObserver(fitChipRows).observe(document.body, { childList: true, subtree: true });
+    // MS1: except unit cards going into or out of the Models list: a card with its Details shut holds no row of buttons, and while the
+    // list arrives a few cards a frame, fitting every row again each frame cost more than the cards themselves.
+    const onlyUnitCards = (r) => r.target === list && [...r.addedNodes].every(n => n.nodeType === 1 && n.matches("li.unit") && !n.querySelector(CHIP_ROWS));
+    new MutationObserver((records) => { if (!records.every(onlyUnitCards)) fitChipRows(); }).observe(document.body, { childList: true, subtree: true });
     window.addEventListener("resize", fitChipRows);
     let tappedRow = null;   // A1: the row of buttons tapped just now, forgotten on the next tap elsewhere
     document.addEventListener("click", (event) => { tappedRow = event.target.closest ? event.target.closest(CHIP_ROWS) : null; fitChipRows(); }, true);   // a pressed button turns bold, which can change what fits
@@ -6559,7 +6563,7 @@
       fillList("game-options", games || uniqueSorted(models.map(m => m.hobby)));
       fillList("faction-options", uniqueSorted(models.map(m => m.faction)));
     }
-    function renderUnits() {
+    function renderUnits(how) {
       staleTabs.delete("units");   // DS2: drawn now (see render)
       // M2: the Detailed / Simple switch for model rows shows only while some unit is tracked model by model.
       modelRowsSwitch.classList.toggle("hidden", !models.some(m => m.each));
@@ -6657,7 +6661,7 @@
       refreshSelectBar(visible);
 
       renderUnitSide(visible);   // v79
-      list.innerHTML = "";
+      if (models.length === 0 || visible.length === 0) { stopUnitQueue(); list.innerHTML = ""; }
       if (models.length === 0) {
         // v19: a brand-new collection gets the import buttons right here.
         list.innerHTML = '<li class="empty" id="units-empty">No units yet.<div class="button-grid">' +
@@ -6671,7 +6675,149 @@
         list.innerHTML = '<li class="empty">No units match these filters.</li>';
         return;
       }
-      for (const model of visible) list.appendChild(buildCard(model));
+      placeUnitCards(visible, how === "arriving" || how === "travel" ? how : false);   // MS1: was a fresh card for every unit, every time
+    }
+
+    // ----- MS1: THE MODELS LIST WITHOUT THE FIRST-FRAME STALL -----
+    // Measured first (300 mixed cards): most of the time of a Models redraw was not building the cards but the browser working out the
+    // styles and layout of all 300 of them again, every time the list was rebuilt or shown. Two changes, and neither changes how a card looks:
+    // 1. Cards are kept and used again (unitCards, by unit id). A card is built again only when something it shows has changed (cardKey):
+    //    a stage tap, a rename, a tick or Details rebuilds that one card, and the others stay in the page as they are. A card with its
+    //    Details open on a phone, or one just added, is always built fresh (as before).
+    // 2. When Models arrives with motion (the start circle's travel, the slide or fade from another section), only the cards for the first
+    //    screen and a margin go in at once; the rest follow a few at a time over the next frames while the travel (or the slide) runs, and
+    //    whatever is left goes in at once when it ends, or straight away if you touch, click, turn a wheel or use a key, or something looks for
+    //    a card further down (unitsUpTo). New cards only ever
+    //    go below the ones already there, so nothing on screen moves. With no motion (reduced motion) the whole list goes in at once.
+    const unitCards = new Map();   // unit id -> { model, key, el }
+    let unitQueue = null;          // while the list is arriving: { rest (units still to go in, in order), raf, last, n, start }
+    const UNIT_PIECES_MAX_MS = 3000;   // a list still arriving after this long goes in whole (the travel is 1.5 s)
+    // How many cards fill a screen and a margin: a card is 120 px or taller, so a screen's height of cards and one more (9 on a 390x844
+    // phone, which shows 5 under the filters). From 900 px the cards sit in columns at least 360 px wide, so there are that many more.
+    // The size is read on start and on resize only: reading it in the tap would make the browser lay out the whole list there and then.
+    let screenSize = [window.innerWidth, window.innerHeight];
+    window.addEventListener("resize", () => { screenSize = [window.innerWidth, window.innerHeight]; });
+    function firstScreenCards() {
+      const columns = unitWide.matches ? Math.max(1, Math.floor(screenSize[0] / 360)) : 1;
+      return columns * Math.max(6, Math.ceil(screenSize[1] / 120) + 1);
+    }
+    // What every card shares. Worked out once per batch of cards.
+    function sharedCardKey() {
+      return JSON.stringify([selectMode, isLight(), unitWide.matches, STAGES, document.documentElement.dataset.t || ""]);
+    }
+    // Everything a card shows, as one string; null means "never use this card again" (Details open on a phone, or just added).
+    // The unit itself is compared whole, so any change to it counts; an old-style photo counts by its length and end only.
+    function cardKey(model, shared) {
+      if (model.id === justAddedId || (openIds.has(model.id) && !selectMode && !unitWide.matches)) return null;
+      const photo = hasPhoto(model) ? (model.photo ? "old" : thumbUrls.get((mainPhoto(model) || {}).id) || "") : "";
+      return JSON.stringify([model, shared, selectMode && ticked.has(model.id), openIds.has(model.id), factionColour(model.faction), photo,
+        recipesOf(model).map(r => [r.id, r.name, recipeColours(r)[0] || ""])],
+        (k, v) => (k === "photo" && typeof v === "string" ? v.length + v.slice(-40) : v));
+    }
+    // The card for a unit: the kept one if nothing it shows has changed, otherwise a new one (which is kept from then on).
+    function cardFor(model, shared, fresh) {
+      const key = cardKey(model, shared);
+      const kept = unitCards.get(model.id);
+      if (!fresh && key !== null && kept && kept.model === model && kept.key === key && !(stageMotion && stageMotion.id === model.id)
+          && (kept.el.isConnected || !kept.el.classList.contains("mo-stage"))) return kept.el;   // (a stage move left on a card out of the page would play again)
+      const el = buildCard(model);
+      if (key === null) unitCards.delete(model.id); else unitCards.set(model.id, { model, key, el });
+      return el;
+    }
+    // Puts exactly these cards in the list, in this order, touching only what differs: a card that stays where it was is left alone.
+    function setUnitCards(cards) {
+      const wanted = new Set(cards);
+      let at = list.firstChild;
+      for (const card of cards) {
+        while (at && !wanted.has(at)) { const next = at.nextSibling; at.remove(); at = next; }
+        if (at === card) at = at.nextSibling;
+        else list.insertBefore(card, at);
+      }
+      if (at) {   // the rest go in one step (taking 290 cards out one by one cost several times more)
+        const rest = document.createRange();
+        rest.setStartBefore(at);
+        rest.setEndAfter(list.lastChild);
+        rest.deleteContents();
+      }
+    }
+    // visible: the units to show, in order. arriving: Models is coming on screen with motion ("travel" for the start circle's travel, which
+    // runs on after the page has faded in), so it goes in pieces. A list that is still
+    // arriving keeps arriving (at least the cards already in stay in), so a redraw during the travel does not draw the whole list in one frame.
+    function placeUnitCards(visible, arriving) {
+      const shared = sharedCardKey();
+      const ids = new Set(models.map(m => m.id));
+      for (const id of unitCards.keys()) if (!ids.has(id)) unitCards.delete(id);   // deleted units
+      const placed = unitQueue ? list.querySelectorAll(":scope > li.unit").length : 0;
+      const now = arriving || unitQueue ? Math.min(visible.length, Math.max(firstScreenCards(), placed)) : visible.length;
+      setUnitCards(visible.slice(0, now).map(m => cardFor(m, shared)));
+      if (now >= visible.length) { stopUnitQueue(); return; }
+      if (unitQueue) {
+        unitQueue.rest = visible.slice(now);
+        if (arriving) Object.assign(unitQueue, { last: 0, start: performance.now(), travel: arriving === "travel" });   // a new arrival: its own motion
+        return;
+      }
+      const q = unitQueue = { rest: visible.slice(now), raf: 0, last: 0, n: 4, start: performance.now(), travel: arriving === "travel" };
+      // The frames are asked for once the tap has been handled, so in every frame this runs after the travel's own step (see unitQueueStep).
+      queueMicrotask(() => { if (unitQueue === q) q.raf = requestAnimationFrame(unitQueueStep); });
+    }
+    function stopUnitQueue() {
+      if (unitQueue) cancelAnimationFrame(unitQueue.raf);
+      unitQueue = null;
+    }
+    function appendUnitCards(count) {
+      const q = unitQueue;
+      if (!q) return;
+      const shared = sharedCardKey();
+      const part = document.createDocumentFragment();
+      for (const model of q.rest.splice(0, count)) part.appendChild(cardFor(model, shared));
+      list.appendChild(part);
+      if (!q.rest.length) stopUnitQueue();
+    }
+    // One frame of the arrival. The tap's own frame adds nothing, so the travel or the slide starts on time. Then a few cards each frame,
+    // spread over the time the motion has left. Whatever is left when the motion is over goes in at once: in the frame the travel ends
+    // (this runs after the travel's own step in each frame, and before anything that waits for the travel to end) or the frame after
+    // the page's slide or fade. It asks for its next frame first, so it keeps its place in that order.
+    function unitQueueStep(time) {
+      const q = unitQueue;
+      if (!q) return;
+      q.raf = requestAnimationFrame(unitQueueStep);
+      const gap = q.last ? time - q.last : 0;
+      q.last = time;
+      if (!gap) {   // read once: the travel's length, and the page's fade or slide (asking the page for its animations makes it work out its styles)
+        q.until = q.start + (q.travel ? motionMs("--motion-travel") : 0);
+        q.anims = views.units.getAnimations();
+        return;
+      }
+      q.n = gap <= 24 ? Math.min(Math.ceil(q.n * 1.5), 48) : gap > 50 ? Math.max(2, q.n >> 1) : q.n;   // more cards in a frame while frames are quick
+      // How long the arrival still runs: the travel (while it lasts) or the page's own fade or slide, whichever ends later.
+      let left = q.travel && travelling ? q.until - performance.now() : 0;
+      const running = q.anims.filter(a => a.playState === "running" || a.playState === "pending");
+      for (const a of running) {
+        const t = a.effect && a.effect.getComputedTiming();
+        if (t) left = Math.max(left, t.endTime - (t.localTime || 0));
+      }
+      const moving = (q.travel && travelling) || running.length > 0;
+      if (!moving || performance.now() - q.start > UNIT_PIECES_MAX_MS) { appendUnitCards(Infinity); return; }
+      const frames = Math.max(1, Math.floor(left / Math.max(gap, 16)) - 1);   // frames left, keeping one to spare
+      // Spread evenly over the frames left, but never more than three frames' worth at once: on a slow phone a big batch makes the next
+      // frame late too, which would only make the batches bigger.
+      appendUnitCards(Math.min(Math.max(q.n, Math.ceil(q.rest.length / frames)), q.n * 3));
+    }
+    // Everything in now: a person reaching for the page, or something about to look further down the list.
+    function finishUnitCards() { if (unitQueue) appendUnitCards(Infinity); }
+    // The card for this unit is in the list (and a screen of cards under it), so it can be scrolled to. The rest keep arriving.
+    function unitsUpTo(id) {
+      if (!unitQueue) return;
+      const at = unitQueue.rest.findIndex(m => m.id === id);
+      if (at >= 0) appendUnitCards(at + 1 + firstScreenCards());
+    }
+    for (const type of ["touchstart", "pointerdown", "wheel", "keydown"]) window.addEventListener(type, finishUnitCards, { capture: true, passive: true });
+    // Models is coming on screen with motion: draws it if it changed while out of sight, otherwise takes the cards past the first screen out
+    // for a moment, to come back in over the next frames (they are kept, so nothing is built again).
+    function unitsArrive(travel) {
+      const how = travel ? "travel" : "arriving";
+      if (staleTabs.has("units")) { renderUnits(how); return; }
+      if (list.querySelectorAll(":scope > li.unit").length > firstScreenCards()) placeUnitCards(models.filter(isVisible), how);
     }
 
     // v79: from 900 px every open unit (in list order) gets a card in the side pane, with a Close button. Select mode shows none.
@@ -6812,7 +6958,7 @@
         // SM1 (Smooth4): opening or closing Details changes only this card (nothing is saved and no other card or section changes), so on a phone
         // only this card is drawn again; the side pane on a wide screen still takes the full redraw.
         const card = !unitWide.matches && [...list.children].find(li => li.dataset.id === String(model.id));
-        if (card) card.replaceWith(buildCard(model));
+        if (card) card.replaceWith(cardFor(model, sharedCardKey(), true));   // MS1: and kept for the next redraw
         else render();
         animatePanel(model.id, !wasOpen, heightNow);   // Mo2
       };
@@ -9118,6 +9264,7 @@
     // the bottom, which would otherwise cover it. Smooth unless the phone asks for less motion.
     const JUST_ADDED_MS = 2500;
     function showNewUnit(id) {
+      unitsUpTo(id);   // MS1
       const card = list.querySelector(`li.unit[data-id="${id}"]`);
       if (card) {
         const gap = 12;
@@ -9383,6 +9530,7 @@
       openIds.add(id);
       render();
       showTab("units");
+      unitsUpTo(id);   // MS1: the list may still be arriving
       const card = list.querySelector(`li.unit[data-id="${id}"]`);
       if (card) card.scrollIntoView({ block: "center" });
     }
