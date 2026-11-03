@@ -2639,6 +2639,10 @@
     .guides-cats .guides-row > .guides-num { grid-column: 4; }
     .guides-entry-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: baseline; }
     @media (max-width: 359px) { .guides-cats .guides-row { column-gap: 4px; padding-left: 10px; padding-right: 10px; } }   /* G2a: room for the section number without breaking a one-word title */
+    /* G2b: the Topics | A to Z switch above the home list, and the See also row under an entry's text (a small muted heading, then one accent link per line, 44 px each) */
+    .seg.guides-order { grid-template-columns: repeat(2, 1fr); margin: 0; }
+    .guides-seealso { display: grid; justify-items: start; }
+    .guides-seealso-link { max-width: 100%; text-align: left; overflow-wrap: anywhere; }
     @media (min-width: 900px) {
       .guides-split.guides-has-main { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 18px; align-items: start; }
       .guides-split.guides-has-main > .guides-nav { display: grid; }

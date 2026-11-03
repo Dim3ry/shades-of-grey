@@ -8,7 +8,7 @@
 // own files and are not listed here. The order here does not matter: the app sorts groups and entries A to Z each time it shows
 // a list, and works the numbers out from that order. No number is stored. An entry left out of this file still shows, in a last
 // group called "Not yet grouped", and a key here with no entry is skipped (a test fails on both).
-// GUIDE_GROUPS.seeAlso: { entry key: [up to 3 entry keys] } for the See also row on an entry page (not shown yet).
+// GUIDE_GROUPS.seeAlso: { entry key: [up to 3 entry keys] } for the See also row on an entry page (G2b shows it).
 const GUIDE_GROUPS = {
   sections: {
     "colour-basics": [

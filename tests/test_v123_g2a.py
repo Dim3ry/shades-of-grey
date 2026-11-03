@@ -155,7 +155,7 @@ def main():
         check("Back from a section goes to the home list", page.locator(".guides-cats").count() == 1 and page.locator("#guides-back").count() == 0)
         page.fill("#guides-search", "rust")
         page.wait_for_selector(".guides-lower .guides-row[data-guide]")
-        check("search results are left as they were (no numbers in this chunk)", page.locator(".guides-lower .guides-num").count() == 0)
+        # G2b: search results now show numbers on purpose, so the old "no numbers in search" check is gone; test_v124_g2b checks them.
         hit = page.get_attribute(".guides-lower .guides-row[data-guide]", "data-guide")
         page.click(".guides-lower .guides-row[data-guide]")
         page.wait_for_selector(".guides-entry")
