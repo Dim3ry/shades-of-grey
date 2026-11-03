@@ -125,7 +125,8 @@ def main():
             missing = [k for k in STRUCTURE_TOKENS if k not in table.get((th, None), {})]
             check(f"{NAMES[th]}: every structure token is defined", not missing, missing)
             for mode in ("dark", "light"):
-                missing = [k for k in COLOUR_TOKENS if k not in table.get((th, mode), {})]
+                # TH3: a theme may set a token once for both modes in its shared block (Parchment Codex draws one --texture from per-mode ink colours)
+                missing = [k for k in COLOUR_TOKENS if k not in table.get((th, mode), {}) and k not in table.get((th, None), {})]
                 check(f"{NAMES[th]} {mode}: every colour token is defined", not missing, missing)
         classic_struct = re.search(r':root, \[data-t="classic"\], \.viewer, #scan-camera \{(.*?)\n    \}', style, re.S)
         missing = [k for k in STRUCTURE_TOKENS if not classic_struct or k + ":" not in classic_struct.group(1)]
@@ -250,7 +251,8 @@ def main():
                 check(f"{NAMES[th]} {mode}: every text colour reads at 4.5:1 on the page and the cards", not low, low)
                 check(f"{NAMES[th]} {mode}: borders reach 3:1 on the page and the cards",
                       min(contrast(g("--border"), bg), contrast(g("--border"), card)) >= 3, (g("--border"), bg, card))
-                check(f"{NAMES[th]} {mode}: button text reads at 4.5:1 on the accent", contrast(g("--on-accent"), g("--accent")) >= 4.5, (g("--on-accent"), g("--accent")))
+                # TH3: buttons are filled with --accent-fill (the accent itself in every theme but Parchment Codex dark, which uses a deeper red)
+                check(f"{NAMES[th]} {mode}: button text reads at 4.5:1 on the accent fill", contrast(g("--on-accent"), g("--accent-fill")) >= 4.5, (g("--on-accent"), g("--accent-fill")))
                 check(f"{NAMES[th]} {mode}: the toast's Undo reads at 4.5:1 on the toast", contrast(g("--toast-action"), g("--text")) >= 4.5)
                 check(f"{NAMES[th]} {mode}: both graph lines reach 3:1 on the cards and differ",
                       min(contrast(g("--series-added"), card), contrast(g("--series-painted"), card)) >= 3 and g("--series-added") != g("--series-painted"))

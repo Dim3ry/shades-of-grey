@@ -236,7 +236,7 @@
       min-height: 44px;       /* v53: every base button is a full 44 px target (was 41) */
     }
     .plain-button:hover { border-color: var(--accent); }
-    .primary-button { background: var(--accent); color: var(--on-accent); font-weight: 600; padding: 12px; min-height: 44px; }
+    .primary-button { background: var(--accent-fill, var(--accent)); color: var(--on-accent); font-weight: 600; padding: 12px; min-height: 44px; }
     .danger-button { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 11px 14px; font-size: 14px; min-height: 44px; }
     /* RS2: remove buttons in Recipe preferences keep a 44 px tap area */
     #recipe-prefs-card .chip { min-height: 44px; }
@@ -285,16 +285,16 @@
     .arc .icon { display: inline-flex; font-size: 22px; line-height: 1; }
     .arc .icon svg { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
     /* The segment you are in stays lit: a brighter fill, a thicker icon and a bold label (never colour alone). */
-    .arc [data-tab][aria-current="page"] { background-color: var(--accent); color: var(--on-accent); font-weight: 700; }
+    .arc [data-tab][aria-current="page"] { background-color: var(--accent-fill, var(--accent)); color: var(--on-accent); font-weight: 700; }
     .arc [data-tab][aria-current="page"] .icon svg { stroke-width: 2.4; }
     .arc [data-tab]:focus-visible, .mentor-orb:focus-visible { outline: 2px solid var(--text); outline-offset: -4px; }
     /* The round Mentor button: one component, so its look can be restyled later (the orb comes with the Mentor chunks). */
     .mentor-orb {
       left: 145px; top: 82px; width: 100px; height: 100px; padding: 9px 0 0; border-radius: 50%;
       display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 3px;
-      background-color: var(--accent); background-image: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.35) 0%, transparent 60%);
+      background-color: var(--accent-fill, var(--accent)); background-image: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.35) 0%, transparent 60%);
       color: var(--on-accent); font-size: 13px; font-weight: 700; line-height: 16px;
-      box-shadow: 0 0 28px color-mix(in srgb, var(--accent) 50%, transparent);
+      box-shadow: 0 0 28px color-mix(in srgb, var(--accent-fill, var(--accent)) 50%, transparent);
     }
     .mentor-orb svg { width: 50px; height: 50px; flex: none; }
     /* A3: the keyboard ring sits just outside the circle (on the page colour, where the text colour reads at 3:1 or more in every theme); inside, it sat on the accent fill and was too faint. */
@@ -343,13 +343,13 @@
     body.launching .tabs { top: 0; height: auto; }
     body.launching .tabs::before {
       height: auto; top: 0;
-      background: radial-gradient(circle at 50% var(--ring-cy, 50%), color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent calc(260px * var(--ring-scale, 1)));
+      background: radial-gradient(circle at 50% var(--ring-cy, 50%), color-mix(in srgb, var(--accent-fill, var(--accent)) 12%, transparent) 0%, transparent calc(260px * var(--ring-scale, 1)));
     }
     :is(body.launching, .mo-ring) .arc {
       left: 50%; top: var(--ring-cy, 50%); bottom: auto; width: 390px; height: 360px; margin: -180px 0 0 -195px;
       transform: scale(var(--ring-scale, 1)); transform-origin: 50% 50%;
     }
-    :is(body.launching, .mo-ring) .arc [data-tab] { padding: 0; gap: 4px; background-color: color-mix(in srgb, var(--accent) 14%, var(--card)); color: var(--text); font-size: 13px; line-height: 16px; font-weight: 400; }
+    :is(body.launching, .mo-ring) .arc [data-tab] { padding: 0; gap: 4px; background-color: color-mix(in srgb, var(--accent-fill, var(--accent)) 14%, var(--card)); color: var(--text); font-size: 13px; line-height: 16px; font-weight: 400; }
     :is(body.launching, .mo-ring) .arc .icon { font-size: 32px; color: var(--accent); }
     :is(body.launching, .mo-ring) .arc [data-tab="dashboard"] { left: 25.10px; top: 10.10px; width: 167.10px; height: 167.10px; clip-path: path('M163.96 0.00 A170 170 0 0 0 0.00 163.96 L89.95 167.10 A80 80 0 0 1 167.10 89.95 Z'); }
     :is(body.launching, .mo-ring) .arc [data-tab="units"] { left: 197.79px; top: 10.10px; width: 167.10px; height: 167.10px; clip-path: path('M167.10 163.96 A170 170 0 0 0 3.14 0.00 L0.00 89.95 A80 80 0 0 1 77.16 167.10 Z'); }
@@ -357,7 +357,7 @@
     :is(body.launching, .mo-ring) .arc [data-tab="guides"] { left: 197.79px; top: 182.79px; width: 167.10px; height: 167.10px; clip-path: path('M3.14 167.10 A170 170 0 0 0 167.10 3.14 L77.16 0.00 A80 80 0 0 1 0.00 77.16 Z'); }
     body.launching .mentor-orb {
       left: 133px; top: 118px; width: 124px; height: 124px; padding: 0; justify-content: center; gap: 4px; font-size: 14px; line-height: 18px;
-      box-shadow: 0 0 56px color-mix(in srgb, var(--accent) 55%, transparent);
+      box-shadow: 0 0 56px color-mix(in srgb, var(--accent-fill, var(--accent)) 55%, transparent);
     }
     body.launching .mentor-orb svg { width: 64px; height: 64px; }
     body.launching .toast { bottom: calc(12px + env(safe-area-inset-bottom)); }
@@ -411,10 +411,10 @@
     .app-actions .basket {
       position: relative; flex: none; display: inline-flex; align-items: center; gap: 3px; min-width: 0; min-height: 0; height: 26px; padding: 0 8px 0 6px;
       border-radius: 13px;
-      background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 72%, var(--basket-deep)));
+      background: linear-gradient(180deg, var(--accent-fill, var(--accent)), color-mix(in srgb, var(--accent-fill, var(--accent)) 72%, var(--basket-deep)));
       color: var(--on-accent); font-size: 13px; font-weight: 700; line-height: 1;
       border: 2px solid var(--card);                          /* a ring in the page's own colour, so the pill reads cleanly */
-      box-shadow: 0 0 0 1px var(--accent), 0 2px 10px color-mix(in srgb, var(--accent) 45%, transparent);   /* a soft, cold glow */
+      box-shadow: 0 0 0 1px var(--accent-fill, var(--accent)), 0 2px 10px color-mix(in srgb, var(--accent-fill, var(--accent)) 45%, transparent);   /* a soft, cold glow */
     }
     .app-actions .basket svg { width: 15px; height: 15px; flex: none; }
     .app-actions .basket::after { content: ""; position: absolute; inset: -11px -8px; }   /* v53: the hit area is 44 px tall (it was 42) */
@@ -574,7 +574,7 @@
       .units-toolbar { gap: 8px; }
       .units-toolbar .plain-button { padding: 12px 12px; }
     }
-    .units-toolbar .plain-button[aria-pressed="true"] { color: var(--on-accent); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+    .units-toolbar .plain-button[aria-pressed="true"] { color: var(--on-accent); background: var(--accent-fill, var(--accent)); border-color: var(--accent-fill, var(--accent)); font-weight: 600; }
 
     /* v21.1: SELECT MODE. A tick box on each card, and a bar at the bottom to move them all. */
     .unit-tick {
@@ -660,7 +660,7 @@
       min-width: 44px;        /* v53: the short "All" chip was 36 wide */
       border-radius: 999px;   /* pill shape */
     }
-    .chip[aria-pressed="true"] { color: var(--on-accent); background-color: var(--accent); border-color: var(--accent); font-weight: 600; }
+    .chip[aria-pressed="true"] { color: var(--on-accent); background-color: var(--accent-fill, var(--accent)); border-color: var(--accent-fill, var(--accent)); font-weight: 600; }
     /* v49: the Units filter groups (To do, Done, Repaint) are three equal buttons across the card; the stage chips open underneath */
     #group-chips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
     #group-chips .chip { justify-content: center; text-align: center; min-height: 44px; padding: 10px 6px; }
@@ -729,7 +729,7 @@
     /* M2: the Detailed / Simple switch above the unit list. */
     .rows-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
     .rows-switch .plain-button { min-height: 44px; padding: 8px 12px; }
-    .rows-switch .plain-button[aria-pressed="true"] { color: var(--on-accent); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+    .rows-switch .plain-button[aria-pressed="true"] { color: var(--on-accent); background: var(--accent-fill, var(--accent)); border-color: var(--accent-fill, var(--accent)); font-weight: 600; }
     /* M2: Move all models / Track as one batch are full-width, 48 px tall. */
     .panel .jump-stage, .panel .track-each { min-height: 48px; width: 100%; }
 
@@ -1210,7 +1210,7 @@
       background: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card);
     }
     .seg button { background: none; color: var(--muted); padding: 10px; font-size: 15px; min-height: 44px; }
-    .seg button[aria-selected="true"] { background: var(--accent); color: var(--on-accent); font-weight: 600; }
+    .seg button[aria-selected="true"] { background: var(--accent-fill, var(--accent)); color: var(--on-accent); font-weight: 600; }
     .more-title { margin: 0 0 8px; }   /* X2: the page heading above the Guides / Settings / Help / Updates switch */
     #more-seg { grid-template-columns: repeat(5, 1fr); gap: 2px; }   /* X2: Guides added; AM1: About added (five pages) */
     #more-seg button { padding: 10px 2px; font-size: 14px; }
@@ -1564,9 +1564,9 @@
     .pick-tick, .pick-all { display: inline-flex; align-items: center; justify-content: center; background: transparent; color: var(--text); border: 0; cursor: pointer; }
     .pick-tick { width: 44px; height: 44px; padding: 0; border-radius: var(--radius-control); }
     .pick-box { position: relative; flex: none; width: 24px; height: 24px; box-sizing: border-box; border: 2px solid var(--muted); border-radius: 6px; background: var(--card); }
-    [aria-checked="true"] > .pick-box { background: var(--accent); border-color: var(--accent); }
+    [aria-checked="true"] > .pick-box { background: var(--accent-fill, var(--accent)); border-color: var(--accent-fill, var(--accent)); }
     [aria-checked="true"] > .pick-box::after { content: ""; position: absolute; left: 6px; top: 1px; width: 6px; height: 12px; border-right: 2.5px solid var(--on-accent); border-bottom: 2.5px solid var(--on-accent); transform: rotate(45deg); }
-    [aria-checked="mixed"] > .pick-box { background: var(--accent); border-color: var(--accent); }
+    [aria-checked="mixed"] > .pick-box { background: var(--accent-fill, var(--accent)); border-color: var(--accent-fill, var(--accent)); }
     [aria-checked="mixed"] > .pick-box::after { content: ""; position: absolute; left: 4px; top: 9px; width: 12px; height: 0; border-top: 2.5px solid var(--on-accent); }
     .pick-tick:hover .pick-box, .pick-all:hover .pick-box { border-color: var(--accent); }
     .pick-all { justify-content: flex-start; gap: 0; min-height: 44px; padding: 0 12px 0 0; font-size: 14px; border-radius: var(--radius-control); }
@@ -1642,7 +1642,7 @@
     .shop-remove, .shop-addback { flex: none; min-height: 44px; padding: 8px 12px; }
     .shop-item.shop-ticking .shop-text { color: var(--muted); text-decoration: line-through; transition: color 0.2s; }
     .shop-item.shop-ticking .shop-remove { visibility: hidden; }
-    .shop-item.shop-ticking .pick-box { background: var(--accent); border-color: var(--accent); }
+    .shop-item.shop-ticking .pick-box { background: var(--accent-fill, var(--accent)); border-color: var(--accent-fill, var(--accent)); }
     .shop-item.shop-ticking .pick-box::after { content: ""; position: absolute; left: 6px; top: 1px; width: 6px; height: 12px; border-right: 2.5px solid var(--on-accent); border-bottom: 2.5px solid var(--on-accent); transform: rotate(45deg); }
     .shop-bought { margin-top: 16px; }
     .shop-bought-head { width: 100%; min-height: 44px; text-align: left; }
@@ -1919,47 +1919,56 @@
       --button-weight: 400;
       --button-transform: none;
       --button-tracking: .01em;
+      /* TH3: the paper, shared by light and dark (each mode sets the ink, soot and tide colours and its own edge shading). Each stain is a few overlapping
+         ellipses of different sizes and offsets, so it reads as a blot rather than a dot; all of them sit in the 16 px page margin or in the card padding. */
+      --texture: radial-gradient(12px 9px at 100% 21%, var(--ink-a) 78%, #0000), radial-gradient(7px 11px at calc(100% - 5px) calc(21% + 9px), var(--ink-a) 78%, #0000), radial-gradient(5px 4px at calc(100% - 10px) calc(21% - 7px), var(--ink-a) 78%, #0000), radial-gradient(2px 7px at calc(100% - 3px) calc(21% + 24px), var(--ink-a) 70%, #0000), radial-gradient(2.5px 2px at calc(100% - 12px) calc(21% + 17px), var(--ink-a) 60%, #0000), radial-gradient(20px 26px at 100% calc(21% + 4px), var(--ink-b), #0000), radial-gradient(10px 8px at 0 11%, var(--ink-a) 78%, #0000), radial-gradient(6px 9px at 6px calc(11% + 7px), var(--ink-a) 75%, #0000), radial-gradient(3px at 13px calc(11% - 5px), var(--ink-a) 60%, #0000), radial-gradient(16px 20px at 0 calc(11% + 3px), var(--ink-b), #0000), radial-gradient(11px 14px at 0 64%, var(--soot-a) 78%, #0000), radial-gradient(7px 6px at 7px calc(64% - 12px), var(--soot-a) 75%, #0000), radial-gradient(4px 5px at 12px calc(64% + 9px), var(--soot-a) 70%, #0000), radial-gradient(15px 44px at 0 calc(64% - 2px), var(--soot-b), #0000), radial-gradient(9px 70px at 100% 82%, var(--soot-b), #0000), radial-gradient(circle at 18% 34%, #0000 46px, var(--tide) 50px, #0000 56px), radial-gradient(54px 49px at calc(18% + 6px) calc(34% + 3px), #0000 88%, var(--tide) 95%, #0000), var(--paper-shade), var(--paper-grain);
+      --card-stain: radial-gradient(12px 8px at calc(100% - 6px) 3px, var(--soot-a) 75%, #0000), radial-gradient(6px 9px at calc(100% - 2px) 6px, var(--soot-a) 75%, #0000), radial-gradient(4px 3px at calc(100% - 19px) 6px, var(--soot-a) 70%, #0000), radial-gradient(22px 13px at 100% 0, var(--soot-b), #0000);
+      --card-stain-2: radial-gradient(9px 7px at 4px calc(100% - 4px), var(--ink-a) 75%, #0000), radial-gradient(5px 4px at 13px calc(100% - 2px), var(--ink-a) 70%, #0000), radial-gradient(2px at 20px calc(100% - 7px), var(--ink-a) 60%, #0000), radial-gradient(18px 12px at 0 100%, var(--ink-b), #0000);
       --texture-size: auto;
+      --paper-size: 100% 100vh, 100% 100vh, 100% 100vh, 100% 100vh, 100% 100vh, 100% 100vh, 100% 100vh, 100% 100vh, 100% 100vh, 100% 100vh, 100% 100vh, 100% 100vh, 100% 100vh, 100% 100vh, 100% 100vh, 100% 100vh, 100% 100vh, 100% 100vh, 100% 100vh, 100% 100vh, auto;
     }
     [data-t="parchment"][data-m="dark"] {
       --background: #17120e;
       --card: #211a14;
       --track: #120e0b;
-      --border: #82603e;
+      --border: #856340;
       --text: #e8dcc0;
       --muted: #a79877;
-      --accent: #d65b5b;
-      --on-accent: #211a06;
-      --heading-colour: #da594d;
+      --accent: #dc6575;
+      --accent-fill: #b8303c;   /* TH3: deeper red ink for large fills; the lighter --accent stays for text */
+      --on-accent: #f3e7c6;
+      --heading-colour: #dc6575;
       --wordmark-colour: #e8dcc0;
-      --danger: #e88070;
+      --danger: #e55a34;
       --shadow: rgba(0, 0, 0, 0.45);
       --badge-bg: rgba(33, 26, 20, 0.85);
-      --accent-wash: rgba(214, 91, 91, 0.08);
-      --accent-wash-hover: rgba(214, 91, 91, 0.05);
+      --accent-wash: rgba(184, 48, 60, 0.08);
+      --accent-wash-hover: rgba(184, 48, 60, 0.05);
       --note: #6fb8a6;
       --note-wash: rgba(111, 184, 166, 0.18);
       --good: #8cbf7a;
       --good-wash: rgba(140, 191, 122, 0.12);
-      --bad: #e88070;
-      --bad-wash: rgba(232, 128, 112, 0.1);
+      --bad: #e55a34;
+      --bad-wash: rgba(229, 90, 52, 0.1);
       --warn: #e6cf8a;
       --caution: #e8a050;
       --wish: #9ab8e0;
       --grey-status: #a79877;
       --chip-on: #17120e;
-      --toast-action: #8a1c1c;
+      --toast-action: #91133b;
       --series-added: #9ab8e0;
       --series-painted: #8cbf7a;
-      --toast-ring: rgba(214, 91, 91, 0.45);
+      --toast-ring: rgba(220, 101, 117, 0.45);
       --basket-deep: #000000;
-      --first-letter: #da594d;
+      --first-letter: #dc6575;
       color-scheme: dark;
       --card-shadow: inset 0 0 0 1px rgba(255,235,190,.06);
       --frame: 4px double #6d5034;
-      --rule: 3px double #6d5034;
+      --rule: 3px double #b04a5c;
       --swatch-edge: rgba(232, 220, 192, 0.3);
-      --texture: radial-gradient(circle at 16% 10%, rgba(179,45,45,.10), transparent 40%), radial-gradient(circle at 90% 80%, rgba(120,80,40,.12), transparent 45%), repeating-linear-gradient(0deg, rgba(255,235,190,.012) 0 1px, transparent 1px 4px);
+      --ink-a: rgba(170,40,62,.26); --ink-b: rgba(170,40,62,.08); --soot-a: rgba(0,0,0,.45); --soot-b: rgba(0,0,0,.16); --tide: rgba(0,0,0,.12);
+      --paper-shade: radial-gradient(ellipse at 50% 40%, rgba(150,96,46,.07), #0000 60%), radial-gradient(ellipse at 50% 45%, #0000 55%, rgba(4,2,0,.3) 80%, rgba(4,2,0,.6) 100%), linear-gradient(rgba(0,0,0,.3), #0000 24px, #0000 calc(100% - 24px), rgba(0,0,0,.3));
+      --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='d'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.9 0 0 0 -0.42'/%3E%3C/filter%3E%3Cfilter id='l'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 0.9 0 0 0 0 0.75 0.1 0 0 0 -0.058'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23l)'/%3E%3Crect width='180' height='180' filter='url(%23d)'/%3E%3C/svg%3E");
     }
     [data-t="parchment"][data-m="light"] {
       --background: #d8c59a;
@@ -1967,39 +1976,42 @@
       --track: #cdb98c;
       --border: #6f5232;
       --text: #2a1c10;
-      --muted: #65502f;
-      --accent: #8a1c1c;
+      --muted: #5b482a;
+      --accent: #91133b;
+      --accent-fill: #91133b;
       --on-accent: #f3e7c6;
-      --heading-colour: #8a1c1c;
+      --heading-colour: #91133b;
       --wordmark-colour: #2a1c10;
-      --danger: #9b2a12;
+      --danger: #96140b;
       --shadow: rgba(42, 28, 16, 0.18);
       --badge-bg: rgba(228, 212, 174, 0.92);
-      --accent-wash: rgba(138, 28, 28, 0.09);
-      --accent-wash-hover: rgba(138, 28, 28, 0.05);
-      --note: #285c50;
-      --note-wash: rgba(40, 92, 80, 0.1);
-      --good: #2f5a22;
-      --good-wash: rgba(47, 90, 34, 0.1);
-      --bad: #9b2a12;
-      --bad-wash: rgba(155, 42, 18, 0.08);
-      --warn: #6b4e00;
-      --caution: #844000;
+      --accent-wash: rgba(145, 19, 59, 0.09);
+      --accent-wash-hover: rgba(145, 19, 59, 0.05);
+      --note: #245349;
+      --note-wash: rgba(36, 83, 73, 0.1);
+      --good: #2c5420;
+      --good-wash: rgba(44, 84, 32, 0.1);
+      --bad: #96140b;
+      --bad-wash: rgba(150, 20, 11, 0.08);
+      --warn: #614700;
+      --caution: #783a00;
       --wish: #2a4a80;
-      --grey-status: #5e5140;
+      --grey-status: #55493a;
       --chip-on: #f3e7c6;
       --toast-action: #e9c46a;
       --series-added: #2a4a80;
-      --series-painted: #2f5a22;
-      --toast-ring: rgba(138, 28, 28, 0.45);
+      --series-painted: #2c5420;
+      --toast-ring: rgba(145, 19, 59, 0.45);
       --basket-deep: #2a1c10;
-      --first-letter: #8a1c1c;
+      --first-letter: #91133b;
       color-scheme: light;
       --card-shadow: inset 0 0 0 1px rgba(255,255,255,.25);
       --frame: 4px double #6f5232;
-      --rule: 3px double #6f5232;
+      --rule: 3px double #91133b;
       --swatch-edge: rgba(42, 28, 16, 0.4);
-      --texture: radial-gradient(circle at 18% 12%, rgba(120,80,30,.20), transparent 38%), radial-gradient(circle at 88% 72%, rgba(100,60,20,.18), transparent 42%), radial-gradient(circle at 60% 38%, rgba(255,255,255,.12), transparent 40%), repeating-linear-gradient(0deg, rgba(60,35,10,.03) 0 1px, transparent 1px 4px);
+      --ink-a: rgba(110,14,34,.4); --ink-b: rgba(110,14,34,.12); --soot-a: rgba(64,36,12,.34); --soot-b: rgba(96,56,18,.12); --tide: rgba(120,76,28,.035);
+      --paper-shade: radial-gradient(ellipse 120px 80px at 70% 58%, rgba(110,14,34,.03), #0000 70%), linear-gradient(90deg, rgba(96,56,18,.3), rgba(96,56,18,.02) 15px, #0000 30px, #0000 calc(100% - 30px), rgba(96,56,18,.02) calc(100% - 15px), rgba(96,56,18,.3)), linear-gradient(rgba(96,56,18,.26), #0000 12px, #0000 calc(100% - 24px), rgba(96,56,18,.26));
+      --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='d'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.18 0 0 0 0 0.07 0.2 0 0 0 -0.115'/%3E%3C/filter%3E%3Cfilter id='l'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 0.98 0 0 0 0 0.9 0.8 0 0 0 -0.42'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23l)'/%3E%3Crect width='180' height='180' filter='url(%23d)'/%3E%3C/svg%3E");
     }
     [data-t="forge"] {
       --font-heading: 'Teko', 'Oswald', 'Arial Narrow', sans-serif;
@@ -2233,6 +2245,34 @@
 
     /* Parchment Codex: an illuminated first letter, a double line on the open tab, and numbers in italic. */
     [data-t="parchment"] h1::first-letter { font-size: 1.45em; color: var(--first-letter); }
+    /* TH3: large accent fills (buttons, the open segment, the Mentor button) use --accent-fill. Every theme scope (the page, each Theme square, the photo
+       viewer and the camera) sets it back to its own accent, so only Parchment Codex, which sets a deeper red for dark, looks any different. */
+    [data-t], .viewer, #scan-camera { --accent-fill: var(--accent); }
+    /* TH3: red ink on parchment. The paper (--texture) is drawn once on a fixed layer behind the page, so scrolling does not repaint it; the header and the fade behind the bar show the same paper; some cards get one small corner stain inside their padding.
+       The layer, the header and the fade all size the paper by 100vh (the tall, fixed viewport) and measure it from the top of the screen, so on a phone the stains line up and stay put when the browser bar slides away. */
+    [data-t="parchment"] body { background-image: none; background-attachment: scroll; }
+    [data-t="parchment"] body::before {
+      content: ""; position: fixed; top: 0; left: 0; right: 0; height: 100vh; z-index: -1; pointer-events: none; will-change: transform;
+      background-image: var(--texture); background-size: var(--paper-size);
+    }
+    [data-t="parchment"] .app-bar { background-image: var(--texture); background-size: var(--paper-size); }
+    @media (min-width: 673px) { [data-t="parchment"] .app-bar { background-attachment: fixed; } }
+    [data-t="parchment"] .tabs::before {
+      --fade-h: calc((230px + var(--arc-lift)) * var(--arc-scale) + env(safe-area-inset-bottom));   /* the same height as .tabs::before above */
+      background-color: var(--background); background-image: var(--texture); background-size: var(--paper-size);
+      background-position: 0 calc(var(--fade-h) - 100vh); background-position: 0 calc(var(--fade-h) - 100dvh);   /* the fade sits at the bottom of the visible screen: shift the paper so its top meets the top of the screen */
+      -webkit-mask-image: linear-gradient(transparent, #000 60%); mask-image: linear-gradient(transparent, #000 60%);
+    }
+    /* the start page draws its own glow in the fade (body.launching .tabs::before): the fade mask must not cut the top of it */
+    [data-t="parchment"] body.launching .tabs::before { -webkit-mask-image: none; mask-image: none; }
+    [data-t="parchment"] .mentor-send { color: var(--on-accent); }   /* it sits on the crimson fill */
+    :where([data-t="parchment"]) :is(.card, li.unit) { background-image: var(--card-stain); }
+    :where([data-t="parchment"]) :is(.card, li.unit):where(:nth-child(3n+2)) { background-image: var(--card-stain-2); }
+    .theme-swatch[data-t="parchment"] { background-image: var(--card-stain-2), var(--paper-grain); background-size: auto; }
+    @media print {
+      [data-t="parchment"] body::before { content: none; }
+      [data-t="parchment"] :is(.app-bar, .card, li.unit), [data-t="parchment"] .tabs::before { background-image: none; }
+    }
 
     /* Grim Forge: the bevel (in the card shadow) and heavy borders, plus a hard shadow under the title in dark. */
     [data-t="forge"] h1 { text-shadow: var(--wordmark-shadow, none); }
@@ -2271,7 +2311,7 @@
       text-transform: var(--heading-transform); letter-spacing: var(--heading-tracking);
       font-size: 13px; line-height: 1.05; text-align: center; overflow-wrap: normal; hyphens: manual;
     }
-    .theme-swatch .ts-bar { display: block; height: 7px; border-radius: var(--radius-bar); background: var(--accent); flex: none; }
+    .theme-swatch .ts-bar { display: block; height: 7px; border-radius: var(--radius-bar); background: var(--accent-fill, var(--accent)); flex: none; }
     .theme-swatch[aria-pressed="true"] { outline: 3px solid var(--page-accent); outline-offset: 2px; }
     .theme-swatch:focus-visible { outline: 3px dashed var(--page-accent); outline-offset: 2px; }
     .theme-swatch[aria-pressed="true"]:focus-visible { outline-style: double; outline-width: 5px; }
@@ -2364,7 +2404,7 @@
           properties, so themes that tilt a button with transform keep their tilt. */
     .primary-button, .plain-button { transition: translate var(--motion-fast) var(--motion-ease), scale var(--motion-fast) var(--motion-ease), box-shadow var(--motion-med) var(--motion-ease), filter var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease); }
     @media (hover: hover) {
-      .primary-button:not(:disabled):hover, .plain-button:not(:disabled):hover { translate: 0 -2px; box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 38%, transparent); }
+      .primary-button:not(:disabled):hover, .plain-button:not(:disabled):hover { translate: 0 -2px; box-shadow: 0 6px 18px color-mix(in srgb, var(--accent-fill, var(--accent)) 38%, transparent); }
     }
     .primary-button:not(:disabled):active, .plain-button:not(:disabled):active { translate: 0 1px; scale: 0.97; box-shadow: none; filter: brightness(0.92); }
     .rip-host { position: relative; overflow: hidden; }
@@ -2492,7 +2532,7 @@
     .mentor-window:not(.mentor-chatting) .mentor-chips { max-height: min(40vh, 230px); }
     .mentor-window:not(.mentor-chatting) .mentor-scroll { flex: none; }
     .mentor-form { flex: none; display: flex; gap: 6px; margin-top: auto; }
-    .mentor-send { flex: none; width: 44px; height: 48px; padding: 0; display: flex; align-items: center; justify-content: center; color: var(--chip-on); background-color: var(--accent); border: 0; border-radius: 12px; cursor: pointer; }
+    .mentor-send { flex: none; width: 44px; height: 48px; padding: 0; display: flex; align-items: center; justify-content: center; color: var(--chip-on); background-color: var(--accent-fill, var(--accent)); border: 0; border-radius: 12px; cursor: pointer; }
     .mentor-send:disabled { opacity: 0.55; cursor: default; }
     .mentor-msgs { display: grid; gap: 10px; }
     .mentor-msg { min-width: 0; display: grid; gap: 8px; animation: mo-fade var(--motion-fast) var(--motion-ease) both; }
