@@ -21943,12 +21943,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=129".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=130".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v129";
+    const APP_VERSION = "v130";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -22410,6 +22410,13 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v130", date: "3 Nov 2026", changes: [
+        "Model cards are compact: each shows its name, game, army and stage. Tap a card to open it with the stage buttons, recipes and Details, and tap its header to close it. One card is open at a time.",
+        "Buttons and chips dim the moment you touch them, change colour smoothly and keep their rounded shape when pressed. The square flash some phones drew on a tap is gone.",
+        "Switches on Painting, Tools and Settings, Colour Lab and Guides now empty the old choice and fill the new one with colour.",
+        "Fold-outs unroll and what is below slides down, the Undo message and questions fade away, and Back from a recipe keeps your place in the list. With Reduce motion on, everything still happens at once.",
+        "Mentor knows more about insect wings, resin prints, lights in models and jungle bases.",
+      ] },
       { version: "v129", date: "3 Nov 2026", changes: [
         "Mentor has new looks. Futuristic is a machined hub with an iris, Magical a cluster of crystals inside a slowly turning ring of stones, and Grounded a pool of paint. Tap Mentor in its window for a little surprise.",
         "Opening the app shows the icon ring filling as it loads, then it becomes the start circle. The start circle and the bar change colour smoothly, the bar never disappears on the way down, and the chosen section's colour slides across.",
