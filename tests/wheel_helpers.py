@@ -81,7 +81,10 @@ def touch_open(tp, key):
     """The same as tap(), for a touch phone page (taps with a finger): drill into a colour and open its default group."""
     tp.evaluate("() => document.getElementById('cmp-wheel').scrollIntoView({ block: 'center' })")
     tp.tap(f'[data-wheel="{key}"]')
+    # CL2 (James, 3 Nov): the groups now slide out from behind the tapped colour (about half a second) instead of appearing at once, so the
+    # finger waits until they have landed where it taps (a fixed 150 ms used to be enough). Reduce motion still shows them at once.
     tp.wait_for_timeout(150)
+    quiet(tp)
     index = SUBS[key].index(default_group(tp, key))
     x, y = tp.evaluate("""(i) => { const r = document.getElementById('cmp-wheel').getBoundingClientRect(), k = r.width / 320, a = [0, 120, 240][i] * Math.PI / 180;
         return [r.left + (160 + 73 * Math.sin(a)) * k, r.top + (150 - 73 * Math.cos(a)) * k]; }""", index)

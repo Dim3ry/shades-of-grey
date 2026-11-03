@@ -1760,6 +1760,10 @@
                                       padding: 8px 14px 8px 10px; border-radius: 14px; text-align: left; line-height: 1.25; white-space: normal; }
     .start-swatch-name { min-width: 0; overflow-wrap: anywhere; }
     .start-swatches > .start-more { min-height: 44px; padding: 0 14px; }
+    /* CL2: Colour Lab colours morph from one set to the next (app.js "CL2:"). While it runs the pressed colour is drawn over the rest, so they slide in
+       behind it, and a picture's pieces (the wheel and its copy) move in the picture's own units. Nothing here changes the look at rest. */
+    .cl2-front { position: relative; z-index: 2; }
+    .wheel-svg > *, .cl2-ghost svg > * { transform-box: view-box; transform-origin: 0 0; }
     /* v29: the tip for the chosen role, and "Does this scheme hang together?" */
     .role-tip { margin: 0; padding: 8px 12px; border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; background: var(--accent-wash); font-size: 0.875rem; line-height: 1.4; overflow-wrap: anywhere; }
     .role-tip strong { color: var(--accent); }
