@@ -5200,13 +5200,40 @@
     if (settings.mentorLook !== undefined && !goodMentorLook(settings.mentorLook)) delete settings.mentorLook;
     applyMentorLook();
 
-    // The orb for the window: the chosen look in one of its states (U6b). It is drawn 1.2 times larger in its box than in the round button, as
-    // before (the narrower viewBox), and its box (class ml-live) is the only place the look's own slow motion runs.
+    // The orb for the window: the chosen look in one of its states (U6b). Its box (class ml-live) is the only place the look's own slow motion runs.
+    // U7: drawn with the drawing's own viewBox (round 6 cropped it to "25 25 150 150" to zoom in; round 7's brackets and loose shards reach the
+    // edge, so the crop would cut them off). A mood swaps in a fresh drawing, so a part that keeps turning (.ml-orbit: Magical's stone ring) is
+    // started where the clock has it rather than at 0 degrees: the ring turns on through a mood instead of jumping back.
     function buildMentorOrb(state) {
       const svg = mentorLookSvg(currentMentorLook(), state || "neutral");
-      svg.setAttribute("viewBox", "25 25 150 150");
+      const at = `${-Math.round(performance.now()) / 1000}s`;
+      for (const turning of svg.querySelectorAll(".ml-orbit")) turning.style.animationDelay = at;
       svg.classList.add("mp-orb");
       return svg;
+    }
+    // U7 (James, 3 Nov): a tap on the orb in the open window plays the look's one-off move, then the orb carries on in its mood: Futuristic flashes
+    // four of its six bolts, picked at random each time; Magical's stone ring spins once; Grounded sends six paint drops out of the pool. The moves
+    // are in mentor-looks.js (ml-tap on the drawing, ml-picked on the bolts). The orb box is not a button: it stays hidden from screen readers, never
+    // takes focus from the text box, and a tap opens, closes and asks nothing. A tap while a move plays is ignored. With reduced motion (or
+    // .ml-still) the CSS plays nothing, so a tap does nothing. The round button and the start circle have no tap move.
+    const MENTOR_TAP_BOLTS = 4;
+    function mentorOrbTap(state) {
+      const svg = state.orbBox.querySelector("svg");
+      if (!svg || state.tapping) return;
+      const bolts = [...svg.querySelectorAll(".ml-bolt")];
+      for (let i = bolts.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [bolts[i], bolts[j]] = [bolts[j], bolts[i]]; }
+      const picked = bolts.slice(0, MENTOR_TAP_BOLTS);
+      for (const b of picked) b.classList.add("ml-picked");
+      svg.classList.add("ml-tap");
+      const done = () => {
+        svg.classList.remove("ml-tap");
+        for (const b of picked) b.classList.remove("ml-picked");
+        if (state.tapping === svg) state.tapping = null;
+      };
+      const played = svg.getAnimations({ subtree: true }).filter(a => typeof a.animationName === "string" && a.animationName.startsWith("ml-tap-"));
+      if (!played.length) { done(); return; }
+      state.tapping = svg;
+      Promise.allSettled(played.map(a => a.finished)).then(done);   // also settles if a mood swaps the drawing mid-move
     }
     // U6b: MENTOR'S MOODS, in the window only. Thinking while Mentor reads its notes ready for the first question (mentorWarmUp: the one part
     // that takes a while, about 0.9 s on a slow phone; an answer itself comes at once, so the window has no moment to show Thinking then);
@@ -5274,7 +5301,7 @@
       if (icon && drawing && o.width) {
         const s = icon.getBoundingClientRect();
         const units = (el, fallback) => (el.viewBox && el.viewBox.baseVal && el.viewBox.baseVal.width) || fallback;
-        const scale = (s.width / units(icon, 166.67)) / (o.width / units(drawing, 150));   // the same drawing size as on the button
+        const scale = (s.width / units(icon, 166.67)) / (o.width / units(drawing, 166.67));   // the same drawing size as on the button (U7: no crop, so both are 166.67)
         const tx = s.left + s.width / 2 - (o.left + o.width / 2) - dx, ty = s.top + s.height / 2 - (o.top + o.height / 2) - dy;
         frames.orb = [{ transform: `translate(${px(tx)}, ${px(ty)}) scale(${Math.round(scale * 1000) / 1000})`, easing: mentorFlowEase() },
           { transform: "translate(0px, 0px) scale(1)", offset: MENTOR_SHAPE_AT }, { transform: "translate(0px, 0px) scale(1)" }];
@@ -5653,6 +5680,8 @@
       orbBox.className = "mentor-orbbox ml-live";   // U6b: the look's own slow motion runs here only
       orbBox.dataset.mood = "neutral";
       orbBox.appendChild(buildMentorOrb("neutral"));
+      orbBox.addEventListener("mousedown", (event) => event.preventDefault());   // U7: tapping the orb leaves the focus where it is (the text box)
+      orbBox.addEventListener("click", () => { if (mentorState && mentorState.orbBox === orbBox) mentorOrbTap(mentorState); });
       const skin = document.createElement("div");   // MW1: the round button's colour, over the window while it grows
       skin.className = "mp-skin";
       skin.setAttribute("aria-hidden", "true");
