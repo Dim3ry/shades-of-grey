@@ -3110,13 +3110,33 @@
 
     // The main reader. Returns { schemes: [{ name, parts: [{ name, notes, steps }] }] }.
     // v18: builds the paint list once for the whole paste (much faster), then lets it go.
-    function parseRecipeText(text) {
+    // RS3b: opts.quick = the quick-add New recipe box (one recipe). There the word "then" also splits paints, a short line is never read as a
+    // scheme or army name, lines with no heading have no part ("" instead of Whole model), and no line is guessed to be a section heading.
+    // Paste recipes passes no opts and reads exactly as before.
+    // RS3b: in the quick box the word "then" (or ", then", "and then") splits paints like a comma, but not inside (brackets) or on a
+    // "Notes:" line, where it is part of a note ("(dry then glaze)").
+    function quickThen(line) {
+      if (/^\s*notes?\s*:/i.test(line)) return line;
+      let out = "", depth = 0, plain = "";
+      const flush = () => { out += plain.replace(/\s*,?\s+(?:and\s+)?then\s+/gi, ", "); plain = ""; };
+      for (const ch of line) {
+        if (ch === "(") { if (!depth) flush(); depth++; out += ch; continue; }
+        if (ch === ")" && depth) { depth--; out += ch; continue; }
+        if (depth) out += ch; else plain += ch;
+      }
+      flush();
+      return out;
+    }
+    function parseRecipeText(text, opts) {
       candidateCache = null;
       candidateCache = matchCandidates();
-      try { return readRecipeText(text); } finally { candidateCache = null; }
+      try { return readRecipeText(text, opts); } finally { candidateCache = null; }
     }
-    function readRecipeText(text) {
-      const lines = plainQuotes(String(text || "")).replace(/\r/g, "").replace(/\t/g, " ").split("\n");
+    function readRecipeText(text, opts) {
+      const quick = !!(opts && opts.quick);
+      let lines = plainQuotes(String(text || "")).replace(/\r/g, "").replace(/\t/g, " ").split("\n");
+      if (quick) lines = lines.map(quickThen);
+      let lineAt = 0;   // RS3b: the line being read, so the quick form can tell which line each step came from
       const factions = knownFactionNames();
       const schemes = [];
       let scheme = null, part = null, parent = null, blanks = 2;
@@ -3131,7 +3151,7 @@
         ctx.brand = ""; ctx.pendingMix = null;
       };
       const addSteps = (stepText, sticky) => {
-        if (!part) startPart(WHOLE_MODEL, false);
+        if (!part) startPart(quick ? "" : WHOLE_MODEL, false);
         // Commas and mid-line semicolons split steps. "drybrushed;" makes the rest dry brushed.
         let technique = sticky || "";
         const segments = splitOutside(stepText, [",", ";"]).map(s => s.trim()).filter(Boolean);
@@ -3146,18 +3166,20 @@
             // "Vallejo express 50/50" then two paints: they're one mixed step.
             const mix = ctx.pendingMix;
             if (mix && step.paints.length === 1) {
-              if (!mix.step) { mix.step = { ...step, ratio: mix.ratio, paints: [] }; part.steps.push(mix.step); }
+              if (!mix.step) { mix.step = { ...step, ratio: mix.ratio, paints: [] }; if (quick) mix.step.line = lineAt; part.steps.push(mix.step); }
               else mix.step.source += `\n${step.source}`;
               mix.step.paints.push(step.paints[0]);
               if (mix.step.paints.length >= mix.n) ctx.pendingMix = null;
               continue;
             }
+            if (quick) step.line = lineAt;
             part.steps.push(step);
           }
         });
       };
 
       for (let i = 0; i < lines.length; i++) {
+        lineAt = i;
         const line = lines[i].trim();
         // v18: a line with no letters or numbers (a divider like "-----" or "***", or just an
         // emoji) is treated like a blank line.
@@ -3168,7 +3190,7 @@
 
         // An army or scheme name on its own line: the very first line, a known faction, or after
         // a gap of 2+ blank lines. It mustn't read as a step ("Prime", "Leadbelcher").
-        const bare = !/[:;=,()]/.test(line) && !/\s[-–]\s/.test(line);
+        const bare = !quick && !/[:;=,()]/.test(line) && !/\s[-–]\s/.test(line);
         if (bare && line.split(/\s+/).length <= 5 && (factions.has(matchKey(line)) || (afterBlanks >= 2 && (!scheme || scheme.parts.length)) || !schemes.length)) {
           // v18: a known faction is checked before paints ("Dark Angels" isn't Dark Angels Green).
           if (factions.has(matchKey(line))) { startScheme(line); continue; }
@@ -3215,7 +3237,7 @@
       }
       // Group labels with nothing under them ("Misc:", "Slapchops:") are dropped.
       for (const s of schemes) s.parts = s.parts.filter(p => p.steps.length || p.notes.length);
-      for (const s of schemes) for (const p of s.parts) guessSectionHeadings(p);
+      if (!quick) for (const s of schemes) for (const p of s.parts) guessSectionHeadings(p);
       return { schemes: schemes.filter(s => s.parts.length) };
     }
 
@@ -4158,7 +4180,7 @@
     }
     tabButtons.forEach(b => b.addEventListener("click", () => {
       if (travelling) return;   // Mo4b: taps on the bar are ignored while the segments travel
-      if (b.dataset.tab === "guides") Object.assign(guidesState, { view: "home", cat: "", key: "", kind: "", missing: false });   // X3: the tab itself opens the category list
+      if (b.dataset.tab === "guides") Object.assign(guidesState, { view: "home", cat: "", group: "", key: "", kind: "", missing: false });   // X3: the tab itself opens the category list
       if (b.dataset.tab === "guides" || b.dataset.tab === "recipes") compendiumState.focus = null;   // v69: the tab itself opens the whole of Guides (X1: and the whole Colour Lab)
       // Tapping Recipes while already on it goes back to the list (unless you're mid-edit).
       if (b.dataset.tab === "recipes" && settings.tab === "recipes" && !recipeDraft && !launching) {
@@ -7943,7 +7965,7 @@
       dialogPick.replaceChildren();
       dialogPick.classList.toggle("hidden", !pick);
       if (pick) dialogPick.appendChild(cfg.content);
-      dialogExtra.classList.toggle("hidden", !pick);
+      dialogExtra.classList.toggle("hidden", !pick || !cfg.extra);   // RS3b: the Owned sheet has no extra button
       dialogExtra.textContent = cfg.extra || "";
       dialogBox.classList.toggle("dialog-pick-mode", pick);
       dialogInput.classList.toggle("hidden", !text);
@@ -7955,7 +7977,8 @@
       // A question about something destructive makes the safe answer the bold one.
       dialogYes.className = cfg.danger ? "danger-button" : "primary-button";
       dialogNo.className = cfg.danger ? "primary-button" : "plain-button";
-      dialogNo.classList.toggle("hidden", show || pick);   // (after the line above, which sets the whole class)
+      dialogNo.classList.toggle("hidden", show || (pick && !cfg.no));   // (after the line above, which sets the whole class). RS3b: Skip
+      dialogBackdrop.classList.toggle("dialog-sheet", !!cfg.sheet);   // RS3b: a sheet from the bottom of the screen
       dialogButtons.classList.toggle("single", show);
       dialogState = { cfg, opener: document.activeElement };
       dialogBackdrop.classList.remove("hidden");
@@ -8403,10 +8426,11 @@
     // any more (the question is in the app's own box), so it works like this: nothing to lose,
     // carries on straight away; otherwise it asks, and carries on only if you say yes.
     function whenOkToLeaveDraft(carryOn) {
+      if (recipeDraft && recipeDraft.quick) { clearTimeout(quickTimer); readQuickLines(recipeDraft); applyQuick(recipeDraft); }   // RS3b: typed just now
       if (!recipeDraft || draftSnapshot(recipeDraft) === recipeDraft.original) { carryOn(); return; }
       askYesNo("Discard the changes to the recipe you're writing?", carryOn, { danger: true });
     }
-    function draftSnapshot(d) { return JSON.stringify({ n: d.name, p: d.part, o: d.notes, s: d.steps }); }
+    function draftSnapshot(d) { return JSON.stringify({ n: d.name, p: d.part, o: d.notes, s: d.steps, t: d.quick ? d.quick.text : undefined }); }   // RS3b: t = the quick box
 
     function openRecipe(id) {
       whenOkToLeaveDraft(() => {
@@ -8591,7 +8615,7 @@
     }
 
     partFilter.addEventListener("change", () => { recipePartFilter = partFilter.value; renderRecipeList(); });
-    document.getElementById("new-recipe").addEventListener("click", () => startNewRecipe(null));
+    document.getElementById("new-recipe").addEventListener("click", () => startQuickRecipe());   // RS3b: the quick form (startNewRecipe is the full editor)
 
     // RS2: the parts and techniques lists, now in Settings under Recipe preferences: ✕ to remove one (after a question, with Undo), + to add one.
     // Recipes keep their own part and technique when it is removed here; the entry only leaves the editor's menus and the part filter.
@@ -9887,6 +9911,331 @@
       });
     }
 
+    // ----- RS3b: the quick New recipe form -----
+    // Painting > Recipes > + New recipe opens one box: type or paste lines ("Eyes: yriel yellow, then flash gitz yellow"), see a preview,
+    // and Save. The lines are read by the paste reader (parseRecipeText with quick on). It is still a recipe draft (recipeDraft), so leaving
+    // asks first and an unfinished one is kept like any other. d.quick holds the typed text and what was set by hand under More options:
+    //   d.quick.text  the box     d.quick.name / d.quick.part  "" = built from the lines
+    //   d.quick.over[key]  { technique, coats, brand, note } set by hand for one step; a field that is undefined follows the lines.
+    //                 key = the step's line id and its place in that line ("3:0"). Each line keeps its id while you type: a line typed
+    //                 above or below gets a new id, a changed line keeps its own, and a line that is gone takes what was set on it with it.
+    //   d.quick.ids / d.quick.lines  the id of each line of the box and the lines as last read
+    //   d.quick.read  the last reading of the box: { part, otherParts, notes, steps } (null when the box is empty)
+    // d.name, d.part, d.notes and d.steps always hold the result, so Save, Cancel and the kept-draft code work as they do for the full editor.
+    // So a step title (technique) set by hand stays with its line, also when that line's paint changes. Only a step nobody set by hand
+    // follows its paint (blank technique, guessed from the paints when shown, as everywhere else).
+    // The full editor (Edit steps and paints, Duplicate, Colour ideas, a new recipe from a unit) is unchanged.
+    const QUICK_WAIT_MS = 330;
+    let quickTimer = null;
+    function startQuickRecipe() {
+      whenOkToLeaveDraft(() => {
+        openRecipeId = null;
+        startRecipeDraft({ id: null, name: "", part: recipePartFilter, notes: "", linkUnit: null, steps: [],
+                           quick: { text: "", name: "", part: "", defaultPart: recipePartFilter, over: {}, ids: [], lines: [], nextId: 1, read: null } });
+        if (!recipeDraft || !recipeDraft.quick) return;   // a kept unfinished recipe was offered first instead
+        showTab("recipes");
+        const box = document.getElementById("quick-lines");
+        if (box) box.focus();
+      });
+    }
+    // Is this paint in the paint list (yours or the app's)? The same test findOrAddPaint uses, so a paint that is not would be kept as typed.
+    function paintInList(brand, name) {
+      const fits = (p) => sameText(p.name, name) && (!brand || sameText(p.brand, brand));
+      return book.paints.some(fits) || searchedPaints.some(fits);
+    }
+    // Gives each line of the box an id that follows it as the text changes. Lines that are the same before and after (the longest run in
+    // order) keep their ids; between two of those, changed lines are paired up in order and keep theirs; any extra new line gets a new id.
+    function quickLineIds(q) {
+      const before = q.lines, now = q.text.replace(/\r/g, "").split("\n");
+      const n = before.length, m = now.length;
+      const run = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+      for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) {
+        run[i][j] = before[i] === now[j] ? run[i + 1][j + 1] + 1 : Math.max(run[i + 1][j], run[i][j + 1]);
+      }
+      const ids = new Array(m);
+      let i = 0, j = 0, gone = [], fresh = [];   // in a gap between unchanged lines: the ids of lines gone, the new lines
+      const closeGap = () => { for (const k of fresh) ids[k] = gone.length ? gone.shift() : q.nextId++; gone = []; fresh = []; };
+      while (i < n && j < m) {
+        if (before[i] === now[j]) { closeGap(); ids[j] = q.ids[i]; i++; j++; }
+        else if (run[i + 1][j] >= run[i][j + 1]) gone.push(q.ids[i++]);
+        else fresh.push(j++);
+      }
+      while (i < n) gone.push(q.ids[i++]);
+      while (j < m) fresh.push(j++);
+      closeGap();
+      q.ids = ids;
+      q.lines = now;
+      const alive = new Set(ids.map(String));
+      for (const key of Object.keys(q.over)) if (!alive.has(key.split(":")[0])) delete q.over[key];
+    }
+    // Reads the box into d.quick.read.
+    function readQuickLines(d) {
+      const q = d.quick;
+      quickLineIds(q);
+      if (!q.text.trim()) { q.read = null; return; }
+      const parsed = parseRecipeText(q.text, { quick: true });
+      const read = { part: "", otherParts: [], notes: [], steps: [] };
+      const perLine = new Map();
+      for (const s of parsed.schemes) for (const part of s.parts) {
+        const name = part.name ? partForHeading(part.name).name : "";   // RS4a: a Part you have, or the heading in the same style
+        if (!read.part && name) read.part = name;
+        else if (name && !sameText(name, read.part) && !read.otherParts.some(x => sameText(x, name))) read.otherParts.push(name);
+        read.notes.push(...part.notes);
+        for (const st of part.steps) read.steps.push({
+          key: (() => { const id = q.ids[st.line] || 0; const k = perLine.get(id) || 0; perLine.set(id, k + 1); return `${id}:${k}`; })(),
+          technique: st.technique || "", coats: st.coats, ratio: st.ratio || "", note: st.note || "", optional: !!st.optional,
+          paints: st.paints.filter(m => m.paint || m.typed).map(m => {
+            const p = m.paint || { brand: "", name: m.typed, colour: DEFAULT_PAINT_COLOUR };
+            return { brand: p.brand || "", name: p.name, colour: p.colour || DEFAULT_PAINT_COLOUR, type: p.type,
+                     known: m.status === "sure", material: m.status === "material" };
+          }),
+        });
+      }
+      q.read = read;
+    }
+    // A name like the ones Colour ideas builds ("Eyes yellow glow"): the part, the colour word of the first paint in the list, and "glow" for
+    // eyes. With no colour word: "Eyes recipe". With no part: "Yellow recipe", or the first paint's name and "recipe".
+    function quickRecipeName(part, steps) {
+      const paints = steps.flatMap(s => s.paints);
+      const first = paints.find(p => p.known && !p.material);
+      const family = first && typeof MinifolioColour !== "undefined" ? String(MinifolioColour.colourFamily(first.colour) || "") : "";
+      const word = family.split(" ").pop().toLowerCase();
+      const colour = /^[a-z]+$/.test(word) ? word : "";
+      if (part) {
+        const role = COLOUR_ROLES.find(r => sameText(r.part, part) || sameText(r.part, part + "s") || sameText(r.part + "s", part));
+        return colour ? [part, colour, role && role.key === "glow" ? "glow" : ""].filter(Boolean).join(" ") : `${part} recipe`;
+      }
+      if (colour) return `${colour.charAt(0).toUpperCase() + colour.slice(1)} recipe`;
+      return paints.length ? `${paints[0].name} recipe` : "";
+    }
+    // Works out d.name, d.part, d.notes and d.steps from the last reading and what was set by hand.
+    function applyQuick(d) {
+      const q = d.quick, read = q.read || { part: "", otherParts: [], notes: [], steps: [] };
+      d.steps = read.steps.map(st => {
+        const over = q.over[st.key] || {};
+        const brand = over.brand !== undefined && over.brand.trim() ? tidyBrand(over.brand) : null;
+        const n = st.paints.length;
+        const mixes = n > 1 ? (ratioPercents(st.ratio, n) || evenSplit(n)) : [100];
+        return {
+          technique: over.technique !== undefined ? over.technique : st.technique,
+          typedTechnique: st.technique, key: st.key,
+          coats: over.coats !== undefined ? cleanCount(over.coats) : st.coats,
+          note: over.note !== undefined ? over.note : st.note,
+          ratio: st.ratio, optional: st.optional,
+          paints: st.paints.map((p, pi) => {
+            const out = { brand: brand === null ? p.brand : brand, name: p.name, colour: p.colour, mix: mixes[pi], type: p.type, material: p.material };
+            out.known = brand === null ? p.known : paintInList(out.brand, out.name);
+            return out;
+          }),
+        };
+      });
+      d.part = q.part || read.part || q.defaultPart || "";
+      d.name = q.name.trim() || quickRecipeName(d.part, d.steps);
+      d.notes = read.notes.join("\n");
+    }
+    const quickHasPaint = (d) => d.steps.some(s => s.paints.length);
+
+    function renderQuickRecipe() {
+      const d = recipeDraft, q = d.quick;
+      recipePage.innerHTML = "";
+      recipePage.classList.add("editing");
+      const brands = document.createElement("datalist");
+      brands.id = "brand-options";
+      for (const b of uniqueSorted([...COMMON_BRANDS, ...book.paints.map(p => p.brand)])) brands.appendChild(new Option(b));
+      recipePage.appendChild(brands);
+
+      const back = document.createElement("button");
+      back.type = "button";
+      back.className = "link-button";
+      back.textContent = "← All recipes";
+      back.addEventListener("click", () => whenOkToLeaveDraft(() => { recipeDraft = null; renderRecipes(); window.scrollTo(0, 0); }));
+      recipePage.appendChild(back);
+
+      const card = document.createElement("div");
+      card.className = "card form-grid quick-recipe";
+      const heading = document.createElement("h2");
+      heading.style.margin = "0";
+      heading.textContent = "New recipe";
+      const label = document.createElement("label");
+      const box = document.createElement("textarea");
+      box.id = "quick-lines";
+      box.className = "quick-lines";
+      box.placeholder = "Eyes: yriel yellow, then flash gitz yellow";
+      box.value = q.text;
+      box.setAttribute("autocapitalize", "sentences");
+      label.append("Type or paste lines", box);
+      const preview = document.createElement("div");
+      preview.id = "quick-preview";
+      preview.className = "quick-preview";
+      preview.setAttribute("aria-live", "polite");
+      const fields = document.createElement("div");
+      fields.className = "quick-fields";
+      const more = buildMoreInfo([fields], { state: q.moreState || (q.moreState = { open: false }), id: "quick-more",
+        openText: "More options", closeText: "Fewer options", className: "quick-more" });
+      card.append(heading, label, preview, more);
+      recipePage.appendChild(card);
+
+      const save = document.createElement("button");
+      save.type = "button";
+      save.id = "quick-save";
+      save.className = "primary-button quick-save";
+      save.textContent = "Save recipe";
+      save.addEventListener("click", () => {
+        clearTimeout(quickTimer);
+        readQuickLines(d); applyQuick(d);
+        if (!quickHasPaint(d)) { drawQuick(); return; }
+        saveRecipeDraft();
+      });
+      recipePage.appendChild(save);
+
+      const drawQuick = () => {
+        drawQuickPreview(d, preview);
+        if (!fields.contains(document.activeElement)) drawQuickFields(d, fields, () => drawQuickPreview(d, preview));
+        save.disabled = !quickHasPaint(d);
+      };
+      box.addEventListener("input", () => {
+        q.text = box.value;
+        clearTimeout(quickTimer);
+        if (!q.text.trim()) { readQuickLines(d); applyQuick(d); drawQuick(); return; }
+        quickTimer = setTimeout(() => {
+          if (recipeDraft !== d) return;
+          readQuickLines(d); applyQuick(d); drawQuick();
+        }, QUICK_WAIT_MS);
+      });
+      if (q.text.trim() && !q.read) readQuickLines(d);
+      applyQuick(d);
+      drawQuick();
+    }
+
+    // The preview under the box (read only): the part and name, then one numbered row per step.
+    function drawQuickPreview(d, preview) {
+      preview.replaceChildren();
+      preview.hidden = !d.quick.text.trim();
+      if (preview.hidden) return;
+      const meta = document.createElement("p");
+      meta.className = "quick-meta";
+      for (const [word, value] of [["Part", d.part], ["Name", d.name]]) {
+        if (!value) continue;
+        const bit = document.createElement("span");
+        const label = document.createElement("span");
+        label.className = "quick-meta-label";
+        label.textContent = word + " ";
+        const text = document.createElement("strong");
+        text.textContent = value;
+        bit.append(label, text);
+        meta.appendChild(bit);
+      }
+      preview.appendChild(meta);
+      if (!d.steps.length) return;
+      const list = document.createElement("ol");
+      list.className = "quick-rows";
+      d.steps.forEach((st, i) => {
+        const li = document.createElement("li");
+        li.className = "quick-row";
+        const line = document.createElement("div");
+        line.className = "quick-row-line";
+        const num = document.createElement("span");
+        num.className = "quick-num";
+        num.textContent = `${i + 1}.`;
+        const dots = document.createElement("span");
+        dots.className = "quick-swatches";
+        dots.setAttribute("aria-hidden", "true");
+        st.paints.forEach(p => dots.appendChild(makeSwatch(p.colour)));
+        const name = document.createElement("span");
+        name.className = "quick-name";
+        name.textContent = st.paints.map(p => p.name).join(" + ") + (st.paints.length > 1 && st.ratio ? ` ${st.ratio}` : "");
+        line.append(num, dots, name);
+        // Only a technique the person gave (typed in the line, or set under More options) shows; a guess does not.
+        const typed = (d.quick.over[st.key] || {}).technique !== undefined ? st.technique : st.typedTechnique;
+        if (typed) {
+          const tech = document.createElement("span");
+          tech.className = "quick-tech";
+          tech.textContent = typed;
+          line.appendChild(tech);
+        }
+        li.appendChild(line);
+        if (st.paints.some(p => !p.known && !p.material)) {
+          li.classList.add("quick-unknown");
+          const why = document.createElement("p");
+          why.className = "quick-unknown-note";
+          why.textContent = "Not in the paint list. Kept as typed.";
+          li.appendChild(why);
+        }
+        list.appendChild(li);
+      });
+      preview.appendChild(list);
+      // One recipe has one part: lines under another part still join it, and this says so.
+      const others = d.quick.read ? d.quick.read.otherParts : [];
+      if (others.length && d.part) {
+        const one = document.createElement("p");
+        one.className = "quick-parts-note";
+        one.textContent = `One part per recipe. Using ${d.part}.`;
+        preview.appendChild(one);
+      }
+    }
+
+    // More options: the name, the part, and one set of fields per step (technique, coats, brand, note), like the full editor's.
+    function drawQuickFields(d, fields, redrawPreview) {
+      const q = d.quick;
+      fields.replaceChildren();
+      const changed = () => { applyQuick(d); redrawPreview(); queueDraftSync(); };
+      const nameLabel = document.createElement("label");
+      const nameBox = document.createElement("input");
+      nameBox.id = "quick-name";
+      nameBox.placeholder = d.name || "e.g. Ultramarine blue armour";
+      nameBox.value = q.name;
+      nameBox.addEventListener("input", () => { q.name = nameBox.value; changed(); });
+      nameLabel.append("Recipe name", nameBox);
+      const partLabel = document.createElement("label");
+      const partPick = pickOrAdd("parts", "part", d.part, "Choose a part…", v => { q.part = v; changed(); });
+      partPick.id = "quick-part";
+      partLabel.append("Part it's for", partPick);
+      fields.append(nameLabel, partLabel);
+      d.steps.forEach((st, i) => {
+        const over = () => q.over[st.key] || (q.over[st.key] = {});
+        const group = document.createElement("div");
+        group.className = "quick-step-fields";
+        const title = document.createElement("p");
+        title.className = "quick-step-title";
+        title.textContent = `${i + 1}. ${st.paints.map(p => p.name).join(" + ") || st.technique || "Step"}`;
+        const row = document.createElement("div");
+        row.className = "row";
+        const techLabel = document.createElement("label");
+        const autoText = () => { const g = guessTechnique(d.steps[i] ? d.steps[i].paints : []); return g ? `Auto: ${g}` : "Auto (from the paints)"; };
+        const tech = pickOrAdd("techniques", "technique", st.technique, autoText(), v => { over().technique = v; changed(); });
+        tech.dataset.key = `quick-${i}-technique`;
+        techLabel.append("Technique", tech);
+        const coatsLabel = document.createElement("label");
+        const coats = document.createElement("input");
+        coats.type = "number";
+        coats.min = 1;
+        coats.value = st.coats;
+        coats.dataset.key = `quick-${i}-coats`;
+        coats.addEventListener("input", () => { over().coats = coats.value; changed(); });
+        coatsLabel.append("Coats", coats);
+        row.append(techLabel, coatsLabel);
+        const extra = document.createElement("div");
+        extra.className = "row";
+        const brandLabel = document.createElement("label");
+        const brand = document.createElement("input");
+        brand.setAttribute("list", "brand-options");
+        brand.dataset.key = `quick-${i}-brand`;
+        brand.value = (q.over[st.key] || {}).brand !== undefined ? q.over[st.key].brand : (st.paints[0] ? st.paints[0].brand : "");
+        brand.addEventListener("input", () => { over().brand = brand.value; changed(); });
+        brandLabel.append("Brand", brand);
+        const noteLabel = document.createElement("label");
+        const note = document.createElement("input");
+        note.placeholder = "e.g. heavier on the top";
+        note.value = st.note || "";
+        note.dataset.key = `quick-${i}-note`;
+        note.addEventListener("input", () => { over().note = note.value; changed(); });
+        noteLabel.append("Note (if any)", note);
+        extra.append(brandLabel, noteLabel);
+        group.append(title, row, extra);
+        fields.appendChild(group);
+      });
+    }
+
     // A dropdown of a list (parts or techniques) with "＋ Add a new…" at the bottom.
     function pickOrAdd(key, word, current, placeholder, onPick) {
       const select = document.createElement("select");
@@ -9915,6 +10264,7 @@
     let focusAfterRender = null;
 
     function renderRecipeEditor() {
+      if (recipeDraft && recipeDraft.quick) { renderQuickRecipe(); return; }   // RS3b
       const d = recipeDraft;
       recipePage.innerHTML = "";
       recipePage.classList.add("editing");
@@ -10269,13 +10619,16 @@
       }
       // Paints with no name are skipped. Each named paint is found (or added) in the paint list.
       // v18c: a paint new to your palette gets your "Do you own these?" answer (Owned to start with).
+      // RS3b: the quick form leaves what you own alone; its paints that are in the paint list are asked about after Save instead.
+      const askOwn = [];
       const steps = d.steps.map(s => {
         const paints = s.paints.filter(p => p.name.trim())
           .map(p => {
             const fresh = { brand: tidyBrand(p.brand), name: p.name.trim() };
             const known = isInPalette(fresh);
             const paint = findOrAddPaint(p.brand, p.name, p.colour);
-            if (!known && paintStatus(paint) === "") applyPaintStatus(paint, ownsNewPaint(d.own, fresh) ? "owned" : "notowned");
+            if (d.quick) { if (p.known && !p.material && !askOwn.includes(paint)) askOwn.push(paint); }
+            else if (!known && paintStatus(paint) === "") applyPaintStatus(paint, ownsNewPaint(d.own, fresh) ? "owned" : "notowned");
             return { paint: paint.id, mix: cleanMix(p.mix) };
           });
         return {
@@ -10306,8 +10659,61 @@
       pruneUnusedPaints();
       recipeDraft = null;
       openRecipeId = recipe.id;
-      commit(`Saved ${name}`);   // v18c-3: only says Saved if it was
+      const saved = commit(`Saved ${name}`);   // v18c-3: only says Saved if it was
       window.scrollTo(0, 0);
+      if (saved && askOwn.length) openOwnSheet(askOwn);   // RS3b
+    }
+
+    // RS3b: "Do you own these?" A sheet from the bottom of the screen after the quick form saves, over the new recipe's page. One row per paint
+    // of the recipe that is in the paint list: a tick box, its swatch and name. Ticked to start with if you already have it (Owned or Running
+    // low). Done marks the ticked paints Owned and clears the status of unticked ones you had marked as owned. Skip (or Back) changes nothing.
+    function openOwnSheet(paints) {
+      const ticked = new Set(paints.filter(haveIt).map(p => p.id));   // by id: the paint is looked up again at Done
+      const wrap = document.createElement("div");
+      wrap.className = "own-sheet-list";
+      paints.forEach((paint, i) => {
+        const row = document.createElement("div");
+        row.className = "own-sheet-row";
+        const tick = document.createElement("button");
+        tick.type = "button";
+        tick.className = "pick-tick";
+        tick.setAttribute("role", "checkbox");
+        const nameId = `own-sheet-name-${i}`;
+        tick.setAttribute("aria-labelledby", nameId);
+        const box = document.createElement("span");
+        box.className = "pick-box";
+        box.setAttribute("aria-hidden", "true");
+        tick.appendChild(box);
+        const name = document.createElement("span");
+        name.className = "own-sheet-name";
+        name.id = nameId;
+        name.textContent = paint.name;
+        const draw = () => tick.setAttribute("aria-checked", String(ticked.has(paint.id)));
+        const flip = () => { if (ticked.has(paint.id)) ticked.delete(paint.id); else ticked.add(paint.id); draw(); };
+        tick.addEventListener("click", flip);
+        name.addEventListener("click", flip);
+        draw();
+        row.append(tick, makeSwatch(paint.colour), name);
+        wrap.appendChild(row);
+      });
+      showDialog({
+        mode: "pick", sheet: true, message: "Do you own these?", content: wrap, yes: "Done", no: "Skip",
+        onDone: (answer) => {
+          const toHeading = () => {   // the Save button has gone, so focus goes to the new recipe's heading, not the page
+            const h = recipePage.querySelector("h2");
+            if (h && !recipePage.classList.contains("hidden")) { h.tabIndex = -1; h.focus({ preventScroll: true }); }
+          };
+          if (answer !== true) { toHeading(); return; }
+          const before = JSON.stringify(book);
+          let changed = 0;
+          for (const paint of paints.map(p => paintById(p.id)).filter(Boolean)) {
+            if (ticked.has(paint.id) && !haveIt(paint)) { applyPaintStatus(paint, "owned"); changed++; }
+            else if (!ticked.has(paint.id) && haveIt(paint)) { applyPaintStatus(paint, ""); changed++; }
+          }
+          if (changed) commit("Palette updated", () => { book = cleanRecipeBook(JSON.parse(before)); render(); }, null, UNDO_SECONDS);
+          toHeading();
+        },
+      });
     }
 
 
@@ -14083,8 +14489,53 @@
       }
       return knowledgeCache;
     }
-    // Where the Guides screen is: home (search and categories), a category, or one entry. Kept while the app is open, never saved.
-    const guidesState = { view: "home", cat: "", key: "", kind: "", query: "", missing: false };
+    // G2a: the topic groups of a section (guides-groups.js), worked out each time a list is shown, so nothing is stored. Groups are
+    // sorted A to Z, then the entries inside each group A to Z, and the numbers come from those places: the section's fixed place in
+    // GUIDE_CATEGORIES, then the group's place in its section, then the entry's place in its group (2.3.4). Links still use the key.
+    // Nothing disappears: an entry the mapping does not place goes in a last group, "Not yet grouped" (unplaced); a mapped key with no
+    // entry in that section is skipped (unknown); a key named twice counts once, in the first group (twice). Tests fail on all three.
+    const GUIDE_UNGROUPED = "Not yet grouped";
+    const guideByTitle = (a, b) => a.title.localeCompare(b.title, "en", { sensitivity: "base" }) || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0);
+    function guideSectionNumber(cat) {
+      const i = GUIDE_CATEGORIES.findIndex(c => c.key === cat);
+      return i < 0 ? "" : String(i + 1);
+    }
+    function guideGroupsOf(cat, kn = knowledgeIndex(), map) {
+      if (map === undefined) map = typeof GUIDE_GROUPS === "undefined" || !GUIDE_GROUPS ? {} : GUIDE_GROUPS.sections || {};
+      const entries = kn.list({ category: cat, kind: "guide" });
+      const byKey = new Map(entries.map(e => [e.key, e]));
+      const placed = new Set(), unknown = [], twice = [], groups = [];
+      for (const raw of Array.isArray(map[cat]) ? map[cat] : []) {
+        if (!raw || typeof raw.name !== "string" || !raw.name) continue;
+        const list = [];
+        for (const key of Array.isArray(raw.keys) ? raw.keys : []) {
+          const e = byKey.get(key);
+          if (!e) unknown.push(key);
+          else if (placed.has(key)) twice.push(key);
+          else { placed.add(key); list.push(e); }
+        }
+        if (list.length) groups.push({ name: raw.name, entries: list });
+      }
+      groups.sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
+      const unplaced = entries.filter(e => !placed.has(e.key));
+      if (unplaced.length) groups.push({ name: GUIDE_UNGROUPED, entries: unplaced });
+      const sec = guideSectionNumber(cat);
+      groups.forEach((gr, i) => {
+        gr.num = `${sec}.${i + 1}`;
+        gr.entries.sort(guideByTitle);
+        gr.nums = new Map(gr.entries.map((e, j) => [e.key, `${gr.num}.${j + 1}`]));
+      });
+      return { groups, unplaced: unplaced.map(e => e.key), unknown, twice };
+    }
+    // The group an entry sits in and its number, or null (Detail recipes, Basing, Mentor tips and starters have none here).
+    function guidePlace(e, kn = knowledgeIndex()) {
+      if (!e || e.kind !== "guide" || !e.category) return null;
+      const gr = guideGroupsOf(e.category, kn).groups.find(x => x.nums.has(e.key));
+      return gr ? { group: gr.name, num: gr.nums.get(e.key) } : null;
+    }
+    // Where the Guides screen is: home (search and categories), a category (its topic groups), one group, or one entry. Kept while the
+    // app is open, never saved. G2a: group is the name of the topic group being shown, or of the one the open entry sits in.
+    const guidesState = { view: "home", cat: "", group: "", key: "", kind: "", query: "", missing: false };
     function guidesPoint(e) {   // point the screen at one entry
       guidesState.missing = false;
       guidesState.key = e.key;
@@ -14098,6 +14549,8 @@
         guidesState.view = "entry";
         guidesState.cat = e.category;
       }
+      const place = guidePlace(e);   // G2a: Back from an entry goes to its topic group
+      guidesState.group = place ? place.group : "";
     }
     // A credit link is only made for a full web address that starts with the secure scheme; anything else shows as plain text.
     function safeCreditUrl(url) {
@@ -14111,7 +14564,7 @@
         recipeDraft = null;
         openRecipeId = null;
         const e = knowledgeIndex().get(String(key), kind);
-        Object.assign(guidesState, { view: "home", cat: "", key: "", kind: "", query: "", missing: false });
+        Object.assign(guidesState, { view: "home", cat: "", group: "", key: "", kind: "", query: "", missing: false });
         if (e) guidesPoint(e); else guidesState.missing = true;
         showTab("guides");
         const target = e && document.getElementById(e.id);
@@ -14137,7 +14590,12 @@
       const parts = libraryParts(door, redraw);
       const catName = (key) => (GUIDE_CATEGORIES.find(c => c.key === key) || {}).name || "";
       const shown = GUIDE_CATEGORIES.filter(c => kn.list({ category: c.key }).length);
-      if (g.view !== "home" && !(g.view === "entry" ? kn.get(g.key, g.kind) : shown.some(c => c.key === g.cat))) Object.assign(g, { view: "home", cat: "", key: "", kind: "" });
+      if (g.view !== "home" && !(g.view === "entry" ? kn.get(g.key, g.kind) : shown.some(c => c.key === g.cat))) Object.assign(g, { view: "home", cat: "", group: "", key: "", kind: "" });
+      // G2a: Colour basics, Techniques, Tools and prep and Problems show topic groups; Detail recipes and Basing keep their own controls
+      const grouped = (cat) => !!cat && cat !== "detail" && cat !== "basing" && shown.some(c => c.key === cat);
+      const groupsHere = grouped(g.cat) ? guideGroupsOf(g.cat, kn).groups : [];
+      const groupHere = groupsHere.find(x => x.name === g.group) || null;
+      if (g.view === "group" && !groupHere) Object.assign(g, { view: "category", group: "" });
 
       const wrap = document.createElement("div");
       wrap.className = "guides-split" + (g.view === "home" ? "" : " guides-has-main");
@@ -14148,15 +14606,18 @@
       wrap.append(nav, main);
       body.appendChild(wrap);
 
-      const row = (title, summary, onClick, current) => {
+      // G2a: a number (2.3.4) is a small grey span at the right of the first line, worked out when the list is drawn
+      const numSpan = (num) => Object.assign(document.createElement("span"), { className: "guides-num", textContent: num });
+      const row = (title, summary, onClick, current, num) => {
         const b = document.createElement("button");
         b.type = "button";
-        b.className = "guides-row";
+        b.className = "guides-row" + (num ? " guides-row-numbered" : "");
         if (current) b.setAttribute("aria-current", "true");
         const t = document.createElement("span");
         t.className = "guides-row-title";
         t.textContent = title;
         b.appendChild(t);
+        if (num) b.appendChild(numSpan(num));
         if (summary) {
           const s = document.createElement("span");
           s.className = "guides-row-summary";
@@ -14169,7 +14630,7 @@
       const openEntry = (e) => { guidesPoint(e); renderGuides(`#${e.id}`); };
       // X8d: long lists show 30 rows, "Show more" adds the next 30. Search always looks through the whole list.
       const PAGE = 30;
-      const entryRows = (list, pageKey) => {
+      const entryRows = (list, pageKey, numOf) => {
         const box = document.createElement("div");
         box.className = "guides-rows";
         if (!list.length) {
@@ -14182,7 +14643,7 @@
         let more = null;
         const add = (from, to) => {
           for (const e of list.slice(from, to)) {
-            const b = row(e.title, e.summary, () => openEntry(e));
+            const b = row(e.title, e.summary, () => openEntry(e), false, numOf ? numOf(e) : "");
             b.dataset.guide = e.key;
             b.dataset.kind = e.kind;
             if (more) box.insertBefore(b, more); else box.appendChild(b);
@@ -14231,7 +14692,7 @@
         list.className = "guides-rows guides-cats";
         for (const c of shown) {
           const b = row(c.name, "", () => {
-            Object.assign(g, { view: "category", cat: c.key, key: "", kind: "" });
+            Object.assign(g, { view: "category", cat: c.key, group: "", key: "", kind: "" });
             // X8d: Detail recipes and Basing open on their first group (Body, Dry ground); All is still one tap away
             if (c.key === "detail" && !compendiumState.detailGroup) compendiumState.detailGroup = DETAIL_GROUPS[0].key;
             if (c.key === "basing" && !compendiumState.basingGroup) compendiumState.basingGroup = BASING_GROUPS[0].key;
@@ -14240,7 +14701,7 @@
           const n = document.createElement("span");
           n.className = "guides-count";
           n.textContent = String(kn.list({ category: c.key }).length);
-          b.append(n, proTag());   // P1: the whole Guides section is Pro preview for now
+          b.append(n, proTag(), numSpan(guideSectionNumber(c.key)));   // P1: the whole Guides section is Pro preview for now   // G2a: then the section number
           list.appendChild(b);
         }
         lower.appendChild(list);
@@ -14266,12 +14727,22 @@
         back.type = "button";
         back.className = "plain-button guides-back";
         back.id = "guides-back";
-        const toCat = g.view === "entry" && g.cat && shown.some(c => c.key === g.cat);
-        back.textContent = toCat ? `Back to ${catName(g.cat)}` : "Back to Guides";
+        // G2a: an entry goes back to its topic group, a group to its section, a section to the home list
+        const toGroup = g.view === "entry" && grouped(g.cat) && groupHere;
+        const toCat = !toGroup && (g.view === "entry" || g.view === "group") && g.cat && shown.some(c => c.key === g.cat);
+        back.textContent = toGroup ? `Back to ${groupHere.name}` : toCat ? `Back to ${catName(g.cat)}` : "Back to Guides";
         back.addEventListener("click", () => {
-          if (toCat) Object.assign(g, { view: "category", key: "", kind: "" });
-          else Object.assign(g, { view: "home", cat: "", key: "", kind: "" });
-          renderGuides("#guides-search");
+          // the row it came from: in the right-hand list for a group or an entry (a search result with the same key sits, hidden on a phone, in the left one)
+          const from = g.view === "group" ? `.guides-main [data-group="${CSS.escape(g.group)}"]` : g.view === "entry" && (toGroup || toCat) ? `.guides-main [data-guide="${CSS.escape(g.key)}"]` : `.guides-cats [data-cat="${CSS.escape(g.cat)}"]`;
+          if (toGroup) Object.assign(g, { view: "group", key: "", kind: "" });
+          else if (toCat) Object.assign(g, { view: "category", group: "", key: "", kind: "" });
+          else Object.assign(g, { view: "home", cat: "", group: "", key: "", kind: "" });
+          renderGuides(from);
+          const body2 = document.getElementById("compendium-body");   // if that row is not on screen, the first of Back or the search box that is
+          if (body2 && !body2.contains(document.activeElement)) {
+            const next = ["guides-back", "guides-search"].map(id => document.getElementById(id)).find(x => x && x.offsetParent);
+            if (next) next.focus();
+          }
         });
         main.appendChild(back);
         if (g.view === "category") {
@@ -14288,8 +14759,23 @@
             holder.appendChild(dropTitle(part()));
             main.appendChild(holder);
           } else {
-            main.appendChild(entryRows(kn.list({ category: g.cat }), "cat:" + g.cat));
+            // G2a: the section's topic groups, A to Z, each with its number (2.3)
+            const box = document.createElement("div");
+            box.className = "guides-rows guides-groups";
+            for (const gr of groupsHere) {
+              const b = row(gr.name, "", () => { Object.assign(g, { view: "group", group: gr.name, key: "", kind: "" }); renderGuides("#guides-back"); }, false, gr.num);
+              b.dataset.group = gr.name;
+              box.appendChild(b);
+            }
+            main.appendChild(box);
           }
+        } else if (g.view === "group") {
+          // G2a: one topic group's entries, A to Z, each with its number (2.3.4)
+          const h = document.createElement("h3");
+          h.className = "guides-title";
+          h.textContent = groupHere.name;
+          main.appendChild(h);
+          main.appendChild(entryRows(groupHere.entries, `grp:${g.cat}:${groupHere.name}`, (e) => groupHere.nums.get(e.key) || ""));
         } else {
           const e = kn.get(g.key, g.kind);
           const page = document.createElement("article");
@@ -14300,7 +14786,15 @@
           const h = document.createElement("h3");
           h.className = "guides-title";
           h.textContent = e.title;
-          page.appendChild(h);
+          const place = guidePlace(e, kn);   // G2a: the entry's number, small and grey at the top right of its header
+          if (place) {
+            const head = document.createElement("div");
+            head.className = "guides-entry-head";
+            head.append(h, numSpan(place.num));
+            page.appendChild(head);
+          } else {
+            page.appendChild(h);
+          }
           for (const para of e.body) {
             const p = document.createElement("p");
             p.textContent = para;
@@ -17262,14 +17756,57 @@
         } else if (char === ",") {
           row.push(cell); cell = "";
         } else if (char === "\n") {
-          row.push(cell); rows.push(row); row = []; cell = "";
+          row.push(cell); row.line = rows.length + 1; rows.push(row); row = []; cell = "";
         } else if (char !== "\r") {
           cell += char;
         }
       }
       row.push(cell);
+      row.line = rows.length + 1;   // IM1: the row number a spreadsheet shows (titles are row 1), counted before blank rows go
       rows.push(row);
       return rows.filter(r => r.some(c => c.trim() !== ""));
+    }
+
+    // IM1: a CSV date, as "2026-11-02" or day first "02/11/2026". Nothing else is read.
+    // Gives "" for an empty cell, the date as "2026-11-02", or null for a date that can't be
+    // used (not a real day, another style, before 1980 such as Excel's 01/01/1900, or later than today).
+    function csvDate(text) {
+      const t = String(text || "").trim();
+      if (!t) return "";
+      let y, mo, d, found;
+      if ((found = t.match(/^(\d{4})-(\d{2})-(\d{2})$/))) [, y, mo, d] = found;
+      else if ((found = t.match(/^(\d{2})\/(\d{2})\/(\d{4})$/))) [, d, mo, y] = found;
+      else return null;
+      const day = new Date(Date.UTC(Number(y), Number(mo) - 1, Number(d)));
+      if (day.getUTCFullYear() !== Number(y) || day.getUTCMonth() !== Number(mo) - 1 || day.getUTCDate() !== Number(d)) return null;
+      const iso = `${y}-${mo}-${d}`;
+      return iso < "1980-01-01" || iso > todayISO() ? null : iso;
+    }
+
+    // IM1: the day a unit reached the stage it is at now, from its diary (see logStage), or ""
+    // if the diary can't say. Export CSV writes it as date_stage.
+    function stageReachedOn(m) {
+      const log = Array.isArray(m.log) ? m.log : [];
+      if (!log.length) return "";
+      // Replay the diary and keep the day the slowest model got there (a unit that once tracked
+      // each model keeps those per-model entries, so the replay is used for every unit).
+      const st = new Array(m.count || 1).fill(log[0][1]);
+      let was = null, since = "";
+      for (const e of log) {
+        if (e[2] === undefined) st.fill(e[1]);
+        else if (e[2] < st.length) st[e[2]] = e[1];
+        const now = lowest(st);
+        if (now !== was) { since = now === m.stage ? e[0] : ""; was = now; }
+      }
+      return was === m.stage ? since : "";
+    }
+
+    // IM1: give an imported unit the dates from its CSV row. Joined on `added`; if it reached
+    // its stage on a later day, the diary starts at the first stage and moves on that day.
+    function giveCsvDates(model, added, since) {
+      if (!added) return;
+      model.added = added;
+      model.log = since && since !== added && model.stage !== 0 ? [[added, 0], [since, model.stage]] : [[added, model.stage]];
     }
 
     // A stage number from a stage name (any capitals) or a number. Unknown = first stage.
@@ -17286,11 +17823,12 @@
     // the other columns are found by their titles, so they can be in any order (or missing).
     // Without a "name" title the file is refused, so a random file can't become units.
     const CSV_COLUMNS = { name: ["name", "unit", "unit name"], game: ["game", "hobby"], faction: ["faction", "army"],
-      stage: ["stage"], nickname: ["nickname"], count: ["count", "models", "number"], repaint: ["repaint"], notes: ["notes", "note"] };
+      stage: ["stage"], nickname: ["nickname"], count: ["count", "models", "number"], repaint: ["repaint"], notes: ["notes", "note"],
+      dateAdded: ["date_added", "date added"], dateStage: ["date_stage", "date stage"] };   // IM1: the two date columns
     function csvToUnits(rows) {
       rows = rows.filter(cells => cells.some(c => String(c).trim()));
       const noName = 'This file has no "name" column, so Minifolio can\'t tell which column holds your unit names. ' +
-        'The first line should be the column titles: name, game, faction, stage, nickname, count, repaint, notes ' +
+        'The first line should be the column titles: name, game, faction, stage, nickname, count, repaint, notes, date_added, date_stage ' +
         '(only "name" is needed). CSV template in Settings gives you an example. Nothing has changed.';
       if (!rows.length) return { problem: "That file is empty. Nothing has changed." };
       const titles = rows[0].map(c => plainQuotes(String(c)).trim().toLowerCase());
@@ -17300,9 +17838,18 @@
       const cell = (cells, key) => col[key] < 0 ? "" : String(cells[col[key]] || "").trim();
       const unknownStages = new Set();
       const units = [];
+      const datesLeftOut = [];   // IM1: row numbers where a date couldn't be used
       for (const cells of rows.slice(1)) {
         const name = plainQuotes(cell(cells, "name"));
         if (!name) continue;
+        // IM1: a date that can't be used is left out (the row still comes in). A stage date with
+        // no joined date, or a joined date after the stage date, uses the stage date for both.
+        let dateAdded = csvDate(cell(cells, "dateAdded")), dateStage = csvDate(cell(cells, "dateStage"));
+        let leftOut = dateAdded === null || dateStage === null;
+        if (dateAdded === null) dateAdded = "";
+        if (dateStage === null) dateStage = "";
+        if (dateStage && (!dateAdded || dateAdded > dateStage)) { if (dateAdded) leftOut = true; dateAdded = dateStage; }
+        if (leftOut) datesLeftOut.push(cells.line);
         const stageText = cell(cells, "stage");
         const n = Number(stageText);
         const validNumber = stageText !== "" && Number.isInteger(n) && n >= 0 && n < STAGES.length;
@@ -17320,9 +17867,10 @@
           count: cleanCount(cell(cells, "count")),
           repaint: ["yes", "y", "true", "1"].includes(cell(cells, "repaint").toLowerCase()),
           note: cell(cells, "notes"),
+          dateAdded, dateStage,   // IM1: only for the import, never saved as they are
         });
       }
-      return { units, unknownStages };
+      return { units, unknownStages, datesLeftOut };
     }
 
     // Import CSV reads the file, then shows the review so you can choose Add or Replace.
@@ -17342,20 +17890,23 @@
         if (!looksLikeText(text)) { notify(`"${file.name}" isn't a CSV file (it isn't plain text). Nothing has changed.`); return; }
         const read = csvToUnits(parseCSV(text.replace(/^﻿/, "")));   // ﻿: an invisible mark Excel adds
         if (read.problem) { notify(read.problem); return; }
-        const { units, unknownStages } = read;
+        const { units, unknownStages, datesLeftOut } = read;
         if (!units.length) { notify("No units found in that file."); return; }
         whPanel.classList.add("hidden");
-        openReview({ source: "csv", title: `"${file.name}"`, rows: units, unknownStages: [...unknownStages] });
+        openReview({ source: "csv", title: `"${file.name}"`, rows: units, unknownStages: [...unknownStages], datesLeftOut });
       });
     });
 
     document.getElementById("template-button").addEventListener("click", () => {
       const last = STAGES[STAGES.length - 1];
+      // IM1: the two date columns, with the last row filled in (joined 60 days ago, finished 14 days ago).
+      const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
       const template =
-        "name,game,faction,stage,nickname,count,repaint,notes\n" +
-        `Intercessors,40K,Ultramarines,${STAGES[0]},,5,no,\n` +
-        `Intercessors,40K,Ultramarines,${STAGES[Math.min(3, STAGES.length - 1)]},The Gold Squad,5,no,\n` +
-        `Redemptor Dreadnought,40K,Ultramarines,${last},,1,yes,"Magnetised, so can swap guns"\n`;
+        "name,game,faction,stage,nickname,count,repaint,notes,date_added,date_stage\n" +
+        `Intercessors,40K,Ultramarines,${STAGES[0]},,5,no,,,\n` +
+        `Intercessors,40K,Ultramarines,${STAGES[Math.min(3, STAGES.length - 1)]},The Gold Squad,5,no,,,\n` +
+        `Redemptor Dreadnought,40K,Ultramarines,${last},,1,yes,"Magnetised, so can swap guns",${daysAgo(60)},${daysAgo(14)}\n`;
       downloadFile("minifolio-template.csv", template, "text/csv");
     });
 
@@ -17369,9 +17920,10 @@
     }
     document.getElementById("csv-export-button").addEventListener("click", () => {
       if (!models.length) { notify("There are no units to export yet."); return; }
-      const header = "name,game,faction,stage,nickname,count,repaint,notes";
+      const header = "name,game,faction,stage,nickname,count,repaint,notes,date_added,date_stage";
       const rows = models.map(m => [m.name, m.hobby, m.faction, STAGES[m.stage], m.nickname || "",
-        m.count || 1, m.repaint ? "yes" : "no", m.note || ""].map(csvCell).join(","));
+        m.count || 1, m.repaint ? "yes" : "no", m.note || "",
+        m.added || "", stageReachedOn(m)].map(csvCell).join(","));   // IM1: blank when the app has no date
       const today = todayISO();
       // "﻿" at the start helps Excel read accents and curly quotes properly.
       downloadFile(`minifolio-${today}.csv`, "﻿" + [header, ...rows].join("\r\n") + "\r\n", "text/csv");
@@ -17654,6 +18206,12 @@
         summary += ` These stages don't match yours, so those units will start at "${STAGES[0]}": ` +
           incoming.unknownStages.join(", ") + ".";
       }
+      // IM1: one line for CSV dates that couldn't be used (the rows still come in).
+      const leftOut = incoming.datesLeftOut || [];
+      if (leftOut.length) {
+        summary += ` Dates left out on ${plural(leftOut.length, "row")}: ${leftOut.slice(0, 5).join(", ")}` +
+          (leftOut.length > 5 ? ` and ${leftOut.length - 5} more.` : ".");
+      }
       if (!adding && models.length) {
         summary += ` Your current ${plural(models.length, "unit")} will be removed first. You can Undo straight after.`;
       }
@@ -17859,13 +18417,16 @@
           if (!c.tick) return;
           // Extra copies of a unit you have, where you chose to keep your name, use your name.
           const useYours = reviewMode === "add" && m.match && c.keep === "yours";
-          const { stageGiven, ...row } = m.row;   // stageGiven is only for the check, never saved
-          addModel({
+          const { stageGiven, dateAdded, dateStage, ...row } = m.row;   // stageGiven and the dates are only for the check, never saved as they are
+          const unit = addModel({
             ...row,
             name: useYours ? m.match.name : m.row.name,
             stage: c.stage,     // v60: each row's own stage and count
             count: c.count,
           });
+          // IM1: a row with no dates keeps today, as before. date_stage counts only if the unit ends at the
+          // stage the file named; a stage changed in the check (or an unknown one) is logged today.
+          giveCsvDates(unit, dateAdded, stageGiven && c.stage === m.row.stage ? dateStage : todayISO());
         });
 
         const parts = [];
@@ -18078,12 +18639,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL TEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, app), e.g. "app.js?v=122".
+    // "?v=" number on ALL ELEVEN script lines in index.html (early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, app), e.g. "app.js?v=123".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v122";
+    const APP_VERSION = "v123";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -18534,6 +19095,11 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v123", date: "2 Nov 2026", changes: [
+        "+ New recipe now opens a quick form: type or paste lines like Eyes: yriel yellow, then flash gitz yellow and check the preview. A paint the app does not know is outlined and kept as typed. More options holds the name, part and each step's technique, coats, brand and note, and a technique you pick there stays when you change the paint. After saving, Do you own these? lets you tick the paints you have.",
+        "Import CSV can now read two optional dates for each unit: date_added (when it joined your collection) and date_stage (when it reached its stage), as 2026-11-02 or 02/11/2026. The progress graph then shows your collection's real history instead of starting on the day you imported. Export CSV and the CSV template have the two new columns too.",
+        "Guides: Colour basics, Techniques, Tools and prep and Problems now open on topic groups, then the entries in each group, all in A to Z order. Each row has a small number (like 2.3.4) so you can find your place, and Back goes up one level at a time.",
+      ]},
       { version: "v122", date: "2 Nov 2026", changes: [
         "New About page in Tools and Settings, with what Minifolio is and what it is for. The start page has a new short line under the name.",
       ] },

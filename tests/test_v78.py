@@ -91,11 +91,12 @@ def main():
         page.click("#new-recipe")
         s = state(page)
         check("a new recipe opens on the right with the list kept", s["homeShown"] and s["pageShown"] and s["home"]["left"] < s["page"]["left"], s)
-        page.fill("#recipe-page input >> nth=0", "Half written")
+        page.fill("#quick-lines", "Half written")   # RS3b: + New recipe opens the quick form now (one box), so the typing goes there
+        page.wait_for_timeout(500)                  # the box is read about a third of a second after typing stops
         open_recipe(page, "Teal eyes")
         check("picking another recipe while writing asks first", page.is_visible("#dialog-yes"))
         page.click("#dialog-no") if page.is_visible("#dialog-no") else None
-        check("saying no keeps what was typed", page.input_value("#recipe-page input >> nth=0") == "Half written")
+        check("saying no keeps what was typed", page.input_value("#quick-lines") == "Half written")
         open_recipe(page, "Teal eyes")
         page.click("#dialog-yes")
         check("saying yes opens the other recipe", "Teal eyes" in page.inner_text("#recipe-page h2"))

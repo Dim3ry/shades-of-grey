@@ -50,7 +50,7 @@
   <!-- v20: choose light or dark BEFORE the page is drawn, so it doesn't flash dark first.
        v21.4: the code is in early.js (it used to be written right here). The full version
        (applyAppearance in app.js) takes over once the app starts. -->
-  <script src="early.js?v=122"></script>
+  <script src="early.js?v=123"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -1685,6 +1685,32 @@
     .scheme-picker-row[hidden] { display: none; }
     .scheme-picker-row .pick-slot, .scheme-picker-row .pick-tick { margin: 0; }
     .scheme-picker-name { flex: 1; min-width: 0; padding: 8px 0; overflow-wrap: anywhere; cursor: pointer; }
+    /* RS3b: the quick New recipe form (one box, a read-only preview, More options, a full-width Save) and the "Do you own these?" sheet. */
+    .quick-recipe .quick-lines { min-height: 112px; font-size: 16px; }
+    .quick-preview { display: grid; gap: 8px; }
+    .quick-preview[hidden] { display: none; }
+    .quick-meta { margin: 0; display: flex; flex-wrap: wrap; gap: 2px 16px; font-size: 15px; overflow-wrap: anywhere; }
+    .quick-meta-label { color: var(--muted); font-size: 13px; }
+    .quick-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+    .quick-row { border: 1px solid var(--border); border-radius: var(--radius-control); padding: 8px 10px; }
+    .quick-row.quick-unknown { border: 2px solid var(--caution); padding: 7px 9px; }
+    .quick-row-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .quick-num { flex: none; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .quick-swatches { display: inline-flex; gap: 3px; flex: none; }
+    .quick-name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+    .quick-tech { flex: none; color: var(--muted); font-size: 14px; }
+    .quick-unknown-note { margin: 4px 0 0; font-size: 13px; }
+    .quick-parts-note { margin: 0; font-size: 13px; color: var(--muted); }
+    .quick-fields { display: grid; gap: 12px; padding-top: 8px; }
+    .quick-step-fields { display: grid; gap: 8px; border-top: 1px solid var(--border); padding-top: 10px; }
+    .quick-step-title { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+    #recipe-page .quick-save { width: 100%; min-height: 44px; }
+    .dialog-backdrop.dialog-sheet { align-items: flex-end; padding: calc(16px + env(safe-area-inset-top)) 0 0; }
+    .dialog-sheet > .dialog { max-width: 560px; border-radius: var(--radius-card) var(--radius-card) 0 0; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+    .own-sheet-list { display: grid; }
+    .own-sheet-row { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+    .own-sheet-row .pick-tick { flex: none; margin: 0; }
+    .own-sheet-name { flex: 1; min-width: 0; padding: 8px 0; overflow-wrap: anywhere; cursor: pointer; }
     .recipe-shop-idle-wrap { margin-top: 12px; }
     .recipe-shop-idle-wrap .shop-idle-button { min-height: 44px; }
     @media (prefers-reduced-motion: reduce) { .shop-item.shop-ticking .shop-text { transition: none; } }
@@ -2603,6 +2629,16 @@
     .guides-back { justify-self: start; }
     .guides-entry:focus, .guides-main [tabindex="-1"]:focus { outline: none; }
     .guides-split.guides-has-main > .guides-nav { display: none; }
+    /* G2a: Guides numbers (section 2, group 2.3, entry 2.3.4): small, grey, tabular, never wrapping, at the right of the row's first line. A numbered row's title wraps instead of being cut off. */
+    .guides-num { font-size: 13px; font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .guides-row-numbered { align-items: baseline; align-content: center; }
+    .guides-row-numbered .guides-row-title { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+    .guides-row-numbered > .guides-num, .guides-cats .guides-row > .guides-num { grid-row: 1; }
+    .guides-row-numbered > .guides-num { grid-column: 2; }
+    .guides-cats .guides-row { grid-template-columns: minmax(0, 1fr) auto auto auto; }
+    .guides-cats .guides-row > .guides-num { grid-column: 4; }
+    .guides-entry-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: baseline; }
+    @media (max-width: 359px) { .guides-cats .guides-row { column-gap: 4px; padding-left: 10px; padding-right: 10px; } }   /* G2a: room for the section number without breaking a one-word title */
     @media (min-width: 900px) {
       .guides-split.guides-has-main { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 18px; align-items: start; }
       .guides-split.guides-has-main > .guides-nav { display: grid; }
@@ -3102,6 +3138,7 @@
           <summary>Paint recipes</summary>
           <ul>
             <li>A recipe is your own step-by-step for a model, for one part like armour, eyes or trim. Press <strong>Painting → Recipes → + New recipe</strong>.</li>
+            <li id="help-quick-recipe">In <strong>New recipe</strong>, type or paste lines like <em>Eyes: yriel yellow, then flash gitz yellow</em>: a part, a colon, then paints split by commas or "then", or one paint per line. A mix like 2:1 and (optional) work as in Paste recipes. The preview shows the part, a name and each step. A paint that is not in the paint list is kept as typed. <strong>More options</strong> holds the name, part, and each step's technique, coats, brand and note. A technique you pick there stays when you change that step's paint. After <strong>Save recipe</strong>, <strong>Do you own these?</strong> lets you tick the paints you have: <strong>Done</strong> marks them Owned, <strong>Skip</strong> changes nothing. To change a recipe later, use <strong>Edit</strong> on its page.</li>
             <li id="help-recipe-or-scheme"><strong>Recipe or scheme? What's the difference.</strong> <strong>Recipe:</strong> how to paint one part, like teeth or armour. It has steps, paints and mixes. <strong>Scheme:</strong> the look for a whole model, unit or army. It is a bundle of recipes. For example, my dark green scheme is an Armour recipe, a Trim recipe, a Skin recipe and a Weapon recipe. <strong>Colour plan</strong> (Painting → Colour Lab): a quick idea of which colours go together. No steps. Save it into a recipe when you want steps.</li>
             <li>Add steps in the order you paint them. Each step has a technique (base coat, wash, dry brush…), the number of coats, and one or more paints.</li>
             <li>Not sure what to call a technique? Leave it on <strong>Auto</strong> and the app guesses from the paints: a shade becomes Wash, a Contrast paint becomes Contrast, 'Ardcoat becomes Varnish, and so on. You can always pick one yourself.</li>
@@ -3135,7 +3172,7 @@
             <li id="help-paint-to-recipe">In <strong>Colour Lab</strong>, a colour idea, and a colour wheel paint once you open it, has <strong>Use in a recipe</strong> and <strong>Add to a recipe</strong>. Use in a recipe starts a new recipe with that paint in step 1. Add to a recipe lets you choose a recipe, then one of its steps or a new step, and saves it straight away. Both have an <strong>Undo</strong>. A paint that is not in Your Palette is added as <strong>Not owned</strong>, so it reaches your shopping list once a recipe uses it.</li>
             <li id="help-similar-paints">In <strong>Colour Lab</strong>, those same paints also have <strong>Similar paints</strong>. It opens a pop-up with <strong>Best match</strong>: up to three paints from different brands, closest first, whether or not you own them, each with its fit. <strong>Lighter</strong> and <strong>Darker</strong> look for a lighter or darker colour. <strong>Your closest</strong> shows the nearest paints you own, with the same fit; it is left out when your closest paint is already the best match, and says so when none of your paints is close. When none is close, it may also show <strong>Try mixing</strong>: one or two blends of two paints you own, with the parts to use, next to the colour you want. It is a rough guess from screen colours, so test it on a palette first. <strong>Add to recipe step</strong> puts the two paints and the ratio into a recipe step, with an <strong>Undo</strong>. Metallics, washes, shades, Contrast, glazes and other special paints are never mixed. On a phone the two cards are tabs (<strong>Best</strong> and <strong>Yours</strong>, with the arrow keys); on a wider screen they sit side by side. A paint you do not own can go on your shopping list, with an <strong>Undo</strong>. Varnishes, mediums, thinners and other paints that are not colours are never offered.</li>
             <li id="help-ask-mentor"><strong>Paint Picker</strong> (Pro preview): in <strong>Painting → Colour Lab</strong>, or from the <strong>Paint Picker</strong> chip in <strong>Mentor</strong>. Choose a <strong>Base colour</strong>, a <strong>Second colour</strong> if you like, and a <strong>Part</strong> (Armour, Eyes, Weapon or Base). Under each colour you get up to three paints that go with it for that part, with the reason, and your own paints come first. A paint of yours that is a poor match says <strong>Yours, poor fit</strong>. Under the picks are tips for that part, each with its colours and, where it has one, a link to the creator it credits. Each paint row has <strong>Use in a recipe</strong>, <strong>Add to a recipe</strong> and <strong>Similar paints</strong>, and a paint you do not own also has <strong>Add to shopping list</strong> and <strong>Shop links</strong>. Each one says what it did and has an <strong>Undo</strong>. The picks are kept only while the app is open.</li>
-            <li id="help-guides"><strong>Guides</strong> (in Tools): type in the search box, or tap a category to see its entries, then tap one to open it. Related entries are buttons at the bottom of an entry, and <strong>Back</strong> returns to the list. Categories with nothing in them are left out. Long lists show 30 rows at a time: <strong>Show more</strong> adds the next 30, and search looks through them all. <strong>Detail recipes</strong> and <strong>Basing</strong> open on their first group, with <strong>All</strong> one tap away, and have the same buttons as before, including Add to shopping list.</li>
+            <li id="help-guides"><strong>Guides</strong> (in Tools): type in the search box, or tap a category to see its topic groups, then a group to see its entries, then tap one to open it. Category, group and entry rows end with a small number made from their place in A to Z order (2.3.4 is category 2, group 3, entry 4). Related entries are buttons at the bottom of an entry, and <strong>Back</strong> goes up one level. Categories with nothing in them are left out. Long lists show 30 rows at a time: <strong>Show more</strong> adds the next 30, and search looks through them all. <strong>Detail recipes</strong> and <strong>Basing</strong> open on their first group, with <strong>All</strong> one tap away, and have the same buttons as before, including Add to shopping list.</li>
             <li id="help-compendium-ticks">In <strong>Colour Lab</strong> and <strong>Guides</strong>, tick the paints you want from a colour plan or detail recipe, or press <strong>Select all</strong>. <strong>Add to shopping list</strong> is grey until you tick something, then adds only the ticked paints. A paint you own, or that is already on the list, shows a mark instead of a tick box. <strong>Copy as text</strong> and <strong>Save into a new recipe</strong> use the ticked paints, or all of them if none is ticked.</li>
             <li><strong>Schemes</strong> (top of the Painting tab) group the recipes you use for one faction, e.g. "My Blue Army" = armour, trim, lenses and base. Press <strong>+ New scheme</strong>, name it, type the faction and tick its recipes.</li>
             <li>A scheme card lists its recipes as rows (name, part, steps, colour dots). Tap a row to open that recipe. A scheme with more than 3 recipes shows the first 3: tap <strong>Show all</strong> for the rest.</li>
@@ -3166,8 +3203,9 @@
           <ul>
             <li><strong>From the Warhammer app:</strong> open a list, tap Export, copy it as text, then on the Models tab tap <strong>+ Add unit → Paste army list</strong> (it's also in Settings), paste it and press Read list. Only unit names and model counts are kept: points, wargear and rules text are thrown away.</li>
             <li id="help-typed-list">A list typed by hand works too: one unit per line with its count, such as <strong>10x Boyz</strong>, <strong>Boyz x10</strong> or <strong>Boyz (10 models)</strong>. A unit with no count comes in as 1 model.</li>
-            <li><strong>From a spreadsheet:</strong> save it as CSV with the columns name, game, faction, stage, nickname, count, repaint, notes, then use <strong>Import CSV</strong> (under + Add unit, or in Settings). <strong>CSV template</strong> in Settings gives you an example file.</li>
+            <li><strong>From a spreadsheet:</strong> save it as CSV with the columns name, game, faction, stage, nickname, count, repaint, notes, date_added, date_stage, then use <strong>Import CSV</strong> (under + Add unit, or in Settings). <strong>CSV template</strong> in Settings gives you an example file.</li>
             <li id="help-csv-checks">The first line of the CSV must be the column titles, and one must be <strong>name</strong>. The other columns are found by their titles, so they can be in any order or left out. A file without a name column, a picture, an Excel file that isn't saved as CSV, or a file over 2 MB is refused with a message, and nothing changes.</li>
+            <li id="help-csv-dates"><strong>date_added</strong> is the day a unit joined your collection and <strong>date_stage</strong> the day it reached its stage, read day first (UK style, 02/11/2026) or as YYYY-MM-DD (2026-11-02). The progress graph then shows it on those days. A unit with only date_stage uses it for both. A date in another style, before 1980 or in the future is left out but the unit still comes in. If you change a unit's stage in the check, it reached that stage today. A date_added later than date_stage is replaced by date_stage. The check lists the rows where either happened. <strong>Export CSV</strong> writes both dates.</li>
             <li>Before anything changes, you choose <strong>Add to my collection</strong> or <strong>Replace my collection</strong>, and can untick any units you don't want.</li>
             <li id="help-row-stage">Each unit in the check has its own <strong>model count</strong> and <strong>stage</strong>. <strong>Set every row to</strong> puts every unit at one stage in one go, then you can change single units. The tick only decides whether a unit comes in. A CSV stage that matches one of your stages is used; otherwise the unit starts at the Set every row to stage.</li>
             <li>Units you already have start unticked. If one has a different name in the import, it's highlighted so you can pick which name to keep. The Warhammer app's name is the default.</li>
@@ -3436,7 +3474,7 @@
         </div></div>
 
         <p class="hint" id="import-explain" style="margin: 12px 0 0;">
-          CSV columns: name, game, faction, stage, nickname, count, repaint, notes.
+          CSV columns: name, game, faction, stage, nickname, count, repaint, notes, date_added, date_stage.
           Only name is needed.
         </p>
         <input type="file" id="csv-file" class="hidden" accept=".csv,text/csv">
@@ -3502,7 +3540,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=122" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=123" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -3512,15 +3550,18 @@
        v33: basing-tips.js (the basing tips, plain data) loads between detail-recipes.js and app.js. It only adds two
        names, BASING_GROUPS and BASING_TIPS, and does nothing until app.js asks.
        v70: mentor-tips.js (the Mentor tips, plain data) loads between basing-tips.js and app.js. It only adds three
-       names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=122"></script>
-  <script src="schemes.js?v=122"></script>
-  <script src="detail-recipes.js?v=122"></script>
-  <script src="basing-tips.js?v=122"></script>
-  <script src="mentor-tips.js?v=122"></script>
-  <script src="guides-data.js?v=122"></script>
-  <script src="mentor-data.js?v=122"></script>
-  <script src="mentor-engine.js?v=122"></script>
-  <script src="app.js?v=122"></script>
+       names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks.
+       G2a: guides-groups.js (the Guides topic groups, plain data) loads after guides-data.js. It only adds one
+       name, GUIDE_GROUPS, and does nothing until app.js asks. -->
+  <script src="colour.js?v=123"></script>
+  <script src="schemes.js?v=123"></script>
+  <script src="detail-recipes.js?v=123"></script>
+  <script src="basing-tips.js?v=123"></script>
+  <script src="mentor-tips.js?v=123"></script>
+  <script src="guides-data.js?v=123"></script>
+  <script src="guides-groups.js?v=123"></script>
+  <script src="mentor-data.js?v=123"></script>
+  <script src="mentor-engine.js?v=123"></script>
+  <script src="app.js?v=123"></script>
 </body>
 </html>
