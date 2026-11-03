@@ -78,6 +78,7 @@ const APP_FILES = [
   "./index.html",
   "./app.js" + CODE_TAG,
   "./early.js" + CODE_TAG,
+  "./mentor-looks.js" + CODE_TAG,  // U6b: the Mentor orb's three looks and five states
   "./colour.js" + CODE_TAG,   // v28: the colour maths for Colour ideas
   "./schemes.js" + CODE_TAG,  // v31: the starter colour schemes for Colour ideas
   "./detail-recipes.js" + CODE_TAG,  // v32: the detail recipes for Colour ideas

@@ -4107,7 +4107,10 @@
     // and loading it again). Nothing here listens for the page being hidden or shown, so switching away and coming back never resets it.
     // While it shows, <body> has the class "launching" (the CSS hides the sections and draws the menu bar as a full circle).
     // The section you were in is kept underneath, so going to the launch page from the title and back loses nothing.
-    let launching = document.body.classList.contains("launching");
+    // LR1: <body> starts with "launching" in index.html, so the start circle and its loading ring show from the very first frame. The app takes the
+    // class off here and puts it back at the end of start-up (enterLaunch), unless the address names a section; nothing is drawn in between.
+    document.body.classList.remove("launching");
+    let launching = false;
     // The circle is drawn for a 390 px wide phone and centred in the space under the header; it shrinks (never grows) to fit the
     // width and the height.
     function fitLaunch() {
@@ -4404,24 +4407,31 @@
     function canMove() { return !reducedMotion() && !!Element.prototype.animate; }
 
     // Mo4a: THE LOADING RING (a fresh page load only; the start circle is never redrawn when the app returns from the background, so neither is this).
-    // Three arcs around the Mentor button, one per real start-up step (bootSteps above): each starts once its step is done and the one before
-    // has filled, and takes at least 400 ms to fill, so the ring shows for 1.2 s at least and waits for the page to finish loading if that is
-    // later (but gives up after 5 s). The four segments are hidden and appear one by one as it fills; they and the Mentor button can be tapped
-    // once it is full. Reduced motion (or no animation support): no ring at all, the circle shows at once. Opening a section ends it instantly.
-    const RING_R = 71, RING_C = 2 * Math.PI * RING_R, RING_ARC = RING_C * 100 / 360, RING_FILL_MS = 400;
+    // LR1: the ring is now in index.html, so it shows (faint, with a slow sweep) from the first frame, and early.js lights it as the script files
+    // arrive (window.minifolioRing). Here Mo4a's three real start-up steps (bootSteps above) take it on from wherever that got to: each step lights
+    // its third of what is left once the step is done and the one before has filled, and takes at least 400 ms to fill, so the ring still shows for
+    // 1.2 s at least once the app runs and waits for the page to finish loading if that is later (but gives up after 5 s). The four segments are
+    // hidden and appear one by one over this part; they and the Mentor button can be tapped once it is full. With the Futuristic look the ring is the
+    // orb's own five segments, with Magical or Grounded Mo4a's three arcs (the drawing is early.js's minifolioRing.draw, so both files light it the same way).
+    // Reduced motion (or no animation support): no sweep or turning, and no minimum time: the ring lights in whole steps as each step is done, the
+    // segments simply appear, and it goes as soon as it is full. Opening a section ends it at once; opening the app on a section takes it away at once.
+    const RING_FILL_MS = 400;
     let ringState = null;
+    function ringDraw(p) { return window.minifolioRing ? window.minifolioRing.draw(p) : p; }
+    // The ring as index.html drew it, before the app took it over: taken away at once (the app opened on a section, or the ring cannot run).
+    function dropBootRing() {
+      if (window.minifolioRing) window.minifolioRing.app = true;
+      for (const n of arcEl.querySelectorAll(".mo-load, .lr-sweep")) n.remove();
+      for (const w of arcEl.querySelectorAll(".ring-hold")) w.classList.remove("ring-hold");
+      document.body.classList.remove("ring-loading");
+    }
     function startLoadingRing() {
-      if (!launching || !canMove() || ringState) return;
-      const NS = "http://www.w3.org/2000/svg";
-      const mk = (parent, tag, attrs) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); parent.appendChild(n); return n; };
-      const svg = mk(arcEl, "svg", { class: "mo-load", viewBox: "0 0 390 360", role: "progressbar", "aria-label": "Loading", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": "0", focusable: "false" });
-      arcEl.insertBefore(svg, arcEl.firstChild);
-      const turn = mk(svg, "g", { class: "mo-load-turn" });
-      const arcs = [0, 1, 2].map(i => {
-        const rot = `rotate(${-80 + i * 120} 195 180)`;   // starts at -80, +40 and +160 degrees from the top; about 100 degrees each with 20 degree gaps
-        mk(turn, "circle", { class: "t", cx: 195, cy: 180, r: RING_R, "stroke-dasharray": `${RING_ARC} ${RING_C}`, transform: rot });
-        return mk(turn, "circle", { class: "a a" + i, cx: 195, cy: 180, r: RING_R, "stroke-dasharray": `0 ${RING_C}`, transform: rot });
-      });
+      const svg = arcEl.querySelector(".mo-load");
+      if (!svg || !launching || ringState) { dropBootRing(); return; }
+      const sweep = arcEl.querySelector(".lr-sweep");
+      const moving = canMove();
+      if (window.minifolioRing) window.minifolioRing.app = true;   // early.js stops lighting it; from here this does
+      const p0 = window.minifolioRing ? window.minifolioRing.progress : 0;
       // A2: the ring turns clockwise from the top, so the segments arrive clockwise from the top left: Dashboard, Models, Tools, Painting.
       // Only this arrival order changes; the segments stay where they are (the menu's own order is Dashboard, Models, Painting, Tools).
       const byName = {};
@@ -4432,36 +4442,40 @@
       const stepAt = [() => bootSteps.data, () => bootSteps.draw, () => bootSteps.load];
       const t0 = performance.now(), ends = [0, 0, 0], starts = [0, 0, 0];
       let revealed = 0, raf = 0;
-      const state = ringState = { svg, wedges, stop() { cancelAnimationFrame(raf); } };
+      const state = ringState = { svg, sweep, wedges, stop() { cancelAnimationFrame(raf); } };
       function step(now) {
-        // when each arc starts: its step is done and the one before has filled (the load step also gives up after 5 s)
-        let progress = 0;
+        // when each step starts to fill: it is done and the one before has filled (the load step also gives up after 5 s)
+        let part = 0;
         for (let i = 0; i < 3; i++) {
           const done = stepAt[i]() || (i === 2 && now - t0 > 5000 ? now : 0);
+          if (!moving) {   // reduced motion: a whole third as soon as the step (and the one before) is done
+            if (done && (i === 0 || starts[i - 1])) { starts[i] = 1; part += 1 / 3; }
+            continue;
+          }
           if (!starts[i] && done && (i === 0 || (ends[i - 1] && now >= ends[i - 1]))) { starts[i] = Math.max(done, i ? ends[i - 1] : t0); ends[i] = starts[i] + RING_FILL_MS; }
-          const f = starts[i] ? Math.min(1, Math.max(0, (now - starts[i]) / RING_FILL_MS)) : 0;
-          arcs[i].setAttribute("stroke-dasharray", `${RING_ARC * f} ${RING_C}`);
-          progress += f / 3;
+          part += (starts[i] ? Math.min(1, Math.max(0, (now - starts[i]) / RING_FILL_MS)) : 0) / 3;
         }
-        const pct = Math.round(progress * 100);
-        if (String(pct) !== svg.getAttribute("aria-valuenow")) svg.setAttribute("aria-valuenow", String(pct));
-        while (revealed < 4 && progress >= (revealed + 1) / 4 - 0.02) {
+        ringDraw(p0 + (1 - p0) * part);
+        while (revealed < 4 && part >= (revealed + 1) / 4 - 0.02) {
           const w = wedges[revealed++];
           w.classList.remove("ring-hold");
-          w.animate([{ opacity: 0, transform: "scale(0.86)" }, { opacity: 1, transform: "scale(1)" }], { duration: 520, easing: "cubic-bezier(.2,.8,.2,1)" });
+          if (moving) w.animate([{ opacity: 0, transform: "scale(0.86)" }, { opacity: 1, transform: "scale(1)" }], { duration: 520, easing: "cubic-bezier(.2,.8,.2,1)" });
         }
-        if (progress >= 0.999) { finish(); return; }
+        if (part >= 0.999) { finish(); return; }
         raf = requestAnimationFrame(step);
       }
       function finish() {
         if (ringState !== state) return;
         wedges.forEach(w => w.classList.remove("ring-hold"));
         document.body.classList.remove("ring-loading");   // tappable from here
-        svg.setAttribute("aria-valuenow", "100");
-        const out = svg.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(1.12)" }], { duration: 700, easing: "ease-out", fill: "forwards" });
+        ringDraw(1);
+        if (!moving) { setTimeout(() => { if (ringState === state) endLoadingRing(); }, 300); return; }   // the full ring shows for a moment; the circle works already
+        const fade = { duration: 700, easing: "ease-out", fill: "forwards" };
+        const out = svg.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(1.12)" }], fade);
+        if (sweep) sweep.animate([{ opacity: 1 }, { opacity: 0 }], fade);
         out.onfinish = () => { if (ringState === state) endLoadingRing(); };
       }
-      raf = requestAnimationFrame(step);
+      step(performance.now());
     }
     function endLoadingRing() {
       const r = ringState;
@@ -4469,6 +4483,7 @@
       ringState = null;
       r.stop();
       r.svg.remove();   // the ring is gone, along with its progress bar role
+      if (r.sweep) r.sweep.remove();
       r.wedges.forEach(w => { w.classList.remove("ring-hold"); w.getAnimations().forEach(a => a.finish()); });
       document.body.classList.remove("ring-loading");
     }
@@ -4535,11 +4550,25 @@
     // The round Ask Mentor button opens a small window over whatever is showing. It has a greeting, a Paint Picker chip, a text box that is
     // text box (X6b: it works), and the orb. Nothing typed or shown is stored or sent: mentorMessages lives only while the app is open.
     // Stock phrases live in one place so later chunks can fill the empty lists.
+    // U6b: the lists are James's script (chunk U6): one plain sentence each, eight words or fewer, UK spelling, no exclamation marks.
+    // A list never gives the same line twice in a row (mentorPhrase).
     const MENTOR_PHRASES = {
-      greeting: ["How can I help?", "What are you painting?", "Ready when you are."],
-      picker: ["Let's find some paints.", "Welcome back. Pick a colour and a part."],   // not shown yet
-      thinking: [], answer: [], unsure: ["I do not know that yet."], finished: [], actions: [],   // X6b fills unsure (E: one plain line); the rest wait for X9
+      greeting: ["How can I help?", "What are you painting?", "Ready when you are.", "What's on the bench today?", "What would you like to know?",
+        "Ask me about paints or techniques.", "Tell me what you are working on.", "Pick a question or type your own."],
+      picker: ["Let's find some paints.", "Welcome back. Pick a colour and a part.", "Choose a colour to start."],   // not shown yet
+      thinking: ["One moment.", "Checking the tips.", "Looking through my notes.", "Still looking."],   // not shown: answers come at once (see mentorMood)
+      answer: ["Here is what I have.", "Here is what I found.", "This should help.", "Here is what the tips say.", "A good place to start.",
+        "This might help.", "Have a look at this.", "This is how I would approach it."],   // not shown yet: each answer starts with its own line
+      // the first is chunk E's line and the one Mentor uses; the others only follow it (see mentorUnsureLine)
+      unsure: ["I do not know that yet.", "I do not have tips on that yet.", "Nothing on that in my notes yet.", "That is outside what I know so far.",
+        "I cannot answer that one yet.", "Try asking it a different way."],
+      didYouMean: ["Did you mean", "Perhaps you meant", "Were you after"],   // not shown: the window keeps chunk E's "Did you mean"
+      thanks: ["You're welcome.", "Any time.", "No trouble at all.", "Good luck with the painting.", "Ask whenever you need to."],
+      returning: ["Welcome back.", "Back at the bench?", "Picking up where you left off?", "What are you working on now?", "What is next on the bench?"],
+      finished: ["Done for now.", "That covers it.", "Over to you.", "Come back any time.", "I will be here when you need me."],
+      actions: [],
     };
+    const MENTOR_UNSURE_MORE = MENTOR_PHRASES.unsure.slice(1);
     const MENTOR_TYPING = true;    // X6b: the text box is on (one line to switch it off)
     const MENTOR_MAX_LENGTH = 300;
     const MENTOR_MAX_MESSAGES = 30;
@@ -4558,29 +4587,71 @@
       });
     }
 
-    // The orb for the window: the same art as the round button, with the ring and the lens in their own groups so they can move.
-    function buildMentorOrb() {
-      const NS = "http://www.w3.org/2000/svg";
-      const el = (name, attrs, parent) => {
-        const node = document.createElementNS(NS, name);
-        for (const [k, v] of Object.entries(attrs || {})) node.setAttribute(k, v);
-        if (parent) parent.appendChild(node);
-        return node;
-      };
-      const svg = el("svg", { viewBox: "10 10 180 180", class: "mp-orb", "aria-hidden": "true", focusable: "false" });
-      const art = el("g", { transform: "translate(100 100) scale(1.2) translate(-100 -100)" }, svg);
-      el("circle", { class: "orb-bg", cx: 100, cy: 100, r: 74 }, art);
-      const ring = el("g", { class: "mp-ring" }, art);
-      const arcs = el("g", { fill: "none", "stroke-width": 15 }, ring);
-      for (const [cls, dash, rot] of [["orb-a", "111 253.4", 100], ["orb-c", "81 283.4", 10], ["orb-b", "56 308.4", -60], ["orb-dim", "51 313.4", -125]]) {
-        el("circle", { class: cls, cx: 100, cy: 100, r: 58, "stroke-dasharray": dash, transform: `rotate(${rot} 100 100)` }, arcs);
+    // ---- U6b: THE MENTOR LOOK (Settings > Mentor look: Futuristic, Magical or Grounded) ----
+    // James's drawings are in mentor-looks.js (MENTOR_LOOKS[look][state]; early.js puts their styles on the page and makes each drawing,
+    // minifolioLook.svg). The look is settings.mentorLook; missing or unknown means Futuristic, the default (saved settings, so DATA_VERSION stays 1).
+    // Like Shop links it is not in backups, so restoring a backup (old or new) leaves your look as it is.
+    // The round button (in the bar and in the middle of the start circle) always shows the look's neutral drawing; the moods are for the window only.
+    const MENTOR_LOOK_NAMES = { futuristic: "Futuristic", magical: "Magical", grounded: "Grounded" };
+    const goodMentorLook = (look) => typeof look === "string" && hasOwn(MENTOR_LOOK_NAMES, look) && !!window.minifolioLook && window.minifolioLook.known(look);
+    function currentMentorLook() { return goodMentorLook(settings.mentorLook) ? settings.mentorLook : "futuristic"; }
+    function mentorLookSvg(look, state) {
+      if (window.minifolioLook && window.minifolioLook.known(look)) return window.minifolioLook.svg(look, state);
+      return document.createElementNS("http://www.w3.org/2000/svg", "svg");   // mentor-looks.js did not load: an empty drawing
+    }
+    const mentorLookButtons = [...document.querySelectorAll("[data-mentor-look]")];
+    function showMentorLookChoice() {
+      const look = currentMentorLook();
+      for (const b of mentorLookButtons) b.setAttribute("aria-pressed", String(b.dataset.mentorLook === look));
+    }
+    // Puts the chosen look on the page: data-look (the start-up ring's CSS uses it), the round button, and the window's orb if it is open.
+    function applyMentorLook() {
+      const look = currentMentorLook();
+      document.documentElement.dataset.look = look;
+      if (window.minifolioLook) window.minifolioLook.styles();
+      const button = document.getElementById("mentor-button");
+      const old = button.querySelector("svg");
+      if (!old || !old.classList.contains("ml-" + look)) {
+        const fresh = mentorLookSvg(look, "neutral");
+        if (old) button.replaceChild(fresh, old); else button.prepend(fresh);
       }
-      const wake = el("g", { class: "mp-wake" }, art);
-      const look = el("g", { class: "mp-look" }, wake);
-      el("circle", { class: "orb-lens", cx: 100, cy: 100, r: 30, "stroke-width": 3 }, look);
-      el("circle", { class: "orb-core", cx: 100, cy: 100, r: 17 }, look);
-      el("circle", { cx: 95, cy: 94, r: 4, fill: "#ffffff", opacity: 0.85 }, look);
+      if (mentorState) mentorMood(mentorState.mood || "neutral", true);
+      showMentorLookChoice();
+    }
+    for (const b of mentorLookButtons) {
+      b.prepend(mentorLookSvg(b.dataset.mentorLook, "neutral"));   // each choice shows its own small orb
+      b.addEventListener("click", () => {
+        if (!goodMentorLook(b.dataset.mentorLook)) return;
+        settings.mentorLook = b.dataset.mentorLook;
+        saveSettings();
+        applyMentorLook();
+      });
+    }
+    if (settings.mentorLook !== undefined && !goodMentorLook(settings.mentorLook)) delete settings.mentorLook;
+    applyMentorLook();
+
+    // The orb for the window: the chosen look in one of its states (U6b). It is drawn 1.2 times larger in its box than in the round button, as
+    // before (the narrower viewBox), and its box (class ml-live) is the only place the look's own slow motion runs.
+    function buildMentorOrb(state) {
+      const svg = mentorLookSvg(currentMentorLook(), state || "neutral");
+      svg.setAttribute("viewBox", "25 25 150 150");
+      svg.classList.add("mp-orb");
       return svg;
+    }
+    // U6b: MENTOR'S MOODS, in the window only. Thinking while Mentor reads its notes ready for the first question (mentorWarmUp: the one part
+    // that takes a while, about 0.9 s on a slow phone; an answer itself comes at once, so the window has no moment to show Thinking then);
+    // Pleased when a clear answer shows; Unsure when it does not know or asks "Did you mean"; Finished when you sign off with thanks or a goodbye.
+    // Pleased and Finished go back to neutral after 2.5 s, Unsure after 4 s, Thinking once the notes are read. A mood only swaps the drawing
+    // inside the orb's box, which keeps its size, so nothing in the window moves. Reduced motion: the drawings still differ by shape and brightness.
+    const MENTOR_MOOD_MS = { pleased: 2500, finished: 2500, unsure: 4000 };
+    function mentorMood(mood, redraw) {
+      const state = mentorState;
+      if (!state) return;
+      clearTimeout(state.moodTimer);
+      if (redraw || state.mood !== mood || MENTOR_MOOD_MS[mood]) state.orbBox.replaceChildren(buildMentorOrb(mood));   // a repeat replays its settle
+      state.mood = mood;
+      state.orbBox.dataset.mood = mood;
+      if (MENTOR_MOOD_MS[mood]) state.moodTimer = setTimeout(() => { if (mentorState === state) mentorMood("neutral"); }, MENTOR_MOOD_MS[mood]);
     }
 
     // The window grows from the button: the origin is the button's centre, measured on screen, so it works wherever the button is.
@@ -4616,14 +4687,47 @@
       mentorUsed.clear();
       mentorLastAt = 0;
     }
-    const mentorPhrase = (list, fallback) => (list.length ? list[Math.floor(Math.random() * list.length)] : fallback);
+    // U6b: a stock line from one of the lists, never the one that list gave last time (when it has another).
+    const mentorLastPhrase = new Map();
+    function mentorPhrase(list, fallback) {
+      if (!list.length) return fallback;
+      const pool = list.length > 1 ? list.filter(line => line !== mentorLastPhrase.get(list)) : list;
+      const line = pool[Math.floor(Math.random() * pool.length)];
+      mentorLastPhrase.set(list, line);
+      return line;
+    }
+    // U6b: what Mentor says when it does not know: chunk E's "I do not know that yet.", unless that was Mentor's last line, so it never says
+    // the same thing twice in a row; then one of the other unsure lines.
+    function mentorUnsureLine() {
+      const plain = MENTOR_PHRASES.unsure[0];
+      const before = mentorMessages.length ? mentorMessages[mentorMessages.length - 1] : null;
+      return before && before.who === "mentor" && before.text === plain ? mentorPhrase(MENTOR_UNSURE_MORE, plain) : plain;
+    }
+    // U6b: a message that is only thanks or a goodbye ("thanks", "cheers", "that's all", "bye") ends the exchange. Mentor answers with a line from
+    // thanks (a thank-you) or finished (a goodbye) and its orb shows Finished. The engine is not asked: it reads "thanks" as a filler word.
+    // Returns "thanks", "finished" or "" (anything else, which is asked as usual).
+    const MENTOR_SIGN_OFF_WORDS = new Set(("thanks thank thankyou you u ty thx thanx cheers ta much very so a lot lots loads many again for that the help "
+      + "your this was is it helpful helps helped great perfect brilliant lovely nice cool ok okay right mentor mate anyway appreciated appreciate "
+      + "all done now bye goodbye good night see ya later that's thats i'm im").split(" "));
+    function mentorSignOff(text) {
+      const words = String(text).toLowerCase().replace(/’/g, "'").replace(/[^a-z' ]+/g, " ").trim().split(/\s+/).filter(Boolean);
+      if (!words.length || words.length > 10 || !words.every(w => MENTOR_SIGN_OFF_WORDS.has(w))) return "";
+      const plain = words.join(" ");
+      if (/\b(thanks|thank|thankyou|thx|thanx|ty|cheers|ta|appreciated?)\b/.test(plain)) return "thanks";
+      if (/\b(bye|goodbye|good night|see (you|ya)|later|that'?s all|that is all|that'?s it|all done|done for now|i'?m done)\b/.test(plain)) return "finished";
+      return "";
+    }
 
     // The first question after a new index takes about 0.9 s with the CPU slowed 4x (X8b, with mentor-data.js; about 0.2 s on a fast machine), so the window asks one empty question once it has finished
     // growing. That builds the engine's word tables before the first real question.
     function mentorWarmUp() {
       if (mentorWarm || typeof MinifolioMentor === "undefined") return;
       mentorWarm = true;
-      setTimeout(() => { try { MinifolioMentor.mentorAnswer("hello", { index: knowledgeIndex(), paints: [], tips: [] }); } catch (ignored) {} }, 400);
+      mentorMood("thinking");   // U6b: Mentor is reading its notes
+      setTimeout(() => {
+        try { MinifolioMentor.mentorAnswer("hello", { index: knowledgeIndex(), paints: [], tips: [] }); } catch (ignored) {}
+        if (mentorState && mentorState.mood === "thinking") mentorMood("neutral");
+      }, 400);
     }
 
     let mentorDoors = 0;
@@ -4756,15 +4860,20 @@
         if (row.classList.contains("mentor-dym-chips") && row.previousElementSibling && row.previousElementSibling.classList.contains("mentor-dym")) row.previousElementSibling.remove();   // E: "Did you mean" goes with its chip
         if (!row.children.length) row.remove();
       }
-      let reply;
-      try {
+      let reply, mood = "unsure";
+      const signOff = mentorSignOff(text);
+      if (signOff) {   // U6b: thanks or a goodbye: a short line back, and the orb shows Finished
+        reply = { who: "mentor", text: mentorPhrase(MENTOR_PHRASES[signOff], "Any time."), sources: [], suggestions: [] };
+        mood = "finished";
+      } else try {
         const { answer, pick } = mentorAsk(text, confirmed);
         // E: no answer: one line, and the starter questions that share the most words with it under it (the engine's suggestions)
         reply = answer.kind === "none"
-          ? { who: "mentor", text: mentorPhrase(MENTOR_PHRASES.unsure, "I do not know that yet."), sources: [], suggestions: answer.suggestions || [] }
+          ? { who: "mentor", text: mentorUnsureLine(), sources: [], suggestions: answer.suggestions || [] }
           : { who: "mentor", text: answer.lead, sources: answer.sources || [], pick, didYouMean: answer.band === "maybe" && answer.didYouMean ? answer.didYouMean : "" };
+        mood = answer.kind === "none" || reply.didYouMean ? "unsure" : "pleased";   // U6b
       } catch (ignored) {
-        reply = { who: "mentor", text: mentorPhrase(MENTOR_PHRASES.unsure, "I do not know that yet."), sources: [], suggestions: [] };
+        reply = { who: "mentor", text: mentorUnsureLine(), sources: [], suggestions: [] };
       }
       const mine = { who: "me", text };
       mentorMessages.push(mine, reply);
@@ -4776,6 +4885,7 @@
       state.win.classList.add("mentor-chatting");
       state.status.textContent = reply.didYouMean ? `Did you mean ${String(reply.didYouMean).replace(/[?.!]+$/, "")}? ${reply.text}` : reply.text;   // announced politely; the rows themselves are not read out unprompted
       mentorDrawChips(state);
+      mentorMood(mood);
       state.scroll.scrollTop = first.offsetTop - 4;
       if (fromChip) state.scroll.focus({ preventScroll: true });   // the chip that was tapped is gone, and a chip must not open the keyboard
       else state.input.focus({ preventScroll: true });
@@ -4802,7 +4912,9 @@
       win.setAttribute("aria-label", "Mentor");
 
       // D: a conversation left alone for MENTOR_IDLE_MINUTES is dropped before the window is drawn, so it opens at its start.
-      if (mentorMessages.length && Date.now() - mentorLastAt >= MENTOR_IDLE_MINUTES * 60000) mentorClear();
+      // U6b: and then it greets you with a line from returning ("Welcome back.") instead of greeting.
+      const returning = mentorMessages.length > 0 && Date.now() - mentorLastAt >= MENTOR_IDLE_MINUTES * 60000;
+      if (returning) mentorClear();
 
       const close = document.createElement("button");
       close.type = "button";
@@ -4835,7 +4947,7 @@
       scroll.setAttribute("aria-label", "Conversation");
       const greeting = document.createElement("p");
       greeting.className = "mentor-greeting";
-      greeting.textContent = mentorPhrase(MENTOR_PHRASES.greeting, "How can I help?");
+      greeting.textContent = returning ? mentorPhrase(MENTOR_PHRASES.returning, "Welcome back.") : mentorPhrase(MENTOR_PHRASES.greeting, "How can I help?");
       const msgs = document.createElement("div");
       msgs.className = "mentor-msgs";
       scroll.append(greeting, msgs);
@@ -4884,14 +4996,15 @@
       col.append(scroll, chips, form, status);
 
       const orbBox = document.createElement("div");
-      orbBox.className = "mentor-orbbox";
-      orbBox.appendChild(buildMentorOrb());
+      orbBox.className = "mentor-orbbox ml-live";   // U6b: the look's own slow motion runs here only
+      orbBox.dataset.mood = "neutral";
+      orbBox.appendChild(buildMentorOrb("neutral"));
       win.append(back, col, orbBox, close);
       backdrop.appendChild(win);
       document.body.appendChild(backdrop);
       document.body.classList.add("mentor-open");
 
-      const state = { backdrop, win, opener, scroll, msgs, chips, pickerChip, input, status, prevOverflow: document.body.style.overflow };
+      const state = { backdrop, win, opener, scroll, msgs, chips, pickerChip, input, status, orbBox, mood: "neutral", moodTimer: 0, prevOverflow: document.body.style.overflow };
       mentorState = state;
       for (const m of mentorMessages) msgs.appendChild(mentorBuildMessage(m));   // the conversation so far, if the window was closed and opened again
       if (mentorMessages.length) win.classList.add("mentor-chatting");
@@ -4942,6 +5055,7 @@
       const state = mentorState;
       if (!state) { if (after) after(); return; }
       mentorState = null;
+      clearTimeout(state.moodTimer);   // U6b
       document.removeEventListener("keydown", state.onKey, true);
       if (state.onView) {
         window.visualViewport.removeEventListener("resize", state.onView);
@@ -17565,6 +17679,8 @@
       const colours = forShow(usingCustom() ? customColoursFor(STAGES.length) : stageColours(name, STAGES.length));
       colours.forEach((colour, index) => document.documentElement.style.setProperty(`--stage-${index}`, colour));
       document.documentElement.style.setProperty("--done-colour", colours[colours.length - 1]);
+      // U6b: the Mentor orb's five ring segments are your colour set's own five colours, as stored (the orb is a dark badge in light mode too).
+      (usingCustom() ? customColoursFor(5) : stageColours(name, 5)).forEach((colour, index) => document.documentElement.style.setProperty(`--mentor-s${index}`, colour));
     }
 
     // v20: the Appearance buttons in Settings.
@@ -18636,8 +18752,7 @@
               if (unitsToo && !isList && goodTheme(parsed.theme)) settings.theme = parsed.theme;
               else if (unitsToo && !isList && RETIRED_THEMES.includes(parsed.theme)) settings.theme = "classic";   // TH1: a removed theme becomes Classic
               // v48: and the paint brands you'd switched off (unknown brands are dropped).
-              if (unitsToo && !isList && Array.isArray(parsed.brandsOff)) settings.brandsOff = cleanBrandsOff(parsed.brandsOff);
-              // v20.1: Custom colours. Backups from before v20.1 don't have them, so yours stay.
+              if (unitsToo && !isList && Array.isArray(parsed.brandsOff)) settings.brandsOff = cleanBrandsOff(parsed.brandsOff);              // v20.1: Custom colours. Backups from before v20.1 don't have them, so yours stay.
               if (unitsToo && !isList && Array.isArray(parsed.customColours)) settings.customColours = cleanCustomColours(parsed.customColours);
               if (unitsToo && !isList && typeof parsed.useCustom === "boolean") settings.useCustom = parsed.useCustom;
             });
@@ -20743,7 +20858,7 @@
     // SEC1: a broken address such as "#%" can't be read; it then counts as no section named, instead of stopping start-up.
     let linkedTab = "";
     try { linkedTab = decodeURIComponent(location.hash.slice(1)); } catch (error) { linkedTab = ""; }
-    if (Object.prototype.hasOwnProperty.call(views, tabAlias(linkedTab))) showTab(linkedTab);
+    if (Object.prototype.hasOwnProperty.call(views, tabAlias(linkedTab))) { showTab(linkedTab); dropBootRing(); }   // LR1: no ring on a section
     else { showTab(settings.tab); enterLaunch(); startLoadingRing(); }
     launchMotionReady = true;
     if (unreadableParts.length) showSaveProblem();   // DS1: the start-up render() couldn't save; the banner says why
@@ -20798,6 +20913,7 @@
         STAGES = settings.stages.map(String);
         fixDoneFrom();
         applyPalette(settings.palette);
+        applyMentorLook();   // U6b: a look chosen in the other window
       }
       if (wasPaused) unreadableParts = [];
       if (unitsText) models = load();
