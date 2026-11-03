@@ -57,8 +57,9 @@ def check(name, ok, detail=""):
 REQUIRED = ["teeth", "chitin", "eyes and glow", "rusty metal", "oiled metal", "bone", "leather", "cloth", "gems and lenses", "skin", "wood",
             "blood", "verdigris", "weathering"]
 GROUPS = ["body", "metal", "material", "light"]
-DETAIL_COUNT = 143   # X8: the 18 recipes of v32 plus 119 from knowledge-base/data/k3-detail-recipes.json (was 18)
+DETAIL_COUNT = 184   # X8: the 18 recipes of v32 plus 119 from knowledge-base/data/k3-detail-recipes.json (was 18)
                      # KR4: plus 6 Body recipes (hair and horse coats) from k9-kr4-detail-recipes.json (was 137)
+                     # KR5: plus 41 recipes (cloth, fur, gems, leather, skin and more) from k11-kr5-detail-recipes.json (was 143)
 SHOWN_JS = """() => [...document.querySelectorAll('#detail-recipes > .scheme-title, #detail-recipes > .hint, #detail-recipes .chip, #detail-summary, #detail-add-all, #detail-list .idea-why, #detail-list .idea-tag, #detail-list .idea-note, #detail-list .idea-add')].map(e => e.textContent).join('\\n')"""
 
 def cap(text):
@@ -142,7 +143,7 @@ def main():
         recipes = page.evaluate("DETAIL_RECIPES")
         groups = page.evaluate("DETAIL_GROUPS")
         techniques = page.evaluate("DEFAULT_TECHNIQUES")
-        check(f"there are {DETAIL_COUNT} recipes (18 from v32, 119 added by the knowledge base in X8, 6 in KR4)", len(recipes) == DETAIL_COUNT, len(recipes))
+        check(f"there are {DETAIL_COUNT} recipes (18 from v32, 119 added by the knowledge base in X8, 6 in KR4, 41 in KR5)", len(recipes) == DETAIL_COUNT, len(recipes))
         check("four groups, in order: Body, Metal, Materials, Light", [g["key"] for g in groups] == GROUPS and [g["name"] for g in groups] == ["Body", "Metal", "Materials", "Light"], groups)
         counts = {g: len([r for r in recipes if r["group"] == g]) for g in GROUPS}
         check("every recipe is in one of the groups and every group has at least two recipes", sum(counts.values()) == DETAIL_COUNT and all(v >= 2 for v in counts.values()), counts)

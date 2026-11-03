@@ -1,0 +1,1619 @@
+{
+  "guides": [
+    {
+      "key": "more-painting-terms",
+      "category": "colour-basics",
+      "title": "More hobby words: building, paint and finish",
+      "summary": "Plain meanings for sprue, flash, dry fit, opaque, medium, retarder, tide mark, matt and satin, warm and cool, and tabletop standard.",
+      "body": [
+        "Building words. Sprue: the plastic frame the parts come on. The small stubs left where a part joined it are often called nubs. Flash: thin, papery plastic or metal that leaked past the mould, trimmed off with a knife. Mould line: the faint raised ridge where the two halves of the mould met, scraped away before priming.",
+        "Dry fit: holding or taping parts together without glue to check how they line up, and to spot a nub or mould line stopping a joint sitting flush. Sub-assembly: a group of parts left unglued, such as a head, arms or a rider, so each can be painted on its own and glued on at the end.",
+        "Paint words. Opaque: covers what is under it. Translucent or see-through: lets the colour underneath show, as washes, glazes, inks and one-coat paints do. Coverage: how well a paint hides what is below in one coat. Pale and bright colours such as yellow and white often cover poorly and need several thin coats.",
+        "Medium: a clear liquid, binder with no pigment, mixed into paint. Glaze or thinning medium makes paint more see-through without breaking it up, and is the usual answer when a guide says to cut a wash with medium. One-coat medium is the same idea made for one-coat paints and does the same job in a wash. Flow improver is different: a strong additive used a drop at a time.",
+        "Retarder: a medium that slows drying, handy for wet blending or in a warm room. Tide mark: a hard dark ring left where a wash or glaze dried at the edge of a pool, also called a coffee ring. Lifting pools with a damp brush before they dry stops them forming.",
+        "Finish words. Matt: flat, no shine. Satin: a soft sheen. Gloss: shiny and smooth. They describe paint and varnish alike. Gloss helps washes run and transfers sit down, and a matt varnish at the end evens out mixed shine so the colours read properly.",
+        "Warm and cool. Warm colours are the reds, oranges and yellows; cool ones are the blues, blue-greens and violets. Warm tones seem to come forward and cool ones to sit back. It is relative: a purple leaning to red looks warm beside blue, and one leaning to blue looks cool beside orange. Every colour has warmer and cooler versions, such as an egg-yolk yellow and a lemon.",
+        "Tabletop standard: every area painted in its own colour, with a shade, a highlight and a finished base, so the model reads well at arm's length in a unit. Display level adds smooth blends and crisp fine detail for close viewing."
+      ],
+      "related": [
+        "painting-terms-glossary",
+        "paint-mediums",
+        "hue-value-saturation",
+        "tabletop-vs-display-standard"
+      ],
+      "keywords": [
+        "what is a sprue",
+        "what is flash",
+        "what does dry fit mean",
+        "sub assembly",
+        "opaque or translucent",
+        "what is medium",
+        "which medium",
+        "what is retarder",
+        "what is a tide mark",
+        "matt satin gloss",
+        "warm and cool colours",
+        "is purple warm or cool"
+      ]
+    },
+    {
+      "key": "real-skin-tone-range",
+      "category": "colour-basics",
+      "title": "Real skin tones: depth and undertone",
+      "summary": "Describe any real skin by how light or deep it is and which way it leans, then choose a base, shade and highlight to match.",
+      "body": [
+        "Real skin covers a wide range, and no heritage, country or label gives you a fixed recipe. People with the same background can be very light or very deep. Describe the tone you want by two things instead: its depth, from very light to very deep, and its undertone, the colour it leans towards.",
+        "Undertones fall into a few families. Rosy or pink leans cool. Golden or peachy leans warm yellow. Olive has a muted yellow-green cast. Neutral sits between them. Deep skin can lean warm red-brown, umber or cool blue-violet. Nearly all living skin sits in the orange to brown family, so you are nudging an orange-brown, not inventing a new colour.",
+        "Set the depth first. A mid brown lifted with off-white covers most light and mid tones, and red and blue mixed to a deep brown makes a good base for very deep skin. Highlight size is a second control: the same paints read lighter with broad highlights and deeper with small, tight ones and more of the surface left dark.",
+        "Then steer the undertone with small amounts. A touch more red or pink for a rosy tone. Ochre or yellow for golden skin. For olive, a tiny drop of violet brown in the mid tone, or a thin flesh glaze over an ochre coat. A dot of blue in the darkest brown cools deep skin, and a red-leaning brown base warms it.",
+        "Very light skin: build from pinks and pale flesh with little brown, since brown reads as a tan. It can carry a lot of darker tone in the shadows and still read pale, as long as the raised areas stay clean and light. Cool the highlights slightly and keep the shadows warm.",
+        "Mid and golden skin: a warm amber or tan base, a soft warm brown wash, the base back on the raised areas, then a paler, slightly pearly tan on top. For a sun-darkened look, start a little lighter and glaze warmer browns down over it rather than mixing the base muddy.",
+        "Deep skin: base dark and leave most of it dark, lifting the brow, cheekbones, nose, lips and knuckles. Warm deep skin highlights towards a warm tan or bone; cool deep skin towards a blue-tinged grey, with only tiny dots of a pale shine. Glaze thin red into the lips, under the cheekbones and round the eyes so it looks alive.",
+        "Freckled fair skin: dot a thinned soft brown in a loose band across the nose and cheeks, and glaze a little warm red on the cheeks, nose and ears. Paint any red hair as muted orange and auburn rather than true red. To work from a photo of a real person, see Matching a real person's skin tone."
+      ],
+      "related": [
+        "mixing-skin-tones",
+        "matching-a-real-skin-tone",
+        "painting-dark-skin",
+        "pale-skin"
+      ],
+      "keywords": [
+        "skin tones",
+        "real skin tones",
+        "skin undertone",
+        "medium skin tone",
+        "golden skin",
+        "olive skin tone",
+        "deep skin tone",
+        "light skin tone",
+        "east asian skin",
+        "south asian skin",
+        "mixed heritage skin",
+        "freckled skin"
+      ]
+    },
+    {
+      "key": "painting-with-colour-blindness",
+      "category": "colour-basics",
+      "title": "Painting with colour blindness",
+      "summary": "Lean on light and dark rather than hue, label your paints, check colours with your phone and pick schemes that read by value.",
+      "body": [
+        "Plenty of people see colour differently, most often finding reds, greens and browns hard to tell apart, and paint very well. What makes a model read on the table is mostly value, how light or dark each part is, and you can judge that without naming the colour.",
+        "Work by value. Plan each area as light, mid or dark, keep neighbouring parts at different values, and check with a black and white photo on your phone. If the model reads in greyscale, it will read in colour.",
+        "Label everything. Write the colour name big on the lid or side of each pot, keep paints in rows by colour family, and make a swatch card with the name beside each dab so you can see the dried colour and know what it is.",
+        "Mix and paint by recipe, not by eye. Save every step with the paint name, and write mixes as drop counts, such as two drops to one, so the same colour comes out every time and later units match.",
+        "Check colours with your phone when unsure. Many phones have colour filter settings in their accessibility options, and free colour picker apps name the colour under the camera. Point one at a pot, a mix on the palette or a finished area.",
+        "Choose schemes that stay readable: one main colour with neutrals, strong light against dark, and pairs that differ in value as well as hue. Red against green at the same value can merge, while a dark colour with a pale trim reads for almost everyone.",
+        "A monochrome scheme, one colour from dark to light, or plain black, white and greys, takes hue choices away almost entirely and still looks striking.",
+        "Ask someone to check a tricky choice now and then, such as a skin tone or a red beside a green, and treat it as a second opinion rather than a test you have to pass."
+      ],
+      "related": [
+        "using-value",
+        "checking-values-in-greyscale",
+        "paint-swatch-cards",
+        "recording-your-recipes"
+      ],
+      "keywords": [
+        "colour blind",
+        "color blind",
+        "colourblind",
+        "colorblind",
+        "colour blindness",
+        "red green colour blind",
+        "cant tell colours apart",
+        "deuteranopia",
+        "protanopia",
+        "colour vision",
+        "painting when colour blind",
+        "mixing up red and green"
+      ]
+    },
+    {
+      "key": "first-weathering-job",
+      "category": "techniques",
+      "title": "A first weathering job on a vehicle",
+      "summary": "A simple first routine for a tank or vehicle: sponge chips, a brown wash for grime and streaks, then soot and dust, stopping early.",
+      "body": [
+        "You need very little: a torn scrap of packing foam held in tweezers, a dark brown paint, a brown wash, a soft old drybrush, a dusty khaki or the colour of your bases, and a black for soot. Silver is optional. Finish the paint job and put any transfers on first, so they get worn and dirtied with the rest.",
+        "Chips first. Dab the foam in the dark brown, then dab most of it off on paper towel until it leaves only fine specks. Test on the underside. Press lightly, without dragging, on edges, corners, hatches and the lower hull, where crew and ground knock it. Build up over a few light passes rather than one heavy one.",
+        "Keep chips small and uneven, mostly on edges with only a few on flat panels. For bare metal, sponge a little silver inside some of the bigger brown chips, keeping some brown showing round it.",
+        "Grime next, with the brown wash. Dot it under bolts, hatches and vents and pull it straight down with a damp brush so it fades into streaks. Run it along the lower hull just above the tracks or wheels, then soften its top edge upwards with a clean damp brush.",
+        "Soot and dust last. Work the black off a soft brush on tissue until it leaves only a grey haze, and circle it round exhaust tips and gun muzzles. Then drybrush the khaki or base colour over tracks, wheels and lower panels, heaviest near the ground and fading out going up. Let a little catch the transfers.",
+        "Check it at arm's length after each stage. Weathering is easy to add and hard to take back, so stop while you still like it. If one spot gets too heavy, paint the base colour back over it once dry.",
+        "Once it is all dry, a coat of matt varnish protects the chips and evens out the shine of the wash. The same order works on infantry: chips on armour edges and weapons, grime in recesses, then dust on boots and hems.",
+        "When you want more, Order of weathering, Sponge chipping, Rust and grime streaks and Soot and scorch marks each take one of these steps further."
+      ],
+      "related": [
+        "weathering-basics",
+        "weathering-order",
+        "sponge-chipping",
+        "streaking-grime-and-rust"
+      ],
+      "keywords": [
+        "first weathering",
+        "how to weather a tank",
+        "weathering for beginners",
+        "sponge and brown wash",
+        "beginner weathering routine",
+        "weathering a vehicle",
+        "easy weathering",
+        "dirty tank",
+        "chipping and dust",
+        "battle damage tank",
+        "weather my tank",
+        "simple weathering steps"
+      ]
+    },
+    {
+      "key": "tabletop-stop-points",
+      "category": "techniques",
+      "title": "How many layers a tabletop model needs",
+      "summary": "For troops, a base, one shade and one or two highlights is enough; save extra layers for faces, leaders and display pieces.",
+      "body": [
+        "For rank and file models, the steps that do most of the work are a clean base coat, one shade and the main colour laid back over the raised areas. At that point a unit reads well on the table. A first edge highlight is the next best step, and most troops can stop there.",
+        "So a trooper's cloak needs about three tones: the base, a wash or shade in the folds, and one or two lighter layers on the raised folds. Layering can run to five or more steps, but that is for leaders and display work.",
+        "Give more steps to the parts near the head. A face might get three or four highlights, the chest and arms one or two, and boots and lower legs none beyond the shade. People look at the face first, so that is where extra steps show.",
+        "Short of time, highlight only one or two colours: the one that covers most of every model, then the most eye catching one, such as gold. The middle layers between the shade and the top highlight are the first thing to drop.",
+        "Glazing and wet blending stop at the same point: once the join between tones does not jump out at arm's length. For gaming models that is often after two or three passes. More is for close photos and display.",
+        "Judge a unit as a group, not one model under a lamp. A zoomed phone photo makes a small model look far rougher than it does in person, and in a unit of ten the small flaws vanish.",
+        "Do the same steps neatly on every model in the unit. Repetition makes a simple scheme look strong, and it is easier to add one more step to all ten later than to undo extra work on one.",
+        "Write down the steps you used on the first model, then decide which to drop for the rest. Leaders can take the full set, with a second, paler highlight on corners, knuckles and the brow."
+      ],
+      "related": [
+        "tabletop-vs-display-standard",
+        "knowing-when-to-stop",
+        "spend-time-where-it-shows",
+        "quick-tabletop-method"
+      ],
+      "keywords": [
+        "how many layers",
+        "how many highlights",
+        "tabletop standard",
+        "rank and file",
+        "how many layers on a cloak",
+        "when to stop layering",
+        "good enough for gaming",
+        "layers for troops",
+        "how many steps",
+        "too many layers",
+        "how much highlighting",
+        "troops quality"
+      ]
+    },
+    {
+      "key": "first-oil-paints",
+      "category": "techniques",
+      "title": "Oil paints for a first-timer",
+      "summary": "Start with a few earthy tubes and odourless spirit, use oils as a wash over fully dry acrylic, and know the common slips and fixes.",
+      "body": [
+        "You need very few tubes. A dark brown and an orange brown cover most washes, grime and rust. A black adds soot and dark grime, and a white gives dust and mist. Very cheap sets are often weak and gritty, so a few decent single tubes go further.",
+        "Thin and clean with odourless mineral spirit or a low odour white spirit, never water. Pour a little into a small jar with a lid, keep a second clean jar for moving paint on the model, and work with a window open.",
+        "Put a small blob on the palette and mix spirit into it a little at a time. Some painters mix on glossy card or a tile; others use plain paper or baking parchment, which draws out excess oil so it dries flatter. Very thin mixes can split and look grainy.",
+        "A good first job is an oil wash over a finished acrylic model. Let the acrylic dry fully. Many painters seal it first with gloss or satin varnish, which helps the wash run and wipe off and protects the paint. Brush the wash on, leave it a few minutes, then wipe the raised areas with a sponge or a brush with the faintest trace of spirit.",
+        "Wash will not wipe off the highlights: it sat too long or went onto a matt, grippy surface. A cotton bud or brush barely damp with spirit lifts it; next time wipe sooner, or varnish first. Never scrub, which can rub through to the paint.",
+        "Highlights stained darker: the longer the wash sits, the more it tints what is under it. Once the oil is dry and sealed with matt varnish, repaint the top highlights in acrylic. Acrylic lifting: that comes from scrubbing, or thin paint on unprimed plastic, so prime, seal, use a softer brush and press lightly.",
+        "Still tacky after days: oils dry slowly, often several days, and longer when thick or in greens and blues. Wait until a hidden spot no longer feels sticky before varnishing, as varnish over tacky oil can wrinkle or cloud. Keep a second model on the go while one dries.",
+        "Keep spirit away from the sticky tack on painting handles, which turns to goo. Do not paint acrylic straight onto wet or unsealed oil, as it can flake later; seal it with matt varnish first."
+      ],
+      "related": [
+        "oil-washes",
+        "oil-paints-on-models",
+        "oil-pin-wash",
+        "varnishing"
+      ],
+      "keywords": [
+        "oil paints for beginners",
+        "which oil colours",
+        "first oil paints",
+        "oil wash wont wipe off",
+        "oil stained my highlights",
+        "oil paint still tacky",
+        "oils lifted my acrylic",
+        "what spirit for oils",
+        "starter oil paints",
+        "oil wash problems",
+        "oil not drying",
+        "white spirit or turps"
+      ]
+    },
+    {
+      "key": "first-nmm-sword",
+      "category": "techniques",
+      "title": "A first NMM exercise: a straight sword",
+      "summary": "Practise painted metal on one blade: mark the light, step from dark grey to white in a few big jumps, then add bounce light and edges.",
+      "body": [
+        "A straight blade is the best first try: two flat faces, an edge and a simple light pattern. Prime it black or dark grey and put out black, white and a mid grey, with a touch of blue to keep the greys cool. Mix a short ladder of four or five greys first, so you never stop halfway to mix.",
+        "Decide where the light comes from, usually above and a little in front, and the angle the model will mostly be seen from. With thin white, roughly mark the brightest band on the face tilted towards the light, ending each stroke where it should be lightest. It is only a guide.",
+        "Cover the blade in the mid grey in two thin coats. Then work up: add white to the grey and paint the light band again on a smaller area, then lighter and smaller again. Use about three steps, each a clear jump. A short, sudden change looks shinier than a long smooth blend.",
+        "Now the dark. Thin a darker grey and pull it towards the light from the other end, so the face runs from near black to near white. Put the darkest dark right against the brightest light somewhere; that hard meeting reads as polished. Keep little of the blade in plain mid grey, or it looks like stone.",
+        "Treat the two faces differently. The one tilted to the light gets the bright band; the one tilted down stays darker and can pick up a dull hint of the ground colour, such as a muted green or brown. A sharp line where the faces meet sells the edge.",
+        "Bounce light is a second, weaker shine on the side away from the main light, as if light bounced back off the ground or a wall. Add a small, dimmer band opposite the main highlight, kept apart from it by dark. Leaving it out is the usual reason a first try looks flat.",
+        "Finish with a thin pale grey line along the cutting edge, brightest where it crosses the main band, and one or two tiny near white dots at the brightest point. A filter, meaning a very thin, see-through tint over the whole blade such as a thin blue, can tie the steps together; keep it off the white dots.",
+        "It looks wrong until the edge and dots go on, so finish before judging, then check it in a black and white phone photo. Non-metallic steel and the Painted steel recipe take the same ideas further."
+      ],
+      "related": [
+        "nmm-basics",
+        "nmm-steel",
+        "nmm-reflections",
+        "painted-steel"
+      ],
+      "keywords": [
+        "first nmm",
+        "nmm sword",
+        "nmm for beginners",
+        "how to paint nmm sword",
+        "nmm practice",
+        "what is bounce light",
+        "what is a filter",
+        "nmm blade steps",
+        "easy nmm",
+        "non metallic sword",
+        "painted metal sword",
+        "my nmm looks flat"
+      ]
+    },
+    {
+      "key": "airbrushing-one-coat-paints",
+      "category": "techniques",
+      "title": "One-coat paints through an airbrush",
+      "summary": "One-coat paints spray well once thinned with airbrush thinner, building colour in light passes over a pre-shaded undercoat.",
+      "body": [
+        "One-coat paints go through an airbrush, like washes and inks do. They are thick in the pot, so thin them first: about two or three drops of airbrush thinner to one of paint is a common start, and any airbrush thinner works. A mid sized needle copes with most paints; a very fine one needs more careful thinning.",
+        "They suit spraying over a pre-shade or zenithal undercoat, such as black primer with white or light grey sprayed from above. The paint is see-through, so the undercoat shows through as shadow, midtone and highlight.",
+        "Spray light passes and let each dry before the next. The first coat often looks blotchy and evens out with more thin coats. Piling it on wet flattens the colour, as if you had never pre-shaded, and can spider or run.",
+        "More coats give a deeper colour with less contrast; fewer keep it brighter. The paint dries darker and more solid than it looks wet, so dry it with plain air and wait a minute before judging.",
+        "Spray a darker one-coat paint of the same colour into the shadows from below, so the shadows read as coloured rather than dull grey. Thinned much further with water and thinner, the same paints make a filter: a few light passes over the whole model that stain rather than cover and pull rough layers together.",
+        "Then brush the details as usual: small parts in solid colours, edge highlights, lenses and gems. For an army this is a cleaner, faster version of drybrush and tint.",
+        "Clean the airbrush straight after and between colours, as with any paint, using Cleaning an airbrush between colours. Seal the finished model with matt varnish, as these paints can rub off raised edges."
+      ],
+      "related": [
+        "airbrush-tinting",
+        "applying-contrast-paints",
+        "zenithal-priming",
+        "airbrush-cleaning"
+      ],
+      "keywords": [
+        "contrast paint airbrush",
+        "can i airbrush contrast paint",
+        "speed paint airbrush",
+        "one coat paint airbrush",
+        "thin contrast for airbrush",
+        "contrast over zenithal",
+        "spraying contrast paint",
+        "contrast paint thinner",
+        "slapchop airbrush",
+        "contrast blotchy airbrush",
+        "airbrush filter",
+        "airbrush one coat"
+      ]
+    },
+    {
+      "key": "salt-weathering",
+      "category": "techniques",
+      "title": "Salt weathering",
+      "summary": "Stick coarse salt over a rust or metal base, spray the top colour, then rinse the salt off to leave patches of worn paint.",
+      "body": [
+        "Salt works as a mask. Wherever a grain sits, the top colour cannot reach, so rinsing it off later leaves patches of the colour underneath. It gives bigger, more random wear than sponge chipping, which suits rusty vehicles, scenery and old metal.",
+        "Prime, then paint the colour you want to show through, such as a rust brown, a dark brown or a dull metal. Varying the browns a little looks more natural. Let it dry fully.",
+        "Brush or spray a little hairspray onto the areas that should wear, such as edges, lower panels and places where water gathers. Sprinkle coarse salt onto it while it is wet. Crush or rub the salt first for smaller, finer chips, and use less of it for a subtle result.",
+        "Once the salt is stuck and dry, spray the top colour over everything in thin coats. An airbrush works best; a brush tends to shift the salt or leave weaker paint around it. Bright or pale top colours show the effect better than black.",
+        "When the top coat is dry, rinse the model under warm water and rub the salt away with your fingers, an old brush, or a toothpick for small spots. Cold water works poorly, and very hot water can warp plastic. The base colour shows wherever the salt was.",
+        "Paint that is too thick around a grain can tear off with it, so keep the top coat thin. Once dry, tidy the edges of the worn patches with a brush, and repaint any spot that looks wrong with more rust or the top colour.",
+        "Put the wear where it would really happen: edges that get handled and low areas where water and dirt collect. Too much salt looks messy rather than worn, so start small and test on a spare part first.",
+        "Salt also goes onto wet hairspray in Hairspray and scratch-through chipping, giving large patches as well as fine chips from the same top coat."
+      ],
+      "related": [
+        "hairspray-chipping",
+        "sponge-chipping",
+        "painting-rust",
+        "where-chips-go"
+      ],
+      "keywords": [
+        "salt weathering",
+        "how to do salt weathering",
+        "salt chipping",
+        "salt technique",
+        "salt and hairspray",
+        "rust with salt",
+        "salt mask",
+        "worn paint with salt",
+        "salt weathering tank",
+        "coarse salt chipping",
+        "rinse salt off",
+        "heavy rust effect"
+      ]
+    },
+    {
+      "key": "masking-fluid-by-brush",
+      "category": "techniques",
+      "title": "Using masking fluid by brush",
+      "summary": "Brush liquid mask over parts or chip spots with an old soaped brush, let it dry, paint over it, then peel or rub it off.",
+      "body": [
+        "Liquid mask is a rubbery liquid that dries to a film you peel off later. It is not only for airbrush users: brush it over a finished part, such as a helmet or a gem, before painting next to it, or dab it where chips should be before a top coat.",
+        "It ruins brushes, so use an old cheap one, a sponge, or a cocktail stick for small dots. Rub a little liquid hand soap into the bristles before dipping, and wash the brush in soapy water straight after. Dried mask will not wash out with thinner.",
+        "Test it on a hidden spot first, and only over paint that has dried and gripped well. It can pull up fresh or poorly gripping paint, especially on soft or oily plastic. A light coat of gloss varnish under it helps it lift cleanly.",
+        "Lay it on with some body rather than a thin skim, as thin mask tears when you peel it. Two thin coats are steadier than one thick blob. Let it dry fully, roughly 15 to 30 minutes depending on the product and how thick it is; check the label.",
+        "Paint over and around it in thin coats, since thick paint bridges the edge and tears when the mask comes off. Once the paint is dry, peel the mask with tweezers or roll it onto a cocktail stick. Small bits rub off with a fingertip or a soft eraser.",
+        "For chips, dab mask with the hard side of a sponge or an old brush where wear would happen, over a rust or metal colour. Paint the top colour, then pull the mask off roughly: the paint comes away in ragged chips.",
+        "Peel it soon after the paint dries rather than days later, as old mask gets harder to remove. If you want a transfer or stencil chipped as well, put the mask under it, not on top."
+      ],
+      "related": [
+        "airbrush-masking",
+        "hairspray-chipping",
+        "masking-tape-stripes",
+        "sponge-chipping"
+      ],
+      "keywords": [
+        "masking fluid",
+        "how to use masking fluid",
+        "liquid mask",
+        "liquid latex mask",
+        "masking fluid by brush",
+        "mask without tape",
+        "masking fluid ruined my brush",
+        "masking fluid chipping",
+        "peel off mask",
+        "mask a gem",
+        "masking fluid pulled paint",
+        "latex mask chips"
+      ]
+    },
+    {
+      "key": "matching-a-real-skin-tone",
+      "category": "techniques",
+      "title": "Matching a real person's skin tone",
+      "summary": "Paint a historical figure or portrait from a clear photo, reading depth, undertone and light rather than following a label.",
+      "body": [
+        "For a historical figure, a portrait or a character with a particular look, work from a clear photo of a real person with that tone. One stock recipe for a whole group of people flattens them into a single colour, and real faces vary far more than any label suggests.",
+        "Judge the photo with its light in mind. The same face looks paler under office light and warmer and darker at sunset. Pick the light your model will sit in, and choose a photo lit in a similar way.",
+        "Read the real colours. A colour picker on a phone or computer shows tones that are usually duller and browner than you expect. Take three: the lit forehead or cheekbone, the main tone of the cheek, and the shadow under the jaw. Mix to those, then judge the dry paint beside the photo.",
+        "Turn the photo black and white, or squint, to see where the light and dark fall. Get the values right first and the colour second. A face with light and dark in the right places reads as real even if the hue is a little off.",
+        "Test each mix on a spare head, a bit of sprue or the base rim before the face. Swap steps between recipes you already know, such as one recipe's highlight over another's base, to get a new tone from the same paints.",
+        "One person's skin is not one colour. Cheeks, nose, ears and knuckles run redder, the forehead a touch more yellow, and shadows and older skin cooler and bluer. Add these with thin glazes once the main tone is right.",
+        "If the tone drifts: too orange, mix in a little light cool blue. Too yellow, a thin flesh or pink glaze pulls it back. Grey and lifeless, a very thin warm orange flesh glaze over the whole area brings it back to life.",
+        "For a group of real people, such as a crew or a regiment, vary depth and undertone from figure to figure as a real group would, and keep one shared shade colour or final highlight so they still read as one unit."
+      ],
+      "related": [
+        "real-skin-tone-range",
+        "painting-from-reference",
+        "colour-variation-in-skin",
+        "vary-skin-across-a-squad"
+      ],
+      "keywords": [
+        "match skin tone",
+        "skin tone from photo",
+        "historical figure skin",
+        "portrait skin colour",
+        "realistic skin colour",
+        "skin colour picker",
+        "skin too orange",
+        "skin too yellow",
+        "paint a real person",
+        "skin reference photo"
+      ]
+    },
+    {
+      "key": "painting-holograms",
+      "category": "techniques",
+      "title": "Painting holograms and projected figures",
+      "summary": "Paint a hologram as a see-through glow: thin bright glazes over white, a lit emitter and a little light spilling nearby.",
+      "body": [
+        "A hologram reads as light, not a solid thing: pale, glowing and slightly see-through, in one colour, often a cool blue or green. Paint it with glow methods rather than normal shading, and ignore the real colours of skin, cloth and kit inside it, so the whole figure looks projected.",
+        "Base the projected figure white. Mix a translucent bright colour about half and half with glaze medium, since neat paint darkens instead of glowing, and glaze it all over with a big-bellied brush. Add further glazes starting lower down so the colour deepens towards the bottom and in the recesses.",
+        "Keep the palest tone on the top-most points, with a few thin white highlights. Pick out eyes, folds and buckles in a pale tint of the same colour rather than their real colours.",
+        "For a flickering, broken signal, paint the final pale lines as broken pieces, stopping and restarting them along the form, as you would on painted lightning. Judge it from normal viewing distance; close up it always looks rougher than it is.",
+        "Paint the emitter as a glowing source: white first, then glazes of the hologram colour, deepest away from its brightest point, which stays near white. A thin near black line round it makes it pop.",
+        "Spill a little of the colour onto nearby surfaces that face the hologram or the emitter: thin glazes of a mid tone, then a very light drybrush moving outwards. Only surfaces that can see the light catch it, and nothing should be as bright as the source.",
+        "If the hologram is a clear plastic part, a coat of satin varnish works as a primer without clouding it. Tint it with inks and thin glazes so light still passes through, and fix it with a tiny dot of glue."
+      ],
+      "related": [
+        "glowing-light-sources",
+        "ghostly-ethereal-spirits",
+        "glow-on-surroundings",
+        "clear-plastic-parts"
+      ],
+      "keywords": [
+        "hologram",
+        "holograms",
+        "holographic",
+        "projected image",
+        "projection",
+        "hologram effect",
+        "see through figure",
+        "blue glowing figure",
+        "sci fi hologram",
+        "flickering signal"
+      ]
+    },
+    {
+      "key": "rain-and-wet-surfaces",
+      "category": "techniques",
+      "title": "Rain, water drops and wet surfaces",
+      "summary": "Show wet armour, skin and cloth with darker colour and chosen gloss, rain streaks that run straight down and raised drops.",
+      "body": [
+        "Water makes a surface darker and shinier, and a matt surface beside it makes the shine read more. Before committing, brush plain water over the area: while it is wet you see roughly how gloss will look.",
+        "Wet armour and metal: brush slightly thinned gloss varnish over the plates, keeping it out of the recesses. It deepens the colour underneath, and brushed gloss comes out shinier than sprayed. Keep cloth, hair and skin around it matt so the contrast stays strong.",
+        "Wet or sweaty skin: a wash that dries glossy, or a very thin touch of satin over the finished skin, leaves a sheen. Keep it light and to a few areas, as full gloss makes skin and cloth look odd.",
+        "Rain streaks: rain runs straight down vertical faces. Pull thin, slightly darker lines down from edges, rivets and seams. Old stains look hazy and matt; a few thin, dark, glossy lines look like water running right now.",
+        "Raised drops: a dab of thick gloss on an edge or a hanging strand forms a drop. For a bigger one, glue a short brush bristle as a core and build gloss or clear effect onto its end in coats, letting each dry so it gathers into a teardrop.",
+        "Painted drops on a flat surface: paint each drop a little darker than the surface under it, add a tiny white glint on the side facing the light, then a dot of gloss on top. Vary the size, and keep them on upper surfaces and hanging from lower edges.",
+        "Puddles on the base: small pools of clear gloss gel or resin at low points read as fresh rain, especially next to dead matt rust or mud. Do every gloss step last, after any matt varnish, and blow dust off first, because gloss fixes it in place."
+      ],
+      "related": [
+        "damp-patches-and-drips",
+        "selective-gloss",
+        "resin-water-effects",
+        "slime-and-goo"
+      ],
+      "keywords": [
+        "rain",
+        "rain effect",
+        "water drops",
+        "water droplets",
+        "wet look",
+        "wet armour",
+        "wet skin",
+        "sweat",
+        "sweaty skin",
+        "rain streaks",
+        "raindrops",
+        "puddles"
+      ]
+    },
+    {
+      "key": "frost-and-icicles-on-models",
+      "category": "techniques",
+      "title": "Frost and icicles on armour and models",
+      "summary": "Cool the highlights, dust frost onto top edges, paint glassy ice over a strong blue and hang icicles where meltwater would drip.",
+      "body": [
+        "Frost starts with the light. Highlight the whole model with a cool grey or pale blue rather than a warm cream, so it reads as cold before any ice goes on. Grey gloves and blue-grey tones elsewhere help.",
+        "For a light frosty crust on armour, brush a fine powdery snow mix thinly along the top edges and upper surfaces, or dab off-white on with a nearly dry scrap of sponge. With an airbrush, a light whitish veil over the painted area reads as thin frost. Commit to it: a timid dusting tends to look like a mistake.",
+        "Thick, glassy ice on a part: base a strong, saturated blue, then dab and criss-cross many very thin coats of white to suggest facets, leaving some blue showing. Glaze a thinned pale icy blue over it, and dab white along the edges as chips rather than a smooth line.",
+        "Icicles: draw thin strings of hot glue onto baking parchment, not wax paper, and peel them off once cool. Or warm thin clear plastic above a candle, never in the flame, and pull it into points. Glue them flat side to the model with tweezers.",
+        "Icicles glued onto paint hold weakly, because the bond is only to the paint. Fix them to bare plastic before painting where you can, or brush two coats of gloss varnish over them for extra hold.",
+        "Hang icicles where meltwater would run down and freeze, not at random: under the lower edges of plates, a cloak hem, a barrel or a ledge. A few tiny icicles suggest a light frost; many suggest deep cold.",
+        "Paint icicles with a little white in clear medium for frosted, half see-through ice; clear on its own reads as liquid water. Add thin pale blue where they are thickest and white on their edges.",
+        "Keep frost and snow matt and powdery, and ice and icicles glossy; the difference in finish sells both. For cold skin, shade with blue, highlight with a cold off-white and glaze a little red onto the cheeks, nose and ears."
+      ],
+      "related": [
+        "snow-on-models",
+        "frost-and-ice-weapons",
+        "snow-bases",
+        "cold-light-scenes"
+      ],
+      "keywords": [
+        "frost",
+        "frosted armour",
+        "ice on armour",
+        "icicles",
+        "frozen",
+        "icy",
+        "frost effect",
+        "ice effect",
+        "winter model",
+        "hoarfrost",
+        "frozen armour",
+        "cold look"
+      ]
+    },
+    {
+      "key": "painting-banners-and-flags",
+      "category": "techniques",
+      "title": "Painting banners and flags",
+      "summary": "Paint banners off the model on a flat base colour, shade each colour with its own darker tone, then add the design and wear.",
+      "body": [
+        "Paint the banner or flag before it goes on the model where you can, as freehand takes a lot of handling. If it has to be on, wear a glove or wrap the rest in cling film. Lay the design on a flat base colour first and shade the background after, since repairs are far easier on flat paint.",
+        "A big flag is the largest flat area on the model, so it pulls the eye. If it would be bright red, start from a muted, drabber version and keep the purest colour for the focal point. Flags mostly use three colours, which is a good limit.",
+        "Shade each colour with a darker related tone: brown under red, beige under white, dark blue under blue. One shade over every colour looks wrong; a yellow flag shaded dark red looks dirty. Keep the shade in the troughs of the folds and pull thinned highlights onto the ridges and the outer edge.",
+        "Washes run down a hanging banner and pool at the bottom edge. Thin them with medium, use small amounts, and lay the banner flat to dry, one side at a time. Lift any pooling with a clean damp brush while it is wet.",
+        "Sketch the design on paper first, then mark it lightly in pencil on the dry base colour. Find the centre from the top edge, not a ragged bottom, and paint one line straight down following the cloth. Build the emblem from simple lines through that centre, then thicken them. A white or yellow emblem on a red, blue or black field, or the reverse, reads from across the table.",
+        "Small emblems can be highlighted on their own, ignoring the folds, so they stand out. For transfers, gloss the cloth first so they slide into place, then chip their edges with the cloth colours and drag thin stains over them so they sit in the fabric.",
+        "For an old, hard-used banner, wet blend a few drab tones with downward strokes so it looks streaked by rain, darken the bottom edge and nick the edges with small notches as if torn. For a white flag, ivory over a warm grey covers far better than pure white."
+      ],
+      "related": [
+        "freehand-painting",
+        "freehand-symbols",
+        "paper-and-tape-cloth",
+        "painting-shields"
+      ],
+      "keywords": [
+        "banner",
+        "banners",
+        "flag",
+        "flags",
+        "how to paint a banner",
+        "standard",
+        "pennant",
+        "banner design",
+        "banner folds",
+        "flag freehand",
+        "heraldry banner",
+        "battle standard"
+      ]
+    },
+    {
+      "key": "digital-pixel-camo",
+      "category": "techniques",
+      "title": "Digital pixel camouflage",
+      "summary": "Build digital camo from small stepped squares in three or four tones of one colour family, by tape and spray or by brush.",
+      "body": [
+        "Digital camo is made of small squares and stepped, staircase edges instead of blobs. Pick three or four tones from one colour family that suit the setting, each clearly darker than the last, or two of them will read as one.",
+        "With tape and spray: cut narrow tape into strips. For each patch, lay two strips at a right angle and a third cut into a stepped edge below them, and press them down hard over raised detail so they seal. Spray, mask the next set, spray again, then peel gently.",
+        "By brush: paint each patch as a cluster of small squares, outlining the edges first with the tip and keeping the corners square. Let patches of each tone touch the others rather than float alone, and vary their size so nothing repeats.",
+        "At small scale or on busy, curved parts, use fewer tones and bigger, simpler steps, as with any camo. On troops, keep the pattern to one area, such as the trousers or a cloak, so it does not hide the figure's shape.",
+        "Shade and highlight the base colour first so the pattern sits in light and shadow, then highlight all the camo as one area. Satin varnish before washes and weathering, and a thin all-over wash, tie the pattern together."
+      ],
+      "related": [
+        "camouflage-patterns",
+        "airbrush-masking",
+        "masking-tape-stripes",
+        "urban-camo"
+      ],
+      "keywords": [
+        "digital camo",
+        "pixel camo",
+        "pixelated camouflage",
+        "modern camo",
+        "square camo",
+        "blocky camo",
+        "digital camouflage",
+        "pixel pattern",
+        "how to paint digital camo",
+        "masking tape camo"
+      ]
+    },
+    {
+      "key": "painting-insect-wings",
+      "category": "techniques",
+      "title": "Painting insect wings",
+      "summary": "Paint fly, wasp and dragonfly wings as thin, tinted, shimmering panels over white, with fine veins and a few bright edges.",
+      "body": [
+        "Insect wings are thin and glassy, so treat them as tinted panels catching light rather than solid skin. Paint them off the model where you can; they are fragile and easy to smudge.",
+        "For an iridescent fly wing, base the wing white. Glaze thin washes of violet, green, yellow and pink over it, each thinned with glaze medium, in patches that meet and blend rather than in neat bands. The white underneath makes the thin colours shimmer.",
+        "Finish with fine white highlights along the leading edge and on a few raised veins, then tidy any slips. Keep every colour thin; an opaque coat hides the white and kills the shimmer.",
+        "For a colour-shift look, base a rich mid colour such as purple. Drybrush one hue from above, such as pinks, and another from below, such as deep blue then turquoise, and finish both sides with the same pale yellow.",
+        "Veins: run a thin dark line along each sculpted vein on a pale wing, or a pale one on a dark wing, and keep them finer than you think. Edge torn ends with a light colour so the tear reads.",
+        "Clear plastic wings: a coat of satin varnish works as a primer without clouding them. Tint them with inks and thin glazes so light still passes through, add the veins, and fix them with a tiny dot of glue.",
+        "Hard, shiny beetle wing cases: a near black purple base, a muted purple on the curves, a thin pale violet line on top of each and a small teal glaze on each plate for an oily sheen, then a touch of gloss."
+      ],
+      "related": [
+        "iridescent-colour-shift",
+        "membrane-wings",
+        "clear-plastic-parts",
+        "iridescent-insect-wings"
+      ],
+      "keywords": [
+        "insect wings",
+        "fly wings",
+        "wasp wings",
+        "dragonfly wings",
+        "bee wings",
+        "bug wings",
+        "translucent wings",
+        "iridescent wings",
+        "see through wings",
+        "veined wings",
+        "beetle wings",
+        "fairy wings"
+      ]
+    },
+    {
+      "key": "velvet-and-fur-trim",
+      "category": "techniques",
+      "title": "Velvet and fur trim",
+      "summary": "Stipple velvet into a soft, deep, matt cloth, and paint fur trim and ermine with tinted greys, flicked strands and spots.",
+      "body": [
+        "Velvet is soft and matt, so keep its highlights broad and gentle and its shadows deep and rich. That sets it apart from shiny silk, where highlights are small and sharp. A deep plum red (#5a1020) stippled up to a soft pinkish red (#c85a5a) is a classic velvet.",
+        "Build velvet by stippling: dab tiny dots of each mix along the blend, from the top highlight down, leaving a little space between dots. The dots hide the joins between layers and give the slightly fuzzy texture that reads as velvet.",
+        "Then glaze thin base colour over the edges of the stippled areas, reaching further in with each thinner glaze and sweeping towards the shadow. A slightly see-through warm highlight, such as a pale warm flesh over purple, avoids the chalky look white gives.",
+        "Fur trim on a cloak or collar: base it, wash it, then flick lighter strokes along the direction of the fur in stages, each finer than the last. Paint the cloth up to it neatly and keep the line where fur meets cloth clear.",
+        "White fur trim: plain greys look flat. Use greys tinted with purple, brown or blue for the shadows and a dusky pink or warm off-white for the top highlights, keeping the brightest white to a few strands near the face.",
+        "Ermine, the white fur with small black tail tips seen on the robes of kings and nobles: finish the white fur first, then paint the dark tips with a thinned dark one-coat paint so it sinks into the texture. One light drybrush over the whole trim makes spots and fur read as one material."
+      ],
+      "related": [
+        "silk-and-satin",
+        "painting-fur",
+        "painting-cloth",
+        "fabric-textures"
+      ],
+      "keywords": [
+        "velvet",
+        "velvet cloth",
+        "fur trim",
+        "ermine",
+        "fur collar",
+        "fur lined cloak",
+        "royal robes",
+        "white fur trim",
+        "plush fabric",
+        "soft cloth",
+        "fur edging",
+        "noble robes"
+      ]
+    },
+    {
+      "key": "rubber-tyres-and-hoses",
+      "category": "techniques",
+      "title": "Rubber tyres, hoses and cables",
+      "summary": "Paint rubber, tyres and cables a soft near black so they separate from black armour, then dust or dirty the treads.",
+      "body": [
+        "Rubber is a soft black. Base tyres, hoses, cables and flexible joints in a very dark grey rather than pure black, and keep true black for hard armour and for shading. The two then read as different materials.",
+        "Line the ridges of cables and the tread of tyres with true black, then edge highlight in a dark grey, with a lighter grey only on the sharpest corners. On a black model, one subtle grey step along the edges is often enough, so the rubber stays darker than the armour.",
+        "On ribbed cables and tyre tread, wipe almost all the paint off the brush and skim along so only the raised ribs catch it. A smooth round hose has no edge to follow: skim one line down the side facing the light.",
+        "Highlight black pipes and hoses with a fairly light grey, not just a dark one, or they vanish into the model. Coloured hoses work too: an orange base under a yellow one-coat paint, with a thin pale yellow highlight, makes small tubes pop.",
+        "Hazard-striped cables: paint and shade the cable yellow, plot thin slanted black stripes faintly so they spiral round it, thicken them until both bands match, and tidy any wobbles with the yellow.",
+        "Leave push-fit wheels and tyres off the model, paint them on their own and fit them at the end. It saves brushing black round every edge.",
+        "Dusty tyres: brush a light earth enamel or oil, thinned a little, into the tread, wait about 20 to 30 minutes, then wipe it off the raised parts with a brush damp with thinner. Or work dry earth pigment into the tread and lower rim. A well thinned wash of the base ground colour ties the wheels to the base."
+      ],
+      "related": [
+        "painting-vehicles-by-brush",
+        "breaking-up-metal-models",
+        "hazard-stripes",
+        "angular-surfaces"
+      ],
+      "keywords": [
+        "rubber",
+        "tyres",
+        "tires",
+        "rubber tyres",
+        "hoses",
+        "cables",
+        "pipes",
+        "wheels",
+        "tyre tread",
+        "dusty tyres",
+        "rubber joints",
+        "rubber black"
+      ]
+    },
+    {
+      "key": "books-bottles-and-props",
+      "category": "techniques",
+      "title": "Books, bottles, candles and small props",
+      "summary": "Small props read best with clean edges and one clear material each: crisp page edges, glassy bottles, soft waxy candles.",
+      "body": [
+        "Props are small, so separate each one from its neighbour with a fine dark line and give it one clear material. Paint the hard to reach areas first, then the props in front of them, such as books and bottles held in hands.",
+        "Books: base the cover in a leather or cloth colour and highlight only a short line along its edges and corners. Define the page edges by hand in a pale bone or parchment tone with fine dark lines between them, as a wash may not pick them out. Writing on open pages is tiny dark brown squiggles in rows.",
+        "Bottles, jars and potions: paint them as glass, following Painting glass and clear parts. A dark edge, a gradient across, a sharp white glint near the opposite corner, liquid kept level with the ground, and gloss on the glass only.",
+        "Candles: wax looks soft, so blend gently with no hard steps. Base a pale greyish green (#c9c9a0) or bone dulled with light brown, work up through pale cream (#e3dcc0) and take the top edge and drip tips near white (#f6f4ec). Darken the base mix for older candles.",
+        "Extra drips on candles: dab white glue, thinned only slightly so it holds its shape, down the sides with a toothpick, let it dry, then add more on the same spots so each drip grows fatter and longer.",
+        "Wax seals on letters and scrolls want a colour unlike the main accent, such as a deep burgundy (#4a1420), highlighted by mixing in a little pale blue-grey and finished with a touch of gloss."
+      ],
+      "related": [
+        "parchment-and-scrolls",
+        "painting-glass",
+        "wax-seals",
+        "painting-leather"
+      ],
+      "keywords": [
+        "books",
+        "book",
+        "how to paint a book",
+        "bottles",
+        "potions",
+        "candles",
+        "candle wax",
+        "tavern props",
+        "props",
+        "clutter",
+        "jars",
+        "tome"
+      ]
+    },
+    {
+      "key": "ships-sails-and-rigging",
+      "category": "techniques",
+      "title": "Ships, sails and rigging",
+      "summary": "Paint hull, deck and sails as separate parts, treat sails as canvas and give rigging and tarred rope a darker rope tone.",
+      "body": [
+        "Keep masts and sails off the hull while you paint where the kit allows, and base each part in its own colour. Painting all the hulls first, then all the sails in one session, keeps a fleet consistent.",
+        "Hull and deck are wood: follow the planks along their length, as in Painting wood grain. A plank-coloured deck looks more natural than a black one. Pull any grime and streaks straight down the hull sides, the way water runs.",
+        "Sails are canvas. Block in a dark ivory or pale tan, run a thinned khaki into the creases and dark brown only into the deepest folds, restore the flat areas, then highlight the outer edges and the crests of the billows. Keep the shade in the troughs and lead the highlights onto the ridges.",
+        "Old sails: wet blend a few drab tones with downward strokes so they look stained, and nick the edges for tears. Designs on sails can be freehand or picked out from cast detail; paint them on the flat colour before shading. One accent colour on sails and flags ties a ship together.",
+        "Rope and rigging: base a light sandy beige, wash brown so it runs into the twists, then highlight back along each twist with a finer pale cream on top. For tarred rope, base it a very dark brown, wash it black and keep the highlight to a dull brown on the top of each twist."
+      ],
+      "related": [
+        "painting-wood-grain",
+        "painting-rope",
+        "painting-pale-cloth",
+        "torn-and-worn-cloth"
+      ],
+      "keywords": [
+        "ship",
+        "ships",
+        "sailing ship",
+        "boat",
+        "sails",
+        "rigging",
+        "tarred rope",
+        "ship hull",
+        "ship deck",
+        "galleon",
+        "pirate ship",
+        "canvas sail"
+      ]
+    },
+    {
+      "key": "snake-and-serpent-patterns",
+      "category": "techniques",
+      "title": "Snake and serpent patterns",
+      "summary": "Lay out a snake's bands, stripes or diamonds before highlighting, then light each colour in its own tones over a pale belly.",
+      "body": [
+        "Snakes and serpents are mostly pattern. Block in the whole pattern first, base colour and markings, before any highlights. Mistakes are easy to fix at that stage, and the highlights stay consistent along the body.",
+        "Then highlight each colour in its own tones: blues and teals on a blue base, greys on black markings. Keep the gaps between scales dark so each scale stands out, and edge only the most raised ones.",
+        "Bands and stripes: mark them faintly first, evenly spaced along the body and slanting slightly so they wrap round it, then thicken them and tidy wobbles with the base colour. Diamonds: place a small dot at each point along the spine, join the dots, then fill the shapes in thin coats.",
+        "Body colours often shift from a dark back through the flanks to a paler belly. A deep slate blue back (#1f3b57), blue-green flanks (#3f7f7a), then grey-green to magenta and a pale lilac (#c6a9d8) on the belly scales makes a vivid serpent.",
+        "For a pale belly, base a mid blue (#4a6a9a), shade a muted violet-grey (#4a4058) between the scales, then lighten it step by step with off-white. It reads as a pale underside without going chalky.",
+        "Eyes: a soft white, a pale colour glazed lighter in the middle, a darker rim of wash, and a thin vertical black slit for the pupil. A thin line reads more reptilian than a dot. Gloss the eyes last."
+      ],
+      "related": [
+        "painting-scales",
+        "green-scales",
+        "freehand-patterns",
+        "snake-scales"
+      ],
+      "keywords": [
+        "snake",
+        "snakes",
+        "serpent",
+        "snake skin",
+        "snake pattern",
+        "banded snake",
+        "striped snake",
+        "diamond pattern",
+        "viper",
+        "python",
+        "reptile eyes",
+        "sea serpent"
+      ]
+    },
+    {
+      "key": "painting-robots-and-mechs",
+      "category": "techniques",
+      "title": "Painting robots and mechs",
+      "summary": "Treat robot and mech armour as flat lit panels, paint the inner frame first, then add panel lines, stripes and grease.",
+      "body": [
+        "Robots and mechs sit between vehicles and armoured figures. Their armour is flat planes and corners, so give each face its own light level: faces towards the light clearly lighter, faces turned away clearly darker. See Highlighting blocky, angular shapes.",
+        "Leave arms and big plates off so you can reach the frame and joints. Paint the inner machinery first, while nothing around it is finished: silver, a black wash, a few bronze bolts, a dark brown wash for an oily look, then a bright silver drybrush.",
+        "Snap-fit poseable kits: pull them apart and plug every socket and peg with small bits of tape or putty, and leave hidden inner frame parts bare. Paint in the joints makes poses sag or parts stop fitting.",
+        "Prime for the armour colour even if there is a lot of metal, as painting white over silver is much harder than the other way round. If a wash leaves big panels murky, drybrush the base colour back over the blotches, then layer thinned base into the panel centres.",
+        "Panel lines: gloss varnish the armour, dot a thinned dark enamel wash into the lines so it runs along them, and wipe stray wash off flat panels with a cotton bud damp with thinner. Work with good airflow, add any transfers, then matt varnish.",
+        "Hazard stripes go where moving parts are dangerous: joints, pistons and weapons. Paint a pale band, then diagonal stripes at about 45 degrees from the middle outwards, one stripe width apart. Tidy overspill with the armour colour, and use rivets and panel lines as guides.",
+        "Pistons and joints: bright silver stroked round the piston, a gritty texture paint in ball joints for caked grime, then a glossy oil-coloured enamel or oil pulled out from the joint. A few glossy grease spots on a satin or matt robot look good.",
+        "Small drones and gadgets: prime dark silver, wash black, drop bright orange into the lower recesses as rust, drybrush steel, then pick out lenses in red and cables in bright colours."
+      ],
+      "related": [
+        "angular-surfaces",
+        "painting-vehicles-by-brush",
+        "breaking-up-metal-models",
+        "hazard-stripes"
+      ],
+      "keywords": [
+        "robot",
+        "robots",
+        "mech",
+        "mechs",
+        "mecha",
+        "mech armour",
+        "robot armour",
+        "poseable robot kit",
+        "walker",
+        "giant robot",
+        "droid",
+        "drones"
+      ]
+    },
+    {
+      "key": "soft-plastic-figures",
+      "category": "tools-prep",
+      "title": "Board game and soft plastic figures",
+      "summary": "Bendy board game figures need a good wash, a sliced not scraped mould line, a primer that grips and varnish at the end.",
+      "body": [
+        "Most board game figures are made from a softer, bendier plastic than hobby kits, often PVC. It is tough and cheap to make in big numbers, and the detail can be good, but it flexes, often carries an oily release agent from the mould, and plastic glue does not weld it.",
+        "Wash the figures first in warm soapy water with an old toothbrush, rinse and let them dry fully. Release agent left on the surface stops primer and paint gripping, and paint that beads up or rubs off is the usual sign.",
+        "Mould lines are the hard part. Scraping and filing, which work on hard plastic, just raise burrs on soft plastic. Instead, lay a fresh blade almost flat and slice the line off in small, slow cuts, and change the blade as soon as it skips rather than cuts. On a quick game piece, take off only the lines that show.",
+        "Bent spears and swords can be warmed, straightened and cooled to set the shape; factories do the same with fresh parts. Dip the part in hot water until it softens, hold it straight and cool it under cold water. Results vary: some soft plastics hardly respond to heat, so try a hidden part first.",
+        "Use super glue for any building. On the softest, waxy plastics even super glue grips poorly, so a joint that keeps failing is better pinned: drill a tiny hole in each part and glue in a short piece of fine wire.",
+        "Always prime. Thin hobby paint beads on bare soft plastic and rubs off easily. A spray primer grips well; a brush-on surface primer in two or three very thin coats lasts better than one thick coat. Some painters brush on a primer made for soft plastic first.",
+        "Paint them as any figure, often with a quick routine such as Base, wash and tidy method. Because the plastic flexes, paint can crack or chip on bendy parts, so finish anything that gets handled with a couple of thin varnish coats, and expect the odd touch up on spears and swords.",
+        "Figures that came pre-painted can be painted over once washed; see Repainting toys and pre-painted figures."
+      ],
+      "related": [
+        "repainting-toys-and-figures",
+        "straightening-bent-parts",
+        "quick-tabletop-method",
+        "model-materials-compared"
+      ],
+      "keywords": [
+        "board game miniatures",
+        "board game figures",
+        "soft plastic",
+        "bendy plastic figures",
+        "pvc miniatures",
+        "paint wont stick to board game minis",
+        "mould lines on soft plastic",
+        "bent board game sword",
+        "prime board game minis",
+        "different plastic",
+        "flexible plastic",
+        "rubbery miniatures"
+      ]
+    },
+    {
+      "key": "model-materials-compared",
+      "category": "tools-prep",
+      "title": "Plastic, resin, metal and prints compared",
+      "summary": "Each model material needs its own glue, clean up and primer care, so knowing which one you have saves early mistakes.",
+      "body": [
+        "Hard plastic kits on frames are the most common. They are light and tough, clean up easily with a knife and sanding stick, and plastic glue welds them together. Fresh paint on bare plastic rubs off easily, which is one good reason to prime.",
+        "Soft plastic, used for most board game figures, bends rather than snaps. Mould lines are hard to remove, plastic glue does nothing to it and paint needs a primer to grip. Board game and soft plastic figures covers it.",
+        "Cast resin holds very sharp detail but is brittle and can shatter if dropped. Wash off the mould release first, cut casting blocks away in small bites, file gently and glue with super glue; plastic glue does nothing to it. Wear a mask when cutting or sanding resin, as the dust is harmful.",
+        "Metal, often called white metal or pewter, is heavy, so arms and weapons need pins as well as super glue. It is harder to file, dulls blades quickly and cracks if bent back and forth. Paint chips off it more easily than off plastic, so varnish it. Very old metal figures may contain lead, so wear gloves when stripping or filing them.",
+        "Resin 3D prints hold fine detail like cast resin and glue the same way, but they must be washed and fully cured, and thin parts are often brittle. Filament prints are tough and cheap but show layer lines, so they suit terrain more than figures.",
+        "Some smaller makers now use other injection moulded plastics. The softer kinds behave like board game plastic; the harder kinds file and scrape almost like a normal kit. Neither takes plastic glue, so use super glue.",
+        "Not sure what you have? Metal is much heavier than it looks. Hard plastic usually comes on frames. Soft plastic bends easily in your fingers. Resin parts often come on chunky casting blocks and can feel waxy or oily before washing.",
+        "Glue rule of thumb: plastic glue only for hard plastic to hard plastic; super glue for every other material and for mixed joins; two-part epoxy or a pin for heavy joints."
+      ],
+      "related": [
+        "choosing-glue",
+        "preparing-resin-models",
+        "preparing-metal-models",
+        "soft-plastic-figures"
+      ],
+      "keywords": [
+        "resin vs plastic",
+        "plastic vs metal miniatures",
+        "what are miniatures made of",
+        "resin plastic and metal difference",
+        "model materials",
+        "white metal",
+        "pewter",
+        "polystyrene",
+        "is my model resin or plastic",
+        "soft plastic vs hard plastic",
+        "which material is best",
+        "3d print vs resin"
+      ]
+    },
+    {
+      "key": "assembly-hand-tools",
+      "category": "tools-prep",
+      "title": "Hand tools for building models",
+      "summary": "A knife, clippers, files, sanding sticks, a cutting mat, tweezers and a pin vice cover nearly all building work.",
+      "body": [
+        "A hobby knife or scalpel with spare blades does most clean up. Cut away from your body and fingers in several small strokes rather than one hard push. Hold it near the tip for fine work and further up the handle for power. A blunt blade needs more force, and that is when it slips, so change blades often; bulk packs of scalpel blades cost far less.",
+        "Keep a curved blade for hollows and between hair strands. For scraping mould lines a slightly worn blade is better than a brand new one, which can skip and leave ridges, so move a blade from cutting to scraping once it starts to dull.",
+        "A self-healing cutting mat protects the table, closes up after cuts and gives a firm surface to brace a part on while you trim it. Pick one in a colour that dropped parts stand out on.",
+        "Needle files take material off fast and suit metal and resin, but leave scratches on plastic. Sanding sticks and sponges do most plastic work: around 320 to 400 grit for nubs and heavy lines, 600 to 800 for tight spots, then 1200 or finer for smooth surfaces. Sanding sponge bends round curves.",
+        "Wet the paper or file so it clogs less and keeps the dust down, and wear a mask when sanding resin, metal or putty. Sand in one direction only to keep a sharp edge or point.",
+        "Fine pointed tweezers place tiny parts, transfers and tufts. Reverse grip tweezers stay closed until you squeeze them, so they hold a part or a scrap of sponge without hand ache. Cheap pairs work as well as hobby branded ones.",
+        "A pin vice, a small hand drill, makes holes for pins and gun barrels. Turn it one way only, with light pressure; turning it back can loosen the bit. The bits that come with cheap drills are often poor, so a set of fine bits is worth adding.",
+        "Flat faced clippers free parts from the frame. Keep a fine pair for delicate plastic and an old pair for thick frames, wire and paper clips, which notch good blades."
+      ],
+      "related": [
+        "clippers-and-clipping",
+        "mould-line-removal",
+        "cutting-kit-parts",
+        "starter-tool-kit"
+      ],
+      "keywords": [
+        "what tools do i need to build models",
+        "hobby knife",
+        "which way to cut with a hobby knife",
+        "what grit sandpaper",
+        "sanding sticks",
+        "needle files",
+        "cutting mat",
+        "do i need a cutting mat",
+        "what tweezers do i need",
+        "pin vice",
+        "scalpel blades",
+        "when to change knife blade"
+      ]
+    },
+    {
+      "key": "checking-second-hand-models",
+      "category": "tools-prep",
+      "title": "Checking a second-hand lot",
+      "summary": "Look a used lot over for paint, glue, damage and missing parts, then sort it into models to fix, strip or keep as spares.",
+      "body": [
+        "Ask for clear, close photos before agreeing a price. Blurry pictures hide half-empty frames, loose bits in bags and a mix of models that may not make up what you want.",
+        "Look at the paint. Thin, sound paint can be painted over or touched up; thick coats that blur the detail mean stripping. Resin is the hardest material to strip cleanly, so a thickly painted resin model is more work. A big model in many parts can take longer to strip than to repair and prime.",
+        "Look at the joins. Superglued parts can usually be popped apart and reglued, while plastic glue joints have to be cut. Loose or crooked parts, glue blobs and gaps are all fixable but take time. Many second-hand models were built without the mould lines removed, so plan to clean those too.",
+        "Check the thin parts: spears, antennae, horns and swords. Old metal figures often have bent weapons, which can be eased back with gentle warmth, but metal snaps if bent back and forth. Snapped parts can be pinned or replaced with wire.",
+        "Check every part is there, against a photo of the complete model if you can. Paint and damage matter little if the parts you want are whole, and a box of odd parts is still useful for conversions.",
+        "Very old metal figures may contain lead. Wear gloves when stripping or filing them, keep the dust down and wash your hands afterwards.",
+        "Before stripping someone's paint job, take a photo of it, as an old scheme can still give you ideas. Then sort the lot into models to touch up, models to strip and parts for the spares box."
+      ],
+      "related": [
+        "stripping-paint",
+        "taking-apart-old-models",
+        "touching-up-old-models",
+        "replacing-snapped-parts"
+      ],
+      "keywords": [
+        "second hand models",
+        "used miniatures",
+        "used lot",
+        "job lot of miniatures",
+        "second hand army",
+        "check used models",
+        "old painted models",
+        "pre owned miniatures",
+        "what to look for in used models",
+        "old metal models",
+        "thick old paint",
+        "missing parts in a lot"
+      ]
+    },
+    {
+      "key": "brush-on-varnish",
+      "category": "tools-prep",
+      "title": "Brush-on varnish without smearing",
+      "summary": "Brush varnish on in thin coats without going back over it, and seal one-coat paints and inks first so the brush cannot drag their colour.",
+      "body": [
+        "Brush or spray? Spray is the quickest way to coat a whole model and gives the smoothest finish, but it is fussy about cold and damp air. Brush-on is slower, works in any weather and lets you pick a finish for each part. Many painters spray whole models and keep a brush-on pot for bases, touch-ups and small repairs.",
+        "The catch with a brush is that water-based varnish is wet, and some paints soften again when wet. One-coat contrast-style paints, inks and some washes can lift and smear under the brush, and reds and golds can creep into a white next to them. The thin, staining paints are the ones to watch.",
+        "So give those paints longer before you varnish, at least an hour and more if you can, as touch dry is not fully dry. Then treat the first coat as a seal: a light mist of spray if you have it, or one thin brushed coat laid down in a single pass with no scrubbing. Once that is dry, later coats cannot reach the paint.",
+        "Shake the pot well and pour a little into a palette well rather than working from the pot. Use a soft synthetic brush, a wide flat one for big areas. Lay the varnish on like a thin all-over wash and move any pools out of recesses before they set. Work with flat surfaces facing up where you can, and go thinner on upright faces so it does not run.",
+        "Never go back over a patch that has started to dry. Varnish forms a skin as it dries, and brushing it again tears the skin and leaves streaks, bumps and lifted colour. If you missed a spot, wait until it is dry and catch it on the next coat.",
+        "Keep coats thin and let each dry fully. One or two thin coats is plenty, as a thick coat can dry cloudy or milky and fill fine detail. Some painters add a drop of water to help it flow; others use matt straight from the pot, as water can make it less flat. Thinning a gloss tones its shine down.",
+        "Brushed varnish often comes out a little shinier than sprayed, and brush-on matt is usually a touch less flat than matt spray. If it dries with a sheen, another thin coat of a flatter matt sorts it. Leave the model 12 to 24 hours before heavy handling, or check the label.",
+        "If it has already smeared, let it dry fully first. Paint the original colour back over the stain, or tidy a stained white with white, then seal that area with a light first coat before you carry on."
+      ],
+      "related": [
+        "varnishing",
+        "applying-contrast-paints",
+        "fix-shiny-finish",
+        "drying-and-curing-times"
+      ],
+      "keywords": [
+        "brush on varnish",
+        "brush-on varnish",
+        "brushing varnish",
+        "varnish smeared contrast",
+        "contrast paint reactivated",
+        "varnish lifted my paint",
+        "varnish streaky",
+        "brush or spray varnish",
+        "one coat paint smudged",
+        "ink smeared under varnish",
+        "varnish without a spray",
+        "varnish bled colour"
+      ]
+    },
+    {
+      "key": "photos-with-a-phone",
+      "category": "tools-prep",
+      "title": "Photographing models with just a phone",
+      "summary": "One lamp, a sheet of paper and a steady phone take good model photos, with no lightbox or proper camera needed.",
+      "body": [
+        "Light matters far more than the camera. A phone takes good photos of a model under good, steady light, and an expensive camera will not save a badly lit one.",
+        "Tape a sheet of plain paper or card to a wall or a box and let it curve down onto the desk under the model, so there is no line behind it. White, grey or black all work, and a dark backdrop makes the model look brighter. Stand the model a little in front of the curve so its shadow does not fall on the paper.",
+        "With one lamp, put it right beside the phone, or above and just behind it, pointing at the front of the model. Light from straight above casts real shadows over the ones you painted and burns out the top. Your painting lamp is fine if it is a daylight colour. Prop a white card or sheet of paper on the far side to bounce light into the shadows.",
+        "If the lamp gives hard shadows or glare, tape baking parchment or tracing paper over it, or move it back a little. Switch the other lights off, close the blinds and turn the flash off: mixed light gives odd colours and flash flattens your shading.",
+        "You do not need a lightbox. A desk lamp is already big next to a miniature, so its shadows are soft enough, and two lamps from the front often do better. If you want one anyway, a matt see-through plastic tub with one side cut away, with lamps shining on its walls from outside, makes a cheap one.",
+        "Keep the phone still with a cheap phone tripod or a stack of books, and use the self-timer so tapping the button does not shake it. Do not zoom in. Shoot from where it focuses sharply, about 30 cm away, and crop afterwards.",
+        "Tap the screen on the model's face to focus, then drag the brightness slider down until the highlights are not blown out and the contrast looks like the model in your hand. If the phone keeps shifting the colours on its own, a camera app with manual settings lets you fix focus, exposure and white balance.",
+        "Afterwards make only small changes to brightness, contrast and white balance, and compare the photo with the real model. Shoot each model the same way every time and your progress photos will line up."
+      ],
+      "related": [
+        "photographing-models",
+        "editing-model-photos",
+        "progress-photo-records",
+        "photo-check-for-mistakes"
+      ],
+      "keywords": [
+        "photos with my phone",
+        "phone photos of minis",
+        "photograph with just a phone",
+        "smartphone photos",
+        "no lightbox",
+        "diy lightbox",
+        "home made light box",
+        "one lamp photo",
+        "photo backdrop paper",
+        "phone photos too dark",
+        "blurry phone photos",
+        "cheap photo setup"
+      ]
+    },
+    {
+      "key": "storing-terrain",
+      "category": "tools-prep",
+      "title": "Storing terrain and scenery",
+      "summary": "Plan terrain so it packs flat into a few labelled boxes, and keep it cool, dry, dust free and out of the sun.",
+      "body": [
+        "Think about storage before you glue or paint. Many plastic buildings clip together firmly, so leave walls unglued where the joins are hidden and leave roofs and upper floors loose. They come apart flat, fit in one deep box and leave room for more later.",
+        "Test pack the box before painting. Measure the height left once a tray for small scatter pieces is in, and plan the big pieces to fit that space.",
+        "Cut foam hills from slabs that span the box, drawn out like a jigsaw so they nest together in layers. Small hills can sit on bigger ones. Extruded foam is tougher and cuts cleaner than bead foam, which crumbles.",
+        "Write labels on the underside of each piece, as labels on top get painted over. Number the layers and mark both sides of every join, so repacking after a game takes moments rather than a puzzle session.",
+        "Keep scenery somewhere cool and dry, away from sunny windows and out of the car: sun fades paint and can warp resin, and heat softens plastic. Closed boxes or a cupboard keep the dust off.",
+        "Scenery gets knocked about in every game, so varnish the pieces that are handled most. Delicate scatter is safer in a foam tray or on a steel sheet with magnets under it.",
+        "A board made of foam panels taped edge to edge, with the hinges folding opposite ways, folds flat like a zig-zag and stands against a wall."
+      ],
+      "related": [
+        "transporting-models",
+        "organising-the-hobby-space",
+        "protecting-painted-models",
+        "building-a-gaming-board"
+      ],
+      "keywords": [
+        "storing my terrain",
+        "storing terrain",
+        "terrain storage",
+        "scenery storage",
+        "where to keep terrain",
+        "pack terrain flat",
+        "terrain boxes",
+        "storing foam hills",
+        "terrain takes up space",
+        "keep terrain dust free",
+        "flat pack buildings",
+        "terrain packing"
+      ]
+    },
+    {
+      "key": "movement-trays",
+      "category": "tools-prep",
+      "title": "Making and basing movement trays",
+      "summary": "A thin steel plate with low side rails moves a whole block of rank-and-file models, based and painted to match their ground.",
+      "body": [
+        "A movement tray carries a whole block of rank-and-file models so the unit moves in one go and nothing gets knocked over. Ready-made ones exist, but they are quick to make.",
+        "Work out the block's footprint first: models wide by ranks deep, times the base size. Ten models on 20 mm bases, three ranks deep, is 200 by 60 mm. Add a little space so models are not jammed in, as some cannot sit base to base, and allow for the rails.",
+        "Thin steel sheet, under 1 mm, cuts with old scissors. Mark it in pencil, cut it out and file the corners. Steel also holds models with magnets under their bases, so they stay put when the tray is moved.",
+        "Cut balsa strips in pairs and super glue them along the edges, flush with the plate. Four sides stop models sliding off in transport; three leave the back open so models can come off easily.",
+        "Base the rails like the unit's bases so the tray looks like part of the ground. Brush wood glue on the outer faces only and sprinkle sand on, one side at a time.",
+        "Keep glue and sand off the floor of the tray, as a stray grain stops models sitting flat. Brush off anything that lands inside straight away and scrape loose grains out with a knife tip before the glue cures.",
+        "Spray the tray black, drybrush the rails up from dark brown to bone, add a few dots of glue with grass, and paint any rim in the same colour as the unit's base rims so the tray disappears under the models."
+      ],
+      "related": [
+        "consistent-bases",
+        "magnetising",
+        "transporting-models",
+        "painting-base-rims"
+      ],
+      "keywords": [
+        "movement tray",
+        "movement trays",
+        "make movement trays",
+        "diy movement tray",
+        "tray for rank and file",
+        "unit tray",
+        "regiment tray",
+        "tray for my unit",
+        "basing movement trays",
+        "magnetic movement tray",
+        "rank and flank",
+        "movement tray size"
+      ]
+    },
+    {
+      "key": "lights-in-models",
+      "category": "tools-prep",
+      "title": "Putting lights in models",
+      "summary": "Plan small LED lights before you build, run their wires through hollow parts to a battery hidden in the base, and paint the glow round them.",
+      "body": [
+        "Small LED lights can make lenses, screens, holograms, torches or a forge really shine. They take planning, so decide where each light and its wires will go before you glue the model together.",
+        "Most plastic figures are hollow inside the torso, so wires can run through it. Drill a hole just wide enough for the wires through the parts in between, such as along an arm to where the light sits, and feed the wires through before you glue.",
+        "The battery and any switch need a home: a larger, deeper base, around 32 mm or more for a single figure, or a hollow piece of scenery such as a barrel, crate or building that can hide the wiring.",
+        "Many hobby LEDs come with their wires ready to join. If yours do not, strip the ends and twist the matching wires together, and follow the kit's own instructions for which wire goes where.",
+        "Flickering LEDs suit torches, fires and forges, or faulty machines and warning lights. Pick the light colour to match the glow you plan to paint.",
+        "Before priming, wrap the LED in a little foil held on with tack so it stays clean. Afterwards, paint the glow onto the nearby surfaces as you would for a painted light, so the real light and the painted one agree."
+      ],
+      "related": [
+        "glowing-light-sources",
+        "glow-on-surroundings",
+        "fluorescent-paints",
+        "mounting-on-plinths"
+      ],
+      "keywords": [
+        "led lights in models",
+        "leds in miniatures",
+        "light up model",
+        "lights in my models",
+        "battery in base",
+        "wiring leds",
+        "glowing eyes led",
+        "flickering led",
+        "light up terrain",
+        "led torch effect",
+        "hidden wires",
+        "electronics in models"
+      ]
+    },
+    {
+      "key": "easiest-first-base",
+      "category": "tools-prep",
+      "title": "The easiest first base",
+      "summary": "Sand on white glue, a thin brown stain, a pale drybrush and a neat rim make a quick, good looking first base.",
+      "body": [
+        "Start simple. A base hides the plastic disc, ties a group together and makes a model look finished, and sand on glue does all of that with hardly any skill.",
+        "Brush white glue over the top of the base with an old brush and wipe the rim clean with a finger. Dip it in sand, or sprinkle fine gravel or dried garden dirt over it, and tap off the extra. Push in a small rock or two if you like.",
+        "Let it dry on its own, as a hair dryer can blow the grit off. Dribble thinned glue over any loose patches, or prime the model with the base on so the primer locks the sand down.",
+        "Flood very thin brown over the sand so it soaks in, let it dry, then drybrush pale bone or sand lightly over the top. Pick ground lighter than a dark model, or darker than a pale one.",
+        "Paint the rim neatly in black or dark brown, angling the brush so the line stops at the top edge. Once the rim is dry, add a tuft or two with tweezers.",
+        "Even quicker, a gritty texture paint spread on with an old brush gives grit and colour in one go; then wash, drybrush and paint the rim the same way. Basing tips has full steps for both as Sand and rocks, and Texture paint ground."
+      ],
+      "related": [
+        "designing-a-base",
+        "painting-base-rims",
+        "basing-glue-and-tools",
+        "cheap-basing-materials"
+      ],
+      "keywords": [
+        "easiest base",
+        "easy base for beginners",
+        "simple base",
+        "first base",
+        "quick basing",
+        "sand base",
+        "how do i base a model",
+        "basic basing",
+        "beginner basing",
+        "base for my first model",
+        "cheap easy base",
+        "what base should i do first"
+      ]
+    },
+    {
+      "key": "resin-print-problems",
+      "category": "problems",
+      "title": "Resin print problems: sticky, bulging or brittle",
+      "summary": "Most sticky, bulging or snapping resin prints come down to washing, curing, trapped resin or the resin itself.",
+      "body": [
+        "A print that still feels sticky or tacky after curing has uncured resin on its surface, and paint will not hold on it for long. Wash it again in strong isopropyl alcohol, or in water if the resin is a water-washable type. Swish or brush it so the liquid reaches every recess, then let it dry fully. Water left on it when it goes under the light dries as a white film.",
+        "Then give it more light. Strong midday sun takes roughly an hour; a curing lamp or station takes a few minutes, depending on the size of the print. Turn it so every side gets light, the underside of the base included. Air slows curing at the surface, so some painters cure prints sunk in a clear tub of water for a more even result.",
+        "A hollow print needs a drain hole. Without one, liquid resin stays trapped inside and never cures, and the air sealed in can expand under the curing light and push out a bulge. Hollowing in the slicer saves resin, but always add a drain hole so the liquid resin inside can run out.",
+        "Prints that snap at ankles, spear tips and antennae are partly down to the resin. Standard resins are on the brittle side, and some blends add softer ingredients so the plastic flexes a little before it breaks. Shake the bottle well before every print, as the ingredients settle and an unmixed bottle prints less reliably. Handle thin parts gently.",
+        "Glue printed resin with super glue; a slightly flexible type is less likely to snap at the joint. Pin heavy or long parts. A snapped spear or antenna is better replaced with metal rod, as in Replacing snapped spears, ankles and thin parts.",
+        "Received a print rather than printed it? It should arrive washed and cured. If it feels tacky, wear gloves, then wash and cure it as above if you have the kit, or ask the maker for a replacement rather than painting over it.",
+        "Wear nitrile gloves until a print is cured, and keep alcohol well away from heat, as it and its fumes catch fire easily. Never pour resin or used alcohol down the drain. Leave resin-soaked paper towels in the sun to harden before they go in the bin."
+      ],
+      "related": [
+        "preparing-3d-prints",
+        "resin-printing-setup",
+        "replacing-snapped-parts",
+        "disposing-of-paint-water"
+      ],
+      "keywords": [
+        "sticky resin print",
+        "tacky 3d print",
+        "resin print still sticky",
+        "under cured print",
+        "cure resin print",
+        "white residue on print",
+        "hollow print drain hole",
+        "resin print bulge",
+        "brittle resin print",
+        "print keeps snapping",
+        "resin print cracked",
+        "3d print problems"
+      ]
+    },
+    {
+      "key": "failed-resin-prints",
+      "category": "problems",
+      "title": "Failed resin prints and support trouble",
+      "summary": "When a print sticks to the vat film, loses its toes or comes out pitted, check supports, angle and exposure in turn.",
+      "body": [
+        "Part of the model left stuck to the vat film, or a loose blob in the resin, means that part was not held up. Usually an island, a part that starts printing before it joins the rest, had no support, or there were too few supports for the weight above them. Supports carry soft, part cured resin while it prints.",
+        "Clear the vat before trying again. Cured flakes from a failed print float in the resin and ruin the next one. Cure a thin skin across the film, using the tank cleaning mode or one blank layer, and peel it out with the bits stuck to it, using a plastic tool, never metal. Looking after a resin printer covers this.",
+        "Toes, fingertips and other small tips that print short were not supported. A tip that starts printing in mid air has nothing to build on, so add a support under each one. A short tip can be rebuilt with putty, but it is easier to get the supports right.",
+        "Pitting or rough marks across the back usually come from automatic supports on a model tipped back steeply. Tilting it back only about 10 degrees and adding supports by hand, stepping through the layers to catch every island, usually keeps that side clean. Put supports where the marks are easy to clean or will not show.",
+        "Support marks with a rough texture can be reduced with fewer struts and smaller contact points where the slicer allows. Run supports from the build plate rather than from one part of the model to another, so they come off cleanly.",
+        "Soft, blurry detail or prints that fail for no clear reason can be exposure. Every resin cures at its own speed, so run a small test print whenever you change resin and note the settings that work. Room temperature and a slack or scratched film affect prints too, so check those before blaming the settings.",
+        "Long prints carry more risk, so check the first layers when you can. Many printers let you pause to top up resin, and a print set at the wrong angle is better restarted early than left to fail.",
+        "Take supports off before the final cure. Clip them close to the model with flush cutters rather than pulling, so they do not tear out detail, then trim and sand the nubs as in Preparing 3D printed models."
+      ],
+      "related": [
+        "supporting-3d-prints",
+        "resin-printer-care",
+        "resin-printing-setup",
+        "preparing-3d-prints"
+      ],
+      "keywords": [
+        "print stuck to vat film",
+        "failed resin print",
+        "half my print stayed on the film",
+        "print fell off supports",
+        "missing toes on print",
+        "pitted 3d print",
+        "support marks",
+        "support settings",
+        "how many supports",
+        "blob in the vat",
+        "print failed",
+        "remove supports before curing"
+      ]
+    },
+    {
+      "key": "fixing-building-mistakes",
+      "category": "problems",
+      "title": "Fixing building mistakes on a kit",
+      "summary": "A part glued on wrong, snapped or lost is rarely the end of a model; most building slips can be undone or hidden.",
+      "body": [
+        "Glued a part on wrong with plastic glue? Act straight away. For a short while the joint is soft and the part can be pulled off or twisted into place. Scrape off the softened plastic before refitting it.",
+        "Once plastic glue has set, the parts are welded together. Cut along the seam with a fine razor saw or a sharp blade rather than pulling, file the faces flat and glue again. Expect to fill a small gap afterwards.",
+        "Superglue joints are brittle and can usually be snapped apart with a firm twist; a few hours in the freezer first helps. Acetone, such as nail varnish remover, softens superglue, but it can also soften plastic and lift paint, so use very little.",
+        "A clean snap, such as a thin sword breaking at its weak point, usually lines up well. Glue it with a tiny drop of superglue, hold it straight until it sets, then smooth the join with a fine emery board. Pin anything that carries weight.",
+        "Clipped off a small locating peg? Glue it back with a dab of superglue. It only has to keep the part lined up. Look closely before you clip: some nubs are pegs, not leftover frame.",
+        "Lost a part? Search on a hard floor rather than carpet, and next time build over a cloth so parts do not bounce away. A spare from another kit or a small piece of putty sculpting usually covers it, and makers often replace parts missing from a new kit.",
+        "Once the glue is fully set, gaps left by a crooked fix can be filled; see Filling gaps between parts."
+      ],
+      "related": [
+        "taking-apart-old-models",
+        "replacing-snapped-parts",
+        "fix-glue-marks-and-fingerprints",
+        "gap-filling"
+      ],
+      "keywords": [
+        "glued arm on backwards",
+        "glued the wrong part",
+        "undo plastic glue",
+        "glued it on wrong",
+        "snapped part while building",
+        "broke a piece",
+        "lost a part",
+        "clipped off a peg",
+        "fix assembly mistake",
+        "unglue a model",
+        "glued upside down",
+        "dropped part on carpet"
+      ]
+    },
+    {
+      "key": "hollow-backs-and-pin-marks",
+      "category": "problems",
+      "title": "Hollow backs and push-pin marks",
+      "summary": "Fill shallow round marks with brush-on filler, shave raised ones flat, and pack big hollows with foil before putty.",
+      "body": [
+        "Some figures have hollow backs under cloaks, open undersides on vehicles, or small round marks where the part was pushed out of its mould. Most only show from behind or below, so first decide whether anyone will see them.",
+        "Shallow round dips fill like any small gap. Brush a water-based filler in, then draw a damp brush gently outwards so it feathers to nothing. It shrinks as it dries, so expect two or three thin coats, and sand it dry once hard.",
+        "Raised round discs can be shaved flat with a sharp blade held almost flat to the surface, then smoothed with a fine sanding stick.",
+        "Deeper holes and hollow cloaks take two-part epoxy putty. A soft putty spreads thinly, grips well, shrinks little and sands well once cured, which takes roughly 5 to 6 hours at room temperature. Press it in, smooth it with a wet tool or rubber shaper and leave it overnight before sanding.",
+        "For a big hollow, pack crumpled kitchen foil into the space first, then skin it with a thin layer of putty. It saves putty. Sculpt folds into the surface while it is soft, or smooth it flat where it will not show.",
+        "On plastic kits, dissolved sprue filler also closes larger gaps and welds into the plastic, though it smells strongly and needs fresh air. On a vehicle's open underside, gluing a piece of plastic card or a spare part over the opening is quicker than filling it.",
+        "Check under a strong light after priming. Primer shows any dip you missed, and a second fill and a dab of primer on that spot fixes it."
+      ],
+      "related": [
+        "gap-filling",
+        "two-part-putty",
+        "sprue-goo",
+        "sculpting-cloth"
+      ],
+      "keywords": [
+        "hollow back",
+        "hollow cloak",
+        "push pin marks",
+        "ejector pin marks",
+        "round dent on model",
+        "hole in the back of a model",
+        "fill a hollow",
+        "hollow underside",
+        "pin marks",
+        "dimples on miniature",
+        "fill holes in a model",
+        "open back of cloak"
+      ]
+    },
+    {
+      "key": "spray-can-faults",
+      "category": "problems",
+      "title": "Spray can spitting, clogged or running low",
+      "summary": "Blobs, spatter and a weak spray usually come from a cold, badly shaken, clogged or nearly empty can.",
+      "body": [
+        "A can that spits blobs or drizzles instead of giving a fine mist is most often too cold. Keep cans indoors at room temperature. Warm a cold one in lukewarm water for a few minutes, never with direct heat, as an aerosol can burst.",
+        "Shake it for longer than feels needed, two minutes or more, and give it a few more shakes between passes. Paint that is not fully mixed spits and sprays unevenly.",
+        "To stop the nozzle clogging, turn the can upside down after each session and spray until only clear gas comes out. That empties the nozzle so paint does not dry inside it.",
+        "A nearly empty can loses pressure and leaves a speckled, grainy finish that looks blotchy under paint, even when it feels smooth. Start a big batch with a fresh can, and test any can on card or a spare part before it goes near a model.",
+        "Blobs also come from spraying too close or holding the button down too long in one spot. Start spraying beside the model, sweep across and release past it, using short bursts from roughly 20 to 30 cm away.",
+        "If blobs land on the model, leave them to dry rather than touching them, as wet primer smears. Small ones can be shaved or sanded flat once hard. A heavily spotted or grainy coat is better stripped and done again.",
+        "If a can will not behave on a cold day, prime by brush instead. Another way is to undercoat it dark by brush, then overbrush the main colour with a large old brush."
+      ],
+      "related": [
+        "fix-priming-problems",
+        "spray-priming",
+        "brush-priming",
+        "stripping-paint"
+      ],
+      "keywords": [
+        "spray can spitting",
+        "spray can blobs",
+        "rattle can sputtering",
+        "clogged spray nozzle",
+        "spray can running out",
+        "spray can low pressure",
+        "primer spitting",
+        "spray paint splatter",
+        "can not spraying properly",
+        "spray can in cold weather",
+        "speckled spray primer",
+        "aerosol spitting"
+      ]
+    },
+    {
+      "key": "fixing-chipped-paint",
+      "category": "problems",
+      "title": "Fixing paint chipped off in a game",
+      "summary": "Touch up a chip with the original colours in small dabs, break up its edge, reseal the patch, then stop it happening again.",
+      "body": [
+        "Chips after a game mostly come from fingers and from models knocking together in a box, so they turn up on raised edges, weapon tips, the base rim and anything that sticks out. Most are a quick fix if you still have the colours.",
+        "Brush off dust and loose flakes and check nothing is loose. Reglue or pin a broken part first. On plastic, a coat or two of paint covers a small bare spot without priming; on bare metal, dab on primer first.",
+        "Find out what you used. Your saved recipe, a note or a photo of the pots gives the colours and their order. If you have nothing written down, take the nearest match and test it under your lamp on the underside of the base, dry, before it goes near the model.",
+        "Rebuild the area in the same order as the first time, just smaller: the base colour in thin coats, a touch of wash if the area was washed, then the highlight. Plain base colour over a washed area leaves a bright patch, so mix in a little of the wash or a darker tone to match.",
+        "Do not trace round the chip. A hard, clean edge is what makes a repair show, so dab small uneven patches that cross the old edge on both sides. On a drybrushed or stippled area, a little texture over the patch helps it blend in.",
+        "A brushed touch-up over a sprayed colour can dry with a different sheen. Once it is dry, brush a little of the same varnish as the rest over the patch, spreading it a touch past the edges, so the shine matches.",
+        "On a battered or weathered model, an awkward chip can simply stay as battle damage. Paint a darker chip colour into it with a fine light line along its lower edge, and it reads as wear.",
+        "To stop it happening again, varnish gaming models, with a gloss coat under the matt for extra toughness. Glue magnets under the bases and carry the models on a steel sheet so they cannot rub, line case walls with soft fabric, and pick models up by the base."
+      ],
+      "related": [
+        "touching-up-old-models",
+        "matching-a-lost-colour",
+        "fix-peeling-paint",
+        "protecting-painted-models"
+      ],
+      "keywords": [
+        "paint chipped off",
+        "chipped paint fix",
+        "repair chipped model",
+        "touch up chips",
+        "paint rubbed off edges",
+        "damaged paint after a game",
+        "fix scratched paint",
+        "paint chipping off model",
+        "touch up after gaming",
+        "chip repair",
+        "paint came off",
+        "worn paint repair"
+      ]
+    },
+    {
+      "key": "fix-blotchy-one-coat-paints",
+      "category": "problems",
+      "title": "One-coat paints dried blotchy or patchy",
+      "summary": "Blotches, rings and streaks in one-coat paints come from smooth panels, overloading and brushing back in, and most can be rescued.",
+      "body": [
+        "These paints flow like a wash and dry from the edges inwards, so on big smooth panels, cloaks and rounded legs they gather unevenly and dry with dark patches and rings. Fur, scales and mail hide it. Rough clipper marks and a dusty spray finish give them more places to pool, so smooth upward faces first.",
+        "Load from a palette, not the pot, and with less than you think. Blot stray water off the brush first, as it thins the paint unevenly. Put a little extra in one spot, use it as a reservoir to spread across the panel, and run just past the panel edge so you stop at a natural break, not in the middle.",
+        "Then leave it. It levels out as it dries, and scrubbing or going back into a half-dry patch tears its skin and leaves streaks a second coat will not hide. Keep the model at the same angle until it is dry so the paint runs one way only. On a blade, draw one stroke down each flat face and let it dry.",
+        "Mop pools straight away by touching a clean, damp brush to them. A medium brush soaks up far more than a tiny one. Check low corners and the undersides of overhangs. If the paint has started to dry before you finish, stop and let it dry fully rather than chasing it.",
+        "If a colour always streaks, thin it with its clear medium, roughly two parts paint to one of medium, or half and half, and give two thin coats instead of one heavy one. A drop of water is fine, but heavier thinning with water breaks the colour up on smooth surfaces. In hot weather a little more medium gives you longer to work.",
+        "On large flat areas, base coat a normal paint of a similar colour first. The one-coat paint goes on far more evenly over it. Or keep one-coat paints for the textured and detailed parts and paint the big smooth panels with opaque paint and painted highlights.",
+        "Once fully dry, a second coat put on the same way, panel by panel and in the reverse order to the first, evens out mild patches. A light drybrush of a brighter version of the colour hides blotches and highlights the edges in one go. A thin coat of matt or satin varnish at the end evens out a patchy sheen.",
+        "If a smooth panel is badly blotchy, cover it in a few thin coats of a matching opaque colour and highlight it as normal, or paint it back in the primer colour and redo that panel. A blotchy dark panel can take several thin coats of plain black, an edge highlight and a few small scratches."
+      ],
+      "related": [
+        "applying-contrast-paints",
+        "contrast-medium",
+        "contrast-over-coloured-base",
+        "fix-wash-tide-marks"
+      ],
+      "keywords": [
+        "contrast paint blotchy",
+        "contrast went patchy",
+        "speed paint blotchy",
+        "one coat paint streaky",
+        "patchy speedpaint",
+        "contrast tide marks",
+        "contrast rings on armour",
+        "contrast streaks on flat panels",
+        "fix blotchy contrast",
+        "contrast dried uneven",
+        "splotchy contrast paint",
+        "contrast pooled and dried"
+      ]
+    },
+    {
+      "key": "fix-peeling-paint",
+      "category": "problems",
+      "title": "Paint peeling, flaking or rubbing off",
+      "summary": "Paint that lifts, flakes or rubs off usually comes from grease, missing primer, rushing or handling, so fix the cause, then patch it.",
+      "body": [
+        "Notice when it comes off. Paint that beads or flakes in sheets points to grease or bare plastic under it. Paint that lifts as you brush the next coat was not dry. Wear on edges after games is handling. Paint that comes away with tape had not gripped what was under it.",
+        "New models carry release agent from the mould, and fingers add skin oil. Paint and primer bead up or flake off both. Scrub parts in warm water with a drop of washing-up liquid and an old toothbrush, rinse, and let them dry fully before priming. Resin and board-game figures often carry the most.",
+        "Prime everything. Paint on bare plastic or metal grips poorly, and fresh paint on bare plastic rubs off very easily even once it looks dry, though it toughens over a few days. Let primer dry fully before painting, as painting too soon can pull the primer off with it. Metal chips far more easily than plastic, so varnish metal figures.",
+        "Fresh paint is soft. Let each coat dry before the next, as brushing over a half-dry layer drags it up, and thick single coats can crack and peel as they dry. Some washes skin over and peel if touched half dry, so work them while fully wet and then leave them alone. If glazes start lifting the layers below, thin them with plain water rather than flow improver.",
+        "Hold the model on a painting handle or by its base so fingers never rub the paint. One-coat paints used straight from the pot and metallic edges rub off fastest. If you have to hold a finished area while you work, brush a coat of varnish over it first. Varnish gaming models once finished, base included.",
+        "For masking, use low-tack hobby tape, not household tape, and only on paint that has cured over sound primer. Test a hidden spot first. A thin coat of varnish under the tape helps it peel cleanly. Peel slowly, folding the tape back at a low angle.",
+        "To repair a small patch, let it dry, smooth any lifted edge with a fine sanding stick or a light knife scrape, dab brush-on primer onto bare spots, then rebuild the colours in thin coats; Fixing paint chipped off in a game covers matching the colours and hiding the edge. If paint flakes all over, strip it, wash the model well and start again.",
+        "If paint came off under oils or enamels, the brush usually did it: scrubbing, too much spirit or paint that was still fresh. Gloss varnish the rest of the model, switch to a softer brush, and hide the damaged spots later as chips."
+      ],
+      "related": [
+        "prep-check-before-priming",
+        "fix-priming-problems",
+        "fixing-chipped-paint",
+        "masking-tape-stripes"
+      ],
+      "keywords": [
+        "paint peeling off",
+        "paint flaking off",
+        "paint rubbing off",
+        "paint coming off model",
+        "paint lifting",
+        "tape pulled paint off",
+        "primer peeling",
+        "paint chipping off",
+        "paint comes off when i hold it",
+        "paint scratches off easily",
+        "paint lifted with masking tape",
+        "paint peeling on metal model"
+      ]
+    },
+    {
+      "key": "fix-dust-and-hairs-in-paint",
+      "category": "problems",
+      "title": "Dust, hairs and fluff stuck in paint",
+      "summary": "Lift a hair from wet paint at once, pick or sand it out once dry, and dust the model off before primer, varnish and washes.",
+      "body": [
+        "Most specks come from dusty rinse water, the brush itself, tissue or paper towel, clothes and pets, or a model left out between sessions. Primer and varnish fix anything sitting on the surface in place for good, and a later wash collects round it and makes it stand out more.",
+        "Change the rinse water when dust or fluff floats in it, especially before smooth base coats, glazes and stippling. Wipe brushes on a lint-free cloth or an old cotton shirt rather than tissue or toilet roll. Flick a dry brush under a bright light to shake out loose fluff before using it, and keep fuzzy jumpers away from the desk.",
+        "Dust the model with a soft dry brush or a puff of air just before priming, varnishing or an all-over wash. Do not varnish in a dusty room. Keep a model that is drying covered, and put the lid on the wet palette during breaks.",
+        "If a hair lands in wet paint, lift it out at once with the tip of a clean brush or a toothpick, then smooth the paint while it is still wet.",
+        "Once the paint is dry, pick the speck out with the point of a sharp blade or a toothpick, using light pressure, and touch the spot up with the same colour. If it left a ridge, smooth it first with a fine sanding stick, or a scrap of fine sandpaper glued to a toothpick for tight spots.",
+        "Fluff caught in primer: let it dry, scrape or sand it off, and dab a little brush-on primer over the spot. Primer that feels fuzzy all over is a different problem, from spraying too far away.",
+        "A hair sealed under varnish will not lift out cleanly. Either live with it, or let the varnish cure, gently scrape or sand the speck away, touch up the paint and give just that spot a thin coat of varnish again."
+      ],
+      "related": [
+        "rinse-water-habits",
+        "varnishing",
+        "fix-priming-problems",
+        "protecting-painted-models"
+      ],
+      "keywords": [
+        "hair in paint",
+        "hairs stuck in paint",
+        "dust in paint",
+        "dust in varnish",
+        "fluff in paint",
+        "fibres in primer",
+        "cat hair in paint",
+        "dog hair on model",
+        "lint on model",
+        "brush hair stuck in paint",
+        "bits stuck in my paint",
+        "hair stuck in varnish"
+      ]
+    },
+    {
+      "key": "fix-basing-problems",
+      "category": "problems",
+      "title": "Basing problems: grass, tufts, sand and paste",
+      "summary": "Grass that lies flat or falls off, loose tufts, white glue bloom, shedding sand and cracked paste each have a simple cause and fix.",
+      "body": [
+        "Grass fibres need wet glue and a lift to stand up. Dab glue in small patches, press or sprinkle the fibres on while it is wet, then turn the base over and flick the underside hard, or hold a charged balloon just above it. Work a few patches at a time, as glue spread wide loses its grip before it looks dry.",
+        "Let the glue dry fully before handling, then tip the base over and brush off the loose strands. A coat of varnish over the grass afterwards stiffens it and holds it in place, and lets you paint or drybrush it to match the base.",
+        "Self-adhesive tufts hold far better with a touch of glue under them, especially on uneven ground. Pull the loose strands off the edge of each tuft first, as they fall off anyway. On models that get handled, gel super glue holds tufts better than white glue, which lets them loosen over time.",
+        "Super glue can leave a white frosty bloom on the ground and rim round tufts, and it is hard to paint over. Use a tiny amount from a pin rather than the nozzle, keep it away from the rim, and use white glue for loose scatter. Hide a bloom that has already formed under a tuft or a pinch of scatter.",
+        "Sand that rubs off was held by too little glue. Once dry, tap off the loose grains, then lock the rest in before painting: drip thinned white glue or a stronger scenic glue onto it from the brush without touching the surface, or mist it with varnish, and leave it overnight. Dab paint on rather than brushing it, so you do not drag grains loose.",
+        "Heavy drybrushing scrubs texture loose. Seal sand, grit and dried texture paste with gloss varnish or thinned glue before you drybrush, and fix any skulls or rocks pressed into paste with a dot of glue.",
+        "Texture paste and thick crackle split as they dry, and the thicker the layer, the bigger the cracks. For smooth ground, spread it thinner and in two layers, letting each dry. Let paste and glued sand dry naturally, as a hair dryer can skin the paste or crack the glue layer. Porous paste soaks up washes unevenly, so seal it first.",
+        "Wipe sand and paste off the rim with a damp finger before they dry. Paint the rim after the texture but before grass and tufts, so nothing sticks in wet rim paint."
+      ],
+      "related": [
+        "basing-glue-and-tools",
+        "painting-base-rims",
+        "crackle-paint-problems",
+        "designing-a-base"
+      ],
+      "keywords": [
+        "static grass falling off",
+        "grass wont stand up",
+        "tufts falling off",
+        "tufts keep coming off",
+        "sand falling off base",
+        "sand rubbing off base",
+        "white marks around tufts",
+        "super glue white on base",
+        "texture paste cracking",
+        "flock coming off",
+        "grass lying flat",
+        "basing problems"
+      ]
+    },
+    {
+      "key": "fix-metallic-glitter-in-paint",
+      "category": "problems",
+      "title": "Metallic glitter in other colours",
+      "summary": "Find where the flakes came from, cover specks on dry paint with the colour, and layer back over glitter that dried in a wash.",
+      "body": [
+        "Sparkles in a cloak, in skin or in a wash are metal flakes carried over in rinse water, in a brush, on the palette or from a metal drybrush that strayed. Find which it was before you fix anything, or the glitter comes straight back.",
+        "Change the rinse water, or keep a separate pot just for metallics, and rinse and wipe the brush well before going back to other colours. Use a clean part of the palette, or keep one area just for metals.",
+        "On dry paint, cover the specks with the original colour in one or two thin coats; flakes paint over like anything else. A few big specks can be rubbed off first with the chewed, damp tip of a toothpick, then touched up.",
+        "Glitter that dried into a wash will not wash out. Layer the base colour back over the raised areas, as you would after any wash, and redo the recesses with fresh water and a clean brush if they need it. Flakes left lying in recesses after metalwork can be brushed out with a clean dry brush before the wash goes on.",
+        "Paint or drybrush the metal parts before tidying the colours next to them, or leave metals until last, so any stray flakes get covered by the next step."
+      ],
+      "related": [
+        "metallic-paint-handling",
+        "rinse-water-habits",
+        "fix-dry-paint-mistakes",
+        "fix-wash-tide-marks"
+      ],
+      "keywords": [
+        "silver glitter in red paint",
+        "glitter in my paint",
+        "metallic specks in paint",
+        "sparkles in my wash",
+        "glitter in cloak",
+        "metal flakes in other colours",
+        "sparkly bits in paint",
+        "gold flecks in paint",
+        "remove glitter from paint",
+        "silver specks on model",
+        "glittery wash",
+        "metallic contamination"
+      ]
+    },
+    {
+      "key": "fix-glue-marks-and-fingerprints",
+      "category": "problems",
+      "title": "Glue marks, melted detail and fingerprints",
+      "summary": "Plastic glue softens plastic and holds prints, so let it harden, then scrape and sand, and keep glue and fingers off joins and paint.",
+      "body": [
+        "Plastic glue works by melting the surface. Touch the join while it is soft and it keeps your fingerprint; flood it and nearby detail softens into blurry brush marks. Keep thumbs off the join, put glue only on the contact faces, and on tiny contact points use super glue or a bigger joint.",
+        "To fix a print or smear, leave it to harden fully, ideally overnight, as soft plastic only smears more. Then scrape the mark level with the edge of a sharp blade and sand it smooth with a fine sanding stick, or a scrap of fine paper glued to a toothpick for tight spots.",
+        "A thin brush of extra thin plastic glue over a scuffed or sanded area melts loose fuzz flat and levels small scratches. Use very little and let it dry fully before priming.",
+        "Detail that has melted cannot be brought back. Sand it smooth so it looks deliberate, rebuild it with a little putty, or cover it with a spare part. On metal or rough surfaces, a dab of crackle or rust texture hides glue smears and fingerprints.",
+        "Super glue flooded onto a join can fog nearby detail white, and its fumes cloud clear parts. Put a tiny amount on one surface only, from a pin, and use a clear-parts glue or white glue on canopies. On solid parts a thin film of residue disappears under primer.",
+        "Primer shows up glue blobs and sanding marks you missed. Scrape and sand them, then brush primer over just that spot.",
+        "Never use plastic glue on painted parts, as it melts the paint too. Scrape the paint off both contact points and join them with a small drop of super glue.",
+        "Prints in paint come from oily hands on matt paint, or from handling paint or varnish too soon. Wiping one with a damp sponge can strip the paint, even a day later, so repaint the spot instead. Use a handle or thin disposable gloves on big models, and leave brush-on varnish 12 to 24 hours before handling."
+      ],
+      "related": [
+        "choosing-glue",
+        "fixing-building-mistakes",
+        "gluing-painted-parts",
+        "superglue-problems"
+      ],
+      "keywords": [
+        "fingerprint in plastic glue",
+        "plastic glue marks",
+        "melted plastic detail",
+        "glue smear on model",
+        "glue melted the model",
+        "superglue fogging",
+        "white marks from super glue",
+        "fingerprints on paint",
+        "glue blobs after priming",
+        "too much plastic glue",
+        "thumbprint in glue",
+        "superglue white and foggy"
+      ]
+    },
+    {
+      "key": "fix-flat-or-muddy-model",
+      "category": "problems",
+      "title": "Model looks flat, muddy or boring",
+      "summary": "Work out whether it lacks contrast, has gone muddy, has no focal point or has a dull finish, then follow the guide for that one.",
+      "body": [
+        "Almost every model looks rough halfway through, so finish the main steps before judging. Then take a close phone photo and also look from arm's length. Spotting mistakes with a phone photo covers this, and a photo shows whether the model reads as one grey mass.",
+        "Flat means the lights and darks are too close together. Small models need deeper shadows and brighter highlights than feel natural, and fast army painting often stops short of them. See Pushing contrast further, Where highlights go and Edge highlighting.",
+        "Muddy or murky usually means a heavy dark wash over everything at the end, black or brown shading on a bright colour, or a dark undercoat under pale paint. Shade each colour with its own family, layer the base colour back over the raised areas, and start brighter than you want to finish. See Keeping colours bright and saturated and Shading without black.",
+        "Boring often means one colour everywhere, or only metal and leather with every material painted the same way. One small, strong accent colour near the face, and different highlights for cloth, metal and skin, give the eye somewhere to land. See Adding an accent colour and Creating a focal point.",
+        "If it looked right before varnish and dull after, the matt coat went on too thick or flattened the colours; see Varnish changing your colours. A patchwork of shiny and matt areas also looks dull, and one thin coat of varnish over everything evens it out.",
+        "If the highlights look chalky or dusty, often after heavy drybrushing, a thin glaze of the base colour over them brings the colour back. See Fixing chalky highlights.",
+        "Change one thing at a time, then look again. When you dislike your paint job covers deciding what to fix before you reach for the paint stripper."
+      ],
+      "related": [
+        "pushing-contrast",
+        "keeping-colours-bright",
+        "accent-colour",
+        "fix-a-paint-job-you-hate"
+      ],
+      "keywords": [
+        "model looks flat",
+        "model looks muddy",
+        "model looks boring",
+        "model looks dull",
+        "mini looks murky",
+        "paint job looks flat",
+        "colours look dirty",
+        "not enough contrast",
+        "model looks bland",
+        "why does my model look bad",
+        "everything looks the same colour",
+        "lifeless paint job"
+      ]
+    }
+  ]
+}

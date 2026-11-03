@@ -143,11 +143,11 @@
       "key": "airbrush-priming",
       "category": "tools-prep",
       "title": "Priming with an airbrush",
-      "summary": "Spray thinned primer in short, light passes at around 18 to 20 psi, building two thin satin coats.",
+      "summary": "Spray thinned primer in short, light passes at around 20 to 30 psi, building two thin satin coats.",
       "body": [
         "Use a primer made for the airbrush and a nozzle of 0.3 mm or larger; smaller ones clog with primer. Wash the models first to remove release agent, and fix them in a holder so both hands are free. Humidity changes how each primer behaves, so it is worth trying a few.",
         "Always put a few drops of thinner in the cup before the primer, so it wets the nozzle and primer cannot dry there first. Mix about three or four drops of primer to one of thinner. To check, drag a little up the cup wall: a droplet that forms and slowly slides down is right; one that runs is too thin.",
-        "Spray in short, controlled bursts at around 18 to 20 psi, test on paper towel first, and sweep across the model without pausing on one spot. Turn it as you go so every side and the underside get covered. Do not pull the trigger fully back and hose it. Large models can take thicker primer and more pressure.",
+        "Spray in short, controlled bursts at around 20 to 30 psi, test on paper towel first, and sweep across the model without pausing on one spot. Turn it as you go so every side and the underside get covered. Do not pull the trigger fully back and hose it. Large models can take thicker primer and more pressure.",
         "The surface should look satin as it goes on. If it looks wet and glossy you are flooding the detail: stop, let it dry, and go lighter.",
         "Apply two thin coats, letting the first dry for a few minutes, and let it dry fully, ideally for an hour, before painting. Over black, white primer looks grey at first and dries duller than it looks wet. White primer is chalky and clogs more, so a slightly higher pressure, around 35 to 40 psi, helps.",
         "When priming a batch, rinse the cup every few minutes. Primer drying round the rim makes flakes that clog the nozzle. Clean with a few extra drops of isopropyl alcohol.",
@@ -219,7 +219,7 @@
         "Learn on a low cost airbrush if you like: you will make cleaning mistakes, and an entry level one sprays well. Others prefer a better one from the start, as a poor one causes constant trouble. Either way, pick one whose spare needles, nozzles and seals are easy to get. Spend the extra on the compressor.",
         "The compressor must have a pressure regulator and a moisture trap. A tank lets the motor fill it and rest, so it runs quieter, steadier and lasts longer. Tiny battery or USB units and cans of compressed air cannot hold steady pressure and spatter. Check the hose thread fits your airbrush; adapters are cheap.",
         "Set pressure on the regulator. About 1.5 to 2 bar, roughly 20 to 30 psi, suits most work. Go to 15 to 20 for close detail and glazes, and up to about 40 for priming and big areas. Quick check: spray air at a fingertip; a small dimple is fine, a flattened fingertip is too much. Empty the water trap now and then.",
-        "For less noise, stand the compressor on a folded towel or foam, away from walls and desk legs. Never wrap it up, as it will overheat. Switch tank compressors off at the wall when done.",
+        "Much compressor noise is vibration, so stand it on a folded towel or foam, away from walls; under the desk is quieter than on it. Never wrap it up, as it will overheat. A tank lets the motor rest between fills, and tankless units can overheat after about ten minutes of running. Switch off at the wall any compressor without an auto shut-off, and big tank ones too, or they may refill overnight.",
         "Keep nearby: airbrush thinner, airbrush cleaner, a spray bottle of water, a large cup for waste and a cleaning pot to rest the airbrush in. A quick release connector and thread seal tape for leaky joints help. Keep the needle cap on, as a bent tip ruins the spray.",
         "Before a session, clear dust from the area, put down something absorbent to spray over, and wear a respirator rated for paint particles."
       ],
@@ -291,7 +291,7 @@
         "Spread texture paste with a small spatula instead of a brush. It loads more easily and spares your brushes. Two different pastes give more believable ground than one.",
         "Lock texture in before heavy drybrushing: mist with watered PVA, or brush gloss varnish over dry sand and paste, then prime. If sand still rubs off, drip a stronger glue onto it from the brush without touching the surface. Finish with matt varnish to hide the glue's sheen.",
         "Base and paint the model separately where you can. If you must prime a base with a painted model already on it, wrap the model in kitchen foil and brush the primer on carefully.",
-        "Do not dry PVA and sand with a hair dryer; the heat can crack the sand or warp the model. Air drying clay shrinks as it cures and can curl off a thin base: use a thick base, give it a week, and fill any gaps with putty."
+        "Do not dry PVA and sand with a hair dryer; the heat can crack the glue layer, loosening the sand, or warp the model. Air drying clay shrinks as it cures and can curl off a thin base: use a thick base, give it a week, and fill any gaps with putty."
       ],
       "related": [
         "designing-a-base",
@@ -497,7 +497,7 @@
         "The point matters more than the size. A large brush with a good tip can still paint fine detail, so judge a brush by its tip, not its number.",
         "A bigger brush has a larger belly, so it holds more paint, dries on the tip less and sends you back to the palette less often. This helps most with washes and glazes.",
         "One smooth stroke from a larger brush covers a cloak panel that would take a dozen dabs with a small one. Fewer strokes mean less chance of dragging half dry paint. On big flat panels, such as vehicle hulls, a wide flat brush is faster still.",
-        "As a guide: size 2 or 3 for a normal infantry figure, 3 or 4 for larger figures, and 4 to 6 for big monsters. Sizes vary between makers, so treat the numbers loosely. Only drop to a small brush to reach into tight corners.",
+        "As a guide: size 1 to 3 for a normal infantry figure, 3 or 4 for larger figures, and 4 to 6 for big monsters. Sizes vary between makers, so treat the numbers loosely. Only drop to a small brush to reach into tight corners.",
         "Small brushes run dry quickly. On large areas the paint dries before you finish, and blending turns into patchy layering.",
         "If control feels poor, the brush is usually overloaded rather than too big. Wipe the excess on the palette edge or a tissue before touching the model. Use the side of the bristles for broad strokes and blending, and the very tip for lines and detail.",
         "For eyes, a size 0 is a good middle ground: big enough not to dry out, small enough not to flood the socket. With anything tinier, go straight from palette to model without pausing.",
@@ -644,7 +644,7 @@
         "Dry fit parts before gluing. Push fit pegs and lugs often hold parts apart. Trim about a third off a peg or nick the rim of its hole, or cut the lugs off if you are gluing anyway, so the halves meet flush.",
         "Use plastic glue sparingly on one side, press together and hold for ten seconds or so. Too much squeezes out and blurs detail. Give each joint a minute before adding the next part. Once set, scrape any squeezed-out glue off a seam with the knife and fill a gap with a little putty.",
         "Check which base the model needs, then glue the feet down with a small dab. Give the finished model a last look for mould lines and gaps.",
-        "On very small kits a few gaps and tabs are hard to avoid, and they are rarely noticed once painted. Hold tiny models on a stick or holder rather than in your fingers."
+        "On very small kits a few gaps and tabs are hard to avoid, and they are rarely noticed once painted. Hold tiny models on a stick or holder rather than in your fingers. If a part goes on wrong, snaps or goes missing, see Fixing building mistakes on a kit."
       ],
       "related": [
         "clippers-and-clipping",
@@ -852,7 +852,7 @@
         "Start with the colours your current models need and add a paint only when a project calls for it. A premixed pot is worth having for a colour you would otherwise mix every time. Two sets that do the same job rarely solve a painting problem.",
         "Pigment strength matters most. Strongly pigmented paint covers in fewer coats, so the finish stays smooth instead of muddy. Cheap craft paint is made for paper: on models it covers and grips poorly, dries slowly and smears when handled.",
         "Dropper bottles are easy to dose and often come slightly thinned. Pots are fine but dry out faster and need thinning. Plain tap water is all you need to thin either at first; mediums can wait.",
-        "Very matt paints let you decide where light falls but look less rich and turn chalky if highlights step up too fast. Satin paints look deeper and are more forgiving. A good habit is satin for the early layers and matt for the final highlights.",
+        "Very matt paints look less rich and turn chalky if highlights step up too fast; satin paints look deeper and are more forgiving, so satin suits early layers and matt the final highlights. To tell which a paint is, let a swatch dry and tilt it under a lamp. Sheen varies even within one range: pale paints with lots of white are usually the most matt, and inks and many washes dry satin or gloss.",
         "Whites, blacks and metallics vary most between ranges. A white that covers black in one thin coat is worth seeking out. Metallics made with real metal powder look more like metal than mica ones. A light and a dark neutral steel, a warm gold and a copper cover most metals.",
         "Thick, tube style artist acrylics are much denser than hobby paint. Use them either spread thick like butter or thinned right down to glazes. At layer thickness they go streaky.",
         "Transparent one-coat paints, inks, glaze medium and fluorescents are useful additions later; test anything new on a spare part first. Even so, a good brush with a sharp point makes more difference to your results than which paint range you use."
@@ -960,7 +960,7 @@
         "Avoid super glue here. Its fumes leave a white frost inside clear plastic that cannot be cleaned off. Plastic glue melts paint and clear plastic and barely holds canopies anyway.",
         "Paint on clear plastic often beads, pulls away or looks streaky. For canopy frames, lightly scuff the frame lines with a fine abrasive, or brush on a thinned coat and wipe it off with paper towel or a sponge.",
         "The faint film left behind gives the next coat something to grip. Then paint the frame normally, building up thin coats.",
-        "Do not varnish clear parts; varnish, spray most of all, turns them cloudy. If a canopy has to be on while you varnish, mask the clear areas with tape first.",
+        "Do not varnish clear canopies and windows you want to see through; varnish, spray most of all, turns them cloudy. If a canopy has to be on while you varnish, mask the clear areas with tape first.",
         "For clear effect parts such as flames, crystals and energy, a light coat of satin varnish works as a primer without clouding them. Paint them with inks, washes and thin glazes so light still passes through, and fix them with a tiny dot of glue at the contact point."
       ],
       "related": [
@@ -1517,7 +1517,7 @@
         "On a dry palette the only water in the paint is what you added, so mixes behave the same each session. You see how the paint acts from the pot and after each drop of water, which teaches you how much the brush picks up and lets go.",
         "It suits inks, glaze mediums, oils and oil washes, which need a solid dry surface, and fine detail where you want exact thickness. Two-brush blending, wet blending and drybrushing all work from it too.",
         "The catch is drying time. Plan your colours, put out small amounts and work briskly. A drop of drying retarder keeps a mix usable for longer.",
-        "A wet palette keeps paint open for hours and suits long glazing sessions, but it slowly thins the paint and needs fresh paper and mould control. Many painters keep one of each.",
+        "A wet palette keeps paint open for hours and suits long glazing sessions, but paint can slowly take up water if the sponge is too wet, and it needs fresh paper and mould control. Many painters keep one of each.",
         "To clean glazed ceramic, soak it in water and dried acrylic slides off. Keep it covered against dust and start each session on a clean surface."
       ],
       "related": [
@@ -2463,7 +2463,7 @@
         "Too little wash dries before it spreads and leaves blotches. Load enough to cover the area quickly, start away from tricky details and keep moving. Then leave it: brushing back into half-dry wash is what leaves hard rings, and brushing over it before it is dry lifts paint.",
         "On large flat parts, thin the wash with medium, or add a drop of flow improver or washing-up liquid, and put it on in two thin coats. Lay the part flat and keep it still while it dries, one side at a time. On a slick metallic primer, a heavy flood slides off.",
         "Where wash ends next to unwashed paint, pull the pigment towards the area that should be shaded. Feathering the edge like this stops hard rings.",
-        "Ready-made washes and one-coat paints can ring on smooth rounded panels. A normal paint thinned with plenty of water dries as an even tint instead, and you can stack coats for depth.",
+        "Ready-made washes and one-coat paints can ring on smooth rounded panels. A normal paint thinned with plenty of water dries as an even tint instead, as long as you load very little and do not let it pool, and you can stack coats for depth. If it still rings, add a little medium.",
         "Give a heavy wash about 45 minutes to dry. Then layer the base colour back over raised areas, avoiding recesses. If the whole model was washed, tint the base slightly darker, with a little wash or a touch of mid brown, so the patch blends in. On textured areas a drybrush of the base fades blotches fast. Re-washing will not match.",
         "If coloured wash pooled oddly where two materials meet, run a thin dark brown or grey along that seam instead. Wash heavily clogging fine detail can be lifted with a little paint stripper on just that spot, then repainted."
       ],
@@ -2936,7 +2936,7 @@
       "summary": "Hide a transfer's shiny film with gloss under it and thin matt varnish over it, then shade and chip it so it looks painted on.",
       "body": [
         "Put transfers on early, before washes and weathering, so they get the same treatment as the surface around them. Lay them on gloss varnish so the film sits flat, and use a thin coat of softening solution so they mould to curves. Soaking them makes them fragile and they tear.",
-        "Let the transfer dry completely; a hair dryer can blow it out of place. Then brush thinned matt varnish or matt medium over it and its edges in two or three thin coats with a soft brush, blotting any that pools. The varnish settles around the film edge and hides it. A thick coat can dry milky.",
+        "Let the transfer dry completely; a hair dryer can blow it out of place. Then brush a thin coat of gloss or satin over it, and once that is dry, thinned matt varnish or matt medium over it and its edges in two or three thin coats with a soft brush, blotting any that pools. The varnish settles around the film edge and hides it. A thick coat can dry milky.",
         "Varnish the whole panel in the same sheen so it matches. Without this, later washes gather along the raised film edge and outline the transfer. When washing, blot off any liquid that collects around the edge.",
         "Glaze very thin black or shade over the lower part so it darkens with the panel, and add a few fine chips and a little grime across it, painted on or scratched with a needle tip. They also hide any wrinkles.",
         "Paint the area under a dark transfer lighter so the design stands out. Thin transfers take on the colour beneath, so one laid across two colours looks patchy; once set, paint over its coloured part with a matching colour.",
@@ -3153,7 +3153,7 @@
         "Trim it so it sits inside the edge of the base, and push it to one side to leave room for the model.",
         "Choose a hidden contact point on the model, such as the back of a pack or a trailing foot, to join to the terrain. Scrape the joint flush.",
         "Pin the joint with wire for strength, as the model will be held at an awkward angle.",
-        "For a ghostly figure with no legs, drill a long brass rod into the body to act as a handle and later as the support. Bulk out the lower body with putty and cover it with chain or trailing cloth. Wear eye protection if grinding metal."
+        "For a ghostly figure with no legs, drill a long brass rod into the body to act as a handle and later as the support. Bulk out the lower body with putty and cover it with chain or trailing cloth."
       ],
       "related": [
         "pinning-parts",
@@ -3249,13 +3249,13 @@
       "key": "keeping-white-clean",
       "category": "problems",
       "title": "Keeping white clean",
-      "summary": "White shows every trace of another colour, so use clean water, fresh paint and paint white areas last.",
+      "summary": "White shows every trace of another colour, so use clean water and fresh paint, and plan when the white goes on.",
       "body": [
         "Even a trace of another colour visibly tints white. Red in the rinse water turns it pink.",
         "Change to clean water before painting white, or keep a separate rinse pot for it, as you would for metallics.",
         "Red pigment lingers in bristles even after rinsing. Rinse the brush, dip it in a little black paint and rinse again. Any tint left is grey, which hurts white far less than pink.",
         "If the white on the palette gets tinted, replace it. Clean the mixing area well; fibres and dried flecks show on pale surfaces.",
-        "Paint white areas last where you can, since mistakes on white are hard to fix. Shade the white first with a light grey wash, then wash dark details next to it with a small brush and very little wash so nothing splashes.",
+        "If you wash the whole model, add clean white markings after the wash; otherwise paint white before the darker colours next to it, which then cover any slips. Shade the white first with a light grey wash, then wash dark details next to it with a small brush and very little wash so nothing splashes.",
         "Keep a high-coverage off-white for corrections. One coat usually hides a dark spill, where a weak white needs three or four thin coats, each left to dry. Over red, use the same off-white and patient thin coats; the first will look pink and see-through.",
         "Avoid wet blending into white. Darker colours overwhelm it easily.",
         "Seal finished white areas with varnish. Handling rubs paint off, and marks show badly on white."
@@ -3464,7 +3464,7 @@
         "Drill a hole sized to the magnet so it sits flush; a magnet glued to a bare flat face pops off. Pack hollow parts with two-part putty and press the magnet in. Thin solid parts split when drilled, so thicken them with glued plastic sheet first.",
         "Glue a magnet into the body first and let it set. Before gluing each matching magnet, stick it onto the body magnet so it faces the right way, and mark its outer face. Glue it in marked face out, then test the fit on every option.",
         "Keep magnet sizes and polarity the same on every mount, so any weapon fits any mount and parts can move between models.",
-        "Heavy weapons need big magnets. Small ones in thin plastic let arms droop and fall; going from 1 mm to 1.5 mm thick discs in load-bearing joints makes a big difference. Set a large magnet flush into solid plastic, and key the joint with a short slot or square tube so it cannot spin.",
+        "Match the magnet to the load: discs about 3 to 4 mm across for heads, hands and small weapons, 6 to 8 mm for big arms and torsos, and up to 10 mm for heavy weapons, usually 1 to 1.5 mm thick. Drill with a bit the same size as the magnet, test the fit dry and pack thin plastic card under one that sits too deep. Set big magnets flush in solid plastic and key the joint so it cannot spin.",
         "For light parts like shields, a small ball of reusable tack works without magnets; black tack hides better than blue. A snug socket can also hold an unglued option. Sand the contact faces slightly first, as paint and varnish add thickness.",
         "Fill the seam on the fixed side with putty so the swap point is hidden, and paint the options separately. Paint several shield designs and one squad in neutral colours can serve different sides."
       ],
@@ -3634,7 +3634,7 @@
         "Medium is the better base. Water alone lets the pigment split and spread unevenly. Medium keeps it bound so it dries smoothly with fewer tide marks, and stays workable longer so you can lift mistakes. A drop of flow improver helps it run into recesses.",
         "Put a good puddle of medium on the palette, about five drops, then pull in a small dab of one or two related colours until the tint looks right, counting drops so you can repeat it. Roughly equal paint and medium is a strong wash; more medium makes it a glaze. For pale colours, a slightly darker version of the base shades softly without turning grey.",
         "A weak ready made wash can be strengthened with a dot of matching paint. Balance it with medium rather than lots of water, which causes tide marks.",
-        "Inks in medium make smooth washes too, but neat ink is very strong, so add it a drop at a time. More brown gives a warmer tone, more black a cooler one. A little matt medium cuts the shine some inks dry with. About 8 parts medium, 3 to 4 parts ink and 2 parts flow improver gives a home-made one-coat staining paint.",
+        "Inks in medium make smooth washes too, but neat ink is very strong, so add it a drop at a time. More brown gives a warmer tone, more black a cooler one. A little matt medium cuts the shine some inks dry with. As a set recipe, about 8 parts medium, 3 to 4 parts ink and 2 parts flow improver gives a home-made one-coat staining paint; that is far more flow improver than ordinary paint needs.",
         "Medium mixes are thicker than ready made washes, so use a medium brush and do not overload it. End each stroke in a recess so colour gathers there, and add a second pass only in the deepest ones. Test on a spare piece first, and add medium if it is too strong. Two light washes are safer than one heavy one.",
         "Instant coffee dissolved in water makes a cheap, grimy brown wash for bone and undead flesh, and food colouring shifts it red, green or blue. It stays tacky for up to a day, so dry it gently and seal with spray varnish; a brushed varnish can lift it.",
         "A coat of gloss varnish underneath helps any wash flow into the recesses cleanly instead of staining the raised areas. Let it dry for about half an hour before layering over it. Mixes can turn jelly-like if left standing, so check before reusing one."
@@ -3913,7 +3913,7 @@
         "Base coats and layers: from straight out of the pot to about half water, like thin cream or full fat milk. Thin enough to level flat, thick enough to cover in two or three coats. Neat paint is fine if you brush it out thin rather than flooding the model; several thin coats beat one thick one.",
         "Edge highlights: thin less than for layers. The paint should flow off the tip in a clean line without being watery, giving a strong, opaque line in one pass.",
         "Highlight stages: thinner for early, broad stages built over a couple of coats; less water as you go up to the final small highlights.",
-        "Glazes: over half water, up to about nine parts water to one of paint, almost tinted water; they also hide small imperfections. Washes and shades: thin as much as you like, as long as some colour remains.",
+        "Glazes: over half water, up to about nine parts water to one of paint, almost tinted water; they also hide small imperfections. Washes made from normal paint: thin a long way, around four or five parts water to one, as long as some colour remains; ready-made washes and one-coat paints want medium past about half and half.",
         "Blending: thin on a wet palette, with a touch of glaze medium for very smooth blends. Stroke the brush on the palette and blot it so it looks wet but carries almost no visible paint. More, thinner layers give smoother blends; fewer, thicker ones are faster but grainier.",
         "Mix a little at a time and add water a drop at a time. Strongly pigmented colours need more thinning than weak ones. Test on the palette or a thumbnail first: dry, scratchy lines mean the paint is too thick, and paint that floods off the brush is too thin.",
         "These are ranges, not rules. Slow, smooth display work uses more water; quick work can use paint nearly neat. Move between layering and glazing freely as the area needs."
@@ -4020,7 +4020,7 @@
         "To blend with it, brush a little medium on the area, put paint on a dry spot nearby, then pull the paint into the wet medium so it fades.",
         "Water evaporates and leaves only pigment. Too much water in a weak, pale paint can break it into blotches and coffee-ring stains; medium keeps it even but leaves a thin clear film that builds over many coats. Water is a fine place to start, and medium gives the same result every time. Try both.",
         "Flow improver breaks surface tension so paint leaves the brush and spreads more easily. A little helps fine lines, eyes, freehand and edge highlights, and turns thinned paint into a wash.",
-        "It is strong. Dilute it about one to ten with water first, then add less than a drop at a time. Too much stops paint setting, so it runs and stains. A few drops in your rinse water also helps clean brushes.",
+        "It is strong when you add it to ordinary paint. Dilute it about one to ten with water first, then add less than a drop at a time. Too much stops paint setting, so it runs and stains. A few drops in your rinse water also helps clean brushes.",
         "For ink, a few drops of isopropyl alcohol act as a flow aid for fine lines. It evaporates fast, so reload often, and never leave neat alcohol sitting on painted acrylic, as it can lift it.",
         "A cheap glaze mix: 2 drops matt varnish, 1 drop flow improver and about 10 parts water, kept in a dropper bottle and mixed about one to one with paint. Any additive that is not paint reduces coverage, so keep mediums for glazes, washes and blends rather than first base coats."
       ],
@@ -4116,6 +4116,7 @@
       "summary": "Swatch every paint on primed card to see its true dried colour, keep track of your collection and plan schemes.",
       "body": [
         "Dried paint often looks quite different from the pot, so a swatch of every paint shows its real colour, finish and coverage at a glance.",
+        "Screens are not paint. A colour on a phone or monitor is lit from behind and shifts with the screen's brightness, warmth and settings, so one colour code looks different from screen to screen, while dried paint is darker and duller and has a sheen. Use on-screen colours, Minifolio's included, to narrow the choice, then decide from a swatch or a dried test under your painting lamp.",
         "Use textured plastic card with a grid pattern, cut to sheet size. The texture shows how paint behaves over raised and recessed surfaces. Avoid paper: it soaks paint up and changes the finish, so the swatch will not match the model.",
         "Prime one sheet in a neutral mid grey, or in your usual primer colour. Prime a second sheet white just for washes, shades and one-coat paints, which look very different over white.",
         "Paint a small block of squares for each paint, adding a coat to each square in turn and a tally mark per coat, until the coverage is solid. You can then see how many coats it really needs.",
@@ -4139,7 +4140,9 @@
         "coverage test",
         "paint looks different dry",
         "how many coats",
-        "which paint is which"
+        "which paint is which",
+        "screen colour looks different",
+        "colour on screen vs real paint"
       ]
     },
     {
@@ -4188,7 +4191,7 @@
         "Thin the paint just enough to flow. Stroke along the side at a slight angle, or hold the brush bristles up from underneath, so the colour stops cleanly at the top edge.",
         "Start and finish at the back of the base so any join is hidden. Go in two or three thin coats; trying to cover in one pass causes most slips. A satin black levels more smoothly than matt and covers faster.",
         "Stand the model on a holder, such as a block with tacky putty, so your fingers never touch the rim while it dries.",
-        "Clean sand and texture off the edge first, or the rim never looks sharp. On a black-primed base, a cotton bud damped with alcohol can wipe the rim back to primer.",
+        "Clean sand and texture off the edge first, or the rim never looks sharp. On a black-primed base, a cotton bud damped with alcohol can wipe paint off the rim back to the primer; keep it off the painted ground.",
         "Take care with superglue for tufts near the rim, as thick glue can fog the paint white. Pick one rim style for a whole army and keep to it."
       ],
       "related": [
@@ -4461,7 +4464,7 @@
       "summary": "Fix snapped or heavy parts by drilling matching holes and gluing in short lengths of wire so joints will not break.",
       "body": [
         "Pinning strengthens joints on heavy parts, metal and resin models, models standing on one foot and anything that gets handled. Glue alone rarely holds heavy metal arms and weapons for long. Use paper clip wire or brass rod.",
-        "Plan where the pin goes so the hole is hidden and there is enough material round it. Pick a drill bit the same size as the wire or slightly bigger, and drill into the first part with a hand drill, straight and with light pressure.",
+        "Plan where the pin goes so the hole is hidden and there is enough material round it. A straightened paper clip suits most metal arms and weapons; thinner wire suits small parts and sharp tips, and brass rod cuts cleanly to any length. Hold the end of the bit against the wire to match them, or go slightly bigger, and drill straight with light pressure.",
         "Two pins stop a joint from twisting round and falling off.",
         "Glue a long length of wire into each hole with super glue, then snip it so it stands out a little less than the depth of the hole it will go into.",
         "Dab a little paint on the pin ends and press them against the other part. The paint marks exactly where to drill.",
@@ -4814,13 +4817,14 @@
       "title": "Preparing 3D printed models",
       "summary": "Trim support nubs, smooth them with a fine file, clean the print of every residue, then prime in thin coats.",
       "body": [
-        "Before printing, check the height of the figure itself in the slicer against your target scale. It is easy to scale by the wrong axis and print it too big.",
+        "If you print your own, size the figure in the slicer first; Resin printer settings and scaling covers how.",
         "Wash resin prints in isopropyl alcohol, or in water if the resin is a water-washable type, then cure them fully under UV light as the resin's instructions say. Wear gloves until the print is cured.",
         "Clip supports off with flush cutters, then slice the leftover nubs level with a sharp craft knife, cutting away from yourself. Smooth the spots with a fine emery board or sanding stick.",
         "Clean off every trace of residue before priming. Wipe resin prints with a lint-free cloth dampened with isopropyl alcohol and water, and wash filament prints in warm soapy water. Oil and dust left behind stop primer gripping.",
         "Faint layer lines are normal and very fine ones usually vanish under primer. For stronger lines, sand with 600 grit or finer, or build up thin coats of a self-levelling primer, alternating dark and light so any lines left show as shadows. If detail looks soft even at good settings, another resin may hold it sharper.",
         "Prime in two or three thin coats rather than one thick one. Resin is semi-transparent, so detail is hard to judge until it is primed. Thick filler primer suits rough filament terrain but buries fine detail on small figures.",
-        "On filament printed terrain, drybrushing and washes catch the print ridges. Prime dark, sponge a lighter colour over with a dense makeup sponge, add the main colour, then edge highlight and line recesses by hand."
+        "On filament printed terrain, drybrushing and washes catch the print ridges. Prime dark, sponge a lighter colour over with a dense makeup sponge, add the main colour, then edge highlight and line recesses by hand.",
+        "A well cured print feels hard and dry, not tacky, and firmer than when it came off the plate. If it still feels sticky, wash it again and give it more light; Resin print problems: sticky, bulging or brittle covers that, plus hollow prints and brittle parts. A print you received rather than printed should arrive cured; if it feels tacky, wear gloves, then wash and cure it before cleaning it up."
       ],
       "related": [
         "supporting-3d-prints",
@@ -4852,7 +4856,7 @@
         "Check each casting for holes, shifted mould halves and soft detail before you start. Makers usually replace a badly miscast part; small missing areas can be rebuilt with two-part epoxy putty.",
         "Metal casts have mould lines and flash, the thin webs left by the mould channels. Clip flash away, then clean lines with a needle file or a sharp knife. Start with long thin parts such as weapons, hands and spikes, where lines show most.",
         "Cut parts off casting tags or thin metal links carefully. Bend metal as little as possible, as it tends to crack or snap.",
-        "Wash the parts in warm soapy water to lift grease, and let them dry fully.",
+        "Wash the parts in warm soapy water to lift grease, and let them dry fully. Primer matters more on metal than on plastic, as it evens out the bare surface and helps stop chips. A light pass with fine sandpaper smooths small flaws and helps primer grip, and some painters polish smooth metal with very fine steel wool. Test a new primer on a hidden spot first.",
         "Plastic glue does not work on metal. Use a strong super glue, and file contact faces so parts meet snugly, as loose fits make weak joints. Plugs and sockets hold far better than flat joins.",
         "Pin heavy arms and weapons, since glue alone will not hold them for long. If the base has a slot under a foot, push a lug through it for extra hold.",
         "Look again under a bright light once primed. Primer shows up lines you missed on bare metal, and they are far easier to fix now than halfway through painting.",
@@ -5303,7 +5307,7 @@
         "If your printer can run a test that exposes zones of the plate for different times, print the small test card and compare the zones. Otherwise start from settings others use with the same resin, then print one model with the same supports three times, changing exposure by one second each time.",
         "Every resin cures at its own speed, so test again whenever you change resin and note the settings that work. Many printers let you change exposure and lift speed on the machine without slicing again. A sharp, high resolution screen may need shorter exposures than you are used to.",
         "Room temperature, the resin itself and a clean, tight vat film all affect quality, so check those before blaming exposure.",
-        "Check the height of the figure itself in the slicer against your target. Printed bits are often sized for a bigger model: measure where a part that fits meets the model, work out the difference as a percentage and scale by that.",
+        "Check the height of the figure itself in the slicer against your target scale, as it is easy to scale by the wrong axis and print it too big. Printed bits are often sized for a bigger model: measure where a part that fits meets the model, work out the difference as a percentage and scale by that.",
         "Print one test set to compare arm and weapon lengths before the final batch. Mirroring parts in the slicer lets you test which side looks better in a pose.",
         "Pour thick resin slowly and let it settle, as trapped bubbles can leave holes in the model. Wear gloves with liquid resin and work in a well ventilated space."
       ],
@@ -5933,7 +5937,7 @@
       "title": "Spray priming",
       "summary": "Shake the can well and spray short sweeping bursts from a sensible distance, stopping at a thin coat that keeps the detail.",
       "body": [
-        "Warm the can in warm, not hot, water for a few minutes, then shake it for at least a minute or two. Warm, well mixed primer sprays more evenly. A can that sputters or loses pressure usually just needs the same again.",
+        "Warm the can in warm, not hot, water for a few minutes, then shake it for at least a minute or two. Warm, well mixed primer sprays more evenly, and a can that sputters often just needs the same again. A nearly empty can loses pressure for good and sprays grainy, so start with a fresh one; Spray can spitting, clogged or running low has more.",
         "Wash, dry and assemble the model first, then fix it to a stick, or with tack on its underside to a strip of card, so you never touch it. Spray outdoors or somewhere well ventilated, wearing a mask, on mild, dry days of roughly 10 to 27 C. Cold, damp or humid air gives fuzzy, grainy or orange peel results.",
         "Hold the can about 15 to 30 cm away, following the can's advice. Too close floods detail; too far and the paint dries in the air and lands gritty. In hot, dry air move a little closer, in humid air a little further.",
         "Start spraying beside the model, sweep across it and release past it, in short light passes. Turn the model, or stagger a batch on card so none shades another, and spray from all sides at a low and a high angle, underneath included.",
@@ -6039,9 +6043,9 @@
       "summary": "A few cheap tools, the right glues, a lamp and a basic painting set are all a new hobbyist needs to start.",
       "body": [
         "Space: any sturdy table and chair you already have, with the surface covered against spills, and a desk lamp close to the model. A daylight bulb saves your eyes. A spot you can leave set up saves packing away each time.",
-        "Building: clippers with a flat side so they cut flush, a hobby knife, fine sandpaper around 400 to 800 grit or sanding sticks, and tweezers. Hardware and craft versions work as well as hobby branded ones, and bulk scalpel blades cost far less.",
+        "Building: clippers with a flat side so they cut flush, a hobby knife, a self-healing cutting mat, fine sandpaper around 400 to 800 grit or sanding sticks, and tweezers. Hardware and craft versions work as well as hobby branded ones, and bulk scalpel blades cost far less. Hand tools for building models has more on each.",
         "Glue: plastic glue for plastic kits, super glue for metal and resin, and white PVA for basing and terrain.",
-        "Painting: a heavy water pot that will not tip, a few synthetic brushes including one pointed round around size 1 or 2, a palette such as an old tile or a home-made wet palette, paper towel, a primer and, later, a varnish.",
+        "Painting: a heavy water pot that will not tip, a few synthetic brushes including one pointed round around size 1 or 2, a palette such as an old tile or a home-made wet palette, paper towel, a primer and, later, a varnish. A grey or white spray primer is easiest if you can spray outdoors; if not, use a primer made for brushing on.",
         "Start with a handful of colours for the model in front of you rather than a full range. The well known miniature paint ranges are all good, and finer than craft acrylics. Shake each pot well before use.",
         "Hold the model on a painting handle or anything handy, such as a pill pot or a block of wood, with a little poster putty. A helping hands stand holds small parts while glue sets. Paper clips make pins and clear blocked dropper nozzles.",
         "A small hand drill lets you pin heavy joints and open up gun barrels. The bits that come with cheap drills are often poor, so a set of fine bits is worth adding.",
@@ -6324,7 +6328,7 @@
         "Use only the tip of an old brush and rinse it straight away.",
         "Smooth the edges with a damp brush or finger so the texture fades out instead of ending in a hard line.",
         "It also hides a messy glue drip without sanding. On a large kitbash, a fine gritty paste brushed over joins hides seams and reads as grime once painted.",
-        "For pitted rust, mix a fine filler powder or sifted dirt with PVA and a little water and dab it on flat metal. Avoid baking soda, which can react under paint. Add a few cuts and scrapes on big flat areas.",
+        "For pitted rust, mix a fine filler powder or sifted dirt with PVA and a little water and dab it on flat metal. Avoid loose baking soda here, which can react under paint; set hard in super glue as a gap filler it is fine. Add a few cuts and scrapes on big flat areas.",
         "For rough organic shells, mix soft filler putty with plastic glue into a paste and dab it on, adding crackle paint in places. It suits dark, grimy styles and takes drybrushing well.",
         "Glue sand and texture to the base before priming too, and prime model and base together, so no glue or grit lands on finished paint. The primer locks loose grains in and seals twigs and other natural bits that could crumble. Add tufts at the end.",
         "Let it dry fully, then prime over it. The primer seals the texture in, and washes and drybrushing pick it out."
@@ -6491,7 +6495,7 @@
       "body": [
         "Two-part epoxy putty hardens once its two parts are mixed. Hard, sandable kinds suit gap filling and smooth armour plates. Softer, springy kinds suit faces, cloth and organic shapes, but blend and sand poorly, so joins show.",
         "Cut roughly equal amounts. Discard the strip where the two parts touched in the packet, and any crusty bits, as they have already set and make lumps.",
-        "Knead until there are no streaks left; if both parts are a similar colour, knead longer. You get a few hours of working time. The ratio can shift: extra of the soft, sticky part holds finer detail but stays tacky and cures slower, while extra hardener gives a firmer putty that sets faster and keeps crisp edges.",
+        "Knead until there are no streaks left; if both parts are a similar colour, knead longer. It stays soft enough to sculpt for about an hour and firms up over the next few hours; check the label, as types differ. The ratio can shift: extra of the soft, sticky part holds finer detail but stays tacky and cures slower, while extra hardener gives a firmer putty that sets faster and keeps crisp edges.",
         "Wet fingers and tools lightly with water, or rub on a little hand cream, so it does not stick. Keep them damp, not dripping, as too much water turns the surface slimy. Uncured putty can irritate skin and eyes, so wash it off your hands after mixing, and wear gloves if your skin reacts.",
         "Rough out the shape while soft; it will look poor at first. Come back every half hour or so. As it firms up it resists the tool and holds sharper detail.",
         "Trim edges with a sharp blade while the putty is still soft or just firm. Fully cured putty cuts and sands rougher and slower. Leave it to cure fully, ideally overnight, before sanding.",
@@ -6586,10 +6590,10 @@
       "body": [
         "Millimetre scales such as 28mm describe a rough figure height, not an exact ratio, and makers measure differently, often from foot to eye rather than to the top of the head. A 28mm figure is often 32 to 35mm tall overall.",
         "A ratio such as 1:56 is a true reduction: the real thing is 56 times bigger. To find a ratio, divide the real size by the model size in the same units. A person 1800mm tall shown by a 30mm figure is 1:60.",
-        "Rough matches: 28mm is about 1:56, 32mm about 1:48, 20mm about 1:72, 15mm about 1:100, 6mm about 1:285 and 54mm about 1:35.",
+        "Rough matches: 28mm is about 1:56, or down to 1:64 depending on the maker, 32mm about 1:48, 20mm about 1:72, 15mm about 1:100, 6mm about 1:285 and 54mm about 1:35.",
         "To size terrain, convert the real size to millimetres and divide by the ratio. A 2 m door at 1:56 is about 36mm. Handy real sizes: a person about 180 cm, a door about 200 cm, a building storey about 300 cm.",
         "Doorways are the best check. Stand one of your based figures by a door or window before committing to terrain. A door around 35 to 37mm tall lets based 28mm figures through; a 28mm door looks too small.",
-        "Kits from other hobbies can work: a 1:48 car or O gauge railway buildings suit 28 to 32mm figures, and about 1:64 sits close to 28mm. HO railway at 1:87 is too small for most, though it can suit 25mm.",
+        "Kits from other hobbies can work: a 1:48 car or O gauge railway buildings suit 28 to 32mm figures, and about 1:64 sits close to 28mm. HO railway at 1:87 is too small for most, as it suits figures nearer 15 to 20mm.",
         "Heroic scale figures have chunky heads, hands and weapons; true scale figures are realistically proportioned. Figures have also grown over the years, so old and new ranges, or two makers' 28mm, can look mismatched. Match new models to what you have.",
         "In a diorama, smaller-scale pieces at the back and larger ones at the front fake extra depth."
       ],
@@ -6727,7 +6731,8 @@
         "Airbrushed paint often dries flatter and duller than brushed paint, because it lands as fine droplets. A light satin or gloss coat brings much of the depth back. Judge colours once dry, not while wet.",
         "A satin coat can also lift a model that looks dull and over-matt.",
         "Matt varnish kills the shine of metallics. Give metal areas a brushed gloss coat afterwards to keep them bright.",
-        "Models that get handled are worth a matt coat even with a small shift. Display pieces on a plinth rarely need varnish. Try a new varnish on a spare painted part first."
+        "Models that get handled are worth a matt coat even with a small shift. Display pieces on a plinth rarely need varnish. Try a new varnish on a spare painted part first.",
+        "Will it go yellow? Varnish made for models is meant to stay clear, but some floor and furniture varnishes can yellow or tint, which shows most over white and pale colours. Over a light scheme, use a model varnish sold as non-yellowing, keep the coats thin and try it on a spare white part first. Some very flat varnishes can also turn shinier over months, so a test piece is worth keeping."
       ],
       "related": [
         "varnishing",
@@ -6745,7 +6750,9 @@
         "ultra matt",
         "which varnish finish",
         "airbrush looks flat",
-        "sheen"
+        "sheen",
+        "varnish going yellow",
+        "non yellowing varnish"
       ]
     },
     {
@@ -6758,9 +6765,9 @@
         "Gloss is shiny and hardest wearing, and suits metal and wet looks. Matt is flat and suits cloth and skin but can deaden metals and bright colours. Satin sits between. Do not leave a whole model gloss or satin, as shine fights your highlights. Finish matt, then brush gloss back onto gems, eyes and wet effects.",
         "For a tough finish, coat the whole model in slightly thinned gloss, then matt or satin over it. Over gloss, matt usually needs two thin coats. A mix of about three parts very flat matt to one part satin is tougher than pure matt and still looks flat.",
         "Wait until every layer of paint is fully dry, not just touch dry. Dust the model with a soft dry brush or a puff of air first; fibres and dust get sealed in for good. Keep loose static grass away from wet varnish.",
-        "Brush on: shake well, pour some into a palette well, and coat the model with a large soft brush like an all over wash, moving pools away before they clog detail. Never go back over an area as it dries, as that tears the forming skin.",
+        "Brush on: shake well, pour some into a palette well, and coat the model with a large soft brush like an all over wash, moving pools away before they clog detail. Never go back over an area as it dries, as that tears the forming skin. One-coat paints and inks can smear under a brush, so seal them with a light first coat.",
         "Spray: shake the can for longer than it says, test on card, hold it about 20 to 30 cm away and sweep past in thin passes. Cold or damp air, much above 50 percent humidity, gives a white frosty finish. Turn the can upside down and spray until clear afterwards. Check it is varnish, not a similar primer.",
-        "Airbrush: put two or three drops of thinner in the cup first so varnish cannot dry at the nozzle. Spray thin, even coats; if it pools, stop adding varnish and push it thin with air alone. Let it dry, ten minutes to an hour depending on humidity, before a second coat. Never leave varnish sitting in the cup.",
+        "Airbrush: put two or three drops of water or the maker's thinner in the cup first so varnish cannot dry at the nozzle; check the label, as some thinners add shine. Spray thin, even coats; if it pools, stop adding varnish and push it thin with air alone. Let it dry, ten minutes to an hour depending on humidity, before a second coat. Never leave varnish sitting in the cup.",
         "Varnish also works as a save point part way through. Seal delicate glazes, and a later slip can be wiped off with water without lifting them. Matt varnish takes paint well; gloss is less grippy. Many painters add metallics after the last matt coat. Leave it a day before heavy handling."
       ],
       "related": [
@@ -6862,11 +6869,11 @@
       "body": [
         "A palette is where you thin paint, test it and take excess off the brush. Paint straight from pot to model skips all of that.",
         "On a dry palette, thinned acrylic skins over quickly and you end up painting with thick, half dry paint. A wet palette keeps it fresh and the same consistency for hours, which helps blending and glazing and wastes less paint. Keep two drops of one colour side by side: plain for crisp edges, thinned for layers.",
-        "To make one, fold paper towel into a shallow tray or lidded tub, about four layers, and soak it until almost floating. A kitchen sponge works too. Use plenty of water so it does not dry out mid session.",
+        "To make one, fold paper towel into a shallow tray or lidded tub, about four layers, and soak it, then pour off standing water so it is damp, not floating. A kitchen sponge works too. Top it up at the edge if it dries out mid session.",
         "Lay non-waxed baking parchment on top and press it flat, smoothing out bubbles. Paint sits on the paper and draws moisture up from below. Pour off any water pooling on top. Wax paper will not work, as it blocks the moisture.",
         "A ready-made one seals better and lasts longer, but the homemade version works well. Kitchen parchment often beats the paper that comes with kits for thin miniature paints.",
-        "Keep paint in small, compact blobs, as spread out paint dries faster. With the lid on between sessions, paint often keeps for a day or more.",
-        "Keep a dry white tile as well. Washes and inks behave poorly on a wet palette, paint for sharp edge highlights can turn too runny, and metallic flakes can get into the sponge and taint other colours.",
+        "Keep paint in small, compact blobs, as spread out paint dries faster. With the lid on between sessions, paint often keeps for a day or more; leave a small gap or a few holes in the lid overnight so it does not turn watery.",
+        "Keep a dry white tile as well. Washes and inks behave poorly on a wet palette, paint for sharp edge highlights can turn too runny, and some metallics split into flakes and medium on it.",
         "You do not need a wet palette to paint well. Any smooth, hard surface works; the wet one just buys time, and a dry palette can be quicker for fast speed painting."
       ],
       "related": [

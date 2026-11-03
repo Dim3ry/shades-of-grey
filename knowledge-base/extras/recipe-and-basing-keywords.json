@@ -2039,5 +2039,535 @@
   "spotted horse",
   "silver horse",
   "horse dapples"
+ ],
+ "clean-white-armour": [
+  "white armour",
+  "white armor",
+  "clean white",
+  "white power armour",
+  "white plates",
+  "how to paint white",
+  "grey shading on white",
+  "white knight armour"
+ ],
+ "white-robes": [
+  "white robes",
+  "white cloth",
+  "white cloak",
+  "cream robes",
+  "off white cloth",
+  "priest robes",
+  "white tabard",
+  "wizard robes"
+ ],
+ "black-robes": [
+  "black robes",
+  "black cloth",
+  "black cloak",
+  "highlight black cloth",
+  "dark robes",
+  "black hood",
+  "black tabard",
+  "necromancer robes"
+ ],
+ "green-cloak": [
+  "green cloak",
+  "green cloth",
+  "ranger cloak",
+  "green robes",
+  "green hood",
+  "forest green",
+  "green tabard",
+  "elf cloak"
+ ],
+ "mid-blue-cloth": [
+  "blue cloth",
+  "blue cloak",
+  "blue robes",
+  "bright blue cloth",
+  "royal blue cloth",
+  "blue tunic",
+  "blue tabard",
+  "light blue cloth"
+ ],
+ "brown-robes": [
+  "brown robes",
+  "monk robes",
+  "brown cloth",
+  "brown cloak",
+  "friar robes",
+  "peasant clothes",
+  "brown hood",
+  "dusty robes"
+ ],
+ "orange-cloth": [
+  "orange cloth",
+  "orange robes",
+  "orange cloak",
+  "bright orange",
+  "orange tunic",
+  "saffron robes",
+  "orange sash",
+  "monk orange"
+ ],
+ "teal-cloth": [
+  "teal cloth",
+  "teal cloak",
+  "teal robes",
+  "turquoise cloth",
+  "sea green cloth",
+  "blue green cloth",
+  "aqua cloth",
+  "teal fabric"
+ ],
+ "gold-embroidered-trim": [
+  "gold trim",
+  "embroidered trim",
+  "gold embroidery",
+  "gold border",
+  "robe trim",
+  "cloak edging",
+  "gold thread",
+  "hem pattern"
+ ],
+ "brown-fur": [
+  "brown fur",
+  "bear fur",
+  "fur cloak",
+  "brown pelt",
+  "animal fur",
+  "fur trim",
+  "hairy beast",
+  "dog fur"
+ ],
+ "grey-wolf-fur": [
+  "grey wolf",
+  "gray wolf",
+  "wolf fur",
+  "wolf pelt",
+  "grey fur",
+  "big wolf",
+  "husky fur",
+  "wolf cloak"
+ ],
+ "black-horse-coat": [
+  "black horse",
+  "dark horse",
+  "black steed",
+  "black stallion",
+  "black mount",
+  "highlight black horse",
+  "dark knight horse",
+  "nightmare horse"
+ ],
+ "white-horse-coat": [
+  "white horse",
+  "pale horse",
+  "white steed",
+  "grey white horse",
+  "white pony",
+  "white mount",
+  "unicorn",
+  "white stallion"
+ ],
+ "white-feathers": [
+  "white feathers",
+  "white wings",
+  "angel wings",
+  "white bird",
+  "pale feathers",
+  "white plumes",
+  "swan feathers",
+  "owl feathers"
+ ],
+ "brown-feathers": [
+  "brown feathers",
+  "eagle feathers",
+  "brown wings",
+  "hawk feathers",
+  "bird wings",
+  "bird of prey",
+  "owl wings",
+  "feathered wings"
+ ],
+ "bright-green-gem": [
+  "emerald",
+  "emerald gem",
+  "green gem",
+  "green jewel",
+  "green gemstone",
+  "green crystal",
+  "green stone in sword",
+  "bright gem"
+ ],
+ "amber-gem": [
+  "amber",
+  "amber gem",
+  "yellow gem",
+  "orange gem",
+  "topaz",
+  "golden gem",
+  "citrine",
+  "yellow jewel"
+ ],
+ "purple-gem": [
+  "amethyst",
+  "purple gem",
+  "violet gem",
+  "purple jewel",
+  "purple crystal",
+  "purple gemstone",
+  "lilac gem",
+  "magic gem purple"
+ ],
+ "glass-potion-bottle": [
+  "potion",
+  "potion bottle",
+  "glass bottle",
+  "vial",
+  "glass vial",
+  "liquid in glass",
+  "flask",
+  "how to paint glass"
+ ],
+ "tan-leather": [
+  "tan leather",
+  "light leather",
+  "saddle",
+  "light brown leather",
+  "belts and pouches",
+  "leather gloves",
+  "pale leather",
+  "cork leather"
+ ],
+ "red-brown-leather": [
+  "red brown leather",
+  "reddish leather",
+  "oxblood leather",
+  "rich leather",
+  "leather boots",
+  "chestnut leather",
+  "dark red leather",
+  "riding boots"
+ ],
+ "worn-brown-leather": [
+  "worn leather",
+  "old leather",
+  "scuffed leather",
+  "battered leather",
+  "scratched leather",
+  "weathered leather",
+  "leather coat",
+  "distressed leather"
+ ],
+ "sandy-stone": [
+  "sandstone",
+  "sand stone",
+  "desert stone",
+  "pink stone",
+  "rose stone",
+  "desert ruins",
+  "tan stone",
+  "statue stone"
+ ],
+ "red-brick": [
+  "brick",
+  "bricks",
+  "red brick",
+  "brick wall",
+  "brickwork",
+  "mortar",
+  "ruined wall",
+  "building terrain"
+ ],
+ "purple-skin": [
+  "purple skin",
+  "lilac skin",
+  "violet skin",
+  "lavender skin",
+  "purple monster",
+  "purple alien",
+  "purple demon",
+  "pale purple skin"
+ ],
+ "snake-scales": [
+  "snake skin",
+  "snake scales",
+  "serpent",
+  "reptile skin",
+  "lizard scales",
+  "scaly skin",
+  "naga",
+  "snake belly"
+ ],
+ "red-dragon-scales": [
+  "red dragon",
+  "dragon scales",
+  "dragon skin",
+  "dragon hide",
+  "coloured dragon",
+  "red scales",
+  "wyvern",
+  "drake scales"
+ ],
+ "pink-tentacles": [
+  "tentacles",
+  "tentacle",
+  "squid",
+  "octopus",
+  "sea monster",
+  "pink tentacles",
+  "mutation",
+  "fleshy growths"
+ ],
+ "bat-wing-membranes": [
+  "bat wings",
+  "wing membranes",
+  "membrane wings",
+  "dragon wings",
+  "demon wings",
+  "leathery wings",
+  "vampire wings",
+  "gargoyle wings"
+ ],
+ "iridescent-insect-wings": [
+  "insect wings",
+  "fly wings",
+  "bug wings",
+  "iridescent wings",
+  "translucent wings",
+  "dragonfly wings",
+  "wasp wings",
+  "fairy wings"
+ ],
+ "chain-mail": [
+  "chainmail",
+  "chain mail",
+  "mail armour",
+  "mail shirt",
+  "hauberk",
+  "ring mail",
+  "rusty chainmail",
+  "knight mail"
+ ],
+ "old-paper-and-scrolls": [
+  "parchment",
+  "scrolls",
+  "scroll",
+  "paper",
+  "old paper",
+  "labels",
+  "books",
+  "map"
+ ],
+ "hemp-rope": [
+  "rope",
+  "hemp rope",
+  "cord",
+  "string",
+  "twine",
+  "noose",
+  "rope lashings",
+  "rigging"
+ ],
+ "natural-eyes": [
+  "eyes",
+  "painting eyes",
+  "eye whites",
+  "pupils",
+  "iris",
+  "face eyes",
+  "human eyes",
+  "realistic eyes"
+ ],
+ "ghostly-spirit": [
+  "ghost",
+  "ghosts",
+  "spirit",
+  "ethereal",
+  "spectral",
+  "wraith",
+  "phantom",
+  "haunted"
+ ],
+ "smoke-plume": [
+  "smoke",
+  "smoke plume",
+  "smoke effect",
+  "steam",
+  "smoke cloud",
+  "exhaust smoke",
+  "magic smoke",
+  "chimney smoke"
+ ],
+ "light-cool-skin": [
+  "light skin cool undertone",
+  "pale pink skin",
+  "rosy skin",
+  "fair skin pink",
+  "cool undertone",
+  "pink undertone",
+  "pale skin blush",
+  "porcelain skin"
+ ],
+ "light-warm-skin": [
+  "light skin warm undertone",
+  "golden skin",
+  "light golden skin",
+  "warm undertone",
+  "peachy skin",
+  "pale warm skin",
+  "light tan skin",
+  "freckled skin"
+ ],
+ "light-olive-skin": [
+  "light olive skin",
+  "olive undertone",
+  "pale olive skin",
+  "green undertone",
+  "light olive tone",
+  "olive complexion",
+  "neutral olive skin",
+  "muted skin"
+ ],
+ "medium-cool-skin": [
+  "medium skin cool undertone",
+  "medium brown skin",
+  "cool medium skin",
+  "mid skin tone",
+  "medium skin tone",
+  "brown skin cool",
+  "cool undertone medium",
+  "medium complexion"
+ ],
+ "deep-cool-skin": [
+  "deep skin cool undertone",
+  "deep brown skin",
+  "dark skin cool",
+  "very dark skin",
+  "deep skin tone",
+  "dark brown skin blue",
+  "rich dark skin",
+  "cool dark skin"
+ ],
+ "jungle-floor": [
+  "jungle",
+  "jungle base",
+  "rainforest",
+  "tropical base",
+  "ferns",
+  "lush plants",
+  "overgrown base",
+  "jungle floor"
+ ],
+ "graveyard-ground": [
+  "graveyard",
+  "grave",
+  "headstone",
+  "gravestone",
+  "tombstone",
+  "cemetery",
+  "undead base",
+  "grave dirt"
+ ],
+ "muddy-trench": [
+  "trench",
+  "trench base",
+  "duckboards",
+  "planks",
+  "trench wall",
+  "wooden boards",
+  "battlefield trench",
+  "mud and planks"
+ ],
+ "river-bed": [
+  "river",
+  "river bed",
+  "stream",
+  "riverbank",
+  "pebbles",
+  "shallow water",
+  "creek",
+  "river base"
+ ],
+ "autumn-leaf-litter": [
+  "autumn",
+  "autumn leaves",
+  "fallen leaves",
+  "fall leaves",
+  "leaf litter",
+  "dead leaves",
+  "autumn base",
+  "golden grass"
+ ],
+ "asphalt-road": [
+  "concrete",
+  "road",
+  "asphalt",
+  "tarmac",
+  "kerb",
+  "city street",
+  "urban road",
+  "road surface"
+ ],
+ "tundra-heath": [
+  "tundra",
+  "heath",
+  "dry grass",
+  "dead grass",
+  "moorland",
+  "steppe",
+  "dried grass",
+  "cold plains"
+ ],
+ "temple-floor": [
+  "temple",
+  "temple floor",
+  "mosaic",
+  "tiles",
+  "ancient ruins",
+  "sandstone slabs",
+  "carved plaster",
+  "painted pattern"
+ ],
+ "skull-strewn-ground": [
+  "skulls on a base",
+  "skull base",
+  "bones",
+  "skull pile",
+  "scattered skulls",
+  "half buried skulls",
+  "bone field",
+  "skulls on ground"
+ ],
+ "rusty-metal-grating": [
+  "grating",
+  "grate",
+  "metal grating",
+  "mesh floor",
+  "grille",
+  "industrial floor",
+  "punched metal",
+  "walkway"
+ ],
+ "cave-floor": [
+  "cave",
+  "cave floor",
+  "cavern",
+  "stalagmites",
+  "stalactites",
+  "underground",
+  "flowstone",
+  "cave base"
+ ],
+ "corrupted-dark-forest": [
+  "corrupted",
+  "corruption",
+  "dark forest",
+  "haunted wood",
+  "moonlight",
+  "rot",
+  "webs",
+  "gloomy forest"
  ]
 }

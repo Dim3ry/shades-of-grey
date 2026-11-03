@@ -389,7 +389,7 @@
         "One wash over the whole model is quick but makes every colour look alike and a little dirty. For a cleaner finish, give each colour group its own wash.",
         "Work group by group: wash the main colour first, then base the silver and black details and wash only those black, then base the gold and give it a warm chestnut wash.",
         "To tell textured materials apart, highlight wood, leather and cloth with the same couple of colours, then tint each with a different wash, such as warm brown on wood and a greenish or purple wash on the others.",
-        "Thinned ordinary paint can stand in for a ready-made wash. It should stain the surface, not cover it. A skin wash straight from the pot is often too strong on pale skin, so thin it with medium and build it in coats. Mix brown and black for a dirtier, worn look."
+        "Thinned ordinary paint can stand in for a ready-made wash. It should stain the surface, not cover it. A skin wash straight from the pot is often too strong on pale skin, so thin it with clear glaze medium or one-coat medium, not flow improver, and build it in coats. Mix brown and black for a dirtier, worn look."
       ],
       "related": [
         "applying-washes",
@@ -422,6 +422,7 @@
         "Try the colour opposite your main colour on the colour wheel as the spot colour. Put blobs of the candidates side by side on the palette, or colour a grey photo of a model roughly in an image editor, to judge the balance before you commit.",
         "Paint one test model start to finish, ideally the most complicated one in the range so every material gets decided. Write down every step, and drop or change any step that is slow or does not work. If it fails, strip it and try again.",
         "Big monsters and vehicles can bring brightness to a dark force, but reuse the same few paints, lighten every colour with the same pale tone, and swap any extra colour for one already on the models.",
+        "For a first army, some colours forgive far more than others. Dark blue, dark green, brown and black cover in a coat or two, hide slips and take a wash well, and metallics look good for little work. Yellow, white, red, orange and bright green cover poorly, especially over black, need a light undercoat and several thin coats and show every slip, so they are easier as trim than as the main colour.",
         "Then paint the rest from your written list without stopping to deliberate."
       ],
       "related": [
@@ -440,7 +441,9 @@
         "custom army scheme",
         "planning an army",
         "army test model",
-        "three colour scheme"
+        "three colour scheme",
+        "easiest colours for an army",
+        "hard colours to paint"
       ]
     },
     {
@@ -661,7 +664,10 @@
         "Paint a range of colours underneath: greens, pinks, oranges, purples, placed loosely where they suit the form.",
         "Then glaze the intended colour over the top in thin coats. The area still reads as that colour, but with depth.",
         "Keep the glaze thin so the colours beneath are not lost.",
-        "This suits monster skin, hide and large single-colour areas, where flat colour shows most."
+        "This suits monster skin, hide and large single-colour areas, where flat colour shows most.",
+        "A monochrome scheme takes this further: the whole model in one hue, from near black to pale, or in plain black, white and greys. It holds together easily, so all the work goes into value. Make each neighbouring area a clear step lighter or darker than the next, or it merges into one shape from arm's length.",
+        "A quick route for a unit: prime white, base coat one mid or dark colour all over, darken the recesses from below, then dust or drybrush a pale version from above. A wash and a pale drybrush on heads, shoulders and key details finish it. For greys, drybrush up from black through three or four greys, each from the same light direction.",
+        "To stop a monochrome model looking flat, add one small accent in an opposite colour, such as eyes, a gem or a lens. Or treat the finished monochrome model as a base layer and glaze thin colour over each material, so the one colour underneath ties the whole model together."
       ],
       "related": [
         "colourful-underpainting",
@@ -677,7 +683,11 @@
         "underpainting colours",
         "depth in colour",
         "monochrome model",
-        "single colour area"
+        "single colour area",
+        "monochrome scheme",
+        "one colour scheme",
+        "monochromatic",
+        "black and white scheme"
       ]
     },
     {
@@ -1040,7 +1050,8 @@
         "Saturation is how intense or pure a colour is. A neon green is highly saturated, a grey hardly at all. Paint straight from the pot is usually at its most saturated; mixing in other colours tends to dull it.",
         "The three move separately. Adding white raises value but lowers saturation, which is why red plus white turns pink rather than a brighter red. A touch of the opposite colour, a grey or an earthy brown calms a colour that is too loud.",
         "Contrast is how different two colours are, and it can come from any of the three: black against white is strong value contrast, violet against yellow strong hue contrast, a vivid colour beside a greyed one saturation contrast. Red against orange has very little.",
-        "Use them to steer the eye. Put the strongest value contrast and the most saturated colour on the focal point, and keep hues and values quieter elsewhere."
+        "Use them to steer the eye. Put the strongest value contrast and the most saturated colour on the focal point, and keep hues and values quieter elsewhere.",
+        "Temperature is another way to describe a colour. Warm colours are the reds, oranges and yellows; cool ones are the blues, blue-greens and violets. Warm tones seem to come towards you and cool ones to sit back, so warm highlights with cool shadows, or the reverse, gives richer shading. Purples and greens sit between and read warm or cool by what they lean to and sit beside."
       ],
       "related": [
         "using-value",
@@ -1680,7 +1691,8 @@
         "Finish the highest points in pure yellow.",
         "On hard or metallic-looking parts, add a little white to the yellow right at the end for a shiny, reflective look.",
         "Start from a deeper orange than your brightest one so there is room to highlight, and prime white or pale. Orange covers poorly and loses punch over dark.",
-        "For a quick bright orange, mix a one-coat orange with an ordinary orange and lay it in one smooth layer over white primer. The ratio sets how bright and how see-through it is."
+        "For a quick bright orange, mix a one-coat orange with an ordinary orange and lay it in one smooth layer over white primer. The ratio sets how bright and how see-through it is.",
+        "Shading orange: run a deep orange-red tint (#b5401a) into the recesses only, keeping it off the raised areas. For coverage, lay a more opaque, slightly duller orange in two or three thin coats, letting each dry without brushing back into it, then a thin vivid orange on top. It looks blotchy at first, so keep adding thin layers rather than one thick one. A pale bone edge suits it better than white."
       ],
       "related": [
         "leave-room-for-highlights",
@@ -1712,7 +1724,8 @@
         "Avoid swapping to a chalky pastel pink just for coverage. It covers better but loses the clean, bright look.",
         "Pink is happy over a cool, bluish undercoat gradient, unlike yellow, which needs a warm one underneath.",
         "Shade pink with a deeper pink, magenta or dark red-purple so it stays clean. Brown or black shading makes it look dirty.",
-        "Think about what pink says on the model: soft and gentle on skin and cloth, loud and eye-catching on armour or creatures."
+        "Think about what pink says on the model: soft and gentle on skin and cloth, loud and eye-catching on armour or creatures.",
+        "Highlighting pink: blend a pale yellow (#f4ecb0) or a pale warm cream into the top rather than white, which kills the colour fast. Shade with a blue-leaning violet (#4a3a7a) for a cooler pink, or a deep magenta to keep it warm."
       ],
       "related": [
         "bright-pink-armour",
@@ -1745,7 +1758,8 @@
         "Mixes with a lot of white jump in lightness quickly and push purple towards a cold, chalky lilac. Add the white in small amounts and keep the palest mixes to small, high areas.",
         "For a colder purple, lean the highlights towards a lilac blue instead. Pick one direction and keep it across the whole area.",
         "If highlights drift too pink or too blue, a thin glaze of the base purple over them pulls the colour back together.",
-        "For a pale lilac, base in purple and spray or dry brush thin white from above, then glaze thinned purple back into recesses the white flooded, and put a thinned dark violet ink in the deepest folds."
+        "For a pale lilac, base in purple and spray or dry brush thin white from above, then glaze thinned purple back into recesses the white flooded, and put a thinned dark violet ink in the deepest folds.",
+        "Coverage: deep purples go straight over black or dark grey, and a strong purple often covers in one coat. A white undercoat makes purple harder to cover, so keep it for pale lilac. There, a purple base with thinned white sprayed from above, then purple glazed back into the recesses, does most of the work."
       ],
       "related": [
         "purple-armour",
@@ -1817,7 +1831,7 @@
         "Light and colour. Value: how light or dark a colour is, ignoring its hue. Contrast: the gap between lights and darks, which helps a model read across a table. Value sketch: blocking in white, greys and black first to map the light. Colour wheel: colours set in a circle to show which sit opposite or side by side.",
         "Metal and glow. TMM, true metallic metal: paint with metal flakes that really shines. NMM, non-metallic metal: faking shiny metal with flat colours and hand-painted reflections. OSL, object source lighting: painting the glow a lamp, fire or spell casts on nearby surfaces. All three depend on careful placing of light and dark.",
         "Prep and tools. Primer: a first coat, sprayed or brushed, that helps paint grip. Zenithal: priming dark, then spraying white or light grey from above, so light and shadow are mapped from the start. Masking: covering part of a model with tape or a removable liquid. Wet palette: a tray with damp paper under a thin sheet that keeps paint wet.",
-        "Other shorthand. Viscosity: how thick or runny paint is. Brush control: putting paint exactly where you want it. Freehand: patterns painted straight on. Sketching: loose colour to try ideas. Basing: dressing the ground. WIP: work in progress."
+        "Other shorthand. Viscosity: how thick or runny paint is. Brush control: putting paint exactly where you want it. Freehand: patterns painted straight on. Sketching: loose colour to try ideas. Basing: dressing the ground. WIP: work in progress. Building, paint and finish words, from sprue to medium and satin, are in More hobby words: building, paint and finish."
       ],
       "related": [
         "hue-value-saturation",
@@ -1848,7 +1862,7 @@
       "body": [
         "Pure white is rare in real life. A large area of it has nowhere lighter to go and looks flat, so treat white as a range of light greys and tints. Often only the top half of the surface needs to be truly white.",
         "Building up: start from a mid or light grey, or a pale blue grey, which covers better than white. Lay greyish off-whites over everything but the deepest areas, covering less each time. With an airbrush, spray thinned white in passes over grey, giving panel centres more passes so the grey stays as soft shadow.",
-        "Shading down: base in an off-white, then shade with a thin pale blue or grey wash. A black wash straight from the pot turns everything grey, so cut it about half and half with clear medium. Bring white back on the raised areas afterwards.",
+        "Shading down: base in an off-white, then shade with a thin pale blue or grey wash. A black wash straight from the pot turns everything grey, so cut it about half and half with clear glaze medium or one-coat medium. Bring white back on the raised areas afterwards.",
         "Pick the tint on purpose. Cool blue-greys give a crisp, clean white; brown or sepia tones give a natural or aged white. A flat grey mixed from black and white looks dull.",
         "Thin light layers either a lot and build several coats, or place a small thick dab and feather its edge with a damp brush. Normal layer thickness is where chalky streaks come from.",
         "Over red or black, base in an off-white, which covers better than pure white, in three or so thin coats, letting each dry. Or paint a mid blue first, then two parts white to one of blue, and the white covers in a stroke or two. Red pigment hides in brushes and turns white pink, so rinse well first.",
@@ -1916,7 +1930,7 @@
       "body": [
         "Browns add a tan. Build pale skin from pinks and very pale flesh tones instead, adding a little more pink with each layer. A ready-made flesh cooled with a light blue also reads paler.",
         "Give highlights and shadows opposite temperatures: push a little cool blue into the highlights and keep the shadows warm.",
-        "Lay out about five paints from dark to light and mix half steps between them for around ten tones. Use the very lightest and darkest mostly for mixing.",
+        "Lay out about five paints from dark to light and mix half steps between them for around ten tones. Use the very lightest and darkest mostly for mixing. For a batch of troops, skip all that: over a bone or off-white primer, one coat of a one-coat flesh paint and a pale flesh touch on brow, nose and cheeks is enough, as in Quick two paint skin.",
         "Over black primer, a thin mid grey under the skin lets pale tones cover in one coat and cools them slightly. An undercoat of pale cold blue from above and red from below maps the light before you start.",
         "Skin made only from pinks looks flat, and pale skin built from yellowish or greenish tones looks sickly. Glaze a thin magenta into cheeks, lips and joints, and a muted grey-blue into the shadows and where skin looks thinner.",
         "Keep these glazes very thin and build them slowly so they tint rather than cover. If warm shading spreads too far, the skin reads pink or purple instead of pale.",
@@ -2561,7 +2575,7 @@
       "summary": "A wash shades colours you have already painted; a contrast-style one-coat paint colours and shades in one step.",
       "body": [
         "A wash goes over existing colours. It mostly sits in recesses, only lightly tints raised areas and keeps metallics shiny. Use it to shade and keep your colours.",
-        "A contrast-style one-coat paint does the base colour and shading together. It pools in recesses, leaves a thin tint on raised areas and dries matt. Over white, light grey or a zenithal prime it looks bright and clean; over dark primer it looks muted. Results are consistent model to model, which suits batch painting.",
+        "A contrast-style one-coat paint does the base colour and shading together. It pools in recesses, leaves a thin tint on raised areas and usually dries matt, though some dry with a slight, patchy sheen. Over white, light grey or a zenithal prime it looks bright and clean; over dark primer it looks muted. Results are consistent model to model, which suits batch painting.",
         "Test on the palette: spread a wash thin and it goes pale; a one-coat paint stays strong.",
         "Over finished base coats, a one-coat paint can darken everything a lot. A bright red can end up near black.",
         "One-coat paints that settle into a pale layer in the pot cover more like paint. Ones that do not behave more like inks and let metallics shine through.",

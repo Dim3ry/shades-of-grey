@@ -3753,18 +3753,18 @@
         {
           "technique": "Glaze",
           "coats": 2,
-          "mix": 20,
-          "look": "a bright red",
-          "hex": "#c8281e",
-          "note": "Very thin coats over the hot end, pulled towards the brightest point."
+          "mix": 40,
+          "look": "an orange",
+          "hex": "#e8781e",
+          "note": "Over the white and a little past it, leaving the very core white."
         },
         {
           "technique": "Glaze",
           "coats": 2,
-          "mix": 40,
-          "look": "an orange",
-          "hex": "#e8781e",
-          "note": "Less water than the red, kept towards the tips and the core."
+          "mix": 20,
+          "look": "a bright red",
+          "hex": "#c8281e",
+          "note": "Very thin coats on the cooler parts further from the core, fading out."
         },
         {
           "technique": "Edge highlight",
@@ -3772,7 +3772,7 @@
           "mix": 100,
           "look": "a pale yellow",
           "hex": "#fbe36a",
-          "note": "Finest line on the very ends, and black chunks on a blade look like crust."
+          "note": "Finest line on the hottest ends, and black chunks on a blade look like crust."
         }
       ]
     },
@@ -4540,7 +4540,7 @@
           "mix": 35,
           "look": "a dark brown",
           "hex": "#3a2b1e",
-          "note": "One part wash to two of water over the whole pattern."
+          "note": "One part wash to two of medium over the whole pattern, so it tints without rings."
         }
       ]
     },
