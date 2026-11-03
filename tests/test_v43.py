@@ -154,7 +154,11 @@ def overlap(a, b):
 def main():
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
+        # CL2 (James, 3 Nov): pressing a colour on the wheel now morphs into the next set over about half a second, and this file presses the
+        # wheel a few hundred times (each wait would sit through it, more than doubling the file's time). Nothing here is about motion, so it
+        # runs with Reduce motion on, the setting it was written for: the picture is drawn at once, exactly where the morph ends.
+        # test_v130_cl2.py checks the morph itself.
+        ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block", reduced_motion="reduce")
         page = ctx.new_page()
         errors, dialogs, requests = [], [], []
         page.on("pageerror", lambda e: errors.append(str(e)))

@@ -16454,11 +16454,11 @@
       const svg = mk("svg", { viewBox: "0 0 320 300", class: "wheel-svg wheel-zoom", role: "group", "aria-label": `${seg.label} colour wheel, ${seg.subs.length} groups` });
       svg.id = door.id("wheel");
       const CX = 160, CY = 150, R_OUT = 96, R_IN = 50, CHIP = 10;
-      const back = () => {
+      const back = () => clMorphSwap(svg, disc, () => {   // CL2: the groups slide in behind the Back disc and all the colours slide out from it
         st.wheelZoom = ""; st.wheelGroup = ""; st.paintOpen = "";
         redraw(`[data-wheel="${seg.key}"]`);
         wheelAnnounce("Back to all colours.");
-      };
+      });
       const pieces = [];
       seg.subs.forEach((sub, i) => {
         const group = mine.filter(x => x.at.sub === sub.key);
@@ -16488,9 +16488,13 @@
         });
         const choose = () => {
           const closing = st.wheelGroup === sub.key;
-          st.wheelGroup = closing ? "" : sub.key;
-          st.paintOpen = "";   // a paint panel never carries over to another group
-          redraw(`[data-wheel-sub="${seg.key}/${sub.key}"]`);
+          const go = () => {
+            st.wheelGroup = closing ? "" : sub.key;
+            st.paintOpen = "";   // a paint panel never carries over to another group
+            redraw(`[data-wheel-sub="${seg.key}/${sub.key}"]`);
+          };
+          if (closing) go();   // CL2: closing brings nothing new out; opening, the other groups slide in behind this one and its paints slide out
+          else clMorphStay(() => document.getElementById(door.id("wheel")), ".wheel-sub-seg", e => e.dataset.wheelSub, `${seg.key}/${sub.key}`, go, clWheelRows(door));
           wheelAnnounce(closing ? `${sub.label} closed.` : `${seg.label}, ${sub.label}. Its paints are listed below the picture.`);
         };
         g.addEventListener("click", choose);
@@ -16578,12 +16582,16 @@
         tip.textContent = seg.label;
         path.appendChild(tip);
         const choose = drills
-          ? () => {
+          ? () => clMorphSwap(svg, path, () => {   // CL2: the other colours slide in behind this one and its groups slide out
             st.wheelZoom = seg.key; st.wheelGroup = ""; st.wheel = ""; st.paintOpen = "";
             redraw(`[data-wheel-sub="${seg.key}/${seg.subs[0].key}"]`);
             wheelAnnounce(`${seg.label}. ${seg.subs.length} groups: ${colourWordList(seg.subs.map(s => s.label.toLowerCase()))}. Tap a group to see its paints, or Back to return to all colours.`);
-          }
-          : () => { st.wheel = st.wheel === seg.key ? "" : seg.key; st.paintOpen = ""; redraw(`[data-wheel="${seg.key}"]`); };   // v38: a paint panel never carries over to another part
+          })
+          : () => {
+            const go = () => { st.wheel = st.wheel === seg.key ? "" : seg.key; st.paintOpen = ""; redraw(`[data-wheel="${seg.key}"]`); };   // v38: a paint panel never carries over to another part
+            if (st.wheel === seg.key) go();   // closing: nothing new comes out
+            else clMorphStay(() => document.getElementById(door.id("wheel")), ".wheel-seg", e => e.dataset.wheel, seg.key, go, clWheelRows(door));   // CL2
+          };
         path.addEventListener("click", choose);
         path.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(); } });
         slices.push({ key: seg.key, path });
@@ -16683,7 +16691,16 @@
         emptyPlaceholder: "No paints with a colour yet",
         groups: pickGroups, value: st.base, clickOpens: !swatches.length,
         lead: swatches.length ? (openList) => buildStartSwatches(door, swatches, choices, st.base, choices.own.length > swatches.length, openList,
-          (value) => { st.base = value; redraw(`[data-start-swatch="${CSS.escape(value)}"]`); }) : null,
+          (value) => {
+            const go = () => { st.base = value; redraw(`[data-start-swatch="${CSS.escape(value)}"]`); };
+            if (value === st.base) { go(); return; }
+            // CL2: the other swatches slide in behind this one and fade back, and its colour ideas slide out from behind it
+            clMorphStay(() => document.getElementById(door.id("start-swatches")), ".start-swatch", e => e.dataset.startSwatch, value, go, () => {
+              const box = document.getElementById(door.id("start-swatches"));
+              const scope = box && box.closest(".lab-section, .fold-panel");
+              return scope ? [...scope.querySelectorAll(".idea-list > li")] : [];
+            });
+          }) : null,
         onPick: (value, focus) => { st.base = value; redraw(focus); },
       }));
 
@@ -17536,6 +17553,135 @@
         if (target) target.focus();
       }
     }
+
+    // ================= CL2: Colour Lab colours morph from one set to the next =================
+    // James, 3 Nov: "When a colour is pressed, non chosen colours smoothly slide in behind the pressed colour and the next set of colours
+    // smoothly slide out." Two kinds of press:
+    // (1) the set is replaced (a hue on the wheel opens into its groups; Back returns to all colours): a see-through copy of the old picture
+    //     (no ids, classes, data-, aria- or role, cannot be tapped, hidden from screen readers) stays where it was; its other colours slide in
+    //     behind the pressed one and fade, then the pressed one fades while the new set slides out from behind it into place.
+    // (2) the set stays on screen (Start from's swatches, the wheel's middle colours, a hue's groups): the other colours slide in behind the
+    //     pressed one and fade, then fade back in their own places, while the next set (the colour ideas, or that colour's paints) slides out
+    //     from behind the pressed one into place.
+    // The page itself is drawn at once, exactly as before (same redraw, focus, names and keyboard order); only transform and opacity move,
+    // and nothing is left with a transform. Each half takes --motion-med, on LQ1's --motion-fill-ease curve. A new press (or any tap) finishes
+    // a morph still running at once. Reduce motion: none of it runs. The CSS is in index.html under "CL2:".
+    const CL_SHRINK = 0.3;   // how small a colour gets behind the pressed one
+    const clRuns = new Set();   // the morphs still running, each as the function that finishes it
+    function clMorphEnd() { for (const end of [...clRuns]) end(); }
+    document.addEventListener("click", clMorphEnd, true);
+    // the move that takes el's middle to the screen point (x, y), shrunk to s: in a picture's own units for a piece of a picture, else in px
+    function clToward(el, x, y, s) {
+      const svg = el.ownerSVGElement;
+      if (svg) {
+        const m = svg.getScreenCTM();
+        if (!m) return "none";
+        const p = new DOMPoint(x, y).matrixTransform(m.inverse()), b = el.getBBox();
+        return `translate(${p.x}px, ${p.y}px) scale(${s}) translate(${-(b.x + b.width / 2)}px, ${-(b.y + b.height / 2)}px)`;
+      }
+      const r = el.getBoundingClientRect();
+      return `translate(${x - (r.left + r.width / 2)}px, ${y - (r.top + r.height / 2)}px) scale(${s})`;
+    }
+    const clMiddle = (el) => { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+    // one morph: play(el, frames) runs over both halves; end() finishes every move at once, removes the copy and puts the pressed one back
+    function clStart() {
+      const anims = [], layers = [], fronts = [];
+      const ms = 2 * (motionMs("--motion-med") || 240);
+      const ease = getComputedStyle(document.documentElement).getPropertyValue("--motion-fill-ease").trim() || "ease-in-out";
+      const end = () => {
+        if (!clRuns.delete(end)) return;
+        for (const a of anims) { try { a.finish(); } catch (ignored) { a.cancel(); } }
+        for (const l of layers) l.remove();
+        for (const f of fronts) f.classList.remove("cl2-front");
+      };
+      clRuns.add(end);
+      setTimeout(end, ms + 400);   // in case the animation never runs
+      return {
+        layers, end,
+        front(el) { el.classList.add("cl2-front"); fronts.push(el); },   // drawn over the rest, so they pass behind it
+        play(el, frames) { for (const f of frames) if (f.offset !== 1) f.easing = ease; anims.push(lqAnim(el, frames, { duration: ms, easing: "linear" })); },
+        done() { Promise.all(anims.map(a => a.finished.catch(() => {}))).then(end); },
+      };
+    }
+    // the keyframes: a colour slides in behind the point (x, y) and fades (then, with back, fades in again where it is), or slides out from it
+    const clIn = (el, x, y, back) => [{ transform: "none", opacity: 1 }, { offset: 0.5, transform: clToward(el, x, y, CL_SHRINK), opacity: 0 },
+      ...(back ? [{ offset: 0.5, transform: "none", opacity: 0 }, { offset: 1, transform: "none", opacity: 1 }] : [{ offset: 1, transform: clToward(el, x, y, CL_SHRINK), opacity: 0 }])];
+    const clOut = (el, x, y) => { const t = clToward(el, x, y, CL_SHRINK); return [{ transform: t, opacity: 0 }, { offset: 0.5, transform: t, opacity: 0 }, { offset: 1, transform: "none", opacity: 1 }]; };
+    const clFade = (from, to) => [{ opacity: from }, { offset: 0.5, opacity: from }, { offset: 1, opacity: to }];
+    const CL_PIECES = ".wheel-seg, .wheel-sub-seg, .wheel-back-seg";   // the pressable colours of a wheel picture (and its Back disc)
+    const CL_PAINT = ["fill", "stroke", "stroke-width", "opacity", "font-size", "font-weight", "font-family"];
+    // (1) the set is replaced. svg: the wheel picture now; pressed: the piece pressed (a hue, or the Back disc); change() draws the page again.
+    function clMorphSwap(svg, pressed, change) {
+      clMorphEnd();
+      if (!lqOn() || !svg || !svg.id || !lqShown(svg) || !pressed) return change();
+      // the copy: every part keeps the colours it is drawn in (as plain style), then loses its class, id, data-, aria-, role and tooltip
+      const r = svg.getBoundingClientRect();
+      const copy = svg.cloneNode(true);
+      const from = [svg, ...svg.querySelectorAll("*")], to = [copy, ...copy.querySelectorAll("*")];
+      const twin = new Map(from.map((el, i) => [el, to[i]]));
+      const grads = [];
+      from.forEach((el, i) => {
+        const cs = getComputedStyle(el);
+        for (const p of CL_PAINT) to[i].style.setProperty(p, cs.getPropertyValue(p));
+        if (el.id && /gradient$/i.test(el.tagName)) grads.push([el.id, i]);
+      });
+      lqStrip(copy);
+      for (const c of to) { c.removeAttribute("class"); c.removeAttribute("tabindex"); if (c.tagName === "title") c.remove(); }
+      for (const [id, i] of grads) {   // a gradient gets an id of its own in the copy, so the piece painted with it still is
+        to[i].id = "cmp-morph-" + i;
+        for (const c of to) if (c.style.fill.includes(id)) c.style.fill = `url("#${to[i].id}")`;
+      }
+      Object.assign(copy.style, { display: "block", width: "100%", height: "100%", margin: "0", maxWidth: "none" });
+      const layer = document.createElement("div");
+      layer.className = "lq-ghost cl2-ghost";
+      layer.setAttribute("aria-hidden", "true");
+      layer.inert = true;
+      layer.style.cssText = `position: absolute; left: ${r.left + scrollX}px; top: ${r.top + scrollY}px; width: ${r.width}px; height: ${r.height}px; `
+        + "margin: 0; padding: 0; border: 0; overflow: visible; z-index: 5; pointer-events: none;";
+      layer.appendChild(copy);
+      const oldPieces = [...svg.children].filter(e => e.matches(CL_PIECES));
+      const pc = twin.get(pressed);
+      change();
+      const now = document.getElementById(svg.id);
+      if (!now || now === svg || !lqShown(now) || !pc) return;
+      const run = clStart();
+      document.body.appendChild(layer);
+      run.layers.push(layer);
+      pc.parentNode.appendChild(pc);   // the pressed one is drawn over the rest, so they slide in behind it
+      const [x, y] = clMiddle(pc);
+      const moving = new Set(oldPieces.map(e => twin.get(e)));
+      for (const c of copy.children) {
+        if (c === pc) run.play(c, clFade(1, 0));
+        else if (moving.has(c)) run.play(c, clIn(c, x, y, false));
+        else if (c.tagName !== "defs") run.play(c, [{ opacity: 1 }, { offset: 0.5, opacity: 0 }, { offset: 1, opacity: 0 }]);   // the rings' edges
+      }
+      for (const c of now.children) {
+        if (c.matches(".wheel-seg, .wheel-sub-seg")) run.play(c, clOut(c, x, y));
+        else if (c.tagName !== "defs") run.play(c, clFade(0, 1));   // the edges and the Back disc come in with them
+      }
+      run.done();
+    }
+    // (2) the set stays. getBox(): the set's box (found again after the redraw); sel: its colours; keyOf(el): a colour's key; key: the one
+    // pressed; change() draws the page again; getNext(): the new set's colours, in place.
+    function clMorphStay(getBox, sel, keyOf, key, change, getNext) {
+      clMorphEnd();
+      if (!lqOn() || !lqShown(getBox())) return change();
+      change();
+      const box = getBox();
+      if (!box || !lqShown(box)) return;
+      const items = [...box.querySelectorAll(sel)];
+      const pressed = items.find(e => keyOf(e) === key);
+      if (!pressed || !lqShown(pressed)) return;
+      const run = clStart();
+      run.front(pressed.ownerSVGElement || pressed);
+      const [x, y] = clMiddle(pressed);
+      for (const el of items) if (el !== pressed && lqShown(el)) run.play(el, clIn(el, x, y, true));
+      const near = (q) => q.bottom > -40 && q.top < innerHeight + 40;   // only the new colours on or near the screen move
+      for (const el of getNext().filter(e => lqShown(e) && near(e.getBoundingClientRect())).slice(0, 24)) run.play(el, clOut(el, x, y));
+      run.done();
+    }
+    // the paints listed under the wheel picture (the next set after a middle colour or a group)
+    const clWheelRows = (door) => () => { const d = document.getElementById(door.id("wheel-detail")); return d ? [...d.querySelectorAll(".idea-list > li")] : []; };
 
     // ================= v18c: TIDY BRANDS AND "DO YOU OWN THESE?" =================
     // The brand box used to fill itself in, so typing "Citadel" gave "CitadelCitadel".
