@@ -30,9 +30,11 @@ def size(page, sel):
 
 # U6b (v126): the orb is now James's Futuristic look (the app icon's ring): five ring segments (ml-k0 to ml-k4 in .ml-segs), the dark lens disc
 # (ml-lens) and the centre dot (ml-dot), instead of the old four arcs (orb-a, orb-b, orb-c, orb-dim), lens and core. The checks below follow it.
+# U7 (round 7, James's drawings): the Futuristic look keeps the five ring segments, but the lens disc and centre dot became a machined housing
+# outlined in the lens colour (every ml-sil outline) round a lit eye (ml-h-eye1). The checks follow what they stand for: an outline and a lit centre.
 PAINT_OF = """() => {
     const c = s => getComputedStyle(document.querySelector('#mentor-button ' + s));
-    return { segs: [0, 1, 2, 3, 4].map(i => c('.ml-segs .ml-k' + i).stroke), lens: c('.ml-lens').fill, core: c('.ml-dot').fill };
+    return { segs: [0, 1, 2, 3, 4].map(i => c('.ml-segs .ml-k' + i).stroke), lens: c('.ml-sil').stroke, core: c('.ml-h-eye1').fill };
 }"""
 
 def main():
@@ -48,8 +50,8 @@ def main():
         start(page)
         orb = page.locator("#mentor-button svg")
         check("one inline graphic in the button, hidden from screen readers", orb.count() == 1 and orb.get_attribute("aria-hidden") == "true")
-        check("five ring segments, a lens and a dot (U6b: the Futuristic look)", page.locator("#mentor-button svg .ml-segs circle").count() == 5
-              and page.locator("#mentor-button svg .ml-lens").count() >= 1 and page.locator("#mentor-button svg .ml-dot").count() == 1)
+        check("five ring segments, an outline and a lit centre (U6b, U7: the Futuristic look)", page.locator("#mentor-button svg .ml-segs circle").count() == 5
+              and page.locator("#mentor-button svg .ml-sil").count() >= 1 and page.locator("#mentor-button svg .ml-h-eye1").count() == 1)
         check("no image, no link to a file inside it", page.locator("#mentor-button img, #mentor-button image, #mentor-button use").count() == 0)
         check("the button keeps its name and is still the one component in the bar",
               page.get_attribute("#mentor-button", "aria-label") == "Ask Mentor" and page.locator(".tabs .arc #mentor-button").count() == 1)
@@ -87,7 +89,7 @@ def main():
         print("\n--- 4. It still opens Ask the Mentor ---")
         start(page)
         page.click("#mentor-button")
-        page.click(".mentor-chip")   # X5: the orb opens the Mentor window; its Paint Picker chip opens the picker in Painting > Colour Lab
+        page.click(".mentor-suggest"); page.click(".mentor-row >> nth=0")   # MW2 (v129): Paint Picker is the first row inside the Suggestions pill (was a chip). X5: the orb opens the Mentor window; its Paint Picker chip opens the picker in Painting > Colour Lab
         page.wait_for_selector("#cmp-lab-picker")
         # X1: the picker in Painting > Colour Lab
         check("tapping the orb opens the Picker in Colour Lab", page.get_attribute('#lab-seg [data-lab="picker"]', "aria-selected") == "true")

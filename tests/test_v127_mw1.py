@@ -97,8 +97,10 @@ def main():
         orb_scale = page.evaluate("() => { const b = document.querySelector('#mentor-button svg'), o = document.querySelector('.mentor-orbbox svg'); return (b.getBoundingClientRect().width / b.viewBox.baseVal.width) / (o.getBoundingClientRect().width / o.viewBox.baseVal.width); }")
         check("the orb starts on the button's drawing, at the same drawing size", near(centre(start["orb"]), centre(before["svg"]), 2) and abs(orb_scale - 1) < 0.03, (start["orb"], before["svg"], orb_scale))
         mid = page.evaluate(AT, 0.35)
-        check("half way the shape is between the button and the window, still covered, words still hidden",
-              mid["box"][1] < start["box"][1] and mid["box"][3] - mid["box"][1] > bw and mid["skin"] == 1 and mid["words"] == 0, mid)
+        # v129 (MO6, James 3 Nov evening: "much slower so it feels fluid"): the button's colour now fades into the window's over most of the open
+        # (from a tenth of the way), so half way it is part faded rather than still full; the words still wait for the end
+        check("half way the shape is between the button and the window, the button's colour part way through its fade, words still hidden",
+              mid["box"][1] < start["box"][1] and mid["box"][3] - mid["box"][1] > bw and 0.2 < mid["skin"] < 1 and mid["words"] == 0, mid)
         arrived = page.evaluate(AT, 0.7)
         page.evaluate(RESUME)
         settled(page)
@@ -109,18 +111,21 @@ def main():
         check("the orb has reached its place when the shape arrives", near(arrived["orb"], orb), (arrived["orb"], orb))
         end = page.evaluate("() => { const w = document.querySelector('.mentor-window'), cs = getComputedStyle(w); return [cs.clipPath, cs.transform, getComputedStyle(document.querySelector('.mp-skin')).opacity, getComputedStyle(document.querySelector('.mentor-col')).opacity]; }")
         check("once open: no clip, no transform, the skin gone and the words in full", end == ["none", "none", "0", "1"], end)
-        check("only transform, opacity and clip-path move, and the move is about 320 ms", props["props"] and set(props["props"]) <= {"transform", "opacity", "clipPath"}
-              and props["ms"] and max(props["ms"]) <= 360, props)
+        # v129 (MO6, James 3 Nov evening): the open is now 700 to 900 ms (--motion-flow, 800 ms); it was 320 ms, which James saw as instant
+        check("only transform, opacity and clip-path move, and the move takes 700 to 900 ms", props["props"] and set(props["props"]) <= {"transform", "opacity", "clipPath"}
+              and props["ms"] and 700 <= max(props["ms"]) <= 900, props)
         after = page.evaluate(BUTTON)
         check("the round button stays where it is and shows no mood", after["box"] == before["box"] and "ml-neutral" in after["look"], (before, after))
 
         print("\n--- 2. The orb above the chat ---")
-        g, chips, form = rect(page, ".mentor-greeting"), rect(page, ".mentor-col > .mentor-chips"), rect(page, ".mentor-form")
+        # MW2 (v129): the strip of starter chips became one Suggestions pill, centred under the greeting, so the chip strip's box here became the
+        # pill's, and "the chips use the window's full width" became "the pill is centred" (the box still uses the full width)
+        g, chips, form = rect(page, ".mentor-greeting"), rect(page, ".mentor-suggest"), rect(page, ".mentor-form")
         ow = orb[2] - orb[0]
         check("the orb is larger than before (68 px), 84 to 96 px", 84 <= ow <= 96, ow)
-        check("the orb sits above the greeting, the chips and the box", orb[3] <= g[1] + 0.5 and g[3] <= chips[1] + 0.5 and chips[3] <= form[1] + 0.5, (orb, g, chips, form))
+        check("the orb sits above the greeting, the Suggestions pill and the box", orb[3] <= g[1] + 0.5 and g[3] <= chips[1] + 0.5 and chips[3] <= form[1] + 0.5, (orb, g, chips, form))
         check("the orb is centred in the window", abs(centre(orb)[0] - centre(win)[0]) < 1.5, (orb, win))
-        check("the chips and the box use the window's full width", chips[0] - win[0] < 20 and win[2] - chips[2] < 20 and form[2] - form[0] > win[2] - win[0] - 40, (chips, form, win))
+        check("the pill is centred and the box uses the window's full width", abs(centre(chips)[0] - centre(win)[0]) < 1.5 and form[2] - form[0] > win[2] - win[0] - 40, (chips, form, win))
         shrink = page.evaluate(ORB_MOVE, "how do I thin paint")
         check("in the chat view the orb shrinks smoothly (it starts from its old size)", len(shrink) == 1 and "scale(1." in shrink[0], shrink)
         page.wait_for_function("() => document.querySelector('.mentor-orbbox svg').getAnimations().every(a => a.animationName)")

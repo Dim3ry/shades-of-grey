@@ -1016,7 +1016,7 @@
           "mix": 40,
           "look": "a moss green",
           "hex": "#3d6a2a",
-          "note": "Stippled onto rocks for fine moss, never over the whole base."
+          "note": "Dabbed onto rocks with an old brush as fine moss, never washed over the whole base."
         }
       ]
     },
@@ -1988,7 +1988,7 @@
         "Snow texture paste",
         "An old brush for spooning",
         "A very thin blue paint",
-        "Plastic glue",
+        "Super glue",
         "Tissue for handling"
       ],
       "howto": [
@@ -1996,7 +1996,7 @@
         "Paint the stones and ground as below, then pick out leaves and any small details.",
         "Spoon snow paste into drifts with an old brush, leaving room for the feet, and build it up once dry.",
         "While the snow is still wet, touch in a very thin blue so it soaks in as cold shadow.",
-        "When fully dry, glue the model on and paint the rim black."
+        "When fully dry, scrape paint off the contact points, glue the model on with super glue and paint the rim black."
       ],
       "paintSteps": [
         {
@@ -2013,7 +2013,15 @@
           "mix": 100,
           "look": "a warm mid grey",
           "hex": "#7a7470",
-          "note": "Overbrush the stone, then a thin wash of black over it all."
+          "note": "Overbrush the stone fairly heavily."
+        },
+        {
+          "technique": "Wash",
+          "coats": 1,
+          "mix": 40,
+          "look": "a thin black",
+          "hex": "#1f1f21",
+          "note": "A thin wash over it all so the joins between stones go dark."
         },
         {
           "technique": "Edge highlight",
@@ -2030,14 +2038,6 @@
           "look": "a deep green",
           "hex": "#2f3d2c",
           "note": "Thin patches on random stones for age."
-        },
-        {
-          "technique": "Glaze",
-          "coats": 1,
-          "mix": 10,
-          "look": "a cold blue",
-          "hex": "#8aa8c8",
-          "note": "Drop into the wet snow for shadow."
         }
       ]
     },
@@ -2156,6 +2156,14 @@
         "Paint the rim neatly, then press a tuft or two on with tweezers so no grass sticks to wet rim paint."
       ],
       "paintSteps": [
+        {
+          "technique": "Base coat",
+          "coats": 2,
+          "mix": 100,
+          "look": "a mid earth brown",
+          "hex": "#6b5236",
+          "note": "Prime and base plain artist's paste first, but tinted texture paint can skip this."
+        },
         {
           "technique": "Wash",
           "coats": 1,

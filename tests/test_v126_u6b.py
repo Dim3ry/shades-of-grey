@@ -9,7 +9,7 @@
    Finished for thanks or a goodbye (with a thanks or finished line), back to neutral after a pause; the round button never shows a mood;
    the orb's box keeps its size. Returning after a long gap greets with a returning line.
 5. Reduce motion: nothing in the orb moves, and the moods still differ in shape.
-6. The orb's ring takes the colour set's five colours. Sizes: 390, 360 and 320 px, light and dark, three themes besides Classic.
+6. The colour set's five colours are still set, but (since U7) the orb's ring keeps the theme's colours. Sizes: 390, 360 and 320 px, light and dark, three themes besides Classic.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
@@ -57,14 +57,15 @@ def main():
         check("colours only from --mentor names: no hex, rgb or hsl", not re.search(r"#[0-9a-fA-F]{3,6}\b|rgba?\(|hsla?\(", src)
               and all(v.startswith("--mentor-") for v in re.findall(r"var\((--[\w-]+)", src)))
         check("no scripts or event attributes inside the drawings", not re.search(r"<script|\son[a-z]+\s*=", src, re.I))
-        # James's tweaks (3 Nov, afternoon)
-        stars = page.evaluate("""() => ['neutral','thinking','pleased','unsure','finished'].map(s => { const g = minifolioLook.svg('magical', s);
-            return [g.querySelectorAll('.ml-swirl, .ml-dotline').length, g.querySelectorAll('.ml-stars .ml-star').length]; })""")
-        check("Magical: the swirl lines are gone, and every state has a few tiny stars (fewer for Unsure, more for Pleased)",
-              all(a == 0 for a, _ in stars) and stars[3][1] < stars[0][1] < stars[2][1] and all(2 <= n <= 7 for _, n in stars), stars)
-        drop = page.evaluate("""() => { const n = minifolioLook.svg('grounded', 'neutral').querySelector('path.ml-dot'), f = minifolioLook.svg('grounded', 'finished');
-            const ring = f.querySelector('.ml-dotring'); return [ring && ring.tagName, ring && ring.getAttribute('d') === n.getAttribute('d'), getComputedStyle(document.body).color && 1]; }""")
-        check("Grounded Finished: a hollow paint drop (the drop the other states use, as an outline), not a hollow circle", drop[0] == "path" and drop[1], drop)
+        # James's tweaks (3 Nov, afternoon) were to round 6's drawings. U7 (round 7, James's own drawings) replaced them: Magical has no stars and
+        # Grounded no hollow drop, and Finished in every look is a glow at the centre. So these two checks now follow round 7's behaviour.
+        swirl = page.evaluate("""() => ['neutral','thinking','pleased','unsure','finished'].map(s => minifolioLook.svg('magical', s).querySelectorAll('.ml-swirl, .ml-dotline').length)""")
+        check("Magical: the swirl lines round the dot are still gone", all(n == 0 for n in swirl), swirl)
+        glow = page.evaluate("""() => { const box = document.createElement('div'); document.body.appendChild(box);
+            const out = ['futuristic', 'magical', 'grounded'].map(l => ['neutral', 'finished'].map(s => { box.replaceChildren(minifolioLook.svg(l, s));
+              const g = box.querySelector('.ml-fglow'); return !!g && getComputedStyle(g).display !== 'none'; }));
+            box.remove(); return out; }""")
+        check("Finished (and only Finished) shows the centre glow, in every look", glow == [[False, True]] * 3, glow)
 
         print("\n--- 2. The script ---")
         phrases = page.evaluate("() => MENTOR_PHRASES")
@@ -127,13 +128,21 @@ def main():
         for look in LOOKS:
             # the same page each time: the look is switched and Mentor starts afresh, as on a new load (its notes not yet read)
             page.evaluate("(l) => { settings.mentorLook = l; applyMentorLook(); mentorWarm = false; mentorClear(); }", look)
+            # U7: Thinking lasts about 0.4 s from the end of the opening move, and reading it straight after the move left only a few ms to spare
+            # (round 7's bigger drawings made it miss often on a busy machine). So the first mood the orb takes after opening is recorded as it happens.
+            page.evaluate("""() => { window.__moods = []; window.__moodWatch && window.__moodWatch.disconnect();
+                window.__moodWatch = new MutationObserver(() => { const b = document.querySelector('.mentor-orbbox');
+                  if (b && b.dataset.mood) window.__moods.push([b.dataset.mood, b.querySelector('svg').getAttribute('class')]); });
+                window.__moodWatch.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['data-mood'] }); }""")
             open_window(page)
-            seen = {"open": page.evaluate(MOOD)}
+            page.wait_for_function("() => window.__moods.length > 0", timeout=6000)
+            seen = {"open": page.evaluate("() => { window.__moodWatch.disconnect(); return window.__moods[0]; }")}
             page.wait_for_function("() => document.querySelector('.mentor-orbbox').dataset.mood === 'neutral'", timeout=6000)
             seen["ready"] = page.evaluate(MOOD)
-            tw = page.evaluate("""() => { const shown = e => !!e && getComputedStyle(e).display !== 'none';
-                return [shown(document.querySelector('.mentor-orbbox .ml-stars')), shown(document.querySelector('#mentor-button .ml-stars')),
-                        [...document.querySelectorAll('.mentor-orbbox .ml-star')].some(s => s.getAnimations().some(a => a.animationName === 'ml-twinkle'))]; }""")
+            # U7: round 7 has no stars; the window-only motion is checked on the look's own moving parts (Magical: the stone ring and the crystals)
+            tw = page.evaluate("""() => { const moving = sel => [...document.querySelectorAll(sel)].some(e => e.getAnimations().some(a => a.playState === 'running'));
+                return [!!document.querySelector('#mentor-button .ml-magical'), moving('.mentor-orbbox .ml-orbit, .mentor-orbbox [class*="ml-c"]'),
+                        moving('#mentor-button *')]; }""")
             ask(page, "how do I thin paint"); seen["clear"] = page.evaluate(MOOD)
             size0 = page.locator(".mentor-orbbox").bounding_box()
             ask(page, "basecaot tips"); seen["dym"] = page.evaluate(MOOD)
@@ -149,7 +158,7 @@ def main():
                   all(seen[k][0] == v and f"ml-{v}" in seen[k][1] and f"ml-{look}" in seen[k][1] for k, v in want.items()), seen)
             check(f"{look}: the round button never shows a mood", "ml-neutral" in button and f"ml-{look}" in button, button)
             if look == "magical":
-                check("Magical: the stars twinkle in the window at rest; the round button leaves them out (it never moves)", tw == [True, False, True], tw)
+                check("Magical: its parts move in the window at rest; the round button never moves", tw == [True, True, False], tw)
             if look == "futuristic":
                 check("the orb's box keeps its size when the mood changes", size1 and size0 and abs(size0["width"] - size1["width"]) < 1 and abs(size0["height"] - size1["height"]) < 1, (size0, size1))
                 check("no answer twice in a row: E's line first, then a different unsure line", first_none == "I do not know that yet."
@@ -179,22 +188,29 @@ def main():
         check("the window's orb does not move while Mentor gets ready", rp.evaluate(MOOD)[0] == "thinking"
               and rp.evaluate("() => document.querySelector('.mentor-orbbox').getAnimations({ subtree: true }).length") == 0)
         rp.wait_for_function("() => document.querySelector('.mentor-orbbox').dataset.mood === 'neutral'", timeout=6000)
+        # U7: round 7 draws every state from one drawing (the state is a class on it), so the shapes are compared as they look on screen, not as markup
         shapes = []
         for q in ("how do I thin paint", "asdf qwerty", "thanks"):
             ask(rp, q)
-            shapes.append(rp.evaluate("() => [document.querySelector('.mentor-orbbox').getAnimations({ subtree: true }).length, document.querySelector('.mentor-orbbox svg').innerHTML]"))
-        check("Pleased, Unsure and Finished: nothing moves, and each is a different shape", all(a == 0 for a, _ in shapes) and len({s for _, s in shapes}) == 3)
+            shapes.append([rp.evaluate("() => document.querySelector('.mentor-orbbox').getAnimations({ subtree: true }).length"),
+                           rp.locator(".mentor-orbbox").screenshot()])
+        check("Pleased, Unsure and Finished: nothing moves, and each looks different", all(a == 0 for a, _ in shapes) and len({s for _, s in shapes}) == 3)
         still = rp.evaluate("""() => { settings.mentorLook = 'magical'; applyMentorLook(); return ['pleased', 'unsure'].map(m => { mentorMood(m);
-            const st = [...document.querySelectorAll('.mentor-orbbox .ml-star')];
-            return [st.length, st.every(s => s.getAnimations().length === 0), +getComputedStyle(st[0]).opacity]; }); }""")
-        check("Magical stars with reduce motion: still, at a fixed opacity, and more and brighter for Pleased than Unsure",
-              all(x[1] for x in still) and still[0][0] > still[1][0] and still[0][2] > still[1][2] > 0, still)
+            const box = document.querySelector('.mentor-orbbox');
+            return [box.getAnimations({ subtree: true }).length, +getComputedStyle(box.querySelector('.ml-cg')).opacity]; }); }""")
+        check("Magical with reduce motion: still, and its crystals brighter for Pleased than Unsure",
+              all(x[0] == 0 for x in still) and still[0][1] > still[1][1] > 0, still)
         rm.close()
 
         print("\n--- 6. Colours and sizes ---")
+        # U7 reversed this (James, 3 Nov): the avatars take the theme's colours only. app.js still sets the colour set's five colours
+        # (--mentor-s0 to --mentor-s4, which round 6 in mentor-looks-r6.js reads), but the ring no longer follows them.
+        RING = "() => [0, 1, 2, 3, 4].map(i => getComputedStyle(document.querySelector('#mentor-button .ml-segs .ml-k' + i)).stroke)"
+        page.evaluate("() => { settings.mentorLook = 'futuristic'; applyMentorLook(); }")
+        ring0 = page.evaluate(RING)
         page.evaluate("() => { settings.palette = 'greyscale'; applyPalette('greyscale'); }")
         got = page.evaluate("() => [stageColours('greyscale', 5), [0, 1, 2, 3, 4].map(i => getComputedStyle(document.documentElement).getPropertyValue('--mentor-s' + i).trim())]")
-        check("the ring segments take the colour set's own five colours", got[0] == got[1], got)
+        check("the colour set's five colours are still set, but the ring segments keep the theme's colours", got[0] == got[1] and page.evaluate(RING) == ring0, (got, ring0))
         for (w, h, mode, theme, look) in ((390, 844, "dark", "parchment", "magical"), (360, 640, "light", "forge", "grounded"),
                                           (320, 568, "light", "bench", "futuristic")):
             page.set_viewport_size({"width": w, "height": h})

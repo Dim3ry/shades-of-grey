@@ -66,7 +66,8 @@ def main():
         print("\n--- 1. Versions and the Updates entry ---")
         t.load(page, units=[])
         entry = page.evaluate("CHANGELOG.find(c => c.version === 'v60')")
-        check("the entry mentions counts and Set every row to", entry and "10x Boyz" in " ".join(entry["changes"]) and "Set every row to" in " ".join(entry["changes"]), entry)
+        # H: the entry's example is now "10x Goblins" (Boyz is a Games Workshop name)
+        check("the entry mentions counts and Set every row to", entry and "10x Goblins" in " ".join(entry["changes"]) and "Set every row to" in " ".join(entry["changes"]), entry)
         check("Help explains typed lists and the per-row stage", page.locator("#help-typed-list").count() == 1 and "Set every row to" in (page.text_content("#help-row-stage") or ""))
 
         # ---------- 2. Reading counts ----------

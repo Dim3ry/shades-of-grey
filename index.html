@@ -55,8 +55,8 @@
        (applyAppearance in app.js) takes over once the app starts.
        U6b: mentor-looks.js (the Mentor orb's three looks and five states, plain data: MENTOR_LOOKS and MENTOR_LOOKS_CSS) loads
        just before it, so early.js can put the chosen look and its styles on the page before the first frame (LR1). -->
-  <script src="mentor-looks.js?v=128"></script>
-  <script src="early.js?v=128"></script>
+  <script src="mentor-looks.js?v=129"></script>
+  <script src="early.js?v=129"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -107,7 +107,10 @@
     /* Mo1: every movement in the app takes its time and feel from these four values. Change them here and everything follows. */
     :root { --motion-fast: 120ms; --motion-med: 240ms; --motion-slow: 480ms; --motion-ease: linear;
       /* Mo4b: the travel of the start circle's segments into the bar (that travel only; everything else stays linear): 1.5 s, ease in and out with a small overshoot */
-      --motion-travel: 1500ms; --motion-travel-ease: cubic-bezier(0.65, 0, 0.3, 1.25); }
+      --motion-travel: 1500ms; --motion-travel-ease: cubic-bezier(0.65, 0, 0.3, 1.25);
+      /* MO6 (James, 3 Nov evening): the slow, fluid pace for the signature moves only (the Mentor window opening, the lit piece sliding in the bar, and
+         the curve of the colour fades on the travel above), so they read as designed, not instant. Ordinary taps, toasts and fold-outs keep the values above. */
+      --motion-flow: 800ms; --motion-flow-ease: cubic-bezier(0, 0, 0.58, 1); }
     :root[data-appearance="light"], .theme-swatch[data-t="classic"][data-m="light"] {
       --background: #e9eff6;  /* pale cool blue-grey page */
       --card: #f8fafc;        /* near-white boxes */
@@ -138,23 +141,15 @@
     }
     /* v47: the theme fonts. Our own files only (the security policy allows fonts from minifolio.app and nowhere else).
        Latin subset, woff2. A browser downloads a font only when something on screen uses it (TH1: Classic now uses Oxanium, set in its TH1 block),
-       and sw.js keeps each one after its first use so a chosen theme works offline. Licences: fonts/LICENSES.md. */
+       and sw.js keeps each one after its first use so a chosen theme works offline. Licences: fonts/LICENSES.md.
+       TH6: each look has its own set (the newer faces and their fallbacks are in the TH6 block after the THEMES section). */
     @font-face { font-family: 'Barlow'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/barlow-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
     @font-face { font-family: 'Barlow'; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/barlow-latin-500-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
     @font-face { font-family: 'Barlow'; font-style: normal; font-weight: 600; font-display: swap; src: url(fonts/barlow-latin-600-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-    @font-face { font-family: 'Barlow Semi Condensed'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/barlow-semi-condensed-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-    @font-face { font-family: 'Barlow Semi Condensed'; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/barlow-semi-condensed-latin-500-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
     @font-face { font-family: 'Big Shoulders Stencil'; font-style: normal; font-weight: 700; font-display: swap; src: url(fonts/big-shoulders-stencil-latin-700-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
     @font-face { font-family: 'DM Mono'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/dm-mono-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
     @font-face { font-family: 'DM Mono'; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/dm-mono-latin-500-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-    @font-face { font-family: 'EB Garamond'; font-style: italic; font-weight: 400; font-display: swap; src: url(fonts/eb-garamond-latin-400-italic.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-    @font-face { font-family: 'EB Garamond'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/eb-garamond-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-    @font-face { font-family: 'EB Garamond'; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/eb-garamond-latin-500-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-    @font-face { font-family: 'IM Fell English'; font-style: italic; font-weight: 400; font-display: swap; src: url(fonts/im-fell-english-latin-400-italic.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-    @font-face { font-family: 'IM Fell English'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/im-fell-english-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
     @font-face { font-family: 'Permanent Marker'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/permanent-marker-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-    @font-face { font-family: 'Teko'; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/teko-latin-500-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-    @font-face { font-family: 'Teko'; font-style: normal; font-weight: 600; font-display: swap; src: url(fonts/teko-latin-600-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
 
     /* v47: the theme "structure" tokens. These are the pre-theme values; the photo viewer and the camera keep them. TH1: Classic's own fonts and corners are in its TH1 block.
        The other themes set their own in the THEMES section near the end. The photo viewer and the camera always keep these. */
@@ -328,10 +323,13 @@
        applyPalette; these defaults are the Ice set, the app icon's colours, for the first frame before app.js has run). --mentor-dot is the centre
        dot: each theme's dark accent, so it stays light on the dark badge in light mode too (Classic: the icon's ice blue). --mentor-glint is the
        wet sheen on the Grounded paint. */
-    :root { --mentor-s0: #64748b; --mentor-s1: #6366f1; --mentor-s2: #38bdf8; --mentor-s3: #22d3ee; --mentor-s4: #a7f3d0; --mentor-dot: #7dd3fc; --mentor-glint: #ffffff; }
-    :root[data-t="parchment"] { --mentor-dot: #dc6575; }
-    :root[data-t="forge"] { --mentor-dot: #e8642c; }   /* TH2: the new forge orange */
-    :root[data-t="bench"] { --mentor-dot: #cdbd89; }
+    /* U7: round 7's looks (James's drawings) take their colours from the theme only: --mentor-t1, --mentor-t2 and --mentor-t3 are the theme's own dark-mode
+       good, note and muted colours, so they read the same in light mode (like --mentor-dot). The stage colour set no longer changes the avatars; app.js
+       still sets --mentor-s0 to --mentor-s4, which only round 6 (mentor-looks-r6.js) reads. */
+    :root { --mentor-s0: #64748b; --mentor-s1: #6366f1; --mentor-s2: #38bdf8; --mentor-s3: #22d3ee; --mentor-s4: #a7f3d0; --mentor-dot: #7dd3fc; --mentor-glint: #ffffff; --mentor-t1: #5eead4; --mentor-t2: #c4b5fd; --mentor-t3: #8193ad; }
+    :root[data-t="parchment"] { --mentor-dot: #dc6575; --mentor-t1: #8cbf7a; --mentor-t2: #6fb8a6; --mentor-t3: #a79877; }
+    :root[data-t="forge"] { --mentor-dot: #e8642c; --mentor-t1: #80c56b; --mentor-t2: #6fc3b5; --mentor-t3: #9c9a93; }   /* TH2: the new forge orange; U7: TH2's dark good, note and muted */
+    :root[data-t="bench"] { --mentor-dot: #cdbd89; --mentor-t1: #86d096; --mentor-t2: #86c7d2; --mentor-t3: #abb1a2; }   /* U7: TH4's dark good, note and muted */
     .mentor-look-chips .chip { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; }
     .mentor-look-chips .ml-orb { width: 24px; height: 24px; flex: none; }   /* v126: 24 px keeps the chip at the one-line height (28 made it 52 px, a stretched pill) */
 
@@ -381,45 +379,10 @@
     body.launching .mentor-orb svg { width: 64px; height: 64px; }
     body.launching .toast { bottom: calc(12px + env(safe-area-inset-bottom)); }
 
-    /* Mo4a: the loading ring (a fresh load only), drawn inside .arc so it scales with the circle. Three arcs in the Mentor orb's own colours,
-       each over a faint full track, turning slowly while they fill; the segments stay hidden (and nothing can be tapped) until it is full. */
-    .mo-load { position: absolute; left: 0; top: 0; width: 390px; height: 360px; overflow: visible; pointer-events: none; }
-    .mo-load-turn { transform-box: view-box; transform-origin: 195px 180px; animation: mo-ring-turn 4s var(--motion-ease) infinite; }
-    .mo-load circle { fill: none; }
-    .mo-load .t { stroke: var(--text); stroke-opacity: 0.14; stroke-width: 3; }
-    .mo-load .a { stroke-width: 4.5; stroke-linecap: round; }
-    .mo-load .a0 { stroke: var(--mentor-a); }
-    .mo-load .a1 { stroke: var(--mentor-b); }
-    .mo-load .a2 { stroke: var(--mentor-c); }
+    /* Mo4a, LR1: the start circle's segments are held back (hidden and not tappable) while the app loads. MO6: the loading ring is no longer drawn
+       inside the circle; the loading screen is the app icon's ring on a plain screen (see "MO6:" below), and it hands over to the circle when done. */
     .ring-hold { visibility: hidden; }
     body.ring-loading .arc > button { pointer-events: none; }
-    @keyframes mo-ring-turn { to { transform: rotate(360deg); } }
-    /* LR1: the loading ring is in the page itself (inside .arc below), so it shows from the very first frame, before any script has run. <body> starts with
-       "launching ring-loading" and the four segments with "ring-hold"; early.js lights the ring as each script file arrives, then app.js runs Mo4a's three
-       steps on the same ring and takes it away (or at once if the app opens on a section). With the Futuristic look (the default) the ring is the orb's
-       own five segments, the app icon's ring, at Mo4a's place (radius 71): each one goes from faint to full in turn, clockwise from 12 o'clock, over a dark
-       band (the orb's badge colour, so it reads in light mode too). Magical and Grounded keep Mo4a's three arcs (data-look on the page, set by early.js).
-       The slow sweep is a separate box turned by CSS alone, so it keeps moving even while the phone is busy reading a big script file.
-       Reduced motion: no sweep and no turning; the segments light up in whole steps. */
-    .mo-load .lr-three { display: none; }
-    :root[data-look="magical"] .mo-load .lr-three, :root[data-look="grounded"] .mo-load .lr-three { display: inline; }
-    :root[data-look="magical"] .mo-load .lr-five, :root[data-look="grounded"] .mo-load .lr-five { display: none; }
-    .mo-load .lr-back { stroke: var(--mentor-lens); stroke-width: 14; }
-    .mo-load .lr-s { stroke-width: 10; opacity: 0.2; }
-    .mo-load .lr-s0 { stroke: var(--mentor-s0); stroke-dasharray: 49.57 446.11; stroke-dashoffset: -3.1; }
-    .mo-load .lr-s1 { stroke: var(--mentor-s1); stroke-dasharray: 49.57 446.11; stroke-dashoffset: -58.86; }
-    .mo-load .lr-s2 { stroke: var(--mentor-s2); stroke-dasharray: 60.73 446.11; stroke-dashoffset: -114.63; }
-    .mo-load .lr-s3 { stroke: var(--mentor-s3); stroke-dasharray: 71.87 446.11; stroke-dashoffset: -181.54; }
-    .mo-load .lr-s4 { stroke: var(--mentor-s4); stroke-dasharray: 183.39 446.11; stroke-dashoffset: -259.61; }
-    .lr-sweep {
-      position: absolute; left: 115px; top: 100px; width: 160px; height: 160px; border-radius: 50%; pointer-events: none;
-      background: conic-gradient(transparent 0turn 0.78turn, color-mix(in srgb, var(--mentor-dot) 75%, transparent) 1turn);
-      -webkit-mask: radial-gradient(closest-side, transparent 81%, #000 82.5%, #000 95%, transparent 96.5%);
-      mask: radial-gradient(closest-side, transparent 81%, #000 82.5%, #000 95%, transparent 96.5%);
-      will-change: transform; animation: lr-sweep 2.4s linear infinite;
-    }
-    @keyframes lr-sweep { to { transform: rotate(360deg); } }
-    @media (prefers-reduced-motion: reduce) { .lr-sweep { display: none; } }
 
     /* Mo3b: while the start circle turns into the bar (or back), a picture of the old shape is drawn on top for a moment: .mo-ring is the circle's
        segments (the rules above also match it), .mo-ghost is the bar's. Both are inert and removed when the move ends. */
@@ -2053,9 +2016,9 @@
        data-t and data-m, so each one shows its own theme. Values come from minifolio-themes-spec.md; anything
        changed for contrast is listed in the pull request for v47. */
     [data-t="parchment"] {
-      --font-heading: 'IM Fell English', 'Palatino Linotype', Georgia, serif;
-      --font-body: 'EB Garamond', Georgia, serif;
-      --font-num: 'EB Garamond', Georgia, serif;
+      --font-heading: 'Grenze Gotisch', 'Grenze Gotisch Fallback', 'Palatino Linotype', Georgia, serif;   /* TH6: a readable blackletter for titles */
+      --font-body: 'EB Garamond', 'EB Garamond Fallback', Georgia, serif;
+      --font-num: 'EB Garamond', 'EB Garamond Fallback', Georgia, serif;
       --num-style: italic;
       --radius-card: 2px;
       --radius-control: 2px;
@@ -2170,9 +2133,9 @@
       --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='d'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.18 0 0 0 0 0.07 0.2 0 0 0 -0.115'/%3E%3C/filter%3E%3Cfilter id='l'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 0.98 0 0 0 0 0.9 0.8 0 0 0 -0.42'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23l)'/%3E%3Crect width='180' height='180' filter='url(%23d)'/%3E%3C/svg%3E");
     }
     [data-t="forge"] {
-      --font-heading: 'Teko', 'Oswald', 'Arial Narrow', sans-serif;
-      --font-body: 'Barlow', system-ui, sans-serif;
-      --font-num: 'Barlow', system-ui, sans-serif;
+      --font-heading: 'Anton', 'Anton Fallback', 'Arial Narrow', sans-serif;   /* TH6: a heavy condensed face for titles and buttons */
+      --font-body: 'Barlow', 'Barlow Fallback', system-ui, sans-serif;
+      --font-num: 'Barlow', 'Barlow Fallback', system-ui, sans-serif;
       --num-style: normal;
       --radius-card: 0px;
       --radius-control: 0px;
@@ -2183,15 +2146,15 @@
       --border-style: solid;
       --heading-weight: 600;
       --heading-transform: uppercase;
-      --heading-tracking: .07em;
-      --heading-size: 1.5rem;
-      --wordmark-size: 2.5rem;
+      --heading-tracking: .03em;
+      --heading-size: 1.125rem;   /* TH6: Anton has taller capitals than Teko; these keep the same cap height */
+      --wordmark-size: 1.75rem;
       --body-size: 1rem;
       --card-pad: 16px;
       --button-font: var(--font-heading);
       --button-weight: 600;
       --button-transform: uppercase;
-      --button-tracking: .07em;
+      --button-tracking: .04em;
       /* TH2: worn, scratched steel, shared by light and dark (each mode sets its own shade, scratch and brushed-grain layers). Soot and the forge
          glow are gradients sized to the screen; the scratches (383 x 541) and the brushed grain (240 x 240) are two small inline SVG tiles. */
       --texture: var(--forge-shade), var(--forge-scratch), var(--forge-brush);
@@ -2293,9 +2256,9 @@
       --forge-brush: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='b' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.004 .5' numOctaves='3' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.12 0 0 0 0 0.15 1.2 0 0 0 -.55'/%3E%3C/filter%3E%3Cfilter id='g' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' seed='9' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1.4 0 0 0 -.7'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23b)' opacity='.09'/%3E%3Crect width='240' height='240' filter='url(%23g)' opacity='.35'/%3E%3C/svg%3E");
     }
     [data-t="bench"] {
-      --font-heading: 'Big Shoulders Stencil', 'Allerta Stencil', 'Arial Narrow', sans-serif;
-      --font-body: 'Barlow Semi Condensed', 'Arial Narrow', system-ui, sans-serif;
-      --font-num: 'DM Mono', ui-monospace, monospace;
+      --font-heading: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Fallback', system-ui, sans-serif;   /* TH6: plain titles; the marker is for the tape, the stencil for the name */
+      --font-body: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Fallback', system-ui, sans-serif;
+      --font-num: 'DM Mono', 'DM Mono Fallback', ui-monospace, monospace;
       --num-style: normal;
       --radius-card: 6px;
       --radius-control: 6px;
@@ -2305,16 +2268,16 @@
       --border-width: 1px;
       --border-style: solid;
       --heading-weight: 700;
-      --heading-transform: uppercase;
-      --heading-tracking: .05em;
+      --heading-transform: none;
+      --heading-tracking: normal;
       --heading-size: 1.0625rem;
       --wordmark-size: 2.375rem;
       --body-size: 1rem;
       --card-pad: 16px;
       --button-font: var(--font-heading);
       --button-weight: 700;
-      --button-transform: uppercase;
-      --button-tracking: .05em;
+      --button-transform: none;   /* TH6: buttons in sentence case (AT-55) */
+      --button-tracking: normal;
       /* TH4: the plain hobby desk. The cutting-mat grid (fine lines every 20 px, a stronger line every 100 px) and, last, a warm cork tint
          that fades out within 12 px of the left and right edges, so it stays in the 16 px page margin and never sits behind text. */
       --texture-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px, auto;
@@ -2414,8 +2377,8 @@
     }
     :where(:root:not([data-t="classic"])) .swatch { border-color: var(--swatch-edge); }
     /* Condensed and small-eyed display fonts are drawn a little larger, so their words are as easy to read as before. */
-    [data-t="forge"] { --button-adjust: 0.55; --rule-gap: 8px; }
-    [data-t="bench"] { --button-adjust: 0.52; --rule-gap: 8px; }
+    [data-t="forge"] { --button-adjust: 0.66; --rule-gap: 8px; }   /* TH6: for Anton (0.55 was for Teko) */
+    [data-t="bench"] { --button-adjust: none; --rule-gap: 8px; }   /* TH6: Atkinson Hyperlegible is not condensed (0.52 was for the stencil) */
     [data-t="parchment"] { --button-adjust: none; --rule-gap: 8px; }
 
     /* Parchment Codex: an illuminated first letter, a double line on the open tab, and numbers in italic. */
@@ -2546,8 +2509,9 @@
     /* TH1: Classic is the cold sci-fi look (ice cyan accent, Oxanium for headings and numbers, steel panel lines with small corner marks drawn in CSS); the photo viewer and the camera keep the colours set at the top of this file. */
     @font-face { font-family: 'Oxanium'; font-style: normal; font-weight: 600; font-display: swap; src: url(fonts/oxanium-latin-600-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
     :root[data-t="classic"], .theme-swatch[data-t="classic"] {
-      --font-heading: 'Oxanium', 'Bahnschrift', 'DIN Alternate', 'Arial Narrow', system-ui, sans-serif;
-      --font-num: 'Oxanium', 'Bahnschrift', 'DIN Alternate', 'Arial Narrow', system-ui, sans-serif;
+      --font-heading: 'Oxanium', 'Oxanium Fallback', 'Bahnschrift', 'DIN Alternate', 'Arial Narrow', system-ui, sans-serif;
+      --font-body: 'Chakra Petch', 'Chakra Petch Fallback', system-ui, sans-serif;   /* TH6: a matching technical body face, and a monospaced face for numbers */
+      --font-num: 'Azeret Mono', 'Azeret Mono Fallback', ui-monospace, monospace;
       --heading-weight: 600; --heading-tracking: .02em;
       --radius-card: 6px; --radius-box: 6px; --radius-control: 6px; --radius-small: 4px;
       --border: #4968a0;
@@ -2597,6 +2561,134 @@
     }
     /* TH5: the hint inside an empty text box uses the look's own muted colour, as the paint boxes already do; the browser's grey was under 4.5:1 in every look */
     ::placeholder { color: var(--muted); opacity: 1; }
+    /* TH6: every look has its own fonts, and three looks get more of their own marks: Parchment Codex more ink (blots, spatters, drips), Grim Forge hex bolts,
+       cogs and rust, Paint Bench dry-brush strokes, paint smudges and three small stickers. A look's fonts download only when that look is on screen; the Theme
+       squares in Settings use four tiny files holding just the letters of each name. Each font has a fallback with matching metrics, so nothing moves when it arrives.
+       Every new mark sits in the screen's edge margin, in a card's padding or in a corner of the header: never under text, never on a button. */
+    @font-face { font-family: 'Chakra Petch'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/chakra-petch-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Chakra Petch'; font-style: normal; font-weight: 600; font-display: swap; src: url(fonts/chakra-petch-latin-600-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Azeret Mono'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(fonts/azeret-mono-latin-500-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Anton'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(fonts/anton-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Grenze Gotisch'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(fonts/grenze-gotisch-latin-500-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'EB Garamond'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/eb-garamond-lnum-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'EB Garamond'; font-style: normal; font-weight: 500 700; font-display: swap; src: url(fonts/eb-garamond-lnum-latin-500-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'EB Garamond'; font-style: italic; font-weight: 400 700; font-display: swap; src: url(fonts/eb-garamond-lnum-latin-400-italic.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Atkinson Hyperlegible'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/atkinson-hyperlegible-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Atkinson Hyperlegible'; font-style: normal; font-weight: 700; font-display: swap; src: url(fonts/atkinson-hyperlegible-latin-700-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Oxanium Theme Name'; font-style: normal; font-weight: 100 900; font-display: swap; src: url(fonts/theme-name-classic.woff2) format('woff2'); }
+    @font-face { font-family: 'Grenze Gotisch Theme Name'; font-style: normal; font-weight: 100 900; font-display: swap; src: url(fonts/theme-name-parchment.woff2) format('woff2'); }
+    @font-face { font-family: 'Anton Theme Name'; font-style: normal; font-weight: 100 900; font-display: swap; src: url(fonts/theme-name-forge.woff2) format('woff2'); }
+    @font-face { font-family: 'Permanent Marker Theme Name'; font-style: normal; font-weight: 100 900; font-display: swap; src: url(fonts/theme-name-bench.woff2) format('woff2'); }
+    /* The fallbacks: the phone's own font, resized to take the same room as the real one (size, line height), so text does not jump when the real font arrives. */
+    @font-face { font-family: 'Oxanium Fallback'; src: local('Arial'), local('Helvetica'), local('Roboto'); size-adjust: 107.1%; ascent-override: 73.8%; descent-override: 19.6%; line-gap-override: 23.3%; }
+    @font-face { font-family: 'Chakra Petch Fallback'; src: local('Arial'), local('Helvetica'), local('Roboto'); size-adjust: 103.7%; ascent-override: 95.6%; descent-override: 29.7%; line-gap-override: 0%; }
+    @font-face { font-family: 'Azeret Mono Fallback'; src: local('Courier New'), local('Courier'), local('Droid Sans Mono'); size-adjust: 108.3%; ascent-override: 86.5%; descent-override: 21.2%; line-gap-override: 0%; }
+    @font-face { font-family: 'Anton Fallback'; src: local('Arial'), local('Helvetica'), local('Roboto'); size-adjust: 69.4%; ascent-override: 169.6%; descent-override: 47.4%; line-gap-override: 0%; }
+    @font-face { font-family: 'Barlow Fallback'; src: local('Arial'), local('Helvetica'), local('Roboto'); size-adjust: 97.5%; ascent-override: 102.5%; descent-override: 20.5%; line-gap-override: 0%; }
+    @font-face { font-family: 'Grenze Gotisch Fallback'; src: local('Times New Roman'), local('Times'), local('Noto Serif'); size-adjust: 89.6%; ascent-override: 122.8%; descent-override: 42.4%; line-gap-override: 0%; }
+    @font-face { font-family: 'EB Garamond Fallback'; src: local('Times New Roman'), local('Times'), local('Noto Serif'); size-adjust: 94.6%; ascent-override: 106.4%; descent-override: 31.5%; line-gap-override: 0%; }
+    @font-face { font-family: 'Big Shoulders Stencil Fallback'; src: local('Arial'), local('Helvetica'), local('Roboto'); size-adjust: 89.5%; ascent-override: 110.1%; descent-override: 24%; line-gap-override: 0%; }
+    @font-face { font-family: 'Permanent Marker Fallback'; src: local('Arial'), local('Helvetica'), local('Roboto'); size-adjust: 114.1%; ascent-override: 97.2%; descent-override: 27.8%; line-gap-override: 2.7%; }
+    @font-face { font-family: 'Atkinson Hyperlegible Fallback'; src: local('Arial'), local('Helvetica'), local('Roboto'); size-adjust: 99.7%; ascent-override: 95.3%; descent-override: 29.1%; line-gap-override: 0%; }
+    @font-face { font-family: 'DM Mono Fallback'; src: local('Courier New'), local('Courier'), local('Droid Sans Mono'); size-adjust: 100%; ascent-override: 99.2%; descent-override: 31%; line-gap-override: 0%; }
+    /* Numbers line up in every look (tabular figures). Parchment Codex's book face uses lining figures everywhere (its old-style 1 read as an i) and never fakes a bold or an italic. */
+    :is(.big, .legend .num, .group-button strong, .qty-count, .paint-line .mix, .history-table td, .chart-tip b) { font-variant-numeric: tabular-nums; }
+    [data-t="parchment"] body { font-variant-numeric: lining-nums; font-synthesis: none; }
+    [data-t="parchment"] :is(.big, .legend .num, .group-button strong, .qty-count, .paint-line .mix, .history-table td, .chart-tip b) { font-variant-numeric: lining-nums tabular-nums; }
+    /* Paint Bench: the stencilled name in sentence case, so it reads "Minifolio" at any size (in capitals its I looked like an l). */
+    [data-t="bench"] h1 { font-family: 'Big Shoulders Stencil', 'Big Shoulders Stencil Fallback', 'Arial Narrow', sans-serif; text-transform: none; letter-spacing: .02em; }
+    /* The Theme squares: each name in its own look's title face, from a file holding only that name's letters. */
+    .theme-swatch[data-t="classic"] .ts-card { font-family: 'Oxanium Theme Name', 'Oxanium Fallback', system-ui, sans-serif; }
+    .theme-swatch[data-t="parchment"] .ts-card { font-family: 'Grenze Gotisch Theme Name', 'Grenze Gotisch Fallback', Georgia, serif; }
+    .theme-swatch[data-t="forge"] .ts-card { font-family: 'Anton Theme Name', 'Anton Fallback', 'Arial Narrow', sans-serif; font-size: 0.875rem; letter-spacing: .03em; line-height: 1.05; }
+    .theme-swatch[data-t="bench"] :is(.ts-card, .ts-name) { font-family: 'Permanent Marker Theme Name', 'Permanent Marker Fallback', 'Comic Sans MS', cursive; }
+
+    /* The extra marks are drawn on one more fixed layer behind the page (above the paper, steel or desk), so scrolling does not repaint them. */
+    :is([data-t="parchment"], [data-t="forge"], [data-t="bench"]) body::after {
+      content: ""; position: fixed; top: 0; left: 0; right: 0; height: 100vh; z-index: -1; pointer-events: none; will-change: transform;
+    }
+    :is([data-t="parchment"], [data-t="forge"]) .app-bar::before, :is([data-t="parchment"], [data-t="forge"]) .app-bar::after { content: ""; position: absolute; z-index: -1; pointer-events: none; }
+
+    /* Parchment Codex: more ink. Blots, spatters and drips in the page edges, a drip off the header's rule, a blot beside the name, a drip and a spatter
+       on some cards (inside their padding) and, on the start page only, a fine spray across the empty paper above the circle. Light is ink on parchment;
+       dark is the same marks, darker and softer. One ink colour per mode, drawn through the shapes below. */
+    [data-t="parchment"] {
+      --ink-blot: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M29.9 20.2C30 21.3 28.9 23.2 28.6 24.9C28.4 26.5 29.6 29.5 28.4 30.1C27.3 30.8 23.9 29 21.9 28.6C20 28.1 17.7 27.5 16.5 27.3C15.3 27.1 15.3 27.8 14.9 27.1C14.4 26.5 15.8 24.6 14 23.3C12.2 22 4.7 21 4 19.4C3.2 17.8 7.2 14.8 9.5 13.6C11.8 12.4 15.8 12.1 17.8 12.1C19.9 12.1 20.7 13 21.7 13.5C22.7 13.9 22.8 14 23.9 14.7C24.9 15.4 27 16.8 28 17.8C29 18.7 29.8 19 29.9 20.2Z'/%3E%3Cpath fill-opacity='.55' d='M30.4 13.3C30.5 13.9 29.5 14.4 28.9 14.9C28.4 15.4 28 16.2 27.3 16.3C26.6 16.3 25.2 15.8 24.7 15.3C24.2 14.8 24.2 14 24.2 13.4C24.2 12.7 24.5 12.1 24.9 11.5C25.4 10.8 26.3 9.4 27 9.4C27.6 9.3 28.1 10.6 28.7 11.2C29.3 11.9 30.4 12.7 30.4 13.3Z'/%3E%3Cg fill-opacity='.8'%3E%3Ccircle cx='11.8' cy='31.8' r='0.7'/%3E%3Ccircle cx='33' cy='10.6' r='0.5'/%3E%3Ccircle cx='37.5' cy='29.4' r='0.5'/%3E%3Ccircle cx='9.7' cy='21.7' r='1.5'/%3E%3Ccircle cx='33.8' cy='23.6' r='1.1'/%3E%3Ccircle cx='26.9' cy='7.5' r='1.2'/%3E%3Ccircle cx='30.4' cy='3.6' r='0.6'/%3E%3Ccircle cx='31.8' cy='16.7' r='0.5'/%3E%3Ccircle cx='29.4' cy='28.7' r='0.5'/%3E%3C/g%3E%3Cellipse cx='33' cy='30' rx='1' ry='3.2' transform='rotate(-38 33 30)' fill-opacity='.7'/%3E%3Cellipse cx='7' cy='9' rx='.8' ry='2.6' transform='rotate(-45 7 9)' fill-opacity='.7'/%3E%3C/svg%3E");
+      --ink-spatter: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16.9 14.3C17.1 15 16.1 15.9 15.4 16.3C14.6 16.8 13.3 17.1 12.5 17.2C11.7 17.2 11 16.9 10.6 16.5C10.1 16.2 9.8 15.6 9.6 15.1C9.4 14.5 9.3 14 9.5 13.2C9.6 12.3 9.8 10.3 10.3 10C10.8 9.7 11.9 11.1 12.5 11.5C13.2 11.9 13.4 11.9 14.1 12.3C14.8 12.8 16.7 13.7 16.9 14.3Z'/%3E%3Cpath fill-opacity='.7' d='M26.6 21.9C26.7 22.4 26.3 22.9 26 23.2C25.7 23.5 25.3 23.7 24.7 23.7C24.2 23.7 23.1 23.5 22.8 23.1C22.5 22.6 22.7 21.5 23 21C23.3 20.4 24.2 20 24.7 20C25.2 19.9 25.5 20.3 25.8 20.7C26.1 21 26.6 21.5 26.6 21.9Z'/%3E%3Cg fill-opacity='.75'%3E%3Ccircle cx='26.1' cy='28.4' r='0.6'/%3E%3Ccircle cx='12.5' cy='22.6' r='0.5'/%3E%3Ccircle cx='13' cy='13.4' r='1'/%3E%3Ccircle cx='22.3' cy='19.2' r='1.1'/%3E%3Ccircle cx='17.5' cy='8.7' r='1.1'/%3E%3Ccircle cx='7' cy='14.9' r='0.6'/%3E%3Ccircle cx='19.6' cy='21.3' r='1.2'/%3E%3Ccircle cx='7' cy='4.6' r='0.7'/%3E%3Ccircle cx='10.8' cy='30.1' r='0.7'/%3E%3Ccircle cx='24.3' cy='12.9' r='0.7'/%3E%3Ccircle cx='28.1' cy='27.4' r='0.6'/%3E%3Ccircle cx='17.5' cy='9.4' r='1'/%3E%3Ccircle cx='18.6' cy='18.9' r='1.1'/%3E%3Ccircle cx='10.6' cy='23.4' r='0.6'/%3E%3Ccircle cx='18.1' cy='24.3' r='1.1'/%3E%3Ccircle cx='11.5' cy='18.3' r='1.1'/%3E%3Ccircle cx='25.2' cy='22.8' r='0.7'/%3E%3Ccircle cx='17.9' cy='19.6' r='1.2'/%3E%3Ccircle cx='11.5' cy='15.2' r='0.9'/%3E%3Ccircle cx='11.9' cy='16' r='0.5'/%3E%3Ccircle cx='10.1' cy='24.4' r='0.8'/%3E%3Ccircle cx='10.8' cy='12.7' r='1.1'/%3E%3C/g%3E%3C/svg%3E");
+      --ink-drip: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 28'%3E%3Cpath d='M1 0h4c0 4-.6 7-1 11s-.2 9 .4 12c.5 2.6-.5 4.4-1.4 4.4s-2-1.8-1.4-4.4c.6-3 .7-8 .3-12S1 4 1 0z'/%3E%3C/svg%3E");
+      --ink-marks: var(--ink-blot) left -19px top 30% / 34px 34px no-repeat, var(--ink-spatter) right -11px top 36% / 26px 26px no-repeat, var(--ink-drip) right 4px top 47% / 6px 26px no-repeat,
+        var(--ink-spatter) left -8px top 50% / 22px 22px no-repeat, var(--ink-blot) right -14px top 68% / 28px 28px no-repeat, var(--ink-drip) left 6px top 77% / 5px 20px no-repeat,
+        var(--ink-blot) left -16px top 93% / 30px 30px no-repeat, var(--ink-spatter) right -9px top 96% / 24px 24px no-repeat;
+      --card-stain-3: radial-gradient(9px 3px at calc(100% - 38px) 0, var(--ink-a) 75%, #0000), radial-gradient(1.4px 5px at calc(100% - 38px) 4px, var(--ink-a) 80%, #0000), radial-gradient(2px at calc(100% - 38px) 9px, var(--ink-a) 80%, #0000), radial-gradient(3px 2.5px at calc(100% - 5px) 55%, var(--ink-a) 70%, #0000), radial-gradient(1.5px at calc(100% - 8px) calc(55% + 7px), var(--ink-a) 60%, #0000), radial-gradient(1.2px at calc(100% - 4px) calc(55% - 8px), var(--ink-a) 60%, #0000);
+    }
+    [data-t="parchment"][data-m="light"] { --splat: rgba(104, 14, 32, .5); --drip-ink: #91133b; }
+    [data-t="parchment"][data-m="dark"] { --splat: rgba(6, 1, 2, .5); --drip-ink: #7d2d3b; }
+    [data-t="parchment"] body::after { background-color: var(--splat); -webkit-mask: var(--ink-marks); mask: var(--ink-marks); }
+    [data-t="parchment"] body.launching::after { -webkit-mask: var(--ink-marks), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 30'%3E%3Cg fill-opacity='.7'%3E%3Ccircle cx='42.8' cy='-3.1' r='0.4'/%3E%3Ccircle cx='27.6' cy='14' r='0.8'/%3E%3Ccircle cx='18.8' cy='22.2' r='0.6'/%3E%3Ccircle cx='31.8' cy='13.4' r='0.4'/%3E%3Ccircle cx='69.2' cy='20.6' r='0.4'/%3E%3Ccircle cx='48.5' cy='24.6' r='0.6'/%3E%3Ccircle cx='53.6' cy='11.4' r='0.5'/%3E%3Ccircle cx='56.3' cy='7.5' r='0.9'/%3E%3Ccircle cx='41.9' cy='15' r='1.2'/%3E%3Ccircle cx='24.6' cy='19.9' r='0.6'/%3E%3Ccircle cx='62.8' cy='28.3' r='0.4'/%3E%3Ccircle cx='42.6' cy='5.9' r='0.4'/%3E%3Ccircle cx='47.1' cy='-2.6' r='1'/%3E%3Ccircle cx='34.3' cy='20.2' r='0.5'/%3E%3Ccircle cx='11.7' cy='18.7' r='0.8'/%3E%3Ccircle cx='55.6' cy='9.2' r='0.4'/%3E%3Ccircle cx='43.3' cy='8' r='1.1'/%3E%3Ccircle cx='39.2' cy='13.7' r='1'/%3E%3Ccircle cx='37.5' cy='7.2' r='0.8'/%3E%3Ccircle cx='40.8' cy='12.7' r='0.4'/%3E%3Ccircle cx='39.9' cy='14.3' r='0.4'/%3E%3Ccircle cx='40.4' cy='20.8' r='0.8'/%3E%3Ccircle cx='47.7' cy='37.5' r='0.6'/%3E%3Ccircle cx='43.4' cy='19' r='0.5'/%3E%3Ccircle cx='39.6' cy='13.8' r='1.2'/%3E%3Ccircle cx='33' cy='3.6' r='0.9'/%3E%3Ccircle cx='53.2' cy='8.1' r='0.8'/%3E%3Ccircle cx='40' cy='24.2' r='1'/%3E%3Ccircle cx='45.8' cy='32.2' r='0.9'/%3E%3Ccircle cx='38.1' cy='14.2' r='0.4'/%3E%3Ccircle cx='48.4' cy='7.6' r='0.4'/%3E%3Ccircle cx='39.9' cy='13.9' r='0.7'/%3E%3Ccircle cx='46' cy='5.3' r='0.4'/%3E%3Ccircle cx='34.2' cy='18.8' r='0.9'/%3E%3C/g%3E%3Cpath d='M27.1 12.1C27.2 12.8 26.4 13.9 25.9 14.4C25.5 14.9 25 15.4 24.5 15.2C23.9 15.1 23 14 22.5 13.5C22 13 21.5 12.7 21.4 12.1C21.3 11.5 21.4 10.2 21.9 9.8C22.4 9.5 23.5 9.8 24.2 9.8C24.8 9.9 25.4 9.9 25.8 10.2C26.3 10.6 27.1 11.4 27.1 12.1Z'/%3E%3C/svg%3E") left 58% top 104px / 80px 30px no-repeat; mask: var(--ink-marks), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 30'%3E%3Cg fill-opacity='.7'%3E%3Ccircle cx='42.8' cy='-3.1' r='0.4'/%3E%3Ccircle cx='27.6' cy='14' r='0.8'/%3E%3Ccircle cx='18.8' cy='22.2' r='0.6'/%3E%3Ccircle cx='31.8' cy='13.4' r='0.4'/%3E%3Ccircle cx='69.2' cy='20.6' r='0.4'/%3E%3Ccircle cx='48.5' cy='24.6' r='0.6'/%3E%3Ccircle cx='53.6' cy='11.4' r='0.5'/%3E%3Ccircle cx='56.3' cy='7.5' r='0.9'/%3E%3Ccircle cx='41.9' cy='15' r='1.2'/%3E%3Ccircle cx='24.6' cy='19.9' r='0.6'/%3E%3Ccircle cx='62.8' cy='28.3' r='0.4'/%3E%3Ccircle cx='42.6' cy='5.9' r='0.4'/%3E%3Ccircle cx='47.1' cy='-2.6' r='1'/%3E%3Ccircle cx='34.3' cy='20.2' r='0.5'/%3E%3Ccircle cx='11.7' cy='18.7' r='0.8'/%3E%3Ccircle cx='55.6' cy='9.2' r='0.4'/%3E%3Ccircle cx='43.3' cy='8' r='1.1'/%3E%3Ccircle cx='39.2' cy='13.7' r='1'/%3E%3Ccircle cx='37.5' cy='7.2' r='0.8'/%3E%3Ccircle cx='40.8' cy='12.7' r='0.4'/%3E%3Ccircle cx='39.9' cy='14.3' r='0.4'/%3E%3Ccircle cx='40.4' cy='20.8' r='0.8'/%3E%3Ccircle cx='47.7' cy='37.5' r='0.6'/%3E%3Ccircle cx='43.4' cy='19' r='0.5'/%3E%3Ccircle cx='39.6' cy='13.8' r='1.2'/%3E%3Ccircle cx='33' cy='3.6' r='0.9'/%3E%3Ccircle cx='53.2' cy='8.1' r='0.8'/%3E%3Ccircle cx='40' cy='24.2' r='1'/%3E%3Ccircle cx='45.8' cy='32.2' r='0.9'/%3E%3Ccircle cx='38.1' cy='14.2' r='0.4'/%3E%3Ccircle cx='48.4' cy='7.6' r='0.4'/%3E%3Ccircle cx='39.9' cy='13.9' r='0.7'/%3E%3Ccircle cx='46' cy='5.3' r='0.4'/%3E%3Ccircle cx='34.2' cy='18.8' r='0.9'/%3E%3C/g%3E%3Cpath d='M27.1 12.1C27.2 12.8 26.4 13.9 25.9 14.4C25.5 14.9 25 15.4 24.5 15.2C23.9 15.1 23 14 22.5 13.5C22 13 21.5 12.7 21.4 12.1C21.3 11.5 21.4 10.2 21.9 9.8C22.4 9.5 23.5 9.8 24.2 9.8C24.8 9.9 25.4 9.9 25.8 10.2C26.3 10.6 27.1 11.4 27.1 12.1Z'/%3E%3C/svg%3E") left 58% top 104px / 80px 30px no-repeat; }
+    [data-t="parchment"] .app-bar::before { left: 0; top: 14px; width: 15px; height: 30px; background-color: var(--splat); -webkit-mask: var(--ink-blot) right center / 30px 30px no-repeat; mask: var(--ink-blot) right center / 30px 30px no-repeat; }
+    [data-t="parchment"] .app-bar::after { right: 8px; bottom: -20px; width: 6px; height: 20px; background-color: var(--drip-ink); -webkit-mask: var(--ink-drip) top / 6px 20px no-repeat; mask: var(--ink-drip) top / 6px 20px no-repeat; }
+    :where([data-t="parchment"]) :is(.card, li.unit):where(:nth-child(3n)) { background-image: var(--card-stain), var(--card-stain-3); }
+
+    /* Grim Forge: hex bolts, cogs and rust. Hex bolts hold the brass rule under the header at both ends and take the place of the two top rivets on the
+       cards; a cog is half hidden behind the header's top corner and another behind the left edge of the page. Rust runs down from the bolts, the rivets and
+       the header's seam, blooms at the cards' lower corners and in the steel at the page edges, and eats the bottom edge of every third plate. */
+    [data-t="forge"][data-m="dark"] {
+      --rust: #7a3a18; --rust-a: rgba(122, 58, 24, .55); --rust-b: rgba(122, 58, 24, .22);
+      --bolt: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpolygon points='9,7.3 5,9.6 1,7.3 1,2.7 5,0.4 9,2.7' fill='%235d6168' stroke='%2308090a' stroke-width='.8'/%3E%3Cpolygon points='1,2.7 5,0.4 9,2.7 5,5' fill='%23b9bec6' fill-opacity='.55'/%3E%3Cpolygon points='9,7.3 5,9.6 1,7.3 5,5' fill='%231b1d20' fill-opacity='.5'/%3E%3Ccircle cx='5' cy='5' r='1.6' fill='%235d6168'/%3E%3C/svg%3E"); --rough: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 6' preserveAspectRatio='none'%3E%3Cpath d='M0 6V3L2.3 1L5.4 0.7L8.3 1.6L9.9 2.1L11.5 1.8L13.2 0.8L15.8 3.1L17.6 1.2L20.6 3.4L23.6 1.7L27.5 0.6L31.2 1.4L33 0.9L35.3 3L37.2 2.3L40.3 1.7L43.2 0.7L44.9 1.1L48.1 1.8L50.3 2.3L53 1.4L56.5 2.7L58.6 2.3L60 3.2V6Z' fill='%236b2f12' fill-opacity='.55'/%3E%3C/svg%3E");
+      --cog-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg transform='translate(50 50)' fill='%23a3acb6' opacity='.16'%3E%3Cpath fill-rule='evenodd' d='M40 0L39.8 3.8L47.4 7.5L45.5 15.3L37 15.1L34.6 20L32.6 23.2L37.3 30.2L31.7 36L24.5 31.6L20 34.6L16.7 36.4L17.2 44.8L9.5 47.1L5.4 39.6L0 40L-3.8 39.8L-7.5 47.4L-15.3 45.5L-15.1 37L-20 34.6L-23.2 32.6L-30.2 37.3L-36 31.7L-31.6 24.5L-34.6 20L-36.4 16.7L-44.8 17.2L-47.1 9.5L-39.6 5.4L-40 0L-39.8 -3.8L-47.4 -7.5L-45.5 -15.3L-37 -15.1L-34.6 -20L-32.6 -23.2L-37.3 -30.2L-31.7 -36L-24.5 -31.6L-20 -34.6L-16.7 -36.4L-17.2 -44.8L-9.5 -47.1L-5.4 -39.6L0 -40L3.8 -39.8L7.5 -47.4L15.3 -45.5L15.1 -37L20 -34.6L23.2 -32.6L30.2 -37.3L36 -31.7L31.6 -24.5L34.6 -20L36.4 -16.7L44.8 -17.2L47.1 -9.5L39.6 -5.4ZM31 0A31 31 0 1 0 -31 0A31 31 0 1 0 31 0Z'/%3E%3Cg fill-opacity='.6'%3E%3Crect x='-3.5' y='-30' width='7' height='30' transform='rotate(0)'/%3E%3Crect x='-3.5' y='-30' width='7' height='30' transform='rotate(72)'/%3E%3Crect x='-3.5' y='-30' width='7' height='30' transform='rotate(144)'/%3E%3Crect x='-3.5' y='-30' width='7' height='30' transform='rotate(216)'/%3E%3Crect x='-3.5' y='-30' width='7' height='30' transform='rotate(288)'/%3E%3C/g%3E%3Ccircle r='11'/%3E%3C/g%3E%3C/svg%3E");
+    }
+    [data-t="forge"][data-m="light"] {
+      --rust: #b0703f; --rust-a: rgba(176, 112, 63, .5); --rust-b: rgba(176, 112, 63, .2);
+      --bolt: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpolygon points='9,7.3 5,9.6 1,7.3 1,2.7 5,0.4 9,2.7' fill='%238d939a' stroke='%233a3e43' stroke-width='.8'/%3E%3Cpolygon points='1,2.7 5,0.4 9,2.7 5,5' fill='%23f2f4f6' fill-opacity='.55'/%3E%3Cpolygon points='9,7.3 5,9.6 1,7.3 5,5' fill='%234d5257' fill-opacity='.5'/%3E%3Ccircle cx='5' cy='5' r='1.6' fill='%238d939a'/%3E%3C/svg%3E"); --rough: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 6' preserveAspectRatio='none'%3E%3Cpath d='M0 6V3L3.3 1.4L7.3 0.9L9.8 2.8L11.7 2L13.3 2.6L16.7 2.3L20.4 1.5L23.6 2.3L26.6 1.9L30.2 3.4L32.9 2.6L34.5 2.7L37.6 3.6L41.2 1.4L43.7 2.6L45.2 1.9L47.1 0.9L48.8 2.9L50.6 1.3L53.1 3.2L54.8 1.9L57.7 3.2L60 3.2V6Z' fill='%23a8653b' fill-opacity='.45'/%3E%3C/svg%3E");
+      --cog-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg transform='translate(50 50)' fill='%232a323b' opacity='.2'%3E%3Cpath fill-rule='evenodd' d='M40 0L39.8 3.8L47.4 7.5L45.5 15.3L37 15.1L34.6 20L32.6 23.2L37.3 30.2L31.7 36L24.5 31.6L20 34.6L16.7 36.4L17.2 44.8L9.5 47.1L5.4 39.6L0 40L-3.8 39.8L-7.5 47.4L-15.3 45.5L-15.1 37L-20 34.6L-23.2 32.6L-30.2 37.3L-36 31.7L-31.6 24.5L-34.6 20L-36.4 16.7L-44.8 17.2L-47.1 9.5L-39.6 5.4L-40 0L-39.8 -3.8L-47.4 -7.5L-45.5 -15.3L-37 -15.1L-34.6 -20L-32.6 -23.2L-37.3 -30.2L-31.7 -36L-24.5 -31.6L-20 -34.6L-16.7 -36.4L-17.2 -44.8L-9.5 -47.1L-5.4 -39.6L0 -40L3.8 -39.8L7.5 -47.4L15.3 -45.5L15.1 -37L20 -34.6L23.2 -32.6L30.2 -37.3L36 -31.7L31.6 -24.5L34.6 -20L36.4 -16.7L44.8 -17.2L47.1 -9.5L39.6 -5.4ZM31 0A31 31 0 1 0 -31 0A31 31 0 1 0 31 0Z'/%3E%3Cg fill-opacity='.6'%3E%3Crect x='-3.5' y='-30' width='7' height='30' transform='rotate(0)'/%3E%3Crect x='-3.5' y='-30' width='7' height='30' transform='rotate(72)'/%3E%3Crect x='-3.5' y='-30' width='7' height='30' transform='rotate(144)'/%3E%3Crect x='-3.5' y='-30' width='7' height='30' transform='rotate(216)'/%3E%3Crect x='-3.5' y='-30' width='7' height='30' transform='rotate(288)'/%3E%3C/g%3E%3Ccircle r='11'/%3E%3C/g%3E%3C/svg%3E");
+    }
+    [data-t="forge"] body::after {
+      background: var(--cog-img) left -50px top 56% / 64px 64px no-repeat,
+        linear-gradient(var(--rust-a), #0000) left 5px top 64px / 2px 90px no-repeat, linear-gradient(var(--rust-b), #0000) left 9px top 64px / 2px 46px no-repeat,
+        linear-gradient(var(--rust-a), #0000) right 6px top 64px / 3px 64px no-repeat, linear-gradient(var(--rust-b), #0000) left 4px top calc(56% + 12px) / 3px 70px no-repeat,
+        radial-gradient(closest-side, var(--rust-a), var(--rust-b) 55%, #0000) left -6px top 31% / 18px 34px no-repeat, radial-gradient(closest-side, var(--rust-b), #0000) left -2px top calc(31% + 22px) / 12px 20px no-repeat,
+        radial-gradient(closest-side, var(--rust-a), var(--rust-b) 50%, #0000) right -7px top 74% / 20px 40px no-repeat, radial-gradient(closest-side, var(--rust-b), #0000) right -3px top 86% / 12px 26px no-repeat,
+        radial-gradient(closest-side, var(--rust-b), #0000) left -10px bottom -10px / 24px 44px no-repeat, radial-gradient(closest-side, var(--rust-b), #0000) right -10px bottom -8px / 24px 40px no-repeat;
+    }
+    [data-t="forge"] .app-bar::before {
+      left: 0; right: 0; bottom: -14px; height: 28px;
+      background: var(--bolt) left 3px top 7.5px / 10px 10px no-repeat, var(--bolt) right 3px top 7.5px / 10px 10px no-repeat,
+        linear-gradient(var(--rust-a), #0000) left 7px top 17px / 2px 11px no-repeat, linear-gradient(var(--rust-a), #0000) right 7px top 17px / 3px 9px no-repeat;
+    }
+    [data-t="forge"] .app-bar::after { top: 0; right: 0; width: 34px; height: 22px; background: var(--cog-img) right -22px top -34px / 56px 56px no-repeat; }
+    /* each plate: two top fasteners (rivets on unit rows, hex bolts on cards), two rivets below, rust running down from the top two, rust blooms at the
+       lower corners, a rough rusted bottom edge on every third plate, then TH2's sheen. The same selector strength as TH2's plate rule, so it replaces it. */
+    :where([data-t="forge"]) :is(.card, li.unit) {
+      --edge: linear-gradient(#0000, #0000);
+      background-image: var(--fa), var(--fa), var(--rivet), var(--rivet), linear-gradient(var(--rust-a), #0000), linear-gradient(var(--rust-b), #0000),
+        radial-gradient(closest-side, var(--rust-a), #0000), radial-gradient(closest-side, var(--rust-b), #0000), var(--edge), var(--plate);
+      background-size: var(--fs) var(--fs), var(--fs) var(--fs), var(--rs) var(--rs), var(--rs) var(--rs), 2px var(--run), 2px calc(var(--run) * .65), 14px 11px, 14px 11px, 60px 4px, 100% 100%;
+      background-position: left var(--fo) top var(--fo), right var(--fo) top var(--fo), left 3px bottom 3px, right 3px bottom 3px, left 6.5px top 12px, right 7px top 12px, left -2px bottom -2px, right -2px bottom -2px, left bottom, 0 0;
+      background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, repeat-x, no-repeat;
+    }
+    :where([data-t="forge"]) li.unit { --fa: var(--rivet); --fs: var(--rs); --fo: 3px; --run: 24px; }
+    :where([data-t="forge"]) .card { --fa: var(--bolt); --fs: calc(var(--rs) + 2px); --fo: 2px; --run: 34px; }
+    :where([data-t="forge"]) :is(.card, li.unit):nth-child(3n+1) { --edge: var(--rough); }
+    [data-t="forge"][data-m="dark"] { --rs: 9px; }
+    [data-t="forge"][data-m="light"] { --rs: 8px; }   /* quieter rivets in light, as TH2 had them */
+
+    /* Paint Bench: faint dry-brush strokes and paint smudges in the desk's edges, in muted paint colours that sit with the desk greens, a smudge on
+       some cards (inside their padding), and three small stickers stuck at the edge of the mat (a star, a little skull, a paint drop), each a touch
+       crooked with one corner lifting. Nothing here can be tapped. Quieter in dark. */
+    [data-t="bench"] body::after {
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg transform='rotate(-6 12 12)'%3E%3Cpath d='M3 4.5Q3 3 4.5 3H19.5Q21 3 21 4.5V15L15 21H4.5Q3 21 3 19.5Z' fill='%23e9e3d1' stroke='%23c9c1a9' stroke-width='.6'/%3E%3Cpath d='M12 5.8l1.8 3.8 4.1.5-3 2.9.8 4.1-3.7-2-3.7 2 .8-4.1-3-2.9 4.1-.5z' fill='%23a8803a'/%3E%3Cpath d='M21 15L15 21L15.8 16.4Q16 15.4 17 15.2Z' fill='%23fff' fill-opacity='.85' stroke='%23c9c1a9' stroke-width='.4'/%3E%3Cpath d='M15 21L21 15' stroke='%23000' stroke-opacity='.18' stroke-width='1.2'/%3E%3C/g%3E%3C/svg%3E") left -4px top 19% / 20px 20px no-repeat, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg transform='rotate(-11 12 12)'%3E%3Cpath d='M3 4.5Q3 3 4.5 3H19.5Q21 3 21 4.5V15L15 21H4.5Q3 21 3 19.5Z' fill='%23e9e3d1' stroke='%23c9c1a9' stroke-width='.6'/%3E%3Cpath d='M12 6.2c-3 0-5 2-5 4.6 0 1.6.8 2.6 1.8 3.2v1.6h1.5v-1h1v1h1.4v-1h1v1h1.5V14c1-.6 1.8-1.6 1.8-3.2 0-2.6-2-4.6-5-4.6z' fill='%233d433b'/%3E%3Ccircle cx='10' cy='11' r='1.2' fill='%23e9e3d1'/%3E%3Ccircle cx='14' cy='11' r='1.2' fill='%23e9e3d1'/%3E%3Cpath d='M21 15L15 21L15.8 16.4Q16 15.4 17 15.2Z' fill='%23fff' fill-opacity='.85' stroke='%23c9c1a9' stroke-width='.4'/%3E%3Cpath d='M15 21L21 15' stroke='%23000' stroke-opacity='.18' stroke-width='1.2'/%3E%3C/g%3E%3C/svg%3E") right -4px top 39% / 20px 20px no-repeat, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg transform='rotate(9 12 12)'%3E%3Cpath d='M3 4.5Q3 3 4.5 3H19.5Q21 3 21 4.5V15L15 21H4.5Q3 21 3 19.5Z' fill='%23e9e3d1' stroke='%23c9c1a9' stroke-width='.6'/%3E%3Cpath d='M12 5.5c2.4 3.2 4 5.5 4 7.6a4 4 0 0 1-8 0c0-2.1 1.6-4.4 4-7.6z' fill='%235f7f93'/%3E%3Cpath d='M10.4 13.4a1.8 1.8 0 0 0 1.4 1.8' stroke='%23e9e3d1' stroke-width='.8' fill='none' stroke-linecap='round'/%3E%3Cpath d='M21 15L15 21L15.8 16.4Q16 15.4 17 15.2Z' fill='%23fff' fill-opacity='.85' stroke='%23c9c1a9' stroke-width='.4'/%3E%3Cpath d='M15 21L21 15' stroke='%23000' stroke-opacity='.18' stroke-width='1.2'/%3E%3C/g%3E%3C/svg%3E") left -4px top 58% / 20px 20px no-repeat,
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 90'%3E%3Cg fill='none' stroke='%23b49a5c' stroke-linecap='round' transform='translate(16 0) rotate(90) rotate(-3 45.0 8.0)'%3E%3Cpath d='M6.8 4.5q38.9 0.5 77.9 0.2' stroke-width='0.6' stroke-dasharray='17.3 3.1 5.3 2' stroke-opacity='0.7'/%3E%3Cpath d='M3.3 4.7q26.7 1.1 53.3 0.4' stroke-width='0.6' stroke-dasharray='17.3 3.1 11.3 2.8' stroke-opacity='0.5'/%3E%3Cpath d='M4.2 6.3q36.4 2.4 72.9 0.9' stroke-width='1.2' stroke-dasharray='16 4 7.7 3.9' stroke-opacity='0.8'/%3E%3Cpath d='M0.6 6.8q35.3 0.5 70.5 0.2' stroke-width='1.3' stroke-dasharray='17.8 3.6 5.8 1.9' stroke-opacity='0.6'/%3E%3Cpath d='M1.4 8.4q29 -2.3 58.1 -0.9' stroke-width='0.6' stroke-dasharray='14.1 3.3 12.2 2.7' stroke-opacity='0.6'/%3E%3Cpath d='M2.2 8.7q39.4 -1.2 78.8 -0.5' stroke-width='1.1' stroke-dasharray='10.4 4.1 11.1 5.1' stroke-opacity='0.6'/%3E%3Cpath d='M6.6 10.1q34.2 -1.7 68.4 -0.7' stroke-width='1.5' stroke-dasharray='29.5 1.2 8.2 1.1' stroke-opacity='0.9'/%3E%3Cpath d='M7 11.2q37.4 0.2 74.9 0.1' stroke-width='1.5' stroke-dasharray='29.7 4 7.5 5.9' stroke-opacity='0.6'/%3E%3Cpath d='M0.5 11.6q35.2 2.2 70.4 0.9' stroke-width='0.7' stroke-dasharray='28.9 1.9 5 3.6' stroke-opacity='0.5'/%3E%3C/g%3E%3C/svg%3E") right 1px top 24% / 14px 84px no-repeat, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 80'%3E%3Cg fill='none' stroke='%237d9877' stroke-linecap='round' transform='translate(14 0) rotate(90) rotate(2 40.0 7.0)'%3E%3Cpath d='M5.2 3.6q25.8 2 51.7 0.8' stroke-width='1' stroke-dasharray='17.8 2.4 12.9 5.1' stroke-opacity='0.9'/%3E%3Cpath d='M2.6 4.7q33.5 0.7 66.9 0.3' stroke-width='1.4' stroke-dasharray='13.2 2.2 8.1 4.9' stroke-opacity='0.7'/%3E%3Cpath d='M5.3 5.6q23.7 -0.8 47.4 -0.3' stroke-width='1.2' stroke-dasharray='20.3 4.3 6.5 5.8' stroke-opacity='0.5'/%3E%3Cpath d='M3.5 6.6q26.5 -0.1 52.9 -0.1' stroke-width='1.1' stroke-dasharray='17.9 3.9 4 2.9' stroke-opacity='0.8'/%3E%3Cpath d='M5.6 7.1q25 -1.6 49.9 -0.7' stroke-width='1.2' stroke-dasharray='17.9 2.7 4.8 4.5' stroke-opacity='0.7'/%3E%3Cpath d='M3.5 8.7q31.1 -1 62.2 -0.4' stroke-width='1.1' stroke-dasharray='27.8 1.3 12.8 5.3' stroke-opacity='0.7'/%3E%3Cpath d='M4.3 9.8q31.4 -0.9 62.7 -0.4' stroke-width='0.8' stroke-dasharray='15.7 2.2 13.6 2.7' stroke-opacity='0.6'/%3E%3Cpath d='M5.2 10.4q29.1 -1.2 58.1 -0.5' stroke-width='1.1' stroke-dasharray='14.1 1.4 6.2 2.3' stroke-opacity='0.9'/%3E%3C/g%3E%3C/svg%3E") left 1px top 33% / 13px 70px no-repeat, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 70'%3E%3Cg fill='none' stroke='%2376899b' stroke-linecap='round' transform='translate(12 0) rotate(90) rotate(-2 35.0 6.0)'%3E%3Cpath d='M0.6 3q27.2 0.3 54.4 0.1' stroke-width='0.6' stroke-dasharray='17.7 4.4 6.6 5.3' stroke-opacity='0.6'/%3E%3Cpath d='M3.6 4.6q20.5 -1.1 40.9 -0.4' stroke-width='1.4' stroke-dasharray='16 1.6 12.4 1.5' stroke-opacity='0.8'/%3E%3Cpath d='M3.8 4.9q23.5 2.1 47 0.8' stroke-width='0.6' stroke-dasharray='22.4 1.7 13.8 5.6' stroke-opacity='0.5'/%3E%3Cpath d='M3.4 5.4q21.7 -0.2 43.5 -0.1' stroke-width='1.3' stroke-dasharray='23.6 3.3 11.7 5.1' stroke-opacity='0.8'/%3E%3Cpath d='M1.8 7.1q22.5 1.8 44.9 0.7' stroke-width='0.6' stroke-dasharray='12.5 2.7 7.2 4.1' stroke-opacity='0.7'/%3E%3Cpath d='M2.4 8.4q25 1.2 50.1 0.5' stroke-width='1.2' stroke-dasharray='28.4 2.2 12.9 5.9' stroke-opacity='0.9'/%3E%3Cpath d='M2.1 8.6q30.4 -2.3 60.8 -0.9' stroke-width='1.4' stroke-dasharray='16.7 3.9 11.6 3.7' stroke-opacity='0.6'/%3E%3C/g%3E%3C/svg%3E") right 2px top 63% / 12px 64px no-repeat,
+        radial-gradient(closest-side, rgba(127, 152, 119, .3), #0000) left -8px top 72% / 22px 30px no-repeat, radial-gradient(closest-side, rgba(180, 154, 92, .26), #0000) right -6px top 51% / 18px 24px no-repeat,
+        radial-gradient(closest-side, rgba(118, 137, 155, .24), #0000) left -6px top 9% / 18px 26px no-repeat, radial-gradient(closest-side, rgba(160, 102, 90, .2), #0000) right -8px top 84% / 20px 30px no-repeat;
+      opacity: .9;
+    }
+    [data-t="bench"][data-m="dark"] body::after { opacity: .6; }
+    :where([data-t="bench"]) :is(.card, li.unit):where(:nth-child(3n+2)) { background-image: radial-gradient(5px 4px at calc(100% - 6px) calc(100% - 6px), rgba(127, 152, 119, .32), #0000), radial-gradient(3px 2.5px at calc(100% - 10px) calc(100% - 4px), rgba(127, 152, 119, .22), #0000); }
+    :where([data-t="bench"]) :is(.card, li.unit):where(:nth-child(3n)) { background-image: radial-gradient(4px 5px at 6px calc(100% - 7px), rgba(180, 154, 92, .3), #0000); }
+    @media print {
+      :is([data-t="parchment"], [data-t="forge"], [data-t="bench"]) body::after, :is([data-t="parchment"], [data-t="forge"]) .app-bar::before, :is([data-t="parchment"], [data-t="forge"]) .app-bar::after { content: none; }
+    }
+    /* TH6 end */
     /* Chunk B: the round back arrow at the bottom left, beside the bar (look from the chosen mockup, colours from the app's own names). 44 px wide and high.
        Hidden on the start page, while the loading ring or the travel plays, while the Mentor pop-up is open and while a text box has the cursor (the bar steps aside too);
        it fades in again when they end. */
@@ -2614,6 +2706,20 @@
     @media (max-width: 899.98px) { body.typing .back-menu { visibility: hidden; opacity: 0; pointer-events: none; transition: none; } }
     @media (hover: hover) { .back-menu:hover { translate: 0 -2px; } }
     .back-menu:active { translate: 0 1px; scale: 0.97; filter: brightness(0.92); }
+    /* WS1: wide screens (900 px and over) only, the same shapes placed and sized better; phones are unchanged.
+       1. The start circle: the Dashboard's wide grid rule (#view-dashboard:not(.hidden), an id) beat the start page's "hide every section",
+          so on a cold start the Dashboard's cards showed through and behind the circle. Hidden there now, as on a phone.
+       2. The last card stops as far above the bar as on a phone: the bar's height plus 24 px (it was 170 px, 2 px short of the bar since A1 raised it 14 px).
+       3. An open unit's or paint's side pane (R2b, R2c): only its room at the end changes. It runs down under the bar like the page does, so its own
+          scroll now ends with the same room as the page, and its last row (Delete, More info) can be scrolled clear of the bar and its fade.
+       4. The round back arrow sits beside the bar, in the same place against the bar as on a 390 px phone (8 px in from the bar's left edge),
+          instead of in the far bottom corner of the window (267 px from the bar at 900 px wide, 777 px at 1920). */
+    @media (min-width: 900px) {
+      body.launching #view-dashboard:not(.hidden) { display: none; }
+      body { padding-bottom: calc(var(--arc-h) + 24px); }
+      #unit-split.layout-split > .layout-side:not(.hidden), #palette-split.layout-split > .layout-side:not(.hidden) { padding-bottom: calc(var(--arc-h) + 8px); }
+      .back-menu { left: calc(50% - 187px); }
+    }
 
     .hidden { display: none !important; }
 
@@ -2688,6 +2794,84 @@
       *, *::before, *::after { animation: none !important; transition: none !important; }
       .ripple { display: none; }
     }
+    /* ===== MO6: no flashes in the start circle and the bar, the icon ring is the loading screen, the lit piece slides (James, 3 Nov) =====
+       1. THE LOADING SCREEN (the first thing in <body>, so it is the first frame, before any script has run): a plain screen in the page colour with the
+       app icon's segmented ring and centre dot in the middle, the size (132 px across) and place (the middle of the screen) of the phone's own launch
+       screen, which is the manifest icon (icon-512.png) on the manifest background colour (#0b1220). Installed (display-mode standalone) the screen is
+       that exact colour in every theme and in light mode, so the phone's screen and the app's first frame are the same picture; it blends into your
+       theme as it hands over. The ring is the Futuristic orb's own drawing (the ml-* classes, so it ends exactly as the orb), shown with the icon's
+       proportions and round 7's ring colours (mo6-icon, below). Each segment lights up (a glow round it) as the app loads, clockwise from 12 o'clock (--l0 to --l4, set by
+       early.js and app.js); a slow sheen goes round meanwhile (CSS alone, so it keeps moving while the phone is busy). When the app is ready, app.js moves
+       and shrinks the ring onto the round Ask Mentor button's orb while the screen fades and the start circle's four segments grow out round it.
+       Reduced motion: no sheen, the glows come in whole steps, then the circle fades in. */
+    .mo6-load { position: fixed; inset: 0; z-index: 30; }
+    .mo6-load.mo6-handing, .mo6-load.mo6-leaving { pointer-events: none; }
+    .mo6-bg { position: absolute; inset: 0; background-color: var(--background); }
+    .mo6-spot { position: absolute; left: 50%; top: 50%; width: 157.5px; height: 157.5px; margin: -78.75px 0 0 -78.75px; }
+    .mo6-ring { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; transform-origin: 50% 50%; }
+    .mo6-ring circle { transition: stroke var(--mo6-ms, 200ms) linear, fill var(--mo6-ms, 200ms) linear, opacity var(--mo6-ms, 200ms) linear, stroke-width var(--mo6-ms, 200ms) linear, r var(--mo6-ms, 200ms) linear; }
+    /* the five segments' colours, clockwise from 12 o'clock: round 7's Futuristic ring (U7: the theme's own colours, --mentor-t1 to t3; the fallbacks
+       are for before U7), so the ring is the round button's drawing when it lands. The gap is the icon's. */
+    .mo6-load .mo6-icon .ml-k0 { stroke: var(--mentor-t3, var(--mentor-rim)); }
+    .mo6-load .mo6-icon .ml-k1 { stroke: var(--mentor-t2, var(--mentor-b)); }
+    .mo6-load .mo6-icon .ml-k2 { stroke: color-mix(in srgb, var(--mentor-t2, var(--mentor-b)) 50%, var(--mentor-dot, var(--mentor-core))); }
+    .mo6-load .mo6-icon .ml-k3 { stroke: var(--mentor-dot, var(--mentor-core)); }
+    .mo6-load .mo6-icon .ml-k4 { stroke: var(--mentor-t1, var(--mentor-a)); }
+    .mo6-load .mo6-icon .ml-gap { stroke: #22304a; }
+    .mo6-load .mo6-icon .ml-dot { fill: var(--mentor-dot, var(--mentor-core)); r: 13.6px; }
+    .mo6-load .mo6-ring.mo6-icon :is(.ml-segs circle, .ml-gap, .ml-glow1 circle, .ml-glow2 circle, .ml-glow3 circle) { r: 60.2px; }
+    .mo6-load .mo6-ring.mo6-icon :is(.ml-segs circle, .ml-gap) { stroke-width: 19.5; }
+    /* a lit segment: a fine bright edge along its outside and a soft glow; the segment's own colour never changes, so it stays the icon */
+    .mo6-load .ml-k0 { --lit: var(--l0, 0); }
+    .mo6-load .ml-k1 { --lit: var(--l1, 0); }
+    .mo6-load .ml-k2 { --lit: var(--l2, 0); }
+    .mo6-load .ml-k3 { --lit: var(--l3, 0); }
+    .mo6-load .ml-k4 { --lit: var(--l4, 0); }
+    .mo6-load .mo6-icon { --boost: 1.8; }
+    .mo6-load .mo6-ring .ml-glow1 circle { opacity: calc(var(--lit) * 0.16 * var(--boost, 1)); }
+    .mo6-load .mo6-ring .ml-glow2 circle { opacity: calc(var(--lit) * 0.1 * var(--boost, 1)); }
+    .mo6-load .mo6-ring .ml-glow3 circle { opacity: calc(var(--lit) * 0.06 * var(--boost, 1)); }
+    .mo6-load .mo6-ring .mo6-rim circle { stroke: #ffffff; stroke-width: 1.8; r: 69px; opacity: 0; }
+    .mo6-load .mo6-ring.mo6-icon .mo6-rim circle { opacity: calc(var(--lit) * 0.6); }
+    @media (display-mode: standalone) {
+      .mo6-bg { background-color: #0b1220; }
+      .mo6-load .mo6-icon .ml-lens { fill: #0b1220; }
+    }
+    .mo6-load .lr-sweep {
+      position: absolute; left: 12.65px; top: 12.65px; width: 132.2px; height: 132.2px; border-radius: 50%; pointer-events: none;
+      background: conic-gradient(rgba(255, 255, 255, 0) 0turn 0.7turn, rgba(255, 255, 255, 0.3) 1turn);
+      -webkit-mask: radial-gradient(closest-side, transparent 71.4%, #000 72.6%, #000 98.8%, transparent 100%);
+      mask: radial-gradient(closest-side, transparent 71.4%, #000 72.6%, #000 98.8%, transparent 100%);
+      will-change: transform, opacity; animation: lr-sweep 2.4s linear infinite, mo6-fade-in 600ms linear both;
+    }
+    @keyframes lr-sweep { to { transform: rotate(360deg); } }
+    @keyframes mo6-fade-in { from { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { .lr-sweep { display: none; } }
+    /* While the ring hands over with the Futuristic look, it is the orb: the button's own drawing waits underneath until the ring has landed on it. */
+    :root[data-look="futuristic"] body.mo6-handing #mentor-button > svg { visibility: hidden; }
+    /* (v129 fix) and the round button itself waits unseen under the screen until the hand-over grows it in (it showed for a frame at full strength
+       under the screen as that began to fade, then dropped to the hand-over's start) */
+    body.ring-loading #mentor-button { opacity: 0; }
+    /* 2. THE TRAVEL (Mo4b, Mo4c). The bar's fade and the circle's glow were drawn on the real bar, above the travelling copies: the copies sank into the
+       fade as they landed and the real bar then appeared at once, and the circle's glow went out in one frame. While the travel runs the real bar's
+       fade is hidden and app.js draws both looks under the copies (mo6-fade: the bar's, mo6-glow: the circle's, the same rules as the real ones),
+       crossfading on the travel's clock, so the last frame is the real bar or circle exactly. */
+    body.mo-travelling > nav.tabs::before { visibility: hidden; }
+    .tabs.mo6-fade, .tabs.mo6-glow { z-index: 9; }
+    .tabs.mo6-glow { top: 0; height: auto; }
+    html .tabs.mo6-glow::before {
+      top: 0; height: auto; -webkit-mask-image: none; mask-image: none;
+      background: radial-gradient(circle at 50% var(--ring-cy, 50%), color-mix(in srgb, var(--accent-fill, var(--accent)) 12%, transparent) 0%, transparent calc(260px * var(--ring-scale, 1)));
+    }
+    /* words that leave with a move (the start page's line, the version number) fade out as a copy of themselves (inert, hidden from screen readers) */
+    .mo6-ghost { position: fixed; z-index: 13; margin: 0; pointer-events: none; }
+    /* 3. (James, 3 Nov evening) the Mentor window opens at the slow pace (--motion-flow, see app.js), so its dim layer fades in over the same time, and
+       out over the close's two thirds */
+    .mentor-backdrop::before { animation-duration: var(--motion-flow); animation-timing-function: var(--motion-flow-ease); }
+    .mentor-backdrop.mentor-closing::before { animation-duration: calc(var(--motion-flow) * 2 / 3); }
+    /* the back arrow fades out (it vanished in one frame when the Mentor window opened or the start page came back) and in */
+    .back-menu { transition: opacity var(--motion-med) var(--motion-ease), translate var(--motion-fast) var(--motion-ease), scale var(--motion-fast) var(--motion-ease), filter var(--motion-fast) var(--motion-ease); }
+    body.launching .back-menu, body.mo-travelling .back-menu, body.mentor-open .back-menu { transition: opacity var(--motion-med) var(--motion-ease), visibility 0s linear var(--motion-med); }
     /* X3: the Guides library. A search box and the category list on the left (the only part on a phone until you pick something); a category or one entry on the right
        (the only part on a phone once you have). Rows are whole buttons, 44 px or more, no resting transform. */
     .guides-split { display: grid; gap: 14px; min-width: 0; }
@@ -2783,7 +2967,8 @@
     body.typing .mentor-backdrop { padding-bottom: 12px; }
     body.mentor-open .toast { z-index: 210; bottom: auto; top: 12px; }
     body.mentor-open .toast:not(.hidden) { animation-name: mo-fade; }   /* D: at the top it fades in instead of sliding up from below, so it never passes over the X or Back on the way */   /* a notice from a row in the window shows at the top, clear of every button in it */
-    .mp-orb { animation: mp-float 4s ease-in-out infinite; }
+    /* U7: the window orb no longer has the app's own 4 s float (.mp-orb { animation: mp-float 4s ease-in-out infinite; }): every round 7 look brings its
+       own bob, so the two were stacked. The keyframes below stay for round 6 (see SWITCHING BACK in mentor-looks.js). */
     /* U6b: the window's orb is the chosen look (its box has the class ml-live, so the look's own slow motion runs there and nowhere else); a mood swaps
        the drawing inside the same box, so nothing around it moves. The old lens orb's wake, glance and turn are gone with it. */
     .mentor-orbbox svg { pointer-events: none; }
@@ -2813,10 +2998,33 @@
     .mentor-window:not(.mentor-chatting) .mentor-greeting { text-align: center; }
     .mp-skin { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0;   /* the shadow covers the border without widening the window's scroll area */
       box-shadow: 0 0 0 var(--border-width, 1px) var(--accent-fill, var(--accent)); background-color: var(--accent-fill, var(--accent)); background-image: radial-gradient(circle var(--mp-hr, 57px) at var(--mp-hx, 35%) var(--mp-hy, 30%), rgba(255, 255, 255, 0.35), transparent); }
+    /* MW2: Mentor's starter questions sit inside one Suggestions pill (James, 3 Nov). The pill is the last thing in the conversation's scroll box:
+       centred under the greeting on the start view, under the latest answer in the chat view. Its list is plain rows in the text colour, 44 px
+       each, with a rule between them; Paint Picker is the first row, in the accent colour, since it opens a tool rather than asking. app.js
+       unrolls the list (clip-path) and glides what moves (transform); the chevron turns over. The start view's scroll box may now shrink, so with
+       the list open the window stops at its full height and the rows scroll under the pill. No resting transform on a tap target. */
+    .mentor-suggest-box { display: grid; justify-items: start; gap: 6px; margin-top: 12px; }
+    .mentor-window:not(.mentor-chatting) .mentor-suggest-box { justify-items: center; }
+    .mentor-window:not(.mentor-chatting) .mentor-scroll { flex: 0 1 auto; }
+    .mentor-suggest { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 6px 12px 6px 16px; font: inherit; font-size: 0.9375rem; font-weight: 600; color: var(--accent); background-color: var(--card); border: 1px solid var(--accent); border-radius: 22px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .mentor-suggest svg { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.25; stroke-linecap: round; stroke-linejoin: round; transition: transform var(--motion-med) var(--motion-ease); }
+    .mentor-suggest[aria-expanded="true"] svg { transform: rotate(180deg); }
+    .mentor-suggest:active { filter: brightness(0.92); }
+    .mentor-rows { justify-self: stretch; display: grid; border-top: 1px solid var(--border); }
+    .mentor-rows[hidden] { display: none; }
+    .mentor-row { display: flex; align-items: center; width: 100%; min-height: 44px; box-sizing: border-box; padding: 10px 4px; font: inherit; font-size: 0.9375rem; line-height: 1.35; text-align: left; overflow-wrap: anywhere; color: var(--text); background-color: transparent; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .mentor-row:first-child { color: var(--accent); font-weight: 600; }
+    .mentor-row:active { background-color: var(--accent-wash); }
+    .mentor-suggest:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+    .mentor-row:focus-visible { outline: 2px solid var(--text); outline-offset: -2px; }
   </style>
 </head>
 
 <body class="launching ring-loading">
+  <!-- MO6: the loading screen, in the page from the first frame (see "MO6:" in the CSS): the app icon's ring and centre dot on a plain screen, the same
+       size, place and colours as the phone's own launch screen. early.js and then app.js light its five segments; when the app is ready it moves into
+       the start circle and becomes the round Ask Mentor button's orb. -->
+  <div class="mo-load mo6-load" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="mo6-bg"></span><span class="mo6-spot"><svg xmlns='http://www.w3.org/2000/svg' viewBox='16.67 16.67 166.67 166.67' class='mo6-ring mo6-icon ml-futuristic ml-neutral' aria-hidden='true' focusable='false'><circle class='ml-lens' cx='100' cy='100' r='70'/><g transform='translate(100 100) rotate(-90)' fill='none'><g class='ml-glow3'><circle class='ml-k0' r='59.5' pathLength='373.85'/><circle class='ml-k1' r='59.5' pathLength='373.85'/><circle class='ml-k2' r='59.5' pathLength='373.85'/><circle class='ml-k3' r='59.5' pathLength='373.85'/><circle class='ml-k4' r='59.5' pathLength='373.85'/></g><g class='ml-glow2'><circle class='ml-k0' r='59.5' pathLength='373.85'/><circle class='ml-k1' r='59.5' pathLength='373.85'/><circle class='ml-k2' r='59.5' pathLength='373.85'/><circle class='ml-k3' r='59.5' pathLength='373.85'/><circle class='ml-k4' r='59.5' pathLength='373.85'/></g><g class='ml-glow1'><circle class='ml-k0' r='59.5' pathLength='373.85'/><circle class='ml-k1' r='59.5' pathLength='373.85'/><circle class='ml-k2' r='59.5' pathLength='373.85'/><circle class='ml-k3' r='59.5' pathLength='373.85'/><circle class='ml-k4' r='59.5' pathLength='373.85'/></g><circle class='ml-gap' r='59.5' pathLength='373.85'/><g class='ml-segs'><circle class='ml-k0' r='59.5' pathLength='373.85'/><circle class='ml-k1' r='59.5' pathLength='373.85'/><circle class='ml-k2' r='59.5' pathLength='373.85'/><circle class='ml-k3' r='59.5' pathLength='373.85'/><circle class='ml-k4' r='59.5' pathLength='373.85'/></g><g class='mo6-rim'><circle class='ml-k0' r='69' pathLength='373.85'/><circle class='ml-k1' r='69' pathLength='373.85'/><circle class='ml-k2' r='69' pathLength='373.85'/><circle class='ml-k3' r='69' pathLength='373.85'/><circle class='ml-k4' r='69' pathLength='373.85'/></g></g><circle class='ml-lens' cx='100' cy='100' r='49.5'/><circle class='ml-dot' cx='100' cy='100' r='13'/></svg><span class="lr-sweep" aria-hidden="true"></span></span></div>
   <!-- UX1b: the first stop for the Tab key: jumps past the menu bar to the page's content (wired in app.js). Shown only while focused. -->
   <button type="button" class="skip-link" id="skip-link">Skip to content</button>
   <!-- v14: shown while saving isn't working (storage full). Stays until a save works. -->
@@ -2830,14 +3038,12 @@
        The numbers that shape it are in the CSS (".arc"). The fourth segment is Tools and Settings (Guides, Settings, Help, Updates); its short label is Tools. -->
   <nav class="tabs" aria-label="Sections">
     <div class="arc">
-      <!-- LR1: the loading ring, in the page from the first frame (see "LR1:" in the CSS). early.js and then app.js light it; app.js takes it away. -->
-      <svg class="mo-load" viewBox="0 0 390 360" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" focusable="false"><g class="lr-five" fill="none" transform="translate(195 180) rotate(-90)"><circle class="lr-back" r="71"/><circle class="lr-s lr-s0" r="71"/><circle class="lr-s lr-s1" r="71"/><circle class="lr-s lr-s2" r="71"/><circle class="lr-s lr-s3" r="71"/><circle class="lr-s lr-s4" r="71"/></g><g class="lr-three" fill="none"><g class="mo-load-turn"><circle class="t" cx="195" cy="180" r="71" stroke-dasharray="123.92 446.11" transform="rotate(-80 195 180)"/><circle class="a a0" cx="195" cy="180" r="71" stroke-dasharray="0 446.11" transform="rotate(-80 195 180)"/><circle class="t" cx="195" cy="180" r="71" stroke-dasharray="123.92 446.11" transform="rotate(40 195 180)"/><circle class="a a1" cx="195" cy="180" r="71" stroke-dasharray="0 446.11" transform="rotate(40 195 180)"/><circle class="t" cx="195" cy="180" r="71" stroke-dasharray="123.92 446.11" transform="rotate(160 195 180)"/><circle class="a a2" cx="195" cy="180" r="71" stroke-dasharray="0 446.11" transform="rotate(160 195 180)"/></g></g></svg><span class="lr-sweep" aria-hidden="true"></span>
       <button data-tab="dashboard" class="ring-hold"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>Dashboard</button>
       <button data-tab="units" class="ring-hold"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 7.9-8 9-4.8-1.1-8-4.5-8-9V6l8-3z"/></svg></span>Models</button>
       <button data-tab="recipes" class="ring-hold"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3.5 4.2 6 7.6 6 10.5a6 6 0 0 1-12 0C6 10.6 8.5 7.2 12 3z"/></svg></span>Painting</button>
       <button data-tab="guides" class="ring-hold" aria-label="Tools"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.6 2.2c-.8.4-1.2 1-1.2 1.8M12 17h.01"/></svg></span>Tools</button>
       <!-- The round Ask Mentor button: one component, wired by app.js (it opens the Mentor pop-up). -->
-      <button type="button" class="mentor-orb" id="mentor-button" aria-label="Ask Mentor"><svg xmlns='http://www.w3.org/2000/svg' viewBox='16.67 16.67 166.67 166.67' class='ml-orb ml-futuristic ml-neutral' aria-hidden='true' focusable='false'><circle class='ml-lens' cx='100' cy='100' r='70'/><g class='ml-turn'><g transform='translate(100 100) rotate(-90)' fill='none'><g class='ml-glow3'><circle class='ml-k0' r='59.5'/><circle class='ml-k1' r='59.5'/><circle class='ml-k2' r='59.5'/><circle class='ml-k3' r='59.5'/><circle class='ml-k4' r='59.5'/></g><g class='ml-glow2'><circle class='ml-k0' r='59.5'/><circle class='ml-k1' r='59.5'/><circle class='ml-k2' r='59.5'/><circle class='ml-k3' r='59.5'/><circle class='ml-k4' r='59.5'/></g><g class='ml-glow1'><circle class='ml-k0' r='59.5'/><circle class='ml-k1' r='59.5'/><circle class='ml-k2' r='59.5'/><circle class='ml-k3' r='59.5'/><circle class='ml-k4' r='59.5'/></g><circle class='ml-gap' r='59.5'/><g class='ml-segs'><circle class='ml-k0' r='59.5'/><circle class='ml-k1' r='59.5'/><circle class='ml-k2' r='59.5'/><circle class='ml-k3' r='59.5'/><circle class='ml-k4' r='59.5'/></g></g></g><circle class='ml-lens' cx='100' cy='100' r='49.5'/><circle class='ml-dot' cx='100' cy='100' r='13'/></svg>Ask Mentor</button>
+      <button type="button" class="mentor-orb" id="mentor-button" aria-label="Ask Mentor"><svg xmlns='http://www.w3.org/2000/svg' viewBox='16.67 16.67 166.67 166.67' class='ml-orb ml-futuristic ml-neutral' aria-hidden='true' focusable='false'><g class='ml-float'><g class='ml-brk ml-bk0'><path class='ml-sil ml-h-m2' d='M43.7 144A71.5 71.5 0 0 1 43.7 56L47.2 58.8A67 67 0 0 0 47.2 141.2z'/><path class='ml-sil ml-h-m1' d='M31.3 142.9A81 81 0 0 1 31.3 57.1L38.9 61.8A72 72 0 0 0 38.9 138.2z'/><path class='ml-sil ml-h-m1' d='M42.4 151.9A77.5 77.5 0 0 1 32.2 137.6L37 134.9A72 72 0 0 0 46.5 148.2z'/><path class='ml-sil ml-h-m1' d='M32.2 62.4A77.5 77.5 0 0 1 42.4 48.1L46.5 51.8A72 72 0 0 0 37 65.1z'/><path class='ml-shade' d='M37.2 139.2A74 74 0 0 1 37.2 60.8L38.9 61.8A72 72 0 0 0 38.9 138.2z'/><circle class='ml-ink' cx='25.8' cy='118.5' r='1.1'/><circle class='ml-ink' cx='25.8' cy='81.5' r='1.1'/><path class='ml-h-cab0' d='M59.5 148.3Q61.5 172.4 84.5 162.1'/><path class='ml-h-cab1' d='M59.5 148.3Q61.5 172.4 84.5 162.1'/><path class='ml-h-cab0' d='M69 153.7Q74 171.4 93.5 161.7'/><path class='ml-h-cab1' d='M69 153.7Q74 171.4 93.5 161.7'/></g><g class='ml-brk ml-bk1'><path class='ml-sil ml-h-m2' d='M156.3 56A71.5 71.5 0 0 1 156.3 144L152.8 141.2A67 67 0 0 0 152.8 58.8z'/><path class='ml-sil ml-h-m1' d='M168.7 57.1A81 81 0 0 1 168.7 142.9L161.1 138.2A72 72 0 0 0 161.1 61.8z'/><path class='ml-sil ml-h-m1' d='M157.6 48.1A77.5 77.5 0 0 1 167.8 62.4L163 65.1A72 72 0 0 0 153.5 51.8z'/><path class='ml-sil ml-h-m1' d='M167.8 137.6A77.5 77.5 0 0 1 157.6 151.9L153.5 148.2A72 72 0 0 0 163 134.9z'/><path class='ml-shade' d='M162.8 60.8A74 74 0 0 1 162.8 139.2L161.1 138.2A72 72 0 0 0 161.1 61.8z'/><circle class='ml-ink' cx='174.2' cy='81.5' r='1.1'/><circle class='ml-ink' cx='174.2' cy='118.5' r='1.1'/><path class='ml-h-cab0' d='M140.5 148.3Q138.5 172.4 115.5 162.1'/><path class='ml-h-cab1' d='M140.5 148.3Q138.5 172.4 115.5 162.1'/><path class='ml-h-cab0' d='M131 153.7Q126 171.4 106.5 161.7'/><path class='ml-h-cab1' d='M131 153.7Q126 171.4 106.5 161.7'/></g><circle class='ml-h-cond0' cx='100' cy='100' r='47.2'/><circle class='ml-h-cond1' cx='100' cy='100' r='47.2'/><path class='ml-sil ml-h-m2' d='M95.5 48.2A52 52 0 0 1 104.5 48.2L103.7 57.2A43 43 0 0 0 96.3 57.2z'/><path class='ml-shade' d='M100.9 48A52 52 0 0 1 104.5 48.2L103.7 57.2A43 43 0 0 0 100.8 57z'/><path class='ml-sil ml-h-m2' d='M104.5 151.8A52 52 0 0 1 95.5 151.8L96.3 142.8A43 43 0 0 0 103.7 142.8z'/><path class='ml-shade' d='M99.1 152A52 52 0 0 1 95.5 151.8L96.3 142.8A43 43 0 0 0 99.2 143z'/><g class='ml-turn'><g transform='translate(100 100) rotate(-90)'><g class='ml-outl'><circle class='ml-o0' r='59.5'/><circle class='ml-o1' r='59.5'/><circle class='ml-o2' r='59.5'/><circle class='ml-o3' r='59.5'/><circle class='ml-o4' r='59.5'/></g><g class='ml-segs'><circle class='ml-k0' r='59.5'/><circle class='ml-k1' r='59.5'/><circle class='ml-k2' r='59.5'/><circle class='ml-k3' r='59.5'/><circle class='ml-k4' r='59.5'/></g></g></g><g class='ml-eye'><circle class='ml-sil ml-h-eye0' cx='100' cy='100' r='24.5'/><circle class='ml-h-eye1' cx='100' cy='100' r='17.5'/><path class='ml-h-swirl' d='M95.9 111.3A12 12 0 0 1 94 89.6M104.5 94.6A7 7 0 0 1 103.5 106.1'/><circle class='ml-h-pupil' cx='100' cy='100' r='8'/><ellipse class='ml-glint' cx='93.5' cy='92.5' rx='4.6' ry='3.4' transform='rotate(-35 93.5 92.5)'/><circle class='ml-glint' cx='106' cy='107' r='1.6'/></g><g class='ml-iris'><g transform='rotate(30 100 100)'><path class='ml-blade' d='M86.5 100h27v-27h-27z'/></g><g transform='rotate(90 100 100)'><path class='ml-blade' d='M86.5 100h27v-27h-27z'/></g><g transform='rotate(150 100 100)'><path class='ml-blade' d='M86.5 100h27v-27h-27z'/></g><g transform='rotate(210 100 100)'><path class='ml-blade' d='M86.5 100h27v-27h-27z'/></g><g transform='rotate(270 100 100)'><path class='ml-blade' d='M86.5 100h27v-27h-27z'/></g><g transform='rotate(330 100 100)'><path class='ml-blade' d='M86.5 100h27v-27h-27z'/></g></g><path class='ml-sil ml-h-m3' d='M100 56a44 44 0 1 0 .01 0zM100 75.5a24.5 24.5 0 1 1 -.01 0z' fill-rule='evenodd'/><path class='ml-sil ml-h-m2' d='M93.5 54A46.5 46.5 0 0 1 106.5 54L105.6 60.4A40 40 0 0 0 94.4 60.4z'/><path class='ml-sil ml-h-m2' d='M128 62.9A46.5 46.5 0 0 1 137.1 72L131.9 75.9A40 40 0 0 0 124.1 68.1z'/><path class='ml-sil ml-h-m2' d='M146 93.5A46.5 46.5 0 0 1 146 106.5L139.6 105.6A40 40 0 0 0 139.6 94.4z'/><path class='ml-sil ml-h-m2' d='M137.1 128A46.5 46.5 0 0 1 128 137.1L124.1 131.9A40 40 0 0 0 131.9 124.1z'/><path class='ml-sil ml-h-m2' d='M106.5 146A46.5 46.5 0 0 1 93.5 146L94.4 139.6A40 40 0 0 0 105.6 139.6z'/><path class='ml-sil ml-h-m2' d='M72 137.1A46.5 46.5 0 0 1 62.9 128L68.1 124.1A40 40 0 0 0 75.9 131.9z'/><path class='ml-sil ml-h-m2' d='M54 106.5A46.5 46.5 0 0 1 54 93.5L60.4 94.4A40 40 0 0 0 60.4 105.6z'/><path class='ml-sil ml-h-m2' d='M62.9 72A46.5 46.5 0 0 1 72 62.9L75.9 68.1A40 40 0 0 0 68.1 75.9z'/><path class='ml-sil ml-h-m1' d='M100 59.5a40.5 40.5 0 1 0 .01 0zM100 69a31 31 0 1 1 -.01 0z' fill-rule='evenodd'/><path class='ml-h-groove' d='M107.4 65A35.8 35.8 0 0 1 135 92.6'/><path class='ml-h-groove' d='M135 107.4A35.8 35.8 0 0 1 107.4 135'/><path class='ml-h-groove' d='M92.6 135A35.8 35.8 0 0 1 65 107.4'/><path class='ml-h-groove' d='M65 92.6A35.8 35.8 0 0 1 92.6 65'/><circle class='ml-ink' cx='125.3' cy='74.7' r='1.1'/><circle class='ml-ink' cx='125.3' cy='125.3' r='1.1'/><circle class='ml-ink' cx='74.7' cy='125.3' r='1.1'/><circle class='ml-ink' cx='74.7' cy='74.7' r='1.1'/><path class='ml-sil ml-h-m2' d='M100 69a31 31 0 1 0 .01 0zM100 75.5a24.5 24.5 0 1 1 -.01 0z' fill-rule='evenodd'/><path class='ml-light' d='M64.9 79.8A40.5 40.5 0 0 1 135.1 79.8L133.3 80.8A38.5 38.5 0 0 0 66.7 80.8z'/><g class='ml-fglow'><circle class='ml-gw0' cx='100' cy='100' r='46'/><circle class='ml-gw1' cx='100' cy='100' r='32'/><circle class='ml-gw2' cx='100' cy='100' r='16'/></g><g class='ml-bolt ml-z0'><path class='ml-z-glow' d='M111.8 90.8L118.9 90.3L119.9 81.2L129.5 83.9L127.7 71.4L140.9 78.9'/><path class='ml-z-core' d='M111.8 90.8L118.9 90.3L119.9 81.2L129.5 83.9L127.7 71.4L140.9 78.9'/></g><g class='ml-bolt ml-z1'><path class='ml-z-glow' d='M93 113.2L88.2 117.1L91.6 125.3L82.2 127.1L88.1 136.3L75.1 136.2'/><path class='ml-z-core' d='M93 113.2L88.2 117.1L91.6 125.3L82.2 127.1L88.1 136.3L75.1 136.2'/></g><g class='ml-bolt ml-z2'><path class='ml-z-glow' d='M90 88.9L88.9 82.9L81 82.5L82.3 74.3L72.2 76.2L77 64.9'/><path class='ml-z-core' d='M90 88.9L88.9 82.9L81 82.5L82.3 74.3L72.2 76.2L77 64.9'/></g><g transform='rotate(76 100 100)'><g class='ml-bolt ml-z3'><path class='ml-z-glow' d='M111.8 90.8L118.9 90.3L119.9 81.2L129.5 83.9L127.7 71.4L140.9 78.9'/><path class='ml-z-core' d='M111.8 90.8L118.9 90.3L119.9 81.2L129.5 83.9L127.7 71.4L140.9 78.9'/></g></g><g transform='rotate(56 100 100)'><g class='ml-bolt ml-z4'><path class='ml-z-glow' d='M93 113.2L88.2 117.1L91.6 125.3L82.2 127.1L88.1 136.3L75.1 136.2'/><path class='ml-z-core' d='M93 113.2L88.2 117.1L91.6 125.3L82.2 127.1L88.1 136.3L75.1 136.2'/></g></g><g transform='rotate(48 100 100)'><g class='ml-bolt ml-z5'><path class='ml-z-glow' d='M90 88.9L88.9 82.9L81 82.5L82.3 74.3L72.2 76.2L77 64.9'/><path class='ml-z-core' d='M90 88.9L88.9 82.9L81 82.5L82.3 74.3L72.2 76.2L77 64.9'/></g></g></g></svg>Ask Mentor</button>
     </div>
   </nav>
   <!-- Chunk B: the round back arrow beside the bar. It does what the Minifolio title does (back to the start page); the name is the only text. -->
@@ -3162,14 +3368,14 @@
             <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
           </ol>
           <p id="help-tabs" style="margin: 8px 0 0;">The bar at the bottom has four sections around the round <strong>Ask Mentor</strong> button: <strong>Dashboard</strong>, <strong>Models</strong>, <strong>Painting</strong> and <strong>Tools</strong>. The one you are in is lit. <strong>Tools</strong> opens <strong>Tools and Settings</strong>: <strong>About</strong>, <strong>Guides</strong>, <strong>Settings</strong>, <strong>Help</strong> and <strong>Updates</strong>. The shopping basket sits at the top right once your list has a paint. The app opens on a <strong>start page</strong>: the same four sections in a circle around Ask Mentor. Tap the round arrow at the bottom left, or the <strong>Minifolio</strong> title, to come back to it. Switching to another app and back leaves you where you were.</p>
-          <p id="help-mentor" style="margin: 8px 0 0;"><strong>Mentor:</strong> tap <strong>Ask Mentor</strong> to open a small window over whatever you are on. Type a question or tap a chip. Mentor answers from <strong>Guides</strong> and the colour rules, with a <strong>Sources</strong> row; a source opens that guide, recipe, tip or colour. It puts small typing slips right. When it is not sure, it shows <strong>Did you mean</strong> with the question as it read it; tap that to ask it. When it has no answer, it says <strong>I do not know that yet.</strong> and shows some starter questions. It also answers simple questions about the app, such as price, backups and privacy. Say thanks or goodbye and it signs off. In the window its orb shows when it is getting ready, has an answer, is not sure, or has signed off. <strong>Settings → Mentor look</strong> changes the orb: <strong>Futuristic</strong> (the app icon's ring), <strong>Magical</strong> or <strong>Grounded</strong>. The <strong>Paint Picker</strong> chip takes you to <strong>Painting → Colour Lab</strong>. Close the window with the cross, a tap outside it, Escape or Back; Ask Mentor brings the chat back. Mentor runs on this device. What you type is not sent anywhere and is not stored, and the chat is cleared when the app reloads or after a while without use.</p>
+          <p id="help-mentor" style="margin: 8px 0 0;"><strong>Mentor:</strong> tap <strong>Ask Mentor</strong> to open a small window over whatever you are on. Type a question, or tap <strong>Suggestions</strong> and pick one. Mentor answers from <strong>Guides</strong> and the colour rules, with a <strong>Sources</strong> row; a source opens that guide, recipe, tip or colour. It puts small typing slips right. When it is not sure, it shows <strong>Did you mean</strong> with the question as it read it; tap that to ask it. When it has no answer, it says <strong>I do not know that yet.</strong> and shows some starter questions. It also answers simple questions about the app, such as price, backups and privacy. Say thanks or goodbye and it signs off. In the window its orb shows when it is getting ready, has an answer, is not sure, or has signed off. <strong>Settings → Mentor look</strong> changes the orb: <strong>Futuristic</strong> (the app icon's ring), <strong>Magical</strong> or <strong>Grounded</strong>. <strong>Paint Picker</strong>, the first of the suggestions, takes you to <strong>Painting → Colour Lab</strong>. Close the window with the cross, a tap outside it, Escape or Back; Ask Mentor brings the chat back. Mentor runs on this device. What you type is not sent anywhere and is not stored, and the chat is cleared when the app reloads or after a while without use.</p>
           <p id="help-back" style="margin: 8px 0 0;">The phone's <strong>Back</strong> button closes what's open first, one thing per press: a question box (it counts as No), a photo, the camera, a recipe, the paste box. Then it goes to the Dashboard. On the Dashboard, with nothing open, it leaves the app.</p>
         </details>
         <details>
           <summary>Adding and updating units</summary>
           <ul>
             <li><strong>+ Add unit</strong> on the Models tab. The number box is how many models are in the unit (up to 999; tracking each model separately works for up to 100). The game and faction you used last are filled in the next time you open the form.</li>
-            <li>Add the same unit twice (same name, game and faction) and they're numbered for you: Intercessors 1, Intercessors 2.</li>
+            <li>Add the same unit twice (same name, game and faction) and they're numbered for you: Spearmen 1, Spearmen 2.</li>
             <li><strong>Starting stage</strong> in the Add form puts a new unit straight at the stage it's really at (it stays picked for the next unit you add).</li>
             <li id="help-new-unit-shown">Each new unit is <strong>scrolled into view</strong> and outlined for a moment, so you can see where it went in the list.</li>
             <li>Press the right arrow to move a unit up a stage, or the left arrow to move it back one. Made a mistake? Press <strong>Undo</strong> on the message that pops up.</li>
@@ -3251,15 +3457,15 @@
           <summary>Paint recipes</summary>
           <ul>
             <li>A recipe is your own step-by-step for a model, for one part like armour, eyes or trim. Press <strong>Painting → Recipes → + New recipe</strong>.</li>
-            <li id="help-quick-recipe">In <strong>New recipe</strong>, type or paste lines like <em>Eyes: yriel yellow, then flash gitz yellow</em>: a part, a colon, then paints split by commas or "then", or one paint per line. A mix like 2:1 and (optional) work as in Paste recipes. The preview shows the part, a name and each step. A paint that is not in the paint list is kept as typed. <strong>More options</strong> holds the name, part, and each step's technique, coats, brand and note. A technique you pick there stays when you change that step's paint. After <strong>Save recipe</strong>, <strong>Do you own these?</strong> lets you tick the paints you have: <strong>Done</strong> marks them Owned, <strong>Skip</strong> changes nothing. To change a recipe later, use <strong>Edit</strong> on its page.</li>
+            <li id="help-quick-recipe">In <strong>New recipe</strong>, type or paste lines like <em>Eyes: bright yellow, then pale yellow</em>: a part, a colon, then paints split by commas or "then", or one paint per line. A mix like 2:1 and (optional) work as in Paste recipes. The preview shows the part, a name and each step. A paint that is not in the paint list is kept as typed. <strong>More options</strong> holds the name, part, and each step's technique, coats, brand and note. A technique you pick there stays when you change that step's paint. After <strong>Save recipe</strong>, <strong>Do you own these?</strong> lets you tick the paints you have: <strong>Done</strong> marks them Owned, <strong>Skip</strong> changes nothing. To change a recipe later, use <strong>Edit</strong> on its page.</li>
             <li id="help-recipe-or-scheme"><strong>Recipe or scheme? What's the difference.</strong> <strong>Recipe:</strong> how to paint one part, like teeth or armour. It has steps, paints and mixes. <strong>Scheme:</strong> the look for a whole model, unit or army. It is a bundle of recipes. For example, my dark green scheme is an Armour recipe, a Trim recipe, a Skin recipe and a Weapon recipe. <strong>Colour plan</strong> (Painting → Colour Lab): a quick idea of which colours go together. No steps. Save it into a recipe when you want steps.</li>
             <li>Add steps in the order you paint them. Each step has a technique (base coat, wash, dry brush…), the number of coats, and one or more paints.</li>
-            <li>Not sure what to call a technique? Leave it on <strong>Auto</strong> and the app guesses from the paints: a shade becomes Wash, a Contrast paint becomes Contrast, 'Ardcoat becomes Varnish, and so on. You can always pick one yourself.</li>
+            <li>Not sure what to call a technique? Leave it on <strong>Auto</strong> and the app guesses from the paints: a shade becomes Wash, a Contrast paint becomes Contrast, a gloss varnish becomes Varnish, and so on. You can always pick one yourself.</li>
             <li>Use the <strong>Whole model</strong> part for steps done all over the model, like priming, base coats and an all-over dry brush.</li>
             <li>Each step can have a short <strong>note</strong> (e.g. "heavier on the top") and an <strong>Optional</strong> tick for steps you sometimes skip. Optional steps show faded.</li>
             <li>Basing materials like rocks, sand, snow and static grass can go in a step too. They're listed in Your Palette as basing materials and kept out of the colour sort.</li>
             <li>For each paint, type its name and brand and tap the colour circle to pick roughly what it looks like. Paints you've used before are suggested as you type.</li>
-            <li>Mixing paints? Add more than one paint to a step and type a <strong>mix ratio</strong> like 2:1, 1:1:2 or 50/50 (in the same order as the paints). The %s are worked out for you, or you can set each one's <strong>mix %</strong> yourself. Contrast Medium and Lahmian Medium are suggested as you type.</li>
+            <li>Mixing paints? Add more than one paint to a step and type a <strong>mix ratio</strong> like 2:1, 1:1:2 or 50/50 (in the same order as the paints). The %s are worked out for you, or you can set each one's <strong>mix %</strong> yourself. Mediums and thinners are suggested as you type.</li>
             <li id="help-recipe-steps">Each step is folded to one line. Tap it to open it. Inside, <strong>More options</strong> holds the technique, coats, mix ratio, note and the <strong>Optional</strong> tick.</li>
             <li>On a wide screen an open recipe sits beside the list, so you can open another without going back.</li>
             <li>Reorder steps with <strong>↑ ↓</strong>. Nothing is saved until you press <strong>Save recipe</strong>.</li>
@@ -3271,7 +3477,7 @@
             <li>In Your Palette, sort by colour, name or brand, and tap a brand to show only its paints. Tap a paint to change its colour, name or brand: the change applies in every recipe that uses it.</li>
             <li>At the bottom of an open paint: <strong>Remove</strong> deletes a paint no recipe uses (a paint that's still in a recipe can't be removed). <strong>Merge into…</strong> joins it to another paint, handy for a typo twin like "Deep Bluee": its recipes move to the paint you pick, and that paint keeps its own name and brand. Both have Undo.</li>
             <li><strong>Scan a paint pot</strong> (in Your Palette) reads the paint's name from its label with the camera and suggests matches. The reading happens on your phone; the photo is never sent anywhere. The first scan loads the label reader (about 11 MB) from Minifolio's own site, and after that scanning works with no internet. Leaving the app, or closing the scan panel, switches the camera off.</li>
-            <li id="help-scan-brands"><strong>Brands the scanner knows:</strong> Citadel, Warhammer Tone Pro (each colour in its five tones, like Carmine Blades 1 to 5), Vallejo, The Army Painter, Pro Acryl, AK Interactive, Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World (about 4,000 paints), and every paint already in Your Palette. <strong>Settings → Paint brands</strong> switches brands on or off: a brand that's off isn't suggested, matched or used in Colour ideas. Your own paints always are. On a Vallejo pot it also reads the <strong>code number</strong> (like 72.021), which picks the exact paint even if the name is hard to read. Other brands still work: if the scanner doesn't know the name, type it in. The same lists help when you paste recipes from your notes. Where two brands share a name (like "Black"), you're asked which one. The colours for these brands are close guesses, so tap a paint to fix its colour.</li>
+            <li id="help-scan-brands"><strong>Brands the scanner knows:</strong> Citadel, Warhammer Tone Pro (each colour in its five tones, 1 to 5), Vallejo, The Army Painter, Pro Acryl, AK Interactive, Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World (about 4,000 paints), and every paint already in Your Palette. <strong>Settings → Paint brands</strong> switches brands on or off: a brand that's off isn't suggested, matched or used in Colour ideas. Your own paints always are. On a Vallejo pot it also reads the <strong>code number</strong> (like 72.021), which picks the exact paint even if the name is hard to read. Other brands still work: if the scanner doesn't know the name, type it in. The same lists help when you paste recipes from your notes. Where two brands share a name (like "Black"), you're asked which one. The colours for these brands are close guesses, so tap a paint to fix its colour.</li>
             <li>Typed a paint into a recipe that isn't in Your Palette yet? Above <strong>Save recipe</strong>, <strong>Do you own these?</strong> asks about the new paints that are in the paint list: <strong>All</strong> (Owned), <strong>None</strong> (Not owned) or <strong>Let me pick</strong> (tap a paint to untick it). The card names the paints it means. A paint name only counts once it matches a known paint or you leave the box. A name that isn't in the paint list (a typo, say) is kept as typed with no status, and can still go on the shopping list. Save stops and says so if a step has a brand but no paint name, and a step with no paint says <strong>No paint</strong> on its line.</li>
             <li id="help-recipe-shop">Missing paints are not put on the shopping list by themselves. Every recipe has an <strong>Add to shopping list</strong> button under its steps. It adds the real paints you don't own (never the made-up example paints) and says how many. Undo takes them off again. It is greyed out when there is nothing to add.</li>
             <li id="help-shop-tick">On the Shopping list, tick a paint when you have bought it: it moves to <strong>Bought</strong> at the bottom and is marked Owned in Your Palette. Open Bought to tap <strong>Add back</strong>, or <strong>Clear bought</strong> to forget the list. <strong>Remove</strong> takes a paint off the list. Both have an Undo.</li>
@@ -3287,7 +3493,7 @@
             <li id="help-paint-to-recipe">In <strong>Colour Lab</strong>, a colour idea, and a colour wheel paint once you open it, has <strong>Use in a recipe</strong> and <strong>Add to a recipe</strong>. Use in a recipe starts a new recipe with that paint in step 1. Add to a recipe lets you choose a recipe, then one of its steps or a new step, and saves it straight away. Both have an <strong>Undo</strong>. A paint that is not in Your Palette is added as <strong>Not owned</strong>, so it reaches your shopping list once a recipe uses it.</li>
             <li id="help-similar-paints">In <strong>Colour Lab</strong>, those same paints also have <strong>Similar paints</strong>. It opens a pop-up with <strong>Best match</strong>: up to three paints from different brands, closest first, whether or not you own them, each with its fit. <strong>Lighter</strong> and <strong>Darker</strong> look for a lighter or darker colour. <strong>Your closest</strong> shows the nearest paints you own, with the same fit; it is left out when your closest paint is already the best match, and says so when none of your paints is close. When none is close, it may also show <strong>Try mixing</strong>: one or two blends of two paints you own, with the parts to use, next to the colour you want. It is a rough guess from screen colours, so test it on a palette first. <strong>Add to recipe step</strong> puts the two paints and the ratio into a recipe step, with an <strong>Undo</strong>. Metallics, washes, shades, Contrast, glazes and other special paints are never mixed. On a phone the two cards are tabs (<strong>Best</strong> and <strong>Yours</strong>, with the arrow keys); on a wider screen they sit side by side. A paint you do not own can go on your shopping list, with an <strong>Undo</strong>. Varnishes, mediums, thinners and other paints that are not colours are never offered.</li>
             <li id="help-ask-mentor"><strong>Paint Picker</strong> (Pro preview): in <strong>Painting → Colour Lab</strong>, or from the <strong>Paint Picker</strong> chip in <strong>Mentor</strong>. Choose a <strong>Base colour</strong>, a <strong>Second colour</strong> if you like, and a <strong>Part</strong> (Armour, Eyes, Weapon or Base). Under each colour you get up to three paints that go with it for that part, with the reason, and your own paints come first. A paint of yours that is a poor match says <strong>Yours, poor fit</strong>. Under the picks are tips for that part, each with its colours and, where it has one, a link to the creator it credits. Each paint row has <strong>Use in a recipe</strong>, <strong>Add to a recipe</strong> and <strong>Similar paints</strong>, and a paint you do not own also has <strong>Add to shopping list</strong> and <strong>Shop links</strong>. Each one says what it did and has an <strong>Undo</strong>. The picks are kept only while the app is open.</li>
-            <li id="help-guides"><strong>Guides</strong> (in Tools): type in the search box, or tap a category to see its topic groups, then a group to see its entries, then tap one to open it. Category, group and entry rows end with a small number made from their place in A to Z order (2.3.4 is category 2, group 3, entry 4). Related entries are buttons at the bottom of an entry, and <strong>Back</strong> goes up one level. Categories with nothing in them are left out. Long lists show 30 rows at a time: <strong>Show more</strong> adds the next 30, and search looks through them all. <strong>Detail recipes</strong> and <strong>Basing</strong> open on their first group, with <strong>All</strong> one tap away, and have the same buttons as before, including Add to shopping list. Their groups and entries are numbered the same way, and <strong>Filters</strong> folds the row of group buttons away or shows it again.</li>
+            <li id="help-guides"><strong>Guides</strong> (in Tools): type in the search box, or tap a category to see its topic groups, then a group to see its entries, then tap one to open it. Category, group and entry rows end with a small number made from their place in A to Z order (2.3.4 is category 2, group 3, entry 4). Related entries are buttons at the bottom of an entry. From an entry, <strong>Back</strong> goes to the list you opened it from (search results, A to Z or a group), where you left off; from a group or category it goes up one level. Categories with nothing in them are left out. Long lists show 30 rows at a time: <strong>Show more</strong> adds the next 30, and search looks through them all. <strong>Detail recipes</strong> and <strong>Basing</strong> open on their first group, with <strong>All</strong> one tap away, and have the same buttons as before, including Add to shopping list. Their groups and entries are numbered the same way, and <strong>Filters</strong> folds the row of group buttons away or shows it again.</li>
             <li id="help-safety">Guides and Mentor give general hobby tips, not professional safety advice. Always follow the maker's label and safety sheet.</li>
             <li id="help-compendium-ticks">In <strong>Colour Lab</strong> and <strong>Guides</strong>, tick the paints you want from a colour plan or detail recipe, or press <strong>Select all</strong>. <strong>Add to shopping list</strong> is grey until you tick something, then adds only the ticked paints. A paint you own, or that is already on the list, shows a mark instead of a tick box. <strong>Copy as text</strong> and <strong>Save into a new recipe</strong> use the ticked paints, or all of them if none is ticked.</li>
             <li><strong>Schemes</strong> (top of the Painting tab) group the recipes you use for one faction, e.g. "My Blue Army" = armour, trim, lenses and base. Press <strong>+ New scheme</strong>, name it and tick its recipes. The faction is filled in from the recipes you tick when they agree (or the last faction you used): <strong>Change</strong> picks another. <strong>Search recipes</strong> narrows the list, and <strong>Select all</strong> ticks a whole part.</li>
@@ -3303,7 +3509,7 @@
           <summary>Pasting recipes from your notes</summary>
           <ul>
             <li>Got recipes in Google Keep, a phone note or a Reddit post? On the Painting tab, tap <strong>Paste recipes from your notes</strong>, paste them in and press <strong>Read notes</strong>. You get a preview first: nothing is saved until you press <strong>Save</strong>.</li>
-            <li>Put each part on its own line ending in a colon, like <strong>Eyes:</strong>, then one step per line (or several split by commas). Mixes like <strong>2:1 Dark Red:CM</strong>, <strong>50/50</strong> or <strong>Brown Wash 1:2 with Contrast Medium</strong> are read as one mixed step. "Bone and Pale Bone" is read as both paints.</li>
+            <li>Put each part on its own line ending in a colon, like <strong>Eyes:</strong>, then one step per line (or several split by commas). Mixes like <strong>2:1 Dark Red:CM</strong>, <strong>50/50</strong> or <strong>Brown Wash 1:2 with Glaze Medium</strong> are read as one mixed step. "Bone and Pale Bone" is read as both paints.</li>
             <li id="help-faction-part">A line with just a faction name (<strong>Blue Army</strong>) starts that faction's scheme. A faction followed by a part (<strong>Blue Army armour</strong>, <strong>Green Army cloak</strong>) starts that scheme and that part, so it isn't mistaken for a paint with a similar name.</li>
             <li>Divider lines (<strong>-----</strong>, <strong>***</strong>, <strong>===</strong>) and lines with only emoji are skipped, like blank lines. Words the app can't read as a paint (say, in another alphabet) are kept as a note.</li>
             <li>Up to <strong>20,000 characters</strong> are read at once (a few pages of notes). If yours is longer, the preview says so: paste the rest separately.</li>
@@ -3318,14 +3524,14 @@
         <details>
           <summary>Importing (CSV and army lists)</summary>
           <ul>
-            <li><strong>From the Warhammer app:</strong> open a list, tap Export, copy it as text, then on the Models tab tap <strong>+ Add unit → Paste army list</strong> (it's also in Settings), paste it and press Read list. Only unit names and model counts are kept: points, wargear and rules text are thrown away.</li>
-            <li id="help-typed-list">A list typed by hand works too: one unit per line with its count, such as <strong>10x Boyz</strong>, <strong>Boyz x10</strong> or <strong>Boyz (10 models)</strong>. A unit with no count comes in as 1 model. Lists from other list builders work too, such as <strong>10x Intercessors [180pts]</strong>. Any line that can't be read is listed by its line number in the check.</li>
+            <li><strong>From your army list app:</strong> open a list, tap Export, copy it as text, then on the Models tab tap <strong>+ Add unit → Paste army list</strong> (it's also in Settings), paste it and press Read list. Only unit names and model counts are kept: points, wargear and rules text are thrown away.</li>
+            <li id="help-typed-list">A list typed by hand works too: one unit per line with its count, such as <strong>10x Goblins</strong>, <strong>Goblins x10</strong> or <strong>Goblins (10 models)</strong>. A unit with no count comes in as 1 model. Lists from other list builders work too, such as <strong>10x Spearmen [180pts]</strong>. Any line that can't be read is listed by its line number in the check.</li>
             <li><strong>From a spreadsheet:</strong> save it as CSV with the columns name, game, faction, stage, nickname, count, repaint, notes, date_added, date_stage, then use <strong>Import CSV</strong> (under + Add unit, or in Settings). <strong>CSV template</strong> in Settings gives you an example file. Cells can be split by commas or by semicolons (as Excel saves them in much of Europe).</li>
             <li id="help-csv-checks">The first line of the CSV must be the column titles, and one must be <strong>name</strong>. The other columns are found by their titles, so they can be in any order or left out. A file without a name column, a picture, an Excel file that isn't saved as CSV, or a file over 2 MB is refused with a message that stays until you press OK, and nothing changes.</li>
             <li id="help-csv-dates"><strong>date_added</strong> is the day a unit joined your collection and <strong>date_stage</strong> the day it reached its stage, read day first (UK style, 02/11/2026) or as YYYY-MM-DD (2026-11-02). The progress graph then shows it on those days. A unit with only date_stage uses it for both. A date in another style, before 1980 or in the future is left out but the unit still comes in. If you change a unit's stage in the check, it reached that stage today. A date_added later than date_stage is replaced by date_stage. The check lists the rows where either happened. <strong>Export CSV</strong> writes both dates.</li>
             <li>Before anything changes, you choose <strong>Add to my collection</strong> or <strong>Replace my collection</strong>, and can untick any units you don't want.</li>
             <li id="help-row-stage">Each unit in the check has its own <strong>model count</strong> and <strong>stage</strong>. <strong>Set every row to</strong> puts every unit at one stage in one go, then you can change single units. The tick only decides whether a unit comes in. A CSV stage that matches one of your stages is used. A <strong>status</strong> column works too, and everyday words such as primed, WIP or painted are matched to your stages (painted, done and finished mean your first Done stage). Anything else is listed in the check, and the unit starts at the Set every row to stage.</li>
-            <li>Units you already have start unticked. If one has a different name in the import, it's highlighted so you can pick which name to keep. The Warhammer app's name is the default.</li>
+            <li>Units you already have start unticked. If one has a different name in the import, it's highlighted so you can pick which name to keep. The army list's name is the default.</li>
             <li>After an import, the <strong>Models</strong> tab opens so you can see what came in. Changed your mind? Press <strong>Undo</strong> straight after.</li>
           </ul>
         </details>
@@ -3547,17 +3753,17 @@
         <!-- v19: the paste box and the import check live in #import-area, which is moved to
              the Units tab when an import starts there, and back here when it starts here. -->
         <div id="settings-import-slot"><div id="import-area">
-        <!-- Import from the Warhammer app: hidden until the button above is pressed. -->
+        <!-- Import from an army list app: hidden until the button above is pressed. -->
         <div id="wh-panel" class="hidden" style="margin-top: 14px; display: grid; gap: 10px;">
           <p class="hint" style="margin: 0;">
-            In the Warhammer app, open a list, tap Export, then Copy as text. Paste it below.
+            In your army list app, open a list, tap Export, then Copy as text. Paste it below.
             Only unit names and model counts are kept; points and wargear are ignored.
           </p>
           <textarea id="wh-text" placeholder="Paste your exported list here" aria-label="Army list" maxlength="50000"></textarea>
           <button class="primary-button" id="wh-read">Read list</button>
         </div>
 
-        <!-- The review step, used by BOTH Import CSV and Warhammer app list.
+        <!-- The review step, used by BOTH Import CSV and the pasted army list.
              Nothing changes until you press the button at the bottom. -->
         <div id="review" class="hidden review">
           <h2 id="review-title" style="margin: 0;">Check your import</h2>
@@ -3576,7 +3782,7 @@
             </div>
           </div>
 
-          <!-- Only for Warhammer lists, which don't say which game or stage. -->
+          <!-- Only for pasted army lists, which don't say which game or stage. -->
           <div id="review-wh-fields" style="display: grid; gap: 6px;">
             <p class="hint" style="margin: 0;">Game and faction for these units (check they match the spelling you use):</p>
             <div class="row">
@@ -3669,7 +3875,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=128" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=129" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -3682,16 +3888,16 @@
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks.
        G2a: guides-groups.js (the Guides topic groups, plain data) loads after guides-data.js. It only adds one
        name, GUIDE_GROUPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=128"></script>
-  <script src="schemes.js?v=128"></script>
-  <script src="detail-recipes.js?v=128"></script>
-  <script src="basing-tips.js?v=128"></script>
-  <script src="mentor-tips.js?v=128"></script>
-  <script src="guides-data.js?v=128"></script>
-  <script src="guides-groups.js?v=128"></script>
-  <script src="mentor-data.js?v=128"></script>
-  <script src="mentor-engine.js?v=128"></script>
-  <script src="where-to-buy.js?v=128"></script>
-  <script src="app.js?v=128"></script>
+  <script src="colour.js?v=129"></script>
+  <script src="schemes.js?v=129"></script>
+  <script src="detail-recipes.js?v=129"></script>
+  <script src="basing-tips.js?v=129"></script>
+  <script src="mentor-tips.js?v=129"></script>
+  <script src="guides-data.js?v=129"></script>
+  <script src="guides-groups.js?v=129"></script>
+  <script src="mentor-data.js?v=129"></script>
+  <script src="mentor-engine.js?v=129"></script>
+  <script src="where-to-buy.js?v=129"></script>
+  <script src="app.js?v=129"></script>
 </body>
 </html>

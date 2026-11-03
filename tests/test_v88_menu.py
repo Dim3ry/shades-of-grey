@@ -14,6 +14,7 @@ from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v31 as t
+from launch_helpers import wait_settled
 
 load, no_sideways = t.load, t.no_sideways
 results = []
@@ -81,6 +82,7 @@ def main():
 
         print("\n--- 3. The lit segment ---")
         page.click(seg("recipes"))
+        wait_settled(page)   # v129 (MO6): the lit colour now slides to the new piece over the switch (it jumped at once); the look is checked once it lands
         lit = page.evaluate("() => [...document.querySelectorAll('.tabs button[data-tab]')].map(b => [b.dataset.tab, b.getAttribute('aria-current'), getComputedStyle(b).fontWeight, getComputedStyle(b).backgroundColor])")
         on = [r for r in lit if r[1] == "page"]
         off = [r for r in lit if r[1] != "page"]
@@ -103,7 +105,7 @@ def main():
         check("its centre is 40 px above the bottom edge (26 px, plus the 14 px the whole bar was lifted in A1 so the Ask Mentor label shows in full)", abs((m[1] + m[3] / 2) - (844 - 40)) < 1, m)
         check("it has the name Ask Mentor", page.get_attribute("#mentor-button", "aria-label") == "Ask Mentor")
         page.click("#mentor-button")
-        page.click(".mentor-chip")   # X5: the button opens the Mentor window; its Paint Picker chip goes where the button used to
+        page.click(".mentor-suggest"); page.click(".mentor-row >> nth=0")   # MW2 (v129): Paint Picker is the first row inside the Suggestions pill (was a chip). X5: the button opens the Mentor window; its Paint Picker chip goes where the button used to
         page.wait_for_selector("#cmp-lab-picker")
         fold = box(page, "#cmp-lab-picker")   # X1: Painting > Colour Lab > Picker
         check("it opens Colour Lab with the Picker open", page.is_visible("#colourlab-view") and page.get_attribute('#lab-seg [data-lab="picker"]', "aria-selected") == "true")

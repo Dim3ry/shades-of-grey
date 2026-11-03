@@ -54,7 +54,7 @@ V21_4_CSP = ("default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-sr
 DRAFTS = "shades-of-grey-drafts"
 UNITS = [{"id": 1, "name": "Termagants", "hobby": "40K", "faction": "Tyranids", "stage": 2, "count": 10},
          {"id": 2, "name": "Hormagaunts", "hobby": "40K", "faction": "Tyranids", "stage": 4, "count": 10}]
-NAME_BOX = 'input[placeholder="e.g. Ultramarine blue armour"]'
+NAME_BOX = 'input[placeholder="e.g. Blue armour"]'   # H: the hint no longer names a Games Workshop army
 NOTES_BOX = 'textarea[placeholder^="Optional: tips"]'
 PASTE_TEXT = "Chitin:\nLuxion purple\nGenestealer purple (drybrush)\n\nTeeth:\nWraithbone, Agrax"
 

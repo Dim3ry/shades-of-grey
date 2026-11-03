@@ -1,6 +1,6 @@
 """X8 tests for Minifolio (the knowledge base is imported). New behaviour only:
 1. The Guides home list shows every category with its real count (602 guides in four categories, 137 detail recipes, 60 basing tips;
-   KR4 made it 614 guides and 143 detail recipes, see COUNTS),
+   KR4 made it 614 guides and 143 detail recipes, KR5 660 guides, 184 detail recipes and 72 basing tips, see COUNTS),
    and there are 20 starter questions.
 2. Three sample guides (one each from Colour basics, Techniques and Problems) open from Guides: title, body, related buttons.
 3. One new detail recipe and one new basing tip (from knowledge-base/data) open under Detail recipes and Basing with their steps.
@@ -18,7 +18,10 @@ DATA = os.path.join(HERE, "..", "knowledge-base", "data")
 # KR4: the gap-fill pack (knowledge-base/data/k8-kr4-guides.json, k9-kr4-detail-recipes.json) added 12 guides and 6 detail recipes,
 # so the real counts went up: Colour basics 81 to 85, Techniques 316 to 318, Tools and prep 155 to 160, Problems 50 to 51,
 # Detail recipes 137 to 143. The check is unchanged: the home list must show each category's real count.
-COUNTS = {"Colour basics": 85, "Techniques": 318, "Detail recipes": 143, "Basing": 60, "Tools and prep": 160, "Problems": 51}
+# KR5: the second gap-fill pack (k10-kr5-guides.json, k11-kr5-detail-recipes.json, k12-kr5-basing-tips.json) added 46 guides,
+# 41 detail recipes and 12 basing tips: Colour basics 85 to 88, Techniques 318 to 338, Tools and prep 160 to 170, Problems 51 to 64,
+# Detail recipes 143 to 184, Basing 60 to 72. Same check, new real counts.
+COUNTS = {"Colour basics": 88, "Techniques": 338, "Detail recipes": 184, "Basing": 72, "Tools and prep": 170, "Problems": 64}
 results = []
 
 def check(name, ok, detail=""):

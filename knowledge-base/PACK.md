@@ -20,6 +20,9 @@ knowledge-base/
     k7-starters.json              20 starter questions
     k8-kr4-guides.json            12 guides (KR4 gap fill, added later)
     k9-kr4-detail-recipes.json     6 detail recipes, all Body (KR4 gap fill, added later; new ones only, like k3)
+    k10-kr5-guides.json           46 guides (KR5 gap fill, added later)
+    k11-kr5-detail-recipes.json   41 detail recipes (KR5 gap fill, added later; new ones only, like k3)
+    k12-kr5-basing-tips.json      12 basing tips (KR5 gap fill, added later; new ones only, like k4)
   extras/                  Mentor matching data (read only by build_mentor_data.py, never by the app)
     recipe-and-basing-keywords.json   keywords for recipes and basing tips (those kinds have no keywords field)
     beginner-synonyms.json            282 groups of words that mean the same thing, canonical first

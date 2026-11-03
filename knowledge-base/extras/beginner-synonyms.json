@@ -1687,10 +1687,6 @@
     "hair spray chipping",
     "hair spray technique",
     "hairspray method",
-    "salt chipping",
-    "salt technique",
-    "salt weathering",
-    "salt method",
     "chipping medium",
     "chipping fluid"
    ]
@@ -3360,6 +3356,379 @@
     "stained clothing",
     "stained jeans",
     "stained trousers"
+   ]
+  },
+  {
+   "canonical": "tweezers",
+   "variants": [
+    "tweezer",
+    "tweasers",
+    "tweesers",
+    "tweezors"
+   ]
+  },
+  {
+   "canonical": "spray can",
+   "variants": [
+    "spray cans",
+    "rattlecan",
+    "rattlecans",
+    "spraycan",
+    "aerosol",
+    "aerosols"
+   ]
+  },
+  {
+   "canonical": "board game",
+   "variants": [
+    "board games",
+    "boardgame",
+    "boardgames"
+   ]
+  },
+  {
+   "canonical": "second hand",
+   "variants": [
+    "secondhand",
+    "second-hand",
+    "pre owned",
+    "pre-owned",
+    "preowned"
+   ]
+  },
+  {
+   "canonical": "push pin",
+   "variants": [
+    "push pins",
+    "pushpin",
+    "ejector pin",
+    "ejector pins",
+    "ejector mark",
+    "ejector marks"
+   ]
+  },
+  {
+   "canonical": "compressor",
+   "variants": [
+    "compressors",
+    "compresser",
+    "compresor",
+    "air compressor"
+   ]
+  },
+  {
+   "canonical": "soft plastic",
+   "variants": [
+    "bendy plastic",
+    "rubbery plastic",
+    "flexible plastic",
+    "squishy plastic"
+   ]
+  },
+  {
+   "canonical": "liquid mask",
+   "variants": [
+    "masking fluid",
+    "masking liquid",
+    "mask fluid",
+    "liquid latex",
+    "latex mask"
+   ]
+  },
+  {
+   "canonical": "decal softener",
+   "variants": [
+    "softening solution",
+    "decal softening solution",
+    "softening fluid",
+    "transfer softener"
+   ]
+  },
+  {
+   "canonical": "bounce light",
+   "variants": [
+    "bounced light",
+    "bounce lighting",
+    "reflected light"
+   ]
+  },
+  {
+   "canonical": "hologram",
+   "variants": [
+    "holograms",
+    "holographic",
+    "holo",
+    "holograph"
+   ]
+  },
+  {
+   "canonical": "mech",
+   "variants": [
+    "mechs",
+    "mecha",
+    "mechas",
+    "mech suit",
+    "mech suits"
+   ]
+  },
+  {
+   "canonical": "robot",
+   "variants": [
+    "robots",
+    "robotic",
+    "droid",
+    "droids",
+    "android",
+    "androids"
+   ]
+  },
+  {
+   "canonical": "icicle",
+   "variants": [
+    "icicles",
+    "ice cicle",
+    "ice cicles"
+   ]
+  },
+  {
+   "canonical": "snake",
+   "variants": [
+    "snakes",
+    "serpent",
+    "serpents",
+    "snakeskin"
+   ]
+  },
+  {
+   "canonical": "velvet",
+   "variants": [
+    "velvety",
+    "velour"
+   ]
+  },
+  {
+   "canonical": "raindrop",
+   "variants": [
+    "raindrops",
+    "rain drop",
+    "rain drops"
+   ]
+  },
+  {
+   "canonical": "undertone",
+   "variants": [
+    "undertones",
+    "under tone",
+    "under tones",
+    "undertoned"
+   ]
+  },
+  {
+   "canonical": "pixel",
+   "variants": [
+    "pixels",
+    "pixelated",
+    "pixellated",
+    "pixely"
+   ]
+  },
+  {
+   "canonical": "fingernail",
+   "variants": [
+    "fingernails",
+    "finger nail",
+    "finger nails"
+   ]
+  },
+  {
+   "canonical": "ship",
+   "variants": [
+    "ships",
+    "galleon",
+    "galleons",
+    "sailing ship",
+    "sailing ships"
+   ]
+  },
+  {
+   "canonical": "colour blind",
+   "variants": [
+    "colourblind",
+    "colorblind",
+    "color blind",
+    "colour blindness",
+    "color blindness",
+    "colourblindness",
+    "colorblindness"
+   ]
+  },
+  {
+   "canonical": "movement tray",
+   "variants": [
+    "movement trays",
+    "movetray",
+    "movetrays",
+    "move tray",
+    "move trays"
+   ]
+  },
+  {
+   "canonical": "headstone",
+   "variants": [
+    "headstones",
+    "gravestone",
+    "gravestones",
+    "tombstone",
+    "tombstones",
+    "grave stone",
+    "grave stones"
+   ]
+  },
+  {
+   "canonical": "graveyard",
+   "variants": [
+    "graveyards",
+    "cemetery",
+    "cemeteries",
+    "churchyard",
+    "grave yard"
+   ]
+  },
+  {
+   "canonical": "duckboard",
+   "variants": [
+    "duckboards",
+    "duck board",
+    "duck boards",
+    "trench boards"
+   ]
+  },
+  {
+   "canonical": "kerb",
+   "variants": [
+    "kerbs",
+    "curb",
+    "curbs",
+    "kerbstone",
+    "kerbstones"
+   ]
+  },
+  {
+   "canonical": "asphalt",
+   "variants": [
+    "tarmac",
+    "blacktop"
+   ]
+  },
+  {
+   "canonical": "jungle",
+   "variants": [
+    "jungles",
+    "rainforest",
+    "rain forest",
+    "rainforests"
+   ]
+  },
+  {
+   "canonical": "phone",
+   "variants": [
+    "phones",
+    "smartphone",
+    "smartphones",
+    "mobile phone",
+    "cell phone",
+    "cellphone"
+   ]
+  },
+  {
+   "canonical": "stalagmite",
+   "variants": [
+    "stalagmites",
+    "stalactite",
+    "stalactites"
+   ]
+  },
+  {
+   "canonical": "led",
+   "variants": [
+    "leds"
+   ]
+  },
+  {
+   "canonical": "reactivate",
+   "variants": [
+    "reactivates",
+    "reactivated",
+    "reactivating",
+    "reactivation",
+    "re activate",
+    "re-activate"
+   ]
+  },
+  {
+   "canonical": "peeling",
+   "variants": [
+    "peel off",
+    "peels off",
+    "peeled off",
+    "peeling off",
+    "flaking off",
+    "flakes off",
+    "flaked off"
+   ]
+  },
+  {
+   "canonical": "lint",
+   "variants": [
+    "fluff",
+    "fuzz",
+    "lint balls"
+   ]
+  },
+  {
+   "canonical": "tuft",
+   "variants": [
+    "tufts",
+    "tuffs",
+    "tuff"
+   ]
+  },
+  {
+   "canonical": "fingerprint",
+   "variants": [
+    "fingerprints",
+    "finger print",
+    "finger prints",
+    "thumbprint",
+    "thumbprints",
+    "thumb print"
+   ]
+  },
+  {
+   "canonical": "glitter",
+   "variants": [
+    "glittery",
+    "sparkles",
+    "sparkly"
+   ]
+  },
+  {
+   "canonical": "chain mail",
+   "variants": [
+    "chainmail",
+    "chain-mail",
+    "chainmaille",
+    "chain maille",
+    "hauberk",
+    "hauberks"
+   ]
+  },
+  {
+   "canonical": "tentacle",
+   "variants": [
+    "tentacles",
+    "tendril",
+    "tendrils"
    ]
   }
  ]

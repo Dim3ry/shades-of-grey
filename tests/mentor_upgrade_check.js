@@ -132,7 +132,11 @@ check("the same question gives the same answer with MENTOR_DATA", JSON.stringify
 //  - "how tall is a tree": the data's phrase bank knows "tree" from the scenery guides, so it answers trees-from-twigs instead of none.
 //    That is a near-miss answer to an off-topic question, the kind the pack's report counts (17 of 40 off-topic questions answer).
 // E: ASK.points went from 10 to 15, so "muddy ground" now finds wet-muddy-ground (KR4's guide) first: as right as the other two.
-const WITH_DATA = { "muddy ground": ["answer", ["mud", "dry-mud-ground", "wet-muddy-ground"]], "how tall is a tree": ["answer", ["trees-from-twigs"]] };
+// KR5: the 41 new detail recipes are in the index, so two more rows answer with a recipe on the same subject, both fair answers:
+//  - "how do I drybrush fur" finds the black fur recipe (drybrushing is then second);
+//  - "leather" finds KR5's tan leather recipe (George's leather recipe is then third).
+const WITH_DATA = { "muddy ground": ["answer", ["mud", "dry-mud-ground", "wet-muddy-ground"]], "how tall is a tree": ["answer", ["trees-from-twigs"]],
+                    "how do I drybrush fur": ["answer", ["drybrushing", "black-fur"]], "leather": ["answer", ["leather", "tan-leather"]] };
 const table = fx.questions.filter(([, , kind]) => kind !== "colour").map(([q, want, kind]) => {
   const r = ask(q); const first = r.sources[0];
   const alt = WITH_DATA[q];
@@ -140,7 +144,7 @@ const table = fx.questions.filter(([, , kind]) => kind !== "colour").map(([q, wa
                  : r.kind === kind && (want === "none" ? r.sources.length === 0 : first && first.key === want);
   return { q, ok, got: first ? first.key : r.kind };
 });
-check("with MENTOR_DATA on the page, the X6a question table still leads to the same first sources (two rows named above differ on purpose)", table.every((r) => r.ok), table.filter((r) => !r.ok));
+check("with MENTOR_DATA on the page, the X6a question table still leads to the same first sources (four rows named above differ on purpose)", table.every((r) => r.ok), table.filter((r) => !r.ok));
 
 // ---- 8. speed with the full phrase bank: one stub entry per MENTOR_DATA key (about 800), all their phrases ----
 const stubs = Object.keys(D.phrases).map((k) => G(k, k.replace(/-/g, " "), "", D.keywords[k] || []));

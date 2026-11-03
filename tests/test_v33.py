@@ -60,9 +60,11 @@ def check(name, ok, detail=""):
 
 REQUIRED = ["sand", "snow", "grass", "mud", "rock", "cracked earth", "rubble", "lava", "gravel", "moss", "ash", "ice"]
 GROUPS = ["ground", "cold", "plants", "stone"]
-TIP_COUNT = 60       # X8: the 12 tips of v33 plus 48 from knowledge-base/data/k4-basing-tips.json (was 12)
-DETAIL_COUNT = 143   # X8: the 18 detail recipes of v32 plus 119 from knowledge-base/data/k3-detail-recipes.json (was 18)
+TIP_COUNT = 72       # X8: the 12 tips of v33 plus 48 from knowledge-base/data/k4-basing-tips.json (was 12)
+                     # KR5: plus 12 tips (jungle floor, cave floor, river bed and more) from k12-kr5-basing-tips.json (was 60)
+DETAIL_COUNT = 184   # X8: the 18 detail recipes of v32 plus 119 from knowledge-base/data/k3-detail-recipes.json (was 18)
                      # KR4: plus 6 Body recipes (hair and horse coats) from k9-kr4-detail-recipes.json (was 137)
+                     # KR5: plus 41 recipes from k11-kr5-detail-recipes.json (was 143)
 SHOWN_JS = """() => [...document.querySelectorAll('#basing-tips > .scheme-title, #basing-tips > .hint, #basing-tips .chip, #basing-summary, #basing-tips .basing-sub, #basing-tips .basing-list li, #basing-no-paint, #basing-none, #basing-add-all, #basing-list .idea-why, #basing-list .idea-tag, #basing-list .idea-note, #basing-list .idea-add')].map(e => e.textContent).join('\\n')"""
 # brand and product words that must not appear in anything we wrote for the tips
 BRAND_WORDS = re.compile(r"\b(citadel|vallejo|army painter|scale ?75|tamiya|ak interactive|woodland scenics|gale force|green stuff|milliput|vaseline|polyfilla|"
@@ -161,7 +163,7 @@ def main():
         tips = page.evaluate("BASING_TIPS")
         groups = page.evaluate("BASING_GROUPS")
         techniques = page.evaluate("DEFAULT_TECHNIQUES")
-        check(f"there are {TIP_COUNT} tips (12 from v33, 48 added by the knowledge base in X8)", len(tips) == TIP_COUNT, len(tips))
+        check(f"there are {TIP_COUNT} tips (12 from v33, 48 added by the knowledge base in X8, 12 in KR5)", len(tips) == TIP_COUNT, len(tips))
         check("four groups, in order: Dry ground, Wet and cold, Plants, Stone and fire",
               [g["key"] for g in groups] == GROUPS and [g["name"] for g in groups] == ["Dry ground", "Wet and cold", "Plants", "Stone and fire"], groups)
         counts = {g: len([x for x in tips if x["group"] == g]) for g in GROUPS}

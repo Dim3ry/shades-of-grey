@@ -4386,13 +4386,18 @@
       root.setProperty("--ring-cy", Math.round(top + room / 2) + "px");
     }
     function enterLaunch() {
+      endFill();   // MO6: a lit piece still sliding ends first
       const move = launchMoveStart("bar");
+      const page = move ? pageOutSnap() : null;   // MO6: measured before the state changes
+      if (move) ghostOut(document.getElementById("version-tag"));   // MO6: the version number fades out (it went in one frame)
       launching = true;
       document.body.classList.add("launching");
       tabButtons.forEach(b => b.removeAttribute("aria-current"));   // nothing is chosen yet
+      if (page) move.pageOut = pageOutRun(page, TRAVEL_BACK_AT);   // MO6: the page fades out while the bar waits (it went in one frame)
       window.scrollTo(0, 0);
       fitLaunch();
       launchMoveRun(move);
+      if (move) fadeWordIn(document.getElementById("start-line"), TRAVEL_BACK_AT);   // MO6: and the start page's line fades in once the page has gone
       if (!move && launchMotionReady && reducedMotion() && Element.prototype.animate) {   // Mo4c: reduced motion, bar to circle: no travel, just a short fade
         document.querySelector(".tabs").animate([{ opacity: 0 }, { opacity: 1 }], { duration: motionMs("--motion-fast"), easing: "linear" });
       }
@@ -4447,17 +4452,37 @@
                pl: parseFloat(cs.paddingLeft), pr: parseFloat(cs.paddingRight), pt: parseFloat(cs.paddingTop), pb: parseFloat(cs.paddingBottom),
                font: { fontFamily: cs.fontFamily, fontStyle: cs.fontStyle, letterSpacing: cs.letterSpacing, textTransform: cs.textTransform, fontSizeAdjust: cs.fontSizeAdjust } };
     }
+    // MO6: the round Mentor button's inner look, in its own pixels: where its drawing sits and how big, the label's size, and its glow. The circle's
+    // button and the bar's differ (124 px with the drawing centred, 100 px with it at the top), and the travel only scaled the bar's look, so at the
+    // start the drawing and the label jumped about 9 px and the glow halved in one frame. The travel now blends these too (see orbAt in travelRun).
+    function orbLook() {
+      const cs = getComputedStyle(orbEl), svg = orbEl.querySelector("svg"), r = orbEl.getBoundingClientRect();
+      const k = orbEl.offsetWidth ? r.width / orbEl.offsetWidth : 1, s = svg ? svg.getBoundingClientRect() : null;
+      return { w: orbEl.offsetWidth, shadow: cs.boxShadow, gap: parseFloat(cs.rowGap) || 0, fs: parseFloat(cs.fontSize), lh: parseFloat(cs.lineHeight),
+               top: s ? (s.top - r.top) / k : 0, size: s ? s.width / k : 0 };
+    }
+    // MO6: where a segment's icon and label really are on the page (their centres). The copies placed them by sums from the sizes, which left them
+    // up to a pixel off the real ones, so they jumped a little at the hand-over; the travel now blends from the real places to the real places.
+    function wordsAt(b) {
+      const icon = b.querySelector(".icon"), text = [...b.childNodes].find(n => n.nodeType === 3 && n.textContent.trim());
+      if (!icon || !text) return null;
+      const range = document.createRange();
+      range.selectNodeContents(text);
+      const i = icon.getBoundingClientRect(), t = range.getBoundingClientRect();
+      return { i: [i.left + i.width / 2, i.top + i.height / 2], t: [t.left + t.width / 2, t.top + t.height / 2] };
+    }
     // Call BEFORE the state changes (the circle is still drawn).
     function travelStart(first, from) {
+      endFill();   // MO6: a lit piece still sliding ends first (its inline look would be measured otherwise)
       const segs = {};
       for (const b of arcEl.querySelectorAll("[data-tab]")) {
         const r = b.getBoundingClientRect(), d = clipOf(b);
         if (!d || !r.width) return null;
-        segs[b.dataset.tab] = { rect: r, sc: r.width / b.offsetWidth, d, look: segLook(b), label: b.textContent,
+        segs[b.dataset.tab] = { rect: r, sc: r.width / b.offsetWidth, d, look: segLook(b), label: b.textContent, words: wordsAt(b),
                                 left: b.offsetLeft, top: b.offsetTop, w: b.offsetWidth, h: b.offsetHeight, chosen: b.getAttribute("aria-current") === "page" };
       }
       // the Mentor button's centre in the bar's own pixels (only meaningful when the bar is what is showing now)
-      return { from, first, segs, barC: [orbEl.offsetLeft + orbEl.offsetWidth / 2, orbEl.offsetTop + orbEl.offsetHeight / 2] };
+      return { from, first, segs, orb: orbLook(), barC: [orbEl.offsetLeft + orbEl.offsetWidth / 2, orbEl.offsetTop + orbEl.offsetHeight / 2] };
     }
     // Call AFTER the state has changed (the bar is drawn). Returns false (and draws nothing) if something cannot be measured.
     function travelRun(move) {
@@ -4473,7 +4498,7 @@
       layer.appendChild(arc);
       document.documentElement.appendChild(layer);
       const ar = (back ? arc : arcEl).getBoundingClientRect(), sb = ar.width / (back ? arc : arcEl).offsetWidth;
-      const last = orbBox();
+      const last = orbBox(), O1 = orbLook();   // MO6: the button's end look, read here with the rest (before anything is drawn, so no second layout)
       if (!ar.width || !last.w) { layer.remove(); return false; }
       const TAU = Math.PI * 2;
       const loc = (x, y) => [(x - ar.left) / sb, (y - ar.top) / sb];   // page position -> the bar's own pixels
@@ -4496,9 +4521,12 @@
         now.sc = now.rect.width / now.w;
         const A = back ? barEnd(s, CR) : circleEnd(s, CR), Z = back ? circleEnd(now, CB) : barEnd(now, CB);
         const sh = Math.round(((A.lo + A.hi) / 2 - (Z.lo + Z.hi) / 2) / TAU) * TAU;   // the shortest way round
+        // MO6: how far the real icon and label sit from where the sums below put them, at each end (see wordsAt); blended on the clock
+        const off = (k, c, w) => { if (!w) return [0, 0, 0, 0]; const top = c[1] - (k.ifs + k.gap + k.lh) / 2, i = loc(w.i[0], w.i[1]), t = loc(w.t[0], w.t[1]);
+          return [i[0] - c[0], i[1] - (top + k.ifs / 2), t[0] - c[0], t[1] - (top + k.ifs + k.gap + k.lh / 2)].map(v => Math.abs(v) < 6 ? v : 0); };
         items.push({
           tab: b.dataset.tab, chosen: !back && b.getAttribute("aria-current") === "page", slo: A.lo - sh, shi: A.hi - sh, elo: Z.lo, ehi: Z.hi,
-          ro: [A.ro, Z.ro], ri: [A.ri, Z.ri], c0: A.c, c1: Z.c, k0: A.look, k1: Z.look, src: b,
+          ro: [A.ro, Z.ro], ri: [A.ri, Z.ri], c0: A.c, c1: Z.c, k0: A.look, k1: Z.look, src: b, e0: off(A.look, A.c, s.words), e1: off(Z.look, Z.c, wordsAt(b)),
         });
       }
       // one drawing area for all four (covers the circle, the bar and the overshoot), in the bar's own pixels
@@ -4525,16 +4553,20 @@
         // font for the 1.5 s, which jumped at the start and the end); they now use exactly the segment's font, case and letter spacing.
         Object.assign(c.style, k0.font);
         icon.style.fontSize = k0.ifs + "px";
+        let warm = null;
         if (it.k1.weight !== k0.weight || it.k1.fs !== k0.fs) {   // the end font, drawn invisibly from the first frame, so the switch half way needs no new font
-          const warm = document.createElement("span");
+          warm = document.createElement("span");
           warm.className = "t warm";
           warm.textContent = text.textContent;
           Object.assign(warm.style, { fontWeight: String(it.k1.weight), fontSize: it.k1.fs + "px" });
           c.appendChild(warm);
         }
+        // MO6: a label whose weight changes (the lit piece: bold in the bar, plain in the circle) switched from one weight to the other in a single
+        // frame half way. It now crossfades: the start look and the end look (the warm copy above, shown) are both drawn, each at its own size.
+        if (warm && it.k1.weight !== k0.weight) { it.cross = true; Object.assign(warm.style, { visibility: "visible", opacity: "0", lineHeight: it.k1.lh + "px" }); }
         w.appendChild(c);
         arc.appendChild(w);
-        Object.assign(it, { w, c, icon, text, svg: icon.querySelector("svg") });
+        Object.assign(it, { w, c, icon, text, warm, svg: icon.querySelector("svg") });
       }
       const ms = motionMs("--motion-travel");
       const ease = getComputedStyle(document.documentElement).getPropertyValue("--motion-travel-ease").trim() || "ease-in-out";
@@ -4554,7 +4586,7 @@
           const ch = (i) => Math.round((A[i] * A[3] * (1 - q) + B[i] * B[3] * q) / al * 100) / 100;
           return `rgba(${ch(0)}, ${ch(1)}, ${ch(2)}, ${Math.round(al * 1000) / 1000})`; };
       };
-      const put = (it, el, prop, value) => { const key = prop + (el === it.w ? "w" : el === it.c ? "c" : el === it.icon ? "i" : el === it.text ? "t" : "s");
+      const put = (it, el, prop, value) => { const key = prop + (el === it.w ? "w" : el === it.c ? "c" : el === it.icon ? "i" : el === it.text ? "t" : el === it.warm ? "m" : "s");
         if (it.last[key] !== value) { it.last[key] = value; el.style[prop] = value; } };
       for (const it of items) Object.assign(it, { last: {}, bgAt: blend(it.k0.bg, it.k1.bg), colorAt: blend(it.k0.color, it.k1.color), iconAt: blend(it.k0.icon, it.k1.icon) });
       const N = 24;
@@ -4564,7 +4596,36 @@
       // place is capped at 1.5 degrees (the clock, the easing and everything else in the bounce are unchanged; Models and Painting never reach the cap).
       const SWAY = 1.5 * Math.PI / 180;
       for (const it of items) it.sway = SWAY / Math.max(1e-6, Math.abs(it.elo - it.slo), Math.abs(it.ehi - it.shi));
-      function render(p, pop) {
+      // MO6: the Mentor button's inside on the same clock. Its move scales the end look (from first.w / last.w), so a start value v is drawn as
+      // v * rel in the end look's pixels; each value blends from there to its end value, and the glow's size and colour blend the same way.
+      // Its inline values are taken away at the end, so the last frame is the real button exactly.
+      const O0 = move.orb, rel = O0 && O0.w ? O1.w / O0.w : 1, orbSvg = orbEl.querySelector("svg");
+      const shadowOf = (s) => { const m = /^(rgba?\([^)]*\)|color\([^)]*\))\s+(-?[\d.]+)px\s+(-?[\d.]+)px\s+([\d.]+)px/.exec(s || ""); return m ? { c: m[1], b: parseFloat(m[4]) } : null; };
+      const sh0 = O0 && shadowOf(O0.shadow), sh1 = shadowOf(O1.shadow), shAt = sh0 && sh1 ? blend(sh0.c, sh1.c) : null;
+      const orbLast = {};
+      const orbPut = (el, prop, value) => { const key = prop + (el === orbEl ? "o" : "s"); if (orbLast[key] !== value) { orbLast[key] = value; el.style[prop] = value; } };
+      function orbAt(p, f) {
+        if (!O0) return;
+        const v = (a, b) => r2(L(a * rel, b, p));
+        orbPut(orbEl, "justifyContent", "flex-start");
+        orbPut(orbEl, "paddingTop", Math.max(0, v(O0.top, O1.top)) + "px");
+        // the drawing keeps its own (end) size and is scaled from its top centre; the gap under it makes up the difference, so the label sits right
+        const size = O1.size ? Math.max(1, v(O0.size, O1.size)) : 0;
+        orbPut(orbEl, "rowGap", Math.max(0, r2(v(O0.gap, O1.gap) + (size ? size - O1.size : 0))) + "px");
+        orbPut(orbEl, "fontSize", v(O0.fs, O1.fs) + "px");
+        orbPut(orbEl, "lineHeight", v(O0.lh, O1.lh) + "px");
+        if (orbSvg && size) { orbPut(orbSvg, "transformOrigin", "50% 0px"); orbPut(orbSvg, "transform", `scale(${Math.round(size / O1.size * 10000) / 10000})`); }
+        if (shAt) orbPut(orbEl, "boxShadow", `0px 0px ${Math.max(0, v(sh0.b, sh1.b))}px 0px ${shAt(f)}`);
+      }
+      function orbClear() {
+        for (const k of ["justifyContent", "paddingTop", "rowGap", "fontSize", "lineHeight", "boxShadow"]) orbEl.style[k] = "";
+        if (orbSvg) { orbSvg.style.transform = ""; orbSvg.style.transformOrigin = ""; }
+      }
+      // MO6 (James, 3 Nov evening: "a slow fade"): the colours (each piece's fill, words, icon and line weight, the lit label's bold, the button's glow)
+      // blend on f, the travel's own time (not its eased, overshooting progress) on the --motion-flow-ease curve, so the change is spread over the whole
+      // travel instead of happening in its quick middle.
+      const flow = curveOf(getComputedStyle(document.documentElement).getPropertyValue("--motion-flow-ease"));
+      function render(p, pop, f) {
         const q = Math.min(1, Math.max(0, p)), out = TRAVEL_SPREAD * Math.sin(Math.PI * q) / sb;
         for (const it of items) {
           const pa = back && p > 1 ? 1 + Math.min(p - 1, it.sway) : p;   // MN1: the turn's progress (see SWAY)
@@ -4577,41 +4638,57 @@
           for (let i = N; i >= 0; i--) { const t = L(lo, hi, i / N); pts += `${r2(cx + ri * Math.cos(t))}px ${r2(cy + ri * Math.sin(t))}px${i ? "," : ""}`; }
           const k0 = it.k0, k1 = it.k1;
           put(it, it.w, "clipPath", `polygon(${pts})`);
-          put(it, it.w, "backgroundColor", it.bgAt(q));
+          put(it, it.w, "backgroundColor", it.bgAt(f));
           put(it, it.c, "transform", `translate(${r2(L(it.c0[0], it.c1[0], p) + dx - x0)}px, ${r2(L(it.c0[1], it.c1[1], p) + dy - y0)}px)`);
-          put(it, it.c, "color", it.colorAt(q));
+          put(it, it.c, "color", it.colorAt(f));
           // SM1 (Smooth1): the same sizes as before (font size, line height, gap and icon size blended on the clock), drawn with transform only:
           // the icon and the label each sit centred on their own line of the column, scaled from the sizes they are laid out at (b).
           const fs = L(k0.fs, k1.fs, p), lh = L(k0.lh, k1.lh, p), gap = L(k0.gap, k1.gap, p), ifs = L(k0.ifs, k1.ifs, p);
           const top = -(ifs + gap + lh) / 2, b = q < 0.5 ? k0 : k1;   // b: the start's sizes, then (from half way) the end's
-          put(it, it.c, "fontSize", b.fs + "px");
-          put(it, it.c, "lineHeight", b.lh + "px");
-          put(it, it.c, "fontWeight", String(b.weight));
+          const tb = it.cross ? k0 : b;   // MO6: a crossfaded label keeps its start look all the way; its end look is the warm copy
+          put(it, it.c, "fontSize", tb.fs + "px");
+          put(it, it.c, "lineHeight", tb.lh + "px");
+          put(it, it.c, "fontWeight", String(tb.weight));
           put(it, it.icon, "fontSize", b.ifs + "px");
-          put(it, it.icon, "transform", `translate(0px, ${r2(top + ifs / 2)}px) scale(${Math.round(ifs / b.ifs * 10000) / 10000}) translate(-50%, -50%)`);
-          put(it, it.text, "transform", `translate(0px, ${r2(top + ifs + gap + lh / 2)}px) scale(${Math.round(fs / b.fs * 10000) / 10000}) translate(-50%, -50%)`);
-          put(it, it.icon, "color", it.iconAt(q));
-          put(it, it.svg, "strokeWidth", String(L(k0.stroke, k1.stroke, q)));
+          const e = [0, 1, 2, 3].map(i => L(it.e0[i], it.e1[i], p));   // MO6: the real places at each end (see wordsAt)
+          put(it, it.icon, "transform", `translate(${r2(e[0])}px, ${r2(top + ifs / 2 + e[1])}px) scale(${Math.round(ifs / b.ifs * 10000) / 10000}) translate(-50%, -50%)`);
+          put(it, it.text, "transform", `translate(${r2(e[2])}px, ${r2(top + ifs + gap + lh / 2 + e[3])}px) scale(${Math.round(fs / tb.fs * 10000) / 10000}) translate(-50%, -50%)`);
+          if (it.cross) {   // MO6: the weight crossfades over the middle of the travel (0.3 to 0.7 of the way)
+            const x = Math.min(1, Math.max(0, (f - 0.15) / 0.7)), m = Math.round(x * x * (3 - 2 * x) * 1000) / 1000;
+            put(it, it.warm, "transform", `translate(${r2(e[2])}px, ${r2(top + ifs + gap + lh / 2 + e[3])}px) scale(${Math.round(fs / k1.fs * 10000) / 10000}) translate(-50%, -50%)`);
+            put(it, it.warm, "opacity", String(m));
+            put(it, it.text, "opacity", String(Math.round((1 - m) * 1000) / 1000));
+          }
+          put(it, it.icon, "color", it.iconAt(f));
+          put(it, it.svg, "strokeWidth", String(L(k0.stroke, k1.stroke, f)));
         }
+        orbAt(p, f);
       }
-      render(0, 0);
+      render(0, 0, 0);
       document.body.classList.add("mo-travelling");   // the real segments: see-through and not tappable until the travel ends
       travelling = true;
+      // MO6: the bar's fade and the circle's glow, drawn under the copies (the real bar's fade is hidden while the travel runs; see "MO6:" in the CSS)
+      const looks = ["mo6-fade", "mo6-glow"].map(k => { const el = document.createElement("div"); el.className = "tabs " + k; el.inert = true;
+        el.setAttribute("aria-hidden", "true"); document.documentElement.insertBefore(el, layer); return el; });
       // the real Mentor button, from its circle place to the bar's, on the same clock
       const wait = back ? { delay: TRAVEL_BACK_AT, fill: "backwards" } : {};   // Mo4c: on the way back the bar copies and the Mentor button hold still first
       const timing = { duration: ms, easing: ease, ...wait };
       const dx = (first.x - last.x) / last.scale, dy = (first.y - last.y) / last.scale;
       const clock = layer.animate([{ opacity: 1 }, { opacity: 1 }], timing);   // the one clock the drawing follows (it reads this animation's own progress)
       const pop = layer.animate([{ opacity: 1 }, { opacity: 1 }], { duration: TRAVEL_POP_MS, delay: back ? TRAVEL_BACK_AT + ms : ms, easing: "linear" });   // the lit segment's small push outward as it lands
+      // the fade and the glow crossfade over the travel (the fade alone used to fade in, the glow went at once); they hold their end through the landing
+      const fadeT = { duration: ms, easing: "linear", ...wait, fill: "both" };
       const anims = [clock, pop,
         orbEl.animate([{ transform: `translate(${dx}px, ${dy}px) scale(${first.w / last.w})` }, { transform: "none" }], timing),
-        document.querySelector(".tabs").animate([{ opacity: 0 }, { opacity: 1 }], { duration: ms, easing: "linear", pseudoElement: "::before", ...wait })];
+        looks[0].animate([{ opacity: back ? 1 : 0 }, { opacity: back ? 0 : 1 }], fadeT),
+        looks[1].animate([{ opacity: back ? 0 : 1 }, { opacity: back ? 1 : 0 }], fadeT)];
       move.anims = anims;
       let raf = 0, live = true;
       const frame = () => {
         if (!live) return;
         const p = clock.effect.getComputedTiming().progress, u = pop.effect.getComputedTiming().progress;
-        render(p == null ? 1 : p, u || 0);
+        const lin = Math.min(1, Math.max(0, ((clock.currentTime || 0) - (back ? TRAVEL_BACK_AT : 0)) / ms));   // MO6: the travel's own time, 0 to 1
+        render(p == null ? 1 : p, u || 0, flow(lin));
         raf = requestAnimationFrame(frame);
       };
       raf = requestAnimationFrame(frame);
@@ -4619,7 +4696,10 @@
         live = false; cancelAnimationFrame(raf);
         anims.forEach(a => a.cancel());
         if (move.fade) move.fade.cancel();
+        if (move.pageOut) move.pageOut();
         layer.remove();
+        looks.forEach(el => el.remove());
+        orbClear();
         document.body.classList.remove("mo-travelling");
         travelling = false;
       };
@@ -4675,34 +4755,208 @@
     const barOf = (name) => (MORE_PAGES.includes(name) ? "guides" : name);   // the bar segment a page belongs to (Settings, Help and Updates are in the fourth)
     function canMove() { return !reducedMotion() && !!Element.prototype.animate; }
 
+    // MO6: WORDS AND THE PAGE LEAVE SMOOTHLY WITH THE TRAVEL. The start page's line, the version number and the page under the bar used to appear or go
+    // in a single frame when the start circle and the bar traded places. Only the look changes; the app's state is already the new one.
+    // ghostOut: call BEFORE the words are hidden. A copy of them (no id, inert, hidden from screen readers) fades out where they were, then goes.
+    function ghostOut(el) {
+      if (!el || !canMove()) return null;
+      const r = el.getBoundingClientRect();
+      if (!r.width || !r.height) return null;
+      const cs = getComputedStyle(el), g = el.cloneNode(true);
+      g.removeAttribute("id");
+      g.className = "mo6-ghost";
+      g.inert = true;
+      g.setAttribute("aria-hidden", "true");
+      for (const k of ["fontFamily", "fontSize", "fontWeight", "fontStyle", "lineHeight", "letterSpacing", "textTransform", "textAlign", "textShadow", "color", "whiteSpace"]) g.style[k] = cs[k];
+      Object.assign(g.style, { left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px" });
+      document.documentElement.appendChild(g);
+      g.animate([{ opacity: 1 }, { opacity: 0 }], { duration: motionMs("--motion-med"), easing: "linear", fill: "forwards" }).onfinish = () => g.remove();
+      return g;
+    }
+    // ... and words that have just appeared fade in.
+    function fadeWordIn(el, delay) {
+      if (!el || !canMove()) return;   // (no layout read here: it runs right after a move has drawn its first frame)
+      el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: motionMs("--motion-med"), delay: delay || 0, easing: "linear", fill: "backwards" });
+    }
+    // The page on the way back to the start circle: measured BEFORE the state changes (what is on screen under the header), then each part is held
+    // where it was (fixed, inert, hidden from screen readers) and fades out while the bar waits, then is put back as it was (hidden by the start page).
+    function pageOutSnap() {
+      const list = [];
+      for (const el of document.querySelectorAll("main > :not(.app-bar)")) {
+        const r = el.getBoundingClientRect();
+        if (!r.width || !r.height || r.bottom <= 0 || r.top >= window.innerHeight) continue;
+        list.push({ el, r, display: getComputedStyle(el).display });
+      }
+      return list;
+    }
+    function pageOutRun(list, ms) {
+      const PROPS = ["display", "position", "top", "left", "width", "margin", "z-index", "pointer-events"];
+      const kept = list.map(({ el, r, display }) => {
+        const was = { inert: el.inert, hidden: el.getAttribute("aria-hidden"), style: PROPS.map(k => [k, el.style.getPropertyValue(k), el.style.getPropertyPriority(k)]) };
+        const set = { display, position: "fixed", top: r.top + "px", left: r.left + "px", width: r.width + "px", margin: "0px", "z-index": "1", "pointer-events": "none" };
+        for (const k of PROPS) el.style.setProperty(k, set[k], "important");
+        el.inert = true;
+        el.setAttribute("aria-hidden", "true");
+        const anim = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: ms, easing: "linear", fill: "forwards" });
+        return { el, was, anim };
+      });
+      let over = false;
+      const end = () => {
+        if (over) return;
+        over = true;
+        for (const { el, was, anim } of kept) {
+          anim.cancel();
+          for (const [k, v, pri] of was.style) { if (v) el.style.setProperty(k, v, pri); else el.style.removeProperty(k); }
+          el.inert = was.inert;
+          if (was.hidden === null) el.removeAttribute("aria-hidden"); else el.setAttribute("aria-hidden", was.hidden);
+        }
+      };
+      if (kept.length) kept[0].anim.onfinish = end; else over = true;
+      return end;
+    }
+
+    // MO6: THE LIT PIECE SLIDES. Switching sections, the accent fill of the bar used to jump from the old piece to the new one in one frame. Now one
+    // fill (a slice of the band) slides along the arc from the old piece to the new one, turning about the band's centre and taking the new piece's
+    // span, at the slow pace (--motion-flow, 800 ms, ease-out; James asked for it slower than the 240 ms section switch); it passes over the pieces in between, and each piece's words and icon take the lit
+    // colours (and the bold weight once it is half covered) as it passes. It is drawn inside each piece (a conic slice in its own background), so
+    // it shows only on the pieces, never in the gaps or over the Mentor button. The state (aria-current) changes at once as before; only the look
+    // follows, and at the end the inline look goes, so the last frame is the real bar exactly. A new switch while it slides starts from where the
+    // fill is. Reduced motion: a short crossfade of the fill (--motion-fast) instead of the slide.
+    let fillState = null;
+    function endFill() {
+      const f = fillState;
+      if (!f) return;
+      fillState = null;
+      cancelAnimationFrame(f.raf);
+      if (f.clock) f.clock.cancel();
+      for (const b of tabButtons) {
+        for (const k of ["backgroundColor", "backgroundImage", "color", "fontWeight"]) b.style[k] = "";
+        const svg = b.querySelector(".icon svg");
+        if (svg) svg.style.strokeWidth = "";
+      }
+    }
+    // the band's centre in the bar's own pixels, and a piece's span round it in degrees clockwise from 12 o'clock
+    const bandCentre = () => [orbEl.offsetLeft + orbEl.offsetWidth / 2, orbEl.offsetTop + orbEl.offsetHeight / 2];
+    function pieceSpan(b, c) {
+      const d = clipOf(b);
+      if (!d) return null;
+      const z = slicePath(d), deg = (p) => Math.atan2(b.offsetLeft + p[0] - c[0], -(b.offsetTop + p[1] - c[1])) * 180 / Math.PI;
+      const a = deg(z.p0), e = deg(z.p1);
+      return [Math.min(a, e), Math.max(a, e)];
+    }
+    const pieceLook = (b) => { const cs = getComputedStyle(b), svg = b.querySelector(".icon svg");
+      return { bg: cs.backgroundColor, color: cs.color, weight: cs.fontWeight, stroke: svg ? parseFloat(getComputedStyle(svg).strokeWidth) : 0 }; };
+    // Call BEFORE aria-current changes. Returns null when there is nothing to slide (no lit piece, the same piece, or the bar is not drawn).
+    function fillSnap(toTab) {
+      if (launching || travelling || !launchMotionReady || !Element.prototype.animate) { endFill(); return null; }
+      const pieces = [...tabButtons], to = pieces.find(b => b.dataset.tab === toTab);
+      const now = fillState;
+      const lit = now ? now.to : pieces.find(b => b.getAttribute("aria-current") === "page");
+      if (!to || !lit || lit === to) { endFill(); return null; }
+      if (!arcEl.getClientRects().length || !to.offsetWidth) { endFill(); return null; }
+      const c = bandCentre(), spans = new Map(pieces.map(b => [b, pieceSpan(b, c)]));
+      if (pieces.some(b => !spans.get(b))) { endFill(); return null; }
+      let looks, from;
+      if (now) { looks = now.looks; from = now.at(); }   // a switch while it slides: from where the fill is now, with the looks it measured
+      else { looks = { lit: pieceLook(lit), plain: pieceLook(to) }; const s = spans.get(lit); from = [s[0] - 1.5, s[1] + 1.5]; }
+      endFill();
+      // the band's centre in each piece's own box, read now while nothing has changed (reading it after the switch would lay the page out twice)
+      const at = new Map(pieces.map(b => [b, [Math.round((c[0] - b.offsetLeft) * 100) / 100, Math.round((c[1] - b.offsetTop) * 100) / 100]]));
+      return { pieces, to, from, spans, c, at, looks, fromPiece: lit };
+    }
+    function fillRun(snap) {
+      const { pieces, to, from, spans, c, looks } = snap;
+      const s = spans.get(to), end = [s[0] - 1.5, s[1] + 1.5];   // 1.5 degrees past each end: the edges fall in the gaps, so the piece is fully lit
+      // (James, 3 Nov evening) the slide takes the slow pace, --motion-flow on its ease-out curve, so it reads as a designed move, not a jump
+      const slide = canMove(), ms = motionMs(slide ? "--motion-flow" : "--motion-fast") || 1;
+      const ease = slide ? (getComputedStyle(document.documentElement).getPropertyValue("--motion-flow-ease").trim() || "ease-out") : "linear";
+      const rgba = (col, a) => { const m = /^rgba?\(([^)]*)\)$/.exec(col); if (!m) return col; const v = m[1].split(/[\s,/]+/).filter(Boolean).map(Number);
+        return `rgba(${v[0]}, ${v[1]}, ${v[2]}, ${Math.round((v.length > 3 ? v[3] : 1) * a * 1000) / 1000})`; };
+      const mixCol = (a, b, q) => { const A = /^rgba?\(([^)]*)\)$/.exec(a), B = /^rgba?\(([^)]*)\)$/.exec(b); if (!A || !B) return q < 0.5 ? a : b;
+        const x = A[1].split(/[\s,/]+/).filter(Boolean).map(Number), y = B[1].split(/[\s,/]+/).filter(Boolean).map(Number);
+        return `rgb(${[0, 1, 2].map(i => Math.round(x[i] + (y[i] - x[i]) * q)).join(", ")})`; };
+      const L = (a, b, t) => a + (b - a) * t, r2 = (v) => Math.round(v * 100) / 100;
+      const state = fillState = { to, looks, raf: 0, q: 0, at: () => slide ? [L(from[0], end[0], state.q), L(from[1], end[1], state.q)] : end };
+      const last = new Map();
+      const put = (el, prop, v) => { const k = last.get(el) || {}; if (k[prop] !== v) { k[prop] = v; last.set(el, k); el.style[prop] = v; } };
+      function draw(q) {
+        state.q = q;
+        const [lo, hi] = state.at();
+        for (const b of pieces) {
+          const [a, e] = spans.get(b);
+          // how much of this piece the fill covers (slide), or how strongly it shows there (crossfade)
+          let cover, alpha = 1, slo = lo, shi = hi;
+          if (slide) cover = Math.max(0, Math.min(hi, e) - Math.max(lo, a)) / Math.max(1e-6, e - a);
+          else { cover = b === to ? q : b === snap.fromPiece ? 1 - q : 0; alpha = cover; [slo, shi] = spans.get(b); slo -= 1.5; shi += 1.5; }
+          cover = Math.min(1, cover);
+          const [cx, cy] = snap.at.get(b), span = r2(shi - slo);
+          put(b, "backgroundColor", looks.plain.bg);
+          put(b, "backgroundImage", cover > 0 && alpha > 0 && span > 0
+            ? `conic-gradient(from ${r2(slo)}deg at ${cx}px ${cy}px, ${rgba(looks.lit.bg, alpha)} 0deg ${span}deg, rgba(0, 0, 0, 0) ${span}deg)` : "none");
+          put(b, "color", mixCol(looks.plain.color, looks.lit.color, cover));
+          put(b, "fontWeight", cover >= 0.5 ? looks.lit.weight : looks.plain.weight);
+          const svg = b.querySelector(".icon svg");
+          if (svg) put(svg, "strokeWidth", String(r2(L(looks.plain.stroke, looks.lit.stroke, cover))));
+        }
+      }
+      draw(0);
+      // the clock the drawing follows (an animation that changes nothing, like the travel's), so the move shows in getAnimations and can be finished
+      // It holds its end (fill forwards) so the last frame drawn is the end exactly; the next frame hands over to the real bar.
+      const clock = state.clock = arcEl.animate([{ opacity: 1 }, { opacity: 1 }], { duration: ms, easing: ease, fill: "forwards" });
+      const frame = () => {
+        if (fillState !== state) return;
+        if (state.ended) { endFill(); return; }
+        const q = clock.effect.getComputedTiming().progress;
+        draw(q == null ? 1 : q);
+        if (clock.playState === "finished") state.ended = true;
+        state.raf = requestAnimationFrame(frame);
+      };
+      state.raf = requestAnimationFrame(frame);
+    }
+
     // Mo4a: THE LOADING RING (a fresh page load only; the start circle is never redrawn when the app returns from the background, so neither is this).
-    // LR1: the ring is now in index.html, so it shows (faint, with a slow sweep) from the first frame, and early.js lights it as the script files
-    // arrive (window.minifolioRing). Here Mo4a's three real start-up steps (bootSteps above) take it on from wherever that got to: each step lights
-    // its third of what is left once the step is done and the one before has filled, and takes at least 400 ms to fill, so the ring still shows for
-    // 1.2 s at least once the app runs and waits for the page to finish loading if that is later (but gives up after 5 s). The four segments are
-    // hidden and appear one by one over this part; they and the Mentor button can be tapped once it is full. With the Futuristic look the ring is the
-    // orb's own five segments, with Magical or Grounded Mo4a's three arcs (the drawing is early.js's minifolioRing.draw, so both files light it the same way).
-    // Reduced motion (or no animation support): no sweep or turning, and no minimum time: the ring lights in whole steps as each step is done, the
-    // segments simply appear, and it goes as soon as it is full. Opening a section ends it at once; opening the app on a section takes it away at once.
+    // LR1: the ring is in index.html, so it shows from the first frame, and early.js lights it as the script files arrive (window.minifolioRing). Here
+    // Mo4a's three real start-up steps (bootSteps above) take it on from wherever that got to: each step lights its third of what is left once the step
+    // is done and the one before has filled, and takes at least 400 ms to fill, so the ring still shows for 1.2 s at least once the app runs and waits
+    // for the page to finish loading if that is later (but gives up after 5 s). The drawing is early.js's minifolioRing.draw, so both light it the same way.
+    // MO6: the ring is now the loading screen: the app icon's ring in the middle of a plain screen (.mo6-load, the first thing in index.html's <body>),
+    // the same picture as the phone's own launch screen, with every Mentor look. The start circle is drawn underneath meanwhile, its four segments held
+    // back. When the ring is full it hands over (handOver): the ring moves and shrinks onto the round Ask Mentor button's orb, the screen fades, the
+    // button grows in round it and the four segments grow out of the middle one after another, clockwise from the top left (Models, Painting, Tools,
+    // Dashboard). With the Futuristic look the ring lands exactly on the button's own drawing (same drawing, colours blending from the icon's to yours);
+    // with Magical or Grounded the ring fades into that look's drawing as it lands. Nothing can be tapped until the hand-over is done.
+    // Reduced motion (or no animation support): no sheen and no minimum time: the ring lights in whole steps as each step is done, then the screen fades
+    // out over the circle (no movement). Opening a section ends it at once; opening the app on a section fades the screen away over the section.
     const RING_FILL_MS = 400;
+    const HAND_MS = 720, HAND_GROW_MS = 480, HAND_STAGGER = 80, HAND_EASE = "cubic-bezier(.2,.8,.2,1)";   // MO6: the hand-over
     let ringState = null;
     function ringDraw(p) { return window.minifolioRing ? window.minifolioRing.draw(p) : p; }
-    // The ring as index.html drew it, before the app took it over: taken away at once (the app opened on a section, or the ring cannot run).
+    // MO6: the loading screen stops being a progress bar at once (so nothing is left waiting on it) and fades out over ms (0: at once).
+    function fadeLoadBox(box, ms) {
+      if (!box || !box.isConnected) return;
+      box.classList.remove("mo-load");
+      box.removeAttribute("role");
+      box.setAttribute("aria-hidden", "true");
+      box.classList.add("mo6-leaving");
+      if (!ms || !Element.prototype.animate) { box.remove(); return; }
+      const from = parseFloat(getComputedStyle(box).opacity);   // from where it is (it may be part way through a fade already)
+      box.animate([{ opacity: Number.isFinite(from) ? from : 1 }, { opacity: 0 }], { duration: ms, easing: "linear", fill: "forwards" }).onfinish = () => box.remove();
+    }
+    // The screen as index.html drew it, before the app took it over: the app opened on a section (or the ring cannot run). It fades away over the section.
     function dropBootRing() {
       if (window.minifolioRing) window.minifolioRing.app = true;
-      for (const n of arcEl.querySelectorAll(".mo-load, .lr-sweep")) n.remove();
+      fadeLoadBox(document.querySelector(".mo6-load.mo-load"), motionMs("--motion-med"));
       for (const w of arcEl.querySelectorAll(".ring-hold")) w.classList.remove("ring-hold");
       document.body.classList.remove("ring-loading");
     }
     function startLoadingRing() {
-      const svg = arcEl.querySelector(".mo-load");
-      if (!svg || !launching || ringState) { dropBootRing(); return; }
-      const sweep = arcEl.querySelector(".lr-sweep");
+      const box = document.querySelector(".mo6-load.mo-load");
+      if (!box || !launching || ringState) { dropBootRing(); return; }
       const moving = canMove();
       if (window.minifolioRing) window.minifolioRing.app = true;   // early.js stops lighting it; from here this does
       const p0 = window.minifolioRing ? window.minifolioRing.progress : 0;
-      // A2: the ring turns clockwise from the top, so the segments arrive clockwise from the top left. MN1: with the new places that is
-      // Models, Painting, Tools, Dashboard. Only this arrival order changes; the menu's own order (and keyboard order) is Dashboard, Models, Painting, Tools.
+      // A2: the segments arrive clockwise from the top left. MN1: with the new places that is Models, Painting, Tools, Dashboard. Only this arrival
+      // order changes; the menu's own order (and keyboard order) is Dashboard, Models, Painting, Tools.
       const byName = {};
       for (const b of arcEl.querySelectorAll("[data-tab]")) byName[b.dataset.tab] = b;
       const wedges = ["units", "recipes", "guides", "dashboard"].map(n => byName[n]);
@@ -4710,8 +4964,7 @@
       document.body.classList.add("ring-loading");
       const stepAt = [() => bootSteps.data, () => bootSteps.draw, () => bootSteps.load];
       const t0 = performance.now(), ends = [0, 0, 0], starts = [0, 0, 0];
-      let revealed = 0, raf = 0;
-      const state = ringState = { svg, sweep, wedges, stop() { cancelAnimationFrame(raf); } };
+      const state = ringState = { box, wedges, anims: [], raf: 0, handed: false, stop() { cancelAnimationFrame(state.raf); } };
       function step(now) {
         // when each step starts to fill: it is done and the one before has filled (the load step also gives up after 5 s)
         let part = 0;
@@ -4725,36 +4978,79 @@
           part += (starts[i] ? Math.min(1, Math.max(0, (now - starts[i]) / RING_FILL_MS)) : 0) / 3;
         }
         ringDraw(p0 + (1 - p0) * part);
-        while (revealed < 4 && part >= (revealed + 1) / 4 - 0.02) {
-          const w = wedges[revealed++];
-          w.classList.remove("ring-hold");
-          if (moving) w.animate([{ opacity: 0, transform: "scale(0.86)" }, { opacity: 1, transform: "scale(1)" }], { duration: 520, easing: "cubic-bezier(.2,.8,.2,1)" });
-        }
-        if (part >= 0.999) { finish(); return; }
-        raf = requestAnimationFrame(step);
-      }
-      function finish() {
-        if (ringState !== state) return;
-        wedges.forEach(w => w.classList.remove("ring-hold"));
-        document.body.classList.remove("ring-loading");   // tappable from here
-        ringDraw(1);
-        if (!moving) { setTimeout(() => { if (ringState === state) endLoadingRing(); }, 300); return; }   // the full ring shows for a moment; the circle works already
-        const fade = { duration: 700, easing: "ease-out", fill: "forwards" };
-        const out = svg.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(1.12)" }], fade);
-        if (sweep) sweep.animate([{ opacity: 1 }, { opacity: 0 }], fade);
-        out.onfinish = () => { if (ringState === state) endLoadingRing(); };
+        if (part >= 0.999) { handOver(state); return; }
+        state.raf = requestAnimationFrame(step);
       }
       step(performance.now());
+    }
+    // MO6: the loading screen becomes the start circle's centre.
+    function handOver(state) {
+      if (ringState !== state) return;
+      ringDraw(1);
+      const { box, wedges } = state;
+      const ring = box.querySelector(".mo6-ring"), bg = box.querySelector(".mo6-bg"), sheen = box.querySelector(".lr-sweep");
+      const target = orbEl.querySelector("svg");
+      const r0 = ring && ring.getBoundingClientRect(), r1 = target && target.getBoundingClientRect(), ob = orbEl.getBoundingClientRect();
+      state.handed = true;
+      box.classList.add("mo6-handing");   // the screen no longer takes taps,
+      document.body.classList.remove("ring-loading");   // and the circle does, as soon as the ring is full (as before), so a start is as quick to use
+      const end = () => { if (ringState === state) { state.landed = true; endLoadingRing(); } };
+      if (!canMove() || !r0 || !r0.width || !r1 || !r1.width || !ob.width) {   // reduced motion: no movement; the screen fades out over the whole circle
+        wedges.forEach(w => w.classList.remove("ring-hold"));
+        const a = box.animate([{ opacity: 1 }, { opacity: 0 }], { duration: motionMs("--motion-med") || 1, easing: "linear", fill: "forwards" });
+        state.screenAnims = [a];
+        a.onfinish = end;
+        return;
+      }
+      const k = r1.width / r0.width, dx = r1.left + r1.width / 2 - (r0.left + r0.width / 2), dy = r1.top + r1.height / 2 - (r0.top + r0.height / 2);
+      state.screenAnims = [];   // the loading screen's own moves (held, not undone, if a tap cuts the hand-over short)
+      box.style.setProperty("--mo6-ms", HAND_MS + "ms");
+      document.body.classList.add("mo6-handing");
+      ring.classList.remove("mo6-icon");   // its colours, widths and glows blend to the orb's own over the move (CSS transitions over --mo6-ms)
+      const T = { duration: HAND_MS, easing: HAND_EASE, fill: "forwards" };
+      const moveRing = (ring.parentElement || ring).animate([{ transform: "none" }, { transform: `translate(${dx}px, ${dy}px) scale(${k})` }], T);   // the ring and its sheen together
+      state.screenAnims.push(moveRing, bg.animate([{ opacity: 1 }, { opacity: 0 }], { duration: HAND_MS, easing: "ease-out", fill: "forwards" }));
+      if (sheen) state.screenAnims.push(sheen.animate([{ opacity: 1 }, { opacity: 0 }], { duration: motionMs("--motion-med"), easing: "linear", fill: "forwards" }));
+      if (currentMentorLook() !== "futuristic") {   // another look: the icon ring fades into that look's drawing as it lands
+        state.screenAnims.push(ring.animate([{ opacity: 1 }, { opacity: 0 }], { duration: HAND_MS / 2, delay: HAND_MS / 2, easing: "linear", fill: "both" }));
+      }
+      // the round button grows in round its drawing (its centre stays put, so the ring lands on it)
+      const os = orbEl.offsetWidth ? ob.width / orbEl.offsetWidth : 1;
+      orbEl.style.transformOrigin = `${Math.round((r1.left + r1.width / 2 - ob.left) / os * 100) / 100}px ${Math.round((r1.top + r1.height / 2 - ob.top) / os * 100) / 100}px`;
+      state.anims.push(orbEl.animate([{ transform: "scale(0.55)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: HAND_MS, easing: HAND_EASE }));
+      // the four segments grow out of the circle's middle, one after another
+      const cx = orbEl.offsetLeft + orbEl.offsetWidth / 2, cy = orbEl.offsetTop + orbEl.offsetHeight / 2, t0 = performance.now();
+      let shown = 0, landed = false, grown = null;
+      const maybeEnd = () => { if (landed && grown && grown.playState === "finished") end(); };
+      const tick = (now) => {
+        if (ringState !== state) return;
+        while (shown < wedges.length && now - t0 >= shown * HAND_STAGGER) {
+          const w = wedges[shown++];
+          w.style.transformOrigin = `${cx - w.offsetLeft}px ${cy - w.offsetTop}px`;
+          w.classList.remove("ring-hold");
+          const a = w.animate([{ opacity: 0, transform: "scale(0.6)" }, { opacity: 1, transform: "none" }], { duration: HAND_GROW_MS, easing: HAND_EASE });
+          state.anims.push(a);
+          if (shown === wedges.length) { grown = a; a.onfinish = maybeEnd; }
+        }
+        if (shown < wedges.length) state.raf = requestAnimationFrame(tick);
+      };
+      tick(t0);
+      moveRing.onfinish = () => { landed = true; maybeEnd(); };
     }
     function endLoadingRing() {
       const r = ringState;
       if (!r) return;
       ringState = null;
       r.stop();
-      r.svg.remove();   // the ring is gone, along with its progress bar role
-      if (r.sweep) r.sweep.remove();
-      r.wedges.forEach(w => { w.classList.remove("ring-hold"); w.getAnimations().forEach(a => a.finish()); });
-      document.body.classList.remove("ring-loading");
+      r.anims.forEach(a => a.cancel());   // the circle and the button: at their end (the travel that follows a tap measures them)
+      r.wedges.forEach(w => { w.classList.remove("ring-hold"); w.style.transformOrigin = ""; });
+      orbEl.style.transformOrigin = "";
+      document.body.classList.remove("ring-loading", "mo6-handing");
+      if (r.landed) r.box.remove();   // the hand-over is done: the ring is the button's own drawing now
+      else {   // still loading (a section opened by code), or a tap cut the hand-over short: the screen holds where it is and goes quickly
+        (r.screenAnims || []).forEach(a => a.pause());
+        fadeLoadBox(r.box, motionMs("--motion-fast"));
+      }
     }
 
 
@@ -4771,6 +5067,8 @@
       if (move !== "slide" && before !== name) endMove();
       endLoadingRing();   // Mo4a: leaving the start circle ends the loading ring at once
       const leaving = launching ? launchMoveStart("ring") : (endLaunchMove(), null);
+      if (leaving) ghostOut(document.getElementById("start-line"));   // MO6: the start page's line fades out (it went in one frame)
+      const fill = !launching && before !== null ? fillSnap(barOf(name)) : null;   // MO6: the lit piece, measured before it changes
       if (launching) { launching = false; document.body.classList.remove("launching"); }
       if (name !== "units" && selectMode) closeSelect();   // v21.1: leaving Units ends select mode
       if (name === "units" && move) unitsArrive(!!leaving);   // MS1: Models arriving with motion goes in pieces (see placeUnitCards)
@@ -4792,7 +5090,9 @@
         if (b.dataset.tab === mainTab) b.setAttribute("aria-current", "page");
         else b.removeAttribute("aria-current");
       });
+      if (fill) fillRun(fill);   // MO6: the lit colour slides from the old piece to the new one
       launchMoveRun(leaving);
+      if (leaving) fadeWordIn(document.getElementById("version-tag"));   // MO6: the version number fades in
       moreSeg.classList.toggle("hidden", !MORE_PAGES.includes(name));
       moreTitle.classList.toggle("hidden", !MORE_PAGES.includes(name));
       moreSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.page === name)));
@@ -4806,7 +5106,7 @@
     }
     tabButtons.forEach(b => b.addEventListener("click", () => {
       if (travelling) return;   // Mo4b: taps on the bar are ignored while the segments travel
-      if (b.dataset.tab === "guides") Object.assign(guidesState, { view: "home", cat: "", group: "", key: "", kind: "", missing: false });   // X3: the tab itself opens the category list
+      if (b.dataset.tab === "guides") Object.assign(guidesState, { view: "home", cat: "", group: "", key: "", kind: "", missing: false, from: null });   // X3: the tab itself opens the category list
       if (b.dataset.tab === "guides" || b.dataset.tab === "recipes") compendiumState.focus = null;   // v69: the tab itself opens the whole of Guides (X1: and the whole Colour Lab)
       // Tapping Recipes while already on it goes back to the list (unless you're mid-edit).
       if (b.dataset.tab === "recipes" && settings.tab === "recipes" && !recipeDraft && !launching) {
@@ -4817,7 +5117,7 @@
     }));
 
     // ================= X5: THE MENTOR POP-UP =================
-    // The round Ask Mentor button opens a small window over whatever is showing. It has a greeting, a Paint Picker chip, a text box that is
+    // The round Ask Mentor button opens a small window over whatever is showing. It has a greeting, a Suggestions pill (MW2: Paint Picker and the starter questions), a text box that is
     // text box (X6b: it works), and the orb. Nothing typed or shown is stored or sent: mentorMessages lives only while the app is open.
     // Stock phrases live in one place so later chunks can fill the empty lists.
     // U6b: the lists are James's script (chunk U6): one plain sentence each, eight words or fewer, UK spelling, no exclamation marks.
@@ -4900,13 +5200,40 @@
     if (settings.mentorLook !== undefined && !goodMentorLook(settings.mentorLook)) delete settings.mentorLook;
     applyMentorLook();
 
-    // The orb for the window: the chosen look in one of its states (U6b). It is drawn 1.2 times larger in its box than in the round button, as
-    // before (the narrower viewBox), and its box (class ml-live) is the only place the look's own slow motion runs.
+    // The orb for the window: the chosen look in one of its states (U6b). Its box (class ml-live) is the only place the look's own slow motion runs.
+    // U7: drawn with the drawing's own viewBox (round 6 cropped it to "25 25 150 150" to zoom in; round 7's brackets and loose shards reach the
+    // edge, so the crop would cut them off). A mood swaps in a fresh drawing, so a part that keeps turning (.ml-orbit: Magical's stone ring) is
+    // started where the clock has it rather than at 0 degrees: the ring turns on through a mood instead of jumping back.
     function buildMentorOrb(state) {
       const svg = mentorLookSvg(currentMentorLook(), state || "neutral");
-      svg.setAttribute("viewBox", "25 25 150 150");
+      const at = `${-Math.round(performance.now()) / 1000}s`;
+      for (const turning of svg.querySelectorAll(".ml-orbit")) turning.style.animationDelay = at;
       svg.classList.add("mp-orb");
       return svg;
+    }
+    // U7 (James, 3 Nov): a tap on the orb in the open window plays the look's one-off move, then the orb carries on in its mood: Futuristic flashes
+    // four of its six bolts, picked at random each time; Magical's stone ring spins once; Grounded sends six paint drops out of the pool. The moves
+    // are in mentor-looks.js (ml-tap on the drawing, ml-picked on the bolts). The orb box is not a button: it stays hidden from screen readers, never
+    // takes focus from the text box, and a tap opens, closes and asks nothing. A tap while a move plays is ignored. With reduced motion (or
+    // .ml-still) the CSS plays nothing, so a tap does nothing. The round button and the start circle have no tap move.
+    const MENTOR_TAP_BOLTS = 4;
+    function mentorOrbTap(state) {
+      const svg = state.orbBox.querySelector("svg");
+      if (!svg || state.tapping) return;
+      const bolts = [...svg.querySelectorAll(".ml-bolt")];
+      for (let i = bolts.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [bolts[i], bolts[j]] = [bolts[j], bolts[i]]; }
+      const picked = bolts.slice(0, MENTOR_TAP_BOLTS);
+      for (const b of picked) b.classList.add("ml-picked");
+      svg.classList.add("ml-tap");
+      const done = () => {
+        svg.classList.remove("ml-tap");
+        for (const b of picked) b.classList.remove("ml-picked");
+        if (state.tapping === svg) state.tapping = null;
+      };
+      const played = svg.getAnimations({ subtree: true }).filter(a => typeof a.animationName === "string" && a.animationName.startsWith("ml-tap-"));
+      if (!played.length) { done(); return; }
+      state.tapping = svg;
+      Promise.allSettled(played.map(a => a.finished)).then(done);   // also settles if a mood swaps the drawing mid-move
     }
     // U6b: MENTOR'S MOODS, in the window only. Thinking while Mentor reads its notes ready for the first question (mentorWarmUp: the one part
     // that takes a while, about 0.9 s on a slow phone; an answer itself comes at once, so the window has no moment to show Thinking then);
@@ -4932,10 +5259,16 @@
     // the window's own, so on screen it goes in a straight line, and its scale starts at the button's drawing size. Closing plays the same
     // frames backwards into the button. Only transform, opacity and clip-path move, so no frame lays the page out again.
     // Reduced motion: no growing and no travel; the window fades in quickly and goes at once on closing.
-    const MENTOR_OPEN_MS = 320;
-    const MENTOR_CLOSE_MS = 240;
-    const MENTOR_SHAPE_AT = 0.7;          // the part of the move the shape takes; the skin and the words cross-fade in the rest
-    const MENTOR_MOVE_EASE = "cubic-bezier(0.3, 0, 0.2, 1)";
+    // MO6 (James, 3 Nov evening: "much slower so it feels fluid"): the open takes --motion-flow (800 ms) on its ease-out curve, and closing is the same
+    // move back in two thirds of that (it was 320 ms and 240 ms). The button's colour (the skin) now fades into the window's own surface over most of the
+    // open (from a tenth of the way to 85%), while the shape opens, and the words fade in only near the end (from 75%).
+    const mentorOpenMs = () => motionMs("--motion-flow") || 800;
+    const mentorCloseMs = () => Math.round(mentorOpenMs() * 2 / 3);
+    const mentorFlowEase = () => getComputedStyle(document.documentElement).getPropertyValue("--motion-flow-ease").trim() || "ease-out";
+    const MENTOR_SHAPE_AT = 0.7;          // the part of the move the shape takes
+    const MENTOR_SKIN = [0.1, 0.85];      // MO6: the button's colour fades into the window's over this part of the move
+    const MENTOR_WORDS_AT = 0.75;         // MO6: the words fade in from here to the end
+    const MENTOR_MOVE_EASE = "cubic-bezier(0.3, 0, 0.2, 1)";   // (the orb's settle into the chat view keeps this one)
     const MENTOR_SHADOW = 64;             // the clip opens this far past the window at the end, so its shadow shows before the clip is dropped
     const mentorReduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     // The frames of the move, measured now (the window at its resting place and size), or null when there is no round button on screen to grow from.
@@ -4956,11 +5289,11 @@
       skin.style.setProperty("--mp-hy", px(ly + b.height * 0.3));
       skin.style.setProperty("--mp-hr", px(b.width * 0.57));
       const frames = {
-        win: [{ transform: `translate(${px(dx)}, ${px(dy)})`, clipPath: from, easing: MENTOR_MOVE_EASE },
+        win: [{ transform: `translate(${px(dx)}, ${px(dy)})`, clipPath: from, easing: mentorFlowEase() },
           { transform: "translate(0px, 0px)", clipPath: `inset(0px round ${px(radius)})`, offset: MENTOR_SHAPE_AT },
           { transform: "translate(0px, 0px)", clipPath: `inset(-${MENTOR_SHADOW}px round ${px(radius + MENTOR_SHADOW)})` }],
-        skin: [{ opacity: 1 }, { opacity: 1, offset: MENTOR_SHAPE_AT }, { opacity: 0 }],
-        words: [{ opacity: 0 }, { opacity: 0, offset: MENTOR_SHAPE_AT }, { opacity: 1 }],
+        skin: [{ opacity: 1 }, { opacity: 1, offset: MENTOR_SKIN[0], easing: mentorFlowEase() }, { opacity: 0, offset: MENTOR_SKIN[1] }, { opacity: 0 }],
+        words: [{ opacity: 0 }, { opacity: 0, offset: MENTOR_WORDS_AT }, { opacity: 1 }],
         orb: null,
       };
       const icon = opener.querySelector("svg"), drawing = orbBox.querySelector("svg");
@@ -4968,16 +5301,16 @@
       if (icon && drawing && o.width) {
         const s = icon.getBoundingClientRect();
         const units = (el, fallback) => (el.viewBox && el.viewBox.baseVal && el.viewBox.baseVal.width) || fallback;
-        const scale = (s.width / units(icon, 166.67)) / (o.width / units(drawing, 150));   // the same drawing size as on the button
+        const scale = (s.width / units(icon, 166.67)) / (o.width / units(drawing, 166.67));   // the same drawing size as on the button (U7: no crop, so both are 166.67)
         const tx = s.left + s.width / 2 - (o.left + o.width / 2) - dx, ty = s.top + s.height / 2 - (o.top + o.height / 2) - dy;
-        frames.orb = [{ transform: `translate(${px(tx)}, ${px(ty)}) scale(${Math.round(scale * 1000) / 1000})`, easing: MENTOR_MOVE_EASE },
+        frames.orb = [{ transform: `translate(${px(tx)}, ${px(ty)}) scale(${Math.round(scale * 1000) / 1000})`, easing: mentorFlowEase() },
           { transform: "translate(0px, 0px) scale(1)", offset: MENTOR_SHAPE_AT }, { transform: "translate(0px, 0px) scale(1)" }];
       }
       return frames;
     }
     // Plays the move on the window, its skin, its words and its orb (backwards when closing). Returns the window's own animation.
     function mentorPlayMove(state, frames, closing) {
-      const timing = { duration: closing ? MENTOR_CLOSE_MS : MENTOR_OPEN_MS, direction: closing ? "reverse" : "normal", fill: closing ? "forwards" : "none" };
+      const timing = { duration: closing ? mentorCloseMs() : mentorOpenMs(), direction: closing ? "reverse" : "normal", fill: closing ? "forwards" : "none" };
       const words = [...state.win.children].filter(el => el !== state.skin && el !== state.orbBox);
       const played = [state.win.animate(frames.win, timing), state.skin.animate(frames.skin, timing), ...words.map(el => el.animate(frames.words, timing))];
       if (frames.orb) played.push(state.orbBox.animate(frames.orb, timing));
@@ -5059,14 +5392,22 @@
 
     // The first question after a new index takes about 0.9 s with the CPU slowed 4x (X8b, with mentor-data.js; about 0.2 s on a fast machine), so the window asks one empty question once it has finished
     // growing. That builds the engine's word tables before the first real question.
-    function mentorWarmUp() {
+    // MO6: wait (ms) is how long to leave it: the window's opening move (the reading stalls the page for up to a second on a slow phone, and it fell in
+    // the middle of the open, so the open stuttered); it was always 400 ms.
+    // MO6 (v129 fix): the reading never lands on another move either. If the window was closed before it read, it reads on the next open instead
+    // (closing and then tapping the back arrow straight away put the stall in the travel back to the start circle, which then jumped part way); and
+    // while the start circle and the bar travel, or the lit piece slides, it waits until they are done.
+    function mentorWarmUp(wait) {
       if (mentorWarm || typeof MinifolioMentor === "undefined") return;
       mentorWarm = true;
       mentorMood("thinking");   // U6b: Mentor is reading its notes
-      setTimeout(() => {
+      const read = () => {
+        if (!mentorState) { mentorWarm = false; return; }
+        if (travelling || fillState) { setTimeout(read, 200); return; }
         try { MinifolioMentor.mentorAnswer("hello", { index: knowledgeIndex(), paints: [], tips: [] }); } catch (ignored) {}
         if (mentorState && mentorState.mood === "thinking") mentorMood("neutral");
-      }, 400);
+      };
+      setTimeout(read, Math.max(400, wait || 0));
     }
 
     let mentorDoors = 0;
@@ -5187,8 +5528,108 @@
       return b;
     }
 
-    function mentorDrawChips(state) {
-      state.chips.replaceChildren(state.pickerChip, ...mentorStarters().map(t => mentorChip(t, () => mentorSend(t, true))));
+    // ---- MW2: Mentor's starter questions sit inside one Suggestions pill (James, 3 Nov) ----
+    // One closed pill, "Suggestions", is the last thing in the conversation's scroll box: under the greeting on the start view, and under the
+    // latest answer once the chat has started (each answer is added above it, so there is only ever one). Tapping it unrolls a list of plain
+    // rows: Paint Picker, then the starter questions not yet asked (after an "I do not know" answer, not the ones that answer already shows).
+    // A row asks its question, as a chip did, and the list closes. The page is laid out once per open or close: the rows unroll by clip-path,
+    // and whatever moved (on the start view the window grows upward from the box, so its top edge, the orb, Back, Close and the greeting;
+    // in the chat view the conversation, scrolled so the rows show) glides there by transform, on the --motion-med and --motion-ease tokens.
+    // Closing plays the same frames backwards, then lays the page out again. Reduced motion, or the window still opening: at once.
+    // Escape closes the list before the window; focus goes to the first row on open and back to the pill on close.
+    function mentorSuggestRows() {
+      const last = mentorMessages[mentorMessages.length - 1];
+      const shown = new Set(last && last.who === "mentor" ? (last.suggestions || []).map(s => String(s && s.text || "").toLowerCase()) : []);
+      return mentorStarters().filter(t => !shown.has(t.toLowerCase()));
+    }
+    function mentorRow(text, onClick) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "mentor-row";
+      b.textContent = text;
+      b.addEventListener("click", onClick);
+      return b;
+    }
+    // Fills the list and closes it at once (after an answer, Back, or when the window opens).
+    function mentorDrawSuggest(state) {
+      mentorSuggestSettle(state);
+      state.suggestOpen = false;
+      state.pill.setAttribute("aria-expanded", "false");
+      state.list.hidden = true;
+      state.list.inert = false;
+      state.win.classList.remove("mentor-suggesting");
+      state.list.replaceChildren(mentorRow("Paint Picker", () => { closeMentor(false); goToPaintPicker(); }),
+        ...mentorSuggestRows().map(t => mentorRow(t, () => mentorSend(t, true))));
+    }
+    // A fold still moving ends where it was going (a new tap, an answer, Back).
+    function mentorSuggestSettle(state) {
+      const f = state.fold;
+      if (!f) return;
+      state.fold = null;
+      for (const a of f.anims) a.cancel();
+      f.end(true);   // cut short: an opening list is not scrolled into room afterwards
+    }
+    // A small phone's start view: once the list has opened, if fewer than three rows show under the pill, the greeting scrolls away (smoothly,
+    // after the unroll, so nothing passes under the orb) until the pill is at the top of the conversation.
+    function mentorSuggestRoom(state, smooth) {
+      const { win, scroll, pill, list } = state;
+      if (win.classList.contains("mentor-chatting") || list.hidden) return;
+      const room = scroll.getBoundingClientRect().bottom - list.getBoundingClientRect().top;
+      const top = pill.offsetTop - 4;
+      if (room >= 132 || top <= scroll.scrollTop) return;
+      if (smooth && !mentorReduced()) scroll.scrollTo({ top, behavior: "smooth" }); else scroll.scrollTop = top;
+    }
+    function mentorFoldTiming() {
+      const css = getComputedStyle(document.documentElement);
+      return { duration: parseFloat(css.getPropertyValue("--motion-med")) || 240, easing: css.getPropertyValue("--motion-ease").trim() || "linear" };
+    }
+    function mentorSuggestSet(state, open) {
+      if (!!state.suggestOpen === open) return;
+      mentorSuggestSettle(state);
+      const { win, scroll, pill, list } = state;
+      state.suggestOpen = open;
+      pill.setAttribute("aria-expanded", String(open));
+      const show = (on) => { list.hidden = !on; win.classList.toggle("mentor-suggesting", on); };
+      const still = mentorReduced() || !win.animate || state.moves.some(a => a.playState === "running");
+      const movers = still ? [] : [state.orbBox, state.back, state.close, state.greeting, state.msgs, pill].filter(el => el.getClientRects().length);
+      const tops = () => movers.map(el => el.getBoundingClientRect().top);
+      const before = tops(), winBefore = win.getBoundingClientRect().top, scrolled = scroll.scrollTop;
+      if (open) {
+        show(true);
+        list.inert = false;
+        // chat view: the rows in view, scrolled down until the last row shows, or until the pill reaches the top of the conversation if they
+        // do not all fit. (The start view is not scrolled here: the window grows upward instead, so the orb, the greeting and the pill move as
+        // one; on a small phone mentorSuggestRoom scrolls the greeting away once the unroll is over.)
+        const want = Math.min(pill.offsetTop - 4, list.offsetTop + list.offsetHeight + 6 - scroll.clientHeight);
+        if (win.classList.contains("mentor-chatting") && want > scroll.scrollTop) scroll.scrollTop = want;
+      } else {
+        list.inert = true;   // rolling up: its rows can no longer be reached
+        show(false);         // laid out closed for a moment, to measure where everything goes; put back below while it rolls up
+      }
+      if (still) { if (!open) list.inert = false; else mentorSuggestRoom(state, false); return; }
+      const after = tops(), winAfter = win.getBoundingClientRect().top;
+      if (!open) { show(true); scroll.scrollTop = scrolled; }
+      // closedTop - openTop for each piece: how far it sits below its open place when the list is closed
+      const shift = movers.map((el, i) => open ? before[i] - after[i] : after[i] - before[i]);
+      const grow = open ? winBefore - winAfter : winAfter - winBefore;
+      const timing = Object.assign(mentorFoldTiming(), { fill: open ? "none" : "forwards" });
+      const play = (el, closedLook, openLook) => el.animate(open ? [closedLook, openLook] : [openLook, closedLook], timing);
+      const px = (n) => `${Math.round(n * 10) / 10}px`;
+      const pillShift = shift[movers.indexOf(pill)] || 0;
+      const anims = [play(list, { clipPath: "inset(0px 0px 100% 0px)", transform: `translateY(${px(pillShift)})` }, { clipPath: "inset(0px 0px 0px 0px)", transform: "translateY(0px)" })];
+      movers.forEach((el, i) => { if (Math.abs(shift[i]) > 0.5) anims.push(play(el, { transform: `translateY(${px(shift[i])})` }, { transform: "translateY(0px)" })); });
+      if (Math.abs(grow) > 0.5) {
+        const r = px(parseFloat(getComputedStyle(win).borderTopLeftRadius) || 0);
+        anims.push(play(win, { clipPath: `inset(${px(grow)} 0px 0px 0px round ${r})` }, { clipPath: `inset(0px 0px 0px 0px round ${r})` }));
+      }
+      const f = { anims, end: open ? (cut) => { if (!cut) mentorSuggestRoom(state, true); } : () => { show(false); list.inert = false; } };
+      state.fold = f;
+      anims[0].addEventListener("finish", () => {
+        if (state.fold !== f) return;
+        state.fold = null;
+        f.end();   // closing: laid out closed in the same step its frames are taken away, so nothing jumps
+        for (const a of anims) a.cancel();
+      });
     }
 
     // Send what the box holds (or the text of a chip). Returns false when there was nothing to send. E: confirmed is true for a "Did you mean" chip.
@@ -5229,7 +5670,7 @@
       while (state.msgs.children.length > mentorMessages.length) state.msgs.firstElementChild.remove();
       state.win.classList.add("mentor-chatting");
       state.status.textContent = reply.didYouMean ? `Did you mean ${String(reply.didYouMean).replace(/[?.!]+$/, "")}? ${reply.text}` : reply.text;   // announced politely; the rows themselves are not read out unprompted
-      mentorDrawChips(state);
+      mentorDrawSuggest(state);   // MW2: one closed Suggestions pill, now under this answer
       mentorMood(mood);
       mentorOrbSettle(state, orbWas);
       state.scroll.scrollTop = first.offsetTop - 4;
@@ -5296,14 +5737,34 @@
       greeting.textContent = returning ? mentorPhrase(MENTOR_PHRASES.returning, "Welcome back.") : mentorPhrase(MENTOR_PHRASES.greeting, "How can I help?");
       const msgs = document.createElement("div");
       msgs.className = "mentor-msgs";
-      scroll.append(greeting, msgs);
+      // MW2: the Suggestions pill and its list of rows (closed), after the conversation
+      const suggest = document.createElement("div");
+      suggest.className = "mentor-suggest-box";
+      const pill = document.createElement("button");
+      pill.type = "button";
+      pill.className = "mentor-suggest";
+      pill.setAttribute("aria-expanded", "false");
+      pill.setAttribute("aria-controls", "mentor-suggest-list");
+      const pillText = document.createElement("span");
+      pillText.textContent = "Suggestions";
+      const chevron = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      chevron.setAttribute("viewBox", "0 0 24 24");
+      chevron.setAttribute("aria-hidden", "true");
+      chevron.setAttribute("focusable", "false");
+      const chevronPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      chevronPath.setAttribute("d", "M6 9l6 6 6-6");
+      chevron.appendChild(chevronPath);
+      pill.append(pillText, chevron);
+      const list = document.createElement("div");
+      list.className = "mentor-rows";
+      list.id = "mentor-suggest-list";
+      list.hidden = true;
+      suggest.append(pill, list);
+      scroll.append(greeting, msgs, suggest);
       const status = document.createElement("p");
       status.className = "sr-only";
       status.setAttribute("role", "status");
       status.setAttribute("aria-live", "polite");
-      const chips = document.createElement("div");
-      chips.className = "mentor-chips";
-      const pickerChip = mentorChip("Paint Picker", () => { closeMentor(false); goToPaintPicker(); });
       const form = document.createElement("form");
       form.className = "mentor-form";
       form.noValidate = true;
@@ -5339,12 +5800,14 @@
       arrow.appendChild(shape);
       send.appendChild(arrow);
       form.append(input, send);
-      col.append(scroll, chips, form, status);
+      col.append(scroll, form, status);
 
       const orbBox = document.createElement("div");
       orbBox.className = "mentor-orbbox ml-live";   // U6b: the look's own slow motion runs here only
       orbBox.dataset.mood = "neutral";
       orbBox.appendChild(buildMentorOrb("neutral"));
+      orbBox.addEventListener("mousedown", (event) => event.preventDefault());   // U7: tapping the orb leaves the focus where it is (the text box)
+      orbBox.addEventListener("click", () => { if (mentorState && mentorState.orbBox === orbBox) mentorOrbTap(mentorState); });
       const skin = document.createElement("div");   // MW1: the round button's colour, over the window while it grows
       skin.className = "mp-skin";
       skin.setAttribute("aria-hidden", "true");
@@ -5353,11 +5816,16 @@
       document.body.appendChild(backdrop);
       document.body.classList.add("mentor-open");
 
-      const state = { backdrop, win, opener, scroll, msgs, chips, pickerChip, input, status, orbBox, skin, moves: [], mood: "neutral", moodTimer: 0, prevOverflow: document.body.style.overflow };
+      const state = { backdrop, win, opener, scroll, msgs, greeting, pill, list, back, close, input, status, orbBox, skin, moves: [], mood: "neutral", moodTimer: 0, prevOverflow: document.body.style.overflow };
       mentorState = state;
       for (const m of mentorMessages) msgs.appendChild(mentorBuildMessage(m));   // the conversation so far, if the window was closed and opened again
       if (mentorMessages.length) win.classList.add("mentor-chatting");
-      mentorDrawChips(state);
+      mentorDrawSuggest(state);
+      pill.addEventListener("click", () => {   // MW2
+        const open = !state.suggestOpen;
+        mentorSuggestSet(state, open);
+        if (open && list.firstElementChild) list.firstElementChild.focus({ preventScroll: true });
+      });
       if (mentorMessages.length) scroll.scrollTop = scroll.scrollHeight;
       document.body.style.overflow = "hidden";   // the page behind does not scroll
       close.addEventListener("click", () => closeMentor());
@@ -5368,16 +5836,17 @@
         win.classList.remove("mentor-chatting");
         status.textContent = "";
         input.value = "";
-        mentorDrawChips(state);
+        mentorDrawSuggest(state);
         mentorOrbSettle(state, orbWas);   // MW1: the orb grows back to its start size
         scroll.scrollTop = 0;
-        pickerChip.focus({ preventScroll: true });   // the first thing in the start view
+        pill.focus({ preventScroll: true });   // the first thing in the start view (MW2: the Suggestions pill)
       });
       form.addEventListener("submit", (event) => { event.preventDefault(); if (mentorSend(input.value, false)) input.value = ""; });
       backdrop.addEventListener("click", (event) => { if (event.target === backdrop) closeMentor(); });
       state.onKey = (event) => {
         if (event.key === "Escape") {
           event.preventDefault(); event.stopPropagation();
+          if (state.suggestOpen) { mentorSuggestSet(state, false); pill.focus({ preventScroll: true }); return; }   // MW2: the list closes first
           closeMentor();
         } else if (event.key === "Tab") {
           const all = [...win.querySelectorAll("button, input, select, summary, a[href]")].filter(b => !b.disabled && b.tabIndex >= 0 && b.getClientRects().length);
@@ -5397,7 +5866,7 @@
         mentorFit(state);
       }
       close.focus({ preventScroll: true });
-      mentorWarmUp();
+      mentorWarmUp(mentorReduced() ? 0 : mentorOpenMs() + 80);   // MO6: Mentor reads its notes once the window has opened, so the open runs smoothly
       // MW1: the move starts in this same frame, so the window is never seen at full size before it grows
       const frames = mentorReduced() ? null : mentorMoveFrames(state);
       if (frames) mentorPlayMove(state, frames, false);
@@ -5437,7 +5906,7 @@
         else main = mentorPlayMove(state, frames, true);
         main.addEventListener("finish", done);
         main.addEventListener("cancel", done);
-        setTimeout(done, MENTOR_CLOSE_MS + 400);   // safety net if the browser never reports the end
+        setTimeout(done, mentorCloseMs() + 400);   // safety net if the browser never reports the end
       }
       queueBackCheck();
     }
@@ -7066,6 +7535,19 @@
       pip.style.setProperty("--prev-colour", i <= motion.fromStage ? `var(--stage-${motion.fromStage})` : "var(--border)");
     }
     function motionMs(name) { return parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name)) || 0; }
+    // MO6: a cubic-bezier() easing (as written in the CSS tokens) as a function from time (0 to 1) to progress, for moves drawn frame by frame
+    function curveOf(text) {
+      const m = /cubic-bezier\(([^)]*)\)/.exec(text || ""), v = m ? m[1].split(",").map(Number) : [];
+      const [x1, y1, x2, y2] = v.length === 4 && v.every(Number.isFinite) ? v : [0, 0, 0.58, 1];
+      const B = (a, b, t) => 3 * a * t * (1 - t) * (1 - t) + 3 * b * t * t * (1 - t) + t * t * t;
+      return (x) => {
+        if (x <= 0) return 0;
+        if (x >= 1) return 1;
+        let lo = 0, hi = 1;
+        for (let i = 0; i < 22; i++) { const mid = (lo + hi) / 2; if (B(x1, x2, mid) < x) lo = mid; else hi = mid; }
+        return B(y1, y2, (lo + hi) / 2);
+      };
+    }
     // Mo2: put the movement classes away again a moment after the motion ends, so nothing is left behind at rest
     // (the old name must not stay in the page for a screen reader).
     let stageMotionTimer = null;
@@ -9552,7 +10034,7 @@
       const draw = () => {
         const text = document.createElement("span");
         text.className = "step-line-text";
-        // RS1: the recipe page also names the paints ("1. Yriel Yellow, Layer"); the editor passes no names and is unchanged.
+        // RS1: the recipe page also names the paints ("1. Bright yellow, Layer"); the editor passes no names and is unchanged.
         const names = o.paintNames ? o.paintNames() : "";
         text.textContent = `${o.number}. ${names ? names + ", " : ""}${o.technique()}`;
         if (o.paintNames) button.classList.add("step-line-named");
@@ -10375,7 +10857,7 @@
       const nameLabel = document.createElement("label");
       nameLabel.textContent = "Scheme name";
       const nameBox = document.createElement("input");
-      nameBox.placeholder = "e.g. My Ultramarines";
+      nameBox.placeholder = "e.g. My rust knights";
       nameBox.value = d.name;
       nameBox.addEventListener("input", () => { d.name = nameBox.value; });
       nameLabel.appendChild(nameBox);
@@ -11232,7 +11714,7 @@
     }
 
     // ----- RS3b: the quick New recipe form -----
-    // Painting > Recipes > + New recipe opens one box: type or paste lines ("Eyes: yriel yellow, then flash gitz yellow"), see a preview,
+    // Painting > Recipes > + New recipe opens one box: type or paste lines ("Eyes: bright yellow, then pale yellow"), see a preview,
     // and Save. The lines are read by the paste reader (parseRecipeText with quick on). It is still a recipe draft (recipeDraft), so leaving
     // asks first and an unfinished one is kept like any other. d.quick holds the typed text and what was set by hand under More options:
     //   d.quick.text  the box     d.quick.name / d.quick.part  "" = built from the lines
@@ -11381,7 +11863,7 @@
       const box = document.createElement("textarea");
       box.id = "quick-lines";
       box.className = "quick-lines";
-      box.placeholder = "Eyes: yriel yellow, then flash gitz yellow";
+      box.placeholder = "Eyes: bright yellow, then pale yellow";
       box.value = q.text;
       box.setAttribute("autocapitalize", "sentences");
       label.append("Type or paste lines", box);
@@ -11503,7 +11985,7 @@
       const nameLabel = document.createElement("label");
       const nameBox = document.createElement("input");
       nameBox.id = "quick-name";
-      nameBox.placeholder = d.name || "e.g. Ultramarine blue armour";
+      nameBox.placeholder = d.name || "e.g. Blue armour";
       nameBox.value = q.name;
       nameBox.addEventListener("input", () => { q.name = nameBox.value; changed(); });
       nameLabel.append("Recipe name", nameBox);
@@ -11618,7 +12100,7 @@
         return label;
       };
       const nameBox = document.createElement("input");
-      nameBox.placeholder = "e.g. Ultramarine blue armour";
+      nameBox.placeholder = "e.g. Blue armour";
       nameBox.value = d.name;
       nameBox.addEventListener("input", () => { d.name = nameBox.value; });
       card.appendChild(field("Recipe name", nameBox));
@@ -12048,6 +12530,8 @@
     // text (never as HTML), because they can be anything the user typed or pasted.
     let recipeIdeasCard = null;   // the card in the recipe editor, if it's open
     let colourIdeasState = { open: false, base: "whole", role: "glow", check: false, scheme: "", mood: "", detail: "", detailGroup: "", basing: "", basingGroup: "" };   // kept while the app is open
+    // H: "Compendium" in the comments and names below is the old tab. Its colour parts are now Colour Lab (in Painting) and its detail
+    // recipes and basing tips are Guides (in Tools and Settings). The names (compendiumState, compendiumDoor...) stay; the screen text never says it.
     // v35: the Compendium tab keeps its own picks (also only while the app is open), so what you pick there never changes the card in a recipe.
     // v36: wheel = the colour wheel part that is open ("" = none), wheelOthers = which parts also show paints you do not have yet.
     // v37: open = which of the five folding parts are open (all start closed). view = "themes" or "combos" (the Starter schemes switch),
@@ -15292,12 +15776,12 @@
         panel.insertBefore(list, share);
       };
       if (typeof DETAIL_RECIPES !== "undefined") part("Detail recipes with a similar colour", libraryLike(paint, DETAIL_RECIPES, r => r.steps), "detail", (r) => {
-        guidesState.query = ""; guidesPoint({ key: r.key, kind: "detail" });
+        guidesState.query = ""; guidesState.from = null; guidesPoint({ key: r.key, kind: "detail" });   // UX2: from Colour Lab, so Back goes to Guides
         showTab("guides");
         renderGuides(`[data-detail="${r.key}"]`);
       });
       if (typeof BASING_TIPS !== "undefined") part("Basing tips with a similar colour", libraryLike(paint, BASING_TIPS, t => t.paintSteps), "basing", (t) => {
-        guidesState.query = ""; guidesPoint({ key: t.key, kind: "basing" });
+        guidesState.query = ""; guidesState.from = null; guidesPoint({ key: t.key, kind: "basing" });
         showTab("guides");
         renderGuides(`[data-basing="${t.key}"]`);
       });
@@ -15752,7 +16236,7 @@
       return box;
     }
 
-    // ---- v71: ASK THE MENTOR (Compendium, Pro preview) ----
+    // ---- v71: PAINT PICKER (first called Ask the Mentor, in the Compendium; now in Colour Lab, Pro preview) ----
     // Pick a base colour, a second colour and a part (armour, eyes, weapon or base) and get paint picks for that part, each with its reason.
     // It reuses the colour ideas above: colourIdeas() finds paints that go with a colour for a part (your own paints first, a poor fit
     // you own labelled "Yours, poor fit"), and buildIdeasList() draws them with the same rows, reasons and tags. Nothing new is stored
@@ -15808,7 +16292,7 @@
       }
       const role = mentorRole(st.mentorPart);
       // v73: the rows get three next steps. Use in a recipe and Add to a recipe (v62) and the Shop links fold-out come with the shared rows;
-      // listButton puts Add to shopping list in plain view, and the list remembers "Ask the Mentor" as the place the paint came from.
+      // listButton puts Add to shopping list in plain view, and the list remembers "Colour Lab: Paint Picker" as the place the paint came from.
       const pickDoor = Object.assign({}, door, { listButton: true, realOnly: true, shopSource: () => "Colour Lab: Paint Picker" });
       for (const paint of chosen) {
         const label = document.createElement("p");
@@ -16026,7 +16510,29 @@
     // Where the Guides screen is: home (search and categories), a category (its topic groups), one group, or one entry. Kept while the
     // app is open, never saved. G2a: group is the name of the topic group being shown, or of the one the open entry sits in.
     // G2b: order is how the home list shows when nothing is typed: "topics" (the sections) or "az" (every entry A to Z).
-    const guidesState = { view: "home", cat: "", group: "", key: "", kind: "", query: "", missing: false, order: "topics" };
+    // UX2: from is where Back goes from an entry opened from a list (see guidesNote), or null.
+    const guidesState = { view: "home", cat: "", group: "", key: "", kind: "", query: "", missing: false, order: "topics", from: null };
+    // UX2: the list on screen when an entry is opened from one of its rows: search results, A to Z, a topic group, or (on a wide screen,
+    // where the list sits beside it) a section such as Detail recipes. It notes the screen, the search text and order, how far the page was
+    // scrolled, the row tapped, and the Detail recipes and Basing picks (their chosen group, recipe or tip, and search text), because opening
+    // one of those moves its own list to it. Back puts all of it back (the Filters fold-out is never touched, so it stays as it was).
+    // Links inside an entry (Related, See also) keep the note, so Back still goes to the list. Kept only while the app is open, never saved.
+    function guidesNote(row) {
+      const g = guidesState, st = compendiumState;
+      return { view: g.view, cat: g.cat, group: g.group, key: g.key, kind: g.kind, query: g.query, order: g.order, y: window.scrollY, row,
+        lib: { detail: st.detail, detailGroup: st.detailGroup, basing: st.basing, basingGroup: st.basingGroup, detailText: st.search.detail, basingText: st.search.basing } };
+    }
+    // UX2: after a section, a group or an entry opens, its Back button and title sit just under the menu bar, which stays on screen as you
+    // scroll (anything scrolled under it is hidden). The page only moves when Back is under the bar or the title is in the lower half.
+    function guidesShowTop() {
+      const main = document.querySelector("#compendium-body .guides-main");
+      const title = main && main.querySelector(".guides-title");
+      const bar = document.querySelector("main > .app-bar");
+      if (!title || !bar || !main.firstElementChild) return;
+      const under = bar.getBoundingClientRect().bottom, first = main.firstElementChild.getBoundingClientRect().top;
+      if (first >= under && title.getBoundingClientRect().bottom <= window.innerHeight / 2) return;
+      window.scrollTo(0, Math.max(0, window.scrollY + first - under - 8));
+    }
     function guidesPoint(e) {   // point the screen at one entry
       whereBuyOpen.clear();   // L1: a Where to buy fold-out starts closed on every entry you open
       guidesState.missing = false;
@@ -16056,11 +16562,13 @@
         recipeDraft = null;
         openRecipeId = null;
         const e = knowledgeIndex().get(String(key), kind);
-        Object.assign(guidesState, { view: "home", cat: "", group: "", key: "", kind: "", query: "", missing: false });
+        // UX2: a link from one entry to another (See also, or a Mentor link while an entry is open) keeps the way back to the list
+        const keep = settings.tab === "guides" && guidesState.view === "entry" && guidesState.from;
+        Object.assign(guidesState, { view: "home", cat: "", group: "", key: "", kind: "", query: keep ? guidesState.query : "", missing: false, from: keep || null });
         if (e) guidesPoint(e); else guidesState.missing = true;
         showTab("guides");
         const target = e && document.getElementById(e.id);
-        if (target) { target.scrollIntoView({ block: "start" }); target.focus({ preventScroll: true }); }
+        if (target) { target.focus({ preventScroll: true }); guidesShowTop(); }   // UX2: the title shows under the menu bar, not behind it
         const gone = !e && document.getElementById("guides-missing");   // X7: a retired key: the one calm line gets the focus
         if (gone) { gone.tabIndex = -1; gone.focus({ preventScroll: true }); }
       });
@@ -16082,7 +16590,7 @@
       const parts = libraryParts(door, redraw);
       const catName = (key) => (GUIDE_CATEGORIES.find(c => c.key === key) || {}).name || "";
       const shown = GUIDE_CATEGORIES.filter(c => kn.list({ category: c.key }).length);
-      if (g.view !== "home" && !(g.view === "entry" ? kn.get(g.key, g.kind) : shown.some(c => c.key === g.cat))) Object.assign(g, { view: "home", cat: "", group: "", key: "", kind: "" });
+      if (g.view !== "home" && !(g.view === "entry" ? kn.get(g.key, g.kind) : shown.some(c => c.key === g.cat))) Object.assign(g, { view: "home", cat: "", group: "", key: "", kind: "", from: null });
       // G2a: Colour basics, Techniques, Tools and prep and Problems show topic groups; Detail recipes and Basing keep their own controls
       const grouped = (cat) => !!cat && cat !== "detail" && cat !== "basing" && shown.some(c => c.key === cat);
       const groupsHere = grouped(g.cat) ? guideGroupsOf(g.cat, kn).groups : [];
@@ -16119,7 +16627,19 @@
         b.addEventListener("click", onClick);
         return b;
       };
-      const openEntry = (e) => { guidesPoint(e); renderGuides(`#${e.id}`); };
+      // UX2: a list row passes its own selector, and the list it sits in is noted for Back (guidesNote). On a wide screen an entry can be
+      // open beside the list: then the earlier note keeps its screen (or, with none, Back goes to the plain list) and takes the new row.
+      // A Related button passes none, so the note stays as it is.
+      const openEntry = (e, row) => {
+        if (row) {
+          const note = guidesNote(row);
+          if (g.view === "entry") Object.assign(note, g.from ? { view: g.from.view, cat: g.from.cat, group: g.from.group, key: g.from.key, kind: g.from.kind, lib: g.from.lib } : { view: "home", cat: "", group: "", key: "", kind: "" });
+          g.from = note;
+        }
+        guidesPoint(e);
+        renderGuides(`#${e.id}`);
+        guidesShowTop();
+      };
       // X8d: long lists show 30 rows, "Show more" adds the next 30. Search always looks through the whole list.
       const PAGE = 30;
       const entryRows = (list, pageKey, numOf) => {
@@ -16135,7 +16655,7 @@
         let more = null;
         const add = (from, to) => {
           for (const e of list.slice(from, to)) {
-            const b = row(e.title, e.summary, () => openEntry(e), false, numOf ? numOf(e) : "");
+            const b = row(e.title, e.summary, () => openEntry(e, `${b.closest(".guides-nav") ? ".guides-nav" : ".guides-main"} [data-guide="${CSS.escape(e.key)}"][data-kind="${e.kind}"]`), false, numOf ? numOf(e) : "");
             b.dataset.guide = e.key;
             b.dataset.kind = e.kind;
             if (more) box.insertBefore(b, more); else box.appendChild(b);
@@ -16210,11 +16730,12 @@
         list.className = "guides-rows guides-cats";
         for (const c of shown) {
           const b = row(c.name, "", () => {
-            Object.assign(g, { view: "category", cat: c.key, group: "", key: "", kind: "" });
+            Object.assign(g, { view: "category", cat: c.key, group: "", key: "", kind: "", from: null });   // UX2: a section goes back to Guides
             // X8d: Detail recipes and Basing open on their first group (Body, Dry ground); All is still one tap away
             if (c.key === "detail" && !compendiumState.detailGroup) compendiumState.detailGroup = DETAIL_GROUPS[0].key;
             if (c.key === "basing" && !compendiumState.basingGroup) compendiumState.basingGroup = BASING_GROUPS[0].key;
-            renderGuides(`[data-cat="${c.key}"]`); }, g.view !== "home" && g.cat === c.key);
+            renderGuides(`[data-cat="${c.key}"]`);
+            guidesShowTop(); }, g.view !== "home" && g.cat === c.key);
           b.dataset.cat = c.key;
           const n = document.createElement("span");
           n.className = "guides-count";
@@ -16246,10 +16767,28 @@
         back.className = "plain-button guides-back";
         back.id = "guides-back";
         // G2a: an entry goes back to its topic group, a group to its section, a section to the home list
+        // UX2: unless it was opened from a list (g.from): then Back goes to that list, named by what it is
+        const note = g.view === "entry" || g.view === "category" ? g.from : null;
         const toGroup = g.view === "entry" && grouped(g.cat) && groupHere;
         const toCat = !toGroup && (g.view === "entry" || g.view === "group") && g.cat && shown.some(c => c.key === g.cat);
-        back.textContent = toGroup ? `Back to ${groupHere.name}` : toCat ? `Back to ${catName(g.cat)}` : "Back to Guides";
+        back.textContent = note ? `Back to ${note.view === "group" ? note.group : note.view === "category" ? catName(note.cat) : g.query.trim() ? "results" : g.order === "az" ? "A to Z" : "Guides"}`
+          : toGroup ? `Back to ${groupHere.name}` : toCat ? `Back to ${catName(g.cat)}` : "Back to Guides";
         back.addEventListener("click", () => {
+          if (note) {   // UX2: the list as it was: same screen, same scroll, the Detail recipes and Basing picks, and the focus on the row you opened
+            const lib = note.lib, st = compendiumState;
+            Object.assign(g, { view: note.view, cat: note.cat, group: note.group, key: note.key, kind: note.kind, from: null });
+            Object.assign(st, { detail: lib.detail, detailGroup: lib.detailGroup, basing: lib.basing, basingGroup: lib.basingGroup });
+            st.search.detail = lib.detailText;
+            st.search.basing = lib.basingText;
+            renderGuides();
+            // (on a wide screen the search text or order can change while the entry is open: then the list is new, so it starts at its top)
+            const same = g.query === note.query && g.order === note.order;
+            const was = same && document.querySelector(`#compendium-body ${note.row}`);
+            window.scrollTo(0, same ? note.y : 0);
+            const next = [was, ...["guides-back", "guides-search"].map(id => document.getElementById(id))].find(x => x && x.offsetParent);
+            if (next) next.focus({ preventScroll: true });
+            return;
+          }
           // the row it came from: in the right-hand list for a group or an entry (a search result with the same key sits, hidden on a phone, in the left one)
           const from = g.view === "group" ? `.guides-main [data-group="${CSS.escape(g.group)}"]` : g.view === "entry" && (toGroup || toCat) ? `.guides-main [data-guide="${CSS.escape(g.key)}"]` : `.guides-cats [data-cat="${CSS.escape(g.cat)}"]`;
           if (toGroup) Object.assign(g, { view: "group", key: "", kind: "" });
@@ -16281,7 +16820,7 @@
             const box = document.createElement("div");
             box.className = "guides-rows guides-groups";
             for (const gr of groupsHere) {
-              const b = row(gr.name, "", () => { Object.assign(g, { view: "group", group: gr.name, key: "", kind: "" }); renderGuides("#guides-back"); }, false, gr.num);
+              const b = row(gr.name, "", () => { Object.assign(g, { view: "group", group: gr.name, key: "", kind: "", from: null }); renderGuides("#guides-back"); guidesShowTop(); }, false, gr.num);
               b.dataset.group = gr.name;
               box.appendChild(b);
             }
@@ -16723,14 +17262,14 @@
       importIntro.className = "hint";
       const bold = (text) => { const b = document.createElement("b"); b.textContent = text; return b; };
       importIntro.append("Paste your notes (from Google Keep, Reddit, anywhere). Put each part on its own line ending in a colon, like ",
-        bold("Eyes:"), ", then one step per line, or several split by commas. Mixes like ", bold("2:1 Baal:CM"), " or ", bold("50/50"),
+        bold("Eyes:"), ", then one step per line, or several split by commas. Mixes like ", bold("2:1 Dark Red:CM"), " or ", bold("50/50"),
         " work too. You'll see a preview before anything is saved.");
       card.append(importHead, pageMoreInfo("paste-intro", [importIntro], { label: "Paste recipes" }));
       const box = document.createElement("textarea");
       box.id = "import-text";
       box.rows = 8;
       box.style.width = "100%";
-      box.placeholder = "Tyranids\n\nChitin:\nLuxion purple\nGenestealer purple (drybrush)\n\nTeeth:\nWraithbone, Agrax";
+      box.placeholder = "Bog goblins\n\nSkin:\nSwamp green\nPale green (drybrush)\n\nTeeth:\nBone, brown wash";
       box.setAttribute("aria-label", "Recipe notes to paste");
       box.value = d.text;
       box.addEventListener("input", () => { d.text = box.value; });
@@ -18077,7 +18616,7 @@
       });
 
       const typed = document.createElement("input");
-      typed.placeholder = "Or type a paint name, e.g. Macragge Blue";
+      typed.placeholder = "Or type a paint name";
       typed.setAttribute("aria-label", "Paint name");
       typed.id = "scan-typed";
       typed.value = st.typed;
@@ -19896,9 +20435,9 @@
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
       const template =
         "name,game,faction,stage,nickname,count,repaint,notes,date_added,date_stage\n" +
-        `Intercessors,40K,Ultramarines,${STAGES[0]},,5,no,,,\n` +
-        `Intercessors,40K,Ultramarines,${STAGES[Math.min(3, STAGES.length - 1)]},The Gold Squad,5,no,,,\n` +
-        `Redemptor Dreadnought,40K,Ultramarines,${last},,1,yes,"Magnetised, so can swap guns",${daysAgo(60)},${daysAgo(14)}\n`;
+        `Spearmen,Skirmish,Bone warband,${STAGES[0]},,5,no,,,\n` +
+        `Spearmen,Skirmish,Bone warband,${STAGES[Math.min(3, STAGES.length - 1)]},The Gold Squad,5,no,,,\n` +
+        `Bone giant,Skirmish,Bone warband,${last},,1,yes,"Magnetised, so can swap arms",${daysAgo(60)},${daysAgo(14)}\n`;   // H: invented names (was a Games Workshop unit and army)
       downloadFile("minifolio-template.csv", template, "text/csv");
     });
 
@@ -20437,7 +20976,7 @@
       const notes = [];
       if (adding && have) notes.push(`${plural(have, "unit")} already in your collection, so ${have === 1 ? "it starts" : "they start"} unticked.`);
       if (adding && spelling) notes.push(fromApp
-        ? `${spelling} will have ${spelling === 1 ? "its" : "their"} spelling updated to match the Warhammer app (e.g. capitals).`
+        ? `${spelling} will have ${spelling === 1 ? "its" : "their"} spelling updated to match the army list (e.g. capitals).`
         : `${spelling} differ only in capitals or hyphens; your spelling is kept.`);
       if (adding && possible) notes.push(`${possible} possible match${possible === 1 ? "" : "es"} highlighted in amber: check each one is really the same unit.`);
       reviewClashNote.textContent = notes.join(" ");
@@ -20697,7 +21236,7 @@
         return;
       }
       if (!list) {
-        notify("That doesn't look like a list exported from the Warhammer app. Each unit should be a name followed by its points, e.g. \"Lictor (60 points)\", or a count, e.g. \"10x Boyz\".");
+        notify("That doesn't look like an exported army list. Each line should be a unit name and its points, like \"Captain (60 points)\", or a count, like \"10x Goblins\".");
         return;
       }
       // Use the spelling of a faction you already have, and its game.
@@ -20876,12 +21415,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=128".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=129".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v128";
+    const APP_VERSION = "v129";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -21343,6 +21882,14 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v129", date: "3 Nov 2026", changes: [
+        "Mentor has new looks. Futuristic is a machined hub with an iris, Magical a cluster of crystals inside a slowly turning ring of stones, and Grounded a pool of paint. Tap Mentor in its window for a little surprise.",
+        "Opening the app shows the icon ring filling as it loads, then it becomes the start circle. The start circle and the bar change colour smoothly, the bar never disappears on the way down, and the chosen section's colour slides across.",
+        "Mentor's window opens more slowly out of its button, and its starter questions sit inside one Suggestions button.",
+        "Each look has its own fonts. Parchment Codex has more ink blots, Grim Forge has bolts, cogs and rust, and Paint Bench has brush strokes, smudges and a few stickers.",
+        "Guides has 99 new guides, recipes and basing tips, and many older ones are corrected. Back from a guide returns to the list you came from, in the same place.",
+        "On a wide screen the start circle shows on its own, and the back arrow sits beside the bar. Hints and Help use made-up names instead of real army and paint names.",
+      ]},
       { version: "v128", date: "3 Nov 2026", changes: [
         "Grim Forge is now blackened steel with brushed grain, soot, brass rivets and a forge orange, and bare steel in light mode.",
         "Paint Bench is a calmer hobby desk: lighter, warmer colours, a quieter cutting mat and paler masking tape.",
@@ -21380,7 +21927,7 @@
         "Guides has 12 new entries (such as painting blue, green, brown and grey, horses, drying times and using Colour Lab) and six new hair and horse coat detail recipes, and Mentor can answer questions on them.",
       ]},
       { version: "v123", date: "2 Nov 2026", changes: [
-        "+ New recipe now opens a quick form: type or paste lines like Eyes: yriel yellow, then flash gitz yellow and check the preview. A paint the app does not know is outlined and kept as typed. More options holds the name, part and each step's technique, coats, brand and note, and a technique you pick there stays when you change the paint. After saving, Do you own these? lets you tick the paints you have.",
+        "+ New recipe now opens a quick form: type or paste lines like Eyes: bright yellow, then pale yellow and check the preview. A paint the app does not know is outlined and kept as typed. More options holds the name, part and each step's technique, coats, brand and note, and a technique you pick there stays when you change the paint. After saving, Do you own these? lets you tick the paints you have.",
         "Import CSV can now read two optional dates for each unit: date_added (when it joined your collection) and date_stage (when it reached its stage), as 2026-11-02 or 02/11/2026. The progress graph then shows your collection's real history instead of starting on the day you imported. Export CSV and the CSV template have the two new columns too.",
         "Guides: Colour basics, Techniques, Tools and prep and Problems now open on topic groups, then the entries in each group, all in A to Z order. Each row has a small number (like 2.3.4) so you can find your place, and Back goes up one level at a time.",
       ]},
@@ -21397,13 +21944,13 @@
         "Duplicate recipe now has its own title and adds \"copy\" to the name. Saving Colour ideas into a new recipe now keeps your starting paint as step 1 and sets the part and a name.",
       ] },
       { version: "v118", date: "2 Nov 2026", changes: [
-        "A recipe now has one small Edit button by its name. It opens a short list: edit the steps and paints, duplicate, copy as text or delete. Each step shows its paint and technique, for example Yriel Yellow, Layer. Used on is folded and shows how many units. A new Add to scheme button, next to Add to shopping list, lets you tick which schemes hold the recipe; changes apply when you press Done.",
+        "A recipe now has one small Edit button by its name. It opens a short list: edit the steps and paints, duplicate, copy as text or delete. Each step shows its paint and technique, for example Bright yellow, Layer. Used on is folded and shows how many units. A new Add to scheme button, next to Add to shopping list, lets you tick which schemes hold the recipe; changes apply when you press Done.",
       ] },
       { version: "v117", date: "1 Nov 2026", changes: [
         "A grey square no longer flashes over the round Ask Mentor button, or the back arrow, basket and Mentor window buttons, when you tap them. The keyboard focus ring on Ask Mentor is now clearer.",
       ] },
       { version: "v116", date: "1 Nov 2026", changes: [
-        "Mentor now starts fresh after 30 minutes without use, and has a Back button (an arrow, top left) that takes you back to the start. The Mentor window is also taller on a phone, so more of the chat shows.",
+        "Mentor now starts fresh after 30 minutes without use, and has a Back button (an arrow, top left) that takes you back to the start. Mentor's window is also taller on a phone, so more of the chat shows.",
       ] },
       { version: "v115", date: "1 Nov 2026", changes: [
         "The start page now has a short line under the name and no longer shows the version number (it is still in Updates). Help starts with a card called 5 things to know. The Dashboard says what Done means, and the progress graph and Palette tiles stay out of the way until you have a unit or a paint. The Game and Faction boxes now select their text when you tap them, and have an x to clear them.",
@@ -21421,13 +21968,13 @@
         "Fixes: the Ask Mentor label is no longer cut off at the bottom, the last card scrolls clear of the menu, Mentor questions wrap instead of running off the side, the Guides search box is full width, and leftover sample tips are gone.",
       ] },
       { version: "v110", date: "31 Oct 2026", changes: [
-        "Tapping the Minifolio title now sends the bottom bar's four sections and the Mentor button travelling back up into the start circle, the same journey in reverse. With reduced motion on, it fades quickly instead.",
+        "Tapping the Minifolio title now sends the bottom bar's four sections and the Ask Mentor button travelling back up into the start circle, the same journey in reverse. With reduced motion on, it fades quickly instead.",
       ] },
       { version: "v109", date: "31 Oct 2026", changes: [
-        "Tapping a section on the start circle now sends the four sections and the Mentor button travelling down together into the bottom bar, and the section opens as they land. With reduced motion on, it swaps at once.",
+        "Tapping a section on the start circle now sends the four sections and the Ask Mentor button travelling down together into the bottom bar, and the section opens as they land. With reduced motion on, it swaps at once.",
       ] },
       { version: "v108", date: "31 Oct 2026", changes: [
-        "When you open the app fresh, a ring of three coloured arcs fills around the Mentor button on the start circle, and the four sections appear one by one as it fills. It takes about a second and a quarter. With reduced motion on, the circle shows at once.",
+        "When you open the app fresh, a ring of three coloured arcs fills around the Ask Mentor button on the start circle, and the four sections appear one by one as it fills. It takes about a second and a quarter. With reduced motion on, the circle shows at once.",
       ] },
       { version: "v107", date: "31 Oct 2026", changes: [
         "Help now describes the menu, Colour Lab, Guides and Mentor as they are today, and Help > Privacy says Mentor runs on your device: what you type is not sent or stored, and the chat is cleared when the app reloads.",
@@ -21445,7 +21992,7 @@
         "Mentor's sources now take you to the exact guide, recipe, tip or colour on the Colour Lab wheel.",
       ] },
       { version: "v102", date: "30 Oct 2026", changes: [
-        "Mentor now answers. Type a question or tap a chip in the Mentor window. Mentor replies from Guides and the colour rules, shows paint ideas with the usual buttons, and lists its sources. What you type is not saved or sent, and the last 30 messages are forgotten when you close the app.",
+        "Mentor now answers. Type a question or tap a chip in Mentor's window. Mentor replies from Guides and the colour rules, shows paint ideas with the usual buttons, and lists its sources. What you type is not saved or sent, and the last 30 messages are forgotten when you close the app.",
       ] },
       { version: "v101", date: "30 Oct 2026", changes: [
         "Mentor now has an answer engine behind the scenes. It finds the right guide, recipe or tip for a question, and suggests paints for a colour and a part of the model. You cannot see it yet; the typing box comes next.",
@@ -21460,16 +22007,16 @@
         "Guides is now a library. Search it, or pick a category (Colour basics, Techniques, Detail recipes, Basing, Tools and prep, Problems) and open an entry. Detail recipes and Basing work as before.",
       ] },
       { version: "v97", date: "30 Oct 2026", changes: [
-        "The fourth menu section is now Tools. It opens Tools and Settings, which has four pages: Guides (the detail recipes and basing tips that were in the Compendium), Settings, Help and Updates. The Compendium and the cog at the top are gone; the basket stays.",
+        "The fourth menu section is now Tools. It opens Tools and Settings, which has four pages: Guides (the detail recipes and basing tips, which moved here), Settings, Help and Updates. The cog at the top is gone; the basket stays.",
       ] },
       { version: "v96", date: "29 Oct 2026", changes: [
-        "Painting has a new Colour Lab. The colour wheel, Colour ideas, Colour plans, Colours you've used and the Picker moved there from the Compendium. The round Ask Mentor button opens the Picker. The Compendium keeps Detail recipes and Basing tips for now.",
+        "Painting has a new Colour Lab, with the colour wheel, Colour ideas, Colour plans, Colours you've used and the Picker. The round Ask Mentor button opens the Picker. Detail recipes and Basing tips stay where they were for now.",
       ] },
       { version: "v95", date: "29 Oct 2026", changes: [
         "Example recipes and schemes now say so above their name. A scheme card lists its recipes as rows you can tap, with the part, the steps and the colours. A scheme with more than 3 recipes has Show all.",
       ] },
       { version: "v94", date: "29 Oct 2026", changes: [
-        "The Compendium's Starter schemes are now called Colour plans, and Your schemes is now Colours you've used, so scheme only means a bundle of recipes. A new closed box, Recipe or scheme? What's the difference, is at the top of Painting > Recipes and Painting > Schemes, and in Help. Words only: your recipes, schemes and backups are untouched.",
+        "Starter schemes are now called Colour plans, and Your schemes is now Colours you've used, so scheme only means a bundle of recipes. A new closed box, Recipe or scheme? What's the difference, is at the top of Painting > Recipes and Painting > Schemes, and in Help. Words only: your recipes, schemes and backups are untouched.",
       ] },
       { version: "v93", date: "29 Oct 2026", changes: [
         "Tapping a section on the start circle now glides into the menu bar, and going back to the start page glides the other way. Nothing moves if your phone is set to reduce motion.",
@@ -21481,13 +22028,13 @@
         "Similar paints can now suggest a paint blend. When none of your paints is close, Your closest may show Try mixing: one or two mixes of two paints you own, with the parts to use, next to the colour you want. It is a rough guess from screen colours, so test it on a palette first. Add to recipe step puts the two paints and the ratio into a recipe step, with an Undo. Metallics, washes, shades, Contrast, glazes and other special paints are never mixed.",
       ] },
       { version: "v90", date: "28 Oct 2026", changes: [
-        "The round Ask Mentor button now shows the Mentor orb, matching your theme's colours.",
+        "The round Ask Mentor button now shows Mentor's orb, matching your theme's colours.",
       ] },
       { version: "v89", date: "28 Oct 2026", changes: [
         "The app now opens on a start page: your four sections in a circle around Ask Mentor. Tap one to go in, and tap the Minifolio title any time to come back to it. Switching to another app and back leaves you exactly where you were.",
       ] },
       { version: "v88", date: "28 Oct 2026", changes: [
-        "The menu is now a curved bar at the bottom around a round Ask Mentor button. The Units tab is now called Models. Settings is the cog at the top right, and the shopping basket sits beside it. Ask Mentor opens Ask the Mentor in the Compendium.",
+        "The menu is now a curved bar at the bottom around a round Ask Mentor button. The Units tab is now called Models. Settings is the cog at the top right, and the shopping basket sits beside it. Ask Mentor opens the Paint Picker.",
       ] },
       { version: "v87", date: "28 Oct 2026", changes: [
         "Unit cards now move a little when you change a stage: the stage name slides, the colours fade across and the card pulses once on the way up. Details opens and closes smoothly and the paint swatches pop in.",
@@ -21517,10 +22064,10 @@
         "Settings, Your data says Works offline once the app is ready without internet.",
       ]},
       { version: "v82", date: "28 Oct 2026", changes: [
-        "Wide screens: the Dashboard, the recipe page opened from Schemes, Paste recipes, the scheme editor and the Compendium wheel now use the space better. Show as a table is now an easy-to-tap size on phones too.",
+        "Wide screens: the Dashboard, the recipe page opened from Schemes, Paste recipes, the scheme editor and the colour wheel now use the space better. Show as a table is now an easy-to-tap size on phones too.",
       ]},
       { version: "v81", date: "27 Oct 2026", changes: [
-        "On a wide screen, the Shopping list now has the shop links and Copy as text on one side and the paints on the other, and the Compendium has the colour wheel on the left and its sections on the right. Phones are unchanged.",
+        "On a wide screen, the Shopping list now has the shop links and Copy as text on one side and the paints on the other, and Colour Lab has the colour wheel on the left and its sections on the right. Phones are unchanged.",
       ]},
       { version: "v80", date: "27 Oct 2026", changes: [
         "On a wide screen, Your Palette now opens a paint's details in a pane beside the list. You can keep several open at once and close each one. Phones are unchanged.",
@@ -21539,7 +22086,7 @@
         "If Restore backup lowers any unit's model count to the 999 limit, it now tells you how many were changed.",
       ]},
       { version: "v75", date: "27 Oct 2026", changes: [
-        "Less small print. Many hints are shorter or gone: on the Dashboard, shopping list, Colour ideas, the Compendium, the paint scanner, the paste-recipes preview, Settings (Backups, Import, Counting visits, Shop links) and Help. Nothing you can do has changed.",
+        "Less small print. Many hints are shorter or gone: on the Dashboard, shopping list, Colour ideas, Colour Lab, the paint scanner, the paste-recipes preview, Settings (Backups, Import, Counting visits, Shop links) and Help. Nothing you can do has changed.",
         "The notes on Counting visits and Shop links in Settings now just say On or Off. The full explanation is in Help, Privacy, which is split into three shorter points.",
         "The note under the Dashboard graph about units added before dates were recorded is shorter.",
         "The ✕ and ✎ buttons in the paste-recipes preview are now 44 px, big enough to tap easily, and screen readers read them with the step they belong to.",
@@ -21549,22 +22096,22 @@
         "The ▲ now does the same on every unit: it moves the whole unit up one stage. On a unit tracked model by model, every model moves up one. Both have an Undo.",
       ]},
       { version: "v73", date: "27 Oct 2026", changes: [
-        "Each paint pick in Ask the Mentor now has Add to shopping list in plain view, next to Use in a recipe, Add to a recipe and Similar paints. Each one says what it did and has an Undo.",
+        "Each paint pick in the Paint Picker now has Add to shopping list in plain view, next to Use in a recipe, Add to a recipe and Similar paints. Each one says what it did and has an Undo.",
         "Add to shopping list stays there even if you switch Shop links off in Settings. Paints you own and made-up example paints don't get it.",
       ]},
       { version: "v72", date: "27 Oct 2026", changes: [
-        "Ask the Mentor now shows tips for the part you chose under the paint picks, each with its colours and, where it has one, a link to the creator it credits. A tip about your chosen colour comes first.",
+        "The Paint Picker now shows tips for the part you chose under the paint picks, each with its colours and, where it has one, a link to the creator it credits. A tip about your chosen colour comes first.",
         "The tips there are samples for now. Real tips will replace them later.",
       ]},
       { version: "v71", date: "27 Oct 2026", changes: [
-        "Ask the Mentor (Pro preview): in the Compendium, choose a base colour, a second colour and a part (armour, eyes, weapon or base). You get paints that go with each colour for that part, with the reason. Your own paints come first, and a poor match you own says Yours, poor fit.",
+        "Paint Picker (Pro preview): in Colour Lab, choose a base colour, a second colour and a part (armour, eyes, weapon or base). You get paints that go with each colour for that part, with the reason. Your own paints come first, and a poor match you own says Yours, poor fit.",
         "Mentor tips will join these picks in the next update.",
       ]},
       { version: "v70", date: "26 Oct 2026", changes: [
         "Behind the scenes: a place for Mentor tips is ready, with three sample tips that only show the format. Nothing new to see yet.",
       ]},
       { version: "v69", date: "26 Oct 2026", changes: [
-        "Ideas for this: open a recipe step or a paint in Your Palette and tap Ideas for this. The Compendium opens with that paint's ideas at the top: colours that go with it, starter schemes, detail recipes and basing tips with a similar colour, using your paints first.",
+        "Ideas for this: open a recipe step or a paint in Your Palette and tap Ideas for this. Colour Lab opens with that paint's ideas at the top: colours that go with it, starter schemes, detail recipes and basing tips with a similar colour, using your paints first.",
         "Show steps or Show tip opens that detail recipe or basing tip in full. Back to recipe or Back to Your Palette takes you to the same place. A paint with no colour set has no button.",
       ]},
       { version: "v68", date: "26 Oct 2026", changes: [
@@ -21585,7 +22132,7 @@
         "On a phone the two cards are tabs, Best and Yours. On a wider screen they sit side by side and the pop-up is wider.",
       ]},
       { version: "v65", date: "25 Oct 2026", changes: [
-        "New Similar paints button on a paint in the Compendium. It opens a pop-up with Best match: up to three paints from different brands, closest first, whether or not you own them, each with its fit.",
+        "New Similar paints button on a paint in Colour Lab. It opens a pop-up with Best match: up to three paints from different brands, closest first, whether or not you own them, each with its fit.",
         "Lighter, Close and Darker at the top of the pop-up look for a lighter or darker colour. Close is the default.",
         "A paint you do not own can go on your shopping list from the pop-up, with an Undo. Paints that are not colours, such as varnishes, mediums and thinners, are never offered.",
       ]},
@@ -21596,11 +22143,11 @@
         "The sentences under suggested paints, such as Closest you own and Similar, not exact, have gone. Only the labels are left.",
       ]},
       { version: "v63", date: "24 Oct 2026", changes: [
-        "In the Compendium colour wheel, each group now shows 12 paints before Show all (it was 8).",
+        "In the Colour Lab colour wheel, each group now shows 12 paints before Show all (it was 8).",
         "After your own paints, paints from popular ranges come first, so the short list is not filled with brands you may not know. The rest are still there under Show all.",
       ]},
       { version: "v62", date: "24 Oct 2026", changes: [
-        "A paint in the Compendium (a colour idea, or a colour wheel paint once you open it) has two buttons. Use in a recipe starts a new recipe with that paint in step 1. Add to a recipe lets you pick a recipe, then one of its steps or a new step. Both have an Undo.",
+        "A paint in Colour Lab (a colour idea, or a colour wheel paint once you open it) has two buttons. Use in a recipe starts a new recipe with that paint in step 1. Add to a recipe lets you pick a recipe, then one of its steps or a new step. Both have an Undo.",
         "If the paint is not in Your Palette yet, it is added as Not owned, so it reaches your shopping list once a recipe uses it, and the message says so. Made-up example paints are not offered.",
       ]},
       { version: "v61", date: "24 Oct 2026", changes: [
@@ -21608,7 +22155,7 @@
         "The old tick for this in Edit details has gone, as the button does the same job.",
       ]},
       { version: "v60", date: "24 Oct 2026", changes: [
-        "Importing an army list now reads the model count written on a unit's line, such as 10x Boyz, Boyz x10 or Boyz (10 models), so units no longer land as 1 model. A list typed by hand, one unit per line, works too.",
+        "Importing an army list now reads the model count written on a unit's line, such as 10x Goblins, Goblins x10 or Goblins (10 models), so units no longer land as 1 model. A list typed by hand, one unit per line, works too.",
         "In the import check, every unit has its own model count and stage. Set every row to puts them all at one stage in one go, and stays in view on a long list. This works for Import CSV as well as army lists.",
         "A CSV file's stage column is used when it matches one of your stages.",
       ]},
@@ -21629,7 +22176,7 @@
         "Keep them now keeps all the examples as your own, so the These are examples card goes away on the Dashboard, Units, Recipes and Your Palette.",
       ]},
       { version: "v55", date: "20 Oct 2026", changes: [
-        "The small labels on recipes, Colour ideas and the Compendium are now plain text instead of rounded pills: the part name on a recipe, Fine, Look at this and Suggestion, and Pro preview. The words are the same.",
+        "The small labels on recipes, Colour ideas and Colour Lab are now plain text instead of rounded pills: the part name on a recipe, Fine, Look at this and Suggestion, and Pro preview. The words are the same.",
         "Screen readers now read a paint's own name on the buttons and boxes that act on it, such as Remove, More options, the colour box, Merge, Shop links and the swatch tiles, instead of a longer label that repeated the name.",
       ]},
       { version: "v54", date: "20 Oct 2026", changes: [
@@ -21650,10 +22197,10 @@
         "The Shopping list is tidier. Your paints, the Copy as text button and the basket count stay in view. The explanations (what the list holds, the no-statuses warning and how the shop buttons work) are behind one More info.",
         "Settings is tidier. Each card keeps its buttons and switches in view, and its explanation sits behind a More info. Backups stay big and easy to reach.",
         "On the Dashboard and Units, the note about the example units is behind More info.",
-        "Help topics use the same More info and Less info words and the same arrow. Help also has new lines for the Swatches switch and More options, the folded steps in recipes, and the Compendium tick boxes with Select all and Add to shopping list.",
+        "Help topics use the same More info and Less info words and the same arrow. Help also has new lines for the Swatches switch and More options, the folded steps in recipes, and the Colour Lab and Guides tick boxes with Select all and Add to shopping list.",
       ]},
       { version: "v51", date: "20 Oct 2026", changes: [
-        "In the Compendium, the paints in Starter schemes, Your schemes and Detail recipes now have a tick box on the left, and a Select all row above each list.",
+        "In Colour Lab and Guides, the paints in Starter schemes, Your schemes and Detail recipes now have a tick box on the left, and a Select all row above each list.",
         "Add to shopping list sits under the list. It is small and grey until you tick something, then it turns into a full-width button that shows how many paints it will add. It adds only the ticked paints, and one Undo takes them all off again.",
         "Copy as text and Save into a new recipe use the paints you ticked. If nothing is ticked they use all of them.",
         "Paints you own, or that are already on your shopping list, show their status mark where the tick box would be. Open More info on the row to see why.",
@@ -21665,14 +22212,14 @@
         "Have and Missing now use the same small tick and cross marks as Your Palette, with a one-line key. The What can I paint now? hint, the Parts and techniques note and the other long explanations on the Recipes tab are behind More info.",
       ]},
       { version: "v49", date: "19 Oct 2026", changes: [
-        "Less busy: long explanations now sit behind a small More info button. In the Compendium, each paint row has its own, and so does each page's introduction.",
+        "Less busy: long explanations now sit behind a small More info button. In Colour Lab and Guides, each paint row has its own, and so does each page's introduction.",
         "Your Palette has a List | Swatches switch. Swatches shows every paint as a small colour tile with a mark for its status (tick, half circle, ring, star, cross) and a key above. Tap a tile to open that paint. Name, brand, Merge and Remove are now under More options.",
-        "On Units, To do, Done and Repaint are three equal buttons, and the stages open underneath once you pick one (or tap Pick by stage). In the Compendium, the shopping list and Copy buttons stretch across the card, and the shopping list button is greyed out until you pick a scheme.",
+        "On Units, To do, Done and Repaint are three equal buttons, and the stages open underneath once you pick one (or tap Pick by stage). In Colour Lab and Guides, the shopping list and Copy buttons stretch across the card, and the shopping list button is greyed out until you pick a scheme.",
         "Groups of option buttons (paint status, the stage filters, Paint brands and the rest) now always sit on one row. When a group is too long for the screen, it scrolls sideways: a fade shows there are more, and your choice is always in view.",
         "Scanning a pot label works properly with all the new paints: every Vallejo code number is read (Model Air, Game Air, Mecha and the rest), Tamiya codes like XF-1 are read on Tamiya pots, and a Citadel label gives the same answer as before the new brands arrived.",
       ]},
       { version: "v48", date: "19 Oct 2026", changes: [
-        "About 2,800 more paints the app knows by name: Warhammer Tone Pro (all 30 colours in their five tones, like Carmine Blades 1 to 5), Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World, plus every range of Citadel, Vallejo, The Army Painter, Pro Acryl and AK Interactive (Speedpaint, Model Air, AK figures and more). They're suggested as you type, matched when you paste recipes or scan a pot, and used in Colour ideas.",
+        "About 2,800 more paints the app knows by name: Warhammer Tone Pro (all 30 colours in their five tones, 1 to 5), Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World, plus every range of Citadel, Vallejo, The Army Painter, Pro Acryl and AK Interactive (Speedpaint, Model Air, AK figures and more). They're suggested as you type, matched when you paste recipes or scan a pot, and used in Colour ideas.",
         "New in Settings: Paint brands. Switch off the brands you don't use, and their paints stop being suggested and matched. Your own paints are always included.",
       ]},
       { version: "v47", date: "19 Oct 2026", changes: [
@@ -21693,16 +22240,16 @@
         "New in Settings, under Your data: Restore example recipes. It adds the examples back for anyone, including people who started before, without changing your own recipes, schemes or paints and without adding any twice. The card on the Recipes tab then shows again.",
       ]},
       { version: "v43", date: "18 Oct 2026", changes: [
-        "The Compendium's colour wheel now opens up. Tap red, orange, yellow, green, blue or purple and the picture is redrawn as that colour's three groups (for example Deep reds, Reds and Pinks), each a big labelled segment with its name outside the ring. Tap a group to see its paints below the picture (yours first, dark to light, with Show all and Copy as text), and tap it again to close it.",
+        "The colour wheel now opens up. Tap red, orange, yellow, green, blue or purple and the picture is redrawn as that colour's three groups (for example Deep reds, Reds and Pinks), each a big labelled segment with its name outside the ring. Tap a group to see its paints below the picture (yours first, dark to light, with Show all and Copy as text), and tap it again to close it.",
         "To go back up, tap the Back button in the middle of the picture, the Back to all colours button under it, or press Escape. The grey middle (whites, greys, blacks and metallics) works as before. Which colour and group are open is kept while the app is open. Everything works with a keyboard and a screen reader, which says when the level changes.",
       ]},
       { version: "v42", date: "18 Oct 2026", changes: [
-        "In the Compendium, Starter schemes and Your schemes each have a small closed Shopping list heading under their paints. Open it and tap Add paints to shopping list to put every paint of that scheme you don't own on your shopping list in one go. Paints you own, or have running low, are left out, and paints already on the list are not added twice.",
+        "In Colour Lab, Starter schemes and Your schemes each have a small closed Shopping list heading under their paints. Open it and tap Add paints to shopping list to put every paint of that scheme you don't own on your shopping list in one go. Paints you own, or have running low, are left out, and paints already on the list are not added twice.",
         "Each paint remembers the scheme it came from (for example \"Scheme: <name>\"). The message says how many were added, and one Undo puts them all back. If nothing needed adding, it says so. It uses the same shopping list as everything else, and the basket count and \"On your shopping list\" marks stay right. It stays when Shop links is switched off, because it only adds to your own list.",
       ]},
       { version: "v41", date: "18 Oct 2026", changes: [
-        "The Compendium now remembers where a paint on your shopping list came from. Adding a paint from the colour wheel's matching colours says \"Compendium: Colour wheel\" and the colour part you were in (for example Blue). Adding from the Compendium's Colour ideas says \"Compendium: Colour ideas\". It is the same list the Recipes tab uses, and a paint is still on it once.",
-        "A paint that is already on your shopping list now says \"On your shopping list\" on its row in the Compendium (in the colour wheel's lists and matching colours, and in Colour ideas). It updates when you add a paint or tap Undo.",
+        "Your shopping list now remembers where a paint came from. Adding a paint from the colour wheel's matching colours says \"Colour Lab: Colour wheel\" and the colour part you were in (for example Blue). Adding from Colour ideas says \"Colour Lab: Colour ideas\". It is the same list the Recipes tab uses, and a paint is still on it once.",
+        "A paint that is already on your shopping list now says \"On your shopping list\" on its row in Colour Lab (in the colour wheel's lists and matching colours, and in Colour ideas). It updates when you add a paint or tap Undo.",
       ]},
     ];
 

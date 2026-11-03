@@ -104,8 +104,8 @@ def main():
         print("\n--- 4. Other ways out, and interruptions ---")
         # X5: the Mentor button opens the Mentor window (no move); the Paint Picker chip in it is the way out that moves
         page.evaluate("() => document.getElementById('mentor-button').click()")
-        page.wait_for_selector(".mentor-chip")
-        r = page.evaluate(TAP, ".mentor-chip")
+        page.wait_for_selector(".mentor-suggest")   # MW2 (v129): Paint Picker is the first row inside the Suggestions pill (was a chip)
+        r = page.evaluate(TAP, ".mentor-row")
         check("tapping the Paint Picker chip from the circle also moves", r["orb"] and r["ghost"] and "mo-tr" in r["ghost"]["cls"], r)
         settle(page)
         # X1: the Mentor button lands in Painting > Colour Lab

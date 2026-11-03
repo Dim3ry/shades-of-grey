@@ -71,7 +71,8 @@ def main():
               and page.get_attribute(".mentor-window", "aria-modal") == "true" and page.get_attribute(".mentor-window", "aria-label") == "Mentor"
               and page.get_attribute(".mentor-close", "aria-label") == "Close Mentor")
         # X6b: typing is on, so the box is a working input and there is a Send button (an arrow with no words), still only the one chip
-        check("one chip, Paint Picker; no other chips (and the Send button)", page.locator(".mentor-window button").evaluate_all("els => els.filter(e => e.getClientRects().length).map(e => e.textContent.trim() || e.getAttribute('aria-label'))") == ["Paint Picker", "Send", "✕"])   # chunk D: the hidden Back button (chat view only) is not counted
+        # MW2 (v129): Paint Picker and the starter questions moved inside one closed Suggestions pill, so the pill is the one button above the box (was the Paint Picker chip)
+        check("one pill, Suggestions; no chips (and the Send button)", page.locator(".mentor-window button").evaluate_all("els => els.filter(e => e.getClientRects().length).map(e => e.textContent.trim() || e.getAttribute('aria-label'))") == ["Suggestions", "Send", "✕"])   # chunk D: the hidden Back button (chat view only) is not counted
         inp = page.locator(".mentor-input")
         check("text box is on: enabled, Ask Mentor, full strength", inp.is_enabled() and inp.get_attribute("placeholder") == "Ask Mentor"
               and float(page.evaluate("() => getComputedStyle(document.querySelector('.mentor-input')).opacity")) == 1)
@@ -86,7 +87,8 @@ def main():
         for _ in range(4):
             page.keyboard.press("Tab"); seq.append(page.evaluate("() => document.activeElement.className"))
         # X6b: the box and Send are now tab stops too
-        check("Tab stays inside (chip, box, Send and X)", set(seq) == {"mentor-chip", "mentor-input", "mentor-send", "mentor-close"}, seq)
+        # MW2 (v129): the Suggestions pill takes the Paint Picker chip's place in the Tab order
+        check("Tab stays inside (pill, box, Send and X)", set(seq) == {"mentor-suggest", "mentor-input", "mentor-send", "mentor-close"}, seq)
         page.keyboard.press("Shift+Tab")
         check("Shift+Tab stays inside too", page.evaluate("() => !!document.activeElement.closest('.mentor-window')"))
         check("page behind does not scroll", page.evaluate("() => document.body.style.overflow") == "hidden")
@@ -107,7 +109,7 @@ def main():
 
         print("\n--- 3. Paint Picker chip ---")
         t.main_tab(page, "dashboard")
-        open_it(page); page.click(".mentor-chip"); page.wait_for_selector("#cmp-lab-picker")
+        open_it(page); page.click(".mentor-suggest"); page.click(".mentor-row >> text=Paint Picker"); page.wait_for_selector("#cmp-lab-picker")   # MW2 (v129): Paint Picker is the first row inside Suggestions (was a chip)
         closed(page)
         check("lands on Painting > Colour Lab > Paint Picker", page.evaluate("() => [settings.tab, settings.recipeView, compendiumState.lab].join()") == "recipes,colourlab,picker"
               and page.get_attribute('#lab-seg [data-lab="picker"]', "aria-selected") == "true" and page.inner_text('#lab-seg [data-lab="picker"]') == "Paint Picker")
@@ -123,12 +125,16 @@ def main():
             const own = w.getAnimations().map(a => [a.effect.getTiming().duration, a.effect.getKeyframes().map(k => k.clipPath)]);
             return { anims, own }; }""")
         names = {a[0]: a for a in info["anims"]}
-        check("opens out of the button: the window's own move is a 320 ms clip-path (no mp-grow)", "mp-grow" not in names
-              and len(info["own"]) == 1 and info["own"][0][0] == 320 and str(info["own"][0][1][0]).startswith("inset("), info)
+        # v129 (MO6, James 3 Nov evening: "much slower so it feels fluid"): the move now takes --motion-flow, 800 ms (it was 320 ms)
+        check("opens out of the button: the window's own move is an 800 ms clip-path (no mp-grow)", "mp-grow" not in names
+              and len(info["own"]) == 1 and info["own"][0][0] == 800 and str(info["own"][0][1][0]).startswith("inset("), info)
         # U6b (v126): the window's orb is the chosen look (Futuristic here), so the old lens orb's wake, glance and 40 s ring turn are gone;
         # the whole-orb float stays, and the look's own motion runs (Thinking's slow 14 s turn while Mentor gets ready, then the 6 s glow)
-        check("idle: float 4 s, and the look's own slow motion", names.get("mp-float", [0, 0])[1] == 4000
-              and (names.get("ml-spin", [0, 0])[1] == 14000 or names.get("ml-glow", [0, 0])[1] in (3000, 6000)), names)
+        # U7 (round 7's drawings): the look's own motion has new names and timings (a 6.5 s bob, a blink, and so on), so this checks that some
+        # slow motion of the look's own (an ml- animation of 3 s or longer) runs, not one named animation. U7 also took away the app's own 4 s float
+        # (mp-float): every round 7 look brings its own bob, and the two were stacked (the parent's decision), so the check is now that it is gone.
+        check("idle: the look's own slow motion, and no second float on top of it", "mp-float" not in names
+              and any(k and k.startswith("ml-") and v[1] >= 3000 for k, v in names.items()), names)
         check("the orb is the Futuristic look, in its own box", page.locator(".mentor-window .mentor-orbbox.ml-live svg.ml-futuristic").count() == 1)
         page.wait_for_function("() => document.querySelector('.mentor-window').getAnimations().length === 0")   # MW1: opened in full first
         # T6: the close animation is read as soon as Escape has been handled (on a busy machine a read made afterwards could miss it);
@@ -138,7 +144,8 @@ def main():
         page.keyboard.press("Escape")
         closing = page.evaluate("() => window.__closing") or page.evaluate("() => { const w = document.querySelector('.mentor-window'); return w ? w.getAnimations().map(a => [a.effect.getTiming().duration, a.effect.getTiming().direction]) : null; }")
         # MW1 (v127): closing is the same move backwards into the button, 240 ms (X5 shrank it with mp-grow in reverse in 120 ms)
-        check("close is the same move in reverse, 240 ms", closing and [240, "reverse"] in closing, closing)
+        # v129 (MO6): closing is two thirds of the open, 533 ms (it was 240 ms)
+        check("close is the same move in reverse, 533 ms", closing and [533, "reverse"] in closing, closing)
         closed(page)
         check("nothing keeps running once closed", page.evaluate("() => document.getAnimations().filter(a => String(a.animationName || '').startsWith('mp-')).length") == 0)
         rm = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block", reduced_motion="reduce")
@@ -162,16 +169,16 @@ def main():
             pg = c2.new_page(); pg.on("pageerror", lambda x: errors.append(str(x)))
             t.fresh(pg)
             open_it(pg); quiet(pg)
-            w, c, x, ch = box(pg, ".mentor-window"), box(pg, ".mentor-chip"), box(pg, ".mentor-close"), box(pg, ".mentor-input")
+            w, c, x, ch = box(pg, ".mentor-window"), box(pg, ".mentor-suggest"), box(pg, ".mentor-close"), box(pg, ".mentor-input")   # MW2 (v129): the Suggestions pill in place of the Paint Picker chip
             bar = box(pg, ".tabs .arc")
             ok_in = w[0] >= 0 and w[0] + w[2] <= width and w[1] >= 0 and w[1] + w[3] <= bar[1] + bar[3]
             check(f"{width} px {scheme}: window inside the screen, above the bar, no wider than 380 px", ok_in and w[2] <= 380.5, w)
-            check(f"{width} px {scheme}: close X and chip are 44 px or more, nothing runs past the window", min(c[2], c[3], x[2], x[3]) >= 44
+            check(f"{width} px {scheme}: close X and Suggestions pill are 44 px or more, nothing runs past the window", min(c[2], c[3], x[2], x[3]) >= 44
                   and c[0] + c[2] <= w[0] + w[2] and ch[0] + ch[2] <= w[0] + w[2] and pg.evaluate("() => document.documentElement.scrollWidth <= document.documentElement.clientWidth"), (c, x))
             if width == 1280:
                 check("wide screen: window is centred", abs((w[0] + w[2] / 2) - width / 2) < 2, w)
-            check(f"{width} px {scheme}: no resting transform on the X, chip or window", pg.evaluate(
-                "() => ['.mentor-close', '.mentor-chip'].every(s => getComputedStyle(document.querySelector(s)).transform === 'none')"))
+            check(f"{width} px {scheme}: no resting transform on the X, pill or window", pg.evaluate(
+                "() => ['.mentor-close', '.mentor-suggest'].every(s => getComputedStyle(document.querySelector(s)).transform === 'none')"))
             c2.close()
         check("no page errors or pop-ups", not errors, errors)
         browser.close()
