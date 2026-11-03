@@ -22439,7 +22439,10 @@
         "Model cards are compact: each shows its name, game, army and stage. Tap a card to open it with the stage buttons, recipes and Details, and tap its header to close it. One card is open at a time.",
         "Buttons and chips dim the moment you touch them, change colour smoothly and keep their rounded shape when pressed. The square flash some phones drew on a tap is gone.",
         "Switches on Painting, Tools and Settings, Colour Lab and Guides now empty the old choice and fill the new one with colour.",
-        "Fold-outs unroll and what is below slides down, the Undo message and questions fade away, and Back from a recipe keeps your place in the list. With Reduce motion on, everything still happens at once.",
+        "Fold-outs unroll and what is below slides down, the Undo message and questions fade away, and Back from a recipe keeps your place in the list. A deleted unit fades out while the cards below glide up, and Undo glides them back. With Reduce motion on, everything still happens at once.",
+        "Opening the app shows the loading ring round the start circle again, filling as the app loads. The app icon is now Mentor.",
+        "Tapping the start circle no longer flashes a blue square where the bar will be, and the bar fades back in after typing instead of popping.",
+        "Tapping the Grounded Mentor in its window sends its paint drops further, in random directions and colours.",
         "Mentor knows more about insect wings, resin prints, lights in models and jungle bases.",
       ] },
       { version: "v129", date: "3 Nov 2026", changes: [
