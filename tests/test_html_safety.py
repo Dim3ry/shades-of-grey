@@ -95,6 +95,8 @@ REVIEWED_URLS = {
     # Shop links: a fixed shop address from the SHOPS table with the paint name passed through encodeURIComponent.
     "78f75cb744d0": "shop link (shopping list)",
     "11baaa6a3e70": "shop link (paint panel)",
+    # L1: a fixed shop address from the SHOPS table with a product type from where-to-buy.js (built-in data) passed through encodeURIComponent.
+    "e4388a5f06de": "shop link (Where to buy)",
     # Drawing helpers: attribute names written out in the code that calls them (chart and icon shapes), never typed text.
     "76f8e1b1d97b": "chart shape helper",
     "4e02910d676a": "drawing helper",
