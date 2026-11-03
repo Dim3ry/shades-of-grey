@@ -254,7 +254,10 @@ def main():
             if on and server[0] is None:
                 server[0] = subprocess.Popen([sys.executable, "-m", "http.server", str(own_port), "--bind", "127.0.0.1"],
                                              cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                for _ in range(50):
+                # T6: wait until the server answers, up to 60 s (it gave up after about 5 to 15 s, which a busy machine needed just
+                # to start Python, and the next page load was refused)
+                deadline = time.time() + 60
+                while time.time() < deadline:
                     try:
                         socket.create_connection(("127.0.0.1", own_port), timeout=0.2).close(); break
                     except OSError:

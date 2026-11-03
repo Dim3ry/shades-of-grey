@@ -53,7 +53,7 @@ def main():
 
         # 2. A newer page whose code files arrive.
         ctx.unroute(newer_code)
-        # T6: the offline helper waits at most 4 s (PAGE_WAIT_MS in sw.js) for the new page and all its code files; after that it shows
+        # T6: the offline helper waits at most 4 s (its PAGE_WAIT_MS) for the new page and all its code files; after that it shows
         # the saved page on purpose (a slow connection) and keeps fetching, so the next load is the new one. On a busy machine the
         # fetching alone took longer than 4 s and this check saw the old version. So: the newer page on this load, or, only when this
         # load really waited the 4 s, on the next one. A helper that never uses the newer page still fails.
