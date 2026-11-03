@@ -100,19 +100,25 @@ def main():
         check("no answer: the suggestions are chips", sug.count() >= 1, sug.count())
         status = page.locator(".mentor-window [role=status]")
         check("the answer is announced politely", status.get_attribute("aria-live") == "polite" and status.inner_text() == "I do not know that yet.")
-        top_chips = page.locator(".mentor-col > .mentor-chips .mentor-chip").evaluate_all("els => els.map(e => e.textContent)")
-        check("starter chips sit after Paint Picker", top_chips[0] == "Paint Picker" and "Why add water?" in top_chips and "How do I thin paint?" in top_chips, top_chips)
-        row = page.locator(".mentor-col > .mentor-chips")
-        # A1: the pills now wrap onto several lines (no sideways scroll) and the strip scrolls up and down when it is tall, so the old one-line check became this
-        check("the chip row wraps and never scrolls sideways", page.evaluate(
-            "() => { const r = document.querySelector('.mentor-col > .mentor-chips'), c = getComputedStyle(r); return c.overflowX === 'hidden' && c.flexWrap === 'wrap' && c.overflowY === 'auto'; }"))
-        page.locator(".mentor-col > .mentor-chips").get_by_text("Why add water?").click()
-        check("a starter chip sends its question as if typed", page.locator(".mentor-me").last.inner_text() == "Why add water?" and count(page, ".mentor-reply .mentor-source") >= 2)
-        again = page.locator(".mentor-chip").evaluate_all("els => els.map(e => e.textContent)")
-        check("a used chip drops out of every row, and focus stays inside the window", "Why add water?" not in again and page.evaluate("() => !!document.activeElement.closest('.mentor-window')"), again)
+        # MW2 (v129): the starter questions are no longer a strip of chips under the conversation (redrawn after every answer); they are rows
+        # inside one closed Suggestions pill under the latest answer, Paint Picker first, and after a no-answer reply the pill leaves out the
+        # questions that reply already shows. So these checks open the pill and read its rows (they read the chip strip before), and the A1
+        # check that the strip wraps became a check that the rows never run sideways.
+        sug_texts = sug.evaluate_all("els => els.map(e => e.textContent)")
+        page.locator(".mentor-suggest").click()
+        top_rows = page.locator(".mentor-rows .mentor-row").evaluate_all("els => els.map(e => e.textContent)")
+        check("the starter questions sit after Paint Picker in the pill, leaving out the ones the no-answer reply shows",
+              top_rows[0] == "Paint Picker" and not set(top_rows[1:]) & set(sug_texts) and {"Why add water?", "How do I thin paint?"} <= set(top_rows[1:]) | set(sug_texts), (top_rows, sug_texts))
+        check("the rows never run sideways", page.evaluate(
+            "() => { const s = document.querySelector('.mentor-scroll'), r = s.getBoundingClientRect(); return s.scrollWidth <= s.clientWidth && [...document.querySelectorAll('.mentor-row')].every(x => x.getBoundingClientRect().right <= r.right + 0.5); }"))
+        water = "Why add water?"   # a row in the pill, or (when the no-answer reply already shows it) that reply's chip
+        (page.locator(".mentor-rows") if water in top_rows else none).get_by_text(water, exact=True).click()
+        check("a starter question sends itself as if typed", page.locator(".mentor-me").last.inner_text() == water and count(page, ".mentor-reply .mentor-source") >= 2, water)
+        again = page.locator(".mentor-chip, .mentor-row").evaluate_all("els => els.map(e => e.textContent)")
+        check("a used chip drops out of every row, and focus stays inside the window", water not in again and page.evaluate("() => !!document.activeElement.closest('.mentor-window')"), again)
         none.locator(".mentor-chip").first.click()
         check("a suggestion chip in a no-answer message works too and goes", page.locator(".mentor-me").last.inner_text() == "How do I thin paint?"
-              and "How do I thin paint?" not in page.locator(".mentor-chip").evaluate_all("els => els.map(e => e.textContent)"))
+              and "How do I thin paint?" not in page.locator(".mentor-chip, .mentor-row").evaluate_all("els => els.map(e => e.textContent)"))   # MW2: and from the pill's rows
 
         print("\n--- 3. Sources, memory, cap ---")
         n = count(page, ".mentor-msg")
@@ -155,7 +161,7 @@ def main():
         open_it(page)
         send_typed(page, "what goes with red")
         send_typed(page, "zzqx qwerty")
-        page.locator(".mentor-col > .mentor-chips").get_by_text("Paint Picker").hover()
+        page.locator(".mentor-suggest").hover()   # MW2 (v129): the Suggestions pill (Paint Picker is inside it now)
         check("sending messages writes nothing to storage", page.evaluate("() => window.__sets") == 0)
         check("no network use, no pop-ups, no page errors", not requests and not errors, (requests, errors))
         page.keyboard.press("Escape"); closed(page)
@@ -170,7 +176,7 @@ def main():
             flat = page.evaluate("() => document.documentElement.scrollWidth <= innerWidth && (w => w.scrollWidth <= w.clientWidth)(document.querySelector('.mentor-window'))")
             small = page.evaluate("""() => [...document.querySelectorAll('.mentor-window button, .mentor-window input')].filter(b => b.getClientRects().length && !b.closest('.idea-list') && !b.closest('.shop-add-row'))
                 .filter(b => { const r = b.getBoundingClientRect(); return r.height < 44 || r.width < 44; }).map(b => b.className)""")
-            flat_tx = page.evaluate("() => [...document.querySelectorAll('.mentor-send, .mentor-chip, .mentor-source')].every(b => getComputedStyle(b).transform === 'none')")
+            flat_tx = page.evaluate("() => [...document.querySelectorAll('.mentor-send, .mentor-chip, .mentor-source, .mentor-suggest, .mentor-row')].every(b => getComputedStyle(b).transform === 'none')")
             check(f"{w}x{h} {'dark' if dark else 'light'}: window on screen, no sideways scroll, taps 44 px+, no resting transform", fits and flat and not small and flat_tx, (r, flat, small, flat_tx))
             page.keyboard.press("Escape"); closed(page)
         page.evaluate("() => document.documentElement.removeAttribute('data-appearance')")

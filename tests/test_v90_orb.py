@@ -87,7 +87,7 @@ def main():
         print("\n--- 4. It still opens Ask the Mentor ---")
         start(page)
         page.click("#mentor-button")
-        page.click(".mentor-chip")   # X5: the orb opens the Mentor window; its Paint Picker chip opens the picker in Painting > Colour Lab
+        page.click(".mentor-suggest"); page.click(".mentor-row >> nth=0")   # MW2 (v129): Paint Picker is the first row inside the Suggestions pill (was a chip). X5: the orb opens the Mentor window; its Paint Picker chip opens the picker in Painting > Colour Lab
         page.wait_for_selector("#cmp-lab-picker")
         # X1: the picker in Painting > Colour Lab
         check("tapping the orb opens the Picker in Colour Lab", page.get_attribute('#lab-seg [data-lab="picker"]', "aria-selected") == "true")

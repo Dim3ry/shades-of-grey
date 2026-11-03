@@ -71,7 +71,8 @@ def main():
               and page.get_attribute(".mentor-window", "aria-modal") == "true" and page.get_attribute(".mentor-window", "aria-label") == "Mentor"
               and page.get_attribute(".mentor-close", "aria-label") == "Close Mentor")
         # X6b: typing is on, so the box is a working input and there is a Send button (an arrow with no words), still only the one chip
-        check("one chip, Paint Picker; no other chips (and the Send button)", page.locator(".mentor-window button").evaluate_all("els => els.filter(e => e.getClientRects().length).map(e => e.textContent.trim() || e.getAttribute('aria-label'))") == ["Paint Picker", "Send", "✕"])   # chunk D: the hidden Back button (chat view only) is not counted
+        # MW2 (v129): Paint Picker and the starter questions moved inside one closed Suggestions pill, so the pill is the one button above the box (was the Paint Picker chip)
+        check("one pill, Suggestions; no chips (and the Send button)", page.locator(".mentor-window button").evaluate_all("els => els.filter(e => e.getClientRects().length).map(e => e.textContent.trim() || e.getAttribute('aria-label'))") == ["Suggestions", "Send", "✕"])   # chunk D: the hidden Back button (chat view only) is not counted
         inp = page.locator(".mentor-input")
         check("text box is on: enabled, Ask Mentor, full strength", inp.is_enabled() and inp.get_attribute("placeholder") == "Ask Mentor"
               and float(page.evaluate("() => getComputedStyle(document.querySelector('.mentor-input')).opacity")) == 1)
@@ -86,7 +87,8 @@ def main():
         for _ in range(4):
             page.keyboard.press("Tab"); seq.append(page.evaluate("() => document.activeElement.className"))
         # X6b: the box and Send are now tab stops too
-        check("Tab stays inside (chip, box, Send and X)", set(seq) == {"mentor-chip", "mentor-input", "mentor-send", "mentor-close"}, seq)
+        # MW2 (v129): the Suggestions pill takes the Paint Picker chip's place in the Tab order
+        check("Tab stays inside (pill, box, Send and X)", set(seq) == {"mentor-suggest", "mentor-input", "mentor-send", "mentor-close"}, seq)
         page.keyboard.press("Shift+Tab")
         check("Shift+Tab stays inside too", page.evaluate("() => !!document.activeElement.closest('.mentor-window')"))
         check("page behind does not scroll", page.evaluate("() => document.body.style.overflow") == "hidden")
@@ -107,7 +109,7 @@ def main():
 
         print("\n--- 3. Paint Picker chip ---")
         t.main_tab(page, "dashboard")
-        open_it(page); page.click(".mentor-chip"); page.wait_for_selector("#cmp-lab-picker")
+        open_it(page); page.click(".mentor-suggest"); page.click(".mentor-row >> text=Paint Picker"); page.wait_for_selector("#cmp-lab-picker")   # MW2 (v129): Paint Picker is the first row inside Suggestions (was a chip)
         closed(page)
         check("lands on Painting > Colour Lab > Paint Picker", page.evaluate("() => [settings.tab, settings.recipeView, compendiumState.lab].join()") == "recipes,colourlab,picker"
               and page.get_attribute('#lab-seg [data-lab="picker"]', "aria-selected") == "true" and page.inner_text('#lab-seg [data-lab="picker"]') == "Paint Picker")
@@ -162,16 +164,16 @@ def main():
             pg = c2.new_page(); pg.on("pageerror", lambda x: errors.append(str(x)))
             t.fresh(pg)
             open_it(pg); quiet(pg)
-            w, c, x, ch = box(pg, ".mentor-window"), box(pg, ".mentor-chip"), box(pg, ".mentor-close"), box(pg, ".mentor-input")
+            w, c, x, ch = box(pg, ".mentor-window"), box(pg, ".mentor-suggest"), box(pg, ".mentor-close"), box(pg, ".mentor-input")   # MW2 (v129): the Suggestions pill in place of the Paint Picker chip
             bar = box(pg, ".tabs .arc")
             ok_in = w[0] >= 0 and w[0] + w[2] <= width and w[1] >= 0 and w[1] + w[3] <= bar[1] + bar[3]
             check(f"{width} px {scheme}: window inside the screen, above the bar, no wider than 380 px", ok_in and w[2] <= 380.5, w)
-            check(f"{width} px {scheme}: close X and chip are 44 px or more, nothing runs past the window", min(c[2], c[3], x[2], x[3]) >= 44
+            check(f"{width} px {scheme}: close X and Suggestions pill are 44 px or more, nothing runs past the window", min(c[2], c[3], x[2], x[3]) >= 44
                   and c[0] + c[2] <= w[0] + w[2] and ch[0] + ch[2] <= w[0] + w[2] and pg.evaluate("() => document.documentElement.scrollWidth <= document.documentElement.clientWidth"), (c, x))
             if width == 1280:
                 check("wide screen: window is centred", abs((w[0] + w[2] / 2) - width / 2) < 2, w)
-            check(f"{width} px {scheme}: no resting transform on the X, chip or window", pg.evaluate(
-                "() => ['.mentor-close', '.mentor-chip'].every(s => getComputedStyle(document.querySelector(s)).transform === 'none')"))
+            check(f"{width} px {scheme}: no resting transform on the X, pill or window", pg.evaluate(
+                "() => ['.mentor-close', '.mentor-suggest'].every(s => getComputedStyle(document.querySelector(s)).transform === 'none')"))
             c2.close()
         check("no page errors or pop-ups", not errors, errors)
         browser.close()
