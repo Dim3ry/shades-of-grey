@@ -252,8 +252,8 @@ def main():
         page.click("#add-wh")
         page.fill("#wh-text", "this is not an army list")
         page.click("#wh-read")
-        ok, t = says("doesn't look like a list exported from the Warhammer app")
-        check("army list paste that isn't a list gets the same words", ok and 'Lictor (60 points)' in t["text"], t)
+        ok, t = says("doesn't look like an exported army list")   # H: the message no longer names the Warhammer app or its units
+        check("army list paste that isn't a list gets the same words", ok and 'Captain (60 points)' in t["text"], t)
 
         check("none of these showed a browser pop-up", not browser_boxes, browser_boxes[:3])
 
