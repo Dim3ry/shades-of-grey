@@ -367,9 +367,12 @@
     }
     :is(body.launching, .mo-ring) .arc [data-tab] { padding: 0; gap: 4px; background-color: color-mix(in srgb, var(--accent-fill, var(--accent)) 14%, var(--card)); color: var(--text); font-size: 13px; line-height: 16px; font-weight: 400; }
     :is(body.launching, .mo-ring) .arc .icon { font-size: 32px; color: var(--accent); }
-    :is(body.launching, .mo-ring) .arc [data-tab="dashboard"] { left: 25.10px; top: 10.10px; width: 167.10px; height: 167.10px; clip-path: path('M163.96 0.00 A170 170 0 0 0 0.00 163.96 L89.95 167.10 A80 80 0 0 1 167.10 89.95 Z'); }
-    :is(body.launching, .mo-ring) .arc [data-tab="units"] { left: 197.79px; top: 10.10px; width: 167.10px; height: 167.10px; clip-path: path('M167.10 163.96 A170 170 0 0 0 3.14 0.00 L0.00 89.95 A80 80 0 0 1 77.16 167.10 Z'); }
-    :is(body.launching, .mo-ring) .arc [data-tab="recipes"] { left: 25.10px; top: 182.79px; width: 167.10px; height: 167.10px; clip-path: path('M0.00 3.14 A170 170 0 0 0 163.96 167.10 L167.10 77.16 A80 80 0 0 1 89.95 0.00 Z'); }
+    /* MN1: the circle's order matches the bar's (James, 3 Nov): Models top left, Painting top right, Dashboard bottom left, Tools bottom right. The bar
+       reads Dashboard, Models, Painting, Tools with Models and Painting raised in the middle, so on the travel (Mo4b, Mo4c) the top two go to the raised
+       middle pieces, the bottom two go down and out to the low ends, and no piece crosses another. Each segment keeps its icon, label, colour and size. */
+    :is(body.launching, .mo-ring) .arc [data-tab="units"] { left: 25.10px; top: 10.10px; width: 167.10px; height: 167.10px; clip-path: path('M163.96 0.00 A170 170 0 0 0 0.00 163.96 L89.95 167.10 A80 80 0 0 1 167.10 89.95 Z'); }
+    :is(body.launching, .mo-ring) .arc [data-tab="recipes"] { left: 197.79px; top: 10.10px; width: 167.10px; height: 167.10px; clip-path: path('M167.10 163.96 A170 170 0 0 0 3.14 0.00 L0.00 89.95 A80 80 0 0 1 77.16 167.10 Z'); }
+    :is(body.launching, .mo-ring) .arc [data-tab="dashboard"] { left: 25.10px; top: 182.79px; width: 167.10px; height: 167.10px; clip-path: path('M0.00 3.14 A170 170 0 0 0 163.96 167.10 L167.10 77.16 A80 80 0 0 1 89.95 0.00 Z'); }
     :is(body.launching, .mo-ring) .arc [data-tab="guides"] { left: 197.79px; top: 182.79px; width: 167.10px; height: 167.10px; clip-path: path('M3.14 167.10 A170 170 0 0 0 167.10 3.14 L77.16 0.00 A80 80 0 0 1 0.00 77.16 Z'); }
     body.launching .mentor-orb {
       left: 133px; top: 118px; width: 124px; height: 124px; padding: 0; justify-content: center; gap: 4px; font-size: 14px; line-height: 18px;

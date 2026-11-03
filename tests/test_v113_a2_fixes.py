@@ -5,7 +5,7 @@
 3. A kept unfinished unit: tapping Add unit shows no second box; the top card is the only offer.
 4. Unit name, game and faction boxes stop at 80 characters; longer saved values still load and show unchanged.
 5. Every Undo message lasts 10 seconds from one shared setting (UNDO_SECONDS); it sits above the menu and is readable at 390, 360, 320 px.
-6. The start circle's four segments arrive Dashboard, Models, Tools, Painting (clockwise); where they sit is unchanged.
+6. The start circle's four segments arrive clockwise from the top left. (v127, MN1: they moved, so that is now Models, Painting, Tools, Dashboard.)
 7. The Minifolio title takes every section to a clean start page (nothing from the old screen left behind).
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, sys
@@ -139,14 +139,16 @@ def main():
             const f = () => { for (const b of document.querySelectorAll('.arc [data-tab]'))
                 if (!b.classList.contains('ring-hold') && !seen.includes(b.dataset.tab) && document.querySelector('.mo-load')) seen.push(b.dataset.tab);
               if (!document.querySelector('.mo-load') && performance.now() - t0 > 300 || performance.now() - t0 > 5000) done(seen); else requestAnimationFrame(f); }; f(); })""")
-        check("they arrive Dashboard, Models, Tools, Painting", order == ["dashboard", "units", "guides", "recipes"], order)
+        # v127 (MN1, James): the segments moved (Models top left, Painting top right, Dashboard bottom left, Tools bottom right), so clockwise
+        # from the top left they now arrive Models, Painting, Tools, Dashboard
+        check("they arrive clockwise from the top left: Models, Painting, Tools, Dashboard", order == ["units", "recipes", "guides", "dashboard"], order)
         wait_settled(page)
         page.wait_for_function("() => !document.querySelector('.mo-load')")
         pos = page.evaluate("""() => Object.fromEntries([...document.querySelectorAll('.arc [data-tab]')].map(b => { const r = b.getBoundingClientRect();
             return [b.dataset.tab, [r.left + r.width / 2, r.top + r.height / 2]]; }))""")
-        check("they still sit Dashboard top left, Models top right, Painting bottom left, Tools bottom right",
-              pos["dashboard"][0] < pos["units"][0] and pos["dashboard"][1] < pos["recipes"][1] and pos["recipes"][0] < pos["guides"][0]
-              and abs(pos["dashboard"][1] - pos["units"][1]) < 5 and abs(pos["recipes"][1] - pos["guides"][1]) < 5, pos)
+        check("they sit Models top left, Painting top right, Dashboard bottom left, Tools bottom right (v127, MN1)",
+              pos["units"][0] < pos["recipes"][0] and pos["units"][1] < pos["dashboard"][1] and pos["dashboard"][0] < pos["guides"][0]
+              and abs(pos["units"][1] - pos["recipes"][1]) < 5 and abs(pos["dashboard"][1] - pos["guides"][1]) < 5, pos)
 
         print("\n--- 7. Title button: clean start page from every section ---")
         CLEAN = """() => ({ launching: document.body.classList.contains('launching'),

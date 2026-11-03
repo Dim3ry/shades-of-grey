@@ -4559,10 +4559,16 @@
       for (const it of items) Object.assign(it, { last: {}, bgAt: blend(it.k0.bg, it.k1.bg), colorAt: blend(it.k0.color, it.k1.color), iconAt: blend(it.k0.icon, it.k1.icon) });
       const N = 24;
       const r2 = (v) => Math.round(v * 100) / 100;
+      // MN1: on the way back the soft bounce carries Dashboard and Tools a little past their places, towards each other under the Mentor button,
+      // and the circle's gaps are only 4 degrees, so they would overlap there for a few frames. Only on the way back, each piece's turn past its
+      // place is capped at 1.5 degrees (the clock, the easing and everything else in the bounce are unchanged; Models and Painting never reach the cap).
+      const SWAY = 1.5 * Math.PI / 180;
+      for (const it of items) it.sway = SWAY / Math.max(1e-6, Math.abs(it.elo - it.slo), Math.abs(it.ehi - it.shi));
       function render(p, pop) {
         const q = Math.min(1, Math.max(0, p)), out = TRAVEL_SPREAD * Math.sin(Math.PI * q) / sb;
         for (const it of items) {
-          const lo = L(it.slo, it.elo, p), hi = L(it.shi, it.ehi, p), ro = L(it.ro[0], it.ro[1], p), ri = L(it.ri[0], it.ri[1], p);
+          const pa = back && p > 1 ? 1 + Math.min(p - 1, it.sway) : p;   // MN1: the turn's progress (see SWAY)
+          const lo = L(it.slo, it.elo, pa), hi = L(it.shi, it.ehi, pa), ro = L(it.ro[0], it.ro[1], p), ri = L(it.ri[0], it.ri[1], p);
           const mid = (lo + hi) / 2, off = out + (it.chosen ? TRAVEL_POP * Math.sin(Math.PI * pop) / sb : 0);
           const dx = Math.cos(mid) * off, dy = Math.sin(mid) * off;
           const cx = L(CR[0], CB[0], p) + dx - x0, cy = L(CR[1], CB[1], p) + dy - y0;
@@ -4695,11 +4701,11 @@
       const moving = canMove();
       if (window.minifolioRing) window.minifolioRing.app = true;   // early.js stops lighting it; from here this does
       const p0 = window.minifolioRing ? window.minifolioRing.progress : 0;
-      // A2: the ring turns clockwise from the top, so the segments arrive clockwise from the top left: Dashboard, Models, Tools, Painting.
-      // Only this arrival order changes; the segments stay where they are (the menu's own order is Dashboard, Models, Painting, Tools).
+      // A2: the ring turns clockwise from the top, so the segments arrive clockwise from the top left. MN1: with the new places that is
+      // Models, Painting, Tools, Dashboard. Only this arrival order changes; the menu's own order (and keyboard order) is Dashboard, Models, Painting, Tools.
       const byName = {};
       for (const b of arcEl.querySelectorAll("[data-tab]")) byName[b.dataset.tab] = b;
-      const wedges = ["dashboard", "units", "guides", "recipes"].map(n => byName[n]);
+      const wedges = ["units", "recipes", "guides", "dashboard"].map(n => byName[n]);
       wedges.forEach(w => w.classList.add("ring-hold"));
       document.body.classList.add("ring-loading");
       const stepAt = [() => bootSteps.data, () => bootSteps.draw, () => bootSteps.load];
