@@ -12581,18 +12581,21 @@
       groups.setAttribute("role", "group");
       groups.setAttribute("aria-label", "Show detail recipes by group");
       const activeGroup = groupValue(door, DETAIL_GROUPS, st.detailGroup);
-      for (const g of groupButtons(door, DETAIL_GROUPS)) {
+      const nums = door.guides ? guideListNumbers("detail") : null;   // G3: in Guides, groups and recipes A to Z, each with its number
+      for (const g of groupButtons(door, nums ? nums.sortGroups(DETAIL_GROUPS) : DETAIL_GROUPS)) {
         const chip = makeChip(g.name, g.key === activeGroup, () => onGroup(groupNext(door, g.key, activeGroup), g.key));
         chip.dataset.detailGroup = g.key || "all";
+        if (nums) guideNumberChip(chip, g.name, nums.groups.get(g.key));
         groups.appendChild(chip);
       }
       const chips = document.createElement("div");
       chips.className = "chips chips-wrap";   // v49: a list to browse, so it wraps (the group buttons above are one row)
       chips.id = door.id("detail-chips");
       chips.style.marginTop = "0";
-      for (const r of detailRecipesShown(st, door)) {
+      for (const r of nums ? nums.sort(detailRecipesShown(st, door)) : detailRecipesShown(st, door)) {
         const chip = makeChip(r.name, r.key === st.detail, () => onPick(r.key === st.detail ? "" : r.key, r.key));
         chip.dataset.detail = r.key;
+        if (nums) guideNumberChip(chip, r.name, nums.entries.get(r.key));
         chips.appendChild(chip);
       }
       box.append(title, compactRows(door) ? buildMoreInfo([hint], { state: infoState(door, "detail-hint"), id: door.id("detail-hint-panel"), label: "detail recipes" }) : hint);
@@ -12604,6 +12607,7 @@
           rebuild: (text) => { onSearch(text); return buildDetailRecipes(door, onPick, onGroup, onSearch); },
         }));
       }
+      if (door.guides) box.appendChild(guideFiltersButton(st, "detail", groups));   // G3: Filters folds the group buttons away
       box.appendChild(groups);
       if (!(door.short && !activeGroup && !q) && (!q || chips.childElementCount)) { box.appendChild(chips); const m = collapseChips(door, st, "detail", chips); if (m) box.appendChild(m); }
       const recipe = detailRecipesShown(st, door).find(r => r.key === st.detail);
@@ -12784,18 +12788,21 @@
       groups.setAttribute("role", "group");
       groups.setAttribute("aria-label", "Show basing tips by group");
       const activeGroup = groupValue(door, BASING_GROUPS, st.basingGroup);
-      for (const g of groupButtons(door, BASING_GROUPS)) {
+      const nums = door.guides ? guideListNumbers("basing") : null;   // G3: in Guides, groups and tips A to Z, each with its number
+      for (const g of groupButtons(door, nums ? nums.sortGroups(BASING_GROUPS) : BASING_GROUPS)) {
         const chip = makeChip(g.name, g.key === activeGroup, () => onGroup(groupNext(door, g.key, activeGroup), g.key));
         chip.dataset.basingGroup = g.key || "all";
+        if (nums) guideNumberChip(chip, g.name, nums.groups.get(g.key));
         groups.appendChild(chip);
       }
       const chips = document.createElement("div");
       chips.className = "chips chips-wrap";   // v49: a list to browse, so it wraps (the group buttons above are one row)
       chips.id = door.id("basing-chips");
       chips.style.marginTop = "0";
-      for (const t of basingTipsShown(st, door)) {
+      for (const t of nums ? nums.sort(basingTipsShown(st, door)) : basingTipsShown(st, door)) {
         const chip = makeChip(t.name, t.key === st.basing, () => onPick(t.key === st.basing ? "" : t.key, t.key));
         chip.dataset.basing = t.key;
+        if (nums) guideNumberChip(chip, t.name, nums.entries.get(t.key));
         chips.appendChild(chip);
       }
       box.append(title, compactRows(door) ? buildMoreInfo([hint], { state: infoState(door, "basing-hint"), id: door.id("basing-hint-panel"), label: "basing tips" }) : hint);
@@ -12807,6 +12814,7 @@
           rebuild: (text) => { onSearch(text); return buildBasingTips(door, onPick, onGroup, onSearch); },
         }));
       }
+      if (door.guides) box.appendChild(guideFiltersButton(st, "basing", groups));   // G3: Filters folds the group buttons away
       box.appendChild(groups);
       if (!(door.short && !activeGroup && !q) && (!q || chips.childElementCount)) { box.appendChild(chips); const m = collapseChips(door, st, "basing", chips); if (m) box.appendChild(m); }
       const tip = basingTipsShown(st, door).find(t => t.key === st.basing);
@@ -14912,6 +14920,60 @@
       for (const c of GUIDE_CATEGORIES) for (const gr of guideGroupsOf(c.key, kn).groups) for (const [k, n] of gr.nums) out.set(k, n);
       return out;
     }
+    // G3: Detail recipes and Basing keep their own groups (DETAIL_GROUPS, BASING_GROUPS) and get the same kind of numbers as the other
+    // sections, worked out each time the list is drawn and never stored: the section's place in GUIDE_CATEGORIES, then the group's place
+    // A to Z (3.2), then the entry's place A to Z inside its group (3.2.5). Keys and links are unchanged. An entry whose group is not in
+    // the group list gets no number. sort(list) puts recipes or tips in number order (anything unnumbered last, in the order given).
+    function guideListNumbers(cat) {
+      const out = { groups: new Map(), entries: new Map() };
+      const src = cat === "detail" && typeof DETAIL_GROUPS !== "undefined" && typeof DETAIL_RECIPES !== "undefined" ? [DETAIL_GROUPS, DETAIL_RECIPES]
+        : cat === "basing" && typeof BASING_GROUPS !== "undefined" && typeof BASING_TIPS !== "undefined" ? [BASING_GROUPS, BASING_TIPS] : [[], []];
+      const sec = guideSectionNumber(cat);
+      const byName = (a, b) => guideByTitle({ title: String(a.name), key: a.key }, { title: String(b.name), key: b.key });
+      const rank = new Map(), groupRank = new Map();
+      if (sec) [...src[0]].sort(byName).forEach((g, i) => {
+        const num = `${sec}.${i + 1}`;
+        out.groups.set(g.key, num);
+        groupRank.set(g.key, i);
+        src[1].filter(x => x.group === g.key).sort(byName).forEach((x, j) => { out.entries.set(x.key, `${num}.${j + 1}`); rank.set(x.key, rank.size); });
+      });
+      const by = (ranks) => (list) => list.map((x, i) => [x, ranks.has(x.key) ? ranks.get(x.key) : Infinity, i]).sort((a, b) => a[1] - b[1] || a[2] - b[2]).map(p => p[0]);
+      out.sort = by(rank);
+      out.sortGroups = by(groupRank);
+      return out;
+    }
+    // G3: a chip with its number at the right (the title, then the same small grey span as the Guides rows). The number never wraps.
+    function guideNumberChip(chip, title, num) {
+      if (!num) return chip;
+      const t = document.createElement("span");
+      t.className = "g3-chip-title";
+      t.textContent = title;
+      chip.replaceChildren(t, Object.assign(document.createElement("span"), { className: "guides-num", textContent: num }));
+      chip.classList.add("g3-num-chip");
+      return chip;
+    }
+    // G3: the small Filters button over the group buttons of Detail recipes and Basing in Guides. It folds that row away and shows it
+    // again (shown at first). The chosen group still filters while the row is folded. Like More info and the Units Filters, the open or
+    // folded state is kept only while the app is open (in the door's state), never saved.
+    function guideFiltersButton(st, name, row) {
+      const shut = st.filtersShut || (st.filtersShut = {});
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "more-info-button g3-filters";
+      b.id = row.id + "-toggle";
+      b.setAttribute("aria-controls", row.id);
+      const text = document.createElement("span");
+      text.textContent = "Filters";
+      const mark = document.createElement("span");
+      mark.className = "fold-mark";
+      mark.setAttribute("aria-hidden", "true");
+      b.append(text, mark);
+      row.classList.add("g3-filter-row");
+      const show = () => { b.setAttribute("aria-expanded", String(!shut[name])); row.hidden = !!shut[name]; };
+      b.addEventListener("click", () => { shut[name] = !shut[name]; show(); });
+      show();
+      return b;
+    }
     // G2b: the See also entries of one entry (guides-groups.js), up to 3, in the order given. A key that is not in the library,
     // the entry's own key or a key named twice is skipped, so a wrong key never shows a dead link.
     function guideSeeAlso(e, kn = knowledgeIndex()) {
@@ -14977,7 +15039,7 @@
         return;
       }
       const g = guidesState, kn = knowledgeIndex();
-      const door = compendiumDoor();
+      const door = Object.assign(compendiumDoor(), { guides: true });   // G3: Detail recipes and Basing show numbers and the Filters button here only
       const redraw = (selector) => renderGuides(selector);
       const parts = libraryParts(door, redraw);
       const catName = (key) => (GUIDE_CATEGORIES.find(c => c.key === key) || {}).name || "";
