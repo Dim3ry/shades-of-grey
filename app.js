@@ -43,11 +43,19 @@
     // NEWER one, it stops saving and asks you to reload, so it can't damage that newer data.
     const DATA_VERSION = 2;   // v68: 2, for the "Needs touch-ups" rename (see V61_DEFAULT_STAGES)
     let dataTooNew = false;  // true once this copy has seen data from a newer version
+    // DS2: every save asks this, so the answer is kept with the settings text it came from, and the settings are read again
+    // (JSON.parse) only when that text has changed (another window, or this one saving new settings). Before DS2 every save,
+    // every key press included, read and parsed the whole settings text.
+    const storedVersionSeen = { text: undefined, n: 0 };
     function storedDataVersion() {
       try {
-        const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "null");
+        const text = localStorage.getItem(SETTINGS_KEY);
+        if (text === storedVersionSeen.text) return storedVersionSeen.n;
+        const saved = JSON.parse(text || "null");
         const n = saved && typeof saved === "object" ? Number(saved.dataVersion) : 0;
-        return Number.isFinite(n) ? n : 0;
+        storedVersionSeen.text = text;
+        storedVersionSeen.n = Number.isFinite(n) ? n : 0;
+        return storedVersionSeen.n;
       } catch (ignored) { return 0; }
     }
     function checkDataVersion() {
@@ -115,6 +123,13 @@
         if (backup) backup.textContent = "Save it as a file";
         const retry = document.getElementById("banner-retry");
         if (retry) retry.textContent = "Start again";
+      }
+      // DS2: storage full, and safety copies are taking some of the room: offer to remove them (it asks first).
+      const copies = document.getElementById("banner-copies");
+      if (copies) {
+        let offer = false;
+        try { offer = !dataTooNew && !unreadableParts.length && safetyCopyKeys().length > 0; } catch (ignored) {}   // not yet set up at start-up
+        copies.classList.toggle("hidden", !offer);
       }
       banner.classList.remove("hidden");
     }
@@ -3855,6 +3870,7 @@
     // writeTogether at the top). It reports back: true if it worked (or storage is
     // switched off), false if storage is FULL, in which case the red banner shows.
     function saveAll() {
+      if (fieldSaveTimer !== null) { clearTimeout(fieldSaveTimer); fieldSaveTimer = null; }   // DS2: this save covers a box's waiting one
       const ok = writeTogether([
         [STORAGE_KEY, JSON.stringify(models)],
         [RECIPES_KEY, JSON.stringify(book)],
@@ -3886,10 +3902,18 @@
       applyPalette(settings.palette);
       return false;
     }
+    // DS2: photos live in their own, much bigger store, so deleting one frees nothing here; the words about photos went.
     const FULL_MESSAGE = "Storage on this device is full, so that change couldn't be saved and nothing has changed. " +
-      "Please save a backup, then free some space (for example delete photos or units you no longer need).";
+      "Please save a backup, then free some space (for example units you no longer need, or the safety copies).";
     // v18.3: the right "not saved" message: newer data from a newer version, or full storage.
     function fullMessage() { return dataTooNew ? TOO_NEW_MESSAGE : unreadableParts.length ? unreadableMessage() : FULL_MESSAGE; }
+    // DS2: the same message, with a Remove safety copies button when storage is full and there are safety copies to remove.
+    function notifyFull() {
+      let offer = false;
+      try { offer = !dataTooNew && !unreadableParts.length && safetyCopyKeys().length > 0; } catch (ignored) {}
+      if (offer) showToast(FULL_MESSAGE, offerRemoveSafetyCopies, "Remove safety copies", 14);
+      else notify(fullMessage());
+    }
 
     // ================= SMALL HELPERS =================
 
@@ -4465,6 +4489,7 @@
       const leaving = launching ? launchMoveStart("ring") : (endLaunchMove(), null);
       if (launching) { launching = false; document.body.classList.remove("launching"); }
       if (name !== "units" && selectMode) closeSelect();   // v21.1: leaving Units ends select mode
+      drawIfStale(name);   // DS2: a section that changed while out of sight is drawn before it shows (see render)
       for (const [key, view] of Object.entries(views)) view.classList.toggle("hidden", key !== name);
       if (move === "slide") {
         const dir = BAR_ORDER.indexOf(barOf(name)) > BAR_ORDER.indexOf(barOf(before)) ? 1 : -1;
@@ -4993,12 +5018,35 @@
     // render() redraws the screen from the data. Change the data first, then render().
     // It saves first, so every change is saved from this one place.
     // Saves, then redraws everything. v18c-3: reports back true if the save worked.
+    // DS2: only the section on screen is drawn straight away. The other sections that show your data (Dashboard, Units, Recipes,
+    // and Recipe preferences in Settings) are noted in staleTabs and drawn when they are opened (showTab), before they appear,
+    // so what you see is always up to date. Before DS2 every tap rebuilt all of them: with 600 units, 1,500 paints and 300 recipes
+    // that was about a second on a slow phone, most of it for sections you couldn't see. Anything that jumps to another section
+    // (goToUnit, openRecipe, Mentor's links, the Back button) goes through showTab, so it is drawn first. A few small things
+    // outside one section stay up to date on every redraw: the basket count on the menu bar and the game and faction suggestions.
+    const staleTabs = new Set();
+    const DRAWN_TABS = ["dashboard", "units", "recipes", "settings"];
+    function shownTab() {
+      for (const [key, view] of Object.entries(views)) if (!view.classList.contains("hidden")) return key;
+      return tabAlias(settings.tab);
+    }
+    function drawTab(name) {
+      staleTabs.delete(name);
+      if (name === "dashboard") {
+        renderDashboard();
+        renderExamplesCards(); renderFeedbackCard(); renderBackupNudge();   // Dashboard cards that renderUnits used to draw for it
+      } else if (name === "units") renderUnits();
+      else if (name === "recipes") renderRecipes();
+      else if (name === "settings") renderRecipePrefs();   // RS2
+    }
+    // Draws a section now if it changed while it was out of sight. Returns nothing; safe to call for any name.
+    function drawIfStale(name) { if (staleTabs.has(name)) drawTab(name); }
     function render() {
       const ok = save();
-      renderDashboard();
-      renderUnits();
-      renderRecipes();
-      renderRecipePrefs();   // RS2
+      const shown = shownTab();
+      for (const name of DRAWN_TABS) { if (name === shown) drawTab(name); else staleTabs.add(name); }
+      if (shown !== "recipes") updateBasket();   // the basket on the menu bar (renderRecipes does it when Recipes is drawn)
+      if (shown !== "units") fillUnitLists();     // the game and faction suggestions (the scheme editor on Recipes uses them too)
       if (settings.tab === "guides") renderGuides();   // v35: only while you are looking at it
       return ok;
     }
@@ -6023,7 +6071,19 @@
 
     let stagesWereShown = false;   // Mo1
     let unitStagesOpen = false;   // v49: "Pick by stage" on the Units filters (kept while the app is open)
+    // Suggestions for the game/faction boxes in the add form, the edit panel and (factions) the scheme editor.
+    // DS2: on its own, so render() can keep them right while the Units tab is out of sight.
+    function fillUnitLists(games) {
+      const fillList = (id, values) => {
+        const dl = document.getElementById(id);
+        dl.innerHTML = "";
+        for (const v of values) { const o = document.createElement("option"); o.value = v; dl.appendChild(o); }
+      };
+      fillList("game-options", games || uniqueSorted(models.map(m => m.hobby)));
+      fillList("faction-options", uniqueSorted(models.map(m => m.faction)));
+    }
     function renderUnits() {
+      staleTabs.delete("units");   // DS2: drawn now (see render)
       // M2: the Detailed / Simple switch for model rows shows only while some unit is tracked model by model.
       modelRowsSwitch.classList.toggle("hidden", !models.some(m => m.each));
       for (const b of modelRowsSwitch.querySelectorAll("button")) b.setAttribute("aria-pressed", String((b.dataset.rows === "simple") === rowsSimple()));
@@ -6103,14 +6163,7 @@
         : `${plural(models.length, "unit")}, ${plural(modelCount(models), "model")}`;
       toggleFilters.textContent = `Filters${anyFilter ? " (" + activeCount + ")" : ""} ${filtersOpen ? "▴" : "▾"}`;
 
-      // Suggestions for the game/faction boxes in the add form and the edit panel.
-      const fillList = (id, values) => {
-        const dl = document.getElementById(id);
-        dl.innerHTML = "";
-        for (const v of values) { const o = document.createElement("option"); o.value = v; dl.appendChild(o); }
-      };
-      fillList("game-options", games);
-      fillList("faction-options", uniqueSorted(models.map(m => m.faction)));
+      fillUnitLists(games);
       fillStartStage();
       renderExamplesCards();
       renderFeedbackCard();   // v25
@@ -6752,13 +6805,15 @@
       }
 
       // Nickname: saves as you type ("input"), redraws when you leave the box ("change").
+      // DS2: like the notes box, it saves half a second after you stop typing (and at once if the app goes to the background).
+      // Before DS2 every key press saved everything, and any other open window redrew everything for each one.
       const nicknameLabel = document.createElement("label");
       nicknameLabel.textContent = "Nickname (optional)";
       const nickname = document.createElement("input");
       nickname.maxLength = UNIT_TEXT_MAX;   // SEC1: the same limit as the name
       nickname.placeholder = "e.g. The Gold Squad";
       nickname.value = model.nickname || "";
-      nickname.addEventListener("input", () => { model.nickname = nickname.value.trim(); save(); });
+      nickname.addEventListener("input", () => { model.nickname = nickname.value.trim(); saveFieldSoon(); });
       nickname.addEventListener("change", () => render());
       nicknameLabel.appendChild(nickname);
 
@@ -7945,8 +8000,24 @@
       if (focusBeforeViewer && focusBeforeViewer.isConnected) focusBeforeViewer.focus();
     }
     document.getElementById("viewer-close").addEventListener("click", closeViewer);
+    // DS2: the viewer is a pop-up ("modal"), so Tab and Shift+Tab go round its own buttons and boxes only, as in the question box.
+    // Before DS2, Tab went on to the save banner and the menu bar behind it. A question asked from the viewer (Delete photo?) keeps
+    // its own Tab handling.
+    function viewerStops() {
+      return [...viewerBox.querySelectorAll("button, input, select, textarea, a[href]")]
+        .filter(el => !el.disabled && el.tabIndex >= 0 && el.getClientRects().length);
+    }
     document.addEventListener("keydown", (event) => {
       if (!viewer) return;
+      if (event.key === "Tab" && !dialogState) {
+        const stops = viewerStops();
+        if (!stops.length) return;
+        const at = stops.indexOf(document.activeElement);
+        const next = event.shiftKey ? (at <= 0 ? stops.length - 1 : at - 1) : (at < 0 || at === stops.length - 1 ? 0 : at + 1);
+        event.preventDefault();
+        stops[next].focus();
+        return;
+      }
       if (event.key === "Escape") { closeViewer(); return; }
       // Arrow keys move between photos, unless you're typing in a box.
       const typing = /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName);
@@ -7954,6 +8025,13 @@
         if (event.key === "ArrowLeft") moveViewer(-1);
         if (event.key === "ArrowRight") moveViewer(+1);
       }
+    });
+    // DS2: if focus lands outside the viewer some other way (a screen reader's own keys, say), it is brought back in. Not while a
+    // question box or a message's button is in use: the question box pulls focus to itself, and Undo on a message must still work.
+    document.addEventListener("focusin", (event) => {
+      if (!viewer || dialogState || viewerBox.contains(event.target) || event.target.closest("#toast, #dialog")) return;
+      const first = document.getElementById("viewer-close");
+      if (first) first.focus();
     });
 
     // Show the full-size picture in an <img>. Shows the small one first if the big one
@@ -8721,6 +8799,7 @@
     let schemeDraft = null;    // the painting scheme being edited (a copy), or null
 
     function renderRecipes() {
+      staleTabs.delete("recipes");   // DS2: drawn now (see render)
       updateBasket();   // v40: the basket count on the tab bar
       if (openRecipeId !== null && !recipeById(openRecipeId)) openRecipeId = null;
       // v16: Paste recipes fills the screen while it's open.
@@ -9013,6 +9092,7 @@
       }, { yes: "Remove", danger: true });
     }
     function renderRecipePrefs() {
+      staleTabs.delete("settings");   // DS2: drawn now (see render)
       renderListChips("part-chips", "parts", "part");
       renderListChips("technique-chips", "techniques", "technique");
     }
@@ -16718,10 +16798,6 @@
       for (const [re, brand] of LABEL_BRANDS) if (re.test(t)) return { brand, re };
       return null;
     }
-    function brandOnLabel(text) {
-      const hit = labelBrandHit(text);
-      return hit ? hit.brand : "";
-    }
     function wordLikeness(word, token) {
       const d = typoDistance(word, token, word.length);
       let same = 0;
@@ -17244,7 +17320,7 @@
           settings.stages = STAGES = names;
           fixDoneFrom();
         });
-        if (!kept) { notify(fullMessage()); renderSettings(); return; }
+        if (!kept) { notifyFull(); renderSettings(); return; }
         applyPalette(settings.palette);
         filters.stages = new Set();
         render();
@@ -17311,10 +17387,6 @@
     function customColoursFor(n) {
       const saved = Array.isArray(settings.customColours) ? settings.customColours : [];
       return stageColours(settings.palette, n).map((fallback, i) => goodHex(saved[i]) ? saved[i].toLowerCase() : fallback);
-    }
-    // The colours in use now (before light mode deepens them): yours, or the set's.
-    function chosenStageColours(n) {
-      return usingCustom() ? customColoursFor(n) : stageColours(settings.palette, n);
     }
     // How a colour reads on the dark cards. Under 3 is too faint for a stage's name to be
     // read easily. (Light mode deepens pale colours by itself, so light cards are fine.)
@@ -17689,13 +17761,12 @@
       startDraft();
       renderStageEditor();
       renderFactionColours();
-      let used = 0;
-      try { used = (localStorage.getItem(STORAGE_KEY) || "").length + (localStorage.getItem(RECIPES_KEY) || "").length; } catch (ignored) {}
+      const used = appStorageUsed();   // DS2: every name the app saves under, safety copies included
       const photos = models.reduce((sum, m) => sum + (m.photos || []).length + (m.photo ? 1 : 0), 0);
       const summary =
         `${plural(models.length, "unit")}, ${plural(modelCount(models), "model")}, ${plural(photos, "photo")}, ` +
         `${plural(book.recipes.length, "recipe")}. ` +
-        `Units and recipes use about ${Math.max(1, Math.round(used / 1024))} KB of roughly 5,000 KB. ` +
+        `Saved data, safety copies included, uses about ${Math.max(1, Math.round(used / 1024))} KB of roughly 5,000 KB. ` +
         (settings.lastBackup ? `Last backup: ${shortDate(settings.lastBackup)}.` : "No backup saved yet.") +
         (photos ? (settings.lastFullBackup ? ` Last backup with photos: ${shortDate(settings.lastFullBackup)}.` : " Your photos haven't been backed up yet.") : "");
       dataSummary.textContent = summary;
@@ -17802,6 +17873,45 @@
     function forgetSafetyCopy(suffix) {
       try { localStorage.removeItem(STORAGE_KEY + suffix); localStorage.removeItem(RECIPES_KEY + suffix); } catch (ignored) {}
     }
+
+    // ----- DS2: storage used, and removing the safety copies -----
+    // The browser keeps about 5 million characters for the app's saved data. Every name the app saves under starts with
+    // "mini-tracker-" or "shades-of-grey-", and all of them count: units, recipes, settings, drafts and the safety copies.
+    // (Before DS2 the Settings line counted only units and recipes, so it could say 1,562 KB while saving had stopped.)
+    function appStorageUsed() {
+      let used = 0;
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith("mini-tracker-") || key.startsWith("shades-of-grey-"))) used += key.length + (localStorage.getItem(key) || "").length;
+        }
+      } catch (ignored) {}
+      return used;
+    }
+    // The safety copies saved on this device right now (kept by Delete all, Replace, Restore and Recover). Text that couldn't be
+    // read ("-unreadable") is not one of them: it may be the only copy of something, so it is only ever removed by its 30 days.
+    function safetyCopyKeys() {
+      const keys = [];
+      for (const suffix of SAFETY_COPIES) keys.push(STORAGE_KEY + suffix, RECIPES_KEY + suffix);
+      keys.push(RECIPES_KEY + RECIPES_ONLY_COPY);
+      return keys.filter(key => savedText(key) !== null);
+    }
+    // Offered when a save fails because storage is full (the red banner, and the "couldn't be saved" message). It asks first.
+    function offerRemoveSafetyCopies() {
+      const keys = safetyCopyKeys();
+      if (!keys.length) { notify("There are no safety copies to remove."); return; }
+      const kb = Math.max(1, Math.round(keys.reduce((sum, key) => sum + key.length + (savedText(key) || "").length, 0) / 1024));
+      askYesNo(`Remove the safety copies kept on this device (about ${kb} KB)? Recover earlier data can't bring them back afterwards.`, () => {
+        for (const key of safetyCopyKeys()) { try { localStorage.removeItem(key); } catch (ignored) {} }
+        const wasFailing = saveFailing;
+        const ok = saveAll();
+        renderRecover();
+        if (settings.tab === "settings") renderSettings();
+        if (ok) showToast(wasFailing ? "Safety copies removed. Everything is saved." : "Safety copies removed. Please try again.");
+        else notify("Safety copies removed, but storage is still full. Please save a backup, then remove units you no longer need.");
+      }, { yes: "Remove", danger: true });
+    }
+    document.getElementById("banner-copies").addEventListener("click", offerRemoveSafetyCopies);
     // Run at start-up: copies older than 30 days are removed. Pre-v14 copies have no date,
     // so they're given today's date now (and are removed 30 days from now).
     function expireSafetyCopies() {
@@ -17902,10 +18012,10 @@
       askYesNo(`Replace your current ${plural(book.recipes.length, "recipe")} with the ${plural(restored.recipes.length, "recipe")} in this copy? (Your units stay as they are.)`, () => {
         const before = JSON.stringify(book);
         const linksBefore = unitRecipeLinks();   // DS1
-        if (!changeAndSave(() => { linkUnitsToBook(models, restored, book); book = restored; })) { notify(fullMessage()); return; }
+        if (!changeAndSave(() => { linkUnitsToBook(models, restored, book); book = restored; })) { notifyFull(); return; }
         afterBigChange();
         showToast(`Recovered ${plural(book.recipes.length, "recipe")}`, () => {
-          if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(before)); putUnitRecipeLinksBack(linksBefore); })) { notify(fullMessage()); return; }
+          if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(before)); putUnitRecipeLinksBack(linksBefore); })) { notifyFull(); return; }
           afterBigChange();
         }, "Undo", UNDO_SECONDS);
       }, { danger: true });
@@ -17942,7 +18052,7 @@
             fixDoneFrom();
           }
         });
-        if (!kept) { notify(fullMessage()); return; }
+        if (!kept) { notifyFull(); return; }
         afterBigChange();
         showToast(`Recovered ${plural(units.length, "unit")}`, () => {
           const back = changeAndSave(() => {
@@ -17952,7 +18062,7 @@
             settings.doneFrom = undoState.doneFrom;
             fixDoneFrom();
           });
-          if (!back) { notify(fullMessage()); return; }
+          if (!back) { notifyFull(); return; }
           afterBigChange();
         }, "Undo", UNDO_SECONDS);
       }, { danger: true });
@@ -18002,11 +18112,7 @@
       loadThumbs().catch(() => {});
     }
 
-    function sizeText(bytes) {
-      if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(1)} GB`;
-      if (bytes >= 1e6) return `${(bytes / 1e6).toFixed(1)} MB`;
-      return `${Math.max(1, Math.round(bytes / 1e3))} KB`;
-    }
+    // DS2: a first sizeText() (with GB) stood here. The one further down (with the file checks) was always the one used, so this went.
     // Look through every file in the photo store and sort them into in-use / spare.
     async function photoStoreReport() {
       const records = await photoStore("readonly", store => store.getAll());
@@ -18070,13 +18176,13 @@
         // v14: STOP if the safety copy can't be kept, rather than delete with no safety net.
         if (!keepSafetyCopy("-before-delete-all")) {
           notify("There isn't room on this device to keep a safety copy of your units, so nothing has been deleted. " +
-                "Please press Save backup first, then delete some photos or units you no longer need.");
+                "Please press Save backup first, then delete units you no longer need.");   // DS2: deleting photos frees nothing here
           return;
         }
         const count = models.length;
         const before = JSON.stringify(models);
         // DS1: saved first; if that fails, nothing changes and the message says so (no "Deleted").
-        if (!changeAndSave(() => { models = []; })) { notify(fullMessage()); return; }
+        if (!changeAndSave(() => { models = []; })) { notifyFull(); return; }
         const undo = unitsUndo(before);   // DS1: Undo keeps units added since
         openIds.clear();
         clearFilters();
@@ -18092,7 +18198,7 @@
 
     // ================= BACKUPS AND CSV =================
 
-    // Hands the browser some text and asks it to download it as a file.
+    // Hands the browser some text and asks it to download it as a file. (DS2: text can also be a Blob, as the full backup is.)
     function downloadFile(filename, text, type) {
       const blob = new Blob([text], { type });
       const link = document.createElement("a");
@@ -18155,16 +18261,27 @@
     // v46: the full backup (units, recipes and every photo) made into one piece of text, shared by
     // Save full backup with photos and Send full backup with photos to… so the file is the same either way.
     // No neat line breaks here: the file is big enough already.
+    // DS2: the file is put together as a Blob, piece by piece (the units and recipes, then one photo at a time), rather than as one
+    // piece of text. A few hundred photos made a string of 100 MB or more, which can crash a phone's tab. The file is exactly the
+    // same as before (the photos sit last, under "photoFiles"), so every backup still restores the same way. blob is the file.
     async function buildFullBackup() {
-      const backup = backupData();
-      backup.photoFiles = {};
+      const head = JSON.stringify(backupData());
+      let blob = new Blob([head.slice(0, -1), ',"photoFiles":{'], { type: "application/json" });
+      let parts = [];
+      const done = new Set();
       let missing = 0;
       for (const m of models) for (const id of photoIds(m)) {
+        if (done.has(id)) continue;   // a photo listed twice is written once, as JSON.stringify did
         const record = await getPhoto(id);
         if (!record) { missing++; continue; }
-        backup.photoFiles[id] = { full: await blobToDataUrl(record.full), thumb: await blobToDataUrl(record.thumb) };
+        const pair = { full: await blobToDataUrl(record.full), thumb: await blobToDataUrl(record.thumb) };
+        parts.push((done.size ? "," : "") + JSON.stringify(String(id)) + ":" + JSON.stringify(pair));
+        done.add(id);
+        // every few photos the waiting pieces go into the Blob, so only a handful of photos are ever held as text
+        if (parts.length >= 8) { blob = new Blob([blob, ...parts], { type: "application/json" }); parts = []; }
       }
-      return { text: JSON.stringify(backup), count: Object.keys(backup.photoFiles).length, missing };
+      blob = new Blob([blob, ...parts, "}}"], { type: "application/json" });
+      return { blob, count: done.size, missing };
     }
     function fullBackupName(today) { return `minifolio-full-backup-${today}.json`; }
     function noteFullBackupDone() {
@@ -18186,7 +18303,7 @@
       button.textContent = "Preparing backup…";
       try {
         const made = await buildFullBackup();
-        downloadFile(fullBackupName(todayISO()), made.text, "application/json");
+        downloadFile(fullBackupName(todayISO()), made.blob, "application/json");
         noteFullBackupDone();
         showToast(`Full backup saved with ${fullBackupWords(made)}`);
       } catch (error) {
@@ -18227,7 +18344,7 @@
         fullShareButton.textContent = "Preparing backup…";
         try {
           made = await buildFullBackup();
-          text = made.text;
+          text = made.blob;   // DS2: a Blob (the file's contents), not a string
           file = new File([text], fullBackupName(todayISO()), { type: "application/json" });
         } catch (error) {
           notify("Sorry, the full backup couldn't be made. Try Save backup (without photos) instead.");
@@ -18407,7 +18524,7 @@
       if (dataTooNew) { location.reload(); return; }
       if (unreadableParts.length) { startAgainFromUnreadable(); return; }   // DS1
       if (saveAll()) showToast("Saved. Everything is up to date.");
-      else notify("Still full. Please save a backup, then free some space (delete photos or units you no longer need).");
+      else notify("Still full. Please save a backup, then free some space (units you no longer need, or the safety copies).");   // DS2: not photos
     });
 
     const restoreFile = document.getElementById("restore-file");
@@ -18524,7 +18641,7 @@
               if (unitsToo && !isList && Array.isArray(parsed.customColours)) settings.customColours = cleanCustomColours(parsed.customColours);
               if (unitsToo && !isList && typeof parsed.useCustom === "boolean") settings.useCustom = parsed.useCustom;
             });
-            if (!kept) { notify(fullMessage()); return; }
+            if (!kept) { notifyFull(); return; }
             recipeDraft = null;
             openRecipeId = null;
             openIds.clear();
@@ -18549,7 +18666,7 @@
             } else {
               if (unitsToo) showToast("Backup restored" + restoreNotes.map(n => `. ${n}`).join(""));
               else showToast(`Recipes restored (${plural(book.recipes.length, "recipe")})`, () => {
-                if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(recipesBefore)); putUnitRecipeLinksBack(linksBefore); })) { notify(fullMessage()); return; }
+                if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(recipesBefore)); putUnitRecipeLinksBack(linksBefore); })) { notifyFull(); return; }
                 afterBigChange();
                 showToast("Your recipes are back as they were");
               }, "Undo", UNDO_SECONDS);
@@ -18789,8 +18906,11 @@
     // ================= EXPORT CSV =================
     // The same columns Import CSV reads, so a file can go out to Excel and back in again.
     // A value with a comma, quote or new line is wrapped in quotes ("" means a real quote).
+    // DS2: a value that starts with = + - @ (or a tab or carriage return) gets a ' in front, so a spreadsheet shows it as
+    // text rather than running it as a formula (a name pasted from an army list could start with one). Spreadsheets hide the '.
     function csvCell(value) {
-      const text = String(value === undefined || value === null ? "" : value);
+      let text = String(value === undefined || value === null ? "" : value);
+      if (/^[=+\-@\t\r]/.test(text)) text = "'" + text;
       return /[",\n\r]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
     }
     document.getElementById("csv-export-button").addEventListener("click", () => {
@@ -19525,7 +19645,7 @@
             giveCsvDates(unit, dateAdded, stageGiven && c.stage === m.row.stage ? dateStage : todayISO());
           });
         });
-        if (!kept) { notify(fullMessage()); return; }
+        if (!kept) { notifyFull(); return; }
         const undo = unitsUndo(before);
         const parts = [];
         if (reviewMode === "replace") parts.push(`Replaced with ${plural(toAdd.length, "unit")}`);
