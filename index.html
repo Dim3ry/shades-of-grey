@@ -2849,6 +2849,9 @@
     @media (prefers-reduced-motion: reduce) { .lr-sweep { display: none; } }
     /* While the ring hands over with the Futuristic look, it is the orb: the button's own drawing waits underneath until the ring has landed on it. */
     :root[data-look="futuristic"] body.mo6-handing #mentor-button > svg { visibility: hidden; }
+    /* (v129 fix) and the round button itself waits unseen under the screen until the hand-over grows it in (it showed for a frame at full strength
+       under the screen as that began to fade, then dropped to the hand-over's start) */
+    body.ring-loading #mentor-button { opacity: 0; }
     /* 2. THE TRAVEL (Mo4b, Mo4c). The bar's fade and the circle's glow were drawn on the real bar, above the travelling copies: the copies sank into the
        fade as they landed and the real bar then appeared at once, and the circle's glow went out in one frame. While the travel runs the real bar's
        fade is hidden and app.js draws both looks under the copies (mo6-fade: the bar's, mo6-glow: the circle's, the same rules as the real ones),
