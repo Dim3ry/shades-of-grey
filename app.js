@@ -10923,8 +10923,9 @@
             const known = isInPalette(fresh);
             const paint = findOrAddPaint(p.brand, p.name, p.colour);
             if (d.quick) { if (p.known && !p.material && !askOwn.includes(paint)) askOwn.push(paint); }
-            // UX1: a name that isn't in the paint list (a typo, or one you made up) is never marked Owned.
-            else if (!known && paintStatus(paint) === "") applyPaintStatus(paint, inPaintList(fresh) && ownsNewPaint(d.own, fresh) ? "owned" : "notowned");
+            // UX1: a name that isn't in the paint list (a typo, or one you made up) is kept as typed with no status, as the quick form
+            // and Paste recipes do: never Owned, and it can still go on the shopping list.
+            else if (!known && paintStatus(paint) === "" && inPaintList(fresh)) applyPaintStatus(paint, ownsNewPaint(d.own, fresh) ? "owned" : "notowned");
             return { paint: paint.id, mix: cleanMix(p.mix) };
           });
         return {
@@ -15351,7 +15352,7 @@
     function knownPaintName(name) {
       return book.paints.some(p => sameText(p.name, name)) || searchedPaints.some(p => sameText(p.name, name));
     }
-    // UX1: only paints in the paint list are asked about. Any other name is saved as Not owned.
+    // UX1: only paints in the paint list are asked about. Any other name is kept as typed, with no status.
     function draftNewPaints(d) {
       const list = [];
       for (const s of d.steps) for (const p of s.paints) {
@@ -18523,14 +18524,14 @@
         /^(\d{1,4})\s*[x×]\s+(.+)$/i,                                                        // 10x Boyz
         /^(.+?)\s*[x×]\s*(\d{1,4})$/i,                                                       // Boyz x10
         /^(.+?)\s*[([]\s*(\d{1,4})\s*(?:[x×]|models?|minis?|miniatures?)?\s*[)\]]$/i,         // Boyz (10), Boyz [10x], Boyz (10 models)
-        /^(.+?)[\s,:–-]+(\d{1,4})\s*(?:models?|minis?|miniatures?)$/i,                        // Boyz - 10 models
+        /^(.+?)[\s,:–—-]+(\d{1,4})\s*(?:models?|minis?|miniatures?)$/i,                        // Boyz - 10 models
         /^(\d{1,4})\s+([A-Za-z].*)$/,                                                         // 10 Boyz
       ];
       for (const [i, pattern] of patterns.entries()) {
         const found = name.match(pattern);
         if (!found) continue;
         const numberFirst = i === 0 || i === 4;
-        const rest = (numberFirst ? found[2] : found[1]).trim().replace(/[\s,:–-]+$/, "");
+        const rest = (numberFirst ? found[2] : found[1]).trim().replace(/[\s,:–—-]+$/, "");
         const n = Number(numberFirst ? found[1] : found[2]);
         // "Squad 0" or a name that is only a number isn't a count.
         if (n >= 1 && /[A-Za-z]/.test(rest)) return { name: rest, count: Math.min(n, MAX_MODELS) };
@@ -18555,56 +18556,72 @@
 
     // UX1: the points at the end of a line, in the ways list builders write them:
     //   "Captain (80 points)", "Intercessors [180pts]", "Assault Intercessors - 75 points",
-    //   "Infiltrators (5) ........ 100", "Lieutenant x1 (75 pts)"
+    //   "Infiltrators (5) ........ 100", "Lieutenant x1 (75 pts)", "Blood Claws x10 — 135 pts"
     // Gives back the line without them, and whether there were any.
+    const TRIM_END = /[\s.,:–—-]+$/;
     function stripPoints(text) {
       let t = text.trim();
       const close = t.slice(-1);
       if (close === ")" || close === "]") {
         const open = t.lastIndexOf(close === ")" ? "(" : "[");
         if (open !== -1 && /^\s*[\d,]+\s*(?:points?|pts?)\s*$/i.test(t.slice(open + 1, -1))) {
-          return { name: t.slice(0, open).trim(), points: true };
+          return { name: t.slice(0, open).trim().replace(TRIM_END, ""), points: true };
         }
       }
       // "- 75 points", "75pts" or "....... 100" at the end
       const words = t.match(/[\d,]+\s*(?:points?|pts?)$/i);
-      if (words && words.index > 0) return { name: t.slice(0, words.index).trim().replace(/[\s.,:–-]+$/, ""), points: true };
+      if (words && words.index > 0) return { name: t.slice(0, words.index).trim().replace(TRIM_END, ""), points: true };
       const leaders = t.match(/\.{3,}\s*[\d,]+$/);
       if (leaders) return { name: t.slice(0, leaders.index).trim(), points: true };
       return { name: t, points: false };
     }
 
-    // UX1: one unit line of a list: bullets, points and ": wargear" after the name taken off,
-    // then the model count read from the name. "Captain [95pts]: Master-crafted bolt rifle"
-    // reads as Captain; "Boyz: 10 models" still reads as 10 Boyz.
+    // UX1: one unit line of a list: bullets, a "Char1:" label, points and ": wargear" after the
+    // name taken off, then the model count read from the name. "Captain [95pts]: Master-crafted
+    // bolt rifle" and "Char1: 1x Logan Grimnar (110 pts): Warlord" read as 1 model; "Boyz: 10 models"
+    // still reads as 10 Boyz. Points are never kept, wherever they were on the line.
     function readListLine(line) {
-      const bare = line.trim().replace(/^[•*·–-]\s*/, "").trim();
+      const bare = line.trim().replace(/^[•*·–—-]\s*/, "").trim().replace(/^char\d{1,3}\s*:\s*/i, "");
       const first = stripPoints(bare);
       let unit = first.name;
-      const colon = unit.indexOf(": ");
-      if (colon > 0 && !/^\d{1,4}\s*(?:models?|minis?|miniatures?)?$/i.test(unit.slice(colon + 2).trim())) {
+      const colon = unit.indexOf(":");
+      if (colon > 0 && !/^\d{1,4}\s*(?:models?|minis?|miniatures?)?$/i.test(unit.slice(colon + 1).trim())) {
         unit = unit.slice(0, colon).trim();
       }
       const second = stripPoints(unit);
-      return { ...countInName(second.name), points: first.points || second.points };
+      const name = second.name.replace(/[([]\s*[\d,]+\s*(?:points?|pts?)\s*[)\]]/gi, " ").replace(/\s{2,}/g, " ").trim();
+      return { ...countInName(name), points: first.points || second.points };
     }
 
-    // UX1: is this line a heading, the list's size or a total, rather than a unit?
+    // UX1: header lines of other list builders: "Battle Size: Strike Force", "Detachment: ...",
+    // "+ WARLORD: Char1: ...". They are never units.
+    const LIST_HEADER_KEYS = new Set(["battle size", "detachment", "detachment rule", "detachment rules", "show/hide options",
+      "faction", "faction keyword", "faction keywords", "total", "total army points", "warlord", "enhancement",
+      "enhancements", "number of units", "secondary", "secondaries", "army roster", "points", "game type", "configuration",
+      "army", "list", "chapter", "subfaction", "sub-faction", "army faction", "player", "name", "rules", "mission"]);
+    function listHeader(line) {
+      const key = line.trim().replace(/^\+\s*/, "").match(/^([A-Za-z][A-Za-z /'&-]{0,30}?)\s*:/);
+      return !!key && LIST_HEADER_KEYS.has(key[1].toLowerCase());
+    }
+
+    // UX1: is this line a heading, the list's size, a total or a footer, rather than a unit?
     function listFrame(line, rosterStyle) {
       const t = line.trim();
       const bare = stripPoints(t).name.toLowerCase().replace(/:$/, "").trim();
-      if (/^exported with/i.test(t) || /^total\b/i.test(t) || /detachment points?\)?$/i.test(t)) return true;
-      if (/^[+=]/.test(t)) return true;                                // "++ Army Roster ... ++", "== ... =="
+      if (/^(?:exported|created) with/i.test(t) || /^total\b/i.test(t) || /detachment points?\)?$/i.test(t)) return true;
+      if (/^[+=#]/.test(t)) return true;                               // "++ Army Roster ... ++", "## Character", "+ Configuration +"
       if (/^[A-Z][A-Z\s&'-]+$/.test(t) && t.length > 3) return true;   // "CHARACTERS" is a heading
-      if (LIST_SIZES.has(bare)) return true;
+      if (LIST_SIZES.has(bare) || listHeader(t)) return true;
       return rosterStyle && LIST_HEADINGS.has(bare);
     }
 
     // UX1: the faction named in a list builder's top line,
     //   "++ Army Roster (Imperium - Space Marines) [2,000pts] ++"  ->  "Space Marines"
-    // or on a line such as "Faction: Orks". "" if there isn't one.
+    // or on a line such as "Faction: Orks" or "+ FACTION KEYWORD: Imperium - Space Wolves".
+    // Gives back the faction and the line it came from ("" and -1 if there isn't one).
     function rosterFaction(lines) {
-      for (const raw of lines) {
+      for (let i = 0; i < lines.length; i++) {
+        const raw = lines[i];
         if (raw.length > LIST_LINE_MAX) continue;
         const t = raw.trim();
         let found = "";
@@ -18615,19 +18632,22 @@
           const label = t.match(/^(?:\+\s*)?faction(?: keywords?)?\s*:\s*(.+)$/i);
           if (label) found = label[1];
         }
-        const parts = found.split(/\s+[-–]\s+/).map(x => x.trim()).filter(Boolean);
-        if (parts.length) return parts[parts.length - 1];
+        const parts = found.split(/\s+[-–—]\s+/).map(x => x.trim()).filter(Boolean);
+        if (parts.length) return { faction: parts[parts.length - 1], line: i };
       }
-      return "";
+      return { faction: "", line: -1 };
     }
 
     // UX1: the words of a model name, so "Intercessor Sergeant" and "Intercessors" can be
-    // compared. Plurals ending in s or z don't matter ("Boyz" and "Boy").
+    // compared. Plurals ending in s or z don't matter ("Boyz" and "Boy", "Boss" and "Bos").
+    const modelWord = (w) => w.length > 3 ? w.replace(/[sz]$/, "") : w;
+    // Squad leaders' titles across the factions (each through the same plural trim).
     const LEADER_WORDS = new Set(["sergeant", "sarge", "leader", "champion", "boss", "nob", "exarch", "superior",
-      "alpha", "sybarite", "hekatrix", "aspiring", "shas'ui", "shasui", "veteran", "brother"]);
+      "alpha", "sybarite", "hekatrix", "klaivex", "aspiring", "shas'ui", "shasui", "shas'vre", "shasvre", "veteran", "brother",
+      "runtherd", "justicar", "theyn", "hesyr", "princeps", "prime", "huntmaster", "gunner", "icon", "bearer"].map(modelWord));
     function modelWords(name) {
-      return name.toLowerCase().split(/[^a-z0-9']+/)
-        .map(w => w.length > 3 ? w.replace(/[sz]$/, "") : w)
+      return plainQuotes(name).toLowerCase().split(/[^a-z0-9']+/)
+        .map(modelWord)
         .filter(w => w && !FILLER_WORDS.has(w));
     }
     // UX1: bullet lines with no lines under them, under one unit. The Warhammer app puts
@@ -18655,34 +18675,57 @@
     // Each line not indented under another becomes a unit (bullets and dashes in front are fine).
     // Only used when at least one line has a count, so a random paste isn't turned into units.
     // A first line with no count, followed by lines that have one, is taken as the list's name.
-    // UX1: also reads lists from other list builders ("10x Intercessors [180pts]",
-    // "Infiltrators (5) ........ 100", "++ Army Roster (Imperium - Space Marines) ++"),
-    // counts model lines indented under a unit, and lists every line it couldn't use.
+    // UX1: also reads lists from other list builders (New Recruit, BattleScribe and the like:
+    // "10x Intercessors [180pts]", "Char1: 1x Logan Grimnar (110 pts): ...", "Infiltrators (5) ... 100",
+    // "++ Army Roster (Imperium - Space Marines) ++"). Lines under a unit (indented, "•" in a list with
+    // points, or BattleScribe's ". " lines) are its models or wargear. Every other line that isn't a
+    // unit (headings, settings, totals, anything it can't make out) is listed under "Not read".
     function parsePlainList(lines) {
       const notRead = [];
-      const isIndented = (l) => /^(?: {2,}|\t)/.test(l);
       const usable = (i) => lines[i].trim() !== "" && lines[i].length <= LIST_LINE_MAX;
-      lines.forEach((l, i) => { if (l.length > LIST_LINE_MAX) notRead.push(i + 1); });
       const rosterStyle = lines.some(l => l.length <= LIST_LINE_MAX && stripPoints(l).points);
-      const faction = rosterFaction(lines);
+      const isSub = (l) => /^(?: {2,}|\t)/.test(l) || /^\s*\.+\s/.test(l) || (rosterStyle && /^\s*•/.test(l));
+      const { faction, line: factionAt } = rosterFaction(lines);
+      const header = lines.findIndex(l => l.length <= LIST_LINE_MAX && /^\+\+.*\+\+$/.test(l.trim()));
+      const quiet = (i) => i === factionAt || i === header || /^[+=\-\s]+$/.test(lines[i].trim())
+        || /^(?:exported|created) with/i.test(lines[i].trim()) || (/^\+\+.*\+\+$/.test(lines[i].trim()) && /total/i.test(lines[i]));
+      // A unit's name should start with a letter or a count, and not still hold a colon or points.
+      const looksWrong = (r) => !/[A-Za-z]/.test(r.name) || !/^[A-Za-z0-9'"(]/.test(r.name) || /:|\b\d+\s*(?:pts?|points?)\b/i.test(r.name);
       const read = [];
       for (let i = 0; i < lines.length; i++) {
-        if (!usable(i) || isIndented(lines[i]) || listFrame(lines[i], rosterStyle)) continue;
+        if (lines[i].trim() === "") continue;
+        if (!usable(i)) { notRead.push(i + 1); continue; }
+        if (isSub(lines[i])) {
+          if (!read.length) notRead.push(i + 1);   // a model or wargear line with no unit above it
+          continue;
+        }
+        if (quiet(i)) continue;
+        if (listFrame(lines[i], rosterStyle)) { notRead.push(i + 1); continue; }
         const r = readListLine(lines[i]);
-        if (!/[A-Za-z]/.test(r.name)) { notRead.push(i + 1); continue; }
-        // Model lines indented under it: "• 9x Intercessor"
+        if (looksWrong(r)) { notRead.push(i + 1); continue; }
+        // Its model lines: "• 9x Intercessor", ". Blood Claw Pack Leader: Bolt pistol" (no count is 1).
+        // Deeper lines ("..", or indented under them) are wargear.
         const flat = [];
-        for (let j = i + 1; j < lines.length && (!usable(j) ? lines[j].trim() === "" : isIndented(lines[j])); j++) {
-          if (!usable(j)) continue;
-          const child = lines[j].trim().replace(/^[•*·–-]\s*/, "").match(/^(\d{1,4})\s*[x×]\s+(.+)$/i);
+        let top = null;
+        for (let j = i + 1; j < lines.length && (lines[j].trim() === "" || (usable(j) && isSub(lines[j]))); j++) {
+          if (lines[j].trim() === "") { if (lines[j + 1] !== undefined && lines[j + 1].trim() !== "" && !isSub(lines[j + 1])) break; continue; }
+          const sub = lines[j].match(/^(\s*)([•.*·–—-]*)\s*(.*)$/);
+          const depth = sub[1].replace(/\t/g, "  ").length + (sub[2].startsWith(".") ? sub[2].length * 2 : 0);
+          if (top === null) top = depth;
+          if (depth > top) continue;
+          const text = sub[3].split(":")[0].trim();
+          const child = text.match(/^(\d{1,4})\s*[x×]\s+(.+)$/i);
           if (child) flat.push({ count: Number(child[1]), name: child[2] });
+          else if (sub[2].startsWith(".") && /[A-Za-z]/.test(text)) flat.push({ count: 1, name: text });
         }
         read.push({ ...r, models: flatModels(r.name, flat), line: i + 1 });
       }
-      if (!read.some(r => r.count || r.points || r.models)) return null;
+      if (!read.some(r => r.count || r.points || r.models)) {
+        // UX1: it looked like a list from a list builder, but no unit in it could be read: say which lines.
+        return rosterStyle || header !== -1 ? { listName: "Pasted list", faction, units: [], notRead: notRead.sort((x, y) => x - y) } : null;
+      }
       let listName = "Pasted list";
-      const header = lines.find(l => l.length <= LIST_LINE_MAX && /^\+\+.*\+\+$/.test(l.trim()));
-      if (header) listName = header.trim().replace(/^\+\+\s*|\s*\+\+$/g, "").replace(/\s*[([].*$/, "") || listName;
+      if (header !== -1) listName = lines[header].trim().replace(/^\+\+\s*|\s*\+\+$/g, "").replace(/\s*[([].*$/, "").replace(/^\++$/, "") || listName;
       else if (read.length > 1 && !read[0].count && !read[0].models) listName = read.shift().name;
       return {
         listName, faction,
@@ -18711,7 +18754,8 @@
       const isBullet = (i) => short(i) && bulletPattern.test(lines[i]);
       // UX1: a Warhammer app list has "Name (N points)" lines with "•" bullets under them.
       // Anything else (typed lists, other list builders) is read line by line instead.
-      const appStyle = nonEmpty.some((i, n) => unitName(i) && n + 1 < nonEmpty.length && isBullet(nonEmpty[n + 1]));
+      // It starts with the list's own "Name (N points)" line (other list builders' "++ Army Roster" or "+ FACTION" lines don't).
+      const appStyle = !!unitName(nonEmpty[0]) && nonEmpty.some((i, n) => unitName(i) && n + 1 < nonEmpty.length && isBullet(nonEmpty[n + 1]));
       if (!appStyle) return parsePlainList(lines);
 
       // The first line is the list's name; the next non-empty line is the faction.
@@ -19215,6 +19259,12 @@
 
     document.getElementById("wh-read").addEventListener("click", () => {
       const list = parseWarhammerList(whText.value);
+      if (list && !list.units.length) {   // UX1: a list builder's list with nothing in it that reads as a unit
+        const nr = list.notRead;
+        notify("No units could be read from that list, so nothing was added." + (!nr.length ? "" : ` Not read: ${nr.length === 1 ? "line" : "lines"} ` +
+          nr.slice(0, 10).join(", ") + (nr.length > 10 ? ` and ${nr.length - 10} more.` : ".")));
+        return;
+      }
       if (!list) {
         notify("That doesn't look like a list exported from the Warhammer app. Each unit should be a name followed by its points, e.g. \"Lictor (60 points)\", or a count, e.g. \"10x Boyz\".");
         return;
