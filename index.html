@@ -1311,9 +1311,38 @@
     .add-step { width: 100%; min-height: 44px; border-color: var(--accent); color: var(--accent); font-weight: 600; }
     .step-note { margin: 4px 0 0; color: var(--muted); font-size: 14px; font-style: italic; }
     /* v16: Paste recipes preview and pot scan */
-    .import-ask { padding: 10px 0; border-top: 1px solid var(--border); }
-    .import-ask.answered .import-typed { color: var(--muted); }
-    .import-typed { font-weight: 600; color: var(--note); }
+    /* RS4b: Check paints (the summary line, Show the N matched, one card per paint that needs a look) and the Save bar that stays above the bottom menu */
+    .import-check-sum { margin: 0 0 8px; }
+    .import-matched-toggle { width: 100%; min-height: 44px; text-align: left; }
+    .import-matched { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+    .import-matched[hidden] { display: none; }
+    .import-matched li, .import-option { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .import-option-name { min-width: 0; overflow-wrap: anywhere; }
+    .import-option-brand { color: var(--muted); font-size: 12px; }
+    .import-ask { margin: 12px 0 0; padding: 12px; border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-box); min-width: 0; }
+    .import-wrote { padding: 0 4px; color: var(--muted); font-size: 14px; }
+    .import-typed { font-weight: 700; color: var(--text); overflow-wrap: anywhere; }
+    .import-where { display: block; margin: 0 0 4px; color: var(--muted); font-size: 12px; }
+    .import-options { display: grid; gap: 2px; }
+    .import-option { min-height: 44px; padding: 4px 6px; border-radius: var(--radius-control); cursor: pointer; font-size: 14px; }
+    .import-option input[type="radio"] { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--accent-fill, var(--accent)); }
+    .import-option:has(input:checked) { background: var(--note-wash, transparent); font-weight: 600; }
+    .import-option:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .import-pick { width: 100%; min-height: 44px; margin-top: 6px; }
+    .import-bar {
+      position: sticky; bottom: calc(var(--arc-h) + 8px); z-index: 11;   /* sticks above the menu while the page scrolls, and keeps the page's width */
+      margin: 12px 0 0; display: grid; gap: 6px; padding: 8px 10px 10px;
+      background: var(--card); border: 1px solid var(--accent); border-radius: var(--radius-card); box-shadow: 0 6px 20px var(--shadow);
+    }
+    .import-bar .import-owned { width: 100%; padding-left: 0; }
+    .import-bar .import-owned > .pick-box { margin-left: 10px; }
+    .import-bar #import-save { width: 100%; min-height: 48px; }
+    body:has(#import-page:not(.hidden) .import-bar) .toast { bottom: calc(var(--arc-h) + 136px); }
+    body:has(#import-page:not(.hidden) .import-bar.no-tick) .toast { bottom: calc(var(--arc-h) + 86px); }
+    @media (max-width: 899.98px) {
+      body.typing .import-bar { bottom: calc(12px + env(safe-area-inset-bottom)); }
+      body.typing:has(#import-page:not(.hidden) .import-bar) .toast { bottom: calc(140px + env(safe-area-inset-bottom)); }
+    }
     .import-part { font-weight: 600; color: var(--accent); margin: 14px 0 4px; }
     .import-steps { margin: 0; padding-left: 22px; font-size: 14px; line-height: 1.5; }
     .import-steps li { margin-bottom: 4px; }
@@ -3068,11 +3097,11 @@
             <li id="help-faction-part">A line with just a faction name (<strong>Blue Army</strong>) starts that faction's scheme. A faction followed by a part (<strong>Blue Army armour</strong>, <strong>Green Army cloak</strong>) starts that scheme and that part, so it isn't mistaken for a paint with a similar name.</li>
             <li>Divider lines (<strong>-----</strong>, <strong>***</strong>, <strong>===</strong>) and lines with only emoji are skipped, like blank lines. Words the app can't read as a paint (say, in another alphabet) are kept as a note.</li>
             <li>Up to <strong>20,000 characters</strong> are read at once (a few pages of notes). If yours is longer, the preview says so: paste the rest separately.</li>
-            <li>Not sure about a paint (like "CM")? <strong>Check … paints</strong> asks what you meant. The app remembers your answer for next time.</li>
+            <li id="help-check-paints"><strong>Check paints</strong> says how many paints matched and how many need a look. <strong>Show the … matched</strong> lists the matched ones. A paint it is not sure about (like "CM") gets a card with its best match already picked, the second best, and <strong>Keep as typed</strong>. A paint it does not know at all starts on Keep as typed, and <strong>Pick a paint</strong> lets you choose one from the paint list. One card per name: your choice counts everywhere that name is in the paste. A paint you choose yourself is remembered for next time. Nothing has to be answered before Save.</li>
             <li><strong>✕</strong> next to a step, a part's name or a note leaves it out of the paste. Each has Undo. This only changes the preview, not your notes, so <strong>Read again</strong> brings everything back.</li>
             <li>A short line the app can't match to a paint, with paints under it (like <strong>Heraldry</strong>), is guessed to be a <strong>section heading</strong>. The paints under it become their own recipe named after it. Tap <strong>✎</strong> and set <strong>This line is</strong> to a paint step, a section heading or Ignore.</li>
             <li><strong>✎</strong> on a step lets you change it before saving: its <strong>technique</strong>, its <strong>mix ratio</strong> (<strong>Clear</strong> makes it an even mix), or <strong>Change…</strong> any of its <strong>paints</strong> to a different one. Only that step changes, and each change has Undo.</li>
-            <li>If the paste has paints that aren't in Your Palette yet, <strong>Do you own these?</strong> sits above Save: <strong>All</strong> (Owned), <strong>None</strong> (Not owned) or <strong>Let me pick</strong>.</li>
+            <li>If the paste has paints that aren't in Your Palette yet, <strong>Mark these paints as Owned</strong> sits above Save, ticked to start with. Untick it to add the recipes without changing what you own. The Save button stays above the menu bar while you scroll.</li>
             <li><strong>Copy as text</strong> on a recipe writes it out in the same style, so you can share it or paste it back. Mixes are copied with their ratio (an even mix is written <strong>1:1</strong>), so they come back the same.</li>
           </ul>
         </details>

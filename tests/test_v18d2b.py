@@ -83,18 +83,16 @@ def type_swap(page, text, how="enter"):
     page.wait_for_timeout(50)
 
 def asks(page):
-    return page.eval_on_selector_all("#import-page .import-check .import-typed", "els => els.map(e => e.textContent.trim())")
+    # RS4b: one card per paint ("You wrote CM", "in 2 recipes" when more than one); it was "“CM” (2 times)".
+    return page.eval_on_selector_all("#import-page .import-ask", """els => els.map(e => e.querySelector('.import-typed').textContent.trim()
+        + (e.querySelector('.import-where') ? ' ' + e.querySelector('.import-where').textContent.trim() : ''))""")
 
 def save_text(page):
     return page.text_content("#import-save")
 
 def own_labels(page):
-    page.click("#import-own [data-own='pick']")
-    page.wait_for_timeout(30)
-    out = page.eval_on_selector_all("#import-own .own-paint", "els => els.map(e => e.getAttribute('aria-label').split(':')[0])")
-    page.click("#import-own [data-own='all']")
-    page.wait_for_timeout(30)
-    return out
+    # RS4b: "Do you own these?" became the "Mark these paints as Owned" tick, which covers these same new paints.
+    return page.evaluate("importNewPaints(importDraft).map(p => p.label)")
 
 def toast(page):
     return page.evaluate("document.getElementById('toast').classList.contains('hidden') ? '' : document.getElementById('toast').textContent")
@@ -125,14 +123,15 @@ def main():
         # --- 1. The rows in the editor ---
         paste(page, NOTE)
         start_lines = lines(page)
-        check("to start: asks about CM (twice), and Save waits for it",
-              asks(page) == ["“CM” (2 times)"] and page.is_disabled("#import-save"), [asks(page), save_text(page)])
+        # RS4b: CM starts on its best match (Contrast Medium) and Save is ready; before, it showed "CM?" and Save waited.
+        check("to start: asks about CM (in 2 recipes), and Save is ready",
+              asks(page) == ["CM in 2 recipes"] and not page.is_disabled("#import-save"), [asks(page), save_text(page)])
         open_editor(page, 1)
         check("the editor lists each paint in the step, with Change…",
-              swap_names(page) == ["Mephiston Red", "CM?"] and editor(page).locator(".import-swap").count() == 2, swap_names(page))
+              swap_names(page) == ["Mephiston Red", "Contrast Medium"] and editor(page).locator(".import-swap").count() == 2, swap_names(page))
         check("Change… says what it does (for screen readers)",
               # v75: the name is now "Change" plus the paint's name (aria-labelledby)
-              all(w in editor(page).locator(".import-swap").nth(1).aria_snapshot() for w in ("Change", "CM?")),
+              all(w in editor(page).locator(".import-swap").nth(1).aria_snapshot() for w in ("Change", "Contrast Medium")),
               editor(page).locator(".import-swap").nth(1).aria_snapshot())
         check("the hint mentions changing a step", "Tap ✎ to change a step" in page.text_content("#import-page"))   # v75: shorter hint
 
@@ -148,33 +147,32 @@ def main():
               and focused(page).endswith("|swap-1"), focused(page))
         check("…the editor row shows the new paint and what was pasted",
               swap_names(page)[1] == "Abaddon Black (pasted as “CM”)", swap_names(page))
-        check("…says what it did, with Undo", "CM changed to Abaddon Black" in toast(page), toast(page))
+        check("…says what it did, with Undo", "Contrast Medium changed to Abaddon Black" in toast(page), toast(page))   # RS4b: CM started on Contrast Medium
         check("…the mix ratio is unchanged (2:1)", "mix 2:1" in lines(page)[1]
               and page.input_value("#import-page .import-step-editor input[data-import-focus='ratio']") == "2:1", lines(page)[1])
         check("…only this step: CM is still asked about once, for the Eyes step",
-              asks(page) == ["“CM”"] and "CM?" in lines(page)[3],
+              asks(page) == ["CM"] and "CM → Contrast Medium" in lines(page)[3],
               [asks(page), lines(page)[3]])
-        check("…and Save still waits for that one", page.is_disabled("#import-save") and "Pick 1 more paint" in save_text(page), save_text(page))
 
         undo(page)
-        check("Undo: CM? is back in the step, and asked about twice again",
-              "CM?" in lines(page)[1] and asks(page) == ["“CM” (2 times)"], [lines(page)[1], asks(page)])
-        check("Undo: the editor row shows CM? again", swap_names(page) == ["Mephiston Red", "CM?"], swap_names(page))
+        check("Undo: CM is back in the step, and asked about in 2 recipes again",
+              "CM → Contrast Medium" in lines(page)[1] and asks(page) == ["CM in 2 recipes"], [lines(page)[1], asks(page)])
+        check("Undo: the editor row shows its best match again", swap_names(page) == ["Mephiston Red", "Contrast Medium"], swap_names(page))
 
         # --- 3. Swap both CMs: the question goes, Save is ready, "Do you own these?" updates ---
         change(page, 1)
         type_swap(page, "Abaddon Black", how="click")
         check("Use button works the same as Enter", "CM → Abaddon Black" in lines(page)[1], lines(page)[1])
         open_editor(page, 3)
-        check("opening another step's ✎ closes the first", editor(page).count() == 1 and swap_names(page) == ["CM?"], swap_names(page))
+        check("opening another step's ✎ closes the first", editor(page).count() == 1 and swap_names(page) == ["Contrast Medium"], swap_names(page))
         change(page, 0)
         type_swap(page, "Zzyzx Glow")
         check("a name it doesn't know becomes a new paint, as typed", "CM → Zzyzx Glow (new)" in lines(page)[3], lines(page)[3])
         check("no paints left to check: the card goes and Save is ready",
-              page.locator("#import-page .import-check").count() == 0 and not page.is_disabled("#import-save")
+              page.locator("#import-page .import-ask").count() == 0 and not page.is_disabled("#import-save")
               and save_text(page) == "Save 2 recipes", save_text(page))
         labels = own_labels(page)
-        check("\"Do you own these?\" lists the new paints (and no CM)",
+        check("the new paints (for the Owned tick) are the swapped ones (and no CM)",
               any("Zzyzx Glow" in l for l in labels) and any("Abaddon Black" in l for l in labels)
               and not any(l.endswith("CM") or "Contrast Medium" in l for l in labels), labels)
 
@@ -237,7 +235,7 @@ def main():
         # --- 7. Answers in "Check N paints" are kept; Undo brings the question back answered ---
         start(page)
         paste(page, NOTE)
-        page.locator("#import-page .import-check .chips button", has_text="Contrast Medium").click()
+        page.locator("#import-page .import-ask label", has_text="Contrast Medium").click()   # RS4b: radio options
         page.wait_for_timeout(50)
         check("answering CM covers both steps", "CM → Contrast Medium" in lines(page)[1] and "CM → Contrast Medium" in lines(page)[3]
               and not page.is_disabled("#import-save"), lines(page))
@@ -247,10 +245,10 @@ def main():
         type_swap(page, "Moot Green")
         check("swapping one step leaves your answer for the other",
               "CM → Moot Green" in lines(page)[3] and "CM → Contrast Medium" in lines(page)[1]
-              and asks(page) == ["“CM”"] and not page.is_disabled("#import-save"), [lines(page), asks(page)])
+              and asks(page) == ["CM"] and not page.is_disabled("#import-save"), [lines(page), asks(page)])
         undo(page)
-        check("Undo: the question is back to 2 steps, still answered",
-              asks(page) == ["“CM” (2 times)"] and "CM → Contrast Medium" in lines(page)[3]
+        check("Undo: the question is back to 2 recipes, still answered",
+              asks(page) == ["CM in 2 recipes"] and "CM → Contrast Medium" in lines(page)[3]
               and not page.is_disabled("#import-save"), [asks(page), lines(page)[3]])
 
         # --- 8. Read again brings everything back ---
@@ -258,7 +256,7 @@ def main():
         type_swap(page, "Leadbelcher")
         read_again(page)
         check("Read again: every paint as pasted, CM asked about again",
-              lines(page) == start_lines and asks(page) == ["“CM” (2 times)"]
+              lines(page) == start_lines and asks(page) == ["CM in 2 recipes"]
               and editor(page).count() == 0, [lines(page), asks(page)])
 
         # --- 9. Odd text is shown as plain text ---

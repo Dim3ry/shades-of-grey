@@ -129,12 +129,12 @@ def main():
         check("Undo: the note is back, in order", notes(page) == ["thin your paints", "do the trim last"], notes(page))
 
         # --- 3. Leave a whole part out ---
-        check("starts with an unsure paint to check (Khorn red, in Eyes)", page.locator("#import-page .import-check").count() == 1)
+        check("starts with an unsure paint to check (Khorn red, in Eyes)", page.locator("#import-page .import-ask").count() == 1)   # RS4b: one card per paint
         page.locator("#import-page .import-drop-part").nth(1).click()
         page.wait_for_timeout(50)
         check("the Eyes part and its steps are gone", parts(page) == ["Cloak", "Rocks"] and len(lines(page)) == 5, parts(page))
         check("says so, with Undo", "Left out Eyes (2 steps)" in toast(page), toast(page))
-        check("its unsure paint no longer holds up Save", page.locator("#import-page .import-check").count() == 0
+        check("its unsure paint is no longer asked about", page.locator("#import-page .import-ask").count() == 0
               and page.text_content("#import-save") == "Save 2 recipes", page.text_content("#import-save"))
         undo(page)
         check("Undo: Eyes is back in the middle", parts(page) == ["Cloak", "Eyes", "Rocks"] and lines(page) == start_lines, parts(page))
@@ -242,7 +242,7 @@ def main():
         page.locator("#import-page .import-drop-note").first.click()     # thin your paints
         page.locator("#import-page .import-drop-part").nth(2).click()    # Rocks
         page.wait_for_timeout(50)
-        page.locator("#import-page .import-ask .chip", has_text="Khorne Red").first.click()
+        page.locator("#import-page .import-ask label", has_text="Khorne Red").first.click()   # RS4b: radio options
         page.wait_for_timeout(50)
         page.click("#import-save")
         page.wait_for_timeout(200)

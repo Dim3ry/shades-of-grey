@@ -186,7 +186,7 @@ def main():
         page.fill("#import-text", NOTE)
         page.click("#import-page button.primary-button")   # "Read notes"
         page.wait_for_timeout(100)
-        page.click("#import-own [data-own=none]")          # "Do you own these?" None
+        page.click("#import-owned")                        # RS4b: untick "Mark these paints as Owned" (was "Do you own these?" None)
         paints_before = page.evaluate("book.paints.length")
         before = saved(page, RECIPES_KEY)
         full(page, True)
@@ -201,8 +201,7 @@ def main():
               page.input_value("#import-text"))
         check("paste (full): the preview and its Save button are still there",
               page.locator("#import-save").is_visible() and "Retributor Armour" in page.inner_text("#import-page"))
-        check("paste (full): your 'None' answer is kept", page.locator("#import-own [data-own=none]")
-              .get_attribute("aria-pressed") == "true")
+        check("paste (full): your unticked Owned box is kept", page.locator("#import-owned").get_attribute("aria-checked") == "false")
         check("paste (full): nothing half-added on screen",
               page.evaluate("book.recipes.length") == 1 and page.evaluate("book.paints.length") == paints_before
               and page.evaluate("book.schemes.length") == 0)
@@ -219,8 +218,8 @@ def main():
               [x["name"] for x in b["paints"]].count("Retributor Armour") == 1
               and [x["name"] for x in b["paints"]].count("Agrax Earthshade") == 1, [x["name"] for x in b["paints"]])
         st = {x["name"]: x.get("status", "") for x in b["paints"]}
-        check("paste (room, Save again): your 'None' answer was used",
-              st.get("Retributor Armour") == "notowned" and st.get("Agrax Earthshade") == "notowned", st)
+        check("paste (room, Save again): your unticked Owned box was used (RS4b: no status, was Not owned)",
+              st.get("Retributor Armour") == "" and st.get("Agrax Earthshade") == "", st)
         check("paste (room, Save again): the paste screen closes", not page.locator("#import-page").is_visible())
 
         # ---------- 4. Pot scan: Added … to your palette ----------

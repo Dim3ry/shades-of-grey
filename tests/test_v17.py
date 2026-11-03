@@ -57,9 +57,10 @@ Vallejo
 - Mystic Blue"""
 
 # How George answers the questions the Keep note raises (same as v16).
-ANSWERS = {"Bleck Templar": "Black Templar", "CM": "Contrast Medium", "Ice": "Basing material", "SS": "Screaming Skull",
+ANSWERS = {"Bleck Templar": "Black Templar", "CM": "Contrast Medium", "Ice": "Keep as typed", "SS": "Screaming Skull",
            "Khorn red": "Khorne Red", "gothor brown": "Gorthor Brown", "white": "White Primer",
            "blangels red": "Blood Angels Red", "ultramarine blue": "Ultramarines Blue"}
+# RS4b: the review no longer offers Basing material, so Ice is kept as typed.
 
 def load(page, book):
     page.goto(URL)
@@ -187,8 +188,8 @@ with sync_playwright() as pw:
             page.click("text=Read notes")
             page.wait_for_timeout(200)
             for typed, answer in ANSWERS.items():
-                row = page.locator(".import-ask", has=page.locator(".import-typed", has_text=f"“{typed}”"))
-                row.locator("button.chip", has_text=answer).first.click()
+                row = page.locator(".import-ask", has=page.locator(".import-typed", has_text=re.compile(f"^{re.escape(typed)}$")))   # RS4b: the typed text in bold, no quote marks
+                row.locator("label.import-option", has_text=answer).first.click()   # RS4b: radio options instead of chips
             page.click("#import-save")
             page.wait_for_timeout(300)
             total = page.evaluate("book.recipes.length")

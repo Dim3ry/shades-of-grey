@@ -7,7 +7,7 @@ a scheme with no parts left. Undo puts back exactly what was there.
 Leaving a step out also tidies the rest of the preview:
 - an unsure paint that was only in that step stops being asked about (so it can't hold up Save),
   and answers you've already given to other paints are kept;
-- a new paint that was only in that step drops off "Do you own these?" and isn't added;
+- a new paint that was only in that step drops off Check paints (RS4b: it had been "Do you own these?") and isn't added;
 - a scheme name you typed is kept.
 
 Serve the repo folder first (run_all.py does this for you), then run:
@@ -83,6 +83,10 @@ def undo(page):
     page.click("#toast-undo")
     page.wait_for_timeout(50)
 
+def asks(page):
+    """RS4b: the typed names that have a card under Check paints."""
+    return page.eval_on_selector_all("#import-page .import-ask .import-typed", "els => els.map(e => e.textContent)")
+
 def save_text(page):
     return page.text_content("#import-save")
 
@@ -104,11 +108,9 @@ def main():
               all(w in page.locator("#import-page .import-remove").first.aria_snapshot() for w in ("Leave out", "Mephiston Red")),
               page.locator("#import-page .import-remove").first.aria_snapshot())
         check("a hint explains the ✕", "✕ to leave something out" in page.text_content("#import-page"))   # v75: shorter hint
-        check("starts with an unsure paint to check", page.locator("#import-page .import-check").count() == 1)
-        check("Save waits for it", page.locator("#import-save").is_disabled(), save_text(page))
-        page.click("#import-page [data-own=pick]")
-        own_before = page.eval_on_selector_all("#import-page .own-paint", "els => els.map(e => e.textContent)")
-        check("the new paint is asked about under Do you own these?", any("Zorblax Goo" in t for t in own_before), own_before)
+        # RS4b: each paint that needs a look has its own card under Check paints (a new paint too), and Save is never held up.
+        check("starts with an unsure paint and a new paint to check", asks(page) == ["Khorn red", "Zorblax Goo"], asks(page))
+        check("Save is ready at once", not page.locator("#import-save").is_disabled(), save_text(page))
 
         # --- 2. Leave out one step (the part keeps its other steps) ---
         remove_line(page, "Mephiston Red")
@@ -122,20 +124,20 @@ def main():
 
         # --- 3. An unsure paint only in a left-out step stops holding up Save ---
         remove_line(page, "Khorn red")
-        check("the unsure paint isn't asked about any more", page.locator("#import-page .import-check").count() == 0)
+        check("the unsure paint isn't asked about any more", "Khorn red" not in asks(page), asks(page))
         check("Save is ready", not page.locator("#import-save").is_disabled() and save_text(page) == "Save 3 recipes", save_text(page))
 
         # --- 4. Undo puts it back, in the same place ---
         undo(page)
         check("Undo: the line is back in its place", lines(page) == start_lines[1:], lines(page))
-        check("Undo: the unsure paint is asked about again", page.locator("#import-page .import-check").count() == 1)
+        check("Undo: the unsure paint is asked about again", "Khorn red" in asks(page), asks(page))
 
         # --- 5. An answer you've given is kept when another step is left out ---
-        page.locator("#import-page .import-ask .chip", has_text="Khorne Red").first.click()
+        page.locator("#import-page .import-ask", has_text="Khorn red").locator("label", has_text="Keep as typed").click()   # RS4b: radio options
         remove_line(page, "Agrax Earthshade")
-        check("your answer (Khorne Red) is kept", page.locator("#import-page .import-check").count() == 1
-              and page.locator("#import-page .import-ask.answered").count() == 1
-              and any("Khorn red → Khorne Red" in t for t in lines(page)), lines(page))
+        check("your answer (Keep as typed) is kept", "Khorn red" in asks(page)
+              and page.locator("#import-page .import-ask", has_text="Khorn red").locator("input[value=keep]").is_checked()
+              and any("Khorn red → Khorn Red" in t for t in lines(page)), lines(page))
         undo(page)
 
         # --- 6. Leaving out a part's last step leaves the part out ---
@@ -143,9 +145,8 @@ def main():
         remove_line(page, "Zorblax Goo")
         check("Eyes had one step, so it's gone too", parts(page) == ["Cloak", "Rocks"], parts(page))
         check("the message says so", "Eyes had no steps left" in toast(page), toast(page))
-        check("Save counts one fewer recipe", save_text(page) == "Pick 1 more paint first" or save_text(page) == "Save 2 recipes", save_text(page))
-        own_after = page.eval_on_selector_all("#import-page .own-paint", "els => els.map(e => e.textContent)")
-        check("its new paint drops off Do you own these?", own_after and not any("Zorblax Goo" in t for t in own_after), own_after)
+        check("Save counts one fewer recipe", save_text(page) == "Save 2 recipes", save_text(page))
+        check("its new paint's card goes too", "Zorblax Goo" not in asks(page), asks(page))
         check("the scheme name you typed is kept", page.input_value("#import-page input[aria-label='Scheme 1 name']") == "My Sisters")
         undo(page)
         check("Undo brings the part back", parts(page) == ["Cloak", "Eyes", "Rocks"], parts(page))
@@ -162,14 +163,14 @@ def main():
         undo(page)
 
         # --- 8. Saving leaves the step out for real ---
-        # Mephiston Red was left out in part 2 (never undone), so Cloak keeps only "Khorn red → Khorne Red".
+        # Mephiston Red was left out in part 2 (never undone), so Cloak keeps only "Khorn red", kept as typed in part 5 (RS4b; it was Khorne Red).
         remove_line(page, "Agrax Earthshade")
         page.click("#import-save")
         page.wait_for_timeout(200)
         book = saved_book(page)
         names = {x["id"]: x["name"] for x in book.get("paints", [])}
         recipes = {r["name"]: [[names.get(sp["paint"]) for sp in s["paints"]] for s in r["steps"]] for r in book.get("recipes", [])}
-        check("saved: Cloak has only the steps you kept", recipes.get("Cloak") == [["Khorne Red"]], recipes)
+        check("saved: Cloak has only the steps you kept", recipes.get("Cloak") == [["Khorn Red"]], recipes)
         check("saved: Eyes (left out) isn't saved", "Eyes" not in recipes, recipes)
         check("saved: Rocks is saved whole", recipes.get("Rocks") == [["Stirland Mud"], ["Nuln Oil"]], recipes)
         check("saved: left-out paints aren't added to your palette",

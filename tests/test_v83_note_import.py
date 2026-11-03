@@ -83,7 +83,7 @@ def main():
         print("\n--- 2. The preview ---")
         open_preview(page, NOTES)
         check("the headings show as Section lines", page.locator("#import-page .import-heading").count() == 4)
-        check("Check N paints does not ask about the headings", page.locator("#import-page .import-check").count() == 0)
+        check("Check paints does not ask about the headings", page.locator("#import-page .import-ask").count() == 0)   # RS4b: one card per paint to look at
         check("Save is ready and says how many recipes it will make", "Save 5 recipes" in page.inner_text("#import-save"), page.inner_text("#import-save"))
         first = page.locator("#import-page .import-heading .import-edit").first
         first.click()
