@@ -47,7 +47,8 @@ def settle(page):
 
 # Open the card and its Details, put it in the middle of the screen, press Delete in Details (the question box is then up).
 ASK = """async (id) => { const sel = `#unit-list > li.unit[data-id="${id}"]`, wait = (ms) => new Promise(r => setTimeout(r, ms));
-    let c = document.querySelector(sel); c.scrollIntoView({ block: 'center' });
+    let c; for (let i = 0; i < 100 && !(c = document.querySelector(sel)); i++) await wait(30);   // T6: wait for the card to be drawn (the list arrives in pieces), not a guess
+    c.scrollIntoView({ block: 'center' });
     if (c.classList.contains('compact')) c.querySelector('.info').click();
     await wait(350); c = document.querySelector(sel);
     const d = c.querySelector('.details-toggle'); if (d.getAttribute('aria-expanded') !== 'true') d.click();
