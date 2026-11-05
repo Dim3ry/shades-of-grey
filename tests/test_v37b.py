@@ -847,7 +847,7 @@ def main():
                 shot(page, f"v37b-wheel-detail-{width}.png")
         page.set_viewport_size({"width": 390, "height": 844})
         # a real touch phone
-        touch = browser.new_context(viewport={"width": 390, "height": 844}, has_touch=True, is_mobile=True, service_workers="block")
+        touch = browser.new_context(viewport={"width": 390, "height": 844}, has_touch=True, is_mobile=True, service_workers="block", reduced_motion="reduce")  # T6: reduced motion: screen moves are skipped, so the test no longer waits out every 0.3 to 1 s animation (this file checks content, not motion)
         tp = touch.new_page()
         tp.on("pageerror", lambda e: errors.append(str(e)))
         load(tp, paints=PAINTS, recipes=RECIPES, units=UNITS)

@@ -20,7 +20,7 @@ You run the Minifolio test suite and tell George, in plain words, whether it is 
 
 ## Lessons (do not forget these)
 - Never skip, weaken or edit a test to get green. Never merge. Report real failures plainly, even if they look small.
-- Known failures that also happen on main (CLAUDE.md): `test_colour_engine` (needs Node.js) and `test_v21_7` (select_option timeout). Say they are known, and still list them. The run exits 1 because of them; that is expected.
+- There are no known failures now (CLAUDE.md). Any red file is news: report it.
 - Checks that are sensitive to a busy machine (already hardened, so a failure there is most likely load): `test_v87_motion2` (stripe colour), `test_v18_paste` (200 ms read), `test_colour_engine` (30 ms search), `test_v82_tap_targets` (sideways scroll), `test_v55`.
 - A one-off `page.goto ... net::ERR_ABORTED` is retried up to 3 times by the test harness. If one survives into the output, rerun that file alone: `python3 tests/run_all.py` has no single-file option, so serve the repo (`python3 -m http.server 8801`) and run `SOG_PORT=8801 python3 tests/test_xxx.py tests/screenshots`.
 - Never put `pkill` in the same shell command as other work (it can kill the shell). Run it on its own.

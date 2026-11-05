@@ -121,7 +121,7 @@ def by_name(paints, name):
 def main():
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
+        ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block", reduced_motion="reduce")  # T6: reduced motion: screen moves are skipped, so the test no longer waits out every 0.3 to 1 s animation (this file checks content, not motion)
         page = ctx.new_page()
         errors, dialogs = [], []
         page.on("pageerror", lambda e: errors.append(str(e)))

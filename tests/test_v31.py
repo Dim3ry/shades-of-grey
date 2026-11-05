@@ -259,7 +259,7 @@ def focused(page):
 def main():
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        ctx = browser.new_context(viewport={"width": 390, "height": 844})
+        ctx = browser.new_context(viewport={"width": 390, "height": 844}, reduced_motion="reduce")  # T6: reduced motion: screen moves are skipped, so the test no longer waits out every 0.3 to 1 s animation (this file checks content, not motion)
         page = ctx.new_page()
         errors, dialogs, requests = [], [], []
         page.on("pageerror", lambda e: errors.append(str(e)))
@@ -495,7 +495,7 @@ def main():
         check("with the network switched off, the mood buttons and the schemes still work", ok_off)
         check("using the mood buttons, picking schemes and tapping paints made no network requests at all", requests == [], requests)
         # If schemes.js could not be loaded at all, the rest of the card must still work.
-        ctx3 = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
+        ctx3 = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block", reduced_motion="reduce")
         page3 = ctx3.new_page()
         errors3 = []
         page3.on("pageerror", lambda e: errors3.append(str(e)))

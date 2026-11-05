@@ -190,7 +190,7 @@ def main():
     errors, csp, popups, notices, outside = [], [], [], [], []
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        context = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
+        context = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block", reduced_motion="reduce")  # T6: reduced motion: screen moves are skipped, so the test no longer waits out every 0.3 to 1 s animation (this file checks content, not motion)
         context.on("request", lambda r: outside.append(r.url) if not (r.url.startswith(BASE) or r.url.startswith(("data:", "blob:", "about:"))) else None)
         page = context.new_page()
         attach_notices(page, notices.append)

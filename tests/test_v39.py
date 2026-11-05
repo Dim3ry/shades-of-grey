@@ -150,7 +150,7 @@ def open_shopping(page):
 def main():
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
+        ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block", reduced_motion="reduce")  # T6: reduced motion: screen moves are skipped, so the test no longer waits out every 0.3 to 1 s animation (this file checks content, not motion)
         page = ctx.new_page()
         errors, dialogs, requests = [], [], []
         page.on("pageerror", lambda e: errors.append(str(e)))
@@ -584,7 +584,7 @@ def main():
                 return { out, small, sw: document.documentElement.scrollWidth <= window.innerWidth + 1 }; }""")
             check(f"at {width} px the recipe's Colour ideas card fits too: three open fold-outs inside the card, 44 px to tap, no sideways scroll", geo["out"] == 0 and geo["small"] == 0 and geo["sw"], geo)
         page.set_viewport_size({"width": 390, "height": 844})
-        touch = browser.new_context(viewport={"width": 390, "height": 844}, has_touch=True, is_mobile=True, service_workers="block")
+        touch = browser.new_context(viewport={"width": 390, "height": 844}, has_touch=True, is_mobile=True, service_workers="block", reduced_motion="reduce")
         tp = touch.new_page()
         tp.on("pageerror", lambda e: errors.append(str(e)))
         load(tp, paints=JUST_BLUE)

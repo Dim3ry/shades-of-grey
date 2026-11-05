@@ -109,7 +109,7 @@ def exact_palette(recipe, n, status="owned", start=300):
 def main():
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        ctx = browser.new_context(viewport={"width": 390, "height": 844})
+        ctx = browser.new_context(viewport={"width": 390, "height": 844}, reduced_motion="reduce")  # T6: reduced motion: screen moves are skipped, so the test no longer waits out every 0.3 to 1 s animation (this file checks content, not motion)
         page = ctx.new_page()
         errors, dialogs, requests = [], [], []
         page.on("pageerror", lambda e: errors.append(str(e)))
@@ -452,7 +452,7 @@ def main():
         ctx.set_offline(False)
         check("with the network switched off, the group buttons, the recipes, Add all steps and single taps still work", ok_off)
         check("using the group buttons, picking recipes and adding steps made no network requests at all", requests == [], requests)
-        ctx3 = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
+        ctx3 = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block", reduced_motion="reduce")
         page3 = ctx3.new_page()
         errors3 = []
         page3.on("pageerror", lambda e: errors3.append(str(e)))
@@ -465,7 +465,7 @@ def main():
               and page3.locator("#colour-ideas button.idea").count() == 3 and page3.locator("#faction-history").count() == 1 and page3.locator("#starter-schemes").count() == 1
               and page3.locator("#scheme-check").count() == 1 and not errors3, errors3[:2])
         ctx3.close()
-        ctx4 = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
+        ctx4 = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block", reduced_motion="reduce")
         page4 = ctx4.new_page()
         errors4 = []
         page4.on("pageerror", lambda e: errors4.append(str(e)))

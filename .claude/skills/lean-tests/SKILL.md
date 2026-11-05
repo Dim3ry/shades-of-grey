@@ -29,7 +29,7 @@ Keep `no page errors` and `no browser pop-ups` in each new test; those are cheap
 ## While building
 1. Run only your test: serve the repo (`python3 -m http.server 8801`) and `SOG_PORT=8801 python3 tests/test_vNN.py tests/screenshots`.
 2. Then `python3 tests/run_all.py --quick` for the newest versions and the plumbing test.
-3. Before the pull request: the full `python3 tests/run_all.py` in the background. Known failures that also happen on main: `test_colour_engine`, `test_v21_7`.
+3. Before the pull request: the full `python3 tests/run_all.py` in the background. There are no known failures now; report any failure plainly.
 
 ## Removing tests (only when George has approved the list)
 - Say what goes and why in the pull request, one line each.
