@@ -55,8 +55,8 @@
        (applyAppearance in app.js) takes over once the app starts.
        U6b: mentor-looks.js (the Mentor orb's three looks and five states, plain data: MENTOR_LOOKS and MENTOR_LOOKS_CSS) loads
        just before it, so early.js can put the chosen look and its styles on the page before the first frame (LR1). -->
-  <script src="mentor-looks.js?v=130"></script>
-  <script src="early.js?v=130"></script>
+  <script src="mentor-looks.js?v=131"></script>
+  <script src="early.js?v=131"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -1310,7 +1310,7 @@
     .seg button { background: none; color: var(--muted); padding: 10px; font-size: 0.9375rem; min-height: 44px; }
     .seg button[aria-selected="true"] { background: var(--accent-fill, var(--accent)); color: var(--on-accent); font-weight: 600; }
     .more-title { margin: 0 0 8px; }   /* X2: the page heading above the Guides / Settings / Help / Updates switch */
-    #more-seg { grid-template-columns: repeat(5, 1fr); gap: 2px; }   /* X2: Guides added; AM1: About added (five pages) */
+    #more-seg { grid-template-columns: repeat(6, 1fr); gap: 2px; }   /* X2: Guides added; AM1: About added; CR1: Credits added (six pages) */
     #more-seg button { padding: 10px 2px; font-size: 0.875rem; }
     @media (max-width: 380px) { #more-seg button { font-size: 0.8125rem; } }   /* AM1: five pages must fit 320 px */
     /* v40: the Recipes tab's switch has four parts now (Recipes, Schemes, Your Palette, Shopping), so each is a little narrower */
@@ -1337,6 +1337,17 @@
       #recipe-seg button, #more-seg button { flex: 1 1 44px; min-width: auto; }   /* auto: never narrower than the longest word */
     }
     @media (max-width: 300px) { #recipe-seg button, #more-seg button { flex-basis: 30%; } }
+    #more-seg { grid-template-columns: repeat(6, minmax(min-content, 1fr)); }   /* CR1: six pages; the wrapping rules above still apply under 340 px */
+    @media (max-width: 21.25em) { #more-seg { display: flex; } }
+    /* CR1: the Credits page. Each row is the name, who made it, and the licence name, which is the link (44 px tall). */
+    #view-credits .credits-list { list-style: none; margin: 0 0 12px; padding: 0; }
+    #view-credits .credits-list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 12px; padding: 4px 0; border-top: 1px solid var(--border); }
+    #view-credits .credits-list li:first-child { border-top: 0; }
+    #view-credits .cr-who { flex: 1 1 11rem; min-width: 0; overflow-wrap: anywhere; }
+    #view-credits .cr-by { display: block; color: var(--muted); font-size: 0.875rem; }
+    #view-credits .credits-list a, #view-credits .credits-thanks-list a { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; overflow-wrap: anywhere; }
+    #view-credits a:focus-visible, .about-credits-link:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+    #view-credits .credits-thanks-list { list-style: none; margin: 0; padding: 0; }
     .link-button { min-width: 44px; }
     .review-row label { min-height: 44px; }
     .clearable input:placeholder-shown { padding-right: 10px; }   /* the clear x is hidden while the box is empty, so the hint gets its room */
@@ -3385,8 +3396,9 @@
          the Recipes tab's) moves between the four pages. It shows only on those pages and is
          filled in by showTab(). -->
     <h2 class="more-title hidden" id="more-title">Tools and Settings</h2>
-    <div class="seg hidden" id="more-seg" role="tablist" aria-label="About, guides, settings, help or updates">
+    <div class="seg hidden" id="more-seg" role="tablist" aria-label="About, credits, guides, settings, help or updates">
       <button role="tab" data-page="about">About</button>
+      <button role="tab" data-page="credits">Credits</button>
       <button role="tab" data-page="guides">Guides</button>
       <button role="tab" data-page="settings">Settings</button>
       <button role="tab" data-page="help">Help</button>
@@ -3400,6 +3412,37 @@
         <p>Minifolio is a hobby tracker made by a nerd, for nerds. It began as one painter’s side project to track their own models and learn to code, and it grew arms, legs and a few tentacles. It’s still mostly one person, so thanks for your patience.</p>
         <h2>Mission</h2>
         <p>To give every painter a mentor in their pocket: a place to track your progress, get advice, and find the right colours.</p>
+        <button type="button" class="link-button about-credits-link" id="about-credits-link">Credits</button>
+      </div>
+    </section>
+
+    <!-- ===== CR1: Credits (fonts, pot-label reader, paint list; the Thanks section is drawn only when THANKS in app.js has entries) ===== -->
+    <section id="view-credits" class="hidden">
+      <div class="card">
+        <h2>Credits</h2>
+        <h3>Fonts</h3>
+        <ul class="credits-list" id="credits-fonts">
+          <li><span class="cr-who"><strong>Anton</strong><span class="cr-by">The Anton Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
+          <li><span class="cr-who"><strong>Atkinson Hyperlegible</strong><span class="cr-by">Braille Institute of America, Inc.</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
+          <li><span class="cr-who"><strong>Azeret Mono</strong><span class="cr-by">The Azeret Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
+          <li><span class="cr-who"><strong>Barlow</strong><span class="cr-by">The Barlow Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
+          <li><span class="cr-who"><strong>Big Shoulders Stencil</strong><span class="cr-by">The Big Shoulders Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
+          <li><span class="cr-who"><strong>Chakra Petch</strong><span class="cr-by">The Chakra Petch Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
+          <li><span class="cr-who"><strong>DM Mono</strong><span class="cr-by">The DM Mono Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
+          <li><span class="cr-who"><strong>EB Garamond</strong><span class="cr-by">The EB Garamond Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
+          <li><span class="cr-who"><strong>Grenze Gotisch</strong><span class="cr-by">The Grenze Gotisch Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
+          <li><span class="cr-who"><strong>Oxanium</strong><span class="cr-by">The Oxanium Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
+          <li><span class="cr-who"><strong>Permanent Marker</strong><span class="cr-by">Font Diner, Inc.</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">Apache License 2.0</a></li>
+        </ul>
+        <h3>Pot-label reader</h3>
+        <ul class="credits-list" id="credits-reader">
+          <li><span class="cr-who"><strong>Tesseract engine and English data</strong><span class="cr-by">The Tesseract authors</span></span><a href="ocr/LICENSE-tesseract.txt" target="_blank" rel="noopener noreferrer">Apache License 2.0</a></li>
+        </ul>
+        <h3>Paint list</h3>
+        <ul class="credits-list" id="credits-paints">
+          <li><span class="cr-who"><strong>miniature-paints</strong><span class="cr-by">Rick Fleuren</span></span><a href="LICENSE-paint-list.txt" target="_blank" rel="noopener noreferrer">MIT License</a></li>
+        </ul>
+        <div id="credits-thanks" class="hidden"></div>
       </div>
     </section>
 
@@ -3944,7 +3987,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=130" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=131" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -3957,16 +4000,16 @@
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks.
        G2a: guides-groups.js (the Guides topic groups, plain data) loads after guides-data.js. It only adds one
        name, GUIDE_GROUPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=130"></script>
-  <script src="schemes.js?v=130"></script>
-  <script src="detail-recipes.js?v=130"></script>
-  <script src="basing-tips.js?v=130"></script>
-  <script src="mentor-tips.js?v=130"></script>
-  <script src="guides-data.js?v=130"></script>
-  <script src="guides-groups.js?v=130"></script>
-  <script src="mentor-data.js?v=130"></script>
-  <script src="mentor-engine.js?v=130"></script>
-  <script src="where-to-buy.js?v=130"></script>
-  <script src="app.js?v=130"></script>
+  <script src="colour.js?v=131"></script>
+  <script src="schemes.js?v=131"></script>
+  <script src="detail-recipes.js?v=131"></script>
+  <script src="basing-tips.js?v=131"></script>
+  <script src="mentor-tips.js?v=131"></script>
+  <script src="guides-data.js?v=131"></script>
+  <script src="guides-groups.js?v=131"></script>
+  <script src="mentor-data.js?v=131"></script>
+  <script src="mentor-engine.js?v=131"></script>
+  <script src="where-to-buy.js?v=131"></script>
+  <script src="app.js?v=131"></script>
 </body>
 </html>

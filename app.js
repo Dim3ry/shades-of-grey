@@ -17,6 +17,13 @@
     const MAX_MODELS = 999;
     const MAX_EACH = 100;
 
+    // ===== CR1: THANKS (the Thanks section at the bottom of the Credits page) =====
+    // TO ADD A NAME: put one line in the list below, like  { name: "Creator Name", link: "https://example.com/their-page" }.
+    // The link must start with https:// (anything else is left out). Names and links are drawn as plain text and a plain link.
+    // While the list is empty, the whole Thanks section (heading included) is not drawn.
+    const THANKS = [];
+    const THANKS_LINE = "These creators inspired Minifolio. Thank you to them, and they're well worth checking out:";
+
     // ================= SAVING SAFELY (v14) =================
     // Browser storage has no "all or nothing" save, so writeTogether() does it by hand:
     // it notes what each name held before, writes the new values one by one, and if one
@@ -4359,6 +4366,7 @@
       units: document.getElementById("view-units"),
       recipes: document.getElementById("view-recipes"),
       about: document.getElementById("view-about"),   // AM1: About and Mission, the first page of Tools and Settings
+      credits: document.getElementById("view-credits"),   // CR1: Credits, straight after About
       guides: document.getElementById("view-guides"),   // v35 as the Compendium; X2: Guides, the first page of Tools and Settings
       settings: document.getElementById("view-settings"),
       updates: document.getElementById("view-updates"),
@@ -4379,7 +4387,7 @@
     // Guides / Settings / Help / Updates switch (#more-seg) at the top. The page names are "guides", "settings", "help" and "updates", so a
     // saved settings.tab of "settings", "help" or "updates" opens the right page. A saved "compendium" (the old tab) opens Guides, which
     // holds the Detail recipes and Basing tips that were all it had left (TAB_ALIASES; the same goes for the address #compendium).
-    const MORE_PAGES = ["about", "guides", "settings", "help", "updates"];
+    const MORE_PAGES = ["about", "credits", "guides", "settings", "help", "updates"];
     const TAB_ALIASES = { compendium: "guides" };
     const moreSeg = document.getElementById("more-seg");
     const moreTitle = document.getElementById("more-title");
@@ -5022,6 +5030,28 @@
     // start page gets a short fade at most. Moving between the pages inside one section (Guides, Settings, Help, Updates) is an instant switch.
     // SEC1: the section an old or short name stands for. hasOwn, so a word like "constructor" is never looked up as a built-in.
     function tabAlias(name) { return hasOwn(TAB_ALIASES, name) ? TAB_ALIASES[name] : name; }
+    // CR1: draws the Thanks section from THANKS. Entries need a name and an https link; others are left out. Nothing here uses innerHTML.
+    function renderThanks() {
+      const box = document.getElementById("credits-thanks");
+      box.textContent = "";
+      const good = THANKS.filter(t => {
+        if (!t || typeof t.name !== "string" || !t.name.trim() || typeof t.link !== "string") return false;
+        try { const u = new URL(t.link); return u.protocol === "https:" && !u.username && !u.password; } catch (e) { return false; }
+      });
+      box.classList.toggle("hidden", good.length === 0);
+      if (!good.length) return;
+      const h = document.createElement("h3"); h.textContent = "Thanks"; box.appendChild(h);
+      const p = document.createElement("p"); p.textContent = THANKS_LINE; box.appendChild(p);
+      const ul = document.createElement("ul"); ul.className = "credits-thanks-list";
+      good.forEach(t => {
+        const li = document.createElement("li"), a = document.createElement("a");
+        a.textContent = t.name.trim(); a.href = new URL(t.link).href; a.target = "_blank"; a.rel = "noopener noreferrer";
+        li.appendChild(a); ul.appendChild(li);
+      });
+      box.appendChild(ul);
+    }
+    document.getElementById("about-credits-link").addEventListener("click", () => showTab("credits"));   // CR1
+
     function showTab(name, how) {
       name = tabAlias(name);
       if (!hasOwn(views, name)) name = "dashboard";
@@ -5063,6 +5093,7 @@
       settings.tab = name;
       saveSettings();
       if (name === "settings") renderSettings();
+      if (name === "credits") renderThanks();   // CR1
       if (name === "guides") renderGuides();   // v35: built fresh each time, from your palette and units as they are now
       if (name === "dashboard") renderPaletteTile();   // X4: the palette may have changed since the Dashboard was last drawn
       if (name === "dashboard") renderHistory();   // the graph needs to be on screen to measure its width
@@ -22117,12 +22148,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=130".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=131".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v130";
+    const APP_VERSION = "v131";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -22584,6 +22615,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v131", date: "5 Nov 2026", changes: [
+        "A new Credits page, straight after About in Tools and Settings, lists the licences for the fonts, the pot-label reader and the paint list. Each licence name opens its full text, which is kept inside the app so it also opens offline. About has a Credits link.",
+      ] },
       { version: "v130", date: "3 Nov 2026", changes: [
         "Model cards are compact: each shows its name, game, army and stage. Tap a card to open it with the stage buttons, recipes and Details, and tap its header to close it. One card is open at a time.",
         "Buttons and chips dim the moment you touch them, change colour smoothly and keep their rounded shape when pressed. The square flash some phones drew on a tap is gone.",

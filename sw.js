@@ -12,7 +12,7 @@
 //
 // WHEN YOU UPLOAD A NEW VERSION: change the number below (v1 -> v2 -> v3...).
 // That tells the phone to throw away the old saved copy and start a new one.
-const VERSION = "v130";
+const VERSION = "v131";
 const CACHE_NAME = "shades-of-grey-" + VERSION;
 // The pot-label reader's big files (the engine and its English data, about 11 MB) are kept in
 // their own store that ISN'T cleared on updates, so they're only fetched once.
@@ -93,6 +93,9 @@ const APP_FILES = [
   "./icon-192.png",
   "./icon-512.png",
   "./ocr/ocr-worker.js",
+  "./fonts/LICENSES.md",  // CR1: the licence texts the Credits page links to, saved so they open offline
+  "./ocr/LICENSE-tesseract.txt",
+  "./LICENSE-paint-list.txt",
 ];
 
 // "install": runs once when this version of sw.js is first seen. Save the app files.
