@@ -37,8 +37,16 @@ TOAST = """() => {
   showToast('Removed Squad 1', () => {});
   const tt = document.getElementById('toast'), b = document.getElementById('toast-undo'), s = getComputedStyle(tt);
   return { cls: tt.classList.contains('toast-slip'), bg: s.backgroundColor, color: s.color, radius: parseFloat(s.borderTopLeftRadius),
-           btn: b.getBoundingClientRect().height, btnColor: getComputedStyle(b).color, card: getComputedStyle(document.documentElement).getPropertyValue('--card').trim(),
+           btn: b.getBoundingClientRect().height, btnColor: getComputedStyle(b).color, bT: parseFloat(s.borderTopWidth), bL: parseFloat(s.borderLeftWidth), under: getComputedStyle(b).textDecorationLine, card: getComputedStyle(document.documentElement).getPropertyValue('--card').trim(),
            text: getComputedStyle(document.documentElement).getPropertyValue('--text').trim(), bgv: getComputedStyle(document.documentElement).getPropertyValue('--background').trim() };
+}"""
+
+LEAK = """() => {
+  const host = document.querySelector('#unit-list'), cs = e => getComputedStyle(e);
+  const mk = (cls) => { const e = document.createElement('span'); e.className = cls; e.textContent = 'x'; host.after(e); return e; };
+  const pill = mk('status-pill s-owned'), tag = mk('tag'), pip = document.querySelector('.unit-sum .pip');
+  const out = { pill: cs(pill).clipPath, tag: cs(tag).clipPath, pip: cs(pip).clipPath, pipRadius: cs(pip).borderTopLeftRadius, toastRotate: cs(document.getElementById('toast')).rotate };
+  pill.remove(); tag.remove(); return out;
 }"""
 
 def open_look(page, theme, mode):
@@ -73,6 +81,9 @@ def main():
                 check(f"Parchment {tag}: toast is a paper slip (class, card paper, ink text, square) with a 44 px Undo",
                       (tz["cls"] and tz["btn"] >= 43.9 and tz["radius"] == 0 and tz["bg"] == hexrgb(tz["card"])), tz)
                 if w == 390:
+                    lk = page.evaluate(LEAK)
+                    # AB15 (Forge) and AB16 (Bench) restyle tags, pips and toasts; none of that may leak into Parchment.
+                    check(f"Parchment {tag}: no Forge chamfer, Bench tape or tilt on tags, pips or toast", lk["pill"] == "none" and lk["tag"] == "none" and lk["pip"] == "none" and lk["toastRotate"] in ("none", "0deg"), lk)
                     bg = t.rgb(tz["bg"])
                     check(f"Parchment {tag}: toast text and Undo reach 4.5 to 1 on the slip",
                           t.contrast(t.rgb(tz["color"]), bg) >= 4.5 and t.contrast(t.rgb(tz["btnColor"]), bg) >= 4.5,
@@ -86,11 +97,22 @@ def main():
             u, c = s["u"], s["c"]
             want = page.evaluate("() => { const r = getComputedStyle(document.documentElement); return [parseFloat(r.getPropertyValue('--border-width')), r.getPropertyValue('--radius-card').trim()]; }")
             bw = want[0]
-            check(f"{theme}: cards and rows keep their box border, stripe, spacing and shadow",
-                  c["left"] == bw and c["top"] == bw and u["top"] == bw and u["left"] == 4 and u["mb"] == 10 and u["bottom"] == bw, (u, c, want))
-            check(f"{theme}: corners follow the look's own radius token", f"{u['radius']:g}px" == want[1] or want[1].startswith("var") or u["radius"] == c["radius"], (u["radius"], c["radius"], want))
             tz = page.evaluate(TOAST)
-            check(f"{theme}: toast is still the plain snackbar (ink on page colour)", tz["bg"] == hexrgb(tz["text"]) and tz["color"] == hexrgb(tz["bgv"]) and tz["btn"] >= 43.9, tz)
+            if theme == "classic":
+                # No chunk of AB14, AB15, AB16 touches Classic, so it stays strictly unchanged.
+                check("classic: cards and rows keep their box border, stripe, spacing and shadow",
+                      c["left"] == bw and c["top"] == bw and u["top"] == bw and u["left"] == 4 and u["mb"] == 10 and u["bottom"] == bw, (u, c, want))
+                check("classic: corners follow the look's own radius token", f"{u['radius']:g}px" == want[1] or want[1].startswith("var") or u["radius"] == c["radius"], (u["radius"], c["radius"], want))
+                check("classic: toast is still the plain snackbar (ink on page colour)", tz["bg"] == hexrgb(tz["text"]) and tz["color"] == hexrgb(tz["bgv"]) and tz["btn"] >= 43.9, tz)
+            else:
+                # Forge (AB15) and Bench (AB16) legitimately restyle their own toasts, tags and pips, so they are no longer "unchanged".
+                # What this chunk promises is that Parchment's own features do not leak into them.
+                check(f"{theme}: no Parchment ledger rules on unit rows (rows are not bottom-hairline-only, square, gapless)",
+                      not (u["bottom"] == 1 and u["top"] == 0 and u["right"] == 0 and u["radius"] == 0 and u["mb"] == 0 and u["shadow"] == "none"), u)
+                check(f"{theme}: cards are not Parchment's rule-above-and-below ledger cards",
+                      not (c["left"] == 0 and c["top"] == 1 and c["bottom"] == 1 and c["shadow"] == "none"), c)
+                check(f"{theme}: the toast carries none of Parchment's paper slip (no card paper, no ruled edge only, no underlined Undo)",
+                      tz["cls"] and tz["bg"] != hexrgb(tz["card"]) and not (tz["bT"] == 1 and tz["bL"] == 0) and "underline" not in tz["under"], tz)
         ctx.close()
         browser.close()
     check("no page errors", not errors, errors)
