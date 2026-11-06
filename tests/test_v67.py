@@ -36,7 +36,7 @@ def check(name, ok, detail=""):
     results.append(bool(ok))
     print(("PASS " if ok else "FAIL ") + name + ("" if ok else f"  -> {detail}"))
 
-MADE_UP = "Example deep blue"   # replaced below by a real made-up name from EXAMPLE_RECIPES
+MADE_UP = "Harbour blue"   # replaced below by a real made-up name from EXAMPLE_RECIPES
 
 def paints(made_up):
     return [
@@ -46,7 +46,9 @@ def paints(made_up):
         {"id": 4, "brand": "Citadel", "name": "Eshin Grey", "colour": "#4a4d52", "status": "low"},
         {"id": 5, "brand": "Citadel", "name": "Rakarth Flesh", "colour": "#a7a28f", "status": "empty"},
         {"id": 6, "brand": "Citadel", "name": "Fire Dragon Bright", "colour": "#ff6a00", "status": "wishlist"},
-        {"id": 7, "brand": "", "name": made_up, "colour": "#223355", "status": "notowned"},
+        # AB9: a made-up paint with one of the plain pot names carries the "madeUp" mark the examples give it (the name alone no longer
+        # counts, so a paint of yours with the same name is never caught). Saved this way it is still made-up after Keep them.
+        {"id": 7, "brand": "", "name": made_up, "colour": "#223355", "status": "notowned", "madeUp": True},
     ]
 
 def step(pids, technique="Layer"):

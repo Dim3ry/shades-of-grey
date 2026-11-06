@@ -16,6 +16,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import press_examples   # AB9: Clear and Keep are on the Models strip only
 from launch_helpers import quiet, open_settings, tap_tab
 from launch_helpers import leave_launch
 import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
@@ -112,6 +113,11 @@ def sizes(page, selector):
 def all_big(found, need_width=True):
     return bool(found) and all(h >= 44 and (w >= 44 or not need_width) for w, h, _ in found)
 
+def strip_due(page):
+    """AB9: whether the examples strip shows, read from the code that draws it (examplesCardParts). It is on Models only, which is
+    drawn when you go there, so this works from any tab (the Dashboard card these checks read is gone)."""
+    return page.evaluate("() => !!examplesCardParts('a', 'b')")
+
 def shown(page, element_id):
     """True if the element isn't hidden (works whichever tab is open)."""
     return page.evaluate("(id) => !document.getElementById(id).classList.contains('hidden')", element_id)
@@ -144,15 +150,11 @@ def main():
         saved = units(page)
         check("a first visit saves the 3 example units, each marked as an example",
               [u["name"] for u in saved] == ["Captain", "Brutes", "Guardians"] and all(u.get("example") is True for u in saved), saved)
-        check("the examples card shows on the Dashboard", page.is_visible("#examples-card-dash"))
-        dash_text = page.locator("#examples-card-dash").text_content()   # v52: the names sit behind More info
-        check("…saying they're examples and naming them", "These are examples" in dash_text and
-              all(n in dash_text for n in ["Captain", "Brutes", "Guardians"]), dash_text)
-        check("…with Clear examples and Keep them", page.is_visible("#examples-card-dash .clear-examples")
-              and page.inner_text("#examples-card-dash .keep-examples") == "Keep them")
-        shot(page, "v21-examples-card-dashboard.png")
+        # AB9: the examples strip is on Models only (it was a card on the Dashboard too), says "Sample bench." and no longer names the units
         tab(page, "units")
-        check("the examples card shows on the Units tab too", page.is_visible("#examples-card"))
+        check("the examples strip shows on Models", page.is_visible("#examples-card"))
+        check("…with Clear examples and Keep them", page.is_visible("#examples-card .clear-examples")
+              and page.inner_text("#examples-card .keep-examples") == "Keep them")
         shot(page, "v21-examples-card-units.png")
         check("examplesChecked is saved, so old-style recognition only runs once", saved_settings(page).get("examplesChecked") is True)
 
@@ -170,9 +172,8 @@ def main():
         after = units(page)
         check("Clear examples removes only the 3 examples; your own unit stays",
               [u["name"] for u in after] == ["Hormagaunts"], [u["name"] for u in after])
-        check("…the card goes from both tabs", not page.is_visible("#examples-card") and
-              page.evaluate("document.getElementById('examples-card-dash').classList.contains('hidden')"))
-        check("…the message says so, with Undo", "Cleared 3 example units" in toast(page) and page.is_visible("#toast-undo"), toast(page))
+        check("…the strip goes", not page.is_visible("#examples-card"))
+        check("…the message says so, with Undo", toast(page) == "Examples cleared." and page.is_visible("#toast-undo"), toast(page))   # AB9: was a count
         undo(page)
         back = units(page)
         check("Undo puts the 3 examples back, in their old places, still marked",
@@ -181,34 +182,33 @@ def main():
         check("…and the card is back", page.is_visible("#examples-card"))
         page.reload(); page.wait_for_timeout(300); leave_launch(page)   # U4b: tap through the start page
         check("after a reload the examples and the card are still there",
-              len(units(page)) == 4 and shown(page, "examples-card-dash"))
-        tab(page, "dashboard")
-        page.click("#examples-card-dash .clear-examples")
+              len(units(page)) == 4 and strip_due(page))
+        press_examples(page, "clear")
         page.wait_for_timeout(150)
         page.reload(); page.wait_for_timeout(300); leave_launch(page)   # U4b: tap through the start page
         check("a clear survives a reload (and the examples don't come back)",
-              [u["name"] for u in units(page)] == ["Hormagaunts"] and not page.is_visible("#examples-card-dash"))
+              [u["name"] for u in units(page)] == ["Hormagaunts"] and not strip_due(page))
 
         # Keep them.
         seed(page, fresh=True)
-        page.click("#examples-card-dash .keep-examples")
+        press_examples(page, "keep")
         page.wait_for_timeout(150)
         check("Keep them unmarks all 3 and hides the card", all("example" not in u for u in units(page))
-              and len(units(page)) == 3 and not page.is_visible("#examples-card-dash"))
+              and len(units(page)) == 3 and not strip_due(page))
         check("…with a message and Undo", "Kept" in toast(page) and page.is_visible("#toast-undo"), toast(page))
         undo(page)
-        check("Undo marks them as examples again", all(u.get("example") is True for u in units(page)) and page.is_visible("#examples-card-dash"))
-        page.click("#examples-card-dash .keep-examples")
+        check("Undo marks them as examples again", all(u.get("example") is True for u in units(page)) and strip_due(page))
+        press_examples(page, "keep")
         page.wait_for_timeout(150)
         page.reload(); page.wait_for_timeout(300); leave_launch(page)   # U4b: tap through the start page
         check("kept examples stay unmarked after a reload (not recognised again)",
-              all("example" not in u for u in units(page)) and not page.is_visible("#examples-card-dash"))
+              all("example" not in u for u in units(page)) and not strip_due(page))
 
         # Examples saved before v21 (no mark).
         changed = [dict(OLD_EXAMPLES[0]), dict(OLD_EXAMPLES[1], nickname="Da Boyz"), dict(OLD_EXAMPLES[2], recipes=[])]
         seed(page, units=OLD_EXAMPLES, settings=full_settings())
         check("examples saved before v21 are recognised and marked", all(u.get("example") is True for u in units(page))
-              and page.is_visible("#examples-card-dash"))
+              and strip_due(page))
         seed(page, units=[dict(OLD_EXAMPLES[0], name="Chapter Master")] + changed[1:], settings=full_settings())
         marks = [u.get("example") is True for u in units(page)]
         check("…but not ones you've renamed or given a nickname", marks[:2] == [False, False], marks)
@@ -230,7 +230,7 @@ def main():
         saved = {u["id"]: u for u in units(page)}
         check("renaming an example makes it yours (unmarked); the others stay examples",
               "example" not in saved[1] and saved[2].get("example") and saved[3].get("example"))
-        check("…and the card now lists 2", "2 example units" in page.locator("#examples-card").text_content(), page.locator("#examples-card").text_content())
+        check("…and 2 examples are left (AB9: the strip no longer counts them)", page.evaluate("() => exampleUnits().length") == 2)
 
         # ---------- 3. Jump to stage ----------
         print("--- 3. Jump to stage ---")
@@ -357,9 +357,10 @@ def main():
             check(f"[{width}px] no sideways scroll in Help", no_sideways(page))
             if width == 360: shot(page, "v21-tap-targets-help-360.png", full=False)
             seed(page, fresh=True)
-            card_buttons = sizes(page, "#examples-card-dash button:not(.more-info-button)")   # v52: More info is checked in test_v52
-            check(f"[{width}px] the examples card's buttons are at least 44 tall", len(card_buttons) == 2 and all_big(card_buttons), card_buttons)
-            check(f"[{width}px] no sideways scroll on the Dashboard with the examples card", no_sideways(page))
+            tab(page, "units")   # AB9: the examples strip is on Models only (this read the Dashboard card)
+            card_buttons = sizes(page, "#examples-card button:not(.more-info-button)")   # v52: More info is checked in test_v52
+            check(f"[{width}px] the examples strip's buttons are at least 44 tall", len(card_buttons) == 2 and all_big(card_buttons), card_buttons)
+            check(f"[{width}px] no sideways scroll on Models with the examples strip", no_sideways(page))
         page.set_viewport_size({"width": 390, "height": 844})
 
         # ---------- 5. Help, Back, light mode, errors ----------
@@ -382,10 +383,11 @@ def main():
         seed(page, settings=full_settings(appearance="light"), fresh=True)
         page.evaluate("localStorage.setItem('shades-of-grey-settings', JSON.stringify(Object.assign(JSON.parse(localStorage.getItem('shades-of-grey-settings')), {appearance: 'light'})))")
         page.reload(); page.wait_for_timeout(300); leave_launch(page)   # U4b: tap through the start page
-        check("the examples card shows in light mode too", page.is_visible("#examples-card-dash"))
+        tab(page, "units")   # AB9: Models only
+        check("the examples strip shows in light mode too", page.is_visible("#examples-card"))
         shot(page, "v21-examples-card-light.png")
         check("v21 screenshots saved", all(os.path.exists(os.path.join(SHOTS, f)) for f in [
-            "v21-examples-card-dashboard.png", "v21-examples-card-units.png", "v21-jump-to-stage.png",
+            "v21-examples-card-units.png", "v21-jump-to-stage.png",
             "v21-jump-each-model.png", "v21-starting-stage.png", "v21-tap-targets-units-360.png",
             "v21-tap-targets-stage-editor-360.png", "v21-tap-targets-help-360.png"]))
         check("no page errors", not errors, errors)

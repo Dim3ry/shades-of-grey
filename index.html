@@ -792,7 +792,10 @@
     /* v21: the "These are examples" card. */
     .examples-card p { margin: 0 0 10px; }
     .examples-card .button-grid button { min-height: 44px; }
-    .recipes-examples-card { margin-bottom: 12px; }
+    /* AB9: the examples strip on Models: a rule above and below, no card frame, no fill. */
+    .examples-strip { margin: 0 0 12px; padding: 8px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .examples-strip p { margin: 0 0 6px; }
+    .examples-strip .button-grid { margin-top: 6px; }
     #restore-examples { min-height: 44px; }   /* v44 */
     /* v25: the feedback card (same look as the examples cards). Buttons are 44 px tall. */
     .feedback-card p { margin: 0 0 10px; }
@@ -3137,8 +3140,6 @@
         <p id="iphone-steps">Tap Safari's Share button, then <strong>Add to Home Screen</strong>, and open it from there.</p>
         <button class="plain-button" id="iphone-warning-ok">Got it</button>
       </div>
-      <!-- v21: shown while any of the 3 starting example units are still there. -->
-      <div class="card notice-card examples-card hidden" id="examples-card-dash" role="note"></div>
       <!-- v25: one gentle "send feedback?" card, about a week after first use. Filled by renderFeedbackCard(). -->
       <div class="card notice-card feedback-card hidden" id="feedback-card" role="note"></div>
       <!-- v57: one gentle "Save a backup?" card, once there is something worth keeping. Filled by renderBackupNudge(). -->
@@ -3252,8 +3253,8 @@
         <div id="units-import-slot"></div>
       </div>
 
-      <!-- v21: the same "These are examples" card as on the Dashboard. -->
-      <div class="card notice-card examples-card hidden" id="examples-card" role="note"></div>
+      <!-- v21: shown while any example is still there. AB9: a thin strip, on Models only (not a card, so no look gives it a frame). -->
+      <div class="examples-card examples-strip hidden" id="examples-card" role="note"></div>
 
       <!-- Filters start folded away so the units get the screen; "Filters" opens them. -->
       <div class="card hidden" id="filter-card">
@@ -3297,8 +3298,6 @@
       <!-- v26: kept, unfinished work: a recipe being written, or the text in Paste recipes. Filled by fillDraftCard(). -->
       <div class="card notice-card draft-card hidden" id="draft-card-recipe" role="note"></div>
       <div class="card notice-card draft-card hidden" id="draft-card-paste" role="note"></div>
-      <!-- v24: shown while any example recipes or paints are still there. Filled by renderRecipeExamplesCard(). -->
-      <div class="card notice-card examples-card recipes-examples-card hidden" id="examples-card-recipes" role="note"></div>
       <!-- Switch between your recipes and your palette (the paints those recipes use). -->
       <div class="seg" id="recipe-seg" role="tablist" aria-label="Recipes, schemes, Colour Lab, palette or shopping list">
         <button role="tab" data-view="recipes">Recipes</button>
@@ -3459,7 +3458,7 @@
         <details>
           <summary>Getting started</summary>
           <ol>
-            <li id="help-example-recipes">A new start comes with example units, recipes, schemes and paints. Each example says <strong>Example recipe</strong> or <strong>Example scheme</strong> above its name, and the example recipes sit inside the example schemes. <strong>Clear examples</strong> removes them (one Undo brings them back); anything you edited or used stays yours. <strong>Keep them</strong> makes them yours. To make a recipe real, open an example paint on Your Palette and choose <strong>More options → Swap for a real paint</strong>. <strong>Settings → Your data → Restore example recipes</strong> brings the examples back.</li>
+            <li id="help-example-recipes">A new start comes with example units, recipes, schemes and paints. Each example says <strong>Example recipe</strong> or <strong>Example scheme</strong> above its name, and the example recipes sit inside the example schemes. <strong>Clear examples</strong>, on Models, removes them (one Undo brings them back); anything you've changed stays yours. <strong>Keep them</strong> makes them yours. To make a recipe real, open an example paint on Your Palette and choose <strong>More options → Swap for a real paint</strong>. <strong>Settings → Your data → Restore example recipes</strong> brings the examples back.</li>
             <li>Add your units: one at a time with <strong>Models → + Add unit</strong>, or a whole army at once with <strong>Paste army list</strong> or <strong>Import CSV</strong>, which are on the same panel (see <strong>Importing</strong>).</li>
             <li>As you build and paint, press the right arrow on a unit to move it up a stage (or open <strong>Details</strong> and pick any stage from <strong>Jump to stage</strong>).</li>
             <li>Check the <strong>Dashboard</strong> to see how far you've got.</li>

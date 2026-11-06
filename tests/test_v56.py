@@ -19,6 +19,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import press_examples   # AB9: Clear and Keep are on the Models strip only
 from launch_helpers import quiet
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -36,7 +37,10 @@ def check(name, ok, detail=""):
 
 UNITS = ["Captain", "Brutes", "Guardians"]
 EVERYTHING = "3 example units, 5 example recipes, 2 example schemes and 16 example paints"
-CARDS = {"dashboard": "#examples-card-dash", "units": "#examples-card", "recipes": "#examples-card-recipes"}
+# AB9: the examples card is a strip on Models ("units") only now. Before AB9 it was also on the Dashboard, Recipes and Your Palette.
+# cards_seen still looks for an examples card in every one of those places, so the checks below now say it shows on Models alone.
+CARDS = {"dashboard": "#view-dashboard [id^=examples-card]", "units": "#examples-card", "recipes": "#view-recipes [id^=examples-card]"}
+EVERYWHERE = ["units"]
 
 def counts(page):
     return page.evaluate("""() => ({ units: models.filter(m => m.example === true).length,
@@ -48,10 +52,10 @@ def cards_seen(page):
     seen = []
     for name, sel in CARDS.items():
         e.main_tab(page, name)
-        if page.locator(sel).is_visible(): seen.append(name)
+        if page.locator(sel).count() and page.locator(sel).first.is_visible(): seen.append(name)
     e.main_tab(page, "recipes")
     e.recipe_view(page, "palette")
-    if page.locator(CARDS["recipes"]).is_visible(): seen.append("palette")
+    if page.locator(CARDS["recipes"]).count() and page.locator(CARDS["recipes"]).first.is_visible(): seen.append("palette")
     e.recipe_view(page, "recipes")
     return seen
 
@@ -96,17 +100,19 @@ def main():
         start = counts(page)
         check("a brand-new start has 3 example units, 5 recipes, 2 schemes and 16 paints",
               start == {"units": 3, "recipes": 5, "schemes": 2, "paints": 16}, start)
-        check("before: the card is on the Dashboard, Units, Recipes and Your Palette",
-              cards_seen(page) == ["dashboard", "units", "recipes", "palette"], cards_seen(page))
+        check("before: the strip is on Models only (AB9: it was on the Dashboard, Units, Recipes and Your Palette)",
+              cards_seen(page) == EVERYWHERE, cards_seen(page))
+        # AB9: the strip's explanation is plain words now; it no longer counts every kind or names the units
+        e.main_tab(page, "units")
+        page.click("#examples-card .more-info-button")
+        info = page.text_content("#examples-card .more-info-panel") or ""
+        check("the explanation says what the examples are and that changes stay", "Made-up units and recipes" in info and "Anything you've changed stays." in info, info)
         e.main_tab(page, "dashboard")
-        page.click("#examples-card-dash .more-info-button")
-        info = page.text_content("#examples-card-dash .more-info-panel") or ""
-        check("the explanation counts every kind and names the units", EVERYTHING in info and all(n in info for n in UNITS), info)
         before = links(page)
-        tap(page, "#examples-card-dash .clear-examples")
+        press_examples(page, "clear")
         msg = e.toast(page)
-        check("one tap: the message says everything that was cleared, with Undo",
-              msg["text"] == f"Cleared {EVERYTHING}" and msg["shown"] and msg["undo"], msg)
+        check("one tap: the message says so (AB9: 'Examples cleared.', no longer a count), with Undo",
+              msg["text"] == "Examples cleared." and msg["shown"] and msg["undo"], msg)
         check("every example is gone: no units, recipes, schemes or paints left",
               page.evaluate("() => [models.length, book.recipes.length, book.schemes.length, book.paints.length]") == [0, 0, 0, 0],
               page.evaluate("() => [models.length, book.recipes.length, book.schemes.length, book.paints.length]"))
@@ -124,13 +130,13 @@ def main():
         e.fresh(page)
         before_snap, before = e.snap(page), links(page)
         e.main_tab(page, "dashboard")
-        tap(page, "#examples-card-dash .clear-examples")
+        press_examples(page, "clear")
         undo(page)
         check("Undo brings back all 3 units, 5 recipes, 2 schemes and 16 paints", counts(page) == start, counts(page))
         check("…with every unit linked to the same recipes and every scheme holding the same recipes", links(page) == before, (links(page), before))
         check("…and the saved data is exactly as it was", e.snap(page) == before_snap)
         check("…and the unit order is as before", page.evaluate("() => models.map(m => m.name)") == UNITS, page.evaluate("() => models.map(m => m.name)"))
-        check("the card is back on every tab", cards_seen(page) == ["dashboard", "units", "recipes", "palette"], cards_seen(page))
+        check("the card is back on every tab", cards_seen(page) == EVERYWHERE, cards_seen(page))
 
         # ---------- 4. Clear from the Recipes tab and Your Palette ----------
         print("\n--- 4. Clear from Recipes and Your Palette does the same ---")
@@ -138,8 +144,8 @@ def main():
             e.fresh(page)
             e.main_tab(page, "recipes")
             e.recipe_view(page, view)
-            tap(page, "#examples-card-recipes .clear-recipe-examples")
-            check(f"from {view}: the message says everything, units too", e.toast(page)["text"] == f"Cleared {EVERYTHING}", e.toast(page))
+            press_examples(page, "clear")
+            check(f"from {view}: the message says so (AB9: no count)", e.toast(page)["text"] == "Examples cleared.", e.toast(page))
             check(f"from {view}: the example units are gone too, and the card is on no tab",
                   page.evaluate("() => models.length") == 0 and cards_seen(page) == [], cards_seen(page))
             undo(page)
@@ -151,10 +157,10 @@ def main():
 
         # ---------- 5. Keep them ----------
         print("\n--- 5. Keep them keeps everything ---")
-        for where, sel in (("Dashboard", "#examples-card-dash .keep-examples"), ("Recipes tab", "#examples-card-recipes .keep-recipe-examples")):
+        for where in ("Dashboard", "Recipes tab"):   # AB9: the Keep button is on the Models strip; pressed from each place it was before
             e.fresh(page)
             e.main_tab(page, "dashboard" if where == "Dashboard" else "recipes")
-            tap(page, sel)
+            press_examples(page, "keep")
             msg = e.toast(page)
             check(f"Keep them on the {where}: the message says what was kept", msg["text"] == f"Kept {EVERYTHING} as your own", msg)
             check(f"Keep them on the {where}: nothing is marked as an example any more",
@@ -165,10 +171,10 @@ def main():
             check(f"Keep them on the {where}: still gone after a reload", cards_seen(page) == [])
         e.fresh(page)
         e.main_tab(page, "dashboard")
-        tap(page, "#examples-card-dash .keep-examples")
+        press_examples(page, "keep")
         undo(page)
         check("Undo after Keep them marks everything as an example again", counts(page) == start, counts(page))
-        check("…and the card is back on every tab", cards_seen(page) == ["dashboard", "units", "recipes", "palette"], cards_seen(page))
+        check("…and the card is back on every tab", cards_seen(page) == EVERYWHERE, cards_seen(page))
 
         # ---------- 6. Yours is never touched; Restore ----------
         print("\n--- 6. What you made stays; Restore ---")
@@ -176,7 +182,7 @@ def main():
         e.own_recipe(page)
         page.evaluate("() => { models.push(...cleanModels([{ id: 50, name: 'My squad', hobby: 'Sci-fi', faction: 'Red army', stage: 0, count: 5 }])); render(); }")
         e.main_tab(page, "dashboard")
-        tap(page, "#examples-card-dash .clear-examples")
+        press_examples(page, "clear")
         check("Clear leaves your own unit, recipe and paint",
               page.evaluate("() => [models.map(m => m.name), book.recipes.map(r => r.name), book.paints.map(p => p.name)]") == [["My squad"], ["My recipe"], ["My own paint"]],
               page.evaluate("() => [models.map(m => m.name), book.recipes.map(r => r.name), book.paints.map(p => p.name)]"))
@@ -185,23 +191,23 @@ def main():
         check("Restore in Settings brings the example recipes back", counts(page)["recipes"] == 5, counts(page))
         msg_restore = e.toast(page)["text"]
         check("…and says what it added", msg_restore.startswith("Added 5 example recipes, 2 example schemes and 16 example paints"), msg_restore)
-        check("…and the card shows again (units are not restored, so it counts only recipes, schemes and paints)",
-              "recipes" in cards_seen(page) and "dashboard" in cards_seen(page), cards_seen(page))
+        check("…and the strip shows again on Models (units are not restored)", cards_seen(page) == EVERYWHERE, cards_seen(page))
         e.main_tab(page, "recipes")
-        tap(page, "#examples-card-recipes .clear-recipe-examples")
-        check("Clear after Restore: the message names only what there was", e.toast(page)["text"] == "Cleared 5 example recipes, 2 example schemes and 16 example paints", e.toast(page))
+        press_examples(page, "clear")
+        check("Clear after Restore clears them (AB9: the message no longer names what there was)", e.toast(page)["text"] == "Examples cleared." and counts(page) == {"units": 0, "recipes": 0, "schemes": 0, "paints": 0}, e.toast(page))
         e.fresh(page)
         page.evaluate("() => { const m = models[0]; delete m.example; render(); }")
-        check("with one unit already yours, the card still counts the other two", "2 example units" in (page.text_content("#examples-card-dash") or ""),
-              page.text_content("#examples-card-dash"))
+        check("with one unit already yours, the other two are still examples (AB9: the strip no longer counts them)", counts(page)["units"] == 2, counts(page))
         e.main_tab(page, "dashboard")
-        tap(page, "#examples-card-dash .clear-examples")
+        press_examples(page, "clear")
         check("…and Clear leaves that unit", page.evaluate("() => models.map(m => m.name)") == ["Captain"], page.evaluate("() => models.map(m => m.name)"))
 
         # ---------- 7. Code and Help ----------
         print("\n--- 7. The code and Help ---")
         check("one clearExamples and one keepExamples", len(re.findall(r"function clearExamples\(", app)) == 1 and len(re.findall(r"function keepExamples\(", app)) == 1)
-        check("all three cards are filled by the same examplesCardParts", app.count("examplesCardParts(\"clear-") == 2 and len(re.findall(r"function examplesCardParts\(", app)) == 1)
+        # AB9: one strip (Models) now, so examplesCardParts fills it from one place (it filled the Dashboard and Units cards from one place
+        # and the Recipes card from another)
+        check("the one strip is filled by examplesCardParts", app.count("examplesCardParts(\"clear-") == 1 and len(re.findall(r"function examplesCardParts\(", app)) == 1)
         snippet = app[app.index("function examplesCardParts("):app.index("function clearExamples(")]
         check("the card code uses no innerHTML (text only)", "innerHTML" not in snippet)
         help_text = page.evaluate("() => document.getElementById('help-example-recipes').textContent")

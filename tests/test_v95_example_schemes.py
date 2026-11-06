@@ -9,6 +9,7 @@
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, sys, re
 from playwright.sync_api import sync_playwright
+from launch_helpers import press_examples   # AB9: Clear and Keep are on the Models strip only
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_v24 as t
@@ -49,18 +50,18 @@ def main():
         cs = cards(page)
         check("two example schemes, each labelled Example scheme above its name",
               len(cs) == 2 and all(c["label"] == "Example scheme" and c["first"] == "example-label" for c in cs), cs)
-        blue = next(c for c in cs if c["name"] == "Blue army colours")
-        green = next(c for c in cs if c["name"] == "Green army colours")
+        blue = next(c for c in cs if c["name"] == "Ash wardens colours")
+        green = next(c for c in cs if c["name"] == "Bog goblins colours")
         check("a scheme with 4 recipes shows 3 rows and Show all 4", len(blue["rows"]) == 3 and blue["toggle"] == "Show all 4", blue)
         check("a scheme with 3 recipes shows 3 rows and no Show all", len(green["rows"]) == 3 and green["toggle"] == "", green)
         row = green["rows"][0]
         check("a row has the recipe name, part and step count, and colour dots", row["name"] == "Green skin" and row["meta"] == "Skin · 4 steps" and row["dots"] >= 2, row)
         page.locator("#scheme-list .scheme-show-all").click()
         cs = cards(page)
-        blue = next(c for c in cs if c["name"] == "Blue army colours")
+        blue = next(c for c in cs if c["name"] == "Ash wardens colours")
         check("Show all opens the 4th row and the button says Show fewer", len(blue["rows"]) == 4 and blue["toggle"] == "Show fewer", blue)
         page.locator("#scheme-list .scheme-show-all").click()
-        check("Show fewer goes back to 3", len(next(c for c in cards(page) if c["name"] == "Blue army colours")["rows"]) == 3)
+        check("Show fewer goes back to 3", len(next(c for c in cards(page) if c["name"] == "Ash wardens colours")["rows"]) == 3)
         page.locator("#scheme-list .scheme-recipe-row", has_text="Green skin").click()
         page.wait_for_function("() => !document.getElementById('recipe-page').classList.contains('hidden')")
         check("tapping a row opens that recipe", "Green skin" in page.text_content("#recipe-page h2, #recipe-page"))
@@ -80,7 +81,7 @@ def main():
         t.recipe_view(page, "schemes")
         before_book = page.evaluate("() => JSON.stringify(backupData())")
         full = counts(page)
-        page.click("#examples-card-recipes .clear-recipe-examples")
+        press_examples(page, "clear")
         page.wait_for_function("() => book.schemes.length === 0")
         check("Clear examples removes the example schemes and recipes together", counts(page)[:2] == [0, 0], counts(page))
         page.click("#toast-undo")
@@ -88,16 +89,16 @@ def main():
         check("one Undo brings both back, with the rows", counts(page) == full and len(cards(page)) == 2 and len(cards(page)[0]["rows"]) == 3, counts(page))
         check("backup data is the same after Clear and Undo", page.evaluate("() => JSON.stringify(backupData())") == before_book)
         # An edit makes an example yours (the app drops the mark, same as saving an edit): Clear leaves it alone.
-        page.evaluate("() => { delete book.recipes.find(r => r.name === 'Green skin').example; delete book.schemes.find(s => s.name === 'Green army colours').example; renderRecipes(); }")
-        page.click("#examples-card-recipes .clear-recipe-examples")
+        page.evaluate("() => { delete book.recipes.find(r => r.name === 'Green skin').example; delete book.schemes.find(s => s.name === 'Bog goblins colours').example; renderRecipes(); }")
+        press_examples(page, "clear")
         page.wait_for_function("() => book.schemes.length === 1")
         left = page.evaluate("() => [book.schemes.map(s => s.name), book.recipes.map(r => r.name)]")
-        check("an example you changed stays after Clear (the scheme and its recipe)", left[0] == ["Green army colours"] and "Green skin" in left[1], left)
+        check("an example you changed stays after Clear (the scheme and its recipe)", left[0] == ["Bog goblins colours"] and "Green skin" in left[1], left)
         cs = cards(page)
         check("a scheme of your own looks the same but has no label", len(cs) == 1 and cs[0]["label"] == "" and len(cs[0]["rows"]) >= 1, cs)
         page.evaluate("() => addExamples()")
         c = counts(page)
-        check("Restore brings the missing examples back and does not duplicate yours", c[1] == 2 and page.evaluate("() => book.schemes.filter(s => s.name === 'Green army colours').length") == 1, c)
+        check("Restore brings the missing examples back and does not duplicate yours", c[1] == 2 and page.evaluate("() => book.schemes.filter(s => s.name === 'Bog goblins colours').length") == 1, c)
 
         print("\n--- 6. Phone sizes ---")
         for width in (390, 360):

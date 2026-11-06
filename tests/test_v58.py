@@ -1,7 +1,7 @@
 """v58 tests for Minifolio (chunk 1.3: kept example paints off the shopping list).
 
 What changed:
- AI testers tapped Keep them on the examples card, then found made-up example paints such as "Example deep blue" on the shopping list
+ AI testers tapped Keep them on the examples card, then found made-up example paints such as "Example deep blue" (called "Harbour blue" since AB9) on the shopping list
  as missing, because a kept example recipe uses them. No shop sells them, so the list looked broken and testers tried to buy them.
  v44 had deliberately let kept example paints count like any paint; v58 changes that decision. A paint that started as an example
  (one of the made-up names, no brand) never goes on the shopping list or into Copy as text, whether the examples were kept or not,
@@ -20,6 +20,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import press_examples   # AB9: Clear and Keep are on the Models strip only
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
@@ -53,7 +54,7 @@ def kept(page):
     """A brand-new start, then Keep them on the card (real taps)."""
     e.fresh(page)
     e.main_tab(page, "recipes")
-    page.click("#examples-card-recipes .keep-recipe-examples")
+    press_examples(page, "keep")
     page.wait_for_timeout(300)
 
 def paint_id(page, name):
@@ -105,15 +106,15 @@ def main():
         e.recipe_view(page, "shopping")
         shop = page.inner_text("#shop-panel")
         check("the Shopping page names no example paint and says there is nothing to buy", "Example" not in shop and "Nothing to buy" in shop, shop[:200])
-        page.evaluate("() => { applyPaintStatus(book.paints.find(p => p.name === 'Example deep blue'), 'wishlist'); render(); }")
+        page.evaluate("() => { applyPaintStatus(book.paints.find(p => p.name === 'Harbour blue'), 'wishlist'); render(); }")
         check("a kept made-up paint put on the wishlist still stays off the list", list_names(page) == [], list_names(page))
-        page.evaluate("() => { applyPaintStatus(book.paints.find(p => p.name === 'Example mid blue'), 'empty'); render(); }")
+        page.evaluate("() => { applyPaintStatus(book.paints.find(p => p.name === 'Cobalt'), 'empty'); render(); }")
         check("and so does one marked empty", list_names(page) == [], list_names(page))
         text = copied(page)
         check("Copy as text has no example paint in it", text.startswith("Shopping list") and "Example" not in text, text)
         e.fresh(page)
         check("before Keep them the examples are off the list too (as since v24)", list_names(page) == [], list_names(page))
-        page.evaluate("() => { applyPaintStatus(book.paints.find(p => p.name === 'Example pale grey'), 'wishlist'); render(); }")
+        page.evaluate("() => { applyPaintStatus(book.paints.find(p => p.name === 'Pale ash'), 'wishlist'); render(); }")
         check("a made-up paint given a status before Keep them stays off the list", list_names(page) == [], list_names(page))
 
         # ---------- 3. Real paints work as before ----------
@@ -162,7 +163,7 @@ def main():
         # ---------- 5. Swap for a real paint ----------
         print("\n--- 5. Swap for a real paint ---")
         kept(page)
-        blue = paint_id(page, "Example deep blue")
+        blue = paint_id(page, "Harbour blue")
         open_paint(page, blue)
         swap = page.locator(".paint-options .swap-real")
         check("a made-up paint's More options has Swap for a real paint", swap.count() == 1 and swap.inner_text() == "Swap for a real paint")
@@ -181,11 +182,11 @@ def main():
         pick_combo(page, f"#swap-{blue}-pick", text=f"{real['name']} ({real['brand']})", wait=300)
         now = page.evaluate("""(r) => { const p = book.paints.find(x => x.name === r.name && x.brand === r.brand);
             const uses = book.recipes.filter(x => x.steps.some(s => s.paints.some(sp => p && sp.paint === p.id))).map(x => x.name);
-            return { there: !!p, uses, gone: !book.paints.some(x => x.name === 'Example deep blue') }; }""", real)
+            return { there: !!p, uses, gone: !book.paints.some(x => x.name === 'Harbour blue') }; }""", real)
         check("the real paint is in your palette and Blue armour uses it", now["there"] and now["uses"] == ["Blue armour"], now)
-        check("Example deep blue has left your palette", now["gone"], now)
+        check("Harbour blue has left your palette", now["gone"], now)
         check("the message says what was swapped, with Undo", e.toast(page)["shown"] and e.toast(page)["undo"]
-              and e.toast(page)["text"] == f"Swapped Example deep blue for {real['name']}", e.toast(page))
+              and e.toast(page)["text"] == f"Swapped Harbour blue for {real['name']}", e.toast(page))
         # v62 (chunk 2.2): it is no longer put on the list by itself, so this checks that Blue armour's button now offers it.
         check("the real paint can go on the shopping list now (you don't have it)",
               page.evaluate("() => schemePaintsToAdd(recipeShopPaints(book.recipes.find(r => r.name === 'Blue armour'))).map(p => p.name)") == [real["name"]],
@@ -198,7 +199,7 @@ def main():
         check("a real paint has no Swap button", page.locator(".paint-options .swap-real").count() == 0)
         # swapping to a paint already in your palette keeps its status
         page.evaluate("() => { applyPaintStatus(book.paints.find(p => p.name === 'Plain Real'), 'owned'); render(); }")
-        wash = paint_id(page, "Example dark wash")
+        wash = paint_id(page, "Soot wash")
         open_paint(page, wash)
         page.click(".paint-options .swap-real")
         page.wait_for_timeout(100)
@@ -209,15 +210,15 @@ def main():
         check("swapping to a palette paint uses it in both recipes that had the dark wash, keeps it owned and adds no copy",
               after == {"status": "owned", "uses": ["Blue armour", "Gold metal"], "dupes": 1}, after)
         saved = e.saved_book(page)
-        check("the swap is saved", not any(q["name"] == "Example dark wash" for q in saved["paints"]))
+        check("the swap is saved", not any(q["name"] == "Soot wash" for q in saved["paints"]))
 
         # ---------- 6. Renamed or branded ----------
         print("\n--- 6. A made-up paint you rename or give a brand ---")
         kept(page)
-        page.evaluate("() => { const p = book.paints.find(x => x.name === 'Example mid green'); p.brand = 'Test Paints'; applyPaintStatus(p, 'wishlist'); render(); }")
-        check("given a brand, it is an ordinary paint and can go on the list", list_names(page) == ["Example mid green"], list_names(page))
-        page.evaluate("() => { const p = book.paints.find(x => x.name === 'Example bright green'); p.name = 'My bright green'; applyPaintStatus(p, 'wishlist'); render(); }")
-        check("renamed, it is an ordinary paint too", sorted(list_names(page)) == ["Example mid green", "My bright green"], list_names(page))
+        page.evaluate("() => { const p = book.paints.find(x => x.name === 'Swamp green'); p.brand = 'Test Paints'; applyPaintStatus(p, 'wishlist'); render(); }")
+        check("given a brand, it is an ordinary paint and can go on the list", list_names(page) == ["Swamp green"], list_names(page))
+        page.evaluate("() => { const p = book.paints.find(x => x.name === 'Pond green'); p.name = 'My bright green'; applyPaintStatus(p, 'wishlist'); render(); }")
+        check("renamed, it is an ordinary paint too", sorted(list_names(page)) == sorted(["Swamp green", "My bright green"]), list_names(page))   # AB9: sorted both sides (the new name no longer sorts first)
 
         # ---------- 7. Safety ----------
         print("\n--- 7. Safety ---")
