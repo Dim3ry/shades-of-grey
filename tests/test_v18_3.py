@@ -73,7 +73,7 @@ def main():
 
         # ---------- 1. Versions, Updates, README, kept names ----------
         print("--- 1. Versions and paperwork ---")
-        context = browser.new_context(viewport={"width": 390, "height": 844})
+        context = browser.new_context(viewport={"width": 390, "height": 844}, reduced_motion="reduce")  # T7: reduced motion (this file checks content, not motion)'
         page = context.new_page()
         fold_opener.open_cards_on_load(page)   # v54: open the folded Settings cards whenever the app loads
         errors = []
@@ -168,7 +168,7 @@ def main():
 
         # ---------- 3. Dates in your time zone ----------
         print("\n--- 3. Dates ---")
-        context = browser.new_context(viewport={"width": 390, "height": 844}, timezone_id="Europe/London", accept_downloads=True)
+        context = browser.new_context(viewport={"width": 390, "height": 844}, timezone_id="Europe/London", accept_downloads=True, reduced_motion="reduce")  # T7: reduced motion (this file checks content, not motion)'
         page = context.new_page()
         fold_opener.open_cards_on_load(page)   # v54: open the folded Settings cards whenever the app loads
         page.on("pageerror", lambda e: errors.append(str(e)))
@@ -190,7 +190,7 @@ def main():
 
         # ---------- 4. Recipes-only restore: Undo and Recover ----------
         print("\n--- 4. Recipes-only restore ---")
-        context = browser.new_context(viewport={"width": 390, "height": 844})
+        context = browser.new_context(viewport={"width": 390, "height": 844}, reduced_motion="reduce")  # T7: reduced motion (this file checks content, not motion)'
         page = context.new_page()
         fold_opener.open_cards_on_load(page)   # v54: open the folded Settings cards whenever the app loads
         page.on("pageerror", lambda e: errors.append(str(e)))
@@ -245,7 +245,7 @@ def main():
 
         # ---------- 5. Data version number ----------
         print("\n--- 5. Data version number ---")
-        context = browser.new_context(viewport={"width": 390, "height": 844})
+        context = browser.new_context(viewport={"width": 390, "height": 844}, reduced_motion="reduce")  # T7: reduced motion (this file checks content, not motion)'
         page = context.new_page()
         fold_opener.open_cards_on_load(page)   # v54: open the folded Settings cards whenever the app loads
         page.on("pageerror", lambda e: errors.append(str(e)))
@@ -308,7 +308,7 @@ def main():
         # ---------- 6. Label reader from the app's own folder ----------
         print("\n--- 6. Label reader ---")
         check("index.html no longer loads the reader from a CDN", "cdn.jsdelivr.net/npm/tesseract" not in html)
-        context = browser.new_context(viewport={"width": 390, "height": 844})
+        context = browser.new_context(viewport={"width": 390, "height": 844}, reduced_motion="reduce")  # T7: reduced motion (this file checks content, not motion)'
         page = context.new_page()
         fold_opener.open_cards_on_load(page)   # v54: open the folded Settings cards whenever the app loads
         page.on("pageerror", lambda e: errors.append(str(e)))

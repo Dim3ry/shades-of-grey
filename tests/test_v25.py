@@ -132,7 +132,7 @@ def main():
     errors, csp, popups, notices, outside = [], [], [], [], []
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        context = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844}, service_workers="block")
+        context = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844}, service_workers="block", reduced_motion="reduce")  # T7: reduced motion (this file checks content, not motion)'
         # The feedback form is somebody else's website: answer for it here, and note every request that leaves.
         context.route("https://tally.so/**", lambda route: route.fulfill(status=200, content_type="text/html", body="<p>form</p>"))
         context.on("request", lambda r: outside.append(r.url) if not (r.url.startswith(BASE) or r.url.startswith(("data:", "blob:", "about:"))) else None)
