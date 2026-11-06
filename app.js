@@ -22241,12 +22241,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=138".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=139".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v138";
+    const APP_VERSION = "v139";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -22708,6 +22708,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v139", date: "6 Nov 2026", changes: [
+        "Examples now sit in one thin strip on Models, with plainer made-up names for the sample armies and paints.",
+        "Clear examples keeps anything you've changed, and Undo brings the rest back.",
+      ] },
       { version: "v138", date: "6 Nov 2026", changes: [
         "The menu icons are hand-drawn, and the Painting and Tools tabs are a row of words with a line under the chosen one that scrolls sideways instead of wrapping.",
         "Armies on the Dashboard show as rows with a switch back to doughnuts, Classic's colours are re-mixed, the loading ring no longer sweeps, and new installs start at On sprue.",
