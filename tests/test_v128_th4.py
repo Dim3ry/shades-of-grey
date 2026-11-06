@@ -128,7 +128,7 @@ def main():
             check(f"{mode} {w}px: every text colour reads at 4.5:1 on the {'darkest' if darkest else 'lightest'} point of the desk", not low, low)
             low = [(k, round(ratio(v[k], card), 2)) for k in TEXT if card and ratio(v[k], card) < 4.5]
             check(f"{mode} {w}px: every text colour reads at 4.5:1 inside the cards ({n} cards)", n >= 3 and not low, (n, low))
-            check(f"{mode} {w}px: the small version number in the header reads at 4.5:1", ratio(v["--muted"], tag) >= 4.5, round(ratio(v["--muted"], tag), 2))
+            # v136 (AT-31): the header version number is gone, so its contrast check is gone too
             check(f"{mode} {w}px: borders reach 3:1 on the worst point of the desk and inside the cards",
                   min(ratio(v["--border"], col), ratio(v["--border"], card)) >= 3, (round(ratio(v["--border"], col), 2), round(ratio(v["--border"], card), 2)))
             check(f"{mode}: button text reads at 4.5:1 on the accent", ratio(v["--on-accent"], v["--accent-fill"]) >= 4.5, round(ratio(v["--on-accent"], v["--accent-fill"]), 2))

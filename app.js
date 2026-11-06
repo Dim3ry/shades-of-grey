@@ -5515,16 +5515,17 @@
         if (ideas.length) box.appendChild(buildIdeasList(mentorPickDoor(), ideas, m.pick.hex, role).list);
       }
       if (m.sources && m.sources.length) {
-        const label = document.createElement("p");
-        label.className = "mentor-sources-label";
-        label.textContent = "Sources";
+        // AT-12: no "Sources" label; each source is a plain link with the guide's own title, one per line, with a small book (a colour swatch for a colour)
         const list = document.createElement("div");
-        list.className = "mentor-sources";
+        list.className = "mentor-sources guides-seealso";
+        list.setAttribute("role", "group");
+        list.setAttribute("aria-label", "Sources");
         for (const src of m.sources) {
           const b = document.createElement("button");
           b.type = "button";
-          b.className = "mentor-source";
+          b.className = "link-button guides-seealso-link mentor-source";
           if (src.colour && MinifolioColour.isHex(src.colour)) b.appendChild(makeSwatch(src.colour));
+          else b.appendChild(mentorBookIcon());
           const t = document.createElement("span");
           t.textContent = src.label;
           b.appendChild(t);
@@ -5532,7 +5533,7 @@
           b.addEventListener("click", () => mentorOpenSource(src));
           list.appendChild(b);
         }
-        box.append(label, list);
+        box.append(list);
         // L1: when the best source is an entry with products, the same closed Where to buy fold-out as on its Guides page, under the sources
         const best = m.sources[0], kind = best && MENTOR_SOURCE_KIND[best.type];
         const e = kind && (kind === "guide" || kind === "basing") ? knowledgeIndex().get(best.key, kind) : null;
@@ -5547,6 +5548,24 @@
         box.appendChild(row);
       }
       return box;
+    }
+    function mentorBookIcon() {
+      const NS = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(NS, "svg");
+      svg.setAttribute("viewBox", "0 0 24 24");
+      svg.setAttribute("width", "16");
+      svg.setAttribute("height", "16");
+      svg.setAttribute("aria-hidden", "true");
+      svg.setAttribute("focusable", "false");
+      svg.setAttribute("class", "mentor-book");
+      const p = document.createElementNS(NS, "path");
+      p.setAttribute("d", "M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5");
+      p.setAttribute("fill", "none");
+      p.setAttribute("stroke", "currentColor");
+      p.setAttribute("stroke-width", "2");
+      p.setAttribute("stroke-linejoin", "round");
+      svg.appendChild(p);
+      return svg;
     }
     function mentorChip(text, onClick) {
       const b = document.createElement("button");
@@ -8405,6 +8424,22 @@
       commit(`Saved ${displayName(model)}`);   // v18c-3: only says Saved if it was
     }
 
+    // AT-56: one plain line when a whole unit reaches Done (its lowest model is at a Done stage). "First one off the pile." for the first unit of yours
+    // to get there, "That's the whole Green army." when it was the last unfinished unit of its army, else "<name> is/are done.". Read from the
+    // stages already saved, so nothing new is stored. Example units do not count towards "first". Returns "" when the unit did not just reach Done.
+    function prideLine(model, wasDone) {
+      if (wasDone || !isDone(model.stage)) return "";
+      const others = models.filter(m => m !== model);
+      if (!others.some(m => m.example !== true && isDone(m.stage))) return "First one off the pile.";
+      const army = String(model.faction || "").trim().toLowerCase();
+      const mates = army ? others.filter(m => String(m.faction || "").trim().toLowerCase() === army) : [];
+      if (mates.length && mates.every(m => isDone(m.stage))) {
+        const name = shownText(String(model.faction).trim());
+        return `That's the whole ${/\barmy$/i.test(name) ? name : name + " army"}.`;
+      }
+      return `${displayName(model)} ${(model.count || 1) > 1 ? "are" : "is"} done.`;
+    }
+
     // Move a unit up (+1) or back (-1) a stage, then show a message with Undo.
     // index: which model, for units tracked model-by-model. Without one, the card's stepper
     // moves every model.
@@ -8419,9 +8454,10 @@
         if (!model.stages.some(movable)) return;
         const kept = JSON.stringify({ stage: model.stage, stages: model.stages, log: model.log });
         const moving = stageBefore(model);
+        const wasDone = isDone(model.stage);
         model.stages.forEach((s, i) => { if (movable(s)) setStage(model, s + (direction > 0 ? 1 : -1), i); });
         if (!redrawWithStageMotion(moving, direction, render)) { showNotSaved(); return; }   // DS1: no "moved" message if it wasn't saved
-        showToast(`All of ${displayName(model)} ${direction > 0 ? "up" : "back"} one stage`, () => {
+        showToast(prideLine(model, wasDone) || `All of ${displayName(model)} ${direction > 0 ? "up" : "back"} one stage`, () => {
           const unit = models.find(m => m.id === id);
           if (!unit) return;
           const was = JSON.parse(kept);
@@ -8440,10 +8476,11 @@
       // now show as the wrong date under a model's name).
       const snapshot = JSON.stringify({ stage: model.stage, stages: model.stages, log: model.log });
       const moving = stageBefore(model, model.each ? index : undefined);
+      const wasDone = isDone(model.stage);
       setStage(model, after, model.each ? index : undefined);
       if (!redrawWithStageMotion(moving, direction, render)) { showNotSaved(); return; }   // DS1
       const who = model.each ? `${displayName(model)}, model ${index + 1}` : displayName(model);
-      showToast(`${who} → ${STAGES[after]}`, () => {
+      showToast(prideLine(model, wasDone) || `${who} → ${STAGES[after]}`, () => {
         const unit = models.find(m => m.id === id);
         if (!unit) return;
         const was = JSON.parse(snapshot);
@@ -8822,10 +8859,11 @@
       if (already) { render(); return; }
       const before = JSON.stringify({ stage: model.stage, stages: model.stages, log: model.log });
       const moving = stageBefore(model, index);
+      const wasDone = isDone(model.stage);
       setStage(model, stage, index);
       const who = index !== undefined ? `${displayName(model)}, model ${index + 1}`
         : model.each ? `All of ${displayName(model)}` : displayName(model);
-      redrawWithStageMotion(moving, stage > moving.fromStage ? 1 : -1, () => commit(`${who} → ${STAGES[stage]}`, () => {
+      redrawWithStageMotion(moving, stage > moving.fromStage ? 1 : -1, () => commit(prideLine(model, wasDone) || `${who} → ${STAGES[stage]}`, () => {
         const unit = models.find(m => m.id === id);
         if (!unit) return;
         const was = JSON.parse(before);
@@ -13301,32 +13339,33 @@
     const SCHEME_NEEDS_TWO = "Needs two paints with colours set.";
     const SCHEME_ONLY_A_GUIDE = "Colours on a screen are only a guide, so check them on your model.";   // v59: one shared line (the Compendium copy text uses it too)
 
-    // The answer as { verdict, rows: [{ cls, tag, label, text }] }. cls matches the idea tags: own (fine), near (look at this), none (suggestion).
+    // The answer as { verdict, rows: [{ ok, label, text }] }. AT-45: no tags; ok true shows a tick, false a cross, each with words for screen readers.
     function schemeCheckWords(r) {
       const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
       const rows = [];
       const n = r.strong.length;
       const names = colourWordList(r.strong.map(s => s.family));
+      const NUMBER_WORDS = ["none", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
       if (r.tooManyStrong) {
-        rows.push({ cls: "near", tag: "Look at this", label: "Strong colours", text: `You have ${n}: ${names}. That many strong colours fight for attention, so the eye has nowhere to rest.` });
+        rows.push({ ok: false, label: "Loud colours", text: `${names}. ${cap(NUMBER_WORDS[n] || String(n))} at once will fight.` });
       } else if (n === 0) {
-        rows.push({ cls: "own", tag: "Fine", label: "Strong colours", text: "None. Your colours are calm and muted, which keeps things tidy." });
+        rows.push({ ok: true, label: "Loud colours", text: "None. Your colours are calm and muted, which keeps things tidy." });
       } else {
-        rows.push({ cls: "own", tag: "Fine", label: "Strong colours", text: `${n} (${names}). That is a good number.` });
+        rows.push({ ok: true, label: "Loud colours", text: `${n} (${names}). That is a good number.` });
       }
       rows.push(r.flat
-        ? { cls: "near", tag: "Look at this", label: "Light and dark", text: "Your colours are all about the same lightness, so the model may look flat. Add a darker shade or a lighter highlight." }
-        : { cls: "own", tag: "Fine", label: "Light and dark", text: "Your darkest and lightest colours are far enough apart for the model to have depth." });
+        ? { ok: false, label: "Light and dark", text: "Your colours are all about the same lightness, so the model may look flat. Add a darker shade or a lighter highlight." }
+        : { ok: true, label: "Light and dark", text: "Your darkest and lightest colours are far enough apart for the model to have depth." });
       if (r.focus && r.focusKind === "only") {
-        rows.push({ cls: "none", tag: "Suggestion", label: "Focus colour", text: `${cap(r.focus.family)} is your only strong colour, so it is already the star. Keep the rest calmer.` });
+        rows.push({ ok: true, label: "Spot colour", text: `${cap(r.focus.family)} is your only strong colour, so it is already the star. Keep the rest calmer.` });
       } else if (r.focus) {
-        rows.push({ cls: "none", tag: "Suggestion", label: "Focus colour", text: `Let ${r.focus.family} be the star. It stands out most against your main colour, ${r.dominant.family}. Use it in small areas and keep the other strong colours darker or duller.` });
+        rows.push({ ok: true, label: "Spot colour", text: `Let ${r.focus.family} be the star. It stands out most against your main colour, ${r.dominant.family}. Use it in small areas and keep the other strong colours darker or duller.` });
       } else {
-        rows.push({ cls: "none", tag: "Suggestion", label: "Focus colour", text: "Your colours are all calm. For one spot to stand out, make a small area (like the eyes) a stronger colour. The ideas above can suggest one." });
+        rows.push({ ok: true, label: "Spot colour", text: "Your colours are all calm. For one spot to stand out, make a small area (like the eyes) a stronger colour. The ideas above can suggest one." });
       }
       const problems = (r.tooManyStrong ? 1 : 0) + (r.flat ? 1 : 0);
-      const verdict = problems === 0 ? "Yes, this looks like it hangs together."
-        : problems === 1 ? "Nearly. One thing to look at." : "Not quite yet. Two things to look at.";
+      const verdict = problems === 0 ? "Hangs together."
+        : problems === 1 ? "Nearly. One thing to fix." : "Not yet. Two things to fix.";
       return { verdict, rows };
     }
 
@@ -13368,15 +13407,23 @@
         list.className = "scheme-list";
         for (const row of words.rows) {
           const li = document.createElement("li");
-          const tag = document.createElement("span");
-          tag.className = "idea-tag " + row.cls;
-          tag.textContent = row.tag;
+          const mark = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+          mark.setAttribute("viewBox", "0 0 24 24");
+          mark.setAttribute("class", "scheme-mark " + (row.ok ? "ok" : "fix"));
+          mark.setAttribute("aria-hidden", "true");
+          mark.setAttribute("focusable", "false");
+          const shape = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          shape.setAttribute("d", row.ok ? "M5 12.5l4.5 4.5L19 7.5" : "M6 6l12 12M18 6L6 18");
+          mark.appendChild(shape);
           const what = document.createElement("span");
           what.className = "scheme-what";
+          const words = document.createElement("span");
+          words.className = "sr-only";
+          words.textContent = row.ok ? "Fine. " : "To fix. ";
           const label = document.createElement("strong");
           label.textContent = row.label + ": ";
-          what.append(label, row.text);
-          li.append(tag, what);
+          what.append(words, label, row.text);
+          li.append(mark, what);
           list.appendChild(li);
         }
         result.append(verdict, list);
@@ -22061,12 +22108,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=135".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=136".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v135";
+    const APP_VERSION = "v136";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -22528,6 +22575,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v136", date: "6 Nov 2026", changes: [
+        "Mentor's sources are plain links with the guide's title. The scheme check uses ticks and crosses with plain verdicts, the coloured stripes on Guides rows, chips and stage menus are gone, and the version number lives in Updates only.",
+        "A unit that reaches Done gets a short message with Undo, with a special line for your first one and for the last of an army.",
+      ] },
       { version: "v135", date: "6 Nov 2026", changes: [
         "Plainer wording: empty lists, Dashboard headings, the Palette tile and the delete question. Paint matches now read Close, Near or Not close.",
       ] },
@@ -22938,7 +22989,7 @@
       document.getElementById("feedback-soon").classList.toggle("hidden", !!FEEDBACK_URL);
       // "?version=v2" tells the form which version the tester is on, so they don't have to.
       if (FEEDBACK_URL) link.href = feedbackAddress();
-      document.getElementById("version-note").textContent = `You're on version ${APP_VERSION}.`;
+      document.getElementById("version-note").textContent = `This is ${APP_VERSION}.`;
       document.getElementById("version-tag").textContent = APP_VERSION;
       const box = document.getElementById("changelog");
       box.innerHTML = "";

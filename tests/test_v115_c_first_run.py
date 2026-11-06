@@ -52,12 +52,12 @@ def main():
         tap_tab(page, "dashboard")
         wait_settled(page)
         check("the line is gone once you leave the start page", not page.evaluate(SHOWN, "#start-line"))
-        check("the version still shows next to the title on a section", page.evaluate(SHOWN, "#version-tag"))
+        check("the version is not shown next to the title on a section (v136, AT-31: it lives in Updates)", not page.evaluate(SHOWN, "#version-tag"))
         page.click('nav button[data-tab="guides"]')
         wait_settled(page)
         page.click('#more-seg button[data-page="updates"]')
         wait_settled(page)
-        check("Updates says which version you are on", "version" in page.inner_text("#version-note").lower() and vh.current() in page.inner_text("#version-note"))
+        check("Updates says which version you are on (v136: 'This is vNNN.')", page.inner_text("#version-note") == f"This is {vh.current()}.")
 
         print("\n--- 2. Search and share tags ---")
         meta = page.evaluate("""() => { const g = (q) => { const e = document.querySelector(q); return e ? e.content : null; };

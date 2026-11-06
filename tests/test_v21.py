@@ -248,7 +248,8 @@ def main():
         check("picking Tabletop ready moves it straight there (one step, not five taps)", u["stage"] == 5, u)
         check("…the diary notes it", u["log"][-1][1] == 5, u["log"])
         check("…the card shows the new stage", "Tabletop ready" in page.inner_text(f"{card(page, 1)} .stage"))
-        check("…and the message says so, with Undo", "Intercessors → Tabletop ready" in toast(page) and page.is_visible("#toast-undo"), toast(page))
+        # v136 (AT-56): reaching a Done stage now says so in one plain line (here the first unit ever to get there), still with Undo
+        check("…and the message says so, with Undo", toast(page) == "First one off the pile." and page.is_visible("#toast-undo"), toast(page))
         shot(page, "v21-jump-to-stage.png")
         undo(page)
         u = units(page)[0]

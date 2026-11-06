@@ -162,7 +162,7 @@ def main():
                 .every(e => { const s = getComputedStyle(e); return s.transform === 'none' && (s.scale === 'none' || s.scale === '1'); })"""))
             edge = page.evaluate("""() => { const c = [...document.querySelectorAll('#history-card .chip')].find(e => e.getAttribute('aria-pressed') !== 'true' && !e.style.getPropertyValue('--chip-colour'));
                 return c ? getComputedStyle(c).borderLeftColor : null; }""")
-            check(f"{mode}: a plain pill keeps its old subtle 4 px left edge", edge and rgb(edge) == rgb({"dark": "#22304a", "light": "#c4d0de"}[mode]), edge)
+            check(f"{mode}: a plain pill has no coloured left stripe (v136, AT-53: its left edge is the same line as the other three)", edge and edge == page.evaluate("""() => getComputedStyle([...document.querySelectorAll('#history-card .chip')].find(e => e.getAttribute('aria-pressed') !== 'true' && !e.style.getPropertyValue('--chip-colour'))).borderTopColor"""), edge)
             for sel in (".viewer", "#scan-camera"):
                 # the camera box is only built when the camera opens, so a bare one stands in for it here (only its colours are read)
                 page.evaluate("(s) => { if (!document.querySelector(s)) { const d = document.createElement('div'); if (s[0] === '#') d.id = s.slice(1); else d.className = s.slice(1); d.hidden = true; document.body.appendChild(d); } }", sel)

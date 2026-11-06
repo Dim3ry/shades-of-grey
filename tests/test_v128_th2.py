@@ -80,7 +80,7 @@ def steel_extremes(page, darkest):
     w = page.viewport_size["width"]
     top = page.evaluate("Math.ceil(document.querySelector('.app-bar').getBoundingClientRect().bottom)")
     bottom = page.evaluate("Math.floor(innerHeight - parseFloat(getComputedStyle(document.querySelector('.tabs'), '::before').height) * 0.4)")
-    vt = page.evaluate("(() => { const r = document.querySelector('h1 .version-tag').getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; })()")
+    vt = None   # v136 (AT-31): the header version number is gone, nothing to measure behind it
     tag = page.add_style_tag(content=HIDE)
     boxes = page.evaluate("""() => [...document.querySelectorAll('.card, li.unit')].filter(c => c.getClientRects().length).map(c => { const r = c.getBoundingClientRect(), s = getComputedStyle(c);
         const px = (p) => parseFloat(s['border' + p + 'Width']) + parseFloat(s['padding' + p]);
@@ -94,7 +94,7 @@ def steel_extremes(page, darkest):
     # TH6 (v129): hex bolts now hold the brass rule at both ends, in the 16 px page margins, so the steel beside the rule is measured between them
     rule = page.evaluate("(() => { const r = document.querySelector('.app-bar').getBoundingClientRect(); return [16, r.bottom - 12, innerWidth - 16, r.bottom + 6]; })()")
     return (extreme(bare, (16, top, w - 16, bottom), darkest), (pick(in_cards, key=lum) if in_cards else None), len(boxes),
-            extreme(bare, vt, darkest), extreme(bare, rule, darkest))
+            None, extreme(bare, rule, darkest))
 
 def current_guides_row(page, darkest):
     """The worst point of the highlighted Guides row's own background (inside its border and the 4 px bar), with its text hidden."""
@@ -180,7 +180,7 @@ def main():
             check(f"{mode} {w}px: every text colour reads at 4.5:1 on the {'darkest' if darkest else 'lightest'} point of the steel", not low, low)
             low = [(k, round(ratio(v[k], card), 2)) for k in TEXT if card and ratio(v[k], card) < 4.5]
             check(f"{mode} {w}px: every text colour reads at 4.5:1 inside the cards, plate sheen included ({n} cards)", n >= 3 and not low, (n, low))
-            check(f"{mode} {w}px: the small version number in the header reads at 4.5:1 on the header's steel", ratio(v["--muted"], tag) >= 4.5, round(ratio(v["--muted"], tag), 2))
+            # v136 (AT-31): the header version number is gone, so its contrast check is gone too
             check(f"{mode} {w}px: borders reach 3:1 on the worst point of the steel and on the cards",
                   min(ratio(v["--border"], col), ratio(v["--border"], v["--card"])) >= 3, (round(ratio(v["--border"], col), 2), round(ratio(v["--border"], v["--card"]), 2)))
             rule = page.evaluate("getComputedStyle(document.querySelector('.app-bar')).borderBottomColor")

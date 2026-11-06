@@ -386,7 +386,7 @@ def main():
         check("the Give feedback link is unchanged (new tab, noopener noreferrer, version added)",
               (link["hidden"] or (link["target"] == "_blank" and "noopener" in link["rel"] and "noreferrer" in link["rel"] and ("version=" + version) in link["href"])), link)
         check("the unofficial note and the version note are still on the Updates page",
-              "Unofficial fan-made app" in page.inner_text("#view-updates") and f"You're on version {version}" in page.inner_text("#view-updates"))
+              "Unofficial fan-made app" in page.inner_text("#view-updates") and f"This is {version}" in page.inner_text("#view-updates"))
 
         # ---------- 8. A wide screen ----------
         print("\n--- 8. A wide screen ---")

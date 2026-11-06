@@ -215,8 +215,8 @@ def main():
             over = []
             for _ in range(3):
                 over.append(page.evaluate("""() => { const t = document.getElementById('toast').getBoundingClientRect();
-                    const w = document.querySelector('.mentor-window').getBoundingClientRect();   // a button scrolled out of the chat area is clipped, so it is not counted
-                    return [...document.querySelectorAll('.mentor-window button, .mentor-window input')].filter(b => { const r = b.getBoundingClientRect(); if (r.bottom <= w.top) return false;
+                    const w = document.querySelector('.mentor-window').getBoundingClientRect(), sc = document.querySelector('.mentor-scroll'), sr = sc ? sc.getBoundingClientRect() : null;   // v136: a button inside the scrolling chat that is scrolled out of its visible area is clipped, so it is not counted; every other button (header, input row, Send) is always checked
+                    return [...document.querySelectorAll('.mentor-window button, .mentor-window input')].filter(b => { const r = b.getBoundingClientRect(); if (r.bottom <= w.top) return false; if (sc && sc.contains(b) && (r.bottom <= sr.top || r.top >= sr.bottom)) return false;
                         return r.width && r.left < t.right && r.right > t.left && r.top < t.bottom && r.bottom > t.top; }).map(b => b.className + ":" + Math.round(b.getBoundingClientRect().top) + ":" + Math.round(t.bottom)).join(","); }"""))
                 page.wait_for_timeout(120)
             check(f"360x640 {'dark' if dark else 'light'}: a notice never sits over a button in the window, even while it appears", over == ["", "", ""], over)

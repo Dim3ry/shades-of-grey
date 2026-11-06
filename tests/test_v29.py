@@ -143,9 +143,12 @@ def result_text(page):
     return page.evaluate("() => (document.getElementById('scheme-result') || {}).innerText || ''")
 
 def rows(page):
-    return page.evaluate("""() => [...document.querySelectorAll('#scheme-result .scheme-list li')].map(li => ({
-        cls: li.querySelector('.idea-tag').className.replace('idea-tag ', ''), tag: li.querySelector('.idea-tag').textContent,
-        label: li.querySelector('.scheme-what strong').textContent, text: li.querySelector('.scheme-what').textContent.replace(li.querySelector('.scheme-what strong').textContent, '') }))""")
+    # v136 (AT-45): the Fine / Look at this / Suggestion tags are gone; a row now has a tick or a cross. This maps them back to the old three
+    # words (a cross is "Look at this", the Spot colour row is the "Suggestion") so the checks below still test the same things.
+    return page.evaluate("""() => [...document.querySelectorAll('#scheme-result .scheme-list li')].map(li => { const strong = li.querySelector('.scheme-what strong'), ok = !!li.querySelector('.scheme-mark.ok');
+        const spot = strong.textContent === 'Spot colour: ';
+        return { cls: spot ? 'none' : ok ? 'own' : 'near', tag: spot ? 'Suggestion' : ok ? 'Fine' : 'Look at this',
+        label: strong.textContent, text: li.querySelector('.scheme-what').textContent.replace(li.querySelector('.sr-only').textContent, '').replace(strong.textContent, '') }; })""")
 
 def verdict(page):
     return page.evaluate("() => (document.querySelector('#scheme-result .scheme-verdict') || {}).textContent || ''")
@@ -324,33 +327,33 @@ def main():
         open_panel(page)
         press_check(page)
         r = rows(page)
-        check("good scheme: the verdict says it hangs together", verdict(page) == "Yes, this looks like it hangs together.", verdict(page))
-        check("good scheme: three rows, labelled Strong colours, Light and dark, Focus colour", [x["label"] for x in r] == ["Strong colours: ", "Light and dark: ", "Focus colour: "], r)
+        check("good scheme: the verdict says it hangs together", verdict(page) == "Hangs together.", verdict(page))
+        check("good scheme: three rows, labelled Loud colours, Light and dark, Spot colour", [x["label"] for x in r] == ["Loud colours: ", "Light and dark: ", "Spot colour: "], r)
         check("good scheme: strong colours are Fine and name dark blue and orange",
               r[0]["tag"] == "Fine" and r[0]["cls"] == "own" and "2 (dark blue and orange)" in r[0]["text"] and "good number" in r[0]["text"], r[0])
         check("good scheme: light and dark is Fine", r[1]["tag"] == "Fine" and "depth" in r[1]["text"], r[1])
         check("good scheme: exactly one focus colour is suggested, the orange, against the main dark blue",
-              sum(1 for x in r if x["label"] == "Focus colour: ") == 1 and r[2]["tag"] == "Suggestion" and "Let orange be the star" in r[2]["text"] and "dark blue" in r[2]["text"], r[2])
+              sum(1 for x in r if x["label"] == "Spot colour: ") == 1 and r[2]["tag"] == "Suggestion" and "Let orange be the star" in r[2]["text"] and "dark blue" in r[2]["text"], r[2])
         shot(page, "v29-check-good-dark-390.png")
         edit_recipe(page, 102)
         open_panel(page)
         r = rows(page)
-        check("too many colours: the verdict is 'Nearly. One thing to look at.'", verdict(page) == "Nearly. One thing to look at.", verdict(page))
-        check("too many colours: strong colours says Look at this, counts five and names them",
-              r[0]["tag"] == "Look at this" and r[0]["cls"] == "near" and r[0]["text"].startswith("You have 5: ") and all(w in r[0]["text"] for w in ["dark blue", "orange", "green", "purple", "red"]) and "fight for attention" in r[0]["text"], r[0])
+        check("too many colours: the verdict is 'Nearly. One thing to fix.'", verdict(page) == "Nearly. One thing to fix.", verdict(page))
+        check("too many colours: loud colours is a cross, counts five and names them",
+              r[0]["tag"] == "Look at this" and r[0]["cls"] == "near" and "Five at once will fight." in r[0]["text"] and all(w in r[0]["text"] for w in ["dark blue", "orange", "green", "purple", "red"]) , r[0])
         check("too many colours: light and dark is still Fine (a pale paint is in the recipe)", r[1]["tag"] == "Fine", r[1])
-        check("too many colours: it still suggests one focus colour", sum(1 for x in r if x["label"] == "Focus colour: ") == 1 and "star" in r[2]["text"] and "darker or duller" in r[2]["text"], r[2])
+        check("too many colours: it still suggests one focus colour", sum(1 for x in r if x["label"] == "Spot colour: ") == 1 and "star" in r[2]["text"] and "darker or duller" in r[2]["text"], r[2])
         edit_recipe(page, 103)
         open_panel(page)
         r = rows(page)
-        check("flat blues: the verdict is 'Nearly. One thing to look at.'", verdict(page) == "Nearly. One thing to look at.", verdict(page))
+        check("flat blues: the verdict is 'Nearly. One thing to fix.'", verdict(page) == "Nearly. One thing to fix.", verdict(page))
         check("flat blues: light and dark says Look at this and suggests a darker shade or lighter highlight",
               r[1]["tag"] == "Look at this" and "same lightness" in r[1]["text"] and "darker shade or a lighter highlight" in r[1]["text"], r[1])
         check("flat blues: one strong blue is already the star", r[0]["tag"] == "Fine" and r[2]["text"].startswith("Blue is your only strong colour, so it is already the star."), r)
         edit_recipe(page, 104)
         open_panel(page)
         r = rows(page)
-        check("both problems: the verdict is 'Not quite yet. Two things to look at.'", verdict(page) == "Not quite yet. Two things to look at.", verdict(page))
+        check("both problems: the verdict is 'Not yet. Two things to fix.'", verdict(page) == "Not yet. Two things to fix.", verdict(page))
         check("both problems: both rows say Look at this, and a focus colour is still suggested",
               r[0]["tag"] == "Look at this" and r[1]["tag"] == "Look at this" and r[2]["tag"] == "Suggestion", r)
         shot(page, "v29-check-both-dark-390.png")
@@ -369,8 +372,8 @@ def main():
             calm: schemeCheckWords(MinifolioColour.schemeCheck([{ colour: '#462f30', uses: 2 }, { colour: '#9e915c', uses: 1 }, { colour: '#0b0b0b', uses: 1 }])),
             three: schemeCheckWords(MinifolioColour.schemeCheck([{ colour: '#0d407f', uses: 3 }, { colour: '#f4741c', uses: 2 }, { colour: '#228b22', uses: 2 }, { colour: '#0b0b0b', uses: 1 }])) })""")
         check("calm colours: 'None. Your colours are calm and muted' and a focus hint with no colour named",
-              words["calm"]["rows"][0]["text"].startswith("None. Your colours are calm and muted") and words["calm"]["rows"][2]["text"].startswith("Your colours are all calm.") and words["calm"]["verdict"].startswith("Yes"), words["calm"])
-        check("exactly three strong colours reads as a good number, not a warning", words["three"]["rows"][0]["tag"] == "Fine" and words["three"]["verdict"].startswith("Yes"), words["three"])
+              words["calm"]["rows"][0]["text"].startswith("None. Your colours are calm and muted") and words["calm"]["rows"][2]["text"].startswith("Your colours are all calm.") and words["calm"]["verdict"] == "Hangs together.", words["calm"])
+        check("exactly three strong colours reads as a good number, not a warning", words["three"]["rows"][0]["ok"] is True and words["three"]["verdict"] == "Hangs together.", words["three"])
 
         # ---------- 6. Live updates, unset colours ----------
         print("\n--- 6. It updates as the recipe changes ---")
@@ -438,7 +441,7 @@ def main():
               and "Evil" not in result_text(page) and "<" not in result_text(page) and "onerror" not in result_text(page), result_text(page))
         check("the check still gave a real answer (a verdict and three rows)", verdict(page) != "" and page.locator("#scheme-result .scheme-list li").count() == 3, result_text(page))
         check("the card's own text (tip, check) is the same with hostile paints as with plain ones: no extra elements",
-              page.locator("#scheme-result *").evaluate_all("els => els.map(e => e.tagName).filter(t => !['DIV','P','UL','LI','SPAN','STRONG'].includes(t))") == [])
+              page.locator("#scheme-result *").evaluate_all("els => els.map(e => e.tagName).filter(t => !['DIV','P','UL','LI','SPAN','STRONG','svg','path'].includes(t))") == [])   # v136 (AT-45): the tick and cross are drawn with svg and path
 
         # ---------- 9. Offline ----------
         print("\n--- 9. Offline ---")
@@ -451,7 +454,7 @@ def main():
         for key in keys:
             pick_role(page, key)
         press_check(page)
-        offline_ok = page.locator("#scheme-result .scheme-list li").count() == 3 and verdict(page) == "Nearly. One thing to look at."
+        offline_ok = page.locator("#scheme-result .scheme-list li").count() == 3 and verdict(page) == "Nearly. One thing to fix."
         press_check(page)
         press_check(page)
         ctx.set_offline(False)
@@ -506,7 +509,7 @@ def main():
                         const pairs = [['tip', '#colour-ideas-tip'], ['tip label', '#colour-ideas-tip strong'], ['title', '.scheme-title'], ['button', '#scheme-check-toggle'],
                                        ['verdict', '.scheme-verdict'], ['what', '.scheme-what'], ['guide', '#scheme-result .hint']];
                         for (const [k, s] of pairs) { const el = document.querySelector(s); if (el) out[k] = [getComputedStyle(el).color, bg(el)]; }
-                        [...document.querySelectorAll('#scheme-result .idea-tag')].forEach((el, i) => { out['pill ' + i + ' ' + el.className] = [getComputedStyle(el).color, bg(el)]; });
+                        [...document.querySelectorAll('#scheme-result .scheme-mark')].forEach((el, i) => { out['pill ' + i + ' ' + el.className] = [getComputedStyle(el).color, bg(el)]; });
                         return out; }""")
                     bad = {k: round(contrast(rgb(v[0]), rgb(v[1])), 2) for k, v in col.items() if contrast(rgb(v[0]), rgb(v[1])) < 4.5}
                     check(f"{tag}: tip, title, button, verdict, rows, pills and the guide line all have contrast of at least 4.5", not bad and len(col) >= 9, (bad, list(col)))
