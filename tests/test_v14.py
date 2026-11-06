@@ -14,7 +14,7 @@ URL = f"http://localhost:{PORT}/index.html"
 SHOTS = sys.argv[1] if len(sys.argv) > 1 else "."
 # v68: the 7th default stage was renamed from "Painted with issues" to "Needs touch-ups", so this list uses the new name.
 DEFAULT = ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted",
-           "Battle ready", "Needs touch-ups", "Parade ready"]
+           "Tabletop ready", "Needs touch-ups", "Display ready"]
 
 # Fake "storage full": when window.__quota is set, setItem throws once the total would pass it.
 INIT = """
@@ -99,7 +99,7 @@ def run(viewport, label):
         check(f"{label} 1c screen kept the old stages", page.evaluate("STAGES.length") == 8)
         page.reload(); page.wait_for_timeout(300)
         m = stored()
-        check(f"{label} 1d after reopening, all 303 units still Parade ready",
+        check(f"{label} 1d after reopening, all 303 units still Display ready",
               len(m) == 303 and all(u["stage"] == 7 for u in m) and all(len(u["log"]) == 2 for u in m))
 
         # Restore with full storage: a backup with DIFFERENT stages

@@ -80,10 +80,10 @@ def main():
 
         print("\n--- 4. What Done means ---")
         # (saved units with no saved settings get the old 5 stages, so the default 8 are seeded on purpose)
-        t.load(page, units=[unit(1)], settings={"stages": ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted", "Battle ready", "Needs touch-ups", "Parade ready"], "doneFrom": 5})
+        t.load(page, units=[unit(1)], settings={"stages": ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted", "Tabletop ready", "Needs touch-ups", "Display ready"], "doneFrom": 5})
         tap_tab(page, "dashboard")
         wait_settled(page)
-        check("default stages: Done means Battle ready or later.", page.inner_text("#done-meaning").strip() == "Done means Battle ready or later.", page.inner_text("#done-meaning"))
+        check("default stages: Done means Tabletop ready or later.", page.inner_text("#done-meaning").strip() == "Done means Tabletop ready or later.", page.inner_text("#done-meaning"))
         stages = ["Boxed", "Built", "Primed", "Finished"]
         t.load(page, units=[unit(1)], settings={"stages": stages, "doneFrom": 3})
         tap_tab(page, "dashboard")

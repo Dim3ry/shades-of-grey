@@ -43,7 +43,7 @@ def read(name):
 
 # v68: the 7th default stage was renamed from "Painted with issues" to "Needs touch-ups", so this list uses the new name.
 STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted",
-          "Battle ready", "Needs touch-ups", "Parade ready"]
+          "Tabletop ready", "Needs touch-ups", "Display ready"]
 UNITS = [{"id": i + 1, "name": n, "hobby": "40K", "faction": f, "stage": st, "count": c, "notes": "",
           "log": [["2026-09-01", 0], ["2026-10-0" + str(i + 1), st]]}
          for i, (n, f, st, c) in enumerate([("Intercessors", "Ultramarines", 7, 10), ("Hive Tyrant", "Tyranids", 5, 1),

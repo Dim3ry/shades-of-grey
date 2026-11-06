@@ -2,7 +2,7 @@
 
 How it works: the page's clock is set to noon (UK time) on 5 Oct 2026 and moved on to 7, 10, 12 and 14 Oct, with a reload
 each day. On those days units are added with the Add unit form and moved with the card's Up and Back buttons, and one unit
-tracked model by model has each model moved on its own row. Painted (Done) means Battle ready or later. Checks:
+tracked model by model has each model moved on its own row. Painted (Done) means Tabletop ready or later. Checks:
 1. Each day the page's clock really is on that day.
 2. On the first day the graph says it starts today (nothing to draw yet); on the second day it has that day and the first.
 3. The units' diaries hold one entry per unit per day (several taps on one day keep the last), and the one tracked model
@@ -36,7 +36,7 @@ def noon(day):
     return datetime(2026, 10, day, 11, 0, tzinfo=timezone.utc)
 
 # The default stages, given in the settings (a device with units and no stage list would get the original five).
-STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted", "Battle ready", "Needs touch-ups", "Parade ready"]
+STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted", "Tabletop ready", "Needs touch-ups", "Display ready"]
 # Made-up unit, tracked model by model, there from the first day.
 HERO = {"id": 1, "name": "Hero band", "hobby": "Test game", "faction": "Gloom Legion", "stage": 4, "count": 2, "each": True,
         "stages": [4, 4], "added": "2026-10-05", "log": [["2026-10-05", 4]]}
@@ -152,7 +152,7 @@ def main():
         print("\n--- 7 Oct ---")
         new_day(page, 7)
         go(page, "units")
-        tap(page, troop, "up-button", 5)   # Unassembled to Battle ready: painted
+        tap(page, troop, "up-button", 5)   # Unassembled to Tabletop ready: painted
         show_dashboard(page)
         check("on the second day the graph has today and the first day", table(page) == [["Today", "8", "5", "63%"], ["5 Oct 2026", "8", "0", "0%"]],
               table(page))
@@ -160,15 +160,15 @@ def main():
         print("\n--- 10 Oct ---")
         new_day(page, 10)
         scout = add_unit(page, "Scout", 3, 4)
-        tap(page, walker, "up-button", 1)   # Part painted to Battle ready: painted
+        tap(page, walker, "up-button", 1)   # Part painted to Tabletop ready: painted
         hero = unit_id(page, "Hero band")
         open_details(page, hero)
-        tap(page, hero, "up", 1, index=0)   # just model 1 to Battle ready
+        tap(page, hero, "up", 1, index=0)   # just model 1 to Tabletop ready
 
         print("\n--- 12 Oct ---")
         new_day(page, 12)
         go(page, "units")
-        tap(page, troop, "step-back", 1)   # Battle ready back to Part painted: no longer painted
+        tap(page, troop, "step-back", 1)   # Tabletop ready back to Part painted: no longer painted
         tap(page, scout, "up-button", 1)
         open_details(page, hero)
         tap(page, hero, "up", 2, index=1)   # model 2 to Needs touch-ups
