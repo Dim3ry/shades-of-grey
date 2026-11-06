@@ -131,7 +131,7 @@ def main():
         # v83: the newest entry grew to nine lines, so the old 1400 px limit was too tight. Four entries are still tucked away, so 1800 keeps the point.
         check("the page is much shorter than before (the lines of four entries are tucked away)", h_before < 1800, h_before)
         check("the You're on version line and the Unofficial line are still shown",
-              f"You're on version {version}" in page.inner_text("#view-updates") and "Unofficial fan-made app" in page.inner_text("#view-updates"))
+              f"This is {version}" in page.inner_text("#view-updates") and "Unofficial fan-made app" in page.inner_text("#view-updates"))
         before = storage_dump(page)
         press(page, buttons.nth(1))
         check("tapping More info on an older entry opens it (Less info, lines in view)",

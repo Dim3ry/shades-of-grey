@@ -89,7 +89,8 @@ def main():
         check("a colour and a part give the Paint Picker's own rows", rows.count() >= 1 and reply.locator(".idea-name").count() >= 1)
         check("the rows carry their actions (shopping list for a paint you do not have)", reply.get_by_role("button", name="Add to shopping list").count() >= 1)
         srcs = reply.locator(".mentor-source")
-        check("a Sources row follows, with buttons of 44 px or more", reply.locator(".mentor-sources-label").inner_text() == "Sources" and srcs.count() >= 1
+        # v136 (AT-12): the "Sources" label is gone; the sources are plain links, still 44 px rows
+        check("a row of source links follows, 44 px or more, with no Sources label", reply.locator(".mentor-sources-label").count() == 0 and srcs.count() >= 1
               and all(h >= 44 for h in srcs.evaluate_all("els => els.map(e => e.getBoundingClientRect().height)")))
         check("a source button has a clear name", (srcs.first.get_attribute("aria-label") or "").startswith("Open ") and srcs.first.inner_text().strip() in srcs.first.get_attribute("aria-label"))
         send_typed(page, "zzqx qwerty")

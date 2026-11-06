@@ -55,8 +55,8 @@
        (applyAppearance in app.js) takes over once the app starts.
        U6b: mentor-looks.js (the Mentor orb's three looks and five states, plain data: MENTOR_LOOKS and MENTOR_LOOKS_CSS) loads
        just before it, so early.js can put the chosen look and its styles on the page before the first frame (LR1). -->
-  <script src="mentor-looks.js?v=135"></script>
-  <script src="early.js?v=135"></script>
+  <script src="mentor-looks.js?v=136"></script>
+  <script src="early.js?v=136"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -704,8 +704,7 @@
       background: var(--background);
       color: var(--muted);
       border: var(--border-width) var(--border-style) var(--border);
-      border-left: 4px solid var(--chip-colour, var(--border));
-      padding: 11px 14px;
+      padding: 11px 14px;   /* AT-53: no coloured stripe on the left */
       font-size: 0.8125rem;
       min-height: 44px;       /* v53: was 40 */
       min-width: 44px;        /* v53: the short "All" chip was 36 wide */
@@ -786,7 +785,7 @@
 
     /* v21: "Jump to stage" menus (unit details, each model, the Add form). The stage's
        colour shows as a stripe on the left, like the stage chips. */
-    .stage-pick { min-height: 44px; width: 100%; border-left: 4px solid var(--stage-colour, var(--border)); }
+    .stage-pick { min-height: 44px; width: 100%; }   /* AT-53: no stage-colour stripe */
     .stage-pick-label { display: grid; gap: 6px; font-size: 0.8125rem; color: var(--muted); }
 
     /* v21: the "These are examples" card. */
@@ -1124,8 +1123,8 @@
     .recover-list li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .recover-list span { flex: 1 1 200px; color: var(--muted); font-size: 0.875rem; }
 
-    /* The small version number beside the title, shown on every tab. */
-    .version-tag { font-size: 0.75rem; font-weight: 500; color: var(--muted); vertical-align: middle; margin-left: 6px; }
+    /* AT-31: the version number is no longer shown beside the title (it was hidden on the start page already); Updates says it. The element stays so the number is still in the page. */
+    .version-tag { display: none; font-size: 0.75rem; font-weight: 500; color: var(--muted); vertical-align: middle; margin-left: 6px; }
 
     /* ----- Import review ----- */
     .review { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); display: grid; gap: 12px; }
@@ -1797,7 +1796,9 @@
     .scheme-result .hint { margin: 0; }
     .scheme-verdict { margin: 0; font-weight: 600; }
     .scheme-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
-    .scheme-list li { display: grid; gap: 4px; }
+    .scheme-list li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; align-items: start; }
+    .scheme-mark { width: 18px; height: 18px; margin-top: 1px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }   /* AT-45: tick or cross; the words next to it say the same */
+    .scheme-mark { color: var(--text); }   /* the tick and the cross differ by shape, not colour */
     .scheme-what { font-size: 0.875rem; line-height: 1.4; overflow-wrap: anywhere; }
     .shop-brand { font-weight: 600; color: var(--accent); margin: 12px 0 4px; }
     .shop-list { margin: 0; padding-left: 20px; line-height: 1.6; }
@@ -2616,7 +2617,6 @@
       --basket-deep: #0e4a57;
       --pill-edge: #c4d0de;
     }
-    :where(:root[data-t="classic"]) .chip { border-left-color: var(--chip-colour, var(--pill-edge)); }
     :where(:root[data-t="classic"]) :is(.big, .legend .num, .group-button strong, .qty-count, .paint-line .mix, .history-table td, .chart-tip b) { font-family: var(--font-num); }
     /* AB5: the eight corner marks only on the headline card and the Mentor window; every other Classic card keeps its plain 1 px border */
     :where(:root[data-t="classic"]) :is(#headline-card, .mentor-window) {
@@ -2954,7 +2954,7 @@
     .guides-more, .chips-more { min-height: 44px; justify-self: start; }
     .chip[hidden] { display: none; }
     .guides-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; min-height: 48px; width: 100%; padding: 8px 12px; text-align: left; font: inherit; color: var(--text); background-color: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card); cursor: pointer; }
-    .guides-cats .guides-row { grid-template-columns: minmax(0, 1fr) auto auto; gap: 2px 8px; box-shadow: inset 3px 0 0 var(--accent); }   /* P1: thin accent bar on the left, title, count, then the Pro preview tag */
+    .guides-cats .guides-row { grid-template-columns: minmax(0, 1fr) auto auto; gap: 2px 8px; }   /* P1: title, count, then the Pro preview tag (AT-53: the thin accent bar on the left is gone) */
     .guides-cats .guides-row-title { white-space: normal; text-overflow: clip; overflow: visible; overflow-wrap: anywhere; }   /* P1: a long title wraps rather than being pushed off by the tag */
     .guides-free { margin: 0; font-size: 0.8125rem; color: var(--muted); }
     .guides-row[aria-current="true"] { border-color: var(--accent); background-color: var(--accent-wash); box-shadow: inset 4px 0 0 var(--accent); }
@@ -3025,10 +3025,10 @@
     .mentor-me p { margin: 0; max-width: 85%; padding: 8px 12px; font-size: 0.9375rem; line-height: 1.35; overflow-wrap: anywhere; white-space: pre-wrap; color: var(--text); background-color: var(--accent-wash); border: 1px solid var(--border); border-radius: var(--radius-card); }
     .mentor-lead { margin: 0; font-size: 0.9375rem; line-height: 1.4; overflow-wrap: anywhere; }
     .mentor-reply .idea-list { gap: 8px; }
-    .mentor-sources-label { margin: 0; font-size: 0.8125rem; color: var(--muted); }
-    .mentor-sources { display: grid; gap: 6px; justify-items: start; }
-    .mentor-source { max-width: 100%; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px; font: inherit; font-size: 0.875rem; text-align: left; color: var(--accent); background-color: var(--card); border: 1px solid var(--border); border-radius: var(--radius-card); cursor: pointer; }
+    .mentor-sources { justify-items: stretch; gap: 0; }   /* AT-12: plain links, one per line, like Guides' See also */
+    .mentor-source { max-width: 100%; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 0; font: inherit; font-size: 0.875rem; text-align: left; color: var(--accent); background: transparent; border: 0; cursor: pointer; }
     .mentor-source span:last-child { min-width: 0; overflow-wrap: anywhere; }
+    .mentor-book { flex: none; }
     .mentor-chips-in { padding-bottom: 2px; }
     /* E: "Did you mean" above its one chip, in the same quiet style as the Sources label */
     .mentor-dym { margin: 0; font-size: 0.8125rem; color: var(--muted); }
@@ -3672,7 +3672,7 @@
         <details>
           <summary>Updates and feedback</summary>
           <ul>
-            <li>The version number is next to the title on every page except the start page, and in <strong>Updates</strong>, which lists what changed in the latest five versions.</li>
+            <li>The version number is in <strong>Updates</strong>, which lists what changed in the latest five versions.</li>
             <li>Found a bug or have an idea? Use <strong>Give feedback</strong> under <strong>Settings → Updates</strong>.</li>
             <li id="help-feedback-prompt">About a week after you start using the app, a small card on the Dashboard asks if you'd like to send feedback. <strong>Give feedback</strong> opens the same form and the card goes away for good. <strong>Not now</strong> hides it for 30 days. <strong>Don't ask again</strong> hides it for good. If you don't answer, it hides itself the next day and waits 30 days, so it never shows two days running. The app only remembers the date you started and your choice, on this device. Nothing is sent anywhere.</li>
           </ul>
@@ -3977,7 +3977,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=135" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=136" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -3990,16 +3990,16 @@
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks.
        G2a: guides-groups.js (the Guides topic groups, plain data) loads after guides-data.js. It only adds one
        name, GUIDE_GROUPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=135"></script>
-  <script src="schemes.js?v=135"></script>
-  <script src="detail-recipes.js?v=135"></script>
-  <script src="basing-tips.js?v=135"></script>
-  <script src="mentor-tips.js?v=135"></script>
-  <script src="guides-data.js?v=135"></script>
-  <script src="guides-groups.js?v=135"></script>
-  <script src="mentor-data.js?v=135"></script>
-  <script src="mentor-engine.js?v=135"></script>
-  <script src="where-to-buy.js?v=135"></script>
-  <script src="app.js?v=135"></script>
+  <script src="colour.js?v=136"></script>
+  <script src="schemes.js?v=136"></script>
+  <script src="detail-recipes.js?v=136"></script>
+  <script src="basing-tips.js?v=136"></script>
+  <script src="mentor-tips.js?v=136"></script>
+  <script src="guides-data.js?v=136"></script>
+  <script src="guides-groups.js?v=136"></script>
+  <script src="mentor-data.js?v=136"></script>
+  <script src="mentor-engine.js?v=136"></script>
+  <script src="where-to-buy.js?v=136"></script>
+  <script src="app.js?v=136"></script>
 </body>
 </html>
