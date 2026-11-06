@@ -3,7 +3,7 @@
 1. The arrow shows on the four sections (and on a page opened inside one), is 44 px, named "Back to menu", and has no words on screen.
 2. It is hidden on the start circle, while the Mentor pop-up is open and while the segments travel; it is back when the travel ends.
 3. Tapping it ends on the start circle by the same route as the Minifolio title (with the travel); the title still works; focus lands on the title button.
-4. Reduced motion: tapping it goes back with no travel and no ripple; with motion on a ripple starts.
+4. Reduced motion: tapping it goes back with no travel and no ripple; with motion on there is no ripple either (AB4 removed it).
 5. It stays clear of the Dashboard segment by 4 px or more at 320, 360 and 390 px (dark and light) and is still 44 px.
 6. The last item on a page scrolls clear of the arrow.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
@@ -98,7 +98,7 @@ def main():
         pg.wait_for_function("() => !document.body.classList.contains('mo-travelling')", timeout=6000)
         wait_settled(pg)
         pg.dispatch_event("#back-menu", "pointerdown", {"clientX": 20, "clientY": 820, "bubbles": True})
-        check("with motion on, a ripple starts", pg.locator("#back-menu .ripple").count() == 1)
+        check("with motion on, no ripple is made (AB4, AT-33: the ripple is gone)", pg.locator("#back-menu .ripple").count() == 0)
         ctx2.close()
         page.click("#home-button")
         wait_ring_done(page)
