@@ -20,6 +20,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import press_examples   # AB9: Clear and Keep are on the Models strip only
 from launch_helpers import quiet, tap_tab
 from launch_helpers import app_ready
 import fold_opener   # v54: Stages, Import and Your data fold shut; this older test works inside them
@@ -48,12 +49,12 @@ V21_4_CSP = ("default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-sr
              "manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'")
 RECIPES = ["Blue armour", "Gold metal", "Green skin", "Glowing eyes", "Stone base"]
 PARTS = ["Armour", "Metal", "Skin", "Eyes", "Base"]
-SCHEMES = {"Blue army colours": ("Blue army", ["Blue armour", "Gold metal", "Glowing eyes", "Stone base"]),
-           "Green army colours": ("Green army", ["Green skin", "Glowing eyes", "Stone base"])}
-PAINTS = sorted(["Example deep blue", "Example dark wash", "Example mid blue", "Example pale grey",
-                 "Example mid green", "Example brown wash", "Example bright green", "Example pale green",
-                 "Example dark gold", "Example bright gold", "Example pale gold", "Example deep red",
-                 "Example bright orange", "Example pale yellow", "Example dark grey", "Example mid grey"])
+SCHEMES = {"Ash wardens colours": ("Ash wardens", ["Blue armour", "Gold metal", "Glowing eyes", "Stone base"]),
+           "Bog goblins colours": ("Bog goblins", ["Green skin", "Glowing eyes", "Stone base"])}
+PAINTS = sorted(["Harbour blue", "Soot wash", "Cobalt", "Pale ash",
+                 "Swamp green", "Brown wash", "Pond green", "Pale lichen",
+                 "Dull gold", "Brass gold", "Bone", "Brick red",
+                 "Flame orange", "Candle yellow", "Raven grey", "Flint grey"])
 LINKS = {"Captain": ["Blue armour", "Gold metal", "Glowing eyes", "Stone base"],
          "Brutes": ["Green skin", "Glowing eyes", "Stone base"],
          "Guardians": ["Gold metal", "Stone base"]}
@@ -117,11 +118,19 @@ def snap(page):
     """The saved recipe book and units as sorted text, to compare 'exactly as before'."""
     return json.dumps(saved_book(page), sort_keys=True), json.dumps(saved_units(page), sort_keys=True)
 
+# AB9: the examples card left Painting; a strip on Models is the only one now. These two read whether the strip shows, and its words,
+# from the same code that draws it (examplesCardParts), so the checks below can stay on Painting. The strip itself (its place, size and
+# buttons) is checked on Models in test_v139_ab9.
 def card_shown(page):
-    return page.locator("#examples-card-recipes").is_visible()
+    return page.evaluate("() => !!examplesCardParts('a', 'b')")
 
 def card_text(page):
-    return page.text_content("#examples-card-recipes") if card_shown(page) else ""   # v50: the explanation sits behind More info
+    return page.evaluate("() => { const p = examplesCardParts('a', 'b'); return p ? p.text.textContent + ' ' + p.why.textContent : ''; }")
+
+# AB9: the strip and the "Examples cleared." message no longer count the examples. What they counted is read here instead, from the
+# same counting code (exampleWords over what is still an example), so the counts below are still checked.
+def example_words(page):
+    return page.evaluate("() => exampleWords({ units: exampleUnits().length, recipes: exampleRecipes().length, schemes: exampleSchemes().length, paints: examplePaints().length })")
 
 def toast(page):
     return page.evaluate("""() => ({ text: document.getElementById('toast-text').textContent,
@@ -136,7 +145,7 @@ def palette_names(page):
 
 def clear_on_card(page):
     main_tab(page, "recipes")
-    page.click("#examples-card-recipes .clear-recipe-examples")
+    press_examples(page, "clear")
     quiet(page)
 
 def restore_in_settings(page):
@@ -210,8 +219,12 @@ def main():
         check("the sixteen paints are in the palette", palette_names(page) == PAINTS, palette_names(page))
         check("every example paint is marked, has no brand and a real colour",
               page.evaluate("() => book.paints.every(p => p.example === true && p.brand === '' && p.colour !== DEFAULT_PAINT_COLOUR)"))
-        check("no example paint shares a name with a real paint in the built-in list",
-              not page.evaluate("() => book.paints.some(p => KNOWN_PAINTS.some(k => sameText(k.name, p.name)))"))
+        # AB9: George approved "Brick red" and "Brown wash" for two of the example paints, and the built-in list has pots with those
+        # names. This check no longer covers those two; for them it checks the made-up mark instead (a branded pot never lands on them,
+        # see test_v139_ab9). Every other example paint still must not share a name with a built-in paint.
+        check("no example paint shares a name with a real paint in the built-in list (except the two approved names, which are marked)",
+              not page.evaluate("() => book.paints.some(p => !['Brick red', 'Brown wash'].includes(p.name) && KNOWN_PAINTS.some(k => sameText(k.name, p.name)))")
+              and page.evaluate("() => book.paints.filter(p => ['Brick red', 'Brown wash'].includes(p.name)).every(p => p.madeUp === true && isMadeUpPaint(p))"))
         sch = page.evaluate("""() => book.schemes.map(s => ({ name: s.name, faction: s.faction, auto: s.auto, example: s.example,
                                 recipes: s.recipes.map(id => recipeById(id).name) }))""")
         check("two example schemes with plain names", sorted(s["name"] for s in sch) == sorted(SCHEMES), sch)
@@ -223,7 +236,7 @@ def main():
         id_name = page.evaluate("() => Object.fromEntries(book.recipes.map(r => [r.id, r.name]))")
         linked = {u["name"]: [id_name[str(i)] for i in u.get("recipes", [])] for u in units}
         check("each recipe is linked to the example units that suit it", linked == LINKS, linked)
-        check("the two schemes' factions match example units", {u["faction"] for u in units} >= {"Blue army", "Green army"})
+        check("the two schemes' factions match example units", {u["faction"] for u in units} >= {"Ash wardens", "Bog goblins"})
         saved = saved_book(page)
         check("saved: five recipes, two schemes and sixteen paints carry the example mark",
               [r.get("example") for r in saved["recipes"]] == [True] * 5 and [s.get("example") for s in saved["schemes"]] == [True] * 2
@@ -232,15 +245,15 @@ def main():
         check("the saved recipe book has the same keys as before", sorted(saved.keys()) == sorted(BOOK_KEYS), sorted(saved.keys()))
         main_tab(page, "recipes")
         check("the Recipes tab lists all five", page.locator("#recipe-list li").count() == 5, page.locator("#recipe-list li").count())
-        check("the card shows and counts recipes, schemes and paints", card_shown(page) and "These are examples." in card_text(page)
-              and ALL_WORDS in card_text(page), card_text(page))
+        check("the strip shows (AB9: 'Sample bench.'), and the examples are recipes, schemes and paints", card_shown(page) and "Sample bench." in card_text(page)
+              and ALL_WORDS in example_words(page), example_words(page))
         recipe_view(page, "schemes")
         check("the Schemes page lists both example schemes with their recipes",
-              page.locator("#scheme-list li").count() == 2 and "Blue army colours" in page.inner_text("#scheme-list")
+              page.locator("#scheme-list li").count() == 2 and "Ash wardens colours" in page.inner_text("#scheme-list")
               and "4 recipes" in page.inner_text("#scheme-list") and "3 recipes" in page.inner_text("#scheme-list"), page.inner_text("#scheme-list"))
         check("the example units already have their schemes (no 'Apply' button)", page.locator("#scheme-list button:has-text('Apply')").count() == 0)
         recipe_view(page, "palette")
-        check("the card also shows on Your Palette, which lists sixteen paints", card_shown(page) and page.locator("#paint-list li.paint-item").count() == 16)
+        check("the examples are still there (AB9: the strip is on Models), and Your Palette lists sixteen paints", card_shown(page) and page.locator("#paint-list li.paint-item").count() == 16)
         recipe_view(page, "recipes")
         page.click("#recipe-list li >> nth=0")
         page.wait_for_timeout(250)
@@ -321,13 +334,13 @@ def main():
         before = snap(page)
         clear_on_card(page)
         tt = toast(page)
-        check("a message says exactly what was cleared, with Undo (v56: the example units go too)",
-              tt["shown"] and tt["undo"] and tt["text"] == "Cleared 3 example units, " + ALL_WORDS, tt)
+        check("a message says so, with Undo (AB9: 'Examples cleared.', no longer a count; v56: the example units go too)",
+              tt["shown"] and tt["undo"] and tt["text"] == "Examples cleared." and saved_units(page) == [], tt)
         check("no recipes, schemes or paints are left", page.evaluate("() => book.recipes.length + book.schemes.length + book.paints.length") == 0)
         check("the card is gone", not card_shown(page))
         check("v56: the example units are cleared in the same tap", saved_units(page) == [], saved_units(page))
         recipe_view(page, "schemes")
-        check("the Schemes page no longer lists the examples", "Blue army colours" not in page.inner_text("#scheme-list"))
+        check("the Schemes page no longer lists the examples", "Ash wardens colours" not in page.inner_text("#scheme-list"))
         saved = saved_book(page)
         check("saved: the book has no recipes, schemes or paints", saved["recipes"] == [] and saved["schemes"] == [] and saved["paints"] == [])
         page.click("#toast-undo")
@@ -338,36 +351,38 @@ def main():
 
         # what is yours is kept
         fresh(page)
-        page.evaluate("() => { applyPaintStatus(book.paints.find(p => p.name === 'Example mid blue'), 'owned'); render(); }")
-        own_recipe(page, "My green", "Example bright green", "#6fa03a")
+        page.evaluate("() => { applyPaintStatus(book.paints.find(p => p.name === 'Cobalt'), 'owned'); render(); }")
+        own_recipe(page, "My green", "Pond green", "#6fa03a")
         page.evaluate("""() => { const m = book.recipes.find(r => r.name === 'My green'); m.id = 9; render(); }""")
         edit_recipe(page, "Gold metal", "Gold metal (mine)")
-        edit_scheme(page, "Green army colours", "Green army colours (mine)")
+        edit_scheme(page, "Bog goblins colours", "Bog goblins colours (mine)")
         page.evaluate("""() => { const eyes = book.recipes.find(r => r.name === 'Glowing eyes').id;
             book.schemes.push({ id: Math.max(0, ...book.schemes.map(s => s.id)) + 1, name: 'My scheme', faction: 'Red army', auto: false,
                                 recipes: [eyes, 9] }); render(); }""")
         check("editing a recipe or a scheme makes it yours (the mark goes)",
-              page.evaluate("() => !('example' in book.recipes.find(r => r.name === 'Gold metal (mine)')) && !('example' in book.schemes.find(s => s.name === 'Green army colours (mine)'))"))
+              page.evaluate("() => !('example' in book.recipes.find(r => r.name === 'Gold metal (mine)')) && !('example' in book.schemes.find(s => s.name === 'Bog goblins colours (mine)'))"))
         main_tab(page, "recipes")
-        check("the card counts only what is still an example (4 recipes, 1 scheme, 10 paints)",
-              "4 example recipes, 1 example scheme and 10 example paints" in card_text(page), card_text(page))
+        check("only what is still an example counts (4 recipes, 1 scheme, 10 paints)",
+              "4 example recipes, 1 example scheme and 10 example paints" in example_words(page), example_words(page))
         mine_before = page.evaluate("""() => JSON.stringify({ gm: book.recipes.find(r => r.name === 'Gold metal (mine)'),
             my: book.recipes.find(r => r.name === 'My green'), ms: book.schemes.find(s => s.name === 'My scheme') })""")
         before = snap(page)
-        page.click("#examples-card-recipes .clear-recipe-examples")
+        press_examples(page, "clear")
         page.wait_for_timeout(300)
-        check("Clear says 3 units, 4 recipes, 1 scheme and 10 paints", toast(page)["text"] == "Cleared 3 example units, 4 example recipes, 1 example scheme and 10 example paints", toast(page))
-        check("what is yours stays: the edited recipe and your own recipe",
-              names(page, "recipes") == ["Gold metal (mine)", "My green"], names(page, "recipes"))
+        check("Clear says 'Examples cleared.' (AB9: no count)", toast(page)["text"] == "Examples cleared.", toast(page))
+        # AB9: "Anything you've changed stays." An example recipe in a scheme of yours now stays with it, as yours (before AB9 it was
+        # cleared and taken out of your scheme). Here "Bog goblins colours (mine)" (edited, so yours) holds Green skin, Glowing eyes and
+        # Stone base, and "My scheme" holds Glowing eyes, so only Blue armour goes, and of the paints only Harbour blue (used by nothing else).
+        check("what is yours stays: the edited recipe, the example recipes in your schemes (AB9) and your own recipe",
+              names(page, "recipes") == ["Gold metal (mine)", "Green skin", "Glowing eyes", "Stone base", "My green"], names(page, "recipes"))
         check("what is yours stays: the edited scheme and your own scheme",
-              sorted(names(page, "schemes")) == ["Green army colours (mine)", "My scheme"], names(page, "schemes"))
+              sorted(names(page, "schemes")) == ["Bog goblins colours (mine)", "My scheme"], names(page, "schemes"))
         check("what is yours stays: the paint with a status, the paints your recipes use",
-              palette_names(page) == sorted(["Example mid blue", "Example bright green", "Example dark gold", "Example dark wash",
-                                             "Example bright gold", "Example pale gold"]), palette_names(page))
-        check("the paint with a status keeps it", page.evaluate("() => paintStatus(book.paints.find(p => p.name === 'Example mid blue'))") == "owned")
+              palette_names(page) == sorted(p for p in PAINTS if p != "Harbour blue"), palette_names(page))
+        check("the paint with a status keeps it", page.evaluate("() => paintStatus(book.paints.find(p => p.name === 'Cobalt'))") == "owned")
         check("no scheme is left pointing at a recipe that is gone",
               page.evaluate("() => book.schemes.every(s => s.recipes.every(id => !!recipeById(id)))"))
-        check("your own scheme keeps your own recipe", page.evaluate("() => book.schemes.find(s => s.name === 'My scheme').recipes.length") == 1)
+        check("your own scheme keeps both its recipes (AB9: the example one in it stays too)", page.evaluate("() => book.schemes.find(s => s.name === 'My scheme').recipes.length") == 2)
         check("the card is gone", not card_shown(page))
         page.click("#toast-undo")
         page.wait_for_timeout(300)
@@ -401,16 +416,16 @@ def main():
         page.evaluate("() => { for (const r of book.recipes.slice()) deleteRecipeNow(r.id); }")
         page.wait_for_timeout(200)
         main_tab(page, "recipes")
-        check("with only example schemes left, the card still shows and says so", card_shown(page) and "2 example schemes" in card_text(page), card_text(page))
-        page.click("#examples-card-recipes .clear-recipe-examples")
+        check("with only example schemes left, the strip still shows, and they count", card_shown(page) and "2 example schemes" in example_words(page), example_words(page))
+        press_examples(page, "clear")
         page.wait_for_timeout(300)
-        check("Clear then says only that (and the example units, v56)", toast(page)["text"] == "Cleared 3 example units and 2 example schemes", toast(page))
+        check("Clear then clears them (and the example units, v56)", toast(page)["text"] == "Examples cleared." and names(page, "schemes") == [] and saved_units(page) == [], toast(page))
 
         # ---------- 6. Keep them ----------
         print("\n--- 6. Keep them ---")
         fresh(page)
         main_tab(page, "recipes")
-        page.click("#examples-card-recipes .keep-recipe-examples")
+        press_examples(page, "keep")
         page.wait_for_timeout(300)
         tt = toast(page)
         check("Keep them: a message with Undo", tt["shown"] and tt["undo"] and "Kept" in tt["text"], tt)
@@ -425,7 +440,7 @@ def main():
               and page.evaluate("() => [...book.recipes, ...book.schemes, ...book.paints].every(x => !('example' in x))"))
         fresh(page)
         main_tab(page, "recipes")
-        page.click("#examples-card-recipes .keep-recipe-examples")
+        press_examples(page, "keep")
         page.wait_for_timeout(300)
         page.click("#toast-undo")
         page.wait_for_timeout(300)
@@ -439,8 +454,9 @@ def main():
         gone = []
         for view in ("recipes", "schemes", "palette"):
             recipe_view(page, view)
-            gone.append(not card_shown(page) and page.evaluate("() => document.getElementById('examples-card-recipes').getBoundingClientRect().height") == 0)
-        check("after Clear it is gone on every page of the Recipes tab (no space left either)", all(gone), gone)
+            # AB9: Painting has no examples card at all now (checked in test_v139_ab9), so this reads only that nothing is an example
+            gone.append(not card_shown(page))
+        check("after Clear nothing is an example on any page of the Recipes tab", all(gone), gone)
         main_tab(page, "units")
         main_tab(page, "recipes")
         check("and stays gone after leaving the tab and coming back", not card_shown(page))
@@ -451,7 +467,7 @@ def main():
         check("and stays gone after a reload", not card_shown(page))
         fresh(page)
         main_tab(page, "recipes")
-        page.click("#examples-card-recipes .keep-recipe-examples")
+        press_examples(page, "keep")
         page.wait_for_timeout(300)
         gone = []
         for view in ("recipes", "schemes", "palette"):
@@ -466,7 +482,7 @@ def main():
         page.evaluate("() => { for (const p of book.paints) applyPaintStatus(p, 'owned'); render(); }")
         edit_recipe(page, "Blue armour", "A")
         main_tab(page, "recipes")
-        page.click("#examples-card-recipes .clear-recipe-examples")
+        press_examples(page, "clear")
         page.wait_for_timeout(300)
         check("with paints you own and a recipe you changed left over, the card is still gone after Clear", not card_shown(page))
         reload(page)
@@ -502,10 +518,11 @@ def main():
         check("the recipe book is exactly the fresh start's again", snap(page)[0] == before[0])
         check("v56: Clear took the example units too, and Restore (recipes only) does not bring them back", saved_units(page) == [], saved_units(page))
         main_tab(page, "recipes")
-        check("the Recipes card is back with Clear and Keep",
-              card_shown(page) and page.locator("#examples-card-recipes .clear-recipe-examples").count() == 1
-              and page.locator("#examples-card-recipes .keep-recipe-examples").count() == 1 and ALL_WORDS in card_text(page), card_text(page))
-        page.click("#examples-card-recipes .clear-recipe-examples")
+        main_tab(page, "units")   # AB9: Clear and Keep are on the Models strip only (they were on the Recipes card)
+        check("the strip is back with Clear and Keep",
+              card_shown(page) and page.locator("#examples-card .clear-examples").count() == 1
+              and page.locator("#examples-card .keep-examples").count() == 1 and ALL_WORDS in example_words(page), example_words(page))
+        press_examples(page, "clear")
         page.wait_for_timeout(300)
         check("and Clear works on the restored examples", page.evaluate("() => book.recipes.length + book.schemes.length + book.paints.length") == 0)
 
@@ -522,7 +539,7 @@ def main():
         # c) leftovers: only what is missing is added
         fresh(page)
         page.evaluate("""() => { deleteRecipeNow(book.recipes.find(r => r.name === 'Gold metal').id);
-            deleteSchemeNow(book.schemes.find(s => s.name === 'Green army colours').id); }""")
+            deleteSchemeNow(book.schemes.find(s => s.name === 'Bog goblins colours').id); }""")
         page.wait_for_timeout(200)
         restore_in_settings(page)
         tt = toast(page)
@@ -536,7 +553,7 @@ def main():
         check("the restored recipe is marked and linked to the example units again",
               page.evaluate("() => { const r = book.recipes.find(x => x.name === 'Gold metal'); return r.example === true && models.filter(m => (m.recipes || []).includes(r.id)).map(m => m.name).join() === 'Captain,Guardians'; }"))
         check("the scheme that was still there is left as it was (Restore does not rewrite it)",
-              page.evaluate("() => book.schemes.find(s => s.name === 'Blue army colours').recipes.length") == 3)
+              page.evaluate("() => book.schemes.find(s => s.name === 'Ash wardens colours').recipes.length") == 3)
 
         # c2) your own recipe with an example's name (whatever the capitals) counts as already there
         fresh(page)
@@ -551,9 +568,9 @@ def main():
         check("there is no second Blue armour", [x.lower() for x in rn].count("blue armour") == 1 and "BLUE ARMOUR" in rn, rn)
         check("your recipe is exactly as it was", page.evaluate("() => JSON.stringify(book.recipes.find(r => r.name === 'BLUE ARMOUR'))") == own_before)
         check("the example scheme groups your recipe in place of the one that was not added",
-              page.evaluate("() => book.schemes.find(s => s.name === 'Blue army colours').recipes.map(id => recipeById(id).name)") == ["BLUE ARMOUR", "Gold metal", "Glowing eyes", "Stone base"])
+              page.evaluate("() => book.schemes.find(s => s.name === 'Ash wardens colours').recipes.map(id => recipeById(id).name)") == ["BLUE ARMOUR", "Gold metal", "Glowing eyes", "Stone base"])
         main_tab(page, "recipes")
-        page.click("#examples-card-recipes .clear-recipe-examples")
+        press_examples(page, "clear")
         page.wait_for_timeout(300)
         check("Clear after that keeps your recipe (and removes the schemes that grouped it)",
               names(page, "recipes") == ["BLUE ARMOUR"] and names(page, "schemes") == [])
@@ -561,34 +578,34 @@ def main():
         # d) leftovers after Clear: what is yours is reused as it is
         fresh(page)
         clear_on_card(page)
-        page.evaluate("""() => { book.paints.push({ id: Math.max(0, ...book.paints.map(p => p.id)) + 1, brand: '', name: 'Example deep blue', colour: '#123456' }); render(); }""")
-        own_recipe(page, "Mine blue", "Example deep blue", "#123456")
-        mine = page.evaluate("() => JSON.stringify(book.paints.find(p => p.name === 'Example deep blue'))")
+        page.evaluate("""() => { book.paints.push({ id: Math.max(0, ...book.paints.map(p => p.id)) + 1, brand: '', name: 'Harbour blue', colour: '#123456' }); render(); }""")
+        own_recipe(page, "Mine blue", "Harbour blue", "#123456")
+        mine = page.evaluate("() => JSON.stringify(book.paints.find(p => p.name === 'Harbour blue'))")
         restore_in_settings(page)
         tt = toast(page)
         check("Restore reuses a paint you already have by that name (15 new paints, not 16)",
               tt["text"] == "Added 5 example recipes, 2 example schemes and 15 example paints. You'll find them on the Painting tab.", tt)
         check("that paint keeps its colour and is not turned into an example",
-              page.evaluate("() => JSON.stringify(book.paints.find(p => p.name === 'Example deep blue'))") == mine)
+              page.evaluate("() => JSON.stringify(book.paints.find(p => p.name === 'Harbour blue'))") == mine)
         check("only one paint has that name, and the restored recipe uses it",
-              palette_names(page).count("Example deep blue") == 1 and page.evaluate(
-                  "() => { const p = book.paints.find(x => x.name === 'Example deep blue'); return book.recipes.find(r => r.name === 'Blue armour').steps[0].paints[0].paint === p.id; }"))
+              palette_names(page).count("Harbour blue") == 1 and page.evaluate(
+                  "() => { const p = book.paints.find(x => x.name === 'Harbour blue'); return book.recipes.find(r => r.name === 'Blue armour').steps[0].paints[0].paint === p.id; }"))
         main_tab(page, "recipes")
-        page.click("#examples-card-recipes .clear-recipe-examples")
+        press_examples(page, "clear")
         page.wait_for_timeout(300)
-        check("Clear after that keeps the paint and your recipe", "Example deep blue" in palette_names(page) and "Mine blue" in names(page, "recipes"))
+        check("Clear after that keeps the paint and your recipe", "Harbour blue" in palette_names(page) and "Mine blue" in names(page, "recipes"))
 
         # d2) a paint with a status and an edited recipe survive a Clear and a Restore
         fresh(page)
-        page.evaluate("() => { applyPaintStatus(book.paints.find(p => p.name === 'Example mid blue'), 'owned'); render(); }")
+        page.evaluate("() => { applyPaintStatus(book.paints.find(p => p.name === 'Cobalt'), 'owned'); render(); }")
         edit_recipe(page, "Blue armour", "Blue armour (mine)")
         clear_on_card(page)
-        mine = page.evaluate("() => JSON.stringify([book.recipes.find(r => r.name === 'Blue armour (mine)'), book.paints.find(p => p.name === 'Example mid blue')])")
+        mine = page.evaluate("() => JSON.stringify([book.recipes.find(r => r.name === 'Blue armour (mine)'), book.paints.find(p => p.name === 'Cobalt')])")
         restore_in_settings(page)
         check("Restore leaves your edited recipe and your owned paint exactly as they were",
-              page.evaluate("() => JSON.stringify([book.recipes.find(r => r.name === 'Blue armour (mine)'), book.paints.find(p => p.name === 'Example mid blue')])") == mine)
-        check("and the owned paint is still owned, once", page.evaluate("() => book.paints.filter(p => p.name === 'Example mid blue').length") == 1
-              and page.evaluate("() => paintStatus(book.paints.find(p => p.name === 'Example mid blue'))") == "owned")
+              page.evaluate("() => JSON.stringify([book.recipes.find(r => r.name === 'Blue armour (mine)'), book.paints.find(p => p.name === 'Cobalt')])") == mine)
+        check("and the owned paint is still owned, once", page.evaluate("() => book.paints.filter(p => p.name === 'Cobalt').length") == 1
+              and page.evaluate("() => paintStatus(book.paints.find(p => p.name === 'Cobalt'))") == "owned")
         check("a fresh Blue armour was added next to your edited one", "Blue armour" in names(page, "recipes") and "Blue armour (mine)" in names(page, "recipes"))
 
         # e) existing user, own data
@@ -606,21 +623,21 @@ def main():
         check("their units are untouched (there are no example units, so nothing is linked)", json.dumps(saved_units(page), sort_keys=True) == units_before)
         check("their settings remember the examples were handled, so start-up never adds them by itself",
               saved_settings(page).get("recipeExamplesChecked") is True)
-        main_tab(page, "recipes")
-        check("the Recipes card shows for them too, with Clear and Keep",
-              card_shown(page) and page.locator("#examples-card-recipes button:not(.more-info-button)").count() == 2)
+        main_tab(page, "units")   # AB9: the strip is on Models only
+        check("the strip shows for them too, with Clear and Keep",
+              card_shown(page) and page.locator("#examples-card button:not(.more-info-button)").count() == 2)
         reload(page)
         check("after a reload they still have the examples once (nothing doubled)",
               len(names(page, "recipes")) == 6 and len(names(page, "schemes")) == 3)
         main_tab(page, "recipes")
-        page.click("#examples-card-recipes .clear-recipe-examples")
+        press_examples(page, "clear")
         page.wait_for_timeout(300)
         check("Clear takes them away again and leaves the book exactly as it was before Restore", snap(page)[0] == full_before)
 
         # f) after Keep, the same names exist unmarked: nothing is added
         fresh(page)
         main_tab(page, "recipes")
-        page.click("#examples-card-recipes .keep-recipe-examples")
+        press_examples(page, "keep")
         page.wait_for_timeout(300)
         before = snap(page)
         restore_in_settings(page)
@@ -637,10 +654,10 @@ def main():
         page.wait_for_timeout(200)
         check("the shopping page says there is nothing to buy", "Nothing to buy" in page.inner_text("#shop-panel"), page.inner_text("#shop-panel"))
         # v58 (chunk 1.3) changed this decision. v44 let a kept example paint (or one given a status) count like any paint, so after
-        # Keep them all sixteen made-up paints showed on the shopping list as missing. AI testers then tried to buy "Example deep blue",
+        # Keep them all sixteen made-up paints showed on the shopping list as missing. AI testers then tried to buy "Example deep blue" (a made-up paint, called "Harbour blue" since AB9),
         # which no shop sells, and the list looked broken. Now a paint that started as an example stays off the list either way;
         # tests/test_v58.py checks real paints still work as before and that Swap for a real paint makes a recipe real.
-        page.evaluate("() => { applyPaintStatus(book.paints.find(p => p.name === 'Example mid blue'), 'wishlist'); render(); }")
+        page.evaluate("() => { applyPaintStatus(book.paints.find(p => p.name === 'Cobalt'), 'wishlist'); render(); }")
         check("a made-up paint you put on your wishlist still stays off the list (v58: no shop sells it)",
               page.evaluate("() => shoppingItems().length") == 0)
         fresh(page)
@@ -678,7 +695,8 @@ def main():
         # ---------- 10. Safety: plain text ----------
         print("\n--- 10. Text stays plain text ---")
         inner = [ln for ln in src.splitlines() if "innerHTML" in ln]
-        check("the new example code only ever uses innerHTML to empty an element", inner and all(re.search(r'innerHTML\s*=\s*""', ln) for ln in inner), inner)
+        # AB9: the Recipes card's drawing code (the one innerHTML = "" here) went with the card, so none at all also passes now.
+        check("the new example code only ever uses innerHTML to empty an element", all(re.search(r'innerHTML\s*=\s*""', ln) for ln in inner), inner)
         fresh(page)
         clear_on_card(page)
         evil = '<img src=x onerror="window.__pwn=1">Evil'
@@ -691,7 +709,7 @@ def main():
         recipe_view(page, "schemes")
         check("a recipe, scheme and paint named with markup show as plain text, nothing runs",
               page.evaluate("() => window.__pwn === undefined")
-              and page.locator("#examples-card-recipes img, #scheme-list img, #recipe-list img, #paint-list img").count() == 0
+              and page.locator("#examples-card img, #scheme-list img, #recipe-list img, #paint-list img").count() == 0
               and "<img" in page.inner_text("#scheme-list"), page.inner_text("#scheme-list")[:200])
         recipe_view(page, "recipes")
         check("and the card and the messages carry no markup either", "<" not in card_text(page) and "<" not in toast(page)["text"])
@@ -703,18 +721,20 @@ def main():
                 tag = f"{appearance} {width}px"
                 page.set_viewport_size({"width": width, "height": 844})
                 fresh(page, {"appearance": appearance})
-                main_tab(page, "recipes")
+                main_tab(page, "units")   # AB9: the examples strip is on Models only; these checks read it there (they read the Recipes card)
                 wait_settled(page)   # v92 (Mo3a): the section slides in over 240 ms; its place is read once it has settled
-                box = page.evaluate("""() => { const r = document.getElementById('examples-card-recipes').getBoundingClientRect();
+                box = page.evaluate("""() => { const r = document.getElementById('examples-card').getBoundingClientRect();
                     return { l: r.left, r: r.right, w: window.innerWidth }; }""")
-                check(f"{tag} Recipes: the card is inside the screen", box["l"] >= 0 and box["r"] <= box["w"] + 0.5, box)
-                sizes = page.evaluate("""() => [...document.querySelectorAll('#examples-card-recipes button:not(.more-info-button)')]
+                check(f"{tag} Models: the strip is inside the screen", box["l"] >= 0 and box["r"] <= box["w"] + 0.5, box)
+                sizes = page.evaluate("""() => [...document.querySelectorAll('#examples-card button:not(.more-info-button)')]
                     .map(b => { const r = b.getBoundingClientRect(); return [r.width, r.height]; })""")
-                check(f"{tag} Recipes: both buttons are at least 44 px tall and wide", len(sizes) == 2 and all(w >= 44 and h >= 44 for w, h in sizes), sizes)
-                col = page.evaluate("""() => { const el = document.querySelector('#examples-card-recipes p');
-                    return { fg: getComputedStyle(el).color, bg: getComputedStyle(document.getElementById('examples-card-recipes')).backgroundColor }; }""")
-                check(f"{tag} Recipes: the card's text is readable (contrast at least 4.5)", contrast(rgb(col["fg"]), rgb(col["bg"])) >= 4.5, col)
-                check(f"{tag} Recipes: nothing scrolls sideways", no_sideways(page))
+                check(f"{tag} Models: both buttons are at least 44 px tall and wide", len(sizes) == 2 and all(w >= 44 and h >= 44 for w, h in sizes), sizes)
+                # AB9: the strip has no fill of its own, so its text is read against the page behind it.
+                col = page.evaluate("""() => { const el = document.querySelector('#examples-card p');
+                    return { fg: getComputedStyle(el).color, bg: getComputedStyle(document.body).backgroundColor }; }""")
+                check(f"{tag} Models: the strip's text is readable (contrast at least 4.5)", contrast(rgb(col["fg"]), rgb(col["bg"])) >= 4.5, col)
+                check(f"{tag} Models: nothing scrolls sideways", no_sideways(page))
+                main_tab(page, "recipes")
                 recipe_view(page, "schemes")
                 inside = page.evaluate("""() => [...document.querySelectorAll('#scheme-list .recipe-item')].every(e => { const r = e.getBoundingClientRect();
                     return r.left >= 0 && r.right <= window.innerWidth + 0.5; })""")

@@ -14,6 +14,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import press_examples   # AB9: Clear and Keep are on the Models strip only
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
@@ -83,11 +84,12 @@ def main():
         # ---------- 4. The newer cards ----------
         print("\n--- 4. The v56 to v58 cards still work ---")
         e.fresh(page)
+        e.main_tab(page, "units")   # AB9: the examples strip is on Models only (this read the card on Painting)
+        check("a brand-new start shows the examples strip with Clear examples and Keep them",
+              page.locator("#examples-card .clear-examples").count() == 1 and page.locator("#examples-card .keep-examples").count() == 1)
         e.main_tab(page, "recipes")
         e.recipe_view(page, "recipes")
-        check("a brand-new start shows the examples card with Clear examples and Keep them",
-              page.locator("#examples-card-recipes .clear-recipe-examples").count() == 1 and page.locator("#examples-card-recipes .keep-recipe-examples").count() == 1)
-        page.click("#examples-card-recipes .keep-recipe-examples")
+        press_examples(page, "keep")
         page.wait_for_timeout(300)
         # The status line on a card only shows once some paint has a status (v50), so give one real paint a status.
         page.evaluate("() => { applyPaintStatus(findOrAddPaint('Test Paints', 'Real Blue', '#2244aa'), 'owned'); render(); }")

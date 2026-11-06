@@ -118,7 +118,12 @@ def main():
         page.wait_for_timeout(300)
         after = page.evaluate("(r) => document.querySelector(r).scrollLeft", row)
         check("Your Palette brand row stays slid to the end when a brand is tapped", before > 300 and abs(after - before) < 60, (before, after))
-        page.evaluate("() => window.scrollTo(0, 250)")
+        # AB9: the examples card left Painting, so the brand row sits 180 px higher up the page. A fixed 250 px scroll then put the row
+        # right under the top bar, where nothing of a chip can be tapped, and the click itself scrolled the page to reach it (the app did
+        # not move it: with the same tap sent without scrolling, the page stays put). So the page is scrolled until the row sits 150 px
+        # from the top, still a scrolled page (checked), and the 3 px check is unchanged.
+        page.evaluate("(r) => window.scrollTo(0, scrollY + document.querySelector(r).getBoundingClientRect().top - 150)", row)
+        check("the page is scrolled before the tap", page.evaluate("() => scrollY") > 50, page.evaluate("() => scrollY"))
         top = page.evaluate("(r) => document.querySelector(r).getBoundingClientRect().top", row)
         page.locator(f"{row} .chip").nth(10).click()
         page.wait_for_timeout(300)

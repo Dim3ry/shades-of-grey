@@ -213,23 +213,20 @@ def main():
         leave_launch(page)   # U4b: tap through the start page
         page.evaluate("() => document.querySelector('nav button[data-tab=\"dashboard\"]').click()")
         page.wait_for_timeout(150)
-        check("Dashboard: the examples card shows its heading line, the two buttons and one More info (closed)",
-              page.locator("#examples-card-dash").is_visible() and "These are examples" in (text(page, "#examples-card-dash") or "") and
-              page.locator("#examples-card-dash .clear-examples").is_visible() and page.locator("#examples-card-dash .keep-examples").is_visible() and
-              page.get_attribute("#examples-card-dash .more-info-button", "aria-expanded") == "false")
-        check("…the explanation and the unit names are hidden until it is opened", not page.locator("#examples-card-dash .more-info-panel").is_visible()
-              and all(n in (text(page, "#examples-card-dash .more-info-panel") or "") for n in ("Captain", "Brutes", "Guardians")))
-        press(page, page.locator("#examples-card-dash .more-info-button"))
-        check("…opened, it says what the examples are for", "to start your own" in (text(page, "#examples-card-dash .more-info-panel") or "") and page.locator("#examples-card-dash .more-info-panel").is_visible())
-        check("Dashboard: the buttons are still at least 44 px tall", height(page, "#examples-card-dash .clear-examples") >= 43.5 and height(page, "#examples-card-dash .keep-examples") >= 43.5)
+        # AB9: the examples card left the Dashboard; the strip on Models is the only one. Its More info, buttons and size are checked
+        # there below (the hint no longer names the units or says "to start your own").
+        check("Dashboard: no examples card", page.locator("#examples-card-dash").count() == 0)
         page.evaluate("() => document.querySelector('nav button[data-tab=\"units\"]').click()")
         page.wait_for_timeout(150)
-        check("Units: the same card has its own More info, closed, and the buttons in view",
+        check("Models: the strip has its More info, closed, and the buttons in view",
               page.get_attribute("#examples-card .more-info-button", "aria-expanded") == "false" and page.locator("#examples-card .clear-examples").is_visible())
+        press(page, page.locator("#examples-card .more-info-button"))
+        check("…opened, it says what the examples are for", "isn't empty on day one" in (text(page, "#examples-card .more-info-panel") or "") and page.locator("#examples-card .more-info-panel").is_visible())
+        check("Models: the buttons are at least 44 px tall", height(page, "#examples-card .clear-examples") >= 43.5 and height(page, "#examples-card .keep-examples") >= 43.5)
         check("the Units filter note and unit list are unchanged (still there)", page.locator("#filter-note").is_visible() and page.locator("#unit-list > li").count() >= 3)
         page.click("#examples-card .keep-examples")
         page.wait_for_timeout(150)
-        check("Keep them removes the card from both pages", page.locator("#examples-card").is_hidden() and page.evaluate("document.getElementById('examples-card-dash').classList.contains('hidden')"))
+        check("Keep them removes the strip", page.locator("#examples-card").is_hidden())
 
         # ---------- 5. Help ----------
         print("\n--- 5. Help ---")
