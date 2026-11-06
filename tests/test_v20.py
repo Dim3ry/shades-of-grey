@@ -110,7 +110,7 @@ def main():
     html = read("index.html")
     with sync_playwright() as p:
         browser = p.chromium.launch(args=["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"])
-        context = browser.new_context(viewport={"width": 390, "height": 844})
+        context = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844})
         page = context.new_page()
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
@@ -137,7 +137,7 @@ def main():
         tab(page, "settings")
         check("Settings has the three Appearance choices",
               page.locator("#appearance-card [data-appearance-choice]").all_inner_texts() == ["Dark", "Light", "Match my phone"])
-        check("Dark is pressed to start with", pressed(page) == ["dark"], pressed(page))
+        check("Match my phone is pressed to start with", pressed(page) == ["auto"], pressed(page))   # TD1b (v133): was Dark; a fresh install follows the phone now
         # v27: the Counting visits card now sits between them, and v39 added the Shop links card after it, so the check is
         # "before Colours, with only those two cards between". v47 added the Theme card straight after Appearance.
         # v126: U6b put the Mentor look card straight after Theme (the looks sit with the other appearance choices).

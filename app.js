@@ -17725,15 +17725,33 @@
     }
     // (2) the set stays. getBox(): the set's box (found again after the redraw); sel: its colours; keyOf(el): a colour's key; key: the one
     // pressed; change() draws the page again; getNext(): the new set's colours, in place.
+    // TD1b: on a narrow screen, when the next set is drawn below the visible area, the page scrolls so its start is in view (smoothly;
+    // a jump when the phone asks for reduced motion). Never on a wide screen, and nothing moves when the set is already in view.
+    // clNextScroll() measures first (before the morph moves the new colours) and returns the move to make, or null; the move starts one
+    // frame later, after the morph has begun. Focus is not touched, so it stays on the pressed colour.
+    function clNextScroll(getNext) {
+      try {
+        if (window.matchMedia("(min-width: " + WIDE_MIN_PX + "px)").matches) return null;
+        const first = getNext().find(e => lqShown(e));
+        if (!first) return null;
+        const tabs = document.querySelector("nav.tabs"), q = first.getBoundingClientRect();
+        const floor = tabs && tabs.getBoundingClientRect().top < innerHeight ? tabs.getBoundingClientRect().top : innerHeight;
+        if (q.top < 0 || q.bottom <= floor) return null;   // already in view (or above it: nothing to reveal)
+        const by = Math.round(q.top + Math.min(q.height, 140) - floor);   // the least that shows the top 140 px of the set's first colour
+        return by > 0 ? () => window.scrollBy({ top: by, left: 0, behavior: reducedMotion() ? "auto" : "smooth" }) : null;
+      } catch (ignored) { return null; }
+    }
     function clMorphStay(getBox, sel, keyOf, key, change, getNext) {
       clMorphEnd();
-      if (!lqOn() || !lqShown(getBox())) return change();
+      if (!lqOn() || !lqShown(getBox())) { change(); const move = clNextScroll(getNext); if (move) move(); return; }
       change();
       const box = getBox();
       if (!box || !lqShown(box)) return;
       const items = [...box.querySelectorAll(sel)];
       const pressed = items.find(e => keyOf(e) === key);
-      if (!pressed || !lqShown(pressed)) return;
+      const move = clNextScroll(getNext);
+      if (!pressed || !lqShown(pressed)) { if (move) move(); return; }
+      if (move) requestAnimationFrame(move);   // TD1b: after the morph has begun
       const run = clStart();
       run.front(pressed.ownerSVGElement || pressed);
       const [x, y] = clMiddle(pressed);
@@ -19688,13 +19706,13 @@
     const lightPage = () => THEME_SURFACES[currentTheme()].light.page;
 
     // ----- v20: Appearance (Dark / Light / Match my phone) -----
-    // settings.appearance is "dark" (the default), "light" or "auto" (follow the phone).
+    // settings.appearance is "auto" (follow the phone, the default since TD1b), "dark" or "light".
     const APPEARANCES = { dark: "Dark", light: "Light", auto: "Match my phone" };
     const phoneLight = window.matchMedia ? window.matchMedia("(prefers-color-scheme: light)") : null;
     const goodAppearance = (value) => Object.prototype.hasOwnProperty.call(APPEARANCES, value);
     // true when the app should be light right now.
     function isLight() {
-      const choice = goodAppearance(settings.appearance) ? settings.appearance : "dark";
+      const choice = goodAppearance(settings.appearance) ? settings.appearance : "auto";
       return choice === "light" || (choice === "auto" && !!phoneLight && phoneLight.matches);
     }
     // Puts data-appearance="light" on the page (or takes it off), which swaps the colour
@@ -19846,7 +19864,7 @@
     // v20: the Appearance buttons in Settings.
     const appearanceButtons = [...document.querySelectorAll("[data-appearance-choice]")];
     function showAppearanceChoice() {
-      const choice = goodAppearance(settings.appearance) ? settings.appearance : "dark";
+      const choice = goodAppearance(settings.appearance) ? settings.appearance : "auto";
       for (const button of document.querySelectorAll("[data-appearance-choice]")) button.setAttribute("aria-pressed", String(button.dataset.appearanceChoice === choice));
       document.getElementById("appearance-note").textContent = choice === "auto"
         ? `Follows your phone's own dark mode setting. Right now: ${isLight() ? "light" : "dark"}.`
@@ -19871,7 +19889,7 @@
         renderCustomColours();
       });
     }
-    if (!goodAppearance(settings.appearance)) settings.appearance = "dark";
+    if (!goodAppearance(settings.appearance)) settings.appearance = "auto";   // TD1b: no saved choice follows the phone
     showAppearanceChoice();
 
     // v47: the Theme squares in Settings. Choosing one changes the whole look at once; Appearance stays as it is.
@@ -22154,12 +22172,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=132".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=133".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v132";
+    const APP_VERSION = "v133";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -22621,6 +22639,11 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v133", date: "6 Nov 2026", changes: [
+        "New installs follow your phone's light or dark setting. If you have chosen Dark, Light or Match my phone before, your choice stays.",
+        "On a phone, the Colour Lab scrolls to the next colours when they appear below the screen.",
+        "Unused fonts were removed, so the app is a little smaller to download.",
+      ] },
       { version: "v132", date: "6 Nov 2026", changes: [
         "The stage names Battle ready and Parade ready are now Tabletop ready and Display ready. If you had not changed your stages, they are renamed for you and your units stay where they were. Older exported files with the old names still import to the right stages.",
         "The Help page is now called How it works.",

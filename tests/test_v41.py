@@ -16,6 +16,8 @@ Checks:
 5. Hostile text (text-injection test): paint and brand names are plain text everywhere new.
 6. Phones and looks: 360 and 390 px, dark and light, no sideways scroll.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
+# TD1b (v133): a fresh install now follows the phone (Match my phone), and a test browser says "light" unless told otherwise,
+# so the pages here ask for a dark phone to keep checking what they always checked.
 import os, re, subprocess, sys
 from playwright.sync_api import sync_playwright
 
@@ -81,7 +83,7 @@ def wheel_rows_everywhere(page):
 def main():
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
+        ctx = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844}, service_workers="block")
         page = ctx.new_page()
         errors, dialogs = [], []
         page.on("pageerror", lambda e: errors.append(str(e)))

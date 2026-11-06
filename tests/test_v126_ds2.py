@@ -250,7 +250,7 @@ def main():
         page.wait_for_timeout(500)
         n1 = page.evaluate(count)
         check("five made-up addresses (index.html?junk=N) add no copies of the page", n1 == n0, (n0, n1))
-        font = "fonts/im-fell-english-latin-400-italic.woff2"
+        font = "fonts/oxanium-latin-600-normal.woff2"
         page.evaluate("f => caches.open('shades-of-grey-fonts').then(c => c.delete(f))", font)
         ctx.route("**/" + font, lambda route: route.fulfill(status=200, content_type="font/woff2", body="NOT A FONT"))
         first = page.evaluate("f => fetch(f).then(r => r.text())", font)

@@ -1,5 +1,5 @@
 """LG1 tests for Minifolio (small legal tidy). New behaviour only:
-1. Help > About has one plain link to the font licences, and the file it opens loads, with IM Fell English's real copyright line.
+1. Help > About has one plain link to the font licences, and the file it opens loads, with Permanent Marker's real copyright line.
 2. Help has one short safety line: general hobby tips, follow the maker's label.
 3. The short unofficial note on the Updates page is checked in test_v18_1 (updated there for "or endorsed by").
 4. A COPYRIGHT file at the repo root, and the README points to it.
@@ -27,9 +27,9 @@ SAFETY = "Guides and Mentor give general hobby tips, not professional safety adv
 def main():
     print("--- Files ---")
     licences = read("fonts/LICENSES.md")
-    fell = licences.split("## IM Fell English", 1)[1][:200]
-    check("IM Fell English credits Igino Marini, not Google Inc.",
-          "Copyright (c) 2010, Igino Marini" in fell and "Google Inc." not in fell, fell)
+    # TD1b (v133): IM Fell English was deleted with its font files, so this checks a font that stays: Permanent Marker credits its real author
+    marker = licences.split("## Permanent Marker", 1)[1].split("## Permanent Marker Theme Name", 1)[0]
+    check("Permanent Marker credits Font Diner, Inc.", "Font Diner" in marker, marker[:200])
     cr = read("COPYRIGHT")
     check("COPYRIGHT: all rights reserved by George, code and knowledge base included",
           "George Atter-Dimery" in cr and "All rights reserved" in cr and "knowledge-base/" in cr, cr[:200])

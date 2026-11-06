@@ -8,6 +8,8 @@ colours smoothly slide in behind the pressed colour and the next set of colours 
 3. A quick second press finishes the first morph at once and leaves nothing stuck.
 4. Reduce motion: no animation and no copy.
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
+# TD1b (v133): a fresh install now follows the phone (Match my phone), and a test browser says "light" unless told otherwise,
+# so the pages here ask for a dark phone to keep checking what they always checked.
 import os, sys
 from playwright.sync_api import sync_playwright
 
@@ -46,7 +48,7 @@ def main():
     errors = []
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
+        ctx = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844}, service_workers="block")
         page = ctx.new_page()
         page.on("pageerror", lambda x: errors.append(str(x)))
         t.load(page, paints=OWN, recipes=[t.rec(1, "Uses", "Armour", [1, 2])], units=[t.unit(1, "Troop A", "Gloom Legion", [1])], settings=LAB)
@@ -56,14 +58,14 @@ def main():
         print("\n--- 1. Start from: the others slide in behind the pressed swatch, its ideas slide out ---")
         key = page.evaluate("() => document.querySelectorAll('#cmp-start-swatches .start-swatch')[2].dataset.startSwatch")
         sel = f'#cmp-start-swatches .start-swatch[data-start-swatch="{key}"]'
-        before = page.evaluate("(s) => { const r = document.querySelector(s).getBoundingClientRect(); return [r.left, r.top]; }", sel)
+        before = page.evaluate("(s) => { const r = document.querySelector(s).getBoundingClientRect(); return [r.left, r.top + scrollY]; }", sel)   # TD1b (v133): the page may now scroll to the new colours on a phone, so the place is measured on the page, not the screen
         page.click(sel)
         m = page.evaluate(MOVES, "#cmp-start-swatches .start-swatch")
         idx = page.evaluate("(k) => [...document.querySelectorAll('#cmp-start-swatches .start-swatch')].findIndex(b => b.dataset.startSwatch === k)", key)
         pressed, others = m[idx], [x for i, x in enumerate(m) if i != idx]
         rows = [r for r, seen in zip(page.evaluate(MOVES, "#cmp-lab-ideas .idea-list > li"), page.evaluate(ON_SCREEN, "#cmp-lab-ideas .idea-list > li")) if seen]
         st = page.evaluate("""(s) => { const b = document.querySelector(s), r = b.getBoundingClientRect();
-            return { at: [r.left, r.top], front: b.classList.contains('cl2-front'), z: getComputedStyle(b).zIndex, focus: document.activeElement === b, on: b.getAttribute('aria-pressed') }; }""", sel)
+            return { at: [r.left, r.top + scrollY], front: b.classList.contains('cl2-front'), z: getComputedStyle(b).zIndex, focus: document.activeElement === b, on: b.getAttribute('aria-pressed') }; }""", sel)
         check("the other swatches slide in behind the pressed one and fade (shrunk), then come back to their own places",
               others and all(o and o["t0"] == "none" and o["o0"] == 1 and o["mid"] and o["mid"][0][0].startswith("translate(") and o["mid"][0][1] == 0
                              and o["t1"] == "none" and o["o1"] == 1 for o in others), others[:2])

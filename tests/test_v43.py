@@ -158,7 +158,7 @@ def main():
         # wheel a few hundred times (each wait would sit through it, more than doubling the file's time). Nothing here is about motion, so it
         # runs with Reduce motion on, the setting it was written for: the picture is drawn at once, exactly where the morph ends.
         # test_v130_cl2.py checks the morph itself.
-        ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block", reduced_motion="reduce")
+        ctx = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844}, service_workers="block", reduced_motion="reduce")
         page = ctx.new_page()
         errors, dialogs, requests = [], [], []
         page.on("pageerror", lambda e: errors.append(str(e)))
@@ -571,7 +571,7 @@ def main():
         page.click("#cmp-wheel-back")
         wait(page)
         check("no network requests were made (offline app)", not [u for u in requests if not u.startswith(("http://127.0.0.1", "http://localhost", "data:", "blob:"))], [u for u in requests if not u.startswith(("http://127.0.0.1", "http://localhost"))][:3])
-        offline = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block", offline=False)
+        offline = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844}, service_workers="block", offline=False)
         page2 = offline.new_page()
         load(page2, paints=PAINTS)
         offline.set_offline(True)

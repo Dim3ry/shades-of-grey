@@ -185,7 +185,7 @@ ALL_RECIPES = [GOOD, MANY, FLAT, BOTH]
 def main():
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        ctx = browser.new_context(viewport={"width": 390, "height": 844})
+        ctx = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844})
         page = ctx.new_page()
         errors, dialogs, requests = [], [], []
         page.on("pageerror", lambda e: errors.append(str(e)))
@@ -460,7 +460,7 @@ def main():
 
         # ---------- 10. An older colour.js without schemeCheck ----------
         print("\n--- 10. colour.js without schemeCheck ---")
-        ctx2 = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
+        ctx2 = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844}, service_workers="block")
         page2 = ctx2.new_page()
         errors2 = []
         page2.on("pageerror", lambda e: errors2.append(str(e)))
