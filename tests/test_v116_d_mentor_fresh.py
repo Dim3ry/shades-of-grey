@@ -215,7 +215,7 @@ def main():
             over = []
             for _ in range(3):
                 over.append(page.evaluate("""() => { const t = document.getElementById('toast').getBoundingClientRect();
-                    const w = document.querySelector('.mentor-window').getBoundingClientRect();   // a button scrolled out of the chat area is clipped, so it is not counted
+                    const w = (document.querySelector('.mentor-scroll') || document.querySelector('.mentor-window')).getBoundingClientRect();   // a button scrolled out of the chat area is clipped, so it is not counted (v136: measured against the scrolling chat area, not the whole window, as the shorter Sources row moves where the scroll stops)
                     return [...document.querySelectorAll('.mentor-window button, .mentor-window input')].filter(b => { const r = b.getBoundingClientRect(); if (r.bottom <= w.top) return false;
                         return r.width && r.left < t.right && r.right > t.left && r.top < t.bottom && r.bottom > t.top; }).map(b => b.className + ":" + Math.round(b.getBoundingClientRect().top) + ":" + Math.round(t.bottom)).join(","); }"""))
                 page.wait_for_timeout(120)

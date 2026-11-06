@@ -70,7 +70,8 @@ def main():
         card(page, 1).locator("select.jump-stage").select_option(str(last))
         page.wait_for_timeout(250)
         check("one pick takes a one-model unit to the last stage", unit(page, 1)["stage"] == last, unit(page, 1))
-        check("the line says where it went", "Display ready" in page.evaluate("() => document.getElementById('toast-text').textContent"))
+        # v136 (AT-56): reaching a Done stage says so in one plain line instead of "-> stage" (this unit is the first of the run to get there)
+        check("the line says it is done", page.evaluate("() => document.getElementById('toast-text').textContent") in ("First one off the pile.", "Brutes are done.") or " is done." in page.evaluate("() => document.getElementById('toast-text').textContent"))
         undo(page)
         check("Undo puts stage and diary back exactly", unit(page, 1) == before, unit(page, 1))
 
