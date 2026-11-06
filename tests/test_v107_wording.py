@@ -70,7 +70,7 @@ def main():
 
         help_ = page.inner_text("#help-mentor") if page.locator("#help-mentor").count() else ""
         priv = page.evaluate("() => document.getElementById('privacy-mentor') ? document.getElementById('privacy-mentor').textContent : ''")
-        check("Help has a short Mentor line that names Ask Mentor and Guides", "Ask Mentor" in help_ and "Guides" in help_, help_)
+        check("Help has a short Mentor line that names Ask Mentor and Guides", "Ask Mentor" in help_ and "guide" in help_, help_)  # AB3 (AT-21): the Mentor paragraph is now three points ("a guide link opens that guide")
         check("Help > Privacy says on the device, not sent, not stored, cleared on reload",
               all(w in priv for w in ["on this device", "not sent anywhere", "not stored", "cleared when the app reloads"]), priv)
         check("the old 'kept until you close the app' wording is gone", "until you close the app" not in page.evaluate("() => document.getElementById('view-help').textContent"))

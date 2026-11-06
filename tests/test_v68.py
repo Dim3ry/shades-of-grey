@@ -171,9 +171,9 @@ def main():
         page.wait_for_timeout(150)
         # A3: the unit card's ▲ became a right arrow, so Help says "right arrow".
         topic = page.text_content("#help-touch-ups") or ""
-        # TD1a: Help now uses the new stage names (Tabletop ready, Display ready).
+        # TD1a: Help now uses the new stage names (Tabletop ready, Display ready). AB3 (AT-21): the sentence about the old name "Painted with issues" is gone (version history), so it is no longer checked.
         check("Help explains Needs touch-ups, where it sits and its old name",
-              all(w in topic for w in ["Needs touch-ups", "Tabletop ready", "Display ready", "right arrow", "Painted with issues"]), topic)
+              all(w in topic for w in ["Needs touch-ups", "Tabletop ready", "Display ready", "right arrow"]), topic)
         check("Help's Done line names the new stage", '"Needs touch-ups"' in html and '"Battle ready", "Painted with issues" and' not in html)
 
         # ---------- 10. Phones, dark and light ----------

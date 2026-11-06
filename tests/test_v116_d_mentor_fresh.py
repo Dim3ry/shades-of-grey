@@ -179,7 +179,7 @@ def main():
         priv = page.evaluate("() => document.getElementById('privacy-mentor').textContent")
         helpt = page.evaluate("() => document.getElementById('help-mentor').textContent")
         check("Privacy says the new sentence", "the chat is cleared when the app reloads or after a while without use." in priv.lower() or NEW in priv, priv)
-        check("Help says the same", "cleared when the app reloads or after a while without use." in helpt, helpt)
+        # AB3 (AT-21): Help's Mentor paragraph is cut to three points; the chat-clearing sentence lives in the Privacy topic only.
         check("the rest of the Privacy line is kept", all(w in priv for w in ["runs on this device", "not sent anywhere", "not stored"]), priv)
 
         print("\n--- 8. Taller window on a phone ---")
