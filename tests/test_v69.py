@@ -199,8 +199,9 @@ def main():
         # ---------- 8. Help ----------
         print("\n--- 8. Help ---")
         topic = page.evaluate("() => (document.getElementById('help-ideas-for') || {}).textContent || ''")
+        # AB3 (AT-21): "Show steps" and "no colour set" were trimmed from the Ideas for this line.
         check("Help has an Ideas for this line naming the parts and the way back",
-              all(w in topic for w in ["Ideas for this", "Your Palette", "detail recipes", "basing tips", "Show steps", "Back to recipe", "Back to Your Palette", "no colour set"]), topic)
+              all(w in topic for w in ["Ideas for this", "Your Palette", "detail recipes", "basing tips", "Back to recipe", "Back to Your Palette"]), topic)
         check("…in the Paint recipes topic", page.evaluate("() => document.getElementById('help-ideas-for').closest('details').querySelector('summary').textContent.trim()") == "Paint recipes")
 
         # ---------- 9. Phones, dark and light ----------
