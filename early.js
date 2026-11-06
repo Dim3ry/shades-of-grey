@@ -9,7 +9,7 @@
 // The page colours below must match the THEMES section of index.html (a test checks).
 try {
   const PAGE_COLOURS = {
-    classic: { dark: "#0b1220", light: "#e9eff6" },
+    classic: { dark: "#0c1418", light: "#e9eff6" },
     parchment: { dark: "#17120e", light: "#d8c59a" },
     forge: { dark: "#0d0f11", light: "#cdd1d5" },
     bench: { dark: "#20251f", light: "#e0e4d8" },
