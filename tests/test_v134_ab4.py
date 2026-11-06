@@ -1,6 +1,6 @@
 """AB4 tests for Minifolio (motion: easing, start circle travel, ripple and hover, small effects, basket pop). New behaviour only:
 1. Two new easing tokens exist; things arriving (dialog, toast, name slide in) use ease-out, the name sliding out uses ease-in.
-2. The start circle's travel is about half a second on a curve with no overshoot; a tap on the bar (here the title button) cuts it short and is used up.
+2. The start circle's travel is about half a second on a curve with no overshoot; a tap on the bar  cuts it short and is used up.
 3. No ripple (no rule, no keyframes, nothing added on a tap). Hover on a main button changes no transform, translate or shadow.
 4. No chip fill sweep (no transition on the fill, no copy layer after a tap), no stage-chip cascade, no pip stagger.
 5. The basket pop peaks at 1.06 and never goes below 1. 6. Reduced motion runs none of these.
@@ -54,18 +54,25 @@ def main():
         check("the travel curve is cubic-bezier(0.4, 0, 0.2, 1): y values stay between 0 and 1, so no overshoot", root("--motion-travel-ease") == "cubic-bezier(0.4, 0, 0.2, 1)", root("--motion-travel-ease"))
         page.evaluate("() => document.querySelector('.tabs button[data-tab=dashboard]').click()")
         started = page.evaluate("() => document.body.classList.contains('mo-travelling')")
-        box = page.evaluate("() => { const r = document.getElementById('home-button').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }")
+        box = page.evaluate("() => { const r = document.querySelector('.tabs button[data-tab=units]').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }")   # a piece of the bar (not the Mentor button, not the title)
         page.mouse.move(*box)
         page.mouse.down()
         cut = page.evaluate("() => !document.body.classList.contains('mo-travelling') && document.querySelectorAll('.mo-tr').length === 0")
         page.mouse.up()
         page.wait_for_timeout(300)
-        check("the travel was running, and a tap on the title cuts it short", started and cut, (started, cut))
-        check("that tap is used up: it does not send the app back to the start page", page.evaluate("() => !document.body.classList.contains('launching') && settings.tab === 'dashboard'"))
+        check("the travel was running, and a tap on the bar cuts it short", started and cut, (started, cut))
+        check("the tap does not open the section under it (the pieces were not tappable during the travel)", page.evaluate("() => !document.body.classList.contains('launching') && settings.tab === 'dashboard'"))
         check("the bar is the real one afterwards (nothing left over)", page.evaluate("() => !document.body.classList.contains('mo-travelling') && document.querySelectorAll('.mo-tr, .mo-ring, .mo-ghost').length === 0"))
         page.evaluate("() => document.getElementById('home-button').click()")
         page.wait_for_timeout(1500)
         check("a tap on the title with no travel still works as before", page.evaluate("() => document.body.classList.contains('launching')"))
+
+        page.evaluate("() => { document.querySelector('.tabs button[data-tab=dashboard]').click(); }")
+        page.wait_for_function("() => !document.body.classList.contains('mo-travelling')", timeout=6000)
+        page.evaluate("() => document.getElementById('home-button').click()")
+        page.click("#mentor-button")
+        page.wait_for_selector(".mentor-window", timeout=5000)
+        check("a tap on the Mentor button during the travel still opens Mentor (a tap there is not changed)", page.locator(".mentor-window").count() == 1)
 
         print("\n--- 3. Ripple and hover ---")
         check("no .ripple rule and no mo-ripple keyframes", not rule(rules, ".ripple") and page.evaluate(KEYFRAMES, "mo-ripple") is None)

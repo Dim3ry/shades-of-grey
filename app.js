@@ -4741,17 +4741,14 @@
     window.addEventListener("load", fitLaunch);   // fonts may change the header height
     // The Minifolio title and the round back arrow (chunk B) both call this one function.
     function goToStartPage() { if (!launching && !travelling) enterLaunch(); }
-    // AB4 (AT-22): a tap on the bar (or the title or the Mentor button) while the segments travel cuts the travel short: it jumps to the end, which is
-    // the real bar exactly, and that tap is used up (it does not also press whatever is there, so a section is never opened by accident).
+    // AB4 (AT-22): a tap on the bar while the segments travel cuts the travel short: it jumps to the end, which is
+    // the real bar exactly. The tap is not used up or changed: it lands where it did before.
     document.addEventListener("pointerdown", (event) => {
       if (!travelling || event.button > 0) return;
-      const x = event.clientX, y = event.clientY;
-      const inside = [arcEl, orbEl, document.getElementById("home-button")].some(el => { const r = el && el.getBoundingClientRect(); return r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; });
-      if (!inside) return;
-      endLaunchMove();
-      const swallow = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
-      document.addEventListener("click", swallow, { capture: true, once: true });
-      setTimeout(() => document.removeEventListener("click", swallow, true), 800);
+      if (event.target instanceof Element && event.target.closest("#mentor-button, #home-button")) return;   // the Mentor button still opens Mentor and the title is still ignored, as before
+      const x = event.clientX, y = event.clientY, r = arcEl.getBoundingClientRect();
+      if (!(x >= r.left && x <= r.right && y >= r.top && y <= r.bottom)) return;   // only a tap on the bar itself
+      endLaunchMove();   // (the tap itself goes where it always did: the bar's pieces were not tappable during the travel, so it never opens a section by accident)
     }, true);
     document.getElementById("home-button").addEventListener("click", goToStartPage);
     document.getElementById("back-menu").addEventListener("click", (event) => {
