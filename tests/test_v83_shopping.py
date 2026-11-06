@@ -55,7 +55,7 @@ def main():
     errors = []
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
+        ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block", reduced_motion="reduce")  # T7: reduced motion (this file checks content, not motion)'
         page = ctx.new_page()
         page.on("pageerror", lambda x: errors.append(str(x)))
 
@@ -207,7 +207,7 @@ def main():
         for width in (390, 360):
             for scheme in ("dark", "light"):
                 page.close()
-                ctx2 = browser.new_context(viewport={"width": width, "height": 800}, service_workers="block", color_scheme=scheme)
+                ctx2 = browser.new_context(viewport={"width": width, "height": 800}, service_workers="block", color_scheme=scheme, reduced_motion="reduce")  # T7: reduced motion (this file checks content, not motion)'
                 page = ctx2.new_page()
                 page.on("pageerror", lambda x: errors.append(str(x)))
                 load(page, paints=PAINTS + [P(6, "Zeta Wishlist With A Rather Long Paint Name Indeed", **WISH)],

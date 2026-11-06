@@ -110,7 +110,7 @@ def main():
 
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        ctx = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844}, service_workers="block")
+        ctx = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844}, service_workers="block", reduced_motion="reduce")  # T7: reduced motion (this file checks content, not motion)'
         page = ctx.new_page()
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.on("console", lambda m: csp.append(m.text) if "Content Security Policy" in m.text else None)
@@ -181,7 +181,7 @@ def main():
             check(f"a saved theme of {v!r} falls back to Classic", page.evaluate("document.documentElement.dataset.t") == "classic"
                   and page.evaluate("settings.theme") == "classic")
         # early.js alone (app.js not loaded): the page is already marked
-        ctx2 = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844}, service_workers="block")
+        ctx2 = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844}, service_workers="block", reduced_motion="reduce")  # T7: reduced motion (this file checks content, not motion)'
         p2 = ctx2.new_page()
         p2.route("**/app.js*", lambda r: r.fulfill(status=200, content_type="text/javascript", body="window.__noApp = true;"))
         p2.goto(t.BASE + "manifest.json")
@@ -332,7 +332,7 @@ def main():
         check("sw.js keeps fonts in their own store, which updates don't clear",
               'const FONT_CACHE = "shades-of-grey-fonts"' in sw and "name !== FONT_CACHE" in sw)
         check("sw.js does not save any font at install", "woff2" not in sw[sw.index("const APP_FILES"):sw.index("];", sw.index("const APP_FILES"))])
-        swctx = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844})
+        swctx = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844}, reduced_motion="reduce")  # T7: reduced motion (this file checks content, not motion)'
         sp = swctx.new_page()
         sp.goto(t.BASE + "manifest.json")
         sp.evaluate("localStorage.setItem('shades-of-grey-settings', JSON.stringify({ theme: 'classic' }))")

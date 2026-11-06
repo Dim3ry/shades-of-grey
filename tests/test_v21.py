@@ -128,7 +128,7 @@ def no_sideways(page):
 def main():
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        context = browser.new_context(viewport={"width": 390, "height": 844})
+        context = browser.new_context(viewport={"width": 390, "height": 844}, reduced_motion="reduce")  # T7: reduced motion (this file checks content, not motion)'
         page = context.new_page()
         fold_opener.open_cards_on_load(page)   # v54: open the folded Settings cards whenever the app loads
         errors = []

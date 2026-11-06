@@ -116,7 +116,7 @@ def active(page):
 def main():
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
+        ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block", reduced_motion="reduce")  # T7: reduced motion (this file checks content, not motion)'
         page = ctx.new_page()
         errors, dialogs, requests = [], [], []
         page.on("pageerror", lambda e: errors.append(str(e)))
@@ -474,7 +474,7 @@ def main():
             tap(page, "blue")
         page.set_viewport_size({"width": 390, "height": 844})
         # a real touch phone
-        touch = browser.new_context(viewport={"width": 390, "height": 844}, has_touch=True, is_mobile=True, service_workers="block")
+        touch = browser.new_context(viewport={"width": 390, "height": 844}, has_touch=True, is_mobile=True, service_workers="block", reduced_motion="reduce")  # T7: reduced motion (this file checks content, not motion)'
         tp = touch.new_page()
         tp.on("pageerror", lambda e: errors.append(str(e)))
         load(tp, paints=PAL)

@@ -132,7 +132,7 @@ def main():
     app, html = read("app.js"), read("index.html")
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
+        ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block", reduced_motion="reduce")  # T7: reduced motion (this file checks content, not motion)'
         page = ctx.new_page()
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.on("dialog", lambda d: (dialogs.append(d.message), d.dismiss()))
@@ -338,7 +338,7 @@ def main():
         # ---------- 8. F13: the iPhone card ----------
         print("\n--- 8. F13: the iPhone card ---")
         for width in (360, 390):
-            ip_ctx = browser.new_context(viewport={"width": width, "height": 800}, service_workers="block", user_agent=IPHONE_UA, is_mobile=True, has_touch=True)
+            ip_ctx = browser.new_context(viewport={"width": width, "height": 800}, service_workers="block", user_agent=IPHONE_UA, is_mobile=True, has_touch=True, reduced_motion="reduce")  # T7: reduced motion (this file checks content, not motion)'
             ip = ip_ctx.new_page()
             ip.on("pageerror", lambda e: errors.append(f"iphone pageerror: {e}"))
             w.load(ip, paints=[], recipes=[], units=t.UNITS)
