@@ -22069,7 +22069,7 @@
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v133";
+    const APP_VERSION = "v134";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -22531,6 +22531,11 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v134", date: "6 Nov 2026", changes: [
+        "Corners now follow each look: Forge is square and Parchment is nearly square. Classic's corner marks now sit on the headline card and Mentor only.",
+        "Things on screen arrive with a soft landing and leave with a quick start, and the start circle now glides into the bar in about half a second. Tapping the bar while it moves skips to the end.",
+        "Buttons no longer ripple or lift when you hover, filter chips switch colour at once, and the basket swells a little less.",
+      ] },
       { version: "v133", date: "6 Nov 2026", changes: [
         "New installs follow your phone's light or dark setting. If you have chosen Dark, Light or Match my phone before, your choice stays.",
         "On a phone, the Colour Lab scrolls to the next colours when they appear below the screen.",
