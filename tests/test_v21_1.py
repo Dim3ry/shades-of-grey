@@ -46,7 +46,7 @@ def read(name):
 
 # v68: the 7th default stage was renamed from "Painted with issues" to "Needs touch-ups", so this list uses the new name.
 STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted",
-          "Battle ready", "Needs touch-ups", "Parade ready"]
+          "Tabletop ready", "Needs touch-ups", "Display ready"]
 UNITS = [
     {"id": 1, "name": "Intercessors", "hobby": "40K", "faction": "Ultramarines", "stage": 0, "count": 5,
      "log": [["2026-09-01", 0]]},
@@ -231,18 +231,18 @@ def main():
         for uid in (1, 2, 3):
             page.click(card(uid) + " .info")
             page.wait_for_timeout(40)
-        move_to(page, 5)   # Battle ready
+        move_to(page, 5)   # Tabletop ready
         after = units(page)
-        check("every ticked unit moved to Battle ready", all(by_id(after, i)["stage"] == 5 for i in (1, 2, 3)),
+        check("every ticked unit moved to Tabletop ready", all(by_id(after, i)["stage"] == 5 for i in (1, 2, 3)),
               [by_id(after, i)["stage"] for i in (1, 2, 3)])
         check("all models of the model-by-model unit moved", by_id(after, 2)["stages"] == [5, 5, 5, 5], by_id(after, 2).get("stages"))
-        check("each moved unit got a diary entry at Battle ready",
+        check("each moved unit got a diary entry at Tabletop ready",
               all(by_id(after, i)["log"][-1][1] == 5 and len(by_id(after, i)["log"]) == len(before[i]["log"]) + 1 for i in (1, 2, 3)),
               [by_id(after, i)["log"] for i in (1, 2, 3)])
         check("the unticked unit didn't change", keep(by_id(after, 4)) == before[4])
         check("select mode closes after a move", not selecting(page) and ticks(page) == 0)
         msg = toast(page)
-        check("the message says how many moved, with Undo", "3 units → Battle ready" in msg and page.is_visible("#toast-undo"), msg)
+        check("the message says how many moved, with Undo", "3 units → Tabletop ready" in msg and page.is_visible("#toast-undo"), msg)
         shot(page, "v21-1-moved.png")
         page.reload()
         page.wait_for_timeout(300)

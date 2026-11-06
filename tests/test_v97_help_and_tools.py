@@ -14,7 +14,8 @@ import test_v31 as t
 from launch_helpers import wait_settled, app_ready, leave_launch
 
 results = []
-FACTION_WORDS = re.compile(r"tyranid|space marine|ork|necron|eldar|ultramarine|warhammer|citadel|games workshop|chaos|imperial", re.I)
+# TD1a: "ork" is now matched as a whole word (\bork\b), because the new label "How it works" contains the letters "ork".
+FACTION_WORDS = re.compile(r"tyranid|space marine|\bork\b|necron|eldar|ultramarine|warhammer|citadel|games workshop|chaos|imperial", re.I)
 
 def check(name, ok, detail=""):
     results.append(bool(ok))
@@ -60,7 +61,7 @@ def main():
               texts(page, ".arc [data-tab]")[3] == "Tools" and page.get_attribute('.arc [data-tab="guides"]', "aria-label") == "Tools")
         check("the page heading says Tools and Settings", page.inner_text("#more-title").strip() == "Tools and Settings" and page.is_visible("#more-title"))
         check("the switch is About, Credits, Guides, Settings, Help, Updates, with Guides selected (AM1, CR1)",
-              texts(page, "#more-seg button") == ["About", "Credits", "Guides", "Settings", "Help", "Updates"]   # AM1: About added first; CR1: Credits second; Guides still the page Tools opens on
+              texts(page, "#more-seg button") == ["About", "Credits", "Guides", "Settings", "How it works", "Updates"]   # AM1: About added first; CR1: Credits second; Guides still the page Tools opens on
               and page.evaluate("() => [...document.querySelectorAll('#more-seg button')].map(b => b.getAttribute('aria-selected')).join()") == "false,false,true,false,false,false")
         check("the cog is gone and the basket is still in the header",
               page.locator(".cog").count() == 0 and page.locator('[data-tab="settings"]').count() == 0 and page.locator(".app-actions #basket-button").count() == 1)

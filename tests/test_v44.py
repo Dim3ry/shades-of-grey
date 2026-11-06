@@ -60,7 +60,7 @@ LINKS = {"Captain": ["Blue armour", "Gold metal", "Glowing eyes", "Stone base"],
 BOOK_KEYS = ["paints", "parts", "recipes", "schemes", "shorthand", "techniques", "v15"]
 # v68: the 7th default stage was renamed from "Painted with issues" to "Needs touch-ups", so this list uses the new name.
 STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted",
-          "Battle ready", "Needs touch-ups", "Parade ready"]
+          "Tabletop ready", "Needs touch-ups", "Display ready"]
 ALL_WORDS = "5 example recipes, 2 example schemes and 16 example paints"
 
 def wait_loaded(page):

@@ -55,8 +55,8 @@
        (applyAppearance in app.js) takes over once the app starts.
        U6b: mentor-looks.js (the Mentor orb's three looks and five states, plain data: MENTOR_LOOKS and MENTOR_LOOKS_CSS) loads
        just before it, so early.js can put the chosen look and its styles on the page before the first frame (LR1). -->
-  <script src="mentor-looks.js?v=131"></script>
-  <script src="early.js?v=131"></script>
+  <script src="mentor-looks.js?v=132"></script>
+  <script src="early.js?v=132"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -3401,7 +3401,7 @@
       <button role="tab" data-page="credits">Credits</button>
       <button role="tab" data-page="guides">Guides</button>
       <button role="tab" data-page="settings">Settings</button>
-      <button role="tab" data-page="help">Help</button>
+      <button role="tab" data-page="help">How it works</button>
       <button role="tab" data-page="updates">Updates</button>
     </div>
 
@@ -3478,7 +3478,7 @@
             <li>Check the <strong>Dashboard</strong> to see how far you've got.</li>
             <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
           </ol>
-          <p id="help-tabs" style="margin: 8px 0 0;">The bar at the bottom has four sections around the round <strong>Ask Mentor</strong> button: <strong>Dashboard</strong>, <strong>Models</strong>, <strong>Painting</strong> and <strong>Tools</strong>. The one you are in is lit. <strong>Tools</strong> opens <strong>Tools and Settings</strong>: <strong>About</strong>, <strong>Guides</strong>, <strong>Settings</strong>, <strong>Help</strong> and <strong>Updates</strong>. The shopping basket sits at the top right once your list has a paint. The app opens on a <strong>start page</strong>: the same four sections in a circle around Ask Mentor. Tap the round arrow at the bottom left, or the <strong>Minifolio</strong> title, to come back to it. Switching to another app and back leaves you where you were.</p>
+          <p id="help-tabs" style="margin: 8px 0 0;">The bar at the bottom has four sections around the round <strong>Ask Mentor</strong> button: <strong>Dashboard</strong>, <strong>Models</strong>, <strong>Painting</strong> and <strong>Tools</strong>. The one you are in is lit. <strong>Tools</strong> opens <strong>Tools and Settings</strong>: <strong>About</strong>, <strong>Guides</strong>, <strong>Settings</strong>, <strong>How it works</strong> and <strong>Updates</strong>. The shopping basket sits at the top right once your list has a paint. The app opens on a <strong>start page</strong>: the same four sections in a circle around Ask Mentor. Tap the round arrow at the bottom left, or the <strong>Minifolio</strong> title, to come back to it. Switching to another app and back leaves you where you were.</p>
           <p id="help-mentor" style="margin: 8px 0 0;"><strong>Mentor:</strong> tap <strong>Ask Mentor</strong> to open a small window over whatever you are on. Type a question, or tap <strong>Suggestions</strong> and pick one. Mentor answers from <strong>Guides</strong> and the colour rules, with a <strong>Sources</strong> row; a source opens that guide, recipe, tip or colour. It puts small typing slips right. When it is not sure, it shows <strong>Did you mean</strong> with the question as it read it; tap that to ask it. When it has no answer, it says <strong>I do not know that yet.</strong> and shows some starter questions. It also answers simple questions about the app, such as price, backups and privacy. Say thanks or goodbye and it signs off. In the window its orb shows when it is getting ready, has an answer, is not sure, or has signed off. <strong>Settings → Mentor look</strong> changes the orb: <strong>Futuristic</strong> (the app icon's ring), <strong>Magical</strong> or <strong>Grounded</strong>. <strong>Paint Picker</strong>, the first of the suggestions, takes you to <strong>Painting → Colour Lab</strong>. Close the window with the cross, a tap outside it, Escape or Back; Ask Mentor brings the chat back. Mentor runs on this device. What you type is not sent anywhere and is not stored, and the chat is cleared when the app reloads or after a while without use.</p>
           <p id="help-back" style="margin: 8px 0 0;">The phone's <strong>Back</strong> button closes what's open first, one thing per press: a question box (it counts as No), a photo, the camera, a recipe, the paste box. Then it goes to the Dashboard. On the Dashboard, with nothing open, it leaves the app.</p>
         </details>
@@ -3520,8 +3520,8 @@
           <summary>Stages and "Done"</summary>
           <ul>
             <li>Stages are yours to change in <strong>Settings → Stages</strong>: rename, reorder (↑ ↓), add or remove. Changes apply when you press Save.</li>
-            <li><strong>Done starts at</strong> decides what counts as finished. By default, "Battle ready", "Needs touch-ups" and "Parade ready" are Done.</li>
-            <li id="help-touch-ups"><strong>Needs touch-ups</strong> is for a unit that is painted and on the table, with a few bits you plan to fix before it is Parade ready. It sits between Battle ready and Parade ready, so the right arrow on a Battle ready unit moves it there next. Up to v61 this stage was called "Painted with issues". If you hadn't changed your stages, it was renamed for you and your units stayed where they were.</li>
+            <li><strong>Done starts at</strong> decides what counts as finished. By default, "Tabletop ready", "Needs touch-ups" and "Display ready" are Done.</li>
+            <li id="help-touch-ups"><strong>Needs touch-ups</strong> is for a unit that is painted and on the table, with a few bits you plan to fix before it is Display ready. It sits between Tabletop ready and Display ready, so the right arrow on a Tabletop ready unit moves it there next. Up to v61 this stage was called "Painted with issues". If you hadn't changed your stages, it was renamed for you and your units stayed where they were.</li>
             <li>Units move with their stage when you reorder. If you remove a stage, its units drop to the stage before it.</li>
           </ul>
         </details>
@@ -3713,6 +3713,7 @@
             <li>The app knows paint and faction names so it can recognise what you type or scan. Citadel, Warhammer and faction and paint names are trademarks of Games Workshop Ltd. Other paint names (such as Vallejo, The Army Painter and AK Interactive) belong to their makers. All are used only to identify those products.</li>
             <li>The Vallejo, Army Painter, Pro Acryl, AK, Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World paint names, colours and codes (and some Citadel ones) come from the free <strong>miniature-paints</strong> list by Rick Fleuren (MIT licence). The colours are close guesses, not exact matches.</li>
             <li id="about-fonts"><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">Font licences</a></li>
+            <li id="about-credits-help"><button type="button" class="link-button" id="help-credits-link">Credits</button></li>
             <li>Your data stays on this device. There's no account, and nothing you add is sent anywhere, except what you choose to write in the feedback form and a paint's name when you tap a shop link.</li>
             <li><strong>Contact:</strong> use <strong>Give feedback</strong> under <strong>Settings → Updates</strong>.</li>
           </ul>
@@ -3808,7 +3809,7 @@
         <h2>Counting visits</h2>
         <label class="check-label count-label"><input type="checkbox" id="count-visits"> Count my visits (anonymous)</label>
         <p class="hint" id="counting-note" style="margin: 6px 0 0;"></p>
-        <p class="hint" id="counting-effect" style="margin: 6px 0 0;">Takes effect the next time the app opens. Details: Help → Privacy.</p>
+        <p class="hint" id="counting-effect" style="margin: 6px 0 0;">Takes effect the next time the app opens. Details: How it works → Privacy.</p>
       </div>
 
       <!-- v39: Shop links. One tick box; on by default; not in backups. See "v39: THE SHOP LINKS SWITCH" in app.js. -->
@@ -3987,7 +3988,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=131" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=132" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -4000,16 +4001,16 @@
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks.
        G2a: guides-groups.js (the Guides topic groups, plain data) loads after guides-data.js. It only adds one
        name, GUIDE_GROUPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=131"></script>
-  <script src="schemes.js?v=131"></script>
-  <script src="detail-recipes.js?v=131"></script>
-  <script src="basing-tips.js?v=131"></script>
-  <script src="mentor-tips.js?v=131"></script>
-  <script src="guides-data.js?v=131"></script>
-  <script src="guides-groups.js?v=131"></script>
-  <script src="mentor-data.js?v=131"></script>
-  <script src="mentor-engine.js?v=131"></script>
-  <script src="where-to-buy.js?v=131"></script>
-  <script src="app.js?v=131"></script>
+  <script src="colour.js?v=132"></script>
+  <script src="schemes.js?v=132"></script>
+  <script src="detail-recipes.js?v=132"></script>
+  <script src="basing-tips.js?v=132"></script>
+  <script src="mentor-tips.js?v=132"></script>
+  <script src="guides-data.js?v=132"></script>
+  <script src="guides-groups.js?v=132"></script>
+  <script src="mentor-data.js?v=132"></script>
+  <script src="mentor-engine.js?v=132"></script>
+  <script src="where-to-buy.js?v=132"></script>
+  <script src="app.js?v=132"></script>
 </body>
 </html>

@@ -45,7 +45,7 @@ def read(name):
 
 # v68: the 7th default stage was renamed from "Painted with issues" to "Needs touch-ups", so this list uses the new name.
 STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted",
-          "Battle ready", "Needs touch-ups", "Parade ready"]
+          "Tabletop ready", "Needs touch-ups", "Display ready"]
 UNITS = [
     {"id": 1, "name": "Intercessors", "hobby": "40K", "faction": "Ultramarines", "stage": 3, "count": 5,
      "log": [["2026-09-01", 0], ["2026-09-05", 3]]},
@@ -56,7 +56,7 @@ V21_4_CSP = ("default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-sr
              "img-src 'self' blob: data: https://dim3ry.goatcounter.com/count; media-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; "
              "manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'")
 PAGES = ["settings", "help", "updates"]
-LABELS = {"settings": "Settings", "help": "Help", "updates": "Updates"}
+LABELS = {"settings": "Settings", "help": "How it works", "updates": "Updates"}
 
 def full_settings(**extra):
     s = {"palette": "ice", "tab": "units", "stages": STAGES, "doneFrom": 5, "examplesChecked": True}
@@ -189,7 +189,7 @@ def main():
         main_tab(page, "settings")
         st = seg_state(page)
         check("tapping Settings in the bar opens the Settings page", shown_views(page) == ["settings"], shown_views(page))
-        check("the switch shows, with Settings, Help and Updates in that order", st["shown"] and st["labels"] == ["About", "Credits", "Guides", "Settings", "Help", "Updates"], st)   # X2: Guides added; AM1: About is first; CR1: Credits after About (six pages)
+        check("the switch shows, with Settings, Help and Updates in that order", st["shown"] and st["labels"] == ["About", "Credits", "Guides", "Settings", "How it works", "Updates"], st)   # X2: Guides added; AM1: About is first; CR1: Credits after About (six pages)
         check("Settings is the selected one", st["selected"] == ["settings"], st)
         check("Settings stays lit in the bar", lit_tabs(page) == ["guides"], lit_tabs(page))   # X2: Settings lives under the Tools segment
         check("the switch buttons are at least 44 px tall", st["minHeight"] >= 44, st["minHeight"])

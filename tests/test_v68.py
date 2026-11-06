@@ -41,7 +41,8 @@ def check(name, ok, detail=""):
 
 OLD = ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted",
        "Battle ready", "Painted with issues", "Parade ready"]
-NEW = OLD[:6] + ["Needs touch-ups", "Parade ready"]
+# TD1a (v132): "Battle ready" and "Parade ready" were renamed again, so the list a device ends on now has the TD1a names.
+NEW = OLD[:5] + ["Tabletop ready", "Needs touch-ups", "Display ready"]
 PRE_V3 = ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted",
           "Painted with issues", "Battle ready"]
 CUSTOM = ["Grey", "Primed", "Battle ready", "Painted with issues", "Parade ready"]
@@ -170,8 +171,9 @@ def main():
         page.wait_for_timeout(150)
         # A3: the unit card's ▲ became a right arrow, so Help says "right arrow".
         topic = page.text_content("#help-touch-ups") or ""
+        # TD1a: Help now uses the new stage names (Tabletop ready, Display ready).
         check("Help explains Needs touch-ups, where it sits and its old name",
-              all(w in topic for w in ["Needs touch-ups", "Battle ready", "Parade ready", "right arrow", "Painted with issues"]), topic)
+              all(w in topic for w in ["Needs touch-ups", "Tabletop ready", "Display ready", "right arrow", "Painted with issues"]), topic)
         check("Help's Done line names the new stage", '"Needs touch-ups"' in html and '"Battle ready", "Painted with issues" and' not in html)
 
         # ---------- 10. Phones, dark and light ----------

@@ -171,7 +171,11 @@
     // Each unit stores a NUMBER pointing at a position in the stage list (0 = first).
     // Stages from settings.doneFrom onwards count as "Done"; earlier ones are "To do".
     const DEFAULT_STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed",
-                            "Part painted", "Battle ready", "Needs touch-ups", "Parade ready"];
+                            "Part painted", "Tabletop ready", "Needs touch-ups", "Display ready"];
+    // TD1a (v132): "Battle ready" is now "Tabletop ready" and "Parade ready" is now "Display ready" (labels only). This is the
+    // default list from v68 to v131; anyone still on exactly it gets the new names (see renamedStageList). Units save a stage NUMBER.
+    const V131_DEFAULT_STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed",
+                                 "Part painted", "Battle ready", "Needs touch-ups", "Parade ready"];
     // v68: the defaults from v3 to v61, when the 7th stage was called "Painted with issues".
     // Anyone still on exactly this list (on the device, in a backup or in a safety copy) gets it
     // renamed to "Needs touch-ups" (see renamedStageList). Units save a stage NUMBER, so none of
@@ -179,9 +183,8 @@
     const V61_DEFAULT_STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed",
                                 "Part painted", "Battle ready", "Painted with issues", "Parade ready"];
     function renamedStageList(list) {
-      const same = Array.isArray(list) && list.length === V61_DEFAULT_STAGES.length &&
-        list.every((x, i) => x === V61_DEFAULT_STAGES[i]);
-      return same ? DEFAULT_STAGES.slice() : list;
+      const is = (old) => Array.isArray(list) && list.length === old.length && list.every((x, i) => x === old[i]);
+      return is(V61_DEFAULT_STAGES) || is(V131_DEFAULT_STAGES) ? DEFAULT_STAGES.slice() : list;
     }
     // The defaults before v3, so testers on them can be moved to the new set (see below).
     const OLD_DEFAULT_STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed",
@@ -5050,6 +5053,7 @@
       box.appendChild(ul);
     }
     document.getElementById("about-credits-link").addEventListener("click", () => showTab("credits"));   // CR1
+    document.getElementById("help-credits-link").addEventListener("click", () => showTab("credits"));   // TD1a: the small Credits link in How it works > About
 
     function showTab(name, how) {
       name = tabAlias(name);
@@ -21063,10 +21067,12 @@
       "Assembled": ["built", "constructed", "to prime", "ready to prime"],
       "Primed": ["undercoated", "undercoat", "primer", "sprayed", "to paint", "ready to paint"],
       "Part painted": ["part painted", "partly painted", "partially painted", "half painted", "started", "in progress", "wip", "work in progress", "painting", "being painted", "base coated", "basecoated", "basecoat", "base coat"],
-      "Battle ready": ["tabletop", "tabletop ready", "table ready", "tabletop standard", "game ready", "battle ready"],
+      "Tabletop ready": ["tabletop", "table ready", "tabletop standard", "game ready", "battle ready"],   // TD1a: "battle ready" still works for older files
       "Needs touch-ups": ["touch up", "touch ups", "touchup", "touchups", "needs touch up", "needs touch ups", "needs touchup", "needs touchups", "needs work", "needs repair", "repair"],
-      "Parade ready": ["parade", "display", "display ready", "showcase", "competition ready"],
+      "Display ready": ["parade", "parade ready", "display", "showcase", "competition ready"],   // TD1a: "parade ready" still works for older files
     };
+    // TD1a: a custom list that still has the old names keeps working with the same everyday words.
+    const CSV_OLD_STAGE_NAMES = { "Tabletop ready": "Battle ready", "Display ready": "Parade ready" };
     const CSV_DONE_WORDS = ["painted", "done", "finished", "complete", "completed", "fully painted"];
     // The stage number for a status word, or -1 when it doesn't match.
     function stageFromStatus(text) {
@@ -21077,7 +21083,8 @@
       if (CSV_DONE_WORDS.includes(word)) return Math.min(Math.max(0, settings.doneFrom), STAGES.length - 1);
       for (const [stage, words] of Object.entries(CSV_STATUS_WORDS)) {
         if (!words.includes(word)) continue;
-        const i = STAGES.findIndex(s => s.toLowerCase() === stage.toLowerCase());
+        const names = [stage, CSV_OLD_STAGE_NAMES[stage]].filter(Boolean).map(n => n.toLowerCase());
+        const i = STAGES.findIndex(s => names.includes(s.toLowerCase()));
         if (i !== -1) return i;
       }
       return -1;
@@ -22147,12 +22154,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=131".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=132".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v131";
+    const APP_VERSION = "v132";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -22223,7 +22230,7 @@
       if (!show) return;
       const text = document.createElement("p");
       const strong = document.createElement("strong");
-      strong.textContent = "Enjoying Minifolio?";
+      strong.textContent = "Anything missing or broken?";
       text.append(strong);
       const give = document.createElement("a");
       give.className = "primary-button feedback-give";
@@ -22614,6 +22621,12 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v132", date: "6 Nov 2026", changes: [
+        "The stage names Battle ready and Parade ready are now Tabletop ready and Display ready. If you had not changed your stages, they are renamed for you and your units stay where they were. Older exported files with the old names still import to the right stages.",
+        "The Help page is now called How it works.",
+        "The feedback card now asks \"Anything missing or broken?\".",
+        "How it works has a small Credits link under About.",
+      ] },
       { version: "v131", date: "5 Nov 2026", changes: [
         "A new Credits page, straight after About in Tools and Settings, lists the licences for the fonts, the pot-label reader and the paint list. Each licence name opens its full text, which is kept inside the app so it also opens offline. About has a Credits link.",
       ] },

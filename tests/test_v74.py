@@ -6,7 +6,7 @@ What changed:
  model moves up one). Both have an Undo.
 
 Checks:
-1. A one-model unit goes from the first stage to Parade ready in one pick; Undo puts it back, diary included.
+1. A one-model unit goes from the first stage to Display ready in one pick; Undo puts it back, diary included.
 2. The up arrow on a batch unit moves it up one stage.
 3. The up arrow on a model-by-model unit moves every model up one (a model already at the top stays); Undo restores it exactly.
 4. When every model is at the top stage the arrow is switched off.
@@ -70,7 +70,7 @@ def main():
         card(page, 1).locator("select.jump-stage").select_option(str(last))
         page.wait_for_timeout(250)
         check("one pick takes a one-model unit to the last stage", unit(page, 1)["stage"] == last, unit(page, 1))
-        check("the line says where it went", "Parade ready" in page.evaluate("() => document.getElementById('toast-text').textContent"))
+        check("the line says where it went", "Display ready" in page.evaluate("() => document.getElementById('toast-text').textContent"))
         undo(page)
         check("Undo puts stage and diary back exactly", unit(page, 1) == before, unit(page, 1))
 

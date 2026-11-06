@@ -43,7 +43,7 @@ def read(name):
 
 # v68: the 7th default stage was renamed from "Painted with issues" to "Needs touch-ups", so this list uses the new name.
 STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted",
-          "Battle ready", "Needs touch-ups", "Parade ready"]
+          "Tabletop ready", "Needs touch-ups", "Display ready"]
 OLD_EXAMPLES = [  # how the 3 example units were saved before v21 (no "example" mark)
     {"id": 1, "name": "Captain", "hobby": "40K", "faction": "Ultramarines", "stage": 3, "count": 1},
     {"id": 2, "name": "Boyz", "hobby": "40K", "faction": "Orks", "stage": 0, "count": 10},
@@ -245,10 +245,10 @@ def main():
         page.select_option(menu, "5")
         page.wait_for_timeout(150)
         u = units(page)[0]
-        check("picking Battle ready moves it straight there (one step, not five taps)", u["stage"] == 5, u)
+        check("picking Tabletop ready moves it straight there (one step, not five taps)", u["stage"] == 5, u)
         check("…the diary notes it", u["log"][-1][1] == 5, u["log"])
-        check("…the card shows the new stage", "Battle ready" in page.inner_text(f"{card(page, 1)} .stage"))
-        check("…and the message says so, with Undo", "Intercessors → Battle ready" in toast(page) and page.is_visible("#toast-undo"), toast(page))
+        check("…the card shows the new stage", "Tabletop ready" in page.inner_text(f"{card(page, 1)} .stage"))
+        check("…and the message says so, with Undo", "Intercessors → Tabletop ready" in toast(page) and page.is_visible("#toast-undo"), toast(page))
         shot(page, "v21-jump-to-stage.png")
         undo(page)
         u = units(page)[0]

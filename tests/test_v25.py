@@ -180,8 +180,8 @@ def main():
         print("\n--- 3. What the card is ---")
         existing(page, {"feedbackFirstSeen": day(-10)})
         text = page.inner_text("#feedback-card")
-        check("the card is polite and short (v59: just the question)",
-              "Enjoying Minifolio?" in text and "short form" not in text, text)
+        check("the card is polite and short (v59: just the question; TD1a reworded it to Anything missing or broken?)",
+              "Anything missing or broken?" in text and "short form" not in text, text)
         controls = page.evaluate("""() => [...document.querySelectorAll('#feedback-card a, #feedback-card button')]
             .map(e => [e.tagName, e.textContent.trim()])""")
         check("three controls in order: Give feedback, Not now, Don't ask again",
