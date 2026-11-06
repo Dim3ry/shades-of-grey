@@ -411,10 +411,10 @@ def main():
         page.click("#cmp-fold-ideas-panel > .share-row button:has-text('Copy as text')")
         text = copied(page)
         check("Copy as text on the colour ideas copies a heading, three lines and the footnote",
-              text and text.splitlines()[0] == "Colour ideas for eyes or glow with Macragge Blue (Citadel)" and len(text.splitlines()) == 5 + text.count("Yours, poor fit")   # v64: your own poor-fit paint adds a line under its suggestion
+              text and text.splitlines()[0] == "Colour ideas for eyes or glow with Macragge Blue (Citadel)" and len(text.splitlines()) == 5 + text.count("Yours, not close")   # v64: your own poor-fit paint adds a line under its suggestion
               and text.splitlines()[-1] == "Colours on a screen are only a guide, so check them on your model.", text)
         check("each line has the paint (and brand), the tag and the reason, as the row shows",
-              all(re.match(r"- .+: (You own this|Yours, poor fit|Not in your palette)\. .+", l) for l in text.splitlines()[1:4]), text)
+              all(re.match(r"- .+: (You own this|Yours, not close|Not in your palette)\. .+", l) for l in text.splitlines()[1:4]), text)
         check("the message says what was copied and does not mention Paste recipes", toast(page) == "Colour ideas copied. Paste it anywhere.", toast(page))
         cmp_pick(page, "starter-chips", "blue-gold")
         page.click("#cmp-starter-schemes .share-row button:has-text('Copy as text')")
@@ -532,7 +532,7 @@ def main():
         open_comp(page)
         cmp_pick(page, "starter-chips", "blue-gold")
         tags = {r["name"]: r["tag"] for r in rows(page, "#cmp-starter-list .idea-static")}
-        check("every tag is one of the three honest tags", set(tags.values()) <= {"You own this", "Yours, poor fit", "Not in your palette"}, tags)
+        check("every tag is one of the three honest tags", set(tags.values()) <= {"You own this", "Yours, not close", "Not in your palette"}, tags)
         wish = [{"id": 1, "brand": "Vallejo", "name": "Pure Blue", "colour": "#1f4287", "status": "wishlist"}]
         load(page, paints=wish, recipes=RECIPES, units=UNITS)
         open_comp(page)

@@ -390,7 +390,7 @@ def main():
               all(w in priv_all for w in ["Stays on your phone", "Scanning a paint pot", "The feedback card", "Unfinished work", "Shop links"]), priv_all)
         sub_tab(page, "updates")
         updates = page.inner_text("#view-updates")
-        check("\"Tell us what you think\" is still there", "Tell us what you think" in updates)
+        check("\"Bugs and ideas\" is still there (AB1 renamed it from \"Tell us what you think\")", "Bugs and ideas" in updates)
         readme = read("README.md")
         check("README explains the counter, no cookies, the one address, and the switch",
               all(w in readme for w in ["GoatCounter", "no cookies", "one address", "Settings → Counting visits", "Help → Privacy"]), readme[:900])

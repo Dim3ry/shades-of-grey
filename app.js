@@ -5800,7 +5800,7 @@
       const input = document.createElement("input");
       input.type = "text";
       input.className = "mentor-input";
-      input.placeholder = "Ask Mentor";
+      input.placeholder = "Ask away";
       input.setAttribute("aria-label", "Ask Mentor");
       input.maxLength = MENTOR_MAX_LENGTH;
       input.autocomplete = "off";
@@ -6505,7 +6505,7 @@
       donePercent.textContent = total ? `${percent}%` : "–";
       doneSummary.textContent = total
         ? `${done} of ${plural(total, "model")} done · ${underWay ? `${underWay} under way · ` : ""}${plural(models.length, "unit")}`
-        : "No units yet. Add some on the Models tab: one at a time, or a whole army from a pasted army list or a CSV file.";
+        : "No units yet.";
 
       // C5: say what "done" means, using the real name of the first stage that counts (so renamed or reordered stages stay right).
       // Hidden when there are no units or that stage has no name.
@@ -6625,13 +6625,14 @@
       if (s.empty) lines.push("No paints yet");
       else {
         if (s.most) lines.push(`Most used: ${s.most.name}, in ${plural(s.most.n, "recipe")}`);
-        if (s.gaps.length) lines.push(`Gap: ${s.gaps.join(", ")}`);
+        if (!s.owned) lines.push("No paints marked Owned yet.");
+        else if (s.gaps.length) lines.push(`No ${s.gaps.map(g => g.toLowerCase()).join(" or ")} yet`);
         lines.push(`${s.owned} owned, ${s.low} running low, ${s.wish} wishlist`);
       }
       // C6: with no paints the tile has nothing to show, so it is left out until there is one.
       document.getElementById("palette-card").classList.toggle("hidden", s.empty);
       paletteStrip.replaceChildren();
-      paletteStrip.hidden = s.empty || !s.colourOk;
+      paletteStrip.hidden = s.empty || !s.colourOk || !s.owned;
       const blocks = s.hues.map(h => ({ key: h.key, count: h.count, gap: h.gap }));
       if (s.neutral) blocks.push({ key: "neutral", count: s.neutral, gap: false });
       for (const b of blocks) {
@@ -6643,14 +6644,13 @@
         bar.style.setProperty("--grow", String(Math.max(b.count, 0)));
         cell.style.setProperty("--grow", String(b.count));
         cell.append(bar);
-        if (b.gap) cell.append(Object.assign(document.createElement("span"), { className: "palette-gap", textContent: "Gap" }));
         paletteStrip.append(cell);
       }
       paletteLines.replaceChildren(...lines.map(t => Object.assign(document.createElement("span"), { textContent: t })));
       // The button has no aria-label (a label would replace its text, and paint names must not be in labels): a screen reader reads the visible
       // lines, plus this hidden line for the strip, which gives each hue's count.
-      document.getElementById("palette-strip-text").textContent = s.empty || !s.colourOk ? ""
-        : "Paints you have by hue: " + s.hues.map(h => `${h.label} ${h.count}${h.gap ? " (gap)" : ""}`).join(", ") + (s.neutral ? `, greys and neutrals ${s.neutral}` : "") + ".";
+      document.getElementById("palette-strip-text").textContent = s.empty || !s.colourOk || !s.owned ? ""
+        : "Paints you have by hue: " + s.hues.map(h => `${h.label} ${h.count}`).join(", ") + (s.neutral ? `, greys and neutrals ${s.neutral}` : "") + ".";
     }
     paletteTile.addEventListener("click", () => {
       if (importDraft) { showToast("Close Paste recipes first, then open Your Palette."); return; }
@@ -7157,7 +7157,7 @@
       if (models.length === 0 || visible.length === 0) { stopUnitQueue(); list.replaceChildren(); }
       if (models.length === 0) {
         // v19: a brand-new collection gets the import buttons right here.
-        list.innerHTML = '<li class="empty" id="units-empty">No units yet.<div class="button-grid">' +
+        list.innerHTML = '<li class="empty" id="units-empty">Nothing on the bench yet.<div class="button-grid">' +
           '<button type="button" class="plain-button" id="empty-wh">Paste army list</button>' +
           '<button type="button" class="plain-button" id="empty-csv">Import CSV</button></div></li>';
         document.getElementById("empty-wh").addEventListener("click", startUnitsPaste);
@@ -10593,7 +10593,7 @@
         const emptyRecipes = document.createElement("li");
         emptyRecipes.className = "empty";
         const emptyRecipesLine = document.createElement("span");
-        emptyRecipesLine.textContent = "No recipes yet.";
+        emptyRecipesLine.textContent = "Nothing written down yet.";
         const emptyRecipesMore = document.createElement("p");
         emptyRecipesMore.className = "hint";
         emptyRecipesMore.textContent = "A recipe is your own step-by-step for a model.";
@@ -11784,7 +11784,7 @@
       paintListEl.innerHTML = "";
       paintListEl.classList.toggle("swatch-grid", swatches);
       if (!paints.length) {
-        paintListEl.innerHTML = '<li class="empty">No paints yet.</li>';
+        paintListEl.innerHTML = '<li class="empty">Nothing in the paint rack yet.</li>';
         return;
       }
       if (!swatches) {
@@ -13506,7 +13506,7 @@
         ["faction-colours", "Faction colours", ["faction-colour-hint"]],
         ["import", "Import", ["import-explain"]],
         ["your-data", "Your data", ["data-summary", "photo-summary", "storage-note", "restore-examples-hint"]],
-        ["feedback", "Tell us what you think", ["feedback-explain"]],
+        ["feedback", "Bugs and ideas", ["feedback-explain"]],
         ["colours", "Colours", ["palette-light-note"]],   // v53
         ["iphone", "Add to Home Screen", ["iphone-steps"]],   // v53: the warning and the reason stay in view; the steps fold
       ];
@@ -19508,7 +19508,7 @@
         showToast("Stages saved");
       };
       if (affected.length) {
-        askYesNo(`${affected.length} unit(s) are in a stage you've removed. They'll move to the nearest earlier stage. Continue?`,
+        askYesNo(`${plural(affected.length, "unit")} ${affected.length === 1 ? "is" : "are"} in a stage you've removed. ${affected.length === 1 ? "It'll" : "They'll"} move to the nearest earlier stage. Continue?`,
           saveNow, { danger: true });
       } else {
         saveNow();
@@ -19959,7 +19959,7 @@
         navigator.storage.persisted().then(kept => {
           storageNote.textContent = kept
             ? "This browser has agreed to keep the app's data, even if the device runs low on space."
-            : "This browser hasn't promised to keep the app's data, so it could be cleared if the device runs low on space. Regular backups are your safety net.";
+            : "This browser hasn't promised to keep the app's data, so it could be cleared if the device runs low on space, so back one up now and then.";
         }).catch(() => {});
       }
       // Photos are kept separately, with much more room. Ask the browser how much is used.
@@ -20353,7 +20353,7 @@
     document.getElementById("delete-all").addEventListener("click", () => {
       if (!models.length) return;
       // v21.7: asks in the app's own box; everything below runs when you say yes.
-      askYesNo(`Delete all ${plural(models.length, "unit")}? A copy is kept on this device for ${SAFETY_DAYS} days ` +
+      askYesNo(`${models.length === 1 ? "Delete your only unit" : `Delete all ${plural(models.length, "unit")}`}? A copy is kept on this device for ${SAFETY_DAYS} days ` +
           `(Settings → Recover earlier data), but please save a backup first.`, () => {
         if (!models.length || refusedWhilePaused()) return;   // DS1
         // v14: STOP if the safety copy can't be kept, rather than delete with no safety net.
@@ -20706,7 +20706,7 @@
     document.getElementById("banner-retry").addEventListener("click", () => {
       if (dataTooNew) { location.reload(); return; }
       if (unreadableParts.length) { startAgainFromUnreadable(); return; }   // DS1
-      if (saveAll()) showToast("Saved. Everything is up to date.");
+      if (saveAll()) showToast("Saved.");
       else notify("Still full. Please save a backup, then free some space (units you no longer need, or the safety copies).");   // DS2: not photos
     });
 
@@ -22061,12 +22061,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=134".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=135".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v134";
+    const APP_VERSION = "v135";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -22126,7 +22126,7 @@
       // Redraw after the tap has finished, so the Give feedback link isn't taken off the page
       // before the browser has opened it.
       setTimeout(() => { renderFeedbackCard(); renderBackupNudge(); }, 0);
-      if (choice === "never") notify("OK, we won't ask again. You can still give feedback under Settings \u2192 Updates.");
+      if (choice === "never") notify("Fair enough. You can still give feedback in Updates.");
     }
     function renderFeedbackCard() {
       const card = document.getElementById("feedback-card");
@@ -22338,7 +22338,7 @@
       if (!on) return;
       const text = document.createElement("p");
       const strong = document.createElement("strong");
-      strong.textContent = kind === "paste" ? "We kept your pasted recipe notes." : `We kept your unfinished ${DRAFT_NAMES[kind]}.`;
+      strong.textContent = kind === "paste" ? "Your pasted recipe notes are still here." : `Your unfinished ${DRAFT_NAMES[kind]} is still here.`;
       text.append(strong, " " + draftCardLine(kind, kept) + " It's saved on this device only.");
       const buttons = document.createElement("div");
       buttons.className = "button-grid";
@@ -22528,6 +22528,9 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v135", date: "6 Nov 2026", changes: [
+        "Plainer wording: empty lists, Dashboard headings, the Palette tile and the delete question. Paint matches now read Close, Near or Not close.",
+      ] },
       { version: "v134", date: "6 Nov 2026", changes: [
         "Corners now follow each look: Forge is square and Parchment is nearly square. Classic's corner marks now sit on the headline card and Mentor only.",
         "Things on screen arrive with a soft landing and leave with a quick start, and the start circle now glides into the bar in about half a second. Tapping the bar while it moves skips to the end.",

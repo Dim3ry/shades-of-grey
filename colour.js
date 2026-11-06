@@ -219,7 +219,7 @@
   // "approximate". The words shown on screen are in FIT_WORDS (the key "close" is the "Okay fit").
   // confidence is a number from 0 (hopeless) to 1 (identical) the screen can turn into words.
   const GOOD_UNDER = 6, CLOSE_UNDER = 15, FAR_AT = 40, ROUGH_STRETCH = 4 / 3;
-  const FIT_WORDS = { good: "Good fit", close: "Okay fit", poor: "Poor fit", ownedPoor: "Yours, poor fit" };
+  const FIT_WORDS = { good: "Close", close: "Near", poor: "Not close", ownedPoor: "Yours, not close" };
   function judgeMatch(distance, rough) {
     const stretch = rough ? ROUGH_STRETCH : 1;
     const quality = distance <= GOOD_UNDER * stretch ? "good" : distance <= CLOSE_UNDER * stretch ? "close" : "poor";

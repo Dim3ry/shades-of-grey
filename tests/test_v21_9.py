@@ -380,7 +380,7 @@ def main():
         main_tab(page, "settings")
         sub_tab(page, "updates")
         heads = page.eval_on_selector_all("#view-updates h2", "els => els.map(e => e.textContent.trim())")
-        check("the Updates page says \"Tell us what you think\"", "Tell us what you think" in heads, heads)
+        check("the Updates page says \"Bugs and ideas\" (AB1; was \"Tell us what you think\")", "Bugs and ideas" in heads, heads)
         link = page.evaluate("""() => { const a = document.getElementById('feedback-link');
             return { hidden: a.classList.contains('hidden'), href: a.getAttribute('href') || '', rel: a.rel, target: a.target }; }""")
         check("the Give feedback link is unchanged (new tab, noopener noreferrer, version added)",

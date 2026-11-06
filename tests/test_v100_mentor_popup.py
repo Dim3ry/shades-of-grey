@@ -74,7 +74,7 @@ def main():
         # MW2 (v129): Paint Picker and the starter questions moved inside one closed Suggestions pill, so the pill is the one button above the box (was the Paint Picker chip)
         check("one pill, Suggestions; no chips (and the Send button)", page.locator(".mentor-window button").evaluate_all("els => els.filter(e => e.getClientRects().length).map(e => e.textContent.trim() || e.getAttribute('aria-label'))") == ["Suggestions", "Send", "✕"])   # chunk D: the hidden Back button (chat view only) is not counted
         inp = page.locator(".mentor-input")
-        check("text box is on: enabled, Ask Mentor, full strength", inp.is_enabled() and inp.get_attribute("placeholder") == "Ask Mentor"
+        check("text box is on: enabled, Ask Mentor, full strength", inp.is_enabled() and inp.get_attribute("placeholder") == "Ask away"
               and float(page.evaluate("() => getComputedStyle(document.querySelector('.mentor-input')).opacity")) == 1)
         # U6b (v126): the lists are filled from James's script now (it was two picker lines and empty thinking, answer and finished lists)
         check("phrases object holds the lists", page.evaluate(

@@ -55,8 +55,8 @@
        (applyAppearance in app.js) takes over once the app starts.
        U6b: mentor-looks.js (the Mentor orb's three looks and five states, plain data: MENTOR_LOOKS and MENTOR_LOOKS_CSS) loads
        just before it, so early.js can put the chosen look and its styles on the page before the first frame (LR1). -->
-  <script src="mentor-looks.js?v=134"></script>
-  <script src="early.js?v=134"></script>
+  <script src="mentor-looks.js?v=135"></script>
+  <script src="early.js?v=135"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -211,7 +211,7 @@
     }
 
     .hint { color: var(--muted); font-size: 0.8125rem; margin: 0 0 10px; line-height: 1.4; }
-    .empty { color: var(--muted); text-align: center; padding: 24px 0; }
+    .empty { color: var(--muted); text-align: left; padding: 24px 0; }
 
     button { font: inherit; border-radius: var(--radius-control); border: none; cursor: pointer; }
     button:disabled { opacity: 0.55; cursor: default; }   /* v54: was 0.35, which was too faint to read; still clearly dimmer than a live button */
@@ -2079,7 +2079,7 @@
     #units-import #wh-panel { margin-top: 0 !important; }
     #units-import .review { margin-top: 12px; }
     #units-import #wh-panel.hidden + .review { margin-top: 0; padding-top: 0; border-top: 0; }
-    .empty .button-grid { margin: 14px auto 0; max-width: 340px; text-align: left; }
+    .empty .button-grid { margin: 14px 0 0; max-width: 340px; text-align: left; }
 
     /* ===== v47: THEMES (Parchment Codex, Grim Forge, Paint Bench; TH1 removed Blueprint and Rulebook) =====
        Final look = theme x mode. The page carries data-t (theme) and data-m (dark or light), set by early.js
@@ -3157,11 +3157,11 @@
 
       <!-- Progress over time: drawn by renderHistory() in the JavaScript. -->
       <div class="card" id="history-card">
-        <h2>Progress over time</h2>
+        <h2>Added and painted</h2>
         <div class="chips range-chips" id="history-range" style="margin: 0 0 12px;"></div>
         <div class="legend-row" id="history-legend">
-          <span class="legend-key"><i style="--key: var(--series-added);"></i>Models added</span>
-          <span class="legend-key"><i style="--key: var(--series-painted);"></i>Models painted (Done)</span>
+          <span class="legend-key"><i style="--key: var(--series-added);"></i>Added</span>
+          <span class="legend-key"><i style="--key: var(--series-painted);"></i>Painted</span>
         </div>
         <div class="history-wrap" id="history-chart"></div>
         <p class="hint" id="history-note" style="margin: 10px 0 0;"></p>
@@ -3172,7 +3172,7 @@
       </div>
 
       <div class="card" id="stage-card">
-        <h2>By stage</h2>
+        <h2>Where everything is</h2>
         <div class="chart-row">
           <div id="overall-chart"></div>
           <ul class="legend" id="stage-legend"></ul>
@@ -3181,7 +3181,7 @@
 
       <div class="card" id="faction-card">
         <div class="card-head">
-          <h2>By faction</h2>
+          <h2>Armies</h2>
           <button class="link-button" id="faction-colours-link">Faction colours</button>
         </div>
         <div class="faction-grid" id="faction-grid"></div>
@@ -3535,7 +3535,7 @@
           <summary>Faction colours</summary>
           <ul>
             <li>Give each faction its own colour in <strong>Settings → Faction colours</strong> (or tap <strong>Faction colours</strong> on the dashboard). Tap the colour circle to pick one.</li>
-            <li id="help-dashboard-tiles"><strong>Palette</strong> on the Dashboard shows a strip with one block for each colour (red to purple, then greys and neutrals), as wide as the paints you have in it (Owned and Running low). A colour with none, or only one, is marked <strong>Gap</strong>. The tile appears once you have a paint. Under it: the paint used in the most recipes, the first gaps, and how many paints are owned, running low and on the wishlist. Tap it to open Your Palette. <strong>Achievements</strong> is a place held for later and does nothing yet.</li>
+            <li id="help-dashboard-tiles"><strong>Palette</strong> on the Dashboard shows a strip with one block for each colour (red to purple, then greys and neutrals), as wide as the paints you have in it (Owned and Running low). A colour with none, or only one, is an empty or thin block, and the first two are named under the strip (for example <strong>No red or orange yet</strong>). With no paints marked Owned, the strip is hidden and the tile says so. The tile appears once you have a paint. Under it: the paint used in the most recipes, the first two thin colours, and how many paints are owned, running low and on the wishlist. Tap it to open Your Palette. <strong>Achievements</strong> is a place held for later and does nothing yet.</li>
             <li id="help-card-folds">In Settings, the <strong>Faction colours</strong> and <strong>Paint brands</strong> cards are shut each time you open the app. Tap the heading to open one. Tapping <strong>Faction colours</strong> on the dashboard opens it for you. <strong>Stages</strong>, <strong>Import</strong> and <strong>Your data</strong> fold shut the same way.</li>
             <li><strong>Suggest</strong> offers a colour. If the faction's units have recipes linked, it uses those (armour recipes first, each recipe's first paint, usually the base coat). Otherwise it uses the colour the faction is usually painted, for well-known factions.</li>
             <li><strong>Use suggested colours</strong> colours every faction that hasn't got one yet, in one tap. Press Undo on the message if you change your mind.</li>
@@ -3550,7 +3550,7 @@
             <li>It counts <strong>models</strong>, not units: a 10-model squad counts as 10.</li>
             <li>Tap any number, chart row or faction to jump to those units.</li>
             <li><strong>Repaint projects</strong> shows units you've flagged for a repaint.</li>
-            <li><strong>Progress over time</strong> shows how many models you've added and how many are painted (Done), day by day. Touch or hover over the graph to see the numbers for any day, or open <strong>Show as a table</strong>. It appears once you have a unit. <strong>Done</strong> means the stage named under the percentage on the Dashboard, or any stage after it.</li>
+            <li><strong>Added and painted</strong> shows how many models you've added and how many are painted (Done), day by day. Touch or hover over the graph to see the numbers for any day, or open <strong>Show as a table</strong>. It appears once you have a unit. <strong>Done</strong> means the stage named under the percentage on the Dashboard, or any stage after it.</li>
             <li>The graph uses the dates the app has recorded since v4. Units added before that count from the start of the graph, and deleted units drop out of its history.</li>
           </ul>
         </details>
@@ -3590,7 +3590,7 @@
             <li id="help-colour-lab"><strong>Colour Lab</strong> (in Painting): the colour wheel, <strong>Colour ideas</strong>, <strong>Colour plans</strong>, <strong>Colours you've used</strong> and the <strong>Paint Picker</strong>. Suggested paints show a fit and your own paints come first.</li>
             <li id="help-ideas-for"><strong>Ideas for this</strong> (Pro preview): open a step in a recipe, or a paint in <strong>Your Palette</strong>, and tap <strong>Ideas for this</strong> under the paint. <strong>Colour Lab</strong> (in Painting) opens with that paint's ideas at the top: colours that go with it, colour plans with a similar colour, and detail recipes and basing tips with a step of a similar colour. Your own paints come first. <strong>Show steps</strong> or <strong>Show tip</strong> opens that recipe or tip in full in <strong>Tools and Settings → Guides</strong>. <strong>Back to recipe</strong> or <strong>Back to Your Palette</strong> (or the phone's Back button) takes you to the same step or paint. A paint with no colour set, or a basing material, has no button, as there is nothing to match. Tapping the Painting tab itself shows the whole Colour Lab again.</li>
             <li id="help-wheel-order">In the <strong>Colour Lab</strong> wheel, each group shows 12 paints first: yours, then the rest of Your Palette, then paints from popular ranges, then other brands. Each part runs from dark to light. <strong>Show all</strong> lists the rest.</li>
-            <li id="help-fit">Suggested paints (Colour ideas, colour plans, detail recipes, basing, and the colour wheel's paint panel) show a fit: <strong>Good fit</strong>, <strong>Okay fit</strong> or <strong>Poor fit</strong>, judged by how different the two colours look. A paint you own comes first when it is a Good or Okay fit. If your best paint is a poor fit, the closest paint overall comes first and your own is second, marked <strong>Yours, poor fit</strong>. Metallic, Contrast, wash and similar paints are allowed a little more room.</li>
+            <li id="help-fit">Suggested paints (Colour ideas, colour plans, detail recipes, basing, and the colour wheel's paint panel) show a fit: <strong>Close</strong>, <strong>Near</strong> or <strong>Not close</strong>, judged by how different the two colours look. A paint you own comes first when it is Close or Near. If your best paint is Not close, the closest paint overall comes first and your own is second, marked <strong>Yours, not close</strong>. Metallic, Contrast, wash and similar paints are allowed a little more room.</li>
             <li id="help-paint-to-recipe">In <strong>Colour Lab</strong>, a colour idea, and a colour wheel paint once you open it, has <strong>Use in a recipe</strong> and <strong>Add to a recipe</strong>. Use in a recipe starts a new recipe with that paint in step 1. Add to a recipe lets you choose a recipe, then one of its steps or a new step, and saves it straight away. Both have an <strong>Undo</strong>. A paint that is not in Your Palette is added as <strong>Not owned</strong>, so it reaches your shopping list once a recipe uses it.</li>
             <li id="help-similar-paints">In <strong>Colour Lab</strong>, those same paints also have <strong>Similar paints</strong>. It opens a pop-up with <strong>Best match</strong>: up to three paints from different brands, closest first, whether or not you own them, each with its fit. <strong>Lighter</strong> and <strong>Darker</strong> look for a lighter or darker colour. <strong>Your closest</strong> shows the nearest paints you own, with the same fit; it is left out when your closest paint is already the best match, and says so when none of your paints is close. When none is close, it may also show <strong>Try mixing</strong>: one or two blends of two paints you own, with the parts to use, next to the colour you want. It is a rough guess from screen colours, so test it on a palette first. <strong>Add to recipe step</strong> puts the two paints and the ratio into a recipe step, with an <strong>Undo</strong>. Metallics, washes, shades, Contrast, glazes and other special paints are never mixed. On a phone the two cards are tabs (<strong>Best</strong> and <strong>Yours</strong>, with the arrow keys); on a wider screen they sit side by side. A paint you do not own can go on your shopping list, with an <strong>Undo</strong>. Varnishes, mediums, thinners and other paints that are not colours are never offered.</li>
             <li id="help-ask-mentor"><strong>Paint Picker</strong> (Pro preview): in <strong>Painting → Colour Lab</strong>, or from the <strong>Paint Picker</strong> chip in <strong>Mentor</strong>. Choose a <strong>Base colour</strong>, a <strong>Second colour</strong> if you like, and a <strong>Part</strong> (Armour, Eyes, Weapon or Base). Under each colour you get up to three paints that go with it for that part, with the reason, and your own paints come first. A paint of yours that is a poor match says <strong>Yours, poor fit</strong>. Under the picks are tips for that part, each with its colours and, where it has one, a link to the creator it credits. Each paint row has <strong>Use in a recipe</strong>, <strong>Add to a recipe</strong> and <strong>Similar paints</strong>, and a paint you do not own also has <strong>Add to shopping list</strong> and <strong>Shop links</strong>. Each one says what it did and has an <strong>Undo</strong>. The picks are kept only while the app is open.</li>
@@ -3713,7 +3713,7 @@
     <!-- ===== TAB: Updates (feedback and change history) ===== -->
     <section id="view-updates" class="layout-split hidden">
       <div class="card layout-side">
-        <h2>Tell us what you think</h2>
+        <h2>Bugs and ideas</h2>
         <p class="hint" id="feedback-explain">About 2 minutes.</p>
         <a class="primary-button" id="feedback-link" target="_blank" rel="noopener noreferrer"
            style="display: block; text-align: center; text-decoration: none;">Give feedback</a>
@@ -3977,7 +3977,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=134" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=135" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -3990,16 +3990,16 @@
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks.
        G2a: guides-groups.js (the Guides topic groups, plain data) loads after guides-data.js. It only adds one
        name, GUIDE_GROUPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=134"></script>
-  <script src="schemes.js?v=134"></script>
-  <script src="detail-recipes.js?v=134"></script>
-  <script src="basing-tips.js?v=134"></script>
-  <script src="mentor-tips.js?v=134"></script>
-  <script src="guides-data.js?v=134"></script>
-  <script src="guides-groups.js?v=134"></script>
-  <script src="mentor-data.js?v=134"></script>
-  <script src="mentor-engine.js?v=134"></script>
-  <script src="where-to-buy.js?v=134"></script>
-  <script src="app.js?v=134"></script>
+  <script src="colour.js?v=135"></script>
+  <script src="schemes.js?v=135"></script>
+  <script src="detail-recipes.js?v=135"></script>
+  <script src="basing-tips.js?v=135"></script>
+  <script src="mentor-tips.js?v=135"></script>
+  <script src="guides-data.js?v=135"></script>
+  <script src="guides-groups.js?v=135"></script>
+  <script src="mentor-data.js?v=135"></script>
+  <script src="mentor-engine.js?v=135"></script>
+  <script src="where-to-buy.js?v=135"></script>
+  <script src="app.js?v=135"></script>
 </body>
 </html>

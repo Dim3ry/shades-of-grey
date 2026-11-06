@@ -42,7 +42,7 @@ def main():
         print("\n--- 2. Empty states ---")
         empty = page.locator("#recipe-list li.empty")
         check("no recipes: one short line, recipe explained behind More info",
-              empty.count() == 1 and "No recipes yet." in empty.inner_text()
+              empty.count() == 1 and "Nothing written down yet." in empty.inner_text()
               and "your own step-by-step for a model" not in empty.inner_text()
               and "your own step-by-step for a model" in page.text_content("#recipe-list li.empty"), empty.all_inner_texts())
         page.evaluate("() => { settings.recipeView = 'schemes'; renderRecipes(); }")

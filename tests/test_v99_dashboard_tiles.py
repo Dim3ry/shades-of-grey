@@ -35,7 +35,7 @@ FIXTURE = """() => {
 def tile(page):
     return page.evaluate("""() => ({
         hues: [...document.querySelectorAll('#palette-strip .palette-bar')].map(b => b.dataset.hue),
-        gapLabels: [...document.querySelectorAll('#palette-strip .palette-gap')].map(g => g.textContent),
+        gapLabels: [...document.querySelectorAll('#palette-strip .palette-bar.is-gap')].map(g => g.dataset.hue),   // AB1: the word "Gap" is gone; the outlined block stays
         widths: Object.fromEntries([...document.querySelectorAll('#palette-strip .palette-cell')].map(c => [c.querySelector('.palette-bar').dataset.hue, Math.round(c.getBoundingClientRect().width)])),
         lines: [...document.querySelectorAll('#palette-lines span')].map(s => s.textContent),
         stripHidden: document.getElementById('palette-strip').hidden,
@@ -61,19 +61,19 @@ def main():
         d = tile(page)
         check("blocks run red, orange, yellow, green, blue, purple, then neutral", d["hues"] == ["red", "orange", "yellow", "green", "blue", "purple", "neutral"], d["hues"])
         check("the block for 3 red paints is wider than the one for 1 blue", d["widths"]["red"] > d["widths"]["blue"], d["widths"])
-        check("gaps say Gap in text: orange, yellow (wishlist does not count), green and blue (one), purple; not red or neutral",
-              len(d["gapLabels"]) == 5 and all(g == "Gap" for g in d["gapLabels"]), d["gapLabels"])
+        check("gap blocks are outlined, with no word: orange, yellow (wishlist does not count), green and blue (one), purple; not red or neutral",
+              d["gapLabels"] == ["orange", "yellow", "green", "blue", "purple"] and page.locator("#palette-strip .palette-gap").count() == 0, d["gapLabels"])
         check("most used: the tie (two recipes each) goes to the first name A to Z", d["lines"][0] == "Most used: Ash red, in 2 recipes", d["lines"])
-        check("gap line names the first two gaps", d["lines"][1] == "Gap: Orange, Yellow", d["lines"])
+        check("gap line names the first two gaps", d["lines"][1] == "No orange or yellow yet", d["lines"])
         check("counts line: owned, running low, wishlist", d["lines"][2] == "6 owned, 1 running low, 1 wishlist", d["lines"])
         check("the strip's text alternative gives each hue's count and gaps; the tile has no aria-label (so no paint name in one) and still reads the visible lines",
-              "Red 3" in d["label"] and "Blue 1 (gap)" in d["label"] and d["tileLabel"] == "" and "Ash red" in page.inner_text("#palette-tile"), d)
+              "Red 3" in d["label"] and "Blue 1" in d["label"] and d["tileLabel"] == "" and "Ash red" in page.inner_text("#palette-tile"), d)
         page.evaluate("() => { book.recipes.length = 0; render(); }")
         d = tile(page)
         check("no recipe uses a paint: the Most used line is left out", not any(l.startswith("Most used") for l in d["lines"]), d["lines"])
         page.evaluate("() => { book.paints.push({ id: 950, name: 'Pine', colour: '#2f8f4a', status: 'owned' }); render(); }")
         d = tile(page)
-        check("a second green paint means green is no longer a gap", "Gap: Orange, Yellow" == d["lines"][0] and d["gapLabels"].count("Gap") == 4, d)
+        check("a second green paint means green is no longer a gap", "No orange or yellow yet" == d["lines"][0] and len(d["gapLabels"]) == 4, d)
 
         print("\n--- 3. No paints, and the tap ---")
         page.evaluate("() => { book.paints.length = 0; book.recipes.length = 0; render(); }")
@@ -104,7 +104,7 @@ def main():
         pg.evaluate(FIXTURE)
         d = tile(pg)
         check("without colour.js the strip and gaps are left out, the counts and most-used lines stay, nothing throws",
-              d["stripHidden"] and not any(l.startswith("Gap") for l in d["lines"]) and d["lines"][0].startswith("Most used") and d["lines"][-1].endswith("1 wishlist"), d)
+              d["stripHidden"] and not any(l.startswith("No ") and l.endswith(" yet") for l in d["lines"]) and d["lines"][0].startswith("Most used") and d["lines"][-1].endswith("1 wishlist"), d)
         nc.close()
 
         print("\n--- 5. Order and layout ---")

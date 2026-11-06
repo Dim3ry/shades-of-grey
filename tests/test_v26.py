@@ -220,7 +220,7 @@ def main():
         reload(page)
         check("after the reload the Units tab opens on its own, as before", page.evaluate("settings.tab") == "units")
         check("a card says we kept your unfinished unit",
-              shown(page, "unit") and "We kept your unfinished unit." in page.inner_text("#draft-card-unit")
+              shown(page, "unit") and "Your unfinished unit is still here." in page.inner_text("#draft-card-unit")
               and "Half typed unit" in page.inner_text("#draft-card-unit"), page.inner_text("#draft-card-unit"))
         check("it says it is saved on this device only", "saved on this device only" in page.inner_text("#draft-card-unit"))
         check("the card has exactly Keep going and Discard, in that order",
@@ -254,7 +254,7 @@ def main():
         check("a recipe being written: the editor is closed after the reload and a card is shown on the Recipes tab",
               page.evaluate("settings.tab") == "recipes" and shown(page, "recipe") and not page.locator(NAME_BOX).is_visible(), page.inner_text("#view-recipes")[:200])
         check("the card says we kept your unfinished recipe and names it",
-              "We kept your unfinished recipe." in page.inner_text("#draft-card-recipe") and "Half written recipe" in page.inner_text("#draft-card-recipe"))
+              "Your unfinished recipe is still here." in page.inner_text("#draft-card-recipe") and "Half written recipe" in page.inner_text("#draft-card-recipe"))
         page.click("#draft-card-recipe .draft-keep")
         page.wait_for_timeout(300)
         got = page.evaluate("""() => { const d = recipeDraft; return d && { name: d.name, notes: d.notes, steps: d.steps.length,
@@ -277,7 +277,7 @@ def main():
         reload(page)
         check("pasted notes: the paste page is closed after the reload and a card is shown",
               shown(page, "paste") and not page.locator("#import-text").is_visible()
-              and "We kept your pasted recipe notes." in page.inner_text("#draft-card-paste"), page.inner_text("#view-recipes")[:200])
+              and "Your pasted recipe notes are still here." in page.inner_text("#draft-card-paste"), page.inner_text("#view-recipes")[:200])
         check("the card says how long the text is", f"{len(PASTE_TEXT)} characters" in page.inner_text("#draft-card-paste"), page.inner_text("#draft-card-paste"))
         page.click("#draft-card-paste .draft-keep")
         page.wait_for_timeout(300)
@@ -769,7 +769,7 @@ def main():
         privacy = page.evaluate("() => document.getElementById('privacy-drafts').textContent")
         sub_tab(page, "updates")
         updates = page.inner_text("#view-updates")
-        check("\"Tell us what you think\" is still there", "Tell us what you think" in updates)
+        check("\"Bugs and ideas\" is still there (AB1 renamed it from \"Tell us what you think\")", "Bugs and ideas" in updates)
 
         check("no real browser pop-ups at any point", not popups, popups)
         check("no page errors", not errors, errors[:3])
