@@ -21,6 +21,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import press_examples   # AB9: Clear and Keep are on the Models strip only
 from launch_helpers import app_ready, quiet, tap_tab
 from launch_helpers import leave_launch
 
@@ -46,10 +47,10 @@ V21_4_CSP = ("default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-sr
              "img-src 'self' blob: data: https://dim3ry.goatcounter.com/count; media-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; "
              "manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'")
 # v44: five example recipes and sixteen example paints (was two and eight)
-PAINTS = ["Example deep blue", "Example dark wash", "Example mid blue", "Example pale grey",
-          "Example mid green", "Example brown wash", "Example bright green", "Example pale green",
-          "Example dark gold", "Example bright gold", "Example pale gold", "Example deep red",
-          "Example bright orange", "Example pale yellow", "Example dark grey", "Example mid grey"]
+PAINTS = ["Harbour blue", "Soot wash", "Cobalt", "Pale ash",
+          "Swamp green", "Brown wash", "Pond green", "Pale lichen",
+          "Dull gold", "Brass gold", "Bone", "Brick red",
+          "Flame orange", "Candle yellow", "Raven grey", "Flint grey"]
 RECIPE_NAMES = ["Blue armour", "Gold metal", "Green skin", "Glowing eyes", "Stone base"]
 CAPTAIN_LINKS = ["Blue armour", "Gold metal", "Glowing eyes", "Stone base"]
 BRUTES_LINKS = ["Green skin", "Glowing eyes", "Stone base"]
@@ -108,8 +109,13 @@ def saved_units(page):
 def saved_settings(page):
     return page.evaluate("() => JSON.parse(localStorage.getItem('shades-of-grey-settings') || '{}')")
 
+# AB9: the examples card left Painting; a strip on Models is the only one. This reads whether the strip shows, from the code that draws
+# it (examplesCardParts), so the checks can stay on Painting. The strip's place and buttons are checked on Models in test_v139_ab9.
 def card_visible(page):
-    return page.evaluate("() => !document.getElementById('examples-card-recipes').classList.contains('hidden')")
+    return page.evaluate("() => !!examplesCardParts('a', 'b')")
+
+def example_words(page):   # AB9: what the card used to count (the strip and the message no longer say it)
+    return page.evaluate("() => exampleWords({ units: exampleUnits().length, recipes: exampleRecipes().length, schemes: exampleSchemes().length, paints: examplePaints().length })")
 
 def toast(page):
     return page.evaluate("""() => ({ text: document.getElementById('toast-text').textContent,
@@ -170,8 +176,8 @@ def main():
         boyz = next(u for u in units if u["name"] == "Brutes")
         names = page.evaluate("() => Object.fromEntries(book.recipes.map(r => [r.id, r.name]))")
         guardians = next(u for u in units if u["name"] == "Guardians")
-        check("Captain is linked to the four recipes that suit the Blue army", [names[str(i)] for i in captain.get("recipes", [])] == CAPTAIN_LINKS, captain)
-        check("Brutes are linked to the three recipes that suit the Green army", [names[str(i)] for i in boyz.get("recipes", [])] == BRUTES_LINKS, boyz)
+        check("Captain is linked to the four recipes that suit the Ash wardens", [names[str(i)] for i in captain.get("recipes", [])] == CAPTAIN_LINKS, captain)
+        check("Brutes are linked to the three recipes that suit the Bog goblins", [names[str(i)] for i in boyz.get("recipes", [])] == BRUTES_LINKS, boyz)
         check("Guardians are linked to the metal and the base", [names[str(i)] for i in guardians.get("recipes", [])] == GUARDIANS_LINKS, guardians)
         saved = saved_book(page)
         check("saved: all five recipes, both schemes and sixteen paints carry the example mark",
@@ -181,31 +187,24 @@ def main():
         check("the saved recipe book still has the same keys", sorted(saved.keys()) == sorted(BOOK_KEYS), sorted(saved.keys()))
         main_tab(page, "recipes")
         check("the Recipes tab lists all five recipes", page.locator("#recipe-list li").count() == 5, page.locator("#recipe-list li").count())
-        check("the card shows on the Recipes sub-page", card_visible(page))
-        card_text = page.text_content("#examples-card-recipes")
-        check("the card says these are examples and counts the recipes, schemes and paints",
-              "These are examples" in card_text and "5 example recipes" in card_text
-              and "2 example schemes" in card_text and "16 example paints" in card_text, card_text)
-        check("the card has Clear examples and Keep them",
-              page.locator("#examples-card-recipes .clear-recipe-examples").inner_text() == "Clear examples"
-              and page.locator("#examples-card-recipes .keep-recipe-examples").inner_text() == "Keep them")
-        recipe_view(page, "schemes")
-        check("the card also shows on Schemes", card_visible(page))
+        # AB9: the card is on Models only now (a strip); these read that the examples are there and what they are
+        check("the examples are there (the strip would show)", card_visible(page))
+        words = example_words(page)
+        check("they are 5 recipes, 2 schemes and 16 paints (besides the units)",
+              "5 example recipes" in words and "2 example schemes" in words and "16 example paints" in words, words)
         recipe_view(page, "palette")
-        check("the card also shows on Your Palette", card_visible(page))
         check("Your Palette lists the sixteen paints", page.locator("#paint-list li.paint-item").count() == 16,
               page.locator("#paint-list li.paint-item").count())
         recipe_view(page, "recipes")
         page.click("#recipe-list li >> nth=0")
         page.wait_for_timeout(250)
-        check("the card is hidden while a recipe is open", not card_visible(page))
         page.evaluate("history.back()")
         page.wait_for_timeout(300)
-        check("and it is back when the recipe is closed", card_visible(page))
         main_tab(page, "units")
-        check("the unit examples card is separate and still shows", page.locator("#examples-card").is_visible())
-        check("the unit card's buttons are unchanged (one Clear examples button per card)",
-              page.locator("#examples-card .clear-examples").count() == 1)
+        check("the examples strip shows on Models (AB9: the only one)", page.locator("#examples-card").is_visible())
+        check("it has one Clear examples button and Keep them",
+              page.locator("#examples-card .clear-examples").inner_text() == "Clear examples"
+              and page.locator("#examples-card .keep-examples").inner_text() == "Keep them")
 
         # ---------- 3. People who already have data ----------
         print("\n--- 3. People who already have data ---")
@@ -241,7 +240,7 @@ def main():
               page.evaluate("() => book.recipes.length + book.paints.length") == 0)
         fresh(page)
         main_tab(page, "recipes")
-        page.click("#examples-card-recipes .clear-recipe-examples")
+        press_examples(page, "clear")
         page.wait_for_timeout(300)
         page.reload()
         app_ready(page)
@@ -261,11 +260,11 @@ def main():
         main_tab(page, "recipes")
         before_book = json.dumps(saved_book(page), sort_keys=True)
         before_units = json.dumps(saved_units(page), sort_keys=True)
-        page.click("#examples-card-recipes .clear-recipe-examples")
+        press_examples(page, "clear")
         page.wait_for_timeout(300)
         t = toast(page)
         check("a message says exactly what was cleared, with Undo (v56: the example units go too)",
-              t["shown"] and t["undo"] and t["text"] == "Cleared 3 example units, 5 example recipes, 2 example schemes and 16 example paints", t)
+              t["shown"] and t["undo"] and t["text"] == "Examples cleared.", t)   # AB9: no count now
         check("no recipes and no paints are left", page.evaluate("() => book.recipes.length + book.paints.length") == 0)
         check("the card is gone", not card_visible(page))
         check("the recipe list no longer shows the examples", "Blue armour" not in page.inner_text("#recipe-list")
@@ -277,7 +276,7 @@ def main():
         check("Undo: the whole recipe book is exactly as before", json.dumps(saved_book(page), sort_keys=True) == before_book)
         check("Undo: the units (and their recipe links) are exactly as before", json.dumps(saved_units(page), sort_keys=True) == before_units)
         check("Undo: the card is back", card_visible(page))
-        page.click("#examples-card-recipes .clear-recipe-examples")
+        press_examples(page, "clear")
         page.wait_for_timeout(10500)   # A2: Undo messages last 10 seconds now (UNDO_SECONDS), not 8
         check("the message goes after about 10 seconds", not toast(page)["shown"] or not toast(page)["undo"])
         page.reload()
@@ -287,7 +286,7 @@ def main():
         # Undo when a new recipe has taken a cleared one's number in the meantime.
         fresh(page)
         main_tab(page, "recipes")
-        page.click("#examples-card-recipes .clear-recipe-examples")
+        press_examples(page, "clear")
         page.wait_for_timeout(300)
         page.evaluate("""() => { const p = findOrAddPaint('Citadel', 'Abaddon Black', '#231f20');
             book.recipes.push({ id: 2, name: 'Mine', part: 'Armour', notes: '', steps: [{ technique: 'Base coat', coats: 1,
@@ -303,7 +302,7 @@ def main():
         # Keep them
         fresh(page)
         main_tab(page, "recipes")
-        page.click("#examples-card-recipes .keep-recipe-examples")
+        press_examples(page, "keep")
         page.wait_for_timeout(300)
         t = toast(page)
         check("Keep them: a message with Undo", t["shown"] and t["undo"] and "Kept" in t["text"], t)
@@ -318,7 +317,7 @@ def main():
               page.evaluate("() => book.recipes.length") == 5 and page.evaluate("() => book.recipes.every(r => !('example' in r))"))
         fresh(page)
         main_tab(page, "recipes")
-        page.click("#examples-card-recipes .keep-recipe-examples")
+        press_examples(page, "keep")
         page.wait_for_timeout(300)
         page.click("#toast-undo")
         page.wait_for_timeout(300)
@@ -328,28 +327,28 @@ def main():
         # ---------- 5. What Clear keeps ----------
         print("\n--- 5. What Clear keeps ---")
         fresh(page)
-        page.evaluate("() => { applyPaintStatus(book.paints.find(p => p.name === 'Example mid blue'), 'owned'); render(); }")
+        page.evaluate("() => { applyPaintStatus(book.paints.find(p => p.name === 'Cobalt'), 'owned'); render(); }")
         main_tab(page, "recipes")
         check("the card counts 15 paints once one has a status",
-              "5 example recipes, 2 example schemes and 15 example paints" in page.text_content("#examples-card-recipes"), page.text_content("#examples-card-recipes"))
-        page.click("#examples-card-recipes .clear-recipe-examples")
+              "5 example recipes, 2 example schemes and 15 example paints" in example_words(page), example_words(page))
+        press_examples(page, "clear")
         page.wait_for_timeout(300)
-        check("Clear says 3 units, 5 recipes, 2 schemes and 15 paints", toast(page)["text"] == "Cleared 3 example units, 5 example recipes, 2 example schemes and 15 example paints", toast(page))
-        check("the paint with a status is kept (and nothing else is)", palette_names(page) == ["Example mid blue"], palette_names(page))
+        check("Clear says Examples cleared. (AB9: no count)", toast(page)["text"] == "Examples cleared.", toast(page))
+        check("the paint with a status is kept (and nothing else is)", palette_names(page) == ["Cobalt"], palette_names(page))
         check("it keeps its status", page.evaluate("() => paintStatus(book.paints[0])") == "owned")
         check("the kept paint is saved without an example claim on the card (card gone)", not card_visible(page))
 
         fresh(page)
-        page.evaluate("""() => { const p = book.paints.find(q => q.name === 'Example bright green');
+        page.evaluate("""() => { const p = book.paints.find(q => q.name === 'Pond green');
             book.recipes.push({ id: 9, name: 'My green', part: 'Skin', notes: '', steps: [{ technique: 'Layer', coats: 1,
               paints: [{ paint: p.id, mix: null }], ratio: '', note: '', optional: false }] }); render(); }""")
         main_tab(page, "recipes")
         check("a paint your own recipe uses is no longer counted as an example",
-              "5 example recipes, 2 example schemes and 15 example paints" in page.text_content("#examples-card-recipes"), page.text_content("#examples-card-recipes"))
-        page.click("#examples-card-recipes .clear-recipe-examples")
+              "5 example recipes, 2 example schemes and 15 example paints" in example_words(page), example_words(page))
+        press_examples(page, "clear")
         page.wait_for_timeout(300)
         check("Clear leaves your recipe and the paint it uses",
-              page.evaluate("() => book.recipes.map(r => r.name)") == ["My green"] and palette_names(page) == ["Example bright green"],
+              page.evaluate("() => book.recipes.map(r => r.name)") == ["My green"] and palette_names(page) == ["Pond green"],
               (page.evaluate("() => book.recipes.map(r => r.name)"), palette_names(page)))
         page.click("#toast-undo")
         page.wait_for_timeout(300)
@@ -357,13 +356,13 @@ def main():
               page.evaluate("() => book.recipes.length") == 6 and len(palette_names(page)) == 16)
 
         fresh(page)
-        page.evaluate("() => { editPaint(book.paints.find(p => p.name === 'Example dark wash'), 'colour', '#101820'); }")
+        page.evaluate("() => { editPaint(book.paints.find(p => p.name === 'Soot wash'), 'colour', '#101820'); }")
         page.wait_for_timeout(200)
-        check("editing an example paint makes it yours (the mark goes)", page.evaluate("() => !('example' in book.paints.find(p => p.name === 'Example dark wash'))"))
+        check("editing an example paint makes it yours (the mark goes)", page.evaluate("() => !('example' in book.paints.find(p => p.name === 'Soot wash'))"))
         main_tab(page, "recipes")
-        page.click("#examples-card-recipes .clear-recipe-examples")
+        press_examples(page, "clear")
         page.wait_for_timeout(300)
-        check("Clear keeps the paint you edited", palette_names(page) == ["Example dark wash"], palette_names(page))
+        check("Clear keeps the paint you edited", palette_names(page) == ["Soot wash"], palette_names(page))
         fresh(page)
         page.evaluate("""() => { const r = book.recipes[0]; openRecipeId = null; recipeDraft = null;
             const d = { id: r.id, name: 'Blue armour (mine)', part: r.part, notes: r.notes, own: {}, linkUnit: null, original: '',
@@ -375,11 +374,11 @@ def main():
               page.evaluate("() => !('example' in book.recipes[0]) && book.recipes[1].example === true"))
         main_tab(page, "recipes")
         page.evaluate("() => { openRecipeId = null; render(); }")
-        page.click("#examples-card-recipes .clear-recipe-examples")
+        press_examples(page, "clear")
         page.wait_for_timeout(300)
         check("Clear keeps the recipe you changed, and the paints it uses",
               page.evaluate("() => book.recipes.map(r => r.name)") == ["Blue armour (mine)"]
-              and palette_names(page) == sorted(["Example deep blue", "Example dark wash", "Example mid blue", "Example pale grey"]), palette_names(page))
+              and palette_names(page) == sorted(["Harbour blue", "Soot wash", "Cobalt", "Pale ash"]), palette_names(page))
 
         # ---------- 6. Shopping list ----------
         print("\n--- 6. Shopping list ---")
@@ -393,9 +392,9 @@ def main():
               "Nothing to buy" in page.inner_text("#shop-panel"), page.inner_text("#shop-panel"))
         check("no shop buttons show", page.locator("#buy-bar").count() == 0)
         # v58 (chunk 1.3) changed this decision: after Keep them the made-up paints showed on the list as missing, and AI testers
-        # tried to buy "Example deep blue", which no shop sells. A paint that started as an example now stays off the list, kept or
+        # tried to buy "Example deep blue" (a made-up paint, called "Harbour blue" since AB9), which no shop sells. A paint that started as an example now stays off the list, kept or
         # given a status (test_v58.py checks real paints still work as before).
-        page.evaluate("() => { applyPaintStatus(book.paints.find(p => p.name === 'Example mid blue'), 'wishlist'); render(); }")
+        page.evaluate("() => { applyPaintStatus(book.paints.find(p => p.name === 'Cobalt'), 'wishlist'); render(); }")
         check("a made-up paint you put on your wishlist stays off the list (v58)",
               page.evaluate("() => shoppingItems().length") == 0)
         fresh(page)
@@ -425,20 +424,21 @@ def main():
                 tag = f"{appearance} {width}px"
                 page.set_viewport_size({"width": width, "height": 844})
                 fresh(page, {"appearance": appearance})
-                main_tab(page, "recipes")
-                for view in ("recipes", "palette"):
-                    recipe_view(page, view)
-                    box = page.evaluate("""() => { const r = document.getElementById('examples-card-recipes').getBoundingClientRect();
+                # AB9: the examples strip is on Models only, so these read it there (they read the card on Recipes and Your Palette)
+                main_tab(page, "units")
+                for view in ("models",):
+                    box = page.evaluate("""() => { const r = document.getElementById('examples-card').getBoundingClientRect();
                         return { l: r.left, r: r.right, w: window.innerWidth }; }""")
                     check(f"{tag} {view}: the card is inside the screen", box["l"] >= 0 and box["r"] <= box["w"] + 0.5, box)
-                    heights = page.evaluate("""() => [...document.querySelectorAll('#examples-card-recipes button:not(.more-info-button)')]
+                    heights = page.evaluate("""() => [...document.querySelectorAll('#examples-card button:not(.more-info-button)')]
                         .map(b => { const r = b.getBoundingClientRect(); return [r.width, r.height]; })""")
                     check(f"{tag} {view}: both buttons are at least 44 px tall and wide", len(heights) == 2 and all(w >= 44 and h >= 44 for w, h in heights), heights)
                     check(f"{tag} {view}: nothing scrolls sideways", no_sideways(page))
-                col = page.evaluate("""() => { const el = document.querySelector('#examples-card-recipes p'); const cs = getComputedStyle(el);
-                    return { fg: cs.color, bg: getComputedStyle(document.getElementById('examples-card-recipes')).backgroundColor }; }""")
+                col = page.evaluate("""() => { const el = document.querySelector('#examples-card p'); const cs = getComputedStyle(el);
+                    return { fg: cs.color, bg: getComputedStyle(document.body).backgroundColor }; }""")   # AB9: the strip has no fill, so the page behind it
                 check(f"{tag}: the card's text is readable (contrast at least 4.5)", contrast(rgb(col["fg"]), rgb(col["bg"])) >= 4.5, col)
                 if width == 390:
+                    main_tab(page, "recipes")
                     recipe_view(page, "recipes")
                     shot(page, f"v24-recipes-{appearance}-{width}.png")
                     recipe_view(page, "palette")

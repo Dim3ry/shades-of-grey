@@ -259,13 +259,14 @@ def main():
 
         # the examples card and the "Do you own these?" card keep their buttons in view and the long text behind More info
         t.load(page, paints=PAINTS, recipes=[dict(RECIPES[0], example=True)], units=UNITS)
-        tab_recipes(page)
-        ex = page.locator("#examples-card-recipes")
-        check("the examples card: the title and both buttons show, the long text is behind More info",
-              ex.locator("strong").is_visible() and ex.locator(".clear-recipe-examples").is_visible() and ex.locator(".keep-recipe-examples").is_visible()
+        # AB9: the examples card is a strip on Models only now (it was on Painting), and its hint ends "Anything you've changed stays."
+        page.click('button[data-tab="units"]'); page.wait_for_timeout(300)
+        ex = page.locator("#examples-card")
+        check("the examples strip: the title and both buttons show, the long text is behind More info",
+              ex.locator("strong").is_visible() and ex.locator(".clear-examples").is_visible() and ex.locator(".keep-examples").is_visible()
               and ex.locator(".more-info-button").count() == 1 and not ex.locator(".hint").is_visible())
         ex.locator(".more-info-button").click()
-        check("the examples card: opening shows the explanation", "stays yours" in ex.locator(".hint").inner_text())
+        check("the examples strip: opening shows the explanation", "Anything you've changed stays." in ex.locator(".hint").inner_text())
         t.load(page, paints=PAINTS, recipes=RECIPES, units=UNITS)
         t.open_editor(page)
         # UX1: the card only asks about paints in the paint list now, so a real paint that isn't in this palette ("Brand New Paint" before)

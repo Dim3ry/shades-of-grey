@@ -21,6 +21,7 @@ Checks:
 Run all tests with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
 import datetime, json, os, re, sys
 from playwright.sync_api import sync_playwright
+from launch_helpers import press_examples   # AB9: Clear and Keep are on the Models strip only
 from launch_helpers import quiet, tap_tab
 from launch_helpers import app_ready
 from launch_helpers import leave_launch
@@ -371,13 +372,13 @@ def main():
         # ---------- 11. With the examples card, and Back ----------
         print("\n--- 11. With the examples card, and Back ---")
         fresh(page, {"feedbackFirstSeen": day(-10)})
-        both = page.evaluate("""() => { const a = document.getElementById('examples-card-dash').getBoundingClientRect();
-            const b = document.getElementById('feedback-card').getBoundingClientRect();
-            return { exShown: !document.getElementById('examples-card-dash').classList.contains('hidden'),
-                     fbShown: !document.getElementById('feedback-card').classList.contains('hidden'), exBottom: a.bottom, fbTop: b.top }; }""")
-        check("a new start with a week behind it shows both cards", both["exShown"] and both["fbShown"], both)
-        check("the feedback card sits below the examples card, not over it", both["fbTop"] >= both["exBottom"] - 0.5, both)
-        page.click("#examples-card-dash .clear-examples")
+        # AB9: the examples card left the Dashboard (a strip on Models is the only one), so the feedback card is checked alone there and
+        # the "sits below the examples card" check no longer applies.
+        both = page.evaluate("""() => ({ exShown: !!examplesCardParts('a', 'b'), dashCard: !!document.getElementById('examples-card-dash'),
+                     fbShown: !document.getElementById('feedback-card').classList.contains('hidden') })""")
+        check("a new start with a week behind it shows the feedback card, with the examples still there (on Models, not the Dashboard)",
+              both["exShown"] and both["fbShown"] and not both["dashCard"], both)
+        press_examples(page, "clear")
         page.wait_for_timeout(250)
         check("clearing the examples leaves the feedback card alone", card_shown(page))
         check("the headline numbers are still on the Dashboard under the cards", page.is_visible("#done-percent"))

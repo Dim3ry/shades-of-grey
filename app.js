@@ -357,19 +357,38 @@
     // Example units, only used the very first time (when nothing is saved yet).
     // v21: each carries "example: true", so the "These are examples" card can find them.
     // v34 (IP tidy): plain, made-up names instead of well-known game, faction and unit names.
+    // AB9: armies with made-up names of their own (they were "Blue army", "Green army" and "Gold army").
     const EXAMPLES = [
-      { id: 1, name: "Captain", hobby: "Sci-fi", faction: "Blue army", stage: 3, count: 1, example: true },
-      { id: 2, name: "Brutes", hobby: "Sci-fi", faction: "Green army", stage: 0, count: 10, example: true },
-      { id: 3, name: "Guardians", hobby: "Fantasy", faction: "Gold army", stage: 6, count: 5, example: true },
+      { id: 1, name: "Captain", hobby: "Sci-fi", faction: "Ash wardens", stage: 3, count: 1, example: true },
+      { id: 2, name: "Brutes", hobby: "Sci-fi", faction: "Bog goblins", stage: 0, count: 10, example: true },
+      { id: 3, name: "Guardians", hobby: "Fantasy", faction: "Gilded knights", stage: 6, count: 5, example: true },
     ];
-    // The examples v21 to v33 started people with. Only used to RECOGNISE units already saved
-    // with these names (the one-off check below, and the backup reminder), so nothing a user
-    // has saved is read differently. Never added to anyone's data.
-    const LEGACY_EXAMPLES = [
-      { id: 1, name: "Captain", hobby: "40K", faction: "Ultramarines" },
-      { id: 2, name: "Boyz", hobby: "40K", faction: "Orks" },
-      { id: 3, name: "Liberators", hobby: "Age of Sigmar", faction: "Stormcast Eternals" },
-    ];
+    // Every name the examples have had before. Only used to RECOGNISE examples already saved with these
+    // names, so nothing a user has saved is read differently or renamed. Never added to anyone's data.
+    //   units:   the units v21 to v33 started people with, and (AB9) v34 to v138's "Blue army" ones, with their
+    //            starting stage and count (one-off check below, and what Clear examples counts as unchanged)
+    //   paints:  AB9: each example paint's name now -> its name before AB9 ("Example deep blue"...). Those old
+    //            names stay made-up paints (isMadeUpPaint) whatever happens to them, as before.
+    //   schemes: AB9: the example schemes' names before AB9, in the same order as EXAMPLE_SCHEMES.
+    const LEGACY_EXAMPLES = {
+      units: [
+        { id: 1, name: "Captain", hobby: "40K", faction: "Ultramarines" },
+        { id: 2, name: "Boyz", hobby: "40K", faction: "Orks" },
+        { id: 3, name: "Liberators", hobby: "Age of Sigmar", faction: "Stormcast Eternals" },
+        { id: 1, name: "Captain", hobby: "Sci-fi", faction: "Blue army", stage: 3, count: 1 },
+        { id: 2, name: "Brutes", hobby: "Sci-fi", faction: "Green army", stage: 0, count: 10 },
+        { id: 3, name: "Guardians", hobby: "Fantasy", faction: "Gold army", stage: 6, count: 5 },
+      ],
+      paints: {
+        "Harbour blue": "Example deep blue", "Soot wash": "Example dark wash", "Cobalt": "Example mid blue",
+        "Pale ash": "Example pale grey", "Dull gold": "Example dark gold", "Brass gold": "Example bright gold",
+        "Bone": "Example pale gold", "Swamp green": "Example mid green", "Brown wash": "Example brown wash",
+        "Pond green": "Example bright green", "Pale lichen": "Example pale green", "Brick red": "Example deep red",
+        "Flame orange": "Example bright orange", "Candle yellow": "Example pale yellow", "Raven grey": "Example dark grey",
+        "Flint grey": "Example mid grey",
+      },
+      schemes: ["Blue army colours", "Green army colours"],
+    };
 
     // v24: is this the very first visit (no units and no recipes saved yet)? Only then do the
     // example recipes and paints get added (see seedExampleRecipes). Anyone who already has data,
@@ -407,7 +426,7 @@
     // (Saved by the start-up render(), units and settings together.)
     if (!settings.examplesChecked) {
       for (const m of models) {
-        const isExample = EXAMPLES.concat(LEGACY_EXAMPLES).some(x => x.id === m.id && m.name === x.name &&
+        const isExample = EXAMPLES.concat(LEGACY_EXAMPLES.units).some(x => x.id === m.id && m.name === x.name &&
           m.hobby === x.hobby && m.faction === x.faction);
         if (isExample && !m.photos && !m.photo && !m.recipes && !m.nickname && !m.copy) m.example = true;
       }
@@ -3287,7 +3306,8 @@
     // Type a name: see whether you own it, it's running low, or you don't have it.
     // Typos and remembered shorthand work, because it uses the shared matcher.
     function paletteResultCard(p) {
-      const found = () => book.paints.find(x => sameText(x.name, p.name) && (!p.brand || !x.brand || sameText(x.brand, p.brand)));
+      const found = () => book.paints.find(x => sameText(x.name, p.name) && (!p.brand || !x.brand || sameText(x.brand, p.brand)) &&
+                                             !(p.brand && isMadeUpPaint(x)));   // AB9: a real pot is never the made-up "Brown wash"
       const mine = found();
       const current = mine ? paintStatus(mine) : "";
       const wrap = document.createElement("div");
@@ -3923,6 +3943,7 @@
         if (paint.brand !== rawBrand) tidied.add(paint.id);
         if (!PAINT_STATUS_KEYS.includes(paint.status)) delete paint.status;
         if (p.example !== true) delete paint.example;   // v24: only a real true counts
+        if (p.madeUp !== true) delete paint.madeUp;     // AB9: the same for the made-up mark
         if (p.shopDismissed !== true) delete paint.shopDismissed;   // F1: dismissed from Suggested (optional, only a real true counts)
         if (paint.status !== "low" || paint.spare !== true) delete paint.spare;
         // v40: where a paint on the shopping list came from (a recipe or scheme name). Up to 5, each cut to 60 characters, plain text only.
@@ -6036,7 +6057,7 @@
       staleTabs.delete(name);
       if (name === "dashboard") {
         renderDashboard();
-        renderExamplesCards(); renderFeedbackCard(); renderBackupNudge();   // Dashboard cards that renderUnits used to draw for it
+        renderFeedbackCard(); renderBackupNudge();   // Dashboard cards that renderUnits used to draw for it
       } else if (name === "units") renderUnits();
       else if (name === "recipes") renderRecipes();
       else if (name === "settings") renderRecipePrefs();   // RS2
@@ -8545,16 +8566,16 @@
     // that brings all of it back) and "Keep them" makes all of them yours, so the card goes away on every
     // tab. Before v56 each card only cleared or kept its own kind, so the card came back on another tab.
     // Renaming an example, or changing its game or faction, also makes it yours (see editUnit).
+    // AB9: one thin strip, on Models only (it was a card on the Dashboard, Models and Painting). Each example recipe and scheme keeps
+    // its "Example" label.
     function exampleUnits() { return models.filter(m => m.example === true); }
     function renderExamplesCards() {
-      for (const id of ["examples-card-dash", "examples-card"]) {
-        const card = document.getElementById(id);
-        const parts = examplesCardParts("clear-examples", "keep-examples");
-        card.classList.toggle("hidden", !parts);
-        card.innerHTML = "";
-        // v52: the explanation sits behind More info
-        if (parts) card.append(parts.text, pageMoreInfo(id, [parts.why], { label: "Examples" }), parts.buttons);
-      }
+      const card = document.getElementById("examples-card");
+      const parts = examplesCardParts("clear-examples", "keep-examples");
+      card.classList.toggle("hidden", !parts);
+      card.innerHTML = "";
+      // v52: the explanation sits behind More info
+      if (parts) card.append(parts.text, pageMoreInfo("examples-card", [parts.why], { label: "Examples" }), parts.buttons);
     }
     // v56: what every examples card holds: the heading line, the explanation (for More info) and the two
     // buttons. Null when nothing is an example any more. The class names stay as they were on each card.
@@ -8565,20 +8586,16 @@
       const many = total > 1;
       const text = document.createElement("p");
       const strong = document.createElement("strong");
-      strong.textContent = many ? "These are examples." : "This is an example.";
+      strong.textContent = "Sample bench.";   // AB9
       text.append(strong);
       const why = document.createElement("p");
       why.className = "hint";
-      const counts = { units: units.length, recipes: recipes.length, schemes: schemes.length, paints: paints.length };
-      const names = units.length ? ` (the ${units.length === 1 ? "unit is" : "units are"} ${units.map(m => displayName(m)).join(", ")})` : "";
-      why.textContent = `${exampleWords(counts)[0].toUpperCase()}${exampleWords(counts).slice(1)}${names}. ` +
-        `Clear ${many ? "them" : "it"} to start your own. ` +
-        `Anything you edit or use stays yours.`;
+      why.textContent = "Made-up units and recipes, so the app isn't empty on day one. Clear them when you've got your own. Anything you've changed stays.";
       const buttons = document.createElement("div");
       buttons.className = "button-grid";
       const clear = document.createElement("button");
       clear.type = "button";
-      clear.className = "danger-button " + clearClass;
+      clear.className = "plain-button " + clearClass;   // AB9: plain, not red: Undo covers it
       clear.textContent = "Clear examples";
       clear.addEventListener("click", clearExamples);
       const keep = document.createElement("button");
@@ -8589,12 +8606,37 @@
       buttons.append(clear, keep);
       return { text, why, buttons };
     }
-    // v56: clears every example at once and says what went. Undo puts all of it back.
+    // AB9: an example unit you've changed in any way: a stage moved (its diary), a note, photo, nickname, gear or repaint mark, tracking
+    // each model or a different count. Renaming it or moving it to another army already made it yours (editUnit).
+    const EXAMPLE_UNIT_KEYS = new Set(["id", "name", "hobby", "faction", "stage", "count", "repaint", "example", "log", "recipes", "copy"]);
+    function exampleUnitChanged(m) {
+      const empty = (v) => v === undefined || v === null || v === "" || v === false || (Array.isArray(v) && !v.length);
+      if (!empty(m.log) || m.repaint === true || Object.keys(m).some(k => !EXAMPLE_UNIT_KEYS.has(k) && !empty(m[k]))) return true;
+      const start = EXAMPLES.concat(LEGACY_EXAMPLES.units).find(x => x.id === m.id && x.name === m.name && x.faction === m.faction && x.stage !== undefined);
+      return !!start && (m.stage !== start.stage || m.count !== start.count);
+    }
+    // v56: clears every example at once. Undo puts all of it back.
+    // AB9: anything you've changed stays, as yours: an example unit you changed, and an example recipe you linked to a unit of yours or put
+    // in a scheme of yours (so the paints it uses stay too; before AB9 it was taken out of your scheme). Their "example" marks go, and Undo puts the marks back.
     function clearExamples() {
+      const keptUnits = exampleUnits().filter(exampleUnitChanged);
+      const yourUnits = models.filter(m => m.example !== true);
+      const keptRecipes = exampleRecipes().filter(r => yourUnits.some(m => (m.recipes || []).includes(r.id)) ||
+        book.schemes.some(s => s.example !== true && s.recipes.includes(r.id)));
+      // A unit you changed keeps only the links the examples didn't make: its links to the example recipes that go are taken off below.
+      for (const m of keptUnits) delete m.example;
+      for (const r of keptRecipes) delete r.example;
       const goneUnits = exampleUnits(), goneRecipes = exampleRecipes(), goneSchemes = exampleSchemes(), gonePaints = examplePaints();
-      if (!goneUnits.length && !goneRecipes.length && !goneSchemes.length && !gonePaints.length) return;
-      const message = `Cleared ${exampleWords({ units: goneUnits.length, recipes: goneRecipes.length,
-                                                schemes: goneSchemes.length, paints: gonePaints.length })}`;
+      const putMarksBack = () => {
+        for (const m of keptUnits) if (models.includes(m)) m.example = true;
+        for (const r of keptRecipes) if (book.recipes.includes(r)) r.example = true;
+      };
+      if (!goneUnits.length && !goneRecipes.length && !goneSchemes.length && !gonePaints.length) {
+        // Everything left was yours: say so, Undo still puts the marks back.
+        if (keptUnits.length || keptRecipes.length) commit("Examples cleared.", () => { putMarksBack(); render(); }, "Undo", UNDO_SECONDS);
+        return;
+      }
+      const message = "Examples cleared.";   // AB9: was a count of every kind
       // The recipes first: that also unlinks them from the example units, and remembers the links for Undo.
       const putRecipesBack = takeOutRecipeExamples(goneRecipes, goneSchemes, gonePaints);
       // Remember where each unit was, so Undo puts it back in the same place.
@@ -8609,6 +8651,7 @@
           models.splice(Math.min(spot, models.length), 0, m);
         }
         putRecipesBack();   // after the units, so their links to the example recipes come back too
+        putMarksBack();     // AB9
         render();
       }, "Undo", UNDO_SECONDS);
       // UX1b: the card (and the button you pressed) has gone, so focus moves to the start of the page's content
@@ -8654,53 +8697,55 @@
     // recipes and units connect.
     const EXAMPLE_RECIPES = [
       // v34 (IP tidy): made-up paints with no brand and a plain colour name (third item = colour),
-      // so nothing here names a real paint, faction or unit. "Example" keeps them from matching real paints.
+      // so nothing here names a real paint, faction or unit. "Example" kept them from matching real paints.
+      // AB9: named like pots now, without "Example" (old names in LEGACY_EXAMPLES.paints). Each is marked "madeUp" when added,
+      // and only a marked one counts as made-up by its name (isMadeUpPaint), so a paint of yours with the same name is never caught.
       // v44: "units" = the example unit ids it is linked to (only if that unit is still an example).
       { name: "Blue armour", part: "Armour", units: [1],
         notes: "An example recipe, to show how they look. Clear it when you're ready to write your own.",
         steps: [
-          { technique: "Base coat", coats: 2, paints: [["", "Example deep blue", "#1f3f8f"]] },
-          { technique: "Shade", coats: 1, paints: [["", "Example dark wash", "#2a2a2e"]] },
-          { technique: "Layer", coats: 1, paints: [["", "Example mid blue", "#2f62c4"]] },
-          { technique: "Edge highlight", coats: 1, paints: [["", "Example pale grey", "#cfd3d8"]] },
+          { technique: "Base coat", coats: 2, paints: [["", "Harbour blue", "#1f3f8f"]] },
+          { technique: "Shade", coats: 1, paints: [["", "Soot wash", "#2a2a2e"]] },
+          { technique: "Layer", coats: 1, paints: [["", "Cobalt", "#2f62c4"]] },
+          { technique: "Edge highlight", coats: 1, paints: [["", "Pale ash", "#cfd3d8"]] },
         ] },
       { name: "Gold metal", part: "Metal", units: [1, 3],
         notes: "An example recipe, to show how they look. Clear it when you're ready to write your own.",
         steps: [
-          { technique: "Base coat", coats: 2, paints: [["", "Example dark gold", "#8a6a1f"]] },
-          { technique: "Shade", coats: 1, paints: [["", "Example dark wash", "#2a2a2e"]] },
-          { technique: "Layer", coats: 1, paints: [["", "Example bright gold", "#d4a73a"]] },
-          { technique: "Edge highlight", coats: 1, paints: [["", "Example pale gold", "#f0dca0"]] },
+          { technique: "Base coat", coats: 2, paints: [["", "Dull gold", "#8a6a1f"]] },
+          { technique: "Shade", coats: 1, paints: [["", "Soot wash", "#2a2a2e"]] },
+          { technique: "Layer", coats: 1, paints: [["", "Brass gold", "#d4a73a"]] },
+          { technique: "Edge highlight", coats: 1, paints: [["", "Bone", "#f0dca0"]] },
         ] },
       { name: "Green skin", part: "Skin", units: [2],
         notes: "An example recipe, to show how they look. Clear it when you're ready to write your own.",
         steps: [
-          { technique: "Base coat", coats: 2, paints: [["", "Example mid green", "#4f7a2b"]] },
-          { technique: "Shade", coats: 1, paints: [["", "Example brown wash", "#4a3320"]] },
-          { technique: "Layer", coats: 1, paints: [["", "Example bright green", "#6fa03a"]] },
-          { technique: "Edge highlight", coats: 1, paints: [["", "Example pale green", "#b7d28a"]] },
+          { technique: "Base coat", coats: 2, paints: [["", "Swamp green", "#4f7a2b"]] },
+          { technique: "Shade", coats: 1, paints: [["", "Brown wash", "#4a3320"]] },
+          { technique: "Layer", coats: 1, paints: [["", "Pond green", "#6fa03a"]] },
+          { technique: "Edge highlight", coats: 1, paints: [["", "Pale lichen", "#b7d28a"]] },
         ] },
       { name: "Glowing eyes", part: "Eyes", units: [1, 2],
         notes: "An example recipe, to show how they look. Clear it when you're ready to write your own.",
         steps: [
-          { technique: "Base coat", coats: 1, paints: [["", "Example deep red", "#7a1414"]] },
-          { technique: "Layer", coats: 1, paints: [["", "Example bright orange", "#e8741c"]] },
-          { technique: "Edge highlight", coats: 1, paints: [["", "Example pale yellow", "#f6e7a3"]] },
+          { technique: "Base coat", coats: 1, paints: [["", "Brick red", "#7a1414"]] },
+          { technique: "Layer", coats: 1, paints: [["", "Flame orange", "#e8741c"]] },
+          { technique: "Edge highlight", coats: 1, paints: [["", "Candle yellow", "#f6e7a3"]] },
         ] },
       { name: "Stone base", part: "Base", units: [1, 2, 3],
         notes: "An example recipe, to show how they look. Clear it when you're ready to write your own.",
         steps: [
-          { technique: "Base coat", coats: 2, paints: [["", "Example dark grey", "#3b3d42"]] },
-          { technique: "Dry brush", coats: 1, paints: [["", "Example mid grey", "#7b7f87"]] },
-          { technique: "Dry brush", coats: 1, paints: [["", "Example pale grey", "#cfd3d8"]] },
+          { technique: "Base coat", coats: 2, paints: [["", "Raven grey", "#3b3d42"]] },
+          { technique: "Dry brush", coats: 1, paints: [["", "Flint grey", "#7b7f87"]] },
+          { technique: "Dry brush", coats: 1, paints: [["", "Pale ash", "#cfd3d8"]] },
         ] },
     ];
     // v44: two example schemes. A scheme groups recipes for one faction (the plain made-up armies the
     // example units belong to). "auto" is off, so a new unit of yours in that army is not handed
     // the example recipes by surprise.
     const EXAMPLE_SCHEMES = [
-      { name: "Blue army colours", faction: "Blue army", recipes: ["Blue armour", "Gold metal", "Glowing eyes", "Stone base"] },
-      { name: "Green army colours", faction: "Green army", recipes: ["Green skin", "Glowing eyes", "Stone base"] },
+      { name: "Ash wardens colours", faction: "Ash wardens", recipes: ["Blue armour", "Gold metal", "Glowing eyes", "Stone base"] },
+      { name: "Bog goblins colours", faction: "Bog goblins", recipes: ["Green skin", "Glowing eyes", "Stone base"] },
     ];
 
     // Adds whichever examples are not there yet and says how many it added. Used by the automatic
@@ -8722,10 +8767,15 @@
           technique: s.technique, coats: s.coats,
           paints: s.paints.map(([brand, name, colour]) => {
             const wanted = tidyBrand(brand);
-            let paint = book.paints.find(p => sameText(p.name, name.trim()) && (!wanted || sameText(p.brand, wanted)));
+            const was = LEGACY_EXAMPLES.paints[name] || "";   // AB9: the same example paint under its old name counts too
+            let paint = book.paints.find(p => (sameText(p.name, name.trim()) || (was && sameText(p.name, was))) && (!wanted || sameText(p.brand, wanted)));
             if (!paint) {
-              paint = findOrAddPaint(brand, name, colour || "");
-              paint.example = true;
+              // AB9: made here, not with findOrAddPaint, which would look the plain name up in the built-in list and give a pot
+              // such as "Brown wash" a real brand. Example paints have no brand.
+              paint = { id: Math.max(retiredIds.paints, ...book.paints.map(p => p.id)) + 1, brand: wanted, name: name.trim(),
+                        colour: /^#[0-9a-f]{6}$/i.test(colour || "") ? colour.toLowerCase() : DEFAULT_PAINT_COLOUR,
+                        example: true, madeUp: true };   // AB9: madeUp, see isMadeUpPaint
+              book.paints.push(paint);
               added.paints++;
             }
             return { paint: paint.id, mix: null };
@@ -8742,8 +8792,8 @@
           if (unit) linkRecipe(unit, recipe.id);
         }
       }
-      for (const ex of EXAMPLE_SCHEMES) {
-        if (named(book.schemes, ex.name)) continue;
+      for (const [i, ex] of EXAMPLE_SCHEMES.entries()) {
+        if (named(book.schemes, ex.name) || named(book.schemes, LEGACY_EXAMPLES.schemes[i])) continue;   // AB9: or its old name
         book.schemes.push({ id: Math.max(0, ...book.schemes.map(s => s.id)) + 1, name: ex.name, faction: ex.faction,
                             auto: false, recipes: ex.recipes.map(n => ids.get(n)).filter(id => id !== undefined), example: true });
         added.schemes++;
@@ -8770,11 +8820,15 @@
     // (which only removes the "example" mark) and after you give it a status, because no shop sells it. So it never goes on the
     // shopping list, a recipe that only needs made-up paints says "Uses example paints", and its More options offers
     // "Swap for a real paint". Renaming it or giving it a brand makes it an ordinary paint.
-    let madeUpNames = null;
+    // AB9: an old "Example ..." name is made-up by its name alone, as before. The plain pot names since AB9 ("Brick red") could also be
+    // a paint of yours, so they count only on a paint the examples added (marked "madeUp", or still an example).
+    let madeUpNames = null, oldMadeUpNames = null;
     function isMadeUpPaint(paint) {
       if (!paint || String(paint.brand || "").trim()) return false;
       if (!madeUpNames) madeUpNames = new Set(EXAMPLE_RECIPES.flatMap(r => r.steps.flatMap(s => s.paints.map(([, name]) => sameKey(name)))));
-      return madeUpNames.has(sameKey(paint.name));
+      if (!oldMadeUpNames) oldMadeUpNames = new Set(Object.values(LEGACY_EXAMPLES.paints).map(sameKey));
+      const key = sameKey(paint.name);
+      return oldMadeUpNames.has(key) || (madeUpNames.has(key) && (paint.madeUp === true || paint.example === true));
     }
     // v56: "3 example units, 5 example recipes, 2 example schemes and 16 example paints" (only the kinds there are).
     function exampleWords({ units = 0, recipes = 0, schemes = 0, paints = 0 }) {
@@ -8785,20 +8839,7 @@
       if (paints) parts.push(plural(paints, "example paint"));
       return parts.length > 1 ? parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1] : parts.join("");
     }
-    // The card shows only while something is still an example, so once everything is cleared or kept
-    // it is gone (it is redrawn by every render(), also after a reload or a change in another window).
-    // v56: the same card as on the Dashboard and Units tab (examplesCardParts), so its Clear and Keep act on
-    // every example, units too.
-    function renderRecipeExamplesCard(show) {
-      const card = document.getElementById("examples-card-recipes");
-      const parts = show ? examplesCardParts("clear-recipe-examples", "keep-recipe-examples") : null;
-      card.classList.toggle("hidden", !parts);
-      card.innerHTML = "";
-      if (!parts) return;
-      // v50: the longer explanation sits behind More info; the two buttons stay in view.
-      const more = buildMoreInfo([parts.why], { state: infoState(recipeInfoDoor, "examples-card"), id: "examples-card-recipes-info", label: "the examples" });
-      card.append(parts.text, more, parts.buttons);
-    }
+    // AB9: the examples card on the Recipes tab (renderRecipeExamplesCard, v24 to v138) is gone: the strip is on Models only.
     // v56: takes the example recipes, schemes and paints out (no render, no message) and returns what puts them
     // back, so clearExamples can clear them together with the example units under one Undo.
     function takeOutRecipeExamples(goneRecipes, goneSchemes, gonePaints) {
@@ -10477,7 +10518,6 @@
       // v16: Paste recipes fills the screen while it's open.
       importPage.classList.toggle("hidden", !importDraft);
       if (importDraft) {
-        renderRecipeExamplesCard(false);
         fillDraftCard("recipe", false); fillDraftCard("paste", false);   // v26
         for (const el of [recipeSeg, recipeHome, paletteView, schemeView, shoppingView, labView, recipePage]) el.classList.add("hidden");
         renderImport();
@@ -10491,7 +10531,6 @@
       const current = onPalette ? "palette" : onSchemes ? "schemes" : onShopping ? "shopping" : onLab ? "colourlab" : "recipes";
       // The switch hides while a recipe or a scheme being edited fills the screen.
       recipeSeg.classList.toggle("hidden", onPage || (onSchemes && !!schemeDraft));
-      renderRecipeExamplesCard(!onPage && !(onSchemes && !!schemeDraft));   // v24
       fillDraftCard("recipe", !onPage && !(onSchemes && !!schemeDraft));    // v26: kept unfinished work
       fillDraftCard("paste", !onPage && !(onSchemes && !!schemeDraft));
       recipeSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", b.dataset.view === current));
@@ -10879,10 +10918,13 @@
           if (!paint) continue;
           const line = document.createElement("div");
           line.className = "paint-line";
-          const brand = document.createElement("span");
-          brand.className = "brand";
-          brand.textContent = paint.brand;
-          line.append(makeSwatch(paint.colour), paint.name, brand);
+          line.append(makeSwatch(paint.colour), paint.name);
+          if (String(paint.brand || "").trim()) {   // AB9: no empty brand slot when there is none
+            const brand = document.createElement("span");
+            brand.className = "brand";
+            brand.textContent = paint.brand;
+            line.append(brand);
+          }
           const mark = haveMark(paint);   // v17, v50: a tick or a cross
           if (mark) line.appendChild(mark);
           // Show the mix % when paints are mixed, or a single paint isn't 100% (e.g. thinned).
@@ -11889,7 +11931,7 @@
 
       const unset = paints.filter(p => p.colour === DEFAULT_PAINT_COLOUR && !isMaterial(p)).length;
       paletteSummary.textContent = paints.length
-        ? `${plural(paints.length, "paint")} from ${plural(brands.length, "brand")}` +
+        ? `${plural(paints.length, "paint")}${brands.length ? ` from ${plural(brands.length, "brand")}` : ""}` +   // AB9: no "from 0 brands"
           (paletteBrand !== null ? ` · showing ${shown.length}` : "") +
           (unset ? ` · ${unset} still need${unset === 1 ? "s" : ""} a colour (tap to set it)` : "")
         : "";
@@ -11982,7 +12024,7 @@
       name.textContent = paint.name;
       const meta = document.createElement("span");
       meta.className = "details";
-      meta.textContent = [paint.brand || "No brand", `in ${plural(usedIn.length, "recipe")}`,
+      meta.textContent = [paint.brand, `in ${plural(usedIn.length, "recipe")}`,
                           paintQty(paint) > 1 ? `× ${paintQty(paint)} in stock` : "",
                           isMaterial(paint) ? "basing material" :
                           paint.colour === DEFAULT_PAINT_COLOUR ? "colour not set" : ""].filter(Boolean).join(" · ");
@@ -19422,7 +19464,8 @@
       }
       if (st.chosen) {
         const p = st.chosen;
-        const mine = book.paints.find(x => sameText(x.name, p.name) && (!p.brand || !x.brand || sameText(x.brand, p.brand)));
+        const mine = book.paints.find(x => sameText(x.name, p.name) && (!p.brand || !x.brand || sameText(x.brand, p.brand)) &&
+                                          !(p.brand && isMadeUpPaint(x)));   // AB9: as in the scan result above
         const box = document.createElement("div");
         box.className = "scan-result";
         box.id = "scan-result";

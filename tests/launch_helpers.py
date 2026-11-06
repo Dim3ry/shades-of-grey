@@ -95,3 +95,17 @@ _QUIET = """() => new Promise(r => requestAnimationFrame(() => requestAnimationF
 
 def quiet(page):
     page.evaluate(_QUIET)
+
+
+def press_examples(page, which="clear"):
+    """AB9: the examples strip (Clear examples, Keep them) is on Models only; before AB9 the same buttons were also on a card on the
+    Dashboard and on Painting. Taps Models, presses the strip's button ("clear" or "keep"), then taps back to the section that was open
+    (Painting comes back on the page it was on). Used by the older tests that pressed the buttons on the Dashboard or Painting card."""
+    back = page.evaluate("() => settings.tab")
+    tap_tab(page, "units")
+    page.wait_for_timeout(80)
+    page.click(f"#examples-card .{which}-examples")
+    page.wait_for_timeout(150)
+    if back and back != "units":
+        tap_tab(page, back)
+        page.wait_for_timeout(80)

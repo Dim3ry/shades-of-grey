@@ -73,15 +73,15 @@ def main():
         check("3 example units, all marked as examples", len(units) == 3 and all(u.get("example") is True for u in units), units)
         check("the example units use plain made-up names",
               [u["name"] for u in units] == ["Captain", "Brutes", "Guardians"]
-              and [u["faction"] for u in units] == ["Blue army", "Green army", "Gold army"]
+              and [u["faction"] for u in units] == ["Ash wardens", "Bog goblins", "Gilded knights"]
               and [u["hobby"] for u in units] == ["Sci-fi", "Sci-fi", "Fantasy"], units)
         check("no unit text has a Games Workshop word", not dirty(json.dumps(units)), units)
         book = page.evaluate("book")
         check("5 example recipes with plain names (v44: was 2)", [r["name"] for r in book["recipes"]] == ["Blue armour", "Gold metal", "Green skin", "Glowing eyes", "Stone base"]
               and all(r.get("example") is True and len(r["steps"]) in (3, 4) for r in book["recipes"]), book["recipes"])
         paints = book["paints"]
-        check("16 example paints, no brand, plain names, a real colour, marked (v44: was 8)",
-              len(paints) == 16 and all(p["brand"] == "" and p["name"].startswith("Example ") and p.get("example") is True
+        check("16 example paints, no brand, plain names (AB9: named like pots, no 'Example' in front, marked made-up), a real colour, marked (v44: was 8)",
+              len(paints) == 16 and all(p["brand"] == "" and not p["name"].startswith("Example ") and p.get("example") is True and p.get("madeUp") is True
                                        and re.match(r"^#[0-9a-f]{6}$", p["colour"]) and p["colour"] != "#808080" for p in paints), paints)
         check("no recipe, scheme or paint text has a Games Workshop word", not dirty(json.dumps(book["recipes"]) + json.dumps(book["schemes"]) + json.dumps(paints)))
         linked = page.evaluate("() => models.filter(m => m.recipes).map(m => [m.name, m.recipes.map(id => recipeById(id).name)])")
@@ -89,10 +89,11 @@ def main():
               linked == [["Captain", ["Blue armour", "Gold metal", "Glowing eyes", "Stone base"]],
                          ["Brutes", ["Green skin", "Glowing eyes", "Stone base"]],
                          ["Guardians", ["Gold metal", "Stone base"]]], linked)
-        page.click('button[data-tab="recipes"]'); page.wait_for_timeout(300)
-        card = page.text_content("#examples-card-recipes")   # v53: the explanation sits behind More info (hidden), so read the text, not what shows
-        check("the Recipes card counts the new examples in plain words", "5 example recipes" in card and "2 example schemes" in card and not dirty(card), card)
-        check("Clear examples is offered", page.locator("#examples-card-recipes button:not(.more-info-button)").count() == 2)   # v53: the More info button is not one of them
+        # AB9: the examples strip is on Models only and no longer counts them; it is read there (this read the Recipes card's count)
+        page.click('button[data-tab="units"]'); page.wait_for_timeout(300)
+        card = page.text_content("#examples-card")   # v53: the explanation sits behind More info (hidden), so read the text, not what shows
+        check("the examples strip is in plain words", "Sample bench." in card and not dirty(card), card)
+        check("Clear examples is offered", page.locator("#examples-card button:not(.more-info-button)").count() == 2)   # v53: the More info button is not one of them
 
         # ---------- 3. The reworded hints and Help ----------
         print("\n--- 3. Hints and Help ---")
@@ -148,7 +149,7 @@ def main():
         marks = [u.get("example") is True for u in json.loads(page.evaluate("localStorage.getItem('mini-tracker-models')"))]
         check("a renamed old example is not marked", marks[0] is False and marks[1:] == [True, True], marks)
         # the new examples are recognised too, if unmarked
-        new_unmarked = [{"id": 1, "name": "Captain", "hobby": "Sci-fi", "faction": "Blue army", "stage": 3, "count": 1}]
+        new_unmarked = [{"id": 1, "name": "Captain", "hobby": "Sci-fi", "faction": "Ash wardens", "stage": 3, "count": 1}]
         page.evaluate("""(u) => { localStorage.clear(); localStorage.setItem('mini-tracker-models', JSON.stringify(u)); }""", new_unmarked)
         page.goto(URL); page.wait_for_timeout(500); leave_launch(page)   # U4b: tap through the start page
         check("an unmarked new-style example is recognised too", json.loads(page.evaluate("localStorage.getItem('mini-tracker-models')"))[0].get("example") is True)
@@ -157,10 +158,10 @@ def main():
         print("\n--- 5. Safety and offline ---")
         requests.clear()
         fresh(page)
-        page.click('button[data-tab="recipes"]'); page.wait_for_timeout(300)
-        tags_in_card = page.evaluate("() => [...new Set([...document.querySelectorAll('#examples-card-recipes *, #examples-card-dash *')].map(e => e.tagName))].sort()")
+        page.click('button[data-tab="units"]'); page.wait_for_timeout(300)   # AB9: the one examples strip is on Models
+        tags_in_card = page.evaluate("() => [...new Set([...document.querySelectorAll('#examples-card *')].map(e => e.tagName))].sort()")
         check("the example cards contain only the usual tags", set(tags_in_card) <= {"P", "STRONG", "BUTTON", "DIV", "SPAN"}, tags_in_card)   # v53: SPAN is the More info button's own words and arrow
-        check("no script ran and nothing was injected", page.evaluate("() => window.__pwned === undefined && !document.querySelector('#view-recipes img')"))
+        check("no script ran and nothing was injected", page.evaluate("() => window.__pwned === undefined && !document.querySelector('#view-recipes img, #examples-card img')"))
         outside = [u for u in requests if not u.startswith(t.BASE) and not u.startswith("data:") and not u.startswith("blob:")
                    and "goatcounter" not in u]
         check("a fresh start makes no request to any other address", not outside, outside)
@@ -173,13 +174,11 @@ def main():
                 tag = f"{appearance} {width}px"
                 page.set_viewport_size({"width": width, "height": 844})
                 fresh(page, {"appearance": appearance})
-                check(f"{tag}: the dashboard shows the examples card and the three example units",
-                      page.is_visible("#examples-card-dash") and all(n in page.locator("#view-dashboard").text_content() for n in ["Captain", "Brutes", "Guardians"]),   # v52: the names sit behind More info
-                      page.locator("#view-dashboard").text_content()[:200])
+                # AB9: the examples card left the Dashboard (and no longer names the units); only "nothing scrolls sideways" is left here
                 check(f"{tag}: dashboard, nothing scrolls sideways", no_sideways(page))
                 shot(page, f"v34-dashboard-{appearance}-{width}.png")
                 page.click('button[data-tab="recipes"]'); page.wait_for_timeout(300)
-                check(f"{tag}: the Recipes tab shows the examples card", page.is_visible("#examples-card-recipes"))
+                check(f"{tag}: the Recipes tab shows the five example recipes (AB9: no card there now)", page.locator("#recipe-list li").count() == 5)
                 check(f"{tag}: recipes, nothing scrolls sideways", no_sideways(page))
                 shot(page, f"v34-recipes-{appearance}-{width}.png")
         browser.close()
