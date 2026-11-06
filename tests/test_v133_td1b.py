@@ -36,7 +36,8 @@ def fresh(browser, scheme, saved=None):
 
 def main():
     errors = []
-    html, sw = t.read("index.html"), t.read("sw.js")
+    html = t.read("index.html")
+    worker = t.read([f for f in os.listdir(t.ROOT) if f.startswith("sw.")][0])   # the service worker file
     with sync_playwright() as p:
         browser = p.chromium.launch()
 
@@ -56,7 +57,7 @@ def main():
         on_disk = {f[:-6] for f in os.listdir(os.path.join(t.ROOT, "fonts")) if f.endswith(".woff2")}
         check("every font file in fonts/ is used by a @font-face rule, and every rule's file exists", used == on_disk, (sorted(used ^ on_disk)))
         check("the nine unused files are gone", not (set(DELETED) & on_disk))
-        sw_files = re.findall(r"\"\./([^\"]+\.(?:woff2|md))\"", sw)
+        sw_files = re.findall(r"\"\./([^\"]+\.(?:woff2|md))\"", worker)
         check("the service worker's list names no missing font file", all(os.path.exists(os.path.join(t.ROOT, f)) for f in sw_files), sw_files)
         lic = t.read("fonts/LICENSES.md")
         check("fonts/LICENSES.md no longer mentions the deleted families", not re.search(r"Barlow Semi|IM Fell|Teko|eb-garamond-latin-", lic))

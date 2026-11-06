@@ -110,7 +110,7 @@ def main():
 
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
+        ctx = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844}, service_workers="block")
         page = ctx.new_page()
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.on("console", lambda m: csp.append(m.text) if "Content Security Policy" in m.text else None)
@@ -181,7 +181,7 @@ def main():
             check(f"a saved theme of {v!r} falls back to Classic", page.evaluate("document.documentElement.dataset.t") == "classic"
                   and page.evaluate("settings.theme") == "classic")
         # early.js alone (app.js not loaded): the page is already marked
-        ctx2 = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
+        ctx2 = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844}, service_workers="block")
         p2 = ctx2.new_page()
         p2.route("**/app.js*", lambda r: r.fulfill(status=200, content_type="text/javascript", body="window.__noApp = true;"))
         p2.goto(t.BASE + "manifest.json")
@@ -224,7 +224,7 @@ def main():
                 appearance: settings.appearance })""")
             surf = page.evaluate("THEME_SURFACES")[th]["dark"]
             check(f"{NAMES[th]}: the page switches, only its square is pressed, it is saved, Appearance is untouched",
-                  state["t"] == th and state["pressed"] == [th] and state["saved"] == th and state["appearance"] == "dark", state)
+                  state["t"] == th and state["pressed"] == [th] and state["saved"] == th and state["appearance"] == "auto", state)   # TD1b (v133): a fresh install is on Match my phone (auto); the check is that choosing a theme leaves it as it was
             check(f"{NAMES[th]}: the page colour and the phone's top bar follow the theme", to_rgb(state["bg"]) == hexrgb(surf["page"]) and state["bar"] == surf["page"], state)
             title = ["Oxanium", "Grenze Gotisch", "Anton", "Big Shoulders Stencil"][THEMES.index(th)]   # TH6: new title faces for Parchment Codex and Grim Forge
             check(f"{NAMES[th]}: the title uses the theme's title font", title in state["h1"], state["h1"])
@@ -332,7 +332,7 @@ def main():
         check("sw.js keeps fonts in their own store, which updates don't clear",
               'const FONT_CACHE = "shades-of-grey-fonts"' in sw and "name !== FONT_CACHE" in sw)
         check("sw.js does not save any font at install", "woff2" not in sw[sw.index("const APP_FILES"):sw.index("];", sw.index("const APP_FILES"))])
-        swctx = browser.new_context(viewport={"width": 390, "height": 844})
+        swctx = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844})
         sp = swctx.new_page()
         sp.goto(t.BASE + "manifest.json")
         sp.evaluate("localStorage.setItem('shades-of-grey-settings', JSON.stringify({ theme: 'classic' }))")

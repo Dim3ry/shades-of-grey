@@ -151,7 +151,7 @@ def contrast(a, b):
 def main():
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        ctx = browser.new_context(viewport={"width": 390, "height": 844})
+        ctx = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844})
         page = ctx.new_page()
         errors, dialogs = [], []
         page.on("pageerror", lambda e: errors.append(str(e)))
@@ -472,7 +472,7 @@ def main():
         check("if the chosen base paint is removed, the panel quietly goes back to Whole model",
               page.evaluate("() => document.getElementById('colour-ideas-base').value") == "whole")
         # Without colour.js the card is simply not there (a fresh window with no saved copy of the app, so the blocked file really is missing)
-        ctx2 = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
+        ctx2 = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844}, service_workers="block")
         page2 = ctx2.new_page()
         errors2 = []
         page2.on("pageerror", lambda e: errors2.append(str(e)))

@@ -110,7 +110,7 @@ def main():
     html = read("index.html")
     with sync_playwright() as p:
         browser = p.chromium.launch(args=["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"])
-        context = browser.new_context(viewport={"width": 390, "height": 844})
+        context = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844})
         page = context.new_page()
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
