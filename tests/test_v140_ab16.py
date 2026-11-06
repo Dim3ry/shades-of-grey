@@ -101,16 +101,32 @@ def main():
             check(f"Bench {appearance}: Undo is at least 44 px tall and keeps its word", r["undoH"] >= 43.9 and r["undoText"] == "Undo", r)
             check(f"Bench {appearance}: Undo text is 4.5 to 1 on the tape", ratio(r["undoColour"], "rgb(228, 217, 182)") >= 4.5, r["undoColour"])
 
-        print("\n--- 5. The other three looks are unchanged ---")
+        print("\n--- 5. Classic is unchanged; Parchment and Forge do not carry Bench's features, and Bench carries none of theirs ---")
+        # Bench's own values, read once, so the other looks can be compared against exactly what Bench draws.
+        open_look(page, "bench", "dark")
+        bench = probe(page)
+        page.evaluate("() => document.getElementById('toast').classList.remove('hidden')")
+        bt = page.evaluate("() => { const c = getComputedStyle(document.getElementById('toast')); return [c.clipPath, c.rotate, c.backgroundImage, c.borderTopWidth, document.getElementById('toast').className]; }")
+        bpip = page.evaluate("() => { const c = getComputedStyle(document.querySelector('.pip')); return [c.borderTopWidth, c.aspectRatio]; }")
+        check("Bench carries none of Forge's or Parchment's: no chamfer, no lamp pips, no paper-slip border, no rivet plate (the toast-slip class is on every look's toast; only its Parchment rules draw the slip)",
+              "4px" not in bench["tagClip"] and bpip[0] == "0px" and "url" not in bt[2] and bt[3] == "0px" and bt[0].startswith("polygon") and "calc" not in bt[0], (bench["tagClip"], bpip, bt))
         for theme in ("classic", "parchment", "forge"):
             for appearance in ("dark", "light"):
                 open_look(page, theme, appearance)
                 r = probe(page)
                 page.evaluate("() => document.getElementById('toast').classList.remove('hidden')")
-                toast = page.evaluate("() => [getComputedStyle(document.getElementById('toast')).clipPath, getComputedStyle(document.getElementById('toast')).rotate]")
-                same = (r["chipClip"] == "none" and r["pipFilledClip"] == "none" and r["pipEmptyClip"] == "none" and r["tagClip"] == "none"
-                        and r["headBefore"] in ("none", "normal") and toast == ["none", "none"])
-                check(f"{theme} {appearance}: no tape clip on chips, tags, pips, toast, and no label on the headline card", same, (r, toast))
+                toast = page.evaluate("() => { const c = getComputedStyle(document.getElementById('toast')); return [c.clipPath, c.rotate, c.backgroundImage]; }")
+                if theme == "classic":
+                    # No chunk of AB14, AB15 or AB16 touches Classic: every computed style here stays strictly as before.
+                    same = (r["chipClip"] == "none" and r["pipFilledClip"] == "none" and r["pipEmptyClip"] == "none" and r["tagClip"] == "none"
+                            and r["headBefore"] in ("none", "normal") and toast[:2] == ["none", "none"])
+                    check(f"classic {appearance}: no clip on chips, tags, pips, toast, and no label on the headline card", same, (r, toast))
+                else:
+                    # AB14 (Parchment) and AB15 (Forge) restyle their own chips, tags, pips and toast on purpose (Forge's 4 px chamfer clip, for one),
+                    # so "no clip at all" no longer holds. What must hold: none of Bench's features appear here.
+                    ok = (r["tagClip"] != bench["tagClip"] and r["pipFilledClip"] != bench["pipFilledClip"] and r["pipEmptyClip"] != bench["pipEmptyClip"]
+                          and r["headBefore"] in ("none", "normal") and toast[0] != bt[0] and toast[1] == "none" and toast[2] != bt[2])
+                    check(f"{theme} {appearance}: none of Bench's tape tags, ticks, tape label or tape toast (torn-end clips, tilt, tape texture)", ok, (r, toast, bt))
 
         print("\n--- 6. Small phones, dark and light ---")
         for w, h in ((360, 640), (320, 568)):
