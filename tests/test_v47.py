@@ -47,9 +47,7 @@ import test_v31 as t     # the shared page helpers
 URL, read, shot, no_sideways, ROOT = t.URL, t.read, t.shot, t.no_sideways, t.ROOT
 results = []
 # TH6: font files no look uses any more. They stay on disk (and in fonts/LICENSES.md) until someone removes them.
-RETIRED = ["barlow-semi-condensed-latin-400-normal.woff2", "barlow-semi-condensed-latin-500-normal.woff2", "eb-garamond-latin-400-italic.woff2",
-           "eb-garamond-latin-400-normal.woff2", "eb-garamond-latin-500-normal.woff2", "im-fell-english-latin-400-italic.woff2",
-           "im-fell-english-latin-400-normal.woff2", "teko-latin-500-normal.woff2", "teko-latin-600-normal.woff2"]
+RETIRED = []   # TD1b (v133): the nine unused font files were deleted, so nothing is retired any more; every file in fonts/ must be in use
 
 def check(name, ok, detail=""):
     results.append(bool(ok))
@@ -154,7 +152,7 @@ def main():
         print("\n--- 3. Fonts ---")
         urls = re.findall(r"url\(fonts/([\w-]+\.woff2)\)", style)
         on_disk = sorted(f for f in os.listdir(os.path.join(ROOT, "fonts")) if f.endswith(".woff2"))
-        # TH6: 22 files in use (14 added, 9 retired but kept on disk, see RETIRED); before TH6 it was 17 files, all in use
+        # TH6: 22 files in use (14 added; the 9 retired ones were deleted in TD1b, v133); before TH6 it was 17 files, all in use
         check("every font file named in the page exists, and every file in fonts/ is used (apart from the retired ones)",
               sorted(urls) == sorted(set(on_disk) - set(RETIRED)) and len(urls) == 22 and set(RETIRED) <= set(on_disk), (len(urls), len(on_disk)))
         check("every font file is a real woff2 and small (latin subset)",

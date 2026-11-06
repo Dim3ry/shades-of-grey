@@ -15,7 +15,8 @@ try {
     bench: { dark: "#20251f", light: "#e0e4d8" },
   };
   const saved = JSON.parse(localStorage.getItem("shades-of-grey-settings") || "{}") || {};
-  const choice = saved.appearance;
+  // TD1b: no saved choice (or one that is not light, dark or auto) follows the phone, as in app.js
+  const choice = saved.appearance === "light" || saved.appearance === "dark" ? saved.appearance : "auto";
   const light = choice === "light" ||
     (choice === "auto" && window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches);
   const root = document.documentElement;
