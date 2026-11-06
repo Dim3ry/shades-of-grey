@@ -2486,6 +2486,17 @@
     :where([data-t="parchment"]) :is(.card, li.unit) { background-image: var(--card-stain); }
     :where([data-t="parchment"]) :is(.card, li.unit):where(:nth-child(3n+2)) { background-image: var(--card-stain-2); }
     .theme-swatch[data-t="parchment"] { background-image: var(--card-stain-2), var(--paper-grain); background-size: auto; }
+    /* AB14: Parchment Codex only. Cards and the unit list become a ruled ledger: hairline rules between rows instead of boxes. The ink blots, coffee ring,
+       crimson first letter and italic numbers stay (they sit in the padding). Units keep the coloured stage stripe on the left, so the stage is never colour alone
+       (the stage name is still written on the row). Rows keep their height and 44 px taps. */
+    :root[data-t="parchment"] .card { border-width: 1px 0; border-style: solid; border-color: var(--border); border-radius: 0; box-shadow: none; }
+    :root[data-t="parchment"] ul.units { border-top: 1px solid var(--border); }
+    :root[data-t="parchment"] li.unit { border-width: 0 0 1px 4px; border-style: solid; border-color: var(--border); border-left-color: var(--stage-colour); border-radius: 0; margin-bottom: 0; --card-shadow: none; }
+    @media (min-width: 900px) { :root[data-t="parchment"] ul.units { gap: 0 24px; border-top: 0; } :root[data-t="parchment"] li.unit { border-top: 1px solid var(--border); } }
+    /* AB14: Parchment's toast is a paper slip: card paper, ink text, a ruled top and bottom edge, a crimson (or gilt in light mode) Undo. The Undo button keeps its 44 px height. */
+    :root[data-t="parchment"] .toast.toast-slip { background: var(--card); color: var(--text); border: 1px solid var(--border); border-width: 1px 0; border-radius: 0; box-shadow: 0 6px 14px var(--shadow), inset 0 3px 0 -2px var(--border); }
+    :root[data-t="parchment"] .toast.toast-slip button { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+    :root[data-t="parchment"] .toast.toast-slip::after { background: var(--accent); border-radius: 0; height: 2px; }
     @media print {
       [data-t="parchment"] body::before { content: none; }
       [data-t="parchment"] :is(.app-bar, .card, li.unit), [data-t="parchment"] .tabs::before { background-image: none; }
@@ -3956,7 +3967,7 @@
   </div>
 
   <!-- The pop-up message, hidden until needed. -->
-  <div class="toast hidden" id="toast" role="status">
+  <div class="toast toast-slip hidden" id="toast" role="status">
     <span id="toast-text"></span>
     <button id="toast-undo">Undo</button>
   </div>
