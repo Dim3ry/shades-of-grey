@@ -22241,12 +22241,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=139".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=140".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v139";
+    const APP_VERSION = "v140";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -22708,6 +22708,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v140", date: "6 Nov 2026", changes: [
+        "Parchment Codex lays its cards out as a ruled ledger and shows notices as a paper slip. Grim Forge has square tags with one cut corner, square stage lamps and a riveted plate for notices.",
+        "Paint Bench has masking-tape tags and buttons, pencil-tick stage marks, a tape label on the headline card and a tape strip for notices.",
+      ] },
       { version: "v139", date: "6 Nov 2026", changes: [
         "Examples now sit in one thin strip on Models, with plainer made-up names for the sample armies and paints.",
         "Clear examples keeps anything you've changed, and Undo brings the rest back.",

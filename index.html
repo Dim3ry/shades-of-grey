@@ -55,8 +55,8 @@
        (applyAppearance in app.js) takes over once the app starts.
        U6b: mentor-looks.js (the Mentor orb's three looks and five states, plain data: MENTOR_LOOKS and MENTOR_LOOKS_CSS) loads
        just before it, so early.js can put the chosen look and its styles on the page before the first frame (LR1). -->
-  <script src="mentor-looks.js?v=139"></script>
-  <script src="early.js?v=139"></script>
+  <script src="mentor-looks.js?v=140"></script>
+  <script src="early.js?v=140"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -2486,6 +2486,17 @@
     :where([data-t="parchment"]) :is(.card, li.unit) { background-image: var(--card-stain); }
     :where([data-t="parchment"]) :is(.card, li.unit):where(:nth-child(3n+2)) { background-image: var(--card-stain-2); }
     .theme-swatch[data-t="parchment"] { background-image: var(--card-stain-2), var(--paper-grain); background-size: auto; }
+    /* AB14: Parchment Codex only. Cards and the unit list become a ruled ledger: hairline rules between rows instead of boxes. The ink blots, coffee ring,
+       crimson first letter and italic numbers stay (they sit in the padding). Units keep the coloured stage stripe on the left, so the stage is never colour alone
+       (the stage name is still written on the row). Rows keep their height and 44 px taps. */
+    :root[data-t="parchment"] .card { border-width: 1px 0; border-style: solid; border-color: var(--border); border-radius: 0; box-shadow: none; }
+    :root[data-t="parchment"] ul.units { border-top: 1px solid var(--border); }
+    :root[data-t="parchment"] li.unit { border-width: 0 0 1px 4px; border-style: solid; border-color: var(--border); border-left-color: var(--stage-colour); border-radius: 0; margin-bottom: 0; --card-shadow: none; }
+    @media (min-width: 900px) { :root[data-t="parchment"] ul.units { gap: 0 24px; border-top: 0; } :root[data-t="parchment"] li.unit { border-top: 1px solid var(--border); } }
+    /* AB14: Parchment's toast is a paper slip: card paper, ink text, a ruled top and bottom edge, a crimson (or gilt in light mode) Undo. The Undo button keeps its 44 px height. */
+    :root[data-t="parchment"] .toast.toast-slip { background: var(--card); color: var(--text); border: 1px solid var(--border); border-width: 1px 0; border-radius: 0; box-shadow: 0 6px 14px var(--shadow), inset 0 3px 0 -2px var(--border); }
+    :root[data-t="parchment"] .toast.toast-slip button { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+    :root[data-t="parchment"] .toast.toast-slip::after { background: var(--accent); border-radius: 0; height: 2px; }
     @media print {
       [data-t="parchment"] body::before { content: none; }
       [data-t="parchment"] :is(.app-bar, .card, li.unit), [data-t="parchment"] .tabs::before { background-image: none; }
@@ -2749,6 +2760,24 @@
     [data-t="forge"][data-m="dark"] { --rs: 9px; }
     [data-t="forge"][data-m="light"] { --rs: 8px; }   /* quieter rivets in light, as TH2 had them */
 
+    /* AB15: Grim Forge's own structure. Tags (chips and status tags) are square with one 4 px chamfer (top right, clear of the text padding), the stage
+       pips are square lamps, and the toast is a riveted plate. Grim Forge only; every rule below starts with its data-t. The keyboard ring on a chip
+       moves inside the box so the chamfer does not clip it. The bolts, rivets, cogs and rust elsewhere are untouched. */
+    [data-t="forge"] :is(.chip, .status-pill, .review-row .tag) { clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%); }
+    [data-t="forge"] .chip:focus-visible { outline-offset: -4px; }
+    [data-t="forge"] .pips { align-items: flex-start; justify-content: center; }
+    [data-t="forge"] .pip { flex: 1 1 0; max-width: 10px; height: auto; aspect-ratio: 1; box-sizing: border-box; border: 1px solid rgba(0, 0, 0, .55); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3), inset 0 -1px 0 rgba(0, 0, 0, .3); }
+    [data-t="forge"] .unit-sum .pip { height: auto; }
+    :root[data-t="forge"] .toast {
+      border: 2px solid var(--border); border-radius: 0; padding: 12px 26px;
+      background-image: var(--rivet), var(--rivet), var(--rivet), var(--rivet), var(--plate);
+      background-size: var(--rs) var(--rs), var(--rs) var(--rs), var(--rs) var(--rs), var(--rs) var(--rs), 100% 100%;
+      background-position: left 4px top 4px, right 4px top 4px, left 4px bottom 4px, right 4px bottom 4px, 0 0;
+      background-repeat: no-repeat;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4), inset 0 -2px 0 rgba(0, 0, 0, .35), 0 4px 14px var(--shadow);
+    }
+    :root[data-t="forge"] .toast::after { left: 26px; right: 26px; border-radius: 0; }
+
     /* Paint Bench: faint dry-brush strokes and paint smudges in the desk's edges, in muted paint colours that sit with the desk greens, a smudge on
        some cards (inside their padding), and three small stickers stuck at the edge of the mat (a star, a little skull, a paint drop), each a touch
        crooked with one corner lifting. Nothing here can be tapped. Quieter in dark. */
@@ -2766,6 +2795,31 @@
       :is([data-t="parchment"], [data-t="forge"], [data-t="bench"]) body::after, :is([data-t="parchment"], [data-t="forge"]) .app-bar::before, :is([data-t="parchment"], [data-t="forge"]) .app-bar::after { content: none; }
     }
     /* TH6 end */
+    /* AB16: Paint Bench's own structure (AT-16 part, AT-54 part). Bench only. Tags and chips are strips of masking tape, the stage pips are
+       pencil ticks, the headline card has a tape label stuck over its top edge, and the toast is a strip of tape. The stage still shows in words
+       (the stage name above the pips); a filled tick is longer and thicker than an empty one, so it never relies on colour alone. Nothing here sits under text. */
+    [data-t="bench"] { --tape-ink: #2b2616; --tape-on: linear-gradient(rgba(255,255,255,.18), rgba(255,255,255,0) 45%, rgba(110,90,40,.08)), repeating-linear-gradient(92deg, rgba(110,90,40,.09) 0 1px, transparent 1px 3px, rgba(110,90,40,.05) 3px 4px, transparent 4px 7px), #cdbb7c; }
+    [data-t="bench"] .review-row .tag, [data-t="bench"] .review-row.clash .tag {
+      background: var(--tape); color: var(--tape-ink); border: 0; padding: 3px 9px; font-weight: 600;
+      clip-path: polygon(0 0, 100% 0, 97% 25%, 100% 50%, 97% 75%, 100% 100%, 0 100%, 3% 75%, 0 50%, 3% 25%);
+    }
+    [data-t="bench"] .review-row.clash .tag { text-decoration: underline 2px var(--caution); text-underline-offset: 2px; }
+    [data-t="bench"] .chip { background: var(--tape); color: var(--tape-ink); border-color: transparent; }
+    [data-t="bench"] .chip[aria-pressed="true"] { background: var(--tape-on); color: var(--tape-ink); border-color: transparent; font-weight: 700; box-shadow: inset 0 -3px 0 var(--tape-ink); }
+    [data-t="bench"] .pip { height: 12px; background: var(--border); clip-path: polygon(calc(50% - .5px) 36%, calc(50% + .5px) 36%, calc(50% + 1.5px) 100%, calc(50% + .5px) 100%); }
+    [data-t="bench"] .pip:nth-child(even) { clip-path: polygon(calc(50% - .5px) 36%, calc(50% + .5px) 36%, calc(50% - .5px) 100%, calc(50% - 1.5px) 100%); }
+    [data-t="bench"] .pip:is(.filled, .part) { clip-path: polygon(calc(50% - 1px) 0, calc(50% + 2px) 0, calc(50% + 3px) 100%, calc(50% + 0px) 100%); }
+    [data-t="bench"] .pip:is(.filled, .part):nth-child(even) { clip-path: polygon(calc(50% - 2px) 0, calc(50% + 1px) 0, calc(50% + 0px) 100%, calc(50% - 3px) 100%); }
+    [data-t="bench"] .unit-sum .pip { height: 10px; }
+    [data-t="bench"] #headline-card { position: relative; }
+    [data-t="bench"] #headline-card::before {
+      content: ""; position: absolute; top: -8px; right: 22px; width: 64px; height: 16px; background: var(--tape); rotate: 3deg; pointer-events: none;
+      clip-path: polygon(0 0, 100% 0, 96% 25%, 100% 50%, 96% 75%, 100% 100%, 0 100%, 4% 75%, 0 50%, 4% 25%);
+    }
+    [data-t="bench"] .toast {
+      --toast-action: #5c2a0a; background: var(--tape); color: var(--tape-ink); border-radius: 2px; rotate: -0.4deg;
+      clip-path: polygon(0 0, 100% 0, 99% 25%, 100% 50%, 99% 75%, 100% 100%, 0 100%, 1% 75%, 0 50%, 1% 25%);
+    }
     /* Chunk B: the round back arrow at the bottom left, beside the bar (look from the chosen mockup, colours from the app's own names). 44 px wide and high.
        Hidden on the start page, while the loading ring or the travel plays, while the Mentor pop-up is open and while a text box has the cursor (the bar steps aside too);
        it fades in again when they end. */
@@ -3956,7 +4010,7 @@
   </div>
 
   <!-- The pop-up message, hidden until needed. -->
-  <div class="toast hidden" id="toast" role="status">
+  <div class="toast toast-slip hidden" id="toast" role="status">
     <span id="toast-text"></span>
     <button id="toast-undo">Undo</button>
   </div>
@@ -3979,7 +4033,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=139" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=140" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -3992,16 +4046,16 @@
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks.
        G2a: guides-groups.js (the Guides topic groups, plain data) loads after guides-data.js. It only adds one
        name, GUIDE_GROUPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=139"></script>
-  <script src="schemes.js?v=139"></script>
-  <script src="detail-recipes.js?v=139"></script>
-  <script src="basing-tips.js?v=139"></script>
-  <script src="mentor-tips.js?v=139"></script>
-  <script src="guides-data.js?v=139"></script>
-  <script src="guides-groups.js?v=139"></script>
-  <script src="mentor-data.js?v=139"></script>
-  <script src="mentor-engine.js?v=139"></script>
-  <script src="where-to-buy.js?v=139"></script>
-  <script src="app.js?v=139"></script>
+  <script src="colour.js?v=140"></script>
+  <script src="schemes.js?v=140"></script>
+  <script src="detail-recipes.js?v=140"></script>
+  <script src="basing-tips.js?v=140"></script>
+  <script src="mentor-tips.js?v=140"></script>
+  <script src="guides-data.js?v=140"></script>
+  <script src="guides-groups.js?v=140"></script>
+  <script src="mentor-data.js?v=140"></script>
+  <script src="mentor-engine.js?v=140"></script>
+  <script src="where-to-buy.js?v=140"></script>
+  <script src="app.js?v=140"></script>
 </body>
 </html>
