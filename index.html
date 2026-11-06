@@ -1319,35 +1319,29 @@
     .seg button { background: none; color: var(--muted); padding: 10px; font-size: 0.9375rem; min-height: 44px; }
     .seg button[aria-selected="true"] { background: var(--accent-fill, var(--accent)); color: var(--on-accent); font-weight: 600; }
     .more-title { margin: 0 0 8px; }   /* X2: the page heading above the Guides / Settings / Help / Updates switch */
-    #more-seg { grid-template-columns: repeat(6, 1fr); gap: 2px; }   /* X2: Guides added; AM1: About added; CR1: Credits added (six pages) */
-    #more-seg button { padding: 10px 2px; font-size: 0.875rem; }
-    @media (max-width: 380px) { #more-seg button { font-size: 0.8125rem; } }   /* AM1: five pages must fit 320 px */
-    /* v40: the Recipes tab's switch has four parts now (Recipes, Schemes, Your Palette, Shopping), so each is a little narrower */
-    #recipe-seg { grid-template-columns: repeat(4, 1fr); gap: 2px; }
-    #recipe-seg button { padding: 10px 2px; font-size: 0.875rem; }
-    @media (max-width: 420px) { #recipe-seg button { font-size: 0.8125rem; } }
-    /* X1: five parts now (Colour Lab added). A long name may wrap onto a second line instead of being cut. */
-    #recipe-seg { grid-template-columns: repeat(5, 1fr); }
-    #recipe-seg button { line-height: 1.15; overflow-wrap: anywhere; }
-    @media (max-width: 420px) { #recipe-seg button { font-size: 0.75rem; } }
-    /* X1: Colour Lab's second row of section buttons (same look as the switch above, wrapping so each name stays on one line) */
-    #lab-seg { display: flex; flex-wrap: wrap; }
-    #lab-seg button { flex: 1 1 auto; padding: 10px 12px; font-size: 0.875rem; }
+    /* AB7b: (AT-28) the Painting and Tools section tabs are a row of words with a 2 px line under the chosen one, not boxed bars (the boxed
+       switch stays for two-way choices: List / Swatches, Topics / A to Z). The row is 44 px tall, never wraps and scrolls sideways; the line
+       is one shape (.tab-line) that slides to the chosen word. It replaces the older per-bar grid and wrapping rules (X2, v40, X1, UX1b, CR1). */
+    .seg.tab-row {
+      display: flex; flex-wrap: nowrap; gap: 0; padding: 0; max-width: none; position: relative;
+      background: none; border: 0; border-radius: 0; box-shadow: inset 0 -1px 0 var(--border);
+      overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    }
+    .seg.tab-row::-webkit-scrollbar { display: none; }
+    .seg.tab-row > button {
+      flex: 0 0 auto; white-space: nowrap; min-width: 44px; min-height: 44px; padding: 10px 14px; font-size: 0.9375rem; line-height: 1.15;
+      background: none; border: 0; border-radius: 0; color: var(--muted); overflow-wrap: normal;
+    }
+    .seg.tab-row > button[aria-selected="true"] { background: none; color: var(--text); font-weight: 600; }
+    .seg.tab-row > button:focus-visible { outline-offset: -4px; }
+    .seg.tab-row > .tab-line {
+      position: absolute; left: 0; bottom: 0; height: 2px; width: 0; background: var(--accent); pointer-events: none; opacity: 0;
+      transition: transform var(--motion-med) var(--motion-ease), width var(--motion-med) var(--motion-ease);
+    }
+    .seg.tab-row > .tab-line.on { opacity: 1; }
+    .seg.tab-row > .tab-line.still { transition: none; }   /* first placement, or the row was hidden: appear in place rather than slide */
     #colourlab-body .wheel-block { border-bottom: 0; padding-bottom: 0; }
     #colourlab-body .shop-idle-button { min-height: 44px; }
-    /* UX1b: small screens and keyboard. The Painting and Tools switches never break a word: each part is at least 44 px wide and as wide as
-       its longest word. On a 360 px or wider phone at the normal text size they are the same equal columns as before. Narrower than 21.25em
-       (340 px at the normal text size; wider when the text is set bigger, since em here follows the text size setting) they can wrap, so
-       when they can't all fit on one line the last ones move to a second. Below 300 px (a 360 px phone at 130% zoom) they sit three and two. */
-    #recipe-seg, #more-seg { grid-template-columns: repeat(5, minmax(min-content, 1fr)); }
-    #recipe-seg button, #more-seg button { min-width: 44px; overflow-wrap: break-word; }
-    @media (max-width: 21.25em) {
-      #recipe-seg, #more-seg { display: flex; flex-wrap: wrap; }
-      #recipe-seg button, #more-seg button { flex: 1 1 44px; min-width: auto; }   /* auto: never narrower than the longest word */
-    }
-    @media (max-width: 300px) { #recipe-seg button, #more-seg button { flex-basis: 30%; } }
-    #more-seg { grid-template-columns: repeat(6, minmax(min-content, 1fr)); }   /* CR1: six pages; the wrapping rules above still apply under 340 px */
-    @media (max-width: 21.25em) { #more-seg { display: flex; } }
     /* CR1: the Credits page. Each row is the name, who made it, and the licence name, which is the link (44 px tall). */
     #view-credits .credits-list { list-style: none; margin: 0 0 12px; padding: 0; }
     #view-credits .credits-list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 12px; padding: 4px 0; border-top: 1px solid var(--border); }
@@ -3309,7 +3303,7 @@
       <!-- v24: shown while any example recipes or paints are still there. Filled by renderRecipeExamplesCard(). -->
       <div class="card notice-card examples-card recipes-examples-card hidden" id="examples-card-recipes" role="note"></div>
       <!-- Switch between your recipes and your palette (the paints those recipes use). -->
-      <div class="seg" id="recipe-seg" role="tablist" aria-label="Recipes, schemes, Colour Lab, palette or shopping list">
+      <div class="seg tab-row" id="recipe-seg" role="tablist" aria-label="Recipes, schemes, Colour Lab, palette or shopping list">
         <button role="tab" data-view="recipes">Recipes</button>
         <button role="tab" data-view="schemes">Schemes</button>
         <button role="tab" data-view="colourlab">Colour Lab</button>
@@ -3331,7 +3325,7 @@
 
       <!-- X1: Colour Lab (Pro preview): the colour wheel, Colour ideas, Colour plans, Colours you've used and the Picker. Filled by renderColourLab(). -->
       <div id="colourlab-view" class="hidden">
-        <div class="seg" id="lab-seg" role="tablist" aria-label="Colour Lab sections"></div>
+        <div class="seg tab-row" id="lab-seg" role="tablist" aria-label="Colour Lab sections"></div>
         <div class="card compendium-card">
           <div class="ideas-body" id="colourlab-body"></div>
           <p class="sr-only" id="wheel-live" role="status" aria-live="polite"></p>
@@ -3395,7 +3389,7 @@
          the Recipes tab's) moves between the four pages. It shows only on those pages and is
          filled in by showTab(). -->
     <h2 class="more-title hidden" id="more-title">Tools and Settings</h2>
-    <div class="seg hidden" id="more-seg" role="tablist" aria-label="About, credits, guides, settings, help or updates">
+    <div class="seg tab-row hidden" id="more-seg" role="tablist" aria-label="About, credits, guides, settings, help or updates">
       <button role="tab" data-page="about">About</button>
       <button role="tab" data-page="credits">Credits</button>
       <button role="tab" data-page="guides">Guides</button>

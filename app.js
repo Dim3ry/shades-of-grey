@@ -9880,6 +9880,7 @@
       lqSegTap = null;
       lqSegEnd();
       const b = event.target instanceof Element ? event.target.closest(".seg > button") : null;
+      if (b && b.parentElement.classList.contains("tab-row")) return;   // AB7b: the section tab rows slide their own underline (below)
       if (!b || !lqOn() || !(window.KeyframeEffect && "pseudoElement" in KeyframeEffect.prototype)) return;   // (older browsers: the instant change)
       const seg = b.parentElement, buttons = lqSegButtons(seg);
       const old = buttons.findIndex(x => x.getAttribute("aria-selected") === "true");
@@ -9923,6 +9924,36 @@
       anims[1].addEventListener("finish", done, { once: true });
       setTimeout(done, timing.duration + 400);   // in case the animation never runs
     });
+
+    // AB7b (AT-28): the section tab rows (Painting's five, Colour Lab's sections, the Tools pages) are words with one 2 px line under the chosen
+    // one. The line is a single shape that slides from the old word to the new one (the same time and easing as the other fast moves); the row
+    // scrolls sideways, so the chosen word is brought into view. First placement, or a row that was hidden, puts the line in place without a slide.
+    // Reduced motion: the line jumps (the page's own rule turns every transition off).
+    function setUpTabRow(seg) {
+      const line = document.createElement("span");
+      line.className = "tab-line";
+      line.setAttribute("aria-hidden", "true");
+      seg.appendChild(line);
+      let placed = false;
+      const place = () => {
+        const sel = seg.querySelector(':scope > button[aria-selected="true"]');
+        if (!sel || !seg.offsetWidth) { placed = false; line.classList.remove("on"); return; }
+        line.classList.toggle("still", !placed);
+        line.style.width = sel.offsetWidth + "px";
+        line.style.transform = "translateX(" + sel.offsetLeft + "px)";
+        line.classList.add("on");
+        const left = sel.offsetLeft, right = left + sel.offsetWidth, view = seg.clientWidth;
+        if (left < seg.scrollLeft) seg.scrollLeft = Math.max(0, left - 8);
+        else if (right > seg.scrollLeft + view) seg.scrollLeft = right - view + 8;
+        placed = true;
+      };
+      new MutationObserver(place).observe(seg, { attributes: true, attributeFilter: ["aria-selected"], subtree: true, childList: true });
+      if (window.ResizeObserver) new ResizeObserver(place).observe(seg);
+      window.addEventListener("resize", place);
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { placed = false; place(); });
+      place();
+    }
+    document.querySelectorAll(".seg.tab-row").forEach(setUpTabRow);
 
     // LQ1 (button sweep): buttons now change colour smoothly (index.html "LQ1:"). A change of look or Light and dark changes every colour at
     // once, which should be instant as before: so while the page's look changes, those colour changes do not play (one frame, then back).

@@ -247,8 +247,8 @@ def main():
                         const rgb = c => c.match(/[\\d.]+/g).slice(0, 3).map(Number);
                         const lum = c => { const [r, g, bl] = rgb(c).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * r + 0.7152 * g + 0.0722 * bl; };
                         const ratio = (a, c) => { const x = lum(a), y = lum(c); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
-                        const s = getComputedStyle(b), t = getComputedStyle(o), card = getComputedStyle(document.getElementById('more-seg')).backgroundColor;
-                        return { selected: ratio(s.color, s.backgroundColor), other: ratio(t.color, card) }; }""")
+                        const s = getComputedStyle(b), t = getComputedStyle(o), card = getComputedStyle(document.body).backgroundColor;   /* AB7b: the Tools tabs have no box now: their words sit on the page colour */
+                        return { selected: ratio(s.color, card), other: ratio(t.color, card) }; }""")
                     check(f"{appearance} {width}px {name}: switch text reads at 4.5 or more (selected and not)", sel["selected"] >= 4.5 and sel["other"] >= 4.5, sel)
                     shot(page, f"v21-9-{name}-{appearance}-{width}.png")
 
