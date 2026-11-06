@@ -4741,6 +4741,18 @@
     window.addEventListener("load", fitLaunch);   // fonts may change the header height
     // The Minifolio title and the round back arrow (chunk B) both call this one function.
     function goToStartPage() { if (!launching && !travelling) enterLaunch(); }
+    // AB4 (AT-22): a tap on the bar (or the title or the Mentor button) while the segments travel cuts the travel short: it jumps to the end, which is
+    // the real bar exactly, and that tap is used up (it does not also press whatever is there, so a section is never opened by accident).
+    document.addEventListener("pointerdown", (event) => {
+      if (!travelling || event.button > 0) return;
+      const x = event.clientX, y = event.clientY;
+      const inside = [arcEl, orbEl, document.getElementById("home-button")].some(el => { const r = el && el.getBoundingClientRect(); return r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; });
+      if (!inside) return;
+      endLaunchMove();
+      const swallow = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
+      document.addEventListener("click", swallow, { capture: true, once: true });
+      setTimeout(() => document.removeEventListener("click", swallow, true), 800);
+    }, true);
     document.getElementById("home-button").addEventListener("click", goToStartPage);
     document.getElementById("back-menu").addEventListener("click", (event) => {
       const wasFocused = document.activeElement === event.currentTarget;
@@ -7028,28 +7040,16 @@
       if (Math.abs(drift) > 1) window.scrollBy(0, drift);
     }
 
-    // Mo1: chips are redrawn after every tap, so the fill could not sweep. The chip you tap is remembered by its label;
-    // the redrawn copy starts empty (class "sweep") and fills on the next frames. aria-pressed is already right from the start.
-    let sweepLabel = null;
     function makeChip(text, pressed, onClick, colourVar) {
       const chip = document.createElement("button");
       chip.className = "chip";
       chip.textContent = text;
       chip.setAttribute("aria-pressed", pressed);
       if (colourVar) chip.style.setProperty("--chip-colour", colourVar);
-      if (pressed && sweepLabel === text && !reducedMotion()) {
-        sweepLabel = null;
-        chip.classList.add("sweep");
-        requestAnimationFrame(() => requestAnimationFrame(() => chip.classList.remove("sweep")));
-      }
-      chip.addEventListener("click", (event) => {
-        sweepLabel = text;
-        try { onClick(event); } finally { sweepLabel = null; }
-      });
+      chip.addEventListener("click", (event) => onClick(event));   // AB4 (AT-34): the chip's colour switches at once
       return chip;
     }
 
-    let stagesWereShown = false;   // Mo1
     let unitStagesOpen = false;   // v49: "Pick by stage" on the Units filters (kept while the app is open)
     // Suggestions for the game/faction boxes in the add form, the edit panel and (factions) the scheme editor.
     // DS2: on its own, so render() can keep them right while the Units tab is out of sight.
@@ -7101,9 +7101,6 @@
       // is tapped), so the filter card starts as three equal buttons.
       stageChips.innerHTML = "";
       const stagesShown = filters.stages.size > 0 || unitStagesOpen;
-      // Mo1: the stage chips open smoothly, one after another, only on the redraw where they first appear.
-      stageChips.classList.toggle("cascade", stagesShown && !stagesWereShown && !reducedMotion());
-      stagesWereShown = stagesShown;
       if (stagesShown) {
         STAGES.forEach((stageName, index) => {
           const chip = makeChip(stageName, filters.stages.has(index), () => {
@@ -7111,7 +7108,6 @@
             else filters.stages.add(index);
             render();
           }, `var(--stage-${index})`);
-          chip.style.setProperty("--i", index);
           stageChips.appendChild(chip);
         });
       }
@@ -7728,8 +7724,7 @@
     }
     // Mo2: a bar segment fades from the colour it had before; they follow one after another, 30 ms apart.
     function markPip(pip, i, motion) {
-      pip.classList.add("mo-pip");
-      pip.style.setProperty("--i", i);
+      pip.classList.add("mo-pip");   // AB4 (AT-34): every segment fades together (no stagger)
       pip.style.setProperty("--prev-colour", i <= motion.fromStage ? `var(--stage-${motion.fromStage})` : "var(--border)");
     }
     function motionMs(name) { return parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name)) || 0; }
@@ -9602,25 +9597,6 @@
     // Mo1: the phone's reduced-motion setting. The CSS stops all movement; this stops the movement that JavaScript starts.
     function reducedMotion() { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
 
-    // Mo1: a ripple spreads from where a main button is tapped. One listener for every .primary-button, .plain-button, the back arrow and Back in Mentor's window.
-    document.addEventListener("pointerdown", (event) => {
-      const button = event.target instanceof Element ? event.target.closest(".primary-button, .plain-button, .back-menu, .mentor-back") : null;
-      if (!button || button.disabled || reducedMotion()) return;
-      if (!button.classList.contains("rip-host") && !button.classList.contains("back-menu") && !button.classList.contains("mentor-back")) {   // the back arrow is already fixed in place and clips its own ripple
-        if (getComputedStyle(button).position !== "static") return;   // already placed by the page: leave it alone
-        button.classList.add("rip-host");
-      }
-      const box = button.getBoundingClientRect();
-      const dot = document.createElement("span");
-      dot.className = "ripple";
-      dot.setAttribute("aria-hidden", "true");
-      dot.style.left = (event.clientX - box.left) + "px";
-      dot.style.top = (event.clientY - box.top) + "px";
-      button.appendChild(dot);
-      dot.addEventListener("animationend", () => dot.remove());
-      setTimeout(() => dot.remove(), 800);   // in case the animation never runs
-    }, { passive: true });
-
     // ================= LQ1: the liquid feel (from the 3 Nov smoothness sweep, tweaks LQ1 to LQ13) =================
     // Nothing here changes what the app does or how it looks at rest; it only smooths how things arrive and leave. Only transform, opacity
     // and clip-path move (plus the height of Help's folds and of the palette search's small answer box, and the switches' fill). Reduced
@@ -9662,7 +9638,9 @@
       }
       return root;
     }
-    function lqGhostOut(el, frames, ms, inner) {
+    // AB4 (AT-19): a motion token's value ("linear" if it is missing); things that leave use --motion-ease-in
+    const motionEase = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "linear";
+    function lqGhostOut(el, frames, ms, inner, outerEase) {
       if (!lqOn() || !el || !el.isConnected || el.classList.contains("hidden") || !el.getClientRects().length) return;
       const ghost = lqStrip(el.cloneNode(true));
       ghost.classList.remove("draining");
@@ -9671,8 +9649,8 @@
       ghost.inert = true;
       el.after(ghost);
       const timing = { duration: ms, easing: "linear", fill: "forwards" };
-      const anim = lqAnim(ghost, frames, timing);
-      if (inner && ghost.firstElementChild) lqAnim(ghost.firstElementChild, inner, timing);
+      const anim = lqAnim(ghost, frames, outerEase ? { ...timing, easing: outerEase } : timing);
+      if (inner && ghost.firstElementChild) lqAnim(ghost.firstElementChild, inner, { ...timing, easing: motionEase("--motion-ease-in") });   // (what moves leaves on ease-in; the fade of the dim layer stays linear)
       const bye = () => ghost.remove();
       anim.onfinish = anim.oncancel = bye;
       setTimeout(bye, ms + 300);
@@ -9865,92 +9843,6 @@
       setTimeout(done, timing.duration + 400);   // in case the animation never runs
     });
 
-    // LQ1 (button sweep, James, 3 Nov): a chip switched on or off. Mo1's sweep drew the fill with a square leading edge and changed the label's
-    // colour on its own clock, so the label dipped in contrast while the edge crossed it. Now a copy of the chip in its switched-on look (its
-    // fill with its label) is uncovered from the left, or covered from the left when it goes off, with a clip whose leading edge follows the
-    // chip's rounded shape. The copy sits exactly over the chip, in a layer of its own outside the page (no ids, cannot be tapped, hidden
-    // from screen readers); under it the chip is drawn switched off. So wherever the fill is, the label on it is in the switched-on colours.
-    const LQ_CHIP_LOOK = [...LQ_LOOK, "line-height", "text-align", "letter-spacing", "text-transform", "white-space", "overflow-wrap", "font-size-adjust",
-      "box-sizing", "min-height", "align-content", "font-variant-numeric", "text-decoration"];
-    const lqChipLook = (el) => { const cs = getComputedStyle(el); return LQ_CHIP_LOOK.map(p => `${p}: ${cs.getPropertyValue(p)}`).join("; "); };
-    const LQ_OFF = { "background-color": 0, "background-size": 0, "color": 0, "border-top-color": 0, "border-right-color": 0, "border-bottom-color": 0, "border-left-color": 0 };
-    const lqOffLook = (el) => { const cs = getComputedStyle(el); return Object.fromEntries(Object.keys(LQ_OFF).map(k => [k, cs.getPropertyValue(k)])); };
-    let lqChipTap = null;
-    const lqChipRuns = new Set();
-    const lqChipEnd = () => { for (const run of [...lqChipRuns]) run(); };
-    function lqChipCopy(el) {   // a copy of a chip as it looks now (only switched-on ones are copied). A tick before the label (To do, Done,
-      const c = lqStrip(el.cloneNode(true));   // Repaint) is left out of the copy: it goes at once, as before, and the copy's label sits where the chip's now is
-      c.classList.remove("sweep", "lq-press");
-      c.style.cssText = lqChipLook(el);
-      return c;
-    }
-    document.addEventListener("click", (event) => {
-      lqChipTap = null;
-      lqChipEnd();
-      const chip = event.target instanceof Element ? event.target.closest(".chip") : null;
-      if (!chip || !lqOn() || !chip.parentElement || chip.closest(".lq-ghost")) return;
-      const box = chip.parentElement;
-      // the tapped chip, and any chip beside it that is on now (a one-of choice switches that one off)
-      const recs = [...box.children].filter(c => c.classList.contains("chip") && (c === chip || c.getAttribute("aria-pressed") === "true")).slice(0, 8)
-        .map(c => { const on = c.getAttribute("aria-pressed") === "true"; return { key: c.textContent, on, copy: on ? lqChipCopy(c) : null, off: on ? null : lqOffLook(c) }; });
-      lqChipTap = { box, boxId: box.id, recs };
-    }, true);
-    document.addEventListener("click", () => {
-      const t = lqChipTap;
-      lqChipTap = null;
-      if (!t) return;
-      const box = t.box.isConnected ? t.box : t.boxId ? document.getElementById(t.boxId) : null;
-      if (!box || !lqShown(box)) return;
-      const chips = [...box.children].filter(c => c.classList.contains("chip"));
-      for (const rec of t.recs) {
-        const el = chips.find(c => c.textContent === rec.key);
-        if (!el || !lqShown(el)) continue;
-        const on = el.getAttribute("aria-pressed") === "true";
-        if (on === rec.on) continue;
-        let copy = rec.copy;
-        if (on) {   // switched on: copy the chip's switched-on look, then draw the chip switched off underneath while the copy is uncovered
-          el.classList.remove("sweep");
-          el.classList.add("lq-chip-snap", "lq-chip-hold");   // (hold first: its tick, if it has one, waits hidden until the fill is done)
-          copy = lqChipCopy(el);
-          for (const [k, v] of Object.entries(rec.off)) el.style.setProperty(k, v, "important");   // its own switched-off colours, exactly as they were
-          el.classList.remove("lq-chip-snap");
-        }
-        if (!copy) continue;
-        const r = el.getBoundingClientRect();
-        const rad = Math.min(r.height / 2, parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0) + "px";
-        const layer = document.createElement("div");
-        layer.className = "lq-ghost";
-        layer.setAttribute("aria-hidden", "true");
-        layer.inert = true;
-        layer.style.cssText = "position: absolute; left: 0; top: 0; width: 0; height: 0; margin: 0; padding: 0; border: 0; overflow: visible; z-index: 5;";
-        Object.assign(copy.style, { position: "absolute", margin: "0", boxSizing: "border-box", left: (r.left + scrollX) + "px", top: (r.top + scrollY) + "px",
-          width: r.width + "px", height: r.height + "px" });
-        layer.appendChild(copy);
-        document.body.appendChild(layer);
-        const shut = `inset(0 100% 0 0 round ${rad})`, open = `inset(0 0 0 0 round ${rad})`, gone = `inset(0 0 0 100% round ${rad})`;
-        const a = lqAnim(copy, on ? [{ clipPath: shut }, { clipPath: open }] : [{ clipPath: open }, { clipPath: gone }],
-          { duration: motionMs("--motion-med"), easing: getComputedStyle(document.documentElement).getPropertyValue("--motion-fill-ease").trim() || "ease-in-out", fill: "forwards" });
-        const done = () => {
-          if (!lqChipRuns.delete(done)) return;
-          if (el.classList.contains("lq-chip-hold")) {   // the chip takes its switched-on look in the same frame the copy goes, with no transition
-            el.classList.add("lq-chip-snap");
-            el.classList.remove("lq-chip-hold");
-            for (const k of Object.keys(LQ_OFF)) el.style.removeProperty(k);
-            void getComputedStyle(el).backgroundColor;
-            el.classList.remove("lq-chip-snap");
-          }
-          a.cancel();
-          layer.remove();
-        };
-        lqChipRuns.add(done);
-        a.addEventListener("finish", done, { once: true });
-        setTimeout(done, motionMs("--motion-med") + 400);
-      }
-    });
-    // v130: the copy is placed in page pixels, so a window that narrows while it plays (a phone turned, a desktop window resized) would leave it
-    // where the chip used to be, past the new edge, and the page scrolled sideways until it ended. A resize ends the fill at once instead.
-    window.addEventListener("resize", lqChipEnd);
-
     // LQ1 (button sweep): buttons now change colour smoothly (index.html "LQ1:"). A change of look or Light and dark changes every colour at
     // once, which should be instant as before: so while the page's look changes, those colour changes do not play (one frame, then back).
     function lqHush() {   // (applyPalette calls this first, so even a colour read straight after a change of look sees the new colour)
@@ -9997,7 +9889,7 @@
     // up or the screen changes, a message past its time goes.
     // LQ1 (LQ3): the message slides back down and fades as it goes (a copy plays that; the message itself is hidden at once, as before).
     function hideToast() {
-      if (!toast.classList.contains("hidden") && !document.hidden) lqGhostOut(toast, [{ transform: "none", opacity: 1 }, { transform: "translateY(60%)", opacity: 0 }], motionMs("--motion-med"));
+      if (!toast.classList.contains("hidden") && !document.hidden) lqGhostOut(toast, [{ transform: "none", opacity: 1 }, { transform: "translateY(60%)", opacity: 0 }], motionMs("--motion-med"), undefined, motionEase("--motion-ease-in"));
       toast.classList.add("hidden");
     }
     function expireToast() {

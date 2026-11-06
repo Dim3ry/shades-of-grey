@@ -2,7 +2,7 @@
 
 New behaviour only:
 1. Tapping a segment on the start circle draws four copies of the segments (a .tabs.mo-tr layer, inert, hidden from screen readers) that travel
-   on one 1.5 s clock with a small overshoot; the real segments wait see-through; the Mentor button glides on the same clock.
+   on one clock (AB4: about half a second, no overshoot); the real segments wait see-through; the Mentor button glides on the same clock.
 2. Mid-travel the copies are real polygons (not the circle's or the bar's shape), spread outward, and the page opens at about 70%.
 3. Taps on the bar and the title button are ignored while it travels.
 4. At the end nothing is left over and the bar is exactly the one a page opened straight onto that section draws; each of the four segments works.
@@ -60,24 +60,25 @@ def main():
         print("\n--- 1. The travel starts ---")
         load(page, units=UNITS, launch=True)
         tok = page.evaluate("() => [getComputedStyle(document.documentElement).getPropertyValue('--motion-travel').trim(), getComputedStyle(document.documentElement).getPropertyValue('--motion-travel-ease').trim()]")
-        check("tokens: --motion-travel is 1500ms and --motion-travel-ease is a cubic-bezier with y above 1", tok[0] == "1500ms" and tok[1].startswith("cubic-bezier(") and float(tok[1][:-1].split(",")[3]) > 1, tok)
+        # AB4 (AT-22): the travel is about half a second on cubic-bezier(0.4, 0, 0.2, 1) with no overshoot (it was 1500 ms with an overshoot above 1)
+        check("tokens: --motion-travel is 450 to 650 ms and --motion-travel-ease is a cubic-bezier with no y above 1", 450 <= float(tok[0][:-2]) <= 650 and tok[1].startswith("cubic-bezier(") and float(tok[1][:-1].split(",")[3]) <= 1 and float(tok[1][:-1].split(",")[1]) <= 1, tok)
         r = page.evaluate(TAP, "recipes")
         check("four copies on top, inert and hidden from screen readers", r["layer"] and r["inert"] and r["aria"] == "true" and r["copies"] == 4, r)
         check("the real segments wait: see-through and not tappable", r["realHidden"], r)
         check("the Mentor button glides on the same clock", r["orbMoves"], r)
-        check("the clock is 1500 ms and the section's page waits for 70% of it (1050 ms)", r["clock"]["duration"] == 1500 and r["fade"] and abs(r["fade"]["delay"] - 1050) < 1, r)
+        check("the clock is the --motion-travel token (AB4: about half a second) and the section's page waits for 70% of it", 450 <= r["clock"]["duration"] <= 650 and r["fade"] and abs(r["fade"]["delay"] - 0.7 * r["clock"]["duration"]) < 1, r)
         check("the section is already the current one", page.evaluate("() => settings.tab") == "recipes")
 
         print("\n--- 2. Mid-travel ---")
         start = page.evaluate(AT, 0)
-        mid = page.evaluate(AT, 750)
+        mid = page.evaluate(AT, 275)   # AB4 (AT-22): the travel is 550 ms now, so half way is 275 ms (it was 750 of 1500)
         check("half way the copies are neither the circle's nor the bar's shape (24-point polygons)",
               all(c.startswith("polygon(") for c in mid["clips"]) and all(a != b for a, b in zip(start["clips"], mid["clips"])), mid["clips"][0][:60])
         check("the fill colours are blending (they changed from the start)", start["bgs"] != mid["bgs"])
         check("the icons and labels moved with their segments", all(abs(a[0] - b[0]) + abs(a[1] - b[1]) > 5 for a, b in zip(start["boxes"], mid["boxes"])))
-        over = page.evaluate(AT, 1350)
-        check("the soft bounce: the eased progress goes above 1 near the end, then settles", over["progress"] > 1.0, over["progress"])
-        end = page.evaluate(AT, 1499)
+        over = page.evaluate(AT, 500)
+        check("no overshoot (AB4, AT-22): the eased progress is never above 1 near the end", over["progress"] is not None and over["progress"] <= 1.0, over["progress"])
+        end = page.evaluate(AT, 549)
         check("just before the end the progress is within 0.01 of 1", abs(end["progress"] - 1) < 0.01, end["progress"])
 
         print("\n--- 3. Taps are ignored while it travels ---")
@@ -121,7 +122,7 @@ def main():
             ref = page.evaluate(BAR)
             load(page, units=UNITS, launch=True)
             r = page.evaluate(TAP, "guides")
-            m = page.evaluate(AT, 700) if r["layer"] else None
+            m = page.evaluate(AT, 275) if r["layer"] else None
             settle(page)
             check(f"{w}x{h} {scheme}: travels, no sideways scroll, ends exactly on the bar",
                   (r["layer"] and r["copies"] == 4 and not r["scrollW"] and m and all(c.startswith("polygon(") for c in m["clips"])) and page.evaluate(BAR) == ref and page.evaluate(TIDY), (r, page.evaluate(BAR)["orb"], ref["orb"]))

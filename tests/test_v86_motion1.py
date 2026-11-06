@@ -2,8 +2,8 @@
 
 New behaviour only:
 1. One place for the timings (--motion-fast / med / slow / ease), and one shared reduced-motion block.
-2. Main buttons lift on hover and press on tap; a ripple starts at the tap point; the tab bar and chips get none.
-3. Chips: the fill sweeps when switched on (To do / Done / Repaint also tick); the stage chips cascade in once, on opening.
+2. Main buttons press on tap (AB4: no hover lift, no ripple any more); the tab bar and chips get none.
+3. Chips: the colour switches at once (AB4: no sweep; To do / Done / Repaint also tick); the stage chips show at once (AB4: no cascade).
 4. The question box fades and rises; Escape still means No.
 5. The Undo message slides up and its line drains over the real lifetime (one timer).
 6. A new unit drops in once; the outline flash stays.
@@ -54,18 +54,17 @@ def main():
         btn = page.locator("#toggle-select")
         btn.hover()
         page.wait_for_timeout(200)
-        check("hover lifts a main button", css(page, "#toggle-select", "translate").startswith("0px -2px"), css(page, "#toggle-select", "translate"))
+        check("hover does not lift a main button (AB4, AT-33: border colour only)", css(page, "#toggle-select", "translate") in ("none", "0px"), css(page, "#toggle-select", "translate"))
         box = btn.bounding_box()
         page.mouse.move(box["x"] + 10, box["y"] + 10)
         page.mouse.down()
         page.wait_for_timeout(60)
-        check("a ripple starts inside the button at the tap point",
-              page.evaluate("() => { const r = document.querySelector('#toggle-select .ripple'); return !!r && Math.abs(parseFloat(r.style.left) - 10) < 2; }"))
+        check("no ripple starts at the tap point (AB4, AT-33: the ripple is gone)", page.locator("#toggle-select .ripple").count() == 0)
         page.wait_for_timeout(120)
         check("pressing shrinks it slightly", css(page, "#toggle-select", "scale").startswith("0.97"), css(page, "#toggle-select", "scale"))
         page.mouse.up()
         page.wait_for_timeout(700)
-        check("the ripple removes itself", page.locator("#toggle-select .ripple").count() == 0)
+        check("still no ripple after the press", page.locator("#toggle-select .ripple").count() == 0)
         page.click("#toggle-select")   # leave select mode again
         page.wait_for_timeout(200)
         check("tab bar buttons get no lift", css(page, 'nav button[data-tab="units"]', "translate") in ("none", "0px"))
@@ -74,19 +73,18 @@ def main():
         print("\n--- 3. Chips ---")
         page.click("#toggle-filters")
         page.wait_for_timeout(200)
-        # LQ1 (v129): James asked on 3 Nov for the chip fill's square leading edge to go. The chip still starts empty and fills, with aria-pressed
-        # already true, but it is now drawn switched off (lq-chip-hold) under a copy of its switched-on look that a rounded clip uncovers, instead
-        # of Mo1's background sweep (the sweep class).
+        # AB4 (AT-34): the chip fill sweep (Mo1's, then LQ1's rounded copy) is gone: a chip you switch on shows its colour at once, with aria-pressed
+        # already true and nothing drawn over it.
         sweep = page.evaluate("""() => { document.querySelector('#group-chips .chip').click(); const c = document.querySelector('#group-chips .chip[aria-pressed="true"]');
-            return !!c && (c.classList.contains('sweep') || (c.classList.contains('lq-chip-hold') && !!document.querySelector('body > .lq-ghost > .chip'))); }""")
-        check("a chip you switch on starts empty and fills (aria-pressed is already true)", sweep)
+            return !!c && !c.classList.contains('sweep') && !c.classList.contains('lq-chip-hold') && !document.querySelector('body > .lq-ghost > .chip'); }""")
+        check("a chip you switch on shows its colour at once (aria-pressed is already true, no sweep)", sweep)
         page.wait_for_timeout(400)
         check("…then has the full fill and a tick",
               page.evaluate("""() => { const c = document.querySelector('#group-chips .chip[aria-pressed="true"]');
                   return !c.classList.contains('sweep') && getComputedStyle(c).backgroundSize.startsWith('100%') && getComputedStyle(c, '::before').width !== '0px'; }"""))
-        check("the stage chips cascade in when they open, one after another",
+        check("the stage chips show at once when they open (AB4, AT-34: no cascade)",
               page.evaluate("""() => { const r = document.getElementById('stage-chips'), c = r.querySelectorAll('.chip');
-                  return r.classList.contains('cascade') && c.length > 4 && getComputedStyle(c[2]).animationDelay === '0.1s'; }"""))
+                  return !r.classList.contains('cascade') && c.length > 4 && getComputedStyle(c[2]).animationName === 'none'; }"""))
         page.click("#group-chips .chip >> nth=1")   # another redraw with the stages already open
         page.wait_for_timeout(100)
         check("…and not again on later redraws", not page.evaluate("() => document.getElementById('stage-chips').classList.contains('cascade')"))

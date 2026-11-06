@@ -92,7 +92,7 @@ def main():
               info["text"] == STAGES[3] and info["from"] == STAGES[2] and STAGES[2] in info["before"], info)
         check("up pulses a ring once", "mo-up" in info["cls"] and info["ring"] == "mo-ring", info)
         check("the stripe starts in the old stage colour", info["stripe"] == old_colour, (info["stripe"], old_colour))
-        check("the bar segments follow one another", info["pips"] == len(STAGES) and len(set(info["delays"])) == len(STAGES), info["delays"])
+        check("the bar segments fade together, with no stagger (AB4, AT-34)", info["pips"] == len(STAGES) and set(info["delays"]) == {"0s"}, info["delays"])
         wait_still(page)   # T6: was a fixed 1.1 s pause
         check("everything is put away afterwards", moving(page) == 0 and running(page) == 0)
         # T6: tap and read in one call, as T1 did above
