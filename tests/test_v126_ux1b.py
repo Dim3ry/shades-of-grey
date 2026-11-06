@@ -192,7 +192,8 @@ def main():
         go(page, "recipes")
         widths = {round(s[0]) for s in page.evaluate(SIZES, "#recipe-seg button")}
         tops = page.evaluate("() => new Set([...document.querySelectorAll('#recipe-seg button')].map(b => Math.round(b.getBoundingClientRect().top))).size")
-        check("390 px: the five Painting parts still sit on one line at the same width, as before", tops == 1 and len(widths) == 1, (tops, widths))
+        # AB7b: the Painting tabs are words with a line under the chosen one, each as wide as its word, so "at the same width" no longer holds; one line still does
+        check("390 px: the five Painting parts still sit on one line", tops == 1 and len(widths) >= 1, (tops, widths))
         ctx.close()
         browser.close()
 
