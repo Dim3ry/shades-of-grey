@@ -107,8 +107,13 @@ def main():
         pick(page, "base", "Macragge")
         owned = [page.locator(ROWS).nth(i) for i in range(page.locator(ROWS).count()) if "You own this" in page.locator(ROWS).nth(i).inner_text()]
         check("there is a pick you own, and it has no Add to shopping list", owned and all(r.locator(".shop-add-row").count() == 0 for r in owned))
-        made_up = page.evaluate("() => { const n = EXAMPLE_RECIPES[0].steps[0].paints[0][1]; return [realPaintForShop({ brand: '', name: n }), realPaintForShop({ brand: 'Vallejo', name: 'Ink Sky' }), realPaintForShop({ brand: 'Citadel', name: 'Not In My Palette' })]; }")
+        # AB9: the example paints now have plain pot names ("Harbour blue"). Such a name counts as made-up only on a paint the examples added,
+        # which carries the "madeUp" mark (saved data and backups keep it), so a real paint of yours with the same name is not caught. So the
+        # made-up paint here carries the mark, as a real example paint does. The old "Example ..." names still count by name alone.
+        made_up = page.evaluate("() => { const n = EXAMPLE_RECIPES[0].steps[0].paints[0][1]; return [realPaintForShop({ brand: '', name: n, madeUp: true }), realPaintForShop({ brand: 'Vallejo', name: 'Ink Sky' }), realPaintForShop({ brand: 'Citadel', name: 'Not In My Palette' })]; }")
         check("a made-up example paint is not offered it, a real unowned paint is", made_up == [False, False, True], made_up)
+        same_name = page.evaluate("() => { const n = EXAMPLE_RECIPES[0].steps[0].paints[0][1]; return [realPaintForShop({ brand: '', name: n }), realPaintForShop({ brand: '', name: 'Example deep blue' })]; }")
+        check("AB9: a paint of yours with the same plain name (no mark) is offered it; an old 'Example ...' name still is not", same_name == [True, False], same_name)
 
         print("\n--- 5. Recipe actions from a pick ---")
         load(page, paints=[], recipes=RECIPES)
