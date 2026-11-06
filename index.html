@@ -2760,6 +2760,24 @@
     [data-t="forge"][data-m="dark"] { --rs: 9px; }
     [data-t="forge"][data-m="light"] { --rs: 8px; }   /* quieter rivets in light, as TH2 had them */
 
+    /* AB15: Grim Forge's own structure. Tags (chips and status tags) are square with one 4 px chamfer (top right, clear of the text padding), the stage
+       pips are square lamps, and the toast is a riveted plate. Grim Forge only; every rule below starts with its data-t. The keyboard ring on a chip
+       moves inside the box so the chamfer does not clip it. The bolts, rivets, cogs and rust elsewhere are untouched. */
+    [data-t="forge"] :is(.chip, .status-pill, .review-row .tag) { clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%); }
+    [data-t="forge"] .chip:focus-visible { outline-offset: -4px; }
+    [data-t="forge"] .pips { align-items: flex-start; justify-content: center; }
+    [data-t="forge"] .pip { flex: 1 1 0; max-width: 10px; height: auto; aspect-ratio: 1; box-sizing: border-box; border: 1px solid rgba(0, 0, 0, .55); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3), inset 0 -1px 0 rgba(0, 0, 0, .3); }
+    [data-t="forge"] .unit-sum .pip { height: auto; }
+    :root[data-t="forge"] .toast {
+      border: 2px solid var(--border); border-radius: 0; padding: 12px 26px;
+      background-image: var(--rivet), var(--rivet), var(--rivet), var(--rivet), var(--plate);
+      background-size: var(--rs) var(--rs), var(--rs) var(--rs), var(--rs) var(--rs), var(--rs) var(--rs), 100% 100%;
+      background-position: left 4px top 4px, right 4px top 4px, left 4px bottom 4px, right 4px bottom 4px, 0 0;
+      background-repeat: no-repeat;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4), inset 0 -2px 0 rgba(0, 0, 0, .35), 0 4px 14px var(--shadow);
+    }
+    :root[data-t="forge"] .toast::after { left: 26px; right: 26px; border-radius: 0; }
+
     /* Paint Bench: faint dry-brush strokes and paint smudges in the desk's edges, in muted paint colours that sit with the desk greens, a smudge on
        some cards (inside their padding), and three small stickers stuck at the edge of the mat (a star, a little skull, a paint drop), each a touch
        crooked with one corner lifting. Nothing here can be tapped. Quieter in dark. */
