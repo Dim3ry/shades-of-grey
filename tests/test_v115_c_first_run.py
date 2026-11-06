@@ -2,7 +2,7 @@
 
 1. The start page has one line under the name (6 words or fewer) and no version number; the version is still in Updates.
 2. The page has a description and share tags.
-3. Help starts with the "5 things to know" card, with the five lines as written.
+3. Help starts with the "The basics" card (AB3 renamed it and made it four plain bullets).
 4. The Dashboard says what Done means, using the real stage name, and leaves the line out with no units.
 5. With no units the graph card is left out, and with no paints the Palette tile is left out; both come back with data.
 6. Game and Faction: a clear button (44 px, named), select-all on focus, and the clear button hides while the box is empty.
@@ -23,9 +23,8 @@ def check(name, ok, detail=""):
 
 FIVE = [
     "Add units in Models, then tap the arrows to move them through the stages.",
-    "Painting holds recipes (one part of a model) and schemes (a whole army).",
-    "Colour Lab suggests paints that go together. Add any to your shopping list.",
-    "Mentor answers painting questions from built-in guides. It isn't AI and works offline.",
+    "Painting holds recipes (one part of a model) and schemes (a whole army). Colour Lab suggests paints that go together, and you can add any to your shopping list.",
+    "Mentor looks things up in the guides on your phone. Works offline.",
     "Everything stays on this phone. Save a backup in Settings.",
 ]
 
@@ -68,15 +67,15 @@ def main():
         check("og:title, og:description, og:type, og:url", meta["ogt"] == "Minifolio" and meta["ogd"] and meta["type"] == "website" and meta["url"] == "https://minifolio.app/", meta)
         check("og:image is the app icon and twitter:card is summary", meta["img"] == "https://minifolio.app/icon-512.png" and meta["tw"] == "summary", meta)
 
-        print("\n--- 3. Help: 5 things to know ---")
+        print("\n--- 3. Help: The basics ---")
         page.click('#more-seg button[data-page="help"]')
         wait_settled(page)
         first = page.evaluate("() => document.querySelector('#view-help > :first-child').id")
         check("the card is the first thing in Help", first == "help-five", first)
-        check("heading is 5 things to know", page.inner_text("#help-five h2").strip() == "5 things to know")
-        items = page.eval_on_selector_all("#help-five ol > li", "els => els.map(e => e.textContent.trim())")
-        check("the five lines are exactly as written", items == FIVE, items)
-        check("nothing else is in the card", page.evaluate("() => [...document.querySelectorAll('#help-five > *')].map(e => e.tagName).join()") == "H2,OL")
+        check("heading is The basics (AB3 renamed it)", page.inner_text("#help-five h2").strip() == "The basics")
+        items = page.eval_on_selector_all("#help-five ul > li", "els => els.map(e => e.textContent.trim())")
+        check("the four lines are exactly as written (AB3: four plain bullets, Colour Lab folded into the second)", items == FIVE, items)
+        check("nothing else is in the card", page.evaluate("() => [...document.querySelectorAll('#help-five > *')].map(e => e.tagName).join()") == "H2,UL")
 
         print("\n--- 4. What Done means ---")
         # (saved units with no saved settings get the old 5 stages, so the default 8 are seeded on purpose)

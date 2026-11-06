@@ -708,7 +708,7 @@
       lead: "Minifolio works with no internet once it has loaded. To install it, open it in Chrome and choose Add to Home screen, or on an iPhone use Safari's Share button and Add to Home Screen." },
     { key: "app:mentor", label: "Help: Getting started", alone: ["chatgpt", "chatbot", "who are you", "what can you do", "are you ai", "are you an ai", "are you a bot", "are you real", "real person", "are you human", "is mentor ai", "mentor work", "mentor works"],
       with: ["ai", "work", "works", "bot", "robot", "human"], you: ["ai", "bot", "chatbot", "human"], only: ["ai"],
-      lead: "Mentor answers painting questions from the app's own Guides and colour rules. It isn't AI, it runs on this device and works offline." },
+      lead: "It looks things up in the guides on this phone and works offline." },
     { key: "app:feedback", label: "Help: Updates and feedback", alone: ["give feedback", "report a bug", "found a bug", "contact the developer", "suggest a feature", "made this app", "who made this app"],
       with: ["feedback", "bug", "contact", "developer", "feature", "made", "suggest"], only: ["feedback", "developer"],
       lead: "Use Give feedback under Settings, Updates to report a problem or suggest something." },

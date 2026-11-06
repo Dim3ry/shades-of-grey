@@ -22113,7 +22113,7 @@
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v136";
+    const APP_VERSION = "v137";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -22575,6 +22575,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v137", date: "6 Nov 2026", changes: [
+        "Help is shorter: long answers are trimmed, the top card is now The basics, and Match my phone is named as where the app starts.",
+        "Mentor now says it looks things up in the guides on your phone.",
+      ] },
       { version: "v136", date: "6 Nov 2026", changes: [
         "Mentor's sources are plain links with the guide's title. The scheme check uses ticks and crosses with plain verdicts, the coloured stripes on Guides rows, chips and stage menus are gone, and the version number lives in Updates only.",
         "A unit that reaches Done gets a short message with Undo, with a special line for your first one and for the last of an army.",
