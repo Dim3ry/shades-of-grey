@@ -45,7 +45,8 @@ def main():
 
         print("\n--- 1. Fresh start ---")
         t.load(page, settings={"tab": "units", "examplesChecked": True})
-        check("fresh stages use the new names", page.evaluate("STAGES") == NEW, page.evaluate("STAGES"))
+        # AB11 (v138): a fresh start's first stage is now "On sprue"; the rest of the list is TD1a's.
+        check("fresh stages use the new names", page.evaluate("STAGES") == ["On sprue"] + NEW[1:], page.evaluate("STAGES"))
         check("the old names are gone from the stage list", "Battle ready" not in page.evaluate("STAGES") and "Parade ready" not in page.evaluate("STAGES"))
 
         print("\n--- 2. Saved stage lists ---")

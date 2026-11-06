@@ -67,7 +67,9 @@ def main():
         page.on("dialog", lambda d: (dialogs.append(d.message), d.dismiss()))
 
         load(page)
-        STAGES = page.evaluate("STAGES")
+        # AB11 (v138): a brand-new install now starts with "On sprue", but the units below are saved with no stage list,
+        # which the app treats as an existing install and gives the v132 to v137 default ("Unassembled"). Use that list.
+        STAGES = page.evaluate("V137_DEFAULT_STAGES")
         year = page.evaluate("new Date().getFullYear()")
         today = page.evaluate("todayISO()")
         jan2 = f"{year}-01-02"
