@@ -104,7 +104,7 @@ def restore(page, backup):
                                                   "buffer": json.dumps(backup).encode()}])
     page.wait_for_timeout(700)
 
-DARK_BG, LIGHT_BG = "rgb(11, 18, 32)", "rgb(233, 239, 246)"
+DARK_BG, LIGHT_BG = "rgb(12, 20, 24)", "rgb(233, 239, 246)"   # AB6 (AT-13): Classic's dark page is #0c1418 now (was #0b1220)
 
 def main():
     html = read("index.html")
@@ -129,11 +129,11 @@ def main():
         print("--- 2. Dark is the default ---")
         seed(page)
         check("a new user gets dark (no light mark)", mark(page) == "", mark(page))
-        check("dark page colour is the same deep navy as before", background(page) == DARK_BG, background(page))
+        check("dark page colour is the same deep slate as before (AB6: #0c1418)", background(page) == DARK_BG, background(page))
         # TH1: Classic became the sci-fi look, so its border (steel panel lines at 3:1) and accent (ice cyan) changed on purpose; the rest are the v20 colours.
         check("dark base colours unchanged", page.evaluate("""() => { const s = getComputedStyle(document.documentElement);
             return ['--background','--card','--border','--text','--muted','--accent','--danger'].map(k => s.getPropertyValue(k).trim()); }""")
-              == ["#0b1220", "#141d2f", "#4968a0", "#dbe4f0", "#8193ad", "#5fe0ea", "#f87171"])
+              == ["#0c1418", "#141d2f", "#4968a0", "#dbe4f0", "#8193ad", "#5fe0ea", "#ef6f5e"])   # AB6 (AT-13): new page and danger colours
         tab(page, "settings")
         check("Settings has the three Appearance choices",
               page.locator("#appearance-card [data-appearance-choice]").all_inner_texts() == ["Dark", "Light", "Match my phone"])

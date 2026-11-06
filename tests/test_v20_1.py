@@ -134,8 +134,9 @@ def main():
         seed(page, full_settings())
         tab(page, "settings")
         options = page.locator("#palette-select option").all_inner_texts()
-        check("Colours lists 6 choices: the 4 old sets, Forge and Custom",
-              len(options) == 6 and any(o.startswith("Forge") for o in options) and options[-1].startswith("Custom")
+        # AB6 (AT-14): "Match the look" is a new first choice (no set picked), so 7 entries now.
+        check("Colours lists 7 choices: Match the look, the 4 old sets, Forge and Custom",
+              len(options) == 7 and options[0] == "Match the look" and any(o.startswith("Forge") for o in options) and options[-1].startswith("Custom")
               and all(any(o.startswith(w) for o in options) for w in ["Ice", "Frost", "Greyscale", "Colour-blind"]), options)
         check("Forge's colours are ember red → amber → gold → cream", page.evaluate("PALETTES.forge.colours") == FORGE)
         choose_palette(page, "forge")

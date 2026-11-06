@@ -192,7 +192,9 @@
     // The original five, kept for anyone who saved units before stages were editable.
     const ORIGINAL_STAGES = ["Unbuilt", "Built", "Primed", "In progress", "Painted"];
 
-    let settings = { palette: "ice", tab: "dashboard" };
+    // AB6 (AT-14): no "palette" here. Until the person picks a stage colour set, settings.palette stays unset and the look's own set is used
+    // (THEME_SETS). Installs made before this version have "ice" saved already, so they keep Ice: the app cannot tell those from a real pick.
+    let settings = { tab: "dashboard" };
     // v14: if the saved settings can't be read, keep a copy of them under another name
     // (like units and recipes), so nothing is thrown away.
     let settingsUnreadable = false;
@@ -4970,14 +4972,13 @@
     // The ring as index.html drew it, before the app took it over: taken away at once (the app opened on a section, or the ring cannot run).
     function dropBootRing() {
       if (window.minifolioRing) window.minifolioRing.app = true;
-      for (const n of arcEl.querySelectorAll(".mo-load, .lr-sweep")) n.remove();
+      for (const n of arcEl.querySelectorAll(".mo-load")) n.remove();
       for (const w of arcEl.querySelectorAll(".ring-hold")) w.classList.remove("ring-hold");
       document.body.classList.remove("ring-loading");
     }
     function startLoadingRing() {
       const svg = arcEl.querySelector(".mo-load");
       if (!svg || !launching || ringState) { dropBootRing(); return; }
-      const sweep = arcEl.querySelector(".lr-sweep");
       const moving = canMove();
       if (window.minifolioRing) window.minifolioRing.app = true;   // early.js stops lighting it; from here this does
       const p0 = window.minifolioRing ? window.minifolioRing.progress : 0;
@@ -4991,7 +4992,7 @@
       const stepAt = [() => bootSteps.data, () => bootSteps.draw, () => bootSteps.load];
       const t0 = performance.now(), ends = [0, 0, 0], starts = [0, 0, 0];
       let revealed = 0, raf = 0;
-      const state = ringState = { svg, sweep, wedges, stop() { cancelAnimationFrame(raf); } };
+      const state = ringState = { svg, wedges, stop() { cancelAnimationFrame(raf); } };
       function step(now) {
         // when each step starts to fill: it is done and the one before has filled (the load step also gives up after 5 s)
         let part = 0;
@@ -5021,7 +5022,6 @@
         if (!moving) { setTimeout(() => { if (ringState === state) endLoadingRing(); }, 300); return; }   // the full ring shows for a moment; the circle works already
         const fade = { duration: 700, easing: "ease-out", fill: "forwards" };
         const out = svg.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(1.12)" }], fade);
-        if (sweep) sweep.animate([{ opacity: 1 }, { opacity: 0 }], fade);
         out.onfinish = () => { if (ringState === state) endLoadingRing(); };
       }
       step(performance.now());
@@ -5032,7 +5032,6 @@
       ringState = null;
       r.stop();
       r.svg.remove();   // the ring is gone, along with its progress bar role
-      if (r.sweep) r.sweep.remove();
       r.wedges.forEach(w => { w.classList.remove("ring-hold"); w.getAnimations().forEach(a => a.finish()); });
       document.body.classList.remove("ring-loading");
     }
@@ -19575,6 +19574,14 @@
       // v20.1: the one warm set: ember red → orange → amber → gold → warm cream.
       forge:      { label: "Forge (warm)",            colours: ["#e0452b", "#f2701c", "#f59e0b", "#facc15", "#fde9c0"] },
     };
+    // AB6 (AT-14): the set each look uses when nothing was picked (settings.palette unset). Never saved, never listed as a choice.
+    // Classic: Ice re-mixed off the Tailwind grid. Parchment: sepia, iron gall, rubric red, gilt, vellum. Forge: its own set. Bench: primer grey to bone.
+    const THEME_SETS = {
+      classic:   ["#6b7b8c", "#6f79d9", "#4eb6e6", "#4fd6de", "#aeeedd"],
+      parchment: ["#7a6a55", "#8f4a3a", "#b8303c", "#c48a2c", "#e8dcc0"],
+      forge:     PALETTES.forge.colours,
+      bench:     ["#7d8077", "#4f7a8c", "#6f8f3a", "#c9a227", "#efe6cc"]
+    };
 
     // Mixes two colours: amount 0 = colour a, 1 = colour b, 0.5 = halfway.
     // "#38bdf8" is three pairs of hex digits (red 38, green bd, blue f8); we blend each pair.
@@ -19587,7 +19594,7 @@
 
     // A list of n colours spread evenly along a palette.
     function stageColours(paletteName, n) {
-      const colours = (PALETTES[paletteName] || PALETTES.ice).colours;
+      const colours = PALETTES[paletteName] ? PALETTES[paletteName].colours : THEME_SETS[currentTheme()];   // AB6: no pick means the look's own set
       const steps = colours.length - 1;
       return Array.from({ length: n }, (unused, index) => {
         const position = n === 1 ? 0 : index / (n - 1) * steps;
@@ -19632,7 +19639,7 @@
     // Each theme's page and card colours in dark and light (the same as the THEMES section of index.html; a test checks).
     // Stage colours are made readable against these, so they stay readable in every theme.
     const THEME_SURFACES = {
-      classic: { dark: { page: "#0b1220", card: "#141d2f" }, light: { page: "#e9eff6", card: "#f8fafc" } },
+      classic: { dark: { page: "#0c1418", card: "#141d2f" }, light: { page: "#e9eff6", card: "#f8fafc" } },
       parchment: { dark: { page: "#17120e", card: "#211a14" }, light: { page: "#d8c59a", card: "#e4d4ae" } },
       forge: { dark: { page: "#0d0f11", card: "#16191c" }, light: { page: "#cdd1d5", card: "#dde1e5" } },
       bench: { dark: { page: "#20251f", card: "#292f28" }, light: { page: "#e0e4d8", card: "#eef0e7" } }
@@ -19875,13 +19882,14 @@
     showBrandChoice();
 
     const paletteSelect = document.getElementById("palette-select");
+    paletteSelect.add(new Option("Match the look", "theme"));   // AB6: no set picked; each look uses its own colours
     for (const [key, palette] of Object.entries(PALETTES)) paletteSelect.add(new Option(palette.label, key));
     // v20.1: the 6th choice. "custom" is never stored as settings.palette (see usingCustom).
     paletteSelect.add(new Option("Custom (pick your own)", "custom"));
-    if (!Object.prototype.hasOwnProperty.call(PALETTES, settings.palette)) settings.palette = "ice";
+    if (settings.palette !== undefined && !Object.prototype.hasOwnProperty.call(PALETTES, settings.palette)) settings.palette = "ice";   // AB6: unset stays unset
     if (settings.useCustom !== undefined && typeof settings.useCustom !== "boolean") settings.useCustom = false;
     if (settings.customColours !== undefined) settings.customColours = cleanCustomColours(settings.customColours);
-    paletteSelect.value = usingCustom() ? "custom" : settings.palette;
+    paletteSelect.value = usingCustom() ? "custom" : (PALETTES[settings.palette] ? settings.palette : "theme");
     paletteSelect.addEventListener("change", () => {
       if (paletteSelect.value === "custom") {
         // Start from the set you had (or keep the colours you picked last time).
@@ -19890,7 +19898,7 @@
           settings.customColours = stageColours(settings.palette, STAGES.length);
         }
       } else {
-        settings.palette = paletteSelect.value;
+        if (paletteSelect.value === "theme") delete settings.palette; else settings.palette = paletteSelect.value;
         settings.useCustom = false;
       }
       saveSettings();
@@ -19954,7 +19962,7 @@
         row.append(picker, text);
         customList.appendChild(row);
       });
-      const from = PALETTES[settings.palette] || PALETTES.ice;
+      const from = PALETTES[settings.palette] || { label: "Match the look" };
       customReset.textContent = `Reset to ${from.label} colours`;
     }
     customReset.addEventListener("click", () => {
@@ -19986,7 +19994,7 @@
       updateSearchedPaints(); showBrandChoice();   // v48
       showCountingChoice();   // v27
       if (usingCustom()) document.getElementById("palette-select").value = "custom";
-      else if (PALETTES[settings.palette]) document.getElementById("palette-select").value = settings.palette;
+      else document.getElementById("palette-select").value = PALETTES[settings.palette] ? settings.palette : "theme";
       renderCustomColours();
       startDraft();
       renderStageEditor();

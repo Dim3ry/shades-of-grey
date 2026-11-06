@@ -65,7 +65,7 @@ STRUCTURE_TOKENS = ["--font-heading", "--font-body", "--font-num", "--num-style"
                     "--radius-small", "--radius-bar", "--border-width", "--border-style", "--heading-weight", "--heading-transform",
                     "--heading-tracking", "--heading-size", "--wordmark-size", "--body-size", "--card-pad", "--texture-size"]
 # TH1: Classic keeps the v46 page, card and text colours; its border and accent are the TH1 ones.
-CLASSIC = {"dark": {"--background": "#0b1220", "--card": "#141d2f", "--border": "#4968a0", "--text": "#dbe4f0", "--accent": "#5fe0ea"},
+CLASSIC = {"dark": {"--background": "#0c1418", "--card": "#141d2f", "--border": "#4968a0", "--text": "#dbe4f0", "--accent": "#5fe0ea"},
            "light": {"--background": "#e9eff6", "--card": "#f8fafc", "--border": "#6c89ab", "--text": "#0f1b2d", "--accent": "#06707b"}}
 
 def hexrgb(h):
@@ -145,7 +145,7 @@ def main():
         for th in NEW:
             for md in ("dark", "light"):
                 ok = ok and table[(th, md)]["--background"] == pages[th][md] and table[(th, md)]["--card"] == surf[th][md]["card"]
-        check("page and card colours agree between index.html, early.js and app.js", ok and pages["classic"]["dark"] == "#0b1220", pages)
+        check("page and card colours agree between index.html, early.js and app.js", ok and pages["classic"]["dark"] == "#0c1418", pages)   # AB6 (AT-13): Classic's dark page is #0c1418 now
         check("early.js and app.js know the same four themes", sorted(pages) == sorted(THEMES) == sorted(page.evaluate("Object.keys(THEMES)")))
 
         # ---------- 3. Fonts ----------
