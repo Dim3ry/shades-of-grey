@@ -112,7 +112,8 @@ def main():
         # ---------- 2. A new device ----------
         print("\n--- 2. A new device ---")
         t.load(page, settings={"tab": "units", "examplesChecked": True})
-        check("a new device gets Needs touch-ups as the 7th stage", page.evaluate("STAGES") == NEW, page.evaluate("STAGES"))
+        # AB11 (v138): a new device's first stage is now "On sprue" (existing installs keep "Unassembled").
+        check("a new device gets Needs touch-ups as the 7th stage", page.evaluate("STAGES") == ["On sprue"] + NEW[1:], page.evaluate("STAGES"))
 
         # ---------- 4. A custom list ----------
         print("\n--- 4. A custom stage list ---")

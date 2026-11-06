@@ -170,8 +170,14 @@
 
     // Each unit stores a NUMBER pointing at a position in the stage list (0 = first).
     // Stages from settings.doneFrom onwards count as "Done"; earlier ones are "To do".
-    const DEFAULT_STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed",
+    // AB11: new installs start with "On sprue" as the first stage. Only a brand-new install gets this list (see the
+    // no-stage-list start-up below); every older list, saved or in a backup, keeps "Unassembled" (V137_DEFAULT_STAGES).
+    const DEFAULT_STAGES = ["On sprue", "Part assembled", "Assembled", "Primed",
                             "Part painted", "Tabletop ready", "Needs touch-ups", "Display ready"];
+    // AB11: the default list from v132 to v137. Existing installs on it keep it as it is, and the older defaults below are
+    // renamed to it (not to DEFAULT_STAGES), so the new first name never reaches an existing install. Units save a stage NUMBER.
+    const V137_DEFAULT_STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed",
+                                 "Part painted", "Tabletop ready", "Needs touch-ups", "Display ready"];
     // TD1a (v132): "Battle ready" is now "Tabletop ready" and "Parade ready" is now "Display ready" (labels only). This is the
     // default list from v68 to v131; anyone still on exactly it gets the new names (see renamedStageList). Units save a stage NUMBER.
     const V131_DEFAULT_STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed",
@@ -184,7 +190,7 @@
                                 "Part painted", "Battle ready", "Painted with issues", "Parade ready"];
     function renamedStageList(list) {
       const is = (old) => Array.isArray(list) && list.length === old.length && list.every((x, i) => x === old[i]);
-      return is(V61_DEFAULT_STAGES) || is(V131_DEFAULT_STAGES) ? DEFAULT_STAGES.slice() : list;
+      return is(V61_DEFAULT_STAGES) || is(V131_DEFAULT_STAGES) ? V137_DEFAULT_STAGES.slice() : list;   // AB11: not DEFAULT_STAGES
     }
     // The defaults before v3, so testers on them can be moved to the new set (see below).
     const OLD_DEFAULT_STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed",
@@ -237,10 +243,12 @@
       try { savedUnits = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); } catch (ignored) {}
       const hasOldData = Array.isArray(savedUnits);
       const highest = hasOldData ? highestStageUsed(savedUnits) : -1;
-      // Brand-new users and anyone whose settings were damaged get today's default
-      // stages; very old data (from before stages could be edited) gets the original five.
+      // Brand-new users get today's default stages; very old data (from before stages could be edited) gets the
+      // original five. AB11: anyone with saved units or damaged settings is an existing install, so they get the
+      // v132 to v137 default ("Unassembled") instead, and only a brand-new install starts with "On sprue".
+      const brandNew = !settingsUnreadable && !hasOldData;
       let list = !settingsUnreadable && hasOldData && highest < ORIGINAL_STAGES.length
-        ? ORIGINAL_STAGES.slice() : DEFAULT_STAGES.slice();
+        ? ORIGINAL_STAGES.slice() : brandNew ? DEFAULT_STAGES.slice() : V137_DEFAULT_STAGES.slice();
       while (list.length <= highest && list.length < 10) list.push(`Stage ${list.length + 1}`);
       settings.stages = list;
       settings.doneFrom = list.join() === ORIGINAL_STAGES.join() ? 4 : 5;
@@ -276,7 +284,7 @@
           const move = [0, 1, 2, 3, 4, 6, 5];
           for (const u of savedUnits) if (u && Number.isInteger(u.stage) && move[u.stage] !== undefined) u.stage = move[u.stage];
         }
-        settings.stages = STAGES = DEFAULT_STAGES.slice();
+        settings.stages = STAGES = V137_DEFAULT_STAGES.slice();   // AB11: an existing install keeps "Unassembled"
         settings.doneFrom = 5;
         upgradedStages = true;
         // DS1: units and settings are written together, through the data-version check (before DS1 the units were written
@@ -290,12 +298,12 @@
     // v68: "Painted with issues" becomes "Needs touch-ups" for anyone on the v3 to v61 default stages.
     // DATA_VERSION went up to 2 for this, so an older copy of the app left open stops saving
     // instead of writing the old name back. The saveSettings() a little further down saves it.
-    if (renamedStageList(STAGES) !== STAGES) settings.stages = STAGES = DEFAULT_STAGES.slice();
+    if (renamedStageList(STAGES) !== STAGES) settings.stages = STAGES = renamedStageList(STAGES);
     // Settings saved before the Done marker existed: use the matching default if the
     // stages are one of the built-in sets, otherwise just the last stage.
     if (settings.doneFrom === undefined) {
       const same = (a, b) => a.length === b.length && a.every((s, i) => s === b[i]);
-      settings.doneFrom = same(STAGES, DEFAULT_STAGES) ? 5 : same(STAGES, ORIGINAL_STAGES) ? 4 : STAGES.length - 1;
+      settings.doneFrom = same(STAGES, DEFAULT_STAGES) || same(STAGES, V137_DEFAULT_STAGES) ? 5 : same(STAGES, ORIGINAL_STAGES) ? 4 : STAGES.length - 1;
     }
     fixDoneFrom();
 
@@ -21016,7 +21024,7 @@
     // Anything else is listed on the check screen and starts at the Set every row to stage.
     const CSV_STATUS_TITLES = ["status", "state", "progress"];
     const CSV_STATUS_WORDS = {
-      "Unassembled": ["unbuilt", "not built", "not started", "new", "in box", "in the box", "boxed", "on sprue", "on sprues", "on the sprue", "nib", "new in box", "unopened", "sealed", "to build", "pile of shame"],
+      "On sprue": ["unassembled", "unbuilt", "not built", "not started", "new", "in box", "in the box", "boxed", "on sprue", "on sprues", "on the sprue", "nib", "new in box", "unopened", "sealed", "to build", "pile of shame"],
       "Part assembled": ["part built", "partly built", "partially built", "half built", "partly assembled", "partially assembled", "half assembled", "building", "being built"],
       "Assembled": ["built", "constructed", "to prime", "ready to prime"],
       "Primed": ["undercoated", "undercoat", "primer", "sprayed", "to paint", "ready to paint"],
@@ -21026,7 +21034,8 @@
       "Display ready": ["parade", "parade ready", "display", "showcase", "competition ready"],   // TD1a: "parade ready" still works for older files
     };
     // TD1a: a custom list that still has the old names keeps working with the same everyday words.
-    const CSV_OLD_STAGE_NAMES = { "Tabletop ready": "Battle ready", "Display ready": "Parade ready" };
+    // AB11: the same for "Unassembled", the first stage's name before v138 (still the name on existing installs).
+    const CSV_OLD_STAGE_NAMES = { "On sprue": "Unassembled", "Tabletop ready": "Battle ready", "Display ready": "Parade ready" };
     const CSV_DONE_WORDS = ["painted", "done", "finished", "complete", "completed", "fully painted"];
     // The stage number for a status word, or -1 when it doesn't match.
     function stageFromStatus(text) {
