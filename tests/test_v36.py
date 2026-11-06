@@ -492,6 +492,7 @@ def main():
             check(f"at {width} px the ring is {round(ring_gap)} px thick (44 px or more)", ring_gap >= 44, ring_gap)
             wrong = []
             for key in KEYS:
+                page.evaluate("() => window.scrollTo(0, 0)")   # TD1b (v133): see below
                 x, y = g["points"][key]
                 hit = page.evaluate("([x, y]) => { const e = document.elementFromPoint(x, y); return e && e.dataset ? e.dataset.wheel : (e ? e.tagName : null); }", [x, y])
                 page.mouse.click(x, y)
@@ -504,6 +505,7 @@ def main():
                     wh.go_back(page)   # back up, ready for the next
                     page.evaluate("() => window.scrollTo(0, 0)")   # the points were measured from the top of the page
                 else:
+                    page.evaluate("() => window.scrollTo(0, 0)")   # TD1b (v133): opening a grey-centre slice can scroll its list into view on a phone; the points were measured from the top
                     page.mouse.click(x, y)   # tap again to close it, ready for the next
                     page.wait_for_timeout(100)
             check(f"at {width} px tapping the middle of each of the ten slices opens that slice", not wrong, wrong)
