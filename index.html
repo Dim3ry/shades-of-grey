@@ -2766,6 +2766,31 @@
       :is([data-t="parchment"], [data-t="forge"], [data-t="bench"]) body::after, :is([data-t="parchment"], [data-t="forge"]) .app-bar::before, :is([data-t="parchment"], [data-t="forge"]) .app-bar::after { content: none; }
     }
     /* TH6 end */
+    /* AB16: Paint Bench's own structure (AT-16 part, AT-54 part). Bench only. Tags and chips are strips of masking tape, the stage pips are
+       pencil ticks, the headline card has a tape label stuck over its top edge, and the toast is a strip of tape. The stage still shows in words
+       (the stage name above the pips); a filled tick is longer and thicker than an empty one, so it never relies on colour alone. Nothing here sits under text. */
+    [data-t="bench"] { --tape-ink: #2b2616; --tape-on: linear-gradient(rgba(255,255,255,.18), rgba(255,255,255,0) 45%, rgba(110,90,40,.08)), repeating-linear-gradient(92deg, rgba(110,90,40,.09) 0 1px, transparent 1px 3px, rgba(110,90,40,.05) 3px 4px, transparent 4px 7px), #cdbb7c; }
+    [data-t="bench"] .review-row .tag, [data-t="bench"] .review-row.clash .tag {
+      background: var(--tape); color: var(--tape-ink); border: 0; padding: 3px 9px; font-weight: 600;
+      clip-path: polygon(0 0, 100% 0, 97% 25%, 100% 50%, 97% 75%, 100% 100%, 0 100%, 3% 75%, 0 50%, 3% 25%);
+    }
+    [data-t="bench"] .review-row.clash .tag { text-decoration: underline 2px var(--caution); text-underline-offset: 2px; }
+    [data-t="bench"] .chip { background: var(--tape); color: var(--tape-ink); border-color: transparent; }
+    [data-t="bench"] .chip[aria-pressed="true"] { background: var(--tape-on); color: var(--tape-ink); border-color: transparent; font-weight: 700; box-shadow: inset 0 -3px 0 var(--tape-ink); }
+    [data-t="bench"] .pip { height: 12px; background: var(--border); clip-path: polygon(calc(50% - .5px) 36%, calc(50% + .5px) 36%, calc(50% + 1.5px) 100%, calc(50% + .5px) 100%); }
+    [data-t="bench"] .pip:nth-child(even) { clip-path: polygon(calc(50% - .5px) 36%, calc(50% + .5px) 36%, calc(50% - .5px) 100%, calc(50% - 1.5px) 100%); }
+    [data-t="bench"] .pip:is(.filled, .part) { clip-path: polygon(calc(50% - 1px) 0, calc(50% + 2px) 0, calc(50% + 3px) 100%, calc(50% + 0px) 100%); }
+    [data-t="bench"] .pip:is(.filled, .part):nth-child(even) { clip-path: polygon(calc(50% - 2px) 0, calc(50% + 1px) 0, calc(50% + 0px) 100%, calc(50% - 3px) 100%); }
+    [data-t="bench"] .unit-sum .pip { height: 10px; }
+    [data-t="bench"] #headline-card { position: relative; }
+    [data-t="bench"] #headline-card::before {
+      content: ""; position: absolute; top: -8px; right: 22px; width: 64px; height: 16px; background: var(--tape); rotate: 3deg; pointer-events: none;
+      clip-path: polygon(0 0, 100% 0, 96% 25%, 100% 50%, 96% 75%, 100% 100%, 0 100%, 4% 75%, 0 50%, 4% 25%);
+    }
+    [data-t="bench"] .toast {
+      --toast-action: #5c2a0a; background: var(--tape); color: var(--tape-ink); border-radius: 2px; rotate: -0.4deg;
+      clip-path: polygon(0 0, 100% 0, 99% 25%, 100% 50%, 99% 75%, 100% 100%, 0 100%, 1% 75%, 0 50%, 1% 25%);
+    }
     /* Chunk B: the round back arrow at the bottom left, beside the bar (look from the chosen mockup, colours from the app's own names). 44 px wide and high.
        Hidden on the start page, while the loading ring or the travel plays, while the Mentor pop-up is open and while a text box has the cursor (the bar steps aside too);
        it fades in again when they end. */

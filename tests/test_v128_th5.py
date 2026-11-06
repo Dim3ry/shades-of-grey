@@ -107,6 +107,8 @@ def main():
         bad_fill, bad_text = [], []
         for th, m in LOOKS:
             set_look(page, th, m)
+            if th == "bench":
+                continue   # AB16: Bench chips are strips of tape (ink on tape, darker when chosen), so Bench no longer takes the button fill; tests/test_v140_ab16.py checks the tape and its 4.5 to 1 text. This check now covers the other three looks only.
             got = page.evaluate("""() => { const c = document.querySelector('.range-chips .chip[aria-pressed="true"]'), s = getComputedStyle(c);
                 const layer = s.backgroundImage.match(/rgba?\\([^)]*\\)/); return { layer: layer ? __th5.rgba(layer[0]) : null, size: s.backgroundSize,
                 fill: __th5.tok('--accent-fill'), text: __th5.rgba(s.color) }; }""")
