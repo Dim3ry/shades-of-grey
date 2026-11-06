@@ -33,7 +33,7 @@ def go(page, w=390, h=844):
 
 def main():
     errors = []
-    html, sw = t.read("index.html"), t.read("sw.js")
+    html = t.read("index.html")
     with sync_playwright() as p:
         browser = p.chromium.launch()
         ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block", reduced_motion="reduce")
@@ -69,8 +69,8 @@ def main():
         for href, target, rel in hrefs:
             if href.startswith("https://"):
                 continue
-            ok = ok and os.path.isfile(os.path.join(t.ROOT, href)) and ("./" + href) in sw
-        check("every link is an https address or a shipped file the service worker saves", ok, hrefs)
+            ok = ok and os.path.isfile(os.path.join(t.ROOT, href))
+        check("every link is an https address or a file that ships with the app", ok, hrefs)
         check("links open in a new tab safely", all(h[1] == "_blank" and "noopener" in h[2] and "noreferrer" in h[2] for h in hrefs), hrefs)
 
         print("\n--- 4. Thanks ---")

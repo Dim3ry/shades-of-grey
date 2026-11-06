@@ -5034,10 +5034,9 @@
     function renderThanks() {
       const box = document.getElementById("credits-thanks");
       box.textContent = "";
-      const good = THANKS.filter(t => {
-        if (!t || typeof t.name !== "string" || !t.name.trim() || typeof t.link !== "string") return false;
-        try { const u = new URL(t.link); return u.protocol === "https:" && !u.username && !u.password; } catch (e) { return false; }
-      });
+      // safeHttpsUrl (above) gives back the address only when it is a real https one, else ""
+      const good = THANKS.map(t => ({ name: t && typeof t.name === "string" ? t.name.trim() : "", href: t ? safeHttpsUrl(t.link) : "" }))
+        .filter(t => t.name && t.href && !new URL(t.href).username && !new URL(t.href).password);
       box.classList.toggle("hidden", good.length === 0);
       if (!good.length) return;
       const h = document.createElement("h3"); h.textContent = "Thanks"; box.appendChild(h);
@@ -5045,7 +5044,7 @@
       const ul = document.createElement("ul"); ul.className = "credits-thanks-list";
       good.forEach(t => {
         const li = document.createElement("li"), a = document.createElement("a");
-        a.textContent = t.name.trim(); a.href = new URL(t.link).href; a.target = "_blank"; a.rel = "noopener noreferrer";
+        a.textContent = t.name; a.href = t.href; a.target = "_blank"; a.rel = "noopener noreferrer";
         li.appendChild(a); ul.appendChild(li);
       });
       box.appendChild(ul);

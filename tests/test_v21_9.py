@@ -189,14 +189,14 @@ def main():
         main_tab(page, "settings")
         st = seg_state(page)
         check("tapping Settings in the bar opens the Settings page", shown_views(page) == ["settings"], shown_views(page))
-        check("the switch shows, with Settings, Help and Updates in that order", st["shown"] and st["labels"] == ["About", "Guides", "Settings", "Help", "Updates"], st)   # X2: Guides added; AM1: About is first
+        check("the switch shows, with Settings, Help and Updates in that order", st["shown"] and st["labels"] == ["About", "Credits", "Guides", "Settings", "Help", "Updates"], st)   # X2: Guides added; AM1: About is first; CR1: Credits after About (six pages)
         check("Settings is the selected one", st["selected"] == ["settings"], st)
         check("Settings stays lit in the bar", lit_tabs(page) == ["guides"], lit_tabs(page))   # X2: Settings lives under the Tools segment
         check("the switch buttons are at least 44 px tall", st["minHeight"] >= 44, st["minHeight"])
         check("the switch sits inside the screen", st["inside"], st)
         roles = page.evaluate("""() => { const s = document.getElementById('more-seg');
             return [s.getAttribute('role'), [...s.querySelectorAll('button')].map(b => b.getAttribute('role'))]; }""")
-        check("the switch is marked up like the Recipes one (a tab list of tabs)", roles == ["tablist", ["tab", "tab", "tab", "tab", "tab"]], roles)   # AM1: five pages
+        check("the switch is marked up like the Recipes one (a tab list of tabs)", roles == ["tablist", ["tab", "tab", "tab", "tab", "tab", "tab"]], roles)   # AM1: five pages; CR1: six (Credits added)
         check("the Settings page shows the Stages card", page.is_visible("#stage-list"))
         for name in ["help", "updates", "settings", "updates", "help"]:
             sub_tab(page, name)
