@@ -74,7 +74,8 @@ def main():
         show(page, "dashboard", 1280)
         c = cards(page)
         check("3 factions: stage and faction cards side by side", c["stage-card"]["x"] < c["faction-card"]["x"] and c["stage-card"]["w"] < 700, c)
-        load(page, units=units(7))
+        # AB8: Armies are rows by default now; the full-row widening is for the doughnut chart (rows stay beside By stage), so this check asks for doughnuts.
+        load(page, units=units(7), settings={"factionView": "doughnuts"})
         for w in (900, 1280, 1920):
             show(page, "dashboard", w)
             c = cards(page)

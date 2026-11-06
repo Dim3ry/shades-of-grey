@@ -551,6 +551,19 @@
     .ach-circles { display: flex; gap: 14px; }
     .ach-circles i { width: 44px; height: 44px; border-radius: 50%; border: 2px dashed var(--muted); box-sizing: border-box; }
     .faction-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+    /* AB8: Armies as rows (the default). A colour bar at the left, the name, a thin stage strip, "5 of 10 done". */
+    #faction-view { margin-bottom: 12px; }
+    .faction-rows { display: grid; gap: 8px; }
+    .faction-row {
+      display: flex; align-items: stretch; text-align: left; min-height: 44px; padding: 0; overflow: hidden;
+      background: var(--background); color: var(--text); font-size: 0.9375rem;
+      border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-control);
+    }
+    .faction-row::before { content: ""; flex: 0 0 6px; background: var(--faction-colour, var(--border)); }
+    .faction-row .faction-text { flex: 1; min-width: 0; display: grid; gap: 6px; padding: 10px 12px; }
+    .faction-row small { color: var(--muted); font-size: 0.8125rem; }
+    .faction-strip { display: flex; gap: 2px; height: 4px; border-radius: var(--radius-bar); overflow: hidden; background: var(--border); }
+    .faction-strip i { display: block; height: 100%; }
     .faction-button {
       background: var(--background);
       border: var(--border-width) var(--border-style) var(--border);
@@ -2004,9 +2017,9 @@
       /* R3b-1: the headline fills the row (the first-child rule above lands on a hidden notice card). With 4 or more factions the
          faction card is tall, so it and the stage card each take a full row instead of leaving a gap beside the stage card. */
       #headline-card, #view-dashboard > .notice-card { grid-column: 1 / -1; }
-      #view-dashboard:has(#faction-grid > :nth-child(4)) :is(#stage-card, #faction-card) { grid-column: 1 / -1; }
-      #view-dashboard:has(#faction-grid > :nth-child(4)) #stage-card .chart-row { justify-content: center; gap: 48px; }
-      #view-dashboard:has(#faction-grid > :nth-child(4)) #stage-card .legend { flex: 0 1 420px; }
+      #view-dashboard:has(#faction-grid.faction-grid > :nth-child(4)) :is(#stage-card, #faction-card) { grid-column: 1 / -1; }
+      #view-dashboard:has(#faction-grid.faction-grid > :nth-child(4)) #stage-card .chart-row { justify-content: center; gap: 48px; }
+      #view-dashboard:has(#faction-grid.faction-grid > :nth-child(4)) #stage-card .legend { flex: 0 1 420px; }
       .big { font-size: 3.5rem; }
       .of { font-size: 1rem; }
       .group-button { padding: 16px 18px; font-size: 0.9375rem; }
@@ -2855,7 +2868,7 @@
        tap target keeps its full size even while pressed). Mo1's main buttons keep their own press. Not the bar's segments, the start circle or the Mentor button. */
     .step-back, .up-button, .each-up, .each-back, .pick-tick, .theme-swatch, .recipe-chip, .mentor-chip, .mentor-send, .mentor-close, .seg > button,
     .link-button, .danger-button, .more-info-button, .card-fold-button, .group-button, .home, .recipe-item, .paint-head, .guides-row,
-    .scheme-recipe-row, .faction-button, .tile-link, .step-line, .check-label, summary, #stage-legend button, .wheel-seg {
+    .scheme-recipe-row, .faction-button, .faction-row, .tile-link, .step-line, .check-label, summary, #stage-legend button, .wheel-seg {
       transition: filter var(--motion-fast) var(--motion-ease); }
     .chip { transition: filter var(--motion-fast) var(--motion-ease); }
     /* A phone's own :active often shows only once the finger lifts, together with the result; app.js also puts .lq-press on the thing under the finger as soon as it
@@ -3179,6 +3192,7 @@
           <h2>Armies</h2>
           <button class="link-button" id="faction-colours-link">Faction colours</button>
         </div>
+        <div class="view-switch hidden" id="faction-view" role="group" aria-label="Show armies as"></div>
         <div class="faction-grid" id="faction-grid"></div>
       </div>
 
@@ -3530,6 +3544,7 @@
             <li>Give each faction its own colour in <strong>Settings → Faction colours</strong> (or tap <strong>Faction colours</strong> on the dashboard). Tap the colour circle to pick one.</li>
             <li id="help-dashboard-tiles"><strong>Palette</strong> on the Dashboard shows a strip with one block for each colour, as wide as the paints you have in it (Owned and Running low). A colour with none, or only one, is an empty or thin block, and the first two are named under the strip (for example <strong>No red or orange yet</strong>). With no paints marked Owned, the strip is hidden. Tap it to open Your Palette. <strong>Achievements</strong> is a place held for later and does nothing yet.</li>
             <li id="help-card-folds">In Settings, the <strong>Faction colours</strong> and <strong>Paint brands</strong> cards are shut each time you open the app. Tap the heading to open one. Tapping <strong>Faction colours</strong> on the dashboard opens it for you. <strong>Stages</strong>, <strong>Import</strong> and <strong>Your data</strong> fold shut the same way.</li>
+            <li>On the Dashboard, <strong>Armies</strong> shows one row for each faction. Tap a row to see its units. Switch to <strong>Doughnuts</strong> for a small chart each.</li>
             <li><strong>Suggest</strong> offers a colour. If the faction's units have recipes linked, it uses those (armour recipes first, each recipe's first paint, usually the base coat). Otherwise it uses the colour the faction is usually painted, for well-known factions.</li>
             <li><strong>Use suggested colours</strong> colours every faction that hasn't got one yet, in one tap. Press Undo on the message if you change your mind.</li>
             <li>The colour shows as a bar on the dashboard's faction cards, a soft tint and a dot on unit cards, and a stripe on the faction filter.</li>

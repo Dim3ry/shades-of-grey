@@ -6503,6 +6503,24 @@
     const overallChart = document.getElementById("overall-chart");
     const stageLegend = document.getElementById("stage-legend");
     const factionGrid = document.getElementById("faction-grid");
+    // AB8 (AT-20): Armies as rows or doughnuts. settings.factionView is "rows" or "doughnuts"; anything else (or nothing saved) means rows.
+    function currentFactionView() { return settings.factionView === "doughnuts" ? "doughnuts" : "rows"; }
+    function renderFactionViewSwitch(show) {
+      const box = document.getElementById("faction-view");
+      if (!box) return;
+      box.classList.toggle("hidden", !show);
+      box.replaceChildren();
+      for (const [key, label] of [["rows", "Rows"], ["doughnuts", "Doughnuts"]]) {
+        const chip = makeChip(label, currentFactionView() === key, () => {
+          if (currentFactionView() === key) return;
+          settings.factionView = key;
+          saveSettings();
+          renderDashboard();
+        });
+        chip.dataset.factionView = key;
+        box.appendChild(chip);
+      }
+    }
 
     // Counts MODELS (not units) at each stage. Units tracked model-by-model count each model
     // at its own stage.
@@ -6571,35 +6589,56 @@
         stageLegend.appendChild(item);
       });
 
-      // One small doughnut per faction, like pie charts in a spreadsheet.
+      // AB8 (AT-20): one row per faction (the default), or one small doughnut per faction, like pie charts in a spreadsheet.
+      // The choice is settings.factionView ("rows" or "doughnuts"; missing or unknown means rows), a small saved setting, so DATA_VERSION stays 2.
       factionGrid.innerHTML = "";
+      const asRows = currentFactionView() === "rows";
+      factionGrid.className = asRows ? "faction-rows" : "faction-grid";
       const factions = uniqueSorted(models.map(m => m.faction));
       if (models.some(m => !m.faction)) factions.push(""); // units with no faction
-      if (factions.length === 0) {
-        factionGrid.innerHTML = "";
-      }
+      renderFactionViewSwitch(factions.length > 0);
       for (const faction of factions) {
+        if (asRows && !faction && factions.length === 1) continue;   // a lone "No faction" row says nothing
         const group = models.filter(m => m.faction === faction);
         const groupTotal = modelCount(group);
         const groupDone = doneCount(group);
         const pct = groupTotal ? Math.round(groupDone / groupTotal * 100) : 0;
         const button = document.createElement("button");
-        button.className = "faction-button";
+        button.className = asRows ? "faction-row" : "faction-button";
         const name = document.createElement("span");
         name.className = "faction-name";
         name.textContent = faction || "No faction";
-        // Its colour, if it has one: a bar across the top and a dot by the name.
+        // Its colour, if it has one: a bar at the left (rows) or across the top (doughnuts), and a dot by the name.
         const colour = factionColour(faction);
         if (colour) {
           button.classList.add("has-faction");
           setFactionStyle(button, colour);
-          name.prepend(makeSwatch(colour));
+          if (!asRows) name.prepend(makeSwatch(colour));
         }
         const small = document.createElement("small");
         small.textContent = `${groupDone} of ${groupTotal} done`;
-        button.append(
-          donutChart(stageCounts(group), 92, 14, `${pct}%`, "", `${faction || "No faction"}: ${pct}% done`),
-          name, small);
+        if (asRows) {
+          const counts = stageCounts(group);
+          const strip = document.createElement("span");
+          strip.className = "faction-strip";
+          strip.setAttribute("aria-hidden", "true");
+          counts.forEach((count, index) => {
+            if (!count) return;
+            const piece = document.createElement("i");
+            piece.style.flex = String(count);
+            piece.style.background = `var(--stage-${index})`;
+            strip.appendChild(piece);
+          });
+          const text = document.createElement("span");
+          text.className = "faction-text";
+          text.append(name, strip, small);
+          button.setAttribute("aria-label", `${faction || "No faction"}: ${groupDone} of ${groupTotal} done`);
+          button.append(text);
+        } else {
+          button.append(
+            donutChart(stageCounts(group), 92, 14, `${pct}%`, "", `${faction || "No faction"}: ${pct}% done`),
+            name, small);
+        }
         button.addEventListener("click", () => goToUnits({ faction }));
         factionGrid.appendChild(button);
       }
@@ -20497,6 +20536,7 @@
     function backupData() {
       return { app: "Minifolio", version: 6, dataVersion: DATA_VERSION, stages: STAGES, doneFrom: settings.doneFrom, models, recipes: book,
                factionColours: settings.factionColours,
+               factionView: currentFactionView(),   // AB8: Armies as rows or doughnuts. Older versions ignore it.
                // v20: the look travels with the backup too. Older versions ignore these.
                palette: settings.palette, appearance: settings.appearance, theme: currentTheme(),   // v47: the theme too
                brandsOff: cleanBrandsOff(settings.brandsOff),   // v48: the paint brands you've switched off
@@ -20874,6 +20914,8 @@
               }
               // Backups from v8 onwards hold faction colours. Older ones don't, so yours stay.
               if (unitsToo && !isList && parsed.factionColours) settings.factionColours = cleanFactionColours(parsed.factionColours);
+              // AB8: backups from this version on hold the Armies view. Older ones don't, so yours stays (rows unless you chose doughnuts).
+              if (unitsToo && !isList && (parsed.factionView === "rows" || parsed.factionView === "doughnuts")) settings.factionView = parsed.factionView;
               // v20: backups from v20 onwards hold the stage colour set and Appearance.
               // Anything unknown is ignored, so older backups leave yours as they are.
               if (unitsToo && !isList && typeof parsed.palette === "string" && Object.prototype.hasOwnProperty.call(PALETTES, parsed.palette)) settings.palette = parsed.palette;
