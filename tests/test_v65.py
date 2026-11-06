@@ -177,7 +177,7 @@ def main():
         check("the card is Best match", page.inner_text(".similar-card h3") == "Best match")
         got = rows(page)
         check("up to 3 rows, each with a name, a brand and a fit word",
-              1 <= len(got) <= 3 and all(r["name"] and r["brand"] and r["fit"] in ("Good fit", "Okay fit", "Poor fit", "Yours, poor fit") for r in got), got)
+              1 <= len(got) <= 3 and all(r["name"] and r["brand"] and r["fit"] in ("Close", "Near", "Not close", "Yours, not close") for r in got), got)
         check("the one-line note says colours are only a guide", "only a guide" in page.inner_text(".similar-note"), page.inner_text(".similar-note"))
         text = page.inner_text(".similar")
         # v66 (chunk 3.5b-1): this used to say there was no Your closest card yet. It now exists (see test_v66), so only the other two parts stay here.

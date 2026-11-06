@@ -268,7 +268,7 @@ def main():
         s = saved_settings(page)
         check("saved: never again", s.get("feedbackHidden") == "never" and not s.get("feedbackShownOn"), s)
         check("a plain message says so and where the link still is",
-              len(notices) == 1 and "won't ask again" in notices[0] and "Settings" in notices[0] and "Updates" in notices[0], notices)
+              len(notices) == 1 and "Fair enough" in notices[0] and "Updates" in notices[0]   # AB1: wording changed, no "we" and no Settings step, notices)
         page.reload(); settle(page)
         check("after a reload it is still gone", not card_shown(page))
         patch_settings(page, feedbackFirstSeen=day(-400), feedbackNextAfter=day(-100), feedbackShownOn=None)
@@ -399,7 +399,7 @@ def main():
         check("Help still says nothing you add is sent anywhere", "nothing you add is sent anywhere" in page.evaluate("() => document.getElementById('view-help').textContent"))
         sub_tab(page, "updates")
         updates = page.inner_text("#view-updates")
-        check("\"Tell us what you think\" is still there", "Tell us what you think" in updates)
+        check("\"Bugs and ideas\" is still there (AB1 renamed it from \"Tell us what you think\")", "Bugs and ideas" in updates)
 
         check("no real browser pop-ups at any point", not popups, popups)
         check("no page errors", not errors, errors[:3])

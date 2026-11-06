@@ -69,14 +69,14 @@ def main():
         print("\n--- 3. The empty screens ---")
         empty(page)
         e.main_tab(page, "units")
-        check("Units: 'No units yet.' with Paste army list and Import CSV right there",
-              page.inner_text("#units-empty").startswith("No units yet.") and page.locator("#units-empty #empty-wh").count() == 1 and page.locator("#units-empty #empty-csv").count() == 1,
+        check("Units: 'Nothing on the bench yet.' with Paste army list and Import CSV right there",
+              page.inner_text("#units-empty").startswith("Nothing on the bench yet.") and page.locator("#units-empty #empty-wh").count() == 1 and page.locator("#units-empty #empty-csv").count() == 1,
               page.inner_text("#units-empty"))
         e.main_tab(page, "recipes")
         e.recipe_view(page, "recipes")
-        check("Recipes: 'No recipes yet.'", page.locator("#recipe-list li.empty", has_text="No recipes yet.").count() == 1, page.inner_text("#recipe-list"))
+        check("Recipes: 'Nothing written down yet.'", page.locator("#recipe-list li.empty", has_text="Nothing written down yet.").count() == 1, page.inner_text("#recipe-list"))
         e.recipe_view(page, "palette")
-        check("Your Palette: 'No paints yet.'", page.inner_text("#paint-list").strip() == "No paints yet.", page.inner_text("#paint-list"))
+        check("Your Palette: 'Nothing in the paint rack yet.'", page.inner_text("#paint-list").strip() == "Nothing in the paint rack yet.", page.inner_text("#paint-list"))
         e.recipe_view(page, "shopping")
         check("Shopping: 'Nothing to buy.'", "Nothing to buy." in page.inner_text("#view-recipes"))
 

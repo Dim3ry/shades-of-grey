@@ -44,7 +44,7 @@ FAR = P(3, "Alpha Paints", "Owned Far", "#aa2222", status="owned")          # a 
 TWIN = P(4, "Alpha Paints", "Owned Twin", "#3a6fa5", status="owned")        # almost the same colour, and yours
 GHOST = P(5, "", "Ghost Owned", "#3a6ea6", status="owned", example=True)   # an example paint: never offered
 
-FITS = ("Good fit", "Okay fit", "Poor fit", "Yours, poor fit")
+FITS = ("Close", "Near", "Not close", "Yours, not close")
 
 def popup_open(page):
     return page.evaluate("() => !!document.querySelector('.similar-backdrop')")
@@ -130,8 +130,8 @@ def main():
               page.inner_text("#similar-card-yours h3").strip() == "Your closest" and [x[0] for x in tab_state(page)] == ["Best", "Yours"])
         page.click("#similar-tab-yours")
         got = rows_in(page, "yours")
-        check("two rows, each with a fit word; the far one says Yours, poor fit",
-              len(got) == 2 and all(r["fit"] in FITS for r in got) and got[0]["name"] == "Owned Okay" and got[1]["fit"] == "Yours, poor fit", got)
+        check("two rows, each with a fit word; the far one says Yours, not close",
+              len(got) == 2 and all(r["fit"] in FITS for r in got) and got[0]["name"] == "Owned Okay" and got[1]["fit"] == "Yours, not close", got)
         check("no Add button and no 'You own this' line in Your closest (all of it is yours)", all(not r["add"] and not r["own"] for r in got), got)
         check("the paint itself is not a row", all(r["name"] != "Probe Source" for r in got))
         check("the note is still there, once", page.locator(".similar-note").count() == 1 and "only a guide" in page.inner_text(".similar-note"))

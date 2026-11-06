@@ -381,7 +381,7 @@ def main():
               [r["why"] for r in rows_s] == ["Armour: a deep blue.", "Armour highlight: a lighter blue.", "Trim: gold.", "Eyes: a bright red."], [r["why"] for r in rows_s])
         check("the four paints are four different paints", len({r["name"] for r in rows_s}) == 4, rows_s)
         check("every row has one of the three honest tags",
-              all(r["tag"] in ("You own this", "Yours, poor fit", "Not in your palette") for r in rows_s), [r["tag"] for r in rows_s])
+              all(r["tag"] in ("You own this", "Yours, not close", "Not in your palette") for r in rows_s), [r["tag"] for r in rows_s])
         n0 = len(draft_steps(page))
         page.locator("#starter-list button.idea-pick").first.click()
         page.wait_for_timeout(250)
@@ -404,7 +404,7 @@ def main():
             pick_scheme(page, s["key"])
             r = starter_rows(page)
             check(f"{s['name']}: one row per colour, all different paints, honest tags", len(r) == len(s["colours"]) and len({x["name"] for x in r}) == len(r)
-                  and all(x["tag"] in ("You own this", "Yours, poor fit", "Not in your palette") for x in r), r)
+                  and all(x["tag"] in ("You own this", "Yours, not close", "Not in your palette") for x in r), r)
             pick_scheme(page, s["key"])
 
         # ---------- 5. Honesty ----------
@@ -438,10 +438,10 @@ def main():
         edit_recipe(page, 106)
         open_panel(page)
         pick_scheme(page, "blue-gold")
-        # v64: no note sentences. An owned paint that is only a poor fit sits under the best paint overall, labelled "Yours, poor fit".
+        # v64: no note sentences. An owned paint that is only a poor fit sits under the best paint overall, labelled "Yours, not close".
         notes_text = page.evaluate("() => [[...document.querySelectorAll('#starter-list .idea-also .idea-tag')].map(e => e.textContent), document.querySelectorAll('#starter-list .idea-note').length]")
-        check("an owned paint that is only a poor fit says Yours, poor fit under the best paint, and there are no note sentences",
-              "Yours, poor fit" in notes_text[0] and notes_text[1] == 0, notes_text)
+        check("an owned paint that is only a poor fit says Yours, not close under the best paint, and there are no note sentences",
+              "Yours, not close" in notes_text[0] and notes_text[1] == 0, notes_text)
 
         # ---------- 6. Where it sits ----------
         print("\n--- 6. Where it sits, other things unchanged ---")

@@ -426,7 +426,7 @@ def main():
         page.evaluate("() => { startDraft(); draft.splice(4, 1); renderStageEditor(); }")
         page.click("#save-stages"); page.wait_for_timeout(150)
         check("removing a used stage: asks the same thing",
-              asks(page, "1 unit(s) are in a stage you've removed. They'll move to the nearest earlier stage. Continue?"), box_text(page))
+              asks(page, "1 unit is in a stage you've removed. It'll move to the nearest earlier stage. Continue?"), box_text(page))
         no(page)
         check("…No changes nothing", page.evaluate("() => STAGES.length") == 8 and page.evaluate("() => models.find(m => m.id === 2).stage") == 4)
         page.click("#save-stages"); page.wait_for_timeout(150)

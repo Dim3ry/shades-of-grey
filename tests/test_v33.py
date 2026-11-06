@@ -311,7 +311,7 @@ def main():
                   and list_texts(page, "#basing-materials li") == x["materials"] and list_texts(page, "#basing-howto li") == x["howto"] and kinds == ["UL", "OL"]
                   and subs[:2] == ["What you need", "How to build it"] and (subs[2:] == ["Paint steps (optional)"] if x["paintSteps"] else subs[2:] == [])
                   and len(rows) == len(x["paintSteps"]) and [r["why"] for r in rows] == [why_line(i + 1, s) for i, s in enumerate(x["paintSteps"])]
-                  and all(r["tag"] in ("You own this", "Yours, poor fit", "Not in your palette") for r in rows)
+                  and all(r["tag"] in ("You own this", "Yours, not close", "Not in your palette") for r in rows)
                   and page.locator("#basing-add-all").count() == (1 if x["paintSteps"] else 0))
             check(f"{x['name']} ({x['group']}): summary, {len(x['materials'])} materials, {len(x['howto'])} how-to steps as plain text, {len(x['paintSteps'])} paint rows with technique, coats, mix % and note, honest tags, one Add all paint steps button",
                   ok, (rows[:2], subs, page.inner_text("#basing-summary")))
@@ -423,11 +423,11 @@ def main():
         check("an owned paint that is exactly the wanted colour says You own this (paint step 1)", rows[0]["name"] == "Exact Deep Blue" and rows[0]["tag"] == "You own this" and rows[0]["note"] == "", rows)
         # v64: the wishlist paint is the closest paint overall, so it is shown first; it still never says You own this
         check("a wishlist paint that is exactly right never says You own this (paint step 2 is a pale blue and the only exact paint for it is on the wishlist)",
-              rows[1]["tag"] != "You own this" and rows[1]["fit"] == "Good fit", rows[1])
-        check("every row has one of the three honest tags and a fit label", all(r["tag"] in ("You own this", "Yours, poor fit", "Not in your palette") for r in rows) and len(rows) == 3
-              and all(r["fit"] or r["tag"] == "Yours, poor fit" for r in rows), rows)
-        check("when the nearest paint you own is far from the colour wanted, the best paint overall comes first and yours sits under it as Yours, poor fit (no note sentences, never You own this)",
-              all(r["tag"] != "You own this" and r["note"] == "" and (r["also"] == "Yours, poor fit" or r["tag"] == "Yours, poor fit") for r in rows[1:]), rows[1:])
+              rows[1]["tag"] != "You own this" and rows[1]["fit"] == "Close", rows[1])
+        check("every row has one of the three honest tags and a fit label", all(r["tag"] in ("You own this", "Yours, not close", "Not in your palette") for r in rows) and len(rows) == 3
+              and all(r["fit"] or r["tag"] == "Yours, not close" for r in rows), rows)
+        check("when the nearest paint you own is far from the colour wanted, the best paint overall comes first and yours sits under it as Yours, not close (no note sentences, never You own this)",
+              all(r["tag"] != "You own this" and r["note"] == "" and (r["also"] == "Yours, not close" or r["tag"] == "Yours, not close") for r in rows[1:]), rows[1:])
         load(page, paints=[], recipes=[], units=[])
         open_editor(page)
         open_panel(page)

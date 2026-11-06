@@ -2,7 +2,7 @@
 
 In a recipe you are writing or editing: choose the base colour (a paint from the recipe, or "Whole model", the main colour of
 your recipe filed under the Whole model part), choose what you are painting (eyes or glow, trim, gems, weapon, cloth, base) and see 3 paint ideas with a
-plain-English reason. Each says "You own this" or "Yours, poor fit". Tapping one adds it to the recipe as a new step.
+plain-English reason. Each says "You own this" or "Yours, not close". Tapping one adds it to the recipe as a new step.
 All the maths is in colour.js (tested by test_colour_engine.py), which v28 wires into index.html and sw.js.
 
 Checks:
@@ -209,7 +209,7 @@ def main():
         check("there are exactly 3 ideas", len(got) == 3, got)
         # v64: the best paint overall can come first when your own paint is a poor fit, so "Not in your palette" is a valid label here too
         check("every idea has a paint name, a label and a plain-English reason",
-              all(i["name"] and i["tag"] in ("You own this", "Yours, poor fit", "Not in your palette") and i["why"].endswith(".") and len(i["why"]) > 25 for i in got), got)
+              all(i["name"] and i["tag"] in ("You own this", "Yours, not close", "Not in your palette") and i["why"].endswith(".") and len(i["why"]) > 25 for i in got), got)
         check("the first reason names the opposite on the colour wheel", "opposite" in got[0]["why"] and "blue" in got[0]["why"], got[0])
         check("the foot note says colours on screen are a guide (v75: shorter, COMP-5)",
               "Colours on screen are a guide" in page.inner_text("#colour-ideas .ideas-body") and "Colours on screen are a guide" in page.inner_text("#colour-ideas .ideas-body"))
@@ -219,16 +219,16 @@ def main():
         print("\n--- 3. The ideas are right ---")
         names = [i["name"] for i in got]
         check("the glow idea for blue is warm and owned: Troll Slayer Orange comes first (owned, so Closest you own or You own this)",
-              names[0] == "Troll Slayer Orange" and got[0]["tag"] in ("You own this", "Yours, poor fit"), got)
+              names[0] == "Troll Slayer Orange" and got[0]["tag"] in ("You own this", "Yours, not close"), got)
         check("no paint is suggested twice, and the base paint is never suggested", len(set(names)) == 3 and "Macragge Blue" not in names, names)
         check("owned paints come before a wishlist paint (Fire Dragon Bright is not owned, so it is never first here)",
               all(i["name"] != "Fire Dragon Bright" for i in got), names)
         pick_role(page, "weapon")
         weapon = ideas(page)
-        # v64: Eshin Grey (yours) is a poor fit for a mid-grey, so the closest mid-grey overall comes first and Eshin Grey sits under it as Yours, poor fit
+        # v64: Eshin Grey (yours) is a poor fit for a mid-grey, so the closest mid-grey overall comes first and Eshin Grey sits under it as Yours, not close
         check("weapon ideas start with a mid-grey and the reason says so",
               len(weapon) == 3 and "grey" in weapon[0]["why"] and weapon[0]["name"] and "Eshin Grey" in page.inner_text("#colour-ideas .ideas-body")
-              and "Yours, poor fit" in page.inner_text("#colour-ideas .ideas-body"), weapon)
+              and "Yours, not close" in page.inner_text("#colour-ideas .ideas-body"), weapon)
         pick_role(page, "base")
         base = ideas(page)
         check("base ideas are quiet: the first reason says dark neutral", "dark neutral" in base[0]["why"], base)
@@ -256,10 +256,10 @@ def main():
         set_step_paint(page, 0, "Macragge Blue")
         open_panel(page)
         far = ideas(page)
-        # v64: the best paint overall comes first; your poor match is under it as "Yours, poor fit"; no note sentence
+        # v64: the best paint overall comes first; your poor match is under it as "Yours, not close"; no note sentence
         far_also = page.evaluate("() => { const a = document.querySelector('#colour-ideas ul.idea-list > li .idea-also'); return a ? [a.querySelector('.idea-name').childNodes[0].textContent, a.querySelector('.idea-tag').textContent] : null; }")
-        check("when the nearest paint you own is a poor match, the best paint overall is first and yours is under it as Yours, poor fit (no note)",
-              far and far[0]["tag"] == "Not in your palette" and far_also == ["Only Owned Green", "Yours, poor fit"] and far[0]["note"] == "", (far, far_also))
+        check("when the nearest paint you own is a poor match, the best paint overall is first and yours is under it as Yours, not close (no note)",
+              far and far[0]["tag"] == "Not in your palette" and far_also == ["Only Owned Green", "Yours, not close"] and far[0]["note"] == "", (far, far_also))
         load(page, paints=[dict(PAINTS[0]), dict(PAINTS[4])])
         open_editor(page)
         set_step_paint(page, 0, "Macragge Blue")

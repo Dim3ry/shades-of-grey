@@ -74,7 +74,7 @@ def main():
         leave_launch(page)
         tap_tab(page, "units")
         quiet(page)
-        check("the top card is showing", page.locator("#draft-card-unit").is_visible() and "We kept your unfinished unit" in page.inner_text("#draft-card-unit"))
+        check("the top card is showing", page.locator("#draft-card-unit").is_visible() and "Your unfinished unit is still here" in page.inner_text("#draft-card-unit"))
         check("no second box at the bottom", page.locator("#dialog-backdrop").is_hidden())
         page.click("#toggle-add")
         page.wait_for_timeout(300)

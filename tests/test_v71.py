@@ -3,7 +3,7 @@
 What changed:
  The Compendium gets a new folding part, Ask the Mentor (first of the parts, under the Pro preview heading). You choose a Base colour, a
  Second colour (optional) and a Part (Armour, Eyes, Weapon or Base). Under each chosen colour you get up to three paint picks for that part,
- each row with its tag and reason, your own paints first and a poor match you own labelled Yours, poor fit. It reuses the Colour ideas rules.
+ each row with its tag and reason, your own paints first and a poor match you own labelled Yours, not close. It reuses the Colour ideas rules.
  The tips and the similar-paint alternatives are the second half (4.2b).
 
 Checks:
@@ -89,13 +89,13 @@ def main():
         r = rows(page)
         check("up to three rows under 'With Macragge Blue'", labels(page) == ["Part", "With Macragge Blue"] and 1 <= len(r) <= 3, (labels(page), len(r)))
         check("each row has a name, an ownership tag and a reason behind it", all(x["name"] and x["tag"] and x["text"] > 20 for x in r), r[:2])
-        check("a paint of yours is tagged You own this, and a poor one Yours, poor fit",
-              any("You own this" in x["tag"] for x in r) or any("Yours, poor fit" in x["tag"] for x in r), r)
+        check("a paint of yours is tagged You own this, and a poor one Yours, not close",
+              any("You own this" in x["tag"] for x in r) or any("Yours, not close" in x["tag"] for x in r), r)
         load(page, paints=[])
         open_mentor(page)
         pick(page, "base", "Macragge")
         r = rows(page)
-        check("with no paints of yours, no row claims you own it", r and not any(("You own this" in x["tag"]) or ("Yours, poor fit" in x["tag"]) for x in r), r)
+        check("with no paints of yours, no row claims you own it", r and not any(("You own this" in x["tag"]) or ("Yours, not close" in x["tag"]) for x in r), r)
 
         print("\n--- 4. Second colour and part ---")
         load(page)

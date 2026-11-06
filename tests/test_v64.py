@@ -4,7 +4,7 @@ What changed:
  One fit rule in colour.js: Good fit (CIEDE2000 distance up to 6), Okay fit (up to 15), Poor fit (over 15); rough paints (metallic, Contrast,
  wash and so on) get a third more room. All cut-offs and the words are in one place (GOOD_UNDER, CLOSE_UNDER, ROUGH_STRETCH, FIT_WORDS).
  suggestPaint() gives the one suggestion a screen shows: your paint first if it is Good or Okay; if your best paint is Poor, the best paint
- overall first and yours second ("Yours, poor fit"). Used by Colour ideas, starter schemes, detail recipes, basing and the wheel panel.
+ overall first and yours second ("Yours, not close"). Used by Colour ideas, starter schemes, detail recipes, basing and the wheel panel.
  The sentences under a suggestion ("Closest you own", "Not very close...", "Similar, not exact.") are gone: labels only.
  The wheel panel's Opposite lifts a colour darker than 0.45 lightness to 0.45 (saturation at least 0.55). Split, triad and the recipe roles
  are as before. No paint content file changed.
@@ -73,7 +73,7 @@ def main():
         joined = " ".join(entry["changes"]) if entry else ""
         check("the entry names the three labels and Yours, poor fit", all(w in joined for w in ("Good fit", "Okay fit", "Poor fit", "Yours, poor fit")), joined)
         help_li = page.evaluate("() => { const e = document.getElementById('help-fit'); return e ? e.textContent : ''; }")
-        check("Help has a line on the fit labels", all(w in help_li for w in ("Good fit", "Okay fit", "Poor fit", "Yours, poor fit")), help_li)
+        check("Help has a line on the fit labels", all(w in help_li for w in ("Close", "Near", "Not close", "Yours, not close")), help_li)
         check("no em dash in the new Help line or Updates entry", "—" not in help_li and "—" not in joined)
 
         # ---------- 2. The rule ----------
@@ -84,8 +84,8 @@ def main():
                      C.fitLabel({ quality: 'poor', owned: false }), C.fitLabel({ quality: 'poor', owned: true }), C.fitLabel(null)] }; }""")
         check("Good up to 6, Okay up to 15, Poor over 15", j["g"] == ["good", "good", "close"] and j["c"] == ["close", "close", "poor"], j)
         check("rough paints (metallic, Contrast, wash...) get a third more room: 8 and 20", j["rg"] == ["good", "close"] and j["rc"] == ["close", "poor"], j)
-        check("the words: Good fit, Okay fit, Poor fit, and Yours, poor fit for a poor paint you own",
-              j["lab"] == ["Good fit", "Okay fit", "Poor fit", "Yours, poor fit", ""], j["lab"])
+        check("the words: Good fit, Okay fit, Poor fit, and Yours, not close for a poor paint you own",
+              j["lab"] == ["Close", "Near", "Not close", "Yours, not close", ""], j["lab"])
         check("the cut-offs are set once, in colour.js", len(re.findall(r"const GOOD_UNDER = 6, CLOSE_UNDER = 15", colour)) == 1 and "GOOD_UNDER" not in app and "CLOSE_UNDER" not in app)
         app_code = re.sub(r"const CHANGELOG = \[.*?\n    \];", "", app, flags=re.S)   # (the v64 Updates entry names them, on purpose)
 
@@ -105,20 +105,20 @@ def main():
         near_good, near_okay = shade(2, 5), shade(8, 13)
         check("test colours found (a Good and an Okay shade of the target)", bool(near_good and near_okay), (near_good, near_okay))
         r = suggest([["Own Green", "#2e7d32", "owned"], ["Shop Orange", TARGET, "notowned"]])
-        check("only a poor match owned: the best paint overall is first (Good fit), yours is second as Yours, poor fit",
-              r and r["name"] == "Shop Orange" and not r["owned"] and r["label"] == "Good fit" and r["also"] and r["also"]["name"] == "Own Green" and r["also"]["label"] == "Yours, poor fit", r)
+        check("only a poor match owned: the best paint overall is first (Good fit), yours is second as Yours, not close",
+              r and r["name"] == "Shop Orange" and not r["owned"] and r["label"] == "Close" and r["also"] and r["also"]["name"] == "Own Green" and r["also"]["label"] == "Yours, not close", r)
         r = suggest([["Own Green", "#2e7d32", "owned"]])
-        check("only a poor match owned and nothing better: that one paint, Yours, poor fit, no second line",
-              r and r["name"] == "Own Green" and r["owned"] and r["label"] == "Yours, poor fit" and r["also"] is None, r)
+        check("only a poor match owned and nothing better: that one paint, Yours, not close, no second line",
+              r and r["name"] == "Own Green" and r["owned"] and r["label"] == "Yours, not close" and r["also"] is None, r)
         r = suggest([["Own Near", near_good, "owned"], ["Shop Orange", TARGET, "notowned"]])
         check("a good match owned goes first even though a shop paint is closer; Good fit, no second line",
-              r and r["name"] == "Own Near" and r["owned"] and r["label"] == "Good fit" and r["also"] is None, r)
+              r and r["name"] == "Own Near" and r["owned"] and r["label"] == "Close" and r["also"] is None, r)
         r = suggest([["Own Okay", near_okay, "owned"], ["Shop Orange", TARGET, "notowned"]])
-        check("an okay match owned goes first and says Okay fit, no second line", r and r["name"] == "Own Okay" and r["owned"] and r["label"] == "Okay fit" and r["also"] is None, r)
+        check("an okay match owned goes first and says Okay fit, no second line", r and r["name"] == "Own Okay" and r["owned"] and r["label"] == "Near" and r["also"] is None, r)
         r = suggest([["Own Okay", near_okay, "low"], ["Own Green", "#2e7d32", "owned"]])
         check("a paint running low counts as owned", r and r["name"] == "Own Okay" and r["owned"], r)
         r = suggest([["Shop Orange", TARGET, "notowned"], ["Shop Near", near_good, "wishlist"]])
-        check("nothing owned: the closest paint, not in your palette, with its fit and no second line", r and r["name"] == "Shop Orange" and not r["owned"] and r["label"] == "Good fit" and r["also"] is None, r)
+        check("nothing owned: the closest paint, not in your palette, with its fit and no second line", r and r["name"] == "Shop Orange" and not r["owned"] and r["label"] == "Close" and r["also"] is None, r)
         check("an empty collection and an empty list give nothing, no error", suggest([]) is None and page.evaluate("() => MinifolioColour.suggestPaint('nope', [])") is None)
         r = suggest([["Own Green", "#2e7d32", "owned"], ["Shop Orange", TARGET, "notowned"]], exclude=[TARGET])
         check("a colour in the exclude list is skipped (the same paint is never suggested twice)", r and r["name"] == "Own Green", r)
@@ -137,9 +137,9 @@ def main():
         base = {"id": 1, "brand": "Citadel", "name": "Macragge Blue", "colour": "#0d407f", "status": "owned"}
         wanted = page.evaluate("() => colourIdeaWanted(MinifolioColour.harmonies('#0d407f'), COLOUR_ROLES[0], 'complementary', 0).hex")
         rows = ideas_for(page, [base, {"id": 2, "brand": "Test", "name": "Only Owned Green", "colour": "#2e7d32", "status": "owned"}])
-        check("only a poor match owned: the first idea is a paint you do not own with a fit label, and Only Owned Green is under it as Yours, poor fit",
-              rows and rows[0]["tag"] == "Not in your palette" and rows[0]["fit"] in ("Good fit", "Okay fit", "Poor fit") and rows[0]["also"]
-              and rows[0]["also"]["name"] == "Only Owned Green" and rows[0]["also"]["tag"] == "Yours, poor fit" and rows[0]["also"]["add"], rows)
+        check("only a poor match owned: the first idea is a paint you do not own with a fit label, and Only Owned Green is under it as Yours, not close",
+              rows and rows[0]["tag"] == "Not in your palette" and rows[0]["fit"] in ("Close", "Near", "Not close") and rows[0]["also"]
+              and rows[0]["also"]["name"] == "Only Owned Green" and rows[0]["also"]["tag"] == "Yours, not close" and rows[0]["also"]["add"], rows)
         check("the number of ideas is still three (the second paint sits inside the row)", len(rows) == 3, len(rows))
         page.click("#colour-ideas li:first-child .idea-also button")
         page.wait_for_timeout(200)
@@ -147,15 +147,15 @@ def main():
         check("tapping the second line adds your own paint as a new last step", added == "Only Owned Green", added)
         rows = ideas_for(page, [base, {"id": 2, "brand": "Test", "name": "Exact Owned Orange", "colour": wanted, "status": "owned"}])
         check("a good match owned: first, You own this, Good fit, nothing second",
-              rows and rows[0]["name"] == "Exact Owned Orange" and rows[0]["tag"] == "You own this" and rows[0]["fit"] == "Good fit" and rows[0]["also"] is None, rows)
+              rows and rows[0]["name"] == "Exact Owned Orange" and rows[0]["tag"] == "You own this" and rows[0]["fit"] == "Close" and rows[0]["also"] is None, rows)
         okay = page.evaluate("""([target]) => { const C = MinifolioColour, hsl = C.hexToHsl(target);
             for (let k = 1; k < 80; k++) { const hex = C.hslToHex(hsl.h, hsl.s, Math.max(0, hsl.l - k * 0.01)); const d = C.colourDistance(target, hex); if (d > 8 && d < 13) return hex; } return null; }""", [wanted])
         rows = ideas_for(page, [base, {"id": 2, "brand": "Test", "name": "Okay Owned Orange", "colour": okay, "status": "owned"}])
         check("an okay match owned: first, You own this, Okay fit, nothing second",
-              rows and rows[0]["name"] == "Okay Owned Orange" and rows[0]["tag"] == "You own this" and rows[0]["fit"] == "Okay fit" and rows[0]["also"] is None, rows)
+              rows and rows[0]["name"] == "Okay Owned Orange" and rows[0]["tag"] == "You own this" and rows[0]["fit"] == "Near" and rows[0]["also"] is None, rows)
         rows = ideas_for(page, [base])
         check("an empty collection: every idea is Not in your palette with a fit label, none says Yours, no second line",
-              len(rows) == 3 and all(r["tag"] == "Not in your palette" and r["fit"] in ("Good fit", "Okay fit", "Poor fit") and r["also"] is None for r in rows), rows)
+              len(rows) == 3 and all(r["tag"] == "Not in your palette" and r["fit"] in ("Close", "Near", "Not close") and r["also"] is None for r in rows), rows)
         body = page.evaluate("() => document.getElementById('colour-ideas').textContent")
         check("labels only: no note under any idea, and none of the old sentences",
               page.evaluate("() => document.querySelectorAll('#colour-ideas .idea-note').length") == 0
@@ -198,15 +198,15 @@ def main():
         rows = page.evaluate(PANEL_ROWS)
         fam = page.evaluate("(c) => MinifolioColour.colourFamily(c)", rows[0]["colour"] if rows else "#000000")
         check("Kantor Blue's Opposite in the panel is a clear orange or gold, with a fit label and Not in your palette",
-              rows and fam in ("orange", "yellow") and rows[0]["tag"] == "Not in your palette" and rows[0]["fit"] in ("Good fit", "Okay fit"), rows[:1] and (rows[0], fam))
+              rows and fam in ("orange", "yellow") and rows[0]["tag"] == "Not in your palette" and rows[0]["fit"] in ("Close", "Near"), rows[:1] and (rows[0], fam))
         check("no note sentences in the panel's five colour rows (the starter schemes below keep their own summary line)", len(rows) >= 5 and all(r["notes"] == 0 for r in rows[:5]), [r["notes"] for r in rows])
         load(page, paints=[kantor, w38.P(2, "Own Green", "#2e7d32", brand="Test Paints")])
         w38.open_tab(page)
         w38.tap(page, "blue")
         w38.open_row(page, "Kantor Blue")
         rows = page.evaluate(PANEL_ROWS)
-        check("the panel with only a poor owned match: the best paint first, Own Green second as Yours, poor fit",
-              rows and rows[0]["tag"] == "Not in your palette" and rows[0]["also"] and rows[0]["also"]["name"] == "Own Green" and rows[0]["also"]["tag"] == "Yours, poor fit", rows[:1])
+        check("the panel with only a poor owned match: the best paint first, Own Green second as Yours, not close",
+              rows and rows[0]["tag"] == "Not in your palette" and rows[0]["also"] and rows[0]["also"]["name"] == "Own Green" and rows[0]["also"]["tag"] == "Yours, not close", rows[:1])
         sec = page.evaluate("() => { const l = [...document.querySelectorAll('#cmp-paint-panel .paint-panel-label')].map(e => e.textContent); return l; }")
         check("the panel still has Opposite, Neighbours, Triad and the starter schemes", sec[:3] == ["Opposite", "Neighbours", "Triad"], sec)
 
