@@ -267,8 +267,9 @@ def main():
         check("the card is gone", not card_shown(page))
         s = saved_settings(page)
         check("saved: never again", s.get("feedbackHidden") == "never" and not s.get("feedbackShownOn"), s)
+        # AB1: the wording changed (no "we", no Settings step), so this reads "Fair enough. You can still give feedback in Updates."
         check("a plain message says so and where the link still is",
-              len(notices) == 1 and "Fair enough" in notices[0] and "Updates" in notices[0]   # AB1: wording changed, no "we" and no Settings step, notices)
+              len(notices) == 1 and "Fair enough" in notices[0] and "Updates" in notices[0], notices)
         page.reload(); settle(page)
         check("after a reload it is still gone", not card_shown(page))
         patch_settings(page, feedbackFirstSeen=day(-400), feedbackNextAfter=day(-100), feedbackShownOn=None)
