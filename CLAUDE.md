@@ -24,6 +24,7 @@ One version bump per chunk that changes the app. A bump means:
 - VERSION in sw.js
 - APP_VERSION in app.js
 - one new entry at the top of CHANGELOG in app.js, in plain words
+  - Style of new entries (AT-30): at most two plain lines, only what a painter would notice; no colon lead-ins such as "Guides:"; plumbing goes in one "Fixes and tidying." line; no reassurance endings such as "Nothing is locked and nothing works differently."; there is still exactly one entry per version bump (tests check has_entry). Existing entries stay as they are.
 - update Help when behaviour or names change
 - add tests/test_vNN.py for the new behaviour only (see Tests below)
 - if you add a script file, index.html and sw.js change and the shared test follows them; no test file is edited
