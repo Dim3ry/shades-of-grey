@@ -676,7 +676,7 @@
     .chips::-webkit-scrollbar, .buy-shops::-webkit-scrollbar { display: none; }
     .chips > button, .buy-shops > button { flex: 1 1 auto; min-width: max(44px, min-content);   /* v53: 44 px wide at least */ max-width: 16em; line-height: 1.15; text-align: center; }
     .chips > button:only-child, .buy-shops > button:only-child { flex-grow: 0; }
-    .chips > .chip { padding-inline: 10px; border-radius: 22px; }   /* a pill at one line (40 or 44 px tall), rounded corners at two */
+    .chips > .chip { padding-inline: 10px; border-radius: var(--radius-control); }   /* AB5: corners follow the look */
     .chips.chips-scroll, .buy-shops.chips-scroll {
       overscroll-behavior-x: contain; scroll-snap-type: x proximity; scroll-padding-inline: 24px; -webkit-overflow-scrolling: touch;
     }
@@ -694,10 +694,10 @@
     }
     .chips.chips-tight { gap: 4px; }
     .chips.chips-tight > .chip { padding-inline: 6px; }   /* the step before sliding: a little less room round each label */
-    .chips.chips-tall > .chip { border-radius: 14px; }   /* two-line buttons: rounded corners, not a stretched pill */
+    .chips.chips-tall > .chip { border-radius: var(--radius-control); }   /* AB5: two-line buttons */
     .chips.chips-wrap { flex-wrap: wrap; gap: 8px; overflow: visible; contain: none; padding: 0; margin-left: 0 !important; margin-right: 0 !important; }
     .chips.chips-wrap > button { flex: 0 1 auto; min-width: 44px; max-width: none; line-height: normal; }
-    .chips.chips-wrap > .chip { padding-inline: 14px; border-radius: 999px; }
+    .chips.chips-wrap > .chip { padding-inline: 14px; border-radius: var(--radius-control); }
     .chip {
       background: var(--background);
       color: var(--muted);
@@ -707,7 +707,7 @@
       font-size: 0.8125rem;
       min-height: 44px;       /* v53: was 40 */
       min-width: 44px;        /* v53: the short "All" chip was 36 wide */
-      border-radius: 999px;   /* pill shape */
+      border-radius: var(--radius-control);   /* AB5: was a pill; now follows the look */
     }
     .chip[aria-pressed="true"] { color: var(--on-accent); background-color: var(--accent-fill, var(--accent)); border-color: var(--accent-fill, var(--accent)); font-weight: 600; }
     /* v49: the Units filter groups (To do, Done, Repaint) are three equal buttons across the card; the stage chips open underneath */
@@ -1145,7 +1145,7 @@
     .review-row label { display: flex; gap: 10px; align-items: center; cursor: pointer; }
     .review-row input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--accent); flex-shrink: 0; }
     .review-row .meta { color: var(--muted); font-size: 0.75rem; }
-    .review-row .tag { font-size: 0.6875rem; padding: 2px 6px; border-radius: 999px; border: var(--border-width) var(--border-style) var(--border); color: var(--muted); margin-left: auto; white-space: nowrap; }
+    .review-row .tag { font-size: 0.6875rem; padding: 2px 6px; border-radius: var(--radius-control); border: var(--border-width) var(--border-style) var(--border); color: var(--muted); margin-left: auto; white-space: nowrap; }
     .review-row.clash .tag { color: var(--caution); border-color: var(--caution); }
     .review-row select { font-size: 0.875rem; padding: 7px; }
     .review-row.off { opacity: 0.5; }
@@ -1285,7 +1285,7 @@
     .recipe-links { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
     .recipe-chip {
       background: var(--background); color: var(--text); border: var(--border-width) var(--border-style) var(--border);
-      border-radius: 999px; padding: 7px 12px; font-size: 0.8125rem; min-height: 44px;   /* v53: Open recipe / Go to chips were 36 */
+      border-radius: var(--radius-control); padding: 7px 12px; font-size: 0.8125rem; min-height: 44px;   /* v53: Open recipe / Go to chips were 36 */
       display: inline-flex; align-items: center; gap: 6px; text-align: left;
     }
     .recipe-chip:hover { border-color: var(--accent); }
@@ -1294,10 +1294,10 @@
     .linked-list { display: flex; flex-wrap: wrap; gap: 6px; }
     .linked-list[hidden] { display: none; }   /* RS1: the folded Used on list */
     .linked { display: inline-flex; }
-    .linked .recipe-chip { border-radius: 999px 0 0 999px; }
+    .linked .recipe-chip { border-radius: var(--radius-control) 0 0 var(--radius-control); }
     .linked .unlink {
       background: var(--background); color: var(--muted); border: var(--border-width) var(--border-style) var(--border); border-left: none;
-      border-radius: 0 999px 999px 0; padding: 0 12px; min-height: 44px; min-width: 44px;   /* v53: Unlink was 36 by 36 */
+      border-radius: 0 var(--radius-control) var(--radius-control) 0; padding: 0 12px; min-height: 44px; min-width: 44px;   /* v53: Unlink was 36 by 36 */
     }
     .linked .unlink:hover { color: var(--danger); }
     .panel-field { display: grid; gap: 6px; font-size: 0.8125rem; color: var(--muted); }
@@ -1517,7 +1517,7 @@
     .status-chip { border-color: var(--chip-colour); }
     .status-chip[aria-pressed="true"] { background: var(--chip-colour); color: var(--chip-on); border-color: var(--chip-colour); }
     .status-row { margin-top: 12px; }
-    .status-pill { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 999px; font-size: 0.75rem; border: 1px solid; vertical-align: middle; white-space: nowrap; }
+    .status-pill { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: var(--radius-control); font-size: 0.75rem; border: 1px solid; vertical-align: middle; white-space: nowrap; }
     .status-pill.s-owned { color: var(--good); border-color: var(--good); }
     .status-pill.s-low { color: var(--warn); border-color: var(--warn); }
     .status-pill.s-empty { color: var(--bad); border-color: var(--bad); }
@@ -1768,7 +1768,7 @@
     /* F2: Start from in Colour ideas: your own paints as swatches (colour dot and name) that wrap onto lines, then More paints */
     .start-swatches { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
     .start-swatches > .start-swatch { display: inline-flex; align-items: center; gap: 8px; flex: 0 1 auto; max-width: 100%; min-width: 44px; min-height: 44px;
-                                      padding: 8px 14px 8px 10px; border-radius: 14px; text-align: left; line-height: 1.25; white-space: normal; }
+                                      padding: 8px 14px 8px 10px; border-radius: var(--radius-control); text-align: left; line-height: 1.25; white-space: normal; }
     .start-swatch-name { min-width: 0; overflow-wrap: anywhere; }
     .start-swatches > .start-more { min-height: 44px; padding: 0 14px; }
     /* CL2: Colour Lab colours morph from one set to the next (app.js "CL2:"). While it runs the pressed colour is drawn over the rest, so they slide in
@@ -2616,7 +2616,8 @@
     }
     :where(:root[data-t="classic"]) .chip { border-left-color: var(--chip-colour, var(--pill-edge)); }
     :where(:root[data-t="classic"]) :is(.big, .legend .num, .group-button strong, .qty-count, .paint-line .mix, .history-table td, .chart-tip b) { font-family: var(--font-num); }
-    :where(:root[data-t="classic"]) .card {
+    /* AB5: the eight corner marks only on the headline card and the Mentor window; every other Classic card keeps its plain 1 px border */
+    :where(:root[data-t="classic"]) :is(#headline-card, .mentor-window) {
       background-image: linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark));
       background-size: 10px 2px, 2px 10px, 10px 2px, 2px 10px, 10px 2px, 2px 10px, 10px 2px, 2px 10px;
       background-position: left 3px top 3px, left 3px top 3px, right 3px top 3px, right 3px top 3px, left 3px bottom 3px, left 3px bottom 3px, right 3px bottom 3px, right 3px bottom 3px;
@@ -3009,11 +3010,11 @@
     /* X5: the Mentor pop-up window. MW1: it opens out of the round button (app.js plays the move; see "MW1:" below).
        No resting transform on any tap target. */
     .mentor-backdrop { --mp-gap: max(56px, calc(env(safe-area-inset-top) + 12px)); position: fixed; inset: 0; z-index: 200; display: flex; align-items: flex-end; justify-content: center; padding: 0 20px calc(var(--arc-h) + 12px); overscroll-behavior: contain; }
-    .mentor-window { position: relative; box-sizing: border-box; width: 100%; max-width: 380px; height: 260px; max-height: calc(100% - var(--mp-gap)); display: flex; flex-direction: column; gap: 6px; padding: 16px; color: var(--text); background-color: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: 18px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45); }
+    .mentor-window { position: relative; box-sizing: border-box; width: 100%; max-width: 380px; height: 260px; max-height: calc(100% - var(--mp-gap)); display: flex; flex-direction: column; gap: 6px; padding: 16px; color: var(--text); background-color: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45); }
     .mentor-col { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
     .mentor-greeting { margin: 0; padding-top: 4px; font-size: 1.125rem; font-weight: 600; line-height: 1.3; color: var(--accent); overflow-wrap: anywhere; }
-    .mentor-chip { flex: 0 1 auto; max-width: 100%; min-height: 44px; padding: 6px 16px; font: inherit; font-size: 0.9375rem; font-weight: 600; text-align: left; white-space: normal; overflow-wrap: anywhere; color: var(--accent); background-color: var(--card); border: 1px solid var(--accent); border-radius: 22px; cursor: pointer; }
-    .mentor-input { flex: 1; min-width: 0; height: 48px; box-sizing: border-box; padding: 0 12px; font: inherit; font-size: 1rem; color: var(--text); background-color: var(--background); border: 1px solid var(--border); border-radius: 12px; }
+    .mentor-chip { flex: 0 1 auto; max-width: 100%; min-height: 44px; padding: 6px 16px; font: inherit; font-size: 0.9375rem; font-weight: 600; text-align: left; white-space: normal; overflow-wrap: anywhere; color: var(--accent); background-color: var(--card); border: 1px solid var(--accent); border-radius: var(--radius-control); cursor: pointer; }
+    .mentor-input { flex: 1; min-width: 0; height: 48px; box-sizing: border-box; padding: 0 12px; font: inherit; font-size: 1rem; color: var(--text); background-color: var(--background); border: 1px solid var(--border); border-radius: var(--radius-control); }
     .mentor-input:disabled { opacity: 0.55; }
     /* X6b: the conversation. The scroll box holds the greeting and the messages; the chips sit under it (one line, scrolling sideways, no scroll bar); the typing box is at the bottom. */
     .mentor-scroll { position: relative; flex: 0 1 auto; min-height: 0; padding-bottom: 6px; overflow-y: auto; overscroll-behavior: contain; }   /* A1: 6 px so the last chip is not cut by the edge */
@@ -3027,18 +3028,18 @@
     .mentor-window:not(.mentor-chatting) .mentor-chips { max-height: min(40vh, 230px); }
     .mentor-window:not(.mentor-chatting) .mentor-scroll { flex: none; }
     .mentor-form { flex: none; display: flex; gap: 6px; margin-top: auto; }
-    .mentor-send { flex: none; width: 44px; height: 48px; padding: 0; display: flex; align-items: center; justify-content: center; color: var(--chip-on); background-color: var(--accent-fill, var(--accent)); border: 0; border-radius: 12px; cursor: pointer; }
+    .mentor-send { flex: none; width: 44px; height: 48px; padding: 0; display: flex; align-items: center; justify-content: center; color: var(--chip-on); background-color: var(--accent-fill, var(--accent)); border: 0; border-radius: var(--radius-control); cursor: pointer; }
     .mentor-send:disabled { opacity: 0.55; cursor: default; }
     .mentor-msgs { display: grid; gap: 10px; }
     .mentor-msg { min-width: 0; display: grid; gap: 8px; animation: mo-fade var(--motion-fast) var(--motion-ease) both; }
     .mentor-msgs:not(:empty) { margin-top: 10px; }
     .mentor-me { justify-items: end; }
-    .mentor-me p { margin: 0; max-width: 85%; padding: 8px 12px; font-size: 0.9375rem; line-height: 1.35; overflow-wrap: anywhere; white-space: pre-wrap; color: var(--text); background-color: var(--accent-wash); border: 1px solid var(--border); border-radius: 14px; }
+    .mentor-me p { margin: 0; max-width: 85%; padding: 8px 12px; font-size: 0.9375rem; line-height: 1.35; overflow-wrap: anywhere; white-space: pre-wrap; color: var(--text); background-color: var(--accent-wash); border: 1px solid var(--border); border-radius: var(--radius-card); }
     .mentor-lead { margin: 0; font-size: 0.9375rem; line-height: 1.4; overflow-wrap: anywhere; }
     .mentor-reply .idea-list { gap: 8px; }
     .mentor-sources-label { margin: 0; font-size: 0.8125rem; color: var(--muted); }
     .mentor-sources { display: grid; gap: 6px; justify-items: start; }
-    .mentor-source { max-width: 100%; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px; font: inherit; font-size: 0.875rem; text-align: left; color: var(--accent); background-color: var(--card); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; }
+    .mentor-source { max-width: 100%; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px; font: inherit; font-size: 0.875rem; text-align: left; color: var(--accent); background-color: var(--card); border: 1px solid var(--border); border-radius: var(--radius-card); cursor: pointer; }
     .mentor-source span:last-child { min-width: 0; overflow-wrap: anywhere; }
     .mentor-chips-in { padding-bottom: 2px; }
     /* E: "Did you mean" above its one chip, in the same quiet style as the Sources label */
@@ -3053,9 +3054,9 @@
     /* U6b: the window's orb is the chosen look (its box has the class ml-live, so the look's own slow motion runs there and nowhere else); a mood swaps
        the drawing inside the same box, so nothing around it moves. The old lens orb's wake, glance and turn are gone with it. */
     .mentor-orbbox svg { pointer-events: none; }
-    .mentor-close { position: absolute; top: 6px; right: 6px; width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1rem; line-height: 1; color: var(--muted); background-color: transparent; border: 0; border-radius: 12px; cursor: pointer; }
+    .mentor-close { position: absolute; top: 6px; right: 6px; width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1rem; line-height: 1; color: var(--muted); background-color: transparent; border: 0; border-radius: var(--radius-control); cursor: pointer; }
     /* D: Back to start. Top left of the window, shown only in the chat view. Same press as the back arrow (Mo1). */
-    .mentor-back { position: absolute; top: 6px; left: 6px; width: 44px; height: 44px; padding: 0; display: none; align-items: center; justify-content: center; overflow: hidden; color: var(--muted); background-color: transparent; border: 0; border-radius: 12px; cursor: pointer; transition: translate var(--motion-fast) var(--motion-ease), scale var(--motion-fast) var(--motion-ease), filter var(--motion-fast) var(--motion-ease); }
+    .mentor-back { position: absolute; top: 6px; left: 6px; width: 44px; height: 44px; padding: 0; display: none; align-items: center; justify-content: center; overflow: hidden; color: var(--muted); background-color: transparent; border: 0; border-radius: var(--radius-control); cursor: pointer; transition: translate var(--motion-fast) var(--motion-ease), scale var(--motion-fast) var(--motion-ease), filter var(--motion-fast) var(--motion-ease); }
     .mentor-chatting .mentor-back { display: flex; }
     .mentor-back svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .mentor-back:active { translate: 0 1px; scale: 0.97; filter: brightness(0.92); }
@@ -3087,7 +3088,7 @@
     .mentor-suggest-box { display: grid; justify-items: start; gap: 6px; margin-top: 12px; }
     .mentor-window:not(.mentor-chatting) .mentor-suggest-box { justify-items: center; }
     .mentor-window:not(.mentor-chatting) .mentor-scroll { flex: 0 1 auto; }
-    .mentor-suggest { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 6px 12px 6px 16px; font: inherit; font-size: 0.9375rem; font-weight: 600; color: var(--accent); background-color: var(--card); border: 1px solid var(--accent); border-radius: 22px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .mentor-suggest { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 6px 12px 6px 16px; font: inherit; font-size: 0.9375rem; font-weight: 600; color: var(--accent); background-color: var(--card); border: 1px solid var(--accent); border-radius: var(--radius-control); cursor: pointer; -webkit-tap-highlight-color: transparent; }
     .mentor-suggest svg { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.25; stroke-linecap: round; stroke-linejoin: round; transition: transform var(--motion-med) var(--motion-ease); }
     .mentor-suggest[aria-expanded="true"] svg { transform: rotate(180deg); }
     .mentor-suggest:active { filter: brightness(0.92); }

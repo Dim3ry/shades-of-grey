@@ -118,7 +118,8 @@ def judge(tag, where, rows, seen):
         if r["over"] and not r["fade"]: bad.append(("overflows with no fade", r))
         if r["over"] and not r["pressedInView"]: bad.append(("pressed button hidden", r))
         if r["over"] and r["padL"] < 4: bad.append(("no room for the focus ring", r))
-        if any(rad not in ("14px",) for rad in r["tall"]): bad.append(("two-line button still a stretched pill", r))
+        # AB5 (v134): two-line chips now take the look's control radius (Bench and Classic 6 px, default 8 px, Parchment 2 px, Forge 0), no longer a fixed 14 px; the point here is only that they are not a stretched pill.
+        if any(float(rad.replace("px", "")) >= 14 for rad in r["tall"]): bad.append(("two-line button still a stretched pill", r))
     return bad
 
 def sweep(page, tag, results_out, seen):
@@ -216,7 +217,7 @@ def main():
             radius: [...r.children].map(c => getComputedStyle(c).borderTopLeftRadius), h: [...r.children].map(c => Math.round(c.getBoundingClientRect().height)) }; }""")
         check("Paint Bench 390: the five status buttons share one row with no sideways scroll", "chips-fit" in st["cls"] and not st["over"], st)
         check("…and when a label takes two lines the buttons get rounded corners, all the same height", "chips-tall" not in st["cls"]
-              or (set(st["radius"]) == {"14px"} and len(set(st["h"])) == 1), st)
+              or (len(set(st["radius"])) == 1 and float(st["radius"][0].replace("px", "")) < 14 and len(set(st["h"])) == 1)  # AB5: the look's control radius, not a fixed 14 px, st)
         page.locator(".paint-item").first.screenshot(path=os.path.join(t.SHOTS, "v49-status-bench-dark-390.png"))
 
         # ---------- 4. Overflowing rows ----------
