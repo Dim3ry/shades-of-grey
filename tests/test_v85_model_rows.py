@@ -61,7 +61,7 @@ def main():
     errors, dialogs = [], []
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        ctx = browser.new_context(viewport={"width": 390, "height": 900}, service_workers="block")
+        ctx = browser.new_context(viewport={"width": 390, "height": 900}, service_workers="block", reduced_motion="reduce")  # T7: reduced motion (this file checks content, not motion)'
         page = ctx.new_page()
         page.on("pageerror", lambda x: errors.append(str(x)))
         page.on("dialog", lambda d: (dialogs.append(d.message), d.dismiss()))

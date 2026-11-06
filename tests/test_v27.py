@@ -151,7 +151,7 @@ def main():
     errors, csp, popups, notices = [], [], [], []
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        context = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844}, service_workers="block")
+        context = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844}, service_workers="block", reduced_motion="reduce")  # T7: reduced motion (this file checks content, not motion)'
         context.route(SITE_BASE + "**", serve_site)
         context.route("https://dim3ry.goatcounter.com/**", counter_route)
         context.on("request", noted_request)

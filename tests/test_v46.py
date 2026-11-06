@@ -128,7 +128,7 @@ def main():
         browser = p.chromium.launch()
 
         # ===================== the minifolio.app context (for the visit counter) =====================
-        site_ctx = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844}, service_workers="block")
+        site_ctx = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844}, service_workers="block", reduced_motion="reduce")  # T7: reduced motion (this file checks content, not motion)'
         site_ctx.route(s27.SITE_BASE + "**", s27.serve_site)
         site_ctx.route("https://dim3ry.goatcounter.com/**", s27.counter_route)
         site_ctx.on("request", s27.noted_request)
@@ -230,7 +230,7 @@ def main():
         site_ctx.close()
 
         # ===================== the local context =====================
-        ctx = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844}, service_workers="block", accept_downloads=True)
+        ctx = browser.new_context(color_scheme="dark", viewport={"width": 390, "height": 844}, service_workers="block", accept_downloads=True, reduced_motion="reduce")  # T7: reduced motion (this file checks content, not motion)'
         page = ctx.new_page()
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.on("console", lambda m: csp.append(m.text) if "Content Security Policy" in m.text else None)
