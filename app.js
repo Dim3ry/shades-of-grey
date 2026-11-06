@@ -22198,12 +22198,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=137".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=138".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v137";
+    const APP_VERSION = "v138";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -22665,6 +22665,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v138", date: "6 Nov 2026", changes: [
+        "The menu icons are hand-drawn, and the Painting and Tools tabs are a row of words with a line under the chosen one that scrolls sideways instead of wrapping.",
+        "Armies on the Dashboard show as rows with a switch back to doughnuts, Classic's colours are re-mixed, the loading ring no longer sweeps, and new installs start at On sprue.",
+      ] },
       { version: "v137", date: "6 Nov 2026", changes: [
         "Help is shorter: long answers are trimmed, the top card is now The basics, and Match my phone is named as where the app starts.",
         "Mentor now says it looks things up in the guides on your phone.",
