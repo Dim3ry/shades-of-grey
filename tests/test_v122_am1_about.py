@@ -54,7 +54,8 @@ def main():
         check("two headings: About and Mission", heads == ["About", "Mission"], heads)
         check("the About text is exact", paras[:1] == [ABOUT], paras[:1])
         check("the Mission text is exact", paras[1:2] == [MISSION], paras[1:2])
-        check("straight text only: two paragraphs, nothing else in the card", len(paras) == 2 and page.locator("#view-about :is(img, svg, button, a, ul, h3, .pill, .badge)").count() == 0)
+        # CR1: About now has one plain Credits button (#about-credits-link); nothing else is allowed in the card
+        check("straight text only: two paragraphs and the one Credits button, nothing else in the card", len(paras) == 2 and page.locator("#view-about :is(img, svg, a, ul, h3, .pill, .badge)").count() == 0 and page.locator("#view-about button").count() == 1)
         check("the About page is the only page showing, and it is lit as selected",
               page.is_visible("#view-about") and page.locator("main > section:visible").count() == 1
               and page.get_attribute('#more-seg [data-page="about"]', "aria-selected") == "true")

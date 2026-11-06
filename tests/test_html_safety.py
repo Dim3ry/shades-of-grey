@@ -119,6 +119,8 @@ REVIEWED_URLS = {
     # Credits: built-in data only, and only an https address (safeHttpsUrl / safeCreditUrl).
     "04e94676ddcd": "Mentor tip credit",
     "98148e6a2669": "Guides credit",
+    # CR1: the Thanks list on the Credits page: built-in data (THANKS in app.js), passed through safeHttpsUrl, so only an https address.
+    "2c1c9d8aa2e2": "Credits page: Thanks link",
     # Fixed addresses.
     "dacfe45902fa": "download link: a blob: address the app makes",
     "9991c7aaa301": "feedback form: fixed address plus the app version",
