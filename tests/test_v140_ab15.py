@@ -35,14 +35,14 @@ PROBE = """() => {
   const pip = document.querySelector('.unit-sum .pip'), r = pip.getBoundingClientRect();
   const cs = (e) => getComputedStyle(e);
   const out = { chip: cs(chip).clipPath, pill: cs(pill).clipPath, rtag: cs(rtag).clipPath,
-    pipW: r.width, pipH: r.height, pipRadius: cs(pip).borderTopLeftRadius, pipAspect: cs(pip).aspectRatio,
+    pipW: r.width, pipH: r.height, pipRadius: cs(pip).borderTopLeftRadius, pipAspect: cs(pip).aspectRatio, pipClip: cs(pip).clipPath,
     stageWords: document.querySelector('.unit-sum .stage').textContent.trim().length > 0 };
   pill.remove(); row.remove();
   showToast('Squad 1 removed', () => {}, 'Undo', 30);
   const toast = document.getElementById('toast'), undo = document.getElementById('toast-undo') || toast.querySelector('button');
   const tc = cs(toast), tr = toast.getBoundingClientRect(), ur = undo.getBoundingClientRect();
   out.toast = { border: tc.borderTopWidth, radius: tc.borderTopLeftRadius, padLeft: tc.paddingLeft, layers: tc.backgroundImage.split('radial-gradient').length - 1,
-    undoH: ur.height, undoGap: tr.right - ur.right, shadow: tc.boxShadow !== 'none' };
+    undoH: ur.height, undoGap: tr.right - ur.right, shadow: tc.boxShadow !== 'none', clip: tc.clipPath, rotate: tc.rotate, sheet: tc.boxShadow };
   return out;
 }"""
 
@@ -70,14 +70,31 @@ def main():
         off = page.evaluate("""() => { const c = document.createElement('button'); c.className = 'chip'; c.textContent = 'x'; document.querySelector('#unit-list').after(c); c.focus(); return getComputedStyle(c).outlineOffset + ' ' + c.matches(':focus-visible'); }""")
         check("the keyboard ring on a chip sits inside the chamfered box", off.startswith("-4px") and off.endswith("true"), off)
 
-        for theme in ("classic", "parchment", "bench"):
-            print(f"\n--- {theme} is unchanged ---")
+        # Forge must not carry the other looks' things (Bench's tape clip-path and pencil-tick pips, Parchment's paper slip).
+        load(page, "forge", "dark")
+        r = page.evaluate(PROBE)
+        check("forge: no tape clip-path or tilt on the toast, no tick clip-path on the pips",
+              r["toast"]["clip"] == "none" and r["toast"]["rotate"] == "none" and r["pipClip"] == "none", (r["toast"]["clip"], r["toast"]["rotate"], r["pipClip"]))
+        check("forge: the tags carry exactly the 4 px chamfer (no torn ends)", r["chip"].count(",") == 4, r["chip"])
+
+        print("\n--- classic is unchanged (no chunk of this group touches it) ---")
+        load(page, "classic", "dark")
+        r = page.evaluate(PROBE)
+        tt = r["toast"]
+        check("classic: tags are not chamfered", r["chip"] == r["pill"] == r["rtag"] == "none", (r["chip"], r["pill"], r["rtag"]))
+        check("classic: pips are still the thin bars", r["pipH"] <= 4.01 and r["pipW"] > 2 * r["pipH"] and r["pipAspect"] == "auto", r)
+        check("classic: the toast is still the plain snackbar (no border, 14 px side padding, no rivets)", tt["border"] == "0px" and tt["padLeft"] == "14px" and tt["layers"] == 0, tt)
+
+        # Parchment (AB14) and Bench (AB16) are restyled by their own chunks (paper slip toast, tape tags, pencil ticks), so "unchanged" no longer holds
+        # for them. What this chunk promises is that none of Forge's own features reach them.
+        for theme in ("parchment", "bench"):
+            print(f"\n--- {theme} carries none of Forge's features ---")
             load(page, theme, "dark")
             r = page.evaluate(PROBE)
             tt = r["toast"]
-            check(f"{theme}: tags are not chamfered", r["chip"] == r["pill"] == r["rtag"] == "none", (r["chip"], r["pill"], r["rtag"]))
-            check(f"{theme}: pips are still the thin bars", r["pipH"] <= 4.01 and r["pipW"] > 2 * r["pipH"] and r["pipAspect"] == "auto", r)
-            check(f"{theme}: the toast is still the plain snackbar (no border, 14 px side padding, no rivets)", tt["border"] == "0px" and tt["padLeft"] == "14px" and tt["layers"] == 0, tt)
+            check(f"{theme}: no 4 px chamfer on chips or tags", all("calc(100% - 4px)" not in r[k] for k in ("chip", "pill", "rtag")), (r["chip"], r["pill"], r["rtag"]))
+            check(f"{theme}: no square lamp pips", not (abs(r["pipW"] - r["pipH"]) < 0.6 and r["pipRadius"] == "0px" and r["pipH"] >= 5), r)
+            check(f"{theme}: no rivets, no 2 px plate border on the toast", tt["layers"] == 0 and tt["border"] != "2px" and tt["padLeft"] != "26px", tt)
         check("no page errors", not errors, errors)
         browser.close()
     ok = all(results)
