@@ -6,7 +6,7 @@
    and then goes (no ids, cannot be tapped, hidden from screen readers).
 4. Back from a recipe keeps the list's scroll position.
 5. The palette search's answer box changes height smoothly.
-6. The in-section switches (Painting, Tools, Colour Lab) "slow empty and slow fill" (James, 3 Nov): the old option's fill drains while the
+6. (AB7b: Painting, Colour Lab and Tools are now tab rows with a sliding line and no fill; these checks run on Guides' Topics / A to Z.) The in-section switches "slow empty and slow fill" (James, 3 Nov): the old option's fill drains while the
    new one's floods in, drawn with clip-path over the option, its label in the selected colours; the Tools pages themselves still
    switch instantly. Pages inside the Painting section fade in; a shopping row that leaves fades through a copy outside the list.
 7. The Dashboard graph's dates read the same as before (LQ12 only made them faster).
@@ -153,35 +153,24 @@ def main():
 
         print("\n--- 5. Switch fill and pages inside a section ---")
         page.evaluate("scrollTo(0, 0)")
+        # AB7b: the Painting, Colour Lab and Tools section tabs are now a row of words with one sliding line (tests/test_v139_ab7b.py), so they no
+        # longer drain and fill. The fill is still LQ1's look for the boxed two-way switches, so those checks now run on Guides' Topics / A to Z.
         page.click("#recipe-seg button[data-view=schemes]")
-        f = page.evaluate("""([a]) => { const seg = document.getElementById('recipe-seg'); const o = seg.querySelector('[data-view=recipes]'), n = seg.querySelector('[data-view=schemes]');
-            const kf = (el) => el.getAnimations({ subtree: true }).filter(x => x.effect.pseudoElement === '::after' && x.effect.target === el).map(x => x.effect.getKeyframes().map(k => k.clipPath));
-            const pa = getComputedStyle(n, '::after');
-            return { cls: o.classList.contains('lq-fill') && n.classList.contains('lq-fill'), old: kf(o), now: kf(n), label: n.dataset.lqLabel, text: n.textContent.trim(),
-                     content: pa.content, afterColour: pa.color, afterBg: pa.backgroundColor, baseBg: getComputedStyle(n).backgroundColor,
-                     view: (document.getElementById('scheme-view').getAnimations()[0] || {effect: {getKeyframes: () => []}}).effect.getKeyframes().map(k => k.opacity) }; }""", [0])
-        full = lambda s: s.startswith("inset(0px") and "100%" not in s and " round " in s
-        check("picking Schemes: the old option drains and the new one floods (clip-path on their fill, its edge rounded like the option)",
-              f["cls"] and f["old"] and f["now"] and full(f["old"][0][0]) and full(f["now"][0][-1]), f)
-        check("the colour moves across: Schemes fills from the side nearest Recipes, Recipes empties towards it",
-              f["now"] and f["now"][0][0].split()[1] == "100%" and f["old"] and f["old"][0][-1].split()[3] == "100%", f)
-        check("the fill carries the option's own label, hidden from screen readers", f["label"] == f["text"] and f["content"].endswith('/ ""') if f["content"] else False, f)
-        page.wait_for_timeout(550)
-        r = page.evaluate("""() => { const n = document.querySelector('#recipe-seg [data-view=schemes]'); const c = getComputedStyle(n);
-            return { cls: document.querySelectorAll('.lq-fill').length, bg: c.backgroundColor, colour: c.color, label: 'lqLabel' in n.dataset }; }""")
-        check("the fill's colours are the selected option's own (so contrast never drops)",
-              f["afterBg"] == r["bg"] and f["afterColour"] == r["colour"] and f["baseBg"] in ("rgba(0, 0, 0, 0)", "transparent"), [f, r])
-        check("when it ends the switch is back to its plain look", r["cls"] == 0 and not r["label"], r)
+        f = page.evaluate("""() => { const o = document.querySelector('#recipe-seg [data-view=recipes]'), n = document.querySelector('#recipe-seg [data-view=schemes]');
+            return { fills: document.querySelectorAll('#recipe-seg .lq-fill').length,
+                     view: (document.getElementById('scheme-view').getAnimations()[0] || {effect: {getKeyframes: () => []}}).effect.getKeyframes().map(k => k.opacity) }; }""")
+        check("picking Schemes: the section tab row no longer drains and fills (AB7b: its line slides instead)", f["fills"] == 0, f)
         check("the Schemes page fades in", [float(x) for x in f["view"]] == [0, 1], f["view"])
+        page.wait_for_timeout(550)
         page.click("#recipe-seg button[data-view=colourlab]")
         page.wait_for_timeout(550)
         page.evaluate("() => document.querySelectorAll('#lab-seg button')[1].click()")
         lab = page.evaluate(ANIMS, ["#colourlab-body", False]) or []
         check("a Colour Lab part fades in", any("opacity" in a for a in lab), lab)
-        check("the Colour Lab parts switch fills too", page.evaluate("() => document.querySelectorAll('#lab-seg .lq-fill').length") == 2)
+        check("the Colour Lab tab row no longer fills (AB7b)", page.evaluate("() => document.querySelectorAll('#lab-seg .lq-fill').length") == 0)
         page.wait_for_timeout(550)
 
-        print("\n--- 6. Tools: the switch fills, the pages stay instant ---")
+        print("\n--- 6. Tools: the pages stay instant; Guides' boxed switch still fills ---")
         page.evaluate("() => { document.querySelector('nav .arc button[data-tab=guides]').click(); }")
         page.wait_for_timeout(450)
         page.click("#more-seg button[data-page=settings]")
@@ -189,9 +178,29 @@ def main():
         page.click("#more-seg button[data-page=help]")
         tl = page.evaluate("""() => ({ fills: document.querySelectorAll('#more-seg .lq-fill').length,
             page: document.getElementById('view-help').getAnimations().length, shown: !document.getElementById('view-help').classList.contains('hidden') })""")
-        check("the Tools switch drains and fills", tl["fills"] == 2, tl)
+        check("the Tools tab row no longer fills (AB7b)", tl["fills"] == 0, tl)
         check("the Help page itself appears at once, with no fade (Mo3a's instant switch kept)", tl["shown"] and tl["page"] == 0, tl)
         page.wait_for_timeout(550)
+        page.click("#more-seg button[data-page=guides]")
+        page.wait_for_timeout(550)
+        page.click(".guides-order [data-order=az]")
+        f = page.evaluate("""() => { const seg = document.querySelector('.guides-order'); const o = seg.querySelector('[data-order=topics]'), n = seg.querySelector('[data-order=az]');
+            const kf = (el) => el.getAnimations({ subtree: true }).filter(x => x.effect.pseudoElement === '::after' && x.effect.target === el).map(x => x.effect.getKeyframes().map(k => k.clipPath));
+            const pa = getComputedStyle(n, '::after');
+            return { cls: o.classList.contains('lq-fill') && n.classList.contains('lq-fill'), old: kf(o), now: kf(n), label: n.dataset.lqLabel, text: n.textContent.trim(),
+                     content: pa.content, afterColour: pa.color, afterBg: pa.backgroundColor, baseBg: getComputedStyle(n).backgroundColor }; }""")
+        full = lambda s: s.startswith("inset(0px") and "100%" not in s and " round " in s
+        check("picking A to Z: the old option drains and the new one floods (clip-path on their fill, its edge rounded like the option)",
+              f["cls"] and f["old"] and f["now"] and full(f["old"][0][0]) and full(f["now"][0][-1]), f)
+        check("the colour moves across: A to Z fills from the side nearest Topics, Topics empties towards it",
+              f["now"] and f["now"][0][0].split()[1] == "100%" and f["old"] and f["old"][0][-1].split()[3] == "100%", f)
+        check("the fill carries the option's own label, hidden from screen readers", f["label"] == f["text"] and f["content"].endswith('/ ""') if f["content"] else False, f)
+        page.wait_for_timeout(550)
+        r = page.evaluate("""() => { const n = document.querySelector('.guides-order [data-order=az]'); const c = getComputedStyle(n);
+            return { cls: document.querySelectorAll('.lq-fill').length, bg: c.backgroundColor, colour: c.color, label: 'lqLabel' in n.dataset }; }""")
+        check("the fill's colours are the selected option's own (so contrast never drops)",
+              f["afterBg"] == r["bg"] and f["afterColour"] == r["colour"] and f["baseBg"] in ("rgba(0, 0, 0, 0)", "transparent"), [f, r])
+        check("when it ends the switch is back to its plain look", r["cls"] == 0 and not r["label"], r)
 
         print("\n--- 7. The palette search box and the shopping list ---")
         to_painting(page, "palette")

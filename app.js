@@ -170,8 +170,14 @@
 
     // Each unit stores a NUMBER pointing at a position in the stage list (0 = first).
     // Stages from settings.doneFrom onwards count as "Done"; earlier ones are "To do".
-    const DEFAULT_STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed",
+    // AB11: new installs start with "On sprue" as the first stage. Only a brand-new install gets this list (see the
+    // no-stage-list start-up below); every older list, saved or in a backup, keeps "Unassembled" (V137_DEFAULT_STAGES).
+    const DEFAULT_STAGES = ["On sprue", "Part assembled", "Assembled", "Primed",
                             "Part painted", "Tabletop ready", "Needs touch-ups", "Display ready"];
+    // AB11: the default list from v132 to v137. Existing installs on it keep it as it is, and the older defaults below are
+    // renamed to it (not to DEFAULT_STAGES), so the new first name never reaches an existing install. Units save a stage NUMBER.
+    const V137_DEFAULT_STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed",
+                                 "Part painted", "Tabletop ready", "Needs touch-ups", "Display ready"];
     // TD1a (v132): "Battle ready" is now "Tabletop ready" and "Parade ready" is now "Display ready" (labels only). This is the
     // default list from v68 to v131; anyone still on exactly it gets the new names (see renamedStageList). Units save a stage NUMBER.
     const V131_DEFAULT_STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed",
@@ -184,7 +190,7 @@
                                 "Part painted", "Battle ready", "Painted with issues", "Parade ready"];
     function renamedStageList(list) {
       const is = (old) => Array.isArray(list) && list.length === old.length && list.every((x, i) => x === old[i]);
-      return is(V61_DEFAULT_STAGES) || is(V131_DEFAULT_STAGES) ? DEFAULT_STAGES.slice() : list;
+      return is(V61_DEFAULT_STAGES) || is(V131_DEFAULT_STAGES) ? V137_DEFAULT_STAGES.slice() : list;   // AB11: not DEFAULT_STAGES
     }
     // The defaults before v3, so testers on them can be moved to the new set (see below).
     const OLD_DEFAULT_STAGES = ["Unassembled", "Part assembled", "Assembled", "Primed",
@@ -192,7 +198,9 @@
     // The original five, kept for anyone who saved units before stages were editable.
     const ORIGINAL_STAGES = ["Unbuilt", "Built", "Primed", "In progress", "Painted"];
 
-    let settings = { palette: "ice", tab: "dashboard" };
+    // AB6 (AT-14): no "palette" here. Until the person picks a stage colour set, settings.palette stays unset and the look's own set is used
+    // (THEME_SETS). Installs made before this version have "ice" saved already, so they keep Ice: the app cannot tell those from a real pick.
+    let settings = { tab: "dashboard" };
     // v14: if the saved settings can't be read, keep a copy of them under another name
     // (like units and recipes), so nothing is thrown away.
     let settingsUnreadable = false;
@@ -237,10 +245,12 @@
       try { savedUnits = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); } catch (ignored) {}
       const hasOldData = Array.isArray(savedUnits);
       const highest = hasOldData ? highestStageUsed(savedUnits) : -1;
-      // Brand-new users and anyone whose settings were damaged get today's default
-      // stages; very old data (from before stages could be edited) gets the original five.
+      // Brand-new users get today's default stages; very old data (from before stages could be edited) gets the
+      // original five. AB11: anyone with saved units or damaged settings is an existing install, so they get the
+      // v132 to v137 default ("Unassembled") instead, and only a brand-new install starts with "On sprue".
+      const brandNew = !settingsUnreadable && !hasOldData;
       let list = !settingsUnreadable && hasOldData && highest < ORIGINAL_STAGES.length
-        ? ORIGINAL_STAGES.slice() : DEFAULT_STAGES.slice();
+        ? ORIGINAL_STAGES.slice() : brandNew ? DEFAULT_STAGES.slice() : V137_DEFAULT_STAGES.slice();
       while (list.length <= highest && list.length < 10) list.push(`Stage ${list.length + 1}`);
       settings.stages = list;
       settings.doneFrom = list.join() === ORIGINAL_STAGES.join() ? 4 : 5;
@@ -276,7 +286,7 @@
           const move = [0, 1, 2, 3, 4, 6, 5];
           for (const u of savedUnits) if (u && Number.isInteger(u.stage) && move[u.stage] !== undefined) u.stage = move[u.stage];
         }
-        settings.stages = STAGES = DEFAULT_STAGES.slice();
+        settings.stages = STAGES = V137_DEFAULT_STAGES.slice();   // AB11: an existing install keeps "Unassembled"
         settings.doneFrom = 5;
         upgradedStages = true;
         // DS1: units and settings are written together, through the data-version check (before DS1 the units were written
@@ -290,12 +300,12 @@
     // v68: "Painted with issues" becomes "Needs touch-ups" for anyone on the v3 to v61 default stages.
     // DATA_VERSION went up to 2 for this, so an older copy of the app left open stops saving
     // instead of writing the old name back. The saveSettings() a little further down saves it.
-    if (renamedStageList(STAGES) !== STAGES) settings.stages = STAGES = DEFAULT_STAGES.slice();
+    if (renamedStageList(STAGES) !== STAGES) settings.stages = STAGES = renamedStageList(STAGES);
     // Settings saved before the Done marker existed: use the matching default if the
     // stages are one of the built-in sets, otherwise just the last stage.
     if (settings.doneFrom === undefined) {
       const same = (a, b) => a.length === b.length && a.every((s, i) => s === b[i]);
-      settings.doneFrom = same(STAGES, DEFAULT_STAGES) ? 5 : same(STAGES, ORIGINAL_STAGES) ? 4 : STAGES.length - 1;
+      settings.doneFrom = same(STAGES, DEFAULT_STAGES) || same(STAGES, V137_DEFAULT_STAGES) ? 5 : same(STAGES, ORIGINAL_STAGES) ? 4 : STAGES.length - 1;
     }
     fixDoneFrom();
 
@@ -4970,14 +4980,13 @@
     // The ring as index.html drew it, before the app took it over: taken away at once (the app opened on a section, or the ring cannot run).
     function dropBootRing() {
       if (window.minifolioRing) window.minifolioRing.app = true;
-      for (const n of arcEl.querySelectorAll(".mo-load, .lr-sweep")) n.remove();
+      for (const n of arcEl.querySelectorAll(".mo-load")) n.remove();
       for (const w of arcEl.querySelectorAll(".ring-hold")) w.classList.remove("ring-hold");
       document.body.classList.remove("ring-loading");
     }
     function startLoadingRing() {
       const svg = arcEl.querySelector(".mo-load");
       if (!svg || !launching || ringState) { dropBootRing(); return; }
-      const sweep = arcEl.querySelector(".lr-sweep");
       const moving = canMove();
       if (window.minifolioRing) window.minifolioRing.app = true;   // early.js stops lighting it; from here this does
       const p0 = window.minifolioRing ? window.minifolioRing.progress : 0;
@@ -4991,7 +5000,7 @@
       const stepAt = [() => bootSteps.data, () => bootSteps.draw, () => bootSteps.load];
       const t0 = performance.now(), ends = [0, 0, 0], starts = [0, 0, 0];
       let revealed = 0, raf = 0;
-      const state = ringState = { svg, sweep, wedges, stop() { cancelAnimationFrame(raf); } };
+      const state = ringState = { svg, wedges, stop() { cancelAnimationFrame(raf); } };
       function step(now) {
         // when each step starts to fill: it is done and the one before has filled (the load step also gives up after 5 s)
         let part = 0;
@@ -5021,7 +5030,6 @@
         if (!moving) { setTimeout(() => { if (ringState === state) endLoadingRing(); }, 300); return; }   // the full ring shows for a moment; the circle works already
         const fade = { duration: 700, easing: "ease-out", fill: "forwards" };
         const out = svg.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(1.12)" }], fade);
-        if (sweep) sweep.animate([{ opacity: 1 }, { opacity: 0 }], fade);
         out.onfinish = () => { if (ringState === state) endLoadingRing(); };
       }
       step(performance.now());
@@ -5032,7 +5040,6 @@
       ringState = null;
       r.stop();
       r.svg.remove();   // the ring is gone, along with its progress bar role
-      if (r.sweep) r.sweep.remove();
       r.wedges.forEach(w => { w.classList.remove("ring-hold"); w.getAnimations().forEach(a => a.finish()); });
       document.body.classList.remove("ring-loading");
     }
@@ -6496,6 +6503,24 @@
     const overallChart = document.getElementById("overall-chart");
     const stageLegend = document.getElementById("stage-legend");
     const factionGrid = document.getElementById("faction-grid");
+    // AB8 (AT-20): Armies as rows or doughnuts. settings.factionView is "rows" or "doughnuts"; anything else (or nothing saved) means rows.
+    function currentFactionView() { return settings.factionView === "doughnuts" ? "doughnuts" : "rows"; }
+    function renderFactionViewSwitch(show) {
+      const box = document.getElementById("faction-view");
+      if (!box) return;
+      box.classList.toggle("hidden", !show);
+      box.replaceChildren();
+      for (const [key, label] of [["rows", "Rows"], ["doughnuts", "Doughnuts"]]) {
+        const chip = makeChip(label, currentFactionView() === key, () => {
+          if (currentFactionView() === key) return;
+          settings.factionView = key;
+          saveSettings();
+          renderDashboard();
+        });
+        chip.dataset.factionView = key;
+        box.appendChild(chip);
+      }
+    }
 
     // Counts MODELS (not units) at each stage. Units tracked model-by-model count each model
     // at its own stage.
@@ -6564,35 +6589,56 @@
         stageLegend.appendChild(item);
       });
 
-      // One small doughnut per faction, like pie charts in a spreadsheet.
+      // AB8 (AT-20): one row per faction (the default), or one small doughnut per faction, like pie charts in a spreadsheet.
+      // The choice is settings.factionView ("rows" or "doughnuts"; missing or unknown means rows), a small saved setting, so DATA_VERSION stays 2.
       factionGrid.innerHTML = "";
+      const asRows = currentFactionView() === "rows";
+      factionGrid.className = asRows ? "faction-rows" : "faction-grid";
       const factions = uniqueSorted(models.map(m => m.faction));
       if (models.some(m => !m.faction)) factions.push(""); // units with no faction
-      if (factions.length === 0) {
-        factionGrid.innerHTML = "";
-      }
+      renderFactionViewSwitch(factions.length > 0);
       for (const faction of factions) {
+        if (asRows && !faction && factions.length === 1) continue;   // a lone "No faction" row says nothing
         const group = models.filter(m => m.faction === faction);
         const groupTotal = modelCount(group);
         const groupDone = doneCount(group);
         const pct = groupTotal ? Math.round(groupDone / groupTotal * 100) : 0;
         const button = document.createElement("button");
-        button.className = "faction-button";
+        button.className = asRows ? "faction-row" : "faction-button";
         const name = document.createElement("span");
         name.className = "faction-name";
         name.textContent = faction || "No faction";
-        // Its colour, if it has one: a bar across the top and a dot by the name.
+        // Its colour, if it has one: a bar at the left (rows) or across the top (doughnuts), and a dot by the name.
         const colour = factionColour(faction);
         if (colour) {
           button.classList.add("has-faction");
           setFactionStyle(button, colour);
-          name.prepend(makeSwatch(colour));
+          if (!asRows) name.prepend(makeSwatch(colour));
         }
         const small = document.createElement("small");
         small.textContent = `${groupDone} of ${groupTotal} done`;
-        button.append(
-          donutChart(stageCounts(group), 92, 14, `${pct}%`, "", `${faction || "No faction"}: ${pct}% done`),
-          name, small);
+        if (asRows) {
+          const counts = stageCounts(group);
+          const strip = document.createElement("span");
+          strip.className = "faction-strip";
+          strip.setAttribute("aria-hidden", "true");
+          counts.forEach((count, index) => {
+            if (!count) return;
+            const piece = document.createElement("i");
+            piece.style.flex = String(count);
+            piece.style.background = `var(--stage-${index})`;
+            strip.appendChild(piece);
+          });
+          const text = document.createElement("span");
+          text.className = "faction-text";
+          text.append(name, strip, small);
+          button.setAttribute("aria-label", `${faction || "No faction"}: ${groupDone} of ${groupTotal} done`);
+          button.append(text);
+        } else {
+          button.append(
+            donutChart(stageCounts(group), 92, 14, `${pct}%`, "", `${faction || "No faction"}: ${pct}% done`),
+            name, small);
+        }
         button.addEventListener("click", () => goToUnits({ faction }));
         factionGrid.appendChild(button);
       }
@@ -9834,6 +9880,7 @@
       lqSegTap = null;
       lqSegEnd();
       const b = event.target instanceof Element ? event.target.closest(".seg > button") : null;
+      if (b && b.parentElement.classList.contains("tab-row")) return;   // AB7b: the section tab rows slide their own underline (below)
       if (!b || !lqOn() || !(window.KeyframeEffect && "pseudoElement" in KeyframeEffect.prototype)) return;   // (older browsers: the instant change)
       const seg = b.parentElement, buttons = lqSegButtons(seg);
       const old = buttons.findIndex(x => x.getAttribute("aria-selected") === "true");
@@ -9877,6 +9924,36 @@
       anims[1].addEventListener("finish", done, { once: true });
       setTimeout(done, timing.duration + 400);   // in case the animation never runs
     });
+
+    // AB7b (AT-28): the section tab rows (Painting's five, Colour Lab's sections, the Tools pages) are words with one 2 px line under the chosen
+    // one. The line is a single shape that slides from the old word to the new one (the same time and easing as the other fast moves); the row
+    // scrolls sideways, so the chosen word is brought into view. First placement, or a row that was hidden, puts the line in place without a slide.
+    // Reduced motion: the line jumps (the page's own rule turns every transition off).
+    function setUpTabRow(seg) {
+      const line = document.createElement("span");
+      line.className = "tab-line";
+      line.setAttribute("aria-hidden", "true");
+      seg.appendChild(line);
+      let placed = false;
+      const place = () => {
+        const sel = seg.querySelector(':scope > button[aria-selected="true"]');
+        if (!sel || !seg.offsetWidth) { placed = false; line.classList.remove("on"); return; }
+        line.classList.toggle("still", !placed);
+        line.style.width = sel.offsetWidth + "px";
+        line.style.transform = "translateX(" + sel.offsetLeft + "px)";
+        line.classList.add("on");
+        const left = sel.offsetLeft, right = left + sel.offsetWidth, view = seg.clientWidth;
+        if (left < seg.scrollLeft) seg.scrollLeft = Math.max(0, left - 8);
+        else if (right > seg.scrollLeft + view) seg.scrollLeft = right - view + 8;
+        placed = true;
+      };
+      new MutationObserver(place).observe(seg, { attributes: true, attributeFilter: ["aria-selected"], subtree: true, childList: true });
+      if (window.ResizeObserver) new ResizeObserver(place).observe(seg);
+      window.addEventListener("resize", place);
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { placed = false; place(); });
+      place();
+    }
+    document.querySelectorAll(".seg.tab-row").forEach(setUpTabRow);
 
     // LQ1 (button sweep): buttons now change colour smoothly (index.html "LQ1:"). A change of look or Light and dark changes every colour at
     // once, which should be instant as before: so while the page's look changes, those colour changes do not play (one frame, then back).
@@ -19575,6 +19652,14 @@
       // v20.1: the one warm set: ember red → orange → amber → gold → warm cream.
       forge:      { label: "Forge (warm)",            colours: ["#e0452b", "#f2701c", "#f59e0b", "#facc15", "#fde9c0"] },
     };
+    // AB6 (AT-14): the set each look uses when nothing was picked (settings.palette unset). Never saved, never listed as a choice.
+    // Classic: Ice re-mixed off the Tailwind grid. Parchment: sepia, iron gall, rubric red, gilt, vellum. Forge: its own set. Bench: primer grey to bone.
+    const THEME_SETS = {
+      classic:   ["#6b7b8c", "#6f79d9", "#4eb6e6", "#4fd6de", "#aeeedd"],
+      parchment: ["#7a6a55", "#8f4a3a", "#b8303c", "#c48a2c", "#e8dcc0"],
+      forge:     PALETTES.forge.colours,
+      bench:     ["#7d8077", "#4f7a8c", "#6f8f3a", "#c9a227", "#efe6cc"]
+    };
 
     // Mixes two colours: amount 0 = colour a, 1 = colour b, 0.5 = halfway.
     // "#38bdf8" is three pairs of hex digits (red 38, green bd, blue f8); we blend each pair.
@@ -19587,7 +19672,7 @@
 
     // A list of n colours spread evenly along a palette.
     function stageColours(paletteName, n) {
-      const colours = (PALETTES[paletteName] || PALETTES.ice).colours;
+      const colours = PALETTES[paletteName] ? PALETTES[paletteName].colours : THEME_SETS[currentTheme()];   // AB6: no pick means the look's own set
       const steps = colours.length - 1;
       return Array.from({ length: n }, (unused, index) => {
         const position = n === 1 ? 0 : index / (n - 1) * steps;
@@ -19632,7 +19717,7 @@
     // Each theme's page and card colours in dark and light (the same as the THEMES section of index.html; a test checks).
     // Stage colours are made readable against these, so they stay readable in every theme.
     const THEME_SURFACES = {
-      classic: { dark: { page: "#0b1220", card: "#141d2f" }, light: { page: "#e9eff6", card: "#f8fafc" } },
+      classic: { dark: { page: "#0c1418", card: "#141d2f" }, light: { page: "#e9eff6", card: "#f8fafc" } },
       parchment: { dark: { page: "#17120e", card: "#211a14" }, light: { page: "#d8c59a", card: "#e4d4ae" } },
       forge: { dark: { page: "#0d0f11", card: "#16191c" }, light: { page: "#cdd1d5", card: "#dde1e5" } },
       bench: { dark: { page: "#20251f", card: "#292f28" }, light: { page: "#e0e4d8", card: "#eef0e7" } }
@@ -19875,13 +19960,14 @@
     showBrandChoice();
 
     const paletteSelect = document.getElementById("palette-select");
+    paletteSelect.add(new Option("Match the look", "theme"));   // AB6: no set picked; each look uses its own colours
     for (const [key, palette] of Object.entries(PALETTES)) paletteSelect.add(new Option(palette.label, key));
     // v20.1: the 6th choice. "custom" is never stored as settings.palette (see usingCustom).
     paletteSelect.add(new Option("Custom (pick your own)", "custom"));
-    if (!Object.prototype.hasOwnProperty.call(PALETTES, settings.palette)) settings.palette = "ice";
+    if (settings.palette !== undefined && !Object.prototype.hasOwnProperty.call(PALETTES, settings.palette)) settings.palette = "ice";   // AB6: unset stays unset
     if (settings.useCustom !== undefined && typeof settings.useCustom !== "boolean") settings.useCustom = false;
     if (settings.customColours !== undefined) settings.customColours = cleanCustomColours(settings.customColours);
-    paletteSelect.value = usingCustom() ? "custom" : settings.palette;
+    paletteSelect.value = usingCustom() ? "custom" : (PALETTES[settings.palette] ? settings.palette : "theme");
     paletteSelect.addEventListener("change", () => {
       if (paletteSelect.value === "custom") {
         // Start from the set you had (or keep the colours you picked last time).
@@ -19890,7 +19976,7 @@
           settings.customColours = stageColours(settings.palette, STAGES.length);
         }
       } else {
-        settings.palette = paletteSelect.value;
+        if (paletteSelect.value === "theme") delete settings.palette; else settings.palette = paletteSelect.value;
         settings.useCustom = false;
       }
       saveSettings();
@@ -19954,7 +20040,7 @@
         row.append(picker, text);
         customList.appendChild(row);
       });
-      const from = PALETTES[settings.palette] || PALETTES.ice;
+      const from = PALETTES[settings.palette] || { label: "Match the look" };
       customReset.textContent = `Reset to ${from.label} colours`;
     }
     customReset.addEventListener("click", () => {
@@ -19986,7 +20072,7 @@
       updateSearchedPaints(); showBrandChoice();   // v48
       showCountingChoice();   // v27
       if (usingCustom()) document.getElementById("palette-select").value = "custom";
-      else if (PALETTES[settings.palette]) document.getElementById("palette-select").value = settings.palette;
+      else document.getElementById("palette-select").value = PALETTES[settings.palette] ? settings.palette : "theme";
       renderCustomColours();
       startDraft();
       renderStageEditor();
@@ -20481,6 +20567,7 @@
     function backupData() {
       return { app: "Minifolio", version: 6, dataVersion: DATA_VERSION, stages: STAGES, doneFrom: settings.doneFrom, models, recipes: book,
                factionColours: settings.factionColours,
+               factionView: currentFactionView(),   // AB8: Armies as rows or doughnuts. Older versions ignore it.
                // v20: the look travels with the backup too. Older versions ignore these.
                palette: settings.palette, appearance: settings.appearance, theme: currentTheme(),   // v47: the theme too
                brandsOff: cleanBrandsOff(settings.brandsOff),   // v48: the paint brands you've switched off
@@ -20858,6 +20945,8 @@
               }
               // Backups from v8 onwards hold faction colours. Older ones don't, so yours stay.
               if (unitsToo && !isList && parsed.factionColours) settings.factionColours = cleanFactionColours(parsed.factionColours);
+              // AB8: backups from this version on hold the Armies view. Older ones don't, so yours stays (rows unless you chose doughnuts).
+              if (unitsToo && !isList && (parsed.factionView === "rows" || parsed.factionView === "doughnuts")) settings.factionView = parsed.factionView;
               // v20: backups from v20 onwards hold the stage colour set and Appearance.
               // Anything unknown is ignored, so older backups leave yours as they are.
               if (unitsToo && !isList && typeof parsed.palette === "string" && Object.prototype.hasOwnProperty.call(PALETTES, parsed.palette)) settings.palette = parsed.palette;
@@ -21016,7 +21105,7 @@
     // Anything else is listed on the check screen and starts at the Set every row to stage.
     const CSV_STATUS_TITLES = ["status", "state", "progress"];
     const CSV_STATUS_WORDS = {
-      "Unassembled": ["unbuilt", "not built", "not started", "new", "in box", "in the box", "boxed", "on sprue", "on sprues", "on the sprue", "nib", "new in box", "unopened", "sealed", "to build", "pile of shame"],
+      "On sprue": ["unassembled", "unbuilt", "not built", "not started", "new", "in box", "in the box", "boxed", "on sprue", "on sprues", "on the sprue", "nib", "new in box", "unopened", "sealed", "to build", "pile of shame"],
       "Part assembled": ["part built", "partly built", "partially built", "half built", "partly assembled", "partially assembled", "half assembled", "building", "being built"],
       "Assembled": ["built", "constructed", "to prime", "ready to prime"],
       "Primed": ["undercoated", "undercoat", "primer", "sprayed", "to paint", "ready to paint"],
@@ -21026,7 +21115,8 @@
       "Display ready": ["parade", "parade ready", "display", "showcase", "competition ready"],   // TD1a: "parade ready" still works for older files
     };
     // TD1a: a custom list that still has the old names keeps working with the same everyday words.
-    const CSV_OLD_STAGE_NAMES = { "Tabletop ready": "Battle ready", "Display ready": "Parade ready" };
+    // AB11: the same for "Unassembled", the first stage's name before v138 (still the name on existing installs).
+    const CSV_OLD_STAGE_NAMES = { "On sprue": "Unassembled", "Tabletop ready": "Battle ready", "Display ready": "Parade ready" };
     const CSV_DONE_WORDS = ["painted", "done", "finished", "complete", "completed", "fully painted"];
     // The stage number for a status word, or -1 when it doesn't match.
     function stageFromStatus(text) {
@@ -22108,12 +22198,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=137".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=138".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v137";
+    const APP_VERSION = "v138";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -22575,6 +22665,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v138", date: "6 Nov 2026", changes: [
+        "The menu icons are hand-drawn, and the Painting and Tools tabs are a row of words with a line under the chosen one that scrolls sideways instead of wrapping.",
+        "Armies on the Dashboard show as rows with a switch back to doughnuts, Classic's colours are re-mixed, the loading ring no longer sweeps, and new installs start at On sprue.",
+      ] },
       { version: "v137", date: "6 Nov 2026", changes: [
         "Help is shorter: long answers are trimmed, the top card is now The basics, and Match my phone is named as where the app starts.",
         "Mentor now says it looks things up in the guides on your phone.",

@@ -142,8 +142,9 @@ def main():
                 t.fresh(pg, settings={"tab": "recipes", "recipeView": "colourlab"})
                 pg.wait_for_selector("#cmp-lab-wheel")
                 sizes = pg.evaluate("""() => [...document.querySelectorAll('#recipe-seg button, #lab-seg button')].map(b => { const r = b.getBoundingClientRect();
-                    return [Math.round(r.width), Math.round(r.height), r.right <= innerWidth]; })""")
-                check(f"{width} px {scheme}: both rows 44 px or more, inside the screen, no sideways scroll",
+                    const row = b.parentElement.getBoundingClientRect();   // AB7b: the tabs scroll sideways inside their row, so the row (not every word) must be inside the screen
+                    return [Math.round(r.width), Math.round(r.height), row.right <= innerWidth + 1 && row.left >= 0]; })""")
+                check(f"{width} px {scheme}: both rows 44 px or more, each row inside the screen (words reached by scrolling the row), no sideways scroll on the page",
                       len(sizes) == 10 and all(w >= 44 and h >= 44 and ok for w, h, ok in sizes) and t.no_sideways(pg), sizes)
                 for key in ("picker", "history"):
                     lab_open(pg, key)

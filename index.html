@@ -33,7 +33,7 @@
        One rule (frame-ancestors, "don't let other sites show Minifolio inside theirs") only works when the
        host sends it, so it is in the _headers file, which Cloudflare reads (SEC1). -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://dim3ry.goatcounter.com/count; media-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
-  <meta name="theme-color" content="#0b1220">
+  <meta name="theme-color" content="#0c1418">
   <title>Minifolio</title>
   <!-- C3: what search engines and link previews show. The share picture is the app icon for now (a 1200x630 image would look better). -->
   <meta name="description" content="Track your miniature painting: keep your models, paint recipes and colour schemes in one place. Works offline and keeps your data on your own device.">
@@ -55,8 +55,8 @@
        (applyAppearance in app.js) takes over once the app starts.
        U6b: mentor-looks.js (the Mentor orb's three looks and five states, plain data: MENTOR_LOOKS and MENTOR_LOOKS_CSS) loads
        just before it, so early.js can put the chosen look and its styles on the page before the first frame (LR1). -->
-  <script src="mentor-looks.js?v=137"></script>
-  <script src="early.js?v=137"></script>
+  <script src="mentor-looks.js?v=138"></script>
+  <script src="early.js?v=138"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -69,13 +69,13 @@
        The photo viewer and the camera always use the dark set, like a phone's own
        photo viewer, so they're listed here too. */
     :root, .viewer, #scan-camera, .theme-swatch[data-t="classic"] {
-      --background: #0b1220;  /* deep navy, the page colour */
+      --background: #0c1418;  /* AB6: cold dark slate, the page colour (was Tailwind navy #0b1220) */
       --card: #141d2f;        /* slightly lighter, for each box */
       --border: #22304a;      /* thin outlines */
       --text: #dbe4f0;        /* light grey text */
       --muted: #8193ad;       /* dimmer text */
       --accent: #7dd3fc;      /* ice blue, for highlights */
-      --danger: #f87171;      /* soft red, for delete buttons */
+      --danger: #ef6f5e;      /* AB6: red, for delete buttons */
       /* v20: colours that used to be written straight into the rules below */
       --shadow: rgba(0, 0, 0, 0.45);            /* under pop-up boxes */
       /* v53: the surfaces that are dark in every theme and in light mode too (photos and the camera always show on dark). They are named
@@ -93,16 +93,18 @@
       --note-wash: rgba(196, 181, 253, 0.18);
       --good: #5eead4;      /* teal: owned, have it, new */
       --good-wash: rgba(94, 234, 212, 0.12);
-      --bad: #fca5a5;       /* pink-red: empty, missing */
+      --bad: #f2a39a;       /* AB6: pink-red: empty, missing */
       --bad-wash: rgba(252, 165, 165, 0.10);
-      --warn: #fde68a;      /* pale yellow: running low, ratio warning */
-      --caution: #fbbf24;   /* amber: clashes, mix warning */
-      --wish: #93c5fd;      /* blue: wishlist */
-      --grey-status: #94a3b8;  /* not owned */
-      --chip-on: #0b1220;   /* text on a pressed coloured chip */
+      --warn: #e8d58c;      /* AB6: pale yellow: running low, ratio warning */
+      --caution: #e3a43a;   /* AB6: amber: clashes, mix warning */
+      --wish: #8fb4e6;      /* AB6: blue: wishlist */
+      --grey-status: #8d9aa8;  /* AB6: not owned */
+      --chip-on: #0c1418;   /* text on a pressed coloured chip (AB6: the new page colour) */
       --toast-action: #0369a1; /* the Undo button inside the toast */
-      --series-added: #6366f1; --series-painted: #10a99a;   /* dashboard graph lines */
+      --series-added: #8fb4e6; --series-painted: #10a99a;   /* dashboard graph lines (AB6: "added" off Tailwind indigo) */
     }
+    /* AB6: the photo viewer and the camera keep the old deep navy; only the pages take the new page colour. */
+    .viewer, #scan-camera { --background: #0b1220; --chip-on: #0b1220; }
     :root { --done-colour: #a7f3d0; } /* the "finished" colour, also set by JavaScript */
     /* Mo1: every movement in the app takes its time and feel from these four values. Change them here and everything follows. */
     :root { --motion-fast: 120ms; --motion-med: 240ms; --motion-slow: 480ms; --motion-ease: linear;
@@ -120,22 +122,22 @@
       --text: #0f1b2d;        /* deep navy text */
       --muted: #4a5b73;
       --accent: #0369a1;      /* deep sky blue */
-      --danger: #b91c1c;
+      --danger: #a8261c;      /* AB6 */
       --shadow: rgba(15, 27, 45, 0.18);
       --badge-bg: rgba(248, 250, 252, 0.92);
       --accent-wash: rgba(3, 105, 161, 0.09);
       --accent-wash-hover: rgba(3, 105, 161, 0.05);
       --swatch-edge: rgba(15, 27, 45, 0.3);
-      --note: #6d28d9;
-      --note-wash: rgba(109, 40, 217, 0.10);
+      --note: #5440b8;      /* AB6 */
+      --note-wash: rgba(84, 64, 184, 0.10);
       --good: #0f766e;
       --good-wash: rgba(15, 118, 110, 0.10);
       --bad: #b91c1c;
       --bad-wash: rgba(185, 28, 28, 0.08);
-      --warn: #854d0e;
+      --warn: #6e5a10;      /* AB6 */
       --caution: #92400e;
-      --wish: #1d4ed8;
-      --grey-status: #475569;
+      --wish: #2a55b0;      /* AB6 */
+      --grey-status: #4d5a68;   /* AB6 */
       --chip-on: #ffffff;
       --toast-action: #7dd3fc;
       --series-added: #4f46e5; --series-painted: #0f766e;
@@ -415,15 +417,7 @@
     .mo-load .lr-s2 { stroke: color-mix(in srgb, var(--mentor-t2, var(--mentor-b)) 50%, var(--mentor-dot, var(--mentor-core))); stroke-dasharray: 60.73 446.11; stroke-dashoffset: -114.63; }
     .mo-load .lr-s3 { stroke: var(--mentor-dot, var(--mentor-core)); stroke-dasharray: 71.87 446.11; stroke-dashoffset: -181.54; }
     .mo-load .lr-s4 { stroke: var(--mentor-t1, var(--mentor-a)); stroke-dasharray: 183.39 446.11; stroke-dashoffset: -259.61; }
-    .lr-sweep {
-      position: absolute; left: 115px; top: 100px; width: 160px; height: 160px; border-radius: 50%; pointer-events: none;
-      background: conic-gradient(transparent 0turn 0.78turn, color-mix(in srgb, var(--mentor-dot) 75%, transparent) 1turn);
-      -webkit-mask: radial-gradient(closest-side, transparent 81%, #000 82.5%, #000 95%, transparent 96.5%);
-      mask: radial-gradient(closest-side, transparent 81%, #000 82.5%, #000 95%, transparent 96.5%);
-      will-change: transform; animation: lr-sweep 2.4s linear infinite;
-    }
-    @keyframes lr-sweep { to { transform: rotate(360deg); } }
-    @media (prefers-reduced-motion: reduce) { .lr-sweep { display: none; } }
+    /* AB6 (AT-58): the conic sweep over the loading ring is gone; the ring only fills as each step is done. */
 
     /* Mo3b: while the start circle turns into the bar (or back), a picture of the old shape is drawn on top for a moment: .mo-ring is the circle's
        segments (the rules above also match it), .mo-ghost is the bar's. Both are inert and removed when the move ends. */
@@ -557,6 +551,19 @@
     .ach-circles { display: flex; gap: 14px; }
     .ach-circles i { width: 44px; height: 44px; border-radius: 50%; border: 2px dashed var(--muted); box-sizing: border-box; }
     .faction-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+    /* AB8: Armies as rows (the default). A colour bar at the left, the name, a thin stage strip, "5 of 10 done". */
+    #faction-view { margin-bottom: 12px; }
+    .faction-rows { display: grid; gap: 8px; }
+    .faction-row {
+      display: flex; align-items: stretch; text-align: left; min-height: 44px; padding: 0; overflow: hidden;
+      background: var(--background); color: var(--text); font-size: 0.9375rem;
+      border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-control);
+    }
+    .faction-row::before { content: ""; flex: 0 0 6px; background: var(--faction-colour, var(--border)); }
+    .faction-row .faction-text { flex: 1; min-width: 0; display: grid; gap: 6px; padding: 10px 12px; }
+    .faction-row small { color: var(--muted); font-size: 0.8125rem; }
+    .faction-strip { display: flex; gap: 2px; height: 4px; border-radius: var(--radius-bar); overflow: hidden; background: var(--border); }
+    .faction-strip i { display: block; height: 100%; }
     .faction-button {
       background: var(--background);
       border: var(--border-width) var(--border-style) var(--border);
@@ -1312,35 +1319,29 @@
     .seg button { background: none; color: var(--muted); padding: 10px; font-size: 0.9375rem; min-height: 44px; }
     .seg button[aria-selected="true"] { background: var(--accent-fill, var(--accent)); color: var(--on-accent); font-weight: 600; }
     .more-title { margin: 0 0 8px; }   /* X2: the page heading above the Guides / Settings / Help / Updates switch */
-    #more-seg { grid-template-columns: repeat(6, 1fr); gap: 2px; }   /* X2: Guides added; AM1: About added; CR1: Credits added (six pages) */
-    #more-seg button { padding: 10px 2px; font-size: 0.875rem; }
-    @media (max-width: 380px) { #more-seg button { font-size: 0.8125rem; } }   /* AM1: five pages must fit 320 px */
-    /* v40: the Recipes tab's switch has four parts now (Recipes, Schemes, Your Palette, Shopping), so each is a little narrower */
-    #recipe-seg { grid-template-columns: repeat(4, 1fr); gap: 2px; }
-    #recipe-seg button { padding: 10px 2px; font-size: 0.875rem; }
-    @media (max-width: 420px) { #recipe-seg button { font-size: 0.8125rem; } }
-    /* X1: five parts now (Colour Lab added). A long name may wrap onto a second line instead of being cut. */
-    #recipe-seg { grid-template-columns: repeat(5, 1fr); }
-    #recipe-seg button { line-height: 1.15; overflow-wrap: anywhere; }
-    @media (max-width: 420px) { #recipe-seg button { font-size: 0.75rem; } }
-    /* X1: Colour Lab's second row of section buttons (same look as the switch above, wrapping so each name stays on one line) */
-    #lab-seg { display: flex; flex-wrap: wrap; }
-    #lab-seg button { flex: 1 1 auto; padding: 10px 12px; font-size: 0.875rem; }
+    /* AB7b: (AT-28) the Painting and Tools section tabs are a row of words with a 2 px line under the chosen one, not boxed bars (the boxed
+       switch stays for two-way choices: List / Swatches, Topics / A to Z). The row is 44 px tall, never wraps and scrolls sideways; the line
+       is one shape (.tab-line) that slides to the chosen word. It replaces the older per-bar grid and wrapping rules (X2, v40, X1, UX1b, CR1). */
+    .seg.tab-row {
+      display: flex; flex-wrap: nowrap; gap: 0; padding: 0; max-width: none; position: relative;
+      background: none; border: 0; border-radius: 0; box-shadow: inset 0 -1px 0 var(--border);
+      overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    }
+    .seg.tab-row::-webkit-scrollbar { display: none; }
+    .seg.tab-row > button {
+      flex: 0 0 auto; white-space: nowrap; min-width: 44px; min-height: 44px; padding: 10px 14px; font-size: 0.9375rem; line-height: 1.15;
+      background: none; border: 0; border-radius: 0; color: var(--muted); overflow-wrap: normal;
+    }
+    .seg.tab-row > button[aria-selected="true"] { background: none; color: var(--text); font-weight: 600; }
+    .seg.tab-row > button:focus-visible { outline-offset: -4px; }
+    .seg.tab-row > .tab-line {
+      position: absolute; left: 0; bottom: 0; height: 2px; width: 0; background: var(--accent); pointer-events: none; opacity: 0;
+      transition: transform var(--motion-med) var(--motion-ease), width var(--motion-med) var(--motion-ease);
+    }
+    .seg.tab-row > .tab-line.on { opacity: 1; }
+    .seg.tab-row > .tab-line.still { transition: none; }   /* first placement, or the row was hidden: appear in place rather than slide */
     #colourlab-body .wheel-block { border-bottom: 0; padding-bottom: 0; }
     #colourlab-body .shop-idle-button { min-height: 44px; }
-    /* UX1b: small screens and keyboard. The Painting and Tools switches never break a word: each part is at least 44 px wide and as wide as
-       its longest word. On a 360 px or wider phone at the normal text size they are the same equal columns as before. Narrower than 21.25em
-       (340 px at the normal text size; wider when the text is set bigger, since em here follows the text size setting) they can wrap, so
-       when they can't all fit on one line the last ones move to a second. Below 300 px (a 360 px phone at 130% zoom) they sit three and two. */
-    #recipe-seg, #more-seg { grid-template-columns: repeat(5, minmax(min-content, 1fr)); }
-    #recipe-seg button, #more-seg button { min-width: 44px; overflow-wrap: break-word; }
-    @media (max-width: 21.25em) {
-      #recipe-seg, #more-seg { display: flex; flex-wrap: wrap; }
-      #recipe-seg button, #more-seg button { flex: 1 1 44px; min-width: auto; }   /* auto: never narrower than the longest word */
-    }
-    @media (max-width: 300px) { #recipe-seg button, #more-seg button { flex-basis: 30%; } }
-    #more-seg { grid-template-columns: repeat(6, minmax(min-content, 1fr)); }   /* CR1: six pages; the wrapping rules above still apply under 340 px */
-    @media (max-width: 21.25em) { #more-seg { display: flex; } }
     /* CR1: the Credits page. Each row is the name, who made it, and the licence name, which is the link (44 px tall). */
     #view-credits .credits-list { list-style: none; margin: 0 0 12px; padding: 0; }
     #view-credits .credits-list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 12px; padding: 4px 0; border-top: 1px solid var(--border); }
@@ -2010,9 +2011,9 @@
       /* R3b-1: the headline fills the row (the first-child rule above lands on a hidden notice card). With 4 or more factions the
          faction card is tall, so it and the stage card each take a full row instead of leaving a gap beside the stage card. */
       #headline-card, #view-dashboard > .notice-card { grid-column: 1 / -1; }
-      #view-dashboard:has(#faction-grid > :nth-child(4)) :is(#stage-card, #faction-card) { grid-column: 1 / -1; }
-      #view-dashboard:has(#faction-grid > :nth-child(4)) #stage-card .chart-row { justify-content: center; gap: 48px; }
-      #view-dashboard:has(#faction-grid > :nth-child(4)) #stage-card .legend { flex: 0 1 420px; }
+      #view-dashboard:has(#faction-grid.faction-grid > :nth-child(4)) :is(#stage-card, #faction-card) { grid-column: 1 / -1; }
+      #view-dashboard:has(#faction-grid.faction-grid > :nth-child(4)) #stage-card .chart-row { justify-content: center; gap: 48px; }
+      #view-dashboard:has(#faction-grid.faction-grid > :nth-child(4)) #stage-card .legend { flex: 0 1 420px; }
       .big { font-size: 3.5rem; }
       .of { font-size: 1rem; }
       .group-button { padding: 16px 18px; font-size: 0.9375rem; }
@@ -2861,7 +2862,7 @@
        tap target keeps its full size even while pressed). Mo1's main buttons keep their own press. Not the bar's segments, the start circle or the Mentor button. */
     .step-back, .up-button, .each-up, .each-back, .pick-tick, .theme-swatch, .recipe-chip, .mentor-chip, .mentor-send, .mentor-close, .seg > button,
     .link-button, .danger-button, .more-info-button, .card-fold-button, .group-button, .home, .recipe-item, .paint-head, .guides-row,
-    .scheme-recipe-row, .faction-button, .tile-link, .step-line, .check-label, summary, #stage-legend button, .wheel-seg {
+    .scheme-recipe-row, .faction-button, .faction-row, .tile-link, .step-line, .check-label, summary, #stage-legend button, .wheel-seg {
       transition: filter var(--motion-fast) var(--motion-ease); }
     .chip { transition: filter var(--motion-fast) var(--motion-ease); }
     /* A phone's own :active often shows only once the finger lifts, together with the result; app.js also puts .lq-press on the thing under the finger as soon as it
@@ -3103,14 +3104,15 @@
   </div>
   <!-- U4a: the menu bar. Four segments around the round Mentor button; aria-current marks the segment you're in, for screen readers and for the CSS.
        The numbers that shape it are in the CSS (".arc"). The fourth segment is Tools and Settings (Guides, Settings, Help, Updates); its short label is Tools. -->
+  <!-- AB7a: the four icons are hand-drawn hobby icons (shelf, figure on a base, brush, clippers) in the same 24 px box and stroke; the button label is their name. -->
   <nav class="tabs" aria-label="Sections">
     <div class="arc">
       <!-- LR1: the loading ring, in the page from the first frame (see "LR1:" in the CSS). early.js and then app.js light it; app.js takes it away. -->
-      <svg class="mo-load" viewBox="0 0 390 360" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" focusable="false"><g class="lr-five" fill="none" transform="translate(195 180) rotate(-90)"><circle class="lr-back" r="71"/><circle class="lr-s lr-s0" r="71"/><circle class="lr-s lr-s1" r="71"/><circle class="lr-s lr-s2" r="71"/><circle class="lr-s lr-s3" r="71"/><circle class="lr-s lr-s4" r="71"/></g><g class="lr-three" fill="none"><g class="mo-load-turn"><circle class="t" cx="195" cy="180" r="71" stroke-dasharray="123.92 446.11" transform="rotate(-80 195 180)"/><circle class="a a0" cx="195" cy="180" r="71" stroke-dasharray="0 446.11" transform="rotate(-80 195 180)"/><circle class="t" cx="195" cy="180" r="71" stroke-dasharray="123.92 446.11" transform="rotate(40 195 180)"/><circle class="a a1" cx="195" cy="180" r="71" stroke-dasharray="0 446.11" transform="rotate(40 195 180)"/><circle class="t" cx="195" cy="180" r="71" stroke-dasharray="123.92 446.11" transform="rotate(160 195 180)"/><circle class="a a2" cx="195" cy="180" r="71" stroke-dasharray="0 446.11" transform="rotate(160 195 180)"/></g></g></svg><span class="lr-sweep" aria-hidden="true"></span>
-      <button data-tab="dashboard" class="ring-hold"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>Dashboard</button>
-      <button data-tab="units" class="ring-hold"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 7.9-8 9-4.8-1.1-8-4.5-8-9V6l8-3z"/></svg></span>Models</button>
-      <button data-tab="recipes" class="ring-hold"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3.5 4.2 6 7.6 6 10.5a6 6 0 0 1-12 0C6 10.6 8.5 7.2 12 3z"/></svg></span>Painting</button>
-      <button data-tab="guides" class="ring-hold" aria-label="Tools"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.6 2.2c-.8.4-1.2 1-1.2 1.8M12 17h.01"/></svg></span>Tools</button>
+      <svg class="mo-load" viewBox="0 0 390 360" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" focusable="false"><g class="lr-five" fill="none" transform="translate(195 180) rotate(-90)"><circle class="lr-back" r="71"/><circle class="lr-s lr-s0" r="71"/><circle class="lr-s lr-s1" r="71"/><circle class="lr-s lr-s2" r="71"/><circle class="lr-s lr-s3" r="71"/><circle class="lr-s lr-s4" r="71"/></g><g class="lr-three" fill="none"><g class="mo-load-turn"><circle class="t" cx="195" cy="180" r="71" stroke-dasharray="123.92 446.11" transform="rotate(-80 195 180)"/><circle class="a a0" cx="195" cy="180" r="71" stroke-dasharray="0 446.11" transform="rotate(-80 195 180)"/><circle class="t" cx="195" cy="180" r="71" stroke-dasharray="123.92 446.11" transform="rotate(40 195 180)"/><circle class="a a1" cx="195" cy="180" r="71" stroke-dasharray="0 446.11" transform="rotate(40 195 180)"/><circle class="t" cx="195" cy="180" r="71" stroke-dasharray="123.92 446.11" transform="rotate(160 195 180)"/><circle class="a a2" cx="195" cy="180" r="71" stroke-dasharray="0 446.11" transform="rotate(160 195 180)"/></g></g></svg>
+      <button data-tab="dashboard" class="ring-hold"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true" data-icon="dashboard"><rect x="3" y="3" width="18" height="18" rx="1.5"/><path d="M3 9h18M3 15h18M8 9V6.5M15.5 9V6M11 15v-2.5M17 15v-2"/></svg></span>Dashboard</button>
+      <button data-tab="units" class="ring-hold"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true" data-icon="units"><circle cx="12" cy="5.2" r="2.2"/><path d="M8.3 17.2l1.4-6.4q2.3-1.3 4.6 0l1.4 6.4"/><ellipse cx="12" cy="19.5" rx="7.5" ry="2.3"/></svg></span>Models</button>
+      <button data-tab="recipes" class="ring-hold"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true" data-icon="recipes"><path d="M20 4l-8 8"/><path d="M10.3 10.3l3.4 3.4c-.5 2.8-3.4 4.6-8 5.3.7-4.6 2.6-8 4.6-8.7z"/><path d="M4.2 20.6h.01"/></svg></span>Painting</button>
+      <button data-tab="guides" class="ring-hold" aria-label="Tools"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true" data-icon="guides"><path d="M9.2 3.8Q8.4 8.2 12 11.2L16.8 20.5M14.8 3.8Q15.6 8.2 12 11.2L7.2 20.5"/><circle cx="12" cy="11.2" r="1"/></svg></span>Tools</button>
       <!-- The round Ask Mentor button: one component, wired by app.js (it opens the Mentor pop-up). -->
       <button type="button" class="mentor-orb" id="mentor-button" aria-label="Ask Mentor"><svg xmlns='http://www.w3.org/2000/svg' viewBox='16.67 16.67 166.67 166.67' class='ml-orb ml-futuristic ml-neutral' aria-hidden='true' focusable='false'><g class='ml-float'><g class='ml-brk ml-bk0'><path class='ml-sil ml-h-m2' d='M43.7 144A71.5 71.5 0 0 1 43.7 56L47.2 58.8A67 67 0 0 0 47.2 141.2z'/><path class='ml-sil ml-h-m1' d='M31.3 142.9A81 81 0 0 1 31.3 57.1L38.9 61.8A72 72 0 0 0 38.9 138.2z'/><path class='ml-sil ml-h-m1' d='M42.4 151.9A77.5 77.5 0 0 1 32.2 137.6L37 134.9A72 72 0 0 0 46.5 148.2z'/><path class='ml-sil ml-h-m1' d='M32.2 62.4A77.5 77.5 0 0 1 42.4 48.1L46.5 51.8A72 72 0 0 0 37 65.1z'/><path class='ml-shade' d='M37.2 139.2A74 74 0 0 1 37.2 60.8L38.9 61.8A72 72 0 0 0 38.9 138.2z'/><circle class='ml-ink' cx='25.8' cy='118.5' r='1.1'/><circle class='ml-ink' cx='25.8' cy='81.5' r='1.1'/><path class='ml-h-cab0' d='M59.5 148.3Q61.5 172.4 84.5 162.1'/><path class='ml-h-cab1' d='M59.5 148.3Q61.5 172.4 84.5 162.1'/><path class='ml-h-cab0' d='M69 153.7Q74 171.4 93.5 161.7'/><path class='ml-h-cab1' d='M69 153.7Q74 171.4 93.5 161.7'/></g><g class='ml-brk ml-bk1'><path class='ml-sil ml-h-m2' d='M156.3 56A71.5 71.5 0 0 1 156.3 144L152.8 141.2A67 67 0 0 0 152.8 58.8z'/><path class='ml-sil ml-h-m1' d='M168.7 57.1A81 81 0 0 1 168.7 142.9L161.1 138.2A72 72 0 0 0 161.1 61.8z'/><path class='ml-sil ml-h-m1' d='M157.6 48.1A77.5 77.5 0 0 1 167.8 62.4L163 65.1A72 72 0 0 0 153.5 51.8z'/><path class='ml-sil ml-h-m1' d='M167.8 137.6A77.5 77.5 0 0 1 157.6 151.9L153.5 148.2A72 72 0 0 0 163 134.9z'/><path class='ml-shade' d='M162.8 60.8A74 74 0 0 1 162.8 139.2L161.1 138.2A72 72 0 0 0 161.1 61.8z'/><circle class='ml-ink' cx='174.2' cy='81.5' r='1.1'/><circle class='ml-ink' cx='174.2' cy='118.5' r='1.1'/><path class='ml-h-cab0' d='M140.5 148.3Q138.5 172.4 115.5 162.1'/><path class='ml-h-cab1' d='M140.5 148.3Q138.5 172.4 115.5 162.1'/><path class='ml-h-cab0' d='M131 153.7Q126 171.4 106.5 161.7'/><path class='ml-h-cab1' d='M131 153.7Q126 171.4 106.5 161.7'/></g><circle class='ml-h-cond0' cx='100' cy='100' r='47.2'/><circle class='ml-h-cond1' cx='100' cy='100' r='47.2'/><path class='ml-sil ml-h-m2' d='M95.5 48.2A52 52 0 0 1 104.5 48.2L103.7 57.2A43 43 0 0 0 96.3 57.2z'/><path class='ml-shade' d='M100.9 48A52 52 0 0 1 104.5 48.2L103.7 57.2A43 43 0 0 0 100.8 57z'/><path class='ml-sil ml-h-m2' d='M104.5 151.8A52 52 0 0 1 95.5 151.8L96.3 142.8A43 43 0 0 0 103.7 142.8z'/><path class='ml-shade' d='M99.1 152A52 52 0 0 1 95.5 151.8L96.3 142.8A43 43 0 0 0 99.2 143z'/><g class='ml-turn'><g transform='translate(100 100) rotate(-90)'><g class='ml-outl'><circle class='ml-o0' r='59.5'/><circle class='ml-o1' r='59.5'/><circle class='ml-o2' r='59.5'/><circle class='ml-o3' r='59.5'/><circle class='ml-o4' r='59.5'/></g><g class='ml-segs'><circle class='ml-k0' r='59.5'/><circle class='ml-k1' r='59.5'/><circle class='ml-k2' r='59.5'/><circle class='ml-k3' r='59.5'/><circle class='ml-k4' r='59.5'/></g></g></g><g class='ml-eye'><circle class='ml-sil ml-h-eye0' cx='100' cy='100' r='24.5'/><circle class='ml-h-eye1' cx='100' cy='100' r='17.5'/><path class='ml-h-swirl' d='M95.9 111.3A12 12 0 0 1 94 89.6M104.5 94.6A7 7 0 0 1 103.5 106.1'/><circle class='ml-h-pupil' cx='100' cy='100' r='8'/><ellipse class='ml-glint' cx='93.5' cy='92.5' rx='4.6' ry='3.4' transform='rotate(-35 93.5 92.5)'/><circle class='ml-glint' cx='106' cy='107' r='1.6'/></g><g class='ml-iris'><g transform='rotate(30 100 100)'><path class='ml-blade' d='M86.5 100h27v-27h-27z'/></g><g transform='rotate(90 100 100)'><path class='ml-blade' d='M86.5 100h27v-27h-27z'/></g><g transform='rotate(150 100 100)'><path class='ml-blade' d='M86.5 100h27v-27h-27z'/></g><g transform='rotate(210 100 100)'><path class='ml-blade' d='M86.5 100h27v-27h-27z'/></g><g transform='rotate(270 100 100)'><path class='ml-blade' d='M86.5 100h27v-27h-27z'/></g><g transform='rotate(330 100 100)'><path class='ml-blade' d='M86.5 100h27v-27h-27z'/></g></g><path class='ml-sil ml-h-m3' d='M100 56a44 44 0 1 0 .01 0zM100 75.5a24.5 24.5 0 1 1 -.01 0z' fill-rule='evenodd'/><path class='ml-sil ml-h-m2' d='M93.5 54A46.5 46.5 0 0 1 106.5 54L105.6 60.4A40 40 0 0 0 94.4 60.4z'/><path class='ml-sil ml-h-m2' d='M128 62.9A46.5 46.5 0 0 1 137.1 72L131.9 75.9A40 40 0 0 0 124.1 68.1z'/><path class='ml-sil ml-h-m2' d='M146 93.5A46.5 46.5 0 0 1 146 106.5L139.6 105.6A40 40 0 0 0 139.6 94.4z'/><path class='ml-sil ml-h-m2' d='M137.1 128A46.5 46.5 0 0 1 128 137.1L124.1 131.9A40 40 0 0 0 131.9 124.1z'/><path class='ml-sil ml-h-m2' d='M106.5 146A46.5 46.5 0 0 1 93.5 146L94.4 139.6A40 40 0 0 0 105.6 139.6z'/><path class='ml-sil ml-h-m2' d='M72 137.1A46.5 46.5 0 0 1 62.9 128L68.1 124.1A40 40 0 0 0 75.9 131.9z'/><path class='ml-sil ml-h-m2' d='M54 106.5A46.5 46.5 0 0 1 54 93.5L60.4 94.4A40 40 0 0 0 60.4 105.6z'/><path class='ml-sil ml-h-m2' d='M62.9 72A46.5 46.5 0 0 1 72 62.9L75.9 68.1A40 40 0 0 0 68.1 75.9z'/><path class='ml-sil ml-h-m1' d='M100 59.5a40.5 40.5 0 1 0 .01 0zM100 69a31 31 0 1 1 -.01 0z' fill-rule='evenodd'/><path class='ml-h-groove' d='M107.4 65A35.8 35.8 0 0 1 135 92.6'/><path class='ml-h-groove' d='M135 107.4A35.8 35.8 0 0 1 107.4 135'/><path class='ml-h-groove' d='M92.6 135A35.8 35.8 0 0 1 65 107.4'/><path class='ml-h-groove' d='M65 92.6A35.8 35.8 0 0 1 92.6 65'/><circle class='ml-ink' cx='125.3' cy='74.7' r='1.1'/><circle class='ml-ink' cx='125.3' cy='125.3' r='1.1'/><circle class='ml-ink' cx='74.7' cy='125.3' r='1.1'/><circle class='ml-ink' cx='74.7' cy='74.7' r='1.1'/><path class='ml-sil ml-h-m2' d='M100 69a31 31 0 1 0 .01 0zM100 75.5a24.5 24.5 0 1 1 -.01 0z' fill-rule='evenodd'/><path class='ml-light' d='M64.9 79.8A40.5 40.5 0 0 1 135.1 79.8L133.3 80.8A38.5 38.5 0 0 0 66.7 80.8z'/><g class='ml-fglow'><circle class='ml-gw0' cx='100' cy='100' r='46'/><circle class='ml-gw1' cx='100' cy='100' r='32'/><circle class='ml-gw2' cx='100' cy='100' r='16'/></g><g class='ml-bolt ml-z0'><path class='ml-z-glow' d='M111.8 90.8L118.9 90.3L119.9 81.2L129.5 83.9L127.7 71.4L140.9 78.9'/><path class='ml-z-core' d='M111.8 90.8L118.9 90.3L119.9 81.2L129.5 83.9L127.7 71.4L140.9 78.9'/></g><g class='ml-bolt ml-z1'><path class='ml-z-glow' d='M93 113.2L88.2 117.1L91.6 125.3L82.2 127.1L88.1 136.3L75.1 136.2'/><path class='ml-z-core' d='M93 113.2L88.2 117.1L91.6 125.3L82.2 127.1L88.1 136.3L75.1 136.2'/></g><g class='ml-bolt ml-z2'><path class='ml-z-glow' d='M90 88.9L88.9 82.9L81 82.5L82.3 74.3L72.2 76.2L77 64.9'/><path class='ml-z-core' d='M90 88.9L88.9 82.9L81 82.5L82.3 74.3L72.2 76.2L77 64.9'/></g><g transform='rotate(76 100 100)'><g class='ml-bolt ml-z3'><path class='ml-z-glow' d='M111.8 90.8L118.9 90.3L119.9 81.2L129.5 83.9L127.7 71.4L140.9 78.9'/><path class='ml-z-core' d='M111.8 90.8L118.9 90.3L119.9 81.2L129.5 83.9L127.7 71.4L140.9 78.9'/></g></g><g transform='rotate(56 100 100)'><g class='ml-bolt ml-z4'><path class='ml-z-glow' d='M93 113.2L88.2 117.1L91.6 125.3L82.2 127.1L88.1 136.3L75.1 136.2'/><path class='ml-z-core' d='M93 113.2L88.2 117.1L91.6 125.3L82.2 127.1L88.1 136.3L75.1 136.2'/></g></g><g transform='rotate(48 100 100)'><g class='ml-bolt ml-z5'><path class='ml-z-glow' d='M90 88.9L88.9 82.9L81 82.5L82.3 74.3L72.2 76.2L77 64.9'/><path class='ml-z-core' d='M90 88.9L88.9 82.9L81 82.5L82.3 74.3L72.2 76.2L77 64.9'/></g></g></g></svg>Ask Mentor</button>
     </div>
@@ -3185,6 +3187,7 @@
           <h2>Armies</h2>
           <button class="link-button" id="faction-colours-link">Faction colours</button>
         </div>
+        <div class="view-switch hidden" id="faction-view" role="group" aria-label="Show armies as"></div>
         <div class="faction-grid" id="faction-grid"></div>
       </div>
 
@@ -3300,7 +3303,7 @@
       <!-- v24: shown while any example recipes or paints are still there. Filled by renderRecipeExamplesCard(). -->
       <div class="card notice-card examples-card recipes-examples-card hidden" id="examples-card-recipes" role="note"></div>
       <!-- Switch between your recipes and your palette (the paints those recipes use). -->
-      <div class="seg" id="recipe-seg" role="tablist" aria-label="Recipes, schemes, Colour Lab, palette or shopping list">
+      <div class="seg tab-row" id="recipe-seg" role="tablist" aria-label="Recipes, schemes, Colour Lab, palette or shopping list">
         <button role="tab" data-view="recipes">Recipes</button>
         <button role="tab" data-view="schemes">Schemes</button>
         <button role="tab" data-view="colourlab">Colour Lab</button>
@@ -3322,7 +3325,7 @@
 
       <!-- X1: Colour Lab (Pro preview): the colour wheel, Colour ideas, Colour plans, Colours you've used and the Picker. Filled by renderColourLab(). -->
       <div id="colourlab-view" class="hidden">
-        <div class="seg" id="lab-seg" role="tablist" aria-label="Colour Lab sections"></div>
+        <div class="seg tab-row" id="lab-seg" role="tablist" aria-label="Colour Lab sections"></div>
         <div class="card compendium-card">
           <div class="ideas-body" id="colourlab-body"></div>
           <p class="sr-only" id="wheel-live" role="status" aria-live="polite"></p>
@@ -3386,7 +3389,7 @@
          the Recipes tab's) moves between the four pages. It shows only on those pages and is
          filled in by showTab(). -->
     <h2 class="more-title hidden" id="more-title">Tools and Settings</h2>
-    <div class="seg hidden" id="more-seg" role="tablist" aria-label="About, credits, guides, settings, help or updates">
+    <div class="seg tab-row hidden" id="more-seg" role="tablist" aria-label="About, credits, guides, settings, help or updates">
       <button role="tab" data-page="about">About</button>
       <button role="tab" data-page="credits">Credits</button>
       <button role="tab" data-page="guides">Guides</button>
@@ -3518,7 +3521,7 @@
             <li>Choose how the app looks in <strong>Settings → Appearance</strong>: <strong>Match my phone</strong> (where you start) follows your phone's dark mode setting, or pick <strong>Dark</strong> or <strong>Light</strong>.</li>
             <li><strong>Settings → Mentor look</strong> changes Mentor's orb: <strong>Futuristic</strong> (the app icon's ring), <strong>Magical</strong> or <strong>Grounded</strong>. The orb also shows when Mentor is getting ready, has an answer, is not sure, or has signed off.</li>
             <li><strong>Settings → Theme</strong> changes the whole look: colours, lettering, corners and borders. Choose <strong>Classic</strong> (the usual look), <strong>Parchment Codex</strong>, <strong>Grim Forge</strong> or <strong>Paint Bench</strong>. Each square shows what its theme looks like. Every theme has a dark and a light version, chosen by Appearance.</li>
-            <li><strong>Settings → Colours</strong> picks the colour set for your stages: Ice, Frost, Greyscale, Colour-blind friendly, <strong>Forge</strong> (warm: ember red through amber and gold to cream), or <strong>Custom</strong>.</li>
+            <li><strong>Settings → Colours</strong> picks the colour set for your stages: <strong>Match the look</strong> (each look has its own), Ice, Frost, Greyscale, Colour-blind friendly, <strong>Forge</strong> (warm: ember red through amber and gold to cream), or <strong>Custom</strong>.</li>
             <li><strong>Custom</strong> lets you pick a colour for each stage. It starts from the set you had. Tap a stage's colour square to change it; the whole app updates as you go.</li>
             <li>A colour that's too faint to read on the dark cards gets a <strong>⚠ warning</strong> under its stage. You can still keep it.</li>
             <li><strong>Reset</strong> puts every stage back to the set you started from. Press Undo on the message if you change your mind.</li>
@@ -3536,6 +3539,7 @@
             <li>Give each faction its own colour in <strong>Settings → Faction colours</strong> (or tap <strong>Faction colours</strong> on the dashboard). Tap the colour circle to pick one.</li>
             <li id="help-dashboard-tiles"><strong>Palette</strong> on the Dashboard shows a strip with one block for each colour, as wide as the paints you have in it (Owned and Running low). A colour with none, or only one, is an empty or thin block, and the first two are named under the strip (for example <strong>No red or orange yet</strong>). With no paints marked Owned, the strip is hidden. Tap it to open Your Palette. <strong>Achievements</strong> is a place held for later and does nothing yet.</li>
             <li id="help-card-folds">In Settings, the <strong>Faction colours</strong> and <strong>Paint brands</strong> cards are shut each time you open the app. Tap the heading to open one. Tapping <strong>Faction colours</strong> on the dashboard opens it for you. <strong>Stages</strong>, <strong>Import</strong> and <strong>Your data</strong> fold shut the same way.</li>
+            <li>On the Dashboard, <strong>Armies</strong> shows one row for each faction. Tap a row to see its units. Switch to <strong>Doughnuts</strong> for a small chart each.</li>
             <li><strong>Suggest</strong> offers a colour. If the faction's units have recipes linked, it uses those (armour recipes first, each recipe's first paint, usually the base coat). Otherwise it uses the colour the faction is usually painted, for well-known factions.</li>
             <li><strong>Use suggested colours</strong> colours every faction that hasn't got one yet, in one tap. Press Undo on the message if you change your mind.</li>
             <li>The colour shows as a bar on the dashboard's faction cards, a soft tint and a dot on unit cards, and a stripe on the faction filter.</li>
@@ -3976,7 +3980,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=137" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=138" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -3989,16 +3993,16 @@
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks.
        G2a: guides-groups.js (the Guides topic groups, plain data) loads after guides-data.js. It only adds one
        name, GUIDE_GROUPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=137"></script>
-  <script src="schemes.js?v=137"></script>
-  <script src="detail-recipes.js?v=137"></script>
-  <script src="basing-tips.js?v=137"></script>
-  <script src="mentor-tips.js?v=137"></script>
-  <script src="guides-data.js?v=137"></script>
-  <script src="guides-groups.js?v=137"></script>
-  <script src="mentor-data.js?v=137"></script>
-  <script src="mentor-engine.js?v=137"></script>
-  <script src="where-to-buy.js?v=137"></script>
-  <script src="app.js?v=137"></script>
+  <script src="colour.js?v=138"></script>
+  <script src="schemes.js?v=138"></script>
+  <script src="detail-recipes.js?v=138"></script>
+  <script src="basing-tips.js?v=138"></script>
+  <script src="mentor-tips.js?v=138"></script>
+  <script src="guides-data.js?v=138"></script>
+  <script src="guides-groups.js?v=138"></script>
+  <script src="mentor-data.js?v=138"></script>
+  <script src="mentor-engine.js?v=138"></script>
+  <script src="where-to-buy.js?v=138"></script>
+  <script src="app.js?v=138"></script>
 </body>
 </html>

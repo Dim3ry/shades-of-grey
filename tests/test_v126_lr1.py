@@ -77,7 +77,8 @@ def main():
                      held: [...document.querySelectorAll('.arc [data-tab]')].every(b => getComputedStyle(b).visibility === 'hidden'),
                      launching: document.body.classList.contains('launching') }; }""")
         check("with every script blocked: the ring is there, a progress bar named Loading", s["role"] == "progressbar" and s["name"] == "Loading" and s["scripts"] == "undefinedundefined", s)
-        check("...and it moves (the sweep turns by CSS alone), on the start circle, segments held back", s["moving"] and s["held"] and s["launching"], s)
+        # AB6 (AT-58): the sweep is gone, so nothing moves by CSS alone any more; the ring is still there on the start circle with the segments held back.
+        check("...with no sweep (AB6), on the start circle, segments held back", not s["moving"] and s["held"] and s["launching"], s)
         pl = page.evaluate(PLACE)
         check("...centred on the Mentor button", abs(pl["dx"]) < 1.5 and abs(pl["dy"]) < 1.5, pl)
         page.unroute("**/*.js*")
@@ -123,7 +124,7 @@ def main():
         rp.on("pageerror", lambda x: errors.append(str(x)))
         seed(rp)
         held = held_load(rp)
-        r = rp.evaluate("""() => ({ sweep: getComputedStyle(document.querySelector('.lr-sweep')).display,
+        r = rp.evaluate("""() => ({ sweep: document.querySelector('.lr-sweep') ? 'there' : 'none',   /* AB6: the element is gone, so it reads none */
             moving: document.querySelector('.tabs .arc').getAnimations({ subtree: true }).filter(a => a.playState === 'running').length,
             now: +document.querySelector('.mo-load').getAttribute('aria-valuenow') })""")
         check("no sweep and nothing turning, but it is already lit part way", r["sweep"] == "none" and r["moving"] == 0 and r["now"] > 0, r)

@@ -65,8 +65,8 @@ def main():
         check("the five segments use the Mentor orb's own colours (the --mentor tokens)", page.evaluate("""() => {
             const cs = i => getComputedStyle(document.querySelector('.mo-load .lr-s' + i)).stroke, orb = i => getComputedStyle(document.querySelector('#mentor-button .ml-segs .ml-k' + i)).stroke;
             return [0, 1, 2, 3, 4].every(i => cs(i) === orb(i)); }"""))
-        check("it moves slowly (an endless 2.4 s sweep)", page.evaluate("""() => { const a = document.querySelector('.lr-sweep').getAnimations()[0];
-            return a && a.effect.getComputedTiming().iterations === Infinity && a.effect.getComputedTiming().duration === 2400; }"""))
+        # AB6 (AT-58): the conic sweep over the ring was removed, so this old check (an endless 2.4 s sweep) now checks that it is gone.
+        check("the ring has no spinning sweep any more (AB6)", page.evaluate("() => !document.querySelector('.lr-sweep')"))
         fresh(page)
         samples = page.evaluate(WATCH)
         live = [x for x in samples if x]
