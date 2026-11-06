@@ -3,7 +3,7 @@
 1. The idle time is one named setting (MENTOR_IDLE_MINUTES) and is 30.
 2. Reopening within 30 minutes keeps the exchange; after 30 minutes, or after a reload, the window opens at its start. A window left open is not touched.
 3. Back: arrow only, 44 px, named "Back to start", top left, only in the chat view; it clears the exchange, brings the starter questions back, and focus goes to the first thing.
-4. Keyboard and press: Tab reaches it, it has a visible focus ring, it ripples on a press, and not with reduced motion.
+4. Keyboard and press: Tab reaches it, it has a visible focus ring, it makes no ripple on a press (AB4 removed it), with or without reduced motion.
 5. Nothing is stored: no storage writes while chatting, and the question words are not found in any storage.
 6. Help and Privacy say the new sentence.
 7. Taller window on a phone at 390x844, 360x640 and 320x568: taller than before, clear of the top and the bottom bar, still scrolls, no sideways scroll.
@@ -155,8 +155,8 @@ def main():
         close_it(page)
         page.emulate_media(reduced_motion="no-preference")
         open_it(page); ask(page, "thin paint")
-        check("a press ripples when motion is allowed", page.evaluate("""() => { const b = document.querySelector('.mentor-back'); const r = b.getBoundingClientRect();
-            b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: r.left + 10, clientY: r.top + 10 })); return b.querySelectorAll('.ripple').length; }""") == 1)
+        check("a press makes no ripple even when motion is allowed (AB4, AT-33: the ripple is gone)", page.evaluate("""() => { const b = document.querySelector('.mentor-back'); const r = b.getBoundingClientRect();
+            b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: r.left + 10, clientY: r.top + 10 })); return b.querySelectorAll('.ripple').length; }""") == 0)
         close_it(page)
         page.emulate_media(reduced_motion="reduce")
 

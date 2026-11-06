@@ -70,9 +70,9 @@ def main():
                   r["layer"] and r["inert"] and r["aria"] == "true" and r["copies"] == 4 and r["realHidden"], r)
             check(f"{tab}: no loading ring and no old picture of the bar", not r["ring"], r)
             if tab == "dashboard":
-                check("the clock is 1500 ms with the 350 ms wait; the Mentor button waits and glides on the same clock",
-                      r["clock"]["duration"] == 1500 and r["clock"]["delay"] == 350 and r["orb"] == [350], r)
-                check("same easing as the way out", r["clock"]["easing"].startswith("cubic-bezier(") and "1.25" in r["clock"]["easing"], r["clock"]["easing"])
+                check("the clock is the travel token with the 350 ms wait; the Mentor button waits and glides on the same clock",
+                      450 <= r["clock"]["duration"] <= 650 and r["clock"]["delay"] == 350 and r["orb"] == [350], r)   # AB4: the travel is about half a second now (was 1500 ms)
+                check("same easing as the way out (AB4: cubic-bezier(0.4, 0, 0.2, 1), no overshoot)", r["clock"]["easing"] == "cubic-bezier(0.4, 0, 0.2, 1)", r["clock"]["easing"])
                 check("the app is already on the start page", page.evaluate("() => document.body.classList.contains('launching')"))
             settle(page)
             check(f"{tab}: ends tidy on the start page, exactly the circle a fresh load draws", page.evaluate(TIDY) and page.evaluate(CIRCLE) == ref, (page.evaluate(CIRCLE)["orb"], ref["orb"]))
@@ -85,11 +85,11 @@ def main():
         page.evaluate(TAP)
         wait = page.evaluate(AT, 100)
         check("while it waits the progress is 0 (the copies hold the bar's shape)", wait["progress"] == 0, wait["progress"])
-        mid = page.evaluate(AT, 350 + 750)
+        mid = page.evaluate(AT, 350 + 275)   # AB4 (AT-22): the travel is 550 ms now, so half way is 275 ms after the wait
         check("half way the copies are 24-point polygons that have changed from the start",
               all(c.startswith("polygon(") for c in mid["clips"]) and all(a != b for a, b in zip(wait["clips"], mid["clips"])), mid["clips"][0][:60])
-        over = page.evaluate(AT, 350 + 1350)
-        check("the soft bounce: the eased progress goes above 1 near the end", over["progress"] > 1.0, over["progress"])
+        over = page.evaluate(AT, 350 + 500)
+        check("no overshoot (AB4, AT-22): the eased progress is never above 1 near the end", over["progress"] is not None and over["progress"] <= 1.0, over["progress"])
         page.evaluate("() => { document.querySelector('.arc [data-tab=\"units\"]').click(); document.getElementById('home-button').click(); }")
         check("a tap on a segment and on the title do nothing while it travels", page.evaluate("() => settings.tab") == "recipes" and page.evaluate("() => !!document.querySelector('.mo-tr') && document.body.classList.contains('launching')"))
         settle(page)

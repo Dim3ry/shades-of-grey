@@ -55,8 +55,8 @@
        (applyAppearance in app.js) takes over once the app starts.
        U6b: mentor-looks.js (the Mentor orb's three looks and five states, plain data: MENTOR_LOOKS and MENTOR_LOOKS_CSS) loads
        just before it, so early.js can put the chosen look and its styles on the page before the first frame (LR1). -->
-  <script src="mentor-looks.js?v=133"></script>
-  <script src="early.js?v=133"></script>
+  <script src="mentor-looks.js?v=134"></script>
+  <script src="early.js?v=134"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -106,8 +106,10 @@
     :root { --done-colour: #a7f3d0; } /* the "finished" colour, also set by JavaScript */
     /* Mo1: every movement in the app takes its time and feel from these four values. Change them here and everything follows. */
     :root { --motion-fast: 120ms; --motion-med: 240ms; --motion-slow: 480ms; --motion-ease: linear;
-      /* Mo4b: the travel of the start circle's segments into the bar (that travel only; everything else stays linear): 1.5 s, ease in and out with a small overshoot */
-      --motion-travel: 1500ms; --motion-travel-ease: cubic-bezier(0.65, 0, 0.3, 1.25);
+      /* AB4 (AT-19): things arriving ease out (quick start, soft landing) and things leaving ease in. Fades, the toast's drain line and the loading sweep stay linear. */
+      --motion-ease-out: cubic-bezier(0.2, 0.7, 0.3, 1); --motion-ease-in: cubic-bezier(0.4, 0, 1, 1);
+      /* Mo4b / AB4 (AT-22): the travel of the start circle's segments into the bar (that travel only): about half a second, ease in and out, no overshoot */
+      --motion-travel: 550ms; --motion-travel-ease: cubic-bezier(0.4, 0, 0.2, 1);
       /* MO6 (James, 3 Nov evening): the slow, fluid pace for the signature moves only (the Mentor window opening, the lit piece sliding in the bar, and
          the curve of the colour fades on the travel above), so they read as designed, not instant. Ordinary taps, toasts and fold-outs keep the values above. */
       --motion-flow: 800ms; --motion-flow-ease: cubic-bezier(0, 0, 0.58, 1); }
@@ -468,8 +470,8 @@
     .app-actions .basket svg { width: 15px; height: 15px; flex: none; }
     .app-actions .basket::after { content: ""; position: absolute; inset: -11px -8px; }   /* v53: the hit area is 44 px tall (it was 42) */
     .app-actions .basket:active { transform: scale(0.94); }
-    .app-actions .basket.pop { animation: basket-pop 0.35s ease-out; }
-    @keyframes basket-pop { 0% { transform: scale(0.8); } 55% { transform: scale(1.18); } 100% { transform: scale(1); } }
+    .app-actions .basket.pop { animation: basket-pop 0.35s var(--motion-ease-out); }
+    @keyframes basket-pop { 0% { transform: scale(1); } 50% { transform: scale(1.06); } 100% { transform: scale(1); } }   /* AB4 (AT-57): a small swell, no overshoot */
     .shop-list .shop-from { display: block; color: var(--muted); margin-top: 1px; }
     /* Scrolling to the Paint Picker (the chip in the Mentor window) stops below the sticky header. */
     .fold, .lab-section { scroll-margin-top: 72px; }
@@ -676,7 +678,7 @@
     .chips::-webkit-scrollbar, .buy-shops::-webkit-scrollbar { display: none; }
     .chips > button, .buy-shops > button { flex: 1 1 auto; min-width: max(44px, min-content);   /* v53: 44 px wide at least */ max-width: 16em; line-height: 1.15; text-align: center; }
     .chips > button:only-child, .buy-shops > button:only-child { flex-grow: 0; }
-    .chips > .chip { padding-inline: 10px; border-radius: 22px; }   /* a pill at one line (40 or 44 px tall), rounded corners at two */
+    .chips > .chip { padding-inline: 10px; border-radius: var(--radius-control); }   /* AB5: corners follow the look */
     .chips.chips-scroll, .buy-shops.chips-scroll {
       overscroll-behavior-x: contain; scroll-snap-type: x proximity; scroll-padding-inline: 24px; -webkit-overflow-scrolling: touch;
     }
@@ -694,10 +696,10 @@
     }
     .chips.chips-tight { gap: 4px; }
     .chips.chips-tight > .chip { padding-inline: 6px; }   /* the step before sliding: a little less room round each label */
-    .chips.chips-tall > .chip { border-radius: 14px; }   /* two-line buttons: rounded corners, not a stretched pill */
+    .chips.chips-tall > .chip { border-radius: var(--radius-control); }   /* AB5: two-line buttons */
     .chips.chips-wrap { flex-wrap: wrap; gap: 8px; overflow: visible; contain: none; padding: 0; margin-left: 0 !important; margin-right: 0 !important; }
     .chips.chips-wrap > button { flex: 0 1 auto; min-width: 44px; max-width: none; line-height: normal; }
-    .chips.chips-wrap > .chip { padding-inline: 14px; border-radius: 999px; }
+    .chips.chips-wrap > .chip { padding-inline: 14px; border-radius: var(--radius-control); }
     .chip {
       background: var(--background);
       color: var(--muted);
@@ -707,7 +709,7 @@
       font-size: 0.8125rem;
       min-height: 44px;       /* v53: was 40 */
       min-width: 44px;        /* v53: the short "All" chip was 36 wide */
-      border-radius: 999px;   /* pill shape */
+      border-radius: var(--radius-control);   /* AB5: was a pill; now follows the look */
     }
     .chip[aria-pressed="true"] { color: var(--on-accent); background-color: var(--accent-fill, var(--accent)); border-color: var(--accent-fill, var(--accent)); font-weight: 600; }
     /* v49: the Units filter groups (To do, Done, Repaint) are three equal buttons across the card; the stage chips open underneath */
@@ -1145,7 +1147,7 @@
     .review-row label { display: flex; gap: 10px; align-items: center; cursor: pointer; }
     .review-row input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--accent); flex-shrink: 0; }
     .review-row .meta { color: var(--muted); font-size: 0.75rem; }
-    .review-row .tag { font-size: 0.6875rem; padding: 2px 6px; border-radius: 999px; border: var(--border-width) var(--border-style) var(--border); color: var(--muted); margin-left: auto; white-space: nowrap; }
+    .review-row .tag { font-size: 0.6875rem; padding: 2px 6px; border-radius: var(--radius-control); border: var(--border-width) var(--border-style) var(--border); color: var(--muted); margin-left: auto; white-space: nowrap; }
     .review-row.clash .tag { color: var(--caution); border-color: var(--caution); }
     .review-row select { font-size: 0.875rem; padding: 7px; }
     .review-row.off { opacity: 0.5; }
@@ -1285,7 +1287,7 @@
     .recipe-links { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
     .recipe-chip {
       background: var(--background); color: var(--text); border: var(--border-width) var(--border-style) var(--border);
-      border-radius: 999px; padding: 7px 12px; font-size: 0.8125rem; min-height: 44px;   /* v53: Open recipe / Go to chips were 36 */
+      border-radius: var(--radius-control); padding: 7px 12px; font-size: 0.8125rem; min-height: 44px;   /* v53: Open recipe / Go to chips were 36 */
       display: inline-flex; align-items: center; gap: 6px; text-align: left;
     }
     .recipe-chip:hover { border-color: var(--accent); }
@@ -1294,10 +1296,10 @@
     .linked-list { display: flex; flex-wrap: wrap; gap: 6px; }
     .linked-list[hidden] { display: none; }   /* RS1: the folded Used on list */
     .linked { display: inline-flex; }
-    .linked .recipe-chip { border-radius: 999px 0 0 999px; }
+    .linked .recipe-chip { border-radius: var(--radius-control) 0 0 var(--radius-control); }
     .linked .unlink {
       background: var(--background); color: var(--muted); border: var(--border-width) var(--border-style) var(--border); border-left: none;
-      border-radius: 0 999px 999px 0; padding: 0 12px; min-height: 44px; min-width: 44px;   /* v53: Unlink was 36 by 36 */
+      border-radius: 0 var(--radius-control) var(--radius-control) 0; padding: 0 12px; min-height: 44px; min-width: 44px;   /* v53: Unlink was 36 by 36 */
     }
     .linked .unlink:hover { color: var(--danger); }
     .panel-field { display: grid; gap: 6px; font-size: 0.8125rem; color: var(--muted); }
@@ -1517,7 +1519,7 @@
     .status-chip { border-color: var(--chip-colour); }
     .status-chip[aria-pressed="true"] { background: var(--chip-colour); color: var(--chip-on); border-color: var(--chip-colour); }
     .status-row { margin-top: 12px; }
-    .status-pill { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 999px; font-size: 0.75rem; border: 1px solid; vertical-align: middle; white-space: nowrap; }
+    .status-pill { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: var(--radius-control); font-size: 0.75rem; border: 1px solid; vertical-align: middle; white-space: nowrap; }
     .status-pill.s-owned { color: var(--good); border-color: var(--good); }
     .status-pill.s-low { color: var(--warn); border-color: var(--warn); }
     .status-pill.s-empty { color: var(--bad); border-color: var(--bad); }
@@ -1768,7 +1770,7 @@
     /* F2: Start from in Colour ideas: your own paints as swatches (colour dot and name) that wrap onto lines, then More paints */
     .start-swatches { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
     .start-swatches > .start-swatch { display: inline-flex; align-items: center; gap: 8px; flex: 0 1 auto; max-width: 100%; min-width: 44px; min-height: 44px;
-                                      padding: 8px 14px 8px 10px; border-radius: 14px; text-align: left; line-height: 1.25; white-space: normal; }
+                                      padding: 8px 14px 8px 10px; border-radius: var(--radius-control); text-align: left; line-height: 1.25; white-space: normal; }
     .start-swatch-name { min-width: 0; overflow-wrap: anywhere; }
     .start-swatches > .start-more { min-height: 44px; padding: 0 14px; }
     /* CL2: Colour Lab colours morph from one set to the next (app.js "CL2:"). While it runs the pressed colour is drawn over the rest, so they slide in
@@ -2616,7 +2618,8 @@
     }
     :where(:root[data-t="classic"]) .chip { border-left-color: var(--chip-colour, var(--pill-edge)); }
     :where(:root[data-t="classic"]) :is(.big, .legend .num, .group-button strong, .qty-count, .paint-line .mix, .history-table td, .chart-tip b) { font-family: var(--font-num); }
-    :where(:root[data-t="classic"]) .card {
+    /* AB5: the eight corner marks only on the headline card and the Mentor window; every other Classic card keeps its plain 1 px border */
+    :where(:root[data-t="classic"]) :is(#headline-card, .mentor-window) {
       background-image: linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark));
       background-size: 10px 2px, 2px 10px, 10px 2px, 2px 10px, 10px 2px, 2px 10px, 10px 2px, 2px 10px;
       background-position: left 3px top 3px, left 3px top 3px, right 3px top 3px, right 3px top 3px, left 3px bottom 3px, left 3px bottom 3px, right 3px bottom 3px, right 3px bottom 3px;
@@ -2793,34 +2796,25 @@
     .hidden { display: none !important; }
 
     /* ===== Mo1: shared motion ===== */
-    /* 1. Main buttons: lift on hover, press on tap, a ripple from the tap point. translate and scale are separate
+    /* 1. Main buttons: press on tap (AB4, AT-33: no hover lift and no ripple). translate and scale are separate
           properties, so themes that tilt a button with transform keep their tilt. */
     .primary-button, .plain-button { transition: translate var(--motion-fast) var(--motion-ease), scale var(--motion-fast) var(--motion-ease), box-shadow var(--motion-med) var(--motion-ease), filter var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease); }
     @media (hover: hover) {
-      .primary-button:not(:disabled):hover, .plain-button:not(:disabled):hover { translate: 0 -2px; box-shadow: 0 6px 18px color-mix(in srgb, var(--accent-fill, var(--accent)) 38%, transparent); }
+      .primary-button:not(:disabled):hover { border-color: var(--accent-fill, var(--accent)); }   /* AB4 (AT-33): hover changes the border colour only */
     }
     .primary-button:not(:disabled):active, .plain-button:not(:disabled):active { translate: 0 1px; scale: 0.97; box-shadow: none; filter: brightness(0.92); }
-    .rip-host { position: relative; overflow: hidden; }
-    .ripple { position: absolute; width: 10px; height: 10px; margin: -5px; border-radius: 50%; background: currentColor; opacity: 0; pointer-events: none; animation: mo-ripple calc(var(--motion-slow) + 80ms) var(--motion-ease); }
-    @keyframes mo-ripple { from { transform: scale(1); opacity: 0.35; } to { transform: scale(36); opacity: 0; } }
-    /* 2. Chips: the accent fill sweeps across when switched on. To / Done / Repaint also get a tick; the stage chips do not, because a tick would widen them and change how their row fits. */
-    .chip { background-image: linear-gradient(var(--accent-fill, var(--accent)), var(--accent-fill, var(--accent))); background-repeat: no-repeat; background-size: 0% 100%; transition: background-size var(--motion-med) var(--motion-ease), color var(--motion-fast) var(--motion-ease), background-color 0s linear var(--motion-med); }   /* the real accent colour lands as the sweep ends, so contrast checks and themes see it. TH5: the sweep paints the fill colour, as buttons do (in Parchment Codex dark it painted the lighter text crimson, under cream text at 2.8:1) */
+    /* 2. Chips: the colour switches at once (AB4, AT-34: the fill sweep is gone). To / Done / Repaint also get a tick; the stage chips do not, because a tick would widen them and change how their row fits. */
+    .chip { background-image: linear-gradient(var(--accent-fill, var(--accent)), var(--accent-fill, var(--accent))); background-repeat: no-repeat; background-size: 0% 100%; }   /* the same fill layer as before the sweep went, kept still (nothing moves it now) so the rounded edge is drawn pixel for pixel as it was */
     .chip[aria-pressed="true"] { background-size: 100% 100%; }
-    .chip.sweep { background-size: 0% 100%; background-color: var(--background); color: var(--muted); }   /* a freshly drawn chip that was just switched on starts empty, then fills */
-    #group-chips .chip::before { content: "\2713"; display: inline-block; width: 0; overflow: hidden; opacity: 0; vertical-align: bottom; transition: width var(--motion-med) var(--motion-ease), opacity var(--motion-med) var(--motion-ease); }
-    #group-chips .chip[aria-pressed="true"]:not(.sweep)::before { width: 1em; margin-right: 0.3em; opacity: 1; }
-    /* 3. The stage chips open under To do / Done / Repaint: the row is revealed top down and the chips follow one after another. */
-    #stage-chips.cascade { animation: mo-reveal var(--motion-med) var(--motion-ease) both; }
-    #stage-chips.cascade > .chip { animation: mo-cascade var(--motion-med) var(--motion-ease) both; animation-delay: calc(var(--i, 0) * 50ms); }
-    @keyframes mo-reveal { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
-    @keyframes mo-cascade { from { opacity: 0; } to { opacity: 1; } }
+    #group-chips .chip::before { content: "\2713"; display: inline-block; width: 0; overflow: hidden; opacity: 0; vertical-align: bottom; }
+    #group-chips .chip[aria-pressed="true"]::before { width: 1em; margin-right: 0.3em; opacity: 1; }
     /* 4. The question box: the dim layer fades in, the box rises and settles. */
     .dialog-backdrop:not(.hidden) { animation: mo-fade var(--motion-med) var(--motion-ease) both; }
-    .dialog-backdrop:not(.hidden) > .dialog { animation: mo-rise var(--motion-med) var(--motion-ease) both; }
+    .dialog-backdrop:not(.hidden) > .dialog { animation: mo-rise var(--motion-med) var(--motion-ease-out) both; }
     @keyframes mo-fade { from { opacity: 0; } to { opacity: 1; } }
     @keyframes mo-rise { from { transform: translateY(14px); } to { transform: none; } }   /* position only, so the box and its buttons are full size the whole time */
     /* 5. The Undo message slides up, and a thin line drains along its bottom edge over the message's life (JS sets --toast-life). */
-    .toast:not(.hidden) { animation: mo-toast-in var(--motion-med) var(--motion-ease) both; }
+    .toast:not(.hidden) { animation: mo-toast-in var(--motion-med) var(--motion-ease-out) both; }
     @keyframes mo-toast-in { from { transform: translateY(140%); opacity: 0; } to { transform: none; opacity: 1; } }
     .toast::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 0; height: 3px; border-radius: 3px; background: var(--toast-action); transform-origin: left; transform: scaleX(0); pointer-events: none; }
     .toast.draining::after { animation: mo-drain var(--toast-life, 4s) linear forwards; }
@@ -2833,8 +2827,8 @@
     /* Only the unit (or model row) you tapped moves; JS adds the mo-* classes for that one redraw and takes them away again. */
     /* 1. Stage change: the old name slides out (a pseudo-element, so it is not page text) and the new one slides in; up moves names upward, back downward. */
     .mo-slide { position: relative; overflow: hidden; }
-    .mo-slide::before { content: attr(data-from); content: attr(data-from) / ""; position: absolute; left: 0; right: 0; top: 0; text-align: inherit; color: var(--prev-colour); pointer-events: none; animation: mo-name-out-up var(--motion-med) var(--motion-ease) both; }
-    .mo-slide > .stage-in { display: block; animation: mo-name-in-up var(--motion-med) var(--motion-ease) backwards; }
+    .mo-slide::before { content: attr(data-from); content: attr(data-from) / ""; position: absolute; left: 0; right: 0; top: 0; text-align: inherit; color: var(--prev-colour); pointer-events: none; animation: mo-name-out-up var(--motion-med) var(--motion-ease-in) both; }
+    .mo-slide > .stage-in { display: block; animation: mo-name-in-up var(--motion-med) var(--motion-ease-out) backwards; }
     .mo-back .mo-slide::before { animation-name: mo-name-out-down; }
     .mo-back .mo-slide > .stage-in { animation-name: mo-name-in-down; }
     @keyframes mo-name-out-up { from { transform: none; opacity: 1; } to { transform: translateY(-110%); opacity: 0; } }
@@ -2846,7 +2840,7 @@
     @keyframes mo-stripe { from { border-left-color: var(--prev-colour); } }
     .mo-stage .up-button, .mo-row .each-up { animation: mo-up-fill var(--motion-med) var(--motion-ease) backwards; }
     @keyframes mo-up-fill { from { background-color: var(--prev-colour); border-color: var(--prev-colour); } }
-    .mo-pip { animation: mo-pip var(--motion-med) var(--motion-ease) backwards; animation-delay: calc(var(--i, 0) * 30ms); }
+    .mo-pip { animation: mo-pip var(--motion-med) var(--motion-ease) backwards; }   /* AB4 (AT-34): all the segments fade together, no 30 ms stagger */
     @keyframes mo-pip { from { background-color: var(--prev-colour); } }
     /* Moving up: the card pulses once with a ring in the stage colour that fades out (card only, never a model row). Back has no ring. */
     li.unit.mo-up { position: relative; }
@@ -2868,8 +2862,7 @@
     .link-button, .danger-button, .more-info-button, .card-fold-button, .group-button, .home, .recipe-item, .paint-head, .guides-row,
     .scheme-recipe-row, .faction-button, .tile-link, .step-line, .check-label, summary, #stage-legend button, .wheel-seg {
       transition: filter var(--motion-fast) var(--motion-ease); }
-    .chip { transition: background-size var(--motion-med) var(--motion-ease), color var(--motion-fast) var(--motion-ease), background-color 0s linear var(--motion-med),
-      filter var(--motion-fast) var(--motion-ease); }
+    .chip { transition: filter var(--motion-fast) var(--motion-ease); }
     /* A phone's own :active often shows only once the finger lifts, together with the result; app.js also puts .lq-press on the thing under the finger as soon as it
        touches (taken off when it lifts, or at once if the touch turns into a scroll). */
     :is(.step-back, .up-button, .each-up, .each-back, .pick-tick, .chip, .theme-swatch, .recipe-chip, .mentor-chip, .mentor-send, .mentor-close, .seg > button,
@@ -2912,16 +2905,12 @@
         .recipe-chip, .paint-head, .guides-row, .scheme-recipe-row, .swatch-tile, .qty-step, .switch-row button, .buy-shops button, .similar-tabs button, .where-buy > summary,
         .shop-more > summary, .where-buy-links a, .shop-suggest-dismiss, .unlink, .more-info-button, .card-fold-button, .step-line, .pick-box, .legend button, .mentor-chip,
         .theme-swatch, .chip, .seg > button):not(.tabs *, .arc *, #mentor-button) { transition: none !important; }
-    /* A chip switched on or off (app.js): drawn switched off under a copy of its switched-on look, which a clip with a rounded edge uncovers or covers. */
-    .chip.lq-chip-hold, .chip.lq-chip-snap { transition: none !important; }
-    #group-chips .chip.lq-chip-hold.lq-chip-hold[aria-pressed]::before { width: 0; margin-right: 0; opacity: 0; }
     .seg > button.lq-fill.lq-fill { position: relative; background: none; color: var(--muted); }
     .seg > button.lq-fill::after { content: attr(data-lq-label); content: attr(data-lq-label) / ""; position: absolute; inset: 0; box-sizing: border-box; padding: inherit;
       display: flex; align-items: center; justify-content: center; text-align: center; border-radius: inherit; pointer-events: none;
       background: var(--accent-fill, var(--accent)); color: var(--on-accent); }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation: none !important; transition: none !important; }
-      .ripple { display: none; }
     }
     /* ===== MO6: no flashes in the start circle and the bar, the lit piece slides (James, 3 Nov) =====
        1. (JF1, James 3 Nov: MO6's full-screen loading screen, the app icon's ring in the middle of a plain screen, is gone. LR1's loading ring round
@@ -3009,11 +2998,11 @@
     /* X5: the Mentor pop-up window. MW1: it opens out of the round button (app.js plays the move; see "MW1:" below).
        No resting transform on any tap target. */
     .mentor-backdrop { --mp-gap: max(56px, calc(env(safe-area-inset-top) + 12px)); position: fixed; inset: 0; z-index: 200; display: flex; align-items: flex-end; justify-content: center; padding: 0 20px calc(var(--arc-h) + 12px); overscroll-behavior: contain; }
-    .mentor-window { position: relative; box-sizing: border-box; width: 100%; max-width: 380px; height: 260px; max-height: calc(100% - var(--mp-gap)); display: flex; flex-direction: column; gap: 6px; padding: 16px; color: var(--text); background-color: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: 18px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45); }
+    .mentor-window { position: relative; box-sizing: border-box; width: 100%; max-width: 380px; height: 260px; max-height: calc(100% - var(--mp-gap)); display: flex; flex-direction: column; gap: 6px; padding: 16px; color: var(--text); background-color: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45); }
     .mentor-col { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
     .mentor-greeting { margin: 0; padding-top: 4px; font-size: 1.125rem; font-weight: 600; line-height: 1.3; color: var(--accent); overflow-wrap: anywhere; }
-    .mentor-chip { flex: 0 1 auto; max-width: 100%; min-height: 44px; padding: 6px 16px; font: inherit; font-size: 0.9375rem; font-weight: 600; text-align: left; white-space: normal; overflow-wrap: anywhere; color: var(--accent); background-color: var(--card); border: 1px solid var(--accent); border-radius: 22px; cursor: pointer; }
-    .mentor-input { flex: 1; min-width: 0; height: 48px; box-sizing: border-box; padding: 0 12px; font: inherit; font-size: 1rem; color: var(--text); background-color: var(--background); border: 1px solid var(--border); border-radius: 12px; }
+    .mentor-chip { flex: 0 1 auto; max-width: 100%; min-height: 44px; padding: 6px 16px; font: inherit; font-size: 0.9375rem; font-weight: 600; text-align: left; white-space: normal; overflow-wrap: anywhere; color: var(--accent); background-color: var(--card); border: 1px solid var(--accent); border-radius: var(--radius-control); cursor: pointer; }
+    .mentor-input { flex: 1; min-width: 0; height: 48px; box-sizing: border-box; padding: 0 12px; font: inherit; font-size: 1rem; color: var(--text); background-color: var(--background); border: 1px solid var(--border); border-radius: var(--radius-control); }
     .mentor-input:disabled { opacity: 0.55; }
     /* X6b: the conversation. The scroll box holds the greeting and the messages; the chips sit under it (one line, scrolling sideways, no scroll bar); the typing box is at the bottom. */
     .mentor-scroll { position: relative; flex: 0 1 auto; min-height: 0; padding-bottom: 6px; overflow-y: auto; overscroll-behavior: contain; }   /* A1: 6 px so the last chip is not cut by the edge */
@@ -3027,18 +3016,18 @@
     .mentor-window:not(.mentor-chatting) .mentor-chips { max-height: min(40vh, 230px); }
     .mentor-window:not(.mentor-chatting) .mentor-scroll { flex: none; }
     .mentor-form { flex: none; display: flex; gap: 6px; margin-top: auto; }
-    .mentor-send { flex: none; width: 44px; height: 48px; padding: 0; display: flex; align-items: center; justify-content: center; color: var(--chip-on); background-color: var(--accent-fill, var(--accent)); border: 0; border-radius: 12px; cursor: pointer; }
+    .mentor-send { flex: none; width: 44px; height: 48px; padding: 0; display: flex; align-items: center; justify-content: center; color: var(--chip-on); background-color: var(--accent-fill, var(--accent)); border: 0; border-radius: var(--radius-control); cursor: pointer; }
     .mentor-send:disabled { opacity: 0.55; cursor: default; }
     .mentor-msgs { display: grid; gap: 10px; }
     .mentor-msg { min-width: 0; display: grid; gap: 8px; animation: mo-fade var(--motion-fast) var(--motion-ease) both; }
     .mentor-msgs:not(:empty) { margin-top: 10px; }
     .mentor-me { justify-items: end; }
-    .mentor-me p { margin: 0; max-width: 85%; padding: 8px 12px; font-size: 0.9375rem; line-height: 1.35; overflow-wrap: anywhere; white-space: pre-wrap; color: var(--text); background-color: var(--accent-wash); border: 1px solid var(--border); border-radius: 14px; }
+    .mentor-me p { margin: 0; max-width: 85%; padding: 8px 12px; font-size: 0.9375rem; line-height: 1.35; overflow-wrap: anywhere; white-space: pre-wrap; color: var(--text); background-color: var(--accent-wash); border: 1px solid var(--border); border-radius: var(--radius-card); }
     .mentor-lead { margin: 0; font-size: 0.9375rem; line-height: 1.4; overflow-wrap: anywhere; }
     .mentor-reply .idea-list { gap: 8px; }
     .mentor-sources-label { margin: 0; font-size: 0.8125rem; color: var(--muted); }
     .mentor-sources { display: grid; gap: 6px; justify-items: start; }
-    .mentor-source { max-width: 100%; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px; font: inherit; font-size: 0.875rem; text-align: left; color: var(--accent); background-color: var(--card); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; }
+    .mentor-source { max-width: 100%; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px; font: inherit; font-size: 0.875rem; text-align: left; color: var(--accent); background-color: var(--card); border: 1px solid var(--border); border-radius: var(--radius-card); cursor: pointer; }
     .mentor-source span:last-child { min-width: 0; overflow-wrap: anywhere; }
     .mentor-chips-in { padding-bottom: 2px; }
     /* E: "Did you mean" above its one chip, in the same quiet style as the Sources label */
@@ -3053,9 +3042,9 @@
     /* U6b: the window's orb is the chosen look (its box has the class ml-live, so the look's own slow motion runs there and nowhere else); a mood swaps
        the drawing inside the same box, so nothing around it moves. The old lens orb's wake, glance and turn are gone with it. */
     .mentor-orbbox svg { pointer-events: none; }
-    .mentor-close { position: absolute; top: 6px; right: 6px; width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1rem; line-height: 1; color: var(--muted); background-color: transparent; border: 0; border-radius: 12px; cursor: pointer; }
+    .mentor-close { position: absolute; top: 6px; right: 6px; width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1rem; line-height: 1; color: var(--muted); background-color: transparent; border: 0; border-radius: var(--radius-control); cursor: pointer; }
     /* D: Back to start. Top left of the window, shown only in the chat view. Same press as the back arrow (Mo1). */
-    .mentor-back { position: absolute; top: 6px; left: 6px; width: 44px; height: 44px; padding: 0; display: none; align-items: center; justify-content: center; overflow: hidden; color: var(--muted); background-color: transparent; border: 0; border-radius: 12px; cursor: pointer; transition: translate var(--motion-fast) var(--motion-ease), scale var(--motion-fast) var(--motion-ease), filter var(--motion-fast) var(--motion-ease); }
+    .mentor-back { position: absolute; top: 6px; left: 6px; width: 44px; height: 44px; padding: 0; display: none; align-items: center; justify-content: center; overflow: hidden; color: var(--muted); background-color: transparent; border: 0; border-radius: var(--radius-control); cursor: pointer; transition: translate var(--motion-fast) var(--motion-ease), scale var(--motion-fast) var(--motion-ease), filter var(--motion-fast) var(--motion-ease); }
     .mentor-chatting .mentor-back { display: flex; }
     .mentor-back svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .mentor-back:active { translate: 0 1px; scale: 0.97; filter: brightness(0.92); }
@@ -3087,7 +3076,7 @@
     .mentor-suggest-box { display: grid; justify-items: start; gap: 6px; margin-top: 12px; }
     .mentor-window:not(.mentor-chatting) .mentor-suggest-box { justify-items: center; }
     .mentor-window:not(.mentor-chatting) .mentor-scroll { flex: 0 1 auto; }
-    .mentor-suggest { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 6px 12px 6px 16px; font: inherit; font-size: 0.9375rem; font-weight: 600; color: var(--accent); background-color: var(--card); border: 1px solid var(--accent); border-radius: 22px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .mentor-suggest { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 6px 12px 6px 16px; font: inherit; font-size: 0.9375rem; font-weight: 600; color: var(--accent); background-color: var(--card); border: 1px solid var(--accent); border-radius: var(--radius-control); cursor: pointer; -webkit-tap-highlight-color: transparent; }
     .mentor-suggest svg { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.25; stroke-linecap: round; stroke-linejoin: round; transition: transform var(--motion-med) var(--motion-ease); }
     .mentor-suggest[aria-expanded="true"] svg { transform: rotate(180deg); }
     .mentor-suggest:active { filter: brightness(0.92); }
@@ -3988,7 +3977,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=133" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=134" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -4001,16 +3990,16 @@
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks.
        G2a: guides-groups.js (the Guides topic groups, plain data) loads after guides-data.js. It only adds one
        name, GUIDE_GROUPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=133"></script>
-  <script src="schemes.js?v=133"></script>
-  <script src="detail-recipes.js?v=133"></script>
-  <script src="basing-tips.js?v=133"></script>
-  <script src="mentor-tips.js?v=133"></script>
-  <script src="guides-data.js?v=133"></script>
-  <script src="guides-groups.js?v=133"></script>
-  <script src="mentor-data.js?v=133"></script>
-  <script src="mentor-engine.js?v=133"></script>
-  <script src="where-to-buy.js?v=133"></script>
-  <script src="app.js?v=133"></script>
+  <script src="colour.js?v=134"></script>
+  <script src="schemes.js?v=134"></script>
+  <script src="detail-recipes.js?v=134"></script>
+  <script src="basing-tips.js?v=134"></script>
+  <script src="mentor-tips.js?v=134"></script>
+  <script src="guides-data.js?v=134"></script>
+  <script src="guides-groups.js?v=134"></script>
+  <script src="mentor-data.js?v=134"></script>
+  <script src="mentor-engine.js?v=134"></script>
+  <script src="where-to-buy.js?v=134"></script>
+  <script src="app.js?v=134"></script>
 </body>
 </html>

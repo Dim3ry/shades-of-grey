@@ -226,7 +226,8 @@ def main():
             seen.update(r["seen"])
             for k in problems: problems[k] += r[k]
         check("no tappable thing shows the browser's own square when pressed (tap highlight transparent)", not problems["square"], problems["square"])
-        check("every kind of button changes colour on a clock, not in a single frame", not problems["noTrans"] and len(seen) >= 8, [problems["noTrans"], sorted(seen)])
+        # AB4 (AT-34): chips are the exception now: their colour switches at once (no fill and no colour transition)
+        check("every kind of button except chips changes colour on a clock, not in a single frame", set(problems["noTrans"]) <= {".chip"} and len(seen) >= 8, [problems["noTrans"], sorted(seen)])
         check("every fill drawn beside a button stays inside its rounded shape", not problems["unclipped"], problems["unclipped"])
         page.evaluate("showTab('units')")
         page.wait_for_timeout(350)
@@ -242,10 +243,9 @@ def main():
         fin = page.evaluate("""() => { const el = document.querySelector('#group-chips .chip:nth-child(1)'); const c = getComputedStyle(el);
             return { on: el.getAttribute('aria-pressed'), bg: c.backgroundColor, colour: c.color, left: document.querySelectorAll('.lq-ghost, .lq-chip-hold').length,
                      inline: el.getAttribute('style') || '' }; }""")
-        check("a chip switched on fills with a clip whose leading edge is rounded like the chip (a copy, hidden from screen readers)",
-              ch["ghost"] and ch["aria"] == "true" and ch["ids"] == 0 and len(ch["k"]) == 2 and all(" round " in x for x in ch["k"]) and "100%" in ch["k"][0], ch)
-        check("while it fills, the label on the fill is in the switched-on colours and the chip under it in its switched-off ones (so contrast never drops)",
-              fin["on"] == "true" and ch["copyBg"] == fin["bg"] and ch["copyColour"] == fin["colour"] and ch["baseBg"] != fin["bg"], [ch, fin])
+        # AB4 (AT-34): the chip fill (the rounded copy that was uncovered) is gone, so these two checks now say the opposite: no copy, the colour is there at once.
+        check("a chip switched on has no fill copy over it", not ch["ghost"], ch)
+        check("a chip switched on has its switched-on colours at once (so contrast never drops)", fin["on"] == "true" and ch["baseBg"] == fin["bg"], [ch, fin])
         check("when the fill ends the chip is back to its own look, with nothing left over", fin["left"] == 0 and "important" not in fin["inline"], fin)
         check("a touch tap leaves no focus ring", not ch["focusRing"], ch)
         page.evaluate("() => { settings.appearance = 'light'; applyPalette(settings.palette); }")

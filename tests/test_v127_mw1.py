@@ -106,8 +106,10 @@ def main():
         settled(page)
         win = rect(page, ".mentor-window")
         orb = rect(page, ".mentor-orbbox")
+        # AB5 (v134): the window's corner now follows the look (--radius-card), no longer a fixed 18 px; the shape must still be rounded like the window itself
+        win_round = page.evaluate("() => parseFloat(getComputedStyle(document.querySelector('.mentor-window')).borderTopLeftRadius)")
         check("the shape arrives on the window's own box (rounded like the window) before the words show",
-              near(arrived["box"], win) and arrived["round"] == 18 and arrived["words"] == 0, (arrived, win))
+              near(arrived["box"], win) and arrived["round"] == win_round and arrived["words"] == 0, (arrived, win, win_round))
         check("the orb has reached its place when the shape arrives", near(arrived["orb"], orb), (arrived["orb"], orb))
         end = page.evaluate("() => { const w = document.querySelector('.mentor-window'), cs = getComputedStyle(w); return [cs.clipPath, cs.transform, getComputedStyle(document.querySelector('.mp-skin')).opacity, getComputedStyle(document.querySelector('.mentor-col')).opacity]; }")
         check("once open: no clip, no transform, the skin gone and the words in full", end == ["none", "none", "0", "1"], end)

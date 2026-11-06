@@ -150,11 +150,14 @@ def main():
                   look["h1"].startswith("Oxanium") and look["h2"].startswith("Oxanium") and look["big"].startswith('"Azeret Mono"')
                   and look["h1"].rstrip().endswith("sans-serif") and look["body"].startswith('"Chakra Petch"') and look["body"].rstrip().endswith("sans-serif"), look)
             check(f"{mode}: Oxanium has loaded", look["oxanium"])
-            card = page.evaluate("""() => { const c = getComputedStyle(document.querySelector('#view-dashboard .card'));
+            card = page.evaluate("""() => { const c = getComputedStyle(document.querySelector('#headline-card'));   /* AB5 (v134): the corner marks are on the headline card and the Mentor window only, so this reads the headline card */
                 return { img: c.backgroundImage, radius: c.borderTopLeftRadius, width: c.borderTopWidth, transform: c.transform, scale: c.scale }; }""")
             check(f"{mode}: cards have a 1 px line, 6 px corners and eight corner-mark strokes drawn in the accent",
                   card["width"] == "1px" and card["radius"] == "6px" and card["img"].count("linear-gradient") == 8
                   and rgb(re.search(r"rgb\([^)]*\)", card["img"]).group(0)) == rgb(g["--accent"]), card)
+            # AB5 (v134): every other Classic card is a plain 1 px line; the marks are new behaviour tested in test_v134_ab5.
+            check(f"{mode}: other cards are a plain 1 px line with no corner marks",
+                  page.evaluate("""() => { const c = [...document.querySelectorAll('#view-dashboard .card')].find(e => e.id !== 'headline-card'); return !c || getComputedStyle(c).backgroundImage === 'none'; }"""))
             check(f"{mode}: no resting transform or scale on cards or buttons", page.evaluate("""() => [...document.querySelectorAll('.card, .primary-button, .plain-button, .chip')]
                 .every(e => { const s = getComputedStyle(e); return s.transform === 'none' && (s.scale === 'none' || s.scale === '1'); })"""))
             edge = page.evaluate("""() => { const c = [...document.querySelectorAll('#history-card .chip')].find(e => e.getAttribute('aria-pressed') !== 'true' && !e.style.getPropertyValue('--chip-colour'));
