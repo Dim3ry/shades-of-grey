@@ -246,7 +246,7 @@
       "summary": "Accurate dark uniforms blur together on small models, so push them brighter and add small bright details.",
       "body": [
         "Dark green with black kit and brown wood can merge into a shapeless mass at arm's length.",
-        "Paint the main colour a little brighter and lighter than the real reference so it reads, since small models look darker than they are. This also leaves room for washes to pull it back down. Over a black primer, give it at least two thin coats so it covers evenly.",
+        "Paint the main colour a little brighter and lighter than the real reference, since small models look darker than they are. This also leaves room for washes to pull it back down. Over a black primer, give it at least two thin coats so it covers evenly.",
         "Pick out small bright details such as coloured cords, cuffs or white piping to separate the dark areas.",
         "Highlight black straps with a few short dark grey lines.",
         "Exact accuracy matters less than it seems. Real paint varied between batches, crews and seasons, and sun and dust shifted it further, so a colour that looks right to you is fine.",
@@ -487,7 +487,7 @@
       "summary": "Highlight with a mid-value turquoise or blue instead of white or pale yellow so a model looks lit by moonlight.",
       "body": [
         "A highlight only has to be lighter than what surrounds it. It does not have to be white or pale yellow.",
-        "Moonlight needs three things: one light direction, a cold pale blue light, and low saturation in every colour. Prime with a zenithal from the moon's direction and paint the face first, then use it as the guide for where light falls elsewhere.",
+        "For moonlight, keep to one light direction, make that light a cold pale blue, and keep every colour low in saturation. Prime with a zenithal from the moon's direction and paint the face first, then use it as the guide for where light falls elsewhere.",
         "Keep the usual base colours, but highlight every material with the same cold colour, such as a turquoise or a pale pastel blue (#b8cde0), so it reads as one light.",
         "Push the shadows and midtones darker first. Lowering the whole range makes a mid-value turquoise read as bright.",
         "Keep the shadows warm against the cold light: deep black with violet or purple worked in, and a touch of red in places. Pale skin takes cold highlights with warm shadows well.",
@@ -590,7 +590,7 @@
       "summary": "Pull a small palette from artwork, photos or one loud colour you like, and paint the whole model from it.",
       "body": [
         "Pick an illustration, film still or photo whose colours you like. It does not need to match the model's theme: a ship, a sunset, an animal, a historical uniform or a fashion photo all give ready-made palettes, often less obvious than other painted models. Keep a folder of pieces that grab you.",
-        "Use a colour picker on a digital copy to pull out about five main colours. Nudge them towards the pure tones rather than the in-between mixes.",
+        "Use a colour picker on a digital copy to pull out about five main colours. Nudge them towards the pure tones and away from the in-between mixes.",
         "Find the closest paints you have; near enough is fine. To match by eye, zoom in and hold paint pots against the picture. Check the reference first: web photos are often colour-shifted, so find a second, better photo before matching.",
         "Put all five on the palette, plus black and white if needed, from the start. Try them as swatches side by side before they go on the model. Look at the whole artwork, including background and side figures, for how the colours are used.",
         "When the shapes differ, copy the rules rather than the layout. Note the dominant colour, where the accents sit (top, underside, edges) and how they follow the body, then apply that to the model's own plates and limbs. If sources disagree, take the overall feel.",
@@ -873,7 +873,7 @@
       "body": [
         "Decide the one or two areas people should look at first, from what the model is about. A rider on a beast is about the rider's head and the beast's face. More than two points compete.",
         "Put the most saturated colours and brightest, sharpest highlights there, and let colours darken and calm down away from it. Keep the lightest values high on the model, around the head and chest, with the lower body darker, so the eye drifts up.",
-        "Bend reality where it helps. Make the face lighter than the rest of the skin, nudge a reflection towards the head, and keep arms, legs or a backpack darker than the light would really leave them. Believable beats strictly correct.",
+        "Bend reality where it helps, as long as it still looks believable. Make the face lighter than the rest of the skin, nudge a reflection towards the head, and keep arms, legs or a backpack darker than the light would really leave them.",
         "Temperature works too: on a mostly warm model make the face or key detail cool, or put one warm spot on a cool model. A pink tongue on a grey face, or small bright jewellery near the face, leads the eye up.",
         "Tame anything that competes. Start a big flag or cloak that should be bright red from a muted base, and avoid a glowing puddle on the base. High contrast everywhere just looks busy, so save it for the parts that deserve it.",
         "Keep minor details quieter: one or two clear highlights and at most one shadow each, and less vivid than the focus. Keep bone and skulls muted, with restrained whites, so they add contrast without stealing the eye.",
@@ -1284,7 +1284,7 @@
       "title": "Using colour to separate materials",
       "summary": "Pick colours and finishes so leather, cloth, metal and armour read as different materials.",
       "body": [
-        "Neighbouring areas in similar colours blur into one mass at arm's length. Give touching areas clearly different colours or values, and if a model is mostly two materials, such as skin and shell, make one light and one dark. Step back to check each part still reads.",
+        "Neighbouring areas in similar colours blur into one mass at arm's length. Give touching areas clearly different colours or values, and if a model is mostly two materials, such as skin and shell, make one light and one dark. Step back and check you can still tell the parts apart.",
         "Where several areas are already black, more black detail merges into one mass, so paint belts and straps as brown leather. The reverse also holds: next to bright cloth, near-black belts make the colour look brighter than mid-brown leather would.",
         "Tint neutrals to suit the main colour: a neutral brown next to yellow rather than an orange one, browns leaning orange against blue, greys leaning green next to red.",
         "On a model built from one colour family, vary it: a bright red for cloth and a deeper red for armour, warm or cold browns for jacket, straps, hair and wood, or slightly different greys for a grey uniform's cloth, armour and webbing. Highlight each with its own lighter shade.",
@@ -1422,7 +1422,7 @@
         "Mixing a colour with its opposite cancels it out. Red and green, blue and orange, or yellow and purple give browns and greys, depending on the balance.",
         "For a brown, start with orange and add a little blue. More blue gives a cooler, darker brown; more red or yellow a warmer one. Add white for tans, and black only if you must.",
         "For a grey, mix the opposites close to even and add white. A little more blue gives a cool grey, #6f7782; a little more orange gives a warm grey, #857a6e.",
-        "Use a little of the opposite to dull a colour that is too bright. A drop of green in a red shadow, rather than black, keeps it rich instead of dirty.",
+        "Use a little of the opposite to dull a colour that is too bright. A drop of green in a red shadow keeps it rich, where black would make it dirty.",
         "Mixing all three primaries gives a dark, muddy neutral. A touch of it in every shadow mix helps tie a scheme together.",
         "Real paints are not pure primaries, so results vary. Test on the palette first and note the ratio that worked."
       ],
@@ -1520,7 +1520,7 @@
       "title": "Muted colours that make accents pop",
       "summary": "Keep most of a model muted or desaturated so a few vivid areas stand out and busy schemes calm down.",
       "body": [
-        "Lots of strong colours side by side compete, and the model looks chaotic. If everything stands out, nothing does, so decide which part should lead. Muted does not mean dark: a quiet or gritty scheme still needs punch, from deep recesses against sharp pale edges.",
+        "Lots of strong colours side by side compete, so nothing stands out and the model looks a mess. Decide which part should lead. Muted does not mean dark: a quiet or gritty scheme still needs punch, from deep recesses against sharp pale edges.",
         "Give that part the vivid, pure colours. Paint gear, bags, wood and the rest of the cloth in dull natural tones: grey, olive, blue-grey, dull brown or black. Small details can take muted versions of the scheme colours, such as a greyish green under a vivid jade, so they stay part of the scheme.",
         "Neutrals are the background: greys, browns, black, white, and any colour greyed down far enough. Brown is a dull orange and skin is orange of varying strength, so both sit easily beside blue. Add a little grey or a mix of the other colours to wood, leather and skin to tone them down to match.",
         "If a pair looks garish, such as red and green, change the brightness, saturation or amount of one. Mostly red with small green lenses reads far better than half and half. A simple route is one main colour, its complement in smaller areas, and everything else grey, black or metal.",
@@ -2004,7 +2004,7 @@
         "Highlights look brighter next to darker shadows. Deepen the down-facing areas with the base mixed with a deep blue, purple or black before pushing the highlights further. Use deep shades and light tints of the colour itself, not only black and white, and take shadow mixes from colours already on the palette.",
         "To reset your eye, paint one cheap model with shadows taken right down to black and highlights right up to white. It looks overdone up close but grabs attention from across a room. Then paint one your usual way; your normal level of contrast usually moves up. Your own sense of normal drifts, so compare with strong work side by side.",
         "Edge highlights and dark lining in recesses are simple ways to add value contrast. Where two shapes should separate, put a dark line with a light line either side.",
-        "Rather than adding many small steps near the top, a bold jump to a stark final highlight on the sharpest points often reads better. Put the brightest highlights around the face to pull the eye there.",
+        "A bold jump to a stark final highlight on the sharpest points often looks better than lots of small steps near the top. Put the brightest highlights around the face to pull the eye there.",
         "Do not lose contrast chasing smoothness. Judge the model at arm's length under normal room light, which flattens subtle work. If you will weather it, overdo the contrast first, as filters, washes and dust knock it back."
       ],
       "related": [
@@ -2755,7 +2755,7 @@
         "Metallic paint relies on real light, so on a small model its shine can look small and toy-like.",
         "Fix it by shading and highlighting the metal strongly: dark recesses and bright edges and dots.",
         "Painted reflections with matt paint let you exaggerate contrast further. Metallic paint suits larger pieces, such as busts and statues, especially well.",
-        "To compare metallics, paint each on the same simple shape or a strip of black card and turn it slowly under a lamp. Watch the dark reflections as well as the bright ones; that contrast is what sells metal.",
+        "To compare metallics, paint each on the same simple shape or a strip of black card and turn it slowly under a lamp. Watch the dark reflections as well as the bright ones; that contrast is what makes metal look like metal.",
         "A metallic that stays evenly bright from every angle covers well but reads flat, more like grey paint than steel. It can still make a useful base coat under a brighter metallic."
       ],
       "related": [
