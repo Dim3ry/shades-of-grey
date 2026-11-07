@@ -1396,7 +1396,7 @@
           "mix": 100,
           "look": "a bright silver",
           "hex": "#c8ccd0",
-          "note": "Sharp edges only, and a warm brown in the rivets reads as rust."
+          "note": "Sharp edges only, and a warm brown in the rivets looks like rust."
         }
       ]
     },
@@ -1556,7 +1556,7 @@
           "mix": 100,
           "look": "a pale blue grey",
           "hex": "#9aa8b2",
-          "note": "Hems with the side of the brush, crease tops with the tip, and a warm pale tone beats white."
+          "note": "Hems with the side of the brush, crease tops with the tip, using a warm pale tone, not white."
         }
       ]
     },
@@ -1572,7 +1572,7 @@
           "mix": 100,
           "look": "a deep dull red",
           "hex": "#7a1e1a",
-          "note": "Avoid a bright red, as a dull deep red reads more like meat."
+          "note": "Avoid a bright red, as a dull deep red looks more like meat."
         },
         {
           "technique": "Wash",
@@ -1876,7 +1876,7 @@
           "mix": 100,
           "look": "a clear gloss",
           "hex": "#f6fafc",
-          "note": "Gloss over the top so it reads as wet."
+          "note": "Gloss over the top so it looks wet."
         }
       ]
     },
@@ -1948,7 +1948,7 @@
           "mix": 100,
           "look": "a light silver",
           "hex": "#d6d8da",
-          "note": "Silver over gold gives more punch than a lighter gold."
+          "note": "Silver over gold looks brighter than a lighter gold."
         },
         {
           "technique": "Varnish",
@@ -2540,7 +2540,7 @@
           "mix": 50,
           "look": "a rust orange",
           "hex": "#9a4a1e",
-          "note": "Thinned with medium, only into a few cracks and round rivets, as less is more on kept armour."
+          "note": "Thinned with medium, only into a few cracks and round rivets, as kept armour needs very little."
         }
       ]
     },
@@ -2860,7 +2860,7 @@
           "mix": 100,
           "look": "a pale olive",
           "hex": "#9aa270",
-          "note": "Add white in two steps for knees, shoulders and collars, as strong contrast reads well."
+          "note": "Add white in two steps for knees, shoulders and collars, as strong contrast works well."
         }
       ]
     },
@@ -2956,7 +2956,7 @@
           "mix": 100,
           "look": "a deep red brown",
           "hex": "#4a2418",
-          "note": "Start very dark, as a slightly pink red brown gives copper its character."
+          "note": "Start very dark, as a slightly pink red brown makes it look like copper."
         },
         {
           "technique": "Layer",
@@ -3148,7 +3148,7 @@
       "key": "pale-sickly-skin",
       "group": "body",
       "name": "Sickly pale skin",
-      "summary": "Clammy, pale and unhealthy skin with a warm wash and a sickly tint",
+      "summary": "Pale, clammy skin with a warm wash and a sickly tint",
       "steps": [
         {
           "technique": "Base coat",

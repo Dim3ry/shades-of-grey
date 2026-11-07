@@ -304,7 +304,7 @@ const DETAIL_RECIPES = [
     ] },
   { key: "exposed-muscle", group: "body", name: "Exposed raw muscle", summary: "Raw red muscle with fibre lines and a wet blood sheen for flayed creatures",
     steps: [
-      { technique: "Base coat", coats: 2, mix: 100, look: "a deep dull red", hex: "#7a1e1a", note: "Avoid a bright red, as a dull deep red reads more like meat." },
+      { technique: "Base coat", coats: 2, mix: 100, look: "a deep dull red", hex: "#7a1e1a", note: "Avoid a bright red, as a dull deep red looks more like meat." },
       { technique: "Wash", coats: 1, mix: 50, look: "a dark violet brown", hex: "#3a1e26", note: "All over, as heavily textured muscle takes a wash well." },
       { technique: "Layer", coats: 1, mix: 100, look: "a pinkish red", hex: "#c08a7a", note: "Thin parallel fibre lines, red then red with warm grey, shorter each time." },
       { technique: "Glaze", coats: 1, mix: 50, look: "a wet deep red", hex: "#8a1010", note: "A thinned gloss blood effect over the top, then reline the darkest gaps." },
@@ -372,7 +372,7 @@ const DETAIL_RECIPES = [
       { technique: "Layer", coats: 2, mix: 100, look: "a near white flesh", hex: "#ece0d8", note: "Add white to the base and build up cheekbones, brow, nose and lips." },
       { technique: "Glaze", coats: 1, mix: 25, look: "a soft red", hex: "#b8443a", note: "Very thin around the eyes, nose and lips so it still looks alive." },
     ] },
-  { key: "pale-sickly-skin", group: "body", name: "Sickly pale skin", summary: "Clammy, pale and unhealthy skin with a warm wash and a sickly tint",
+  { key: "pale-sickly-skin", group: "body", name: "Sickly pale skin", summary: "Pale, clammy skin with a warm wash and a sickly tint",
     steps: [
       { technique: "Base coat", coats: 2, mix: 100, look: "a pale pinkish bone", hex: "#c9b8a6", note: "Thin, smooth coats over all the skin." },
       { technique: "Wash", coats: 1, mix: 50, look: "a warm chestnut", hex: "#8a4a32", note: "Keeps a hint of life in the skin and picks out the muscles and creases." },
@@ -562,7 +562,7 @@ const DETAIL_RECIPES = [
       { technique: "Base coat", coats: 2, mix: 100, look: "a very dark metal", hex: "#3a3c3f", note: "Gunmetal mixed half and half with black, or silver darkened with black." },
       { technique: "Wash", coats: 1, mix: 60, look: "a brown black", hex: "#1d1914", note: "Any dark wash into recesses, with a little gloss mixed in so the metal does not go flat." },
       { technique: "Layer", coats: 1, mix: 100, look: "a dull grey metal", hex: "#6d6f70", note: "A light grey mixed into the base, about two to one, on raised parts." },
-      { technique: "Edge highlight", coats: 1, mix: 100, look: "a bright silver", hex: "#c8ccd0", note: "Sharp edges only, and a warm brown in the rivets reads as rust." },
+      { technique: "Edge highlight", coats: 1, mix: 100, look: "a bright silver", hex: "#c8ccd0", note: "Sharp edges only, and a warm brown in the rivets looks like rust." },
     ] },
   { key: "gold-armour", group: "metal", name: "Metallic gold armour and trim", summary: "Warm metallic gold from a gold base, a brown shade and pale gold edges",
     steps: [
@@ -575,7 +575,7 @@ const DETAIL_RECIPES = [
     steps: [
       { technique: "Prime", coats: 1, mix: 100, look: "a gold", hex: "#c9a13a", note: "A gold spray makes treasure piles very quick." },
       { technique: "Wash", coats: 1, mix: 70, look: "a warm red brown", hex: "#8a4a32", note: "All over the coins, with a darker brown in the deepest gaps." },
-      { technique: "Dry brush", coats: 1, mix: 100, look: "a light silver", hex: "#d6d8da", note: "Silver over gold gives more punch than a lighter gold." },
+      { technique: "Dry brush", coats: 1, mix: 100, look: "a light silver", hex: "#d6d8da", note: "Silver over gold looks brighter than a lighter gold." },
       { technique: "Varnish", coats: 1, mix: 100, look: "a clear gloss", hex: "#fafafa", note: "Paint a few scattered gems in bright colours, then gloss them." },
     ] },
   { key: "green-water-stains", group: "metal", name: "Green water stains", summary: "Cool green verdigris stains on dulled metal, set against rust",
@@ -616,7 +616,7 @@ const DETAIL_RECIPES = [
       { technique: "Prime", coats: 1, mix: 100, look: "a silver", hex: "#a8acb0", note: "A light coat of silver spray, with joints picked out in black." },
       { technique: "Wash", coats: 1, mix: 80, look: "a dark brown grey", hex: "#2a2622", note: "All over so every recess is dark and matt." },
       { technique: "Layer", coats: 1, mix: 100, look: "a gunmetal", hex: "#7c8086", note: "Raised areas, then a light silver dry brush on the top edges." },
-      { technique: "Wash", coats: 1, mix: 50, look: "a rust orange", hex: "#9a4a1e", note: "Thinned with medium, only into a few cracks and round rivets, as less is more on kept armour." },
+      { technique: "Wash", coats: 1, mix: 50, look: "a rust orange", hex: "#9a4a1e", note: "Thinned with medium, only into a few cracks and round rivets, as kept armour needs very little." },
     ] },
   { key: "metallic-blue", group: "metal", name: "Candy metallic blue", summary: "Shiny blue metal from see-through colour over silver",
     steps: [
@@ -634,7 +634,7 @@ const DETAIL_RECIPES = [
     ] },
   { key: "painted-copper-and-bronze", group: "metal", name: "Painted copper and bronze", summary: "Copper and bronze without metallic paint, from deep red brown up to pale edges",
     steps: [
-      { technique: "Base coat", coats: 2, mix: 100, look: "a deep red brown", hex: "#4a2418", note: "Start very dark, as a slightly pink red brown gives copper its character." },
+      { technique: "Base coat", coats: 2, mix: 100, look: "a deep red brown", hex: "#4a2418", note: "Start very dark, as a slightly pink red brown makes it look like copper." },
       { technique: "Layer", coats: 2, mix: 100, look: "a rusty orange brown", hex: "#9a5428", note: "Mix into the base for broad reflections on upper planes, glazing back to smooth." },
       { technique: "Layer", coats: 1, mix: 100, look: "a warm orange yellow", hex: "#d8a35a", note: "Cover less each time and push yellow into the lit areas before any white." },
       { technique: "Edge highlight", coats: 1, mix: 100, look: "a pale ivory", hex: "#f2d6b8", note: "Most exposed edges and points only, with dark brown right beside them for contrast." },
@@ -949,7 +949,7 @@ const DETAIL_RECIPES = [
       { technique: "Base coat", coats: 2, mix: 100, look: "a mid blue grey", hex: "#5e6f7d", note: "Over a grey undercoat, and a drab olive brown suits a field coat just as well." },
       { technique: "Wash", coats: 1, mix: 70, look: "a dark brown", hex: "#4a3626", note: "All over the coat, breaking up pools at the hem." },
       { technique: "Layer", coats: 1, mix: 100, look: "a lighter blue grey", hex: "#6f808e", note: "Raised folds only, skipping the creases." },
-      { technique: "Edge highlight", coats: 1, mix: 100, look: "a pale blue grey", hex: "#9aa8b2", note: "Hems with the side of the brush, crease tops with the tip, and a warm pale tone beats white." },
+      { technique: "Edge highlight", coats: 1, mix: 100, look: "a pale blue grey", hex: "#9aa8b2", note: "Hems with the side of the brush, crease tops with the tip, using a warm pale tone, not white." },
     ] },
   { key: "grey-armour", group: "material", name: "Grey and blue-grey armour", summary: "Mid grey or blue grey armour, washed, layered back and edged in light grey",
     steps: [
@@ -991,7 +991,7 @@ const DETAIL_RECIPES = [
       { technique: "Base coat", coats: 2, mix: 100, look: "a dark olive green", hex: "#3e4428", note: "Two greens mixed evenly with a little black, over all the uniform." },
       { technique: "Layer", coats: 1, mix: 100, look: "an olive green", hex: "#56603a", note: "Less black in the mix, on creases and raised folds." },
       { technique: "Layer", coats: 1, mix: 100, look: "a mid olive", hex: "#6c7648", note: "The pure green mix on a smaller area of each fold." },
-      { technique: "Edge highlight", coats: 1, mix: 100, look: "a pale olive", hex: "#9aa270", note: "Add white in two steps for knees, shoulders and collars, as strong contrast reads well." },
+      { technique: "Edge highlight", coats: 1, mix: 100, look: "a pale olive", hex: "#9aa270", note: "Add white in two steps for knees, shoulders and collars, as strong contrast works well." },
     ] },
   { key: "orange-armour", group: "material", name: "Bright orange armour", summary: "Saturated orange armour over a light primer, shaded red and edged towards yellow",
     steps: [
@@ -1223,7 +1223,7 @@ const DETAIL_RECIPES = [
       { technique: "Base coat", coats: 2, mix: 100, look: "a strong blue", hex: "#2a7fd4", note: "Over a white base so the colour stays intense." },
       { technique: "Edge highlight", coats: 1, mix: 100, look: "a light blue", hex: "#7fc4e0", note: "Blue with near white on small edges and the tips of droplets." },
       { technique: "Stipple", coats: 1, mix: 100, look: "a near white", hex: "#eef3f5", note: "Loose dots of different sizes for bubbles and reflections." },
-      { technique: "Varnish", coats: 1, mix: 100, look: "a clear gloss", hex: "#f6fafc", note: "Gloss over the top so it reads as wet." },
+      { technique: "Varnish", coats: 1, mix: 100, look: "a clear gloss", hex: "#f6fafc", note: "Gloss over the top so it looks wet." },
     ] },
   { key: "green-glowing-lenses", group: "light", name: "Green glowing lenses", summary: "Glassy green lenses that look lit from inside, with light spill",
     steps: [
