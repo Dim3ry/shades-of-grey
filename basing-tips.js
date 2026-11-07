@@ -1001,11 +1001,11 @@ const BASING_TIPS = [
       { technique: "Dry brush", coats: 1, mix: 100, look: "a pale grey", hex: "#a9b0b2", note: "Very light, only the sharpest edges." },
     ] },
   { key: "pale-stone-ground", group: "stone", name: "Pale dusty stone", summary: "Light sandy stone with grimy edges and dust matched on the feet",
-    materials: ["A textured base", "Brown, sandy and ivory paints", "A small sponge", "Brown oil paint and odourless spirits", "Light earth pigment powder", "A soft make-up brush for the last drybrush"],
+    materials: ["A textured base", "Brown, sandy and ivory paints", "A small sponge", "Brown oil paint, odourless spirits and satin varnish", "Light earth pigment powder", "A soft make-up brush for the last drybrush"],
     howto: [
       "Base the ground brown, then build up through lighter browns to ivory, brighter than feels right.",
       "Sponge a dark greenish brown grime onto the edges of the base.",
-      "Wash with thinned oil paint, then wipe back with clean spirits where the stone should be brightest.",
+      "Seal with satin varnish, wash with thinned oil paint, then wipe back with clean spirits where it is brightest.",
       "Mix pigment with water, run it round the feet and dry it with a hair dryer.",
       "Dab dry pigment onto the feet and lower legs so model and ground share the same dust.",
     ],

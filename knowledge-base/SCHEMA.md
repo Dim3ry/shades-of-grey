@@ -33,7 +33,7 @@ All text fields: no em dashes, no emoji, no angle brackets, and none of the bann
 | `title` | text | 3 to 60 characters. Says what the entry is about. |
 | `summary` | text | 20 to 140 characters. One sentence. |
 | `body` | list of text | 3 to 8 short paragraphs or steps. Each 20 to 400 characters. |
-| `related` | list of keys | 0 to 4. Each must be a real entry key. Not itself. No repeats. |
+| `related` | list of keys | 0 to 5. Each must be a real entry key. Not itself. No repeats. |
 | `keywords` | list of text | 6 to 12. Lower case, 2 to 40 characters each, no repeats. Plain words or phrases a beginner would type, including common wrong names. |
 | `credit` | object, optional | `{ "name": "...", "url": "https://..." }`. Both required if present. |
 

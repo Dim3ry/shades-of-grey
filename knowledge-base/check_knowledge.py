@@ -328,7 +328,7 @@ def check_entry(rep, kind, entry, groups):
         for i, p in enumerate(body or [], 1):
             if not (isinstance(p, str) and 20 <= len(p) <= 400):
                 rep.add(where, f"body paragraph {i} must be text of 20 to 400 characters")
-        rel = need_list(rep, where, entry, "related", 0, 4)
+        rel = need_list(rep, where, entry, "related", 0, 5)
         for r in rel or []:
             if not isinstance(r, str):
                 rep.add(where, "'related' must hold keys (text)")

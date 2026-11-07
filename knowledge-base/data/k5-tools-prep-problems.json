@@ -9,7 +9,7 @@
         "Acrylics are water based. They thin and clean up with water and dry in seconds to minutes. Most hobby paint, washes and one-coat paints are acrylic.",
         "Enamels thin with a spirit thinner, such as odourless white spirit. Never mix water into them. They stay workable for hours, so you can blend, move or wipe them off completely, which suits washes, streaks and mud.",
         "Oil paints also thin with white spirit and take the longest to dry, often a day or more. That long working time is what makes them good for smooth blends, filters and washes.",
-        "Spirit thinner softens and lifts enamels and oils already on the model, but it does not touch dry acrylic. So acrylic effects can go on last, over dry enamel or oil work, without disturbing it.",
+        "Spirit thinner softens and lifts enamels and oils already on the model. Fully cured acrylic stands up to a light touch of it, but scrubbing, a brush heavy with spirit or paint that is still fresh can lift it. So acrylic effects can go on last, over dry enamel or oil work, without disturbing it.",
         "Acrylic over enamel dries almost at once, so thin it a little and build it up gradually rather than trying to blend it.",
         "Before enamel or oil goes over acrylic, let the acrylic dry fully and give it a coat of gloss varnish. The solvent then moves over the surface instead of soaking in or staining.",
         "Glossy enamel effects read as wet, matt ones as dry. Use the same type of product on the model and its base so the colours and finish match."
@@ -1319,7 +1319,8 @@
         "basing-glue-and-tools",
         "raised-ground-on-bases",
         "planning-a-diorama",
-        "basing-finishing-touches"
+        "basing-finishing-touches",
+        "easiest-first-base"
       ],
       "keywords": [
         "basing ideas",
@@ -2246,7 +2247,7 @@
       "title": "Fixing priming problems",
       "summary": "Grainy, rough, tacky or thick primer that clogs detail comes from weather, distance, old cans or touching it wet.",
       "body": [
-        "Spray primer works best on a mild, dry day, roughly 20 to 28 C and under about 60 percent humidity. Damp air makes the droplets clump into a bumpy orange-peel surface. Cold makes the can splutter and the primer dry before it grips, so it clumps or flakes later. Very hot days cause trouble too.",
+        "Spray primer works best on a mild, dry day, roughly 10 to 27 C and ideally nearer room temperature, under about 60 percent humidity; check the can's label. Damp air makes the droplets clump into a bumpy orange-peel surface. Cold makes the can splutter and the primer dry before it grips, so it clumps or flakes later. Very hot days cause trouble too.",
         "Keep the can at room temperature. In cold weather, stand its lower half in lukewarm water, around 36 to 40 C, for five minutes, shake well, and rewarm it when it cools. Never heat an aerosol directly; it can burst. In summer, spray early or late in the day.",
         "Fuzzy, sandpaper-like primer means you sprayed from too far away, so it dried in the air before landing. Too close, or too long in one spot, floods the detail and pools in recesses. Hold the can at a steady 20 to 30 cm and use short, light passes that keep moving.",
         "One coat, or two thin ones at most, is enough. Give a thin patch another light pass rather than a heavy blast. A little plastic colour showing through is fine.",
@@ -4407,7 +4408,8 @@
         "editing-model-photos",
         "light-and-magnification",
         "photo-check-for-mistakes",
-        "checking-values-in-greyscale"
+        "checking-values-in-greyscale",
+        "photos-with-a-phone"
       ],
       "keywords": [
         "how to photograph miniatures",
@@ -4860,7 +4862,7 @@
         "Plastic glue does not work on metal. Use a strong super glue, and file contact faces so parts meet snugly, as loose fits make weak joints. Plugs and sockets hold far better than flat joins.",
         "Pin heavy arms and weapons, since glue alone will not hold them for long. If the base has a slot under a foot, push a lug through it for extra hold.",
         "Look again under a bright light once primed. Primer shows up lines you missed on bare metal, and they are far easier to fix now than halfway through painting.",
-        "Paint chips off metal much more easily than plastic, and heavy figures knock together. Once transfers are on, seal the whole model with a matt varnish."
+        "Paint chips off metal much more easily than plastic, and heavy figures knock together. Once transfers are on, seal the whole model with a matt varnish. Very old metal figures may contain lead: wear gloves when filing or stripping them, sand wet or wear a mask so you do not breathe the dust, and wash your hands afterwards."
       ],
       "related": [
         "pinning-parts",
@@ -4971,7 +4973,8 @@
         "varnishing",
         "transporting-models",
         "organising-the-hobby-space",
-        "magnetising"
+        "magnetising",
+        "fixing-chipped-paint"
       ],
       "keywords": [
         "display cabinet",
@@ -5938,7 +5941,7 @@
       "summary": "Shake the can well and spray short sweeping bursts from a sensible distance, stopping at a thin coat that keeps the detail.",
       "body": [
         "Warm the can in warm, not hot, water for a few minutes, then shake it for at least a minute or two. Warm, well mixed primer sprays more evenly, and a can that sputters often just needs the same again. A nearly empty can loses pressure for good and sprays grainy, so start with a fresh one; Spray can spitting, clogged or running low has more.",
-        "Wash, dry and assemble the model first, then fix it to a stick, or with tack on its underside to a strip of card, so you never touch it. Spray outdoors or somewhere well ventilated, wearing a mask, on mild, dry days of roughly 10 to 27 C. Cold, damp or humid air gives fuzzy, grainy or orange peel results.",
+        "Wash, dry and assemble the model first, then fix it to a stick, or with tack on its underside to a strip of card, so you never touch it. Spray outdoors or somewhere well ventilated, wearing a mask, on mild, dry days of roughly 10 to 27 C, ideally nearer room temperature; check the can's label. Cold, damp or humid air gives fuzzy, grainy or orange peel results.",
         "Hold the can about 15 to 30 cm away, following the can's advice. Too close floods detail; too far and the paint dries in the air and lands gritty. In hot, dry air move a little closer, in humid air a little further.",
         "Start spraying beside the model, sweep across it and release past it, in short light passes. Turn the model, or stagger a batch on card so none shades another, and spray from all sides at a low and a high angle, underneath included.",
         "Spray the back first, so any problem shows there before it reaches the front.",
@@ -6049,7 +6052,7 @@
         "Start with a handful of colours for the model in front of you rather than a full range. The well known miniature paint ranges are all good, and finer than craft acrylics. Shake each pot well before use.",
         "Hold the model on a painting handle or anything handy, such as a pill pot or a block of wood, with a little poster putty. A helping hands stand holds small parts while glue sets. Paper clips make pins and clear blocked dropper nozzles.",
         "A small hand drill lets you pin heavy joints and open up gun barrels. The bits that come with cheap drills are often poor, so a set of fine bits is worth adding.",
-        "Cheap extras that pay off early are magnifiers and brush soap used after every session. An airbrush is useful but not needed. Everything else can wait: add tools as you add skills."
+        "Cheap extras that pay off early are magnifiers and brush soap used after every session. If you spray or sand, add a mask that seals to your face: a paper dust mask stops dust but not fumes. An airbrush is useful but not needed. Everything else can wait: add tools as you add skills."
       ],
       "related": [
         "choosing-brushes",
@@ -6438,7 +6441,8 @@
         "magnetising",
         "protecting-painted-models",
         "varnishing",
-        "travel-painting-kit"
+        "travel-painting-kit",
+        "storing-terrain"
       ],
       "keywords": [
         "carry case",
@@ -6774,7 +6778,8 @@
         "fix-shiny-finish",
         "varnishing-metallics",
         "protecting-painted-models",
-        "selective-gloss"
+        "selective-gloss",
+        "brush-on-varnish"
       ],
       "keywords": [
         "varnish",
