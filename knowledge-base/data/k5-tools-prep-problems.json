@@ -115,7 +115,7 @@
         "Use airbrush thinner, or distilled water rather than hard tap water, which leaves deposits. Add a little flow improver or retarder if paint keeps drying on the needle tip. Never use household glass cleaner. Solvent-based paints need their own matching thinner. Mix fresh each session; old, half dried paint sprays badly.",
         "Speckled, grainy or spattering spray means the paint is too thick or the pressure too low: add thinner a few drops at a time. Spidery, web-like runs mean it is too thin, too close or the pressure too high: add paint. Blocky, one-pass coverage means it is too thick for a smooth fade.",
         "Match thickness to the job. Thicker paint for base coats on big models sprays around 25 to 30 psi from further away. Thinner paint for fine work sprays around 15 psi, close in. About 20 psi is a good everyday setting to learn at. If paint will not flow, thin it more rather than turning the pressure up.",
-        "Most spraying problems come down to three things: pressure, distance from the model and the paint to thinner ratio. Change one at a time and test on paper or your hand.",
+        "Most spraying problems come down to pressure, distance from the model or the paint to thinner ratio. Change one at a time and test on paper or your hand.",
         "Light colours over dark often speckle. Inks spray very smoothly, so a white ink or a little ink mixed into the colour helps for highlights over black. Metallics are the opposite: shake them well and thin only slightly, about ten parts paint to one of thinner."
       ],
       "related": [
@@ -604,7 +604,7 @@
         "Plan the damage. Walls break from the top down and around doors and windows, and corners stand tallest. Draw the break line on the wall before you cut.",
         "Cut walls from foam board, thick card or plastic card. On plastic kit walls, cut roughly with clippers and a blade, then snap off small bits with pliers so the edge looks shattered, not sliced.",
         "Show what the wall is made of. Expose bricks or stones along the break, add a few loose bricks cut from foam or card, and poke wire rebar out of concrete edges.",
-        "Floors: use card or plastic sheet with planks or tiles scored in. Break holes with ragged edges and let joists stick out underneath. A floor that sags or hangs at an angle reads well.",
+        "Floors: use card or plastic sheet with planks or tiles scored in. Break holes with ragged edges and let joists stick out underneath. A floor that sags or hangs at an angle looks good too.",
         "Rubble: pile it where things fell, against the foot of walls and under holes. Mix large chunks, mid pieces and fine sand and grit, and fix it with thinned white glue.",
         "Kit offcuts make good debris: spare sprue, broken parts, leftover pillars and doors. Cut them up so their original shape is not obvious.",
         "Mount the ruin on a thin, sturdy base such as hardboard or plastic sheet with bevelled edges. For gaming, keep floors flat and wide enough for models to stand on.",
@@ -1618,7 +1618,7 @@
       "body": [
         "Decide the mood first: menacing, heroic, eager or calm. Pick the head, pose and any extras to support it, and choose colours after the pose is set.",
         "When a leg is back, bring the arm on that side forward, and the other way round. A raised weapon arm with the other swung back reads as a forward stride.",
-        "Lean the whole model slightly into the movement and tilt the head to follow that line. A deliberately off-balance lean sells a charge or eagerness.",
+        "Lean the whole model slightly into the movement and tilt the head to follow that line. A deliberately off-balance lean suggests a charge or eagerness.",
         "Look for strong lines through the model, such as a weapon following the line of a leg or a cloak that follows the stride.",
         "Many kits have small locating nubs at joints that lock one pose. Cut them off and smooth the joint so the parts can turn freely.",
         "Join the parts with small blobs of sticky tack and try poses on the base. Dry fit several heads, cloaks and weapons, check from the front and side, then glue the parts that keep falling off and build from there.",
@@ -1654,7 +1654,7 @@
         "Shoot raw files if the camera allows it, as they keep far more room to correct light and colour. Turn on the editor's clipping warnings and keep blown highlights and crushed shadows off the model.",
         "Make small overall changes: raise exposure until the model is clear but the highlights do not clip, open the shadows a touch, pull the highlights in, then add a little contrast or clarity so the photo does not look grey.",
         "Use the white balance picker on the white or grey backdrop, then tweak until the colours match the real model beside the screen. Switch on the lens correction profile to remove distortion.",
-        "Go easy on saturation. Pushing it hard destroys detail and changes your colours, so nudge it only slightly. Aim for true colour, not hiding flaws. If your lights and camera never move, save the settings as a preset.",
+        "Go easy on saturation. Pushing it hard destroys detail and changes your colours, so nudge it only slightly. Aim for true colour; do not edit to hide flaws. If your lights and camera never move, save the settings as a preset.",
         "Close-ups show every speck of dust. Zoom in, scan the image in sections, and click each speck once with a healing brush just bigger than it. Undo and resize the brush if a fix smears.",
         "For a pure white backdrop, select the highlight tones, add a curves layer and drag the white point in until the backdrop turns white. Paint the layer mask back over any pale parts of the model that blew out.",
         "To cut the model out, trace round it by hand with a precise path tool, as one-click selections leave fringes. Put a new backdrop on its own layer, use an image you may use, and blur it slightly. For mist, set a smoke image on black to screen mode.",
@@ -3602,7 +3602,7 @@
         "Build two or three thin coats, laying each across the direction of the last to hide brush strokes, and let each dry fully so the flakes lie flat. Metal shows every ridge of thick paint, and varnish will not hide it. A lumpy part can be stripped with a cotton bud and isopropyl alcohol and redone.",
         "Very fluid metallics run into recesses and can flick specks off a springy brush. Wick the brush on a towel first, use a thicker metallic for chains and rivets, paint them slowly, and check nearby areas for silver specks.",
         "Some metallics separate into flakes and medium, or turn to goo, on a wet palette within minutes. If yours do, use a dry palette or glazed tile and stir the puddle often. Others are fine there; the flakes do not travel through the paper, so just keep them apart from other colours.",
-        "Shade with a matching metallic, a dark wash or a thin glaze, and highlight with a lighter metallic, so the area stays reading as metal. Let metallics dry fully before handling. A satin varnish evens a patchy sheen but dulls the shine, so test it first."
+        "Shade with a matching metallic, a dark wash or a thin glaze, and highlight with a lighter metallic, so the area still looks like metal. Let metallics dry fully before handling. A satin varnish evens a patchy sheen but dulls the shine, so test it first."
       ],
       "related": [
         "shading-metallics",
@@ -3917,7 +3917,7 @@
         "Glazes: over half water, up to about nine parts water to one of paint, almost tinted water; they also hide small imperfections. Washes made from normal paint: thin a long way, around four or five parts water to one, as long as some colour remains; ready-made washes and one-coat paints want medium past about half and half.",
         "Blending: thin on a wet palette, with a touch of glaze medium for very smooth blends. Stroke the brush on the palette and blot it so it looks wet but carries almost no visible paint. More, thinner layers give smoother blends; fewer, thicker ones are faster but grainier.",
         "Mix a little at a time and add water a drop at a time. Strongly pigmented colours need more thinning than weak ones. Test on the palette or a thumbnail first: dry, scratchy lines mean the paint is too thick, and paint that floods off the brush is too thin.",
-        "These are ranges, not rules. Slow, smooth display work uses more water; quick work can use paint nearly neat. Move between layering and glazing freely as the area needs."
+        "Treat these as rough ranges. Slow, smooth display work uses more water; quick work can use paint nearly neat. Move between layering and glazing freely as the area needs."
       ],
       "related": [
         "thinning-paint",
@@ -4332,7 +4332,7 @@
         "Paper banners: cut paper with a sharp blade and steel ruler, glue it round a brass wire pole, then bend it into a droop while wet with varnish. Bent dry, it creases. Thin paper soaked in watered PVA drapes into flags and tarpaulins that dry stiff.",
         "Foil flags last longer and bend to look windblown. Cut the flag with about 5 mm extra on the pole side and roll that strip round the pole. Spray the base coat, as brushed paint cracks at the folds, paint the design while it is flat, then check the pose and fold it gently by hand.",
         "Prime or varnish tape to kill its stickiness. Brushed on thinned PVA glue makes it rigid and locks the shape, with a dab of super glue on a pin tip under key folds.",
-        "The paper soaks up paint like fabric. Tape bends without cracking its paint, unlike foil that is folded after painting."
+        "The paper soaks up paint like fabric. Tape bends without its paint cracking, but foil folded after painting will crack."
       ],
       "related": [
         "kitbashing",
@@ -4646,7 +4646,7 @@
         "Plinths with a flat back wall give room for a backdrop that adds story or setting to a display model.",
         "For a simple picture, cut thick card into a torn paper shape and glue it to the back wall. Paint it as old parchment: a pale tan with darker, browner edges.",
         "Sketch the picture lightly in soft brown pencil, then go over the lines with thin dark brown paint and a very fine brush. A small red mark or circle on the picture that points to the model ties the backdrop to the figure.",
-        "Keep the backdrop quieter than the model, with fewer colours and less contrast, so it supports rather than competes.",
+        "Keep the backdrop quieter than the model, with fewer colours and less contrast, so it does not compete.",
         "For a built scene, cut a floor and a back wall from thick plastic sheet, sizing the wall to the tallest feature, such as a door. Thick sheet cuts with a craft knife; thin sheet with scissors. Cut openings for doors and windows, frame them with thin strips, and back them with mesh and a second sheet so you cannot see through.",
         "Cut metal mesh with proper metal shears, as hobby clippers struggle. Pin and glue the wall to the floor, then add vents, floor tiles and small junk. Lay the extras out and rearrange them before gluing so the scene does not look cluttered.",
         "For a quick stage, stand a sturdy small box on its side, build a ground level inside like a little theatre and fill it with flat props cut from card and thin plywood, edges sanded.",
@@ -4932,7 +4932,7 @@
         "Turn off phone filters and beauty modes. Tap and hold on the model to lock focus and brightness. Afterwards only crop and adjust brightness, and do the same to every photo.",
         "Take a quick photo at each stage: built, primed, base coats, shading, highlights, base done. These show where your time went and make good before-and-after pairs.",
         "Name files by date and model, for example 2026-03 knight front, and keep one folder per model or per month. Back them up somewhere other than the phone.",
-        "Every few months, put a new model next to an old one, on the desk and in a photo side by side. Seeing the gap is better motivation than any single compliment.",
+        "Every few months, put a new model next to an old one, on the desk and in a photo side by side. Seeing the gap will motivate you more than any compliment.",
         "Keep a few early models as they are, even the rough ones. They are fixed markers for how far you have come, and they are hard to argue with on a bad day."
       ],
       "related": [
@@ -5489,7 +5489,7 @@
         "For straps, glue a strip of thin plastic card about 1 mm wide at the hip, take it over the shoulder and pinch the ends together. Thin brass sheet makes banners and parchment strips that flex rather than snap.",
         "Rivets: mark spacing on tape and drill shallow pits, then set beads or punched plastic card discs on dots of super glue, lifted on a damp knife tip or a needle tipped with sticky putty. A hole punch squeezed over plastic card with a scrap shim beneath presses a raised dimple instead. Dab away excess glue, as it shows once primed.",
         "Pipes: bend plastic coated wire to the route, strip the ends and glue them into drilled holes, sliding a short piece of plastic tube on as a coupling. Guitar string makes scale cables; bend it round something round to avoid kinks.",
-        "Keep rods and strips longer than needed while working so you have something to hold, and trim at the end. Folded card boxes with glue tabs make stowage. Model a part's most recognisable shapes; a clear silhouette matters more than every detail."
+        "Keep rods and strips longer than needed while working so you have something to hold, and trim at the end. Folded card boxes with glue tabs make stowage. Model a part's most recognisable shapes; if the outline is clear, you do not need every detail."
       ],
       "related": [
         "cutting-plastic-card",
@@ -5558,7 +5558,7 @@
         "Cardboard and foam board make cheap cores. Cut them with a sturdy utility knife with snap-off blades, snapping off a fresh section often, as card blunts it fast. Hot glue joins big shapes in seconds. Brush finished card with one part PVA to two of water to harden it, and clad weak panels in plastic card.",
         "Score panel lines with a light second cut, then deepen them with a triangular file. Back gappy corners with mesh or card so filler grips, then fill, sand and rescribe any lines you lost.",
         "Give each piece a rigid base that will not warp, such as two layers of plastic card glued together or thick board. Cut an irregular outline, bevel the edge to sit flush with the table, and blend the foot in with filler.",
-        "Leave room for play. Test a model on its base through doors, on steps and along walkways, keep gaps wide enough for two medium bases side by side, and floors flat. Terrain should support the models, like a stage set.",
+        "Leave room for play. Test a model on its base through doors, on steps and along walkways, keep gaps wide enough for two medium bases side by side, and floors flat. Think of it as a stage set for the models.",
         "Add detail with spare kit parts, wire cables, tiny rivets and the clutter of daily use, such as stacked logs or a ladder, but know when to stop. Wash the finished shell in soapy water to remove grease and dust before priming."
       ],
       "related": [
@@ -5628,7 +5628,7 @@
         "A straight spine looks stiff, so add a gentle S curve. Tilt the shoulder and hip lines opposite ways: if one shoulder drops, that hip rises. Decide the pose before pushing the legs into the cork, one at a time, and avoid stray kinks.",
         "For a bust, glue a thick upright wire into a wooden block, bind a shoulder crossbar to it and lock it with super glue. Winding thin wire over a film of glue gives clay far more grip than smooth wire.",
         "Bulk the chest and back of the skull with scrunched kitchen foil glued in place. Keep it slim if the design is not settled, and leave room at the front of the skull for the face.",
-        "Clay grips bare wire badly and thin wire can slice through it, so cover the armature in a thin skin of two-part epoxy putty, mixed until no streaks remain and wrapped fully round. You need grip, not volume.",
+        "Clay grips bare wire badly and thin wire can slice through it, so cover the armature in a thin skin of two-part epoxy putty, mixed until no streaks remain and wrapped fully round. It only has to grip.",
         "Leave shoulders, elbows and hips bare so the pose can still change, and give the head a solid rounded block, not a thin rod. Check the size against a normal model of that scale early."
       ],
       "related": [
@@ -5699,7 +5699,7 @@
         "For rough organic skin, paint the filler onto an area and stipple it with a damp drybrush while wet.",
         "For ribbed skin, work in small patches: press on a flattened piece of putty, trim it, score gentle parallel lines with a wet tool, and nudge the edge back to leave a clean edge for the next patch. Thin rolled strands draped over the shapes make vines or tendrils.",
         "Lumpy mutated flesh is forgiving and hides awkward joins. Push small amounts of putty into bulges and ripples with a wet tool, let it firm for an hour or two, then shape growths on top.",
-        "Vary the sizes and leave some smooth areas between clusters so the texture reads clearly. Next to flesh, flat pressed facets with a few cut scratches read as hard shell."
+        "Vary the sizes and leave some smooth areas between clusters so the texture stands out. Next to flesh, flat pressed facets with a few cut scratches look like hard shell."
       ],
       "related": [
         "sculpting-with-putty",
@@ -6701,8 +6701,8 @@
         "Harden anything soft before painting. Soaking brush bristles in super glue sets them solid.",
         "Glue any moving parts in place so nothing shifts later.",
         "Small odds and ends work as scatter too: brush tip covers as pipes, bent paperclips as twisted metal, stripped wire as cables and dried tea leaves as coarse ground. Fix them with thin super glue.",
-        "Repaint everything, even items that already look right, so they share the painted finish of the rest of the scene. Priming it all together helps it read as one.",
-        "Measure and paint any grids, labels or small text carefully. Neat detail copied by hand is what sells the effect."
+        "Repaint everything, even items that already look right, so they share the painted finish of the rest of the scene. Priming it all together helps it look like one piece.",
+        "Measure and paint any grids, labels or small text carefully. Neat detail copied by hand is what makes it convincing."
       ],
       "related": [
         "planning-a-diorama",
@@ -7081,7 +7081,7 @@
       "key": "wire-details",
       "category": "tools-prep",
       "title": "Wire details",
-      "summary": "Thin wire makes lightning bolts, energy arcs and tiny candles that add life to a model or scene.",
+      "summary": "Thin wire makes lightning bolts, energy arcs and tiny candles for a model or scene.",
       "body": [
         "Lightning: bend several short pieces of thin, soft wire into random zigzags. The thinner the wire, the more convincing the bolt.",
         "Drill a small hole in the barrel, staff tip or hand where the bolt starts, glue the main wire in and add the extra zigzags so it branches.",
@@ -7115,7 +7115,7 @@
       "summary": "Prime dark, then spray a light colour from above so the model starts with its lighting already in place.",
       "body": [
         "Prime the whole model black or a dark colour. Then spray white or pale grey straight down from above. Turn the model so every upward facing surface gets some, but keep the spray coming from overhead.",
-        "Recesses and undersides stay dark, so the model already looks lit from above. Stop once the tops are white: piling on coats leaves a chalky surface that makes later paint fuzzy. White over black still reads greyish, so brush heavy white onto the face, shoulders or other focal points for extra punch.",
+        "Recesses and undersides stay dark, so the model already looks lit from above. Stop once the tops are white: piling on coats leaves a chalky surface that makes later paint fuzzy. White over black still looks greyish, so brush heavy white onto the face, shoulders or other focal points to brighten them.",
         "For a front-lit piece, spray mainly from about 45 degrees above the front, then add a light dusting from straight above. Photograph the result under your lamp and keep it by you. It shows where highlights belong, even if opaque paint will cover the undercoat.",
         "Thin one-coat paints, glazes and washes over this undercoat pick up the light and dark for free; a thin satin varnish first helps them flow evenly. Thin other base colours until they stop streaking but still let the undercoat show. Finish with your usual washes, highlights and drybrushing.",
         "You can spray in colour too: dark, mid then light shades of one colour, each from a higher angle. A dark brown prime with warm pale tones above suits one-coat paints. For quick metal, spray silver or gold from above over black or deep red. For fur, spray black, a mid colour from below, then off white from above.",
