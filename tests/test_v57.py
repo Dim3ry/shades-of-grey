@@ -112,7 +112,7 @@ def main():
         check("it asks 'Save a backup?'", text.strip().startswith("Save a backup?"), text)
         more = page.locator("#backup-nudge .more-info-button")
         check("its explanation is behind More info, shut at first",
-              more.count() == 1 and more.inner_text().strip() == "More info" and not page.locator("#more-backup-nudge").is_visible())
+              more.count() == 1 and more.inner_text().strip() == "Why back up?" and not page.locator("#more-backup-nudge").is_visible())
         tap(page, "#backup-nudge .more-info-button")
         why = page.inner_text("#more-backup-nudge")
         check("More info says why, in plain words",

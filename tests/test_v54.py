@@ -119,7 +119,7 @@ def main():
                                            and buttons.nth(i).get_attribute("aria-expanded") in ("true", "false")
                                            and page.locator("#" + buttons.nth(i).get_attribute("aria-controls")).count() == 1 for i in range(5)))
         check("the buttons are named with their version (no paint names)", page.evaluate("() => [...document.querySelectorAll('#changelog .more-info-button')].map(b => b.getAttribute('aria-label'))")
-              == [f"{'Less' if i == 0 else 'More'} info: {v}" for i, (v, d) in enumerate(versions)])
+              == [f"What changed in {v}" for i, (v, d) in enumerate(versions)])   # AB10: arrow-only buttons, named by what they open
         check("the newest entry is open, the other four are shut", release_states(page) == ["true", "false", "false", "false", "false"], release_states(page))
         newest_lines = page.locator("#changelog .release").nth(0).locator("li")
         check("the newest entry's lines are in view", newest_lines.count() == page.evaluate("CHANGELOG[0].changes.length") and newest_lines.first.is_visible())
@@ -134,11 +134,11 @@ def main():
               f"This is {version}" in page.inner_text("#view-updates") and "Unofficial fan-made app" in page.inner_text("#view-updates"))
         before = storage_dump(page)
         press(page, buttons.nth(1))
-        check("tapping More info on an older entry opens it (Less info, lines in view)",
-              buttons.nth(1).get_attribute("aria-expanded") == "true" and "Less info" in buttons.nth(1).inner_text() and older.locator("li").first.is_visible())
+        check("tapping an older entry's button opens it (lines in view)",   # AB10: no more "Less info" word
+              buttons.nth(1).get_attribute("aria-expanded") == "true" and older.locator("li").first.is_visible())
         check("opening it did not close the newest", release_states(page)[:2] == ["true", "true"])
         press(page, buttons.nth(0))
-        check("tapping the newest entry's button shuts it (More info)", buttons.nth(0).get_attribute("aria-expanded") == "false" and "More info" in buttons.nth(0).inner_text()
+        check("tapping the newest entry's button shuts it", buttons.nth(0).get_attribute("aria-expanded") == "false"   # AB10: no "More info" word to read
               and not newest_lines.first.is_visible())
         check("opening and shutting entries saved nothing (every stored value is the same)", storage_dump(page) == before)
         page.evaluate("renderUpdates()")

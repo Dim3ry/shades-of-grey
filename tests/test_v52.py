@@ -120,7 +120,8 @@ def main():
               and text(page, "#shop-panel .primary-button") == "Copy as text" and w.basket(page) != "", (n_items, w.basket(page)))
         check("there is exactly one More info in the card, closed, with aria-expanded false",
               page.locator("#shop-panel .more-info-button").count() == 1 and page.get_attribute("#shop-panel .more-info-button", "aria-expanded") == "false")
-        check("it says More info and is at least 44 px tall", text(page, "#shop-panel .more-info-button") == "More info" and height(page, "#shop-panel .more-info-button") >= 43.5)
+        check("it is named How the list works and is at least 44 px tall", text(page, "#shop-panel .more-info-button") == "How the list works" and   # AB10: named by what it opens, not "More info"
+                height(page, "#shop-panel .more-info-button") >= 43.5)
         check("while closed, the sentence, the warning and the shop note are all hidden",
               not any(page.get_by_text(x).first.is_visible() for x in ("paints to get", "No statuses set yet", "Plain links")))
         panel = text(page, "#shop-panel .more-info-panel")
@@ -129,8 +130,8 @@ def main():
               panel and "paints to get" in panel and "Plain links" in panel, panel)
         before = v51.all_local(page)
         press(page, page.locator("#shop-panel .more-info-button").first)
-        check("tapping it opens the panel, the button says Less info and aria-expanded is true",
-              page.get_attribute("#shop-panel .more-info-button", "aria-expanded") == "true" and text(page, "#shop-panel .more-info-button") == "Less info"
+        check("tapping it opens the panel, the button keeps its name and aria-expanded is true",   # AB10: no more "Less info"
+              page.get_attribute("#shop-panel .more-info-button", "aria-expanded") == "true" and text(page, "#shop-panel .more-info-button") == "How the list works"
               and page.locator("#shop-panel .more-info-panel").first.is_visible())
         check("the button controls the panel (aria-controls matches its id)",
               page.get_attribute("#shop-panel .more-info-button", "aria-controls") == page.get_attribute("#shop-panel .more-info-panel", "id"))
@@ -161,8 +162,8 @@ def main():
         keys = list(SETTINGS_FOLDS)
         have = page.evaluate("(ks) => ks.map(k => { const b = document.querySelector('#more-' + k); return !!b && !!document.querySelector('[aria-controls=\"more-' + k + '\"]'); })", keys)
         check("every Settings card with an explanation has one More info (" + ", ".join(keys) + ")", all(have), dict(zip(keys, have)))
-        check("each is closed, says More info and carries aria-expanded false",
-              page.evaluate("(ks) => ks.every(k => { const b = document.querySelector('[aria-controls=\"more-' + k + '\"]'); return b && b.getAttribute('aria-expanded') === 'false' && b.textContent.trim() === 'More info'; })", keys))
+        check("each is closed, has its own name (never More info) and carries aria-expanded false",   # AB10: named by what it opens
+              page.evaluate("(ks) => ks.every(k => { const b = document.querySelector('[aria-controls=\"more-' + k + '\"]'); return b && b.getAttribute('aria-expanded') === 'false' && b.textContent.trim() !== 'More info' && b.textContent.trim().length > 3; })", keys))
         page.evaluate("() => document.querySelectorAll('.card-fold-button[aria-expanded=\"false\"]').forEach(b => b.click())")   # v53: Faction colours folds shut as a whole card
         page.wait_for_timeout(100)
         check("each More info button is at least 44 px tall",
@@ -178,9 +179,9 @@ def main():
               all(page.locator(s).first.is_visible() for s in ("#appearance-card .chip", "#count-visits", "#show-shop-links", "#save-stages", "#delete-all", "#clean-photos", "#restore-examples", "#csv-button")))
         before = v51.all_local(page)
         press(page, page.locator('[aria-controls="more-backups"]'))
-        check("opening Backups More info shows the explanation and the button says Less info",
+        check("opening the Backups fold shows the explanation and the button keeps its name, Which one?",   # AB10
               page.locator("#backup-explain").is_visible() and
-              page.get_attribute('[aria-controls="more-backups"]', "aria-expanded") == "true" and text(page, '[aria-controls="more-backups"]') == "Less info")
+              page.get_attribute('[aria-controls="more-backups"]', "aria-expanded") == "true" and text(page, '[aria-controls="more-backups"]') == "Which one?")
         press(page, page.locator('[aria-controls="more-your-data"]'))
         check("opening Your data More info shows the summary and the restore-examples line", page.locator("#data-summary").is_visible() and page.locator("#restore-examples-hint").is_visible())
         check("the summary still has its numbers (the code still writes into it)", re.search(r"\d+ units", text(page, "#data-summary") or "") is not None, text(page, "#data-summary"))
@@ -240,11 +241,11 @@ def main():
         press(page, page.locator("#view-help .help details > summary").nth(0))
         words = page.evaluate("""() => { const d = document.querySelectorAll('#view-help .help details');
             return [getComputedStyle(d[0].querySelector('summary'), '::after').content, getComputedStyle(d[1].querySelector('summary'), '::after').content]; }""")
-        check("an open topic reads Less info and a closed one reads More info", words == ['"Less info"', '"More info"'], words)
+        check("a Help topic shows no More info or Less info word, open or shut (only the arrow)", words == ['none', 'none'], words)   # AB10: the row shows only the chevron; its title is the accessible name
         press(page, page.locator("#view-help .help details > summary").nth(0))   # shut it again
         press(page, page.locator("#view-help .help details > summary").nth(1))
-        check("tapping a topic opens it, flips the word and sets aria-expanded true",
-              page.evaluate("() => { const d = document.querySelectorAll('#view-help .help details')[1]; return d.open && d.querySelector('summary').getAttribute('aria-expanded') === 'true' && getComputedStyle(d.querySelector('summary'), '::after').content === '\"Less info\"'; }"))
+        check("tapping a topic opens it and sets aria-expanded true (no word to flip since AB10)",
+              page.evaluate("() => { const d = document.querySelectorAll('#view-help .help details')[1]; return d.open && d.querySelector('summary').getAttribute('aria-expanded') === 'true' && getComputedStyle(d.querySelector('summary'), '::after').content === 'none'; }"))
         page.evaluate("() => { const d = document.getElementById('about'); d.open = true; }")
         page.wait_for_timeout(100)
         check("a topic opened by code (a link, the Back button) gets aria-expanded true too", page.evaluate("() => document.querySelector('#about > summary').getAttribute('aria-expanded') === 'true'"))
@@ -303,7 +304,7 @@ def main():
                     const a = getComputedStyle(s, '::after').color, b = getComputedStyle(s, '::before').borderRightColor;
                     const probe = document.createElement('button'); probe.className = 'more-info-button'; document.body.appendChild(probe);
                     const c = getComputedStyle(probe).color; probe.remove(); return [a, b, c]; }""")
-                check(f"{tag}: Help's More info word and arrow use the same colour as the More info button (so the same contrast)", same[0] == same[2] and same[1] == same[2], same)
+                check(f"{tag}: Help's arrow uses the same colour as the fold buttons (so the same contrast)", same[1] == same[2], same)   # AB10: the word is gone, only the arrow is compared
                 if width == 390: t.shot(page, f"v52-help-{mode}.png")
                 tab(page, "dashboard")
                 check(f"{tag}: Dashboard, no sideways scrolling", t.no_sideways(page))
