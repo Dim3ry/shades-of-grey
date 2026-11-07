@@ -65,7 +65,9 @@ check("each pick has a wanted colour, a paint, a fit and whether it is owned", b
 const eyes = M.mentorAnswer("red eyes on blue armour", ctx());
 check("two parts: the part that belongs to a colour is the base, the other is asked about", eyes.picks.every((p) => p.part === "eyes") && /eyes with blue/.test(eyes.lead), eyes.lead);
 check("base coat is a technique, not the base of the model", M.mentorAnswer("what is a base coat for blue", ctx()).picks === undefined, 1);
-check("a colour on its own: what goes with it, from the colour rules", /^Blue stands out most against \w+/.test(M.mentorAnswer("what goes with blue", ctx()).lead) && M.mentorAnswer("green", ctx()).sources[0].key === "wheel:green", M.mentorAnswer("green", ctx()));
+// AB12 (AT-40): the colour rule's line was reworded ("Gold looks brightest next to blue, and quieter next to orange or lime."), so this
+// reads the new start; it used to read "Blue stands out most against".
+check("a colour on its own: what goes with it, from the colour rules", /^Blue looks brightest next to \w+/.test(M.mentorAnswer("what goes with blue", ctx()).lead) && M.mentorAnswer("green", ctx()).sources[0].key === "wheel:green", M.mentorAnswer("green", ctx()));
 check("a neutral colour on its own says so", /neutral/.test(M.mentorAnswer("grey", ctx()).lead), M.mentorAnswer("grey", ctx()).lead);
 check("a strong entry beats a lone colour word", M.mentorAnswer("blue glaze", ctx()).sources[0].key === "glazing", M.mentorAnswer("blue glaze", ctx()));
 // owned first
@@ -97,8 +99,10 @@ check("a tie goes to the entry that comes first in the index", tied.sources.map(
 // ---- 5. text: built only from entries and templates ----
 const entryText = new Set(index.entries.flatMap((e) => [e.title, e.summary, ...(e.body || []), `${e.title}: ${e.summary}`]));
 const answers = all.filter((r) => r.kind === "answer");
-const fromEntries = answers.every((r) => r.lead.split(/(?<=\.)\s/).every((s) => [...entryText].some((t) => t.includes(s.replace(/\.$/, ""))) || /^Also see /.test(s)));
-check("an answer's lead is an entry's own words or the 'Also see' template", fromEntries, answers.filter((r) => !r.lead).length);
+// AB12 (AT-39): the "Also see X." tail is gone, so a lead is only an entry's own words now (it used to allow that template too). A
+// "Did you mean" answer with choices (AT-40) has the lead "Did you mean" and no sources; its chips are entry titles.
+const fromEntries = answers.every((r) => (r.choices ? r.lead === "Did you mean" && r.choices.every((c) => entryText.has(c.text)) : r.lead.split(/(?<=\.)\s/).every((s) => [...entryText].some((t) => t.includes(s.replace(/\.$/, ""))))));
+check("an answer's lead is an entry's own words (no 'Also see' tail)", fromEntries, answers.filter((r) => !r.lead).length);
 const BAD = /—|–|great question|sorry|unfortunately|as an ai|\bgames workshop\b|\bcitadel\b|\bvallejo\b|\bchaos\b|\bimperial\b|\blegion\b|\bcrusade\b|\bthe mentor\b|<|>/i;
 const templates = [...all.map((r) => r.lead), ...fx.questions.map(([q]) => M.mentorAnswer(q, ownedCtx).lead)];
 check("no filler, em dashes, brand or faction words in anything it says", templates.every((t) => !BAD.test(t)), templates.filter((t) => BAD.test(t)));
