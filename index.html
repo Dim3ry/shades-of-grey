@@ -55,8 +55,8 @@
        (applyAppearance in app.js) takes over once the app starts.
        U6b: mentor-looks.js (the Mentor orb's three looks and five states, plain data: MENTOR_LOOKS and MENTOR_LOOKS_CSS) loads
        just before it, so early.js can put the chosen look and its styles on the page before the first frame (LR1). -->
-  <script src="mentor-looks.js?v=145"></script>
-  <script src="early.js?v=145"></script>
+  <script src="mentor-looks.js?v=146"></script>
+  <script src="early.js?v=146"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -3084,6 +3084,8 @@
     .mentor-me { justify-items: end; }
     .mentor-me p { margin: 0; max-width: 85%; padding: 8px 12px; font-size: 0.9375rem; line-height: 1.35; overflow-wrap: anywhere; white-space: pre-wrap; color: var(--text); background-color: var(--accent-wash); border: 1px solid var(--border); border-radius: var(--radius-card); }
     .mentor-lead { margin: 0; font-size: 0.9375rem; line-height: 1.4; overflow-wrap: anywhere; }
+    /* AB12: a good fit's next lines from its guide, the same text as the lead */
+    .mentor-more { margin: 0; font-size: 0.9375rem; line-height: 1.4; overflow-wrap: anywhere; }
     .mentor-reply .idea-list { gap: 8px; }
     .mentor-sources { justify-items: stretch; gap: 0; }   /* AT-12: plain links, one per line, like Guides' See also */
     .mentor-source { max-width: 100%; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 0; font: inherit; font-size: 0.875rem; text-align: left; color: var(--accent); background: transparent; border: 0; cursor: pointer; }
@@ -3523,7 +3525,7 @@
             <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
           </ol>
           <p id="help-tabs" style="margin: 8px 0 0;">The bar at the bottom has four sections around the round <strong>Ask Mentor</strong> button: <strong>Dashboard</strong>, <strong>Models</strong>, <strong>Painting</strong> and <strong>Tools</strong>. The one you are in is lit. <strong>Tools</strong> opens <strong>Tools and Settings</strong>: <strong>About</strong>, <strong>Guides</strong>, <strong>Settings</strong>, <strong>How it works</strong> and <strong>Updates</strong>. The shopping basket sits at the top right once your list has a paint. The app opens on a <strong>start page</strong>: the same four sections in a circle around Ask Mentor. Tap the round arrow at the bottom left, or the <strong>Minifolio</strong> title, to come back to it. Switching to another app and back leaves you where you were.</p>
-          <p id="help-mentor" style="margin: 8px 0 0;">Tap the round <strong>Ask Mentor</strong> button. Type a question, or tap <strong>Suggestions</strong> and pick one. Under <strong>Sources</strong>, a guide link opens that guide.</p>
+          <p id="help-mentor" style="margin: 8px 0 0;">Tap the round <strong>Ask Mentor</strong> button. Type a question, or tap <strong>Suggestions</strong> and pick one. Under the answer, <strong>Read the guide</strong> or a guide link opens that guide.</p>
           <p id="help-back" style="margin: 8px 0 0;">The phone's <strong>Back</strong> button closes what's open first, one thing per press: a question box (it counts as No), a photo, the camera, a recipe, the paste box. Then it goes to the Dashboard. On the Dashboard, with nothing open, it leaves the app.</p>
         </details>
         <details>
@@ -4034,7 +4036,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=145" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=146" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -4047,16 +4049,16 @@
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks.
        G2a: guides-groups.js (the Guides topic groups, plain data) loads after guides-data.js. It only adds one
        name, GUIDE_GROUPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=145"></script>
-  <script src="schemes.js?v=145"></script>
-  <script src="detail-recipes.js?v=145"></script>
-  <script src="basing-tips.js?v=145"></script>
-  <script src="mentor-tips.js?v=145"></script>
-  <script src="guides-data.js?v=145"></script>
-  <script src="guides-groups.js?v=145"></script>
-  <script src="mentor-data.js?v=145"></script>
-  <script src="mentor-engine.js?v=145"></script>
-  <script src="where-to-buy.js?v=145"></script>
-  <script src="app.js?v=145"></script>
+  <script src="colour.js?v=146"></script>
+  <script src="schemes.js?v=146"></script>
+  <script src="detail-recipes.js?v=146"></script>
+  <script src="basing-tips.js?v=146"></script>
+  <script src="mentor-tips.js?v=146"></script>
+  <script src="guides-data.js?v=146"></script>
+  <script src="guides-groups.js?v=146"></script>
+  <script src="mentor-data.js?v=146"></script>
+  <script src="mentor-engine.js?v=146"></script>
+  <script src="where-to-buy.js?v=146"></script>
+  <script src="app.js?v=146"></script>
 </body>
 </html>

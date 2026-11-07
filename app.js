@@ -5533,10 +5533,30 @@
         row.appendChild(mentorChip(m.didYouMean, () => mentorSend(m.didYouMean, true, true)));
         box.append(dym, row);
       }
+      // AB12 (AT-40): the best entry's title does not hold the question's main noun: "Did you mean" and two or three choices, no answer.
+      // Each chip asks its entry's title; once one is asked, the line and the other choices go.
+      const choices = (m.choices || []).filter(c => c && c.text);
+      if (choices.length && !choices.some(c => mentorUsed.has(String(c.text).toLowerCase()))) {
+        const dym = document.createElement("p");
+        dym.className = "mentor-dym";
+        dym.textContent = "Did you mean";
+        const row = document.createElement("div");
+        row.className = "mentor-chips mentor-chips-in mentor-dym-chips mentor-dym-choices";
+        for (const c of choices) row.appendChild(mentorChip(c.text, () => mentorSend(c.text, true, true)));
+        box.append(dym, row);
+        return box;
+      }
       const lead = document.createElement("p");
       lead.className = "mentor-lead";
       lead.textContent = m.text;
       box.appendChild(lead);
+      // AB12 (AT-39): a good fit from a guide: its next line or two under the lead, then one link, "Read the guide"
+      for (const line of m.more || []) {
+        const p = document.createElement("p");
+        p.className = "mentor-more";
+        p.textContent = line;
+        box.appendChild(p);
+      }
       if (m.pick) {
         const role = mentorRole(m.pick.part);
         const ideas = colourIdeas(null, m.pick.hex, role);
@@ -5548,15 +5568,16 @@
         list.className = "mentor-sources guides-seealso";
         list.setAttribute("role", "group");
         list.setAttribute("aria-label", "Sources");
-        for (const src of m.sources) {
+        for (const src of m.readGuide ? m.sources.slice(0, 1) : m.sources) {   // AB12: a good fit shows one link
           const b = document.createElement("button");
           b.type = "button";
           b.className = "link-button guides-seealso-link mentor-source";
           if (src.colour && MinifolioColour.isHex(src.colour)) b.appendChild(makeSwatch(src.colour));
           else b.appendChild(mentorBookIcon());
           const t = document.createElement("span");
-          t.textContent = src.label;
+          t.textContent = m.readGuide ? "Read the guide" : src.label;   // AB12: a good fit's one link
           b.appendChild(t);
+          if (m.readGuide) b.title = src.label;
           b.setAttribute("aria-label", `Open ${MENTOR_SOURCE_WORD[src.type] || ""}${src.label}`);
           b.addEventListener("click", () => mentorOpenSource(src));
           list.appendChild(b);
@@ -5718,6 +5739,7 @@
         if (!mentorUsed.has(c.textContent.toLowerCase())) continue;
         const row = c.parentElement;
         c.remove();
+        if (row.classList.contains("mentor-dym-choices")) row.replaceChildren();   // AB12: one of the "Did you mean" choices was asked, so the others go too
         if (row.classList.contains("mentor-dym-chips") && row.previousElementSibling && row.previousElementSibling.classList.contains("mentor-dym")) row.previousElementSibling.remove();   // E: "Did you mean" goes with its chip
         if (!row.children.length) row.remove();
       }
@@ -5731,8 +5753,9 @@
         // E: no answer: one line, and the starter questions that share the most words with it under it (the engine's suggestions)
         reply = answer.kind === "none"
           ? { who: "mentor", text: mentorUnsureLine(), sources: [], suggestions: answer.suggestions || [] }
-          : { who: "mentor", text: answer.lead, sources: answer.sources || [], pick, didYouMean: answer.band === "maybe" && answer.didYouMean ? answer.didYouMean : "" };
-        mood = answer.kind === "none" || reply.didYouMean ? "unsure" : "pleased";   // U6b
+          : { who: "mentor", text: answer.lead, sources: answer.sources || [], pick, didYouMean: answer.band === "maybe" && answer.didYouMean ? answer.didYouMean : "",
+              more: answer.more || [], readGuide: !!answer.readGuide, choices: answer.choices || [] };   // AB12: a good fit's next lines, "Read the guide", "Did you mean" choices
+        mood = answer.kind === "none" || reply.didYouMean || reply.choices.length ? "unsure" : "pleased";   // U6b
       } catch (ignored) {
         reply = { who: "mentor", text: mentorUnsureLine(), sources: [], suggestions: [] };
       }
@@ -5745,7 +5768,9 @@
       while (mentorMessages.length > MENTOR_MAX_MESSAGES) mentorMessages.shift();
       while (state.msgs.children.length > mentorMessages.length) state.msgs.firstElementChild.remove();
       state.win.classList.add("mentor-chatting");
-      state.status.textContent = reply.didYouMean ? `Did you mean ${String(reply.didYouMean).replace(/[?.!]+$/, "")}? ${reply.text}` : reply.text;   // announced politely; the rows themselves are not read out unprompted
+      const said = reply.choices && reply.choices.length ? `Did you mean ${reply.choices.map(c => c.text).join(", ")}?`   // AB12
+        : [reply.text, ...(reply.more || [])].join(" ");
+      state.status.textContent = reply.didYouMean ? `Did you mean ${String(reply.didYouMean).replace(/[?.!]+$/, "")}? ${said}` : said;   // announced politely; the rows themselves are not read out unprompted
       mentorDrawSuggest(state);   // MW2: one closed Suggestions pill, now under this answer
       mentorMood(mood);
       mentorOrbSettle(state, orbWas);
@@ -22244,12 +22269,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=145".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=146".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v145";
+    const APP_VERSION = "v146";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -22711,6 +22736,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v146", date: "7 Nov 2026", changes: [
+        "When one guide fits, Mentor answers with a few lines from it and a Read the guide link. When it is not sure what you meant, it offers two or three guides to pick from.",
+        "Fixes and tidying.",
+      ] },
       { version: "v145", date: "7 Nov 2026", changes: [
         "Guides now use contractions such as don't, and spell matte, drybrush and undersuit the same way throughout. Wording in some technique guides is plainer.",
         "Fixes and tidying.",

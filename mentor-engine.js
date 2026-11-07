@@ -33,7 +33,7 @@
 //      ASK.points. Below ASK.floor it adds nothing, so a single shared word in a long phrase does not pile up.
 //      Also new: a word of an entry's keyword phrase counts on its own (SCORE.keywordWord), even when the whole phrase is not asked.
 //  (e) Quick lead. MENTOR_DATA.quick holds a one- or two-line answer for most phrases. When the best source matched one of its phrases
-//      at ASK.strong or more, the lead is that phrase's answer (plus "Also see" if it still fits in two sentences). Otherwise the
+//      at ASK.strong or more, the lead is that phrase's answer. Otherwise the
 //      lead is made exactly as before. A starter question uses MENTOR_DATA.starters the same way.
 //  (f) THRESHOLD, COVER_BONUS, RELATIVE_KEEP, the X6a SCORE numbers and the "none" answer are unchanged. Two things keep "none" honest now
 //      that there are far more words to match: words found nowhere in the entries make every score smaller (UNSEEN_POWER), and chat
@@ -52,6 +52,21 @@
 //      A hand-written list of everyday words (NEVER_REPAIR) is never repaired or split: "bread" stays bread, not "break".
 //  (i) ASK.points 10 -> 15, so an asked-as phrase can outweigh one shared title word.
 //  (j) App questions (price, backups, privacy, installing, what Mentor is, feedback) get kind "app" with a short answer from Help.
+//
+// AB12: the answer's shape (AT-39) and wrong-question answers (AT-40).
+//  (k) No "Also see X." tail any more: the other sources are already links under the answer.
+//  (l) A good fit is the existing band "clear" (BAND.clear 20, or BAND.clearFixed 30 after a typo fix; a starter, a tapped chip or the
+//      very title also count). When the best source of a clear answer is a guide, the answer is two or three lines from that guide
+//      (the lead, then the opening sentence or two of its first paragraph, in "more"), and readGuide: the window then shows only the
+//      first source, as one link "Read the guide". Starter questions keep their own answers.
+//  (m) "How do I paint X" (paint or painting after how, to or at the start) weights technique guides (category "techniques") by
+//      TECHNIQUE_WEIGHT (only those whose title holds every word of the main noun, see (n)), and a colour word in such a question goes to the entries first: the colour rules answer only when no entry
+//      reaches THRESHOLD. "how do I paint gold" used to get the colour rule for gold, not a guide on painting it.
+//  (n) The main noun: after the paint of "how do I paint" (past a, an, the, my, your), the last of up to two words in a row that are
+//      not filler ("how to paint dark brown": brown); else the word right after the first my or your ("my wash went chalky": wash), which counts only when the answer is not already clear. When the best entry's title does not hold it (by stem, synonyms read as their canonical), the answer is not
+//      given: it is "Did you mean" with two or three choices (choices, also its sources; the best entry, then up to two titles that
+//      hold the noun, then by score), each a chip that asks
+//      it. With only one entry to offer it is the one-chip "Did you mean" (band "maybe") as before.
 (function (root) {
   "use strict";
 
@@ -92,6 +107,11 @@
   // E: confidence bands on the best score. clear: answer straight away. maybe: show "Did you mean" with one chip (the corrected question,
   // or the best entry's title). Below maybe: "I do not know". A question that needed a typo fix is clear only from clearFixed.
   const BAND = { clear: 20, clearFixed: 30, maybe: THRESHOLD };
+  // AB12 (m): a technique guide's score in a "how do I paint X" question is times this, so it outranks a colour-basics, recipe or
+  // problem entry that matched about as well (the order between technique guides does not change).
+  const TECHNIQUE_WEIGHT = 1.25;
+  // AB12 (l): the lines a good fit adds from its guide stop at this many letters in all (a long opening sentence comes alone).
+  const MORE_CHARS = 300;
   // E: everyday words that are never typo-repaired (or split): a real word that no entry uses is a question about something else, not
   // a slip ("bread" is not "break", "chess" is not "chest", "website" is not "web site"). It still counts as unknown (rule (f)), so the
   // question is less sure. Written by hand, no build step: common English words of 4 letters or more. Words an entry already uses
@@ -505,7 +525,6 @@
     const text = Array.isArray(list) && typeof list[hit.at] === "string" ? list[hit.at].trim() : "";
     return text ? sentence(text) : "";
   }
-  const fitsTwoSentences = (s) => (s.match(/[.!?](\s|$)/g) || []).length <= 2 && s.length <= 260;
 
   // The best entries for some words. Returns { hits: [ { e, score } ] sorted best first, starter }.
   function lookup(text, index, dropColours, data) {
@@ -536,7 +555,7 @@
     });
     // best first; a tie keeps the index order (the sort is stable)
     hits.sort((a, b) => b.score - a.score);
-    return { hits, starter, asked, rows, fixes };
+    return { hits, starter, asked, rows, fixes, words };
   }
 
   function suggestionsFor(found, index) {
@@ -664,7 +683,7 @@
       const named = upper(baseWord);
       const side = [...new Set(h.analogous.map(fam))].filter((f) => f !== baseWord && !f.endsWith(" " + baseWord));
       const lead = h.hueMeaningful
-        ? `${named} stands out most against ${fam(h.complementary)}` + (side.length ? ` and sits calmly beside ${side.join(" and ")}.` : ".")
+        ? `${named} looks brightest next to ${fam(h.complementary)}` + (side.length ? `, and quieter next to ${side.join(" or ")}.` : ".")   // AB12 (AT-40)
         : `${named} is neutral, so almost any colour works beside it.`;
       return { kind: "colour", lead, sources: [source0] };
     }
@@ -782,6 +801,58 @@
     return s ? upper(s) : "";
   }
 
+  // ---------- AB12: answer shape and the main noun ----------
+  // (m) "how do I paint X": paint or painting after "how" (any words between), after "to", or as the first word.
+  // Returns the place of that paint word, or -1. Only there is paint a verb: "contrast paint tips" or "spray paint melted" is not asking it.
+  function howToPaintAt(words) {
+    const w = words || [];
+    for (let i = 0; i < w.length; i++) {
+      if (w[i] !== "paint" && w[i] !== "painting") continue;
+      if (i === 0 ? w[i] === "painting" : w[i - 1] === "to" || w.slice(0, i).includes("how")) return i;
+    }
+    return -1;
+  }
+  const isTechnique = (e) => e.kind === "guide" && e.category === "techniques";
+  // (n) the main noun, as a stem: after the paint of "how do I paint" (see next), else the word right after the first my or your
+  const NOUN_AFTER = new Set(["my", "a", "an", "the", "your"]);
+  function mainNoun(words) {
+    const w = words || [];
+    // a filler word, or one whose stem is filler ("paints", "models"), is not a noun
+    const plain = (x) => !FILLER.has(x) && !FILLER.has(stem(x));
+    // the noun after paint: past a, an, the, my, your..., the last of up to two plain words in a row ("dark brown": brown, "animal fur": fur)
+    const next = (i) => {
+      let j = i + 1;
+      while (j < w.length && (NOUN_AFTER.has(w[j]) || NOUN_SKIP.has(w[j]))) j++;
+      const phrase = [];
+      for (let k = j; k < Math.min(w.length, j + 2) && plain(w[k]) && !NOT_NOUN.has(w[k]); k++) phrase.push(stem(w[k]));
+      return phrase;
+    };
+    const p = howToPaintAt(w);
+    if (p >= 0) { const phrase = next(p); return { noun: phrase[phrase.length - 1] || "", phrase, strong: true }; }
+    // with no paint word: the word right after the first my or your ("my wash went chalky"; "on a base" or "a new colour" says too little).
+    // This one is weaker ("my static grass keeps falling off" is answered well by a title without "static"), so it only counts when the
+    // answer is not already clear.
+    const at = w.findIndex((x) => x === "my" || x === "your");
+    if (at >= 0 && at < w.length - 1 && plain(w[at + 1])) return { noun: stem(w[at + 1]), phrase: [stem(w[at + 1])], strong: false };
+    return { noun: "", phrase: [], strong: false };
+  }
+  const NOUN_SKIP = new Set(["some", "this", "these", "those", "that", "its"]);
+  const NOT_NOUN = new Set(["not", "without", "with", "on", "in", "for", "like", "so", "when", "after", "before", "over", "under", "again", "well", "fast", "quickly", "neatly"]);
+  const titleHas = (e, noun, syn) => wordsOf(e.title, syn).map(stem).includes(noun);
+  // (l) the lines a good fit adds from its guide: the opening sentence of its first paragraph, and the next one while both fit MORE_CHARS
+  const sentencesOf = (p) => String(p || "").split(/(?<=[.!?])\s+(?=[A-Z0-9])/).map((x) => x.trim()).filter(Boolean);
+  function moreLines(e, lead) {
+    const out = [];
+    let used = 0;
+    for (const line of sentencesOf((e.body || [])[0])) {
+      if (lead.includes(line.replace(/[.!?]$/, ""))) continue;
+      if (out.length && used + line.length > MORE_CHARS) break;
+      out.push(line); used += line.length;
+      if (out.length === 2) break;
+    }
+    return out;
+  }
+
   // ---------- the one function ----------
   function mentorAnswer(text, context) {
     const ctx = context || {};
@@ -802,7 +873,10 @@
       delete app.sure; delete app.rest;
       if (!guideWins) return app;
     }
-    const read = readColourQuestion(text, prepared(index.entries, data).syn);
+    const syn = prepared(index.entries, data).syn;
+    const read = readColourQuestion(text, syn);
+    const howPaint = howToPaintAt(found.words) >= 0;   // AB12 (m)
+    const main = mainNoun(found.words), noun = main.noun;   // AB12 (n)
 
     // a starter question maps straight to its targets
     if (found.starter) {
@@ -819,31 +893,60 @@
     if (C && read.colours.length && read.parts.length) return colourAnswer(C, ctx, read);
 
     // a colour with no part: the colour rules answer, unless the other words in the question fit an entry on their own
-    if (C && read.colours.length && lookup(text, index, true, data).hits.filter((h) => h.score >= THRESHOLD).length === 0) return colourAnswer(C, ctx, read);
+    // AB12 (m): in "how do I paint gold" the colour is what is being painted, so an entry that fits the whole question comes first
+    if (C && read.colours.length && !(howPaint && found.hits.some((h) => h.score >= THRESHOLD)) &&
+      lookup(text, index, true, data).hits.filter((h) => h.score >= THRESHOLD).length === 0) return colourAnswer(C, ctx, read);
 
-    const top = found.hits[0];
+    // AB12 (m): "how do I paint X" weights technique guides (a stable sort, so ties keep the index order)
+    // A main noun narrows it to the technique guides whose title holds all of it, so the weight never lifts a guide on something else,
+    // or on something more general, over one on the very thing asked ("how to paint a bay horse" stays on the bay horse, not horses).
+    const weighted = (e) => isTechnique(e) && main.phrase.every((x) => titleHas(e, x, syn));
+    const hits = howPaint ? found.hits.map((h) => (weighted(h.e) ? Object.assign({}, h, { score: h.score * TECHNIQUE_WEIGHT }) : h)).sort((a, b) => b.score - a.score) : found.hits;
+    const top = hits[0];
     if (top && top.score >= BAND.maybe) {
-      const keep = found.hits.filter((h) => h.score >= THRESHOLD && h.score >= top.score * RELATIVE_KEEP).slice(0, MAX_SOURCES);
-      // X8b (e): the quick answer of the phrase the best source matched, if it matched strongly; else the entry's own words
+      const keep = hits.filter((h) => h.score >= THRESHOLD && h.score >= top.score * RELATIVE_KEEP).slice(0, MAX_SOURCES);
+      // X8b (e): the quick answer of the phrase the best source matched, if it matched strongly; else the entry's own words.
+      // AB12 (k): no "Also see" tail.
       const quick = quickLead(keep[0], data);
-      let lead = quick || leadFor(keep[0].e);
-      const also = keep.length > 1 ? ` Also see ${keep[1].e.title}.` : "";
-      if (also && (!quick || fitsTwoSentences(lead + also))) lead += also;
+      const lead = quick || leadFor(keep[0].e);
       // E: how sure. A weaker match (or one that needed a typo fix) comes with "Did you mean" and one chip that asks it plainly.
       const fixed = found.fixes.length > 0;
       // the very title of the best entry (a "Did you mean" chip that was tapped, say) is clear: there is nothing better to offer
       const asTitle = !fixed && rawWords(text).join(" ") === rawWords(keep[0].e.title).join(" ");
+      // AB12 (n): the best title does not hold the question's main noun: "Did you mean" with two or three choices, not an answer
+      const sure = top.score >= (fixed ? BAND.clearFixed : BAND.clear);
+      const offTopic = !ctx.confirmed && !asTitle && !!noun && (main.strong || !sure) && !titleHas(keep[0].e, noun, syn);
+      if (offTopic) {
+        const pool = hits.filter((h) => h.score >= THRESHOLD);
+        // the best entry first, then up to two titles that hold the noun, then the rest by score
+        const ordered = [top, ...pool.filter((h) => titleHas(h.e, noun, syn)).slice(0, 2), ...pool];
+        const choices = [];
+        const picked = [];
+        for (const h of ordered) if (picked.length < 3 && !picked.some((c) => c.e.title === h.e.title || c.e.key === h.e.key)) picked.push(h);
+        if (picked.length >= 2) {
+          // sources are the choices' entries (the window shows only the chips)
+          const out = { kind: "answer", lead: "Did you mean", sources: picked.map((h) => source(h.e)), score: top.score, band: "maybe",
+            choices: picked.map((h) => ({ text: h.e.title, key: h.e.key })) };
+          if (fixed) out.fixes = found.fixes.map(([a, b]) => [a, b]);
+          return out;
+        }
+      }
       // E: context.confirmed: the question came from a tapped "Did you mean" chip, so the person has said yes: answer it plainly
-      const band = ctx.confirmed || asTitle || top.score >= (fixed ? BAND.clearFixed : BAND.clear) ? "clear" : "maybe";
+      const band = !offTopic && (ctx.confirmed || asTitle || sure) ? "clear" : "maybe";
       const out = { kind: "answer", lead, sources: keep.map((h) => source(h.e)), score: top.score, band };
       if (band === "maybe") out.didYouMean = fixed ? correctedQuestion(text, found.fixes) : keep[0].e.title;
+      // AB12 (l): a good fit from a guide: two or three lines from it and one link, "Read the guide"
+      if (band === "clear" && keep[0].e.kind === "guide") {
+        const more = moreLines(keep[0].e, lead);
+        if (more.length) { out.more = more; out.readGuide = true; }   // sources stay in order; the window shows the first one only
+      }
       if (fixed) out.fixes = found.fixes.map(([a, b]) => [a, b]);
       return out;
     }
     return { kind: "none", lead: "I do not know that yet.", sources: [], suggestions: suggestionsFor(found, index) };
   }
 
-  const api = { mentorAnswer, THRESHOLD, BAND, tokens, stem };
+  const api = { mentorAnswer, THRESHOLD, BAND, TECHNIQUE_WEIGHT, tokens, stem };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.MinifolioMentor = api;
 })(typeof window !== "undefined" ? window : globalThis);

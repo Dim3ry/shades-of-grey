@@ -85,23 +85,24 @@ check("a loose phrase match keeps the entry's own lead", (r3.sources[0] || {}).k
 const two = { phrases: bank.phrases, quick: { tide: ["Rewet it. Then draw the excess off."] } };
 const glazeToo = [...rings, G("tide2", "Tide marks on glazes", "Glazes can leave marks too.", ["tide marks"])];
 const r4 = mini(glazeToo, two, "my wash dried in rings tide marks");
-check("'Also see' is added to a quick lead only if the lead stays within two sentences", (r4.lead.match(/[.!?](\s|$)/g) || []).length <= 2, r4.lead);
+// AB12 (AT-39): "Also see" is never added now, so this checks the quick lead comes alone (it was: added only if it stays in two sentences).
+check("a quick lead comes alone, with no 'Also see'", r4.lead === "Rewet it. Then draw the excess off." && !/Also see/.test(r4.lead), r4.lead);
 const st = fx.starters[0];
 const startData = { starters: { [st.key]: "Start with one model and three colours." } };
 const r5 = M.mentorAnswer(st.text, { index, paints: [], colour: C, data: startData });
 check("a starter question can lead with its own quick answer", r5.kind === "answer" && r5.lead === "Start with one model and three colours.", r5);
-// built with --no-quick, quick and starters are empty: every lead must then be made as before X8b (the entry's own words, plus "Also see")
+// built with --no-quick, quick and starters are empty: every lead must then be made as before X8b (the entry's own words).
+// AB12 (AT-39): with no "Also see" tail any more (it used to be added when there was a second source).
 const noQuick = Object.assign({}, D, { quick: {}, starters: {} });
 const sentence = (x) => { x = String(x || "").trim(); return x && !/[.!?]$/.test(x) ? x + "." : x; };
 const ownLead = (e) => e.kind === "tip" ? sentence((String((e.body || [])[0] || "").match(/^.*?[.!?](\s|$)/) || [String((e.body || [])[0] || "")])[0].trim() || e.title)
   : e.kind === "detail" || e.kind === "basing" ? sentence(`${e.title}: ${e.summary}`.replace(/: $/, "")) : sentence(e.summary || e.title);
 const KIND = { guide: "guide", recipe: "detail", basing: "basing", tip: "tip" };
-const sameWords = (a, b) => { const x = new Set(M.tokens(a)), y = new Set(M.tokens(b)); return x.size === y.size && [...x].every((w) => y.has(w)); };
 const nqBad = [...fx.questions.map(([q]) => q), ...fx.starters.map((x) => x.text)].map((q) => {
-  const r = ask(q, { data: noQuick }), isStarter = fx.starters.some((x) => sameWords(x.text, q));   // a starter's lead has no "Also see"
-  if (r.kind !== "answer") return null;
+  const r = ask(q, { data: noQuick });
+  if (r.kind !== "answer" || r.choices) return null;   // AB12: a "Did you mean" answer with choices has no lead of its own
   const es = r.sources.map((x) => index.entries.find((e) => e.key === x.key && e.kind === KIND[x.type]));
-  const want = ownLead(es[0]) + (!isStarter && es.length > 1 ? ` Also see ${es[1].title}.` : "");
+  const want = ownLead(es[0]);
   return r.lead === want ? null : { q, lead: r.lead, want };
 }).filter(Boolean);
 check("with quick and starters empty (built with --no-quick), every lead is the entry's own words, as before", nqBad.length === 0, nqBad.slice(0, 3));
@@ -123,8 +124,9 @@ check("in an index with few different words, unknown words count for little (it 
 const shapes = fx.questions.map(([q]) => ask(q));
 // E: an answer now also says how sure it is (score, band, and in the "maybe" band didYouMean; fixes when a typo was repaired), and an
 // app question answers with kind "app" (app, label). Those are the only new fields, so this check names them; it was "no new fields".
-const allowed = new Set(["kind", "lead", "sources", "picks", "suggestions", "score", "band", "didYouMean", "fixes", "app", "label"]);
-check("the answer has the same shape as before, plus only E's fields (how sure it is)", shapes.every((r) => Object.keys(r).every((k) => allowed.has(k))), shapes.map((r) => Object.keys(r)).find((k) => k.some((x) => !allowed.has(x))));
+// AB12: a good fit from a guide adds more (its next lines) and readGuide, and a wrong-question answer adds choices (AT-39, AT-40).
+const allowed = new Set(["kind", "lead", "sources", "picks", "suggestions", "score", "band", "didYouMean", "fixes", "app", "label", "more", "readGuide", "choices"]);
+check("the answer has the same shape as before, plus only E's and AB12's fields", shapes.every((r) => Object.keys(r).every((k) => allowed.has(k))), shapes.map((r) => Object.keys(r)).find((k) => k.some((x) => !allowed.has(x))));
 check("the same question gives the same answer with MENTOR_DATA", JSON.stringify(shapes) === JSON.stringify(fx.questions.map(([q]) => ask(q))), 1);
 // Two rows answer differently once MENTOR_DATA is on the page, on purpose and in the open:
 //  - "muddy ground": both mud (George's original tip) and dry-mud-ground (X8's) are right. Without the data his check finds

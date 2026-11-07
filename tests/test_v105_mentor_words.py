@@ -2,7 +2,7 @@
 
 Runs tests/mentor_upgrade_check.js in Node: the data file's shape and words,
 extra keywords for recipes and basing tips, synonyms (in questions, in entries, and so the colour path is not fooled), rare words counting
-more, the phrase bank, the quick lead (strong match only, 'Also see' only if it fits, starters), the none answer with the data on the
+more, the phrase bank, the quick lead (strong match only, no 'Also see' since AB12, starters), the none answer with the data on the
 page (the unknown-word rule at full strength only in an index with enough different words), leads made as before when the data
 has no quick or starter answers (built with --no-quick), the same answer shape, and speed with about 800 entries and their phrase bank. Most checks use small made-up entries and hand in
 their own data, so they test the engine and not the content.
