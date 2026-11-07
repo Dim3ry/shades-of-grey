@@ -31,7 +31,7 @@ const BASING_GROUPS = [
 const BASING_TIPS = [
   // ---------- Dry ground ----------
   { key: "sand", group: "ground", name: "Sand", summary: "Dry, pale ground with soft drifts",
-    materials: ["Fine sand, washed and dried", "White glue that dries clear", "A little water", "An old brush you do not mind ruining", "A small sieve or tea strainer"],
+    materials: ["Fine sand, washed and dried", "White glue that dries clear", "A little water", "An old brush you don't mind ruining", "A small sieve or tea strainer"],
     howto: [
       "Paint a thin layer of white glue on the base, one small area at a time.",
       "Sprinkle sand over the glue, then tip the base over a tray to shake off the extra.",
@@ -77,7 +77,7 @@ const BASING_TIPS = [
     howto: [
       "Glue fine sand over the base with white glue and let it dry.",
       "Paint it using the paint steps below.",
-      "Scrape a little soft grey chalk into powder, and do not breathe in the dust.",
+      "Scrape a little soft grey chalk into powder, and don't breathe in the dust.",
       "Brush the powder over the dry paint with a soft brush, with more in the hollows.",
     ],
     paintSteps: [
@@ -108,7 +108,7 @@ const BASING_TIPS = [
       "Build up a low wall of putty along one side, working fast and wearing gloves, as it sets quickly.",
       "Face the wall with planks and lay short strips across the floor as duckboards, nicking the wood for damage.",
       "Push thick mud into every gap, slope it down to the rim and part bury a plank end or two.",
-      "Tint a few planks with thin red, green or yellow filters so the wood does not read as one board.",
+      "Tint a few planks with thin red, green or yellow filters so the wood doesn't read as one board.",
       "Gloss the hollows for puddles, then brush thinned mud over the tufts so they look trampled.",
     ],
     paintSteps: [
@@ -122,7 +122,7 @@ const BASING_TIPS = [
     howto: [
       "Glue the skulls in a loose cluster, some tilted and some sunk so only the top of the dome shows.",
       "Coat the rest of the base in glue, sprinkle dried earth over it and tap off the extra.",
-      "Leave the skulls until you paint the base, so you are not working round them twice.",
+      "Leave the skulls until you paint the base, so you aren't working round them twice.",
       "Paint and drybrush the earth, then base the skulls bone and run a thinned brown shade into them.",
       "Wipe the wash off the tops with a fingertip while wet, then pick out the domes last.",
     ],
@@ -140,7 +140,7 @@ const BASING_TIPS = [
       "Press in a few rocks and glue spare tentacles upright in a cluster as an odd plant.",
       "Prime it all white, then flood bright inks into each other while wet so the colours run and mix.",
       "Drybrush white over the raised texture and work a purple wash into dips and round the plants.",
-      "Glue on bright tufts, open their tips with tweezers, then varnish matt, as inks dry shiny.",
+      "Glue on bright tufts, open their tips with tweezers, then varnish matte, as inks dry shiny.",
     ],
     paintSteps: [
       { technique: "Prime", coats: 1, mix: 100, look: "a bright white", hex: "#ffffff", note: "A white start keeps the inks bright." },
@@ -149,7 +149,7 @@ const BASING_TIPS = [
       { technique: "Wash", coats: 1, mix: 50, look: "a deep purple", hex: "#4a2a6a", note: "Into level changes and under plants to separate them." },
     ] },
   { key: "ash-wastes", group: "ground", name: "Grey ash wasteland", summary: "Dead grey ash drifting over dark rocks and half buried scrap",
-    materials: ["Fine grain texture paste", "Bark pieces or slate chips for dark rock", "Sand and a few small stones", "Small scrap bits such as canisters or pipes", "A damp sponge", "Matt varnish"],
+    materials: ["Fine grain texture paste", "Bark pieces or slate chips for dark rock", "Sand and a few small stones", "Small scrap bits such as canisters or pipes", "A damp sponge", "Matte varnish"],
     howto: [
       "Glue the bark rocks and scrap down first, leaving room for the feet.",
       "Spread fine texture paste thickly over the open ground and bank it up against the rocks and scrap.",
@@ -159,7 +159,7 @@ const BASING_TIPS = [
     ],
     paintSteps: [
       { technique: "Base coat", coats: 2, mix: 100, look: "a near black", hex: "#1c1c1e", note: "Rocks only, with a broken edge where the ash meets them." },
-      { technique: "Wash", coats: 2, mix: 30, look: "a dark grey", hex: "#4a4c4f", note: "Grey thinned right down with water and a drop of matt varnish." },
+      { technique: "Wash", coats: 2, mix: 30, look: "a dark grey", hex: "#4a4c4f", note: "Grey thinned right down with water and a drop of matte varnish." },
       { technique: "Wash", coats: 1, mix: 30, look: "a charcoal", hex: "#2a2b2d", note: "Dot it into tracks and hollows while the grey is still wet." },
       { technique: "Dry brush", coats: 1, mix: 100, look: "a warm white", hex: "#e8e6e1", note: "A very light dusting for the pale flecks in ash." },
     ] },
@@ -170,7 +170,7 @@ const BASING_TIPS = [
       "For wind ripples, first drag a flat shaper through a thin layer of putty in wavy, crossing lines.",
       "Dip the base in sand, tap off the loose grains, and glue driftwood and props in so they look half buried.",
       "Once painted, run clear water gel along the lowest edge for lapping surf.",
-      "Keep the base darker overall and the props few, so it does not draw the eye from the model.",
+      "Keep the base darker overall and the props few, so it doesn't draw the eye from the model.",
     ],
     paintSteps: [
       { technique: "Base coat", coats: 2, mix: 100, look: "a warm sand", hex: "#b49a6e", note: "Cover the sand and the bare ground." },
@@ -211,14 +211,14 @@ const BASING_TIPS = [
   { key: "crackle-earth", group: "ground", name: "Crackle paint earth", summary: "Crackle paint blended into sand for sun baked cracked ground",
     materials: ["Crackle texture paint", "Gritty texture paste or fine sand", "An old brush and a damp brush", "Small rocks or skulls", "Short dry beige tufts", "Two-part epoxy putty, for crisper cracks"],
     howto: [
-      "Lay a thin coat of sandy paste or brown paint first, so cracks do not open onto bare plastic.",
+      "Lay a thin coat of sandy paste or brown paint first, so cracks don't open onto bare plastic.",
       "Mix a little grit into the crackle and lay it thicker for bigger cracks, but too thick and it chips off.",
       "Blend it into the sand with a damp brush, push rocks into the sandy parts, and let it dry fully.",
-      "Seal the dry crackle with varnish or thinned white glue so washes do not loosen it and chunks stay put.",
+      "Seal the dry crackle with varnish or thinned white glue so washes don't loosen it and chunks stay put.",
       "For crisper cracks, press a very thin rolled sheet of putty over a bumpy base and crack it with a brush end.",
     ],
     paintSteps: [
-      { technique: "Base coat", coats: 2, mix: 100, look: "a pale sandy yellow", hex: "#d2b886", note: "Thin it a little so it does not fill the cracks." },
+      { technique: "Base coat", coats: 2, mix: 100, look: "a pale sandy yellow", hex: "#d2b886", note: "Thin it a little so it doesn't fill the cracks." },
       { technique: "Wash", coats: 1, mix: 40, look: "a dull red brown", hex: "#5a3a2a", note: "Sparingly into the cracks, with a darker wash in the deepest ones." },
       { technique: "Dry brush", coats: 2, mix: 100, look: "a pale bone", hex: "#e8dcb8", note: "Many light passes, crackle needs more than sand." },
       { technique: "Glaze", coats: 1, mix: 20, look: "a warm brown", hex: "#8a5a3a", note: "Very thin near rocks, then drybrush again." },
@@ -253,13 +253,13 @@ const BASING_TIPS = [
       { technique: "Base coat", coats: 2, mix: 100, look: "a dark brown", hex: "#2e2218", note: "Neat coats on the rim." },
     ] },
   { key: "dusty-wasteland", group: "ground", name: "Dusty wasteland", summary: "Dry dusty earth with a rust wash, pigment and dry tufts",
-    materials: ["Sandy texture paste or fine dry earth", "A rust or brown shade", "Earth pigment, or scraped soft pastel, in a dark, mid and light tone", "A bone coloured paint", "Dry beige grass tufts", "Matt varnish"],
+    materials: ["Sandy texture paste or fine dry earth", "A rust or brown shade", "Earth pigment, or scraped soft pastel, in a dark, mid and light tone", "A bone coloured paint", "Dry beige grass tufts", "Matte varnish"],
     howto: [
       "Spread texture paste over the base, thinning it with water near the feet, and let it dry fully.",
-      "Wash it all with a thinned rust or brown, with two drops of matt varnish stirred in so it dries flat.",
+      "Wash it all with a thinned rust or brown, with two drops of matte varnish stirred in so it dries flat.",
       "Drybrush bone over the texture, or a dark grey for a sooty, burnt look.",
       "Dab on pigment, mostly dark, less mid and a touch of light, carry it up the feet and fix it with a little water.",
-      "Stick a few dry tufts on at random, not in rows, paint the rim brown and seal with matt varnish.",
+      "Stick a few dry tufts on at random, not in rows, paint the rim brown and seal with matte varnish.",
     ],
     paintSteps: [
       { technique: "Wash", coats: 1, mix: 50, look: "a rust brown", hex: "#7a4426", note: "Over all the texture, thinned with water." },
@@ -270,7 +270,7 @@ const BASING_TIPS = [
   { key: "real-soil-bases", group: "ground", name: "Real soil and fine dirt", summary: "Sifted garden soil fine enough to keep small or sculpted bases crisp",
     materials: ["Garden soil, dried right through", "An old blender or mortar for grinding", "A nylon stocking or very fine sieve", "White glue thinned with water", "A tub kept for fine dirt only", "Thin super glue"],
     howto: [
-      "Dry the soil fully so it does not clump, grind it fine, pick out stones and twigs, and sift it through a stocking.",
+      "Dry the soil fully so it doesn't clump, grind it fine, pick out stones and twigs, and sift it through a stocking.",
       "Keep a tub of only the finest dirt, as coarse grains look like boulders, and save any tiny roots for later.",
       "Brush thinned white glue over the base, not letting it pool and fill any sculpted detail.",
       "Dip the base into the tub, or spoon dirt over it, and tap off the excess once it grips.",
@@ -349,7 +349,7 @@ const BASING_TIPS = [
       "Thin some with water and stab it onto the boots, or flick it from a stiff brush with a toothpick for spatter.",
       "Press footprint dips into the wet mud with the back of a brush.",
       "Glue on tufts, then brush thinned mud over them so they look trampled, not fresh.",
-      "Once painted, leave raised mud matt and lighter, and gloss the dips and lowest mud so it looks fresh and wet.",
+      "Once painted, leave raised mud matte and lighter, and gloss the dips and lowest mud so it looks fresh and wet.",
     ],
     paintSteps: [
       { technique: "Base coat", coats: 2, mix: 100, look: "a dark warm brown", hex: "#3e2b20", note: "Over a dark primer, on every base at once so they match." },
@@ -506,7 +506,7 @@ const BASING_TIPS = [
       { technique: "Dry brush", coats: 2, mix: 100, look: "an icy light blue", hex: "#9ec4dc", note: "Brush up the wave faces with plenty of paint, mixing lighter each pass." },
       { technique: "Dry brush", coats: 1, mix: 100, look: "a white", hex: "#f6f8fa", note: "Only on the crests and where the foam hits the rock." },
       { technique: "Dry brush", coats: 1, mix: 100, look: "a tan stone", hex: "#b8a07a", note: "On the rock, over a dark brown base coat." },
-      { technique: "Varnish", coats: 1, mix: 100, look: "a clear gloss", hex: "#eef3f6", note: "On the water only, so it looks wet against the matt rock." },
+      { technique: "Varnish", coats: 1, mix: 100, look: "a clear gloss", hex: "#eef3f6", note: "On the water only, so it looks wet against the matte rock." },
     ] },
   { key: "snow-bases", group: "cold", name: "Snow drifts", summary: "Gritty white snow over cold blue ground, with rocks pushed bright",
     materials: ["Cork pieces and a few small rocks", "Gritty texture paste", "A light textured modelling paste or ready-mixed snow paste", "Fine snow powder and a pinch of pearly sparkle powder", "Or white glue thickened with baking soda and a drop of white", "An old brush and a pot of water"],
@@ -590,7 +590,7 @@ const BASING_TIPS = [
       { technique: "Edge highlight", coats: 1, mix: 100, look: "a bright yellow green", hex: "#b5d334", note: "Along leaf edges with the side of the brush, where a slip just looks natural." },
     ] },
   { key: "autumn-leaf-litter", group: "plants", name: "Autumn leaf litter", summary: "Fallen leaves in brown, red and gold over dark earth, with faded grass and a twig",
-    materials: ["Fine soil or dark sand, white glue and water", "Dried birch seeds or leaf scatter", "Small twigs or lichen covered roots", "Golden or straw coloured tufts", "Grass fibres and a little matt varnish", "Tweezers"],
+    materials: ["Fine soil or dark sand, white glue and water", "Dried birch seeds or leaf scatter", "Small twigs or lichen covered roots", "Golden or straw coloured tufts", "Grass fibres and a little matte varnish", "Tweezers"],
     howto: [
       "Paint the bare base dark brown, then spread on soil, glue and water mixed in equal parts.",
       "Press twigs and a stone or two into the wet paste and leave it at least an hour.",
@@ -639,7 +639,7 @@ const BASING_TIPS = [
       "Mix the crumbs with white glue and well thinned paint into a thick paste that holds together.",
       "Lift some on the brush handle, set it on the base and press it into shape with the blunt end.",
       "Build each bush up in clumps for height, as loose crumbs sprinkled on glue only lie flat.",
-      "Let the wet paint tint the ground round each bush, and keep colours muted so they do not pull the eye.",
+      "Let the wet paint tint the ground round each bush, and keep colours muted so they don't pull the eye.",
     ],
     paintSteps: [
       { technique: "Base coat", coats: 1, mix: 100, look: "a dark foliage green", hex: "#2f4a26", note: "Mixed into the paste, so the bush is coloured as it goes on." },
@@ -746,7 +746,7 @@ const BASING_TIPS = [
       { technique: "Wet blend", coats: 1, mix: 100, look: "a dark green", hex: "#1f3a24", note: "Pond bed, dark in the deep end blending to grass green at the shore." },
       { technique: "Glaze", coats: 1, mix: 20, look: "a near black", hex: "#0e0e0e", note: "Only in the deepest part of the pond." },
       { technique: "Wash", coats: 1, mix: 40, look: "a murky green", hex: "#4a5a2a", note: "Into the mud for algae, feathered out at the edges." },
-      { technique: "Varnish", coats: 1, mix: 100, look: "a wet gloss", hex: "#e8eef0", note: "Gloss over the matt wash so the mud looks boggy." },
+      { technique: "Varnish", coats: 1, mix: 100, look: "a wet gloss", hex: "#e8eef0", note: "Gloss over the matte wash so the mud looks boggy." },
     ] },
   { key: "tinted-moss-on-rocks", group: "plants", name: "Tinted moss", summary: "Green tint dropped onto drybrushed rocks for quick moss",
     materials: ["A finished, drybrushed rocky or earth base", "A light green one-coat paint", "A darker green one-coat paint", "A clean, very wet brush", "A pale bone paint", "Fine green scatter and thin super glue, for raised moss"],
@@ -780,7 +780,7 @@ const BASING_TIPS = [
   { key: "worn-grass-pitch", group: "plants", name: "Worn grass pitch", summary: "Cracked dry earth, tufts and faded white lines like a playing field",
     materials: ["Crackle texture paste", "Gritty texture paste", "A beige brown paint and wash", "Grass tufts in two colours, or grass fibres", "A white paint", "Masking tape and a small sponge"],
     howto: [
-      "Paint the base first so any wide cracks do not show bare black.",
+      "Paint the base first so any wide cracks don't show bare black.",
       "Mix crackle with a little gritty paste and spread it on, then let it dry fully.",
       "Wash with a beige brown and drybrush the raised chunks.",
       "Stick on tufts in two shades with their tops pressed different ways, or trim grass fibres flat for short turf.",
@@ -871,13 +871,13 @@ const BASING_TIPS = [
       { technique: "Dry brush", coats: 1, mix: 100, look: "a bone", hex: "#e2d6b6", note: "Heavy on the stone and very light over the pattern." },
     ] },
   { key: "rusty-metal-grating", group: "stone", name: "Rusty metal grating", summary: "Punched metal sheet over a dark void, with one plate lifted, worn paint and rust",
-    materials: ["Thin punched metal sheet or fine mesh", "Small scissors or clippers and fine sandpaper", "Masking tape to protect the base rim", "Super glue", "Texture paste or sand for the ground below", "A very matt orange paint or rust pigment"],
+    materials: ["Thin punched metal sheet or fine mesh", "Small scissors or clippers and fine sandpaper", "Masking tape to protect the base rim", "Super glue", "Texture paste or sand for the ground below", "A very matte orange paint or rust pigment"],
     howto: [
       "Cut the sheet with small scissors or clippers and sand every cut edge, as they can be razor sharp.",
       "Tape the rim, glue the sheet down, and cut one piece free so it can sit raised as a lifted plate.",
       "Build some texture or a gap under the lifted plate, then undercoat it black so the void stays dark.",
       "Sponge silver on the edges and raised pattern for worn paint, then wash grime into the holes.",
-      "Stipple very matt rust on low edges and round fixings, as rust is never shiny.",
+      "Stipple very matte rust on low edges and round fixings, as rust is never shiny.",
     ],
     paintSteps: [
       { technique: "Prime", coats: 1, mix: 100, look: "a black", hex: "#111111", note: "Keeps everything under the grating in shadow." },
@@ -903,7 +903,7 @@ const BASING_TIPS = [
       "Plan the rocks while building the model so the feet still fit, then super glue them down.",
       "If a figure stands on a rock, pin through foot, rock and base, as glue alone can snap.",
       "For a riverbed, roll leftover putty into smooth pebbles and scatter sand between them.",
-      "Fill any gaps a brush could not reach later with extra small rocks before priming.",
+      "Fill any gaps a brush couldn't reach later with extra small rocks before priming.",
     ],
     paintSteps: [
       { technique: "Base coat", coats: 2, mix: 100, look: "a near black", hex: "#1e1c1a", note: "Right into every layer of the bark." },
@@ -942,13 +942,13 @@ const BASING_TIPS = [
       { technique: "Dry brush", coats: 1, mix: 100, look: "a near white", hex: "#f2f2ee", note: "Only on slab edges and broken corners." },
     ] },
   { key: "dungeon-flagstones", group: "stone", name: "Dungeon flagstones", summary: "Dark, damp stone flags for dungeon and indoor scenes",
-    materials: ["A base with sculpted flagstones", "A grey undercoat and black rim paint", "A dark grey paint", "Brown and green washes", "A small soft drybrush and matt varnish", "Fine sand or a thinned earth texture paint"],
+    materials: ["A base with sculpted flagstones", "A grey undercoat and black rim paint", "A dark grey paint", "Brown and green washes", "A small soft drybrush and matte varnish", "Fine sand or a thinned earth texture paint"],
     howto: [
       "Prime grey, paint the stones dark grey up to the feet, and tint a few single slabs a little warmer or cooler.",
       "For worn joints, brush thinned earth texture or fine sand over the stones so it settles in the gaps.",
       "Wash brown and green at the same time, swapping at random so they mix into a damp, mossy look.",
       "Let the wash dry fully, then wipe almost all paint off the brush before drybrushing the fine texture.",
-      "Paint the rim matt black and seal with matt varnish to take the shine off the washes.",
+      "Paint the rim matte black and seal with matte varnish to take the shine off the washes.",
     ],
     paintSteps: [
       { technique: "Base coat", coats: 1, mix: 100, look: "a dark grey", hex: "#4a4d50", note: "Even coat over all the stone." },
@@ -957,12 +957,12 @@ const BASING_TIPS = [
       { technique: "Dry brush", coats: 1, mix: 100, look: "a pale bone", hex: "#ece0c0", note: "A very light dusting to finish." },
     ] },
   { key: "foam-hills", group: "stone", name: "Foam hills and cliffs", summary: "Expanding foam carved into light hills and cliffs for display boards",
-    materials: ["A wooden board", "A can of expanding foam, or sheets of extruded foam board", "A long snap-off blade knife and a fine hobby knife", "Fine surface filler", "Matt sealer and black paint", "Model trees, tufts and moss"],
+    materials: ["A wooden board", "A can of expanding foam, or sheets of extruded foam board", "A long snap-off blade knife and a fine hobby knife", "Fine surface filler", "Matte sealer and black paint", "Model trees, tufts and moss"],
     howto: [
       "Spray foam where hills should go, using less than you think as it grows, or stack cut foam board layers.",
       "Carve slopes and cliff faces with the long blade in several passes, changing blades often.",
-      "Slice cracks with a fine knife first, then widen them with a blunt tool so the foam does not tear.",
-      "Spread fine filler over the bubbles and steps, then coat it in matt sealer mixed with black, not plain white glue.",
+      "Slice cracks with a fine knife first, then widen them with a blunt tool so the foam doesn't tear.",
+      "Spread fine filler over the bubbles and steps, then coat it in matte sealer mixed with black, not plain white glue.",
       "Paint it and add trees, bushes and tufts, but never put super glue on bare foam, as it melts it.",
     ],
     paintSteps: [
@@ -1046,7 +1046,7 @@ const BASING_TIPS = [
       { technique: "Dry brush", coats: 1, mix: 100, look: "a dark grey", hex: "#4a4d50", note: "Heavy, buffed onto the panels, brightest just off centre like a spotlight." },
       { technique: "Wash", coats: 1, mix: 60, look: "a brown-black grime", hex: "#2e2419", note: "Swap between brown and black for uneven grime." },
       { technique: "Dry brush", coats: 1, mix: 100, look: "a light grey", hex: "#9a9c9e", note: "Light pass to catch the panel edges." },
-      { technique: "Stipple", coats: 1, mix: 100, look: "an orange rust", hex: "#c2561e", note: "Small random patches, kept matt, with a dot of dark gloss for spilt oil." },
+      { technique: "Stipple", coats: 1, mix: 100, look: "an orange rust", hex: "#c2561e", note: "Small random patches, kept matte, with a dot of dark gloss for spilt oil." },
     ] },
   { key: "slate-shards", group: "stone", name: "Slate shards", summary: "Real slate pushed up through the earth for broken, burst ground",
     materials: ["A natural slate tile broken with a hammer", "Earth texture paste or two-part epoxy putty", "Fine dry garden soil", "White glue", "A dark brown shade", "Earth coloured pigment powders"],
@@ -1054,7 +1054,7 @@ const BASING_TIPS = [
       "Wrap the slate in a cloth before you hit it, then pick the best sharp shards.",
       "Glue the shards so they angle upward, as if the ground has burst open.",
       "Blend the gaps round them with paste or putty and sprinkle soil on while wet, piling more against the shards.",
-      "Once dry, lock any loose soil with thinned white glue so it does not shed under the brush.",
+      "Once dry, lock any loose soil with thinned white glue so it doesn't shed under the brush.",
       "Paint and wash the whole base, then dab pigments on for colour variation.",
     ],
     paintSteps: [
@@ -1070,7 +1070,7 @@ const BASING_TIPS = [
       "Lay broken slabs round it, fill cracks with chopped frame plastic or crushed rubble, the rest with texture paste.",
       "Stain everything a thin grey-brown, then wash brown and olive together without rinsing for grime.",
       "Drybrush the slabs grey and pick out a few bricks in two or three warm tones, starting lighter than you want.",
-      "Add rust on metal, red brick dust on broken bricks, then pale dust on the ground and feet, fixed with matt varnish.",
+      "Add rust on metal, red brick dust on broken bricks, then pale dust on the ground and feet, fixed with matte varnish.",
     ],
     paintSteps: [
       { technique: "Wash", coats: 1, mix: 20, look: "a brown-grey stain", hex: "#4b4440", note: "Heavily thinned over everything." },
@@ -1084,8 +1084,8 @@ const BASING_TIPS = [
     howto: [
       "Prime it all black and dust grey from above.",
       "Drybrush the stone deep ivory with a circular motion, leaving grey in the recesses.",
-      "Paint soil brown, wash brown and green at once, and let it dry fully so the next drybrush does not smear.",
-      "Bring the ivory back, dust pale bone over it all, and paint the rim matt black.",
+      "Paint soil brown, wash brown and green at once, and let it dry fully so the next drybrush doesn't smear.",
+      "Bring the ivory back, dust pale bone over it all, and paint the rim matte black.",
       "For veined marble, airbrush pale greys and white through a wipe stretched tight over the base, then gloss it.",
     ],
     paintSteps: [

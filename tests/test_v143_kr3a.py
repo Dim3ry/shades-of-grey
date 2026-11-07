@@ -14,6 +14,7 @@ def check(name, ok, detail=""):
     results.append(bool(ok))
     print(("PASS " if ok else "FAIL ") + name + ("" if ok else f"  -> {detail}"))
 
+# KR3c: the app now spells "matte" and uses contractions, so the expected new text below says "matte" where it said "matt".
 # (list, key, new text, old text)
 GUIDES = [
     ("disguising-rough-sculpts", "Or play up odd features with bold, characterful painting instead of hiding them.", "Lean into odd features"),
@@ -29,7 +30,7 @@ TIPS = [
     ("blending-base-textures", "so they look like one ground", "so they read as one ground"),
     ("wet-muddy-ground", "trampled, not fresh", "trampled rather than fresh"),
     ("forest-floor", "Garden soil, baked dry", "Dry garden soil, baked dry"),
-    ("swamp-and-bog", "Gloss over the matt wash so the mud looks boggy.", "make the mud read as boggy"),
+    ("swamp-and-bog", "Gloss over the matte wash so the mud looks boggy.", "make the mud read as boggy"),
     ("trees-from-twigs", "so it looks like bark", "so it reads as bark"),
     ("wooden-plank-floors", "small gaps here and there", "small gaps for interest"),
     ("coloured-liquid-pools", "so it looks deeper in the middle", "so it reads deeper in the middle"),
