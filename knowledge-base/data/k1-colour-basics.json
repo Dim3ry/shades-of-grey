@@ -1498,7 +1498,8 @@
         "pale-skin",
         "painting-dark-skin",
         "undead-and-sickly-skin",
-        "colour-variation-in-skin"
+        "colour-variation-in-skin",
+        "real-skin-tone-range"
       ],
       "keywords": [
         "mixing skin",
@@ -1837,7 +1838,8 @@
         "hue-value-saturation",
         "types-of-contrast",
         "wash-vs-contrast-paint",
-        "using-value"
+        "using-value",
+        "more-painting-terms"
       ],
       "keywords": [
         "painting terms",
@@ -2348,7 +2350,8 @@
         "checking-values-in-greyscale",
         "pushing-contrast",
         "types-of-contrast",
-        "leave-room-for-highlights"
+        "leave-room-for-highlights",
+        "painting-with-colour-blindness"
       ],
       "keywords": [
         "value",

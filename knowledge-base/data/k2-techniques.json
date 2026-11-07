@@ -126,7 +126,8 @@
         "masking-tape-stripes",
         "hazard-stripes",
         "airbrush-basics",
-        "camouflage-patterns"
+        "camouflage-patterns",
+        "masking-fluid-by-brush"
       ],
       "keywords": [
         "masking tape",
@@ -339,7 +340,8 @@
         "edge-highlighting",
         "panel-gradients",
         "volumetric-highlights",
-        "painting-vehicles-by-brush"
+        "painting-vehicles-by-brush",
+        "painting-robots-and-mechs"
       ],
       "keywords": [
         "angular",
@@ -373,7 +375,8 @@
         "contrast-paint-order",
         "contrast-medium",
         "contrast-over-coloured-base",
-        "wash-vs-contrast-paint"
+        "wash-vs-contrast-paint",
+        "airbrushing-one-coat-paints"
       ],
       "keywords": [
         "contrast paint",
@@ -1137,7 +1140,8 @@
         "airbrush-masking",
         "urban-camo",
         "woodland-camo",
-        "two-tone-cloaks"
+        "two-tone-cloaks",
+        "digital-pixel-camo"
       ],
       "keywords": [
         "camo",
@@ -1482,7 +1486,8 @@
         "basing-finishing-touches",
         "dust-on-legs",
         "designing-a-base",
-        "painting-base-rims"
+        "painting-base-rims",
+        "movement-trays"
       ],
       "keywords": [
         "matching bases",
@@ -1831,7 +1836,8 @@
         "selective-gloss",
         "slime-and-goo",
         "wet-muddy-ground",
-        "green-water-stains"
+        "green-water-stains",
+        "rain-and-wet-surfaces"
       ],
       "keywords": [
         "wet effect",
@@ -3499,7 +3505,8 @@
         "glow-on-surroundings",
         "fluorescent-paints",
         "glowing-orbs",
-        "osl-basics"
+        "osl-basics",
+        "lights-in-models"
       ],
       "keywords": [
         "glowing source",
@@ -3919,7 +3926,8 @@
         "painting-chips-and-scratches",
         "sponge-chipping",
         "where-chips-go",
-        "layered-chips"
+        "layered-chips",
+        "salt-weathering"
       ],
       "keywords": [
         "hairspray chipping",
@@ -4673,7 +4681,8 @@
         "iridescent-colour-shift",
         "painting-feathers",
         "stippling-to-blend",
-        "drybrushing"
+        "drybrushing",
+        "painting-insect-wings"
       ],
       "keywords": [
         "membrane wings",
@@ -5147,7 +5156,8 @@
         "nmm-steel",
         "nmm-reflections",
         "nmm-gold",
-        "true-metal-technique"
+        "true-metal-technique",
+        "first-nmm-sword"
       ],
       "keywords": [
         "nmm",
@@ -5414,7 +5424,7 @@
         "Blot almost all the spirit off a soft flat brush, so it leaves no streak on card, and pull it through the dots in one direction, usually top to bottom. Use many light strokes until they fade into soft streaks. On curves, turn the model so the streaks follow the curve.",
         "For soft stains, dab small dots of thicker oil into a still-wet filter near hems and edges. They spread as if muddy or worn. For a local colour shift, put a little oil in one spot, such as a hatch corner, and blend its edge out until no line shows. A red brown on a sand panel reads as dirt.",
         "Common problems: big blobs turn into heavy streaks, too much spirit turns dots into a pooling wash, and dirty spirit spreads a murky tint, so change it often. Do not scrub. Seal any scratch with a dab of gloss first, as spirit under acrylic can lift it.",
-        "Anything you dislike wipes away with clean spirit. Use a synthetic or old brush, as solvent damages natural hair. Let it dry overnight, then varnish satin or matt."
+        "Anything you dislike wipes away with clean spirit. Use a synthetic or old brush, as solvent damages natural hair. Let it dry at least overnight, longer if it is still tacky, then varnish satin or matt."
       ],
       "related": [
         "oil-paints-on-models",
@@ -5443,7 +5453,7 @@
       "title": "Using oil paints on models",
       "summary": "Oils go over dry acrylics; let them cure, seal with matte varnish, then go back in with acrylics and inks.",
       "body": [
-        "Oils work over acrylics that have dried for about half an hour. Thin them with odourless mineral spirits and clean the brush with spirits, not water. Dry acrylic is not harmed by them; damage comes from scrubbing, or from thin paint on unprimed plastic, so always prime.",
+        "Oils work over acrylics once the paint has cured, ideally overnight, or over a coat of satin or gloss varnish. Thin them with odourless mineral spirits and clean the brush with spirits, not water. Cured acrylic is not harmed by them; damage comes from scrubbing, from fresh paint, or from thin paint on unprimed plastic, so always prime.",
         "A satin surface lets oils move freely, gloss helps washes run into recesses, and very matt surfaces grab the paint. Use a paper palette or baking parchment, which soaks up excess oil; no wet palette is needed. Stiff synthetic brushes and cosmetic sponges for wiping back cover most jobs. Work with a window open and low odour spirit.",
         "Oils stay wet for hours, so you can blend and wipe them back long after acrylics would have dried, and a mistake resets with a brush of spirit. They suit smooth skin and highlights on purples and blues that go chalky with white. Keep crisp lines and texture for acrylics.",
         "Oil work tones down what is underneath, so push the acrylic shading and highlights a little further beforehand. Keep the brush loaded with paint, not solvent: a wet brush dissolves the layer below. Change colour by wiping the brush on paper towel rather than rinsing it.",
@@ -5484,9 +5494,9 @@
         "Mix only a little at a time in a clean well. The spirit evaporates fast and changes the mix, and old dried oil left in a pot can stain parts so they will not clean back.",
         "Touch the brush tip into panel lines, round rivets and into recesses only. Capillary action carries it along the line. A slightly thicker mix stays put and stays dark. Too thin and it runs out of the lines and muddies the panels.",
         "After 20 to 30 minutes, lift stray marks with a brush or cotton bud just damp with clean spirits. Wipe across the recess, not along it, so you do not drag the wash out, and keep each touch brief. If a pool has dried as a ring, buff it with small circles of a clean dry brush. Pull a few short streaks down for a weathered look.",
-        "Leave it overnight, then matte or satin varnish to kill the shine and give acrylics something to grip. Redraw any lines you lost with a fine brush and dark brown acrylic, and finish the last highlights by brush. If the wash dried bitty or too pale, give it a second pass before varnishing.",
+        "Leave it at least overnight, until a hidden spot is no longer tacky, then matte or satin varnish to kill the shine and give acrylics something to grip. Redraw any lines you lost with a fine brush and dark brown acrylic, and finish the last highlights by brush. If the wash dried bitty or too pale, give it a second pass before varnishing.",
         "For quick verdigris, pin wash a thinned turquoise oil into cracks on bronze and brass. Keep dark washes off bright metal you want to stay shiny. Dark lines even work on white areas, where they read as cast shadow.",
-        "If the wash stained the paint, the surface was not sealed. If base colour comes off, you rubbed too long, as spirit dissolves acrylic. Even dried oil wash lifts with spirit and can be redone. Clean brushes straight after, as solvent wicks into the ferrule."
+        "If the wash stained the paint, the surface was not sealed. If base colour comes off, you rubbed too long, as rubbing with spirit lifts acrylic wherever the varnish is thin or missing. Even dried oil wash lifts with spirit and can be redone. Clean brushes straight after, as solvent wicks into the ferrule."
       ],
       "related": [
         "panel-lining",
@@ -5587,8 +5597,8 @@
       "body": [
         "Mix artist oil paint with odourless mineral spirits or white spirit until no lumps remain. Never thin oils with water. A dark brown, sepia, purple or a colour that suits the scheme, such as grey green over green, is more interesting than plain black.",
         "Thin it about like skim milk for shading, or roughly equal parts paint and spirit for a strong wash. Use little or no spirit for heavy grime. Very thin mixes can split and look grainy, or need two coats. Test on paper towel: a clear ring of spirit running ahead means add paint; if it will not spread, add spirit.",
-        "Gloss varnish helps the wash flow and wipe off, but is optional over smooth metallic paint. Acrylics underneath need only about half an hour to dry. Use an old synthetic brush, and keep spirit away from putty adhesive, which turns to sticky goo.",
-        "Brush it over the area gently with a big soft brush, ending each stroke in a recess. Spirit does not dissolve acrylic, but scrubbing a wet surface can lift it. If a puddle forms, blot the brush on paper and touch it to the pool to soak it up.",
+        "Gloss varnish helps the wash flow and wipe off, but is optional over smooth metallic paint. Over bare acrylic, let the paint cure first, ideally overnight, as fresh paint lifts more easily; over varnish, wait until the varnish is dry. Use an old synthetic brush, and keep spirit away from putty adhesive, which turns to sticky goo.",
+        "Brush it over the area gently with a big soft brush, ending each stroke in a recess. Spirit barely touches cured acrylic, but scrubbing a wet surface can lift it. If a puddle forms, blot the brush on paper and touch it to the pool to soak it up.",
         "It flows into recesses evenly and dries without tide marks. Wait until the spirit evaporates, from a few minutes to an hour. The longer it sits, the more it tints the colours below. On a batch, go back to the first model every 10 to 20.",
         "Wipe the raised areas with a small makeup sponge, turning to a clean side often and pressing lightly so you do not drag it out of the recesses. Cotton buds leave fibres. A brush with the faintest trace of spirit lifts oil cleanly off highlights. On metal, dab it off only where you want shine.",
         "Once dry, matte varnish to lock it in before painting acrylics over it. Do not leave a very thin mix overnight before cleaning up; it gets hard to shift after a few hours.",
@@ -5598,7 +5608,8 @@
         "oil-pin-wash",
         "enamel-washes",
         "metal-primer-speed-method",
-        "applying-washes"
+        "applying-washes",
+        "first-oil-paints"
       ],
       "keywords": [
         "oil wash",
@@ -9955,7 +9966,8 @@
         "stripping-paint",
         "fix-a-paint-job-you-hate",
         "improving-your-painting",
-        "applying-washes"
+        "applying-washes",
+        "fixing-chipped-paint"
       ],
       "keywords": [
         "old models",
@@ -10429,7 +10441,8 @@
         "weathering-order",
         "sponge-chipping",
         "streaking-grime-and-rust",
-        "weathering-pigments"
+        "weathering-pigments",
+        "first-weathering-job"
       ],
       "keywords": [
         "weathering",
