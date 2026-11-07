@@ -98,8 +98,8 @@
 
     // The red banner at the top. It stays up while saving keeps failing, and goes away
     // by itself as soon as a save works again (before v14 you were warned only once).
-    const TOO_NEW_MESSAGE = "A newer version of Minifolio has saved your data on this device, so this older copy " +
-      "has stopped saving to keep that data safe. Nothing has changed. Please reload to update.";
+    const TOO_NEW_MESSAGE = "A newer version of Minifolio saved your data on this device, so this older copy " +
+      "has stopped saving to keep that data safe. Reload to update.";
     function showSaveProblem() {
       saveFailing = true;
       const banner = document.getElementById("save-banner");
@@ -3031,7 +3031,7 @@
           shops.textContent = SHOP_PLAIN_WORDS;
           notes.push(shops);
         }
-        const more = pageMoreInfo("shopping", notes, { label: "Shopping list" });
+        const more = pageMoreInfo("shopping", notes, { name: "How the list works" });
         more.classList.add("shop-more-info");
         head.append(more);
       }
@@ -4226,8 +4226,8 @@
       return false;
     }
     // DS2: photos live in their own, much bigger store, so deleting one frees nothing here; the words about photos went.
-    const FULL_MESSAGE = "Storage on this device is full, so that change couldn't be saved and nothing has changed. " +
-      "Please save a backup, then free some space (for example units you no longer need, or the safety copies).";
+    const FULL_MESSAGE = "Storage on this device is full, so that change couldn't be saved. " +
+      "Save a backup, then free some space (for example units you no longer need, or the safety copies).";
     // v18.3: the right "not saved" message: newer data from a newer version, or full storage.
     function fullMessage() { return dataTooNew ? TOO_NEW_MESSAGE : unreadableParts.length ? unreadableMessage() : FULL_MESSAGE; }
     // DS2: the same message, with a Remove safety copies button when storage is full and there are safety copies to remove.
@@ -8575,7 +8575,7 @@
       card.classList.toggle("hidden", !parts);
       card.innerHTML = "";
       // v52: the explanation sits behind More info
-      if (parts) card.append(parts.text, pageMoreInfo("examples-card", [parts.why], { label: "Examples" }), parts.buttons);
+      if (parts) card.append(parts.text, pageMoreInfo("examples-card", [parts.why], { name: "What's in it" }), parts.buttons);
     }
     // v56: what every examples card holds: the heading line, the explanation (for More info) and the two
     // buttons. Null when nothing is an example any more. The class names stay as they were on each card.
@@ -9287,7 +9287,7 @@
         const img = await loadImage(file);
         record = { id: newPhotoId(), full: await resizeToBlob(img, 1200, 0.82), thumb: await resizeToBlob(img, 240, 0.75) };
       } catch (error) {
-        notify("Sorry, that image couldn't be read.");
+        notify("That image couldn't be read. Try a different photo.");
         return;
       }
       try {
@@ -10751,7 +10751,7 @@
         const emptyRecipesMore = document.createElement("p");
         emptyRecipesMore.className = "hint";
         emptyRecipesMore.textContent = "A recipe is your own step-by-step for a model.";
-        emptyRecipes.append(emptyRecipesLine, pageMoreInfo("recipes-empty", [emptyRecipesMore], { label: "Recipes" }));
+        emptyRecipes.append(emptyRecipesLine, pageMoreInfo("recipes-empty", [emptyRecipesMore], { name: "What's a recipe?" }));
         recipeList.appendChild(emptyRecipes);
       }
       const shown = book.recipes
@@ -10789,7 +10789,7 @@
         meta.className = "meta";
         meta.textContent = [recipe.part, plural(recipe.steps.length, "step"),
                             users ? `used on ${plural(users, "unit")}` : ""].filter(Boolean).join(" · ");
-        const more = buildMoreInfo([meta], { state: infoState(recipeInfoDoor, `recipe-${recipe.id}`), id: `recipe-${recipe.id}-info` });
+        const more = buildMoreInfo([meta], { state: infoState(recipeInfoDoor, `recipe-${recipe.id}`), id: `recipe-${recipe.id}-info`, name: "Recipe details" });
         more.querySelector(".more-info-button").setAttribute("aria-describedby", name.id);
         item.append(button, more);
         recipeList.appendChild(item);
@@ -11309,7 +11309,7 @@
         emptyMore.className = "hint";
         emptyMore.textContent = "A scheme is the look for a whole model, unit or army. It is a bundle of recipes. Here it groups the recipes you use for one faction " +
           "(armour, trim, lenses, base…). Apply it to the whole faction at once, and new units in that faction get it automatically.";
-        empty.append(emptyLine, pageMoreInfo("schemes-empty", [emptyMore], { label: "Schemes" }));
+        empty.append(emptyLine, pageMoreInfo("schemes-empty", [emptyMore], { name: "What's a scheme?" }));
         schemeListEl.appendChild(empty);
         return;
       }
@@ -13614,9 +13614,12 @@
       const show = (isOpen) => {
         state.open = isOpen;
         button.setAttribute("aria-expanded", String(isOpen));
-        const words = isOpen ? (o.closeText || "Less info") : (o.openText || "More info");
-        text.textContent = words;
-        if (o.nameEl) labelWithName(button, words, o.nameEl);   // v55: the visible name of a paint, no paint name in an aria-label
+        // AB10: a fold is named by what it opens (o.name), the same words shut or open; the arrow shows which. o.chevronOnly shows the arrow
+        // alone and keeps o.label as its accessible name. Without either, the old "More info" / "Less info" words stay (nothing in the app does that now).
+        const words = o.name || (isOpen ? (o.closeText || "Less info") : (o.openText || "More info"));
+        text.textContent = o.chevronOnly ? "" : words;
+        if (o.chevronOnly) { button.setAttribute("aria-label", o.label || words); button.classList.add("arrow-only"); }
+        else if (o.nameEl) labelWithName(button, words, o.nameEl);   // v55: the visible name of a paint, no paint name in an aria-label
         else if (o.label) button.setAttribute("aria-label", `${words}: ${o.label}`);
         panel.hidden = !isOpen;
       };
@@ -13664,17 +13667,17 @@
     }
     function foldPageText() {
       const groups = [
-        ["backups", "Backups", ["backup-explain"]],
-        ["stages", "Stages", ["stages-explain"]],
-        ["appearance", "Appearance", ["appearance-note"]],
-        ["counting", "Counting visits", ["counting-note", "counting-effect"]],
-        ["shoplinks", "Shop links", ["shoplinks-note"]],
-        ["faction-colours", "Faction colours", ["faction-colour-hint"]],
-        ["import", "Import", ["import-explain"]],
-        ["your-data", "Your data", ["data-summary", "photo-summary", "storage-note", "restore-examples-hint"]],
-        ["feedback", "Bugs and ideas", ["feedback-explain"]],
-        ["colours", "Colours", ["palette-light-note"]],   // v53
-        ["iphone", "Add to Home Screen", ["iphone-steps"]],   // v53: the warning and the reason stay in view; the steps fold
+        ["backups", "Which one?", ["backup-explain"]],
+        ["stages", "About stages", ["stages-explain"]],
+        ["appearance", "About looks", ["appearance-note"]],
+        ["counting", "What's sent", ["counting-note", "counting-effect"]],
+        ["shoplinks", "Who gets what", ["shoplinks-note"]],
+        ["faction-colours", "About faction colours", ["faction-colour-hint"]],
+        ["import", "What can be imported", ["import-explain"]],
+        ["your-data", "Where it is kept", ["data-summary", "photo-summary", "storage-note", "restore-examples-hint"]],
+        ["feedback", "Who reads it", ["feedback-explain"]],
+        ["colours", "About light mode", ["palette-light-note"]],   // AB10: named by what it opens
+        ["iphone", "The steps", ["iphone-steps"]],   // v53: the warning and the reason stay in view; the steps fold
       ];
       for (const [key, label, ids] of groups) {
         const nodes = ids.map(id => document.getElementById(id)).filter(Boolean);
@@ -13682,7 +13685,7 @@
         const spot = document.createComment("more-info");
         nodes[0].before(spot);
         for (const node of nodes) node.style.margin = "0";
-        spot.replaceWith(pageMoreInfo(key, nodes, { label }));
+        spot.replaceWith(pageMoreInfo(key, nodes, { name: label }));
       }
       showLightNote();   // v53: the Colours note only shows in light mode
     }
@@ -13938,7 +13941,7 @@
       if (compact && !onAdd && !link) {   // v49: the reason and note sit behind a small More info (Compendium rows)
         const more = noteEl ? [why, noteEl] : [why];
         if (pick) more.push(pick.note);
-        text.appendChild(buildMoreInfo(more, { className: "idea-more" }));
+        text.appendChild(buildMoreInfo(more, { className: "idea-more", name: "Why it fits" }));
       } else {
         text.appendChild(why);
         if (noteEl) text.appendChild(noteEl);
@@ -14568,7 +14571,7 @@
         chip.dataset.scheme = s.key;
         chips.appendChild(chip);
       }
-      box.append(title, compactRows(door) ? buildMoreInfo([hint], { state: infoState(door, "starter-hint"), id: door.id("starter-hint-panel"), label: "colour plans" }) : hint);
+      box.append(title, compactRows(door) ? buildMoreInfo([hint], { state: infoState(door, "starter-hint"), id: door.id("starter-hint-panel"), name: "About colour plans" }) : hint);
       if (door.switcher) box.appendChild(buildSchemeSwitch(door, combos ? "combos" : "themes", onView));
       const q = door.search ? searchQuery(st, "starter") : "";
       if (door.search) {   // v37 part 2: the search box (only what comes after it is rebuilt while you type)
@@ -14613,7 +14616,7 @@
         steps.push(step);
         if (hit.alsoOwned) item.firstElementChild.after(alsoOwnedLine(hit, door.addStep ? () => door.addStep(hit.alsoOwned.paint, stepNote) : null, lines, reason));
       }
-      box.append(summary, compactRows(door) ? buildMoreInfo([why], { state: infoState(door, "starter-why"), id: door.id("starter-why-panel"), label: `why ${scheme.name} works` }) : why);
+      box.append(summary, compactRows(door) ? buildMoreInfo([why], { state: infoState(door, "starter-why"), id: door.id("starter-why-panel"), name: "Why it works" }) : why);
       if (pick) { pick.finish(); box.append(pick.all, list, pick.actions); } else box.appendChild(list);
       const share = buildShareRow(door, scheme.name, pick ? pick.shareLines : [...lines, COMPENDIUM_TEXT_FOOT], pick ? pick.shareSteps : steps);
       if (share) box.appendChild(share);
@@ -14700,7 +14703,7 @@
         if (nums) guideNumberChip(chip, r.name, nums.entries.get(r.key));
         chips.appendChild(chip);
       }
-      box.append(title, compactRows(door) ? buildMoreInfo([hint], { state: infoState(door, "detail-hint"), id: door.id("detail-hint-panel"), label: "detail recipes" }) : hint);
+      box.append(title, compactRows(door) ? buildMoreInfo([hint], { state: infoState(door, "detail-hint"), id: door.id("detail-hint-panel"), name: "About detail recipes" }) : hint);
       const q = door.search ? searchQuery(st, "detail") : "";
       if (door.search) {   // v37 part 2: the search box
         const groupName = (DETAIL_GROUPS.find(g => g.key === activeGroup && activeGroup !== "all") || {}).name || "";
@@ -14907,7 +14910,7 @@
         if (nums) guideNumberChip(chip, t.name, nums.entries.get(t.key));
         chips.appendChild(chip);
       }
-      box.append(title, compactRows(door) ? buildMoreInfo([hint], { state: infoState(door, "basing-hint"), id: door.id("basing-hint-panel"), label: "basing tips" }) : hint);
+      box.append(title, compactRows(door) ? buildMoreInfo([hint], { state: infoState(door, "basing-hint"), id: door.id("basing-hint-panel"), name: "About basing tips" }) : hint);
       const q = door.search ? searchQuery(st, "basing") : "";
       if (door.search) {   // v37 part 2: the search box
         const groupName = (BASING_GROUPS.find(g => g.key === activeGroup && activeGroup !== "all") || {}).name || "";
@@ -16724,7 +16727,7 @@
       const caption = document.createElement("p");
       caption.className = "wheel-caption";
       caption.textContent = "In the middle, clockwise from the top right: whites, greys, blacks and metallics.";
-      block.append(hint, svg, pageMoreInfo("wheel-caption", [caption], { label: "Colour wheel" }));   // v53: the caption sits behind More info
+      block.append(hint, svg, pageMoreInfo("wheel-caption", [caption], { name: "Reading the wheel" }));   // v53: the caption sits behind More info
       const open = WHEEL.find(w => w.key === st.wheel);
       if (open) block.appendChild(buildWheelDetail(door, open, items.filter(x => x.at.seg === open.key), redraw));
       body.appendChild(block);
@@ -17918,7 +17921,7 @@
       const detail = document.createElement("p");
       detail.className = "hint";
       // v50: the explanation sits behind More info (its open state is kept while the app is open).
-      const hint = buildMoreInfo([detail], { state: infoState(recipeInfoDoor, "own-card"), id: `own-card-info-${++ownInfoSeq}`, label: "owning these paints" });
+      const hint = buildMoreInfo([detail], { state: infoState(recipeInfoDoor, "own-card"), id: `own-card-info-${++ownInfoSeq}`, name: "Why ask?" });
       const modes = document.createElement("div");
       modes.className = "chips";
       const modeChips = [];
@@ -18072,7 +18075,7 @@
       importIntro.append("Paste your notes (from Google Keep, Reddit, anywhere). Put each part on its own line ending in a colon, like ",
         bold("Eyes:"), ", then one step per line, or several split by commas. Mixes like ", bold("2:1 Dark Red:CM"), " or ", bold("50/50"),
         " work too. You'll see a preview before anything is saved.");
-      card.append(importHead, pageMoreInfo("paste-intro", [importIntro], { label: "Paste recipes" }));
+      card.append(importHead, pageMoreInfo("paste-intro", [importIntro], { name: "How pasting works" }));
       const box = document.createElement("textarea");
       box.id = "import-text";
       box.rows = 8;
@@ -20397,7 +20400,7 @@
       askYesNo(`Replace your current ${plural(models.length, "unit")} with the ${plural(units.length, "unit")} in this copy` +
           (recipesCopy ? " (and its recipes)" : "") + "?", () => {
         if (models.length && suffix !== "-before-recover" && !keepSafetyCopy("-before-recover", !!recipesCopy)) {
-          notify("There isn't room on this device to keep a copy of your current units first, so nothing has changed. Please save a backup first.");
+          notify("No room for a safety copy of your units, so the restore stopped. Save a backup first.");
           return;
         }
         const undoState = { models: JSON.stringify(models), book: JSON.stringify(book), stages: STAGES.slice(), doneFrom: settings.doneFrom };
@@ -20534,8 +20537,8 @@
         if (!models.length || refusedWhilePaused()) return;   // DS1
         // v14: STOP if the safety copy can't be kept, rather than delete with no safety net.
         if (!keepSafetyCopy("-before-delete-all")) {
-          notify("There isn't room on this device to keep a safety copy of your units, so nothing has been deleted. " +
-                "Please press Save backup first, then delete units you no longer need.");   // DS2: deleting photos frees nothing here
+          notify("No room for a safety copy of your units, so nothing was deleted. " +
+                "Save a backup first, then delete units you no longer need.");   // DS2: deleting photos frees nothing here
           return;
         }
         const count = models.length;
@@ -20586,12 +20589,12 @@
       const type = String(file.type || "");
       if (/^(image|video|audio)\//.test(type) || NOT_TEXT_ENDINGS.test(file.name || "")) {
         return /\.(xlsx?|xlsm|numbers)$/i.test(file.name || "") && kind === "csv"
-          ? `"${file.name}" is a spreadsheet file, not a CSV. In your spreadsheet app, use Save as (or Download) → CSV, then import that. Nothing has changed.`
-          : `"${file.name}" isn't ${what} (it looks like a picture or another kind of file). Nothing has changed.`;
+          ? `"${file.name}" is a spreadsheet file, not a CSV. In your spreadsheet app, use Save as (or Download) → CSV, then import that.`
+          : `"${file.name}" isn't ${what} (it looks like a picture or another kind of file).`;
       }
       const limit = kind === "csv" ? MAX_CSV_BYTES : MAX_BACKUP_BYTES;
       if (file.size > limit) {
-        return `"${file.name}" is too big (${sizeText(file.size)}; the limit for ${what} is ${sizeText(limit)}). It may not be the right file. Nothing has changed.`;
+        return `"${file.name}" is too big (${sizeText(file.size)}; the limit for ${what} is ${sizeText(limit)}). It may not be the right file.`;
       }
       return "";
     }
@@ -20819,7 +20822,7 @@
     // ones, so they are refused before anything is touched.
     function refusedWhilePaused() {
       if (!unreadableParts.length) return false;
-      notify("Save the unreadable data as a file, or start again, first. Nothing has changed.");
+      notify("Save the unreadable data as a file, or start again, first.");
       return true;
     }
     // Save it as a file: the saved text exactly as it is (it can't be read as a backup, but nothing in it is lost).
@@ -20912,19 +20915,19 @@
           (parsed.recipes !== undefined && (parsed.recipes === null || typeof parsed.recipes !== "object" || Array.isArray(parsed.recipes))) ||
           (parsed.photoFiles !== undefined && (parsed.photoFiles === null || typeof parsed.photoFiles !== "object" || Array.isArray(parsed.photoFiles))));
         if (wrongShape) {
-          notify("This backup is damaged (part of it isn't laid out the way Minifolio saves it), so it can't be restored safely. Nothing has changed.");
+          notify("This backup is damaged (part of it isn't laid out the way Minifolio saves it), so it was not restored.");
           return;
         }
         // v18.3: a backup saved by a NEWER version of the app might hold things this copy
         // doesn't understand (and would drop), so it asks you to update first.
         if (!isList && Number(parsed.dataVersion) > DATA_VERSION) {
-          notify("This backup was saved by a newer version of Minifolio. Please reload the app to update it, then restore again. Nothing has changed.");
+          notify("This backup was saved by a newer version of Minifolio. Reload the app to update it, then restore again.");
           return;
         }
         // v14: a damaged stage list (blank or repeated names, or more than 10) is refused,
         // because every unit's stage is a position in that list.
         if (!isList && parsed.stages !== undefined && !goodStageList(parsed.stages)) {
-          notify("This backup's list of stages is damaged (blank or repeated names, or more than 10), so it can't be restored safely. Nothing has changed.");
+          notify("This backup's list of stages is damaged (blank or repeated names, or more than 10), so it was not restored.");
           return;
         }
         const backupStages = !isList && parsed.stages ? renamedStageList(parsed.stages.map(String)) : null;   // v62: renamed as on start-up
@@ -20967,7 +20970,7 @@
           // copy as if it were this one). Units and recipes are kept in one record (see keepSafetyCopy).
           // v18.3: a recipes-only restore keeps its own copy and gets an Undo button.
           if (unitsToo ? !keepSafetyCopy("-before-restore", !!backupBook) : !keepRecipesCopy()) {
-            notify("There isn't room on this device to keep a safety copy of your data first, so nothing has changed. Please save a backup first.");
+            notify("No room for a safety copy of your data, so the restore stopped. Save a backup first.");
             return;
           }
           const recipesBefore = unitsToo ? null : JSON.stringify(book);
@@ -21181,8 +21184,8 @@
       rows = rows.filter(cells => cells.some(c => String(c).trim()));
       const noName = 'This file has no "name" column, so Minifolio can\'t tell which column holds your unit names. ' +
         'The first line should be the column titles: name, game, faction, stage, nickname, count, repaint, notes, date_added, date_stage ' +
-        '(only "name" is needed). CSV template in Settings gives you an example. Nothing has changed.';
-      if (!rows.length) return { problem: "That file is empty. Nothing has changed." };
+        '(only "name" is needed). CSV template in Settings gives you an example.';
+      if (!rows.length) return { problem: "That file is empty." };
       const titles = rows[0].map(c => plainQuotes(String(c)).trim().toLowerCase());
       const col = {};
       for (const [key, words] of Object.entries(CSV_COLUMNS)) col[key] = titles.findIndex(t => words.includes(t));
@@ -21243,12 +21246,12 @@
       if (problem) { csvFile.value = ""; showNotice(problem); return; }
       readFile(file, (text) => {
         csvFile.value = "";
-        if (!looksLikeText(text)) { showNotice(`"${file.name}" isn't a CSV file (it isn't plain text). Nothing has changed.`); return; }
+        if (!looksLikeText(text)) { showNotice(`"${file.name}" isn't a CSV file (it isn't plain text).`); return; }
         const clean = text.replace(/^﻿/, "");   // ﻿: an invisible mark Excel adds
         const read = csvToUnits(parseCSV(clean, csvSeparator(clean)));   // UX1b: commas, semicolons or tabs
         if (read.problem) { showNotice(read.problem); return; }
         const { units, unknownStages, datesLeftOut } = read;
-        if (!units.length) { showNotice("No units found in that file. Nothing has changed."); return; }
+        if (!units.length) { showNotice("No units found in that file."); return; }
         whPanel.classList.add("hidden");
         openReview({ source: "csv", title: `"${file.name}"`, rows: units, unknownStages: [...unknownStages], datesLeftOut });
       });
@@ -21974,7 +21977,7 @@
           // space), stop rather than carry on with no safety net.
           // (v14: kept for 30 days, with the stage list, and listed under Recover earlier data.)
           if (!keepSafetyCopy("-before-replace")) {
-            notify("There isn't room on this device to keep a safety copy of your current units, so nothing has been changed. Please press Save backup first, then try again.");
+            notify("No room for a safety copy of your units, so the replace stopped. Save a backup first, then try again.");
             return;
           }
         }
@@ -22209,7 +22212,7 @@
         renderBackupNudge();
       });
       buttons.append(save, later);
-      card.append(text, pageMoreInfo("backup-nudge", [why], { label: "Save a backup" }), buttons);
+      card.append(text, pageMoreInfo("backup-nudge", [why], { name: "Why back up?" }), buttons);
     }
 
     // ----- iPhone warning (v14) -----
@@ -22241,12 +22244,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=140".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=141".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v140";
+    const APP_VERSION = "v141";
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -22708,6 +22711,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v141", date: "6 Nov 2026", changes: [
+        "Folds are named by what they open, such as Which one? and What's in it, and Help topics show only an arrow.",
+        "Error messages say what went wrong once and what to do next.",
+      ] },
       { version: "v140", date: "6 Nov 2026", changes: [
         "Parchment Codex lays its cards out as a ruled ledger and shows notices as a paper slip. Grim Forge has square tags with one cut corner, square stage lamps and a riveted plate for notices.",
         "Paint Bench has masking-tape tags and buttons, pencil-tick stage marks, a tape label on the headline card and a tape strip for notices.",
@@ -23162,7 +23169,7 @@
         const key = "release-" + release.version.replace(/[^a-z0-9]+/gi, "-");
         pageMoreInfo.door = pageMoreInfo.door || { state: { info: {} } };
         if (release === CHANGELOG[0] && !(key in pageMoreInfo.door.state.info)) infoState(pageMoreInfo.door, key).open = true;
-        div.append(h3, pageMoreInfo(key, [ul], { label: release.version }));
+        div.append(h3, pageMoreInfo(key, [ul], { chevronOnly: true, label: `What changed in ${release.version}` }));
         box.appendChild(div);
       }
     }

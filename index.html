@@ -55,8 +55,8 @@
        (applyAppearance in app.js) takes over once the app starts.
        U6b: mentor-looks.js (the Mentor orb's three looks and five states, plain data: MENTOR_LOOKS and MENTOR_LOOKS_CSS) loads
        just before it, so early.js can put the chosen look and its styles on the page before the first frame (LR1). -->
-  <script src="mentor-looks.js?v=140"></script>
-  <script src="early.js?v=140"></script>
+  <script src="mentor-looks.js?v=141"></script>
+  <script src="early.js?v=141"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -1698,6 +1698,7 @@
     .more-info-button:hover { text-decoration: underline; }
     .more-info-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .more-info-button .fold-mark { margin-right: 0; }
+    .more-info-button.arrow-only { min-width: 44px; justify-content: center; padding: 0; }   /* AB10: an arrow-only fold is still a 44 px square */
     .more-info-button[aria-expanded="true"] .fold-mark { transform: rotate(-135deg) translate(-2px, -2px); }
     .more-info-panel { display: grid; gap: 8px; min-width: 0; }
     .more-info-panel[hidden] { display: none; }
@@ -1708,9 +1709,9 @@
        "More info" or "Less info" and the arrow) from the same rules: the folds just carry the class help-look. Nothing else about them changes. */
     .help summary, .help-look > summary { display: flex; align-items: center; gap: 10px; list-style: none; color: var(--text); }
     .help summary::-webkit-details-marker, .help-look > summary::-webkit-details-marker { display: none; }
-    .help summary::after, .help-look > summary::after { content: "More info"; order: 1; margin-left: auto; font-size: 0.875rem; font-weight: 400; color: var(--accent); }
-    .help details[open] > summary::after, .help-look[open] > summary::after { content: "Less info"; }
-    .help summary::before, .help-look > summary::before { content: ""; order: 2; flex: none; width: 10px; height: 10px; border-right: 2px solid var(--accent); border-bottom: 2px solid var(--accent); transform: rotate(45deg) translate(-2px, -2px); transition: transform .15s; }
+    /* AB10: these rows show only the arrow (no "More info" word); the title is the accessible name. */
+    .help summary::after, .help-look > summary::after, .help details[open] > summary::after, .help-look[open] > summary::after { content: none; }
+    .help summary::before, .help-look > summary::before { content: ""; order: 2; margin-left: auto; flex: none; width: 10px; height: 10px; border-right: 2px solid var(--accent); border-bottom: 2px solid var(--accent); transform: rotate(45deg) translate(-2px, -2px); transition: transform .15s; }
     .help details[open] > summary::before, .help-look[open] > summary::before { transform: rotate(-135deg) translate(-2px, -2px); }
     .help summary:focus-visible, .help-look > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .help-look > summary { min-height: 44px; box-sizing: border-box; padding: 10px 0; font-size: 1rem; font-weight: 600; cursor: pointer; }
@@ -4033,7 +4034,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=140" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=141" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -4046,16 +4047,16 @@
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks.
        G2a: guides-groups.js (the Guides topic groups, plain data) loads after guides-data.js. It only adds one
        name, GUIDE_GROUPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=140"></script>
-  <script src="schemes.js?v=140"></script>
-  <script src="detail-recipes.js?v=140"></script>
-  <script src="basing-tips.js?v=140"></script>
-  <script src="mentor-tips.js?v=140"></script>
-  <script src="guides-data.js?v=140"></script>
-  <script src="guides-groups.js?v=140"></script>
-  <script src="mentor-data.js?v=140"></script>
-  <script src="mentor-engine.js?v=140"></script>
-  <script src="where-to-buy.js?v=140"></script>
-  <script src="app.js?v=140"></script>
+  <script src="colour.js?v=141"></script>
+  <script src="schemes.js?v=141"></script>
+  <script src="detail-recipes.js?v=141"></script>
+  <script src="basing-tips.js?v=141"></script>
+  <script src="mentor-tips.js?v=141"></script>
+  <script src="guides-data.js?v=141"></script>
+  <script src="guides-groups.js?v=141"></script>
+  <script src="mentor-data.js?v=141"></script>
+  <script src="mentor-engine.js?v=141"></script>
+  <script src="where-to-buy.js?v=141"></script>
+  <script src="app.js?v=141"></script>
 </body>
 </html>

@@ -110,7 +110,7 @@ def main():
         more.click()
         check("tapping More info shows the part, steps and units", "Armour" in first.locator(".meta").inner_text()
               and "3 steps" in first.locator(".meta").inner_text() and "1 unit" in first.locator(".meta").inner_text(), first.locator(".meta").inner_text())
-        check("the words change to Less info", "Less info" in more.inner_text())
+        check("the fold keeps its name (Recipe details) and says it is open", more.inner_text().strip() == "Recipe details" and more.get_attribute("aria-expanded") == "true")   # AB10: folds are named by what they open and no longer swap to "Less info"; the arrow and aria-expanded show the state
         tab_recipes(page); page.click('nav button[data-tab="dashboard"]'); page.click('nav button[data-tab="recipes"]'); page.wait_for_timeout(200)
         check("an open More info stays open while the app is open", page.locator("#recipe-list li.recipe-card", has_text="Blue armour").locator(".meta").is_visible())
         more.click()

@@ -115,7 +115,7 @@ def run(viewport, label):
               (len(m), s["stages"]))
         # DS1: a restore now stops earlier, when there's no room for its safety copy, and says so in those words
         # ("There isn't room ... nothing has changed"); before DS1 it went on and failed at the save ("full").
-        check(f"{label} 1f restore with full storage explained", any("full" in d or "isn't room" in d for d in dialogs), dialogs)
+        check(f"{label} 1f restore with full storage explained", any("full" in d or "No room for a safety copy" in d for d in dialogs), dialogs)   # AB10: the message was reworded ("No room ..., so the restore stopped"); still checks the restore says there is no room
 
         # ---------- 8. Photo stage labels follow a stage edit (no quota) ----------
         seed([{"id": 1, "name": "Captain", "hobby": "40K", "faction": "Ultramarines", "stage": 5, "count": 1,
@@ -155,7 +155,7 @@ def run(viewport, label):
         page.click("#delete-all")
         page.wait_for_timeout(100)
         check(f"{label} 3a Delete all stops when no room for a safety copy",
-              len(stored()) == 4 and page.evaluate("models.length") == 4 and any("nothing has been deleted" in d for d in dialogs), dialogs)
+              len(stored()) == 4 and page.evaluate("models.length") == 4 and any("nothing was deleted" in d for d in dialogs), dialogs)   # AB10: reworded from "nothing has been deleted"; same check
         page.evaluate("() => { window.__quota = null; }")
         page.click("#delete-all")
         page.wait_for_timeout(100)

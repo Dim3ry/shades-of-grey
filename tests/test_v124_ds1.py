@@ -198,7 +198,7 @@ def main():
         restore(page, {"app": "Minifolio", "version": 6, "dataVersion": 2, "models": [{"id": 1, "name": "Backup unit", "stage": 0}],
                        "recipes": book(["Theirs"])})
         note = page.text_content("#dialog-message") if page.is_visible("#dialog-message") else page.text_content("#toast")
-        check("no room for the safety copy: the restore says nothing has changed", "nothing has changed" in (note or ""), note)
+        check("no room for the safety copy: the restore says it stopped", "the restore stopped" in (note or ""), note)   # AB10: reworded from "nothing has changed"; the check still needs the message to say the restore did not go ahead
         check("…units and recipes are unchanged", stored(page, UNITS) == before and page.evaluate("book.recipes.map(r => r.name)") == ["Mine"])
         check("…and no copy is listed as if it were this one", stored(page, UNITS + "-before-restore") is None)
         page.evaluate("() => Object.keys(localStorage).filter(k => k.startsWith('filler-')).forEach(k => localStorage.removeItem(k))")

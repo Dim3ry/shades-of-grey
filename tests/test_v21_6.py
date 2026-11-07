@@ -201,7 +201,7 @@ def main():
         check("…and nothing changed", untouched())
         restore_try("bad-shape.json", json.dumps({"app": "Minifolio", "models": "nope"}).encode())
         ok, t = says("This backup is damaged")
-        check("restore: a damaged backup is refused with the same words", ok and "Nothing has changed." in t["text"], t)
+        check("restore: a damaged backup is refused with the same words", ok and "so it was not restored." in t["text"], t)   # AB10: the notice no longer ends "Nothing has changed."; it now says "so it was not restored.", and the check still needs the damaged-backup refusal
         check("…and nothing changed", untouched())
         restore_try("newer.json", json.dumps({"app": "Minifolio", "dataVersion": 99, "models": UNITS}).encode())
         ok, t = says("saved by a newer version of Minifolio")

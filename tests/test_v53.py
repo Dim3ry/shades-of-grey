@@ -203,22 +203,22 @@ def main():
         page.wait_for_timeout(250)
         edit = "#view-units details.edit-details > summary"
         i = info(edit)
-        check("Edit details: native fold in the Help look, shut, aria-expanded false, at least 44 px, says More info",
-              i["tag"] == "DETAILS" and i["look"] and i["exp"] == "false" and i["after"] == '"More info"' and i["h"] >= 44, i)
+        check("Edit details: native fold in the Help look, shut, aria-expanded false, at least 44 px, shows only the arrow",   # AB10: no word
+              i["tag"] == "DETAILS" and i["look"] and i["exp"] == "false" and i["after"] == 'none' and i["h"] >= 44, i)
         check("Edit details still begins with its own words", page.locator(edit).inner_text().strip().startswith("Edit details"))
         press(page, page.locator(edit).first)
         i = info(edit)
-        check("tapping Edit details opens it: aria-expanded true, Less info", i["open"] and i["exp"] == "true" and i["after"] == '"Less info"', i)
+        check("tapping Edit details opens it: aria-expanded true", i["open"] and i["exp"] == "true" and i["after"] == 'none', i)
 
         t.edit_recipe(page, 101)
         ideas = "#colour-ideas > summary"
         i = info(ideas)
-        check("Colour ideas: native fold in the Help look, shut, aria-expanded false, at least 44 px, says More info",
-              i["tag"] == "DETAILS" and i["look"] and i["exp"] == "false" and i["after"] == '"More info"' and i["h"] >= 44, i)
+        check("Colour ideas: native fold in the Help look, shut, aria-expanded false, at least 44 px, shows only the arrow",   # AB10
+              i["tag"] == "DETAILS" and i["look"] and i["exp"] == "false" and i["after"] == 'none' and i["h"] >= 44, i)
         check("Colour ideas still shows its title and Pro preview", "Colour ideas" in page.locator(ideas).inner_text() and "pro preview" in page.locator(ideas).inner_text().lower())   # P1: the tag shows in capitals
         press(page, page.locator(ideas))
         i = info(ideas)
-        check("tapping Colour ideas opens it: aria-expanded true, Less info", i["open"] and i["exp"] == "true" and i["after"] == '"Less info"', i)
+        check("tapping Colour ideas opens it: aria-expanded true", i["open"] and i["exp"] == "true" and i["after"] == 'none', i)
         # RS2: the dark and light contrast check of the Parts and techniques fold went with the fold.
 
         # ---------- 5. F6: Help starts closed ----------
