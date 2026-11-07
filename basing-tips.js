@@ -185,7 +185,7 @@ const BASING_TIPS = [
       "Plan where the feet go, then glue rocks at random rather than in a neat ring, with a tiny root on any bank.",
       "Lay at least two textures, such as sand and crackle, with grit of three sizes in overlapping patches.",
       "Add the second paste while the first is wet, or feather the joins with a damp brush, so no line shows.",
-      "Paint one colour over every texture so they read as one ground, then wash and drybrush as normal.",
+      "Paint one colour over every texture so they look like one ground, then wash and drybrush as normal.",
       "Shade round the foot of each rock with thinned dark brown and soften the line with a damp brush.",
     ],
     paintSteps: [
@@ -348,7 +348,7 @@ const BASING_TIPS = [
       "Spread mud thickly round the feet, with a little sand or root bits mixed in, then add more for mounds and ruts.",
       "Thin some with water and stab it onto the boots, or flick it from a stiff brush with a toothpick for spatter.",
       "Press footprint dips into the wet mud with the back of a brush.",
-      "Glue on tufts, then brush thinned mud over them so they look trampled rather than fresh.",
+      "Glue on tufts, then brush thinned mud over them so they look trampled, not fresh.",
       "Once painted, leave raised mud matt and lighter, and gloss the dips and lowest mud so it looks fresh and wet.",
     ],
     paintSteps: [
@@ -437,7 +437,7 @@ const BASING_TIPS = [
     materials: ["Thick clear gloss water effect or clear resin", "Clear tinting inks or see-through paints in red, green or yellow", "Tiny glass beads or silica beads for bubbles", "A toothpick or silicone shaping tool", "Dead-looking dark grass tufts"],
     howto: [
       "Paint the hollow first, dark for blood and murky slime and bright yellow under ooze that should glow.",
-      "Glaze the pool bed with ink so it reads deeper in the middle and lighter at the edges.",
+      "Glaze the pool bed with ink so it looks deeper in the middle and lighter at the edges.",
       "Stir a very small drop of ink into the clear gloss and pour it in thin layers, as it shrinks while drying.",
       "While the last layer is wet, drop in a few tiny beads so they sink halfway and look like bubbles.",
       "Dot a brighter tint round the bubbles once cured, then add dead tufts along the edge.",
@@ -478,7 +478,7 @@ const BASING_TIPS = [
       { technique: "Varnish", coats: 1, mix: 100, look: "a clear gloss", hex: "#eef4f2", note: "Top coat to level and clear the surface." },
       { technique: "Edge highlight", coats: 1, mix: 100, look: "a bright pale blue", hex: "#e2eef2", note: "A fine shine line where the water meets rock or wood." },
     ] },
-  { key: "resin-ice", group: "cold", name: "Deep resin ice", summary: "Clear resin over a mirror and tint, with cracks for real depth",
+  { key: "resin-ice", group: "cold", name: "Deep resin ice", summary: "Clear resin over a mirror and tint for depth, with cracks on top",
     materials: ["Thin stick-on plastic mirror cut to the base shape", "Clear UV curing resin and a UV lamp", "Thinned blue and blue-black one-coat paints", "Gloss varnish and coarse sandpaper", "A tiny touch of white paint, for frosted ice", "Snow paste for the edges"],
     howto: [
       "Cut the mirror to the base, stick it down, then spread a thin layer of resin to the edge and cure it.",
@@ -647,7 +647,7 @@ const BASING_TIPS = [
       { technique: "Dry brush", coats: 1, mix: 100, look: "a yellow green", hex: "#a3ad4a", note: "Lightly on the highest crumbs only." },
     ] },
   { key: "forest-floor", group: "plants", name: "Forest floor", summary: "Bark, soil, moss and leaves built up with height for woodland",
-    materials: ["Bark, cork or small rocks for the big shapes", "Two-part epoxy putty for height", "Dry garden soil, baked dry", "Crumbled dried leaves, birch seeds or tea leaves, and moss clumps", "A small twig for a fallen branch", "Thick and thin super glue"],
+    materials: ["Bark, cork or small rocks for the big shapes", "Two-part epoxy putty for height", "Garden soil, baked dry", "Crumbled dried leaves, birch seeds or tea leaves, and moss clumps", "A small twig for a fallen branch", "Thick and thin super glue"],
     howto: [
       "Press putty onto the base for height and shape it with wet fingers, pushing in any bits to half bury them.",
       "Glue the biggest bark or rock pieces first, then smaller stones, then soil, always big to small.",
@@ -746,7 +746,7 @@ const BASING_TIPS = [
       { technique: "Wet blend", coats: 1, mix: 100, look: "a dark green", hex: "#1f3a24", note: "Pond bed, dark in the deep end blending to grass green at the shore." },
       { technique: "Glaze", coats: 1, mix: 20, look: "a near black", hex: "#0e0e0e", note: "Only in the deepest part of the pond." },
       { technique: "Wash", coats: 1, mix: 40, look: "a murky green", hex: "#4a5a2a", note: "Into the mud for algae, feathered out at the edges." },
-      { technique: "Varnish", coats: 1, mix: 100, look: "a wet gloss", hex: "#e8eef0", note: "Gloss over the matt wash makes the mud read as boggy." },
+      { technique: "Varnish", coats: 1, mix: 100, look: "a wet gloss", hex: "#e8eef0", note: "Gloss over the matt wash so the mud looks boggy." },
     ] },
   { key: "tinted-moss-on-rocks", group: "plants", name: "Tinted moss", summary: "Green tint dropped onto drybrushed rocks for quick moss",
     materials: ["A finished, drybrushed rocky or earth base", "A light green one-coat paint", "A darker green one-coat paint", "A clean, very wet brush", "A pale bone paint", "Fine green scatter and thin super glue, for raised moss"],
@@ -768,7 +768,7 @@ const BASING_TIPS = [
       "Collect far more dry roots and twigs than you need, and pick a main tree big enough to tower over the figure.",
       "Place the largest tree first, then smaller ones either side to frame the figure, one running past the top.",
       "Glue with super glue and accelerator, one branch at a time, letting each set before the next goes on.",
-      "Press putty into the gaps and joins, curing each layer, then drag a tool along the grain so it reads as bark.",
+      "Press putty into the gaps and joins, curing each layer, then drag a tool along the grain so it looks like bark.",
       "Fix foliage with super glue on the twig and white glue between clumps, and pin the figure so it always refits.",
     ],
     paintSteps: [
@@ -1097,7 +1097,7 @@ const BASING_TIPS = [
   { key: "wooden-plank-floors", group: "stone", name: "Wooden plank floors", summary: "Weathered wooden planks for ship decks, floors and walkways",
     materials: ["Balsa or thin wooden strips in a few widths", "Thin super glue", "A hobby knife and an awl or pin", "Fine sandpaper", "Black, brown and grey washes", "Tissue"],
     howto: [
-      "Glue wooden strips across the base in a few widths, leaving a snapped board or small gaps for interest.",
+      "Glue wooden strips across the base in a few widths, leaving a snapped board or small gaps here and there.",
       "Soak the wood with thin super glue to harden it, then trim the overhang flush with the rim.",
       "Gouge and scratch the planks along the grain and press nail holes near the ends with an awl.",
       "Sand the edge smooth, prime, and paint the planks in slightly different browns or greys.",
