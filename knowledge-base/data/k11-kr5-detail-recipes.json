@@ -364,7 +364,7 @@
       "key": "brown-fur",
       "group": "body",
       "name": "Brown fur",
-      "summary": "Warm brown fur washed dark, then dry brushed up through khaki to pale tips",
+      "summary": "Warm brown fur washed dark, then drybrushed up through khaki to pale tips",
       "steps": [
         {
           "technique": "Base coat",
@@ -388,7 +388,7 @@
           "mix": 100,
           "look": "a light khaki",
           "hex": "#a08462",
-          "note": "Along the fur with a dry brush, spending longer at the top of the pelt."
+          "note": "Along the fur with a drybrush, spending longer at the top of the pelt."
         },
         {
           "technique": "Dry brush",
@@ -404,7 +404,7 @@
       "key": "grey-wolf-fur",
       "group": "body",
       "name": "Grey wolf fur",
-      "summary": "Grey wolf fur with a tan underside, a thin black shade and a pale blue grey dry brush",
+      "summary": "Grey wolf fur with a tan underside, a thin black shade and a pale blue grey drybrush",
       "steps": [
         {
           "technique": "Base coat",
@@ -436,7 +436,7 @@
           "mix": 100,
           "look": "a pale blue grey",
           "hex": "#b8c0c6",
-          "note": "The side of a near dry brush, catching only the tips of the fur."
+          "note": "The side of a near drybrush, catching only the tips of the fur."
         }
       ]
     },
@@ -884,7 +884,7 @@
       "key": "sandy-stone",
       "group": "material",
       "name": "Sandy stone",
-      "summary": "Warm sandy stone for ruins and statues, washed brown and dry brushed up to a pale cream",
+      "summary": "Warm sandy stone for ruins and statues, washed brown and drybrushed up to a pale cream",
       "steps": [
         {
           "technique": "Base coat",
@@ -908,7 +908,7 @@
           "mix": 100,
           "look": "a pale bone",
           "hex": "#dccfa8",
-          "note": "Quick circles with a fully dry brush so it misses the recesses."
+          "note": "Quick circles with a fully drybrush so it misses the recesses."
         },
         {
           "technique": "Dry brush",
@@ -1044,7 +1044,7 @@
       "key": "red-dragon-scales",
       "group": "body",
       "name": "Red dragon scales",
-      "summary": "Deep red dragon hide dry brushed up from burgundy through red and orange",
+      "summary": "Deep red dragon hide drybrushed up from burgundy through red and orange",
       "steps": [
         {
           "technique": "Base coat",
@@ -1196,7 +1196,7 @@
           "mix": 100,
           "look": "a bright white",
           "hex": "#ffffff",
-          "note": "Thin on the edges and torn tips, then dab a little colour back so it is not chalky."
+          "note": "Thin on the edges and torn tips, then dab a little colour back so it isn't chalky."
         }
       ]
     },

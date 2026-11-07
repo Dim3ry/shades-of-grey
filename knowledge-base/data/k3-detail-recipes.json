@@ -244,7 +244,7 @@
       "key": "black-feathers",
       "group": "body",
       "name": "Black feathers",
-      "summary": "Dark feathers dry brushed through greys and tied together with a thin glaze of black",
+      "summary": "Dark feathers drybrushed through greys and tied together with a thin glaze of black",
       "steps": [
         {
           "technique": "Base coat",
@@ -284,7 +284,7 @@
       "key": "black-fur",
       "group": "body",
       "name": "Black fur",
-      "summary": "Quick textured black fur from grey dry brushes over black",
+      "summary": "Quick textured black fur from grey drybrushes over black",
       "steps": [
         {
           "technique": "Dry brush",
@@ -316,7 +316,7 @@
           "mix": 100,
           "look": "a warm bone",
           "hex": "#d8cba8",
-          "note": "Optional faint touch on the tips so the black does not look cold."
+          "note": "Optional faint touch on the tips so the black doesn't look cold."
         }
       ]
     },
@@ -348,7 +348,7 @@
           "mix": 70,
           "look": "a black",
           "hex": "#101010",
-          "note": "An even coat all over, moved about so it does not pool."
+          "note": "An even coat all over, moved about so it doesn't pool."
         },
         {
           "technique": "Edge highlight",
@@ -468,7 +468,7 @@
           "mix": 100,
           "look": "a sandy bone",
           "hex": "#d8c69a",
-          "note": "Fine strokes along the strands, or a near dry brush skimmed across them."
+          "note": "Fine strokes along the strands, or a near drybrush skimmed across them."
         },
         {
           "technique": "Edge highlight",
@@ -636,7 +636,7 @@
           "mix": 100,
           "look": "a bright silver",
           "hex": "#d4d7db",
-          "note": "A thin line on every edge with the side of the tip, or a light buffed dry brush."
+          "note": "A thin line on every edge with the side of the tip, or a light buffed drybrush."
         }
       ]
     },
@@ -740,7 +740,7 @@
           "mix": 60,
           "look": "an amber brown",
           "hex": "#7a4a20",
-          "note": "All over, but do not let it pool."
+          "note": "All over, but don't let it pool."
         },
         {
           "technique": "Shade",
@@ -812,7 +812,7 @@
           "mix": 100,
           "look": "a yellow green",
           "hex": "#9bb83a",
-          "note": "Over a pale cream undercoat, soaking up pools with a dry brush."
+          "note": "Over a pale cream undercoat, soaking up pools with a drybrush."
         },
         {
           "technique": "Layer",
@@ -884,7 +884,7 @@
       "key": "bright-steel-armour",
       "group": "metal",
       "name": "Bright steel and silver armour",
-      "summary": "Clean bright silver armour from a dark base, a wash and lighter dry brushes",
+      "summary": "Clean bright silver armour from a dark base, a wash and lighter drybrushes",
       "steps": [
         {
           "technique": "Base coat",
@@ -1324,7 +1324,7 @@
       "key": "dark-green-armour",
       "group": "material",
       "name": "Quick dark green armour",
-      "summary": "Fast dark green armour from a wash and dry brushes, for big groups",
+      "summary": "Fast dark green armour from a wash and drybrushes, for big groups",
       "steps": [
         {
           "technique": "Base coat",
@@ -1380,7 +1380,7 @@
           "mix": 60,
           "look": "a brown black",
           "hex": "#1d1914",
-          "note": "Any dark wash into recesses, with a little gloss mixed in so the metal does not go flat."
+          "note": "Any dark wash into recesses, with a little gloss mixed in so the metal doesn't go flat."
         },
         {
           "technique": "Layer",
@@ -1444,7 +1444,7 @@
       "key": "deep-red-cloth",
       "group": "material",
       "name": "Deep red cloth",
-      "summary": "A rich cool red for cloaks and robes, built up by dry brushing",
+      "summary": "A rich cool red for cloaks and robes, built up by drybrushing",
       "steps": [
         {
           "technique": "Base coat",
@@ -1612,7 +1612,7 @@
           "mix": 100,
           "look": "a pale cream",
           "hex": "#e6d6bc",
-          "note": "Over a cream undercoat, or layer it instead if the dry brush looks rough."
+          "note": "Over a cream undercoat, or layer it instead if the drybrush looks rough."
         },
         {
           "technique": "Glaze",
@@ -1652,7 +1652,7 @@
           "mix": 100,
           "look": "a deep red",
           "hex": "#8e1b1f",
-          "note": "Paint the source, then dry brush outwards over the area around it."
+          "note": "Paint the source, then drybrush outwards over the area around it."
         },
         {
           "technique": "Glaze",
@@ -1692,7 +1692,7 @@
           "mix": 100,
           "look": "a vivid blue",
           "hex": "#2f6fb5",
-          "note": "A strong, saturated blue, as a dull blue will not show through later layers."
+          "note": "A strong, saturated blue, as a dull blue won't show through later layers."
         },
         {
           "technique": "Layer",
@@ -1772,7 +1772,7 @@
           "mix": 100,
           "look": "a dark green",
           "hex": "#1f3324",
-          "note": "Add a little matt black so the surroundings are dark and flat."
+          "note": "Add a little matte black so the surroundings are dark and flat."
         },
         {
           "technique": "Layer",
@@ -1908,7 +1908,7 @@
           "mix": 100,
           "look": "a bright gold",
           "hex": "#d0a84a",
-          "note": "Repaint the flat panels, stopping short of the shaded recesses, or dry brush for speed."
+          "note": "Repaint the flat panels, stopping short of the shaded recesses, or drybrush for speed."
         },
         {
           "technique": "Edge highlight",
@@ -1924,7 +1924,7 @@
       "key": "gold-treasure",
       "group": "metal",
       "name": "Gold treasure",
-      "summary": "A pile of gold coins with a warm wash and a silver dry brush",
+      "summary": "A pile of gold coins with a warm wash and a silver drybrush",
       "steps": [
         {
           "technique": "Prime",
@@ -2340,7 +2340,7 @@
           "mix": 100,
           "look": "a bright silver",
           "hex": "#c8ccd0",
-          "note": "Short scratchy strokes on edges, or a light silver dry brush, keeping the rest dark."
+          "note": "Short scratchy strokes on edges, or a light silver drybrush, keeping the rest dark."
         }
       ]
     },
@@ -2524,7 +2524,7 @@
           "mix": 80,
           "look": "a dark brown grey",
           "hex": "#2a2622",
-          "note": "All over so every recess is dark and matt."
+          "note": "All over so every recess is dark and matte."
         },
         {
           "technique": "Layer",
@@ -2532,7 +2532,7 @@
           "mix": 100,
           "look": "a gunmetal",
           "hex": "#7c8086",
-          "note": "Raised areas, then a light silver dry brush on the top edges."
+          "note": "Raised areas, then a light silver drybrush on the top edges."
         },
         {
           "technique": "Wash",
@@ -2628,7 +2628,7 @@
       "key": "metallic-red",
       "group": "metal",
       "name": "Metallic red",
-      "summary": "A rich metallic red from red one-coat paint over a silver dry brush",
+      "summary": "A rich metallic red from red one-coat paint over a silver drybrush",
       "steps": [
         {
           "technique": "Prime",
@@ -2636,7 +2636,7 @@
           "mix": 100,
           "look": "a black",
           "hex": "#1a1a1a",
-          "note": "Use a black undercoat or a pale silver base, with gold dry brushed under it for a warmer red."
+          "note": "Use a black undercoat or a pale silver base, with gold drybrushed under it for a warmer red."
         },
         {
           "technique": "Dry brush",
@@ -2644,7 +2644,7 @@
           "mix": 100,
           "look": "a light silver",
           "hex": "#c8c8cc",
-          "note": "Dry brush the armour so the raised areas shine."
+          "note": "Drybrush the armour so the raised areas shine."
         },
         {
           "technique": "Contrast",
@@ -4060,7 +4060,7 @@
           "mix": 100,
           "look": "a mid green",
           "hex": "#4f9a3c",
-          "note": "Paint the source, then dry brush outwards over the raised areas."
+          "note": "Paint the source, then drybrush outwards over the raised areas."
         },
         {
           "technique": "Glaze",
@@ -4092,7 +4092,7 @@
       "key": "turquoise-armour",
       "group": "material",
       "name": "Turquoise armour",
-      "summary": "Sea green to turquoise armour from a pale dry brush and green washes",
+      "summary": "Sea green to turquoise armour from a pale drybrush and green washes",
       "steps": [
         {
           "technique": "Base coat",
@@ -4324,7 +4324,7 @@
           "mix": 100,
           "look": "a dark brown",
           "hex": "#3d2a20",
-          "note": "Spread it evenly, and fairly thick is fine as long as it does not pool."
+          "note": "Spread it evenly, and fairly thick is fine as long as it doesn't pool."
         },
         {
           "technique": "Layer",
@@ -4428,7 +4428,7 @@
       "key": "white-and-pale-fur",
       "group": "body",
       "name": "White and pale fur",
-      "summary": "Clean white or cream fur shaded with thin washes and finished with a white dry brush",
+      "summary": "Clean white or cream fur shaded with thin washes and finished with a white drybrush",
       "steps": [
         {
           "technique": "Prime",
@@ -4572,7 +4572,7 @@
           "mix": 40,
           "look": "a dark warm brown",
           "hex": "#3d2a1f",
-          "note": "Run it into rivets and chips, and thinned black on panel centres tidies a rough dry brush."
+          "note": "Run it into rivets and chips, and thinned black on panel centres tidies a rough drybrush."
         },
         {
           "technique": "Edge highlight",
@@ -4700,7 +4700,7 @@
           "mix": 100,
           "look": "a pale cream",
           "hex": "#f3e7bf",
-          "note": "Sharpest edges only, or a pale sand dry brush for a rougher finish."
+          "note": "Sharpest edges only, or a pale sand drybrush for a rougher finish."
         }
       ]
     }

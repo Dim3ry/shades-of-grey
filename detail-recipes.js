@@ -64,19 +64,19 @@ const DETAIL_RECIPES = [
       { technique: "Edge highlight", coats: 1, mix: 100, look: "a light orange-red", hex: "#e8553e", note: "A tiny dot on top of a drop looks like a wet shine." },
     ] },
   // X8 start: new Body entries from k11-kr5-detail-recipes.json, k3-detail-recipes.json, k9-kr4-detail-recipes.json. kb_import.py writes this block, so re-run it rather than editing here.
-  { key: "brown-fur", group: "body", name: "Brown fur", summary: "Warm brown fur washed dark, then dry brushed up through khaki to pale tips",
+  { key: "brown-fur", group: "body", name: "Brown fur", summary: "Warm brown fur washed dark, then drybrushed up through khaki to pale tips",
     steps: [
       { technique: "Base coat", coats: 2, mix: 100, look: "a warm mid brown", hex: "#6b4a30", note: "Thinned a little so it sinks into the fur without filling the texture." },
       { technique: "Wash", coats: 1, mix: 60, look: "a dark brown", hex: "#2f2016", note: "All over, letting it gather deepest at the roots and under the body." },
-      { technique: "Dry brush", coats: 1, mix: 100, look: "a light khaki", hex: "#a08462", note: "Along the fur with a dry brush, spending longer at the top of the pelt." },
+      { technique: "Dry brush", coats: 1, mix: 100, look: "a light khaki", hex: "#a08462", note: "Along the fur with a drybrush, spending longer at the top of the pelt." },
       { technique: "Dry brush", coats: 1, mix: 100, look: "a pale bone", hex: "#d8c9a6", note: "Very lightly on the tips, as khaki and bone look warmer than greys." },
     ] },
-  { key: "grey-wolf-fur", group: "body", name: "Grey wolf fur", summary: "Grey wolf fur with a tan underside, a thin black shade and a pale blue grey dry brush",
+  { key: "grey-wolf-fur", group: "body", name: "Grey wolf fur", summary: "Grey wolf fur with a tan underside, a thin black shade and a pale blue grey drybrush",
     steps: [
       { technique: "Base coat", coats: 2, mix: 100, look: "a warm grey", hex: "#6f6b65", note: "Over the back, flanks and tail." },
       { technique: "Base coat", coats: 1, mix: 100, look: "a pale tan", hex: "#a8916f", note: "Chest, belly and inner legs, blending into the grey like a real pelt." },
       { technique: "Wash", coats: 1, mix: 30, look: "a thinned black", hex: "#1a1a1b", note: "Very thin over the whole wolf so it settles between the hairs." },
-      { technique: "Dry brush", coats: 1, mix: 100, look: "a pale blue grey", hex: "#b8c0c6", note: "The side of a near dry brush, catching only the tips of the fur." },
+      { technique: "Dry brush", coats: 1, mix: 100, look: "a pale blue grey", hex: "#b8c0c6", note: "The side of a near drybrush, catching only the tips of the fur." },
     ] },
   { key: "black-horse-coat", group: "body", name: "Black horse coat", summary: "A black horse from a brown grey base, washed black and lifted with soft greys",
     steps: [
@@ -120,7 +120,7 @@ const DETAIL_RECIPES = [
       { technique: "Dry brush", coats: 1, mix: 100, look: "a pale turquoise", hex: "#5ec5c8", note: "Light flicks on the back and firmer circles on the belly scales." },
       { technique: "Edge highlight", coats: 1, mix: 100, look: "a very pale blue", hex: "#bfe6e2", note: "Mixed with bone on the belly centre, spine tips and face ridges." },
     ] },
-  { key: "red-dragon-scales", group: "body", name: "Red dragon scales", summary: "Deep red dragon hide dry brushed up from burgundy through red and orange",
+  { key: "red-dragon-scales", group: "body", name: "Red dragon scales", summary: "Deep red dragon hide drybrushed up from burgundy through red and orange",
     steps: [
       { technique: "Base coat", coats: 2, mix: 100, look: "a deep burgundy", hex: "#5a1418", note: "Strong red with a little black and blue, with a second coat on the edges." },
       { technique: "Dry brush", coats: 1, mix: 100, look: "a red", hex: "#9a1c1c", note: "Heavy circles all over so every raised scale takes the red." },
@@ -146,7 +146,7 @@ const DETAIL_RECIPES = [
       { technique: "Base coat", coats: 1, mix: 100, look: "a white", hex: "#f4f4f2", note: "On the top of each wing and its veins, leaving the lower part darker." },
       { technique: "Wash", coats: 1, mix: 40, look: "a purple", hex: "#5a2e6e", note: "All over, moved about so it marks the veins and cells without pooling." },
       { technique: "Stipple", coats: 2, mix: 100, look: "a bright green", hex: "#8ad44a", note: "Green in the middle, then green and yellow, yellow and pink, and pink at the edge." },
-      { technique: "Edge highlight", coats: 1, mix: 100, look: "a bright white", hex: "#ffffff", note: "Thin on the edges and torn tips, then dab a little colour back so it is not chalky." },
+      { technique: "Edge highlight", coats: 1, mix: 100, look: "a bright white", hex: "#ffffff", note: "Thin on the edges and torn tips, then dab a little colour back so it isn't chalky." },
     ] },
   { key: "natural-eyes", group: "body", name: "Natural eyes", summary: "Painted eyes with a dark rim, a soft white eyeball, a dark iris and a tiny glint",
     steps: [
@@ -218,19 +218,19 @@ const DETAIL_RECIPES = [
       { technique: "Glaze", coats: 2, mix: 30, look: "a near black", hex: "#1a1a1a", note: "Thin coats from the tips back, each stopping shorter, so beak and claws fade dark." },
       { technique: "Edge highlight", coats: 1, mix: 100, look: "a light grey", hex: "#c8c8c8", note: "A fine line along the top edge of each claw and the very tip of the beak." },
     ] },
-  { key: "black-feathers", group: "body", name: "Black feathers", summary: "Dark feathers dry brushed through greys and tied together with a thin glaze of black",
+  { key: "black-feathers", group: "body", name: "Black feathers", summary: "Dark feathers drybrushed through greys and tied together with a thin glaze of black",
     steps: [
       { technique: "Base coat", coats: 1, mix: 100, look: "a black", hex: "#151515", note: "Over a black undercoat, keeping some black handy for tidying later." },
       { technique: "Dry brush", coats: 1, mix: 100, look: "a dark grey", hex: "#45494d", note: "Fairly heavy over all the feathers, with no wash needed first." },
       { technique: "Dry brush", coats: 1, mix: 100, look: "a cool blue-grey", hex: "#5e6f7d", note: "Very light, on the sharpest feather edges only, for a hint of colour." },
       { technique: "Glaze", coats: 1, mix: 30, look: "a thinned black", hex: "#202020", note: "Black one-coat paint thinned with medium pulls the grey steps together." },
     ] },
-  { key: "black-fur", group: "body", name: "Black fur", summary: "Quick textured black fur from grey dry brushes over black",
+  { key: "black-fur", group: "body", name: "Black fur", summary: "Quick textured black fur from grey drybrushes over black",
     steps: [
       { technique: "Dry brush", coats: 1, mix: 100, look: "a very dark grey", hex: "#2e2f31", note: "Fairly heavy over a black undercoat, and it should still look subtle." },
       { technique: "Dry brush", coats: 1, mix: 100, look: "a dark grey", hex: "#4a4c50", note: "Lighter pressure, building up the texture of the fur." },
       { technique: "Dry brush", coats: 1, mix: 100, look: "a mid grey", hex: "#6e7176", note: "Very light, only on the most raised tufts." },
-      { technique: "Dry brush", coats: 1, mix: 100, look: "a warm bone", hex: "#d8cba8", note: "Optional faint touch on the tips so the black does not look cold." },
+      { technique: "Dry brush", coats: 1, mix: 100, look: "a warm bone", hex: "#d8cba8", note: "Optional faint touch on the tips so the black doesn't look cold." },
     ] },
   { key: "black-scaly-hide", group: "body", name: "Black scaly skin", summary: "Textured near-black hide for dragons and big monsters, built up by stippling",
     steps: [
@@ -243,7 +243,7 @@ const DETAIL_RECIPES = [
     steps: [
       { technique: "Base coat", coats: 2, mix: 100, look: "a light tan brown", hex: "#b8935a", note: "Thin coats, careful near the skin, or use a pale bone base for a whiter blonde." },
       { technique: "Wash", coats: 1, mix: 40, look: "a sepia brown", hex: "#7a5228", note: "Little on the brush, kept off the face and left to sit in the strands." },
-      { technique: "Layer", coats: 1, mix: 100, look: "a sandy bone", hex: "#d8c69a", note: "Fine strokes along the strands, or a near dry brush skimmed across them." },
+      { technique: "Layer", coats: 1, mix: 100, look: "a sandy bone", hex: "#d8c69a", note: "Fine strokes along the strands, or a near drybrush skimmed across them." },
       { technique: "Edge highlight", coats: 1, mix: 100, look: "a pale cream", hex: "#ece3c4", note: "Strand ends and the lightest bands only, avoiding a sharp, cold yellow." },
     ] },
   { key: "bog-zombie-skin", group: "body", name: "Rotten yellow skin", summary: "Sickly yellow skin with green rot, like a body left in a swamp",
@@ -255,7 +255,7 @@ const DETAIL_RECIPES = [
     ] },
   { key: "bright-green-skin", group: "body", name: "Bright green monster skin", summary: "Contrasty green skin from a one-coat paint over a pale undercoat",
     steps: [
-      { technique: "Contrast", coats: 1, mix: 100, look: "a yellow green", hex: "#9bb83a", note: "Over a pale cream undercoat, soaking up pools with a dry brush." },
+      { technique: "Contrast", coats: 1, mix: 100, look: "a yellow green", hex: "#9bb83a", note: "Over a pale cream undercoat, soaking up pools with a drybrush." },
       { technique: "Layer", coats: 1, mix: 100, look: "a pale stony grey", hex: "#c9c3b0", note: "Pick out the cheeks, brow, nose, knuckles, elbows and muscle edges." },
       { technique: "Contrast", coats: 1, mix: 100, look: "a yellow green", hex: "#8fae34", note: "A second coat over all the skin blends the light areas into a gradient." },
       { technique: "Edge highlight", coats: 1, mix: 100, look: "a warm tan", hex: "#c99a6e", note: "Tiny touches on the face and hands make it look alive." },
@@ -311,7 +311,7 @@ const DETAIL_RECIPES = [
     ] },
   { key: "fair-skin", group: "body", name: "Light skin", summary: "Quick light skin from a cream undercoat, a thin flesh tint and highlights",
     steps: [
-      { technique: "Dry brush", coats: 1, mix: 100, look: "a pale cream", hex: "#e6d6bc", note: "Over a cream undercoat, or layer it instead if the dry brush looks rough." },
+      { technique: "Dry brush", coats: 1, mix: 100, look: "a pale cream", hex: "#e6d6bc", note: "Over a cream undercoat, or layer it instead if the drybrush looks rough." },
       { technique: "Glaze", coats: 1, mix: 50, look: "a light flesh", hex: "#c48a6a", note: "A skin one-coat paint thinned half with water, left to settle in recesses." },
       { technique: "Layer", coats: 1, mix: 100, look: "a pale cream", hex: "#ecdcc4", note: "Pick out knuckles, knees, collarbones, nose and cheeks again." },
       { technique: "Glaze", coats: 1, mix: 30, look: "a light flesh", hex: "#c9917a", note: "A thinner second coat adds depth without hiding the highlights." },
@@ -408,7 +408,7 @@ const DETAIL_RECIPES = [
     ] },
   { key: "warm-skin-from-dark-brown", group: "body", name: "Warm skin from dark brown", summary: "Smooth warm skin built by mixing flesh into a dark brown",
     steps: [
-      { technique: "Base coat", coats: 1, mix: 100, look: "a dark brown", hex: "#3d2a20", note: "Spread it evenly, and fairly thick is fine as long as it does not pool." },
+      { technique: "Base coat", coats: 1, mix: 100, look: "a dark brown", hex: "#3d2a20", note: "Spread it evenly, and fairly thick is fine as long as it doesn't pool." },
       { technique: "Layer", coats: 3, mix: 100, look: "a warm flesh", hex: "#c98570", note: "More flesh in each layer, covering a little less of brow, cheeks and nose." },
       { technique: "Layer", coats: 1, mix: 100, look: "a pale ivory flesh", hex: "#efd9c0", note: "Add ivory for the top points, such as nose, brow, under the eyes and chin." },
       { technique: "Glaze", coats: 1, mix: 15, look: "a muted blue", hex: "#3b4556", note: "Very thin under cheekbones and jaw, and magenta or purple add variety too." },
@@ -420,7 +420,7 @@ const DETAIL_RECIPES = [
       { technique: "Layer", coats: 1, mix: 100, look: "a near white", hex: "#e6e4dc", note: "Highest clumps only, picking out clumps, not single hairs." },
       { technique: "Edge highlight", coats: 1, mix: 100, look: "a bright white", hex: "#fbfbf8", note: "Thinned, only on a small halo on the crown for white hair." },
     ] },
-  { key: "white-and-pale-fur", group: "body", name: "White and pale fur", summary: "Clean white or cream fur shaded with thin washes and finished with a white dry brush",
+  { key: "white-and-pale-fur", group: "body", name: "White and pale fur", summary: "Clean white or cream fur shaded with thin washes and finished with a white drybrush",
     steps: [
       { technique: "Prime", coats: 1, mix: 100, look: "a white", hex: "#f4f4f2", note: "A bright white undercoat keeps the fur clean." },
       { technique: "Wash", coats: 1, mix: 50, look: "a warm cream white", hex: "#d8d4c8", note: "Straight over textured fur so it sinks between the hairs." },
@@ -457,7 +457,7 @@ const DETAIL_RECIPES = [
     ] },
   { key: "bay-horse-coat", group: "body", name: "Bay horse coat", summary: "A rich brown horse with a black mane, tail and lower legs",
     steps: [
-      { technique: "Base coat", coats: 2, mix: 100, look: "a rich red brown", hex: "#5c3220", note: "Over the body and head, and do not worry about the legs yet." },
+      { technique: "Base coat", coats: 2, mix: 100, look: "a rich red brown", hex: "#5c3220", note: "Over the body and head, and don't worry about the legs yet." },
       { technique: "Wash", coats: 1, mix: 50, look: "a dark brown", hex: "#2f1c13", note: "Over the brown to deepen the gaps between the muscles." },
       { technique: "Layer", coats: 1, mix: 100, look: "a warm mid brown", hex: "#8a5434", note: "Back over the shoulder, hip and neck, leaving the shadows dark." },
       { technique: "Base coat", coats: 2, mix: 100, look: "a near black", hex: "#1d1b1a", note: "Mane, tail and the legs below the knees, painted last to cover any slips." },
@@ -541,16 +541,16 @@ const DETAIL_RECIPES = [
       { technique: "Base coat", coats: 2, mix: 100, look: "a dark silver", hex: "#7a7f86", note: "Over a black undercoat, with a touch of blue in the silver to start it cool." },
       { technique: "Glaze", coats: 2, mix: 40, look: "a blue tinted silver", hex: "#5a6f8c", note: "Mix a little blue acrylic ink into the silver and glaze low on each panel, adding ink each pass." },
       { technique: "Shade", coats: 1, mix: 60, look: "a blue black", hex: "#1c2433", note: "A wash of black with a little blue in the recesses, or a purple or turquoise tint." },
-      { technique: "Edge highlight", coats: 1, mix: 100, look: "a bright silver", hex: "#d4d7db", note: "A thin line on every edge with the side of the tip, or a light buffed dry brush." },
+      { technique: "Edge highlight", coats: 1, mix: 100, look: "a bright silver", hex: "#d4d7db", note: "A thin line on every edge with the side of the tip, or a light buffed drybrush." },
     ] },
   { key: "bright-bronze", group: "metal", name: "Bright bronze", summary: "A saturated warm bronze that stands out against cold dark colours",
     steps: [
       { technique: "Base coat", coats: 2, mix: 100, look: "a bright bronze", hex: "#b07a3a", note: "A saturated bronze, or silver mixed with an orange-brown one-coat paint, in smooth coats." },
-      { technique: "Wash", coats: 1, mix: 60, look: "an amber brown", hex: "#7a4a20", note: "All over, but do not let it pool." },
+      { technique: "Wash", coats: 1, mix: 60, look: "an amber brown", hex: "#7a4a20", note: "All over, but don't let it pool." },
       { technique: "Shade", coats: 1, mix: 50, look: "a dark brown", hex: "#2d1f14", note: "Dark brown with black, lined into recesses and around each detail." },
       { technique: "Edge highlight", coats: 1, mix: 100, look: "a pale bronze", hex: "#dcc49a", note: "Re-layer bronze on raised parts, then bronze and silver on the edges." },
     ] },
-  { key: "bright-steel-armour", group: "metal", name: "Bright steel and silver armour", summary: "Clean bright silver armour from a dark base, a wash and lighter dry brushes",
+  { key: "bright-steel-armour", group: "metal", name: "Bright steel and silver armour", summary: "Clean bright silver armour from a dark base, a wash and lighter drybrushes",
     steps: [
       { technique: "Base coat", coats: 2, mix: 100, look: "a very dark silver", hex: "#3e3e42", note: "Silver mixed with black so it barely shines, or use a silver spray primer for speed." },
       { technique: "Dry brush", coats: 1, mix: 100, look: "a mid steel", hex: "#8a8a8e", note: "Add more silver to the same mix and work top down, hitting detailed edges first." },
@@ -560,7 +560,7 @@ const DETAIL_RECIPES = [
   { key: "dark-iron", group: "metal", name: "Dull iron and gunmetal", summary: "Dull blackened iron or gunmetal for small weapon parts",
     steps: [
       { technique: "Base coat", coats: 2, mix: 100, look: "a very dark metal", hex: "#3a3c3f", note: "Gunmetal mixed half and half with black, or silver darkened with black." },
-      { technique: "Wash", coats: 1, mix: 60, look: "a brown black", hex: "#1d1914", note: "Any dark wash into recesses, with a little gloss mixed in so the metal does not go flat." },
+      { technique: "Wash", coats: 1, mix: 60, look: "a brown black", hex: "#1d1914", note: "Any dark wash into recesses, with a little gloss mixed in so the metal doesn't go flat." },
       { technique: "Layer", coats: 1, mix: 100, look: "a dull grey metal", hex: "#6d6f70", note: "A light grey mixed into the base, about two to one, on raised parts." },
       { technique: "Edge highlight", coats: 1, mix: 100, look: "a bright silver", hex: "#c8ccd0", note: "Sharp edges only, and a warm brown in the rivets looks like rust." },
     ] },
@@ -568,10 +568,10 @@ const DETAIL_RECIPES = [
     steps: [
       { technique: "Base coat", coats: 2, mix: 100, look: "a warm gold", hex: "#b8913a", note: "Brush or spray gold over any primer, as brushing over a spray helps washes grip." },
       { technique: "Wash", coats: 1, mix: 60, look: "a warm red brown", hex: "#6a3a1e", note: "All over, lifting pools on flat panels, and a thin purple in the deepest recesses adds depth." },
-      { technique: "Layer", coats: 1, mix: 100, look: "a bright gold", hex: "#d0a84a", note: "Repaint the flat panels, stopping short of the shaded recesses, or dry brush for speed." },
+      { technique: "Layer", coats: 1, mix: 100, look: "a bright gold", hex: "#d0a84a", note: "Repaint the flat panels, stopping short of the shaded recesses, or drybrush for speed." },
       { technique: "Edge highlight", coats: 1, mix: 100, look: "a pale silvery gold", hex: "#e8d8a0", note: "Gold with a little silver on crisp edges, using the side of the brush." },
     ] },
-  { key: "gold-treasure", group: "metal", name: "Gold treasure", summary: "A pile of gold coins with a warm wash and a silver dry brush",
+  { key: "gold-treasure", group: "metal", name: "Gold treasure", summary: "A pile of gold coins with a warm wash and a silver drybrush",
     steps: [
       { technique: "Prime", coats: 1, mix: 100, look: "a gold", hex: "#c9a13a", note: "A gold spray makes treasure piles very quick." },
       { technique: "Wash", coats: 1, mix: 70, look: "a warm red brown", hex: "#8a4a32", note: "All over the coins, with a darker brown in the deepest gaps." },
@@ -588,7 +588,7 @@ const DETAIL_RECIPES = [
     steps: [
       { technique: "Base coat", coats: 2, mix: 100, look: "a dark steel", hex: "#55585c", note: "A ready thinned dark steel, or silver mixed with black and brown so it barely shines." },
       { technique: "Shade", coats: 1, mix: 50, look: "a brown black", hex: "#2c241c", note: "Thinned with water into the recesses, lifting excess off high spots with a damp brush." },
-      { technique: "Edge highlight", coats: 1, mix: 100, look: "a bright silver", hex: "#c8ccd0", note: "Short scratchy strokes on edges, or a light silver dry brush, keeping the rest dark." },
+      { technique: "Edge highlight", coats: 1, mix: 100, look: "a bright silver", hex: "#c8ccd0", note: "Short scratchy strokes on edges, or a light silver drybrush, keeping the rest dark." },
     ] },
   { key: "heat-stained-metal", group: "metal", name: "Heat-stained metal", summary: "Blue, purple and brown bands fading back from a hot muzzle",
     steps: [
@@ -614,8 +614,8 @@ const DETAIL_RECIPES = [
   { key: "light-rust", group: "metal", name: "Light rust on armour", summary: "Well kept metal armour with only a hint of rust in the cracks",
     steps: [
       { technique: "Prime", coats: 1, mix: 100, look: "a silver", hex: "#a8acb0", note: "A light coat of silver spray, with joints picked out in black." },
-      { technique: "Wash", coats: 1, mix: 80, look: "a dark brown grey", hex: "#2a2622", note: "All over so every recess is dark and matt." },
-      { technique: "Layer", coats: 1, mix: 100, look: "a gunmetal", hex: "#7c8086", note: "Raised areas, then a light silver dry brush on the top edges." },
+      { technique: "Wash", coats: 1, mix: 80, look: "a dark brown grey", hex: "#2a2622", note: "All over so every recess is dark and matte." },
+      { technique: "Layer", coats: 1, mix: 100, look: "a gunmetal", hex: "#7c8086", note: "Raised areas, then a light silver drybrush on the top edges." },
       { technique: "Wash", coats: 1, mix: 50, look: "a rust orange", hex: "#9a4a1e", note: "Thinned with medium, only into a few cracks and round rivets, as kept armour needs very little." },
     ] },
   { key: "metallic-blue", group: "metal", name: "Candy metallic blue", summary: "Shiny blue metal from see-through colour over silver",
@@ -625,10 +625,10 @@ const DETAIL_RECIPES = [
       { technique: "Contrast", coats: 2, mix: 100, look: "a strong blue", hex: "#1f5f8f", note: "Coat evenly, or use a blue metallic paint over black instead." },
       { technique: "Edge highlight", coats: 1, mix: 100, look: "a bright silver", hex: "#d6dade", note: "Fine lines on the sharpest edges with a small brush." },
     ] },
-  { key: "metallic-red", group: "metal", name: "Metallic red", summary: "A rich metallic red from red one-coat paint over a silver dry brush",
+  { key: "metallic-red", group: "metal", name: "Metallic red", summary: "A rich metallic red from red one-coat paint over a silver drybrush",
     steps: [
-      { technique: "Prime", coats: 1, mix: 100, look: "a black", hex: "#1a1a1a", note: "Use a black undercoat or a pale silver base, with gold dry brushed under it for a warmer red." },
-      { technique: "Dry brush", coats: 1, mix: 100, look: "a light silver", hex: "#c8c8cc", note: "Dry brush the armour so the raised areas shine." },
+      { technique: "Prime", coats: 1, mix: 100, look: "a black", hex: "#1a1a1a", note: "Use a black undercoat or a pale silver base, with gold drybrushed under it for a warmer red." },
+      { technique: "Dry brush", coats: 1, mix: 100, look: "a light silver", hex: "#c8c8cc", note: "Drybrush the armour so the raised areas shine." },
       { technique: "Contrast", coats: 2, mix: 100, look: "a cherry red", hex: "#b0102a", note: "Two thin, even coats of red one-coat paint or ink, thinned with only a touch of water." },
       { technique: "Shade", coats: 1, mix: 60, look: "a deep red", hex: "#4d0b14", note: "Run it into recesses for definition, then lift edges with bright red." },
     ] },
@@ -811,11 +811,11 @@ const DETAIL_RECIPES = [
       { technique: "Edge highlight", coats: 1, mix: 100, look: "a pale stone", hex: "#b9a685", note: "Edges, plus tiny criss-cross scratches and nicks on flat panels." },
       { technique: "Glaze", coats: 1, mix: 25, look: "a dark brown", hex: "#3a2618", note: "Very thin over the flat areas to soften the contrast, leaving scratches bright." },
     ] },
-  { key: "sandy-stone", group: "material", name: "Sandy stone", summary: "Warm sandy stone for ruins and statues, washed brown and dry brushed up to a pale cream",
+  { key: "sandy-stone", group: "material", name: "Sandy stone", summary: "Warm sandy stone for ruins and statues, washed brown and drybrushed up to a pale cream",
     steps: [
       { technique: "Base coat", coats: 3, mix: 100, look: "a sandy beige", hex: "#b89f72", note: "Fewer coats over a sand primer, and a little pink in it gives rose stone." },
       { technique: "Wash", coats: 1, mix: 60, look: "a warm brown", hex: "#85602f", note: "Thinned with medium so it shades without darkening, soaking up pools at the bottom." },
-      { technique: "Dry brush", coats: 1, mix: 100, look: "a pale bone", hex: "#dccfa8", note: "Quick circles with a fully dry brush so it misses the recesses." },
+      { technique: "Dry brush", coats: 1, mix: 100, look: "a pale bone", hex: "#dccfa8", note: "Quick circles with a fully drybrush so it misses the recesses." },
       { technique: "Dry brush", coats: 1, mix: 100, look: "a pale cream white", hex: "#efe9d8", note: "A very light flick over the sharpest edges only." },
     ] },
   { key: "red-brick", group: "material", name: "Red brick", summary: "Red brick walls with varied bricks, dark mortar lines and worn pale edges",
@@ -857,7 +857,7 @@ const DETAIL_RECIPES = [
     steps: [
       { technique: "Base coat", coats: 1, mix: 100, look: "an off black", hex: "#24262a", note: "One thin coat so detail stays crisp, taking care around painted hands." },
       { technique: "Base coat", coats: 1, mix: 100, look: "a dark silver", hex: "#7d7f82", note: "Pick out the muzzle and a few small parts, some in bronze." },
-      { technique: "Wash", coats: 1, mix: 70, look: "a black", hex: "#101010", note: "An even coat all over, moved about so it does not pool." },
+      { technique: "Wash", coats: 1, mix: 70, look: "a black", hex: "#101010", note: "An even coat all over, moved about so it doesn't pool." },
       { technique: "Edge highlight", coats: 1, mix: 100, look: "a dark grey", hex: "#5a5e63", note: "Dark grey lines on edges, pale grey dots on corners, brighter silver on metal edges." },
     ] },
   { key: "black-leather", group: "material", name: "Clean black leather", summary: "Smart black leather with a soft sheen and cool grey highlights",
@@ -916,7 +916,7 @@ const DETAIL_RECIPES = [
       { technique: "Edge highlight", coats: 1, mix: 100, look: "a mid blue", hex: "#3d68b0", note: "Side of the brush on most edges, the tip only where needed." },
       { technique: "Edge highlight", coats: 1, mix: 100, look: "a pale grey blue", hex: "#9fb6d4", note: "Thinned, flicked onto the sharpest corners only." },
     ] },
-  { key: "dark-green-armour", group: "material", name: "Quick dark green armour", summary: "Fast dark green armour from a wash and dry brushes, for big groups",
+  { key: "dark-green-armour", group: "material", name: "Quick dark green armour", summary: "Fast dark green armour from a wash and drybrushes, for big groups",
     steps: [
       { technique: "Base coat", coats: 2, mix: 100, look: "a dark green", hex: "#1f3d2b", note: "Even coats so later touch ups match." },
       { technique: "Wash", coats: 1, mix: 80, look: "a black", hex: "#101010", note: "All over, lifting pools on flat plates, then let it dry fully." },
@@ -930,7 +930,7 @@ const DETAIL_RECIPES = [
       { technique: "Layer", coats: 2, mix: 100, look: "a mid brown", hex: "#6b5440", note: "Broad then finer wobbly grain lines, each one lighter." },
       { technique: "Edge highlight", coats: 1, mix: 100, look: "a pale grey brown", hex: "#9c8b78", note: "Outer edges and inside a few of the thicker grain lines." },
     ] },
-  { key: "deep-red-cloth", group: "material", name: "Deep red cloth", summary: "A rich cool red for cloaks and robes, built up by dry brushing",
+  { key: "deep-red-cloth", group: "material", name: "Deep red cloth", summary: "A rich cool red for cloaks and robes, built up by drybrushing",
     steps: [
       { technique: "Base coat", coats: 3, mix: 100, look: "a deep maroon", hex: "#5c1424", note: "Several thin coats over black, keeping the recesses dark." },
       { technique: "Dry brush", coats: 1, mix: 100, look: "a mid cherry red", hex: "#9c1c2c", note: "Start with a mix of the two reds, then pure, building up slowly." },
@@ -1055,7 +1055,7 @@ const DETAIL_RECIPES = [
       { technique: "Wash", coats: 1, mix: 60, look: "a dark brown", hex: "#3a2618", note: "Over the whole roof, not just the gaps, to darken the overall colour." },
       { technique: "Technical", coats: 1, mix: 100, look: "a red brown dust", hex: "#8a5a3e", note: "Runny pigment mix flowed on, left for hours, then wiped back so dust stays in gaps." },
     ] },
-  { key: "turquoise-armour", group: "material", name: "Turquoise armour", summary: "Sea green to turquoise armour from a pale dry brush and green washes",
+  { key: "turquoise-armour", group: "material", name: "Turquoise armour", summary: "Sea green to turquoise armour from a pale drybrush and green washes",
     steps: [
       { technique: "Base coat", coats: 2, mix: 100, look: "a blue green", hex: "#1f8a7a", note: "Any method, and a darker blue works if you spray light from above." },
       { technique: "Dry brush", coats: 1, mix: 100, look: "a pale turquoise", hex: "#5fc4c0", note: "All over every surface, though it looks pastel at this stage." },
@@ -1099,7 +1099,7 @@ const DETAIL_RECIPES = [
     steps: [
       { technique: "Prime", coats: 1, mix: 100, look: "a black", hex: "#151515", note: "Spray black and touch up any missed spots with black paint." },
       { technique: "Dry brush", coats: 1, mix: 100, look: "a dark blue grey", hex: "#4b5459", note: "Brush down across every edge, as a rough, uneven finish suits battered plates." },
-      { technique: "Wash", coats: 1, mix: 40, look: "a dark warm brown", hex: "#3d2a1f", note: "Run it into rivets and chips, and thinned black on panel centres tidies a rough dry brush." },
+      { technique: "Wash", coats: 1, mix: 40, look: "a dark warm brown", hex: "#3d2a1f", note: "Run it into rivets and chips, and thinned black on panel centres tidies a rough drybrush." },
       { technique: "Edge highlight", coats: 1, mix: 100, look: "a light grey", hex: "#8a9096", note: "Small jagged chips on corners and rivets where light would catch." },
     ] },
   { key: "yellow-cloth", group: "material", name: "Warm yellow cloth", summary: "A rich yellow for cloth that covers well by brush",
@@ -1114,7 +1114,7 @@ const DETAIL_RECIPES = [
       { technique: "Prime", coats: 1, mix: 100, look: "a hot pink", hex: "#e8559a", note: "Spray the whole model, or use an orange undercoat for softer warm shadows." },
       { technique: "Airbrush", coats: 1, mix: 100, look: "a white", hex: "#f4f4f0", note: "Dust it from above, leaving pink in the recesses and undersides." },
       { technique: "Contrast", coats: 2, mix: 100, look: "a bright yellow", hex: "#f2c418", note: "Thin a yellow one-coat paint or ink about half and half and coat it all." },
-      { technique: "Edge highlight", coats: 1, mix: 100, look: "a pale cream", hex: "#f3e7bf", note: "Sharpest edges only, or a pale sand dry brush for a rougher finish." },
+      { technique: "Edge highlight", coats: 1, mix: 100, look: "a pale cream", hex: "#f3e7bf", note: "Sharpest edges only, or a pale sand drybrush for a rougher finish." },
     ] },
   // X8 end
 
@@ -1192,21 +1192,21 @@ const DETAIL_RECIPES = [
     ] },
   { key: "fiery-red-glow", group: "light", name: "Fiery red glow", summary: "A hot red glow from a crack or source, turning orange near it",
     steps: [
-      { technique: "Dry brush", coats: 1, mix: 100, look: "a deep red", hex: "#8e1b1f", note: "Paint the source, then dry brush outwards over the area around it." },
+      { technique: "Dry brush", coats: 1, mix: 100, look: "a deep red", hex: "#8e1b1f", note: "Paint the source, then drybrush outwards over the area around it." },
       { technique: "Glaze", coats: 1, mix: 20, look: "a deep red", hex: "#9a1a1e", note: "Very thin over the lit area to tint it and remove chalkiness." },
       { technique: "Dry brush", coats: 1, mix: 100, look: "a bright orange", hex: "#ef5a24", note: "Softer and closer to the source, skipping a step if it adds nothing." },
       { technique: "Layer", coats: 1, mix: 100, look: "a bright yellow", hex: "#ffd23f", note: "A touch right at the brightest point only." },
     ] },
   { key: "frost-and-ice-weapons", group: "light", name: "Frost and ice weapons", summary: "Glassy, faceted ice blades built from thin whites over a strong blue",
     steps: [
-      { technique: "Base coat", coats: 2, mix: 100, look: "a vivid blue", hex: "#2f6fb5", note: "A strong, saturated blue, as a dull blue will not show through later layers." },
+      { technique: "Base coat", coats: 2, mix: 100, look: "a vivid blue", hex: "#2f6fb5", note: "A strong, saturated blue, as a dull blue won't show through later layers." },
       { technique: "Layer", coats: 3, mix: 100, look: "a thin white", hex: "#f4f6f8", note: "Many thin dabbed and criss-crossed coats suggest facets, so leave some blue showing." },
       { technique: "Glaze", coats: 2, mix: 40, look: "a pale icy blue", hex: "#8fd0e0", note: "Thinned all over, then a little turquoise only in patches." },
       { technique: "Edge highlight", coats: 1, mix: 100, look: "a white", hex: "#ffffff", note: "Dab white chips along the edges and ridges rather than a smooth line." },
     ] },
   { key: "glowing-fungus", group: "light", name: "Glowing cyan fungus", summary: "A bright cyan glow source that fades into dark surroundings",
     steps: [
-      { technique: "Base coat", coats: 2, mix: 100, look: "a dark green", hex: "#1f3324", note: "Add a little matt black so the surroundings are dark and flat." },
+      { technique: "Base coat", coats: 2, mix: 100, look: "a dark green", hex: "#1f3324", note: "Add a little matte black so the surroundings are dark and flat." },
       { technique: "Layer", coats: 2, mix: 100, look: "a white", hex: "#ffffff", note: "Cover the glowing tips in bright white." },
       { technique: "Glaze", coats: 2, mix: 30, look: "a cyan", hex: "#00c8d8", note: "Thin cyan from the base up, leaving the very tip the palest part." },
       { technique: "Varnish", coats: 1, mix: 100, look: "a glossy white", hex: "#f8ffff", note: "White mixed with gloss varnish on the tip makes it look brighter." },
@@ -1297,7 +1297,7 @@ const DETAIL_RECIPES = [
     ] },
   { key: "toxic-green-glow", group: "light", name: "Toxic green glow", summary: "A sickly green glow built from mid green up to yellow green",
     steps: [
-      { technique: "Dry brush", coats: 1, mix: 100, look: "a mid green", hex: "#4f9a3c", note: "Paint the source, then dry brush outwards over the raised areas." },
+      { technique: "Dry brush", coats: 1, mix: 100, look: "a mid green", hex: "#4f9a3c", note: "Paint the source, then drybrush outwards over the raised areas." },
       { technique: "Glaze", coats: 1, mix: 15, look: "a mid green", hex: "#5aa848", note: "About one part paint to five water over the lit area to tint it." },
       { technique: "Dry brush", coats: 1, mix: 100, look: "a yellow green", hex: "#9ccc3a", note: "Lighter touch, on edges near the source only." },
       { technique: "Glaze", coats: 1, mix: 40, look: "a pale green", hex: "#d4f0b0", note: "Yellow green with white, thinned, into the centre of the source." },

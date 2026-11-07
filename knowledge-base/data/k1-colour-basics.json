@@ -6,10 +6,10 @@
       "title": "Adding an accent colour",
       "summary": "A small patch of one contrasting colour gives the eye a resting point and makes a plain model look finished.",
       "body": [
-        "Steel, leather and browns on their own make a flat model. Pick one colour that is not yet on it, ideally from the far side of the colour wheel from the main colour. A brown flask on an all-blue figure, or a red sash on a grey one, is enough.",
+        "Steel, leather and browns on their own make a flat model. Pick one colour that isn't yet on it, ideally from the far side of the colour wheel from the main colour. A brown flask on an all-blue figure, or a red sash on a grey one, is enough.",
         "Use it in small amounts only: a gem, a lens, a stripe, a few dots on cloth or a touch of verdigris on bronze. Give these few spots more care and saturation than the big areas, since they carry the whole model.",
         "Put the strongest use of it on the upper half, near the face or head. That is what people see first on the table, and accents on the legs are easy to miss.",
-        "Echo it two or three more times in duller or smaller forms, roughly in a triangle around the model, so it does not look stranded. A lone bright spot at the very edge, such as on a foot, pulls the eye away and traps it there.",
+        "Echo it two or three more times in duller or smaller forms, roughly in a triangle around the model, so it doesn't look stranded. A lone bright spot at the very edge, such as on a foot, pulls the eye away and traps it there.",
         "If one accent grabs too much attention, either repeat it somewhere else, for example as a shadow tone in skin, or push it toward a colour already on the model. Matching effects, such as glowing eyes and glowing runes, should share one colour.",
         "For a gem or lens: base in the accent, shade the lower half with your darkest colour, then add a small light dot in the top corner.",
         "On a grimy, muted model, let the accent stay clean: after weathering, touch the pure colour back onto its raised parts.",
@@ -107,11 +107,11 @@
       "key": "base-colours-for-weathering",
       "category": "colour-basics",
       "title": "Base colours for heavy weathering",
-      "summary": "Start base colours paler and greyer than the finish you want, so oils, grime and texture do not swamp the model.",
+      "summary": "Start base colours paler and greyer than the finish you want, so oils, grime and texture don't swamp the model.",
       "body": [
         "Washes, filters, oils and grime all darken and mute what is underneath. A colour that looks right before weathering often ends up dull and dark after it.",
         "Choose base colours a step lighter and a little greyer than the finish you want. Small models already look darker than the real thing, so this helps twice. If your colours come in graded shades, base with the lighter one. You can add strength back later with a glaze.",
-        "Start with strong light. Prime black, then put a heavy white zenithal on from above with an airbrush or a large dry brush. Dirt and texture only read over a bright start.",
+        "Start with strong light. Prime black, then put a heavy white zenithal on from above with an airbrush or a large drybrush. Dirt and texture only read over a bright start.",
         "For coloured armour, a dark ink of the colour sprayed from below and a very pale tint of it from above fades more richly than priming in the colour itself.",
         "Keep a big value gap between light and dark areas placed close together, so the model still reads at table distance once it is dirty.",
         "Keep small details darker than the armour and avoid loud colours on them. Save the few strong spots, such as lenses, until the weathering is done.",
@@ -147,8 +147,8 @@
         "A plain grey base can make the model look separate from it. Thin the model's main colours to glazes and touch them in random patches on stones. Keep it subtle; it fades as it dries.",
         "Echo the model's colours on the base, a little less strong than on the model: a green tuft, a thin orange pigment, a purple-grey rim. A colour opposite the model's main one works well, such as orange dust in the recesses under blue armour.",
         "Match the model's overall level of colour. A vivid model on a dull grey base looks wrong, so allow the base a bit more colour than feels natural.",
-        "Keep the base slightly darker, duller and less busy than the model so the figure stays the focus, but still give it dark recesses and bright raised edges so it has shape. Small models need stronger contrast to read. If a base looks too loud, knock it back with a wash or a duller dry brush.",
-        "Paint every part of the base from one related palette, and give tufts and moss a light dry brush so they match. Vary repeated details such as leaves with two or three slightly different browns.",
+        "Keep the base slightly darker, duller and less busy than the model so the figure stays the focus, but still give it dark recesses and bright raised edges so it has shape. Small models need stronger contrast to read. If a base looks too loud, knock it back with a wash or a duller drybrush.",
+        "Paint every part of the base from one related palette, and give tufts and moss a light drybrush so they match. Vary repeated details such as leaves with two or three slightly different browns.",
         "Dull bright debris such as dropped helmets or weapons with heavy brown washes, then add only the odd bright edge.",
         "A black or dark coloured rim gives a clean frame. Once you settle on a base scheme, keep it the same across a whole group of models."
       ],
@@ -178,7 +178,7 @@
       "summary": "Colours close in hue, or similar in strength, blend smoothly; opposites go muddy unless glazed.",
       "body": [
         "Two colours of the same hue but different strength blend without trouble, as does a colour blended towards black.",
-        "Different hues can still blend if they are similarly muted, such as a dusty pink into a dusty green. Before blending two hues, adjust one until both are close in brightness.",
+        "Different hues can still blend if they're similarly muted, such as a dusty pink into a dusty green. Before blending two hues, adjust one until both are close in brightness.",
         "A muted yellow into a strong magenta fights. Bring them closer first, for example by adding white to the magenta.",
         "Wet blending physically mixes the paints, so opposite colours make a muddy middle (red into blue gives a purple band). Glaze the transition instead.",
         "Paints made from a single pigment mix cleaner than paints made from several. If a mix keeps going grey or brown, the pigments are fighting; use simpler colours where the blend must stay clean.",
@@ -209,15 +209,15 @@
       "key": "breaking-up-metal-models",
       "category": "colour-basics",
       "title": "Breaking up an all-metal model",
-      "summary": "Use two metals, dark joints, painted plates and one bright accent so a metal model does not read as one mass.",
+      "summary": "Use two metals, dark joints, painted plates and one bright accent so a metal model doesn't read as one mass.",
       "body": [
         "A model that is all one metal looks like a shapeless lump. Pick some parts to be other materials, and let one metal be the bright, focal one while the others are toned down.",
-        "Use a mid steel for the main parts and a darker metal for others, shading both strongly with a black and brown mix. A touch of matt medium keeps recesses from going shiny.",
+        "Use a mid steel for the main parts and a darker metal for others, shading both strongly with a black and brown mix. A touch of matte medium keeps recesses from going shiny.",
         "A few paints give many metal tones: black or brown into silver for darker steel, brown into gold for a rich warm base, a little gold and silver together for a pale gold. Silver is the stronger, so add it a little at a time.",
-        "Vary the undertone and finish as well as the brightness. Some silvers lean cool and blue-grey, others warm and brown; cool reads as clean steel, warm as old or oily iron. A smooth coat on a blade and a dry brush of silver over black on a gun also read as two materials.",
+        "Vary the undertone and finish as well as the brightness. Some silvers lean cool and blue-grey, others warm and brown; cool reads as clean steel, warm as old or oily iron. A smooth coat on a blade and a drybrush of silver over black on a gun also read as two materials.",
         "For two tones from one silver, wash it all dark brown, repaint the parts you want cleaner, then wash everything black. The twice-washed inner parts go dark and grimy; the repainted parts stay brighter.",
         "On a mostly gold model, pick out raised trim and emblems in a paler, whiter gold, or pair copper trim with bronze panels. Paint flexible joints, hoses, seals and tyres black, and some plates as flat colour such as off-white.",
-        "Add one or two small spots of strong colour, like a red valve, lights or a painted symbol. Give that colour contrast as strong as the metal's, so the metal does not take over.",
+        "Add one or two small spots of strong colour, like a red valve, lights or a painted symbol. Give that colour contrast as strong as the metal's, so the metal doesn't take over.",
         "Base coat all the new areas first to judge the balance before highlighting anything. Paint symbols after the metal, then tidy around them with the metal."
       ],
       "related": [
@@ -250,7 +250,7 @@
         "Pick out small bright details such as coloured cords, cuffs or white piping to separate the dark areas.",
         "Highlight black straps with a few short dark grey lines.",
         "Exact accuracy matters less than it seems. Real paint varied between batches, crews and seasons, and sun and dust shifted it further, so a colour that looks right to you is fine.",
-        "Small variations in mixed colours across a unit look natural and do not need to match exactly. Keep the overall colour consistent across the whole force."
+        "Small variations in mixed colours across a unit look natural and don't need to match exactly. Keep the overall colour consistent across the whole force."
       ],
       "related": [
         "using-value",
@@ -420,9 +420,9 @@
         "Choose a main colour for the big surfaces, a secondary colour for cloth or trim, and one spot colour that appears on every model. Paint everything else in neutrals such as grey, brown and metal.",
         "Keep the core simple enough to repeat across dozens of models, with room for extra detail on leaders and big pieces. Strong pairings such as yellow and black read well on the table; too many colours look busy at arm's length.",
         "Try the colour opposite your main colour on the colour wheel as the spot colour. Put blobs of the candidates side by side on the palette, or colour a grey photo of a model roughly in an image editor, to judge the balance before you commit.",
-        "Paint one test model start to finish, ideally the most complicated one in the range so every material gets decided. Write down every step, and drop or change any step that is slow or does not work. If it fails, strip it and try again.",
+        "Paint one test model start to finish, ideally the most complicated one in the range so every material gets decided. Write down every step, and drop or change any step that is slow or doesn't work. If it fails, strip it and try again.",
         "Big monsters and vehicles can bring brightness to a dark force, but reuse the same few paints, lighten every colour with the same pale tone, and swap any extra colour for one already on the models.",
-        "For a first army, some colours forgive far more than others. Dark blue, dark green, brown and black cover in a coat or two, hide slips and take a wash well, and metallics look good for little work. Yellow, white, red, orange and bright green cover poorly, especially over black, need a light undercoat and several thin coats and show every slip, so they are easier as trim than as the main colour.",
+        "For a first army, some colours forgive far more than others. Dark blue, dark green, brown and black cover in a coat or two, hide slips and take a wash well, and metallics look good for little work. Yellow, white, red, orange and bright green cover poorly, especially over black, need a light undercoat and several thin coats and show every slip, so they're easier as trim than as the main colour.",
         "Then paint the rest from your written list without stopping to deliberate."
       ],
       "related": [
@@ -486,7 +486,7 @@
       "title": "Cold light and night scenes",
       "summary": "Highlight with a mid-value turquoise or blue instead of white or pale yellow so a model looks lit by moonlight.",
       "body": [
-        "A highlight only has to be lighter than what surrounds it. It does not have to be white or pale yellow.",
+        "A highlight only has to be lighter than what surrounds it. It doesn't have to be white or pale yellow.",
         "For moonlight, keep to one light direction, make that light a cold pale blue, and keep every colour low in saturation. Prime with a zenithal from the moon's direction and paint the face first, then use it as the guide for where light falls elsewhere.",
         "Keep the usual base colours, but highlight every material with the same cold colour, such as a turquoise or a pale pastel blue (#b8cde0), so it reads as one light.",
         "Push the shadows and midtones darker first. Lowering the whole range makes a mid-value turquoise read as bright.",
@@ -589,7 +589,7 @@
       "title": "Building a scheme from reference art",
       "summary": "Pull a small palette from artwork, photos or one loud colour you like, and paint the whole model from it.",
       "body": [
-        "Pick an illustration, film still or photo whose colours you like. It does not need to match the model's theme: a ship, a sunset, an animal, a historical uniform or a fashion photo all give ready-made palettes, often less obvious than other painted models. Keep a folder of pieces that grab you.",
+        "Pick an illustration, film still or photo whose colours you like. It doesn't need to match the model's theme: a ship, a sunset, an animal, a historical uniform or a fashion photo all give ready-made palettes, often less obvious than other painted models. Keep a folder of pieces that grab you.",
         "Use a colour picker on a digital copy to pull out about five main colours. Nudge them towards the pure tones and away from the in-between mixes.",
         "Find the closest paints you have; near enough is fine. To match by eye, zoom in and hold paint pots against the picture. Check the reference first: web photos are often colour-shifted, so find a second, better photo before matching.",
         "Put all five on the palette, plus black and white if needed, from the start. Try them as swatches side by side before they go on the model. Look at the whole artwork, including background and side figures, for how the colours are used.",
@@ -622,7 +622,7 @@
       "key": "colour-variation-in-skin",
       "category": "colour-basics",
       "title": "Colour variation in skin",
-      "summary": "Tint set zones of the face and body with thin reds, blues and purples so skin is not one flat tone.",
+      "summary": "Tint set zones of the face and body with thin reds, blues and purples so skin isn't one flat tone.",
       "body": [
         "One brown wash gives skin a single dull shadow colour. Real skin is translucent and shows warm and cool zones, so add them with very thin glazes, mixed partly from the skin tone itself so no change is abrupt. Shading with dark blue or green mixed into the skin tone, rather than black or brown, already helps.",
         "The face has rough bands: a slightly yellow forehead, a red band across the nose, cheeks and ears, and a cooler, duller chin. Go lightly on the nose or the figure looks drunk.",
@@ -663,7 +663,7 @@
         "Real materials are never one flat colour. Light, reflections and texture all add variety.",
         "Paint a range of colours underneath: greens, pinks, oranges, purples, placed loosely where they suit the form.",
         "Then glaze the intended colour over the top in thin coats. The area still reads as that colour, but with depth.",
-        "Keep the glaze thin so the colours beneath are not lost.",
+        "Keep the glaze thin so the colours beneath aren't lost.",
         "This suits monster skin, hide and large single-colour areas, where flat colour shows most.",
         "A monochrome scheme takes this further: the whole model in one hue, from near black to pale, or in plain black, white and greys. It holds together easily, so all the work goes into value. Make each neighbouring area a clear step lighter or darker than the next, or it merges into one shape from arm's length.",
         "A quick route for a unit: prime white, base coat one mid or dark colour all over, darken the recesses from below, then dust or drybrush a pale version from above. A wash and a pale drybrush on heads, shoulders and key details finish it. For greys, drybrush up from black through three or four greys, each from the same light direction.",
@@ -701,7 +701,7 @@
         "Triad: three evenly spaced, such as green, orange and purple. Split-complementary: one colour plus the two either side of its opposite, strong contrast with less tension. Tetradic and square schemes use four colours and easily look busy.",
         "Turn a triad or split-complementary guide around the wheel, printed or in an online tool, until you find a set you like, or borrow one from a sunset. Mix the chosen colours on the palette to see the whole range before you touch the model, and judge the result by eye.",
         "Whatever the harmony, let one colour dominate and use the others as small pops. Scatter each pop colour in two to four places, such as bracers, a knee and a tassel, for balance.",
-        "Slightly muted versions sit together better than full-strength ones, so add a touch of a neutral if they fight. Corners do not need to be strong colours; a dull blue-green works as well as a bright yellow.",
+        "Slightly muted versions sit together better than full-strength ones, so add a touch of a neutral if they fight. Corners don't need to be strong colours; a dull blue-green works as well as a bright yellow.",
         "A gamut mask is a shape laid over the wheel, such as a triangle. Its corners are your colours, and anything mixable from them plus black and white is allowed.",
         "Colours need not be literal: bronze counts as a dull yellow-orange, and browns, blacks, whites, belts and boots are neutrals outside the scheme. If a type of model always ends up one colour, try the one opposite it on the wheel for a fresh look."
       ],
@@ -803,7 +803,7 @@
         "Wizard: the robe carries the model. Pick one rich colour, such as a deep purple, #4b2a6b, or a midnight blue, #1c2a4a, with a pale cream trim, #e8dcb5. Save the brightest colour for the staff gem or spell, and tint the nearby hands and face with it.",
         "Ranger: earthy and muted. Use greens and browns that differ in lightness, such as a moss green, #4f5d32, a leather brown, #6b4a2f, and a dusty grey brown, #7a6f5e. Dirty the cloak hem. One small cool accent, such as grey blue fletching, #6f8290, stops it reading as mud.",
         "Elf: clean, pale and elegant. Use cool pale skin, #e9d6c8, light cloth such as an ivory, #efe9d8, or a sea green, #3f8f7f, and fine gold or silver trim. Keep blends smooth and edges crisp, and go light on grime. The slim sculpt suits small careful detail.",
-        "Dwarf: warm and heavy. Ruddy skin, #c98a6b, a big beard in a rusty red, #a8452a, a dark brown, #4a2f1e, or a grey white, #c9c6bf, and warm metals such as bronze, #8c6239. Shade the beard deeply and highlight the braids so it does not become one flat blob.",
+        "Dwarf: warm and heavy. Ruddy skin, #c98a6b, a big beard in a rusty red, #a8452a, a dark brown, #4a2f1e, or a grey white, #c9c6bf, and warm metals such as bronze, #8c6239. Shade the beard deeply and highlight the braids so it doesn't become one flat blob.",
         "The face sells the hero. Give the nose, brow and cheekbones a slightly brighter highlight than the rest of the model, and keep your accent colour close to the head.",
         "For a party of heroes, give each one a different main colour but repeat one shared colour, such as the same leather brown, so they look like they belong together.",
         "Let the props tell the role. Swords, staffs, bows and axes already say who the figure is, so the paint only has to support them, not shout over them."
@@ -913,7 +913,7 @@
         "To restore saturation lost to whitened highlights, give the area one all-over glaze of a rich colour, or push a heavily thinned vivid paint of the same hue into the shadows only. Do this before edge highlighting.",
         "For variety, glaze a heavily thinned warm brown or yellow in a few patches, especially low on cloth, or touch a faint contrasting colour into the midtones only, such as pink into a cool blue. On pale areas such as bone, keep warm filters out of the highlights. A colour borrowed from elsewhere on the model ties it together.",
         "To recolour finished cloth, brush a transparent one-coat paint over pale, highlighted areas. Red over cream may look pink at first; a second coat and a wash deepen it, and the shading underneath carries through.",
-        "Load the brush, dab most of it off, and stroke from the highlight towards the shadow so pigment builds where the stroke ends. Do not go back into a wet glaze; let it dry and add another pass. One-coat paints pool under a brush, so thin them well.",
+        "Load the brush, dab most of it off, and stroke from the highlight towards the shadow so pigment builds where the stroke ends. Don't go back into a wet glaze; let it dry and add another pass. One-coat paints pool under a brush, so thin them well.",
         "Glazes and inks knock back the final highlights, so push them a little brighter first and re-apply the brightest edges and dots afterwards. For a display finish, alternate highlighting and glazing a few times; for quick models, glaze once."
       ],
       "related": [
@@ -945,8 +945,8 @@
         "Start with a very dark grey on the main folds and edges as a chunky first stage; it sets where the light falls. Then a mid grey as a finer line on the highest parts, and a light grey only on the sharpest edges. Edges facing the light get brighter lines than those in shadow.",
         "Keep each stage thin and add in-between mixes if a step looks too big. If black reads as blue or grey, the highlights cover too much: trim them back with thinned black and leave more black between. Changing the tint rarely fixes it. If it looks flat instead, add a mid step or a lighter top edge.",
         "Pick the tint for the material and its neighbours: cool blue-greys for hard shiny armour and beside red; black with a touch of pink, cream or pale yellow for leather, gloves and robes, which reads as light rather than dust; neutral greys for anything. A teal or very dark green ties black into a scheme. Two black items with different tints stay apart.",
-        "Finish with a few small dots of light grey with a touch of white on corners. On smooth panels, slip a second colour such as blue or purple between the highlight and the black so reflections do not look plain grey.",
-        "Fast options: one cool mid grey for every black part, varying only how much area you cover; three greys placed in shrinking areas without blending; or a dark grey stippled onto raised areas, then lighter greys dry brushed on edges. A one-coat black over pale primer gives soft highlights for free.",
+        "Finish with a few small dots of light grey with a touch of white on corners. On smooth panels, slip a second colour such as blue or purple between the highlight and the black so reflections don't look plain grey.",
+        "Fast options: one cool mid grey for every black part, varying only how much area you cover; three greys placed in shrinking areas without blending; or a dark grey stippled onto raised areas, then lighter greys drybrushed on edges. A one-coat black over pale primer gives soft highlights for free.",
         "For worn black, dab short broken grey marks along edges instead of a clean line. A few small silver chips show up best of all on black, and can stand in for edge highlights when time is short.",
         "For subtle colour, glaze very thin purple or red over the panels in places, then restore the sharpest highlights. On a dull, dark model or one with lots of grey, stop before pale grey so the black parts keep their weight."
       ],
@@ -982,7 +982,7 @@
         "If you want the extra shine of silver, step towards it in mixes, half gold and half silver, then mostly silver on smaller areas, and keep pure silver to the last tiny edges and dots. If it looks flashy, a thinned brown wash or a glaze of the gold blends it back.",
         "On painted copper and bronze, white turns a red-brown salmon pink. Build the lights with orange and then a warm yellow, use white only for the last small reflections, and glaze the orange back if the pink spreads.",
         "To make a polished part stand out, give the flat of a blade a paler gold than the rest, or break up a large gold shield with a second, darker metal on its patterns.",
-        "Even a little matt black on a mostly metal model makes the metal look brighter. On steel, a bright fine silver is right for highlights, small scratches and dots."
+        "Even a little matte black on a mostly metal model makes the metal look brighter. On steel, a bright fine silver is right for highlights, small scratches and dots."
       ],
       "related": [
         "highlighting-metallics",
@@ -1011,14 +1011,14 @@
       "title": "Changing hue from shadow to highlight",
       "summary": "Use a different hue for shadows and highlights, not just darker and lighter, for richer colour.",
       "body": [
-        "Shadows and highlights do not have to be darker and lighter versions of the base colour. A different hue works as long as the value is right; check it in a greyscale photo.",
+        "Shadows and highlights don't have to be darker and lighter versions of the base colour. A different hue works as long as the value is right; check it in a greyscale photo.",
         "A simple ramp starts from a deep, cool version of the colour and ends on a warm, pale one, with about three steps between, such as a dark greenish blue to a pale yellow. Set the colours in a row on the palette so halfway mixes are easy. Avoid steps that contain black, which go dull.",
         "Or pair a naturally dark colour with a naturally bright one, such as a dark purple and a yellow-green. Base coat in the dark colour and highlight by mixing in more of the bright one.",
         "Glaze see-through paints over this undercoat to set the final colour. The hue shift shows through.",
         "Some pairings that work: brown shaded with a pinky purple and highlighted to a warm yellow; green skin with pink and red in the shadows; grey metal with a hint of turquoise; peach skin shaded to red-brown, with a muted purple only in the darkest areas.",
         "Lighten greens with a yellowish bone or yellow rather than white, which turns them chalky. Most yellows are fairly transparent, so they cover less but blend more easily.",
         "Shade neutrals with a little of the dark colour and highlight them with a little of the bright one, so everything shares the shift.",
-        "Shading towards blue or purple and highlighting towards yellow gives contrast in both lightness and hue. Keep it subtle; the viewer should not spot the trick."
+        "Shading towards blue or purple and highlighting towards yellow gives contrast in both lightness and hue. Keep it subtle; the viewer shouldn't spot the trick."
       ],
       "related": [
         "warm-cool-shadows-highlights",
@@ -1177,7 +1177,7 @@
       "title": "Painting with a limited palette",
       "summary": "Put out a handful of paints plus black and white and mix everything from them for harmony and speed.",
       "body": [
-        "Pick around five or six paints before you start and do not add more. Black and white are always allowed. One hue family covers more than it seems: brown is a dark orange, and pink is a light red.",
+        "Pick around five or six paints before you start and don't add more. Black and white are always allowed. One hue family covers more than it seems: brown is a dark orange, and pink is a light red.",
         "Choose a clear run from light to dark, mostly warm or mostly cool, plus one contrasting accent. A handy five is one warm, one cool, two neutrals and one accent. Keep any one model to two or three prominent colours with neutrals for the rest; a tiny touch of gold barely counts.",
         "Use your darkest paint as the shadow and your lightest as the highlight for every area. A very dark brown and a pale flesh read as black and white when set against each other.",
         "A classic four-colour set is a strong red, black, ivory and yellow ochre. Ochre with some red and ivory makes flesh, and a touch of black cools its shadows. Ivory cut with ochre and a little black gives a dirty off-white. Highlight red with ochre and ivory, not white, or it turns pink.",
@@ -1214,7 +1214,7 @@
       "summary": "Small touches of colour on lips, eyelids and under the cheekbones add life to a face.",
       "body": [
         "Paint the skin fully first, then add colour on top.",
-        "Paint thin red on both lips following their shape. Highlight the bottom lip with red mixed with a pale yellow to make pink, then add a tiny pale reflection point. Do not wipe out the top lip with too bright a highlight; shape the dip in its centre.",
+        "Paint thin red on both lips following their shape. Highlight the bottom lip with red mixed with a pale yellow to make pink, then add a tiny pale reflection point. Don't wipe out the top lip with too bright a highlight; shape the dip in its centre.",
         "On small or male faces, colour on both lips can look swollen. Tint only the lower lip, mix the lip colour with skin tone so it stays close to the skin, or use a muted purple mixed from red and dark blue. A slightly thinned bright red one-coat paint over the skin also gives a natural tint.",
         "For eye colour, use a cool shade that contrasts with warm lips, such as a turquoise or blue mixed with some skin tone. Glaze it thinly on the lids, blending up towards the brow. A thin purple glaze also reads as eyeshadow.",
         "For eyeliner, block the eye in dark grey rather than black and leave a ring of it round the white. For a smoky look, put thinned black around the eye above and on the lower lid, with a fine bright skin line along the lashes.",
@@ -1253,7 +1253,7 @@
         "Use the amount of an accent colour to show rank. With two accents, such as gold and turquoise, give troops more turquoise and only small gold touches, and give leaders more gold, extra edge highlights on it and stripes in the other colour.",
         "Without a uniform, colour still shows who matters: drab browns and greys for the lowest ranks, one bright garment for better equipped fighters, and trims and simple freehand patterns only on the elite.",
         "For group markings, pick one fixed spot, such as a knee pad or helmet, and a simple rule, like a stripe or a different helmet colour for leaders. Keep markings within the existing colours, and choose a freehand shape you can repeat if no transfer exists.",
-        "Specialists can share the scheme but shift it. A thinned sepia wash turns white armour to ivory; thinned black over white, then a mid grey dry brush, gives charcoal for stealthy models. Trim painted over the darker base comes out muted.",
+        "Specialists can share the scheme but shift it. A thinned sepia wash turns white armour to ivory; thinned black over white, then a mid grey drybrush, gives charcoal for stealthy models. Trim painted over the darker base comes out muted.",
         "Reversing the scheme on a leader, swapping which areas are light and which are dark, marks it out at once. Swapped heads, weapons or upgrade parts from the spares box add to it.",
         "Save detailed bases for leaders and centrepieces, and give the rest a simpler version in the same colours so everything still matches."
       ],
@@ -1289,7 +1289,7 @@
         "Tint neutrals to suit the main colour: a neutral brown next to yellow rather than an orange one, browns leaning orange against blue, greys leaning green next to red.",
         "On a model built from one colour family, vary it: a bright red for cloth and a deeper red for armour, warm or cold browns for jacket, straps, hair and wood, or slightly different greys for a grey uniform's cloth, armour and webbing. Highlight each with its own lighter shade.",
         "When cloth and a hard surface share a colour, start the cloth darker, give it a warmer highlight and soft blends, and give the hard surface a paler, cooler highlight with crisp edges, taken towards ivory on the tops of curved plates. Two whites can be split the same way.",
-        "Finish changes how a colour reads. Tiny, very bright highlights make black look like shiny leather, and fine lines across fur suggest texture. Matt varnish on cloth beside slightly glossier armour, with a dark line where the two meet, separates them further.",
+        "Finish changes how a colour reads. Tiny, very bright highlights make black look like shiny leather, and fine lines across fur suggest texture. Matte varnish on cloth beside slightly glossier armour, with a dark line where the two meet, separates them further.",
         "Add scratches or texture so leather looks different from armour. Small steel chips on black armour plates, with the leather left plain black, set them apart at a glance.",
         "Check small details against what sits behind them: parchment on cream robes should go almost white, and skin next to gold and blond hair reads better pushed towards pink. For speed, one recipe for both is fine; the difference is a finishing touch."
       ],
@@ -1318,13 +1318,13 @@
       "title": "What goes under metallic paint",
       "summary": "Smooth surfaces and the right base colour make metallics shinier and truer, such as black under silver and brown under copper.",
       "body": [
-        "Metallics need a smooth surface to shine. A very matt primer scatters light; a satin primer under metal areas helps. Metal also shows every mould line and scratch, so clean up carefully before priming.",
+        "Metallics need a smooth surface to shine. A very matte primer scatters light; a satin primer under metal areas helps. Metal also shows every mould line and scratch, so clean up carefully before priming.",
         "How much the undercoat colour matters depends on how thickly the metal goes on. Under two solid coats it barely shows, so any primer that suits the rest of the model is fine, and a well-flowing metallic covers white primer easily. Under a thin, see-through coat it tints the metal.",
         "For thin coats, silver looks most like silver over black. A blue-black leans it cold, a brown-black leans it towards old iron. A glossy black under a thin metal coat looks noticeably shinier than a flat black.",
         "Gold, bronze and copper look richer and cover in fewer coats over a brown, such as a mid brown (#6b5a3a) or a reddish brown for copper. Yellow under most metals looks poor.",
-        "Mixing a little of the base colour into the first metallic coat helps it cover. Expect the first coat to look dull; the shine appears once the dark is hidden. Golds and pale bronzes often need three or more thin coats. That is normal. Do not over-thin to speed it up: the flakes spread unevenly and look blotchy.",
-        "Block non-metal areas and recesses in thinned black and paint or dry brush metal only on raised parts. The recesses stay shaded with no wash, and you never have to work metal into every crack.",
-        "Over white, a very thin metallic settles into recesses and the white edges act as highlights, but those bright edges are not real shine. Go over them with a thin metallic.",
+        "Mixing a little of the base colour into the first metallic coat helps it cover. Expect the first coat to look dull; the shine appears once the dark is hidden. Golds and pale bronzes often need three or more thin coats. That is normal. Don't over-thin to speed it up: the flakes spread unevenly and look blotchy.",
+        "Block non-metal areas and recesses in thinned black and paint or drybrush metal only on raised parts. The recesses stay shaded with no wash, and you never have to work metal into every crack.",
+        "Over white, a very thin metallic settles into recesses and the white edges act as highlights, but those bright edges aren't real shine. Go over them with a thin metallic.",
         "On a model that is mostly metal, a metallic spray primer can prime and base coat in one step."
       ],
       "related": [
@@ -1356,10 +1356,10 @@
         "For highlights, a pale bone, cream or ivory keeps steps warm and natural, where white goes cold and chalky faster. Red turns pink with any pale mix, so lighten it sparingly with a skin tone or orange. A lighter paint of the same family, mixed half and half with the base, gives the cleanest step.",
         "Some useful mixes: bone into yellow for a pale yellow; bone half and half with black for a mid grey to edge black cloth; a little brown into bright red for a dull shadow; a dark brown with light orange added bit by bit for a warm brown; red with a touch of green for an earthy pink for lips and tongues.",
         "A part is any equal blob of paint; the back of a brush handle moves small, even amounts. For a ladder, mix three to one, two to one, one to one and so on in separate pools. With dropper bottles, count drops and write the ratio down so you can mix it again. If two steps look too far apart, mix a little of each together.",
-        "To match a colour you do not own, take the closest paint and add tiny amounts of a second colour, testing swatches against the reference. Close is good enough. A one-coat paint can tint a mix, but a large share of it makes the mix behave oddly.",
-        "A paint that covers well but is not quite the right colour is worth keeping. Tweak it by mixing rather than looking for another.",
-        "Keep mixes on a wet palette so they last across a whole group; small differences between models do not show. When wetting paint from the sponge, watch for stray colour creeping in.",
-        "Do not stall hunting for the exact paint someone else used. A similar colour on a painted model beats a perfect one waiting on the shelf, and technique matters far more."
+        "To match a colour you don't own, take the closest paint and add tiny amounts of a second colour, testing swatches against the reference. Close is good enough. A one-coat paint can tint a mix, but a large share of it makes the mix behave oddly.",
+        "A paint that covers well but isn't quite the right colour is worth keeping. Tweak it by mixing rather than looking for another.",
+        "Keep mixes on a wet palette so they last across a whole group; small differences between models don't show. When wetting paint from the sponge, watch for stray colour creeping in.",
+        "Don't stall hunting for the exact paint someone else used. A similar colour on a painted model beats a perfect one waiting on the shelf, and technique matters far more."
       ],
       "related": [
         "pre-mixing-colours",
@@ -1392,7 +1392,7 @@
         "Strong colours need only a little. Hold each mix next to the model and keep the one that suits it.",
         "A dark blue mixed with a dark brown makes a richer black than black paint alone.",
         "Paint it thinly and judge again after any wash. Too close to the main colour can look flat.",
-        "Highlight gently, for example with a little ivory. Matt gear needs only a small highlight.",
+        "Highlight gently, for example with a little ivory. Matte gear needs only a small highlight.",
         "A smooth grey mixed from a warm off-white and a cool black reads well on weapons and tech."
       ],
       "related": [
@@ -1424,7 +1424,7 @@
         "For a grey, mix the opposites close to even and add white. A little more blue gives a cool grey, #6f7782; a little more orange gives a warm grey, #857a6e.",
         "Use a little of the opposite to dull a colour that is too bright. A drop of green in a red shadow keeps it rich, where black would make it dirty.",
         "Mixing all three primaries gives a dark, muddy neutral. A touch of it in every shadow mix helps tie a scheme together.",
-        "Real paints are not pure primaries, so results vary. Test on the palette first and note the ratio that worked."
+        "Real paints aren't pure primaries, so results vary. Test on the palette first and note the ratio that worked."
       ],
       "related": [
         "colour-wheel-harmonies",
@@ -1485,10 +1485,10 @@
       "title": "Mixing and choosing skin tones",
       "summary": "Mix any skin tone from a red, a yellow, a blue and an off-white, and nudge it warmer, pinker, sickly or cold.",
       "body": [
-        "Nearly all living skin sits in the warm orange to brown range. Build it from a fairly pure red, yellow and blue plus an off-white. You do not need paints sold for skin; any browns, oranges and blues you own will do, guided by a reference photo.",
+        "Nearly all living skin sits in the warm orange to brown range. Build it from a fairly pure red, yellow and blue plus an off-white. You don't need paints sold for skin; any browns, oranges and blues you own will do, guided by a reference photo.",
         "Mix a little red into a lot of yellow for a bright orange. Red is much stronger, so add it sparingly. Orange plus off-white gives a standard light, warm skin.",
         "Red plus blue gives a deep brown, the base for very dark skin. Lift it with off-white for a cool, purplish dark brown, or mix in some of the orange for a warmer one. For olive and mid tones, combine that brown with the orange and white mix and a little extra yellow.",
-        "A quicker start is a mid brown lifted with white to the tone you want, plus a very small touch of red-brown so it does not look grey. Ready-made flesh paints are often weak, too yellow or too orange, and very bright flesh looks fake, so mute it a little with grey. Mix plenty, as you will keep coming back to it.",
+        "A quicker start is a mid brown lifted with white to the tone you want, plus a very small touch of red-brown so it doesn't look grey. Ready-made flesh paints are often weak, too yellow or too orange, and very bright flesh looks fake, so mute it a little with grey. Mix plenty, as you'll keep coming back to it.",
         "A touch more red gives pinker skin. A touch of blue cools it; let the yellow dominate and it turns sickly. If a flesh paint looks orange, mix in a light cool blue: up to about four parts in ten for pale, delicate skin, a fifth for weathered skin. Once the highlights start to look blue, switch to white.",
         "Pink and green cancel towards a believable neutral, so a warm flesh mixed with a dark green makes a deep green-brown shadow, and with a light green a natural mid-tone. Shift the ratio to control how warm the skin looks.",
         "Match the light rather than using one mix for every face. Warm sun: ochre and orange midtones, brown shadows, yellowish highlights. Cold: pink midtones, blue or violet shadows, greyish highlights. Purple and brown mixed equally make a clean cool shadow. Darker skin often shows bigger jumps between light and dark.",
@@ -1520,7 +1520,7 @@
       "title": "Muted colours that make accents pop",
       "summary": "Keep most of a model muted or desaturated so a few vivid areas stand out and busy schemes calm down.",
       "body": [
-        "Lots of strong colours side by side compete, so nothing stands out and the model looks a mess. Decide which part should lead. Muted does not mean dark: a quiet or gritty scheme still needs punch, from deep recesses against sharp pale edges.",
+        "Lots of strong colours side by side compete, so nothing stands out and the model looks a mess. Decide which part should lead. Muted doesn't mean dark: a quiet or gritty scheme still needs punch, from deep recesses against sharp pale edges.",
         "Give that part the vivid, pure colours. Paint gear, bags, wood and the rest of the cloth in dull natural tones: grey, olive, blue-grey, dull brown or black. Small details can take muted versions of the scheme colours, such as a greyish green under a vivid jade, so they stay part of the scheme.",
         "Neutrals are the background: greys, browns, black, white, and any colour greyed down far enough. Brown is a dull orange and skin is orange of varying strength, so both sit easily beside blue. Add a little grey or a mix of the other colours to wood, leather and skin to tone them down to match.",
         "If a pair looks garish, such as red and green, change the brightness, saturation or amount of one. Mostly red with small green lenses reads far better than half and half. A simple route is one main colour, its complement in smaller areas, and everything else grey, black or metal.",
@@ -1560,7 +1560,7 @@
         "Build the ramp from a deeper neighbour on the colour wheel. The outer edge, where the light barely reaches, sits one or two steps towards the cooler, deeper side: a yellow glow starts from orange or red, a yellow-green from a blue-green, a blue-green from a blue-violet.",
         "Work inwards: thinned deep colour, pure deep colour, a mix of deep and main colour, the pure main colour, then a very pale version of it or white at the source.",
         "A glow shows best on a darker surface. Pick a glow colour that contrasts with, or complements, what it lights, and slip in a neighbouring second hue, such as purple beside blue, for a richer effect. Colour also sets the mood: cool blue reads as technology, warm light as fire, purple as magic.",
-        "Fluorescent paints can help but are not needed."
+        "Fluorescent paints can help but aren't needed."
       ],
       "related": [
         "osl-basics",
@@ -1619,14 +1619,14 @@
       "title": "Painting black areas",
       "summary": "Start from a black undercoat, add depth with warm browns low down, and give each black material its own look.",
       "body": [
-        "Prime black. It does most of the work for black areas, and a heavy dry brush of dark blue grey over it can be enough for a quick black uniform.",
+        "Prime black. It does most of the work for black areas, and a heavy drybrush of dark blue grey over it can be enough for a quick black uniform.",
         "Pure black leaves nowhere darker to go, so a flat black area looks dead. Base in a very dark grey, or a very dark blue or teal, such as black and a bright blue mixed one to one, then run thinned pure black into the recesses as the shadow. Lay it in three or four thin coats with little water, or it blotches.",
-        "For warmth, drop a heavily thinned dark brown into recesses low on the model. A ready-made brown wash barely shows on black, so mix a little dark brown paint with clear medium; it dries matt like the black. A very deep red works the same way for a richer black.",
-        "On cloth, a heavy dry brush of very dark grey, then lighter greys on the edges only. Ragged, broken highlights look like worn cloth and hide a shaky hand.",
+        "For warmth, drop a heavily thinned dark brown into recesses low on the model. A ready-made brown wash barely shows on black, so mix a little dark brown paint with clear medium; it dries matte like the black. A very deep red works the same way for a richer black.",
+        "On cloth, a heavy drybrush of very dark grey, then lighter greys on the edges only. Ragged, broken highlights look like worn cloth and hide a shaky hand.",
         "Give each black material its own treatment. Cloth soaks up light: keep it dark with small, soft, warm grey highlights. Leather has a slight sheen and takes highlights up to a mid grey. Hard armour and metal need the biggest range, with bluish greys up to near white on the sharpest spots only.",
-        "Vary how solid the black is. Thinned black over a pale dry brush reads as very dark grey cloth, while a neat second coat on armour reads deep and solid. On a light model, undercoat black details grey first, since a one-coat black is partly see-through and picks up the colour below.",
+        "Vary how solid the black is. Thinned black over a pale drybrush reads as very dark grey cloth, while a neat second coat on armour reads deep and solid. On a light model, undercoat black details grey first, since a one-coat black is partly see-through and picks up the colour below.",
         "Fine metal chips on black armour tell the eye it is metal, so the black leather beside it stays clearly different.",
-        "On a mostly black model, lean soft parts towards a warm brownish black and hard parts towards a cool bluish black, and add one spot colour to break it up. If highlights went too bright, a black wash settles them, but do not wash dry-brushed black fur or cloth."
+        "On a mostly black model, lean soft parts towards a warm brownish black and hard parts towards a cool bluish black, and add one spot colour to break it up. If highlights went too bright, a black wash settles them, but don't wash dry-brushed black fur or cloth."
       ],
       "related": [
         "highlighting-black",
@@ -1658,8 +1658,8 @@
         "Build the highlights gradually: start with about two parts black to one part dark grey or brownish grey on the raised folds. Use the side of the brush on hard fold edges and a downward stroke of the tip on soft creases.",
         "Add a little more grey each stage and cover smaller areas, so the transitions stay soft like fabric.",
         "Finish with a sharper mid grey, or a pale blue-grey used sparingly, only on hems, crisp fold tops, knees and shoulders, placed in the centre of the earlier highlight. A cool tone reads as light on black better than a neutral grey.",
-        "If the steps look rough, glaze thin black over the cloth and re-touch the top highlights. Keep the greys very matt; a satin sheen makes cloth look like plastic.",
-        "Quicker route: over black primer, dry brush a dark grey in several light passes, then tap broken lighter grey highlights onto worn edges. Add a few more after the wash so the older ones show faintly underneath.",
+        "If the steps look rough, glaze thin black over the cloth and re-touch the top highlights. Keep the greys very matte; a satin sheen makes cloth look like plastic.",
+        "Quicker route: over black primer, drybrush a dark grey in several light passes, then tap broken lighter grey highlights onto worn edges. Add a few more after the wash so the older ones show faintly underneath.",
         "An all-black force looks dull. Add an accent colour on ribbons, feathers or straps, or a little brown mud along the hems to break up the black."
       ],
       "related": [
@@ -1759,7 +1759,7 @@
         "Mixes with a lot of white jump in lightness quickly and push purple towards a cold, chalky lilac. Add the white in small amounts and keep the palest mixes to small, high areas.",
         "For a colder purple, lean the highlights towards a lilac blue instead. Pick one direction and keep it across the whole area.",
         "If highlights drift too pink or too blue, a thin glaze of the base purple over them pulls the colour back together.",
-        "For a pale lilac, base in purple and spray or dry brush thin white from above, then glaze thinned purple back into recesses the white flooded, and put a thinned dark violet ink in the deepest folds.",
+        "For a pale lilac, base in purple and spray or drybrush thin white from above, then glaze thinned purple back into recesses the white flooded, and put a thinned dark violet ink in the deepest folds.",
         "Coverage: deep purples go straight over black or dark grey, and a strong purple often covers in one coat. A white undercoat makes purple harder to cover, so keep it for pale lilac. There, a purple base with thinned white sprayed from above, then purple glazed back into the recesses, does most of the work."
       ],
       "related": [
@@ -1790,11 +1790,11 @@
       "summary": "Shade red with burgundy or dark green rather than black, and finish with a red glaze so highlights stay red.",
       "body": [
         "Red covers poorly. Thin it and build two or three thin coats, letting each dry. Over a white or pale undercoat it looks much brighter than over grey or black.",
-        "Black alone makes red shadows dull and brownish. Mix a very dark green, blue-green or deep purple into the red for a rich burgundy shadow, and save black for the deepest gaps. A violet wash over deep red also gives cool, rich shadows. Mix a pot of the shadow if you are painting many models.",
+        "Black alone makes red shadows dull and brownish. Mix a very dark green, blue-green or deep purple into the red for a rich burgundy shadow, and save black for the deepest gaps. A violet wash over deep red also gives cool, rich shadows. Mix a pot of the shadow if you're painting many models.",
         "A brown or black wash makes bright red muddy. Use a deep red wash cut with about one part clear medium to three parts wash, or line the recesses by hand with a slightly runny deep red.",
         "Highlight in small steps, each covering less area. A simple ladder runs from a brown-red mix up to pure red, then a bright orange-red on the top edges. Too much orange or yellow and the red turns orange; too much white and it turns pink. Keep most of the surface red.",
         "For the top highlights, a pale peach, a mid skin tone or a bone colour lightens red without turning it pink. Keep them to the sharpest edges.",
-        "Every highlight desaturates red. Finish with one even glaze of a deep red ink or one-coat paint thinned about one to one with medium over the whole area, keeping the brush moving. Pink under a red glaze keeps its lightness but reads as bright red. The same glaze rescues a chalky dry brush.",
+        "Every highlight desaturates red. Finish with one even glaze of a deep red ink or one-coat paint thinned about one to one with medium over the whole area, keeping the brush moving. Pink under a red glaze keeps its lightness but reads as bright red. The same glaze rescues a chalky drybrush.",
         "For the most intense red, paint fluorescent orange or pink over the pale highlights, then glaze thin red over in two or three passes so it glows through. Use it only where you want the brightest colour.",
         "Other routes: stipple white where light hits and glaze red over it in a few passes, or base in a soft orange and shade with red glazes so the orange glows on raised parts. For a cooler crimson, lean towards magenta and set small warm coral details against it."
       ],
@@ -1827,8 +1827,8 @@
       "body": [
         "Building colour. Base coat: the first solid, even coat of a colour. Layering: thinned coats on top that build colour, light and shadow in steps. Shading: darker colour in areas that sit in shadow. Highlight: lighter colour on raised parts that catch light. Edge highlight: a thin bright line along sharp edges.",
         "Washes and lining. Wash: thin, see-through paint flooded over an area so it runs into recesses. Pin wash: the same paint placed only in chosen recesses. Contrast-style or one-coat paint: a thin, strong paint that colours and shades in one coat over a light undercoat. Dark lining: a thin dark line where two colours meet, so each part reads as separate.",
-        "Blending. Blending: any smooth move between two colours instead of a hard step. Glazing: very thin, see-through paint that tints or smooths what is under it. Feathering: short strokes that fade out at one end. Wet blending: mixing two colours on the model while both are wet. They are often combined, such as a rough wet blend tidied with glazes.",
-        "Texture and wear. Dry brushing: wiping most paint off the brush so colour only catches raised texture. Stippling: dabbing small dots with the tip to build texture or a rough blend. Flecking: flicking thinned paint off a stiff brush for tiny spatters. Weathering: chips, rust, streaks, dust or mud that make a model look used.",
+        "Blending. Blending: any smooth move between two colours instead of a hard step. Glazing: very thin, see-through paint that tints or smooths what is under it. Feathering: short strokes that fade out at one end. Wet blending: mixing two colours on the model while both are wet. They're often combined, such as a rough wet blend tidied with glazes.",
+        "Texture and wear. Drybrushing: wiping most paint off the brush so colour only catches raised texture. Stippling: dabbing small dots with the tip to build texture or a rough blend. Flecking: flicking thinned paint off a stiff brush for tiny spatters. Weathering: chips, rust, streaks, dust or mud that make a model look used.",
         "Light and colour. Value: how light or dark a colour is, ignoring its hue. Contrast: the gap between lights and darks, which helps a model read across a table. Value sketch: blocking in white, greys and black first to map the light. Colour wheel: colours set in a circle to show which sit opposite or side by side.",
         "Metal and glow. TMM, true metallic metal: paint with metal flakes that really shines. NMM, non-metallic metal: faking shiny metal with flat colours and hand-painted reflections. OSL, object source lighting: painting the glow a lamp, fire or spell casts on nearby surfaces. All three depend on careful placing of light and dark.",
         "Prep and tools. Primer: a first coat, sprayed or brushed, that helps paint grip. Zenithal: priming dark, then spraying white or light grey from above, so light and shadow are mapped from the start. Masking: covering part of a model with tape or a removable liquid. Wet palette: a tray with damp paper under a thin sheet that keeps paint wet.",
@@ -1896,14 +1896,14 @@
       "title": "Painting yellow",
       "summary": "Shade yellow with warm oranges and browns, never black or grey, and give it a pale or warm undercoat.",
       "body": [
-        "Yellow is see-through. Over black or dark grey it turns greenish and dull. Prime white, bone, pink or yellow, sprayed in short light bursts so detail does not clog. Yellow shows every mould line and bubble, and its pigment settles, so clean up well and shake or stir the paint each time.",
+        "Yellow is see-through. Over black or dark grey it turns greenish and dull. Prime white, bone, pink or yellow, sprayed in short light bursts so detail doesn't clog. Yellow shows every mould line and bubble, and its pigment settles, so clean up well and shake or stir the paint each time.",
         "Over pink with white dusted from above, a yellow one-coat paint turns orange in the recesses and shades itself. Peach gives a softer, browner shade.",
         "Over black, block the yellow areas in first with a light grey, a thinned off-white or a deep, high-coverage yellow in two or three smooth coats, then paint the bright yellow over it. Any texture underneath shows through.",
         "If it still needs many coats, add one each time you pause on another area so it is dry when you return. A dense, slightly ochre yellow covers far faster, and also looks more like dyed cloth than a fluorescent pure yellow. Parts that come off, such as a helmet, are quicker primed white on their own.",
         "Shading yellow with black or grey makes it look green and dirty. Shade with a deeper golden or ochre yellow, then a sepia or warm brown run into the recesses, and a mid brown only in the deepest gaps. Let a wash pool and leave it alone to dry; moving it or blasting it with a hair dryer turns it muddy.",
         "If yellow already looks lime in the shadows, glaze a thin reddish orange over the lower areas. Red cancels green. Test the strength on a small area first.",
         "For highlights, a cream or bone looks soft and natural, while a paler yellow looks crisp and stark. If pale yellow over a pale undercoat ends with no contrast, put shadow back with a thin dark brown and bring yellow back on the raised parts.",
-        "On yellow and black models, finish the yellow first and paint the black up to it. Black covers slips on yellow easily; yellow does not cover black, and mistakes on yellow are slow to fix."
+        "On yellow and black models, finish the yellow first and paint the black up to it. Black covers slips on yellow easily; yellow doesn't cover black, and mistakes on yellow are slow to fix."
       ],
       "related": [
         "yellow-armour",
@@ -1998,14 +1998,14 @@
       "title": "Pushing contrast further",
       "summary": "Small models need darker shadows and brighter highlights than seem natural, so push both further than feels right.",
       "body": [
-        "Tiny sculpted features cannot cast real shadows, so you have to paint the light and dark in, as an illustrator would on a flat picture.",
+        "Tiny sculpted features can't cast real shadows, so you have to paint the light and dark in, as an illustrator would on a flat picture.",
         "The smaller the model or detail, the more you exaggerate. Very large models need less. Small belts and symbols need a thin, clean dark line around them; thick black lines look crude.",
         "When you think highlights and shadows are right, push the highlights brighter and the shadows deeper again, two or three times. If you overshoot, glaze the thinned base colour over the whole surface to pull it back.",
         "Highlights look brighter next to darker shadows. Deepen the down-facing areas with the base mixed with a deep blue, purple or black before pushing the highlights further. Use deep shades and light tints of the colour itself, not only black and white, and take shadow mixes from colours already on the palette.",
         "To reset your eye, paint one cheap model with shadows taken right down to black and highlights right up to white. It looks overdone up close but grabs attention from across a room. Then paint one your usual way; your normal level of contrast usually moves up. Your own sense of normal drifts, so compare with strong work side by side.",
         "Edge highlights and dark lining in recesses are simple ways to add value contrast. Where two shapes should separate, put a dark line with a light line either side.",
         "A bold jump to a stark final highlight on the sharpest points often looks better than lots of small steps near the top. Put the brightest highlights around the face to pull the eye there.",
-        "Do not lose contrast chasing smoothness. Judge the model at arm's length under normal room light, which flattens subtle work. If you will weather it, overdo the contrast first, as filters, washes and dust knock it back."
+        "Don't lose contrast chasing smoothness. Judge the model at arm's length under normal room light, which flattens subtle work. If you'll weather it, overdo the contrast first, as filters, washes and dust knock it back."
       ],
       "related": [
         "types-of-contrast",
@@ -2072,7 +2072,7 @@
         "Some colours are naturally darker. Pure blue, red and purple are much darker than yellow and green, so you can shade with hue as well as value.",
         "In a narrow scheme, the colour that sits in the middle of your range often makes the best shadow. In a blue and turquoise scheme with a hint of magenta, that is a purple.",
         "Highlight with a lighter colour of similar hue, a pale yellow or a bone rather than plain white. On skin, a dark red shadow and a pale yellow or pale orange highlight keep it warm and alive.",
-        "A shade does not have to be darker. A see-through yellow over drybrushed pink pools into warm orange-brown shadows, and a pink wash in the recesses of grey-purple skin adds colour without dirt.",
+        "A shade doesn't have to be darker. A see-through yellow over drybrushed pink pools into warm orange-brown shadows, and a pink wash in the recesses of grey-purple skin adds colour without dirt.",
         "Black is fine for the very deepest gaps, or for a deliberately grim, ashy look. For a smoky, worn look, mix each colour's shadow with a shared brown instead, which also ties a group together. Big patches of pure black, for example on a base, read as holes rather than shadow."
       ],
       "related": [
@@ -2100,7 +2100,7 @@
       "title": "Colours for terrain and scenery",
       "summary": "Keep scenery dull so models stand out, with one restrained accent colour.",
       "body": [
-        "Use greys, dull metals and browns for most of the piece. Scenery is a backdrop, not the subject, and it sits beside a board and other pieces. Warm light greys suit most boards and do not fight with bright models.",
+        "Use greys, dull metals and browns for most of the piece. Scenery is a backdrop, not the subject, and it sits beside a board and other pieces. Warm light greys suit most boards and don't fight with bright models.",
         "Add one muted accent that suits the setting, such as a mustard yellow, a faded red, cool green moss for a temperate board or orange rust for a hot one. A single masked stripe across a big plain wall, or a few pipes picked out in copper, breaks up large areas in minutes.",
         "Prime black into every recess, then dust dark grey lightly from above to show the detail. If you airbrush higher, stop at a cool grey; the later weathering is warm and brown, and a cool start balances it.",
         "Base coat roughly with a large old brush. Speed matters more than neatness, slight patchiness reads as age, and drybrushing does most of the work. Skip picking out every rivet.",
@@ -2235,9 +2235,9 @@
         "Hue contrast pairs colours from opposite sides of the colour wheel, such as red with green or orange with teal. It works best when one of the pair clearly dominates, and a small touch hidden in shadows, like turquoise in the recesses of copper, adds it quietly.",
         "Warm next to cool makes the warm look warmer and the cool cooler.",
         "Saturation contrast: one strong colour among greys or muted tones stands out strongly.",
-        "Shape, texture and finish contrast: soft faces against hard armour, rough dusty surfaces against clean shiny ones, matt black beside gloss black. The base can add contrast too.",
+        "Shape, texture and finish contrast: soft faces against hard armour, rough dusty surfaces against clean shiny ones, matte black beside gloss black. The base can add contrast too.",
         "Area matters. A large highlight with a tiny shadow looks less contrasted than the same colours with more dark. Small markings need contrast with what is under them: black on mid grey vanishes at table distance, a strong red reads.",
-        "Alternate light and dark parts: pale armour with dark trim, dark armour with bright trim. A highlight next to deep shadow looks brighter than it is, so you often do not need white.",
+        "Alternate light and dark parts: pale armour with dark trim, dark armour with bright trim. A highlight next to deep shadow looks brighter than it is, so you often don't need white.",
         "Check by turning a photo black and white; each part should still separate. Then read the symptom: muddy or dull needs a bigger light and dark gap, garish needs the loudest colours toned down, flat needs a second colour and varied values, washed out needs some darks, and cluttered needs fewer colours."
       ],
       "related": [
@@ -2272,7 +2272,7 @@
         "A grey with colour in it beats plain grey. Base in a dark plum, then layer up by mixing in more and more green, always keeping a little purple. Touch pure pale green only on the very highest points.",
         "Before highlighting, run thin deep crimson around wounds and under the eyes so they look sore and bloodshot, and drop a deep red into every hole and pock mark as old blood.",
         "For rot, stain natural shadows with a thin turquoise, then add a thin magenta more selectively once dry. To show stages of decay across several bodies, vary the highlight: pale yellow for fresh, pale khaki-green for rotting, pale icy blue for long dead.",
-        "Keep clothing in neutral greys so it does not fight the skin, and shade white cloth and grey hair with a soft blue rather than brown. Dot the eyes with a milky off-white and skip the pupils."
+        "Keep clothing in neutral greys so it doesn't fight the skin, and shade white cloth and grey hair with a soft blue rather than brown. Dot the eyes with a milky off-white and skip the pupils."
       ],
       "related": [
         "fantasy-skin-colours",
@@ -2342,7 +2342,7 @@
         "Make neighbouring areas differ in value, not just in hue, or they merge from a distance. Put light next to mid and dark next to either, never dark against dark. Dark leather or fur beside bright cloth frames it, and dark weathered metal can supply a missing dark.",
         "If every colour sits in the middle of the range, nothing stands out. Let the most important areas, usually the face, reach the brightest values, and keep less important areas lower down darker.",
         "The midtones decide what colour an area reads as. Keep most of the surface close to the target colour and use odd shading colours only in the transitions. To add variety, mix a different hue in at the same lightness, so it looks identical in a greyscale photo. The final bright highlight only needs about a fifth of the area.",
-        "To vary a colour, make it lighter, darker, brighter or duller before reaching for a new hue. Lighten with white or a white ink so the hue does not drift, though purple goes chalky unless a warm magenta goes in first. Darken with black or a deep colour of the same family. To dull a colour without changing its value, add a little of its opposite.",
+        "To vary a colour, make it lighter, darker, brighter or duller before reaching for a new hue. Lighten with white or a white ink so the hue doesn't drift, though purple goes chalky unless a warm magenta goes in first. Darken with black or a deep colour of the same family. To dull a colour without changing its value, add a little of its opposite.",
         "Each area only uses part of the range. In a lit area the darkest tone is around the middle of the scale; in a shadowed area the brightest tone is. You need the full contrast across the whole model, not on every plate.",
         "Check values with a black and white photo. If two areas look the same grey, change one."
       ],
@@ -2370,7 +2370,7 @@
       "key": "vary-skin-across-a-squad",
       "category": "colour-basics",
       "title": "Varying skin tones in a group",
-      "summary": "Shift skin tone figure to figure so a squad does not look like clones, while keeping one shared thread.",
+      "summary": "Shift skin tone figure to figure so a squad doesn't look like clones, while keeping one shared thread.",
       "body": [
         "Identical skin across a small group makes the figures look like clones.",
         "Give each one a slightly different tone: one warmer, one cooler, one paler, one darker.",
@@ -2401,7 +2401,7 @@
       "key": "varying-browns-and-leathers",
       "category": "colour-basics",
       "title": "Telling browns and leathers apart",
-      "summary": "Separate leathers, straps and pouches by value and warmth, often by tinting one brown, so they do not merge.",
+      "summary": "Separate leathers, straps and pouches by value and warmth, often by tinting one brown, so they don't merge.",
       "body": [
         "A model covered in leather turns into one dull brown mass if every strap, pouch and boot is a similar brown.",
         "You need few paints. Take one mid brown and mix in a little white, yellow, red, green, black or ivory for each item. Each mix still reads as leather, and the shared base keeps them in harmony.",
@@ -2410,7 +2410,7 @@
         "Pouches and belts are often canvas or webbing, so they need not be brown. Black looks tidy against red armour, and olive green sits opposite red for stronger contrast. A brown canvas bag can still sit apart from straps: base it chocolate, edge it with a lighter beige brown, and keep the straps a darker oxide brown.",
         "Run one dark brown wash only into the recesses and the joins between parts. The shared shadow ties the pieces together and still separates each one.",
         "Skin can stay in the brown family if you push it more orange. Break up a large area of fur with a simple pattern, such as darker diamonds.",
-        "If a brown is not working, change direction rather than stacking more coats. A red brown shade can rescue a pale leather that looks flat."
+        "If a brown isn't working, change direction rather than stacking more coats. A red brown shade can rescue a pale leather that looks flat."
       ],
       "related": [
         "painting-leather",
@@ -2440,9 +2440,9 @@
         "Pick a short list of four or five colours you like and find easy, such as two light tans, a dark brown and a greenish khaki. Use them on jackets, trousers and gear, combined differently on each figure.",
         "On repeated sculpts, keep the same set of colours but move them around: one figure with a black hood and grey shirt, the next with a red hood and dark trousers. The shared palette keeps the group unified.",
         "For a uniformed unit, keep one shade colour, such as a dark brown, on every coat and vary only the highlight colour or how far you take it. Real issued cloth faded and came from different makers, so a few greener or greyer coats look right. Keep an older uniform to about one figure in five.",
-        "For troops without uniforms, mix freely: hose with each leg a different colour, a stripe down one side, a garment split into two colours or a contrasting trim. Do not repeat the same pattern on neighbouring figures, and vary metal too, with some helmets iron and some bronze.",
+        "For troops without uniforms, mix freely: hose with each leg a different colour, a stripe down one side, a garment split into two colours or a contrasting trim. Don't repeat the same pattern on neighbouring figures, and vary metal too, with some helmets iron and some bronze.",
         "For horses, group coat colours into light, mid and dark, such as white, grey and black or chestnut, light bay and dark bay. In a unit of six, paint three in your easiest colour, two in a second and one in a third, mixing light and dark.",
-        "Aim between the extremes. Every figure or horse a different colour distracts from the group; every one the same looks flat. Keep most harness or kit one colour and change it on one or two, and change the mix from unit to unit so they do not look identical."
+        "Aim between the extremes. Every figure or horse a different colour distracts from the group; every one the same looks flat. Keep most harness or kit one colour and change it on one or two, and change the mix from unit to unit so they don't look identical."
       ],
       "related": [
         "unique-models-in-a-squad",
@@ -2477,7 +2477,7 @@
         "Temperature also works through neighbours. A little blue or turquoise in a black wash run beside gold or yellow makes the gold look warmer and crisper without repainting it.",
         "Carry a little of the main colour into the contrasting area, such as green verdigris on copper beside green armour, so the model still feels tied together.",
         "On bases, set cool grey rocks on warm sandy ground, or warm stone on cool grey ground. Wash rocks darker before highlighting so they read as a separate material.",
-        "For repeated details such as parchment or seals, mix warm and cool versions so they do not all look identical.",
+        "For repeated details such as parchment or seals, mix warm and cool versions so they don't all look identical.",
         "Warm colours seem to come forward and cool ones sit back, and a mostly warm scheme feels lively or harsh, a cool one calm or eerie. Changing temperature between skin, armour and bone also tells the eye the material has changed."
       ],
       "related": [
@@ -2548,7 +2548,7 @@
         "If skin has gone grey and dead, glaze a warm orange flesh mix (#d9792e with some skin tone) thinly over the whole area, and a thin bright red (#c42a24) on the sides of the head and in deep recesses. On skin meant to stay grey, a thin reddish glaze in the recesses and round eyes, mouth and knuckles makes it read as living flesh, not stone.",
         "If flesh is simply too pale, several very thin red glazes into the shadows pink it up without repainting. A very thin orange over the transitions between highlight and shadow reads as warmth rather than orange.",
         "A faint pale yellow glaze from the edge of the highlights down into the midtones warms skin like sunlight and hides rough transitions. Build it in two or so barely visible coats.",
-        "Keep it subtle; strong flushes look cartoonish. Do not push top highlights too white either, or the face will glare when seen from above."
+        "Keep it subtle; strong flushes look cartoonish. Don't push top highlights too white either, or the face will glare when seen from above."
       ],
       "related": [
         "colour-variation-in-skin",
@@ -2578,10 +2578,10 @@
       "summary": "A wash shades colours you have already painted; a contrast-style one-coat paint colours and shades in one step.",
       "body": [
         "A wash goes over existing colours. It mostly sits in recesses, only lightly tints raised areas and keeps metallics shiny. Use it to shade and keep your colours.",
-        "A contrast-style one-coat paint does the base colour and shading together. It pools in recesses, leaves a thin tint on raised areas and usually dries matt, though some dry with a slight, patchy sheen. Over white, light grey or a zenithal prime it looks bright and clean; over dark primer it looks muted. Results are consistent model to model, which suits batch painting.",
+        "A contrast-style one-coat paint does the base colour and shading together. It pools in recesses, leaves a thin tint on raised areas and usually dries matte, though some dry with a slight, patchy sheen. Over white, light grey or a zenithal prime it looks bright and clean; over dark primer it looks muted. Results are consistent model to model, which suits batch painting.",
         "Test on the palette: spread a wash thin and it goes pale; a one-coat paint stays strong.",
         "Over finished base coats, a one-coat paint can darken everything a lot. A bright red can end up near black.",
-        "One-coat paints that settle into a pale layer in the pot cover more like paint. Ones that do not behave more like inks and let metallics shine through.",
+        "One-coat paints that settle into a pale layer in the pot cover more like paint. Ones that don't behave more like inks and let metallics shine through.",
         "Thinned with its clear medium, a one-coat paint dries slower than a wash, so it shades smoothly without tide marks and pulls less hard into recesses. You can steer it into the lower half of rounded shapes.",
         "One-coat paints suit gaming pieces, especially organic models, but their built-in highlights are weak. Add an opaque edge highlight afterwards.",
         "Colours in the same range behave differently, and thin glazes of them can look patchy. Test each on a spare piece."
@@ -2615,7 +2615,7 @@
         "Every layer over a metallic hides some of the flakes that make it shine. For bright metal, keep washes to recesses, rivets and edges, or wash all over on purpose and then layer the metal back on raised areas with a brighter dot on the high points.",
         "Over silver: blue gives cold steel, black gives dark iron, brown or yellow gives oily or aged metal, and sepia warms it towards gold. A black wash mixed half and half with a coloured wash gives a tinted steel.",
         "Over gold: purple looks rich, green looks aged or tarnished, red or yellow deepen the warmth. A red wash pushes copper warmer. After a green tint on gold, edge with silver, as a paler gold gives too little contrast.",
-        "A wash stays see-through and keeps most of the shine. A one-coat paint tints strongly but goes matt, so thin it heavily and drybrush the metal back on edges. Matt washes dull metal and gloss ones look wet and run; a half and half mix dries satin.",
+        "A wash stays see-through and keeps most of the shine. A one-coat paint tints strongly but goes matte, so thin it heavily and drybrush the metal back on edges. Matte washes dull metal and gloss ones look wet and run; a half and half mix dries satin.",
         "A thin blue or turquoise glaze on the lower, down-facing parts of steel breaks up flat grey. Use ink, heavily diluted, with little on the brush, and keep the top highlights less blue so it still reads as steel. Glaze thin silver back over if it goes too far.",
         "Very thin brown on down-facing surfaces and blue on up-facing ones gives a ground and sky effect. Tinting steel with a colour already in the scheme ties it in, and a different tint separates two metals on one model.",
         "Washing dark acrylic all over metal can leave tide marks and kill the polish. For clean metal, shade with an oil wash or ink in the recesses.",
@@ -2654,7 +2654,7 @@
         "Work broad first. Pick out fine detail only in the top highlights: nose, knuckles, scars and folds.",
         "For old, thin skin, build the pale tones in loose dabs and let the warm base show through in spots. Alternate very thin passes with a few thicker dabs of light; if too much goes on, dab it with a dry fingertip.",
         "Follow the sculpted wrinkles: touch the crests, leave the folds dark, and add short pale lines where they catch light, with dots on the cheekbones.",
-        "Upward-facing planes should not drop darker than the mid tone, and hidden areas should top out at the mid tone. Bald heads easily end up too bright, so keep the palest tones mostly on the forehead and nose.",
+        "Upward-facing planes shouldn't drop darker than the mid tone, and hidden areas should top out at the mid tone. Bald heads easily end up too bright, so keep the palest tones mostly on the forehead and nose.",
         "A touch of purple in a dark tone under the eyes and in the cheek hollows, and pink in the lower lip, add life. For a softer, younger look, lean the mid tone towards pink instead of yellow-brown."
       ],
       "related": [
@@ -2687,9 +2687,9 @@
         "A surface is brightest where it faces the light head-on and darkens as it turns away. Picture arms as cylinders and heads as spheres to see how that falls; a bald head or helmet gets its bright spot on the side facing the light.",
         "Pick a light direction, usually above and slightly to one side, and leave the side facing away in the darker tone. Edge the shadow side with a duller tone and the lit side with a brighter one. Sharp folds get a hard dark line, gentle slopes a soft fade.",
         "Light weakens lower down. Mix two or three values of the highlight: the brightest on the top tenth near the face, a slightly darker one on the top half, and duller ones lower down. A face may take three or four highlight stages while boots get one or none. Spend more steps on centrepiece models.",
-        "Bounced light from the ground does the opposite and gets a little stronger and cooler low down, so hidden undersides should not be pure black.",
-        "While shading, keep the centres of raised panels clean; those patches show where highlights go. A zenithal spray of white from above over dark primer maps the light on matt surfaces. Or hold the primed model under a single lamp or torch, turn it slowly, and highlight only where the glare lands.",
-        "Watch for shapes that break the pattern, such as a form bulging near its bottom. For a glow from below, reverse the rules. Edging every edge equally is a stylised alternative that reads crisply at arm's length but does not match one light, and small vehicles often read better lit as if from several sides."
+        "Bounced light from the ground does the opposite and gets a little stronger and cooler low down, so hidden undersides shouldn't be pure black.",
+        "While shading, keep the centres of raised panels clean; those patches show where highlights go. A zenithal spray of white from above over dark primer maps the light on matte surfaces. Or hold the primed model under a single lamp or torch, turn it slowly, and highlight only where the glare lands.",
+        "Watch for shapes that break the pattern, such as a form bulging near its bottom. For a glow from below, reverse the rules. Edging every edge equally is a stylised alternative that reads crisply at arm's length but doesn't match one light, and small vehicles often read better lit as if from several sides."
       ],
       "related": [
         "zenithal-priming",
@@ -2754,7 +2754,7 @@
         "That is why we paint shading at all. A base coat under a desk lamp never looks like a big object.",
         "Metallic paint relies on real light, so on a small model its shine can look small and toy-like.",
         "Fix it by shading and highlighting the metal strongly: dark recesses and bright edges and dots.",
-        "Painted reflections with matt paint let you exaggerate contrast further. Metallic paint suits larger pieces, such as busts and statues, especially well.",
+        "Painted reflections with matte paint let you exaggerate contrast further. Metallic paint suits larger pieces, such as busts and statues, especially well.",
         "To compare metallics, paint each on the same simple shape or a strip of black card and turn it slowly under a lamp. Watch the dark reflections as well as the bright ones; that contrast is what makes metal look like metal.",
         "A metallic that stays evenly bright from every angle covers well but reads flat, more like grey paint than steel. It can still make a useful base coat under a brighter metallic."
       ],
