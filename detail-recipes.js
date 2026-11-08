@@ -361,7 +361,7 @@ const DETAIL_RECIPES = [
   { key: "olive-skin", group: "body", name: "Olive skin", summary: "An olive skin tone using an ochre in place of the usual flesh coat",
     steps: [
       { technique: "Dry brush", coats: 1, mix: 100, look: "a warm flesh", hex: "#d09a78", note: "Fairly heavy over a peach undercoat." },
-      { technique: "Contrast", coats: 1, mix: 100, look: "an ochre", hex: "#b8863b", note: "A one-coat ochre all over, and it is fine that it looks too yellow at first." },
+      { technique: "Contrast", coats: 1, mix: 100, look: "an ochre", hex: "#b8863b", note: "A one-coat ochre all over, and it's fine that it looks too yellow at first." },
       { technique: "Layer", coats: 1, mix: 100, look: "a light amber", hex: "#e2b58f", note: "Thinned a little, on the raised areas for a smoother finish." },
       { technique: "Glaze", coats: 1, mix: 40, look: "a light flesh", hex: "#c48a6a", note: "Pulls the yellow back towards skin while keeping the olive tone." },
     ] },
