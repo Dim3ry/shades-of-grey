@@ -450,7 +450,7 @@
       margin: -20px -16px 16px; padding: 8px 16px var(--rule-gap);
       background-color: var(--background); border-bottom: var(--rule);
     }
-    .app-bar h1 { flex: 1; min-width: 0; margin: 0; padding: 0; border: 0; }
+    .app-bar h1 { flex: 1; min-width: 0; margin: 0; padding: 0; border: 0; display: flex; flex-wrap: wrap; align-items: center; }   /* FB1: title, then the version; if it cannot fit beside the title it drops directly under it */
     .app-actions { display: flex; align-items: center; gap: 12px; flex: none; }
     .app-actions .basket:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
     /* v40: the basket count. Same colours as the rest of the app (no new ones). The ::after makes the tap area bigger than the little pill you see. */
@@ -1134,8 +1134,13 @@
     .recover-list li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .recover-list span { flex: 1 1 200px; color: var(--muted); font-size: 0.875rem; }
 
-    /* AT-31: the version number is no longer shown beside the title (it was hidden on the start page already); Updates says it. The element stays so the number is still in the page. */
-    .version-tag { display: none; font-size: 0.75rem; font-weight: 500; color: var(--muted); vertical-align: middle; margin-left: 6px; }
+    /* FB1: the version number is back at the top of every screen (George, 8 Nov). A button: one tap opens Tools, then Updates. It is small and
+       quiet (the muted text colour); its tap area is the ::after (44 px or more), so the row does not grow. Hidden on the start page. */
+    .version-tag { position: relative; display: inline-block; flex: none; min-height: 0; min-width: 0; margin: 0 0 0 12px; padding: 0; background: none; border: 0; border-radius: var(--radius-control);
+                   font-size: 0.75rem; font-weight: 500; line-height: 1.2; color: var(--muted); }
+    .version-tag::after { content: ""; position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; transform: translate(-50%, -50%); }   /* FB1: the tap area is 44 px or more */
+    .version-tag:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+    .version-tag:empty { display: none; }
 
     /* ----- Import review ----- */
     .review { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); display: grid; gap: 12px; }
@@ -3183,7 +3188,7 @@
   <main>
     <!-- U4a: the header. The title, then the basket in the top corner (.app-actions is one small block, easy to move). -->
     <header class="app-bar">
-      <h1><button type="button" class="home" id="home-button" aria-label="Minifolio, back to the start page">Minifolio</button> <span class="version-tag" id="version-tag"></span></h1>
+      <h1><button type="button" class="home" id="home-button" aria-label="Minifolio, back to the start page">Minifolio</button> <button type="button" class="version-tag" id="version-tag" title="Updates"></button></h1>
       <p class="start-line" id="start-line">Track. Paint. Learn.</p>
       <nav class="app-actions" aria-label="Shopping list">
         <!-- v40: the basket count (hidden when the list is empty). Filled and wired by updateBasket() in app.js. -->
@@ -3731,7 +3736,7 @@
         <details>
           <summary>Updates and feedback</summary>
           <ul>
-            <li>The version number is in <strong>Updates</strong>, which lists what changed in the latest five versions.</li>
+            <li>The version number is at the top of every screen. Tap it to open <strong>Updates</strong>, which lists what changed in the latest five versions.</li>
             <li>Found a bug or have an idea? Use <strong>Give feedback</strong> under <strong>Settings → Updates</strong>.</li>
             <li id="help-feedback-prompt">About a week after you start using the app, a small card on the Dashboard asks if you'd like to send feedback. <strong>Give feedback</strong> opens the same form and the card goes away for good. <strong>Not now</strong> hides it for 30 days. <strong>Don't ask again</strong> hides it for good. If you don't answer, it hides itself the next day and waits 30 days, so it never shows two days running. The app only remembers the date you started and your choice, on this device. Nothing is sent anywhere.</li>
           </ul>

@@ -51,7 +51,8 @@ def main():
         tap_tab(page, "dashboard")
         wait_settled(page)
         check("the line is gone once you leave the start page", not page.evaluate(SHOWN, "#start-line"))
-        check("the version is not shown next to the title on a section (v136, AT-31: it lives in Updates)", not page.evaluate(SHOWN, "#version-tag"))
+        # FB1 (George, 8 Nov): the version is back next to the title on a section (it was hidden in v136, AT-31); it is still hidden on the start page above.
+        check("the version is shown next to the title on a section (FB1, replaces the v136 AT-31 check)", page.evaluate(SHOWN, "#version-tag"))
         page.click('nav button[data-tab="guides"]')
         wait_settled(page)
         page.click('#more-seg button[data-page="updates"]')

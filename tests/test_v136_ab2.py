@@ -1,6 +1,6 @@
 """AB2 tests for Minifolio (display tidy from the approved AI-tells list). New behaviour only:
 1. Mentor's sources: no "Sources" label; each source is a link (button) with the guide's own title, one per line, 44 px rows.
-2. The version tag is not shown beside the title on any page; Updates says "This is vNNN.".
+2. (FB1: the version tag is shown again beside the title) Updates says "This is vNNN.".
 3. The scheme check: no Fine / Look at this / Suggestion tags (the words for screen readers are hidden); a tick or cross icon with words; the new verdicts; "Spot colour".
 4. Moving a unit to Done: "<name> are done." / "<name> is done.", "First one off the pile." for the first, "That's the whole <army>." for the last of an army; Undo still works.
 Run with `python3 tests/run_all.py`, or serve the repo folder and run this file on its own."""
@@ -54,7 +54,8 @@ def main():
         print("\n--- 2. Version number ---")
         t.load(page, units=[])
         shown = page.evaluate("() => { const e = document.getElementById('version-tag'); return getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().width > 0; }")
-        check("the version tag is not shown on a section", not shown)
+        # FB1 (George, 8 Nov): the version is back at the top of every screen, so the v136 "not shown" check now expects it to be shown.
+        check("the version tag is shown on a section (FB1, replaces the v136 check)", shown)
         page.evaluate("() => document.querySelector('nav button[data-tab=more]') && document.querySelector('nav button[data-tab=more]').click()")
         note = page.evaluate("() => (document.getElementById('version-note') || {}).textContent || ''")
         ver = vh.current()
