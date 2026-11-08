@@ -22123,6 +22123,25 @@
       if (whText.value.length >= LIST_TEXT_MAX) notify(`The list box holds up to ${LIST_TEXT_MAX.toLocaleString("en-GB")} characters, so the rest was left out.`);
     });
 
+    // TD2: the game a pasted list names. The Warhammer app ends a list with
+    // "Created with Warhammer <game name>: The App"; "General's Handbook" is a second sign for
+    // Age of Sigmar. Only games the app knows are matched. Anything else (no footer, an unknown
+    // game) returns "" and the box keeps the 40K default.
+    const LIST_GAMES = [["Age of Sigmar", "ageofsigmar"], ["40K", "40k"], ["40K", "40000"], ["40K", "warhammer40000"]];
+    function listGameName(text) {
+      const lines = plainQuotes(String(text || "").slice(0, LIST_TEXT_MAX)).split("\n")
+        .map(l => l.trim()).filter(l => l && l.length <= LIST_LINE_MAX);
+      let footer = null, handbook = false;
+      for (const l of lines) {
+        const m = l.match(/^created with warhammer\s+(.{1,60}?)\s*:\s*the app$/i);
+        if (m) footer = m[1];
+        else if (/^general's handbook\b/i.test(l)) handbook = true;
+      }
+      const name = footer !== null ? looseName(footer) : handbook ? "ageofsigmar" : "";
+      const found = LIST_GAMES.find(g => g[1] === name);
+      return found ? found[0] : "";
+    }
+
     document.getElementById("wh-read").addEventListener("click", () => {
       const list = parseWarhammerList(whText.value);
       if (list && !list.units.length) {   // UX1: a list builder's list with nothing in it that reads as a unit
@@ -22138,7 +22157,11 @@
       // Use the spelling of a faction you already have, and its game.
       const knownFaction = models.find(m => looseName(m.faction) === looseName(list.faction));
       whFaction.value = knownFaction ? knownFaction.faction : list.faction;
-      whGame.value = knownFaction ? knownFaction.hobby
+      // TD2: a game the list names wins (in the spelling you already use); otherwise as before.
+      const named = listGameName(whText.value);
+      const sameGame = named && models.find(m => looseName(m.hobby) === looseName(named));
+      whGame.value = named ? (sameGame ? sameGame.hobby : named)
+        : knownFaction ? knownFaction.hobby
         : (models.find(m => looseName(m.hobby) === "40k") || { hobby: "40K" }).hobby;
       openReview({
         source: "wh",
