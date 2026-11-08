@@ -4449,7 +4449,7 @@
       endFill();   // MO6: a lit piece still sliding ends first
       const move = launchMoveStart("bar");
       const page = move ? pageOutSnap() : null;   // MO6: measured before the state changes
-      if (move) ghostOut(document.getElementById("version-tag"));   // MO6: the version number fades out (it went in one frame)
+      // (FB5: the version number is on the start circle too, in the same place, so it stays still and no longer fades out here)
       launching = true;
       document.body.classList.add("launching");
       tabButtons.forEach(b => b.removeAttribute("aria-current"));   // nothing is chosen yet
@@ -5128,7 +5128,7 @@
       });
       if (fill) fillRun(fill);   // MO6: the lit colour slides from the old piece to the new one
       launchMoveRun(leaving);
-      if (leaving) fadeWordIn(document.getElementById("version-tag"));   // MO6: the version number fades in
+      // (FB5: the version number is on the start circle too, in the same place, so it stays still and no longer fades in here)
       moreSeg.classList.toggle("hidden", !MORE_PAGES.includes(name));
       moreTitle.classList.toggle("hidden", !MORE_PAGES.includes(name));
       moreSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.page === name)));
@@ -22271,19 +22271,20 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=151".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=152".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v151";
+    const APP_VERSION = "v152";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;
+    fadeWordIn(document.getElementById("version-tag"));   // FB5: it is on the start circle now, so at start-up it fades in rather than popping into a frame
     document.getElementById("version-tag").setAttribute("aria-label", APP_VERSION + ", open Updates");
     document.getElementById("version-tag").addEventListener("click", () => {
-      if (launching || travelling) return;
-      if (settings.tab !== "updates") versionFrom = settings.tab;
+      if (travelling) return;
+      if (settings.tab !== "updates" || launching) versionFrom = launching ? "launch" : settings.tab;   // FB5: from the start circle, Back returns to the circle
       showTab("updates");
     });
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
@@ -22744,6 +22745,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v152", date: "8 Nov 2026", changes: [
+        "The version number is back at the top of the start circle. Tap it to open Updates.",
+        "Fixes and tidying.",
+      ] },
       { version: "v151", date: "8 Nov 2026", changes: [
         "The transfers guide now warns that a hair dryer can blow a wet transfer out of place.",
         "Fixes and tidying.",
@@ -23410,7 +23415,7 @@
       if ((tab === "guides" || (tab === "recipes" && settings.recipeView === "colourlab")) && compendiumState.focus) return leaveIdeasFor;   // v69 (X1: also in Colour Lab): back to the recipe step or palette paint
       if (tab === "units" && !unitsImport.classList.contains("hidden")) return closeUnitsImport;
       if (tab === "units" && selectMode) return closeSelect;   // v21.1: select mode's tick boxes
-      if (tab === "updates" && versionFrom) { const from = versionFrom; return () => showTab(from); }   // FB1: opened from the version number: Back returns to where the person was
+      if (tab === "updates" && versionFrom) { const from = versionFrom; return from === "launch" ? enterLaunch : () => showTab(from); }   // FB1: opened from the version number: Back returns to where the person was
       if (tab && tab !== "dashboard") return () => showTab("dashboard");
       return null;
     }

@@ -89,11 +89,12 @@ def main():
         check("after moving on by the menu, Back is as before (to the Dashboard)", page.evaluate("() => settings.tab") == "dashboard")
         ctx.close()
 
-        print("\n--- 3. Not shown on the start page ---")
+        print("\n--- 3. Shown on the start page (FB5) ---")
         ctx = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
         page = ctx.new_page()
         t.load(page, units=[], launch=True)
-        check("the start page does not show it", page.evaluate("() => getComputedStyle(document.getElementById('version-tag')).display") == "none")
+        # FB5 (v152): George wanted the number on the start circle too, so this old check (hidden there) is reversed; test_v152_fb5 covers the details.
+        check("the start page shows it (FB5)", page.evaluate("() => getComputedStyle(document.getElementById('version-tag')).display") != "none")
         ctx.close()
         browser.close()
     check("no page errors", not errors, errors)
