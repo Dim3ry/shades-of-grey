@@ -67,6 +67,15 @@
 //      given: it is "Did you mean" with two or three choices (choices, also its sources; the best entry, then up to two titles that
 //      hold the noun, then by score), each a chip that asks
 //      it. With only one entry to offer it is the one-chip "Did you mean" (band "maybe") as before.
+// MF2: fixes from the v146 spot check (no version of its own; the parent session bumps).
+//  (1) "how do I paint <colour> <part>" ("black armour") asks how: an entry that fits comes before the colour rules, any entry whose title
+//      holds both words is weighted like a technique guide, and a guide titled exactly the colour and part ("Painting black armour") is first.
+//  (2) One shared common noun is not an answer: an entry that holds only one of the question's words, when the question also has an
+//      asking word it lacks (tall, height, heavy, weigh, far, drive), stays under THRESHOLD ("how tall is a tree" is "none").
+//  (3) "watery" keeps its -y so it is not "water"; problem guides on the airbrush or on transfers count for 0.4 of their score unless the
+//      question names them ("bubbles in my paint"); the asked-as phrases for thickness and bubbles are in the knowledge base extras.
+//  (4) The colour line names the part asked ("the cloak"), (5) a recipe or basing lead is its summary, with no "Title:" in front.
+
 (function (root) {
   "use strict";
 
@@ -170,8 +179,9 @@
   // "with" and "for" are filler, but the colour path needs "base coat" and "goes with"; it reads the raw words, not the filtered ones.
 
   // Plurals and -ing / -ed endings count alike: washes, wash, washing, washed -> "wash"; glazing, glazed, glaze -> "glaz".
+  // MF2 (3): "watery" is a word about paint, not about water ("paint is too watery" went to the basing tip on puddles), so it keeps its -y
   function stem(w) {
-    if (w.length <= 3) return w;
+    if (w.length <= 3 || w === "watery") return w;
     if (w.endsWith("ies") && w.length > 4) w = w.slice(0, -3) + "y";
     else if (/(ches|shes|sses|xes|zes)$/.test(w)) w = w.slice(0, -2);
     else if (w.endsWith("s") && !/(ss|us|is)$/.test(w)) w = w.slice(0, -1);
@@ -484,6 +494,30 @@
     return score + Math.min(body, SCORE.bodyCap);
   }
 
+  // MF2 (2): one shared common noun is not an answer. When an entry holds only one of the question's words (anywhere: title, summary,
+  // keywords, phrases or body) and the question also has a word that asks about something else (LONE_OFF: "how TALL is a tree") that the
+  // entry does not hold at all, the entry fits "about something else": its score stays under THRESHOLD, so the question is "none"
+  // unless another entry fits well. Tried first with any leftover word of real weight, then with "fix" and "repair": both also dropped
+  // good answers ("pictures of my painted army", "fix my brush"), so only these words count. A one-word question is untouched.
+  const LONE_OFF = new Set(["tall", "taller", "height", "heavy", "weigh", "weight", "far", "drive"].map(stem));
+  function loneWord(row, q) {
+    if (q.size < 2) return false;
+    let held = 0, off = false;
+    for (const w of q) {
+      const has = row.title.has(w) || row.summary.has(w) || row.keywordWords.has(w) || row.body.has(w) || row.phrases.some((p) => p.includes(w));
+      if (has) held++;
+      if (LONE_OFF.has(w) && !(has && held > 1)) off = true;   // the asking word is missing, or it is the only link
+    }
+    return held === 1 && off;
+  }
+  // MF2 (3): a title that names a tool or material (stem) and the words that make a question about it. Without one of them in the question,
+  // the problem guide counts for NAMED_TOPIC_OFF of its score.
+  const NAMED_TOPICS = [
+    { title: "airbrush", asked: ["airbrush", "airbrushing", "spray", "compressor", "nozzle", "needle", "aerograph"] },
+    { title: "decal", asked: ["decal", "transfer", "waterslide", "slide"] },   // the synonym table reads "transfer" as "decal" in questions and titles
+  ].map((t) => ({ title: stem(t.title), asked: t.asked.map(stem) }));
+  const NAMED_TOPIC_OFF = 0.4;
+
   // X8b (d): the best phrase of every entry that shares a word with the question: { row number: [match 0 to 1, phrase place] }.
   // The match is the shared words' weights squared over both sizes (a cosine), so the same words give 1 and extra words on either side lower it.
   function askMatches(q, prep) {
@@ -514,7 +548,8 @@
   const source = (e) => ({ type: KIND_TYPE[e.kind], key: e.key, label: e.title });
   function leadFor(e) {
     if (e.kind === "tip") return sentence(firstSentence((e.body || [])[0]) || e.title);
-    if (e.kind === "detail" || e.kind === "basing") return sentence(`${e.title}: ${e.summary}`.replace(/: $/, ""));
+    // MF2 (5): a recipe or basing tip opens with its summary, not "Title: summary" (the title is already the source link)
+    if (e.kind === "detail" || e.kind === "basing") return sentence(e.summary || e.title);
     return sentence(e.summary || e.title);
   }
 
@@ -550,11 +585,19 @@
     rows.forEach((r, i) => {
       if (r.e.kind === "starter") return;
       const [match, at] = ask.get(i) || [0, -1];
-      const score = unseen * (scoreRow(r, asked, prep.weightOf) + (match >= ASK.floor ? ASK.points * (match - ASK.floor) / (1 - ASK.floor) : 0));
-      if (score > 0) hits.push({ e: r.e, score, match, at });
+      let score = unseen * (scoreRow(r, asked, prep.weightOf) + (match >= ASK.floor ? ASK.points * (match - ASK.floor) / (1 - ASK.floor) : 0));
+      // MF2 (3): a problem guide about the airbrush or transfers answers only a question that is about the airbrush or transfers ("bubbles in my paint" is not)
+      if (score > 0 && r.e.category === "problems" && NAMED_TOPICS.some((t) => r.title.has(t.title) && !t.asked.some((w) => asked.has(w)))) score *= NAMED_TOPIC_OFF;
+      if (score > 0) hits.push({ e: r.e, score, match, at, lone: loneWord(r, asked) });
     });
     // best first; a tie keeps the index order (the sort is stable)
     hits.sort((a, b) => b.score - a.score);
+    // MF2 (2): only when the best entry is a lone-word fit does the question read as about something else; then no lone-word entry
+    // reaches THRESHOLD. (When the best entry fits well, its weaker neighbours are kept as before.)
+    if (hits.length && hits[0].lone) {
+      for (const h of hits) if (h.lone) h.score = Math.min(h.score, THRESHOLD - 0.5);
+      hits.sort((a, b) => b.score - a.score);
+    }
     return { hits, starter, asked, rows, fixes, words };
   }
 
@@ -664,11 +707,13 @@
       let word = w[i];
       if (word === "sea" && w[i + 1] === "green") { word = "green"; i++; }   // "sea green" is one colour
       if (COLOUR_WORDS[word]) colours.push({ word, at: i });
-      else if (PART_WORDS[word] && !(word === "base" && NOT_A_PART.has(w[i + 1]))) parts.push({ part: PART_WORDS[word], at: i, owned: i > 0 && !!COLOUR_WORDS[w[i - 1]] });
+      else if (PART_WORDS[word] && !(word === "base" && NOT_A_PART.has(w[i + 1]))) parts.push({ part: PART_WORDS[word], word, at: i, owned: i > 0 && !!COLOUR_WORDS[w[i - 1]] });
     }
     return { colours, parts };
   }
 
+  // MF2 (4): the part as the person named it: "the cloak", "the sword", "armour" (not always "armour")
+  const partLabel = (t) => (t.word === t.part || ["armor", "eye"].includes(t.word) ? PART_NAME[t.part] : "the " + t.word);
   function colourAnswer(C, ctx, read) {
     const target = read.parts.find((p) => !p.owned) || read.parts[0] || null;
     const owner = read.parts.find((p) => p.owned && p !== target);
@@ -697,7 +742,8 @@
     }
     const names = picks.map((p) => C.colourFamily(p.wanted)).filter((f, i, a) => f && a.indexOf(f) === i);
     const list = names.length > 1 ? names.slice(0, -1).join(", ") + " and " + names[names.length - 1] : names[0] || "";
-    let lead = list ? `For ${PART_NAME[target.part]} with ${baseWord}, try ${list}.` : `Here are the closest ideas for ${PART_NAME[target.part]} with ${baseWord}.`;
+    const where = partLabel(target);
+    let lead = list ? `For ${where} with ${baseWord}, try ${list}.` : `Here are the closest ideas for ${where} with ${baseWord}.`;
     if (picks.some((p) => p.owned)) lead += " Paints you own come first.";
     return { kind: "colour", lead, sources, picks };
   }
@@ -890,7 +936,9 @@
     }
 
     // a colour and a part: paint picks from the colour rules (a colour with no part waits for an entry that fits better)
-    if (C && read.colours.length && read.parts.length) return colourAnswer(C, ctx, read);
+    // MF2 (1): but "how do I paint black armour" asks how, so an entry that fits the whole question comes first, as in (m) for a lone colour;
+    // the colour rules answer it only when no entry reaches THRESHOLD
+    if (C && read.colours.length && read.parts.length && !(howPaint && found.hits.some((h) => h.score >= THRESHOLD))) return colourAnswer(C, ctx, read);
 
     // a colour with no part: the colour rules answer, unless the other words in the question fit an entry on their own
     // AB12 (m): in "how do I paint gold" the colour is what is being painted, so an entry that fits the whole question comes first
@@ -900,8 +948,16 @@
     // AB12 (m): "how do I paint X" weights technique guides (a stable sort, so ties keep the index order)
     // A main noun narrows it to the technique guides whose title holds all of it, so the weight never lifts a guide on something else,
     // or on something more general, over one on the very thing asked ("how to paint a bay horse" stays on the bay horse, not horses).
-    const weighted = (e) => isTechnique(e) && main.phrase.every((x) => titleHas(e, x, syn));
-    const hits = howPaint ? found.hits.map((h) => (weighted(h.e) ? Object.assign({}, h, { score: h.score * TECHNIQUE_WEIGHT }) : h)).sort((a, b) => b.score - a.score) : found.hits;
+    // MF2 (1): in a colour and part question ("blue armour") any entry whose title holds both words is weighted, a recipe too
+    const colourPart = howPaint && read.colours.length > 0 && read.parts.length > 0;
+    const weighted = (e) => (isTechnique(e) || (colourPart && e.kind !== "tip")) && main.phrase.every((x) => titleHas(e, x, syn));
+    let hits = howPaint ? found.hits.map((h) => (weighted(h.e) ? Object.assign({}, h, { score: h.score * TECHNIQUE_WEIGHT }) : h)).sort((a, b) => b.score - a.score) : found.hits;
+    // MF2 (1): a guide whose title is exactly the colour and the part ("Painting black armour") goes first
+    if (howPaint && read.colours.length && read.parts.length) {
+      const want = new Set(main.phrase), same = (e) => { const t = wordsOf(e.title, syn).filter((w) => !FILLER.has(w)).map(stem); return e.kind === "guide" && t.length === want.size && t.every((w) => want.has(w)); };
+      const at = hits.findIndex((h) => h.score >= THRESHOLD && same(h.e));
+      if (at > 0) hits = [hits[at], ...hits.slice(0, at), ...hits.slice(at + 1)];
+    }
     const top = hits[0];
     if (top && top.score >= BAND.maybe) {
       const keep = hits.filter((h) => h.score >= THRESHOLD && h.score >= top.score * RELATIVE_KEEP).slice(0, MAX_SOURCES);

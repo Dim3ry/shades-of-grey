@@ -92,11 +92,12 @@ const startData = { starters: { [st.key]: "Start with one model and three colour
 const r5 = M.mentorAnswer(st.text, { index, paints: [], colour: C, data: startData });
 check("a starter question can lead with its own quick answer", r5.kind === "answer" && r5.lead === "Start with one model and three colours.", r5);
 // built with --no-quick, quick and starters are empty: every lead must then be made as before X8b (the entry's own words).
+// MF2: a recipe or basing tip's own words are now its summary alone; the old "Title: " in front of it is gone (the title is the source link).
 // AB12 (AT-39): with no "Also see" tail any more (it used to be added when there was a second source).
 const noQuick = Object.assign({}, D, { quick: {}, starters: {} });
 const sentence = (x) => { x = String(x || "").trim(); return x && !/[.!?]$/.test(x) ? x + "." : x; };
 const ownLead = (e) => e.kind === "tip" ? sentence((String((e.body || [])[0] || "").match(/^.*?[.!?](\s|$)/) || [String((e.body || [])[0] || "")])[0].trim() || e.title)
-  : e.kind === "detail" || e.kind === "basing" ? sentence(`${e.title}: ${e.summary}`.replace(/: $/, "")) : sentence(e.summary || e.title);
+  : e.kind === "detail" || e.kind === "basing" ? sentence(e.summary || e.title) : sentence(e.summary || e.title);
 const KIND = { guide: "guide", recipe: "detail", basing: "basing", tip: "tip" };
 const nqBad = [...fx.questions.map(([q]) => q), ...fx.starters.map((x) => x.text)].map((q) => {
   const r = ask(q, { data: noQuick });
@@ -131,18 +132,18 @@ check("the same question gives the same answer with MENTOR_DATA", JSON.stringify
 // Two rows answer differently once MENTOR_DATA is on the page, on purpose and in the open:
 //  - "muddy ground": both mud (George's original tip) and dry-mud-ground (X8's) are right. Without the data his check finds
 //    dry-mud-ground first (the fixture says so since X8); with the data's phrases it finds mud.
-//  - "how tall is a tree": the data's phrase bank knows "tree" from the scenery guides, so it answers trees-from-twigs instead of none.
-//    That is a near-miss answer to an off-topic question, the kind the pack's report counts (17 of 40 off-topic questions answer).
+//  - "how tall is a tree": the data's phrase bank knew "tree" from the scenery guides, so it answered trees-from-twigs instead of none.
+//    That was a near-miss answer to an off-topic question. MF2: it is "none" again, because "tall" is held by no tree entry (lone-word rule).
 // E: ASK.points went from 10 to 15, so "muddy ground" now finds wet-muddy-ground (KR4's guide) first: as right as the other two.
 // KR5: the 41 new detail recipes are in the index, so two more rows answer with a recipe on the same subject, both fair answers:
 //  - "how do I drybrush fur" finds the black fur recipe (drybrushing is then second);
 //  - "leather" finds KR5's tan leather recipe (George's leather recipe is then third).
-const WITH_DATA = { "muddy ground": ["answer", ["mud", "dry-mud-ground", "wet-muddy-ground"]], "how tall is a tree": ["answer", ["trees-from-twigs"]],
+const WITH_DATA = { "muddy ground": ["answer", ["mud", "dry-mud-ground", "wet-muddy-ground"]], "how tall is a tree": ["none", []],
                     "how do I drybrush fur": ["answer", ["drybrushing", "black-fur"]], "leather": ["answer", ["leather", "tan-leather"]] };
 const table = fx.questions.filter(([, , kind]) => kind !== "colour").map(([q, want, kind]) => {
   const r = ask(q); const first = r.sources[0];
   const alt = WITH_DATA[q];
-  const ok = alt ? r.kind === alt[0] && first && alt[1].includes(first.key)
+  const ok = alt ? r.kind === alt[0] && (alt[0] === "none" ? r.sources.length === 0 : first && alt[1].includes(first.key))
                  : r.kind === kind && (want === "none" ? r.sources.length === 0 : first && first.key === want);
   return { q, ok, got: first ? first.key : r.kind };
 });
