@@ -140,8 +140,9 @@ def main():
               and page.inner_text("#guides-back") == "Back to Techniques", es[:3])
         page.click(".guides-main .guides-row >> nth=1")
         wait_settled(page)
-        check("an entry page shows its number at the top right of its header",
-              page.inner_text(".guides-entry .guides-entry-head .guides-num") == es[1][1] and page.inner_text(".guides-entry h3") == es[1][0]
+        # AB13a: the entry page no longer shows the number (the lists do), so this checks the title and Back only
+        check("an entry page shows its title and goes back to its group (no number on the page)",
+              page.locator(".guides-entry .guides-num").count() == 0 and page.inner_text(".guides-entry h3") == es[1][0]
               and page.inner_text("#guides-back") == f"Back to {name}")
         page.click("#guides-back")
         wait_settled(page)
@@ -179,8 +180,9 @@ def main():
         wait_settled(page)
         page.evaluate("(k) => openGuide(k)", key)
         page.wait_for_selector(".guides-entry")
-        check("openGuide(key) lands on that entry with its number, and Back goes to its group",
-              page.get_attribute(".guides-entry", "id") == "guide-" + key and page.inner_text(".guides-entry .guides-num") == place["num"]
+        # AB13a: no number on the entry page any more
+        check("openGuide(key) lands on that entry, and Back goes to its group",
+              page.get_attribute(".guides-entry", "id") == "guide-" + key
               and page.inner_text("#guides-back") == "Back to " + place["group"] and page.evaluate("() => guidesState.group") == place["group"], place)
         page.evaluate("() => openGuide(GUIDE_STARTERS[0].key, 'starter')")
         wait_settled(page)
@@ -218,8 +220,9 @@ def main():
                     page.evaluate("() => window.scrollTo(0, 0)")
                 wait_settled(page)
                 seen.append((step, page.evaluate(LAYOUT)))
+            # AB13a: the entry page has no number now, so its step must show no numbered header (rows == 0); the lists still need one
             check(f"{w}x{h} {scheme} {theme}: numbers on one line at the right of the title's first line, no word split, taps 44 px, no sideways scroll",
-                  r == [theme, scheme] and all(m["rows"] >= 1 and not m["bad"] and not m["small"] and not m["sideways"] for _, m in seen), [x for x in seen if x[1]["bad"] or x[1]["small"] or x[1]["sideways"]])
+                  r == [theme, scheme] and all((m["rows"] == 0 if st == "entry" else m["rows"] >= 1) and not m["bad"] and not m["small"] and not m["sideways"] for st, m in seen), [x for x in seen if x[1]["bad"] or x[1]["small"] or x[1]["sideways"]])
 
         check("no page errors or pop-ups", errors == [], errors)
         browser.close()

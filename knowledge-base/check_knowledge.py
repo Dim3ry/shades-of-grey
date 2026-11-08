@@ -322,8 +322,10 @@ def check_entry(rep, kind, entry, groups):
             rep.add(where, f"'category' must be one of: {', '.join(CATEGORIES)}")
         need_str(rep, where, entry, "title", 3, 60)
         need_str(rep, where, entry, "summary", 20, 140)
-        if isinstance(entry.get("summary"), str) and not one_sentence(entry["summary"]):
-            rep.add(where, "'summary' must be one sentence")
+        # AB13a: George approved two short-sentence leads (wash or glaze, eyes), so a guide summary may be up to 4 short sentences
+        # (the 140 character limit above still holds). Recipes, tips and steps still need one sentence.
+        if isinstance(entry.get("summary"), str) and len([x for x in re.split(r"(?<=[.!?])\s+", entry["summary"].strip()) if x]) > 4:
+            rep.add(where, "'summary' must be 4 short sentences or fewer")
         body = need_list(rep, where, entry, "body", 3, 8)
         for i, p in enumerate(body or [], 1):
             if not (isinstance(p, str) and 20 <= len(p) <= 400):

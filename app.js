@@ -17,12 +17,41 @@
     const MAX_MODELS = 999;
     const MAX_EACH = 100;
 
-    // ===== CR1: THANKS (the Thanks section at the bottom of the Credits page) =====
-    // TO ADD A NAME: put one line in the list below, like  { name: "Creator Name", link: "https://example.com/their-page" }.
-    // The link must start with https:// (anything else is left out). Names and links are drawn as plain text and a plain link.
+    // ===== CR1, CR2: THANKS (the Thanks section on About, under Credits) =====
+    // TO ADD A NAME: put one line in the list below, like  { group: "YouTube", name: "Creator Name", link: "https://example.com/their-page" }.
+    // The group is "YouTube" or "Websites". The link must start with https:// (anything else is left out). Names and links are drawn as plain text
+    // and a plain link. The page sorts each group A to Z (ignoring a leading "The"), so the order here does not matter.
     // While the list is empty, the whole Thanks section (heading included) is not drawn.
-    const THANKS = [];
-    const THANKS_LINE = "These creators inspired Minifolio. Thank you to them, and they're well worth checking out:";
+    const THANKS = [
+      { group: "YouTube", name: "Angel Giraldez", link: "https://www.youtube.com/@AngelGiraldeZ" },
+      { group: "YouTube", name: "Artis Opus", link: "https://www.youtube.com/@artisopus" },
+      { group: "YouTube", name: "Cult of Paint", link: "https://www.youtube.com/channel/UCPI4wJgB2hlWZqz0tRqg4qQ" },
+      { group: "YouTube", name: "Duncan Rhodes Painting Academy", link: "https://www.youtube.com/c/DuncanRhodesPaintingAcademy" },
+      { group: "YouTube", name: "Goobertown Hobbies", link: "https://www.youtube.com/@goobertownhobbies" },
+      { group: "YouTube", name: "Infernal Brush", link: "https://www.youtube.com/@InfernalBrush" },
+      { group: "YouTube", name: "Miniac", link: "https://www.youtube.com/@miniac" },
+      { group: "YouTube", name: "Ninjon", link: "https://www.youtube.com/@ninjon" },
+      { group: "YouTube", name: "Peachy Tips", link: "https://www.youtube.com/@peachytips" },
+      { group: "YouTube", name: "Rogue Hobbies", link: "https://www.youtube.com/@roguehobbies" },
+      { group: "YouTube", name: "Swords and Brushes", link: "https://www.youtube.com/@swordsandbrushes" },
+      { group: "YouTube", name: "TableTopReady", link: "https://www.youtube.com/@tabletopreadyyoutube" },
+      { group: "YouTube", name: "Tabletop Tactics", link: "https://www.youtube.com/@tabletoptactics" },
+      { group: "YouTube", name: "The Painting Phase", link: "https://www.youtube.com/@thepaintingphase" },
+      { group: "YouTube", name: "Toadpainting", link: "https://www.youtube.com/@toadpainting" },
+      { group: "YouTube", name: "Trovarion", link: "https://www.youtube.com/@trovarion" },
+      { group: "YouTube", name: "Vince Venturella", link: "https://www.youtube.com/@vinceventurella" },
+      { group: "YouTube", name: "Zumikito", link: "https://www.youtube.com/c/Zumikito" },
+      { group: "Websites", name: "Chest of Colors", link: "https://chestofcolors.com/" },
+      { group: "Websites", name: "Creative Twilight", link: "https://creativetwilight.com/" },
+      { group: "Websites", name: "Heresy Brush", link: "https://heresybrush.com/en/" },
+      { group: "Websites", name: "Massive Voodoo", link: "https://massivevoodoo.blogspot.com/" },
+      { group: "Websites", name: "Tale of Painters", link: "https://taleofpainters.com/" },
+      { group: "Websites", name: "Tangible Day", link: "https://tangibleday.com/" },
+      { group: "Websites", name: "The Painter's Portal, A Complete Guide to Painting Miniatures", link: "https://thepaintersportaluk.wordpress.com/wp-content/uploads/2025/02/a-complete-guide-to-painting-miniatures-2025-.pdf" },
+    ];
+    const THANKS_GROUPS = ["YouTube", "Websites"];
+    const THANKS_LINE = "Mentor's advice was shaped by learning from painters and creators who generously share what they know. Go and check them out below.";
+    const THANKS_SMALL = "Listed as thanks only. No creator is affiliated with or endorses Minifolio.";
 
     // ================= SAVING SAFELY (v14) =================
     // Browser storage has no "all or nothing" save, so writeTogether() does it by hand:
@@ -4449,7 +4478,7 @@
       endFill();   // MO6: a lit piece still sliding ends first
       const move = launchMoveStart("bar");
       const page = move ? pageOutSnap() : null;   // MO6: measured before the state changes
-      if (move) ghostOut(document.getElementById("version-tag"));   // MO6: the version number fades out (it went in one frame)
+      // (FB5: the version number is on the start circle too, in the same place, so it stays still and no longer fades out here)
       launching = true;
       document.body.classList.add("launching");
       tabButtons.forEach(b => b.removeAttribute("aria-current"));   // nothing is chosen yet
@@ -5069,24 +5098,35 @@
     // start page gets a short fade at most. Moving between the pages inside one section (Guides, Settings, Help, Updates) is an instant switch.
     // SEC1: the section an old or short name stands for. hasOwn, so a word like "constructor" is never looked up as a built-in.
     function tabAlias(name) { return hasOwn(TAB_ALIASES, name) ? TAB_ALIASES[name] : name; }
-    // CR1: draws the Thanks section from THANKS. Entries need a name and an https link; others are left out. Nothing here uses innerHTML.
+    // CR1, CR2: draws the Thanks section from THANKS. Entries need a name and an https link; others are left out. Nothing here uses innerHTML.
+    // The list sits in a fold that starts closed, in two groups, each sorted A to Z ignoring a leading "The".
+    function thanksSortKey(name) { return name.toLowerCase().replace(/^the\s+/, ""); }
     function renderThanks() {
       const box = document.getElementById("credits-thanks");
       box.textContent = "";
       // safeHttpsUrl (above) gives back the address only when it is a real https one, else ""
-      const good = THANKS.map(t => ({ name: t && typeof t.name === "string" ? t.name.trim() : "", href: t ? safeHttpsUrl(t.link) : "" }))
-        .filter(t => t.name && t.href && !new URL(t.href).username && !new URL(t.href).password);
+      const good = THANKS.map(t => ({ group: t && t.group, name: t && typeof t.name === "string" ? t.name.trim() : "", href: t ? safeHttpsUrl(t.link) : "" }))
+        .filter(t => t.name && t.href && THANKS_GROUPS.includes(t.group) && !new URL(t.href).username && !new URL(t.href).password);
       box.classList.toggle("hidden", good.length === 0);
       if (!good.length) return;
       const h = document.createElement("h3"); h.textContent = "Thanks"; box.appendChild(h);
       const p = document.createElement("p"); p.textContent = THANKS_LINE; box.appendChild(p);
-      const ul = document.createElement("ul"); ul.className = "credits-thanks-list";
-      good.forEach(t => {
-        const li = document.createElement("li"), a = document.createElement("a");
-        a.textContent = t.name; a.href = t.href; a.target = "_blank"; a.rel = "noopener noreferrer";
-        li.appendChild(a); ul.appendChild(li);
+      const fold = document.createElement("details"); fold.className = "help-look thanks-fold";
+      const sum = document.createElement("summary"); sum.textContent = "Show all"; fold.appendChild(sum);
+      THANKS_GROUPS.forEach(g => {
+        const mine = good.filter(t => t.group === g).sort((x, y) => { const a = thanksSortKey(x.name), b = thanksSortKey(y.name); return a < b ? -1 : a > b ? 1 : 0; });
+        if (!mine.length) return;
+        const gh = document.createElement("h4"); gh.className = "thanks-group"; gh.textContent = g; fold.appendChild(gh);
+        const ul = document.createElement("ul"); ul.className = "credits-thanks-list";
+        mine.forEach(t => {
+          const li = document.createElement("li"), a = document.createElement("a");
+          a.textContent = t.name; a.href = t.href; a.target = "_blank"; a.rel = "noopener noreferrer";
+          li.appendChild(a); ul.appendChild(li);
+        });
+        fold.appendChild(ul);
       });
-      box.appendChild(ul);
+      box.appendChild(fold);
+      const small = document.createElement("p"); small.className = "hint"; small.textContent = THANKS_SMALL; box.appendChild(small);
     }
     // FB3: every old link to the Credits page opens About and scrolls to its Credits section (showTab("credits") does both).
     for (const id of ["about-credits-link", "help-credits-link", "about-rights-credits", "help-rights-credits"]) document.getElementById(id).addEventListener("click", () => showTab("credits"));
@@ -5128,7 +5168,7 @@
       });
       if (fill) fillRun(fill);   // MO6: the lit colour slides from the old piece to the new one
       launchMoveRun(leaving);
-      if (leaving) fadeWordIn(document.getElementById("version-tag"));   // MO6: the version number fades in
+      // (FB5: the version number is on the start circle too, in the same place, so it stays still and no longer fades in here)
       moreSeg.classList.toggle("hidden", !MORE_PAGES.includes(name));
       moreTitle.classList.toggle("hidden", !MORE_PAGES.includes(name));
       moreSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.page === name)));
@@ -17406,6 +17446,16 @@
         lower.replaceChildren();
         const q = g.query.trim();
         if (q) { lower.appendChild(entryRows(kn.search(q), "q:" + q, numOf)); return; }
+        const gl = kn.get("painting-terms-glossary", "guide");   // AB13a: the glossary, one tap from the Guides home, above the Topics | A to Z switch
+        if (gl) {
+          const gb = document.createElement("button");
+          gb.type = "button";
+          gb.className = "link-button guides-glossary-link";
+          gb.dataset.glossary = gl.key;
+          gb.textContent = gl.title;
+          gb.addEventListener("click", () => openGuide(gl.key, "guide"));
+          lower.appendChild(gb);
+        }
         // G2b: Topics (the sections) or A to Z (every entry of every section in one list), a two-part switch like the others in the app
         const seg = document.createElement("div");
         seg.className = "seg guides-order";
@@ -17546,15 +17596,7 @@
           const h = document.createElement("h3");
           h.className = "guides-title";
           h.textContent = e.title;
-          const place = guidePlace(e, kn);   // G2a: the entry's number, small and grey at the top right of its header
-          if (place) {
-            const head = document.createElement("div");
-            head.className = "guides-entry-head";
-            head.append(h, numSpan(place.num));
-            page.appendChild(head);
-          } else {
-            page.appendChild(h);
-          }
+          page.appendChild(h);   // AB13a: no number on the entry page (the lists keep theirs)
           for (const para of e.body) {
             const p = document.createElement("p");
             p.textContent = para;
@@ -22083,6 +22125,25 @@
       if (whText.value.length >= LIST_TEXT_MAX) notify(`The list box holds up to ${LIST_TEXT_MAX.toLocaleString("en-GB")} characters, so the rest was left out.`);
     });
 
+    // TD2: the game a pasted list names. The Warhammer app ends a list with
+    // "Created with Warhammer <game name>: The App"; "General's Handbook" is a second sign for
+    // Age of Sigmar. Only games the app knows are matched. Anything else (no footer, an unknown
+    // game) returns "" and the box keeps the 40K default.
+    const LIST_GAMES = [["Age of Sigmar", "ageofsigmar"], ["40K", "40k"], ["40K", "40000"], ["40K", "warhammer40000"]];
+    function listGameName(text) {
+      const lines = plainQuotes(String(text || "").slice(0, LIST_TEXT_MAX)).split("\n")
+        .map(l => l.trim()).filter(l => l && l.length <= LIST_LINE_MAX);
+      let footer = null, handbook = false;
+      for (const l of lines) {
+        const m = l.match(/^created with warhammer\s+(.{1,60}?)\s*:\s*the app$/i);
+        if (m) footer = m[1];
+        else if (/^general's handbook\b/i.test(l)) handbook = true;
+      }
+      const name = footer !== null ? looseName(footer) : handbook ? "ageofsigmar" : "";
+      const found = LIST_GAMES.find(g => g[1] === name);
+      return found ? found[0] : "";
+    }
+
     document.getElementById("wh-read").addEventListener("click", () => {
       const list = parseWarhammerList(whText.value);
       if (list && !list.units.length) {   // UX1: a list builder's list with nothing in it that reads as a unit
@@ -22098,7 +22159,11 @@
       // Use the spelling of a faction you already have, and its game.
       const knownFaction = models.find(m => looseName(m.faction) === looseName(list.faction));
       whFaction.value = knownFaction ? knownFaction.faction : list.faction;
-      whGame.value = knownFaction ? knownFaction.hobby
+      // TD2: a game the list names wins (in the spelling you already use); otherwise as before.
+      const named = listGameName(whText.value);
+      const sameGame = named && models.find(m => looseName(m.hobby) === looseName(named));
+      whGame.value = named ? (sameGame ? sameGame.hobby : named)
+        : knownFaction ? knownFaction.hobby
         : (models.find(m => looseName(m.hobby) === "40k") || { hobby: "40K" }).hobby;
       openReview({
         source: "wh",
@@ -22271,19 +22336,20 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=151".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=153".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v151";
+    const APP_VERSION = "v153";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;
+    fadeWordIn(document.getElementById("version-tag"));   // FB5: it is on the start circle now, so at start-up it fades in rather than popping into a frame
     document.getElementById("version-tag").setAttribute("aria-label", APP_VERSION + ", open Updates");
     document.getElementById("version-tag").addEventListener("click", () => {
-      if (launching || travelling) return;
-      if (settings.tab !== "updates") versionFrom = settings.tab;
+      if (travelling) return;
+      if (settings.tab !== "updates" || launching) versionFrom = launching ? "launch" : settings.tab;   // FB5: from the start circle, Back returns to the circle
       showTab("updates");
     });
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
@@ -22744,6 +22810,14 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v153", date: "8 Nov 2026", changes: [
+        "Pasting an army list now fills in the game when the list names it. A Thanks list of creators is on the About page, and guide pages no longer show numbers.",
+        "The Guides home links to the glossary, and the wash or glaze and eyes guides start with clearer lines.",
+      ] },
+      { version: "v152", date: "8 Nov 2026", changes: [
+        "The version number is back at the top of the start circle. Tap it to open Updates.",
+        "Fixes and tidying.",
+      ] },
       { version: "v151", date: "8 Nov 2026", changes: [
         "The transfers guide now warns that a hair dryer can blow a wet transfer out of place.",
         "Fixes and tidying.",
@@ -23410,7 +23484,7 @@
       if ((tab === "guides" || (tab === "recipes" && settings.recipeView === "colourlab")) && compendiumState.focus) return leaveIdeasFor;   // v69 (X1: also in Colour Lab): back to the recipe step or palette paint
       if (tab === "units" && !unitsImport.classList.contains("hidden")) return closeUnitsImport;
       if (tab === "units" && selectMode) return closeSelect;   // v21.1: select mode's tick boxes
-      if (tab === "updates" && versionFrom) { const from = versionFrom; return () => showTab(from); }   // FB1: opened from the version number: Back returns to where the person was
+      if (tab === "updates" && versionFrom) { const from = versionFrom; return from === "launch" ? enterLaunch : () => showTab(from); }   // FB1: opened from the version number: Back returns to where the person was
       if (tab && tab !== "dashboard") return () => showTab("dashboard");
       return null;
     }

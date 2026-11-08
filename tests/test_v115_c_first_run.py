@@ -47,7 +47,9 @@ def main():
         check("the start page line is the agreed words", line == "Track. Paint. Learn.", line)   # AM1: George replaced chunk C's wording with the launch tagline
         check("it is 6 words or fewer", len(line.split()) <= 6)
         check("the line shows on the start page", page.evaluate(SHOWN, "#start-line"))
-        check("the version is not shown on the start page", not page.evaluate(SHOWN, "#version-tag"))
+        # FB5 (v152, George, 8 Nov): the version button is on the start circle too, in the same place as on the other screens, so this old check
+        # (not shown there) is reversed: it is shown, with the app's version as its text. test_v152_fb5 checks the place and the overlap.
+        check("the version is shown on the start page (FB5, replaces the old 'not shown' check)", page.evaluate(SHOWN, "#version-tag") and page.inner_text("#version-tag") == vh.current())
         tap_tab(page, "dashboard")
         wait_settled(page)
         check("the line is gone once you leave the start page", not page.evaluate(SHOWN, "#start-line"))

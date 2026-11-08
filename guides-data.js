@@ -3958,7 +3958,7 @@ const GUIDE_ENTRIES = [
     related: ["material-contrast", "fabric-textures", "silk-and-satin", "texture-in-scale"],
     keywords: ["different materials", "shiny vs matt", "texture", "material painting", "silk", "leather vs cloth", "realism", "surface texture", "make materials look different", "how much contrast", "glossy look", "selective gloss"] },
   { key: "painting-eyes", category: "techniques", title: "Painting eyes on faces",
-    summary: "Dark socket, off-white eyeball leaving a dark rim, then a pupil or iris that touches the lids, and an optional tiny glint.",
+    summary: "Paint the socket dark. Add an off-white eyeball with a dark rim. Put a pupil on, touching the lids. Add a tiny glint if you like.",
     body: [
       "Use a size 0 or similar with a sharp point and short bristles; the point matters more than the size. Brace elbows on the desk and a finger against the model, and move only your fingertips.",
       "Paint eyes once the face has its base and shade but before the highlights, so slips onto the cheeks get covered later and a bad attempt costs little. Some paint them before any skin at all, over the black primer, for the same reason.",
@@ -5448,7 +5448,7 @@ const GUIDE_ENTRIES = [
     related: ["where-highlights-go", "light-and-volume-sketch", "zenithal-priming", "highlighting-curves"],
     keywords: ["volume highlights", "volumetric highlights", "highlighting shapes", "light direction", "form", "muscles", "make it 3d", "flat looking model", "where light hits", "painting volumes"] },
   { key: "wash-vs-glaze", category: "techniques", title: "Wash or glaze",
-    summary: "A wash is meant to run into recesses; a glaze is meant to stay on the surface and tint it.",
+    summary: "A wash runs into the recesses. A glaze sits on top and tints.",
     body: [
       "Both are mostly water and can share the same ratio of paint to water. The difference is how you apply them.",
       "For a wash, apply straight from a loaded brush so it breaks surface tension and runs into cracks.",
