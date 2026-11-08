@@ -17486,6 +17486,16 @@
           b.append(n, proTag(), numSpan(guideSectionNumber(c.key)));   // P1: the whole Guides section is Pro preview for now   // G2a: then the section number
           list.appendChild(b);
         }
+        const gl = kn.get("painting-terms-glossary", "guide");   // AB13a: the glossary, one tap from the Guides home
+        if (gl) {
+          const gb = document.createElement("button");
+          gb.type = "button";
+          gb.className = "link-button guides-glossary-link";
+          gb.dataset.glossary = gl.key;
+          gb.textContent = gl.title;
+          gb.addEventListener("click", () => openGuide(gl.key, "guide"));
+          lower.appendChild(gb);
+        }
         lower.appendChild(list);
         lower.appendChild(Object.assign(document.createElement("p"), { className: "guides-free", textContent: "Free while in preview." }));
       };
@@ -17586,15 +17596,7 @@
           const h = document.createElement("h3");
           h.className = "guides-title";
           h.textContent = e.title;
-          const place = guidePlace(e, kn);   // G2a: the entry's number, small and grey at the top right of its header
-          if (place) {
-            const head = document.createElement("div");
-            head.className = "guides-entry-head";
-            head.append(h, numSpan(place.num));
-            page.appendChild(head);
-          } else {
-            page.appendChild(h);
-          }
+          page.appendChild(h);   // AB13a: no number on the entry page (the lists keep theirs)
           for (const para of e.body) {
             const p = document.createElement("p");
             p.textContent = para;
