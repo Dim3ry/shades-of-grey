@@ -12,7 +12,7 @@
 //
 // WHEN YOU UPLOAD A NEW VERSION: change the number below (v1 -> v2 -> v3...).
 // That tells the phone to throw away the old saved copy and start a new one.
-const VERSION = "v146";
+const VERSION = "v147";
 const CACHE_NAME = "shades-of-grey-" + VERSION;
 // The pot-label reader's big files (the engine and its English data, about 11 MB) are kept in
 // their own store that ISN'T cleared on updates, so they're only fetched once.
@@ -96,6 +96,7 @@ const APP_FILES = [
   "./fonts/LICENSES.md",  // CR1: the licence texts the Credits page links to, saved so they open offline
   "./ocr/LICENSE-tesseract.txt",
   "./LICENSE-paint-list.txt",
+  "./privacy",  // LP1: the privacy page (its own page; saved so it opens offline)
 ];
 
 // "install": runs once when this version of sw.js is first seen. Save the app files.
@@ -216,9 +217,17 @@ const PAGE_WAIT_MS = 4000;
 // DS2: the app's page is saved under its plain address ("./" or "./index.html", with any "?..." taken off), so the store keeps one
 // copy of it. Before DS2 each different "?..." (index.html?junk=1, ?junk=2...) was saved as a full copy of its own. Other pages
 // (null here) are not saved; offline they get the app's page, as before.
+// LP1: the privacy page (privacy, or privacy.html on a plain file server) is a page of its own, not the app. It is saved under its own address
+// and, offline, only its own saved copy is used: it is never answered with the app's page.
+function isPrivacyPage(url) {
+  const u = new URL(url);
+  const scope = new URL("./", self.location.href);
+  return u.origin === scope.origin && (u.pathname === scope.pathname + "privacy" || u.pathname === scope.pathname + "privacy.html");
+}
 function pageKey(url) {
   const u = new URL(url);
   const scope = new URL("./", self.location.href);
+  if (isPrivacyPage(url)) { u.search = ""; u.hash = ""; return u.href; }
   if (u.origin !== scope.origin || (u.pathname !== scope.pathname && u.pathname !== scope.pathname + "index.html")) return null;
   u.search = "";
   u.hash = "";
@@ -226,7 +235,7 @@ function pageKey(url) {
 }
 function savedPage(request) {
   return caches.open(CACHE_NAME).then((cache) => cache.match(request, { ignoreSearch: true })
-    .then((saved) => saved || cache.match("./index.html")));
+    .then((saved) => saved || (isPrivacyPage(request.url) ? null : cache.match("./index.html"))));
 }
 function codeFilesSaved(pageText, pageUrl) {
   const files = [...pageText.matchAll(/<script[^>]*\ssrc="([^"]+)"/g)]

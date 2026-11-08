@@ -55,8 +55,8 @@
        (applyAppearance in app.js) takes over once the app starts.
        U6b: mentor-looks.js (the Mentor orb's three looks and five states, plain data: MENTOR_LOOKS and MENTOR_LOOKS_CSS) loads
        just before it, so early.js can put the chosen look and its styles on the page before the first frame (LR1). -->
-  <script src="mentor-looks.js?v=146"></script>
-  <script src="early.js?v=146"></script>
+  <script src="mentor-looks.js?v=147"></script>
+  <script src="early.js?v=147"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -450,7 +450,7 @@
       margin: -20px -16px 16px; padding: 8px 16px var(--rule-gap);
       background-color: var(--background); border-bottom: var(--rule);
     }
-    .app-bar h1 { flex: 1; min-width: 0; margin: 0; padding: 0; border: 0; }
+    .app-bar h1 { flex: 1; min-width: 0; margin: 0; padding: 0; border: 0; display: flex; flex-wrap: wrap; align-items: center; }   /* FB1: title, then the version; if it cannot fit beside the title it drops directly under it */
     .app-actions { display: flex; align-items: center; gap: 12px; flex: none; }
     .app-actions .basket:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
     /* v40: the basket count. Same colours as the rest of the app (no new ones). The ::after makes the tap area bigger than the little pill you see. */
@@ -1134,8 +1134,13 @@
     .recover-list li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .recover-list span { flex: 1 1 200px; color: var(--muted); font-size: 0.875rem; }
 
-    /* AT-31: the version number is no longer shown beside the title (it was hidden on the start page already); Updates says it. The element stays so the number is still in the page. */
-    .version-tag { display: none; font-size: 0.75rem; font-weight: 500; color: var(--muted); vertical-align: middle; margin-left: 6px; }
+    /* FB1: the version number is back at the top of every screen (George, 8 Nov). A button: one tap opens Tools, then Updates. It is small and
+       quiet (the muted text colour); its tap area is the ::after (44 px or more), so the row does not grow. Hidden on the start page. */
+    .version-tag { position: relative; display: inline-block; flex: none; min-height: 0; min-width: 0; margin: 0 0 0 12px; padding: 0; background: none; border: 0; border-radius: var(--radius-control);
+                   font-size: 0.75rem; font-weight: 500; line-height: 1.2; color: var(--muted); }
+    .version-tag::after { content: ""; position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; transform: translate(-50%, -50%); }   /* FB1: the tap area is 44 px or more */
+    .version-tag:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+    .version-tag:empty { display: none; }
 
     /* ----- Import review ----- */
     .review { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); display: grid; gap: 12px; }
@@ -1352,6 +1357,10 @@
     #view-credits .cr-who { flex: 1 1 11rem; min-width: 0; overflow-wrap: anywhere; }
     #view-credits .cr-by { display: block; color: var(--muted); font-size: 0.875rem; }
     #view-credits .credits-list a, #view-credits .credits-thanks-list a { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; overflow-wrap: anywhere; }
+    /* LP1: the rights line (About and How it works > About) and the links to the privacy page. The words "their own licences" are a link inside the sentence. */
+    .rights-line .link-button { display: inline-flex; align-items: center; vertical-align: middle; padding: 0; min-height: 44px; min-width: 44px; font-size: inherit; text-decoration: underline; text-underline-offset: 2px; }
+    .privacy-page-link { display: flex; align-items: center; min-height: 44px; min-width: 44px; width: fit-content; color: var(--accent); font-size: 0.875rem; }
+    .privacy-page-link:focus-visible, .rights-line .link-button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
     #view-credits a:focus-visible, .about-credits-link:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
     #view-credits .credits-thanks-list { list-style: none; margin: 0; padding: 0; }
     .link-button { min-width: 44px; }
@@ -3183,7 +3192,7 @@
   <main>
     <!-- U4a: the header. The title, then the basket in the top corner (.app-actions is one small block, easy to move). -->
     <header class="app-bar">
-      <h1><button type="button" class="home" id="home-button" aria-label="Minifolio, back to the start page">Minifolio</button> <span class="version-tag" id="version-tag"></span></h1>
+      <h1><button type="button" class="home" id="home-button" aria-label="Minifolio, back to the start page">Minifolio</button> <button type="button" class="version-tag" id="version-tag" title="Updates"></button></h1>
       <p class="start-line" id="start-line">Track. Paint. Learn.</p>
       <nav class="app-actions" aria-label="Shopping list">
         <!-- v40: the basket count (hidden when the list is empty). Filled and wired by updateBasket() in app.js. -->
@@ -3461,7 +3470,9 @@
         <p>Minifolio is a hobby tracker made by a nerd, for nerds. It began as one painter’s side project to track their own models and learn to code, and it grew arms, legs and a few tentacles. It’s still mostly one person, so thanks for your patience.</p>
         <h2>Mission</h2>
         <p>To give every painter a mentor in their pocket: a place to track your progress, get advice, and find the right colours.</p>
+        <p class="rights-line" id="about-rights">Minifolio is an independent app made in the UK by George Atter-Dimery. It is not affiliated with, endorsed by or sponsored by Games Workshop or any paint maker. Citadel, Warhammer, Warhammer Tone Pro and the names of factions and paints are trade marks of Games Workshop Ltd. Other paint and brand names belong to their owners. They are used only to say which products you own or might use. © 2026 George Atter-Dimery. All rights reserved. Fonts, the pot-label reader and the paint list are used under <button type="button" class="link-button" id="about-rights-credits">their own licences</button>.</p>
         <button type="button" class="link-button about-credits-link" id="about-credits-link">Credits</button>
+        <a class="privacy-page-link" id="about-privacy-link" href="privacy" target="_blank" rel="noopener noreferrer">Privacy page</a>
       </div>
     </section>
 
@@ -3492,6 +3503,7 @@
           <li><span class="cr-who"><strong>miniature-paints</strong><span class="cr-by">Rick Fleuren</span></span><a href="LICENSE-paint-list.txt" target="_blank" rel="noopener noreferrer">MIT License</a></li>
         </ul>
         <div id="credits-thanks" class="hidden"></div>
+        <a class="privacy-page-link" id="credits-privacy-link" href="privacy" target="_blank" rel="noopener noreferrer">Privacy page</a>
       </div>
     </section>
 
@@ -3731,7 +3743,7 @@
         <details>
           <summary>Updates and feedback</summary>
           <ul>
-            <li>The version number is in <strong>Updates</strong>, which lists what changed in the latest five versions.</li>
+            <li>The version number is at the top of every screen. Tap it to open <strong>Updates</strong>, which lists what changed in the latest five versions.</li>
             <li>Found a bug or have an idea? Use <strong>Give feedback</strong> under <strong>Settings → Updates</strong>.</li>
             <li id="help-feedback-prompt">About a week after you start using the app, a small card on the Dashboard asks if you'd like to send feedback. <strong>Give feedback</strong> opens the same form and the card goes away for good. <strong>Not now</strong> hides it for 30 days. <strong>Don't ask again</strong> hides it for good. If you don't answer, it hides itself the next day and waits 30 days, so it never shows two days running. The app only remembers the date you started and your choice, on this device. Nothing is sent anywhere.</li>
           </ul>
@@ -3739,6 +3751,7 @@
         <details id="privacy">
           <summary>Privacy</summary>
           <ul>
+            <li id="privacy-full-page"><a class="privacy-page-link" id="help-privacy-link" href="privacy" target="_blank" rel="noopener noreferrer">Read the full privacy page</a></li>
             <li><strong>Stays on your phone:</strong> your units, photos, recipes, paints and settings. They're saved in this browser on this device only. There's no account and no cloud copy.</li>
             <li><strong>Scanning a paint pot</strong> reads the label on your phone. The photo never leaves it.</li>
             <li><strong>What goes out:</strong> only what you choose to send. <strong>Give feedback</strong> opens a form on Tally's website, which receives what you type there plus the app's version number. Backups and exports are files you save yourself. <strong>Send backup to…</strong> and <strong>Send full backup with photos to…</strong> only open your phone's own share menu: the backup goes where you choose, and the app sends nothing itself. The one thing the app does send on its own is the visit count, described next.</li>
@@ -3757,7 +3770,7 @@
         <details id="about">
           <summary>About</summary>
           <ul>
-            <li><strong>Unofficial fan-made app, not affiliated with or endorsed by Games Workshop or any paint maker.</strong> No Games Workshop artwork, rules, points or stats, and no brand logos.</li>
+            <li class="rights-line" id="help-rights">Minifolio is an independent app made in the UK by George Atter-Dimery. It is not affiliated with, endorsed by or sponsored by Games Workshop or any paint maker. Citadel, Warhammer, Warhammer Tone Pro and the names of factions and paints are trade marks of Games Workshop Ltd. Other paint and brand names belong to their owners. They are used only to say which products you own or might use. © 2026 George Atter-Dimery. All rights reserved. Fonts, the pot-label reader and the paint list are used under <button type="button" class="link-button" id="help-rights-credits">their own licences</button>. No Games Workshop artwork, rules, points or stats, and no brand logos.</li>
             <li>The app knows paint and faction names so it can recognise what you type or scan. Citadel, Warhammer and faction and paint names are trademarks of Games Workshop Ltd. Other paint names (such as Vallejo, The Army Painter and AK Interactive) belong to their makers. All are used only to identify those products.</li>
             <li>The Vallejo, Army Painter, Pro Acryl, AK, Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World paint names, colours and codes (and some Citadel ones) come from the free <strong>miniature-paints</strong> list by Rick Fleuren (MIT licence). The colours are close guesses, not exact matches.</li>
             <li id="about-fonts"><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">Font licences</a></li>
@@ -3858,6 +3871,7 @@
         <label class="check-label count-label"><input type="checkbox" id="count-visits"> Count my visits (anonymous)</label>
         <p class="hint" id="counting-note" style="margin: 6px 0 0;"></p>
         <p class="hint" id="counting-effect" style="margin: 6px 0 0;">Takes effect the next time the app opens. Details: How it works → Privacy.</p>
+        <a class="privacy-page-link" id="settings-privacy-link" href="privacy" target="_blank" rel="noopener noreferrer">Privacy page</a>
       </div>
 
       <!-- v39: Shop links. One tick box; on by default; not in backups. See "v39: THE SHOP LINKS SWITCH" in app.js. -->
@@ -4036,7 +4050,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=146" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=147" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -4049,16 +4063,16 @@
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks.
        G2a: guides-groups.js (the Guides topic groups, plain data) loads after guides-data.js. It only adds one
        name, GUIDE_GROUPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=146"></script>
-  <script src="schemes.js?v=146"></script>
-  <script src="detail-recipes.js?v=146"></script>
-  <script src="basing-tips.js?v=146"></script>
-  <script src="mentor-tips.js?v=146"></script>
-  <script src="guides-data.js?v=146"></script>
-  <script src="guides-groups.js?v=146"></script>
-  <script src="mentor-data.js?v=146"></script>
-  <script src="mentor-engine.js?v=146"></script>
-  <script src="where-to-buy.js?v=146"></script>
-  <script src="app.js?v=146"></script>
+  <script src="colour.js?v=147"></script>
+  <script src="schemes.js?v=147"></script>
+  <script src="detail-recipes.js?v=147"></script>
+  <script src="basing-tips.js?v=147"></script>
+  <script src="mentor-tips.js?v=147"></script>
+  <script src="guides-data.js?v=147"></script>
+  <script src="guides-groups.js?v=147"></script>
+  <script src="mentor-data.js?v=147"></script>
+  <script src="mentor-engine.js?v=147"></script>
+  <script src="where-to-buy.js?v=147"></script>
+  <script src="app.js?v=147"></script>
 </body>
 </html>

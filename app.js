@@ -5091,9 +5091,12 @@
     }
     document.getElementById("about-credits-link").addEventListener("click", () => showTab("credits"));   // CR1
     document.getElementById("help-credits-link").addEventListener("click", () => showTab("credits"));   // TD1a: the small Credits link in How it works > About
+    for (const id of ["about-rights-credits", "help-rights-credits"]) document.getElementById(id).addEventListener("click", () => showTab("credits"));   // LP1: "their own licences" in the rights line
 
+    let versionFrom = null;   // FB1: the screen the version button was tapped on, so Back can return there
     function showTab(name, how) {
       name = tabAlias(name);
+      if (name !== "updates") versionFrom = null;
       if (!hasOwn(views, name)) name = "dashboard";
       const before = launching ? null : (hasOwn(views, tabAlias(settings.tab)) ? tabAlias(settings.tab) : null);
       const move = canMove() && before !== name && (before === null || barOf(before) !== barOf(name)) ? (how === "slide" && before ? "slide" : "fade") : "";
@@ -22269,12 +22272,21 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=146".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=147".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v146";
+    const APP_VERSION = "v147";
+    // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
+    // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
+    document.getElementById("version-tag").textContent = APP_VERSION;
+    document.getElementById("version-tag").setAttribute("aria-label", APP_VERSION + ", open Updates");
+    document.getElementById("version-tag").addEventListener("click", () => {
+      if (launching || travelling) return;
+      if (settings.tab !== "updates") versionFrom = settings.tab;
+      showTab("updates");
+    });
     // Paste the Microsoft Forms share link between the quotes. Empty = "coming soon".
     const FEEDBACK_URL = "https://tally.so/r/Y5Lka6";
 
@@ -22736,6 +22748,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v147", date: "8 Nov 2026", changes: [
+        "The version number is back at the top of every screen and opens Updates. There is a privacy page, and Mentor answers \"how do I paint black armour\" and similar questions with the right guide.",
+        "Guides link to each other more, and use \"it's\" in more places.",
+      ] },
       { version: "v146", date: "7 Nov 2026", changes: [
         "When one guide fits, Mentor answers with a few lines from it and a Read the guide link. When it is not sure what you meant, it offers two or three guides to pick from.",
         "Fixes and tidying.",
@@ -23382,6 +23398,7 @@
       if ((tab === "guides" || (tab === "recipes" && settings.recipeView === "colourlab")) && compendiumState.focus) return leaveIdeasFor;   // v69 (X1: also in Colour Lab): back to the recipe step or palette paint
       if (tab === "units" && !unitsImport.classList.contains("hidden")) return closeUnitsImport;
       if (tab === "units" && selectMode) return closeSelect;   // v21.1: select mode's tick boxes
+      if (tab === "updates" && versionFrom) { const from = versionFrom; return () => showTab(from); }   // FB1: opened from the version number: Back returns to where the person was
       if (tab && tab !== "dashboard") return () => showTab("dashboard");
       return null;
     }

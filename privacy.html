@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- LP1: the privacy page. Plain HTML with no script and nothing loaded from another site. Same security idea as the app: nothing may load except this file. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+  <meta name="color-scheme" content="dark light">
+  <title>Minifolio privacy</title>
+  <style>
+    /* LP1: the colours are the Classic look's, dark by default and light when the system is set to light. */
+    :root { --background: #0c1418; --card: #141d2f; --border: #22304a; --text: #dbe4f0; --muted: #8193ad; --accent: #7dd3fc; color-scheme: dark light; }
+    @media (prefers-color-scheme: light) {
+      :root { --background: #e9eff6; --card: #f8fafc; --border: #c4d0de; --text: #0f1b2d; --muted: #4a5b73; --accent: #0369a1; }
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body { margin: 0; background: var(--background); color: var(--text); font: 1rem/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    main, footer { max-width: 42rem; margin: 0 auto; padding: 0 16px; overflow-wrap: anywhere; }
+    main { padding-top: 12px; padding-bottom: 8px; }
+    h1 { font-size: 1.75rem; line-height: 1.25; margin: 16px 0 4px; }
+    h2 { font-size: 1.25rem; line-height: 1.3; margin: 28px 0 8px; }
+    p, ul { margin: 0 0 14px; }
+    ul { padding-left: 1.25rem; }
+    li { margin-bottom: 10px; }
+    a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+    a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+    .back { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
+    .updated { color: var(--muted); }
+    footer { margin-top: 24px; padding-top: 16px; padding-bottom: 32px; border-top: 1px solid var(--border); color: var(--muted); }
+    footer a { display: inline; }
+  </style>
+</head>
+<body>
+  <main>
+    <a class="back" href="./">Back to Minifolio</a>
+    <h1>Minifolio privacy</h1>
+    <p class="updated">Last updated: 8 November 2026</p>
+
+    <p><strong>Who runs it.</strong> Minifolio is made by George Atter-Dimery in the UK. For anything about your data, use Give feedback (Tools and Settings, then Updates).</p>
+
+    <p><strong>The short version.</strong> Your models, photos, recipes, paints and settings stay in your browser, on your device. There is no account, no cookies and no adverts, and nothing about your collection is sent anywhere.</p>
+
+    <h2>What Minifolio does receive, and why</h2>
+    <ul>
+      <li><strong>Visit counts (GoatCounter).</strong> Each time the app opens from minifolio.app, it asks GoatCounter for one tiny picture so visits can be counted. GoatCounter sees your IP address and browser type for a moment, then keeps only totals such as country, browser and screen size. If the link you used ends in a tag like ?from=club, that tag is counted too. The reason: knowing roughly how many people use the app, so it can be improved. You can switch counting off any time in Settings.</li>
+      <li><strong>Feedback (Tally).</strong> If you use Give feedback, Tally stores your answers, the app version and your email if you choose to give one. Tally is based in Belgium and stores data in the EU. Replies are used only to fix and improve Minifolio and to reply to you. They are deleted after 12 months, or sooner if you ask.</li>
+      <li><strong>Hosting (Cloudflare).</strong> Like any website, the host sees your IP address and browser details when the app loads, to deliver it and keep it secure. They are not used to identify you.</li>
+    </ul>
+
+    <p><strong>What stays on your device.</strong> Settings, drafts, photos and your collection are kept in your browser's storage so the app works offline. The app needs this to work, so it does not ask for consent. Clearing your browser data deletes it, so save backups.</p>
+
+    <p>Shop links open the shop's own site, under its own privacy rules. They carry only the paint's name. Minifolio earns nothing from them.</p>
+
+    <p><strong>Who else gets data.</strong> Only the three services above, working for Minifolio. Nothing is sold or shared for advertising.</p>
+
+    <p><strong>Your rights.</strong> You can ask for a copy of, or the correction or deletion of, anything held about you. In practice that means feedback you sent. You can also object to the visit count by switching it off.</p>
+
+    <p><strong>Complaints.</strong> Tell Minifolio first, through the route above. A complaint will be acknowledged within 30 days. You can also complain to the Information Commissioner's Office at <a href="https://ico.org.uk/make-a-complaint" rel="noopener noreferrer">ico.org.uk/make-a-complaint</a>, or on 0303 123 1113.</p>
+
+    <p><strong>Children.</strong> Minifolio collects no personal details. If you are under 13, ask a parent before using the feedback form.</p>
+
+    <p><strong>Changes.</strong> This page and its date will be updated. Big changes will also show in the app's Updates list.</p>
+  </main>
+  <footer>
+    <p id="rights-line">Minifolio is an independent app made in the UK by George Atter-Dimery. It is not affiliated with, endorsed by or sponsored by Games Workshop or any paint maker. Citadel, Warhammer, Warhammer Tone Pro and the names of factions and paints are trade marks of Games Workshop Ltd. Other paint and brand names belong to their owners. They are used only to say which products you own or might use. © 2026 George Atter-Dimery. All rights reserved. Fonts, the pot-label reader and the paint list are used under <a id="rights-credits-link" href="./#credits">their own licences</a>.</p>
+  </footer>
+</body>
+</html>

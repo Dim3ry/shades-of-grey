@@ -68,7 +68,9 @@ def main():
         print("\n--- Part 2: contractions ---")
         check("negations are contracted", r["doNot"] == 0 and r["cannot"] == 0, (r["doNot"], r["cannot"]))
         check("don't, won't and can't appear", r["dont"] > 100 and r["wont"] > 30 and r["cant"] > 30, (r["dont"], r["wont"], r["cant"]))
-        check("'it is' left alone (taste call)", r["itIs"] > 100, r["itIs"])
+        # KR9 (George, 8 Nov): "it is" now becomes "it's" except at the end of a clause, so the old "left alone, over 100"
+        # check no longer holds. Only the clause-end ones remain; KR9's own test checks the new rule.
+        check("'it is' only left at the end of a clause (KR9)", 0 < r["itIs"] < 40, r["itIs"])
         check("no dashes in reader text", r["dash"] == 0, r["dash"])
         s = g.get("white-armour", "")
         check("sample: white-armour has don't", "Don't be afraid" in s)

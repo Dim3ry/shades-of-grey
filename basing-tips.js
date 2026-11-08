@@ -62,7 +62,7 @@ const BASING_TIPS = [
     materials: ["Air-drying modelling clay, or a thick paste filler", "A blunt tool such as a cocktail stick", "Water", "An old brush", "Two-part putty for any gaps"],
     howto: [
       "Press a thin layer of clay onto the base and smooth it with a damp finger.",
-      "Cut thin, wandering cracks into it while it is soft, of different widths, pressing deeper where two meet.",
+      "Cut thin, wandering cracks into it while it's soft, of different widths, pressing deeper where two meet.",
       "Let it dry fully, which can take up to a week, as the clay shrinks while it cures.",
       "Fill any gap where the clay has lifted from the base with putty, then prime the base before painting.",
     ],
@@ -332,7 +332,7 @@ const BASING_TIPS = [
     materials: ["Sanded tile grout for grit, or unsanded for a smoother ground", "A metal palette knife or an old spoon", "A few small rocks", "Brown acrylic ink or a brown shade", "Black paint or acrylic ink for the rim", "A light tan for drybrushing"],
     howto: [
       "Spread a thin layer of grout over the top of the base with the palette knife, and it sticks without extra glue.",
-      "Press in a few small rocks while it is soft, then let it dry, which takes under an hour.",
+      "Press in a few small rocks while it's soft, then let it dry, which takes under an hour.",
       "Left plain, its own colour reads as beach sand, so it can be inked straight away.",
       "For darker earth, flood brown acrylic ink over it so the colour soaks right in, and let it dry.",
       "Drybrush a light tan over the grains and paint the rim black for a neat edge.",
@@ -366,7 +366,7 @@ const BASING_TIPS = [
       "Mix fine sand into white glue until it makes a thick paste.",
       "Stir in a few drops of dark brown paint so the mix dries dark.",
       "Spread it onto the base with the cocktail stick, leaving ridges and dips.",
-      "Press a boot print or a wheel line into it while it is wet, if you like.",
+      "Press a boot print or a wheel line into it while it's wet, if you like.",
       "Let it dry fully, then brush gloss varnish into the wet-looking dips only.",
     ],
     paintSteps: [
@@ -408,7 +408,7 @@ const BASING_TIPS = [
     howto: [
       "Glue rocks along the banks and fill the bed with smooth rounded pebbles, with sand between them.",
       "Real stones look natural unpainted under clear water, but paint any that sit on the dry bank.",
-      "Paint the bed dark blue and, while it is wet, blend murky green and brown into the middle.",
+      "Paint the bed dark blue and, while it's wet, blend murky green and brown into the middle.",
       "Stipple thinned tan out from each bank into the water so it looks shallower at the edges.",
       "Gloss it, or pour clear resin in thin layers with a little tint in a middle layer, then add tufts.",
     ],
@@ -576,7 +576,7 @@ const BASING_TIPS = [
   { key: "jungle-floor", group: "plants", name: "Jungle floor", summary: "Dark damp earth in mixed browns, leaf litter and plants, with green creeping over it all",
     materials: ["Clumpy texture paste, or grit mixed into white glue and filler", "White glue thinned with a little water", "Very fine green scatter and grit in two sizes", "Loose tea leaves crumbled small, for leaf litter", "Tufts, paper ferns or cut down aquarium plants", "A little green brown pigment for dry patches"],
     howto: [
-      "Spread clumpy paste over the base without worrying about gaps, and push the feet in while it is soft.",
+      "Spread clumpy paste over the base without worrying about gaps, and push the feet in while it's soft.",
       "Brush on watery glue and sprinkle fine green scatter rather than grass, then grit and crumbled tea as leaf litter.",
       "Glue plants on before priming, leaving room for the feet, and varnish after priming to lock loose bits.",
       "Wash green over the brown and brown over the green, always pooling it round the foot of each plant.",
@@ -1005,7 +1005,7 @@ const BASING_TIPS = [
     howto: [
       "Base the ground brown, then build up through lighter browns to ivory, brighter than feels right.",
       "Sponge a dark greenish brown grime onto the edges of the base.",
-      "Seal with satin varnish, wash with thinned oil paint, then wipe back with clean spirits where it is brightest.",
+      "Seal with satin varnish, wash with thinned oil paint, then wipe back with clean spirits where it's brightest.",
       "Mix pigment with water, run it round the feet and dry it with a hair dryer.",
       "Dab dry pigment onto the feet and lower legs so model and ground share the same dust.",
     ],

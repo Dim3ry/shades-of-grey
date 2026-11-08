@@ -55,7 +55,12 @@ def main():
         check("the About text is exact", paras[:1] == [ABOUT], paras[:1])
         check("the Mission text is exact", paras[1:2] == [MISSION], paras[1:2])
         # CR1: About now has one plain Credits button (#about-credits-link); nothing else is allowed in the card
-        check("straight text only: two paragraphs and the one Credits button, nothing else in the card", len(paras) == 2 and page.locator("#view-about :is(img, svg, a, ul, h3, .pill, .badge)").count() == 0 and page.locator("#view-about button").count() == 1)
+        # LP1: About also carries the rights line (a third paragraph, #about-rights, with "their own licences" as a second button) and one plain
+        # link to the privacy page (#about-privacy-link, the only a allowed). The AM1 paragraphs checked above stay exact; the rest is still plain text.
+        check("straight text only: the two paragraphs, the rights line, the Credits button and one privacy link, nothing else in the card",
+              len(paras) == 3 and page.locator("#view-about :is(img, svg, ul, h3, .pill, .badge)").count() == 0
+              and page.locator("#view-about a").count() == 1 and page.locator("#about-privacy-link").count() == 1
+              and page.locator("#view-about button").count() == 2 and page.locator("#about-credits-link").count() == 1 and page.locator("#about-rights-credits").count() == 1)
         check("the About page is the only page showing, and it is lit as selected",
               page.is_visible("#view-about") and page.locator("main > section:visible").count() == 1
               and page.get_attribute('#more-seg [data-page="about"]', "aria-selected") == "true")
