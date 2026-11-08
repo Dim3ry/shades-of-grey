@@ -253,7 +253,12 @@ def main():
         server = [None]
         def internet(on):
             if on and server[0] is None:
-                server[0] = subprocess.Popen([sys.executable, "-m", "http.server", str(own_port), "--bind", "127.0.0.1"],
+                # v147 (LP1): sw.js now saves "./privacy", which the host serves as privacy.html. This small server must do the same (as the runner's
+                # server does), or the service worker cannot install and the page never gets a controller.
+                own_server = ("import sys; from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler as B; "
+                              "H = type('H', (B,), {'translate_path': lambda self, p: B.translate_path(self, '/privacy.html' if p.split('?')[0] == '/privacy' else p)}); "
+                              "ThreadingHTTPServer(('127.0.0.1', int(sys.argv[1])), H).serve_forever()")
+                server[0] = subprocess.Popen([sys.executable, "-c", own_server, str(own_port)],
                                              cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 # T6: wait until the server answers, up to 60 s (it gave up after about 5 to 15 s, which a busy machine needed just
                 # to start Python, and the next page load was refused)

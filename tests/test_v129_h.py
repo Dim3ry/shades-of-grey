@@ -75,7 +75,9 @@ def main():
         check("Help (apart from the scanner's brand list and the trademark notice) has no Games Workshop name", not GW.findall(help_text), GW.findall(help_text))
         check("Help's examples are invented: bright yellow, Spearmen 1, Goblins, your army list app",
               all(w in help_text for w in ["Eyes: bright yellow, then pale yellow", "Spearmen 1, Spearmen 2", "10x Goblins", "From your army list app"]))
-        check("the trademark notice is unchanged", "not affiliated with or endorsed by Games Workshop" in html and "trademarks of Games Workshop Ltd" in html)
+        # LP1: the fan-made notice in How it works > About became the rights line ("not affiliated with, endorsed by or sponsored by ... trade marks of Games Workshop Ltd").
+        # The Updates page still carries the old short notice, and the Help trade-mark line is kept.
+        check("the trademark notice is unchanged", ("not affiliated with or endorsed by Games Workshop" in html or "not affiliated with, endorsed by or sponsored by Games Workshop" in html) and "trademarks of Games Workshop Ltd" in html and "trade marks of Games Workshop Ltd" in html)
         panel = page.evaluate(PAGE_TEXT.replace("document.body", "document.getElementById('import-area')"), [])
         check("the army list panel and its check have no Games Workshop name", not GW.findall(panel) and "In your army list app" in panel, GW.findall(panel))
         hints = re.findall(r'placeholder\s*=\s*"((?:[^"\\]|\\.)*)"', app) + re.findall(r'placeholder="([^"]*)"', html)

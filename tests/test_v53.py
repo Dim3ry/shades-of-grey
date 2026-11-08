@@ -57,6 +57,14 @@ SMALL_JS = """() => {
     if (!vis(e) || e.closest('[aria-hidden=true]')) return;
     if (e.id === 'basket-button' || e.classList.contains('shop-idle-button')) return;
     let r = e.getBoundingClientRect();
+    // FB1: the version number in the header is a small word with an invisible 44 by 44 px hit area (its ::after), like the basket. CLAUDE.md: a
+    // button with an enlarged ::after counts at the size of that area. It is judged the same way as the basket in 3b: a tap 21 px above, below,
+    // left and right of its centre must land on it. Anything else (a version tag without that hit area) is still measured at its drawn size and fails.
+    if (e.id === 'version-tag') {
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const on = (x, y) => { const t = document.elementFromPoint(x, y); return !!t && (t === e || e.contains(t)); };
+      if (on(cx, cy) && on(cx, cy - 21) && on(cx, cy + 21) && on(cx - 21, cy) && on(cx + 21, cy)) return;
+    }
     if (e.type === 'checkbox' || e.type === 'radio') { const lab = e.closest('label') || (e.id && document.querySelector('label[for="' + e.id + '"]')); if (lab && vis(lab)) r = lab.getBoundingClientRect(); }
     if (e.tagName === 'A' && e.parentElement && e.parentElement.textContent.trim().length > e.textContent.trim().length + 5) return;
     if (r.width < 43.5 || r.height < 43.5) {
@@ -180,6 +188,15 @@ def main():
             check(f"{width} px: the basket is still a small pill to look at", hit["shown"] and hit["h"] <= 30, hit)
             check(f"{width} px: but a tap 21 px above, below, left or right of its centre still lands on it (a 44 by 44 px hit area)",
                   hit["centre"] and hit["up"] and hit["down"] and hit["left"] and hit["right"], hit)
+
+        print("\n--- 3c. FB1: the version number's hit area is judged, not waved through ---")
+        page.set_viewport_size({"width": 390, "height": 844})
+        w.load(page, paints=v52.paints_with_needs(), recipes=t.RECIPES, units=t.UNITS)
+        tab(page, "dashboard")
+        check("the version number passes the tap-target scan with its 44 px hit area", not any("version-tag" in x for x in page.evaluate(SMALL_JS)), page.evaluate(SMALL_JS))
+        page.add_style_tag(content="#version-tag::after { display: none !important; }")
+        flagged = [x for x in page.evaluate(SMALL_JS) if "version-tag" in x]
+        check("with its hit area taken away, the same scan fails it (the 44 px rule is not loosened)", len(flagged) == 1, flagged)
 
         # ---------- 4. F3 and F4: aria-expanded and the Help look ----------
         print("\n--- 4. Folds: aria-expanded and the Help look ---")
