@@ -57,9 +57,9 @@ def main():
         names = page.evaluate("() => [...document.querySelectorAll('#credits-fonts li strong')].map(e => e.textContent.trim())")
         check("every font family the app loads is on the page", set(families) == set(names), (families, names))
         rows = page.evaluate("() => [...document.querySelectorAll('#view-credits .credits-list li')].map(li => [li.querySelector('strong').textContent, li.querySelector('.cr-by').textContent.trim(), li.querySelector('a').textContent.trim()])")
-        check("every row has a name, a maker and a licence name", all(all(c for c in r) for r in rows) and len(rows) == len(families) + 2, rows)
+        check("every row has a name, a maker and a licence name", all(all(c for c in r) for r in rows) and len(rows) == len(families) + 4, rows)
         check("the pot-label reader and the paint list are listed with a licence",
-              page.locator("#credits-reader a").inner_text() == "Apache License 2.0" and page.locator("#credits-paints a").inner_text() == "MIT License")
+              page.locator("#credits-reader a").first.inner_text() == "Apache License 2.0" and page.locator("#credits-paints a").inner_text() == "MIT License")  # LC1: the reader list now has three links, so the first (Tesseract) is checked
         heads = page.evaluate("() => [...document.querySelectorAll('#view-credits h3')].map(h => h.textContent.trim())")
         check("small headings group the rows", heads == ["Fonts", "Pot-label reader", "Paint list"], heads)
 
