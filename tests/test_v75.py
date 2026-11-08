@@ -76,7 +76,7 @@ def main():
         open_settings(page)
         page.wait_for_timeout(150)
         check("Counting visits note is just On or Off", page.text_content("#counting-note").strip() in ("On.", "Off."), page.text_content("#counting-note"))
-        check("Shop links note is just On or Off", page.text_content("#shoplinks-note").strip() in ("On.", "Off."), page.text_content("#shoplinks-note"))
+        # FB3: the Shop links note (On. or Off.) was removed with its "Who gets what" fold, so only the Counting visits note is checked
         check("the Backups card has no share hint", page.locator("#share-hint").count() == 0)
 
         print("\n--- 4. Dashboard graph note ---")

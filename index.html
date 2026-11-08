@@ -3158,6 +3158,14 @@
     .mentor-row:active { background-color: var(--accent-wash); }
     .mentor-suggest:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
     .mentor-row:focus-visible { outline: 2px solid var(--text); outline-offset: -2px; }
+
+    /* FB3: parts inside a bundled Settings card (Appearance and Themes, Your data), and the Credits section on About. */
+    .settings-part { padding-top: 16px; margin-top: 16px; border-top: 1px solid var(--border); }
+    .settings-part:first-child { padding-top: 0; margin-top: 0; border-top: 0; }
+    .settings-part > h3 { margin: 0 0 10px; font-size: 1.0625rem; }
+    #your-data-card .settings-part { margin-top: 16px; }
+    #view-credits { scroll-margin-top: 84px; }
+    #view-credits > .card { margin-bottom: 14px; }
   </style>
 </head>
 
@@ -3454,9 +3462,8 @@
          the Recipes tab's) moves between the four pages. It shows only on those pages and is
          filled in by showTab(). -->
     <h2 class="more-title hidden" id="more-title">Tools and Settings</h2>
-    <div class="seg tab-row hidden" id="more-seg" role="tablist" aria-label="About, credits, guides, settings, help or updates">
+    <div class="seg tab-row hidden" id="more-seg" role="tablist" aria-label="About, guides, settings, help or updates">
       <button role="tab" data-page="about">About</button>
-      <button role="tab" data-page="credits">Credits</button>
       <button role="tab" data-page="guides">Guides</button>
       <button role="tab" data-page="settings">Settings</button>
       <button role="tab" data-page="help">How it works</button>
@@ -3474,39 +3481,37 @@
         <button type="button" class="link-button about-credits-link" id="about-credits-link">Credits</button>
         <a class="privacy-page-link" id="about-privacy-link" href="privacy" target="_blank" rel="noopener noreferrer">Privacy page</a>
       </div>
-    </section>
-
-    <!-- ===== CR1: Credits (fonts, pot-label reader, paint list; the Thanks section is drawn only when THANKS in app.js has entries) ===== -->
-    <section id="view-credits" class="hidden">
-      <div class="card">
-        <h2>Credits</h2>
-        <h3>Fonts</h3>
-        <ul class="credits-list" id="credits-fonts">
-          <li><span class="cr-who"><strong>Anton</strong><span class="cr-by">The Anton Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
-          <li><span class="cr-who"><strong>Atkinson Hyperlegible</strong><span class="cr-by">Braille Institute of America, Inc.</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
-          <li><span class="cr-who"><strong>Azeret Mono</strong><span class="cr-by">The Azeret Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
-          <li><span class="cr-who"><strong>Barlow</strong><span class="cr-by">The Barlow Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
-          <li><span class="cr-who"><strong>Big Shoulders Stencil</strong><span class="cr-by">The Big Shoulders Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
-          <li><span class="cr-who"><strong>Chakra Petch</strong><span class="cr-by">The Chakra Petch Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
-          <li><span class="cr-who"><strong>DM Mono</strong><span class="cr-by">The DM Mono Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
-          <li><span class="cr-who"><strong>EB Garamond</strong><span class="cr-by">The EB Garamond Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
-          <li><span class="cr-who"><strong>Grenze Gotisch</strong><span class="cr-by">The Grenze Gotisch Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
-          <li><span class="cr-who"><strong>Oxanium</strong><span class="cr-by">The Oxanium Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
-          <li><span class="cr-who"><strong>Permanent Marker</strong><span class="cr-by">Font Diner, Inc.</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">Apache License 2.0</a></li>
-        </ul>
-        <h3>Pot-label reader</h3>
-        <ul class="credits-list" id="credits-reader">
-          <li><span class="cr-who"><strong>Tesseract engine and English data</strong><span class="cr-by">The Tesseract authors</span></span><a href="ocr/LICENSE-tesseract.txt" target="_blank" rel="noopener noreferrer">Apache License 2.0</a></li>
-          <li><span class="cr-who"><strong>Leptonica</strong><span class="cr-by">Dan Bloomberg and the Leptonica authors</span></span><a href="ocr/LICENSE-leptonica.txt" target="_blank" rel="noopener noreferrer">Leptonica licence</a></li>
-          <li><span class="cr-who"><strong>libtiff</strong><span class="cr-by">Sam Leffler and Silicon Graphics, Inc.</span></span><a href="ocr/LICENSE-libtiff.txt" target="_blank" rel="noopener noreferrer">libtiff licence</a></li>
-        </ul>
-        <h3>Paint list</h3>
-        <ul class="credits-list" id="credits-paints">
-          <li><span class="cr-who"><strong>miniature-paints</strong><span class="cr-by">Rick Fleuren</span></span><a href="LICENSE-paint-list.txt" target="_blank" rel="noopener noreferrer">MIT License</a></li>
-        </ul>
-        <div id="credits-thanks" class="hidden"></div>
-        <a class="privacy-page-link" id="credits-privacy-link" href="privacy" target="_blank" rel="noopener noreferrer">Privacy page</a>
-      </div>
+      <!-- ===== CR1, FB3: Credits, now a section of About (fonts, pot-label reader, paint list; the Thanks section is drawn only when THANKS in app.js has entries) ===== -->
+      <section id="view-credits" class="about-credits">
+        <div class="card">
+          <h2>Credits</h2>
+          <h3>Fonts</h3>
+          <ul class="credits-list" id="credits-fonts">
+            <li><span class="cr-who"><strong>Anton</strong><span class="cr-by">The Anton Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
+            <li><span class="cr-who"><strong>Atkinson Hyperlegible</strong><span class="cr-by">Braille Institute of America, Inc.</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
+            <li><span class="cr-who"><strong>Azeret Mono</strong><span class="cr-by">The Azeret Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
+            <li><span class="cr-who"><strong>Barlow</strong><span class="cr-by">The Barlow Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
+            <li><span class="cr-who"><strong>Big Shoulders Stencil</strong><span class="cr-by">The Big Shoulders Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
+            <li><span class="cr-who"><strong>Chakra Petch</strong><span class="cr-by">The Chakra Petch Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
+            <li><span class="cr-who"><strong>DM Mono</strong><span class="cr-by">The DM Mono Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
+            <li><span class="cr-who"><strong>EB Garamond</strong><span class="cr-by">The EB Garamond Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
+            <li><span class="cr-who"><strong>Grenze Gotisch</strong><span class="cr-by">The Grenze Gotisch Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
+            <li><span class="cr-who"><strong>Oxanium</strong><span class="cr-by">The Oxanium Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
+            <li><span class="cr-who"><strong>Permanent Marker</strong><span class="cr-by">Font Diner, Inc.</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">Apache License 2.0</a></li>
+          </ul>
+          <h3>Pot-label reader</h3>
+          <ul class="credits-list" id="credits-reader">
+            <li><span class="cr-who"><strong>Tesseract engine and English data</strong><span class="cr-by">The Tesseract authors</span></span><a href="ocr/LICENSE-tesseract.txt" target="_blank" rel="noopener noreferrer">Apache License 2.0</a></li>
+            <li><span class="cr-who"><strong>Leptonica</strong><span class="cr-by">Dan Bloomberg and the Leptonica authors</span></span><a href="ocr/LICENSE-leptonica.txt" target="_blank" rel="noopener noreferrer">Leptonica licence</a></li>
+            <li><span class="cr-who"><strong>libtiff</strong><span class="cr-by">Sam Leffler and Silicon Graphics, Inc.</span></span><a href="ocr/LICENSE-libtiff.txt" target="_blank" rel="noopener noreferrer">libtiff licence</a></li>
+          </ul>
+          <h3>Paint list</h3>
+          <ul class="credits-list" id="credits-paints">
+            <li><span class="cr-who"><strong>miniature-paints</strong><span class="cr-by">Rick Fleuren</span></span><a href="LICENSE-paint-list.txt" target="_blank" rel="noopener noreferrer">MIT License</a></li>
+          </ul>
+          <div id="credits-thanks" class="hidden"></div>
+        </div>
+      </section>
     </section>
 
     <!-- ===== TAB: Guides (v35 as the Compendium; X2: the first page of Tools and Settings. Pro preview: detail recipes and basing tips, no recipe needed) ===== -->
@@ -3579,7 +3584,7 @@
         <details>
           <summary>Stages and "Done"</summary>
           <ul>
-            <li>Stages are yours to change in <strong>Settings → Stages</strong>: rename, reorder (↑ ↓), add or remove. Changes apply when you press Save.</li>
+            <li>Stages are yours to change in <strong>Settings → Appearance and Themes → Stages</strong>: rename, reorder (↑ ↓), add or remove. Changes apply when you press Save.</li>
             <li><strong>Done starts at</strong> decides what counts as finished. By default, "Tabletop ready", "Needs touch-ups" and "Display ready" are Done.</li>
             <li id="help-touch-ups"><strong>Needs touch-ups</strong> is for a unit that is painted and on the table, with a few bits you plan to fix before it is Display ready. It sits between Tabletop ready and Display ready, so the right arrow on a Tabletop ready unit moves it there next.</li>
             <li>Units move with their stage when you reorder. If you remove a stage, its units drop to the stage before it.</li>
@@ -3588,10 +3593,10 @@
         <details id="help-appearance">
           <summary>Appearance (light and dark) and stage colours</summary>
           <ul>
-            <li>Choose how the app looks in <strong>Settings → Appearance</strong>: <strong>Match my phone</strong> (where you start) follows your phone's dark mode setting, or pick <strong>Dark</strong> or <strong>Light</strong>.</li>
-            <li><strong>Settings → Mentor look</strong> changes Mentor's orb: <strong>Futuristic</strong> (the app icon's ring), <strong>Magical</strong> or <strong>Grounded</strong>. The orb also shows when Mentor is getting ready, has an answer, is not sure, or has signed off.</li>
-            <li><strong>Settings → Theme</strong> changes the whole look: colours, lettering, corners and borders. Choose <strong>Classic</strong> (the usual look), <strong>Parchment Codex</strong>, <strong>Grim Forge</strong> or <strong>Paint Bench</strong>. Each square shows what its theme looks like. Every theme has a dark and a light version, chosen by Appearance.</li>
-            <li><strong>Settings → Colours</strong> picks the colour set for your stages: <strong>Match the look</strong> (each look has its own), Ice, Frost, Greyscale, Colour-blind friendly, <strong>Forge</strong> (warm: ember red through amber and gold to cream), or <strong>Custom</strong>.</li>
+            <li>Choose how the app looks in <strong>Settings → Appearance and Themes → Theme</strong>: <strong>Match my phone</strong> (where you start) follows your phone's dark mode setting, or pick <strong>Dark</strong> or <strong>Light</strong>.</li>
+            <li><strong>Settings → Appearance and Themes → Mentor look</strong> changes Mentor's orb: <strong>Futuristic</strong> (the app icon's ring), <strong>Magical</strong> or <strong>Grounded</strong>. The orb also shows when Mentor is getting ready, has an answer, is not sure, or has signed off.</li>
+            <li>The looks in the same <strong>Theme</strong> part change the whole look: colours, lettering, corners and borders. Choose <strong>Classic</strong> (the usual look), <strong>Parchment Codex</strong>, <strong>Grim Forge</strong> or <strong>Paint Bench</strong>. Each square shows what its theme looks like. Every theme has a dark and a light version, chosen by Appearance.</li>
+            <li><strong>Settings → Appearance and Themes → Colours</strong> picks the colour set for your stages: <strong>Match the look</strong> (each look has its own), Ice, Frost, Greyscale, Colour-blind friendly, <strong>Forge</strong> (warm: ember red through amber and gold to cream), or <strong>Custom</strong>.</li>
             <li><strong>Custom</strong> lets you pick a colour for each stage. It starts from the set you had. Tap a stage's colour square to change it; the whole app updates as you go.</li>
             <li>A colour that's too faint to read on the dark cards gets a <strong>⚠ warning</strong> under its stage. You can still keep it.</li>
             <li><strong>Reset</strong> puts every stage back to the set you started from. Press Undo on the message if you change your mind.</li>
@@ -3656,10 +3661,10 @@
             <li id="help-recipe-shop">Missing paints are not put on the shopping list by themselves. Every recipe has an <strong>Add to shopping list</strong> button under its steps. It adds the real paints you don't own (never the made-up example paints) and says how many. Undo takes them off again. It is greyed out when there is nothing to add.</li>
             <li id="help-shop-tick">On the Shopping list, tick a paint when you have bought it: it moves to <strong>Bought</strong> at the bottom and is marked Owned in Your Palette. Open Bought to tap <strong>Add back</strong>, or <strong>Clear bought</strong> to forget the list. <strong>Remove</strong> takes a paint off the list. Both have an Undo.</li>
             <li id="help-shop-suggested">Under the list, <strong>Suggested</strong> shows your Empty paints and the Not owned paints your recipes use. Nothing goes on the list by itself: tap <strong>Add</strong> to put one there, or <strong>✕</strong> to stop suggesting it. A paint you remove from the list is not suggested again either, until you add it again. Suggested only shows when there is something in it.</li>
-            <li id="help-shop-gear">Some Guides pages, Basing tips and Mentor answers have a <strong>Where to buy</strong> fold-out. It lists the things you need (such as a wet palette), each with plain search links to the shops and <strong>Add to shopping list</strong>. Added things go in a <strong>Gear</strong> section under your paints, saying which guide they came from. Tick one when you have bought it, or <strong>Remove</strong> it; both have an Undo. Gear counts in the basket and in Copy as text. Settings → Shop links hides the links but not the Add button.</li>
+            <li id="help-shop-gear">Some Guides pages, Basing tips and Mentor answers have a <strong>Where to buy</strong> fold-out. It lists the things you need (such as a wet palette), each with plain search links to the shops and <strong>Add to shopping list</strong>. Added things go in a <strong>Gear</strong> section under your paints, saying which guide they came from. Tick one when you have bought it, or <strong>Remove</strong> it; both have an Undo. Gear counts in the basket and in Copy as text. Settings → Your data → Shop links hides the links but not the Add button.</li>
             <li id="help-shop"><strong>Shopping list</strong> (in Your Palette) lists the paints you put there: your Wishlist paints and anything added with an <strong>Add to shopping list</strong> button, grouped by brand. Nothing is added by itself. <strong>Buy these</strong> at the top has a button for each shop that sells them (Firestorm Games, Wayland Games, Element Games, and The Army Painter for Army Painter paints). Each opens that shop's own search for the paint's name in a new tab, so check you've got the right pot before you buy. They're plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop.</li>
             <li id="help-wide-shop">On a wide screen, the shop links and <strong>Copy as text</strong> sit beside the paints on the Shopping list, and the Guides sections use the full width.</li>
-            <li id="help-shop-links"><strong>Shop links on suggested paints</strong> (Pro preview): under a suggested paint you don't own, tap <strong>Shop links</strong> to open a small fold-out with <strong>Add to shopping list</strong> (Undo is offered) and a plain search link for each shop that sells the paint. Paints you own show nothing. They are plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop. To hide every shop link and shop button, including Buy these, untick <strong>Settings → Shop links</strong>. Your shopping list stays.</li>
+            <li id="help-shop-links"><strong>Shop links on suggested paints</strong> (Pro preview): under a suggested paint you don't own, tap <strong>Shop links</strong> to open a small fold-out with <strong>Add to shopping list</strong> (Undo is offered) and a plain search link for each shop that sells the paint. Paints you own show nothing. They are plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop. To hide every shop link and shop button, including Buy these, untick <strong>Settings → Your data → Shop links</strong>. Your shopping list stays.</li>
             <li id="help-colour-lab"><strong>Colour Lab</strong> (in Painting): the colour wheel, <strong>Colour ideas</strong>, <strong>Colour plans</strong>, <strong>Colours you've used</strong> and the <strong>Paint Picker</strong>. Suggested paints show a fit and your own paints come first.</li>
             <li id="help-ideas-for"><strong>Ideas for this</strong> (Pro preview): open a step in a recipe, or a paint in <strong>Your Palette</strong>, and tap <strong>Ideas for this</strong> under the paint. <strong>Colour Lab</strong> opens with that paint's ideas at the top: colours that go with it, colour plans with a similar colour, and detail recipes and basing tips with a step of a similar colour. Your own paints come first. <strong>Back to recipe</strong> or <strong>Back to Your Palette</strong> (or the phone's Back button) takes you back.</li>
             <li id="help-wheel-order">In the <strong>Colour Lab</strong> wheel, each group shows 12 paints first: yours, then the rest of Your Palette, then paints from popular ranges, then other brands. Each part runs from dark to light. <strong>Show all</strong> lists the rest.</li>
@@ -3759,11 +3764,11 @@
             <li><strong>What goes out:</strong> only what you choose to send. <strong>Give feedback</strong> opens a form on Tally's website, which receives what you type there plus the app's version number. Backups and exports are files you save yourself. <strong>Send backup to…</strong> and <strong>Send full backup with photos to…</strong> only open your phone's own share menu: the backup goes where you choose, and the app sends nothing itself. The one thing the app does send on its own is the visit count, described next.</li>
             <li id="privacy-counting"><strong>Counting visits:</strong> to learn roughly how many people use Minifolio, each time the app opens it asks <strong>GoatCounter</strong> (goatcounter.com, a small privacy-friendly counting service run from Ireland, with its data kept in Finland and Germany) for one tiny, empty picture. That request is all that is sent. There are no cookies, nothing is saved on your device, there is no account or ID, and nothing from your units, recipes, photos or settings goes with it. It doesn't tell GoatCounter which page you came from.</li>
             <li id="privacy-counting-extra">The one extra: if you opened Minifolio from a link that ends in a short tag, such as minifolio.app/?from=club, that one short word is sent along too, so visits can be counted by where the link was shared. It is never saved and never goes into your backups; a link without a tag sends nothing extra. Like any request to a website, it carries your device's internet address and browser type. GoatCounter uses them only to add up visits and totals of countries, browsers and systems, and says it doesn't keep the address.</li>
-            <li id="privacy-counting-switch">It only counts when the app is opened from minifolio.app, and with no internet it does nothing. <strong>You can switch it off</strong> under Settings → Counting visits; the app then asks GoatCounter for nothing.</li>
+            <li id="privacy-counting-switch">It only counts when the app is opened from minifolio.app, and with no internet it does nothing. <strong>You can switch it off</strong> under Settings → Your data → Counting visits; the app then asks GoatCounter for nothing.</li>
             <li><strong>The feedback card:</strong> to know when to ask, the app saves the date you first opened it, and your choice on the card, in your settings on this device. They are never sent anywhere.</li>
             <li id="privacy-mentor"><strong>Mentor</strong> runs on this device. What you type to Mentor is not sent anywhere and is not stored, and the chat is cleared when the app reloads or after a while without use.</li>
             <li id="privacy-drafts"><strong>Unfinished work:</strong> to keep a half-written recipe, a half-filled Add unit form or pasted notes through a reload, the app saves what you typed in this browser on this device. It is never sent anywhere, it is not in your backups, and it is removed when you finish it or discard it.</li>
-            <li><strong>Shop links</strong> (Buy these on the shopping list, and the Shop links fold-outs under suggested paints) open the shop's website only when you tap one. They are plain links: Minifolio earns nothing from them. You can hide them all under Settings → Shop links. The link carries just the paint's name for the shop's search, and the shop isn't told it came from Minifolio. From then on you're on the shop's site, under its own privacy rules.</li>
+            <li><strong>Shop links</strong> (Buy these on the shopping list, and the Shop links fold-outs under suggested paints) open the shop's website only when you tap one. They are plain links: Minifolio earns nothing from them. You can hide them all under Settings → Your data → Shop links. The link carries just the paint's name for the shop's search, and the shop isn't told it came from Minifolio. From then on you're on the shop's site, under its own privacy rules.</li>
             <li><strong>Locked down:</strong> the app only runs its own code, from its own files. Your browser is told to refuse scripts from any other website, or slipped into the page itself, and the only other address it is allowed to load anything from is the visit counter's tiny picture (above). The app can't quietly send your data to any other website (a “Content Security Policy”).</li>
             <li><strong>No tracking of you:</strong> no adverts, no cookies, no accounts, nothing about your collection is ever sent, and nothing is sold. The only counting is the anonymous visit count above, which you can switch off.</li>
             <li>Like any website, the site's host (Cloudflare) sees basic technical details, such as your internet address, when the app loads or updates. Minifolio itself never sees or keeps them.</li>
@@ -3816,14 +3821,31 @@
           <button class="plain-button" id="restore-button" style="grid-column: 1 / -1;">Restore backup</button>
         </div>
         <p class="hint" id="backup-age" style="margin: 12px 0 0;"></p>
-        <p class="hint" id="backup-explain" style="margin: 8px 0 0;">
-          Save backup leaves out photos. Save full backup includes them.
-        </p>
         <input type="file" id="restore-file" class="hidden" accept=".json">
       </div>
 
-      <div class="card" id="stages-card">
-        <h2>Stages</h2>
+      <!-- FB3: one section for how the app looks: Theme, Stages, Mentor look, Colours (each was its own card). -->
+      <div class="card" id="appearance-themes-card">
+        <h2>Appearance and Themes</h2>
+      <!-- v20, v47, FB3: Theme. The old Appearance card (Dark, Light, Match my phone) and the old Theme card (the looks) are one part: the light and dark choice first, then the looks. -->
+      <div class="settings-part" id="theme-card">
+        <h3>Theme</h3>
+        <div id="appearance-card">
+          <div class="chips appearance-chips" role="group" aria-label="Appearance" style="margin-top: 0;">
+            <button class="chip" data-appearance-choice="dark" aria-pressed="true">Dark</button>
+            <button class="chip" data-appearance-choice="light" aria-pressed="false">Light</button>
+            <button class="chip" data-appearance-choice="auto" aria-pressed="false">Match my phone</button>
+          </div>
+        </div>
+        <div class="theme-row" role="group" aria-label="Theme">
+          <button type="button" class="theme-swatch" data-theme-choice="classic" data-t="classic" data-m="dark" aria-pressed="true"><span class="ts-card"><span class="ts-name">Classic</span></span><span class="ts-bar"></span></button>
+          <button type="button" class="theme-swatch" data-theme-choice="parchment" data-t="parchment" data-m="dark" aria-pressed="false"><span class="ts-card"><span class="ts-name">Parchment Codex</span></span><span class="ts-bar"></span></button>
+          <button type="button" class="theme-swatch" data-theme-choice="forge" data-t="forge" data-m="dark" aria-pressed="false"><span class="ts-card"><span class="ts-name">Grim Forge</span></span><span class="ts-bar"></span></button>
+          <button type="button" class="theme-swatch" data-theme-choice="bench" data-t="bench" data-m="dark" aria-pressed="false"><span class="ts-card"><span class="ts-name">Paint Bench</span></span><span class="ts-bar"></span></button>
+        </div>
+      </div>
+      <div class="settings-part" id="stages-card">
+        <h3>Stages</h3>
         <p class="hint" id="stages-explain">Rename, reorder (↑ ↓), add or remove stages. Units move with their stage when you reorder. Changes apply when you press Save.</p>
         <ol class="stage-list" id="stage-list"></ol>
         <button class="link-button" id="add-stage">+ Add stage</button>
@@ -3837,29 +3859,9 @@
         </div>
       </div>
 
-      <!-- v20: Appearance. Three buttons; only one is pressed at a time. -->
-      <div class="card" id="appearance-card">
-        <h2>Appearance</h2>
-        <div class="chips appearance-chips" role="group" aria-label="Appearance" style="margin-top: 0;">
-          <button class="chip" data-appearance-choice="dark" aria-pressed="true">Dark</button>
-          <button class="chip" data-appearance-choice="light" aria-pressed="false">Light</button>
-          <button class="chip" data-appearance-choice="auto" aria-pressed="false">Match my phone</button>
-        </div>
-        <p class="hint" id="appearance-note" style="margin: 10px 0 0;"></p>
-      </div>
-      <!-- v47: Theme. One square per theme, each drawn in its own theme. Only one is pressed at a time. -->
-      <div class="card" id="theme-card">
-        <h2>Theme</h2>
-        <div class="theme-row" role="group" aria-label="Theme">
-          <button type="button" class="theme-swatch" data-theme-choice="classic" data-t="classic" data-m="dark" aria-pressed="true"><span class="ts-card"><span class="ts-name">Classic</span></span><span class="ts-bar"></span></button>
-          <button type="button" class="theme-swatch" data-theme-choice="parchment" data-t="parchment" data-m="dark" aria-pressed="false"><span class="ts-card"><span class="ts-name">Parchment Codex</span></span><span class="ts-bar"></span></button>
-          <button type="button" class="theme-swatch" data-theme-choice="forge" data-t="forge" data-m="dark" aria-pressed="false"><span class="ts-card"><span class="ts-name">Grim Forge</span></span><span class="ts-bar"></span></button>
-          <button type="button" class="theme-swatch" data-theme-choice="bench" data-t="bench" data-m="dark" aria-pressed="false"><span class="ts-card"><span class="ts-name">Paint Bench</span></span><span class="ts-bar"></span></button>
-        </div>
-      </div>
       <!-- U6b: Mentor look. Three buttons, each with its own small orb (drawn by app.js); only one is pressed at a time. Saved as settings.mentorLook. -->
-      <div class="card" id="mentor-look-card">
-        <h2>Mentor look</h2>
+      <div class="settings-part" id="mentor-look-card">
+        <h3>Mentor look</h3>
         <div class="chips mentor-look-chips" role="group" aria-label="Mentor look" style="margin-top: 0;">
           <button type="button" class="chip" data-mentor-look="futuristic" aria-pressed="true">Futuristic</button>
           <button type="button" class="chip" data-mentor-look="magical" aria-pressed="false">Magical</button>
@@ -3867,32 +3869,17 @@
         </div>
       </div>
 
-      <!-- v27: Counting visits. One tick box; on by default. See "v27: COUNTING VISITS" in app.js. -->
-      <div class="card" id="counting-card">
-        <h2>Counting visits</h2>
-        <label class="check-label count-label"><input type="checkbox" id="count-visits"> Count my visits (anonymous)</label>
-        <p class="hint" id="counting-note" style="margin: 6px 0 0;"></p>
-        <p class="hint" id="counting-effect" style="margin: 6px 0 0;">Takes effect the next time the app opens. Details: How it works → Privacy.</p>
-        <a class="privacy-page-link" id="settings-privacy-link" href="privacy" target="_blank" rel="noopener noreferrer">Privacy page</a>
-      </div>
-
-      <!-- v39: Shop links. One tick box; on by default; not in backups. See "v39: THE SHOP LINKS SWITCH" in app.js. -->
-      <div class="card" id="shoplinks-card">
-        <h2>Shop links</h2>
-        <label class="check-label shoplinks-label"><input type="checkbox" id="show-shop-links"> Show shop links</label>
-        <p class="hint" id="shoplinks-note" style="margin: 6px 0 0;"></p>
-      </div>
-
-      <div class="card">
-        <h2>Colours</h2>
+      <div class="settings-part" id="colours-card">
+        <h3>Colours</h3>
         <select id="palette-select" aria-label="Stage colours" style="width: 100%;"></select>
-        <p class="hint" id="palette-light-note" style="margin: 10px 0 0;" hidden>In light mode, pale stage colours are shown a little deeper so they're easy to read.</p>
         <!-- v20.1: "Custom" in the list above shows this: a colour for each stage. -->
         <div id="custom-colours" hidden>
           <p class="hint" style="margin: 12px 0 0;">Tap a colour square to change that stage's colour. Each colour stays with its stage if you rename, reorder or remove stages.</p>
           <ol class="custom-colour-list" id="custom-colour-list"></ol>
           <button class="plain-button" id="custom-reset" style="margin-top: 10px; width: 100%;">Reset colours</button>
         </div>
+      </div>
+
       </div>
 
       <!-- Faction colours (v8). Filled in by renderFactionColours(). -->
@@ -3985,10 +3972,6 @@
         </div>
         </div></div>
 
-        <p class="hint" id="import-explain" style="margin: 12px 0 0;">
-          CSV columns: name, game, faction, stage, nickname, count, repaint, notes, date_added, date_stage.
-          Only name is needed.
-        </p>
         <input type="file" id="csv-file" class="hidden" accept=".csv,text/csv">
       </div>
 
@@ -4011,6 +3994,20 @@
           <h3 style="margin: 4px 0 0;">Recover earlier data</h3>
           <p class="hint" style="margin: 4px 0 0;">Copies this device kept before a big change. Each is kept for 30 days.</p>
           <ul class="recover-list" id="recover-list"></ul>
+        </div>
+        <!-- v27: Counting visits. One tick box; on by default. See "v27: COUNTING VISITS" in app.js. -->
+        <div class="settings-part" id="counting-card">
+          <h3>Counting visits</h3>
+          <label class="check-label count-label"><input type="checkbox" id="count-visits"> Count my visits (anonymous)</label>
+          <p class="hint" id="counting-note" style="margin: 6px 0 0;"></p>
+          <p class="hint" id="counting-effect" style="margin: 6px 0 0;">Takes effect the next time the app opens. Details: How it works → Privacy.</p>
+          <a class="privacy-page-link" id="settings-privacy-link" href="privacy" target="_blank" rel="noopener noreferrer">Privacy page</a>
+        </div>
+
+        <!-- v39: Shop links. One tick box; on by default; not in backups. See "v39: THE SHOP LINKS SWITCH" in app.js. -->
+        <div class="settings-part" id="shoplinks-card">
+          <h3>Shop links</h3>
+          <label class="check-label shoplinks-label"><input type="checkbox" id="show-shop-links"> Show shop links</label>
         </div>
         <button class="danger-button" id="delete-all">Delete all units</button>
       </div>

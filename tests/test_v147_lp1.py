@@ -91,14 +91,15 @@ def main():
         check("About carries the rights line, word for word as in the page footer", re.sub(r"\s+", " ", page.inner_text("#about-rights")).strip() == foot, page.inner_text("#about-rights")[:120])
         check("About keeps its About and Mission text", about.count("Mission") >= 1 and "To give every painter a mentor in their pocket" in about)
         page.click("#about-rights-credits")
-        check("'their own licences' in About opens the Credits page", page.is_visible("#view-credits") and not page.is_visible("#view-about"))
+        # FB3: Credits is a section of About now, so the link scrolls to it and About stays open
+        check("'their own licences' in About scrolls to the Credits section", page.is_visible("#view-credits") and page.is_visible("#view-about"))
         page.click('#more-seg button[data-page="help"]')
         page.evaluate("document.getElementById('about').open = true")
         help_about = re.sub(r"\s+", " ", page.inner_text("#about"))
         check("How it works > About has the rights line where the fan-made notice was",
               rights_start in help_about and "Unofficial fan-made app, not affiliated" not in help_about and "No Games Workshop artwork, rules, points or stats" in help_about)
         page.click("#help-rights-credits")
-        check("'their own licences' in How it works opens the Credits page", page.is_visible("#view-credits"))
+        check("'their own licences' in How it works opens About at the Credits section", page.is_visible("#view-credits") and page.is_visible("#view-about"))   # FB3
         check("the page footer's 'their own licences' link goes to the app's Credits page",
               'id="rights-credits-link" href="./#credits"' in PAGE and re.search(r"under <a [^>]*>their own licences</a>\.", PAGE) is not None)
 
@@ -114,16 +115,16 @@ def main():
         page.click('#more-seg button[data-page="about"]')
         h = page.evaluate("() => document.getElementById('about-privacy-link').getBoundingClientRect().height")
         check("About: one plain link opens the page in a new tab, 44 px tall, and About stays open", h >= 44 and opens("#about-privacy-link", "about") and page.is_visible("#view-about"))
-        page.click('#more-seg button[data-page="credits"]')
-        check("Credits: the link opens the page and Credits stays open", opens("#credits-privacy-link", "credits") and page.is_visible("#view-credits"))
+        # FB3: the Credits section has no privacy link of its own any more (About's sits directly above it, on the same page)
         page.click('#more-seg button[data-page="settings"]')
+        page.evaluate("() => { const b = document.getElementById('card-fold-your-data-button'); if (b.getAttribute('aria-expanded') !== 'true') b.click(); }")   # FB3: Counting visits is a part of Your data, which is a fold
         check("Settings: the link by Counting visits opens the page and Settings stays open", opens("#settings-privacy-link", "settings") and page.is_visible("#view-settings"))
         page.click('#more-seg button[data-page="help"]')
         page.evaluate("document.getElementById('privacy').open = true")
         check("How it works > Privacy: one line links to the full page, the rest of the topic is kept",
               opens("#help-privacy-link", "help") and page.locator("#privacy li").count() >= 10 and "Counting visits" in page.inner_text("#privacy"))
-        check("all four links point at /privacy and open in a new tab without handing over the app",
-              page.evaluate("() => ['about-privacy-link','credits-privacy-link','settings-privacy-link','help-privacy-link'].every(id => { const a = document.getElementById(id); return a.getAttribute('href') === 'privacy' && a.target === '_blank' && a.rel.includes('noopener'); })"))
+        check("all three links point at /privacy and open in a new tab without handing over the app",
+              page.evaluate("() => ['about-privacy-link','settings-privacy-link','help-privacy-link'].every(id => { const a = document.getElementById(id); return a.getAttribute('href') === 'privacy' && a.target === '_blank' && a.rel.includes('noopener'); })"))
 
         # ---- 4. the page itself ----
         for scheme in ("dark", "light"):

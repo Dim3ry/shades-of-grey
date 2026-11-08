@@ -49,18 +49,19 @@ def main():
         check("About is the first page in the Tools and Settings switch", labels[0] == "About", labels)
         page.click('#more-seg button[data-page="about"]')
         wait_settled(page)
-        heads = page.evaluate("() => [...document.querySelectorAll('#view-about h2')].map(h => h.textContent.trim())")
-        paras = page.evaluate("() => [...document.querySelectorAll('#view-about p')].map(p => p.textContent.trim())")
+        heads = page.evaluate("() => [...document.querySelectorAll('#view-about .about-card h2')].map(h => h.textContent.trim())")
+        paras = page.evaluate("() => [...document.querySelectorAll('#view-about .about-card p')].map(p => p.textContent.trim())")
         check("two headings: About and Mission", heads == ["About", "Mission"], heads)
         check("the About text is exact", paras[:1] == [ABOUT], paras[:1])
         check("the Mission text is exact", paras[1:2] == [MISSION], paras[1:2])
         # CR1: About now has one plain Credits button (#about-credits-link); nothing else is allowed in the card
         # LP1: About also carries the rights line (a third paragraph, #about-rights, with "their own licences" as a second button) and one plain
         # link to the privacy page (#about-privacy-link, the only a allowed). The AM1 paragraphs checked above stay exact; the rest is still plain text.
+        # FB3: the Credits content is now a section of About, below this card (#view-credits), so these checks look at the About card only
         check("straight text only: the two paragraphs, the rights line, the Credits button and one privacy link, nothing else in the card",
-              len(paras) == 3 and page.locator("#view-about :is(img, svg, ul, h3, .pill, .badge)").count() == 0
-              and page.locator("#view-about a").count() == 1 and page.locator("#about-privacy-link").count() == 1
-              and page.locator("#view-about button").count() == 2 and page.locator("#about-credits-link").count() == 1 and page.locator("#about-rights-credits").count() == 1)
+              len(paras) == 3 and page.locator("#view-about .about-card :is(img, svg, ul, h3, .pill, .badge)").count() == 0
+              and page.locator("#view-about .about-card a").count() == 1 and page.locator("#about-privacy-link").count() == 1
+              and page.locator("#view-about .about-card button").count() == 2 and page.locator("#about-credits-link").count() == 1 and page.locator("#about-rights-credits").count() == 1)
         check("the About page is the only page showing, and it is lit as selected",
               page.is_visible("#view-about") and page.locator("main > section:visible").count() == 1
               and page.get_attribute('#more-seg [data-page="about"]', "aria-selected") == "true")

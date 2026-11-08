@@ -43,13 +43,15 @@ def main():
         print("\n--- 1. Placement ---")
         go(page)
         labels = page.evaluate("() => [...document.querySelectorAll('#more-seg button')].map(b => b.textContent.trim())")
-        check("Credits is straight after About", labels[:2] == ["About", "Credits"], labels)
+        # FB3: Credits is no longer a sub-tab; it is a section at the foot of About, so the switch has five pages
+        check("the switch has no Credits tab (it is a section of About now)", labels == ["About", "Guides", "Settings", "How it works", "Updates"], labels)
         links = page.locator("#view-about #about-credits-link")
         check("About has one Credits link", links.count() == 1)
         links.click()
         wait_settled(page)
-        check("it opens the Credits page, lit as selected", page.is_visible("#view-credits")
-              and page.get_attribute('#more-seg [data-page="credits"]', "aria-selected") == "true")
+        check("it scrolls to the Credits section on About, lit as selected", page.is_visible("#view-credits")
+              and page.get_attribute('#more-seg [data-page="about"]', "aria-selected") == "true"
+              and page.evaluate("() => document.querySelector('#view-credits h2').getBoundingClientRect().top < innerHeight"))
 
         print("\n--- 2. Everything third-party is listed ---")
         families = sorted(set(re.findall(r"@font-face \{ font-family: '([^']+)'", html)))
@@ -83,7 +85,7 @@ def main():
         p2.route(re.compile(r".*/app\.js.*"), lambda route: route.fulfill(
             response=route.fetch(), body=route.fetch().text().replace("const THANKS = [];", "const THANKS = " + FAKE + ";", 1)))
         go(p2)
-        p2.click('#more-seg button[data-page="credits"]')
+        p2.click('#about-credits-link')   # FB3
         wait_settled(p2)
         check("with entries: heading Thanks", p2.locator("#credits-thanks h3").inner_text() == "Thanks")
         check("the line is word for word", p2.locator("#credits-thanks p").inner_text() == LINE, p2.locator("#credits-thanks p").inner_text())
@@ -96,11 +98,11 @@ def main():
         print("\n--- 5. Small screens and keyboard ---")
         for w, h in [(390, 844), (360, 640), (320, 568)]:
             go(page, w, h)
-            page.click('#more-seg button[data-page="credits"]')
+            page.click('#about-credits-link')   # FB3: the section is on About
             wait_settled(page)
             r = page.evaluate("() => [document.documentElement.scrollWidth <= window.innerWidth, Math.min(...[...document.querySelectorAll('#view-credits a, #more-seg button')].map(a => a.getBoundingClientRect().height))]")
             check(f"{w}x{h}: no sideways scroll, links and switch at least 44 px tall", r[0] and r[1] >= 43.5, r)
-        page.focus('#more-seg button[data-page="credits"]')
+        page.focus('#about-credits-link')   # FB3
         for _ in range(8):
             page.keyboard.press("Tab")
             if page.evaluate("() => document.activeElement.matches('#credits-fonts a')"):

@@ -4400,7 +4400,6 @@
       units: document.getElementById("view-units"),
       recipes: document.getElementById("view-recipes"),
       about: document.getElementById("view-about"),   // AM1: About and Mission, the first page of Tools and Settings
-      credits: document.getElementById("view-credits"),   // CR1: Credits, straight after About
       guides: document.getElementById("view-guides"),   // v35 as the Compendium; X2: Guides, the first page of Tools and Settings
       settings: document.getElementById("view-settings"),
       updates: document.getElementById("view-updates"),
@@ -4421,8 +4420,8 @@
     // Guides / Settings / Help / Updates switch (#more-seg) at the top. The page names are "guides", "settings", "help" and "updates", so a
     // saved settings.tab of "settings", "help" or "updates" opens the right page. A saved "compendium" (the old tab) opens Guides, which
     // holds the Detail recipes and Basing tips that were all it had left (TAB_ALIASES; the same goes for the address #compendium).
-    const MORE_PAGES = ["about", "credits", "guides", "settings", "help", "updates"];
-    const TAB_ALIASES = { compendium: "guides" };
+    const MORE_PAGES = ["about", "guides", "settings", "help", "updates"];
+    const TAB_ALIASES = { compendium: "guides", credits: "about" };   // FB3: Credits is a section of About; showTab("credits") opens About and scrolls to it
     const moreSeg = document.getElementById("more-seg");
     const moreTitle = document.getElementById("more-title");
     moreSeg.querySelectorAll("button").forEach(b => b.addEventListener("click", () => showTab(b.dataset.page)));
@@ -5089,12 +5088,12 @@
       });
       box.appendChild(ul);
     }
-    document.getElementById("about-credits-link").addEventListener("click", () => showTab("credits"));   // CR1
-    document.getElementById("help-credits-link").addEventListener("click", () => showTab("credits"));   // TD1a: the small Credits link in How it works > About
-    for (const id of ["about-rights-credits", "help-rights-credits"]) document.getElementById(id).addEventListener("click", () => showTab("credits"));   // LP1: "their own licences" in the rights line
+    // FB3: every old link to the Credits page opens About and scrolls to its Credits section (showTab("credits") does both).
+    for (const id of ["about-credits-link", "help-credits-link", "about-rights-credits", "help-rights-credits"]) document.getElementById(id).addEventListener("click", () => showTab("credits"));
 
     let versionFrom = null;   // FB1: the screen the version button was tapped on, so Back can return there
     function showTab(name, how) {
+      const toCredits = name === "credits";   // FB3
       name = tabAlias(name);
       if (name !== "updates") versionFrom = null;
       if (!hasOwn(views, name)) name = "dashboard";
@@ -5136,11 +5135,12 @@
       settings.tab = name;
       saveSettings();
       if (name === "settings") renderSettings();
-      if (name === "credits") renderThanks();   // CR1
+      if (name === "about") renderThanks();   // CR1, FB3: the Thanks section is part of About now
       if (name === "guides") renderGuides();   // v35: built fresh each time, from your palette and units as they are now
       if (name === "dashboard") renderPaletteTile();   // X4: the palette may have changed since the Dashboard was last drawn
       if (name === "dashboard") renderHistory();   // the graph needs to be on screen to measure its width
       window.scrollTo(0, 0);
+      if (toCredits) document.getElementById("view-credits").scrollIntoView({ block: "start" });   // FB3: the CSS scroll-margin keeps the heading clear of the sticky header
     }
     tabButtons.forEach(b => b.addEventListener("click", () => {
       if (travelling) return;   // Mo4b: taps on the bar are ignored while the segments travel
@@ -13684,7 +13684,7 @@
       return buildMoreInfo(nodes, Object.assign({ state: infoState(pageMoreInfo.door, key), id: "more-" + key }, o || {}));
     }
     // v52: tuck the explanations on Settings and Updates behind one More info per card. The controls stay where they are (Backups stay at 44 px
-    // and in view); only the text moves. The nodes keep their ids, so the code that writes into them (appearance-note, counting-note...) is
+    // and in view); only the text moves. The nodes keep their ids, so the code that writes into them (counting-note...) is
     // unchanged. Run once at start-up. The More info goes where the first moved line was.
     // S1: "Recipe or scheme? What's the difference". One closed More info at the top of Painting > Recipes and Painting > Schemes (the open
     // state is kept only while the app is open). The same words are in Help. Words only: no data or storage.
@@ -13712,16 +13712,11 @@
     }
     function foldPageText() {
       const groups = [
-        ["backups", "Which one?", ["backup-explain"]],
         ["stages", "About stages", ["stages-explain"]],
-        ["appearance", "About looks", ["appearance-note"]],
         ["counting", "What's sent", ["counting-note", "counting-effect"]],
-        ["shoplinks", "Who gets what", ["shoplinks-note"]],
         ["faction-colours", "About faction colours", ["faction-colour-hint"]],
-        ["import", "What can be imported", ["import-explain"]],
         ["your-data", "Where it is kept", ["data-summary", "photo-summary", "storage-note", "restore-examples-hint"]],
         ["feedback", "Who reads it", ["feedback-explain"]],
-        ["colours", "About light mode", ["palette-light-note"]],   // AB10: named by what it opens
         ["iphone", "The steps", ["iphone-steps"]],   // v53: the warning and the reason stay in view; the steps fold
       ];
       for (const [key, label, ids] of groups) {
@@ -13732,7 +13727,6 @@
         for (const node of nodes) node.style.margin = "0";
         spot.replaceWith(pageMoreInfo(key, nodes, { name: label }));
       }
-      showLightNote();   // v53: the Colours note only shows in light mode
     }
     // v52: Help's topics are native folds (so links and the Back button still open them). The look (a "More info" / "Less info" word and a
     // chevron) is in the style sheet; this only tells screen readers whether each one is open.
@@ -19978,18 +19972,6 @@
     function showAppearanceChoice() {
       const choice = goodAppearance(settings.appearance) ? settings.appearance : "auto";
       for (const button of document.querySelectorAll("[data-appearance-choice]")) button.setAttribute("aria-pressed", String(button.dataset.appearanceChoice === choice));
-      document.getElementById("appearance-note").textContent = choice === "auto"
-        ? `Follows your phone's own dark mode setting. Right now: ${isLight() ? "light" : "dark"}.`
-        : "";
-      showLightNote();
-    }
-    // v53: the light-mode note (Settings, Colours) sits behind More info. In dark mode there is nothing to say, so the whole More info is hidden.
-    function showLightNote() {
-      const note = document.getElementById("palette-light-note");
-      const light = isLight();
-      note.hidden = !light;
-      const wrap = note.closest(".more-info");
-      if (wrap) wrap.hidden = !light;
     }
     for (const button of appearanceButtons) {
       button.addEventListener("click", () => {
@@ -22750,9 +22732,6 @@
     const shopLinksBox = document.getElementById("show-shop-links");
     function showShopLinksChoice() {
       shopLinksBox.checked = shopLinksOn();
-      document.getElementById("shoplinks-note").textContent = shopLinksOn()
-        ? "On."
-        : "Off.";
     }
     shopLinksBox.addEventListener("change", () => {
       settings.hideShopLinks = !shopLinksBox.checked;
@@ -23265,7 +23244,7 @@
     foldCard(document.getElementById("faction-colours-card"), "faction-colours");   // v53
     foldCard(document.getElementById("recipe-prefs-card"), "recipe-prefs");   // RS2
     foldCard(document.getElementById("brands-card"), "paint-brands");   // v53
-    foldCard(document.getElementById("stages-card"), "stages");   // v54
+    foldCard(document.getElementById("appearance-themes-card"), "appearance-themes");   // FB3: Theme, Stages, Mentor look and Colours were four cards (Stages was folded since v54)
     foldCard(document.getElementById("import-card"), "import");   // v54
     foldCard(document.getElementById("your-data-card"), "your-data");   // v54: Delete all units stays inside, unchanged
     markFold(document.getElementById("history-table-box"));   // v53: Show as a table

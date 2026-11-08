@@ -155,15 +155,16 @@ def main():
             id: c.id, title: (c.querySelector('h2') || {}).textContent }))""")
         check("the first card on Settings is Backups", cards and cards[0]["title"] == "Backups" and cards[0]["id"] == "backup-card", cards[:3])
         titles = [c["title"] for c in cards]
-        check("Backups comes before Stages, Appearance and Colours",
-              all(titles.index("Backups") < titles.index(t) for t in ["Stages", "Appearance", "Colours"]), titles)
+        # FB3: Stages, Appearance and Colours are parts of "Appearance and Themes" now
+        check("Backups comes before Appearance and Themes",
+              all(titles.index("Backups") < titles.index(t) for t in ["Appearance and Themes"]), titles)
         inside = page.evaluate("""() => { const c = document.getElementById('backup-card');
             return { ids: [...c.querySelectorAll('button:not(.more-info-button), input')].map(b => b.id),
                      labels: [...c.querySelectorAll('button:not(.more-info-button)')].map(b => b.textContent.trim()),
-                     age: !!c.querySelector('#backup-age'), hint: !!c.querySelector('#backup-explain') }; }""")
+                     age: !!c.querySelector('#backup-age'), hint: false }; }""")
         # v46 added "Send full backup with photos to…" straight after Save full backup, so the card now holds five buttons.
-        check("the Backups card holds the five buttons, the restore file box, the last-backed-up line and the hint (v52: the hint sits behind its More info)",
-              inside["ids"] == ["export-button", "share-button", "full-export-button", "full-share-button", "restore-button", "restore-file"] and inside["age"] and inside["hint"], inside)
+        check("the Backups card holds the five buttons, the restore file box, the last-backed-up line (FB3: the hint was removed)",
+              inside["ids"] == ["export-button", "share-button", "full-export-button", "full-share-button", "restore-button", "restore-file"] and inside["age"], inside)   # FB3: the hint (Which one?) was removed on purpose
         check("button words: Save backup, Send backup to…, Save full backup with photos, Send full backup with photos to…, Restore backup",
               inside["labels"] == ["Save backup", "Send backup to…", "Save full backup with photos", "Send full backup with photos to…", "Restore backup"], inside["labels"])
         in_import = page.evaluate("""() => { const h = [...document.querySelectorAll('#view-settings > .card h2')].find(x => x.textContent === 'Import').parentElement;
@@ -176,9 +177,7 @@ def main():
         page.click("#wh-button")
         age = page.inner_text("#backup-age")
         check("it says 'Last backup: Never' before any backup (v57 wording)", age.startswith("Last backup: Never"), age)
-        hint = page.text_content("#backup-explain")
-        check("the hint says which backup leaves out photos",   # v75: the share-hint paragraph is gone (SET-4); this is the one-line hint
-              "leaves out photos" in hint and "includes them" in hint, hint)
+        # FB3: the "Which one?" hint under the Backups buttons was removed on purpose, so the two checks on its words are gone (Help still says it)
         shot(page, "v22-settings-top.png")
 
         # ---------- 3. Send backup to… when the phone can share files ----------
