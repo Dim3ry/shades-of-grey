@@ -17406,6 +17406,16 @@
         lower.replaceChildren();
         const q = g.query.trim();
         if (q) { lower.appendChild(entryRows(kn.search(q), "q:" + q, numOf)); return; }
+        const gl = kn.get("painting-terms-glossary", "guide");   // AB13a: the glossary, one tap from the Guides home, above the Topics | A to Z switch
+        if (gl) {
+          const gb = document.createElement("button");
+          gb.type = "button";
+          gb.className = "link-button guides-glossary-link";
+          gb.dataset.glossary = gl.key;
+          gb.textContent = gl.title;
+          gb.addEventListener("click", () => openGuide(gl.key, "guide"));
+          lower.appendChild(gb);
+        }
         // G2b: Topics (the sections) or A to Z (every entry of every section in one list), a two-part switch like the others in the app
         const seg = document.createElement("div");
         seg.className = "seg guides-order";
@@ -17445,16 +17455,6 @@
           n.textContent = String(kn.list({ category: c.key }).length);
           b.append(n, proTag(), numSpan(guideSectionNumber(c.key)));   // P1: the whole Guides section is Pro preview for now   // G2a: then the section number
           list.appendChild(b);
-        }
-        const gl = kn.get("painting-terms-glossary", "guide");   // AB13a: the glossary, one tap from the Guides home
-        if (gl) {
-          const gb = document.createElement("button");
-          gb.type = "button";
-          gb.className = "link-button guides-glossary-link";
-          gb.dataset.glossary = gl.key;
-          gb.textContent = gl.title;
-          gb.addEventListener("click", () => openGuide(gl.key, "guide"));
-          lower.appendChild(gb);
         }
         lower.appendChild(list);
         lower.appendChild(Object.assign(document.createElement("p"), { className: "guides-free", textContent: "Free while in preview." }));
