@@ -5091,6 +5091,7 @@
     }
     document.getElementById("about-credits-link").addEventListener("click", () => showTab("credits"));   // CR1
     document.getElementById("help-credits-link").addEventListener("click", () => showTab("credits"));   // TD1a: the small Credits link in How it works > About
+    for (const id of ["about-rights-credits", "help-rights-credits"]) document.getElementById(id).addEventListener("click", () => showTab("credits"));   // LP1: "their own licences" in the rights line
 
     function showTab(name, how) {
       name = tabAlias(name);

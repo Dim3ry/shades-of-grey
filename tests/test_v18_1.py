@@ -56,9 +56,10 @@ def main():
         page.wait_for_timeout(150)
         page.evaluate("document.getElementById('about').open = true")
         about = page.inner_text("#about")
-        check("About says unofficial and fan-made", "Unofficial fan-made app" in about, about[:200])
+        # LP1: How it works > About now carries the rights line instead of the fan-made notice (the Updates page still has the short note, checked below).
+        check("About says it is an independent app", "independent app" in about, about[:200])
         check("About says not affiliated with Games Workshop or any paint maker",
-              "not affiliated with or endorsed by Games Workshop or any paint maker" in about)
+              "not affiliated with, endorsed by or sponsored by Games Workshop or any paint maker" in about)
         check("About says no brand logos", "no brand logos" in about)
         check("About says other paint names belong to their makers", "belong to their makers" in about)
         for brand in ["Vallejo", "The Army Painter", "AK Interactive"]:
