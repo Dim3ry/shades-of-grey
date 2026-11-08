@@ -66,7 +66,9 @@ ALWAYS = ["test_html_safety", "test_version_plumbing"]
 # T6: the server's waiting line for new connections is 128 long, not Python's default of 5. With 8 test files loading pages at once, a
 # short line filled up and Windows turned the extra connections away ("net::ERR_CONNECTION_REFUSED" in test_v26, test_v28 and
 # test_v52 on 3 Nov, which then passed alone). Linux makes them wait instead, which is why it was not seen there.
-SERVER = ("import sys; from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler as H; "
+# LP1: the host serves privacy.html at /privacy (a clean address); this plain server does the same, so the service worker can save "./privacy".
+SERVER = ("import sys; from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler as B; "
+          "H = type('H', (B,), {'translate_path': lambda self, p: B.translate_path(self, '/privacy.html' if p.split('?')[0] == '/privacy' else p)}); "
           "S = type('S', (ThreadingHTTPServer,), {'request_queue_size': 128, 'daemon_threads': True}); "
           "S(('127.0.0.1', int(sys.argv[1])), H).serve_forever()")
 
