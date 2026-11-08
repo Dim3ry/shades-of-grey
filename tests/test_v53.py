@@ -302,26 +302,11 @@ def main():
         press(page, btn)
         check("...tapping it shows the caption", page.locator(".wheel-caption").is_visible() and "whites, greys, blacks and metallics" in page.inner_text(".wheel-caption"))
 
+        # FB3: the "About light mode" More info under Colours (and its note) was removed on purpose, so the dark and light checks on it are gone.
         for mode in ("dark", "light"):
             w.load(page, paints=v52.paints_with_needs(), recipes=t.RECIPES, units=t.UNITS, settings={"appearance": mode})
             more_page(page, "settings")
-            wrap = page.evaluate("() => { const n = document.getElementById('palette-light-note'); const w = n.closest('.more-info'); return { has: !!w, hidden: w ? w.hidden : null, vis: !!(w && w.getClientRects().length) }; }")
-            if mode == "dark":
-                check("dark: the Colours card has no More info (nothing to say in dark mode)", wrap["has"] and wrap["hidden"] and not wrap["vis"], wrap)
-            else:
-                check("light: the Colours card shows a More info, and the note is not on show", wrap["has"] and wrap["vis"]
-                      and "pale stage colours" not in page.inner_text("#view-settings") and "pale stage colours" in page.text_content("#more-colours"), wrap)
-                btn = page.locator("button[aria-controls=\"more-colours\"]")
-                check("light: its More info has aria-expanded false, 44 px", btn.get_attribute("aria-expanded") == "false" and btn.bounding_box()["height"] >= 43.5)
-                press(page, btn)
-                check("light: tapping it shows the note", "pale stage colours are shown a little deeper" in page.inner_text("#view-settings"))
-        page.evaluate("() => document.querySelector('[data-appearance-choice=\"dark\"]').click()")
-        page.wait_for_timeout(150)
-        check("switching to dark hides that More info again, and back to light brings it back",
-              page.evaluate("() => document.getElementById('palette-light-note').closest('.more-info').hidden === true"))
-        page.evaluate("() => document.querySelector('[data-appearance-choice=\"light\"]').click()")
-        page.wait_for_timeout(150)
-        check("...and light brings it back", page.evaluate("() => document.getElementById('palette-light-note').closest('.more-info').hidden === false"))
+            check(f"{mode}: Colours has no light-mode More info any more", page.evaluate("() => !document.getElementById('palette-light-note') && !document.getElementById('more-colours')"))
 
         # ---------- 7. F9 and F10 ----------
         print("\n--- 7. F9 and F10: colours ---")

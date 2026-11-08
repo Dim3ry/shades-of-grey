@@ -353,7 +353,8 @@ def main():
                              apBottom: ap.bottom, cTop: c.top }; }""")
                 check(f"{tag}: the card is inside the screen", geo["cl"] >= 0 and geo["cr"] <= geo["w"] + 0.5, geo)
                 check(f"{tag}: the tick row is at least 44 px tall and the box at least 20 px", geo["rowH"] >= 44 and geo["boxW"] >= 20 and geo["boxH"] >= 20, geo)
-                check(f"{tag}: the card sits straight after Appearance", 0 <= geo["cTop"] - geo["apBottom"] <= 40, geo)
+                # FB3: Counting visits is a part of the Your data card now, no longer a card straight after Appearance
+                check(f"{tag}: the part sits inside Your data", page.evaluate("() => document.getElementById('your-data-card').contains(document.getElementById('counting-card'))"), geo)
                 check(f"{tag}: no sideways scroll", no_sideways(page))
                 col = page.evaluate("""() => { const bg = (el) => { let e = el; while (e) { const v = getComputedStyle(e).backgroundColor;
                         if (v && v !== 'rgba(0, 0, 0, 0)' && v !== 'transparent') return v; e = e.parentElement; } return 'rgb(0,0,0)'; };
@@ -379,7 +380,7 @@ def main():
         check("Privacy is honest that the request carries the internet address and browser type, and that GoatCounter says it doesn't keep the address",
               "internet address and browser type" in counting and "doesn't keep the address" in counting, counting)
         check("Privacy says where it counts, that offline does nothing and where the switch is",
-              "only counts when the app is opened from minifolio.app" in counting and "with no internet it does nothing" in counting and "Settings → Counting visits" in counting, counting)
+              "only counts when the app is opened from minifolio.app" in counting and "with no internet it does nothing" in counting and "Settings → Your data → Counting visits" in counting, counting)   # FB3: Counting visits is a part of Your data
         priv_all = page.evaluate("() => document.getElementById('privacy').textContent")
         check("the new line says no tracking of you, nothing about your collection, nothing sold, and points at the switch",
               "No tracking of you" in priv_all and "nothing about your collection is ever sent" in priv_all and "nothing is sold" in priv_all and "switch off" in priv_all, priv_all)

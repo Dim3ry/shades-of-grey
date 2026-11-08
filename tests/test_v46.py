@@ -330,8 +330,7 @@ def main():
 
         setup("ok")
         info = page.evaluate("""() => { const c = document.getElementById('backup-card'); const b = [...c.querySelectorAll('button:not(.more-info-button)')];
-            return { ids: b.map(x => x.id), labels: b.map(x => x.textContent.trim()), full: [...c.querySelectorAll('#full-share-button')].map(x => x.style.gridColumn),
-                     hint: document.getElementById('backup-explain').textContent }; }""")
+            return { ids: b.map(x => x.id), labels: b.map(x => x.textContent.trim()), full: [...c.querySelectorAll('#full-share-button')].map(x => x.style.gridColumn) }; }""")   # FB3: no hint any more (the Which one? text was removed)
         check("the button sits straight after Save full backup with photos, full width, with the right words",
               info["ids"] == ["export-button", "share-button", "full-export-button", "full-share-button", "restore-button"] and
               info["labels"][3] == "Send full backup with photos to…" and info["full"] == ["1 / -1"], info)

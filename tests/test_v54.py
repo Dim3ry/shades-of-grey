@@ -23,6 +23,8 @@ from playwright.sync_api import sync_playwright
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from notice_watch import attach_notices
 import test_v31 as t
+import launch_helpers
+launch_helpers.OPEN_FB3_FOLDS = False   # FB3: this test is about the folds being shut at the start, so the shared Settings helper must not open them
 import test_v42 as w   # load
 import test_v52 as v52   # tab, more_page, press, paints_with_needs
 import test_v53 as v53   # SMALL_JS, parse_colour, blend, storage_dump, open_card_folds
@@ -37,7 +39,8 @@ def check(name, ok, detail=""):
 tab, more_page, press = v52.tab, v52.more_page, v52.press
 storage_dump, parse_colour, blend = v53.storage_dump, v53.parse_colour, v53.blend
 
-NEW_CARDS = (("stages", "#stages-card", "#stage-list"), ("import", "#import-card", "#csv-button"), ("your-data", "#your-data-card", "#delete-all"))
+# FB3: the Stages fold became the Appearance and Themes fold (Theme, Stages, Mentor look and Colours), so its entry and the page order changed
+NEW_CARDS = (("appearance-themes", "#appearance-themes-card", "#stage-list"), ("import", "#import-card", "#csv-button"), ("your-data", "#your-data-card", "#delete-all"))
 
 def scan(page, label):
     small = page.evaluate(v53.SMALL_JS)
@@ -161,12 +164,12 @@ def main():
                   and btn.bounding_box()["height"] >= 43.5 and page.locator(f"{card} > h2").count() == 1)
             check(f"{key}: it carries the same chevron as the other folded cards", page.locator(f"{card} .card-fold-button .fold-mark").count() == 1)
             check(f"{key}: shut at the start, its contents are not on show", not page.locator(inside).first.is_visible())
-            check(f"{key}: the heading still reads as the card's name", page.locator(f"{card} > h2").inner_text().strip() in ("Stages", "Import", "Your data"))
+            check(f"{key}: the heading still reads as the card's name", page.locator(f"{card} > h2").inner_text().strip() in ("Appearance and Themes", "Import", "Your data"))
         before = storage_dump(page)
         buttons = {key: page.locator(f"{card} > h2 > button.card-fold-button") for key, card, inside in NEW_CARDS}
-        press(page, buttons["stages"])
+        press(page, buttons["appearance-themes"])
         check("Stages: tapping the heading opens it (aria-expanded true) and the stage list shows",
-              buttons["stages"].get_attribute("aria-expanded") == "true" and page.locator("#stage-list li").first.is_visible() and page.locator("#add-stage").is_visible())
+              buttons["appearance-themes"].get_attribute("aria-expanded") == "true" and page.locator("#stage-list li").first.is_visible() and page.locator("#add-stage").is_visible())
         check("Stages: its explanation is still behind its own More info inside the card", page.locator("#stages-card .more-info-button").count() == 1)
         press(page, buttons["import"])
         check("Import: tapping the heading opens it and the Import CSV button shows", buttons["import"].get_attribute("aria-expanded") == "true" and page.locator("#csv-button").is_visible())
@@ -185,7 +188,7 @@ def main():
               page.evaluate("() => models.length") == n_units and page.evaluate("() => document.activeElement.id") == "delete-all", page.evaluate("() => document.activeElement.id"))
         check("Your data: the summary lines are still filled in",
               len((page.locator("#data-summary").text_content() or "").strip()) > 0)
-        press(page, buttons["stages"]); press(page, buttons["import"]); press(page, buttons["your-data"])
+        press(page, buttons["appearance-themes"]); press(page, buttons["import"]); press(page, buttons["your-data"])
         check("tapping the headings again shuts all three",
               all(b.get_attribute("aria-expanded") == "false" for b in buttons.values())
               and not page.locator("#stage-list").is_visible() and not page.locator("#csv-button").is_visible() and not page.locator("#delete-all").is_visible())
@@ -197,14 +200,14 @@ def main():
         check("all three are shut again when the app is opened afresh",
               all(page.locator(f"{card} > h2 > button.card-fold-button").get_attribute("aria-expanded") == "false" for key, card, inside in NEW_CARDS))
         folded = page.evaluate("() => [...document.querySelectorAll('#view-settings .card-fold')].map(c => c.id)")
-        check("six cards fold in all (Stages, Faction colours, Recipe preferences, Paint brands, Import, Your data), in the page's order",   # v121 (RS2): Recipe preferences joined the Settings cards, between Faction colours and Paint brands
-              folded == ["stages-card", "faction-colours-card", "recipe-prefs-card", "brands-card", "import-card", "your-data-card"], folded)
+        check("six cards fold in all (Appearance and Themes, Faction colours, Recipe preferences, Paint brands, Import, Your data), in the page's order",   # v121 (RS2): Recipe preferences joined the Settings cards, between Faction colours and Paint brands
+              folded == ["appearance-themes-card", "faction-colours-card", "recipe-prefs-card", "brands-card", "import-card", "your-data-card"], folded)
         stay = page.evaluate("""() => [...document.querySelectorAll('#view-settings > .card, #view-settings .card')].filter(c => c.getClientRects().length && !c.classList.contains('card-fold'))
                                  .map(c => (c.querySelector(':scope > h2') || { textContent: '' }).textContent.trim()).filter(Boolean)""")
-        check("Backups, Appearance, Theme, Counting visits, Shop links and Colours are not folded and are in view",
-              all(any(name in s for s in stay) for name in ("Backups", "Appearance", "Theme", "Counting visits", "Shop links", "Colours")), stay)
-        check("each card's own More info is still there (Stages, Import, Your data)",
-              all(page.locator(f"{card} .more-info-button").count() >= 1 for key, card, inside in NEW_CARDS))
+        check("Backups is not folded and is in view (FB3: the others moved into the Appearance and Themes and Your data folds)",
+              all(any(name in s for s in stay) for name in ("Backups",)), stay)
+        check("each remaining card's own More info is still there (Stages inside Appearance and Themes, Your data; FB3 removed Import's)",
+              all(page.locator(f"{card} .more-info-button").count() >= 1 for key, card, inside in NEW_CARDS if key != "import"))
         gone = page.evaluate("() => document.querySelectorAll('#view-settings > .card > h2, #view-settings .card-fold > h2').length")
 
         # ---------- 4. F15: disabled buttons ----------
@@ -221,7 +224,7 @@ def main():
             check(f"{mode}: a live reorder arrow is at full strength", live_up["disabled"] is False and abs(live_up["opacity"] - 1) < 0.01, live_up)
             last_down = look(page, "#stage-list li:last-child button:disabled")
             check(f"{mode}: the last stage's down arrow is disabled and at 0.55", last_down["disabled"] and abs(last_down["opacity"] - 0.55) < 0.01, last_down)
-            bg_list = page.evaluate("() => { let m = document.querySelector('#stages-card'); return getComputedStyle(m).backgroundColor; }")
+            bg_list = page.evaluate("() => { let m = document.querySelector('#appearance-themes-card'); return getComputedStyle(m).backgroundColor; }")
             r_off = effective_ratio(first_up, bg_list)
             r_on = effective_ratio(live_up, bg_list)
             r_clean = effective_ratio(clean, page.evaluate("() => getComputedStyle(document.querySelector('#your-data-card')).backgroundColor"))
@@ -245,7 +248,7 @@ def main():
         check("foldCard and openCardFold are each still defined once (the shared pieces from v53 are reused, nothing copied)",
               len(re.findall(r"function foldCard\(", app)) == 1 and len(re.findall(r"function openCardFold\(", app)) == 1)
         check("the three new folds are one line each at start-up, using foldCard",
-              all(f'foldCard(document.getElementById("{c}"), "{k}");' in app for c, k in (("stages-card", "stages"), ("import-card", "import"), ("your-data-card", "your-data"))))
+              all(f'foldCard(document.getElementById("{c}"), "{k}");' in app for c, k in (("appearance-themes-card", "appearance-themes"), ("import-card", "import"), ("your-data-card", "your-data"))))
         check("no new function was added for the folds (the v36 and v37 scanned code is untouched)", "function foldStages" not in app and "function foldImport" not in app)
         check("the new CSS adds no colour (only the opacity changed)", "button:disabled { opacity: 0.55; cursor: default; }" in html)
         check("no em dash in the v54 Updates entry or the new Help words", "—" not in app[app.index('{ version: "v54"'):app.index('{ version: "v53"')] and "fold shut the same way" in html)

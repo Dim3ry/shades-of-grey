@@ -40,14 +40,15 @@ def main():
         e.main_tab(page, "settings")
         page.wait_for_timeout(200)
         words = fold_words(page)
-        for fixed in ("Which one?", "What's sent", "Who gets what"):
-            check(f"Settings has a fold called '{fixed}'", fixed in words, words)
+        # FB3: "Which one?" (Backups) and "Who gets what" (Shop links) were removed on purpose; "What's sent" stays (FB3 stopped on it)
+        check("Settings has a fold called 'What's sent'", "What's sent" in words, words)
+        check("Settings no longer has 'Which one?' or 'Who gets what'", "Which one?" not in words and "Who gets what" not in words, words)
         check("Settings: no fold says More info or Less info", not any(w in ("More info", "Less info") for w in words), words)
-        which = page.locator('.more-info-button[aria-controls="more-backups"]')
-        check("the Backups fold is the 'Which one?' one and starts shut",
-              which.count() == 1 and which.inner_text().strip() == "Which one?" and which.get_attribute("aria-expanded") == "false")
+        which = page.locator('.more-info-button[aria-controls="more-counting"]')   # FB3: was the Backups fold; the same checks on the one that stays
+        check("the Counting visits fold is the 'What's sent' one and starts shut",
+              which.count() == 1 and which.inner_text().strip() == "What's sent" and which.get_attribute("aria-expanded") == "false")
         which.click()
-        check("opening it keeps the name and flips aria-expanded", which.inner_text().strip() == "Which one?" and which.get_attribute("aria-expanded") == "true")
+        check("opening it keeps the name and flips aria-expanded", which.inner_text().strip() == "What's sent" and which.get_attribute("aria-expanded") == "true")
 
         empty_book = {"parts": ["Whole model"], "techniques": ["Layer"], "v15": True, "shorthand": {}, "paints": [], "recipes": [], "schemes": []}
         e.existing(page, [], empty_book)

@@ -121,11 +121,11 @@ def main():
         fresh(page)
         m = re.search(r'const VERSION = "v([\d.]+)"', sw)
         check("no inline script added to the page", not re.search(r"<script(?![^>]*\bsrc=)[^>]*>", html))
-        check("Help names Settings → Theme and every theme", "Settings → Theme" in html and all(f"<strong>{n}</strong>" in html for n in NAMES.values()))
+        check("Help names Settings → Theme and every theme", "Settings → Appearance and Themes → Theme" in html and all(f"<strong>{n}</strong>" in html for n in NAMES.values()))
         check("Help says the theme is saved in backups", "Your Appearance, Theme, colour set and Custom colours are saved" in html)
         card = html[html.index('id="theme-card"'):html.index('id="theme-card"') + 2000]
         check("the Theme card has a title and the squares only (no subtitle or helper text)",
-              card.count("<h2>Theme</h2>") == 1 and 'class="hint"' not in card.split("</div>\n      </div>")[0])
+              card.count("<h3>Theme</h3>") == 1 and 'class="hint"' not in card.split('id="stages-card"')[0])   # FB3: a part (h3) of Appearance and Themes; the part ends where Stages starts
 
         # ---------- 2. The theme table ----------
         print("\n--- 2. The theme table ---")
@@ -205,7 +205,7 @@ def main():
         check("four square buttons in one row, Classic first, each labelled with its theme's name",
               [s["k"] for s in squares] == THEMES and all(s["text"] == NAMES[s["k"]] for s in squares)
               and len({s["top"] for s in squares}) == 1 and all(abs(s["w"] - s["h"]) < 1 and s["w"] >= 44 for s in squares), squares)
-        check("the row sits right after the Appearance card", page.evaluate("document.getElementById('appearance-card').nextElementSibling.id") == "theme-card")
+        check("the row sits right after the Dark, Light and Match my phone choices (FB3: one Theme part)", page.evaluate("document.getElementById('appearance-card').nextElementSibling.className") == "theme-row")
         fonts = page.evaluate("""() => [...document.querySelectorAll('#theme-card .ts-name')].map(n => getComputedStyle(n).fontFamily)""")
         want = ["Oxanium Theme Name", "Grenze Gotisch Theme Name", "Anton Theme Name", "Permanent Marker Theme Name"]   # TH6: the title faces, cut down to each name's letters
         check("each name is written in its own theme's title font", all(w in f for w, f in zip(want, fonts)), fonts)

@@ -168,7 +168,7 @@ def main():
         help_li = page.evaluate("() => (document.getElementById('help-shop-links') || {}).textContent || ''")
         privacy = page.evaluate("() => document.getElementById('privacy-counting').closest('details').innerText")
         check("Help has a line for the fold-out (where it is, what is in it, plain links, who it is for, how to hide it) and Privacy names it and the switch",
-              all(w in help_li for w in ["Shop links", "Add to shopping list", "plain links", "paint's name", "Settings"]) and "fold-outs under suggested paints" in privacy and "Settings → Shop links" in privacy, (help_li[:200], privacy[-600:]))
+              all(w in help_li for w in ["Shop links", "Add to shopping list", "plain links", "paint's name", "Settings"]) and "fold-outs under suggested paints" in privacy and "Settings → Your data → Shop links" in privacy, (help_li[:200], privacy[-600:]))
         # (v47: early.js left this list; it now puts the theme on the page too.)
         new_code = app[app.index("v39: plain shop links on suggested paints"):app.index("function buildBuyBar(")]
         switch_code = app[app.index("v39: THE SHOP LINKS SWITCH"):app.index("const CHANGELOG = [")]
@@ -396,9 +396,9 @@ def main():
         keep = [BLUE, P(2, "Probe Opposite", at(180), status="wishlist"), P(3, "Probe Empty", at(30), status="wishlist")]   # v62: was "empty" (only Wishlist is listed now)
         load(page, paints=keep, recipes=[rec(101, "Armour blue", "Whole model", [1])])
         go_settings(page)
-        box_state = page.evaluate("() => ({ checked: document.getElementById('show-shop-links').checked, note: document.getElementById('shoplinks-note').textContent, h: document.querySelector('#shoplinks-card h2').textContent })")
-        # v75: the note says just On (the detail is in Help)
-        check("Settings has a Shop links box: ticked by default, with a plain note saying what it does", box_state["checked"] and box_state["h"] == "Shop links" and box_state["note"] == "On.", box_state)
+        box_state = page.evaluate("() => ({ checked: document.getElementById('show-shop-links').checked, h: document.querySelector('#shoplinks-card h3').textContent })")
+        # v75: the note said just On (the detail is in Help). FB3: that note ("Who gets what" fold) was removed, and Shop links is a part (h3) of Your data
+        check("Settings has a Shop links box: ticked by default", box_state["checked"] and box_state["h"] == "Shop links", box_state)
         look = page.evaluate("""() => { const a = getComputedStyle(document.querySelector('#counting-card .count-label')), b = getComputedStyle(document.querySelector('#shoplinks-card .shoplinks-label'));
             const ia = document.querySelector('#count-visits').getBoundingClientRect(), ib = document.querySelector('#show-shop-links').getBoundingClientRect();
             return { same: ['display', 'alignItems', 'columnGap', 'minHeight', 'fontSize', 'color'].every(k => a[k] === b[k]), box: [ia.width, ia.height, ib.width, ib.height], tall: document.querySelector('#shoplinks-card .shoplinks-label').getBoundingClientRect().height }; }""")
@@ -408,8 +408,7 @@ def main():
         go_settings(page)
         page.uncheck("#show-shop-links")
         page.wait_for_timeout(300)
-        check("unticking it saves the choice (settings.hideShopLinks is true) and the note says Off", stored_settings(page).get("hideShopLinks") is True
-              and page.inner_text("#shoplinks-note").startswith("Off."), stored_settings(page))
+        check("unticking it saves the choice (settings.hideShopLinks is true)", stored_settings(page).get("hideShopLinks") is True, stored_settings(page))   # FB3: the Off. note was removed
         open_shopping(page)
         check("the Buy these bar is gone from the shopping list (every shop button and link), while the shopping list itself and its Copy as text stay",
               page.locator("#buy-bar, #buy-links, .buy-shops, [data-shop]").count() == 0 and page.locator("#shop-panel .shop-list li").count() >= 2 and page.locator("#shop-panel button:has-text('Copy')").count() >= 1
