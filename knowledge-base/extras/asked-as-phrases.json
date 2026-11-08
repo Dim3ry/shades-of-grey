@@ -4107,7 +4107,12 @@
   "what consistency for washes",
   "base coat consistency",
   "thin paints",
-  "paint thickness for layers"
+  "paint thickness for layers",
+  "paint is too watery",
+  "watery paint",
+  "paint is too runny",
+  "runny paint",
+  "paint is too thin"
  ],
  "paint-on-clothes": [
   "paint on clothes",
@@ -6174,7 +6179,8 @@
   "best paper for wet palette",
   "wet palette mold",
   "paint going runny",
-  "how wet should the sponge be"
+  "how wet should the sponge be",
+  "bubbles in my paint"
  ],
  "where-highlights-go": [
   "where to highlight",
@@ -8939,7 +8945,8 @@
   "count drops to mix paint",
   "matching colour across an army",
   "save a custom mix",
-  "mix once use for whole army"
+  "mix once use for whole army",
+  "bubbles in my paint"
  ],
  "progress-photo-records": [
   "progress photos",
@@ -9143,7 +9150,12 @@
   "brush marks showing",
   "how much water to add",
   "paint fills detail",
-  "two thin coats"
+  "two thin coats",
+  "paint is too watery",
+  "watery paint",
+  "paint is too runny",
+  "runny paint",
+  "paint is too thin"
  ],
  "touching-up-old-models": [
   "old paint job",
