@@ -138,15 +138,14 @@ def main():
         check("Settings has the three Appearance choices",
               page.locator("#appearance-card [data-appearance-choice]").all_inner_texts() == ["Dark", "Light", "Match my phone"])
         check("Match my phone is pressed to start with", pressed(page) == ["auto"], pressed(page))   # TD1b (v133): was Dark; a fresh install follows the phone now
-        # v27: the Counting visits card now sits between them, and v39 added the Shop links card after it, so the check is
-        # "before Colours, with only those two cards between". v47 added the Theme card straight after Appearance.
-        # v126: U6b put the Mentor look card straight after Theme (the looks sit with the other appearance choices).
-        check("the Appearance card sits just above Colours (v27: with the Counting visits card between; v39: and the Shop links card; v47: and the Theme card; v126: and the Mentor look card)", page.evaluate("""() => {
-            const a = document.getElementById('appearance-card'); let next = a.nextElementSibling;
-            if (next && next.id === 'theme-card') next = next.nextElementSibling;
+        # FB3: the Appearance choices are the first half of the Theme part of "Appearance and Themes"; after Theme come Stages, Mentor look and then
+        # Colours (the old Appearance, Theme, Mentor look and Colours cards were separate; Counting visits and Shop links moved into Your data).
+        check("the Appearance choices sit in the Theme part, which comes before Colours in Appearance and Themes", page.evaluate("""() => {
+            const a = document.getElementById('appearance-card'); let part = a.parentElement;
+            if (part.id !== 'theme-card') return false;
+            let next = part.nextElementSibling;
+            if (next && next.id === 'stages-card') next = next.nextElementSibling;
             if (next && next.id === 'mentor-look-card') next = next.nextElementSibling;
-            if (next && next.id === 'counting-card') next = next.nextElementSibling;
-            if (next && next.id === 'shoplinks-card') next = next.nextElementSibling;
             return !!next && next.contains(document.getElementById('palette-select')); }"""))
         seed(page, full_settings(palette="ice"))
         check("dark mode shows the colour set's own stage colours (v21.8: lifted only where too dark to read)", page.evaluate("""() => {
@@ -163,7 +162,7 @@ def main():
         check("Light is saved with the other settings", saved(page).get("appearance") == "light" and saved(page).get("stages") == STAGES)
         check("the phone's top-bar colour follows (light)",
               page.get_attribute('meta[name="theme-color"]', "content") == "#e9eff6")
-        check("Colours card explains the deeper stage colours in light mode", page.is_visible('button[aria-controls="more-colours"]') and "deeper" in page.text_content("#palette-light-note"))   # v53: the note sits behind More info
+        # FB3: the "About light mode" note under Colours was removed on purpose, so its check is gone
         for choice, want in [("light", "light"), ("dark", ""), ("auto", "")]:
             seed(page, full_settings())
             page.emulate_media(color_scheme="dark")
@@ -189,11 +188,9 @@ def main():
         page.emulate_media(color_scheme="light")
         choose(page, "auto")
         check("Match my phone + phone in light mode = light", mark(page) == "light")
-        check("Match my phone explains what it's doing right now",
-              "light" in page.inner_text("#appearance-note"), page.inner_text("#appearance-note"))
+        # FB3: the note under Match my phone ("Follows your phone... Right now") was removed on purpose (About looks), so its two checks are gone
         page.emulate_media(color_scheme="dark"); page.wait_for_timeout(200)
         check("phone switches to dark: the app follows straight away", mark(page) == "" and background(page) == DARK_BG)
-        check("the note updates too", "dark" in page.inner_text("#appearance-note"), page.inner_text("#appearance-note"))
         page.emulate_media(color_scheme="light"); page.wait_for_timeout(200)
         check("phone switches back to light: the app follows", mark(page) == "light")
         choose(page, "dark")

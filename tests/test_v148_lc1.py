@@ -24,7 +24,7 @@ def go(page, w, h):
     wait_settled(page)
     page.click('#more-seg button[data-page="about"]')
     wait_settled(page)
-    page.click('#more-seg button[data-page="credits"]')
+    page.click('#about-credits-link')   # FB3: Credits is a section of About, reached by the link on About
     wait_settled(page)
 
 def main():

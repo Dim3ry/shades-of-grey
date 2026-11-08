@@ -230,6 +230,8 @@ def main():
         seen, problems = set(), {"square": [], "noTrans": [], "unclipped": []}
         for go in ("showTab('units')", "showTab('settings')"):
             page.evaluate(go)
+            # FB3: chips, link buttons and the danger button now sit inside the Appearance and Themes and Your data folds, which start shut; open them so the sweep sees them as before
+            page.evaluate("() => document.querySelectorAll('#view-settings .card-fold-button[aria-expanded=\"false\"]').forEach(b => b.click())")
             page.wait_for_timeout(350)
             r = page.evaluate(SWEEP, KINDS)
             seen.update(r["seen"])

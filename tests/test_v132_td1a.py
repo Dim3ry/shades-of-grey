@@ -90,7 +90,7 @@ def main():
         check("it is at least 44 px tall", link.bounding_box()["height"] >= 43.5, link.bounding_box())
         link.click()
         wait_settled(page)
-        check("it opens the Credits sub-tab", page.is_visible("#view-credits") and not page.is_visible("#view-help"))
+        check("it opens About at the Credits section", page.is_visible("#view-credits") and page.is_visible("#view-about") and not page.is_visible("#view-help"))   # FB3: Credits is a section of About, so it opens About at that section
 
         print("\n--- 5. Feedback card ---")
         t.load(page, settings={"examplesChecked": True}, launch=True)

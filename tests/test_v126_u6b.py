@@ -87,8 +87,9 @@ def main():
               and "ml-neutral" in page.evaluate(BUTTON))
         page.click('.tabs button[data-tab="guides"]')
         page.click('#more-seg button[data-page="settings"]')
+        page.click("#card-fold-appearance-themes-button")   # FB3: Mentor look is a part of the Appearance and Themes fold now
         chips = page.locator("[data-mentor-look]")
-        check("Settings has Mentor look with three plain choices, each with its own small orb", page.inner_text("#mentor-look-card h2") == "Mentor look"
+        check("Settings has Mentor look with three plain choices, each with its own small orb", page.inner_text("#mentor-look-card h3") == "Mentor look"   # FB3: a part heading (h3) inside Appearance and Themes
               and chips.all_inner_texts() == ["Futuristic", "Magical", "Grounded"] and page.locator("[data-mentor-look] svg.ml-orb").count() == 3
               and all(b["height"] >= 44 for b in [chips.nth(i).bounding_box() for i in range(3)]))
         check("no helper sentence in the card", page.locator("#mentor-look-card p").count() == 0)

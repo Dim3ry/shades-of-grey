@@ -41,12 +41,21 @@ def leave_launch(page):
     # leaving the start page removes it at once, so there is nothing left to wait for.)
 
 
+OPEN_FB3_FOLDS = True
+
+
 def open_settings(page):
     """X2: Settings is a page of the fourth segment (Tools and Settings) now that the header cog is gone: tap that segment, then Settings."""
     page.click('.tabs button[data-tab="guides"]')
     quiet(page)
     page.click('#more-seg button[data-page="settings"]')
     quiet(page)
+    # FB3: Theme, Dark and Light, Stages, Mentor look, Colours (Appearance and Themes) and Counting visits and Shop links (Your data) are parts
+    # inside two folded cards now. Older tests that use this helper work with those controls, not with the folding, so open both here.
+    if not OPEN_FB3_FOLDS:
+        return   # test_v54 is about the folding itself, so it switches this off and sees the cards shut, as a person does
+    page.evaluate("""() => { for (const k of ['appearance-themes', 'your-data']) { const b = document.getElementById('card-fold-' + k + '-button');
+        if (b && b.getAttribute('aria-expanded') !== 'true') b.click(); } }""")
 
 
 def tap_tab(page, name):
