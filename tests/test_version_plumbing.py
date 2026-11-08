@@ -96,7 +96,8 @@ def main():
         listed_clean = {x for x in listed if x}
         missing = sorted(f for f in loaded if f not in listed_clean and f != "index.html")
         check("every file index.html loads is listed in sw.js", not missing, missing)
-        gone = sorted(f for f in listed_clean if not os.path.exists(os.path.join(ROOT, f)))
+        # LP1 (v147): "./privacy" is the clean address the host serves privacy.html at, so it is checked as that file.
+        gone = sorted(f for f in listed_clean if not os.path.exists(os.path.join(ROOT, "privacy.html" if f == "privacy" else f)))
         check("every file sw.js lists exists", not gone, gone)
         check("no outside host is cached or named in sw.js", not re.search(r"https?://", sw), re.findall(r"https?://\S+", sw)[:3])
         check("sw.js adds the version tag to the files that carry ?v=",
