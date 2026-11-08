@@ -56,9 +56,9 @@ def main():
                              " fonts: document.querySelectorAll('#credits-fonts li').length,"
                              " reader: [...document.querySelectorAll('#credits-reader strong')].map(e => e.textContent.trim()),"
                              " paints: document.querySelectorAll('#credits-paints li').length })")
-        check("same content: Credits, Fonts, Pot-label reader, Paint list", rows["heads"] == ["Credits", "Fonts", "Pot-label reader", "Paint list"], rows["heads"])
+        check("same content: Credits, Fonts, Pot-label reader, Paint list", rows["heads"] == ["Credits", "Fonts", "Pot-label reader", "Paint list", "Thanks"], rows["heads"])   # CR2: Thanks is drawn now
         check("same rows: 11 fonts, three reader rows (with Leptonica and libtiff), one paint list", rows["fonts"] == 11 and rows["reader"][1:] == ["Leptonica", "libtiff"] and rows["paints"] == 1, rows)
-        check("the Thanks section is still hidden while its list is empty", page.evaluate("() => document.getElementById('credits-thanks').classList.contains('hidden')"))
+        check("the Thanks section is drawn at the foot of Credits (CR2 filled the list)", page.evaluate("() => !document.getElementById('credits-thanks').classList.contains('hidden')"))
         check("About keeps one Privacy link, opening the page safely in a new tab", page.evaluate(
             "() => { const l = [...document.querySelectorAll('#view-about a.privacy-page-link')]; return l.length === 1 && l[0].getAttribute('href') === 'privacy' && l[0].target === '_blank' && l[0].rel === 'noopener noreferrer'; }"))
         for sel in ("#about-credits-link", "#about-rights-credits"):

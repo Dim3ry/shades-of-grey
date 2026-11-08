@@ -17,12 +17,41 @@
     const MAX_MODELS = 999;
     const MAX_EACH = 100;
 
-    // ===== CR1: THANKS (the Thanks section at the bottom of the Credits page) =====
-    // TO ADD A NAME: put one line in the list below, like  { name: "Creator Name", link: "https://example.com/their-page" }.
-    // The link must start with https:// (anything else is left out). Names and links are drawn as plain text and a plain link.
+    // ===== CR1, CR2: THANKS (the Thanks section on About, under Credits) =====
+    // TO ADD A NAME: put one line in the list below, like  { group: "YouTube", name: "Creator Name", link: "https://example.com/their-page" }.
+    // The group is "YouTube" or "Websites". The link must start with https:// (anything else is left out). Names and links are drawn as plain text
+    // and a plain link. The page sorts each group A to Z (ignoring a leading "The"), so the order here does not matter.
     // While the list is empty, the whole Thanks section (heading included) is not drawn.
-    const THANKS = [];
-    const THANKS_LINE = "These creators inspired Minifolio. Thank you to them, and they're well worth checking out:";
+    const THANKS = [
+      { group: "YouTube", name: "Angel Giraldez", link: "https://www.youtube.com/@AngelGiraldeZ" },
+      { group: "YouTube", name: "Artis Opus", link: "https://www.youtube.com/@artisopus" },
+      { group: "YouTube", name: "Cult of Paint", link: "https://www.youtube.com/channel/UCPI4wJgB2hlWZqz0tRqg4qQ" },
+      { group: "YouTube", name: "Duncan Rhodes Painting Academy", link: "https://www.youtube.com/c/DuncanRhodesPaintingAcademy" },
+      { group: "YouTube", name: "Goobertown Hobbies", link: "https://www.youtube.com/@goobertownhobbies" },
+      { group: "YouTube", name: "Infernal Brush", link: "https://www.youtube.com/@InfernalBrush" },
+      { group: "YouTube", name: "Miniac", link: "https://www.youtube.com/@miniac" },
+      { group: "YouTube", name: "Ninjon", link: "https://www.youtube.com/@ninjon" },
+      { group: "YouTube", name: "Peachy Tips", link: "https://www.youtube.com/@peachytips" },
+      { group: "YouTube", name: "Rogue Hobbies", link: "https://www.youtube.com/@roguehobbies" },
+      { group: "YouTube", name: "Swords and Brushes", link: "https://www.youtube.com/@swordsandbrushes" },
+      { group: "YouTube", name: "TableTopReady", link: "https://www.youtube.com/@tabletopreadyyoutube" },
+      { group: "YouTube", name: "Tabletop Tactics", link: "https://www.youtube.com/@tabletoptactics" },
+      { group: "YouTube", name: "The Painting Phase", link: "https://www.youtube.com/@thepaintingphase" },
+      { group: "YouTube", name: "Toadpainting", link: "https://www.youtube.com/@toadpainting" },
+      { group: "YouTube", name: "Trovarion", link: "https://www.youtube.com/@trovarion" },
+      { group: "YouTube", name: "Vince Venturella", link: "https://www.youtube.com/@vinceventurella" },
+      { group: "YouTube", name: "Zumikito", link: "https://www.youtube.com/c/Zumikito" },
+      { group: "Websites", name: "Chest of Colors", link: "https://chestofcolors.com/" },
+      { group: "Websites", name: "Creative Twilight", link: "https://creativetwilight.com/" },
+      { group: "Websites", name: "Heresy Brush", link: "https://heresybrush.com/en/" },
+      { group: "Websites", name: "Massive Voodoo", link: "https://massivevoodoo.blogspot.com/" },
+      { group: "Websites", name: "Tale of Painters", link: "https://taleofpainters.com/" },
+      { group: "Websites", name: "Tangible Day", link: "https://tangibleday.com/" },
+      { group: "Websites", name: "The Painter's Portal, A Complete Guide to Painting Miniatures", link: "https://thepaintersportaluk.wordpress.com/wp-content/uploads/2025/02/a-complete-guide-to-painting-miniatures-2025-.pdf" },
+    ];
+    const THANKS_GROUPS = ["YouTube", "Websites"];
+    const THANKS_LINE = "Mentor's advice was shaped by learning from painters and creators who generously share what they know. Go and check them out below.";
+    const THANKS_SMALL = "Listed as thanks only. No creator is affiliated with or endorses Minifolio.";
 
     // ================= SAVING SAFELY (v14) =================
     // Browser storage has no "all or nothing" save, so writeTogether() does it by hand:
@@ -5069,24 +5098,35 @@
     // start page gets a short fade at most. Moving between the pages inside one section (Guides, Settings, Help, Updates) is an instant switch.
     // SEC1: the section an old or short name stands for. hasOwn, so a word like "constructor" is never looked up as a built-in.
     function tabAlias(name) { return hasOwn(TAB_ALIASES, name) ? TAB_ALIASES[name] : name; }
-    // CR1: draws the Thanks section from THANKS. Entries need a name and an https link; others are left out. Nothing here uses innerHTML.
+    // CR1, CR2: draws the Thanks section from THANKS. Entries need a name and an https link; others are left out. Nothing here uses innerHTML.
+    // The list sits in a fold that starts closed, in two groups, each sorted A to Z ignoring a leading "The".
+    function thanksSortKey(name) { return name.toLowerCase().replace(/^the\s+/, ""); }
     function renderThanks() {
       const box = document.getElementById("credits-thanks");
       box.textContent = "";
       // safeHttpsUrl (above) gives back the address only when it is a real https one, else ""
-      const good = THANKS.map(t => ({ name: t && typeof t.name === "string" ? t.name.trim() : "", href: t ? safeHttpsUrl(t.link) : "" }))
-        .filter(t => t.name && t.href && !new URL(t.href).username && !new URL(t.href).password);
+      const good = THANKS.map(t => ({ group: t && t.group, name: t && typeof t.name === "string" ? t.name.trim() : "", href: t ? safeHttpsUrl(t.link) : "" }))
+        .filter(t => t.name && t.href && THANKS_GROUPS.includes(t.group) && !new URL(t.href).username && !new URL(t.href).password);
       box.classList.toggle("hidden", good.length === 0);
       if (!good.length) return;
       const h = document.createElement("h3"); h.textContent = "Thanks"; box.appendChild(h);
       const p = document.createElement("p"); p.textContent = THANKS_LINE; box.appendChild(p);
-      const ul = document.createElement("ul"); ul.className = "credits-thanks-list";
-      good.forEach(t => {
-        const li = document.createElement("li"), a = document.createElement("a");
-        a.textContent = t.name; a.href = t.href; a.target = "_blank"; a.rel = "noopener noreferrer";
-        li.appendChild(a); ul.appendChild(li);
+      const fold = document.createElement("details"); fold.className = "help-look thanks-fold";
+      const sum = document.createElement("summary"); sum.textContent = "Show all"; fold.appendChild(sum);
+      THANKS_GROUPS.forEach(g => {
+        const mine = good.filter(t => t.group === g).sort((x, y) => { const a = thanksSortKey(x.name), b = thanksSortKey(y.name); return a < b ? -1 : a > b ? 1 : 0; });
+        if (!mine.length) return;
+        const gh = document.createElement("h4"); gh.className = "thanks-group"; gh.textContent = g; fold.appendChild(gh);
+        const ul = document.createElement("ul"); ul.className = "credits-thanks-list";
+        mine.forEach(t => {
+          const li = document.createElement("li"), a = document.createElement("a");
+          a.textContent = t.name; a.href = t.href; a.target = "_blank"; a.rel = "noopener noreferrer";
+          li.appendChild(a); ul.appendChild(li);
+        });
+        fold.appendChild(ul);
       });
-      box.appendChild(ul);
+      box.appendChild(fold);
+      const small = document.createElement("p"); small.className = "hint"; small.textContent = THANKS_SMALL; box.appendChild(small);
     }
     // FB3: every old link to the Credits page opens About and scrolls to its Credits section (showTab("credits") does both).
     for (const id of ["about-credits-link", "help-credits-link", "about-rights-credits", "help-rights-credits"]) document.getElementById(id).addEventListener("click", () => showTab("credits"));
