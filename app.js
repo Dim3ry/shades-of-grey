@@ -6619,7 +6619,7 @@
       // The big doughnut, plus a legend you can tap.
       const counts = stageCounts(models);
       overallChart.innerHTML = "";
-      overallChart.appendChild(donutChart(counts, 170, 26, `${percent}%`, "done",
+      overallChart.appendChild(donutChart(counts, 170, 26, `${percent}%`, "Done",
         counts.map((c, i) => `${STAGES[i]}: ${c}`).join(", ")));
 
       stageLegend.innerHTML = "";
@@ -10350,6 +10350,7 @@
     form.addEventListener("submit", (event) => {
       event.preventDefault();                   // stop the browser reloading the page
       if (!nameInput.value.trim()) return;      // ignore names that are only spaces
+      const copiesBefore = models.map(m => [m, m.copy]);   // FB2: addModel can number same-named units; Undo puts those numbers back
       const newModel = addModel({
         name: nameInput.value.trim(),
         count: cleanCount(countInput.value),
@@ -10371,7 +10372,23 @@
       // Game, faction and starting stage stay filled in, since you'll often add several
       // from one army.
       justAddedId = newModel.id;   // v21.5: highlighted when the list is drawn
-      if (commit(`Added ${displayName(newModel)}`)) showNewUnit(newModel.id);   // v18c-3
+      // FB2: Undo (UNDO_SECONDS, like delete). It removes only this unit, wherever it is by then, with its photos; a newer add replaces this message.
+      const undoAdd = () => {
+        const unit = models.find(m => m.id === newModel.id);
+        if (!unit) return;
+        const files = photoIds(unit);
+        models = models.filter(m => m !== unit);
+        openIds.delete(unit.id);
+        if (justAddedId === unit.id) justAddedId = null;
+        for (const [m, copy] of copiesBefore) { if (copy === undefined) delete m.copy; else m.copy = copy; }
+        render();
+        for (const f of files) {
+          if (models.some(m => photoIds(m).includes(f))) continue;
+          forgetUrls(f);
+          deletePhotoFile(f);
+        }
+      };
+      if (commit(`Added ${displayName(newModel)}`, undoAdd, "Undo", UNDO_SECONDS)) showNewUnit(newModel.id);   // v18c-3
     });
 
     // v21.5: a newly added unit is brought into view and briefly outlined, instead of
