@@ -2877,6 +2877,10 @@
     .chip[aria-pressed="true"] { background-size: 100% 100%; }
     #group-chips .chip::before { content: "\2713"; display: inline-block; width: 0; overflow: hidden; opacity: 0; vertical-align: bottom; }
     #group-chips .chip[aria-pressed="true"]::before { width: 1em; margin-right: 0.3em; opacity: 1; }
+    /* FB4: Paint brands are wrapping tiles like Recipe preferences (chips-wrap). A tick says "on" as well as the colour; long names wrap inside the tile. */
+    #brand-toggles .chip { white-space: normal; overflow-wrap: anywhere; text-align: center; display: inline-flex; align-items: center; justify-content: center; }
+    #brand-toggles .chip::before { content: "\2713"; display: inline-block; width: 0; overflow: hidden; opacity: 0; }
+    #brand-toggles .chip[aria-pressed="true"]::before { width: 1em; margin-right: 0.3em; opacity: 1; }
     /* 4. The question box: the dim layer fades in, the box rises and settles. */
     .dialog-backdrop:not(.hidden) { animation: mo-fade var(--motion-med) var(--motion-ease) both; }
     .dialog-backdrop:not(.hidden) > .dialog { animation: mo-rise var(--motion-med) var(--motion-ease-out) both; }
@@ -3903,7 +3907,7 @@
            means that brand is searched. Your own paints are always searched. -->
       <div class="card" id="brands-card">
         <h2>Paint brands</h2>
-        <div class="chips" id="brand-toggles" role="group" aria-label="Paint brands" style="margin-top: 0;"></div>
+        <div class="chips chips-wrap" id="brand-toggles" role="group" aria-label="Paint brands" style="margin-top: 0;"></div>
       </div>
 
       <div class="card" id="import-card">
