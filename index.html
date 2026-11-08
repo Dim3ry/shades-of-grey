@@ -1357,6 +1357,10 @@
     #view-credits .cr-who { flex: 1 1 11rem; min-width: 0; overflow-wrap: anywhere; }
     #view-credits .cr-by { display: block; color: var(--muted); font-size: 0.875rem; }
     #view-credits .credits-list a, #view-credits .credits-thanks-list a { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; overflow-wrap: anywhere; }
+    /* LP1: the rights line (About and How it works > About) and the links to the privacy page. The words "their own licences" are a link inside the sentence. */
+    .rights-line .link-button { display: inline; padding: 0; min-height: 0; min-width: 0; font-size: inherit; text-decoration: underline; text-underline-offset: 2px; }
+    .privacy-page-link { display: flex; align-items: center; min-height: 44px; min-width: 44px; width: fit-content; color: var(--accent); font-size: 0.875rem; }
+    .privacy-page-link:focus-visible, .rights-line .link-button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
     #view-credits a:focus-visible, .about-credits-link:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
     #view-credits .credits-thanks-list { list-style: none; margin: 0; padding: 0; }
     .link-button { min-width: 44px; }
@@ -3466,7 +3470,9 @@
         <p>Minifolio is a hobby tracker made by a nerd, for nerds. It began as one painter’s side project to track their own models and learn to code, and it grew arms, legs and a few tentacles. It’s still mostly one person, so thanks for your patience.</p>
         <h2>Mission</h2>
         <p>To give every painter a mentor in their pocket: a place to track your progress, get advice, and find the right colours.</p>
+        <p class="rights-line" id="about-rights">Minifolio is an independent app made in the UK by George Atter-Dimery. It is not affiliated with, endorsed by or sponsored by Games Workshop or any paint maker. Citadel, Warhammer, Warhammer Tone Pro and the names of factions and paints are trade marks of Games Workshop Ltd. Other paint and brand names belong to their owners. They are used only to say which products you own or might use. © 2026 George Atter-Dimery. All rights reserved. Fonts, the pot-label reader and the paint list are used under <button type="button" class="link-button" id="about-rights-credits">their own licences</button>.</p>
         <button type="button" class="link-button about-credits-link" id="about-credits-link">Credits</button>
+        <a class="privacy-page-link" id="about-privacy-link" href="privacy" target="_blank" rel="noopener noreferrer">Privacy page</a>
       </div>
     </section>
 
@@ -3497,6 +3503,7 @@
           <li><span class="cr-who"><strong>miniature-paints</strong><span class="cr-by">Rick Fleuren</span></span><a href="LICENSE-paint-list.txt" target="_blank" rel="noopener noreferrer">MIT License</a></li>
         </ul>
         <div id="credits-thanks" class="hidden"></div>
+        <a class="privacy-page-link" id="credits-privacy-link" href="privacy" target="_blank" rel="noopener noreferrer">Privacy page</a>
       </div>
     </section>
 
@@ -3744,6 +3751,7 @@
         <details id="privacy">
           <summary>Privacy</summary>
           <ul>
+            <li id="privacy-full-page"><a class="privacy-page-link" id="help-privacy-link" href="privacy" target="_blank" rel="noopener noreferrer">Read the full privacy page</a></li>
             <li><strong>Stays on your phone:</strong> your units, photos, recipes, paints and settings. They're saved in this browser on this device only. There's no account and no cloud copy.</li>
             <li><strong>Scanning a paint pot</strong> reads the label on your phone. The photo never leaves it.</li>
             <li><strong>What goes out:</strong> only what you choose to send. <strong>Give feedback</strong> opens a form on Tally's website, which receives what you type there plus the app's version number. Backups and exports are files you save yourself. <strong>Send backup to…</strong> and <strong>Send full backup with photos to…</strong> only open your phone's own share menu: the backup goes where you choose, and the app sends nothing itself. The one thing the app does send on its own is the visit count, described next.</li>
@@ -3762,7 +3770,7 @@
         <details id="about">
           <summary>About</summary>
           <ul>
-            <li><strong>Unofficial fan-made app, not affiliated with or endorsed by Games Workshop or any paint maker.</strong> No Games Workshop artwork, rules, points or stats, and no brand logos.</li>
+            <li class="rights-line" id="help-rights">Minifolio is an independent app made in the UK by George Atter-Dimery. It is not affiliated with, endorsed by or sponsored by Games Workshop or any paint maker. Citadel, Warhammer, Warhammer Tone Pro and the names of factions and paints are trade marks of Games Workshop Ltd. Other paint and brand names belong to their owners. They are used only to say which products you own or might use. © 2026 George Atter-Dimery. All rights reserved. Fonts, the pot-label reader and the paint list are used under <button type="button" class="link-button" id="help-rights-credits">their own licences</button>. No Games Workshop artwork, rules, points or stats, and no brand logos.</li>
             <li>The app knows paint and faction names so it can recognise what you type or scan. Citadel, Warhammer and faction and paint names are trademarks of Games Workshop Ltd. Other paint names (such as Vallejo, The Army Painter and AK Interactive) belong to their makers. All are used only to identify those products.</li>
             <li>The Vallejo, Army Painter, Pro Acryl, AK, Scale 75, Formula P3, Two Thin Coats, Tamiya and Green Stuff World paint names, colours and codes (and some Citadel ones) come from the free <strong>miniature-paints</strong> list by Rick Fleuren (MIT licence). The colours are close guesses, not exact matches.</li>
             <li id="about-fonts"><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">Font licences</a></li>
@@ -3863,6 +3871,7 @@
         <label class="check-label count-label"><input type="checkbox" id="count-visits"> Count my visits (anonymous)</label>
         <p class="hint" id="counting-note" style="margin: 6px 0 0;"></p>
         <p class="hint" id="counting-effect" style="margin: 6px 0 0;">Takes effect the next time the app opens. Details: How it works → Privacy.</p>
+        <a class="privacy-page-link" id="settings-privacy-link" href="privacy" target="_blank" rel="noopener noreferrer">Privacy page</a>
       </div>
 
       <!-- v39: Shop links. One tick box; on by default; not in backups. See "v39: THE SHOP LINKS SWITCH" in app.js. -->
