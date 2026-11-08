@@ -102,14 +102,14 @@ def main():
         n_az = next(x[3] for x in rows if x[0] == key)
         page.click(f'.guides-az [data-guide="{key}"]')
         page.wait_for_selector(f"#guide-{key}")
-        n_page = page.inner_text(".guides-entry .guides-num")
+        n_page = n_az   # AB13a: the entry page no longer shows a number, so only the two lists are compared
         cat, grp = page.evaluate("(k) => { const e = knowledgeIndex().get(k); return [e.category, guidePlace(e).group]; }", key)
         home(page)
         page.click(f'.guides-cats [data-cat="{cat}"]')
         page.click(f'.guides-main [data-group="{grp}"]')
         wait_settled(page)
         n_grp = page.inner_text(f'.guides-main [data-guide="{key}"] .guides-num')
-        check("an A to Z row opens its entry, and its number matches the entry page and the grouped list", n_az == n_page == n_grp and n_az, (n_az, n_page, n_grp))
+        check("an A to Z row opens its entry, and its number matches the grouped list", n_az == n_page == n_grp and n_az, (n_az, n_page, n_grp))
         home(page, "az")
         page.click('.guides-order [data-order="topics"]')
         wait_settled(page)
@@ -149,8 +149,8 @@ def main():
         page.wait_for_selector(f"#guide-{targets[1]}")
         wait_settled(page)
         place = page.evaluate("(k) => guidePlace(knowledgeIndex().get(k))", targets[1])
-        check("a See also link opens that entry (with its number and Back to its group), as openGuide does",
-              page.evaluate("() => guidesState.view === 'entry' && guidesState.key") == targets[1] and page.inner_text(".guides-entry .guides-num") == place["num"]
+        check("a See also link opens that entry (with Back to its group; AB13a: no number on the page), as openGuide does",
+              page.evaluate("() => guidesState.view === 'entry' && guidesState.key") == targets[1]
               and page.inner_text("#guides-back") == "Back to " + place["group"], place)
         none = page.evaluate("() => GUIDE_ENTRIES.find(e => !GUIDE_GROUPS.seeAlso[e.key]).key")
         page.evaluate("(k) => openGuide(k)", none)
