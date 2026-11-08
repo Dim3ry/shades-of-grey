@@ -19,9 +19,11 @@ def check(name, ok, detail=""):
     results.append(bool(ok))
     print(("PASS " if ok else "FAIL ") + name + ("" if ok else f"  -> {detail}"))
 
-LINE = "These creators inspired Minifolio. Thank you to them, and they're well worth checking out:"
-FAKE = '[{ name: "Painter <b>One</b>", link: "https://example.com/one" }, { name: "Painter Two", link: "https://example.com/two" }, ' \
-       '{ name: "Bad Link", link: "http://example.com/bad" }, { name: "Script Link", link: "javascript:alert(1)" }]'
+# CR2: the intro line is new wording, entries need a group, and the list is no longer empty (the real Thanks list is in; the full wording and
+# list are checked in test_v153_cr2.py). The fake list below still replaces the real one, to prove names are text and bad links are left out.
+LINE = "Mentor's advice was shaped by learning from painters and creators who generously share what they know. Go and check them out below."
+FAKE = '[{ group: "YouTube", name: "Painter <b>One</b>", link: "https://example.com/one" }, { group: "YouTube", name: "Painter Two", link: "https://example.com/two" }, ' \
+       '{ group: "YouTube", name: "Bad Link", link: "http://example.com/bad" }, { group: "YouTube", name: "Script Link", link: "javascript:alert(1)" }]'
 
 def go(page, w=390, h=844):
     page.set_viewport_size({"width": w, "height": h})
@@ -63,7 +65,7 @@ def main():
         check("the pot-label reader and the paint list are listed with a licence",
               page.locator("#credits-reader a").first.inner_text() == "Apache License 2.0" and page.locator("#credits-paints a").inner_text() == "MIT License")  # LC1: the reader list now has three links, so the first (Tesseract) is checked
         heads = page.evaluate("() => [...document.querySelectorAll('#view-credits h3')].map(h => h.textContent.trim())")
-        check("small headings group the rows", heads == ["Fonts", "Pot-label reader", "Paint list"], heads)
+        check("small headings group the rows", heads == ["Fonts", "Pot-label reader", "Paint list", "Thanks"], heads)   # CR2: Thanks is drawn now
 
         print("\n--- 3. Licence links ---")
         hrefs = page.evaluate("() => [...document.querySelectorAll('#view-credits a')].map(a => [a.getAttribute('href'), a.target, a.rel])")
@@ -77,19 +79,20 @@ def main():
         check("links open in a new tab safely", all(h[1] == "_blank" and "noopener" in h[2] and "noreferrer" in h[2] for h in hrefs), hrefs)
 
         print("\n--- 4. Thanks ---")
-        check("empty list: no Thanks section at all", page.locator("#credits-thanks").evaluate("e => e.offsetParent === null && e.children.length === 0")
-              and "Thanks" not in page.inner_text("#view-credits"))
+        # CR2: the list is filled, so the section shows (it stays hidden only while the list is empty; checked below with an empty list)
+        check("filled list: the Thanks section is drawn", page.locator("#credits-thanks h3").inner_text() == "Thanks")
         ctx2 = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block", reduced_motion="reduce")
         p2 = ctx2.new_page()
         p2.on("pageerror", lambda x: errors.append(str(x)))
         p2.route(re.compile(r".*/app\.js.*"), lambda route: route.fulfill(
-            response=route.fetch(), body=route.fetch().text().replace("const THANKS = [];", "const THANKS = " + FAKE + ";", 1)))
+            response=route.fetch(), body=route.fetch().text().replace(re.search(r"const THANKS = \[.*?\n    \];", route.fetch().text(), re.S).group(0), "const THANKS = " + FAKE + ";", 1)))
         go(p2)
         p2.click('#about-credits-link')   # FB3
         wait_settled(p2)
         check("with entries: heading Thanks", p2.locator("#credits-thanks h3").inner_text() == "Thanks")
-        check("the line is word for word", p2.locator("#credits-thanks p").inner_text() == LINE, p2.locator("#credits-thanks p").inner_text())
+        check("the line is word for word", p2.locator("#credits-thanks p").first.inner_text() == LINE, p2.locator("#credits-thanks p").first.inner_text())   # CR2: first p; the small print is the second
         got = p2.evaluate("() => [...document.querySelectorAll('#credits-thanks a')].map(a => [a.textContent, a.href, a.target, a.rel])")
+        # CR2: the real list is replaced by the fake one with a regex now (the real list has many lines)
         check("only the two https entries are drawn, names as plain text",
               [g[0] for g in got] == ["Painter <b>One</b>", "Painter Two"] and p2.locator("#credits-thanks b").count() == 0, got)
         check("each is a safe new-tab link", all(g[2] == "_blank" and g[3] == "noopener noreferrer" and g[1].startswith("https://") for g in got), got)
