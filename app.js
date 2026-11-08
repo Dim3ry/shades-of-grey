@@ -22271,12 +22271,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=148".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=149".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v148";
+    const APP_VERSION = "v149";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;
@@ -22744,6 +22744,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v149", date: "8 Nov 2026", changes: [
+        "About and Credits are now one page, and Settings has seven sections instead of thirteen.",
+        "Appearance, Theme, Stages, Mentor look and Colours sit together, and Counting visits and Shop links are inside Your data.",
+      ] },
       { version: "v148", date: "8 Nov 2026", changes: [
         "Adding a unit now shows an Undo for ten seconds, and the progress ring says Done with a capital. More guides link to the brush tip, first sessions and waiting between coats guides.",
         "The label reader's credits now name the two image libraries inside it.",
