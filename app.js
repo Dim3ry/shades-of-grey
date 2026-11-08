@@ -22811,7 +22811,7 @@
 
     const CHANGELOG = [
       { version: "v153", date: "8 Nov 2026", changes: [
-        "Pasting an Age of Sigmar army list now fills in the game for you. A Thanks list of creators is on the About page, and guide pages no longer show numbers.",
+        "Pasting an army list now fills in the game when the list names it. A Thanks list of creators is on the About page, and guide pages no longer show numbers.",
         "The Guides home links to the glossary, and the wash or glaze and eyes guides start with clearer lines.",
       ] },
       { version: "v152", date: "8 Nov 2026", changes: [
