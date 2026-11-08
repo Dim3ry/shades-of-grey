@@ -111,7 +111,9 @@ def main():
         # H: Help now says "your army list app" (no Games Workshop app name in the app's own words; the trademark notice stays)
         check("the Help lines about the army list import are still there (a plain statement of what it reads)",
               "From your army list app" in html and "Only unit names and model counts are kept" in html)
-        check("the unofficial wording is unchanged", "Unofficial fan-made app" in html and "not affiliated with or endorsed by Games Workshop" in html)
+        # LP1: How it works > About now has the rights line instead of the fan-made notice; the Updates page note keeps the old wording, so both are checked.
+        check("the unofficial wording is unchanged", "Unofficial fan-made app" in html and "not affiliated with or endorsed by Games Workshop" in html
+              and "Minifolio is an independent app made in the UK" in html and "not affiliated with, endorsed by or sponsored by Games Workshop" in html)
 
         # ---------- 4. Nothing saved changes ----------
         print("\n--- 4. Saved data is left alone ---")
