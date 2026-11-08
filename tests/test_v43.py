@@ -181,8 +181,12 @@ def main():
         added = [l[1:] for l in diff.splitlines() if l.startswith("+") and not l.startswith("+++")]
         removed = [l[1:] for l in diff.splitlines() if l.startswith("-") and not l.startswith("---")]
         code_added = [re.sub(r"\s//\s.*$", "", l) for l in added if not l.strip().startswith("//")]
-        check("no new web address, network call or storage in the code added", not any(re.search(r"https?:|fetch\(|XMLHttpRequest|localStorage|sessionStorage|indexedDB|WebSocket|sendBeacon", l) for l in code_added if "w3.org/2000/svg" not in l),
-              [l for l in code_added if "http" in l][:2])
+        # CR2: the Thanks list in app.js (one row per creator, https link only) is plain data for links the person taps; the app makes no request to those
+        # sites and stores nothing. Exactly those rows are allowed; any other new web address, network call or storage still fails (shown just below).
+        thanks_row = re.compile(r'^\s*\{ group: "(?:YouTube|Websites)", name: "[^"]+", link: "https://[^"\s]+" \},?\s*$')
+        scan = lambda ls: [l for l in ls if "w3.org/2000/svg" not in l and not thanks_row.match(l) and re.search(r"https?:|fetch\(|XMLHttpRequest|localStorage|sessionStorage|indexedDB|WebSocket|sendBeacon", l)]
+        check("no new web address, network call or storage in the code added", not scan(code_added), scan(code_added)[:2])
+        check("that check still fails for a new fetch( or an unrelated https address, and allows a Thanks row", scan(['  fetch("x");', '  const u = "https://example.com/";', '  { group: "Websites", name: "A B", link: "https://ab.com/" },']) == ['  fetch("x");', '  const u = "https://example.com/";'])
         check("nothing was added that writes page text from variables (no innerHTML, insertAdjacentHTML, outerHTML, eval)",
               not any(re.search(r"innerHTML|insertAdjacentHTML|outerHTML|document\.write|eval\(|new Function", l) for l in [l for l in code_added if re.sub(r"(['\"]).*?\1", "", l).strip() not in {re.sub(r"(['\"]).*?\1", "", r).strip() for r in removed}]))   # v59: a line that only had its words changed is not new code
         # It checks the lines this version added (a diff against main), so it only means something while this is the newest
