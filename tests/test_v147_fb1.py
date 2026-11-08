@@ -15,6 +15,16 @@ def check(name, ok, detail=""):
     print(("PASS " if ok else "FAIL ") + name + ("" if ok else f"  -> {detail}"))
 
 TABS = ["dashboard", "units", "recipes", "guides"]
+SETTLE = """async () => {
+  const b = document.getElementById('basket-button'), key = () => ['#version-tag', '#home-button', '.app-bar'].map(q => { const x = document.querySelector(q).getBoundingClientRect(); return [x.left, x.right, x.top, x.bottom].join(); }).join('|');
+  await document.fonts.ready;
+  let last = '', same = 0;
+  for (let i = 0; i < 120 && same < 4; i++) {   // settled = the header rects are equal for 4 frames in a row
+    b.classList.remove('hidden'); b.textContent = '88';   // the app may redraw the basket (hidden when empty), so it is put back each frame
+    await new Promise(r => requestAnimationFrame(r));
+    const k = key(); same = k === last ? same + 1 : 0; last = k;
+  }
+}"""
 GEOM = """() => { const r = s => document.querySelector(s).getBoundingClientRect();
   const v = r('#version-tag'), h = r('#home-button'), b = r('#basket-button'), bar = r('.app-bar');
   const a = getComputedStyle(document.getElementById('version-tag'), '::after');
@@ -36,19 +46,17 @@ def main():
                 page = ctx.new_page()
                 page.on("pageerror", lambda x: errors.append(str(x)))
                 t.load(page, units=[])
-                # the basket is empty (hidden) on a fresh page; show it with a wide count, the worst case for room
-                page.evaluate("() => { const b = document.getElementById('basket-button'); b.classList.remove('hidden'); b.textContent = '88'; }")
                 tag = f"{w}x{h} {scheme}"
                 for tab in TABS:
                     page.evaluate("(x) => showTab(x)", tab)
-                    page.wait_for_timeout(450)
+                    page.evaluate(SETTLE)   # the basket is empty (hidden) on a fresh page; SETTLE shows it with a wide count (worst case) and waits for fonts and a steady header
                     g = page.evaluate(GEOM)
                     if tab == "dashboard":
                         check(f"{tag}: the text is the app's version", g["text"] == vh.current() and g["text"].startswith("v"), g)
                         check(f"{tag}: tap area is 44 px or more", g["afterW"] >= 44 and g["afterH"] >= 44, g)
                         check(f"{tag}: it has a visible keyboard focus", g["focusOutline"] != "none", g)
                     check(f"{tag} {tab}: shown, beside the title, clear of the basket, inside the header, no sideways scroll",
-                          g["text"] == vh.current() and g["vLeft"] >= g["hRight"] and g["vRight"] <= g["bLeft"] - 4 and g["vTop"] >= g["barTop"] and g["vBottom"] <= g["barBottom"] and not g["sideways"], g)
+                          g["basketShown"] and g["text"] == vh.current() and g["vLeft"] >= g["hRight"] and g["vRight"] <= g["bLeft"] - 4 and g["vTop"] >= g["barTop"] and g["vBottom"] <= g["barBottom"] and not g["sideways"], g)
                 ctx.close()
 
         print("\n--- 2. One tap opens Tools, then Updates; Back returns ---")
