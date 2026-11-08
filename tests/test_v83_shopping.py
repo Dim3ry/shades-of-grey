@@ -132,13 +132,15 @@ def main():
         page.wait_for_timeout(250)
         page.evaluate("() => document.querySelector('#brands-card button').click()")
         page.wait_for_timeout(250)
-        page.evaluate("() => { document.querySelector('#brand-toggles').scrollLeft = 9999; }")
-        for index in (-1, -2):   # turning brands off one after another: it must not go back to the start between taps
+        # FB4: Paint brands is a wrapping grid of tiles now (no sliding row), so there is no scroll position to keep. What this check
+        # guarded (turning brands off one after another must not jump the view) is now: the tiles keep their place and the page does not scroll sideways.
+        before = page.evaluate("(() => [...document.querySelectorAll('#brand-toggles .chip')].map(c => Math.round(c.getBoundingClientRect().top + scrollY)))()")
+        for index in (-1, -2):   # turning brands off one after another
             page.locator("#brand-toggles .chip").nth(index).click()
             page.wait_for_timeout(250)
-        after = page.evaluate("(() => { const r = document.querySelector('#brand-toggles'); return [r.scrollLeft, r.scrollWidth - r.clientWidth]; })()")
-        check("Settings Paint brands stays slid to the end while brands are turned off (it did go back to the start)",
-              after[1] > 300 and after[0] > after[1] - 80, after)
+        after = page.evaluate("(() => [...document.querySelectorAll('#brand-toggles .chip')].map(c => Math.round(c.getBoundingClientRect().top + scrollY)))()")
+        check("Settings Paint brands tiles stay where they were while brands are turned off (FB4: a grid, no sliding row)",
+              before == after and page.evaluate("document.getElementById('brand-toggles').scrollWidth <= document.getElementById('brand-toggles').clientWidth + 1"), (before, after))
 
         print("\n--- 4. Bought ---")
         load(page, paints=PAINTS, recipes=[t.rec(1, "Blue", "Armour", [1, 2]), t.rec(2, "Red", "Armour", [1, 3])], settings=SETTINGS)
