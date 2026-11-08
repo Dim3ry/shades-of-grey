@@ -6619,7 +6619,7 @@
       // The big doughnut, plus a legend you can tap.
       const counts = stageCounts(models);
       overallChart.innerHTML = "";
-      overallChart.appendChild(donutChart(counts, 170, 26, `${percent}%`, "done",
+      overallChart.appendChild(donutChart(counts, 170, 26, `${percent}%`, "Done",
         counts.map((c, i) => `${STAGES[i]}: ${c}`).join(", ")));
 
       stageLegend.innerHTML = "";
@@ -10350,6 +10350,7 @@
     form.addEventListener("submit", (event) => {
       event.preventDefault();                   // stop the browser reloading the page
       if (!nameInput.value.trim()) return;      // ignore names that are only spaces
+      const copiesBefore = models.map(m => [m, m.copy]);   // FB2: addModel can number same-named units; Undo puts those numbers back
       const newModel = addModel({
         name: nameInput.value.trim(),
         count: cleanCount(countInput.value),
@@ -10371,7 +10372,23 @@
       // Game, faction and starting stage stay filled in, since you'll often add several
       // from one army.
       justAddedId = newModel.id;   // v21.5: highlighted when the list is drawn
-      if (commit(`Added ${displayName(newModel)}`)) showNewUnit(newModel.id);   // v18c-3
+      // FB2: Undo (UNDO_SECONDS, like delete). It removes only this unit, wherever it is by then, with its photos; a newer add replaces this message.
+      const undoAdd = () => {
+        const unit = models.find(m => m.id === newModel.id);
+        if (!unit) return;
+        const files = photoIds(unit);
+        models = models.filter(m => m !== unit);
+        openIds.delete(unit.id);
+        if (justAddedId === unit.id) justAddedId = null;
+        for (const [m, copy] of copiesBefore) { if (copy === undefined) delete m.copy; else m.copy = copy; }
+        render();
+        for (const f of files) {
+          if (models.some(m => photoIds(m).includes(f))) continue;
+          forgetUrls(f);
+          deletePhotoFile(f);
+        }
+      };
+      if (commit(`Added ${displayName(newModel)}`, undoAdd, "Undo", UNDO_SECONDS)) showNewUnit(newModel.id);   // v18c-3
     });
 
     // v21.5: a newly added unit is brought into view and briefly outlined, instead of
@@ -22272,12 +22289,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=147".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=148".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v147";
+    const APP_VERSION = "v148";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;
@@ -22748,6 +22765,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v148", date: "8 Nov 2026", changes: [
+        "Adding a unit now shows an Undo for ten seconds, and the progress ring says Done with a capital. More guides link to the brush tip, first sessions and waiting between coats guides.",
+        "The label reader's credits now name the two image libraries inside it.",
+      ] },
       { version: "v147", date: "8 Nov 2026", changes: [
         "The version number is back at the top of every screen and opens Updates. There is a privacy page, and Mentor answers \"how do I paint black armour\" and similar questions with the right guide.",
         "Guides link to each other more, and use \"it's\" in more places.",
