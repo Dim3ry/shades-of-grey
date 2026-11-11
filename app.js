@@ -10418,6 +10418,22 @@
       return s;
     }
 
+    // AB13b-preview: a row of round swatches for a Detail recipe, dark to light, using each step's own hex.
+    // Wash and glaze steps get a ring so they are not told apart by colour alone.
+    function buildRamp(recipe) {
+      const steps = recipe.steps.filter(s => MinifolioColour.isHex(s.hex)).slice(0, 5);
+      const row = document.createElement("div");
+      row.className = "ab13b-ramp";
+      row.setAttribute("role", "img");
+      row.setAttribute("aria-label", "Colour ramp, dark to light: " + steps.map(s => `${s.look} (${s.technique})`).join(", "));
+      steps.forEach(s => {
+        const dot = makeSwatch(s.hex);
+        if (/^(wash|glaze)/i.test(s.technique)) dot.classList.add("ab13b-ring");
+        row.appendChild(dot);
+      });
+      return row;
+    }
+
     // A rounded button showing a recipe's name, with a dot of its first colour.
     function recipeChip(recipe, onClick) {
       const chip = document.createElement("button");
@@ -14723,6 +14739,7 @@
       summary.id = door.id("detail-summary");
       summary.textContent = recipe.summary;
       box.appendChild(summary);
+      box.appendChild(buildRamp(recipe));   // AB13b-preview
       const items = detailRecipePaints(recipe);
       if (!items.length) {
         const none = document.createElement("p");
