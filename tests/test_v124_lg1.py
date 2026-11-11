@@ -22,7 +22,9 @@ def read(name):
     with open(os.path.join(HERE, "..", name), encoding="utf-8") as f:
         return f.read()
 
-SAFETY = "Guides and Mentor give general hobby tips, not professional safety advice. Always follow the maker's label and safety sheet."
+# v155 (HS2): the Help line was reworded and moved to the top of Help (it now matches the Guides home notice), so this older test
+# follows the new words and place. The new test (test_v155_hs2.py) covers the Guides home and the old line being gone.
+SAFETY = "Common hobby tips, not safety advice. Always follow the maker's instructions and safety sheet, and work somewhere well ventilated and safe."
 
 def main():
     print("--- Files ---")
@@ -64,7 +66,7 @@ def main():
         safety = page.locator("#help-safety")
         check("Help has the safety line once, with the agreed words",
               safety.count() == 1 and " ".join(safety.text_content().split()) == SAFETY, safety.text_content() if safety.count() else "")
-        check("it sits with the Guides help", page.evaluate("document.getElementById('help-safety').previousElementSibling.id") == "help-guides")
+        check("it sits at the top of Help, under the first heading", page.evaluate("document.getElementById('help-safety').previousElementSibling.tagName") == "H2")
         check("no sideways scroll at 360 px", page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"))
 
         check("no page errors", not errors, errors)

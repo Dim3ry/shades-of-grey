@@ -180,12 +180,12 @@
       "body": [
         "Airbrushing puts a fine mist of paint in the air, even with water-based paints. A non-toxic label means it won't poison you if swallowed, not that it's safe to breathe as a spray.",
         "Wear a respirator with filters rated for paint particles every time you spray. Solvent paints, primers and varnishes also need activated carbon filters; a simple dust mask does nothing against fumes. Check the seal each time you put it on, as a loose fit lets air go round the filters.",
-        "Filters wear out. With light use a set can last a few years; heavy use wears them much faster. Follow the maker's guidance on when to replace them.",
-        "Spray into a booth if you can. One with a hose venting outside pulls hardest; a filter booth can sit anywhere. Otherwise ventilate well, but an open window alone isn't enough, and a fan only helps if it pushes air outside.",
-        "Airbrush cleaners, strippers, varnishes, enamels and solvent-based primers are harsher than acrylic paint. Keep the mask on while cleaning; many people take it off to clean, which is the wrong way round. Flush into a cleaning pot, wear gloves with strong cleaners if you like, and keep lids on.",
-        "Spray aerosol cans outdoors or with strong extraction, not indoors, as many hobby booths aren't built to catch their solvent. Keep heat, including a hair dryer, away from fresh aerosol primer until the fumes have cleared.",
+        "Filters wear out, so replace them as the maker says, and straight away if you can smell fumes through the mask. Heavy use wears them much faster.",
+        "Spray into a booth that vents outside if you can. Otherwise ventilate well, but an open window alone isn't enough, and a fan only helps if it pushes air outside. Check what your booth's maker says it suits.",
+        "Airbrush cleaners, strippers, varnishes, enamels and solvent-based primers are harsher than acrylic paint. Keep the mask on while cleaning; many people take it off to clean, which is the wrong way round. Flush into a cleaning pot, wear gloves with strong cleaners, and keep lids on.",
+        "Spray aerosol cans outdoors, not in a booth or indoors, as many hobby booths aren't built for their solvent. Keep heat, including a hair dryer, flames and hot surfaces, away from aerosols and fresh primer.",
         "Lower pressure, under about 30 psi for most work, puts less mist in the air. Even water based paint can irritate your airways, so don't skip the mask for short jobs.",
-        "Read the label or safety sheet for everything you spray, decide on a safety level you're comfortable with, and set the room up before you start."
+        "Read the label or safety sheet for everything you spray, follow the maker's instructions, and set the room up before you start."
       ],
       "related": [
         "airbrush-basics",
@@ -817,7 +817,7 @@
         "Thicker cement in a needle tip bottle suits beginners and gives time to line parts up. Keep the cap on. If a warm room pushes out a bubble, squeeze it back first, and clear a blocked needle with a fine pin.",
         "Plastic glue softens the surface, so keep fingers and extra glue off the join or you leave prints and melted detail. Avoid very strong types on fine parts. Angled parts on a tiny contact point slowly droop as it sets; use super glue or a pin there.",
         "Super glue works on resin, metal, plastic and mixed materials; wash resin in warm soapy water first. Plastic glue won't bond resin or metal. Thin super glue wicks into tight seams, medium suits most jobs, and gel gives time to adjust and stays put on upright joins. A toughened type survives knocks better.",
-        "Super glue grabs fast and usually snaps cleanly at the joint, so you can test a pose and redo it. Use plastic glue where you want a permanent bond and super glue where you may change your mind, or on painted parts. Acetone softens super glue to undo a join, but can harm paint. Scrape off old glue before refitting.",
+        "Super glue grabs fast and usually snaps cleanly at the joint, so you can test a pose and redo it. Use plastic glue for a permanent bond and super glue where you may change your mind, or on painted parts. Acetone softens super glue to undo a join, but it can harm paint and some plastics, and it's highly flammable: ventilate and keep it from flames. Scrape off old glue before refitting.",
         "An activator sets super glue almost instantly, handy for fiddly bits and heavy limbs; too much makes the joint brittle. The spray coats everything, so touch the end of the dip tube to one part, put glue on the other and press. Open a window. Get small tubes of glue and cap them at once, as opened glue thickens.",
         "Use two-part epoxy for heavy or stressed parts; it fills gaps and gives time to line them up. Use white PVA for basing materials and for foam, which solvent glues melt. Clear parts need a clear-parts glue, as super glue fumes fog them."
       ],
@@ -1692,7 +1692,7 @@
         "Clean off the supports and scrape rough spots with a hobby knife. Dry fit the parts, then join them with super glue.",
         "Fill seams with a putty that grips plastic, as some liquid fillers don't stick to prints. Press it in with a wet fingertip or a rubber shaper, build it slightly proud, let it dry and sand flush. Filler closes seams but doesn't hide layer lines.",
         "For layer lines on big pieces, use a thick filler primer: coat, let it dry, sand, and repeat until the lines are gone. Keep it off fine detail, which it buries.",
-        "Or brush a very thin coat of two-part epoxy resin into every recess; it levels itself over the lines. Mix only a little at the maker's ratio, thin with a drop of isopropyl alcohol if needed, and lift any pooling with a clean brush.",
+        "Or brush a very thin coat of two-part epoxy resin into every recess; it levels itself over the lines. Mix only a little at the maker's ratio, thin with a drop of isopropyl alcohol if needed, and lift any pooling with a clean brush. Wear nitrile gloves and ventilate well.",
         "Epoxy thickens after about 10 minutes, so do large models in small sections with fresh batches. Leave it about 4 hours to harden. A wrong mixing ratio leaves the surface sticky. Clean tools with isopropyl alcohol.",
         "Prime the smoothed print and paint it with the same acrylics as your figures so it matches them on the table."
       ],
@@ -2254,7 +2254,7 @@
         "Primer skins over before the layer underneath is dry, and some stretch as they cure. Touching or rebrushing it then leaves streaks, bubbles and wrinkles. Leave it at least 30 to 60 minutes, and overnight in cool or damp weather; painting too soon can peel the primer off.",
         "To rescue fuzzy primer, buff the rough areas with an old dry toothbrush. The buffed spots go a little shiny; dab brush-on primer over them if that bothers you. It works best on flat areas, and you rarely need to strip.",
         "Primer that stays sticky and glossy hasn't cured, usually because the can was old or badly shaken. Bad orange peel is the same. Strip the model and prime again from a fresh, well-shaken can. Water-based primers don't go tacky this way.",
-        "Test on a spare bit of plastic when conditions are borderline. If the weather is wrong, wait, run a dehumidifier, or use brush-on primer or an airbrush indoors. Always spray somewhere ventilated; many spray booths don't clear aerosol fumes."
+        "Test on a spare bit of plastic when conditions are borderline. If the weather is wrong, wait, run a dehumidifier, or use brush-on primer. Spray aerosols outdoors; many spray booths don't clear aerosol fumes."
       ],
       "related": [
         "spray-priming",
@@ -2839,7 +2839,7 @@
         "Plastic glue needs bare plastic, so scrape primer off the contact point. An extra thin plastic glue needs only a dot touched to the join; capillary action pulls it in. Put it on the part that isn't moving, then seat the other.",
         "Shave the leftover sprue nub off tiny joints with a sharp knife so they sit flush. On small models with many legs, glue one leg onto every model in the batch, let them set, then add the next. Gluing all the legs at once leaves a wobbly model and fingerprints in the glue.",
         "Thin parts like sword blades often snap at a weak point. A clean break lines up well: glue it with a tiny drop, hold it straight, and smooth the join with a fine emery board. If a part gets squashed, cut it at an angle that looks like a natural break.",
-        "Fill small gaps at the back with stretched sprue melted in with glue. If a tiny part won't stay put, a dab of UV curing resin set with a UV torch locks it in."
+        "Fill small gaps at the back with stretched sprue melted in with glue. If a tiny part won't stay put, a dab of UV curing resin set with a UV torch locks it in. Wear nitrile gloves and keep uncured resin off your skin."
       ],
       "related": [
         "choosing-glue",
@@ -3113,9 +3113,9 @@
       "title": "Safety with paints, fumes, solvents and dust",
       "summary": "Ventilate, wear a sealed mask with the right filters, keep solvents and resin off skin, and don't lick brushes.",
       "body": [
-        "Work with a window open or good airflow, and take breaks. Spray cans and airbrushes belong outdoors or in a spray booth that pulls the mist out of the room.",
+        "Work with a window open or good airflow, and take breaks. Spray cans belong outdoors. Airbrushes belong outdoors or in a booth that vents outside, used only with paints the booth's maker says it suits.",
         "Wear a respirator for spray cans, airbrushing, solvent paints and thinners, plastic glue, sanding and resin dust. Paper dust masks, even good ones, only stop particles and do nothing against fumes.",
-        "For general hobby use, pick a combined filter rated A2 for organic vapours and the top particle class for fine dust. Uncured printing resin gives off a wider range of vapours, so it needs a filter that also covers inorganic vapours (B2 or higher), and ventilation alone isn't enough.",
+        "For general hobby use, pick a combined filter rated A2 for organic vapours and the top particle class for fine dust. For uncured printing resin, check the resin's safety sheet and your printer maker's advice on the filter and ventilation it needs.",
         "The mask must seal against your face, as any gap lets unfiltered air in. Choose one comfortable enough to wear for a whole session; a mask left on the desk protects nothing. A half-face mask with replaceable cartridges works out cheaper for regular use.",
         "Wear disposable nitrile gloves for uncured resin, solvents and cleaning prints, and wash any splash off skin straight away.",
         "Enamel thinners and white spirit are toxic to breathe, so keep lids on jars when not in use. Rubbing alcohol is flammable with a flame that is hard to see; keep it away from heat, including hair dryers. Some glass cleaners used as thinner contain ammonia, so don't breathe them in.",
@@ -3746,7 +3746,7 @@
         "Cast inserts: cut thin plastic discs to fit the base recess and build textures on them, such as scraped balsa planks or wavy lines in putty for sand.",
         "Avoid undercuts. Every detail should taper inwards or the mould will tear. Seal the masters with thin super glue. Build a box from taped card, space the masters out, pour slow curing silicone, then cast resin copies in it. Heavily filled resin sands and drills easily but is brittle.",
         "For small press moulds, firm oven-bake clay gives crisp casts; modelling dough shrinks and air-dry clay distorts. A reusable hot water moulding plastic also works: soften it, fill a small box in batches, press the part in and leave it until fully hard. Epoxy putty pressed into it cures in up to 8 hours and peels out.",
-        "Always mould inside a container, overfill and clamp. Ease casts out with a cocktail stick rather than pulling. Expect failures and keep the best. Trim flash, wash resin in soapy water and prime as normal."
+        "Always mould inside a container, overfill and clamp. Ease casts out with a cocktail stick rather than pulling. Wear nitrile gloves and ventilate when mixing resin. Expect failures and keep the best. Trim flash, wash resin in soapy water and prime as normal."
       ],
       "related": [
         "designing-a-base",
@@ -5240,7 +5240,7 @@
       "body": [
         "Resin printers harden liquid resin with light, one thin layer at a time. They give the fine detail miniatures need, such as faces, chainmail and small lettering. Layer lines are almost invisible at this scale.",
         "Filament printers melt a plastic strand through a nozzle. Layer lines show on small figures and fine detail goes soft, but large prints are cheap and the plastic is tough. They suit buildings, scenery, bases and carry trays.",
-        "Resin smells and its fumes irritate. It needs a well-aired room or extraction, ideally a spare room, garage or shed, not a bedroom or kitchen.",
+        "Resin smells and its fumes irritate. Use it where air circulates freely, ideally a spare room, garage or shed, not a bedroom or kitchen, and check the resin's safety sheet for the ventilation it needs.",
         "Resin also needs gloves, eye protection, an alcohol or wash bath, a curing lamp or sunlight, and careful waste handling. Uncured resin on skin can cause an allergy that doesn't go away.",
         "Filament needs much less: the printer, spools and a level surface. The common plant-based plastic gives off little smell, and there is no liquid to spill, so it's easier in a family home.",
         "Size: resin build plates are small, fine for figures and small vehicles. Filament printers usually build larger, which suits hills and buildings.",
@@ -5312,7 +5312,7 @@
         "Room temperature, the resin itself and a clean, tight vat film all affect quality, so check those before blaming exposure.",
         "Check the height of the figure itself in the slicer against your target scale, as it's easy to scale by the wrong axis and print it too big. Printed bits are often sized for a bigger model: measure where a part that fits meets the model, work out the difference as a percentage and scale by that.",
         "Print one test set to compare arm and weapon lengths before the final batch. Mirroring parts in the slicer lets you test which side looks better in a pose.",
-        "Pour thick resin slowly and let it settle, as trapped bubbles can leave holes in the model. Wear gloves with liquid resin and work in a well ventilated space."
+        "Pour thick resin slowly and let it settle, as trapped bubbles can leave holes in the model. Wear nitrile gloves with liquid resin and work in a well ventilated space, as the resin's safety sheet says."
       ],
       "related": [
         "supporting-3d-prints",
@@ -5342,8 +5342,8 @@
       "summary": "Choose the right clear resin for the depth, seal the edges, tint sparingly and leave it alone to cure.",
       "body": [
         "One part water resin or gel suits small, shallow puddles but shrinks and leaves a dip, so pour several thin layers. It stays rubbery if poured deep.",
-        "Two part clear epoxy shrinks much less and suits pours deeper than a few millimetres. Mix more than you need, as the ratio is easier to hit and a wrong ratio may never set. Stir slowly to avoid bubbles. Deep pours can take days to harden.",
-        "UV curing resin is thick, easy to push around and sets in seconds under a UV torch or sunlight. Use it for puddles, drips and streams built in thin layers, not big deep pours.",
+        "Two part clear epoxy shrinks much less and suits pours deeper than a few millimetres. Mix more than you need, as the ratio is easier to hit and a wrong ratio may never set. Stir slowly to avoid bubbles. Deep pours can take days to harden. Wear nitrile gloves and keep uncured resin off your skin.",
+        "UV curing resin is thick, easy to push around and sets in seconds under a UV torch or sunlight. Use it for puddles, drips and streams built in thin layers, not big deep pours. Wear nitrile gloves and keep uncured resin off your skin.",
         "Paint everything that will sit under the water first; you can't reach it afterwards. Leave the upper parts of the base until after the pour. Real stones look natural under resin even unpainted.",
         "Where resin meets a base edge, wrap at least three tight layers of tape. For deep pours, build a wall of plastic card lined with acetate, sealed outside with hot glue that peels off cleanly. Set it at the final water height, or resin climbs it.",
         "Tint with a single drop of transparent ink in a lot of resin, or swirl in a brush that has touched the ink. Too much kills the depth. Clear layers over a tinted bottom layer look deep. For ripples, brush tinted gloss gel along the flow.",
@@ -5839,7 +5839,7 @@
         "Use a low heat or cool setting, keep it moving and don't hold it on the model for long. Too much heat can soften or warp plastic, and resin softens sooner still, so use less heat on it. Hold it well back from fresh paint so the liquid isn't blown around.",
         "Make sure a layer is fully dry before glazing over it, or you'll lift the layer below. Wet paint looks darker than dry, so dry a glaze before judging it.",
         "Let a wash settle into the recesses before drying it. Then let the model cool, or finish with cool air, before the next wash, glaze or one-coat paint. Runny paint on warm plastic dries on contact and leaves hard rings and tide marks.",
-        "A small heat gun on its lowest setting works too. Gentle heat also speeds up oil paints and enamels.",
+        "Keep a heat gun away from wet paint: it can warp parts, and oils and enamels still hold flammable solvent. Let those dry in a warm, well ventilated room instead.",
         "Don't heat wet glue, PVA and sand, or poured resin, as it can crack the basing or warp the model. Never drybrushes with it either: heat makes natural hair brittle, loosens the ferrule glue and bends synthetics. Keep rinse water and paint pots clear of the dryer.",
         "Working on another model or part while one dries is the simplest way to keep going."
       ],
@@ -5904,16 +5904,16 @@
       "key": "spray-booth",
       "category": "tools-prep",
       "title": "Setting up and using a spray booth",
-      "summary": "A booth's fan and filters pull overspray and fumes away so you can spray indoors; keep the filter clean.",
+      "summary": "A booth's fan and filters pull overspray away from you; vent it outside and keep the filter clean.",
       "body": [
-        "A spray booth is a hood with a fan and filters that pulls overspray and fumes away from you. Run its exhaust hose to a window adapter to send fumes outside; with no window, the filters alone may do for light use. Pick a size that fits the models you usually spray.",
+        "A spray booth is a hood with a fan and filters that pulls overspray away from you. Run its exhaust hose to a window adapter to vent outside. Pick a size that fits the models you usually spray.",
         "Switch the fan on before you start. Keep the nozzle inside the booth and your face outside it, and aim towards the back filter rather than the side walls.",
         "Put a turntable inside so you turn the model, not the airbrush, and paint doesn't pool on big flat areas. Hold models on a clip stand, cork or stick, and clamp small parts so the airflow doesn't blow them away.",
         "Don't crowd the booth: models in front shadow the ones behind, and small batches end up faster. Booths are dark, so use the built-in lights or point a clamp lamp inside.",
         "Keep pressure low, around 25 to 30 PSI for priming. Needing more usually means the primer is too thick.",
         "Leave the fan running at least 10 minutes after you stop. Freshly varnished models can sit inside with the fan on for 30 to 60 minutes, away from dust, bumps and pets.",
         "Test the pull with a hand-length strip of tissue at the front edge: it should snap in towards the filter. If not, soak the filter about an hour in warm soapy water, rinse, dry fully and refit. With heavy use, replace filters every two to three months. If a clean filter barely pulls, the fan may be failing.",
-        "Never spray flammable solvents in a hobby booth, as the fan motor can spark."
+        "Never spray aerosol cans or flammable solvents in a hobby booth, as the fan motor can spark. Only use paints the booth's maker says it suits."
       ],
       "related": [
         "airbrush-safety",
@@ -5941,7 +5941,7 @@
       "summary": "Shake the can well and spray short sweeping bursts from a sensible distance, stopping at a thin coat that keeps the detail.",
       "body": [
         "Warm the can in warm, not hot, water for a few minutes, then shake it for at least a minute or two. Warm, well mixed primer sprays more evenly, and a can that sputters often just needs the same again. A nearly empty can loses pressure for good and sprays grainy, so start with a fresh one; Spray can spitting, clogged or running low has more.",
-        "Wash, dry and assemble the model first, then fix it to a stick, or with tack on its underside to a strip of card, so you never touch it. Spray outdoors or somewhere well ventilated, wearing a mask, on mild, dry days of roughly 10 to 27 C, ideally nearer room temperature; check the can's label. Cold, damp or humid air gives fuzzy, grainy or orange peel results.",
+        "Wash, dry and assemble the model first, then fix it to a stick, or with tack on its underside to a strip of card, so you never touch it. Spray outdoors, wearing a mask, on mild, dry days of roughly 10 to 27 C, ideally nearer room temperature; check the can's label. Cold, damp or humid air gives fuzzy, grainy or orange peel results.",
         "Hold the can about 15 to 30 cm away, following the can's advice. Too close floods detail; too far and the paint dries in the air and lands gritty. In hot, dry air move a little closer, in humid air a little further.",
         "Start spraying beside the model, sweep across it and release past it, in short light passes. Turn the model, or stagger a batch on card so none shades another, and spray from all sides at a low and a high angle, underneath included.",
         "Spray the back first, so any problem shows there before it reaches the front.",
@@ -6154,11 +6154,11 @@
       "summary": "Warm a warped resin, plastic or soft metal part gently, bend it straight and hold it as it cools.",
       "body": [
         "Thin resin spears, blades and staffs often arrive warped. Wash resin in warm soapy water first to remove release agent.",
-        "Dip the warped part in hot water, from about 70 C up to just boiled, for 30 to 60 seconds, or warm it with a hair dryer, until it flexes slightly. Take care not to scald yourself.",
+        "Dip a warped resin part in hot water, from about 70 C, for 30 to 60 seconds, or warm it with a hair dryer, until it flexes slightly. Take care not to scald yourself. Keep plastic out of hot water, as polystyrene softens from about 80 C; use a hair dryer on it instead.",
         "Ease it straight with your fingers, holding it against a flat surface if that helps, and keep it there until it cools. Dipping it in cold water sets the shape faster. The same method makes small pose changes to legs or necks.",
         "For a spot you can't reach that way, press the warmed tip of a pair of metal tweezers against the resin and ease it round.",
         "Don't overheat resin. It can blister or give off fumes.",
-        "Thin plastic parts often soften enough under a hair dryer on its hottest setting. Thick plastic needs more heat; a heat gun works, but plastic goes from soft to melted quickly, so work slowly and check it often.",
+        "Thin plastic parts often soften enough under a hair dryer, so start on a low setting. Thick plastic needs more heat; a heat gun works if you hold it well back, but plastic goes from soft to melted quickly, so work slowly and check it often.",
         "Soft metal parts such as swords, horns and spikes can be warmed with a hair dryer and eased back in small steps. Don't bend the same spot back and forth repeatedly or it will snap. Flattened details such as squashed teeth can be recut with the tip of a sharp craft knife.",
         "Never leave models in a hot car. It can get hot enough inside to warp them."
       ],
@@ -6228,7 +6228,7 @@
         "Superglue grabs in seconds and bonds skin quickly, so dry-fit and line parts up before any glue goes on, and keep fingers clear of the joint.",
         "Glue on skin: don't pull. Dab on an acetone-based nail polish remover, wait for it to loosen, then peel gently.",
         "Glue on tools: a cotton bud with a little acetone cleans it off. Keep acetone well away from painted surfaces, as it strips paint.",
-        "A clogged metal nozzle can be cleared by briefly heating the metal tip with a lighter to burn off the dried glue. Never do this to a plastic nozzle.",
+        "Clear a clogged nozzle with a pin, or swap in a fresh one. Never heat it or use a flame: the glue's vapour is combustible and heat can set it off.",
         "Thin superglue soaks into cork, wood, paper and other porous materials before it can bond. Switch to a thick or gel type for these.",
         "Glue that stays wet is usually too much glue or a loose fit. Use less and get the parts closer together. Superglue needs a little moisture to set, so very dry air also slows it down.",
         "An accelerator spray sets superglue instantly when you can't wait or can't hold a part in place."
