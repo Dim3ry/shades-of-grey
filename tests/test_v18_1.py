@@ -57,9 +57,11 @@ def main():
         page.evaluate("document.getElementById('about').open = true")
         about = page.inner_text("#about")
         # LP1: How it works > About now carries the rights line instead of the fan-made notice (the Updates page still has the short note, checked below).
-        check("About says it is an independent app", "independent app" in about, about[:200])
+        # DC1: the rights line shows on the About tab only; How it works > About no longer repeats it, so these two read the About tab's line
+        rights = page.evaluate("document.getElementById('about-rights').textContent")
+        check("About says it is an independent app", "independent app" in rights and "independent app" not in about, rights[:200])
         check("About says not affiliated with Games Workshop or any paint maker",
-              "not affiliated with, endorsed by or sponsored by Games Workshop or any paint maker" in about)
+              "not affiliated with, endorsed by or sponsored by Games Workshop or any paint maker" in rights)
         check("About says no brand logos", "no brand logos" in about)
         check("About says other paint names belong to their makers", "belong to their makers" in about)
         for brand in ["Vallejo", "The Army Painter", "AK Interactive"]:
