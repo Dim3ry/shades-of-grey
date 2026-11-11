@@ -481,7 +481,7 @@ const BASING_TIPS = [
   { key: "resin-ice", group: "cold", name: "Deep resin ice", summary: "Clear resin over a mirror and tint for depth, with cracks on top",
     materials: ["Thin stick-on plastic mirror cut to the base shape", "Clear UV curing resin and a UV lamp", "Thinned blue and blue-black one-coat paints", "Gloss varnish and coarse sandpaper", "A tiny touch of white paint, for frosted ice", "Snow paste for the edges"],
     howto: [
-      "Cut the mirror to the base, stick it down, then spread a thin layer of resin to the edge and cure it.",
+      "Cut the mirror to fit, stick it down, then, in nitrile gloves, spread thin resin to the edge and cure it.",
       "Spray or glaze thin blue in light layers, with blue-black in one area to suggest deep water.",
       "Brush gloss on and work a wet brush over it so it dries cracked, then drag folded sandpaper across for scratches.",
       "For frosted ice, stir far less than a drop of white into clear resin and set it in hollows and at the foot of snow.",

@@ -2502,6 +2502,19 @@
       if (!quiet) showToast(`${gearLabel(g.name)} is back on your shopping list`);
     }
 
+    // ----- HS2: the short safety line and the Guides notice -----
+    // where-to-buy.js lists the Guides entries and Basing tips that touch sprays, solvents, glue, resin, heat or dust (HOBBY_SAFETY_KEYS).
+    // Each one gets one quiet line under its text, in Guides only. Mentor answers never show it. The notice is the longer wording for the
+    // top of the Guides home; Help has the same words (index.html, #help-safety).
+    const HOBBY_SAFETY_NOTICE = "Common hobby tips, not safety advice. Always follow the maker's instructions and safety sheet, and work somewhere well ventilated and safe.";
+    function buildSafetyLine(key, kind) {
+      if (typeof HOBBY_SAFETY_KEYS === "undefined" || !HOBBY_SAFETY_KEYS || !hasOwn(HOBBY_SAFETY_KEYS, String(key)) || HOBBY_SAFETY_KEYS[key] !== kind) return null;
+      const p = document.createElement("p");
+      p.className = "hint guides-safety-line";
+      p.dataset.safetyLine = key;
+      p.textContent = HOBBY_SAFETY_LINE;
+      return p;
+    }
     // ----- L1: Where to buy -----
     // A quiet closed fold-out under a Guides entry's text (and under a Basing tip, and under a Mentor answer whose best source is that
     // entry) when where-to-buy.js lists products for it. Each product type has plain search links, one per shop that sells every brand
@@ -15016,6 +15029,8 @@
       howTitle.textContent = "How to build it";
       box.append(summary, matTitle, basingPlainList("ul", door.id("basing-materials"), tip.materials),
                  howTitle, basingPlainList("ol", door.id("basing-howto"), tip.howto));
+      const safe = door.whereToBuy ? buildSafetyLine(tip.key, "basing") : null;   // HS2: Guides only, like the Where to buy fold-out
+      if (safe) box.appendChild(safe);
       const buy = door.whereToBuy ? buildWhereToBuy(tip.key, "basing", tip.name) : null;   // L1: in Guides, under the tip's text (not in the recipe card)
       if (buy) box.appendChild(buy);
       // the words for "Copy as text" (built as we go; the materials and how-to are only ever shown or copied, never put in a recipe)
@@ -17512,6 +17527,13 @@
       }
       nav.appendChild(lower);
       drawLower();
+      if (g.view === "home") {   // HS2: the safety notice, once, on the Guides home
+        const note = document.createElement("p");
+        note.className = "hint guides-safety-notice";
+        note.id = "guides-safety-notice";
+        note.textContent = HOBBY_SAFETY_NOTICE;
+        nav.appendChild(note);
+      }
 
       // ---- right: a category, or one entry
       if (g.view !== "home") {
@@ -17602,6 +17624,8 @@
             p.textContent = para;
             page.appendChild(p);
           }
+          const safe = buildSafetyLine(e.key, e.kind);   // HS2: one quiet line under the text (only for entries in HOBBY_SAFETY_KEYS)
+          if (safe) page.appendChild(safe);
           const buy = buildWhereToBuy(e.key, e.kind, e.title);   // L1: under the entry's text, closed (only for entries in where-to-buy.js)
           if (buy) page.appendChild(buy);
           // G2b: See also, a quiet row under the text: a small heading, then up to 3 entry titles as links, each opening through openGuide
@@ -22336,12 +22360,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=154".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=155".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v154";
+    const APP_VERSION = "v155";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;
@@ -22807,6 +22831,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v155", date: "11 Nov 2026", changes: [
+        "A clearer safety note on the Guides home and in Help, and a short reminder under guides about sprays, glue, resin and heat.",
+        "Safer advice on spray booths, filters, glue, acetone, heat and hot water.",
+      ] },
       { version: "v154", date: "11 Nov 2026", changes: [
         "Mentor now says plainly that it does not know when you ask about something unrelated to painting. Appearance and Themes in Settings starts folded.",
         "The rights line shows once, on About. The privacy page now says a visit-counting change takes effect the next time the app opens.",

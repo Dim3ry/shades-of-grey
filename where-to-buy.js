@@ -44,3 +44,27 @@ const WHERE_TO_BUY = {
   "texture-paint-bases": { kind: "basing", types: ["texture paint", "texture paste"] },
   "foam-bushes-and-shrubs": { kind: "basing", types: ["clump foliage", "scatter foliage"] },
 };
+
+// ===== HS2: the short safety line (plain data) =====
+// Entries that touch sprays, solvents, glue, resin, heat or dust show one quiet line under their text (Guides only, never under a
+// Mentor answer). HOBBY_SAFETY_KEYS = { entry key: kind }, kind "guide" (guides-data.js) or "basing" (basing-tips.js), the same idea as
+// WHERE_TO_BUY above. A key not listed here shows no line. The words are fixed: do not reword them here.
+const HOBBY_SAFETY_LINE = "Hobby tip, not safety advice. Follow the maker's instructions and ventilate well.";
+const HOBBY_SAFETY_KEYS = {
+  "acrylic-enamel-and-oil-paints": "guide", "airbrush-basics": "guide", "airbrush-paint-thinning": "guide",
+  "airbrush-priming": "guide", "airbrush-safety": "guide", "airbrushing-one-coat-paints": "guide",
+  "basing-glue-and-tools": "guide", "choosing-glue": "guide", "cutting-and-sealing-foam": "guide",
+  "disposing-of-paint-water": "guide", "dust-weathering": "guide", "enamel-washes": "guide",
+  "filament-3d-prints": "guide", "fix-basing-problems": "guide", "fix-glue-marks-and-fingerprints": "guide",
+  "fix-priming-problems": "guide", "fixing-building-mistakes": "guide", "gap-filling": "guide",
+  "gluing-strong-joints": "guide", "hobby-kit-pets-and-kids": "guide", "hobby-safety": "guide",
+  "keeping-solvents-safe": "guide", "model-materials-compared": "guide", "oil-blending": "guide",
+  "oil-washes": "guide", "painting-tank-tracks": "guide", "panel-lining": "guide", "pinning-parts": "guide",
+  "polymer-clay-sculpting": "guide", "preparing-3d-prints": "guide", "preparing-metal-models": "guide",
+  "resin-or-filament-printing": "guide", "resin-print-problems": "guide", "resin-printer-care": "guide",
+  "resin-printing-setup": "guide", "resin-water-effects": "guide", "spray-booth": "guide",
+  "spray-can-faults": "guide", "stripping-paint": "guide", "superglue-problems": "guide",
+  "taking-apart-old-models": "guide", "two-part-putty": "guide", "ultrasonic-cleaner": "guide",
+  "using-filters": "guide", "weathering-pigments": "guide",
+  "resin-ice": "basing", "cave-floor": "basing",
+};

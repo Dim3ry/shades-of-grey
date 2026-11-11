@@ -55,8 +55,8 @@
        (applyAppearance in app.js) takes over once the app starts.
        U6b: mentor-looks.js (the Mentor orb's three looks and five states, plain data: MENTOR_LOOKS and MENTOR_LOOKS_CSS) loads
        just before it, so early.js can put the chosen look and its styles on the page before the first frame (LR1). -->
-  <script src="mentor-looks.js?v=154"></script>
-  <script src="early.js?v=154"></script>
+  <script src="mentor-looks.js?v=155"></script>
+  <script src="early.js?v=155"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -3032,6 +3032,7 @@
     .guides-cats .guides-row { grid-template-columns: minmax(0, 1fr) auto auto; gap: 2px 8px; }   /* P1: title, count, then the Pro preview tag (AT-53: the thin accent bar on the left is gone) */
     .guides-cats .guides-row-title { white-space: normal; text-overflow: clip; overflow: visible; overflow-wrap: anywhere; }   /* P1: a long title wraps rather than being pushed off by the tag */
     .guides-free { margin: 0; font-size: 0.8125rem; color: var(--muted); }
+    .guides-safety-line, .guides-safety-notice { overflow-wrap: anywhere; }   /* HS2 */
     .guides-row[aria-current="true"] { border-color: var(--accent); background-color: var(--accent-wash); box-shadow: inset 4px 0 0 var(--accent); }
     .guides-row-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .guides-row-summary { grid-column: 1; font-size: 0.8125rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -3533,6 +3534,7 @@
     <section id="view-help" class="hidden">
       <div class="card" id="help-five">
         <h2>The basics</h2>
+        <p class="hint" id="help-safety">Common hobby tips, not safety advice. Always follow the maker's instructions and safety sheet, and work somewhere well ventilated and safe.</p>
         <ul class="five-list">
           <li>Add units in Models, then tap the arrows to move them through the stages.</li>
           <li>Painting holds recipes (one part of a model) and schemes (a whole army). Colour Lab suggests paints that go together, and you can add any to your shopping list.</li>
@@ -3681,7 +3683,6 @@
             <li id="help-similar-paints">In <strong>Colour Lab</strong>, those same paints also have <strong>Similar paints</strong>. It opens a pop-up with <strong>Best match</strong>: up to three paints from different brands, closest first, whether or not you own them. <strong>Lighter</strong> and <strong>Darker</strong> look for a lighter or darker colour. <strong>Your closest</strong> shows the nearest paints you own. When none is close, it may show <strong>Try mixing</strong>: one or two blends of two paints you own, with the parts to use. It is a rough guess from screen colours, so test it on a palette first. <strong>Add to recipe step</strong> puts the paints and the ratio into a recipe step, with an <strong>Undo</strong>. A paint you do not own can go on your shopping list. Varnishes, mediums, thinners and other paints that are not colours are never offered. On a phone the two cards are tabs (<strong>Best</strong> and <strong>Yours</strong>); on a wider screen they sit side by side.</li>
             <li id="help-ask-mentor"><strong>Paint Picker</strong> (Pro preview): in <strong>Painting → Colour Lab</strong>, or from the <strong>Paint Picker</strong> chip in <strong>Mentor</strong>. Choose a <strong>Base colour</strong>, a <strong>Second colour</strong> if you like, and a <strong>Part</strong> (Armour, Eyes, Weapon or Base). Under each colour you get up to three paints that go with it for that part, with the reason, and your own paints come first. A paint of yours that is a poor match says <strong>Yours, poor fit</strong>. Under the picks are tips for that part, with a link to the creator they credit. Each paint row has <strong>Use in a recipe</strong>, <strong>Add to a recipe</strong> and <strong>Similar paints</strong>, and a paint you do not own also has <strong>Add to shopping list</strong> and <strong>Shop links</strong>.</li>
             <li id="help-guides"><strong>Guides</strong> (in Tools): type in the search box, or tap a category, then a group, then an entry to open it. Related entries are buttons at the bottom of an entry. <strong>Back</strong> goes to the list you opened it from, where you left off. Long lists show 30 rows at a time: <strong>Show more</strong> adds the next 30. <strong>Detail recipes</strong> and <strong>Basing</strong> open on their first group, with <strong>All</strong> one tap away, and <strong>Filters</strong> folds the row of group buttons away or shows it again.</li>
-            <li id="help-safety">Guides and Mentor give general hobby tips, not professional safety advice. Always follow the maker's label and safety sheet.</li>
             <li id="help-compendium-ticks">In <strong>Colour Lab</strong> and <strong>Guides</strong>, tick the paints you want from a colour plan or detail recipe, or press <strong>Select all</strong>. <strong>Add to shopping list</strong> is grey until you tick something, then adds only the ticked paints. A paint you own, or that is already on the list, shows a mark instead of a tick box. <strong>Copy as text</strong> and <strong>Save into a new recipe</strong> use the ticked paints, or all of them if none is ticked.</li>
             <li><strong>Schemes</strong> (top of the Painting tab) group the recipes you use for one faction, e.g. "My Blue Army" = armour, trim, lenses and base. Press <strong>+ New scheme</strong>, name it and tick its recipes. The faction is filled in from the recipes you tick when they agree (or the last faction you used): <strong>Change</strong> picks another. <strong>Search recipes</strong> narrows the list, and <strong>Select all</strong> ticks a whole part.</li>
             <li>A scheme card lists its recipes as rows (name, part, steps, colour dots). Tap a row to open that recipe. A scheme with more than 3 recipes shows the first 3: tap <strong>Show all</strong> for the rest.</li>
@@ -4055,7 +4056,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=154" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=155" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -4068,16 +4069,16 @@
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks.
        G2a: guides-groups.js (the Guides topic groups, plain data) loads after guides-data.js. It only adds one
        name, GUIDE_GROUPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=154"></script>
-  <script src="schemes.js?v=154"></script>
-  <script src="detail-recipes.js?v=154"></script>
-  <script src="basing-tips.js?v=154"></script>
-  <script src="mentor-tips.js?v=154"></script>
-  <script src="guides-data.js?v=154"></script>
-  <script src="guides-groups.js?v=154"></script>
-  <script src="mentor-data.js?v=154"></script>
-  <script src="mentor-engine.js?v=154"></script>
-  <script src="where-to-buy.js?v=154"></script>
-  <script src="app.js?v=154"></script>
+  <script src="colour.js?v=155"></script>
+  <script src="schemes.js?v=155"></script>
+  <script src="detail-recipes.js?v=155"></script>
+  <script src="basing-tips.js?v=155"></script>
+  <script src="mentor-tips.js?v=155"></script>
+  <script src="guides-data.js?v=155"></script>
+  <script src="guides-groups.js?v=155"></script>
+  <script src="mentor-data.js?v=155"></script>
+  <script src="mentor-engine.js?v=155"></script>
+  <script src="where-to-buy.js?v=155"></script>
+  <script src="app.js?v=155"></script>
 </body>
 </html>
