@@ -81,9 +81,9 @@ def press(page, button):
 
 # FB3: the Backups (Which one?), Appearance (About looks), Shop links (Who gets what), Import (What can be imported) and Colours (About light mode)
 # folds were removed on purpose; Counting visits (What's sent), Stages, Faction colours and Your data remain.
+# DC1: "What's sent" (Counting visits) was removed on purpose too, so the checks below that used it now use the Stages fold ("About stages").
 SETTINGS_FOLDS = {
     "stages": ("#stages-explain", ["stages-explain"], "Rename, reorder"),
-    "counting": ("#counting-card", ["counting-note", "counting-effect"], "Takes effect"),
     "faction-colours": ("#faction-colours-card", ["faction-colour-hint"], None),
     "your-data": ("#restore-examples", ["data-summary", "photo-summary", "storage-note", "restore-examples-hint"], None),
 }
@@ -169,17 +169,17 @@ def main():
         check("each one's panel holds the lines it should (they moved, they were not copied)",
               page.evaluate("(spec) => Object.entries(spec).every(([k, ids]) => ids.every(id => { const e = document.getElementById(id); return e && e.closest('#more-' + k) && document.querySelectorAll('#' + id).length === 1; }))",
                             {k: v[1] for k, v in SETTINGS_FOLDS.items()}))
-        check("closed, the explanations are hidden", not any(page.locator(f"#{i}").is_visible() for i in ("counting-note", "data-summary", "stages-explain")))
+        check("closed, the explanations are hidden", not any(page.locator(f"#{i}").is_visible() for i in ("data-summary", "stages-explain")))
         check("the Backups buttons stay in view, closed, and are at least 44 px tall",
               all(page.locator(f"#{i}").is_visible() and height(page, f"#{i}") >= 43.5 for i in ("export-button", "share-button", "full-export-button", "full-share-button", "restore-button")))
         check("the last-backup line stays visible", page.locator("#backup-age").is_visible())
         check("the other controls stay in view: the Appearance buttons, the counting and shop links boxes, Save stages and Delete all units",
               all(page.locator(s).first.is_visible() for s in ("#appearance-card .chip", "#count-visits", "#show-shop-links", "#save-stages", "#delete-all", "#clean-photos", "#restore-examples", "#csv-button")))
         before = v51.all_local(page)
-        press(page, page.locator('[aria-controls="more-counting"]'))
-        check("opening the Counting visits fold shows the explanation and the button keeps its name, What's sent",   # AB10; FB3: was the Backups fold
-              page.locator("#counting-effect").is_visible() and
-              page.get_attribute('[aria-controls="more-counting"]', "aria-expanded") == "true" and text(page, '[aria-controls="more-counting"]') == "What's sent")
+        press(page, page.locator('[aria-controls="more-stages"]'))
+        check("opening the Stages fold shows the explanation and the button keeps its name, About stages",   # AB10; FB3: was the Backups fold; DC1: was the Counting visits one
+              page.locator("#stages-explain").is_visible() and
+              page.get_attribute('[aria-controls="more-stages"]', "aria-expanded") == "true" and text(page, '[aria-controls="more-stages"]') == "About stages")
         press(page, page.locator('[aria-controls="more-your-data"]'))
         check("opening Your data More info shows the summary and the restore-examples line", page.locator("#data-summary").is_visible() and page.locator("#restore-examples-hint").is_visible())
         check("the summary still has its numbers (the code still writes into it)", re.search(r"\d+ units", text(page, "#data-summary") or "") is not None, text(page, "#data-summary"))
@@ -187,7 +187,7 @@ def main():
         # FB3: the Appearance note check was removed with the "About looks" fold
         more_page(page, "help")
         more_page(page, "settings")
-        check("More info stays open when you leave the page and come back (kept while the app is open)", page.get_attribute('[aria-controls="more-counting"]', "aria-expanded") == "true")
+        check("More info stays open when you leave the page and come back (kept while the app is open)", page.get_attribute('[aria-controls="more-stages"]', "aria-expanded") == "true")   # DC1: was more-counting
         w.load(page, paints=[], recipes=[], units=t.UNITS)
         more_page(page, "settings")
         check("after a reload every Settings More info is closed again",
@@ -284,9 +284,9 @@ def main():
                       t.no_sideways(page) and all(height(page, f"#{i}") >= 43.5 and page.locator(f"#{i}").bounding_box()["x"] >= -0.5 and
                       page.locator(f"#{i}").bounding_box()["x"] + page.locator(f"#{i}").bounding_box()["width"] <= width + 0.5
                       for i in ("export-button", "share-button", "full-export-button", "full-share-button", "restore-button")))
-                press(page, page.locator('[aria-controls="more-counting"]'))   # FB3: was the Backups fold
-                low = v51.contrast(page, '[aria-controls="more-counting"]')
-                hint = v51.contrast(page, "#counting-effect", "color", False)
+                press(page, page.locator('[aria-controls="more-stages"]'))   # FB3: was the Backups fold; DC1: was the Counting visits fold
+                low = v51.contrast(page, '[aria-controls="more-stages"]')
+                hint = v51.contrast(page, "#stages-explain", "color", False)
                 check(f"{tag}: Settings, the More info text and the explanation inside it have contrast of at least 4.5", low >= 4.5 and hint >= 4.5, (low, hint))
                 if width == 390: t.shot(page, f"v52-settings-{mode}.png")
                 more_page(page, "help")

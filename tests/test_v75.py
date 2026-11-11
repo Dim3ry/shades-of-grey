@@ -75,7 +75,8 @@ def main():
         load(page, units=[])
         open_settings(page)
         page.wait_for_timeout(150)
-        check("Counting visits note is just On or Off", page.text_content("#counting-note").strip() in ("On.", "Off."), page.text_content("#counting-note"))
+        # DC1: the On/Off note was removed with the "What's sent" fold; the tick box shows the state
+        check("Counting visits has no note under the switch", page.locator("#counting-note").count() == 0 and page.locator("#count-visits").count() == 1)
         # FB3: the Shop links note (On. or Off.) was removed with its "Who gets what" fold, so only the Counting visits note is checked
         check("the Backups card has no share hint", page.locator("#share-hint").count() == 0)
 

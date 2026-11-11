@@ -67,7 +67,7 @@ def main():
             wait_settled(page)
             v = credits_in_view(page)
             check(f"{sel} scrolls to the Credits heading, clear of the header", v["about"] and v["top"] >= v["bar"] and v["top"] < v["vh"], v)
-        for sel in ("#help-credits-link", "#help-rights-credits"):
+        for sel in ("#help-credits-link",):   # DC1: the second rights line (#help-rights-credits) was removed; About keeps the only one
             open_page(page, "help")
             page.evaluate("() => { document.querySelectorAll('#view-help details').forEach(d => d.open = true); }")
             page.locator(sel).scroll_into_view_if_needed()
@@ -87,7 +87,7 @@ def main():
             check(f"'{gone}' is gone from Settings", gone not in text)
         check("their elements and Help words that only served them are gone", page.evaluate(
             "() => ['backup-explain','appearance-note','palette-light-note','import-explain','shoplinks-note'].every(i => !document.getElementById(i))"))
-        check("'What's sent' stays (stopped on: it says when the switch takes effect, which Help does not)", "What's sent" in text and "Takes effect the next time the app opens" in text)
+        check("'What's sent' is gone (DC1, on purpose: the one fact it held, when the switch takes effect, is on the privacy page now)", "What's sent" not in text and "Takes effect the next time the app opens" not in text)
         check("the Privacy link sits under the Counting visits switch and opens the privacy page in a new tab", page.evaluate(
             "() => { const l = document.getElementById('settings-privacy-link'); const c = document.getElementById('counting-card');"
             " return c.contains(l) && l.getAttribute('href') === 'privacy' && l.target === '_blank' && l.rel === 'noopener noreferrer'; }"))

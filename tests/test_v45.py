@@ -76,8 +76,11 @@ def main():
         check("Privacy names Cloudflare as the site's host", "(Cloudflare) sees basic technical details" in privacy, privacy[-300:])
         check("Privacy no longer names GitHub Pages", "GitHub" not in privacy, privacy[-300:])
         about = page.inner_text("#about")
-        check("About still says it is an independent app (LP1 wording), and that data stays on the device",
-              "independent app" in about and "Your data stays on this device" in about)   # LP1: the rights line replaced the fan-made notice
+        # DC1 (v154): the rights line ("independent app") shows once, on the About tab (#about-rights), not in the How it works > About fold any more,
+        # so the independent-app check reads the About tab's line and the data-stays-on-the-device check still reads the fold.
+        about_tab = page.evaluate("() => { const e = document.getElementById('about-rights'); return e ? e.textContent : ''; }")
+        check("About says it is an independent app (LP1 wording, now on the About tab only), and the fold says data stays on the device",
+              "independent app" in about_tab and "independent app" not in about and "Your data stays on this device" in about, about_tab[:120])
 
         print("\n--- 4. Settings page unchanged ---")
         # T6: read git's output as UTF-8 (on Windows the default code page could not read it and printed an error)
