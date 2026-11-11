@@ -359,6 +359,8 @@ def main():
         # the typing rule, on the Settings page
         sub_tab(page, "settings")
         check("the tab bar shows to start with", not tabs_hidden(page) and not typing(page))
+        # DC1: Appearance and Themes now starts folded each time Settings opens (leaving Settings and coming back shuts it), so open it first
+        page.evaluate("() => { const b = document.getElementById('card-fold-appearance-themes-button'); if (b && b.getAttribute('aria-expanded') !== 'true') b.click(); }")
         page.click("#stage-list input")
         page.wait_for_timeout(150)
         check("a text box on Settings has the cursor: the bar steps aside", typing(page) and tabs_hidden(page))
@@ -367,6 +369,8 @@ def main():
         check("tapping Help in the switch while typing works", shown_views(page) == ["help"], shown_views(page))
         check("…and the bar comes back (the cursor left the box)", not tabs_hidden(page) and not typing(page))
         sub_tab(page, "settings")
+        # DC1: Appearance and Themes now starts folded each time Settings opens (leaving Settings and coming back shuts it), so open it first
+        page.evaluate("() => { const b = document.getElementById('card-fold-appearance-themes-button'); if (b && b.getAttribute('aria-expanded') !== 'true') b.click(); }")
         page.click("#stage-list input")
         page.wait_for_timeout(150)
         blur(page)

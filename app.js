@@ -5129,13 +5129,14 @@
       const small = document.createElement("p"); small.className = "hint"; small.textContent = THANKS_SMALL; box.appendChild(small);
     }
     // FB3: every old link to the Credits page opens About and scrolls to its Credits section (showTab("credits") does both).
-    for (const id of ["about-credits-link", "help-credits-link", "about-rights-credits", "help-rights-credits"]) document.getElementById(id).addEventListener("click", () => showTab("credits"));
+    for (const id of ["about-credits-link", "help-credits-link", "about-rights-credits"]) document.getElementById(id).addEventListener("click", () => showTab("credits"));
 
     let versionFrom = null;   // FB1: the screen the version button was tapped on, so Back can return there
     function showTab(name, how) {
       const toCredits = name === "credits";   // FB3
       name = tabAlias(name);
       if (name !== "updates") versionFrom = null;
+      if (name === "settings" && tabAlias(settings.tab) !== "settings") { const fold = cardFolds.get("appearance-themes"); if (fold) fold(false); }   // DC1: Appearance and Themes starts folded each time Settings opens (nothing saved)
       if (!hasOwn(views, name)) name = "dashboard";
       const before = launching ? null : (hasOwn(views, tabAlias(settings.tab)) ? tabAlias(settings.tab) : null);
       const move = canMove() && before !== name && (before === null || barOf(before) !== barOf(name)) ? (how === "slide" && before ? "slide" : "fade") : "";
@@ -13753,7 +13754,6 @@
     function foldPageText() {
       const groups = [
         ["stages", "About stages", ["stages-explain"]],
-        ["counting", "What's sent", ["counting-note", "counting-effect"]],
         ["faction-colours", "About faction colours", ["faction-colour-hint"]],
         ["your-data", "Where it is kept", ["data-summary", "photo-summary", "storage-note", "restore-examples-hint"]],
         ["feedback", "Who reads it", ["feedback-explain"]],
@@ -22778,9 +22778,6 @@
     const countingBox = document.getElementById("count-visits");
     function showCountingChoice() {
       countingBox.checked = countingIsOn();
-      document.getElementById("counting-note").textContent = countingIsOn()
-        ? "On."
-        : "Off.";
     }
     countingBox.addEventListener("change", () => {
       settings.countVisits = countingBox.checked;

@@ -129,6 +129,8 @@ def run(viewport, label):
         leave_launch(page)   # U4b (v89): a reload shows the start page; tap through to the saved section, as before
         dialogs.clear()
         page.evaluate("() => { draft.splice(1, 1); renderStageEditor(); }")   # remove "Part assembled"
+        # DC1: Appearance and Themes (where Save stages lives) now starts folded each time Settings opens, so open it before the tap
+        page.evaluate("() => { const b = document.getElementById('card-fold-appearance-themes-button'); if (b && b.getAttribute('aria-expanded') !== 'true') b.click(); }")
         page.click("#save-stages")
         page.wait_for_timeout(200)
         m = stored()
@@ -301,7 +303,10 @@ def run(viewport, label):
         page.click('#more-seg button[data-page="help"]')
         page.click("#about summary")
         about = page.inner_text("#about")
-        check(f"{label} 11b About has the rights line (LP1 replaced the fan-made notice: it says independent) and contact", "independent app" in about and "not affiliated with, endorsed by or sponsored by Games Workshop" in about and "Contact" in about)
+        # DC1: the rights line shows on the About tab only, so How it works > About no longer holds it; its contact line stays
+        check(f"{label} 11b How it works > About has its contact line and no second rights line", "Contact" in about and "independent app" not in about and "All rights reserved" not in about)
+        rights = page.evaluate("document.getElementById('about-rights').textContent")
+        check(f"{label} 11b the About tab's rights line says independent and not affiliated", "independent app" in rights and "not affiliated with, endorsed by or sponsored by Games Workshop" in rights)
         page.locator("#about").scroll_into_view_if_needed()
         page.screenshot(path=f"{SHOTS}/{label}-about.png")
         open_settings(page)

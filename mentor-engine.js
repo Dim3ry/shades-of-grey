@@ -789,6 +789,16 @@
     "into as up still ever use using much all everything stuff things models units collection recipes schemes photos paints list lists progress settings " +
     "pls plz please thx u ur lol ok okay so basically um anyone where anywhere else my mine hey guys quick question random noob sorry dumb one").split(" "));
   const PAINTING_WORDS = new Set("paint painting painted paints miniature miniatures mini minis figure figures colour colours color colors brush brushes".split(" "));
+  // DC1: everyday words that have nothing to do with the hobby ("fix my car"). A question that holds one, and that no guide, Help topic or
+  // Colour Lab answer fits strongly, gets the plain "I do not know that yet." with no chips. Each word is here only because it has no hobby
+  // meaning: words that do (recipe, scheme, base, army, brush, wash, primer, house, garden, phone) are left out on purpose. The plural
+  // forms are read as the word itself (see isNonHobby).
+  const NON_HOBBY = new Set(("car tax mortgage football holiday insurance pension salary loan bank flight hotel passport visa weather cricket " +
+    "rugby tennis golf election politics lottery bitcoin diet gym pizza pasta coffee boiler plumber petrol diesel tyre horoscope taxi wedding divorce").split(" "));
+  function isNonHobby(text) {
+    const words = String(text).toLowerCase().replace(/['\u2019]/g, "").match(/[a-z]+/g) || [];
+    return words.some((w) => NON_HOBBY.has(w) || (w.length > 3 && w.endsWith("s") && NON_HOBBY.has(w.slice(0, -1))));
+  }
   const APP_WORDS = new Set(["you", "it", "this", "the", "my", "is", "do", "to", "for", "how", "can", "i"]);
   for (const t of APP_TOPICS) for (const p of [...t.alone, ...t.with, ...t.only]) for (const w of p.split(" ")) APP_WORDS.add(w);
   for (const p of APP_NAMES) for (const w of p.split(" ")) APP_WORDS.add(w);
@@ -921,6 +931,10 @@
     }
     const syn = prepared(index.entries, data).syn;
     const read = readColourQuestion(text, syn);
+    // DC1: an everyday non-hobby word and no strong match anywhere (a guide, a Help topic, an app answer or a colour question): plain "do not know", no chips
+    if (!app && !found.starter && !read.colours.length && isNonHobby(text) && !((found.hits[0] ? found.hits[0].score : 0) >= BAND.clear)) {
+      return { kind: "none", lead: "I do not know that yet.", sources: [], suggestions: [] };
+    }
     const howPaint = howToPaintAt(found.words) >= 0;   // AB12 (m)
     const main = mainNoun(found.words), noun = main.noun;   // AB12 (n)
 

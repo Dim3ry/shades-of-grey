@@ -325,6 +325,8 @@ def main():
             sub_tab(page, name)
         check("the Settings / Help / Updates switch still moves between the three", page.evaluate("() => settings.tab") == "settings")
         page.click("#stage-list li input, #stage-list li button", timeout=3000) if False else None
+        # DC1: Appearance and Themes now starts folded each time Settings opens (leaving Settings and coming back shuts it), so open it first
+        page.evaluate("() => { const b = document.getElementById('card-fold-appearance-themes-button'); if (b && b.getAttribute('aria-expanded') !== 'true') b.click(); }")
         page.click("#view-settings #stage-list input")
         page.wait_for_timeout(200)
         check("the tab bar still hides while a text box on Settings has the cursor",

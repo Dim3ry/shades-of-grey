@@ -231,15 +231,13 @@ def main():
         main_tab(page, "settings")
         box = page.locator("#count-visits")
         check("the tick box is ticked by default", box.is_checked())
-        note_on = page.inner_text("#counting-note")
-        # v75: the note says just On (the detail is in Help, Privacy)
-        check("the note says it is on and what is sent", note_on == "On.", note_on)
+        # DC1: the On/Off note and the "What's sent" fold are gone on purpose (the tick box says it); the facts are on the privacy page
+        check("there is no On/Off note under the switch", page.locator("#counting-note").count() == 0)
         counter["hits"].clear()
         page.click("#counting-card .count-label")
         page.wait_for_timeout(300)
         check("tapping the words unticks the box", not box.is_checked())
         check("the choice is saved (false)", saved_settings(page).get("countVisits") is False, saved_settings(page))
-        check("the note says it is off", page.inner_text("#counting-note").startswith("Off."), page.inner_text("#counting-note"))
         check("switching it off sends nothing", counter["hits"] == [], counter["hits"])
         reload(page)
         check("after a reload it stays off and asks GoatCounter for nothing", counter["hits"] == [] and not page.locator("#count-visits").is_checked(), counter["hits"])
@@ -359,10 +357,10 @@ def main():
                 col = page.evaluate("""() => { const bg = (el) => { let e = el; while (e) { const v = getComputedStyle(e).backgroundColor;
                         if (v && v !== 'rgba(0, 0, 0, 0)' && v !== 'transparent') return v; e = e.parentElement; } return 'rgb(0,0,0)'; };
                     const card = document.getElementById('counting-card');
-                    return { label: getComputedStyle(card.querySelector('.count-label')).color, note: getComputedStyle(document.getElementById('counting-note')).color,
-                             bg: bg(card) }; }""")
-                check(f"{tag}: the words and the note are readable (contrast at least 4.5)",
-                      contrast(rgb(col["label"]), rgb(col["bg"])) >= 4.5 and contrast(rgb(col["note"]), rgb(col["bg"])) >= 4.5, col)
+                    return { label: getComputedStyle(card.querySelector('.count-label')).color,
+                             bg: bg(card) }; }""")   # DC1: the note under the switch was removed, so only the label is checked
+                check(f"{tag}: the words are readable (contrast at least 4.5)",
+                      contrast(rgb(col["label"]), rgb(col["bg"])) >= 4.5, col)
                 if width == 390:
                     shot(page, f"v27-counting-card-{appearance}-390.png")
         page.set_viewport_size({"width": 390, "height": 844})

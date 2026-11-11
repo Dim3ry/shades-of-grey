@@ -96,10 +96,9 @@ def main():
         page.click('#more-seg button[data-page="help"]')
         page.evaluate("document.getElementById('about').open = true")
         help_about = re.sub(r"\s+", " ", page.inner_text("#about"))
-        check("How it works > About has the rights line where the fan-made notice was",
-              rights_start in help_about and "Unofficial fan-made app, not affiliated" not in help_about and "No Games Workshop artwork, rules, points or stats" in help_about)
-        page.click("#help-rights-credits")
-        check("'their own licences' in How it works opens About at the Credits section", page.is_visible("#view-credits") and page.is_visible("#view-about"))   # FB3
+        # DC1: George decided the rights line shows on the About tab only, so How it works > About no longer repeats it (the GW line stays)
+        check("How it works > About has no second rights line, and keeps the no-artwork line",
+              rights_start not in help_about and "All rights reserved" not in help_about and "Unofficial fan-made app, not affiliated" not in help_about and "No Games Workshop artwork, rules, points or stats" in help_about)
         check("the page footer's 'their own licences' link goes to the app's Credits page",
               'id="rights-credits-link" href="./#credits"' in PAGE and re.search(r"under <a [^>]*>their own licences</a>\.", PAGE) is not None)
 
