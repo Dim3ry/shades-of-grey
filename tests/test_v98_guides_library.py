@@ -68,7 +68,7 @@ def main():
         check("with no guide entries, only Detail recipes and Basing show, with counts",
               [x.replace("Pro preview", "").rstrip("0123456789") for x in texts(page, ".guides-cats .guides-row")] == ["Detail recipes", "Basing"]   # P1: each row ends with its Pro preview tag
               and all(re.search(r"\d+Pro preview\d$", x) for x in texts(page, ".guides-cats .guides-row")), texts(page, ".guides-cats .guides-row"))   # G2a: the section number (1 to 6) now ends the row
-        check("no heading or sentence under the search box on the home list", page.locator(".guides-nav h3, .guides-nav p:not(.guides-free)").count() == 0)   # P1: the one line George asked for, "Free while in preview.", is allowed
+        check("no heading or sentence under the search box on the home list", page.locator(".guides-nav h3, .guides-nav p:not(.guides-free):not(.guides-safety-notice)").count() == 0)   # v155 (HS2): the one safety notice is allowed too   # P1: the one line George asked for, "Free while in preview.", is allowed
         put(page, SAMPLES["guides"], SAMPLES["starters"])
         guides(page)
         # G2a: the row also ends with its section number now, so the name and the count are read from their own parts

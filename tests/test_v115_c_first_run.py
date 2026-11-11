@@ -78,7 +78,8 @@ def main():
         check("heading is The basics (AB3 renamed it)", page.inner_text("#help-five h2").strip() == "The basics")
         items = page.eval_on_selector_all("#help-five ul > li", "els => els.map(e => e.textContent.trim())")
         check("the four lines are exactly as written (AB3: four plain bullets, Colour Lab folded into the second)", items == FIVE, items)
-        check("nothing else is in the card", page.evaluate("() => [...document.querySelectorAll('#help-five > *')].map(e => e.tagName).join()") == "H2,UL")
+        # v155 (HS2): the safety notice (#help-safety) now sits between the heading and the list, so the card is H2, P, UL. Nothing else may be added.
+        check("nothing else is in the card", page.evaluate("() => [...document.querySelectorAll('#help-five > *')].map(e => e.tagName).join()") == "H2,P,UL")
 
         print("\n--- 4. What Done means ---")
         # (saved units with no saved settings get the old 5 stages, so the default 8 are seeded on purpose)
