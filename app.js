@@ -6598,15 +6598,17 @@
         t.textContent = content;
         svg.appendChild(t);
       };
-      text(mainText, centre + (subText ? 2 : 6), size * 0.17, "var(--text)", 700);
-      if (subText) text(subText, centre + size * 0.15, size * 0.09, "var(--muted)", 400);
+      // DB1: with a second line ("Done") both lines are the same font, size and weight, stacked round the middle.
+      if (subText) {
+        const f = size * 0.16;
+        text(mainText, centre - f * 0.165, f, "var(--text)", 700);
+        text(subText, centre + f * 0.885, f, "var(--text)", 700);
+      } else text(mainText, centre + 6, size * 0.17, "var(--text)", 700);
       return svg;
     }
 
     // ----- Dashboard -----
 
-    const donePercent = document.getElementById("done-percent");
-    const doneSummary = document.getElementById("done-summary");
     const todoButton = document.getElementById("todo-button");
     const doneButton = document.getElementById("done-button");
     const repaintLink = document.getElementById("repaint-link");
@@ -6652,22 +6654,8 @@
       const todo = total - done;
       const percent = total ? Math.round(done / total * 100) : 0;
 
-      // v46: a collection that is built and primed but not finished used to read "0%" and "0 of 9 done", as if
-      // nothing had happened. "Under way" counts models past the first stage that are not done yet, so the
-      // headline line also shows that progress (left out while it is 0, so a brand-new collection reads as before).
-      const underWay = stageCounts(models).reduce((sum, c, i) => sum + (i >= 1 && !isDone(i) ? c : 0), 0);
-      donePercent.textContent = total ? `${percent}%` : "–";
-      doneSummary.textContent = total
-        ? `${done} of ${plural(total, "model")} done · ${underWay ? `${underWay} under way · ` : ""}${plural(models.length, "unit")}`
-        : "No units yet.";
-
-      // C5: say what "done" means, using the real name of the first stage that counts (so renamed or reordered stages stay right).
-      // Hidden when there are no units or that stage has no name.
-      const doneName = String(STAGES[settings.doneFrom] || "").trim();
-      const doneMeaning = document.getElementById("done-meaning");
-      doneMeaning.textContent = doneName ? `Done means ${doneName}${settings.doneFrom < STAGES.length - 1 ? " or later" : ""}.` : "";
-      doneMeaning.classList.toggle("hidden", !total || !doneName);
-
+      // DB1: the big stand-alone percentage and the "340 of 362 models done" and "Done means" lines are gone; the ring says it
+      // (percentage over "Done"). The "under way" and "units" counts are no longer shown on the page.
       todoButton.innerHTML = "";
       todoButton.append(Object.assign(document.createElement("strong"), { textContent: todo }), "models to do");
       doneButton.innerHTML = "";
@@ -6746,7 +6734,7 @@
           button.append(text);
         } else {
           button.append(
-            donutChart(stageCounts(group), 92, 14, `${pct}%`, "", `${faction || "No faction"}: ${pct}% done`),
+            donutChart(stageCounts(group), 92, 14, `${pct}%`, "Done", `${faction || "No faction"}: ${pct}% done`),
             name, small);
         }
         button.addEventListener("click", () => goToUnits({ faction }));
@@ -13841,7 +13829,8 @@
     // The card is shut every time the app opens; whether it is open is kept here, in memory, only while the app is open. Nothing is saved.
     const openCards = new Set();
     const cardFolds = new Map();
-    function foldCard(card, key) {
+    // DB1: o.saved = a settings name; the card then starts as saved there (nothing saved = shut) and keeps each tap there.
+    function foldCard(card, key, o) {
       const heading = card && card.querySelector(":scope > h2");
       if (!heading || cardFolds.has(key)) return;
       const panel = document.createElement("div");
@@ -13867,9 +13856,12 @@
         button.setAttribute("aria-expanded", String(isOpen));
         panel.hidden = !isOpen;
       };
-      button.addEventListener("click", () => show(!openCards.has(key)));
+      button.addEventListener("click", () => {
+        show(!openCards.has(key));
+        if (o && o.saved) { settings[o.saved] = openCards.has(key); saveSettings(); }
+      });
       cardFolds.set(key, show);
-      show(openCards.has(key));
+      show(o && o.saved ? settings[o.saved] === true : openCards.has(key));
     }
     function openCardFold(key) { const show = cardFolds.get(key); if (show) show(true); }
     // v53: the same for any other native fold (Parts and techniques, Edit details, Colour ideas, Show as a table): the title tells screen
@@ -22417,12 +22409,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=157".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=158".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v157";
+    const APP_VERSION = "v158";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;
@@ -22888,6 +22880,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v158", date: "12 Nov 2026", changes: [
+        "The Dashboard is now called Nexus. Its top card is one card, with the ring showing the percentage over Done, and the stage list folds into a Stages row that starts shut.",
+        "The progress graph is now called Progress timeline, and each army doughnut says Done.",
+      ] },
       { version: "v157", date: "12 Nov 2026", changes: [
         "Recipes, basing tips and three guides now show a row of colour dots under their title, dark to light, with a ring on wash and glaze steps.",
         "Help explains what the dots are.",
@@ -23421,6 +23417,7 @@
     foldPageText();   // v52
     addRecipeSchemeExplainers();   // S1
     markHelpFolds();   // v52
+    foldCard(document.getElementById("stage-card"), "stage-legend", { saved: "stagesOpen" });   // DB1: the Stages row under the top card
     foldCard(document.getElementById("faction-colours-card"), "faction-colours");   // v53
     foldCard(document.getElementById("recipe-prefs-card"), "recipe-prefs");   // RS2
     foldCard(document.getElementById("brands-card"), "paint-brands");   // v53

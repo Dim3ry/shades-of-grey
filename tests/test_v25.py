@@ -381,10 +381,10 @@ def main():
         press_examples(page, "clear")
         page.wait_for_timeout(250)
         check("clearing the examples leaves the feedback card alone", card_shown(page))
-        check("the headline numbers are still on the Dashboard under the cards", page.is_visible("#done-percent"))
+        check("the headline numbers are still on the Dashboard under the cards", page.is_visible("#overall-chart"))
         page.click("#feedback-card .feedback-later")
         page.wait_for_timeout(250)
-        check("answering it leaves the Dashboard as it was", not card_shown(page) and page.is_visible("#done-percent"))
+        check("answering it leaves the Dashboard as it was", not card_shown(page) and page.is_visible("#overall-chart"))
         check("no sideways scroll", no_sideways(page))
 
         # ---------- 12. Help and Updates ----------

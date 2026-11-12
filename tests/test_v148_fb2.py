@@ -21,8 +21,8 @@ TOAST = """() => { const x = document.getElementById('toast'), u = document.getE
   return { shown: !x.classList.contains('hidden'), text: document.getElementById('toast-text').textContent, undo: !u.classList.contains('hidden'), label: u.textContent,
            life: x.style.getPropertyValue('--toast-life'), bottom: r.bottom, tabsTop: tabs.top, undoH: ur.height, undoW: ur.width,
            sideways: document.documentElement.scrollWidth > document.documentElement.clientWidth }; }"""
-STATE = """() => ({ names: models.map(m => m.name + ':' + m.count + ':' + (m.copy || '')), done: document.getElementById('done-percent').textContent,
-                  summary: document.getElementById('done-summary').textContent })"""
+STATE = """() => ({ names: models.map(m => m.name + ':' + m.count + ':' + (m.copy || '')), done: document.querySelector('#overall-chart svg text').textContent,   // DB1: the ring's percentage (the big stand-alone one is gone)
+                  summary: document.getElementById('done-button').textContent })   // DB1: the models-done tile"""
 
 def add(page, name, count=1, game="40k", faction="Marines"):
     if page.locator("#add-form.hidden").count(): page.click("#toggle-add")

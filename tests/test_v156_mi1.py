@@ -19,7 +19,7 @@ SHAPES = {
     "recipes": "M12 3.5a8.5 8.5 0 1 0 0 17",
     "guides": '<path d="M3 5.5c3-1 6-.8 9 1 3-1.8 6-2 9-1V19c-3-1-6-.8-9 1-3-1.8-6-2-9-1z"/><path d="M12 6.5V20"/>',
 }
-NAMES = {"dashboard": "Dashboard", "units": "Models", "recipes": "Painting", "guides": "Tools"}
+NAMES = {"dashboard": "Nexus", "units": "Models", "recipes": "Painting", "guides": "Tools"}
 INFO = """() => Object.fromEntries([...document.querySelectorAll('.arc > [data-tab]')].map(b => {
     const s = b.querySelector('.icon svg'), r = s.getBoundingClientRect(), br = b.getBoundingClientRect(), cs = getComputedStyle(s);
     return [b.dataset.tab, { html: s.innerHTML.replace(/><\/(rect|path|circle)>/g, '/>'), name: b.getAttribute('aria-label') || b.textContent.trim(), hidden: s.getAttribute('aria-hidden'),

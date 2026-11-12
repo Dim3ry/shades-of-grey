@@ -171,7 +171,8 @@ def main():
                 check(f"{appearance} {width}px: every tab button is at least 44 px tall and wide", min(heights) >= 44 and min(widths) >= 44, [heights, widths])
                 labels = page.evaluate("""() => [...document.querySelectorAll('nav.tabs button[data-tab]')].map(b =>
                     [...b.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim())""")
-                check(f"{appearance} {width}px: the labels read Dashboard, Models, Painting, Compendium", labels == ["Dashboard", "Models", "Painting", "Tools"], labels)   # X2: the fourth says Tools # U3: Painting. U4a: Units is now Models and Settings is the cog
+                check(f"{appearance} {width}px: the labels read Dashboard, Models, Painting, Compendium", labels == ["Nexus", "Models", "Painting", "Tools"], labels)   # DB1: the Dashboard is now called Nexus (the tab id stays "dashboard")
+                #   # X2: the fourth says Tools # U3: Painting. U4a: Units is now Models and Settings is the cog
                 fits = page.evaluate("""() => [...document.querySelectorAll('nav.tabs button[data-tab]')].every(b => b.scrollWidth <= b.clientWidth + 1)""")
                 check(f"{appearance} {width}px: no label is cut off", fits)
                 check(f"{appearance} {width}px: nothing scrolls sideways", no_sideways(page))
@@ -350,12 +351,12 @@ def main():
             return page.evaluate(f"() => document.getElementById('{i}') ? document.getElementById('{i}').textContent : ''")
         tabs_text = help_text("help-tabs")
         # v75: HELP-3 made this one short sentence
-        check("Help explains the four sections and the Tools and Settings pages", all(w in tabs_text for w in ["four sections", "Dashboard", "Models", "Painting", "Tools and Settings", "Guides", "Settings", "Updates"]), tabs_text)   # X2: no cog   # U4a: four sections around Ask Mentor, Units is Models, Settings is the cog
+        check("Help explains the four sections and the Tools and Settings pages", all(w in tabs_text for w in ["four sections", "Nexus", "Models", "Painting", "Tools and Settings", "Guides", "Settings", "Updates"]), tabs_text)   # X2: no cog   # U4a: four sections around Ask Mentor, Units is Models, Settings is the cog
         feedback_lines = [t for t in page.eval_on_selector_all("#view-help li", "els => els.map(e => e.textContent)") if "Give feedback" in t]
         check("the Help lines that tell you where to find Give feedback say Settings → Updates",
               sum("Settings → Updates" in t for t in feedback_lines) >= 2 and not any("Updates tab" in t for t in feedback_lines), feedback_lines)
         check("no Help line still says the Updates tab", "on the Updates tab" not in html and "the Help tab" not in html.replace("<!--", ""), "")
-        check("Help's Back-button line still says it goes to the Dashboard", "Dashboard" in help_text("help-back"))
+        check("Help's Back-button line still says it goes to the Dashboard", "Nexus" in help_text("help-back"))
         # the typing rule, on the Settings page
         sub_tab(page, "settings")
         check("the tab bar shows to start with", not tabs_hidden(page) and not typing(page))

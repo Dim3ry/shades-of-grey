@@ -23,7 +23,7 @@ def check(name, ok, detail=""):
 
 UNITS = [{"id": 1, "name": "Squad", "hobby": "40K", "stage": 2, "count": 5, "added": "2026-10-01", "log": [["2026-10-01", 2]]}]
 BAR_ORDER = ["dashboard", "units", "recipes", "guides"]   # the bar, left to right
-NAMES = {"dashboard": "Dashboard", "units": "Models", "recipes": "Painting", "guides": "Tools"}
+NAMES = {"dashboard": "Nexus", "units": "Models", "recipes": "Painting", "guides": "Tools"}
 PLACE = {"units": (-1, -1), "recipes": (1, -1), "dashboard": (-1, 1), "guides": (1, 1)}   # MN1: x and y sign from the Mentor button's centre
 
 # each segment's box centre relative to the Mentor button's centre, its smallest side, and the page's sideways scroll

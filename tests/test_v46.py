@@ -238,48 +238,19 @@ def main():
         page.on("download", lambda d: downloads.append(d))
 
         # ---------- 3. The Dashboard line ----------
-        print("\n--- 3. Dashboard: models under way ---")
-        def dash(units, settings=None):
-            fresh(page, settings=settings, units=units)
-            tab(page, "dashboard")
-            return page.inner_text("#done-percent"), page.inner_text("#done-summary")
-        def expected(units):
-            n, done_from = page.evaluate("[STAGES.length, settings.doneFrom]")
-            stages = []
-            for u in units:
-                stages += u["stages"] if u.get("each") else [u["stage"]] * u.get("count", 1)
-            total, done = len(stages), sum(1 for s in stages if s >= done_from)
-            under = sum(1 for s in stages if 1 <= s < done_from)
-            return total, done, under
-        pct, summary = dash([])
-        check("an empty collection reads as before (a dash and the 'No units yet' line)", pct == "–" and summary.startswith("No units yet"), (pct, summary))
-        flat = [{"id": 1, "name": "A", "hobby": "40K", "faction": "X", "stage": 0, "count": 10}, {"id": 2, "name": "B", "hobby": "40K", "faction": "X", "stage": 0, "count": 10}]
-        pct, summary = dash(flat)
-        check("a brand-new collection reads exactly as before: no 'under way' while nothing has started", summary == "0 of 20 models done · 2 units" and pct == "0%", (pct, summary))
-        pct, summary = dash(BASE_UNITS)
-        total, done, under = expected(BASE_UNITS)
-        check("built and primed but none finished: the line says how many are under way (and the headline is still 0%)",
-              summary == f"{done} of {total} models done · {under} under way · 3 units" and under == 10 and pct == "0%", (pct, summary, under))
+        # DB1: the headline line ("... under way · N units") and the big percentage are gone from the top card, so the old checks of that
+        # wording are replaced by one: the tiles still count models done and to do the same way (a unit tracked model by model counts each model).
+        print("\n--- 3. Dashboard: models done and to do ---")
+        fresh(page, settings=None, units=BASE_UNITS)
+        tab(page, "dashboard")
+        check("the 'under way' line is gone", page.locator("#done-summary").count() == 0)
         last = page.evaluate("STAGES.length - 1")
-        more = BASE_UNITS + [{"id": 4, "name": "Ravener", "hobby": "40K", "faction": "Tyranids", "stage": last, "count": 4}]
-        pct, summary = dash(more)
-        total, done, under = expected(more)
-        check("finished models count as done and are not 'under way'", summary == f"{done} of {total} models done · {under} under way · 4 units" and done == 4 and under == 10, (pct, summary))
         mixed = [{"id": 1, "name": "Gaunts", "hobby": "40K", "faction": "Tyranids", "stage": 0, "count": 4, "each": True, "stages": [0, 1, 2, last], "log": [["2026-09-01", 1]]}]
-        pct, summary = dash(mixed)
-        total, done, under = expected(mixed)
-        check("a unit tracked model by model counts each model at its own stage", summary == f"{done} of {total} models done · {under} under way · 1 unit" and (done, under) == (1, 2), (summary, done, under))   # A2: one unit now reads "1 unit" (the plural helper), it was "1 units"
-        one = [{"id": 1, "name": "Solo", "hobby": "40K", "faction": "Tyranids", "stage": 1, "count": 1}]
-        pct, summary = dash(one)
-        check("one model under way reads sensibly", summary.startswith("0 of 1 model done · 1 under way"), summary)
-        dash(BASE_UNITS)
-        page.evaluate("() => { settings.doneFrom = 3; saveSettings(); renderDashboard(); }")
-        summary = page.inner_text("#done-summary")
-        total, done, under = expected(BASE_UNITS)
-        check("it follows the 'Done starts at' choice (with Done from the fourth stage, primed models are done, not under way)",
-              (done, under) == (5, 5) and summary.startswith(f"{done} of {total} models done · {under} under way"), (summary, done, under))
+        fresh(page, settings=None, units=mixed)
+        tab(page, "dashboard")
+        check("a unit tracked model by model counts each model at its own stage", page.inner_text("#done-button").startswith("1") and page.inner_text("#todo-button").startswith("3"), (page.inner_text("#done-button"), page.inner_text("#todo-button")))
         shot(page, "v46-dashboard-underway-dark-390.png")
-        check("the Dashboard still shows its charts and legend", page.locator("#stage-legend li").count() >= 3 and page.locator("#overall-chart svg").count() == 1)
+        check("the Dashboard still shows its ring and legend", page.locator("#stage-legend li").count() >= 3 and page.locator("#overall-chart svg").count() == 1)
 
         # ---------- 4. The up-arrow ----------
         print("\n--- 4. The up-arrow always looks pressable ---")
@@ -424,9 +395,9 @@ def main():
                 tag = f"{appearance} {width}px"
                 fresh(page, settings={"appearance": appearance}, units=BASE_UNITS)
                 tab(page, "dashboard")
-                check(f"{tag}: the Dashboard line with 'under way' is fully visible and nothing scrolls sideways",
-                      "under way" in page.inner_text("#done-summary") and no_sideways(page) and
-                      page.evaluate("() => { const e = document.getElementById('done-summary'); return e.getBoundingClientRect().right <= window.innerWidth + 1; }"))
+                check(f"{tag}: the top card's ring and tiles are fully visible and nothing scrolls sideways",   # DB1: was the 'under way' line
+                      no_sideways(page) and
+                      page.evaluate("() => ['overall-chart', 'done-button'].every(id => { const e = document.getElementById(id).getBoundingClientRect(); return e.right <= window.innerWidth + 1 && e.left >= -1; })"))
                 shot(page, f"v46-dashboard-{appearance}-{width}.png")
                 open_more(page, "settings")
                 sizes = page.evaluate("""() => [...document.querySelectorAll('#backup-card button:not(.more-info-button)')].map(b => { const r = b.getBoundingClientRect();
