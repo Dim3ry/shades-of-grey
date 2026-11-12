@@ -10603,7 +10603,15 @@
       close.type = "button";
       close.className = "fs-close";
       close.setAttribute("aria-label", "Close filters");
-      close.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+      {   // v159: the X is drawn with createElementNS (no HTML text), like the basket, so no innerHTML is used
+        const NS = "http://www.w3.org/2000/svg";
+        const x = document.createElementNS(NS, "svg");
+        x.setAttribute("viewBox", "0 0 24 24"); x.setAttribute("aria-hidden", "true"); x.setAttribute("focusable", "false");
+        const xp = document.createElementNS(NS, "path");
+        xp.setAttribute("d", "M6 6l12 12M18 6L6 18");
+        x.appendChild(xp);
+        close.appendChild(x);
+      }
       head.append(title, close);
       const body = document.createElement("div");
       body.className = "fs-body";
