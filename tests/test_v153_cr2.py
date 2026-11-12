@@ -17,7 +17,7 @@ def check(name, ok, detail=""):
     results.append(bool(ok))
     print(("PASS " if ok else "FAIL ") + name + ("" if ok else f"  -> {detail}"))
 
-INTRO = "Mentor's advice was shaped by learning from painters and creators who generously share what they know. Go and check them out below."
+INTRO = "These creators inspired Minifolio. Thank you to them, and they're well worth checking out:"
 SMALL = "Listed as thanks only. No creator is affiliated with or endorses Minifolio."
 
 def key(n):
@@ -31,8 +31,9 @@ def go(page, w=390, h=844, theme=None):
     wait_settled(page)
     page.click('#more-seg button[data-page="about"]')
     wait_settled(page)
-    page.click('#about-credits-link')
+    page.evaluate("() => showTab('credits')")
     wait_settled(page)
+    page.evaluate("() => { const o = document.querySelector('#credits-thanks .credits-fold'); if (o) o.open = true; }")   # CR3: the whole Thanks section folds and starts closed, so open it here
 
 def main():
     errors = []
@@ -45,21 +46,21 @@ def main():
 
         print("\n--- 1. Wording and fold ---")
         check("the Thanks section shows with heading Thanks", page.locator("#credits-thanks h3").inner_text() == "Thanks")
-        ps = page.locator("#credits-thanks > p")
+        ps = page.locator("#credits-thanks .credits-fold > p")
         check("intro line word for word", ps.first.inner_text() == INTRO, ps.first.inner_text())
         check("small print word for word, under the list", ps.last.inner_text() == SMALL and page.evaluate(
-            "() => { const f = document.querySelector('#credits-thanks details'), s = document.querySelector('#credits-thanks > p:last-child'); return !!(f.compareDocumentPosition(s) & Node.DOCUMENT_POSITION_FOLLOWING); }"), ps.last.inner_text())
+            "() => { const f = document.querySelector('#credits-thanks .thanks-fold'), s = document.querySelector('#credits-thanks .credits-fold > p:last-child'); return !!(f.compareDocumentPosition(s) & Node.DOCUMENT_POSITION_FOLLOWING); }"), ps.last.inner_text())
         check("the fold is closed by default and its button reads Show all", page.evaluate(
-            "() => { const f = document.querySelector('#credits-thanks details'); return !f.open && f.querySelector('summary').textContent.trim() === 'Show all'; }"))
-        h = page.evaluate("() => document.querySelector('#credits-thanks summary').getBoundingClientRect().height")
+            "() => { const f = document.querySelector('#credits-thanks .thanks-fold'); return !f.open && f.querySelector('summary').textContent.trim() === 'Show all'; }"))
+        h = page.evaluate("() => document.querySelector('#credits-thanks .thanks-fold > summary').getBoundingClientRect().height")
         check("the fold button is at least 44 px tall", h >= 43.5, h)
-        page.focus("#credits-thanks summary")
+        page.focus("#credits-thanks .thanks-fold > summary")
         page.keyboard.press("Enter")
-        check("the keyboard opens it", page.evaluate("() => document.querySelector('#credits-thanks details').open"))
+        check("the keyboard opens it", page.evaluate("() => document.querySelector('#credits-thanks .thanks-fold').open"))
         page.keyboard.press("Space")
-        check("and closes it", page.evaluate("() => !document.querySelector('#credits-thanks details').open"))
-        page.click("#credits-thanks summary")
-        check("a tap opens it", page.evaluate("() => document.querySelector('#credits-thanks details').open"))
+        check("and closes it", page.evaluate("() => !document.querySelector('#credits-thanks .thanks-fold').open"))
+        page.click("#credits-thanks .thanks-fold > summary")
+        check("a tap opens it", page.evaluate("() => document.querySelector('#credits-thanks .thanks-fold').open"))
 
         print("\n--- 2. Groups, order, links ---")
         data = page.evaluate("() => [...document.querySelectorAll('#credits-thanks .thanks-group')].map(g => [g.textContent, [...g.nextElementSibling.querySelectorAll('a')].map(a => [a.textContent, a.href, a.target, a.rel])])")
@@ -88,7 +89,7 @@ def main():
             if label == "empty":
                 check("empty list: no Thanks section at all", p2.locator("#credits-thanks").evaluate("e => e.offsetParent === null && e.children.length === 0") and "Thanks" not in p2.inner_text("#view-credits"))
             else:
-                p2.click("#credits-thanks summary")
+                p2.click("#credits-thanks .thanks-fold > summary")
                 check("a name containing <b> shows as text", p2.locator("#credits-thanks a").inner_text() == "A <b>Bold</b> One" and p2.locator("#credits-thanks b").count() == 0)
             c2.close()
 
@@ -96,7 +97,7 @@ def main():
         for w, hh in [(390, 844), (360, 640)]:
             for theme in ("dark", "light"):
                 go(page, w, hh, theme)
-                page.click("#credits-thanks summary")
+                page.click("#credits-thanks .thanks-fold > summary")
                 r = page.evaluate("() => [document.documentElement.scrollWidth <= window.innerWidth, Math.min(...[...document.querySelectorAll('#credits-thanks a')].map(a => a.getBoundingClientRect().height)),"
                                   " getComputedStyle(document.body).backgroundColor.match(/\\d+/g).slice(0, 3).reduce((a, b) => a + +b, 0)]")
                 check(f"{w}x{hh} {theme}: no sideways scroll, every link 44 px or more", r[0] and r[1] >= 43.5 and ((r[2] < 300) == (theme == "dark")), r)   # r[2]: page colour total, low = dark

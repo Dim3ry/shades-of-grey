@@ -61,12 +61,7 @@ def main():
         check("the Thanks section is drawn at the foot of Credits (CR2 filled the list)", page.evaluate("() => !document.getElementById('credits-thanks').classList.contains('hidden')"))
         check("About keeps one Privacy link, opening the page safely in a new tab", page.evaluate(
             "() => { const l = [...document.querySelectorAll('#view-about a.privacy-page-link')]; return l.length === 1 && l[0].getAttribute('href') === 'privacy' && l[0].target === '_blank' && l[0].rel === 'noopener noreferrer'; }"))
-        for sel in ("#about-credits-link", "#about-rights-credits"):
-            open_page(page, "about")
-            page.click(sel)
-            wait_settled(page)
-            v = credits_in_view(page)
-            check(f"{sel} scrolls to the Credits heading, clear of the header", v["about"] and v["top"] >= v["bar"] and v["top"] < v["vh"], v)
+        # CR3: the two links beside the Mission text are gone on purpose (tests/test_v156_cr3.py checks that); the Help link below and showTab still reach Credits
         for sel in ("#help-credits-link",):   # DC1: the second rights line (#help-rights-credits) was removed; About keeps the only one
             open_page(page, "help")
             page.evaluate("() => { document.querySelectorAll('#view-help details').forEach(d => d.open = true); }")

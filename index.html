@@ -1364,6 +1364,9 @@
     #view-credits .credits-thanks-list { list-style: none; margin: 0; padding: 0; }
     /* CR2: the Thanks fold and its two group labels. */
     #view-credits .thanks-fold > summary { padding: 10px 0; }
+    /* CR3: the Credits sections fold; their headings sit inside the fold button. */
+    #view-credits .credits-fold > summary h3 { margin: 0; font-size: 1rem; }
+    #view-credits .credits-fold > summary { margin: 0; }
     #view-credits .thanks-group { margin: 12px 0 0; font-size: 1rem; }
     .link-button { min-width: 44px; }
     .review-row label { min-height: 44px; }
@@ -3486,15 +3489,14 @@
         <p>Minifolio is a hobby tracker made by a nerd, for nerds. It began as one painter’s side project to track their own models and learn to code, and it grew arms, legs and a few tentacles. It’s still mostly one person, so thanks for your patience.</p>
         <h2>Mission</h2>
         <p>To give every painter a mentor in their pocket: a place to track your progress, get advice, and find the right colours.</p>
-        <p class="rights-line" id="about-rights">Minifolio is an independent app made in the UK by George Atter-Dimery. It is not affiliated with, endorsed by or sponsored by Games Workshop or any paint maker. Citadel, Warhammer, Warhammer Tone Pro and the names of factions and paints are trade marks of Games Workshop Ltd. Other paint and brand names belong to their owners. They are used only to say which products you own or might use. © 2026 George Atter-Dimery. All rights reserved. Fonts, the pot-label reader and the paint list are used under <button type="button" class="link-button" id="about-rights-credits">their own licences</button>.</p>
-        <button type="button" class="link-button about-credits-link" id="about-credits-link">Credits</button>
+        <p class="rights-line" id="about-rights">Minifolio is an independent app made in the UK by George Atter-Dimery. It is not affiliated with, endorsed by or sponsored by Games Workshop or any paint maker. Citadel, Warhammer, Warhammer Tone Pro and the names of factions and paints are trade marks of Games Workshop Ltd. Other paint and brand names belong to their owners. They are used only to say which products you own or might use. © 2026 George Atter-Dimery. All rights reserved. Fonts, the pot-label reader and the paint list are used under their own licences.</p>
         <a class="privacy-page-link" id="about-privacy-link" href="privacy" target="_blank" rel="noopener noreferrer">Privacy page</a>
       </div>
       <!-- ===== CR1, FB3: Credits, now a section of About (fonts, pot-label reader, paint list; the Thanks section is drawn only when THANKS in app.js has entries) ===== -->
       <section id="view-credits" class="about-credits">
         <div class="card">
           <h2>Credits</h2>
-          <h3>Fonts</h3>
+          <details class="help-look credits-fold"><summary><h3>Fonts</h3></summary>
           <ul class="credits-list" id="credits-fonts">
             <li><span class="cr-who"><strong>Anton</strong><span class="cr-by">The Anton Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
             <li><span class="cr-who"><strong>Atkinson Hyperlegible</strong><span class="cr-by">Braille Institute of America, Inc.</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
@@ -3508,16 +3510,19 @@
             <li><span class="cr-who"><strong>Oxanium</strong><span class="cr-by">The Oxanium Project Authors</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a></li>
             <li><span class="cr-who"><strong>Permanent Marker</strong><span class="cr-by">Font Diner, Inc.</span></span><a href="fonts/LICENSES.md" target="_blank" rel="noopener noreferrer">Apache License 2.0</a></li>
           </ul>
-          <h3>Pot-label reader</h3>
+          </details>
+          <details class="help-look credits-fold"><summary><h3>Pot-label reader</h3></summary>
           <ul class="credits-list" id="credits-reader">
             <li><span class="cr-who"><strong>Tesseract engine and English data</strong><span class="cr-by">The Tesseract authors</span></span><a href="ocr/LICENSE-tesseract.txt" target="_blank" rel="noopener noreferrer">Apache License 2.0</a></li>
             <li><span class="cr-who"><strong>Leptonica</strong><span class="cr-by">Dan Bloomberg and the Leptonica authors</span></span><a href="ocr/LICENSE-leptonica.txt" target="_blank" rel="noopener noreferrer">Leptonica licence</a></li>
             <li><span class="cr-who"><strong>libtiff</strong><span class="cr-by">Sam Leffler and Silicon Graphics, Inc.</span></span><a href="ocr/LICENSE-libtiff.txt" target="_blank" rel="noopener noreferrer">libtiff licence</a></li>
           </ul>
-          <h3>Paint list</h3>
+          </details>
+          <details class="help-look credits-fold"><summary><h3>Paint list</h3></summary>
           <ul class="credits-list" id="credits-paints">
             <li><span class="cr-who"><strong>miniature-paints</strong><span class="cr-by">Rick Fleuren</span></span><a href="LICENSE-paint-list.txt" target="_blank" rel="noopener noreferrer">MIT License</a></li>
           </ul>
+          </details>
           <div id="credits-thanks" class="hidden"></div>
         </div>
       </section>
