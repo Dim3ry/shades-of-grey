@@ -22739,12 +22739,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=158".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=159".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v158";
+    const APP_VERSION = "v159";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;
@@ -23210,6 +23210,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v159", date: "12 Nov 2026", changes: [
+        "The Models page has a Sort button with ready-made orders and a Build my own order choice, and units are grouped by game and faction. The Detailed and Simple switch is gone.",
+        "Filters now open as a sheet from the bottom, with a button that shows how many units match.",
+      ] },
       { version: "v158", date: "12 Nov 2026", changes: [
         "The Dashboard is now called Nexus. Its top card is one card, with the ring showing the percentage over Done, and the stage list folds into a Stages row that starts shut.",
         "The progress graph is now called Progress timeline, and each army doughnut says Done.",
