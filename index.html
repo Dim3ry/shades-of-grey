@@ -2032,8 +2032,7 @@
          faction card is tall, so it and the stage card each take a full row instead of leaving a gap beside the stage card. */
       #headline-card, #view-dashboard > .notice-card { grid-column: 1 / -1; }
       /* DB1: the Stages card is one folding row and takes the full row under the top card. */
-      #stage-card { grid-column: 1 / -1; }
-      #view-dashboard:has(#faction-grid.faction-grid > :nth-child(4)) #faction-card { grid-column: 1 / -1; }
+      #stage-card, #faction-card { grid-column: 1 / -1; }   /* the faction card takes a full row too, so Palette and Achievements still sit side by side */
       .group-button { padding: 16px 18px; font-size: 0.9375rem; }
       .group-button strong { font-size: 1.75rem; }
       #headline-card #overall-chart svg { width: 240px; height: 240px; }

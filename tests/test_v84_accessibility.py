@@ -53,7 +53,7 @@ def main():
         page.click('nav button[data-tab="dashboard"]')
         page.wait_for_timeout(250)
         dash = page.inner_text("#view-dashboard")
-        check("the Dashboard line says 0 of 1 model done", "of 1 model done" in dash and "1 models" not in dash, dash[:300])
+        check("the Nexus tile says 1 model to do (DB1: the \"0 of 1 model done\" line is gone)", "1 models" not in dash and page.inner_text("#todo-button").startswith("1") and "models to do" in page.inner_text("#todo-button"), dash[:300])
         page.click("#settings-button") if page.locator("#settings-button").count() else page.evaluate("() => showTab('settings')")
         page.wait_for_timeout(250)
         check("Settings does not say 1 models", "1 models" not in page.inner_text("body"))

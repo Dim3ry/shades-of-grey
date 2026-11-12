@@ -197,7 +197,8 @@ def main():
               and lines["ends"] == ["11", "6"] and "Now 11 added, 6 painted." in (lines["label"] or ""), lines)
 
         svg = page.locator("#history-chart svg")
-        svg.scroll_into_view_if_needed()
+        svg.evaluate("e => e.scrollIntoView({ block: 'center' })")   # DB1: the graph now sits lower on the page, so centre it (the nearest-edge scroll left it under the bottom bar)
+        page.wait_for_timeout(150)
         box = svg.bounding_box()
         x = 38 + (5 / span) * (lines["w"] - 38 - 44)   # 10 Oct
         page.mouse.move(box["x"] + x, box["y"] + lines["h"] / 2)

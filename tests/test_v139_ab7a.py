@@ -21,7 +21,7 @@ def check(name, ok, detail=""):
     print(("PASS " if ok else "FAIL ") + name + ("" if ok else f"  -> {detail}"))
 
 UNITS = [{"id": 1, "name": "Squad", "hobby": "40K", "stage": 2, "count": 5, "added": "2026-10-01", "log": [["2026-10-01", 2]]}]
-NAMES = {"dashboard": "Dashboard", "units": "Models", "recipes": "Painting", "guides": "Tools"}
+NAMES = {"dashboard": "Nexus", "units": "Models", "recipes": "Painting", "guides": "Tools"}
 OLD = ["M12 3l8 3v6c0 4.5", "M12 3c3.5 4.2", "M9.6 9.5a2.5 2.5", 'width="7" height="9"', "M3 9h18", "M9.2 3.8Q8.4", "M20 4l-8 8"]  # MI1: the AB7a drawings are gone too
 
 INFO = """() => Object.fromEntries([...document.querySelectorAll('.arc > [data-tab]')].map(b => {
