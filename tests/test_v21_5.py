@@ -62,6 +62,9 @@ V21_4_CSP = ("default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-sr
              "img-src 'self' blob: data: https://dim3ry.goatcounter.com/count; media-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; "
              "manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'")
 
+# SF1: the Models list is in Game > Faction > A-Z order, not the order units were added, so these three units show as 2, 1, 3.
+ORDER = [2, 1, 3]
+
 def full_settings(**extra):
     s = {"palette": "ice", "tab": "units", "stages": STAGES, "doneFrom": 5, "examplesChecked": True}
     s.update(extra)
@@ -181,7 +184,7 @@ def main():
         unit2 = next(u for u in before if u["id"] == 2)
         check("set-up: unit 2 has 2 photos saved", len(unit2.get("photos", [])) == 2, unit2.get("photos"))
         check("set-up: both photo files are in the photo store", files_before and len(files_before) == 2, files_before)
-        check("set-up: list order 1, 2, 3", card_ids(page) == [1, 2, 3], card_ids(page))
+        check("set-up: list order 2, 1, 3 (SF1: game, then faction, then name: 40K Tyranids, 40K Ultramarines, AoS)", card_ids(page) == ORDER, card_ids(page))
 
         # Say no first.
         answers.yes = False
@@ -190,7 +193,7 @@ def main():
         delete_button(page, 2).click()
         page.wait_for_timeout(300)
         check("Delete still asks first", answers.seen and answers.seen[0] == ("yesno", 'Delete "Termagants"?'), answers.seen)
-        check("saying no keeps the unit", card_ids(page) == [1, 2, 3] and saved_units(page) == before)
+        check("saying no keeps the unit", card_ids(page) == ORDER and saved_units(page) == before)
         check("saying no shows no message", not toast(page)["shown"], toast(page))
 
         # Now yes.
@@ -212,7 +215,7 @@ def main():
         after = saved_units(page)
         check("Undo puts the unit back in saved data exactly as it was", after == before,
               json.dumps(after)[:300])
-        check("…in the same place in the list", card_ids(page) == [1, 2, 3], card_ids(page))
+        check("…in the same place in the list", card_ids(page) == ORDER, card_ids(page))
         check("…with its details open again", page.locator('#view-units li.unit[data-id="2"] .panel').count() == 1)
         check("Undo shows a 'back' message", toast(page)["text"] == "Termagants is back", toast(page))
         page.wait_for_function("""() => { const im = [...document.querySelectorAll('#view-units li.unit[data-id="2"] .photo-tile img')];
@@ -224,7 +227,7 @@ def main():
         app_ready(page)
         leave_launch(page)   # U4b: tap through the start page
         check("after reopening the app the unit is there with both photos",
-              card_ids(page) == [1, 2, 3] and len(next(u for u in saved_units(page) if u["id"] == 2)["photos"]) == 2)
+              card_ids(page) == ORDER and len(next(u for u in saved_units(page) if u["id"] == 2)["photos"]) == 2)
 
         # Delete the first unit (no photos) and Undo: back at the top.
         tab(page, "units")
@@ -234,7 +237,7 @@ def main():
         check("a unit with no photos: plain message", toast(page)["text"] == "Deleted Intercessors", toast(page))
         page.click("#toast-undo")
         page.wait_for_timeout(300)
-        check("…Undo puts it back at the top", card_ids(page) == [1, 2, 3], card_ids(page))
+        check("…Undo puts it back at the top", card_ids(page) == ORDER, card_ids(page))
 
         # Delete without Undo: files go once the message has gone.
         page.evaluate("() => document.getElementById('toast').classList.add('hidden')")

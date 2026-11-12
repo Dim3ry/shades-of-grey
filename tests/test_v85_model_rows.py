@@ -1,11 +1,11 @@
-"""v85 tests for Minifolio (chunk M2: model rows with a stepper, Detailed and Simple view).
+"""v85 tests for Minifolio (chunk M2: model rows with a stepper; the Detailed / Simple view was removed in SF1, rows are always the detailed ones).
 
 New behaviour only:
 1. Details of a unit tracked model by model: Move all models to stage, Track as one batch, the rows, then (Paints, ...) Edit details.
 2. Detailed row: name, date line (only when the diary knows), back, stage name in words, thin bar, up. Back off at the first stage, up at the last.
 3. Back / up move one model with Undo that restores stages and diary exactly; focus stays on the tapped button.
 4. Move all models to stage and Undo. Track as one batch: asks when the stages differ, switches at once when they match, both with Undo.
-5. Simple view: no date line, no bar. One saved choice (Detailed by default) for every card; the switch shows only when a unit is tracked model by model.
+5. (SF1: the Simple view and its switch have gone; rows are always detailed.)
 6. More than 8 models: rows grouped by stage, furthest-behind group open, the group a model lands in opens and the one it left stays open. 100 models open quickly.
 7. 390 and 360 px, dark and light, and 900 / 1280 / 1920 px (side pane): no sideways scroll, tap targets 44 px or more, long stage names fit.
 8. The new CSS has no hard-coded colours.
@@ -89,12 +89,8 @@ def main():
 
         print("\n--- 1. The switch and the panel ---")
         start(units=[BATCH])
-        check("the Detailed / Simple switch is hidden when no unit is tracked model by model", not page.locator("#model-rows-switch").is_visible())
+        # SF1: the Detailed / Simple switch is gone (tests/test_v159_sf1.py checks that); the rows are always the detailed ones.
         start()
-        sw = page.locator("#model-rows-switch")
-        check("…and shown when one is, Detailed pressed by default",
-              sw.is_visible() and sw.locator("[data-rows=detailed]").get_attribute("aria-pressed") == "true"
-              and sw.locator("[data-rows=simple]").get_attribute("aria-pressed") == "false")
         open_details(page, 1)
         order = page.evaluate("""() => [...document.querySelectorAll('li.unit[data-id="1"] .panel > *')].map(e =>
             e.querySelector && e.querySelector('select.jump-stage') ? 'move' : e.classList.contains('track-each') ? 'track'
@@ -167,27 +163,16 @@ def main():
         undo(page)
         check("…with an Undo", saved(page, 5)["each"] and saved(page, 5)["stages"] == [1, 1, 1])
 
-        print("\n--- 5. Simple view ---")
-        page.click("#model-rows-switch [data-rows=simple]")
-        page.wait_for_timeout(250)
-        simple = page.evaluate("""() => { const rows = [...document.querySelectorAll('li.unit .each-list li')];
-            return { n: rows.length, since: rows.filter(r => r.querySelector('.each-since')).length, pips: rows.filter(r => r.querySelector('.pips')).length,
-                     names: rows.filter(r => r.querySelector('.each-stage-name')).length, h: Math.max(...rows.map(r => r.getBoundingClientRect().height)) }; }""")
-        # MC1: one card is open at a time, so one unit's rows are showing here (three units' were before MC1)
-        check("no date line and no bar, but the stage name and buttons stay; rows are shorter",
-              simple["n"] >= 3 and simple["since"] == 0 and simple["pips"] == 0 and simple["names"] == simple["n"] and simple["h"] <= 58, simple)
-        check("the choice is saved as a setting", page.evaluate("JSON.parse(localStorage.getItem('shades-of-grey-settings')).modelRows") == "simple")
-        check("it applies to every card at once", page.locator("li.unit .each-list li .each-since, li.unit .each-list li .pips").count() == 0
-              and page.locator("li.unit[data-id='5'] .each-list li").count() == 3)
-        check("it is a view-only setting", page.evaluate("VIEW_ONLY_SETTINGS.includes('modelRows')"))
+        print("\n--- 5. Rows are always detailed (SF1: the Simple view is gone) ---")
+        open_details(page, 1)
+        check("every row shows its bar, and rows whose date the diary knows show the date line", page.locator("li.unit[data-id='1'] .each-list li .pips").count() == page.locator("li.unit[data-id='1'] .each-list li").count() >= 4
+              and page.locator("li.unit[data-id='1'] .each-list li .each-since").count() >= 1)
         page.reload()
         page.wait_for_timeout(500)
         leave_launch(page)   # U4b: tap through the start page
         page.click('nav button[data-tab="units"]')
-        check("it survives a reload", page.locator("#model-rows-switch [data-rows=simple]").get_attribute("aria-pressed") == "true")
-        page.click("#model-rows-switch [data-rows=detailed]")
         open_details(page, 1)   # open units are not remembered over a reload
-        check("Detailed brings the date lines back", page.locator("li.unit[data-id='1'] .each-since").count() == 4)
+        check("still detailed after a reload", page.locator("li.unit[data-id='1'] .each-since").count() == 4)
 
         print("\n--- 6. Long units ---")
         check("8 models or fewer: a flat list, no group headers", page.locator("li.unit[data-id='1'] .each-group-head").count() == 0)
@@ -226,7 +211,7 @@ def main():
         for scheme in ("dark", "light"):
             for width in (390, 360):
                 page.set_viewport_size({"width": width, "height": 900})
-                start(units=[unit(1, "Squad", [0, TOP, 1, 3], log=[[jan2, 0]]), BIG], settings={"appearance": scheme, "modelRows": "detailed"})
+                start(units=[unit(1, "Squad", [0, TOP, 1, 3], log=[[jan2, 0]]), BIG], settings={"appearance": scheme})
                 # MC1: one card is open at a time, so unit 1's rows are measured, then unit 3's (before MC1 both were open together)
                 measure = lambda: page.evaluate("""() => {
                     const R = e => { const r = e.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; };
@@ -235,14 +220,13 @@ def main():
                              fit: rows.every(r => { const n = r.querySelector('.each-stage-name'), s = r.querySelector('.each-step');
                                  return n.scrollWidth <= n.clientWidth + 1 && (!ends.includes(n.textContent) || n.getBoundingClientRect().height < 20) && s.getBoundingClientRect().right <= r.getBoundingClientRect().right
                                      && r.scrollWidth <= r.clientWidth + 1; }),
-                             heads: [...document.querySelectorAll('.each-group-head')].map(R),
-                             sw: [...document.querySelectorAll('#model-rows-switch button')].map(R) }; }""")
+                             heads: [...document.querySelectorAll('.each-group-head')].map(R) }; }""")
                 open_details(page, 1)
                 g1 = measure()
                 open_details(page, 3)
                 g3 = measure()
-                geo = { "btn": g1["btn"] + g3["btn"], "fit": g1["fit"] and g3["fit"], "heads": g3["heads"], "sw": g1["sw"] }
-                ok = (no_sideways(page) and len(geo["btn"]) >= 8 and all(a >= 44 and b >= 44 for a, b in geo["btn"] + geo["sw"])
+                geo = { "btn": g1["btn"] + g3["btn"], "fit": g1["fit"] and g3["fit"], "heads": g3["heads"] }
+                ok = (no_sideways(page) and len(geo["btn"]) >= 8 and all(a >= 44 and b >= 44 for a, b in geo["btn"])
                       and all(b >= 44 for a, b in geo["heads"]) and geo["heads"])
                 check(f"{width} px {scheme}: no sideways scroll, tap targets 44 px or more, Unassembled and {STAGES[TOP]} fit", ok and geo["fit"], geo)
         for width in (900, 1280, 1920):

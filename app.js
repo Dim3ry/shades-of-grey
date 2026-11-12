@@ -249,6 +249,7 @@
       // v18.3: stamp the data version, unless the saved data came from a newer version.
       if (!checkDataVersion()) setTimeout(showSaveProblem, 0);
       else settings.dataVersion = DATA_VERSION;
+      delete settings.modelRows;   // SF1: the Detailed / Simple choice is gone; an old saved value is simply dropped
     }
 
     // A stage list is usable if it's at least 2 names, all text. (Backups are checked
@@ -7074,18 +7075,6 @@
     const selectAllButton = document.getElementById("select-all");
     const selectMoveSlot = document.getElementById("select-move-slot");
 
-    // M2: Detailed / Simple model rows. One saved choice for every card (settings.modelRows, default Detailed).
-    const modelRowsSwitch = document.getElementById("model-rows-switch");
-    modelRowsSwitch.addEventListener("click", (event) => {
-      const button = event.target.closest("button[data-rows]");
-      if (!button) return;
-      settings.modelRows = button.dataset.rows === "simple" ? "simple" : "detailed";
-      saveSettings();
-      render();
-      const again = modelRowsSwitch.querySelector(`button[data-rows="${settings.modelRows}"]`);
-      if (again) again.focus();
-    });
-
     // Which units have their details panel open. Not saved.
     const openIds = new Set();
     // MC1: the one unit whose card is open (stepper, recipes and the Details fold showing); every other card is the closed, compact one.
@@ -7178,7 +7167,7 @@
     // Rows are redrawn all over the app, so watch the page for new buttons rather than calling this from every render.
     // MS1: except unit cards going into or out of the Models list: a card with its Details shut holds no row of buttons, and while the
     // list arrives a few cards a frame, fitting every row again each frame cost more than the cards themselves.
-    const onlyUnitCards = (r) => r.target === list && [...r.addedNodes].every(n => n.nodeType === 1 && n.matches("li.unit") && !n.querySelector(CHIP_ROWS));
+    const onlyUnitCards = (r) => r.target === list && [...r.addedNodes].every(n => n.nodeType === 1 && (n.matches("li.unit-head") || (n.matches("li.unit") && !n.querySelector(CHIP_ROWS))));
     new MutationObserver((records) => { if (!records.every(onlyUnitCards)) fitChipRows(); }).observe(document.body, { childList: true, subtree: true });
     window.addEventListener("resize", fitChipRows);
     let tappedRow = null;   // A1: the row of buttons tapped just now, forgotten on the next tap elsewhere
@@ -7225,9 +7214,6 @@
     function renderUnits(how) {
       staleTabs.delete("units");   // DS2: drawn now (see render)
       if (openCardId !== null && !models.some(m => m.id === openCardId)) openCardId = null;   // MC1: a deleted unit's card (a new unit may get its number)
-      // M2: the Detailed / Simple switch for model rows shows only while some unit is tracked model by model.
-      modelRowsSwitch.classList.toggle("hidden", !models.some(m => m.each));
-      for (const b of modelRowsSwitch.querySelectorAll("button")) b.setAttribute("aria-pressed", String((b.dataset.rows === "simple") === rowsSimple()));
       // Dropdowns: the faction list only shows factions from the chosen game.
       const games = uniqueSorted(models.map(m => m.hobby));
       if (!games.includes(filters.hobby)) filters.hobby = "";
@@ -7288,7 +7274,8 @@
         stageChips.appendChild(opener);
       }
 
-      const visible = models.filter(isVisible);
+      const visible = sortUnits(models.filter(isVisible));   // SF1: in the chosen order
+      drawSortButton();
       const activeCount = (filters.hobby ? 1 : 0) + (filters.faction ? 1 : 0) +
                           (filters.stages.size > 0 ? 1 : 0) + (filters.repaint ? 1 : 0);
       const anyFilter = activeCount > 0;
@@ -7331,7 +7318,7 @@
         list.innerHTML = '<li class="empty">No units match these filters.</li>';
         return;
       }
-      placeUnitCards(visible, how === "arriving" || how === "travel" ? how : false);   // MS1: was a fresh card for every unit, every time
+      placeUnitCards(unitItems(visible), how === "arriving" || how === "travel" ? how : false);   // MS1: was a fresh card for every unit, every time
     }
 
     // ----- MS1: THE MODELS LIST WITHOUT THE FIRST-FRAME STALL -----
@@ -7400,13 +7387,19 @@
     // visible: the units to show, in order. arriving: Models is coming on screen with motion ("travel" for the start circle's travel, which
     // runs on after the page has faded in), so it goes in pieces. A list that is still
     // arriving keeps arriving (at least the cards already in stay in), so a redraw during the travel does not draw the whole list in one frame.
+    // SF1: how many of the items (cards and headings) hold the first n cards, so headings do not use up the first screen's cards.
+    function cardsUpTo(items, n) {
+      let cards = 0;
+      for (let i = 0; i < items.length; i++) if (!items[i].head && ++cards >= n) return i + 1;
+      return items.length;
+    }
     function placeUnitCards(visible, arriving) {
       const shared = sharedCardKey();
       const ids = new Set(models.map(m => m.id));
       for (const id of unitCards.keys()) if (!ids.has(id)) unitCards.delete(id);   // deleted units
       const placed = unitQueue ? list.querySelectorAll(":scope > li.unit").length : 0;
-      const now = arriving || unitQueue ? Math.min(visible.length, Math.max(firstScreenCards(), placed)) : visible.length;
-      setUnitCards(visible.slice(0, now).map(m => cardFor(m, shared)));
+      const now = arriving || unitQueue ? cardsUpTo(visible, Math.max(firstScreenCards(), placed)) : visible.length;
+      setUnitCards(visible.slice(0, now).map(m => itemEl(m, shared)));
       if (now >= visible.length) { stopUnitQueue(); return; }
       if (unitQueue) {
         unitQueue.rest = visible.slice(now);
@@ -7426,7 +7419,7 @@
       if (!q) return;
       const shared = sharedCardKey();
       const part = document.createDocumentFragment();
-      for (const model of q.rest.splice(0, count)) part.appendChild(cardFor(model, shared));
+      for (const model of q.rest.splice(0, count)) part.appendChild(itemEl(model, shared));
       list.appendChild(part);
       if (!q.rest.length) stopUnitQueue();
     }
@@ -7474,7 +7467,7 @@
     function unitsArrive(travel) {
       const how = travel ? "travel" : "arriving";
       if (staleTabs.has("units")) { renderUnits(how); return; }
-      if (list.querySelectorAll(":scope > li.unit").length > firstScreenCards()) placeUnitCards(models.filter(isVisible), how);
+      if (list.querySelectorAll(":scope > li.unit").length > firstScreenCards()) placeUnitCards(unitItems(sortUnits(models.filter(isVisible))), how);
     }
 
     // v79: from 900 px every open unit (in list order) gets a card in the side pane, with a Close button. Select mode shows none.
@@ -8044,12 +8037,11 @@
     }
 
     // ----- M2: the model rows of a unit tracked model by model -----
-    // Each row: name (and, in the Detailed view, when it reached its stage), then back, the stage name with a thin bar,
+    // Each row: name (and when it reached its stage), then back, the stage name with a thin bar,
     // up. Units of more than EACH_GROUP_OVER models list their rows grouped by stage instead; which groups are open is
-    // kept per unit for this visit only (not saved). The Detailed / Simple choice is the saved setting modelRows.
+    // kept per unit for this visit only (not saved). (SF1: the Detailed / Simple switch has gone; rows are always the detailed ones.)
     const EACH_GROUP_OVER = 8;
     const groupOpen = new Map();   // unit id -> Set of stage numbers whose group is open
-    const rowsSimple = () => settings.modelRows === "simple";
 
     function openGroups(model) {
       let open = groupOpen.get(model.id);
@@ -8078,12 +8070,12 @@
       focusRowButton(model.id, index, dir);
     }
 
-    function buildEachRow(model, index, simple) {
+    function buildEachRow(model, index) {
       const st = model.stages[index];
       const top = STAGES.length - 1;
       const who = `Model ${index + 1}`;
       const row = document.createElement("li");
-      row.className = simple ? "each-row simple" : "each-row";
+      row.className = "each-row";
       row.style.setProperty("--stage-colour", `var(--stage-${st})`);
       // Mo2: only the row that was tapped moves: its stage name slides and its bar fades, with no ring.
       const motion = stageMotion && stageMotion.id === model.id && stageMotion.index === index ? stageMotion : null;
@@ -8099,8 +8091,8 @@
       label.textContent = who;
       name.appendChild(label);
       // v21.8: when this model reached its stage ("Today", "Yesterday", "Since 7 Oct"), from the unit's diary.
-      // Left out when the diary can't say. The Simple view has no date line.
-      const since = simple ? null : modelSince(model, index);
+      // Left out when the diary can't say.
+      const since = modelSince(model, index);
       if (since) {
         const when = document.createElement("small");
         when.className = "each-since";
@@ -8133,17 +8125,15 @@
         stageName.replaceChildren(text);
       }
       mid.appendChild(stageName);
-      if (!simple) {
-        const pips = document.createElement("div");
-        pips.className = "pips";
-        for (let k = 0; k <= top; k++) {
-          const pip = document.createElement("div");
-          pip.className = k <= st ? "pip filled" : "pip";
-          if (motion) markPip(pip, k, motion);
-          pips.appendChild(pip);
-        }
-        mid.appendChild(pips);
+      const pips = document.createElement("div");
+      pips.className = "pips";
+      for (let k = 0; k <= top; k++) {
+        const pip = document.createElement("div");
+        pip.className = k <= st ? "pip filled" : "pip";
+        if (motion) markPip(pip, k, motion);
+        pips.appendChild(pip);
       }
+      mid.appendChild(pips);
 
       const up = document.createElement("button");
       up.type = "button";
@@ -8163,11 +8153,10 @@
     }
 
     function buildEachRows(model) {
-      const simple = rowsSimple();
       const list = (indexes) => {
         const ol = document.createElement("ol");
         ol.className = "each-list";
-        for (const i of indexes) ol.appendChild(buildEachRow(model, i, simple));
+        for (const i of indexes) ol.appendChild(buildEachRow(model, i));
         return ol;
       };
       const all = model.stages.map((st, i) => i);
@@ -10258,8 +10247,8 @@
         event.preventDefault(); event.stopPropagation();
         acceptDialog();
       } else if (event.key === "Tab") {
-        const stops = [dialogInput, dialogArea, ...dialogPick.querySelectorAll("input, button"), dialogNo, dialogExtra, dialogYes]
-          .filter(el => !el.classList.contains("hidden") && !el.closest("[hidden]"));
+        const stops = [dialogInput, dialogArea, ...dialogPick.querySelectorAll("input, button, select"), dialogNo, dialogExtra, dialogYes]
+          .filter(el => !el.classList.contains("hidden") && !el.closest("[hidden]") && !el.disabled);   // SF2: menus are stops too, a disabled control is not
         const at = stops.indexOf(document.activeElement);
         const next = event.shiftKey ? (at <= 0 ? stops.length - 1 : at - 1) : (at < 0 || at === stops.length - 1 ? 0 : at + 1);
         event.preventDefault();
@@ -10297,6 +10286,278 @@
     function showNotice(message) {
       showDialog({ mode: "notice", message, onDone: () => {} });
     }
+
+    // ================= SF1: SORT MODELS =================
+    // The Models list order is settings.unitSort: { mode: "default" | "az" | "stage" | "recent" | "custom", levels: [...] } (levels only for custom).
+    // Missing or unknown means the default (Game > Faction > A-Z). It is a small saved setting that travels in backups as "unitSort"; an older
+    // copy of the app ignores it, so DATA_VERSION stays 2. Every order is a list of levels { f: field, rev: bool }; Name A to Z always comes last
+    // as the tie-break. rev flips the first-listed direction of that field (see SORT_FIELDS).
+    const SORT_FIELDS = {
+      game:    { label: "Game",              short: "Game",              dirs: ["A → Z", "Z → A"] },
+      faction: { label: "Faction",           short: "Faction",           dirs: ["A → Z", "Z → A"] },
+      stage:   { label: "Stage",             short: "Stage",             dirs: ["Furthest first", "Least first"] },
+      name:    { label: "Name",              short: "A–Z",               dirs: ["A → Z", "Z → A"] },
+      recent:  { label: "Recently updated",  short: "Recently updated",  dirs: ["Newest first", "Oldest first"] },
+      size:    { label: "Number of models",  short: "Number of models",  dirs: ["Most first", "Fewest first"] },
+    };
+    const SORT_DEFAULT = [{ f: "game", rev: false }, { f: "faction", rev: false }, { f: "name", rev: false }];
+    const SORT_PRESETS = {
+      default: { title: "Game › Faction › A–Z", sub: "Grouped by game, then faction", levels: SORT_DEFAULT },
+      az:      { title: "A–Z", sub: "Names only", levels: [{ f: "name", rev: false }] },
+      stage:   { title: "Stage", sub: "Furthest along first, then A–Z", levels: [{ f: "stage", rev: false }, { f: "name", rev: false }] },
+      recent:  { title: "Recently updated", sub: "Last stage change first, then A–Z", levels: [{ f: "recent", rev: false }, { f: "name", rev: false }] },
+    };
+    // The saved choice, checked: anything odd falls back to the default.
+    function currentUnitSort() {
+      const raw = settings.unitSort;
+      if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+        if (Object.prototype.hasOwnProperty.call(SORT_PRESETS, raw.mode)) return { mode: raw.mode, levels: SORT_PRESETS[raw.mode].levels };
+        if (raw.mode === "custom" && Array.isArray(raw.levels) && raw.levels.length >= 1 && raw.levels.length <= 3) {
+          const seen = new Set();
+          const levels = raw.levels.map(l => (l && typeof l === "object" && Object.prototype.hasOwnProperty.call(SORT_FIELDS, l.f) && !seen.has(l.f) && seen.add(l.f))
+            ? { f: l.f, rev: l.rev === true } : null);
+          if (levels.every(Boolean)) return { mode: "custom", levels };
+        }
+      }
+      return { mode: "default", levels: SORT_DEFAULT };
+    }
+    const sortLabel = (levels) => levels.map(l => SORT_FIELDS[l.f].short).join(" › ");
+    const sortCollator = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
+    const sortNameKey = (m) => displayName(m).trim().replace(/^the\s+/i, "");
+    // The day of a unit's last stage change, then the day it was added, else "" (which counts as oldest).
+    function updatedOn(m) {
+      const log = Array.isArray(m.log) ? m.log : [];
+      const last = log.length ? log[log.length - 1][0] : "";
+      return (typeof last === "string" && last) || (isDate(m.added) ? m.added : "");
+    }
+    // Compares two units on one level. Units with no game (or faction), or no date, go last whichever way the level runs.
+    function sortCompare(level, a, b) {
+      const dir = level.rev ? -1 : 1;
+      switch (level.f) {
+        case "game": case "faction": {
+          const key = level.f === "game" ? "hobby" : "faction";
+          const x = (a[key] || "").trim(), y = (b[key] || "").trim();
+          if (!x || !y) return x === y ? 0 : x ? -1 : 1;
+          return dir * sortCollator.compare(x, y);
+        }
+        case "name": return dir * sortCollator.compare(sortNameKey(a), sortNameKey(b));
+        case "stage": return dir * (b.stage - a.stage);          // first-listed direction: furthest first
+        case "size": return dir * ((b.count || 1) - (a.count || 1));
+        case "recent": {
+          const x = updatedOn(a), y = updatedOn(b);
+          if (!x || !y) return x === y ? 0 : x ? -1 : 1;
+          return dir * (x < y ? 1 : x > y ? -1 : 0);
+        }
+      }
+      return 0;
+    }
+    function sortUnits(list) {
+      const levels = currentUnitSort().levels.slice();
+      if (levels[levels.length - 1].f !== "name") levels.push({ f: "name", rev: false });
+      const rank = new Map(list.map((m, i) => [m, i]));
+      return list.slice().sort((a, b) => {
+        for (const level of levels) { const c = sortCompare(level, a, b); if (c) return c; }
+        return rank.get(a) - rank.get(b);
+      });
+    }
+    // Headings: only for Game first (game headings, and faction headings under them when Faction is second) and Faction first (faction headings).
+    function unitItems(sorted) {
+      const levels = currentUnitSort().levels;
+      const first = levels[0].f, second = levels[1] && levels[1].f;
+      const gameHeads = first === "game", factionHeads = first === "faction" || (gameHeads && second === "faction");
+      if (!gameHeads && !factionHeads) return sorted;
+      const gameOf = (m) => (m.hobby || "").trim(), factionOf = (m) => (m.faction || "").trim();
+      const items = [];
+      let lastGame = null, lastFaction = null;
+      sorted.forEach((m, i) => {
+        const newGame = gameHeads && gameOf(m) !== lastGame;
+        if (newGame) { lastGame = gameOf(m); items.push({ head: { kind: "game", text: gameOf(m) || "No game" } }); }
+        if (factionHeads && (newGame || factionOf(m) !== lastFaction)) {
+          lastFaction = factionOf(m);
+          let count = 0;
+          for (let j = i; j < sorted.length && factionOf(sorted[j]) === lastFaction && (!gameHeads || gameOf(sorted[j]) === lastGame); j++) count++;
+          items.push({ head: { kind: "faction", text: lastFaction || "No faction", colour: factionColour(lastFaction), count } });
+        }
+        items.push(m);
+      });
+      return items;
+    }
+    function buildUnitHead(head) {
+      const li = document.createElement("li");
+      li.className = head.kind === "faction" ? "unit-head faction-head" : "unit-head";
+      li.setAttribute("role", "presentation");
+      const h = document.createElement("h3");
+      if (head.kind === "faction") {
+        const dot = document.createElement("span");
+        dot.className = "head-dot";
+        dot.setAttribute("aria-hidden", "true");
+        if (head.colour) dot.style.setProperty("--faction-dot", head.colour);
+        const name = document.createElement("span");
+        name.textContent = head.text;
+        const count = document.createElement("span");
+        count.className = "head-count";
+        count.textContent = plural(head.count, "unit");
+        h.append(dot, name, count);
+      } else h.textContent = head.text;
+      li.appendChild(h);
+      return li;
+    }
+    const itemEl = (item, shared) => item.head ? buildUnitHead(item.head) : cardFor(item, shared);
+
+    // ----- the Sort button and the "Sort models" sheet (a bottom sheet through showDialog) -----
+    const sortButton = document.getElementById("toggle-sort");
+    const sortOrderText = document.getElementById("sort-order");
+    function saveUnitSort(mode, levels) {
+      settings.unitSort = mode === "custom" ? { mode, levels: levels.map(l => ({ f: l.f, rev: !!l.rev })) } : { mode };
+      saveSettings();
+      render();
+    }
+    function drawSortButton() { const now = currentUnitSort(); sortOrderText.textContent = now.mode === "custom" ? sortLabel(now.levels) : SORT_PRESETS[now.mode].title; }
+    function openSortSheet() {
+      const wrap = document.createElement("div");
+      const x = document.createElement("button");
+      x.type = "button"; x.className = "sort-icon-btn sort-x"; x.setAttribute("aria-label", "Close"); x.textContent = "✕";
+      x.addEventListener("click", () => cancelDialog());
+      const body = document.createElement("div");
+      wrap.append(x, body);
+      const sheet = { view: "list" };
+      dialogBox.classList.add("sort-sheet-box");
+      const finishUi = () => { draft = null; dialogBox.classList.remove("sort-sheet-box", "sort-custom"); dialogButtons.classList.remove("single"); dialogNo.classList.remove("hidden"); };
+
+      // SF2: "Your order": up to three levels, each a field and a direction. draft is [level or null, level or null, level or null].
+      let draft = null;
+      const back = document.createElement("button");
+      back.type = "button"; back.className = "sort-icon-btn sort-back"; back.setAttribute("aria-label", "Back to sort choices"); back.textContent = "←";
+      back.addEventListener("click", () => { draft = null; drawList(); const again = body.querySelector(".sort-row-custom"); if (again) again.focus(); });
+      const LEVEL_NAMES = ["Sort by", "Then by", "Then by"];
+      function drawCustom() {
+        sheet.view = "custom";
+        dialogMessage.textContent = "Your order";
+        dialogBox.classList.add("sort-custom");
+        dialogYes.textContent = "Apply";
+        dialogNo.classList.add("hidden");
+        if (!draft) { draft = currentUnitSort().levels.map(l => ({ f: l.f, rev: l.rev })); while (draft.length < 3) draft.push(null); }
+        if (!wrap.contains(back)) wrap.prepend(back);
+        const levelsBox = document.createElement("div");
+        levelsBox.className = "sort-levels";
+        const reset = document.createElement("button");
+        reset.type = "button"; reset.className = "plain-button sort-reset"; reset.textContent = "Reset to default";
+        reset.addEventListener("click", () => { draft = SORT_DEFAULT.map(l => ({ f: l.f, rev: l.rev })); draw(); reset.focus(); });
+        const draw = (focusAt) => {
+          levelsBox.replaceChildren();
+          draft.forEach((level, i) => {
+            const row = document.createElement("div");
+            row.className = "sort-level";
+            const label = document.createElement("span");
+            label.className = "sort-level-label"; label.id = `sort-level-label-${i}`; label.textContent = LEVEL_NAMES[i];
+            const controls = document.createElement("div");
+            controls.className = "sort-level-controls";
+            const select = document.createElement("select");
+            select.setAttribute("aria-labelledby", label.id);
+            select.dataset.level = String(i);
+            if (i > 0) { const none = document.createElement("option"); none.value = ""; none.textContent = "None"; select.appendChild(none); }
+            const taken = new Set(draft.filter((l, j) => l && j !== i).map(l => l.f));   // a field used in another level is left out of this menu
+            for (const [key, field] of Object.entries(SORT_FIELDS)) {
+              if (taken.has(key)) continue;
+              const o = document.createElement("option"); o.value = key; o.textContent = field.label; select.appendChild(o);
+            }
+            select.value = level ? level.f : "";
+            select.disabled = i === 2 && !draft[1];   // a third level needs a second
+            const dir = document.createElement("button");
+            dir.type = "button"; dir.dataset.level = String(i);
+            if (level) {
+              dir.textContent = SORT_FIELDS[level.f].dirs[level.rev ? 1 : 0];
+              dir.setAttribute("aria-label", `${LEVEL_NAMES[i]} direction, ${dir.textContent}`);
+            } else { dir.textContent = "–"; dir.disabled = true; dir.setAttribute("aria-label", `${LEVEL_NAMES[i]} direction, none`); }
+            select.addEventListener("change", () => {
+              draft[i] = select.value ? { f: select.value, rev: false } : null;
+              if (!draft[1]) draft[2] = null;
+              draw(`select[data-level="${i}"]`);
+            });
+            dir.addEventListener("click", () => { level.rev = !level.rev; draw(`button[data-level="${i}"]`); });
+            controls.append(select, dir);
+            row.append(label, controls);
+            levelsBox.appendChild(row);
+          });
+          if (focusAt) { const el = levelsBox.querySelector(focusAt); if (el && !el.disabled) el.focus(); }
+        };
+        draw();
+        body.replaceChildren(levelsBox, reset);
+        const first = levelsBox.querySelector("select");
+        if (first) first.focus();
+      }
+      // Apply: an order that is the same as one of the four presets is saved as that preset (so its tick shows).
+      sheet.apply = () => {
+        if (!draft) return;
+        const levels = draft.filter(Boolean);
+        const same = (a, b) => JSON.stringify(a.map(l => [l.f, !!l.rev])) === JSON.stringify(b.map(l => [l.f, !!l.rev]));
+        const preset = Object.entries(SORT_PRESETS).find(([, v]) => same(v.levels, levels));
+        if (preset) saveUnitSort(preset[0]); else saveUnitSort("custom", levels);
+      };
+
+      function drawList() {
+        sheet.view = "list";
+        dialogMessage.textContent = "Sort models";
+        dialogBox.classList.remove("sort-custom");
+        back.remove();
+        dialogYes.textContent = "Done";
+        dialogNo.classList.add("hidden");
+        const active = currentUnitSort();
+        const group = document.createElement("div");
+        group.className = "sort-rows";
+        group.setAttribute("role", "radiogroup");
+        group.setAttribute("aria-label", "Sort order");
+        const makeRow = (title, sub, checked) => {
+          const row = document.createElement("button");
+          row.type = "button";
+          row.className = "sort-row";
+          row.setAttribute("role", "radio");
+          row.setAttribute("aria-checked", String(checked));
+          const text = document.createElement("span");
+          const t = document.createElement("span"); t.className = "sort-row-title"; t.textContent = title;
+          const s2 = document.createElement("span"); s2.className = "sort-row-sub"; s2.textContent = sub;
+          text.append(t, s2);
+          const tick = document.createElement("span");
+          tick.className = "sort-tick"; tick.setAttribute("aria-hidden", "true"); tick.textContent = checked ? "✓" : "";
+          row.append(text, tick);
+          return row;
+        };
+        for (const [mode, preset] of Object.entries(SORT_PRESETS)) {
+          const row = makeRow(preset.title, preset.sub, active.mode === mode);
+          row.dataset.sortMode = mode;
+          row.addEventListener("click", () => {
+            saveUnitSort(mode);
+            drawList();
+            const again = body.querySelector(`[data-sort-mode="${mode}"]`);
+            if (again) again.focus();
+          });
+          group.appendChild(row);
+        }
+        // SF2: the last row opens the "Your order" view in this same sheet.
+        const custom = makeRow("Build my own order…", "Pick up to three levels", active.mode === "custom");
+        custom.dataset.sortMode = "custom";
+        custom.classList.add("sort-row-custom");
+        const chev = document.createElement("span");
+        chev.className = "sort-chev"; chev.setAttribute("aria-hidden", "true"); chev.textContent = "›";
+        custom.appendChild(chev);
+        custom.addEventListener("click", drawCustom);
+        group.appendChild(custom);
+        body.replaceChildren(group);
+      }
+      drawList();
+      showDialog({
+        mode: "pick", sheet: true, message: "Sort models", content: wrap, yes: "Done",
+        onDone: (answer) => {
+          if (sheet.view === "custom" && answer === true && sheet.apply) sheet.apply();
+          finishUi();
+        },
+      });
+      dialogButtons.classList.add("single");
+      dialogNo.classList.add("hidden");
+      const checked = body.querySelector('[aria-checked="true"]');
+      if (checked) checked.focus();
+    }
+    sortButton.addEventListener("click", openSortSheet);
 
     // ----- UX1b: Skip to content -----
     // The first stop for the Tab key on every page (shown only while it has the focus). It jumps past the menu bar
@@ -20756,6 +21017,7 @@
       return { app: "Minifolio", version: 6, dataVersion: DATA_VERSION, stages: STAGES, doneFrom: settings.doneFrom, models, recipes: book,
                factionColours: settings.factionColours,
                factionView: currentFactionView(),   // AB8: Armies as rows or doughnuts. Older versions ignore it.
+               unitSort: currentUnitSort().mode === "custom" ? { mode: "custom", levels: currentUnitSort().levels } : { mode: currentUnitSort().mode },   // SF1: the Models order. Older versions ignore it.
                // v20: the look travels with the backup too. Older versions ignore these.
                palette: settings.palette, appearance: settings.appearance, theme: currentTheme(),   // v47: the theme too
                brandsOff: cleanBrandsOff(settings.brandsOff),   // v48: the paint brands you've switched off
@@ -21135,6 +21397,9 @@
               if (unitsToo && !isList && parsed.factionColours) settings.factionColours = cleanFactionColours(parsed.factionColours);
               // AB8: backups from this version on hold the Armies view. Older ones don't, so yours stays (rows unless you chose doughnuts).
               if (unitsToo && !isList && (parsed.factionView === "rows" || parsed.factionView === "doughnuts")) settings.factionView = parsed.factionView;
+              // SF1: backups from this version on hold the Models order. Older ones don't, so yours stays. Anything odd is ignored.
+              if (unitsToo && !isList && parsed.unitSort && typeof parsed.unitSort === "object" && !Array.isArray(parsed.unitSort)
+                  && (parsed.unitSort.mode === "custom" || Object.prototype.hasOwnProperty.call(SORT_PRESETS, parsed.unitSort.mode))) settings.unitSort = parsed.unitSort;
               // v20: backups from v20 onwards hold the stage colour set and Appearance.
               // Anything unknown is ignored, so older backups leave yours as they are.
               if (unitsToo && !isList && typeof parsed.palette === "string" && Object.prototype.hasOwnProperty.call(PALETTES, parsed.palette)) settings.palette = parsed.palette;
@@ -23452,7 +23717,7 @@
     // own copy in memory and saved over the other's changes. Now, when the OTHER window
     // saves, the browser tells this one (the "storage" event) and we load its changes.
     // Screen choices (which tab is open, sort order...) stay this window's own.
-    const VIEW_ONLY_SETTINGS = ["tab", "recipeView", "historyRange", "paintSort", "lastGame", "lastFaction", "modelRows"];
+    const VIEW_ONLY_SETTINGS = ["tab", "recipeView", "historyRange", "paintSort", "lastGame", "lastFaction", "unitSort"];
     const withoutViewSettings = (s) => {
       const copy = { ...s };
       for (const key of VIEW_ONLY_SETTINGS) delete copy[key];

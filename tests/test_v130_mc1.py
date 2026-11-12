@@ -34,7 +34,8 @@ def units(n):
         out.append(u)
     return out
 
-SETTINGS = {"factionColours": {"Iron Wolves": "#3366aa"}, "tab": "units"}
+# SF1: the Models list now starts in Game > Faction > A-Z order; A-Z keeps this test's units (Squad 1, Squad 2, ...) in the order of their numbers, which its checks assume.
+SETTINGS = {"factionColours": {"Iron Wolves": "#3366aa"}, "tab": "units", "unitSort": {"mode": "az"}}
 
 def card(uid):
     return f'#unit-list > li.unit[data-id="{uid}"]'

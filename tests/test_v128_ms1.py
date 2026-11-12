@@ -65,7 +65,7 @@ ARRIVE = """(sel) => new Promise(done => {
                       y: scrollY, top: Math.round(all[0].getBoundingClientRect().top), bottom: last.getBoundingClientRect().bottom });
         if (frames.length < 3 || frames[frames.length - 1].travel || frames[frames.length - 1].arriving) requestAnimationFrame(step);
         else done({ first, max, focused, frames, ids: [...cards()].map(li => +li.dataset.id),
-                    want: models.filter(isVisible).map(m => m.id), height: innerHeight });
+                    want: sortUnits(models.filter(isVisible)).map(m => m.id), height: innerHeight });
     };
     queueMicrotask(() => requestAnimationFrame(step));   // after the app has asked for its own frames, as anything waiting for the travel does
 })"""
@@ -146,7 +146,7 @@ def main():
         page.evaluate(MARK)
         page.evaluate("() => { filters.faction = 'Iron Wolves'; render(); }")
         r = page.evaluate("""() => ({ ids: [...document.querySelectorAll('#unit-list > li.unit')].map(li => +li.dataset.id),
-            want: models.filter(isVisible).map(m => m.id), kept: [...document.querySelectorAll('#unit-list > li.unit')].every(li => li.__ms1) })""")
+            want: sortUnits(models.filter(isVisible)).map(m => m.id), kept: [...document.querySelectorAll('#unit-list > li.unit')].every(li => li.__ms1) })""")
         check("a filter shows exactly its cards, in order, and keeps the cards it showed", r["ids"] == r["want"] and len(r["ids"]) == 87 and r["kept"], r["ids"][:5])
         page.evaluate("() => { clearFilters(); render(); }")
         r = page.evaluate(FRESH)
@@ -154,7 +154,7 @@ def main():
         page.evaluate(MARK)
         page.evaluate("setFactionColour('Ash Riders', '#22aa66')")
         r = page.evaluate("""() => { const ids = [...document.querySelectorAll('#unit-list > li.unit')].filter(li => !li.__ms1).map(li => +li.dataset.id);
-            const want = models.filter(m => m.faction === 'Ash Riders').map(m => m.id);
+            const want = sortUnits(models.filter(m => m.faction === 'Ash Riders')).map(m => m.id);
             return { same: JSON.stringify(ids) === JSON.stringify(want), n: ids.length,
                      colour: document.querySelector('li.unit[data-id="9"]').style.getPropertyValue('--faction-colour') }; }""")
         check("a new faction colour rebuilds exactly the cards of that faction, in its colour", r["same"] and r["n"] == 38 and r["colour"] == "#22aa66", r)
