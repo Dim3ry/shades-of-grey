@@ -87,11 +87,12 @@ def main():
         print("\n--- 4. Small effects ---")
         t.load(page, units=UNITS)
         page.click('nav button[data-tab="units"]'); t.quiet(page)
-        page.evaluate("() => document.querySelector('#group-chips .chip').click()")
-        after = page.evaluate("""() => { const chip = document.querySelector('#group-chips .chip[aria-pressed=true]'), cs = chip && getComputedStyle(chip);
+        page.click("#toggle-filters")   # SF3: the chips are in the Filters sheet now (#fs-chips-progress, #fs-chips-stage), not the old fold-away
+        page.evaluate("() => document.querySelector('#fs-chips-progress .chip').click()")
+        after = page.evaluate("""() => { const chip = document.querySelector('#fs-chips-progress .chip[aria-pressed=true]'), cs = chip && getComputedStyle(chip);
             return { chip: !!chip, fill: cs && /background|size/.test(cs.transitionProperty), layers: document.querySelectorAll('.lq-ghost').length, sweep: document.querySelectorAll('.chip.sweep').length,
-                     cascade: document.getElementById('stage-chips').classList.contains('cascade'), anims: document.getElementById('stage-chips').getAnimations({ subtree: true }).length,
-                     stages: document.querySelectorAll('#stage-chips .chip').length }; }""")
+                     cascade: document.getElementById('fs-chips-stage').classList.contains('cascade'), anims: document.getElementById('fs-chips-stage').getAnimations({ subtree: true }).length,
+                     stages: document.querySelectorAll('#fs-chips-stage .chip').length }; }""")
         check("a chip tapped on: its colour switches at once (no fill transition, no sweep, no copy layer)", after["chip"] and not after["fill"] and not after["layers"] and not after["sweep"], after)
         check("the stage chips show at once: no cascade class and no animation on them", after["stages"] > 0 and not after["cascade"] and after["anims"] == 0, after)
         check("no cascade rule or keyframes left", not rule(rules, "cascade") and page.evaluate(KEYFRAMES, "mo-cascade") is None)
@@ -114,8 +115,9 @@ def main():
         page.evaluate("() => document.querySelector('.tabs button[data-tab=dashboard]').click()")
         check("no travel: no copies and nothing travelling", page.evaluate("() => !document.body.classList.contains('mo-travelling') && document.querySelectorAll('.mo-tr').length === 0"))
         page.evaluate("() => document.querySelector('nav button[data-tab=units]').click()"); t.quiet(page)
-        page.evaluate("() => document.querySelector('#group-chips .chip').click()")
-        check("a chip tap starts no animation", page.evaluate("() => document.getAnimations().filter(a => a.effect && a.effect.target && a.effect.target.closest('#group-chips, #stage-chips')).length === 0"))
+        page.click("#toggle-filters")   # SF3: the Filters sheet
+        page.evaluate("() => document.querySelector('#fs-chips-progress .chip').click()")
+        check("a chip tap starts no animation", page.evaluate("() => document.getAnimations().filter(a => a.effect && a.effect.target && a.effect.target.closest('#fs-chips-progress, #fs-chips-stage')).length === 0"))
         check("the basket pop and the stage animations are off", page.evaluate("""() => { const b = document.querySelector('.app-actions .basket'); b.classList.add('pop'); const el = document.createElement('div'); el.className = 'mo-pip'; document.body.appendChild(el);
             const r = getComputedStyle(b).animationName === 'none' && getComputedStyle(el).animationName === 'none'; el.remove(); return r; }"""))
         ctx.close()

@@ -135,21 +135,16 @@ def main():
         # ---------- 4. Units filters ----------
         print("\n--- 4. Units filters ---")
         page.click('nav button[data-tab="units"]')
-        if page.locator("#filter-card").is_hidden():
-            page.click("#toggle-filters")
-        groups = page.locator("#group-chips .chip")
-        check("three group buttons", groups.count() == 3, groups.count())
-        w = [box(groups.nth(i))["width"] for i in range(3)]
-        check("they are equal width", max(w) - min(w) <= 2, w)
-        check("the stages are hidden at first", page.locator("#stage-chips .chip").count() == 0)
-        check("a Pick by stage button is there", page.locator("#stage-chips-toggle").count() == 1)
-        page.click("#stage-chips-toggle")
-        check("Pick by stage shows every stage", page.locator("#stage-chips .chip").count() >= 5)
-        page.click("#stage-chips-toggle")
-        check("Hide stages hides them again", page.locator("#stage-chips .chip").count() == 0)
+        # SF3: the filters are a bottom sheet now. Its progress chips wrap (they are no longer three equal buttons) and every stage chip is shown
+        # from the start, so the "Pick by stage" / "Hide stages" checks that used to be here no longer apply.
+        page.click("#toggle-filters")
+        groups = page.locator("#fs-chips-progress .chip")
+        check("three progress buttons in the Filters sheet", groups.count() == 3, groups.count())
+        check("every stage is shown from the start", page.locator("#fs-chips-stage .chip").count() >= 5)
+        check("no stage is pressed at first", page.locator('#fs-chips-stage .chip[aria-pressed="true"]').count() == 0)
         groups.first.click()
-        check("picking To do shows the stages underneath", page.locator("#stage-chips .chip").count() >= 5)
-        check("To do's stages are pressed", page.locator('#stage-chips .chip[aria-pressed="true"]').count() >= 1)
+        check("picking To do presses its stages", page.locator('#fs-chips-stage .chip[aria-pressed="true"]').count() >= 1)
+        page.keyboard.press("Escape")
         check("no sideways scrolling on Units", no_sideways(page))
 
         # ---------- 5. Clean run ----------
