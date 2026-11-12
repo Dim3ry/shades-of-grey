@@ -81,7 +81,7 @@ def main():
         check("the button is at least 44 px high", btn.bounding_box()["height"] >= 44, btn.bounding_box())
         open_sheet(page)
         check("sheet title is Sort models", page.locator("#dialog-message").inner_text() == "Sort models")
-        rows = page.locator(".sort-row")
+        rows = page.locator(".sort-row:not(.sort-row-custom)")   # (SF2 adds a fifth row, Build my own order)
         check("four choices, default first, each with a second line",
               rows.count() == 4 and rows.nth(0).locator(".sort-row-title").inner_text() == "Game › Faction › A–Z"
               and all(rows.nth(i).locator(".sort-row-sub").inner_text() for i in range(4)), rows.all_inner_texts())

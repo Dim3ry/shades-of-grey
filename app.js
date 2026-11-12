@@ -10259,8 +10259,8 @@
         event.preventDefault(); event.stopPropagation();
         acceptDialog();
       } else if (event.key === "Tab") {
-        const stops = [dialogInput, dialogArea, ...dialogPick.querySelectorAll("input, button"), dialogNo, dialogExtra, dialogYes]
-          .filter(el => !el.classList.contains("hidden") && !el.closest("[hidden]"));
+        const stops = [dialogInput, dialogArea, ...dialogPick.querySelectorAll("input, button, select"), dialogNo, dialogExtra, dialogYes]
+          .filter(el => !el.classList.contains("hidden") && !el.closest("[hidden]") && !el.disabled);   // SF2: menus are stops too, a disabled control is not
         const at = stops.indexOf(document.activeElement);
         const next = event.shiftKey ? (at <= 0 ? stops.length - 1 : at - 1) : (at < 0 || at === stops.length - 1 ? 0 : at + 1);
         event.preventDefault();
@@ -10434,12 +10434,84 @@
       wrap.append(x, body);
       const sheet = { view: "list" };
       dialogBox.classList.add("sort-sheet-box");
-      const finishUi = () => { dialogBox.classList.remove("sort-sheet-box", "sort-custom"); dialogButtons.classList.remove("single"); dialogNo.classList.remove("hidden"); };
+      const finishUi = () => { draft = null; dialogBox.classList.remove("sort-sheet-box", "sort-custom"); dialogButtons.classList.remove("single"); dialogNo.classList.remove("hidden"); };
+
+      // SF2: "Your order": up to three levels, each a field and a direction. draft is [level or null, level or null, level or null].
+      let draft = null;
+      const back = document.createElement("button");
+      back.type = "button"; back.className = "sort-icon-btn sort-back"; back.setAttribute("aria-label", "Back to sort choices"); back.textContent = "←";
+      back.addEventListener("click", () => { draft = null; drawList(); const again = body.querySelector(".sort-row-custom"); if (again) again.focus(); });
+      const LEVEL_NAMES = ["Sort by", "Then by", "Then by"];
+      function drawCustom() {
+        sheet.view = "custom";
+        dialogMessage.textContent = "Your order";
+        dialogBox.classList.add("sort-custom");
+        dialogYes.textContent = "Apply";
+        dialogNo.classList.add("hidden");
+        if (!draft) { draft = currentUnitSort().levels.map(l => ({ f: l.f, rev: l.rev })); while (draft.length < 3) draft.push(null); }
+        if (!wrap.contains(back)) wrap.prepend(back);
+        const levelsBox = document.createElement("div");
+        levelsBox.className = "sort-levels";
+        const reset = document.createElement("button");
+        reset.type = "button"; reset.className = "plain-button sort-reset"; reset.textContent = "Reset to default";
+        reset.addEventListener("click", () => { draft = SORT_DEFAULT.map(l => ({ f: l.f, rev: l.rev })); draw(); reset.focus(); });
+        const draw = (focusAt) => {
+          levelsBox.replaceChildren();
+          draft.forEach((level, i) => {
+            const row = document.createElement("div");
+            row.className = "sort-level";
+            const label = document.createElement("span");
+            label.className = "sort-level-label"; label.id = `sort-level-label-${i}`; label.textContent = LEVEL_NAMES[i];
+            const controls = document.createElement("div");
+            controls.className = "sort-level-controls";
+            const select = document.createElement("select");
+            select.setAttribute("aria-labelledby", label.id);
+            select.dataset.level = String(i);
+            if (i > 0) { const none = document.createElement("option"); none.value = ""; none.textContent = "None"; select.appendChild(none); }
+            const taken = new Set(draft.filter((l, j) => l && j !== i).map(l => l.f));   // a field used in another level is left out of this menu
+            for (const [key, field] of Object.entries(SORT_FIELDS)) {
+              if (taken.has(key)) continue;
+              const o = document.createElement("option"); o.value = key; o.textContent = field.label; select.appendChild(o);
+            }
+            select.value = level ? level.f : "";
+            select.disabled = i === 2 && !draft[1];   // a third level needs a second
+            const dir = document.createElement("button");
+            dir.type = "button"; dir.dataset.level = String(i);
+            if (level) {
+              dir.textContent = SORT_FIELDS[level.f].dirs[level.rev ? 1 : 0];
+              dir.setAttribute("aria-label", `${LEVEL_NAMES[i]} direction, ${dir.textContent}`);
+            } else { dir.textContent = "–"; dir.disabled = true; dir.setAttribute("aria-label", `${LEVEL_NAMES[i]} direction, none`); }
+            select.addEventListener("change", () => {
+              draft[i] = select.value ? { f: select.value, rev: false } : null;
+              if (!draft[1]) draft[2] = null;
+              draw(`select[data-level="${i}"]`);
+            });
+            dir.addEventListener("click", () => { level.rev = !level.rev; draw(`button[data-level="${i}"]`); });
+            controls.append(select, dir);
+            row.append(label, controls);
+            levelsBox.appendChild(row);
+          });
+          if (focusAt) { const el = levelsBox.querySelector(focusAt); if (el && !el.disabled) el.focus(); }
+        };
+        draw();
+        body.replaceChildren(levelsBox, reset);
+        const first = levelsBox.querySelector("select");
+        if (first) first.focus();
+      }
+      // Apply: an order that is the same as one of the four presets is saved as that preset (so its tick shows).
+      sheet.apply = () => {
+        if (!draft) return;
+        const levels = draft.filter(Boolean);
+        const same = (a, b) => JSON.stringify(a.map(l => [l.f, !!l.rev])) === JSON.stringify(b.map(l => [l.f, !!l.rev]));
+        const preset = Object.entries(SORT_PRESETS).find(([, v]) => same(v.levels, levels));
+        if (preset) saveUnitSort(preset[0]); else saveUnitSort("custom", levels);
+      };
 
       function drawList() {
         sheet.view = "list";
         dialogMessage.textContent = "Sort models";
         dialogBox.classList.remove("sort-custom");
+        back.remove();
         dialogYes.textContent = "Done";
         dialogNo.classList.add("hidden");
         const active = currentUnitSort();
@@ -10473,7 +10545,15 @@
           });
           group.appendChild(row);
         }
-        // SF2-ROW
+        // SF2: the last row opens the "Your order" view in this same sheet.
+        const custom = makeRow("Build my own order…", "Pick up to three levels", active.mode === "custom");
+        custom.dataset.sortMode = "custom";
+        custom.classList.add("sort-row-custom");
+        const chev = document.createElement("span");
+        chev.className = "sort-chev"; chev.setAttribute("aria-hidden", "true"); chev.textContent = "›";
+        custom.appendChild(chev);
+        custom.addEventListener("click", drawCustom);
+        group.appendChild(custom);
         body.replaceChildren(group);
       }
       drawList();

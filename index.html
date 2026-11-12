@@ -669,6 +669,11 @@
     .unit-head .head-count { margin-left: auto; font-weight: 400; opacity: 0.8; }
     /* end SF1 */
 
+    /* SF2: "Build my own order" row and the "Your order" view in the Sort models sheet. */
+    .sort-row.sort-row-custom { grid-template-columns: 1fr auto auto; }
+    .sort-chev { font-size: 1.4rem; line-height: 1; opacity: 0.8; }
+    /* end SF2 */
+
     /* v21.1: SELECT MODE. A tick box on each card, and a bar at the bottom to move them all. */
     .unit-tick {
       width: 44px; height: 44px; flex-shrink: 0; margin: -6px 0 -6px -6px;
@@ -3605,6 +3610,7 @@
             <li id="help-model-dates">If you track each model separately, each model says under its name when it reached its stage: <strong>Today</strong>, <strong>Yesterday</strong>, or <strong>Since 7 Oct</strong>. Hold or long-press the date to see it in full.</li>
             <li id="help-unfinished-work">Unfinished work is kept: if the page reloads or the app closes while you are part-way through adding a unit, writing a recipe, or pasting notes into Paste recipes, the app keeps what you had. Next time you open the Models or Painting tab, a card says <strong>We kept your unfinished…</strong>. <strong>Keep going</strong> puts it all back. <strong>Discard</strong> asks first, then throws it away for good (there is no Undo). A kept draft is never replaced by accident: for a recipe, <strong>Not now</strong> starts the new one and keeps the unfinished one for later. Only one unfinished recipe is kept at a time. It stays on this device and is not in your backups.</li>
             <li id="help-typing">Typing: while the cursor is in a text box, the menu bar at the bottom hides so it can't sit on your keyboard. Tap somewhere else and it comes back.</li>
+            <li id="help-sort-models"><strong>Sort</strong> on the Models tab picks the order of your units: by game, then army, then name (the usual one), by name only, by stage, or by the last time a unit moved. <strong>Build my own order</strong> lets you pick up to three things to sort by, each from first to last or last to first. Your choice is kept.</li>
             <li id="help-move-many">Move several units at once: on the Models tab press <strong>Select</strong>. Tick the units you want, or press <strong>Select all shown</strong> to tick every unit your filters are showing. Then pick a stage from <strong>Move … to stage</strong> in the bar at the bottom. One <strong>Undo</strong> puts every unit back as it was, diary included. <strong>Cancel</strong> or the phone's Back button stops selecting without changing anything.</li>
             <li>Open a unit and press <strong>Details</strong> to see its <strong>stage</strong>, photos, paint recipes and paint notes, then <strong>back a stage</strong> and delete. On a wide screen, tapping a unit opens its details in a pane beside the list, where you can keep several open and press <strong>Close</strong> on each.</li>
             <li id="help-edit-details">Changing a unit: the boxes for its name, game, faction, nickname, number of models and repaint flag are folded away under <strong>Edit details</strong>, near the bottom of its details. Tap it to open them. It stays open while you make changes, and shuts when you open the unit again later.</li>
