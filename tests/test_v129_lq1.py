@@ -94,23 +94,24 @@ def main():
 
         print("\n--- 2. A fold-out: what is below slides ---")
         page.evaluate("scrollTo(0, 0)")
-        page.click("#toggle-filters")
+        # SF3: Filters is a bottom sheet now, not a fold-out, so this fold-out check uses the other fold-out above the list: + Add unit
+        page.click("#toggle-add")
         # the list below moves as one piece, or (a long list) its cards near the screen move
         list_anims = page.evaluate(ANIMS, ["#unit-split", True]) or page.evaluate("""() => document.getElementById('unit-split').getAnimations({ subtree: true })
             .map(a => a.effect.getKeyframes().flatMap(k => Object.keys(k).filter(x => x === 'transform')))""")
         first = page.evaluate("""() => { const a = document.getElementById('unit-split').getAnimations({ subtree: true }).find(x => x.effect.getKeyframes()[0].transform);
-            const h = document.getElementById('filter-card').getBoundingClientRect().height;
+            const h = document.getElementById('add-form').getBoundingClientRect().height;
             return a ? [a.effect.getKeyframes()[0].transform, Math.round(h)] : null; }""")
-        panel_anims = page.evaluate(ANIMS, ["#filter-card", False]) or []
-        check("the list below the opened Filters slides by transform", first is not None, list_anims)
+        panel_anims = page.evaluate(ANIMS, ["#add-form", False]) or []
+        check("the list below the opened Add unit form slides by transform", first is not None, list_anims)
         check("the list starts from where it was (moved back by the panel's height, so no one-frame jump)",
               first and first[0].startswith("translateY(-") and abs(abs(float(first[0][11:-3])) - first[1]) < 30, first)
-        check("the Filters panel unrolls with clip-path", any("clipPath" in a for a in panel_anims), panel_anims)
+        check("the Add unit form unrolls with clip-path", any("clipPath" in a for a in panel_anims), panel_anims)
         page.wait_for_timeout(450)
         rest = page.evaluate("""() => [[document.getElementById('unit-split'), ...document.querySelectorAll('#unit-list > li')].filter(e => getComputedStyle(e).transform !== 'none').length,
             document.getElementById('unit-split').getAnimations({ subtree: true }).filter(a => a.effect.getKeyframes().some(k => k.transform)).length]""")
         check("once it ends, nothing is left with a transform", rest == [0, 0], rest)
-        page.click("#toggle-filters")
+        page.click("#toggle-add")
         check("closing slides the list back up too", page.evaluate("() => document.getElementById('unit-split').getAnimations({ subtree: true }).some(a => a.effect.getKeyframes().some(k => k.transform))"))
         page.wait_for_timeout(450)
 
@@ -242,16 +243,16 @@ def main():
         check("every fill drawn beside a button stays inside its rounded shape", not problems["unclipped"], problems["unclipped"])
         page.evaluate("showTab('units')")
         page.wait_for_timeout(350)
-        page.evaluate("() => { if (document.getElementById('filter-card').classList.contains('hidden')) document.getElementById('toggle-filters').click(); }")
+        page.evaluate("() => { if (!document.getElementById('filters-sheet')) document.getElementById('toggle-filters').click(); }")   # SF3: the chips are in the Filters sheet now
         page.wait_for_timeout(450)
-        page.tap("#group-chips .chip:nth-child(1)")
-        ch = page.evaluate("""() => { const g = document.querySelector('body > .lq-ghost > .chip'); const el = document.querySelector('#group-chips .chip:nth-child(1)');
+        page.tap("#fs-chips-progress .chip:nth-child(1)")
+        ch = page.evaluate("""() => { const g = document.querySelector('body > .lq-ghost > .chip'); const el = document.querySelector('#fs-chips-progress .chip:nth-child(1)');
             const a = g && g.getAnimations()[0]; const k = a ? a.effect.getKeyframes().map(x => x.clipPath) : [];
             return { ghost: !!g, aria: g && g.parentElement.getAttribute('aria-hidden'), ids: g ? g.querySelectorAll('[id]').length + (g.id ? 1 : 0) : -1, k,
                      copyBg: g && getComputedStyle(g).backgroundColor, copyColour: g && getComputedStyle(g).color, baseBg: getComputedStyle(el).backgroundColor,
                      focusRing: document.activeElement === el && el.matches(':focus-visible') }; }""")
         page.wait_for_timeout(500)
-        fin = page.evaluate("""() => { const el = document.querySelector('#group-chips .chip:nth-child(1)'); const c = getComputedStyle(el);
+        fin = page.evaluate("""() => { const el = document.querySelector('#fs-chips-progress .chip:nth-child(1)'); const c = getComputedStyle(el);
             return { on: el.getAttribute('aria-pressed'), bg: c.backgroundColor, colour: c.color, left: document.querySelectorAll('.lq-ghost, .lq-chip-hold').length,
                      inline: el.getAttribute('style') || '' }; }""")
         # AB4 (AT-34): the chip fill (the rounded copy that was uncovered) is gone, so these two checks now say the opposite: no copy, the colour is there at once.
@@ -259,6 +260,7 @@ def main():
         check("a chip switched on has its switched-on colours at once (so contrast never drops)", fin["on"] == "true" and ch["baseBg"] == fin["bg"], [ch, fin])
         check("when the fill ends the chip is back to its own look, with nothing left over", fin["left"] == 0 and "important" not in fin["inline"], fin)
         check("a touch tap leaves no focus ring", not ch["focusRing"], ch)
+        page.keyboard.press("Escape")   # SF3: close the Filters sheet the chip tap above opened
         page.evaluate("() => { settings.appearance = 'light'; applyPalette(settings.palette); }")
         moving = page.evaluate("() => document.getAnimations().filter(a => a instanceof CSSTransition && a.playState === 'running').map(a => a.transitionProperty + ' ' + (a.effect.target.className || ''))")
         check("a change of look (Light here) stays instant: no colour transitions play", not moving, moving[:5])
@@ -271,7 +273,7 @@ def main():
                  ("a shopping row leaving", lambda: (page.click("#recipe-seg button[data-view=shopping]"), page.wait_for_timeout(200),
                                                      page.evaluate("document.querySelector('#shop-panel .shop-remove').click()"))),
                  ("open Filters", lambda: (page.evaluate("showTab('units')"), page.wait_for_timeout(200), page.click("#toggle-filters"))),
-                 ("the Undo message leaving", lambda: (page.evaluate("showToast('x', () => {})"), page.click("#toast-undo"))),
+                 ("the Undo message leaving", lambda: (page.keyboard.press("Escape"), page.evaluate("showToast('x', () => {})"), page.click("#toast-undo"))),
                  ("the question box leaving", lambda: (page.evaluate("askYesNo('Delete this?', () => {})"), page.click("#dialog-no")))]
         moving = []
         for name, act in steps:

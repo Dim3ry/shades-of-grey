@@ -7074,10 +7074,6 @@
     // ----- Units -----
 
     const list = document.getElementById("unit-list");
-    const hobbyFilter = document.getElementById("hobby-filter");
-    const factionFilter = document.getElementById("faction-filter");
-    const groupChips = document.getElementById("group-chips");
-    const stageChips = document.getElementById("stage-chips");
     const filterNote = document.getElementById("filter-note");
     const clearFiltersButton = document.getElementById("clear-filters");
     const selectButton = document.getElementById("toggle-select");      // v21.1
@@ -7163,8 +7159,7 @@
           row.scrollLeft = keepLeft;   // A1: back to where you slid it to
           // Bring the pressed button into view, unless one already is.
           const rowBox = row.getBoundingClientRect();
-          // (the Pick by stage / Hide stages opener sits in the row but is not a choice, so it is never scrolled to)
-          const on = buttons.filter(c => c.id !== "stage-chips-toggle" && (c.getAttribute("aria-pressed") === "true" || c.getAttribute("aria-expanded") === "true"));
+          const on = buttons.filter(c => (c.getAttribute("aria-pressed") === "true" || c.getAttribute("aria-expanded") === "true"));
           const inView = (c) => { const r = c.getBoundingClientRect(); return r.left >= rowBox.left - 1 && r.right <= rowBox.right + 1; };
           if (on.length && !on.some(inView) && row !== tappedRow) {   // A1: not in a row you are tapping in: you know where you are
             const r = on[0].getBoundingClientRect();
@@ -7222,7 +7217,6 @@
       return chip;
     }
 
-    let unitStagesOpen = false;   // v49: "Pick by stage" on the Units filters (kept while the app is open)
     // Suggestions for the game/faction boxes in the add form, the edit panel and (factions) the scheme editor.
     // DS2: on its own, so render() can keep them right while the Units tab is out of sight.
     function fillUnitLists(games) {
@@ -7240,77 +7234,24 @@
       // M2: the Detailed / Simple switch for model rows shows only while some unit is tracked model by model.
       modelRowsSwitch.classList.toggle("hidden", !models.some(m => m.each));
       for (const b of modelRowsSwitch.querySelectorAll("button")) b.setAttribute("aria-pressed", String((b.dataset.rows === "simple") === rowsSimple()));
-      // Dropdowns: the faction list only shows factions from the chosen game.
+      // The faction chosen must belong to the chosen game (the Filters sheet shows only that game's factions).
       const games = uniqueSorted(models.map(m => m.hobby));
       if (!games.includes(filters.hobby)) filters.hobby = "";
       const factions = uniqueSorted(models.filter(m => !filters.hobby || m.hobby === filters.hobby).map(m => m.faction));
       if (!factions.includes(filters.faction)) filters.faction = "";
-      fillSelect(hobbyFilter, "games", games, filters.hobby);
-      fillSelect(factionFilter, "factions", factions, filters.faction);
-      // The chosen faction's colour shows as a stripe on the menu, like the stage chips.
-      factionFilter.style.setProperty("--chip-colour", factionColour(filters.faction) || "var(--border)");
-
-      // Group chips: one tap for every To do (or Done) stage at once.
-      const todo = todoStages();
-      const done = doneStages();
-      groupChips.innerHTML = "";
-      groupChips.append(
-        makeChip("To do", sameStages(filters.stages, todo), () => {
-          filters.stages = sameStages(filters.stages, todo) ? new Set() : new Set(todo);
-          render();
-        }),
-        makeChip("Done", sameStages(filters.stages, done), () => {
-          filters.stages = sameStages(filters.stages, done) ? new Set() : new Set(done);
-          render();
-        }),
-        makeChip("↻ Repaint", filters.repaint, () => {
-          filters.repaint = !filters.repaint;
-          render();
-        }),
-      );
-
-      // Stage chips: tap several to combine them. v49: they open underneath only once a group or a stage is picked (or "Pick by stage"
-      // is tapped), so the filter card starts as three equal buttons.
-      stageChips.innerHTML = "";
-      const stagesShown = filters.stages.size > 0 || unitStagesOpen;
-      if (stagesShown) {
-        STAGES.forEach((stageName, index) => {
-          const chip = makeChip(stageName, filters.stages.has(index), () => {
-            if (filters.stages.has(index)) filters.stages.delete(index);
-            else filters.stages.add(index);
-            render();
-          }, `var(--stage-${index})`);
-          stageChips.appendChild(chip);
-        });
-      }
-      if (!filters.stages.size) {
-        const opener = document.createElement("button");
-        opener.type = "button";
-        opener.className = "more-info-button";
-        opener.id = "stage-chips-toggle";
-        opener.setAttribute("aria-expanded", String(unitStagesOpen));
-        opener.setAttribute("aria-controls", "stage-chips");
-        const text = document.createElement("span");
-        text.textContent = unitStagesOpen ? "Hide stages" : "Pick by stage";
-        const mark = document.createElement("span");
-        mark.className = "fold-mark";
-        mark.setAttribute("aria-hidden", "true");
-        opener.append(text, mark);
-        opener.addEventListener("click", () => { unitStagesOpen = !unitStagesOpen; render(); });
-        stageChips.appendChild(opener);
-      }
 
       const visible = models.filter(isVisible);
       const activeCount = (filters.hobby ? 1 : 0) + (filters.faction ? 1 : 0) +
                           (filters.stages.size > 0 ? 1 : 0) + (filters.repaint ? 1 : 0);
       const anyFilter = activeCount > 0;
       clearFiltersButton.classList.toggle("hidden", !anyFilter);
-      // The summary line always shows what you're looking at, even with Filters folded away.
+      // The summary line always shows what you're looking at, with the Filters sheet shut.
       const scope = [filters.faction || filters.hobby].filter(Boolean).join("");
       filterNote.textContent = anyFilter
         ? `${scope ? scope + ": " : ""}${visible.length} of ${plural(models.length, "unit")} (${plural(modelCount(visible), "model")})`
         : `${plural(models.length, "unit")}, ${plural(modelCount(models), "model")}`;
-      toggleFilters.textContent = `Filters${anyFilter ? " (" + activeCount + ")" : ""} ${filtersOpen ? "▴" : "▾"}`;
+      toggleFilters.textContent = `Filters${anyFilter ? " (" + activeCount + ")" : ""}`;
+      if (filtersSheet) renderFiltersSheet(games, factions, visible);   // SF3: the sheet, if open, follows every change
 
       fillUnitLists(games);
       fillStartStage();
@@ -9924,7 +9865,7 @@
     // out once, as before, so a long list below costs nothing extra on each frame. The panel is the one the button names (aria-controls),
     // or the element straight after it. Skipped where the panel already has its own motion (Details on a unit, the stage chips, Mentor,
     // the <details> folds, which open their height in CSS) and for tabs and text boxes.
-    const LQ_FOLD_SKIP = '[role="tab"], [role="combobox"], input, summary, .details-toggle, #stage-chips-toggle, #mentor-button, .mentor-orb, .tabs *, .arc *, .mentor-backdrop *, .mentor-window *, '
+    const LQ_FOLD_SKIP = '[role="tab"], [role="combobox"], input, summary, .details-toggle, #mentor-button, .mentor-orb, .tabs *, .arc *, .mentor-backdrop *, .mentor-window *, '
       + '#unit-list li.unit *, #unit-side *';   // MC1 (v130) owns a unit card's opening and closing (its own unroll and glideCards), Mo2 its Details
     let lqFold = null;
     const lqSliding = new Set();   // the slides still running: any new tap or key ends them first, so nothing measures a page that is still moving
@@ -10323,28 +10264,152 @@
 
     // ----- Filters and the add form -----
 
-    hobbyFilter.addEventListener("change", () => {
-      filters.hobby = hobbyFilter.value;
-      filters.faction = "";
-      render();
-    });
-    factionFilter.addEventListener("change", () => { filters.faction = factionFilter.value; render(); });
     clearFiltersButton.addEventListener("click", () => { clearFilters(); render(); });
 
-    // Fold the filter card open or shut. Starts open only on wide screens.
+    // SF3: the Filters button opens a sheet from the bottom: Game, Faction, Progress and Stage chips, "Clear all" and "Show N units".
+    // Filters apply as you tap (the same filters object as always), so the list behind is already right; the sheet only draws and sets them.
     const toggleFilters = document.getElementById("toggle-filters");
-    const filterCard = document.getElementById("filter-card");
+    let filtersSheet = null;   // null, or { backdrop, body, clear, show, opener, onKey }
+    function fsChip(key, label, on, onClick, colour) {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chip fs-chip";
+      chip.dataset.fk = key;
+      chip.setAttribute("aria-pressed", String(on));
+      if (colour !== undefined) {
+        const dot = document.createElement("span");
+        dot.className = "fs-dot";
+        dot.setAttribute("aria-hidden", "true");
+        dot.style.setProperty("--chip-colour", colour || "var(--border)");
+        chip.appendChild(dot);
+      }
+      const text = document.createElement("span");
+      text.textContent = label;
+      chip.appendChild(text);
+      chip.addEventListener("click", onClick);
+      return chip;
+    }
+    function fsSection(title, chips) {
+      const section = document.createElement("div");
+      section.className = "fs-section";
+      const label = document.createElement("h3");
+      label.className = "fs-label";
+      label.id = "fs-label-" + title.toLowerCase();
+      label.textContent = title;
+      const row = document.createElement("div");
+      row.className = "chips chips-wrap";
+      row.id = "fs-chips-" + title.toLowerCase();
+      row.setAttribute("role", "group");
+      row.setAttribute("aria-labelledby", label.id);
+      row.append(...chips);
+      section.append(label, row);
+      return section;
+    }
+    function renderFiltersSheet(games, factions, visible) {
+      const state = filtersSheet;
+      const held = document.activeElement && state.body.contains(document.activeElement) ? document.activeElement.dataset.fk : null;
+      const top = state.body.scrollTop;
+      const todo = todoStages(), done = doneStages();
+      state.body.replaceChildren(
+        fsSection("Game", [
+          fsChip("game:", "All games", !filters.hobby, () => { filters.hobby = ""; filters.faction = ""; render(); }),
+          ...games.map(g => fsChip("game:" + g, g, filters.hobby === g, () => { filters.hobby = g; filters.faction = ""; render(); })),
+        ]),
+        fsSection("Faction", [
+          fsChip("faction:", "All factions", !filters.faction, () => { filters.faction = ""; render(); }),
+          ...factions.map(f => fsChip("faction:" + f, f, filters.faction === f, () => { filters.faction = f; render(); }, factionColour(f))),
+        ]),
+        fsSection("Progress", [
+          fsChip("p:todo", "To do", sameStages(filters.stages, todo), () => { filters.stages = sameStages(filters.stages, todo) ? new Set() : new Set(todo); render(); }),
+          fsChip("p:done", "Done", sameStages(filters.stages, done), () => { filters.stages = sameStages(filters.stages, done) ? new Set() : new Set(done); render(); }),
+          fsChip("p:repaint", "\u21bb Repaint", filters.repaint, () => { filters.repaint = !filters.repaint; render(); }),
+        ]),
+        fsSection("Stage", STAGES.map((name, index) => fsChip("s:" + index, name, filters.stages.has(index), () => {
+          if (filters.stages.has(index)) filters.stages.delete(index); else filters.stages.add(index);
+          render();
+        }, `var(--stage-${index})`))),
+      );
+      state.body.scrollTop = top;
+      if (held) { const again = state.body.querySelector(`[data-fk="${CSS.escape(held)}"]`); if (again) again.focus({ preventScroll: true }); }
+      state.clear.disabled = !(filters.hobby || filters.faction || filters.stages.size || filters.repaint);
+      state.show.textContent = "Show " + plural(visible.length, "unit");
+    }
+    function openFiltersSheet() {
+      if (filtersSheet) return;
+      const backdrop = document.createElement("div");
+      backdrop.className = "fs-backdrop";
+      backdrop.id = "filters-sheet";
+      const box = document.createElement("div");
+      box.className = "fs-sheet";
+      box.setAttribute("role", "dialog");
+      box.setAttribute("aria-modal", "true");
+      box.setAttribute("aria-labelledby", "fs-title");
+      const head = document.createElement("div");
+      head.className = "fs-head";
+      const title = document.createElement("h2");
+      title.className = "fs-title";
+      title.id = "fs-title";
+      title.textContent = "Filters";
+      const close = document.createElement("button");
+      close.type = "button";
+      close.className = "fs-close";
+      close.setAttribute("aria-label", "Close filters");
+      close.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+      head.append(title, close);
+      const body = document.createElement("div");
+      body.className = "fs-body";
+      const foot = document.createElement("div");
+      foot.className = "fs-foot";
+      const clear = document.createElement("button");
+      clear.type = "button";
+      clear.className = "plain-button";
+      clear.id = "fs-clear";
+      clear.textContent = "Clear all";
+      const show = document.createElement("button");
+      show.type = "button";
+      show.className = "primary-button";
+      show.id = "fs-show";
+      show.setAttribute("aria-live", "polite");
+      foot.append(clear, show);
+      box.append(head, body, foot);
+      backdrop.appendChild(box);
+      const onKey = (event) => {
+        if (event.isComposing) return;
+        if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); closeFiltersSheet(); }
+        else if (event.key === "Tab") {
+          const stops = [...box.querySelectorAll("button")].filter(b => !b.disabled);
+          const at = stops.indexOf(document.activeElement);
+          const next = event.shiftKey ? (at <= 0 ? stops.length - 1 : at - 1) : (at < 0 || at === stops.length - 1 ? 0 : at + 1);
+          event.preventDefault();
+          stops[next].focus();
+        }
+      };
+      filtersSheet = { backdrop, body, clear, show, opener: document.activeElement, onKey };
+      close.addEventListener("click", closeFiltersSheet);
+      show.addEventListener("click", closeFiltersSheet);
+      clear.addEventListener("click", () => { clearFilters(); render(); });
+      backdrop.addEventListener("click", (event) => { if (event.target === backdrop) closeFiltersSheet(); });
+      document.addEventListener("keydown", onKey, true);
+      document.body.appendChild(backdrop);
+      document.body.style.overflow = "hidden";
+      const games = uniqueSorted(models.map(m => m.hobby));
+      renderFiltersSheet(games, uniqueSorted(models.filter(m => !filters.hobby || m.hobby === filters.hobby).map(m => m.faction)), models.filter(isVisible));
+      close.focus({ preventScroll: true });
+      queueBackCheck();
+    }
+    function closeFiltersSheet() {
+      const state = filtersSheet;
+      if (!state) return;
+      filtersSheet = null;
+      document.removeEventListener("keydown", state.onKey, true);
+      state.backdrop.remove();
+      document.body.style.overflow = "";
+      if (state.opener && state.opener.isConnected) { try { state.opener.focus({ preventScroll: true }); } catch (ignored) {} }
+      queueBackCheck();
+    }
+    toggleFilters.addEventListener("click", openFiltersSheet);
     // v77: WIDE_MIN_PX is the wide-screen breakpoint. The CSS says the same number in index.html (see the v77 comment there).
     const WIDE_MIN_PX = 900;
-    let filtersOpen = window.matchMedia("(min-width: " + WIDE_MIN_PX + "px)").matches;
-    function setFiltersOpen(open) {
-      filtersOpen = open;
-      filterCard.classList.toggle("hidden", !open);
-      toggleFilters.setAttribute("aria-expanded", open);
-      render();
-    }
-    toggleFilters.addEventListener("click", () => setFiltersOpen(!filtersOpen));
-    filterCard.classList.toggle("hidden", !filtersOpen);
 
     const form = document.getElementById("add-form");
     const toggleAdd = document.getElementById("toggle-add");
@@ -23577,6 +23642,7 @@
         if (schemeDraft && settings.recipeView === "schemes") return () => closeScheme(true);
       }
       if ((tab === "guides" || (tab === "recipes" && settings.recipeView === "colourlab")) && compendiumState.focus) return leaveIdeasFor;   // v69 (X1: also in Colour Lab): back to the recipe step or palette paint
+      if (tab === "units" && filtersSheet) return closeFiltersSheet;   // SF3: the Filters sheet
       if (tab === "units" && !unitsImport.classList.contains("hidden")) return closeUnitsImport;
       if (tab === "units" && selectMode) return closeSelect;   // v21.1: select mode's tick boxes
       if (tab === "updates" && versionFrom) { const from = versionFrom; return from === "launch" ? enterLaunch : () => showTab(from); }   // FB1: opened from the version number: Back returns to where the person was

@@ -592,7 +592,6 @@
       background: linear-gradient(to left, var(--faction-tint), transparent 75%), var(--card);
     }
     .details .faction-dot { width: 10px; height: 10px; vertical-align: -1px; margin-right: 4px; }
-    #faction-filter { border-left: 4px solid var(--chip-colour, var(--border)); }
 
     .faction-colour-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
     .faction-colour-row {
@@ -718,10 +717,6 @@
       border-radius: var(--radius-control);   /* AB5: was a pill; now follows the look */
     }
     .chip[aria-pressed="true"] { color: var(--on-accent); background-color: var(--accent-fill, var(--accent)); border-color: var(--accent-fill, var(--accent)); font-weight: 600; }
-    /* v49: the Units filter groups (To do, Done, Repaint) are three equal buttons across the card; the stage chips open underneath */
-    #group-chips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-    #group-chips .chip { justify-content: center; text-align: center; min-height: 44px; padding: 10px 6px; }
-    #stage-chips .more-info-button { flex-basis: 100%; }
 
     /* ----- Units: the list ----- */
     ul.units { list-style: none; margin: 0; padding: 0; }
@@ -2052,10 +2047,6 @@
         gap: 14px; align-items: start;
       }
       li.unit { margin-bottom: 0; padding: 16px; }
-      /* v49: the game and faction menus and To do / Done / Repaint share the top line; the stages get the line below. */
-      #filter-card:not(.hidden) { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); column-gap: 12px; align-items: center; }
-      #filter-card > #group-chips { margin-top: 0; }
-      #filter-card > #stage-chips { grid-column: 1 / -1; }
       .name { font-size: 1.125rem; }
       .details, .stage { font-size: 0.875rem; }
 
@@ -2881,11 +2872,9 @@
       .primary-button:not(:disabled):hover { border-color: var(--accent-fill, var(--accent)); }   /* AB4 (AT-33): hover changes the border colour only */
     }
     .primary-button:not(:disabled):active, .plain-button:not(:disabled):active { translate: 0 1px; scale: 0.97; box-shadow: none; filter: brightness(0.92); }
-    /* 2. Chips: the colour switches at once (AB4, AT-34: the fill sweep is gone). To / Done / Repaint also get a tick; the stage chips do not, because a tick would widen them and change how their row fits. */
+    /* 2. Chips: the colour switches at once (AB4, AT-34: the fill sweep is gone). The chips in the Filters sheet get a tick when chosen (SF3, below). */
     .chip { background-image: linear-gradient(var(--accent-fill, var(--accent)), var(--accent-fill, var(--accent))); background-repeat: no-repeat; background-size: 0% 100%; }   /* the same fill layer as before the sweep went, kept still (nothing moves it now) so the rounded edge is drawn pixel for pixel as it was */
     .chip[aria-pressed="true"] { background-size: 100% 100%; }
-    #group-chips .chip::before { content: "\2713"; display: inline-block; width: 0; overflow: hidden; opacity: 0; vertical-align: bottom; }
-    #group-chips .chip[aria-pressed="true"]::before { width: 1em; margin-right: 0.3em; opacity: 1; }
     /* FB4: Paint brands are wrapping tiles like Recipe preferences (chips-wrap). A tick says "on" as well as the colour; long names wrap inside the tile. */
     #brand-toggles .chip { white-space: normal; overflow-wrap: anywhere; text-align: center; display: inline-flex; align-items: center; justify-content: center; }
     #brand-toggles .chip::before { content: "\2713"; display: inline-block; width: 0; overflow: hidden; opacity: 0; }
@@ -3182,7 +3171,29 @@
     #your-data-card .settings-part { margin-top: 16px; }
     #view-credits { scroll-margin-top: 84px; }
     #view-credits > .card { margin-bottom: 14px; }
-  </style>
+      /* SF3: the Filters sheet (opened by the Filters button on Models; built by openFiltersSheet() in app.js). Reduced motion is switched off by the page-wide rule. */
+    .fs-backdrop { position: fixed; inset: 0; z-index: 150; background: var(--scrim); display: flex; align-items: flex-end; justify-content: center; overscroll-behavior: contain; animation: fs-fade var(--motion-fast) var(--motion-ease) both; }
+    .fs-sheet { width: 100%; max-width: 560px; max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px - env(safe-area-inset-top)); display: flex; flex-direction: column; box-sizing: border-box;
+      background: var(--card); color: var(--text); border: var(--border-width) var(--border-style) var(--border); border-bottom: 0; border-radius: var(--radius-card) var(--radius-card) 0 0;
+      box-shadow: 0 -8px 28px var(--shadow); animation: fs-rise var(--motion-med) var(--motion-ease) both; }
+    .fs-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 8px 0 16px; }
+    .fs-title { margin: 0; font-size: 1.125rem; }
+    .fs-close { width: 44px; height: 44px; padding: 0; display: inline-flex; align-items: center; justify-content: center; background: transparent; border: 0; color: var(--muted); cursor: pointer; }
+    .fs-close svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+    .fs-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 16px 12px; }
+    .fs-section { margin-top: 12px; }
+    .fs-label { margin: 0 0 6px; font-size: 0.75rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    .fs-section > .chips { margin-top: 0; }
+    .fs-chip { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; overflow-wrap: anywhere; }
+    .fs-dot { flex: none; width: 12px; height: 12px; border-radius: 3px; background: var(--chip-colour, var(--border)); box-shadow: 0 0 0 1.5px var(--border); }
+    .fs-chip[aria-pressed="true"] .fs-dot { box-shadow: 0 0 0 1.5px var(--on-accent); }
+    .fs-chip::before { content: "\2713"; display: inline-block; width: 0; overflow: hidden; opacity: 0; font-weight: 700; margin-right: -6px; }   /* the tick of a chosen chip (the chip's own text stays put until chosen) */
+    .fs-chip[aria-pressed="true"]::before { width: 1em; margin-right: 0; opacity: 1; }
+    .fs-foot { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); border-top: var(--border-width) var(--border-style) var(--border); }
+    .fs-foot button { min-height: 44px; }
+    @keyframes fs-fade { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fs-rise { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+</style>
 </head>
 
 <body class="launching ring-loading">
@@ -3306,7 +3317,7 @@
         <button class="primary-button" id="toggle-add" aria-expanded="false" aria-controls="add-form">+ Add unit</button>
         <!-- v21.1: tick several units and move them to a stage in one go. -->
         <button class="plain-button" id="toggle-select" aria-pressed="false">Select</button>
-        <button class="plain-button" id="toggle-filters" aria-expanded="false" aria-controls="filter-card">Filters ▾</button>
+        <button class="plain-button" id="toggle-filters" aria-haspopup="dialog">Filters</button>
       </div>
       <!-- M2: Detailed / Simple model rows, for every unit tracked model by model. Shown only when there is one. -->
       <div class="rows-switch hidden" id="model-rows-switch" role="group" aria-label="Model rows view">
@@ -3349,15 +3360,7 @@
       <!-- v21: shown while any example is still there. AB9: a thin strip, on Models only (not a card, so no look gives it a frame). -->
       <div class="examples-card examples-strip hidden" id="examples-card" role="note"></div>
 
-      <!-- Filters start folded away so the units get the screen; "Filters" opens them. -->
-      <div class="card hidden" id="filter-card">
-        <div class="row">
-          <select id="hobby-filter" aria-label="Filter by game"></select>
-          <select id="faction-filter" aria-label="Filter by faction"></select>
-        </div>
-        <div class="chips" id="group-chips"></div>
-        <div class="chips" id="stage-chips"></div>
-      </div>
+      <!-- SF3: the Filters button opens a sheet from the bottom (built by openFiltersSheet() in app.js). -->
 
       <div class="filter-summary">
         <span class="hint" id="filter-note"></span>
@@ -3585,7 +3588,7 @@
             <li id="help-edit-details">Changing a unit: the boxes for its name, game, faction, nickname, number of models and repaint flag are folded away under <strong>Edit details</strong>, near the bottom of its details. Tap it to open them. It stays open while you make changes, and shuts when you open the unit again later.</li>
             <li id="help-questions">When the app needs to check before doing something, or needs a name from you, it asks in its own small box. Tap <strong>Yes</strong> or <strong>No</strong>, or type the name and tap <strong>OK</strong>. <strong>No</strong>, <strong>Cancel</strong>, <strong>Escape</strong> and the phone's <strong>Back</strong> button all mean no, and nothing changes.</li>
             <li id="help-delete-unit">Deleting a unit: press <strong>Delete</strong> in its details and say yes. Changed your mind? Press <strong>Undo</strong> on the message that appears (it stays about 8 seconds): the unit comes back exactly as it was, photos, recipes and diary included.</li>
-            <li>Use the game and faction menus and the stage chips to filter the list. Tap several stage chips to combine them.</li>
+            <li>Tap <strong>Filters</strong> to narrow the list by game, faction, progress or stage. Tap several stages to combine them. The button shows how many units match.</li>
           </ul>
         </details>
         <details>

@@ -71,23 +71,24 @@ def main():
         page.mouse.move(5, 5)
 
         print("\n--- 3. Chips ---")
-        page.click("#toggle-filters")
+        page.click("#toggle-filters")   # SF3: the chips are in the Filters sheet now
         page.wait_for_timeout(200)
         # AB4 (AT-34): the chip fill sweep (Mo1's, then LQ1's rounded copy) is gone: a chip you switch on shows its colour at once, with aria-pressed
         # already true and nothing drawn over it.
-        sweep = page.evaluate("""() => { document.querySelector('#group-chips .chip').click(); const c = document.querySelector('#group-chips .chip[aria-pressed="true"]');
+        sweep = page.evaluate("""() => { document.querySelector('#fs-chips-progress .chip').click(); const c = document.querySelector('#fs-chips-progress .chip[aria-pressed="true"]');
             return !!c && !c.classList.contains('sweep') && !c.classList.contains('lq-chip-hold') && !document.querySelector('body > .lq-ghost > .chip'); }""")
         check("a chip you switch on shows its colour at once (aria-pressed is already true, no sweep)", sweep)
         page.wait_for_timeout(400)
         check("…then has the full fill and a tick",
-              page.evaluate("""() => { const c = document.querySelector('#group-chips .chip[aria-pressed="true"]');
+              page.evaluate("""() => { const c = document.querySelector('#fs-chips-progress .chip[aria-pressed="true"]');
                   return !c.classList.contains('sweep') && getComputedStyle(c).backgroundSize.startsWith('100%') && getComputedStyle(c, '::before').width !== '0px'; }"""))
         check("the stage chips show at once when they open (AB4, AT-34: no cascade)",
-              page.evaluate("""() => { const r = document.getElementById('stage-chips'), c = r.querySelectorAll('.chip');
+              page.evaluate("""() => { const r = document.getElementById('fs-chips-stage'), c = r.querySelectorAll('.chip');
                   return !r.classList.contains('cascade') && c.length > 4 && getComputedStyle(c[2]).animationName === 'none'; }"""))
-        page.click("#group-chips .chip >> nth=1")   # another redraw with the stages already open
+        page.click("#fs-chips-progress .chip >> nth=1")   # another redraw with the stages already open
         page.wait_for_timeout(100)
-        check("…and not again on later redraws", not page.evaluate("() => document.getElementById('stage-chips').classList.contains('cascade')"))
+        check("…and not again on later redraws", not page.evaluate("() => document.getElementById('fs-chips-stage').classList.contains('cascade')"))
+        page.keyboard.press("Escape")   # SF3: close the Filters sheet
 
         print("\n--- 4. Question box ---")
         page.evaluate("() => { askYesNo('Delete this unit?', () => { window.__yes = true; }); }")
@@ -131,16 +132,15 @@ def main():
         rp.on("pageerror", lambda x: errors.append(str(x)))
         load(rp, units=units(3))
         rp.click('nav button[data-tab="units"]')
-        rp.click("#toggle-filters")
-        rp.wait_for_timeout(200)
         rp.click("#toggle-select")
         rp.wait_for_timeout(80)
         check("no ripple is made", rp.locator(".ripple").count() == 0)
         rp.click("#toggle-select")
-        rp.click("#group-chips .chip >> nth=0")
+        rp.click("#toggle-filters")   # SF3: the chips are in the Filters sheet now
+        rp.click("#fs-chips-progress .chip >> nth=0")
         rp.wait_for_timeout(20)
         check("chips fill at once, no cascade",
-              not rp.evaluate("() => !!document.querySelector('.chip.sweep') || document.getElementById('stage-chips').classList.contains('cascade')"))
+              not rp.evaluate("() => !!document.querySelector('.chip.sweep') || document.getElementById('fs-chips-stage').classList.contains('cascade')"))
         rp.evaluate("() => askYesNo('Sure?', () => {})")
         rp.wait_for_timeout(20)
         rp.evaluate("() => showToast('Moved', () => {}, 'Undo', 5)")
