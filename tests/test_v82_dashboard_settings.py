@@ -73,7 +73,8 @@ def main():
         page.emulate_media(color_scheme="dark")
         show(page, "dashboard", 1280)
         c = cards(page)
-        check("3 factions: stage and faction cards side by side", c["stage-card"]["x"] < c["faction-card"]["x"] and c["stage-card"]["w"] < 700, c)
+        # DB1: the Stages card is now one folding row under the top card, so it no longer sits beside the faction card; each takes a full row (Palette and Achievements stay side by side).
+        check("3 factions: the Stages row and the faction card each take the full row", c["stage-card"]["w"] > 1000 and c["faction-card"]["w"] > 1000 and c["faction-card"]["x"] == c["stage-card"]["x"], c)
         # AB8: Armies are rows by default now; the full-row widening is for the doughnut chart (rows stay beside By stage), so this check asks for doughnuts.
         load(page, units=units(7), settings={"factionView": "doughnuts"})
         for w in (900, 1280, 1920):

@@ -25,7 +25,7 @@ def check(name, ok, detail=""):
 PAINT = {"id": 1, "brand": "Citadel", "name": "Macragge Blue", "colour": "#1f3f9a", "status": "wishlist", "shopFrom": ["Recipe: Blue"]}
 UNIT = {"id": 1, "name": "Squad", "hobby": "40K", "stage": 1, "count": 5, "added": "2026-10-01", "log": [["2026-10-01", 1]]}
 SEGMENTS = ["dashboard", "units", "recipes", "guides"]   # X2: the fourth is Tools and Settings
-NAMES = {"dashboard": "Dashboard", "units": "Models", "recipes": "Painting", "guides": "Tools"}   # X2: the fourth segment reads Tools (George's rename; the page is Tools and Settings)
+NAMES = {"dashboard": "Nexus", "units": "Models", "recipes": "Painting", "guides": "Tools"}   # X2: the fourth segment reads Tools (George's rename; the page is Tools and Settings)
 
 def seg(tab):
     return f'.tabs button[data-tab="{tab}"]'

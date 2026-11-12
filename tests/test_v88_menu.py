@@ -61,7 +61,8 @@ def main():
         start(page)
         labels = page.evaluate("() => [...document.querySelectorAll('.tabs button[data-tab]')].sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left).map(b => [b.getAttribute('aria-label') || b.textContent.trim(), b.textContent.trim()])")
         check("left to right: Dashboard, Models, Painting, Tools (aria-label and visible label; X2: the fourth says Tools, the page is Tools and Settings)",
-              labels == [["Dashboard", "Dashboard"], ["Models", "Models"], ["Painting", "Painting"], ["Tools", "Tools"]], labels)
+              labels == [["Nexus", "Nexus"],   # DB1: the Dashboard is now called Nexus
+                       ["Models", "Models"], ["Painting", "Painting"], ["Tools", "Tools"]], labels)
         check("the old Units name is gone from the bar and Settings is not a segment",
               "Units" not in [l[1] for l in labels] and page.locator(".tabs button[data-tab='settings']").count() == 0)
         check("the Models segment still opens the unit list", (page.click(seg("units")), page.wait_for_timeout(100), page.is_visible("#view-units"))[2])

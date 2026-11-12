@@ -40,9 +40,11 @@ def main():
             print(f"\n--- 1. Empty collection, {width} px ---")
             t.load(page, paints=[], units=[])
             page.evaluate("() => document.querySelector('.tabs button[data-tab=dashboard]').click()"); t.quiet(page)
-            check("Dashboard headline with no units is just 'No units yet.'", text(page, "#done-summary") == "No units yet.", text(page, "#done-summary"))
-            check("Dashboard headings are Added and painted / Where everything is / Armies",
-                  [text(page, s) for s in ("#history-card h2", "#stage-card h2", "#faction-card h2")] == ["Added and painted", "Where everything is", "Armies"])
+            # DB1: the "No units yet." line is gone with the other top-card lines; an empty collection shows the ring at 0% over Done and two 0 tiles.
+            check("Dashboard with no units: the ring reads 0% over Done", page.evaluate("() => [...document.querySelectorAll('#overall-chart svg text')].map(x => x.textContent)") == ["0%", "Done"])
+            # DB1: Added and painted is now Progress timeline; "Where everything is" became the folded Stages card.
+            check("Dashboard headings are Progress timeline / Stages / Armies",
+                  [text(page, s) for s in ("#history-card h2", "#stage-card h2", "#faction-card h2")] == ["Progress timeline", "Stages", "Armies"])
             check("the chart legend reads Added and Painted", [x.strip() for x in page.evaluate("() => [...document.querySelectorAll('#history-legend .legend-key')].map(k => k.textContent)")] == ["Added", "Painted"])
             page.evaluate("() => document.querySelector('nav button[data-tab=units]').click()"); t.quiet(page)
             check("empty Models says 'Nothing on the bench yet.'", text(page, "#units-empty").startswith("Nothing on the bench yet."), text(page, "#units-empty"))

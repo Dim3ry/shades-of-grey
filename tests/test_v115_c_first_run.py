@@ -82,24 +82,11 @@ def main():
         check("nothing else is in the card", page.evaluate("() => [...document.querySelectorAll('#help-five > *')].map(e => e.tagName).join()") == "H2,P,UL")
 
         print("\n--- 4. What Done means ---")
-        # (saved units with no saved settings get the old 5 stages, so the default 8 are seeded on purpose)
+        # DB1: the "Done means ..." line was taken off the top card (the ring says "Done" and Help explains it), so it is checked as gone.
         t.load(page, units=[unit(1)], settings={"stages": ["Unassembled", "Part assembled", "Assembled", "Primed", "Part painted", "Tabletop ready", "Needs touch-ups", "Display ready"], "doneFrom": 5})
         tap_tab(page, "dashboard")
         wait_settled(page)
-        check("default stages: Done means Tabletop ready or later.", page.inner_text("#done-meaning").strip() == "Done means Tabletop ready or later.", page.inner_text("#done-meaning"))
-        stages = ["Boxed", "Built", "Primed", "Finished"]
-        t.load(page, units=[unit(1)], settings={"stages": stages, "doneFrom": 3})
-        tap_tab(page, "dashboard")
-        wait_settled(page)
-        check("renamed stages: the line uses the real name, and no 'or later' on the last stage", page.inner_text("#done-meaning").strip() == "Done means Finished.", page.inner_text("#done-meaning"))
-        t.load(page, units=[unit(1)], settings={"stages": stages, "doneFrom": 2})
-        tap_tab(page, "dashboard")
-        wait_settled(page)
-        check("a middle stage reads 'Primed or later'", page.inner_text("#done-meaning").strip() == "Done means Primed or later.", page.inner_text("#done-meaning"))
-        t.load(page, units=[])
-        tap_tab(page, "dashboard")
-        wait_settled(page)
-        check("no units: the line is left out", not page.evaluate(SHOWN, "#done-meaning"))
+        check("the Done means line is gone from the top card", page.locator("#done-meaning").count() == 0 and "Done means" not in page.inner_text("#headline-card"))
 
         print("\n--- 5. Empty tiles ---")
         t.load(page, paints=[], units=[])

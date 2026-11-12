@@ -55,8 +55,8 @@
        (applyAppearance in app.js) takes over once the app starts.
        U6b: mentor-looks.js (the Mentor orb's three looks and five states, plain data: MENTOR_LOOKS and MENTOR_LOOKS_CSS) loads
        just before it, so early.js can put the chosen look and its styles on the page before the first frame (LR1). -->
-  <script src="mentor-looks.js?v=157"></script>
-  <script src="early.js?v=157"></script>
+  <script src="mentor-looks.js?v=158"></script>
+  <script src="early.js?v=158"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -471,11 +471,11 @@
     .fold, .lab-section { scroll-margin-top: 72px; }
 
     /* ----- Dashboard ----- */
-    .headline { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-    .big { font-size: 2.5rem; font-weight: 700; color: var(--done-colour); }
-    .of { color: var(--muted); font-size: 0.875rem; }
+    /* DB1: the ring sits centred at the top of the one top card, the two tiles directly under it. */
+    #headline-card #overall-chart { display: flex; justify-content: center; }
+    #headline-card #overall-chart svg { flex-shrink: 0; }
 
-    .groups { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+    .groups { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
     .group-button {
       background: var(--background);
       border: var(--border-width) var(--border-style) var(--border);
@@ -486,9 +486,7 @@
     }
     .group-button strong { display: block; font-size: 1.375rem; color: var(--text); }
 
-    .chart-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
-    .chart-row svg { flex-shrink: 0; margin: 0 auto; }
-    .legend { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 180px; }
+    .legend { list-style: none; margin: 0; padding: 0; }
     .legend button {
       width: 100%;
       display: flex;
@@ -2033,14 +2031,11 @@
       /* R3b-1: the headline fills the row (the first-child rule above lands on a hidden notice card). With 4 or more factions the
          faction card is tall, so it and the stage card each take a full row instead of leaving a gap beside the stage card. */
       #headline-card, #view-dashboard > .notice-card { grid-column: 1 / -1; }
-      #view-dashboard:has(#faction-grid.faction-grid > :nth-child(4)) :is(#stage-card, #faction-card) { grid-column: 1 / -1; }
-      #view-dashboard:has(#faction-grid.faction-grid > :nth-child(4)) #stage-card .chart-row { justify-content: center; gap: 48px; }
-      #view-dashboard:has(#faction-grid.faction-grid > :nth-child(4)) #stage-card .legend { flex: 0 1 420px; }
-      .big { font-size: 3.5rem; }
-      .of { font-size: 1rem; }
+      /* DB1: the Stages card is one folding row and takes the full row under the top card. */
+      #stage-card, #faction-card { grid-column: 1 / -1; }   /* the faction card takes a full row too, so Palette and Achievements still sit side by side */
       .group-button { padding: 16px 18px; font-size: 0.9375rem; }
       .group-button strong { font-size: 1.75rem; }
-      #overall-chart svg { width: 240px; height: 240px; }
+      #headline-card #overall-chart svg { width: 240px; height: 240px; }
       .legend button { font-size: 1rem; padding: 9px 4px; }
       .faction-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; }
       .faction-grid svg { width: 120px; height: 120px; }
@@ -3202,7 +3197,7 @@
     <div class="arc">
       <!-- LR1: the loading ring, in the page from the first frame (see "LR1:" in the CSS). early.js and then app.js light it; app.js takes it away. -->
       <svg class="mo-load" viewBox="0 0 390 360" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" focusable="false"><g class="lr-five" fill="none" transform="translate(195 180) rotate(-90)"><circle class="lr-back" r="71"/><circle class="lr-s lr-s0" r="71"/><circle class="lr-s lr-s1" r="71"/><circle class="lr-s lr-s2" r="71"/><circle class="lr-s lr-s3" r="71"/><circle class="lr-s lr-s4" r="71"/></g><g class="lr-three" fill="none"><g class="mo-load-turn"><circle class="t" cx="195" cy="180" r="71" stroke-dasharray="123.92 446.11" transform="rotate(-80 195 180)"/><circle class="a a0" cx="195" cy="180" r="71" stroke-dasharray="0 446.11" transform="rotate(-80 195 180)"/><circle class="t" cx="195" cy="180" r="71" stroke-dasharray="123.92 446.11" transform="rotate(40 195 180)"/><circle class="a a1" cx="195" cy="180" r="71" stroke-dasharray="0 446.11" transform="rotate(40 195 180)"/><circle class="t" cx="195" cy="180" r="71" stroke-dasharray="123.92 446.11" transform="rotate(160 195 180)"/><circle class="a a2" cx="195" cy="180" r="71" stroke-dasharray="0 446.11" transform="rotate(160 195 180)"/></g></g></svg>
-      <button data-tab="dashboard" class="ring-hold"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true" data-icon="dashboard"><rect x="4" y="12.5" width="4" height="7.5" rx="1"/><rect x="10" y="8" width="4" height="12" rx="1"/><rect x="16" y="4" width="4" height="16" rx="1"/></svg></span>Dashboard</button>
+      <button data-tab="dashboard" class="ring-hold"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true" data-icon="dashboard"><rect x="4" y="12.5" width="4" height="7.5" rx="1"/><rect x="10" y="8" width="4" height="12" rx="1"/><rect x="16" y="4" width="4" height="16" rx="1"/></svg></span>Nexus</button>
       <button data-tab="units" class="ring-hold"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true" data-icon="units"><path d="M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z"/><circle cx="12" cy="12" r="3"/></svg></span>Models</button>
       <button data-tab="recipes" class="ring-hold"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true" data-icon="recipes"><path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.3 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1 .8-1.8 1.8-1.8H17a3.8 3.8 0 0 0 3.8-3.8C20.8 6.9 17 3.5 12 3.5z"/><circle cx="7.8" cy="11.5" r="1"/><circle cx="10.5" cy="7.6" r="1"/><circle cx="15" cy="7.8" r="1"/></svg></span>Painting</button>
       <button data-tab="guides" class="ring-hold" aria-label="Tools"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true" data-icon="guides"><path d="M3 5.5c3-1 6-.8 9 1 3-1.8 6-2 9-1V19c-3-1-6-.8-9 1-3-1.8-6-2-9-1z"/><path d="M12 6.5V20"/></svg></span>Tools</button>
@@ -3237,11 +3232,7 @@
       <!-- v57: one gentle "Save a backup?" card, once there is something worth keeping. Filled by renderBackupNudge(). -->
       <div class="card notice-card backup-nudge hidden" id="backup-nudge" role="note"></div>
       <div class="card" id="headline-card">
-        <div class="headline">
-          <span class="big" id="done-percent">–</span>
-          <span class="of" id="done-summary"></span>
-        </div>
-        <p class="hint hidden" id="done-meaning" style="margin: 8px 0 0;"></p>
+        <div id="overall-chart"></div>
         <div class="groups">
           <button class="group-button" id="todo-button"></button>
           <button class="group-button" id="done-button"></button>
@@ -3249,9 +3240,15 @@
         <button class="link-button hidden" id="repaint-link"></button>
       </div>
 
+      <!-- DB1: the stage legend, one folding row under the top card. Folded by foldCard() in app.js (starts shut). -->
+      <div class="card" id="stage-card">
+        <h2>Stages</h2>
+        <ul class="legend" id="stage-legend"></ul>
+      </div>
+
       <!-- Progress over time: drawn by renderHistory() in the JavaScript. -->
       <div class="card" id="history-card">
-        <h2>Added and painted</h2>
+        <h2>Progress timeline</h2>
         <div class="chips range-chips" id="history-range" style="margin: 0 0 12px;"></div>
         <div class="legend-row" id="history-legend">
           <span class="legend-key"><i style="--key: var(--series-added);"></i>Added</span>
@@ -3263,14 +3260,6 @@
           <summary class="hint" style="margin: 0;">Show as a table</summary>
           <div id="history-table" class="history-table"></div>
         </details>
-      </div>
-
-      <div class="card" id="stage-card">
-        <h2>Where everything is</h2>
-        <div class="chart-row">
-          <div id="overall-chart"></div>
-          <ul class="legend" id="stage-legend"></ul>
-        </div>
       </div>
 
       <div class="card" id="faction-card">
@@ -3559,12 +3548,12 @@
             <li id="help-example-recipes">A new start comes with example units, recipes, schemes and paints. Each example says <strong>Example recipe</strong> or <strong>Example scheme</strong> above its name, and the example recipes sit inside the example schemes. <strong>Clear examples</strong>, on Models, removes them (one Undo brings them back); anything you've changed stays yours. <strong>Keep them</strong> makes them yours. To make a recipe real, open an example paint on Your Palette and choose <strong>More options → Swap for a real paint</strong>. <strong>Settings → Your data → Restore example recipes</strong> brings the examples back.</li>
             <li>Add your units: one at a time with <strong>Models → + Add unit</strong>, or a whole army at once with <strong>Paste army list</strong> or <strong>Import CSV</strong>, which are on the same panel (see <strong>Importing</strong>).</li>
             <li>As you build and paint, press the right arrow on a unit to move it up a stage (or open <strong>Details</strong> and pick any stage from <strong>Jump to stage</strong>).</li>
-            <li>Check the <strong>Dashboard</strong> to see how far you've got.</li>
+            <li>Check the <strong>Nexus</strong> to see how far you've got.</li>
             <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
           </ol>
-          <p id="help-tabs" style="margin: 8px 0 0;">The bar at the bottom has four sections around the round <strong>Ask Mentor</strong> button: <strong>Dashboard</strong>, <strong>Models</strong>, <strong>Painting</strong> and <strong>Tools</strong>. The one you are in is lit. <strong>Tools</strong> opens <strong>Tools and Settings</strong>: <strong>About</strong>, <strong>Guides</strong>, <strong>Settings</strong>, <strong>How it works</strong> and <strong>Updates</strong>. The shopping basket sits at the top right once your list has a paint. The app opens on a <strong>start page</strong>: the same four sections in a circle around Ask Mentor. Tap the round arrow at the bottom left, or the <strong>Minifolio</strong> title, to come back to it. Switching to another app and back leaves you where you were.</p>
+          <p id="help-tabs" style="margin: 8px 0 0;">The bar at the bottom has four sections around the round <strong>Ask Mentor</strong> button: <strong>Nexus</strong>, <strong>Models</strong>, <strong>Painting</strong> and <strong>Tools</strong>. The one you are in is lit. <strong>Tools</strong> opens <strong>Tools and Settings</strong>: <strong>About</strong>, <strong>Guides</strong>, <strong>Settings</strong>, <strong>How it works</strong> and <strong>Updates</strong>. The shopping basket sits at the top right once your list has a paint. The app opens on a <strong>start page</strong>: the same four sections in a circle around Ask Mentor. Tap the round arrow at the bottom left, or the <strong>Minifolio</strong> title, to come back to it. Switching to another app and back leaves you where you were.</p>
           <p id="help-mentor" style="margin: 8px 0 0;">Tap the round <strong>Ask Mentor</strong> button. Type a question, or tap <strong>Suggestions</strong> and pick one. Under the answer, <strong>Read the guide</strong> or a guide link opens that guide.</p>
-          <p id="help-back" style="margin: 8px 0 0;">The phone's <strong>Back</strong> button closes what's open first, one thing per press: a question box (it counts as No), a photo, the camera, a recipe, the paste box. Then it goes to the Dashboard. On the Dashboard, with nothing open, it leaves the app.</p>
+          <p id="help-back" style="margin: 8px 0 0;">The phone's <strong>Back</strong> button closes what's open first, one thing per press: a question box (it counts as No), a photo, the camera, a recipe, the paste box. Then it goes to the Nexus. On the Nexus, with nothing open, it leaves the app.</p>
         </details>
         <details>
           <summary>Adding and updating units</summary>
@@ -3631,9 +3620,9 @@
           <summary>Faction colours</summary>
           <ul>
             <li>Give each faction its own colour in <strong>Settings → Faction colours</strong> (or tap <strong>Faction colours</strong> on the dashboard). Tap the colour circle to pick one.</li>
-            <li id="help-dashboard-tiles"><strong>Palette</strong> on the Dashboard shows a strip with one block for each colour, as wide as the paints you have in it (Owned and Running low). A colour with none, or only one, is an empty or thin block, and the first two are named under the strip (for example <strong>No red or orange yet</strong>). With no paints marked Owned, the strip is hidden. Tap it to open Your Palette. <strong>Achievements</strong> is a place held for later and does nothing yet.</li>
+            <li id="help-dashboard-tiles"><strong>Palette</strong> on the Nexus shows a strip with one block for each colour, as wide as the paints you have in it (Owned and Running low). A colour with none, or only one, is an empty or thin block, and the first two are named under the strip (for example <strong>No red or orange yet</strong>). With no paints marked Owned, the strip is hidden. Tap it to open Your Palette. <strong>Achievements</strong> is a place held for later and does nothing yet.</li>
             <li id="help-card-folds">In Settings, the <strong>Faction colours</strong> and <strong>Paint brands</strong> cards are shut each time you open the app. Tap the heading to open one. Tapping <strong>Faction colours</strong> on the dashboard opens it for you. <strong>Stages</strong>, <strong>Import</strong> and <strong>Your data</strong> fold shut the same way.</li>
-            <li>On the Dashboard, <strong>Armies</strong> shows one row for each faction. Tap a row to see its units. Switch to <strong>Doughnuts</strong> for a small chart each.</li>
+            <li>On the Nexus, <strong>Armies</strong> shows one row for each faction. Tap a row to see its units. Switch to <strong>Doughnuts</strong> for a small chart each.</li>
             <li><strong>Suggest</strong> offers a colour. If the faction's units have recipes linked, it uses those (armour recipes first, each recipe's first paint, usually the base coat). Otherwise it uses the colour the faction is usually painted, for well-known factions.</li>
             <li><strong>Use suggested colours</strong> colours every faction that hasn't got one yet, in one tap. Press Undo on the message if you change your mind.</li>
             <li>The colour shows as a bar on the dashboard's faction cards, a soft tint and a dot on unit cards, and a stripe on the faction filter.</li>
@@ -3647,7 +3636,7 @@
             <li>It counts <strong>models</strong>, not units: a 10-model squad counts as 10.</li>
             <li>Tap any number, chart row or faction to jump to those units.</li>
             <li><strong>Repaint projects</strong> shows units you've flagged for a repaint.</li>
-            <li><strong>Added and painted</strong> shows how many models you've added and how many are painted (Done), day by day. Touch or hover over the graph to see the numbers for any day, or open <strong>Show as a table</strong>. It appears once you have a unit. <strong>Done</strong> means the stage named under the percentage on the Dashboard, or any stage after it.</li>
+            <li><strong>Progress timeline</strong> shows how many models you've added and how many are painted (Done), day by day. Touch or hover over the graph to see the numbers for any day, or open <strong>Show as a table</strong>. It appears once you have a unit. <strong>Done</strong> means the first stage counted as finished, or any stage after it.</li>
             <li>Units added before the graph began count from its start. Deleted units drop out of its history.</li>
           </ul>
         </details>
@@ -3737,7 +3726,7 @@
           <summary>Your data and backups</summary>
           <ul>
             <li>Everything is saved <strong>on this device only</strong>, in your browser. Nobody else can see it, and it isn't sent anywhere.</li>
-            <li id="help-backup-nudge">Clearing your browser's data or uninstalling the app deletes it, so <strong>Save backup</strong> regularly. Once you have 5 units or a recipe of your own (examples don't count), a <strong>Save a backup?</strong> card on the Dashboard asks once. <strong>Save backup</strong> on it saves the same file as in Settings, and <strong>Not now</strong> hides it for two weeks. It asks again when your last backup is 30 days old and you've changed things since. <strong>Settings → Backups</strong> shows the date of your last backup (or Never).</li>
+            <li id="help-backup-nudge">Clearing your browser's data or uninstalling the app deletes it, so <strong>Save backup</strong> regularly. Once you have 5 units or a recipe of your own (examples don't count), a <strong>Save a backup?</strong> card on the Nexus asks once. <strong>Save backup</strong> on it saves the same file as in Settings, and <strong>Not now</strong> hides it for two weeks. It asks again when your last backup is 30 days old and you've changed things since. <strong>Settings → Backups</strong> shows the date of your last backup (or Never).</li>
             <li><strong>Settings → Your data</strong> says <strong>Works offline.</strong> once the app has kept a copy on your device, so it opens without internet.</li>
             <li><strong>Save backup</strong> is small and quick, but leaves out photos. <strong>Save full backup with photos</strong> makes one bigger file with everything, photos included.</li>
             <li id="help-send-backup"><strong>Send backup to…</strong> opens your phone's share menu, so you can put the small backup straight into OneDrive, an email or a message. It's the same file as Save backup (no photos). If your phone can't send files from the app, or sending fails, the backup is saved to your device instead and the app says so. Closing the share menu changes nothing.</li>
@@ -3771,7 +3760,7 @@
           <ul>
             <li>The version number is at the top of every screen. Tap it to open <strong>Updates</strong>, which lists what changed in the latest five versions.</li>
             <li>Found a bug or have an idea? Use <strong>Give feedback</strong> under <strong>Settings → Updates</strong>.</li>
-            <li id="help-feedback-prompt">About a week after you start using the app, a small card on the Dashboard asks if you'd like to send feedback. <strong>Give feedback</strong> opens the same form and the card goes away for good. <strong>Not now</strong> hides it for 30 days. <strong>Don't ask again</strong> hides it for good. If you don't answer, it hides itself the next day and waits 30 days, so it never shows two days running. The app only remembers the date you started and your choice, on this device. Nothing is sent anywhere.</li>
+            <li id="help-feedback-prompt">About a week after you start using the app, a small card on the Nexus asks if you'd like to send feedback. <strong>Give feedback</strong> opens the same form and the card goes away for good. <strong>Not now</strong> hides it for 30 days. <strong>Don't ask again</strong> hides it for good. If you don't answer, it hides itself the next day and waits 30 days, so it never shows two days running. The app only remembers the date you started and your choice, on this device. Nothing is sent anywhere.</li>
           </ul>
         </details>
         <details id="privacy">
@@ -4066,7 +4055,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=157" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=158" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -4079,16 +4068,16 @@
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks.
        G2a: guides-groups.js (the Guides topic groups, plain data) loads after guides-data.js. It only adds one
        name, GUIDE_GROUPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=157"></script>
-  <script src="schemes.js?v=157"></script>
-  <script src="detail-recipes.js?v=157"></script>
-  <script src="basing-tips.js?v=157"></script>
-  <script src="mentor-tips.js?v=157"></script>
-  <script src="guides-data.js?v=157"></script>
-  <script src="guides-groups.js?v=157"></script>
-  <script src="mentor-data.js?v=157"></script>
-  <script src="mentor-engine.js?v=157"></script>
-  <script src="where-to-buy.js?v=157"></script>
-  <script src="app.js?v=157"></script>
+  <script src="colour.js?v=158"></script>
+  <script src="schemes.js?v=158"></script>
+  <script src="detail-recipes.js?v=158"></script>
+  <script src="basing-tips.js?v=158"></script>
+  <script src="mentor-tips.js?v=158"></script>
+  <script src="guides-data.js?v=158"></script>
+  <script src="guides-groups.js?v=158"></script>
+  <script src="mentor-data.js?v=158"></script>
+  <script src="mentor-engine.js?v=158"></script>
+  <script src="where-to-buy.js?v=158"></script>
+  <script src="app.js?v=158"></script>
 </body>
 </html>

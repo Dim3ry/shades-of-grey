@@ -123,14 +123,14 @@ def main():
         start(page, units(40))
         tap_tab(page, "recipes"); quiet(page)   # each section drawn once
         tap_tab(page, "units"); quiet(page)
-        before = page.text_content("#done-summary")
+        before = page.text_content("#done-button")
         page.evaluate("() => { document.querySelector('#overall-chart > *').__ds2 = true; document.querySelector('#recipe-list > li').__ds2 = true; }")
         open_unit_card(page, '#unit-list li.unit[data-id="1"]')   # MC1: the stepper is inside the opened card
         mark(page, '#unit-list li.unit[data-id="2"]')
         page.click('#unit-list li.unit[data-id="1"] .up-button')
         quiet(page)
         check("a stage tap on Units: the unit moves up and is saved", json.loads(stored(page, "mini-tracker-models"))[0]["stage"] == 2)
-        check("…the hidden Dashboard is not redrawn", same(page, "#overall-chart > *") and page.text_content("#done-summary") == before)
+        check("…the hidden Dashboard is not redrawn", same(page, "#overall-chart > *") and page.text_content("#done-button") == before)
         check("…nor the hidden Recipes list", same(page, "#recipe-list > li"))
         check("…the Units list on screen is", page.evaluate("document.querySelector('#unit-list li.unit[data-id=\"1\"]').textContent.length > 0"))
         tap_tab(page, "dashboard"); quiet(page)

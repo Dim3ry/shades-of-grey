@@ -142,7 +142,7 @@ def main():
             print(f"\n--- 5 to 7. Fonts, panels and the photo viewer ({mode}) ---")
             page.evaluate("document.fonts.ready")
             look = page.evaluate("""() => { const h1 = getComputedStyle(document.querySelector('h1')), h2 = getComputedStyle(document.querySelector('.card h2')),
-                big = document.querySelector('.big'), body = getComputedStyle(document.body);
+                big = document.querySelector('.group-button strong'), body = getComputedStyle(document.body);
                 return { h1: h1.fontFamily, h2: h2.fontFamily, big: big ? getComputedStyle(big).fontFamily : 'none', body: body.fontFamily,
                          oxanium: document.fonts.check('600 16px Oxanium') }; }""")
             # TH6 (v129): Classic's body text is now Chakra Petch and its numbers Azeret Mono (each look has its own fonts); the titles stay Oxanium.

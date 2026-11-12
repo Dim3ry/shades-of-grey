@@ -173,8 +173,8 @@ def main():
             page.evaluate("document.fonts.ready"); page.wait_for_timeout(150)
             jumps[th] = page.evaluate(MEASURE_FALLBACK)
             faces_seen[th] = page.evaluate("""() => { const f = s => { const e = document.querySelector(s); return e ? getComputedStyle(e).fontFamily : ''; };
-                return { title: f('h1'), card: f('.card h2'), body: f('body'), num: f('.big'), h1t: getComputedStyle(document.querySelector('h1')).textTransform,
-                         nums: getComputedStyle(document.querySelector('.big')).fontVariantNumeric, bodynums: getComputedStyle(document.body).fontVariantNumeric,
+                return { title: f('h1'), card: f('.card h2'), body: f('body'), num: f('.group-button strong'), h1t: getComputedStyle(document.querySelector('h1')).textTransform,
+                         nums: getComputedStyle(document.querySelector('.group-button strong')).fontVariantNumeric, bodynums: getComputedStyle(document.body).fontVariantNumeric,
                          synth: getComputedStyle(document.body).fontSynthesis }; }""")
             check(f"{th}: its screens download only its own fonts, its title font among them",
                   own and own <= OWN[th] and (OWN[th] & own) and all(u.startswith(t.BASE) for u in fonts), sorted(own))
