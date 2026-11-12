@@ -10524,6 +10524,49 @@
       return s;
     }
 
+    // AB13c: a small row of round swatches under an entry's title, dark to light. Steps are { hex, name, wash }.
+    // A wash or glaze step that sits inside the run gets a ring and is named as a wash in the label (never colour alone).
+    // Shown only when there are 3 to 5 swatches and the plain steps get lighter from first to last; otherwise null.
+    const RAMP_SKIP = /wash|glaze|shade|varnish|prime/i;   // steps that are not a colour step of the run
+    // The three text guides that carry their own hex ramp. A test checks each list against the hexes in the guide's words.
+    const GUIDE_RAMPS = {
+      "silk-and-satin": [
+        { hex: "#4a0f18", name: "deep wine red" }, { hex: "#a3202a", name: "mid red" },
+        { hex: "#d8575a", name: "light red" }, { hex: "#f2d0cc", name: "near white pink" }],
+      "pearl-and-shell": [
+        { hex: "#4a5260", name: "dark blue-grey" }, { hex: "#d8dadc", name: "very light grey" }, { hex: "#ece6d4", name: "ivory" }],
+      "snake-and-serpent-patterns": [
+        { hex: "#1f3b57", name: "deep slate blue" }, { hex: "#3f7f7a", name: "blue-green" }, { hex: "#c6a9d8", name: "pale lilac" }],
+    };
+    function rampSteps(steps) {
+      const all = (steps || []).filter(s => s && MinifolioColour.isHex(s.hex)).map(s => ({
+        hex: s.hex, name: s.name || s.look || s.hex, wash: RAMP_SKIP.test(s.technique || "") }));
+      const plain = all.map((s, i) => s.wash ? -1 : i).filter(i => i >= 0);
+      if (plain.length < 2) return null;
+      let run = all.slice(plain[0], plain[plain.length - 1] + 1);   // washes before the first or after the last colour step are dropped
+      if (run.length > 5) run = [0, 1, 2, 3, 4].map(k => run[Math.round(k * (run.length - 1) / 4)]);
+      const colour = run.filter(s => !s.wash);
+      if (run.length < 3 || colour.length < 2) return null;
+      const light = (s) => MinifolioColour.hexToHsl(s.hex).l;
+      for (let i = 1; i < colour.length; i++) if (light(colour[i]) < light(colour[i - 1]) - 0.03) return null;
+      if (light(colour[colour.length - 1]) - light(colour[0]) < 0.05) return null;
+      return run;
+    }
+    function buildRamp(steps) {
+      const run = rampSteps(steps);
+      if (!run) return null;
+      const row = document.createElement("div");
+      row.className = "ab13c-ramp";
+      row.setAttribute("role", "img");
+      row.setAttribute("aria-label", "Colour ramp, dark to light: " + run.map(s => s.wash ? `${s.name} (wash)` : s.name).join(", "));
+      for (const s of run) {
+        const dot = makeSwatch(s.hex);
+        if (s.wash) dot.classList.add("ab13c-ring");
+        row.appendChild(dot);
+      }
+      return row;
+    }
+
     // A rounded button showing a recipe's name, with a dot of its first colour.
     function recipeChip(recipe, onClick) {
       const chip = document.createElement("button");
@@ -14822,6 +14865,8 @@
       summary.id = door.id("detail-summary");
       summary.textContent = recipe.summary;
       box.appendChild(summary);
+      const ramp = buildRamp(recipe.steps);   // AB13c
+      if (ramp) box.appendChild(ramp);
       const items = detailRecipePaints(recipe);
       if (!items.length) {
         const none = document.createElement("p");
@@ -15034,7 +15079,10 @@
       const howTitle = document.createElement("h4");
       howTitle.className = "basing-sub";
       howTitle.textContent = "How to build it";
-      box.append(summary, matTitle, basingPlainList("ul", door.id("basing-materials"), tip.materials),
+      box.appendChild(summary);
+      const ramp = buildRamp(tip.paintSteps);   // AB13c: under the summary, above What you need
+      if (ramp) box.appendChild(ramp);
+      box.append(matTitle, basingPlainList("ul", door.id("basing-materials"), tip.materials),
                  howTitle, basingPlainList("ol", door.id("basing-howto"), tip.howto));
       const safe = door.whereToBuy ? buildSafetyLine(tip.key, "basing") : null;   // HS2: Guides only, like the Where to buy fold-out
       if (safe) box.appendChild(safe);
@@ -17626,6 +17674,8 @@
           h.className = "guides-title";
           h.textContent = e.title;
           page.appendChild(h);   // AB13a: no number on the entry page (the lists keep theirs)
+          const ramp = GUIDE_RAMPS[e.key] ? buildRamp(GUIDE_RAMPS[e.key]) : null;   // AB13c: three text guides carry their own hex ramp
+          if (ramp) page.appendChild(ramp);
           for (const para of e.body) {
             const p = document.createElement("p");
             p.textContent = para;
@@ -22367,12 +22417,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=156".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=157".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v156";
+    const APP_VERSION = "v157";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;
@@ -22838,6 +22888,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v157", date: "12 Nov 2026", changes: [
+        "Recipes, basing tips and three guides now show a row of colour dots under their title, dark to light, with a ring on wash and glaze steps.",
+        "Help explains what the dots are.",
+      ] },
       { version: "v156", date: "12 Nov 2026", changes: [
         "The four menu icons have new drawings: Models, Painting, Dashboard and Tools. Credits sections now fold away and the Thanks line is reworded.",
         "The short safety reminder now shows under seven more guides.",
