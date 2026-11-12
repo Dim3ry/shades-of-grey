@@ -21,7 +21,7 @@ def check(name, ok, detail=""):
 
 # CR2: the intro line is new wording, entries need a group, and the list is no longer empty (the real Thanks list is in; the full wording and
 # list are checked in test_v153_cr2.py). The fake list below still replaces the real one, to prove names are text and bad links are left out.
-LINE = "Mentor's advice was shaped by learning from painters and creators who generously share what they know. Go and check them out below."
+LINE = "These creators inspired Minifolio. Thank you to them, and they're well worth checking out:"
 FAKE = '[{ group: "YouTube", name: "Painter <b>One</b>", link: "https://example.com/one" }, { group: "YouTube", name: "Painter Two", link: "https://example.com/two" }, ' \
        '{ group: "YouTube", name: "Bad Link", link: "http://example.com/bad" }, { group: "YouTube", name: "Script Link", link: "javascript:alert(1)" }]'
 
@@ -47,14 +47,14 @@ def main():
         labels = page.evaluate("() => [...document.querySelectorAll('#more-seg button')].map(b => b.textContent.trim())")
         # FB3: Credits is no longer a sub-tab; it is a section at the foot of About, so the switch has five pages
         check("the switch has no Credits tab (it is a section of About now)", labels == ["About", "Guides", "Settings", "How it works", "Updates"], labels)
-        links = page.locator("#view-about #about-credits-link")
-        check("About has one Credits link", links.count() == 1)
-        links.click()
+        # CR3: the Credits link beside the Mission text is gone, so reach the section the way the Help link does
+        page.evaluate("() => showTab('credits')")
         wait_settled(page)
         check("it scrolls to the Credits section on About, lit as selected", page.is_visible("#view-credits")
               and page.get_attribute('#more-seg [data-page="about"]', "aria-selected") == "true"
               and page.evaluate("() => document.querySelector('#view-credits h2').getBoundingClientRect().top < innerHeight"))
 
+        page.evaluate("() => document.querySelectorAll('#view-credits details').forEach(d => d.open = true)")   # CR3: sections start closed; open them to read the rows
         print("\n--- 2. Everything third-party is listed ---")
         families = sorted(set(re.findall(r"@font-face \{ font-family: '([^']+)'", html)))
         families = [f for f in families if not f.endswith(" Fallback") and not f.endswith(" Theme Name")]
@@ -87,7 +87,8 @@ def main():
         p2.route(re.compile(r".*/app\.js.*"), lambda route: route.fulfill(
             response=route.fetch(), body=route.fetch().text().replace(re.search(r"const THANKS = \[.*?\n    \];", route.fetch().text(), re.S).group(0), "const THANKS = " + FAKE + ";", 1)))
         go(p2)
-        p2.click('#about-credits-link')   # FB3
+        p2.evaluate("() => showTab('credits')")   # CR3: the link on About is gone
+        p2.evaluate("() => document.querySelectorAll('#view-credits details').forEach(d => d.open = true)")   # CR3: sections start closed
         wait_settled(p2)
         check("with entries: heading Thanks", p2.locator("#credits-thanks h3").inner_text() == "Thanks")
         check("the line is word for word", p2.locator("#credits-thanks p").first.inner_text() == LINE, p2.locator("#credits-thanks p").first.inner_text())   # CR2: first p; the small print is the second
@@ -101,11 +102,12 @@ def main():
         print("\n--- 5. Small screens and keyboard ---")
         for w, h in [(390, 844), (360, 640), (320, 568)]:
             go(page, w, h)
-            page.click('#about-credits-link')   # FB3: the section is on About
+            page.evaluate("() => showTab('credits')")   # CR3: the link on About is gone
+            page.evaluate("() => document.querySelectorAll('#view-credits details').forEach(d => d.open = true)")   # CR3: sections start closed, so open them to measure the links
             wait_settled(page)
             r = page.evaluate("() => [document.documentElement.scrollWidth <= window.innerWidth, Math.min(...[...document.querySelectorAll('#view-credits a, #more-seg button')].map(a => a.getBoundingClientRect().height))]")
             check(f"{w}x{h}: no sideways scroll, links and switch at least 44 px tall", r[0] and r[1] >= 43.5, r)
-        page.focus('#about-credits-link')   # FB3
+        page.focus('#credits-fonts a')   # CR3: the About link is gone; start from a licence link (the sections were opened above)
         for _ in range(8):
             page.keyboard.press("Tab")
             if page.evaluate("() => document.activeElement.matches('#credits-fonts a')"):
