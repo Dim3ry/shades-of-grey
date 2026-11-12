@@ -66,5 +66,7 @@ const HOBBY_SAFETY_KEYS = {
   "spray-can-faults": "guide", "stripping-paint": "guide", "superglue-problems": "guide",
   "taking-apart-old-models": "guide", "two-part-putty": "guide", "ultrasonic-cleaner": "guide",
   "using-filters": "guide", "weathering-pigments": "guide",
+  // 12 Nov: George asked for the short line on seven more guides whose advice HS2 made safer.
+  "spray-priming": "guide", "speeding-up-drying": "guide", "straightening-bent-parts": "guide", "gluing-small-parts": "guide", "moulds-and-casting": "guide", "airbrush-setup": "guide", "airbrush-cleaning": "guide",
   "resin-ice": "basing", "cave-floor": "basing",
 };

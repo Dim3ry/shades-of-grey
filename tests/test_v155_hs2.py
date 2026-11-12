@@ -55,8 +55,8 @@ def main():
     check("resin-ice how-to step 1 is the approved text (105 characters)", RESIN_ICE_STEP in bt and len(RESIN_ICE_STEP) <= 120)
     wb = open(os.path.join(ROOT, "where-to-buy.js"), encoding="utf-8").read()
     keys = re.findall(r'"([a-z0-9-]+)": "(?:guide|basing)"', wb[wb.index("const HOBBY_SAFETY_KEYS"):])
-    check("the safety list has the short line's words fixed (81 characters) and 45 guides plus 2 Basing tips",
-          f'HOBBY_SAFETY_LINE = "{LINE}"' in wb and len(LINE) == 81 and len(keys) == 47 and "resin-ice" in keys and "cave-floor" in keys, len(keys))
+    check("the safety list has the short line's words fixed (81 characters) and 52 guides plus 2 Basing tips",
+          f'HOBBY_SAFETY_LINE = "{LINE}"' in wb and len(LINE) == 81 and len(keys) == 54 and "resin-ice" in keys and "cave-floor" in keys, len(keys))   # 12 Nov: George added seven more guides, so 54 keys
     check("dropped entries are not on the list", not any(k in keys for k in UNLISTED[:4] + ["trees-from-twigs"]))
 
     errors = []
