@@ -90,9 +90,8 @@ def main():
         foot = re.sub(r"<[^>]+>", "", foot).strip()
         check("About carries the rights line, word for word as in the page footer", re.sub(r"\s+", " ", page.inner_text("#about-rights")).strip() == foot, page.inner_text("#about-rights")[:120])
         check("About keeps its About and Mission text", about.count("Mission") >= 1 and "To give every painter a mentor in their pocket" in about)
-        page.click("#about-rights-credits")
-        # FB3: Credits is a section of About now, so the link scrolls to it and About stays open
-        check("'their own licences' in About scrolls to the Credits section", page.is_visible("#view-credits") and page.is_visible("#view-about"))
+        # CR3: "their own licences" in About is plain text now (the link to Credits was removed on purpose); the footer link on the privacy page still works
+        check("'their own licences' in About is plain text and Credits is still on the page", "their own licences" in page.inner_text("#about-rights") and page.locator("#about-rights-credits").count() == 0 and page.is_visible("#view-credits"))
         page.click('#more-seg button[data-page="help"]')
         page.evaluate("document.getElementById('about').open = true")
         help_about = re.sub(r"\s+", " ", page.inner_text("#about"))

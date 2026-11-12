@@ -61,7 +61,7 @@ def main():
         check("straight text only: the two paragraphs, the rights line, the Credits button and one privacy link, nothing else in the card",
               len(paras) == 3 and page.locator("#view-about .about-card :is(img, svg, ul, h3, .pill, .badge)").count() == 0
               and page.locator("#view-about .about-card a").count() == 1 and page.locator("#about-privacy-link").count() == 1
-              and page.locator("#view-about .about-card button").count() == 2 and page.locator("#about-credits-link").count() == 1 and page.locator("#about-rights-credits").count() == 1)
+              and page.locator("#view-about .about-card button").count() == 0 and page.locator("#about-credits-link").count() == 0 and page.locator("#about-rights-credits").count() == 0)   # CR3: both Credits links beside the Mission text were removed on purpose
         check("the About page is the only page showing, and it is lit as selected",
               page.is_visible("#view-about") and page.locator("main > section:visible").count() == 1
               and page.get_attribute('#more-seg [data-page="about"]', "aria-selected") == "true")

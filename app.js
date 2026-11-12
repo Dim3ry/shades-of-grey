@@ -50,7 +50,7 @@
       { group: "Websites", name: "The Painter's Portal, A Complete Guide to Painting Miniatures", link: "https://thepaintersportaluk.wordpress.com/wp-content/uploads/2025/02/a-complete-guide-to-painting-miniatures-2025-.pdf" },
     ];
     const THANKS_GROUPS = ["YouTube", "Websites"];
-    const THANKS_LINE = "Mentor's advice was shaped by learning from painters and creators who generously share what they know. Go and check them out below.";
+    const THANKS_LINE = "These creators inspired Minifolio. Thank you to them, and they're well worth checking out:";
     const THANKS_SMALL = "Listed as thanks only. No creator is affiliated with or endorses Minifolio.";
 
     // ================= SAVING SAFELY (v14) =================
@@ -5122,8 +5122,10 @@
         .filter(t => t.name && t.href && THANKS_GROUPS.includes(t.group) && !new URL(t.href).username && !new URL(t.href).password);
       box.classList.toggle("hidden", good.length === 0);
       if (!good.length) return;
-      const h = document.createElement("h3"); h.textContent = "Thanks"; box.appendChild(h);
-      const p = document.createElement("p"); p.textContent = THANKS_LINE; box.appendChild(p);
+      // CR3: the whole Thanks section is a fold like the other Credits sections (closed each time About opens)
+      const outer = document.createElement("details"); outer.className = "help-look credits-fold";
+      const osum = document.createElement("summary"), h = document.createElement("h3"); h.textContent = "Thanks"; osum.appendChild(h); outer.appendChild(osum);
+      const p = document.createElement("p"); p.textContent = THANKS_LINE; outer.appendChild(p);
       const fold = document.createElement("details"); fold.className = "help-look thanks-fold";
       const sum = document.createElement("summary"); sum.textContent = "Show all"; fold.appendChild(sum);
       THANKS_GROUPS.forEach(g => {
@@ -5138,11 +5140,16 @@
         });
         fold.appendChild(ul);
       });
-      box.appendChild(fold);
-      const small = document.createElement("p"); small.className = "hint"; small.textContent = THANKS_SMALL; box.appendChild(small);
+      outer.appendChild(fold);
+      const small = document.createElement("p"); small.className = "hint"; small.textContent = THANKS_SMALL; outer.appendChild(small);
+      box.appendChild(outer);
+      markFold(outer); markFold(fold);
     }
     // FB3: every old link to the Credits page opens About and scrolls to its Credits section (showTab("credits") does both).
-    for (const id of ["about-credits-link", "help-credits-link", "about-rights-credits"]) document.getElementById(id).addEventListener("click", () => showTab("credits"));
+    // CR3: the two links beside the Mission text are gone; the Help one stays.
+    document.getElementById("help-credits-link").addEventListener("click", () => showTab("credits"));
+    // CR3: each Credits section (Fonts, Pot-label reader, Paint list, Thanks) rolls up; all start closed each time About opens. Memory only.
+    function closeCreditsFolds() { for (const d of document.querySelectorAll("#view-credits details")) d.open = false; }
 
     let versionFrom = null;   // FB1: the screen the version button was tapped on, so Back can return there
     function showTab(name, how) {
@@ -5189,7 +5196,7 @@
       settings.tab = name;
       saveSettings();
       if (name === "settings") renderSettings();
-      if (name === "about") renderThanks();   // CR1, FB3: the Thanks section is part of About now
+      if (name === "about") { closeCreditsFolds(); renderThanks(); }   // CR1, FB3: the Thanks section is part of About now
       if (name === "guides") renderGuides();   // v35: built fresh each time, from your palette and units as they are now
       if (name === "dashboard") renderPaletteTile();   // X4: the palette may have changed since the Dashboard was last drawn
       if (name === "dashboard") renderHistory();   // the graph needs to be on screen to measure its width
@@ -22360,12 +22367,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=155".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=156".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v155";
+    const APP_VERSION = "v156";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;
@@ -22831,6 +22838,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v156", date: "12 Nov 2026", changes: [
+        "The four menu icons have new drawings: Models, Painting, Dashboard and Tools. Credits sections now fold away and the Thanks line is reworded.",
+        "The short safety reminder now shows under seven more guides.",
+      ] },
       { version: "v155", date: "11 Nov 2026", changes: [
         "A clearer safety note on the Guides home and in Help, and a short reminder under guides about sprays, glue, resin and heat.",
         "Safer advice on spray booths, filters, glue, acetone, heat and hot water.",
@@ -23363,6 +23374,7 @@
     foldCard(document.getElementById("import-card"), "import");   // v54
     foldCard(document.getElementById("your-data-card"), "your-data");   // v54: Delete all units stays inside, unchanged
     markFold(document.getElementById("history-table-box"));   // v53: Show as a table
+    for (const d of document.querySelectorAll("#view-credits .credits-fold")) markFold(d);   // CR3: aria-expanded on the Credits section folds (the Thanks one is marked when drawn)
     render();
     bootSteps.draw = performance.now();   // Mo4a: the first draw is done
     countThisVisit();   // v27: one anonymous visit count (only from minifolio.app, and only if switched on)

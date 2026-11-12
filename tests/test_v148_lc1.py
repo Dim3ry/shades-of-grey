@@ -24,8 +24,9 @@ def go(page, w, h):
     wait_settled(page)
     page.click('#more-seg button[data-page="about"]')
     wait_settled(page)
-    page.click('#about-credits-link')   # FB3: Credits is a section of About, reached by the link on About
+    page.evaluate("() => showTab('credits')")   # CR3: the link on About is gone
     wait_settled(page)
+    page.evaluate("() => document.querySelectorAll('#view-credits details').forEach(d => d.open = true)")   # CR3: sections start closed
 
 def main():
     errors = []
