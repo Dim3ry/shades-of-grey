@@ -249,6 +249,7 @@
       // v18.3: stamp the data version, unless the saved data came from a newer version.
       if (!checkDataVersion()) setTimeout(showSaveProblem, 0);
       else settings.dataVersion = DATA_VERSION;
+      delete settings.modelRows;   // SF1: the Detailed / Simple choice is gone; an old saved value is simply dropped
     }
 
     // A stage list is usable if it's at least 2 names, all text. (Backups are checked
@@ -7062,10 +7063,6 @@
     // ----- Units -----
 
     const list = document.getElementById("unit-list");
-    const hobbyFilter = document.getElementById("hobby-filter");
-    const factionFilter = document.getElementById("faction-filter");
-    const groupChips = document.getElementById("group-chips");
-    const stageChips = document.getElementById("stage-chips");
     const filterNote = document.getElementById("filter-note");
     const clearFiltersButton = document.getElementById("clear-filters");
     const selectButton = document.getElementById("toggle-select");      // v21.1
@@ -7073,18 +7070,6 @@
     const selectCount = document.getElementById("select-count");
     const selectAllButton = document.getElementById("select-all");
     const selectMoveSlot = document.getElementById("select-move-slot");
-
-    // M2: Detailed / Simple model rows. One saved choice for every card (settings.modelRows, default Detailed).
-    const modelRowsSwitch = document.getElementById("model-rows-switch");
-    modelRowsSwitch.addEventListener("click", (event) => {
-      const button = event.target.closest("button[data-rows]");
-      if (!button) return;
-      settings.modelRows = button.dataset.rows === "simple" ? "simple" : "detailed";
-      saveSettings();
-      render();
-      const again = modelRowsSwitch.querySelector(`button[data-rows="${settings.modelRows}"]`);
-      if (again) again.focus();
-    });
 
     // Which units have their details panel open. Not saved.
     const openIds = new Set();
@@ -7151,8 +7136,7 @@
           row.scrollLeft = keepLeft;   // A1: back to where you slid it to
           // Bring the pressed button into view, unless one already is.
           const rowBox = row.getBoundingClientRect();
-          // (the Pick by stage / Hide stages opener sits in the row but is not a choice, so it is never scrolled to)
-          const on = buttons.filter(c => c.id !== "stage-chips-toggle" && (c.getAttribute("aria-pressed") === "true" || c.getAttribute("aria-expanded") === "true"));
+          const on = buttons.filter(c => (c.getAttribute("aria-pressed") === "true" || c.getAttribute("aria-expanded") === "true"));
           const inView = (c) => { const r = c.getBoundingClientRect(); return r.left >= rowBox.left - 1 && r.right <= rowBox.right + 1; };
           if (on.length && !on.some(inView) && row !== tappedRow) {   // A1: not in a row you are tapping in: you know where you are
             const r = on[0].getBoundingClientRect();
@@ -7178,7 +7162,7 @@
     // Rows are redrawn all over the app, so watch the page for new buttons rather than calling this from every render.
     // MS1: except unit cards going into or out of the Models list: a card with its Details shut holds no row of buttons, and while the
     // list arrives a few cards a frame, fitting every row again each frame cost more than the cards themselves.
-    const onlyUnitCards = (r) => r.target === list && [...r.addedNodes].every(n => n.nodeType === 1 && n.matches("li.unit") && !n.querySelector(CHIP_ROWS));
+    const onlyUnitCards = (r) => r.target === list && [...r.addedNodes].every(n => n.nodeType === 1 && (n.matches("li.unit-head") || (n.matches("li.unit") && !n.querySelector(CHIP_ROWS))));
     new MutationObserver((records) => { if (!records.every(onlyUnitCards)) fitChipRows(); }).observe(document.body, { childList: true, subtree: true });
     window.addEventListener("resize", fitChipRows);
     let tappedRow = null;   // A1: the row of buttons tapped just now, forgotten on the next tap elsewhere
@@ -7210,7 +7194,6 @@
       return chip;
     }
 
-    let unitStagesOpen = false;   // v49: "Pick by stage" on the Units filters (kept while the app is open)
     // Suggestions for the game/faction boxes in the add form, the edit panel and (factions) the scheme editor.
     // DS2: on its own, so render() can keep them right while the Units tab is out of sight.
     function fillUnitLists(games) {
@@ -7225,80 +7208,25 @@
     function renderUnits(how) {
       staleTabs.delete("units");   // DS2: drawn now (see render)
       if (openCardId !== null && !models.some(m => m.id === openCardId)) openCardId = null;   // MC1: a deleted unit's card (a new unit may get its number)
-      // M2: the Detailed / Simple switch for model rows shows only while some unit is tracked model by model.
-      modelRowsSwitch.classList.toggle("hidden", !models.some(m => m.each));
-      for (const b of modelRowsSwitch.querySelectorAll("button")) b.setAttribute("aria-pressed", String((b.dataset.rows === "simple") === rowsSimple()));
-      // Dropdowns: the faction list only shows factions from the chosen game.
+      // The faction chosen must belong to the chosen game (the Filters sheet shows only that game's factions).
       const games = uniqueSorted(models.map(m => m.hobby));
       if (!games.includes(filters.hobby)) filters.hobby = "";
       const factions = uniqueSorted(models.filter(m => !filters.hobby || m.hobby === filters.hobby).map(m => m.faction));
       if (!factions.includes(filters.faction)) filters.faction = "";
-      fillSelect(hobbyFilter, "games", games, filters.hobby);
-      fillSelect(factionFilter, "factions", factions, filters.faction);
-      // The chosen faction's colour shows as a stripe on the menu, like the stage chips.
-      factionFilter.style.setProperty("--chip-colour", factionColour(filters.faction) || "var(--border)");
 
-      // Group chips: one tap for every To do (or Done) stage at once.
-      const todo = todoStages();
-      const done = doneStages();
-      groupChips.innerHTML = "";
-      groupChips.append(
-        makeChip("To do", sameStages(filters.stages, todo), () => {
-          filters.stages = sameStages(filters.stages, todo) ? new Set() : new Set(todo);
-          render();
-        }),
-        makeChip("Done", sameStages(filters.stages, done), () => {
-          filters.stages = sameStages(filters.stages, done) ? new Set() : new Set(done);
-          render();
-        }),
-        makeChip("↻ Repaint", filters.repaint, () => {
-          filters.repaint = !filters.repaint;
-          render();
-        }),
-      );
-
-      // Stage chips: tap several to combine them. v49: they open underneath only once a group or a stage is picked (or "Pick by stage"
-      // is tapped), so the filter card starts as three equal buttons.
-      stageChips.innerHTML = "";
-      const stagesShown = filters.stages.size > 0 || unitStagesOpen;
-      if (stagesShown) {
-        STAGES.forEach((stageName, index) => {
-          const chip = makeChip(stageName, filters.stages.has(index), () => {
-            if (filters.stages.has(index)) filters.stages.delete(index);
-            else filters.stages.add(index);
-            render();
-          }, `var(--stage-${index})`);
-          stageChips.appendChild(chip);
-        });
-      }
-      if (!filters.stages.size) {
-        const opener = document.createElement("button");
-        opener.type = "button";
-        opener.className = "more-info-button";
-        opener.id = "stage-chips-toggle";
-        opener.setAttribute("aria-expanded", String(unitStagesOpen));
-        opener.setAttribute("aria-controls", "stage-chips");
-        const text = document.createElement("span");
-        text.textContent = unitStagesOpen ? "Hide stages" : "Pick by stage";
-        const mark = document.createElement("span");
-        mark.className = "fold-mark";
-        mark.setAttribute("aria-hidden", "true");
-        opener.append(text, mark);
-        opener.addEventListener("click", () => { unitStagesOpen = !unitStagesOpen; render(); });
-        stageChips.appendChild(opener);
-      }
-
-      const visible = models.filter(isVisible);
+      const visible = sortUnits(models.filter(isVisible));   // SF1: in the chosen order
+      drawSortButton();
       const activeCount = (filters.hobby ? 1 : 0) + (filters.faction ? 1 : 0) +
                           (filters.stages.size > 0 ? 1 : 0) + (filters.repaint ? 1 : 0);
       const anyFilter = activeCount > 0;
       clearFiltersButton.classList.toggle("hidden", !anyFilter);
-      // The summary line always shows what you're looking at, even with Filters folded away.
+      // The summary line always shows what you're looking at, with the Filters sheet shut.
       const scope = [filters.faction || filters.hobby].filter(Boolean).join("");
       filterNote.textContent = anyFilter
         ? `${scope ? scope + ": " : ""}${visible.length} of ${plural(models.length, "unit")} (${plural(modelCount(visible), "model")})`
         : `${plural(models.length, "unit")}, ${plural(modelCount(models), "model")}`;
-      toggleFilters.textContent = `Filters${anyFilter ? " (" + activeCount + ")" : ""} ${filtersOpen ? "▴" : "▾"}`;
+      toggleFilters.textContent = `Filters${anyFilter ? " (" + activeCount + ")" : ""}`;
+      if (filtersSheet) renderFiltersSheet(games, factions, visible);   // SF3: the sheet, if open, follows every change
 
       fillUnitLists(games);
       fillStartStage();
@@ -7331,7 +7259,7 @@
         list.innerHTML = '<li class="empty">No units match these filters.</li>';
         return;
       }
-      placeUnitCards(visible, how === "arriving" || how === "travel" ? how : false);   // MS1: was a fresh card for every unit, every time
+      placeUnitCards(unitItems(visible), how === "arriving" || how === "travel" ? how : false);   // MS1: was a fresh card for every unit, every time
     }
 
     // ----- MS1: THE MODELS LIST WITHOUT THE FIRST-FRAME STALL -----
@@ -7400,13 +7328,19 @@
     // visible: the units to show, in order. arriving: Models is coming on screen with motion ("travel" for the start circle's travel, which
     // runs on after the page has faded in), so it goes in pieces. A list that is still
     // arriving keeps arriving (at least the cards already in stay in), so a redraw during the travel does not draw the whole list in one frame.
+    // SF1: how many of the items (cards and headings) hold the first n cards, so headings do not use up the first screen's cards.
+    function cardsUpTo(items, n) {
+      let cards = 0;
+      for (let i = 0; i < items.length; i++) if (!items[i].head && ++cards >= n) return i + 1;
+      return items.length;
+    }
     function placeUnitCards(visible, arriving) {
       const shared = sharedCardKey();
       const ids = new Set(models.map(m => m.id));
       for (const id of unitCards.keys()) if (!ids.has(id)) unitCards.delete(id);   // deleted units
       const placed = unitQueue ? list.querySelectorAll(":scope > li.unit").length : 0;
-      const now = arriving || unitQueue ? Math.min(visible.length, Math.max(firstScreenCards(), placed)) : visible.length;
-      setUnitCards(visible.slice(0, now).map(m => cardFor(m, shared)));
+      const now = arriving || unitQueue ? cardsUpTo(visible, Math.max(firstScreenCards(), placed)) : visible.length;
+      setUnitCards(visible.slice(0, now).map(m => itemEl(m, shared)));
       if (now >= visible.length) { stopUnitQueue(); return; }
       if (unitQueue) {
         unitQueue.rest = visible.slice(now);
@@ -7426,7 +7360,7 @@
       if (!q) return;
       const shared = sharedCardKey();
       const part = document.createDocumentFragment();
-      for (const model of q.rest.splice(0, count)) part.appendChild(cardFor(model, shared));
+      for (const model of q.rest.splice(0, count)) part.appendChild(itemEl(model, shared));
       list.appendChild(part);
       if (!q.rest.length) stopUnitQueue();
     }
@@ -7474,7 +7408,7 @@
     function unitsArrive(travel) {
       const how = travel ? "travel" : "arriving";
       if (staleTabs.has("units")) { renderUnits(how); return; }
-      if (list.querySelectorAll(":scope > li.unit").length > firstScreenCards()) placeUnitCards(models.filter(isVisible), how);
+      if (list.querySelectorAll(":scope > li.unit").length > firstScreenCards()) placeUnitCards(unitItems(sortUnits(models.filter(isVisible))), how);
     }
 
     // v79: from 900 px every open unit (in list order) gets a card in the side pane, with a Close button. Select mode shows none.
@@ -8044,12 +7978,11 @@
     }
 
     // ----- M2: the model rows of a unit tracked model by model -----
-    // Each row: name (and, in the Detailed view, when it reached its stage), then back, the stage name with a thin bar,
+    // Each row: name (and when it reached its stage), then back, the stage name with a thin bar,
     // up. Units of more than EACH_GROUP_OVER models list their rows grouped by stage instead; which groups are open is
-    // kept per unit for this visit only (not saved). The Detailed / Simple choice is the saved setting modelRows.
+    // kept per unit for this visit only (not saved). (SF1: the Detailed / Simple switch has gone; rows are always the detailed ones.)
     const EACH_GROUP_OVER = 8;
     const groupOpen = new Map();   // unit id -> Set of stage numbers whose group is open
-    const rowsSimple = () => settings.modelRows === "simple";
 
     function openGroups(model) {
       let open = groupOpen.get(model.id);
@@ -8078,12 +8011,12 @@
       focusRowButton(model.id, index, dir);
     }
 
-    function buildEachRow(model, index, simple) {
+    function buildEachRow(model, index) {
       const st = model.stages[index];
       const top = STAGES.length - 1;
       const who = `Model ${index + 1}`;
       const row = document.createElement("li");
-      row.className = simple ? "each-row simple" : "each-row";
+      row.className = "each-row";
       row.style.setProperty("--stage-colour", `var(--stage-${st})`);
       // Mo2: only the row that was tapped moves: its stage name slides and its bar fades, with no ring.
       const motion = stageMotion && stageMotion.id === model.id && stageMotion.index === index ? stageMotion : null;
@@ -8099,8 +8032,8 @@
       label.textContent = who;
       name.appendChild(label);
       // v21.8: when this model reached its stage ("Today", "Yesterday", "Since 7 Oct"), from the unit's diary.
-      // Left out when the diary can't say. The Simple view has no date line.
-      const since = simple ? null : modelSince(model, index);
+      // Left out when the diary can't say.
+      const since = modelSince(model, index);
       if (since) {
         const when = document.createElement("small");
         when.className = "each-since";
@@ -8133,17 +8066,15 @@
         stageName.replaceChildren(text);
       }
       mid.appendChild(stageName);
-      if (!simple) {
-        const pips = document.createElement("div");
-        pips.className = "pips";
-        for (let k = 0; k <= top; k++) {
-          const pip = document.createElement("div");
-          pip.className = k <= st ? "pip filled" : "pip";
-          if (motion) markPip(pip, k, motion);
-          pips.appendChild(pip);
-        }
-        mid.appendChild(pips);
+      const pips = document.createElement("div");
+      pips.className = "pips";
+      for (let k = 0; k <= top; k++) {
+        const pip = document.createElement("div");
+        pip.className = k <= st ? "pip filled" : "pip";
+        if (motion) markPip(pip, k, motion);
+        pips.appendChild(pip);
       }
+      mid.appendChild(pips);
 
       const up = document.createElement("button");
       up.type = "button";
@@ -8163,11 +8094,10 @@
     }
 
     function buildEachRows(model) {
-      const simple = rowsSimple();
       const list = (indexes) => {
         const ol = document.createElement("ol");
         ol.className = "each-list";
-        for (const i of indexes) ol.appendChild(buildEachRow(model, i, simple));
+        for (const i of indexes) ol.appendChild(buildEachRow(model, i));
         return ol;
       };
       const all = model.stages.map((st, i) => i);
@@ -9912,7 +9842,7 @@
     // out once, as before, so a long list below costs nothing extra on each frame. The panel is the one the button names (aria-controls),
     // or the element straight after it. Skipped where the panel already has its own motion (Details on a unit, the stage chips, Mentor,
     // the <details> folds, which open their height in CSS) and for tabs and text boxes.
-    const LQ_FOLD_SKIP = '[role="tab"], [role="combobox"], input, summary, .details-toggle, #stage-chips-toggle, #mentor-button, .mentor-orb, .tabs *, .arc *, .mentor-backdrop *, .mentor-window *, '
+    const LQ_FOLD_SKIP = '[role="tab"], [role="combobox"], input, summary, .details-toggle, #mentor-button, .mentor-orb, .tabs *, .arc *, .mentor-backdrop *, .mentor-window *, '
       + '#unit-list li.unit *, #unit-side *';   // MC1 (v130) owns a unit card's opening and closing (its own unroll and glideCards), Mo2 its Details
     let lqFold = null;
     const lqSliding = new Set();   // the slides still running: any new tap or key ends them first, so nothing measures a page that is still moving
@@ -10258,8 +10188,8 @@
         event.preventDefault(); event.stopPropagation();
         acceptDialog();
       } else if (event.key === "Tab") {
-        const stops = [dialogInput, dialogArea, ...dialogPick.querySelectorAll("input, button"), dialogNo, dialogExtra, dialogYes]
-          .filter(el => !el.classList.contains("hidden") && !el.closest("[hidden]"));
+        const stops = [dialogInput, dialogArea, ...dialogPick.querySelectorAll("input, button, select"), dialogNo, dialogExtra, dialogYes]
+          .filter(el => !el.classList.contains("hidden") && !el.closest("[hidden]") && !el.disabled);   // SF2: menus are stops too, a disabled control is not
         const at = stops.indexOf(document.activeElement);
         const next = event.shiftKey ? (at <= 0 ? stops.length - 1 : at - 1) : (at < 0 || at === stops.length - 1 ? 0 : at + 1);
         event.preventDefault();
@@ -10298,6 +10228,278 @@
       showDialog({ mode: "notice", message, onDone: () => {} });
     }
 
+    // ================= SF1: SORT MODELS =================
+    // The Models list order is settings.unitSort: { mode: "default" | "az" | "stage" | "recent" | "custom", levels: [...] } (levels only for custom).
+    // Missing or unknown means the default (Game > Faction > A-Z). It is a small saved setting that travels in backups as "unitSort"; an older
+    // copy of the app ignores it, so DATA_VERSION stays 2. Every order is a list of levels { f: field, rev: bool }; Name A to Z always comes last
+    // as the tie-break. rev flips the first-listed direction of that field (see SORT_FIELDS).
+    const SORT_FIELDS = {
+      game:    { label: "Game",              short: "Game",              dirs: ["A → Z", "Z → A"] },
+      faction: { label: "Faction",           short: "Faction",           dirs: ["A → Z", "Z → A"] },
+      stage:   { label: "Stage",             short: "Stage",             dirs: ["Furthest first", "Least first"] },
+      name:    { label: "Name",              short: "A–Z",               dirs: ["A → Z", "Z → A"] },
+      recent:  { label: "Recently updated",  short: "Recently updated",  dirs: ["Newest first", "Oldest first"] },
+      size:    { label: "Number of models",  short: "Number of models",  dirs: ["Most first", "Fewest first"] },
+    };
+    const SORT_DEFAULT = [{ f: "game", rev: false }, { f: "faction", rev: false }, { f: "name", rev: false }];
+    const SORT_PRESETS = {
+      default: { title: "Game › Faction › A–Z", sub: "Grouped by game, then faction", levels: SORT_DEFAULT },
+      az:      { title: "A–Z", sub: "Names only", levels: [{ f: "name", rev: false }] },
+      stage:   { title: "Stage", sub: "Furthest along first, then A–Z", levels: [{ f: "stage", rev: false }, { f: "name", rev: false }] },
+      recent:  { title: "Recently updated", sub: "Last stage change first, then A–Z", levels: [{ f: "recent", rev: false }, { f: "name", rev: false }] },
+    };
+    // The saved choice, checked: anything odd falls back to the default.
+    function currentUnitSort() {
+      const raw = settings.unitSort;
+      if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+        if (Object.prototype.hasOwnProperty.call(SORT_PRESETS, raw.mode)) return { mode: raw.mode, levels: SORT_PRESETS[raw.mode].levels };
+        if (raw.mode === "custom" && Array.isArray(raw.levels) && raw.levels.length >= 1 && raw.levels.length <= 3) {
+          const seen = new Set();
+          const levels = raw.levels.map(l => (l && typeof l === "object" && Object.prototype.hasOwnProperty.call(SORT_FIELDS, l.f) && !seen.has(l.f) && seen.add(l.f))
+            ? { f: l.f, rev: l.rev === true } : null);
+          if (levels.every(Boolean)) return { mode: "custom", levels };
+        }
+      }
+      return { mode: "default", levels: SORT_DEFAULT };
+    }
+    const sortLabel = (levels) => levels.map(l => SORT_FIELDS[l.f].short).join(" › ");
+    const sortCollator = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
+    const sortNameKey = (m) => displayName(m).trim().replace(/^the\s+/i, "");
+    // The day of a unit's last stage change, then the day it was added, else "" (which counts as oldest).
+    function updatedOn(m) {
+      const log = Array.isArray(m.log) ? m.log : [];
+      const last = log.length ? log[log.length - 1][0] : "";
+      return (typeof last === "string" && last) || (isDate(m.added) ? m.added : "");
+    }
+    // Compares two units on one level. Units with no game (or faction), or no date, go last whichever way the level runs.
+    function sortCompare(level, a, b) {
+      const dir = level.rev ? -1 : 1;
+      switch (level.f) {
+        case "game": case "faction": {
+          const key = level.f === "game" ? "hobby" : "faction";
+          const x = (a[key] || "").trim(), y = (b[key] || "").trim();
+          if (!x || !y) return x === y ? 0 : x ? -1 : 1;
+          return dir * sortCollator.compare(x, y);
+        }
+        case "name": return dir * sortCollator.compare(sortNameKey(a), sortNameKey(b));
+        case "stage": return dir * (b.stage - a.stage);          // first-listed direction: furthest first
+        case "size": return dir * ((b.count || 1) - (a.count || 1));
+        case "recent": {
+          const x = updatedOn(a), y = updatedOn(b);
+          if (!x || !y) return x === y ? 0 : x ? -1 : 1;
+          return dir * (x < y ? 1 : x > y ? -1 : 0);
+        }
+      }
+      return 0;
+    }
+    function sortUnits(list) {
+      const levels = currentUnitSort().levels.slice();
+      if (levels[levels.length - 1].f !== "name") levels.push({ f: "name", rev: false });
+      const rank = new Map(list.map((m, i) => [m, i]));
+      return list.slice().sort((a, b) => {
+        for (const level of levels) { const c = sortCompare(level, a, b); if (c) return c; }
+        return rank.get(a) - rank.get(b);
+      });
+    }
+    // Headings: only for Game first (game headings, and faction headings under them when Faction is second) and Faction first (faction headings).
+    function unitItems(sorted) {
+      const levels = currentUnitSort().levels;
+      const first = levels[0].f, second = levels[1] && levels[1].f;
+      const gameHeads = first === "game", factionHeads = first === "faction" || (gameHeads && second === "faction");
+      if (!gameHeads && !factionHeads) return sorted;
+      const gameOf = (m) => (m.hobby || "").trim(), factionOf = (m) => (m.faction || "").trim();
+      const items = [];
+      let lastGame = null, lastFaction = null;
+      sorted.forEach((m, i) => {
+        const newGame = gameHeads && gameOf(m) !== lastGame;
+        if (newGame) { lastGame = gameOf(m); items.push({ head: { kind: "game", text: gameOf(m) || "No game" } }); }
+        if (factionHeads && (newGame || factionOf(m) !== lastFaction)) {
+          lastFaction = factionOf(m);
+          let count = 0;
+          for (let j = i; j < sorted.length && factionOf(sorted[j]) === lastFaction && (!gameHeads || gameOf(sorted[j]) === lastGame); j++) count++;
+          items.push({ head: { kind: "faction", text: lastFaction || "No faction", colour: factionColour(lastFaction), count } });
+        }
+        items.push(m);
+      });
+      return items;
+    }
+    function buildUnitHead(head) {
+      const li = document.createElement("li");
+      li.className = head.kind === "faction" ? "unit-head faction-head" : "unit-head";
+      li.setAttribute("role", "presentation");
+      const h = document.createElement("h3");
+      if (head.kind === "faction") {
+        const dot = document.createElement("span");
+        dot.className = "head-dot";
+        dot.setAttribute("aria-hidden", "true");
+        if (head.colour) dot.style.setProperty("--faction-dot", head.colour);
+        const name = document.createElement("span");
+        name.textContent = head.text;
+        const count = document.createElement("span");
+        count.className = "head-count";
+        count.textContent = plural(head.count, "unit");
+        h.append(dot, name, count);
+      } else h.textContent = head.text;
+      li.appendChild(h);
+      return li;
+    }
+    const itemEl = (item, shared) => item.head ? buildUnitHead(item.head) : cardFor(item, shared);
+
+    // ----- the Sort button and the "Sort models" sheet (a bottom sheet through showDialog) -----
+    const sortButton = document.getElementById("toggle-sort");
+    const sortOrderText = document.getElementById("sort-order");
+    function saveUnitSort(mode, levels) {
+      settings.unitSort = mode === "custom" ? { mode, levels: levels.map(l => ({ f: l.f, rev: !!l.rev })) } : { mode };
+      saveSettings();
+      render();
+    }
+    function drawSortButton() { const now = currentUnitSort(); sortOrderText.textContent = now.mode === "custom" ? sortLabel(now.levels) : SORT_PRESETS[now.mode].title; }
+    function openSortSheet() {
+      const wrap = document.createElement("div");
+      const x = document.createElement("button");
+      x.type = "button"; x.className = "sort-icon-btn sort-x"; x.setAttribute("aria-label", "Close"); x.textContent = "✕";
+      x.addEventListener("click", () => cancelDialog());
+      const body = document.createElement("div");
+      wrap.append(x, body);
+      const sheet = { view: "list" };
+      dialogBox.classList.add("sort-sheet-box");
+      const finishUi = () => { draft = null; dialogBox.classList.remove("sort-sheet-box", "sort-custom"); dialogButtons.classList.remove("single"); dialogNo.classList.remove("hidden"); };
+
+      // SF2: "Your order": up to three levels, each a field and a direction. draft is [level or null, level or null, level or null].
+      let draft = null;
+      const back = document.createElement("button");
+      back.type = "button"; back.className = "sort-icon-btn sort-back"; back.setAttribute("aria-label", "Back to sort choices"); back.textContent = "←";
+      back.addEventListener("click", () => { draft = null; drawList(); const again = body.querySelector(".sort-row-custom"); if (again) again.focus(); });
+      const LEVEL_NAMES = ["Sort by", "Then by", "Then by"];
+      function drawCustom() {
+        sheet.view = "custom";
+        dialogMessage.textContent = "Your order";
+        dialogBox.classList.add("sort-custom");
+        dialogYes.textContent = "Apply";
+        dialogNo.classList.add("hidden");
+        if (!draft) { draft = currentUnitSort().levels.map(l => ({ f: l.f, rev: l.rev })); while (draft.length < 3) draft.push(null); }
+        if (!wrap.contains(back)) wrap.prepend(back);
+        const levelsBox = document.createElement("div");
+        levelsBox.className = "sort-levels";
+        const reset = document.createElement("button");
+        reset.type = "button"; reset.className = "plain-button sort-reset"; reset.textContent = "Reset to default";
+        reset.addEventListener("click", () => { draft = SORT_DEFAULT.map(l => ({ f: l.f, rev: l.rev })); draw(); reset.focus(); });
+        const draw = (focusAt) => {
+          levelsBox.replaceChildren();
+          draft.forEach((level, i) => {
+            const row = document.createElement("div");
+            row.className = "sort-level";
+            const label = document.createElement("span");
+            label.className = "sort-level-label"; label.id = `sort-level-label-${i}`; label.textContent = LEVEL_NAMES[i];
+            const controls = document.createElement("div");
+            controls.className = "sort-level-controls";
+            const select = document.createElement("select");
+            select.setAttribute("aria-labelledby", label.id);
+            select.dataset.level = String(i);
+            if (i > 0) { const none = document.createElement("option"); none.value = ""; none.textContent = "None"; select.appendChild(none); }
+            const taken = new Set(draft.filter((l, j) => l && j !== i).map(l => l.f));   // a field used in another level is left out of this menu
+            for (const [key, field] of Object.entries(SORT_FIELDS)) {
+              if (taken.has(key)) continue;
+              const o = document.createElement("option"); o.value = key; o.textContent = field.label; select.appendChild(o);
+            }
+            select.value = level ? level.f : "";
+            select.disabled = i === 2 && !draft[1];   // a third level needs a second
+            const dir = document.createElement("button");
+            dir.type = "button"; dir.dataset.level = String(i);
+            if (level) {
+              dir.textContent = SORT_FIELDS[level.f].dirs[level.rev ? 1 : 0];
+              dir.setAttribute("aria-label", `${LEVEL_NAMES[i]} direction, ${dir.textContent}`);
+            } else { dir.textContent = "–"; dir.disabled = true; dir.setAttribute("aria-label", `${LEVEL_NAMES[i]} direction, none`); }
+            select.addEventListener("change", () => {
+              draft[i] = select.value ? { f: select.value, rev: false } : null;
+              if (!draft[1]) draft[2] = null;
+              draw(`select[data-level="${i}"]`);
+            });
+            dir.addEventListener("click", () => { level.rev = !level.rev; draw(`button[data-level="${i}"]`); });
+            controls.append(select, dir);
+            row.append(label, controls);
+            levelsBox.appendChild(row);
+          });
+          if (focusAt) { const el = levelsBox.querySelector(focusAt); if (el && !el.disabled) el.focus(); }
+        };
+        draw();
+        body.replaceChildren(levelsBox, reset);
+        const first = levelsBox.querySelector("select");
+        if (first) first.focus();
+      }
+      // Apply: an order that is the same as one of the four presets is saved as that preset (so its tick shows).
+      sheet.apply = () => {
+        if (!draft) return;
+        const levels = draft.filter(Boolean);
+        const same = (a, b) => JSON.stringify(a.map(l => [l.f, !!l.rev])) === JSON.stringify(b.map(l => [l.f, !!l.rev]));
+        const preset = Object.entries(SORT_PRESETS).find(([, v]) => same(v.levels, levels));
+        if (preset) saveUnitSort(preset[0]); else saveUnitSort("custom", levels);
+      };
+
+      function drawList() {
+        sheet.view = "list";
+        dialogMessage.textContent = "Sort models";
+        dialogBox.classList.remove("sort-custom");
+        back.remove();
+        dialogYes.textContent = "Done";
+        dialogNo.classList.add("hidden");
+        const active = currentUnitSort();
+        const group = document.createElement("div");
+        group.className = "sort-rows";
+        group.setAttribute("role", "radiogroup");
+        group.setAttribute("aria-label", "Sort order");
+        const makeRow = (title, sub, checked) => {
+          const row = document.createElement("button");
+          row.type = "button";
+          row.className = "sort-row";
+          row.setAttribute("role", "radio");
+          row.setAttribute("aria-checked", String(checked));
+          const text = document.createElement("span");
+          const t = document.createElement("span"); t.className = "sort-row-title"; t.textContent = title;
+          const s2 = document.createElement("span"); s2.className = "sort-row-sub"; s2.textContent = sub;
+          text.append(t, s2);
+          const tick = document.createElement("span");
+          tick.className = "sort-tick"; tick.setAttribute("aria-hidden", "true"); tick.textContent = checked ? "✓" : "";
+          row.append(text, tick);
+          return row;
+        };
+        for (const [mode, preset] of Object.entries(SORT_PRESETS)) {
+          const row = makeRow(preset.title, preset.sub, active.mode === mode);
+          row.dataset.sortMode = mode;
+          row.addEventListener("click", () => {
+            saveUnitSort(mode);
+            drawList();
+            const again = body.querySelector(`[data-sort-mode="${mode}"]`);
+            if (again) again.focus();
+          });
+          group.appendChild(row);
+        }
+        // SF2: the last row opens the "Your order" view in this same sheet.
+        const custom = makeRow("Build my own order…", "Pick up to three levels", active.mode === "custom");
+        custom.dataset.sortMode = "custom";
+        custom.classList.add("sort-row-custom");
+        const chev = document.createElement("span");
+        chev.className = "sort-chev"; chev.setAttribute("aria-hidden", "true"); chev.textContent = "›";
+        custom.appendChild(chev);
+        custom.addEventListener("click", drawCustom);
+        group.appendChild(custom);
+        body.replaceChildren(group);
+      }
+      drawList();
+      showDialog({
+        mode: "pick", sheet: true, message: "Sort models", content: wrap, yes: "Done",
+        onDone: (answer) => {
+          if (sheet.view === "custom" && answer === true && sheet.apply) sheet.apply();
+          finishUi();
+        },
+      });
+      dialogButtons.classList.add("single");
+      dialogNo.classList.add("hidden");
+      const checked = body.querySelector('[aria-checked="true"]');
+      if (checked) checked.focus();
+    }
+    sortButton.addEventListener("click", openSortSheet);
+
     // ----- UX1b: Skip to content -----
     // The first stop for the Tab key on every page (shown only while it has the focus). It jumps past the menu bar
     // (four segments, Ask Mentor and the back arrow) to the first control of the page you are on.
@@ -10311,28 +10513,160 @@
 
     // ----- Filters and the add form -----
 
-    hobbyFilter.addEventListener("change", () => {
-      filters.hobby = hobbyFilter.value;
-      filters.faction = "";
-      render();
-    });
-    factionFilter.addEventListener("change", () => { filters.faction = factionFilter.value; render(); });
     clearFiltersButton.addEventListener("click", () => { clearFilters(); render(); });
 
-    // Fold the filter card open or shut. Starts open only on wide screens.
+    // SF3: the Filters button opens a sheet from the bottom: Game, Faction, Progress and Stage chips, "Clear all" and "Show N units".
+    // Filters apply as you tap (the same filters object as always), so the list behind is already right; the sheet only draws and sets them.
     const toggleFilters = document.getElementById("toggle-filters");
-    const filterCard = document.getElementById("filter-card");
+    let filtersSheet = null;   // null, or { backdrop, body, clear, show, opener, onKey }
+    function fsChip(key, label, on, onClick, colour) {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chip fs-chip";
+      chip.dataset.fk = key;
+      chip.setAttribute("aria-pressed", String(on));
+      if (colour !== undefined) {
+        const dot = document.createElement("span");
+        dot.className = "fs-dot";
+        dot.setAttribute("aria-hidden", "true");
+        dot.style.setProperty("--chip-colour", colour || "var(--border)");
+        chip.appendChild(dot);
+      }
+      const text = document.createElement("span");
+      text.textContent = label;
+      chip.appendChild(text);
+      chip.addEventListener("click", onClick);
+      return chip;
+    }
+    function fsSection(title, chips) {
+      const section = document.createElement("div");
+      section.className = "fs-section";
+      const label = document.createElement("h3");
+      label.className = "fs-label";
+      label.id = "fs-label-" + title.toLowerCase();
+      label.textContent = title;
+      const row = document.createElement("div");
+      row.className = "chips chips-wrap";
+      row.id = "fs-chips-" + title.toLowerCase();
+      row.setAttribute("role", "group");
+      row.setAttribute("aria-labelledby", label.id);
+      row.append(...chips);
+      section.append(label, row);
+      return section;
+    }
+    function renderFiltersSheet(games, factions, visible) {
+      const state = filtersSheet;
+      const held = document.activeElement && state.body.contains(document.activeElement) ? document.activeElement.dataset.fk : null;
+      const top = state.body.scrollTop;
+      const todo = todoStages(), done = doneStages();
+      state.body.replaceChildren(
+        fsSection("Game", [
+          fsChip("game:", "All games", !filters.hobby, () => { filters.hobby = ""; filters.faction = ""; render(); }),
+          ...games.map(g => fsChip("game:" + g, g, filters.hobby === g, () => { filters.hobby = g; filters.faction = ""; render(); })),
+        ]),
+        fsSection("Faction", [
+          fsChip("faction:", "All factions", !filters.faction, () => { filters.faction = ""; render(); }),
+          ...factions.map(f => fsChip("faction:" + f, f, filters.faction === f, () => { filters.faction = f; render(); }, factionColour(f))),
+        ]),
+        fsSection("Progress", [
+          fsChip("p:todo", "To do", sameStages(filters.stages, todo), () => { filters.stages = sameStages(filters.stages, todo) ? new Set() : new Set(todo); render(); }),
+          fsChip("p:done", "Done", sameStages(filters.stages, done), () => { filters.stages = sameStages(filters.stages, done) ? new Set() : new Set(done); render(); }),
+          fsChip("p:repaint", "\u21bb Repaint", filters.repaint, () => { filters.repaint = !filters.repaint; render(); }),
+        ]),
+        fsSection("Stage", STAGES.map((name, index) => fsChip("s:" + index, name, filters.stages.has(index), () => {
+          if (filters.stages.has(index)) filters.stages.delete(index); else filters.stages.add(index);
+          render();
+        }, `var(--stage-${index})`))),
+      );
+      state.body.scrollTop = top;
+      if (held) { const again = state.body.querySelector(`[data-fk="${CSS.escape(held)}"]`); if (again) again.focus({ preventScroll: true }); }
+      state.clear.disabled = !(filters.hobby || filters.faction || filters.stages.size || filters.repaint);
+      state.show.textContent = "Show " + plural(visible.length, "unit");
+    }
+    function openFiltersSheet() {
+      if (filtersSheet) return;
+      const backdrop = document.createElement("div");
+      backdrop.className = "fs-backdrop";
+      backdrop.id = "filters-sheet";
+      const box = document.createElement("div");
+      box.className = "fs-sheet";
+      box.setAttribute("role", "dialog");
+      box.setAttribute("aria-modal", "true");
+      box.setAttribute("aria-labelledby", "fs-title");
+      const head = document.createElement("div");
+      head.className = "fs-head";
+      const title = document.createElement("h2");
+      title.className = "fs-title";
+      title.id = "fs-title";
+      title.textContent = "Filters";
+      const close = document.createElement("button");
+      close.type = "button";
+      close.className = "fs-close";
+      close.setAttribute("aria-label", "Close filters");
+      {   // v159: the X is drawn with createElementNS (no HTML text), like the basket, so no innerHTML is used
+        const NS = "http://www.w3.org/2000/svg";
+        const x = document.createElementNS(NS, "svg");
+        x.setAttribute("viewBox", "0 0 24 24"); x.setAttribute("aria-hidden", "true"); x.setAttribute("focusable", "false");
+        const xp = document.createElementNS(NS, "path");
+        xp.setAttribute("d", "M6 6l12 12M18 6L6 18");
+        x.appendChild(xp);
+        close.appendChild(x);
+      }
+      head.append(title, close);
+      const body = document.createElement("div");
+      body.className = "fs-body";
+      const foot = document.createElement("div");
+      foot.className = "fs-foot";
+      const clear = document.createElement("button");
+      clear.type = "button";
+      clear.className = "plain-button";
+      clear.id = "fs-clear";
+      clear.textContent = "Clear all";
+      const show = document.createElement("button");
+      show.type = "button";
+      show.className = "primary-button";
+      show.id = "fs-show";
+      show.setAttribute("aria-live", "polite");
+      foot.append(clear, show);
+      box.append(head, body, foot);
+      backdrop.appendChild(box);
+      const onKey = (event) => {
+        if (event.isComposing) return;
+        if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); closeFiltersSheet(); }
+        else if (event.key === "Tab") {
+          const stops = [...box.querySelectorAll("button")].filter(b => !b.disabled);
+          const at = stops.indexOf(document.activeElement);
+          const next = event.shiftKey ? (at <= 0 ? stops.length - 1 : at - 1) : (at < 0 || at === stops.length - 1 ? 0 : at + 1);
+          event.preventDefault();
+          stops[next].focus();
+        }
+      };
+      filtersSheet = { backdrop, body, clear, show, opener: document.activeElement, onKey };
+      close.addEventListener("click", closeFiltersSheet);
+      show.addEventListener("click", closeFiltersSheet);
+      clear.addEventListener("click", () => { clearFilters(); render(); });
+      backdrop.addEventListener("click", (event) => { if (event.target === backdrop) closeFiltersSheet(); });
+      document.addEventListener("keydown", onKey, true);
+      document.body.appendChild(backdrop);
+      document.body.style.overflow = "hidden";
+      const games = uniqueSorted(models.map(m => m.hobby));
+      renderFiltersSheet(games, uniqueSorted(models.filter(m => !filters.hobby || m.hobby === filters.hobby).map(m => m.faction)), models.filter(isVisible));
+      close.focus({ preventScroll: true });
+      queueBackCheck();
+    }
+    function closeFiltersSheet() {
+      const state = filtersSheet;
+      if (!state) return;
+      filtersSheet = null;
+      document.removeEventListener("keydown", state.onKey, true);
+      state.backdrop.remove();
+      document.body.style.overflow = "";
+      if (state.opener && state.opener.isConnected) { try { state.opener.focus({ preventScroll: true }); } catch (ignored) {} }
+      queueBackCheck();
+    }
+    toggleFilters.addEventListener("click", openFiltersSheet);
     // v77: WIDE_MIN_PX is the wide-screen breakpoint. The CSS says the same number in index.html (see the v77 comment there).
     const WIDE_MIN_PX = 900;
-    let filtersOpen = window.matchMedia("(min-width: " + WIDE_MIN_PX + "px)").matches;
-    function setFiltersOpen(open) {
-      filtersOpen = open;
-      filterCard.classList.toggle("hidden", !open);
-      toggleFilters.setAttribute("aria-expanded", open);
-      render();
-    }
-    toggleFilters.addEventListener("click", () => setFiltersOpen(!filtersOpen));
-    filterCard.classList.toggle("hidden", !filtersOpen);
 
     const form = document.getElementById("add-form");
     const toggleAdd = document.getElementById("toggle-add");
@@ -20756,6 +21090,7 @@
       return { app: "Minifolio", version: 6, dataVersion: DATA_VERSION, stages: STAGES, doneFrom: settings.doneFrom, models, recipes: book,
                factionColours: settings.factionColours,
                factionView: currentFactionView(),   // AB8: Armies as rows or doughnuts. Older versions ignore it.
+               unitSort: currentUnitSort().mode === "custom" ? { mode: "custom", levels: currentUnitSort().levels } : { mode: currentUnitSort().mode },   // SF1: the Models order. Older versions ignore it.
                // v20: the look travels with the backup too. Older versions ignore these.
                palette: settings.palette, appearance: settings.appearance, theme: currentTheme(),   // v47: the theme too
                brandsOff: cleanBrandsOff(settings.brandsOff),   // v48: the paint brands you've switched off
@@ -21135,6 +21470,9 @@
               if (unitsToo && !isList && parsed.factionColours) settings.factionColours = cleanFactionColours(parsed.factionColours);
               // AB8: backups from this version on hold the Armies view. Older ones don't, so yours stays (rows unless you chose doughnuts).
               if (unitsToo && !isList && (parsed.factionView === "rows" || parsed.factionView === "doughnuts")) settings.factionView = parsed.factionView;
+              // SF1: backups from this version on hold the Models order. Older ones don't, so yours stays. Anything odd is ignored.
+              if (unitsToo && !isList && parsed.unitSort && typeof parsed.unitSort === "object" && !Array.isArray(parsed.unitSort)
+                  && (parsed.unitSort.mode === "custom" || Object.prototype.hasOwnProperty.call(SORT_PRESETS, parsed.unitSort.mode))) settings.unitSort = parsed.unitSort;
               // v20: backups from v20 onwards hold the stage colour set and Appearance.
               // Anything unknown is ignored, so older backups leave yours as they are.
               if (unitsToo && !isList && typeof parsed.palette === "string" && Object.prototype.hasOwnProperty.call(PALETTES, parsed.palette)) settings.palette = parsed.palette;
@@ -22409,12 +22747,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=158".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=159".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v158";
+    const APP_VERSION = "v159";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;
@@ -22880,6 +23218,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v159", date: "12 Nov 2026", changes: [
+        "The Models page has a Sort button with ready-made orders and a Build my own order choice, and units are grouped by game and faction. The Detailed and Simple switch is gone.",
+        "Filters now open as a sheet from the bottom, with a button that shows how many units match.",
+      ] },
       { version: "v158", date: "12 Nov 2026", changes: [
         "The Dashboard is now called Nexus. Its top card is one card, with the ring showing the percentage over Done, and the stage list folds into a Stages row that starts shut.",
         "The progress graph is now called Progress timeline, and each army doughnut says Done.",
@@ -23452,7 +23794,7 @@
     // own copy in memory and saved over the other's changes. Now, when the OTHER window
     // saves, the browser tells this one (the "storage" event) and we load its changes.
     // Screen choices (which tab is open, sort order...) stay this window's own.
-    const VIEW_ONLY_SETTINGS = ["tab", "recipeView", "historyRange", "paintSort", "lastGame", "lastFaction", "modelRows"];
+    const VIEW_ONLY_SETTINGS = ["tab", "recipeView", "historyRange", "paintSort", "lastGame", "lastFaction", "unitSort"];
     const withoutViewSettings = (s) => {
       const copy = { ...s };
       for (const key of VIEW_ONLY_SETTINGS) delete copy[key];
@@ -23574,6 +23916,7 @@
         if (schemeDraft && settings.recipeView === "schemes") return () => closeScheme(true);
       }
       if ((tab === "guides" || (tab === "recipes" && settings.recipeView === "colourlab")) && compendiumState.focus) return leaveIdeasFor;   // v69 (X1: also in Colour Lab): back to the recipe step or palette paint
+      if (tab === "units" && filtersSheet) return closeFiltersSheet;   // SF3: the Filters sheet
       if (tab === "units" && !unitsImport.classList.contains("hidden")) return closeUnitsImport;
       if (tab === "units" && selectMode) return closeSelect;   // v21.1: select mode's tick boxes
       if (tab === "updates" && versionFrom) { const from = versionFrom; return from === "launch" ? enterLaunch : () => showTab(from); }   // FB1: opened from the version number: Back returns to where the person was

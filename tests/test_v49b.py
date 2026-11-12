@@ -55,7 +55,7 @@ BOOK = {"parts": ["Whole model", "Armour"], "techniques": ["Layer", "Base coat",
 ROWS_JS = """() => [...document.querySelectorAll('.chips, .buy-shops')].filter(r => r.offsetParent && r.getClientRects().length).map(r => {
     const kids = [...r.children].filter(c => c.offsetParent && c.tagName === 'BUTTON'), box = r.getBoundingClientRect();
     const tops = new Set(kids.map(c => Math.round(c.getBoundingClientRect().top)));
-    const on = kids.filter(c => c.id !== 'stage-chips-toggle' && (c.getAttribute('aria-pressed') === 'true' || c.getAttribute('aria-expanded') === 'true'));
+    const on = kids.filter(c => (c.getAttribute('aria-pressed') === 'true' || c.getAttribute('aria-expanded') === 'true'));
     const inView = (c) => { const b = c.getBoundingClientRect(); return b.left >= box.left - 1 && b.right <= box.right + 1; };
     const cs = getComputedStyle(r);
     return { id: r.id || (r.querySelector(':scope > [data-role]') ? 'colour-roles' : '') || r.parentElement.id || r.parentElement.className, cls: r.className, n: kids.length, lines: tops.size,
@@ -89,14 +89,26 @@ def settle(page):
     page.evaluate("() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))")
 
 def open_filters(page):
+    # SF3: Filters is a bottom sheet now (the fold-away card and its "Pick by stage" opener are gone): its chips wrap, they do not slide.
     tab(page, "units")
-    if page.evaluate("document.getElementById('filter-card').classList.contains('hidden')"):
+    if not page.evaluate("!!document.getElementById('filters-sheet')"):
         page.click("#toggle-filters")
     settle(page)
-    # declutter (v49 on this branch): the stages stay hidden until Pick by stage is tapped
-    if page.locator("#stage-chips-toggle").count() and page.locator("#stage-chips .chip").count() == 0:
-        page.click("#stage-chips-toggle")
-        settle(page)
+
+def close_filters(page):
+    if page.evaluate("!!document.getElementById('filters-sheet')"):
+        page.keyboard.press("Escape")
+    settle(page)
+
+# SF3: the stage chips used to be the one row that slid sideways at 360 px, and section 4 below used them to check how a sliding row behaves
+# (the fade, keeping the pressed button in view, room for the focus ring). The Filters sheet wraps its chips now, so the same row is built here
+# by hand: eight stage buttons in a card, redrawn on every tap the way the app redraws its rows.
+MAKE_ROW = """(pressed) => { let r = document.getElementById('t-stage-row');
+    if (!r) { const card = document.createElement('div'); card.className = 'card'; r = document.createElement('div'); r.id = 't-stage-row'; r.className = 'chips'; card.appendChild(r);
+              document.getElementById('view-units').prepend(card); }
+    const draw = (p) => r.replaceChildren(...STAGES.map((n, i) => { const b = document.createElement('button'); b.className = 'chip'; b.textContent = n;
+        b.setAttribute('aria-pressed', String(i === p)); b.addEventListener('click', () => draw(i)); return b; }));
+    draw(pressed); }"""
 
 def seg(page, view):
     tab(page, "recipes")
@@ -131,8 +143,9 @@ def sweep(page, tag, results_out, seen):
         results_out.extend((where, b) for b in bad)
     tab(page, "dashboard"); look("dashboard")
     open_filters(page); look("units filters")
-    page.locator("#stage-chips .chip").last.click(); look("units, last stage pressed")
-    page.locator("#stage-chips .chip").last.click()
+    page.locator("#fs-chips-stage .chip").last.click(); look("units, last stage pressed")
+    page.locator("#fs-chips-stage .chip").last.click()
+    close_filters(page)
     seg(page, "recipes"); look("recipes")
     seg(page, "palette"); look("palette")
     page.locator(".paint-head").first.click(); look("palette, a paint open (status)")
@@ -188,8 +201,8 @@ def main():
             sweep(page, tag, bad, seen)
             check(f"{tag}: every option row is one line, nothing clipped, buttons tall enough, no sideways page", not bad, bad[:3])
             if w == 390 and th == "bench" and mode == "dark":
-                open_filters(page); page.locator("#filter-card").screenshot(path=os.path.join(t.SHOTS, "v49-filters-bench-dark-390.png"))
-        want = {"history-range", "group-chips", "stage-chips", "can-paint-box", "brand-chips", "palette-search-result", "brand-toggles",
+                open_filters(page); page.locator("#filters-sheet .fs-sheet").screenshot(path=os.path.join(t.SHOTS, "v49-filters-bench-dark-390.png")); close_filters(page)
+        want = {"history-range", "fs-chips-progress", "fs-chips-stage", "can-paint-box", "brand-chips", "palette-search-result", "brand-toggles",
                 "cmp-starter-view", "cmp-starter-moods", "cmp-starter-combos", "cmp-detail-groups", "cmp-basing-groups", "buy-bar",
                 "cmp-starter-chips", "part-chips"}
         check("the sweep met every kind of option row (and the browse lists)", want <= seen, sorted(want - seen))
@@ -224,26 +237,25 @@ def main():
         print("\n--- 4. A row too long for the screen ---")
         page.set_viewport_size({"width": 360, "height": 900})
         load(page, {"theme": "classic", "appearance": "dark"})
-        open_filters(page)
-        r = page.evaluate("() => { const r = document.getElementById('stage-chips'); return [r.className, r.scrollLeft, r.scrollWidth > r.clientWidth + 1]; }")
+        tab(page, "units"); page.evaluate(MAKE_ROW, 0); settle(page)
+        r = page.evaluate("() => { const r = document.getElementById('t-stage-row'); return [r.className, r.scrollLeft, r.scrollWidth > r.clientWidth + 1]; }")
         check("360 px: the eight stages scroll sideways with a fade on the right only", r[2] and "chips-scroll" in r[0] and "chips-more-right" in r[0] and "chips-more-left" not in r[0], r)
-        page.locator("#stage-chips .chip").last.scroll_into_view_if_needed()
-        page.locator("#stage-chips .chip").last.click(); settle(page); settle(page)
-        r = page.evaluate("""() => { const r = document.getElementById('stage-chips'), b = r.getBoundingClientRect(), c = r.querySelector('[aria-pressed="true"]').getBoundingClientRect();
+        page.locator("#t-stage-row .chip").last.scroll_into_view_if_needed()
+        page.locator("#t-stage-row .chip").last.click(); settle(page); settle(page)
+        r = page.evaluate("""() => { const r = document.getElementById('t-stage-row'), b = r.getBoundingClientRect(), c = r.querySelector('[aria-pressed="true"]').getBoundingClientRect();
             return { cls: r.className, inView: c.left >= b.left - 1 && c.right <= b.right + 1, text: r.querySelector('[aria-pressed="true"]').textContent }; }""")
         check("after the row is redrawn, the pressed stage (the last one) is fully in view and the fade moves to the left",
               r["inView"] and r["text"] == page.evaluate("STAGES[STAGES.length - 1]") and "chips-more-left" in r["cls"] and "chips-more-right" not in r["cls"], r)
         load(page, {"theme": "classic", "appearance": "dark"})   # a fresh page with the last stage pressed from the start
-        page.evaluate("() => { filters.stages = new Set([STAGES.length - 1]); render(); }")
-        open_filters(page); settle(page)
-        r = page.evaluate("""() => { const r = document.getElementById('stage-chips'), b = r.getBoundingClientRect(), c = r.querySelector('[aria-pressed="true"]').getBoundingClientRect();
+        tab(page, "units"); page.evaluate(MAKE_ROW, 7); settle(page)
+        r = page.evaluate("""() => { const r = document.getElementById('t-stage-row'), b = r.getBoundingClientRect(), c = r.querySelector('[aria-pressed="true"]').getBoundingClientRect();
             return c.left >= b.left - 1 && c.right <= b.right + 1; }""")
         check("a row that opens with its pressed button off to the side scrolls to show it", r)
-        page.evaluate("document.getElementById('stage-chips').scrollLeft = 0"); settle(page)
-        r = page.evaluate("document.getElementById('stage-chips').className")
+        page.evaluate("document.getElementById('t-stage-row').scrollLeft = 0"); settle(page)
+        r = page.evaluate("document.getElementById('t-stage-row').className")
         check("scrolling back to the start by hand moves the fade back to the right", "chips-more-right" in r and "chips-more-left" not in r, r)
-        page.evaluate("document.querySelector('#stage-chips .chip').focus()")
-        pad = page.evaluate("() => { const r = document.getElementById('stage-chips'), c = r.firstElementChild.getBoundingClientRect(), b = r.getBoundingClientRect(); return [c.left - b.left, c.top - b.top, b.bottom - c.bottom]; }")
+        page.evaluate("document.querySelector('#t-stage-row .chip').focus()")
+        pad = page.evaluate("() => { const r = document.getElementById('t-stage-row'), c = r.firstElementChild.getBoundingClientRect(), b = r.getBoundingClientRect(); return [c.left - b.left, c.top - b.top, b.bottom - c.bottom]; }")
         check("a focused button has at least 4 px of the row round it, so its focus ring (2 px + 2 px gap) isn't cut off", min(pad) >= 3.5, pad)
 
         # ---------- 5. The buttons still work ----------
@@ -253,18 +265,19 @@ def main():
         open_filters(page)
         shown = lambda: page.locator("#unit-list li.unit").count()
         before = shown()
-        page.locator("#stage-chips .chip").nth(2).click(); settle(page)
-        check("a stage button turns on (aria-pressed) and filters the units", page.locator("#stage-chips .chip").nth(2).get_attribute("aria-pressed") == "true"
+        page.locator("#fs-chips-stage .chip").nth(2).click(); settle(page)
+        check("a stage button turns on (aria-pressed) and filters the units", page.locator("#fs-chips-stage .chip").nth(2).get_attribute("aria-pressed") == "true"
               and shown() == 1 and before == 8, (before, shown()))
-        page.locator("#stage-chips .chip").nth(2).click(); settle(page)
-        check("…and tapping it again turns it off", page.locator("#stage-chips .chip").nth(2).get_attribute("aria-pressed") == "false" and shown() == 8)
-        page.locator("#group-chips .chip", has_text="Done").click(); settle(page)
+        page.locator("#fs-chips-stage .chip").nth(2).click(); settle(page)
+        check("…and tapping it again turns it off", page.locator("#fs-chips-stage .chip").nth(2).get_attribute("aria-pressed") == "false" and shown() == 8)
+        page.locator("#fs-chips-progress .chip", has_text="Done").click(); settle(page)
         done = page.evaluate("doneStages().length")
-        check("Done turns on and shows the done units", page.locator("#group-chips .chip", has_text="Done").get_attribute("aria-pressed") == "true" and shown() == done, (shown(), done))
-        page.locator("#group-chips .chip", has_text="Repaint").click(); settle(page)
-        check("↻ Repaint narrows it further", page.locator("#group-chips .chip", has_text="Repaint").get_attribute("aria-pressed") == "true" and shown() <= 1)
-        page.click("#clear-filters"); settle(page)
-        check("Clear still turns every button off", page.locator("#filter-card [aria-pressed='true']").count() == 0 and shown() == 8)
+        check("Done turns on and shows the done units", page.locator("#fs-chips-progress .chip", has_text="Done").get_attribute("aria-pressed") == "true" and shown() == done, (shown(), done))
+        page.locator("#fs-chips-progress .chip", has_text="Repaint").click(); settle(page)
+        check("↻ Repaint narrows it further", page.locator("#fs-chips-progress .chip", has_text="Repaint").get_attribute("aria-pressed") == "true" and shown() <= 1)
+        page.click("#fs-clear"); settle(page)   # SF3: Clear all in the sheet (the Clear link under the sheet is behind it)
+        check("Clear all still turns every button off", page.locator("#filters-sheet [aria-pressed='true']:not([data-fk='game:']):not([data-fk='faction:'])").count() == 0 and shown() == 8)   # only "All games" and "All factions" stay on
+        close_filters(page)
 
         seg(page, "palette")
         page.locator(".paint-head").first.click(); settle(page)
@@ -294,16 +307,15 @@ def main():
         else:
             check("the shopping list has the Buy these shop buttons", False, "no shop buttons")
 
-        # The wide-screen filter card: menus and To do / Done / Repaint on one line, the stages below.
+        # SF3: on a wide screen the Filters sheet is still a bottom sheet no wider than 560 px, with its chips wrapping inside it.
         page.set_viewport_size({"width": 1280, "height": 900})
         load(page)
         open_filters(page)
-        geo = page.evaluate("""() => { const t = (s) => document.querySelector(s).getBoundingClientRect();
-            return { menu: t('#hobby-filter'), group: t('#group-chips'), stages: t('#stage-chips'), card: t('#filter-card') }; }""")
-        check("1280 px: To do / Done / Repaint sit on the same line as the menus, and the stages on a line of their own below",
-              abs((geo["menu"]["top"] + geo["menu"]["bottom"]) / 2 - (geo["group"]["top"] + geo["group"]["bottom"]) / 2) < 8
-              and geo["group"]["left"] > geo["menu"]["right"] and geo["stages"]["top"] >= geo["group"]["bottom"] - 4
-              and geo["stages"]["width"] > geo["card"]["width"] * 0.9, geo)
+        geo = page.evaluate("""() => { const b = document.querySelector('#filters-sheet .fs-sheet').getBoundingClientRect(), r = document.getElementById('fs-chips-stage');
+            return { w: b.width, bottom: b.bottom, vh: innerHeight, wraps: r.classList.contains('chips-wrap'), over: r.scrollWidth > r.clientWidth + 1 }; }""")
+        check("1280 px: the Filters sheet is a bottom sheet at most 560 px wide and the stages wrap inside it",
+              geo["w"] <= 561 and abs(geo["bottom"] - geo["vh"]) < 2 and geo["wraps"] and not geo["over"], geo)
+        close_filters(page)
 
         # ---------- 6. Clean run ----------
         print("\n--- 6. A clean run ---")

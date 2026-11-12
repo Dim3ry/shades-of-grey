@@ -55,8 +55,8 @@
        (applyAppearance in app.js) takes over once the app starts.
        U6b: mentor-looks.js (the Mentor orb's three looks and five states, plain data: MENTOR_LOOKS and MENTOR_LOOKS_CSS) loads
        just before it, so early.js can put the chosen look and its styles on the page before the first frame (LR1). -->
-  <script src="mentor-looks.js?v=158"></script>
-  <script src="early.js?v=158"></script>
+  <script src="mentor-looks.js?v=159"></script>
+  <script src="early.js?v=159"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -590,7 +590,6 @@
       background: linear-gradient(to left, var(--faction-tint), transparent 75%), var(--card);
     }
     .details .faction-dot { width: 10px; height: 10px; vertical-align: -1px; margin-right: 4px; }
-    #faction-filter { border-left: 4px solid var(--chip-colour, var(--border)); }
 
     .faction-colour-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
     .faction-colour-row {
@@ -631,6 +630,46 @@
       .units-toolbar .plain-button { padding: 12px 12px; }
     }
     .units-toolbar .plain-button[aria-pressed="true"] { color: var(--on-accent); background: var(--accent-fill, var(--accent)); border-color: var(--accent-fill, var(--accent)); font-weight: 600; }
+
+    /* SF1: Sort button (two lines) in the Models controls, the Sort models sheet, and the game and faction headings in the list.
+       The controls wrap to two rows of two so the second line of Sort has room on a 320 px screen. */
+    .units-toolbar { grid-template-columns: 1fr 1fr; }
+    .units-toolbar .sort-button { display: grid; gap: 1px; justify-items: start; text-align: left; min-height: 48px; padding-top: 6px; padding-bottom: 6px; min-width: 0; }
+    .sort-button .sort-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.8; }
+    .sort-button .sort-order { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.92rem; }
+    .dialog.sort-sheet-box { position: relative; }
+    .sort-sheet-box #dialog-message { padding-right: 44px; }
+    .sort-sheet-box.sort-custom #dialog-message { padding-left: 44px; }
+    .sort-icon-btn { position: absolute; top: 8px; width: 44px; height: 44px; display: grid; place-items: center; padding: 0; background: transparent; border: 0; color: var(--text); cursor: pointer; border-radius: 50%; font-size: 1.3rem; line-height: 1; }
+    .sort-icon-btn.sort-x { right: 6px; }
+    .sort-icon-btn.sort-back { left: 6px; }
+    .sort-icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .sort-rows { display: grid; gap: 8px; }
+    .sort-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; min-height: 56px; width: 100%; text-align: left; padding: 8px 12px; color: var(--text); background: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card); cursor: pointer; font: inherit; }
+    .sort-row[aria-checked="true"] { border-color: var(--accent); border-width: 2px; padding: 7px 11px; font-weight: 600; }
+    .sort-row .sort-row-title { display: block; }
+    .sort-row .sort-row-sub { display: block; font-weight: 400; font-size: 0.85rem; opacity: 0.8; }
+    .sort-row .sort-tick { width: 24px; text-align: center; color: var(--accent); font-weight: 700; }
+    .sort-row:focus-visible, .sort-level select:focus-visible, .sort-level button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .sort-levels { display: grid; gap: 14px; }
+    .sort-level { display: grid; gap: 6px; }
+    .sort-level-label { font-size: 0.85rem; opacity: 0.85; }
+    .sort-level-controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+    .sort-level select, .sort-level button { min-height: 44px; padding: 8px 10px; font: inherit; color: var(--text); background: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card); min-width: 0; }
+    .sort-level button { cursor: pointer; }
+    .sort-level select:disabled, .sort-level button:disabled { opacity: 0.5; cursor: default; }
+    .sort-reset { min-height: 44px; margin-top: 14px; width: 100%; }
+    .unit-head { list-style: none; margin: 14px 0 6px; padding: 0 2px; }
+    .unit-head h3 { margin: 0; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+    .unit-head.faction-head h3 { display: flex; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0.01em; font-size: 0.92rem; }
+    .unit-head .head-dot { width: 12px; height: 12px; border-radius: 50%; flex: none; background: var(--faction-dot, var(--border)); border: 1px solid var(--border); }
+    .unit-head .head-count { margin-left: auto; font-weight: 400; opacity: 0.8; }
+    /* end SF1 */
+
+    /* SF2: "Build my own order" row and the "Your order" view in the Sort models sheet. */
+    .sort-row.sort-row-custom { grid-template-columns: 1fr auto auto; }
+    .sort-chev { font-size: 1.4rem; line-height: 1; opacity: 0.8; }
+    /* end SF2 */
 
     /* v21.1: SELECT MODE. A tick box on each card, and a bar at the bottom to move them all. */
     .unit-tick {
@@ -716,10 +755,6 @@
       border-radius: var(--radius-control);   /* AB5: was a pill; now follows the look */
     }
     .chip[aria-pressed="true"] { color: var(--on-accent); background-color: var(--accent-fill, var(--accent)); border-color: var(--accent-fill, var(--accent)); font-weight: 600; }
-    /* v49: the Units filter groups (To do, Done, Repaint) are three equal buttons across the card; the stage chips open underneath */
-    #group-chips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-    #group-chips .chip { justify-content: center; text-align: center; min-height: 44px; padding: 10px 6px; }
-    #stage-chips .more-info-button { flex-basis: 100%; }
 
     /* ----- Units: the list ----- */
     ul.units { list-style: none; margin: 0; padding: 0; }
@@ -761,7 +796,6 @@
        Theme variables only: the stage colour, --accent, --background, --border, --muted. */
     .each-row { display: flex; align-items: center; gap: 8px; min-height: 60px; padding: 6px 8px;
                 border: var(--border-width) var(--border-style) var(--border); border-left: 4px solid var(--stage-colour); border-radius: var(--radius-control); }
-    .each-row.simple { min-height: 56px; padding-top: 4px; padding-bottom: 4px; }
     .each-name { flex: 1 1 0; min-width: 0; display: block; font-size: 0.875rem; color: var(--text); }
     .each-label { display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     /* v21.8: "Today", "Yesterday" or "Since 7 Oct" under the model's name. */
@@ -781,10 +815,6 @@
                        background: transparent; color: var(--text); border: 0; border-top: var(--border-width) var(--border-style) var(--border); border-radius: 0; }
     .each-group-stage { font-weight: 700; color: var(--stage-colour); }
     .each-group-count { flex: 1; font-size: 0.8125rem; color: var(--muted); }
-    /* M2: the Detailed / Simple switch above the unit list. */
-    .rows-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-    .rows-switch .plain-button { min-height: 44px; padding: 8px 12px; }
-    .rows-switch .plain-button[aria-pressed="true"] { color: var(--on-accent); background: var(--accent-fill, var(--accent)); border-color: var(--accent-fill, var(--accent)); font-weight: 600; }
     /* M2: Move all models / Track as one batch are full-width, 48 px tall. */
     .panel .jump-stage, .panel .track-each { min-height: 48px; width: 100%; }
 
@@ -2047,10 +2077,6 @@
         gap: 14px; align-items: start;
       }
       li.unit { margin-bottom: 0; padding: 16px; }
-      /* v49: the game and faction menus and To do / Done / Repaint share the top line; the stages get the line below. */
-      #filter-card:not(.hidden) { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); column-gap: 12px; align-items: center; }
-      #filter-card > #group-chips { margin-top: 0; }
-      #filter-card > #stage-chips { grid-column: 1 / -1; }
       .name { font-size: 1.125rem; }
       .details, .stage { font-size: 0.875rem; }
 
@@ -2876,11 +2902,9 @@
       .primary-button:not(:disabled):hover { border-color: var(--accent-fill, var(--accent)); }   /* AB4 (AT-33): hover changes the border colour only */
     }
     .primary-button:not(:disabled):active, .plain-button:not(:disabled):active { translate: 0 1px; scale: 0.97; box-shadow: none; filter: brightness(0.92); }
-    /* 2. Chips: the colour switches at once (AB4, AT-34: the fill sweep is gone). To / Done / Repaint also get a tick; the stage chips do not, because a tick would widen them and change how their row fits. */
+    /* 2. Chips: the colour switches at once (AB4, AT-34: the fill sweep is gone). The chips in the Filters sheet get a tick when chosen (SF3, below). */
     .chip { background-image: linear-gradient(var(--accent-fill, var(--accent)), var(--accent-fill, var(--accent))); background-repeat: no-repeat; background-size: 0% 100%; }   /* the same fill layer as before the sweep went, kept still (nothing moves it now) so the rounded edge is drawn pixel for pixel as it was */
     .chip[aria-pressed="true"] { background-size: 100% 100%; }
-    #group-chips .chip::before { content: "\2713"; display: inline-block; width: 0; overflow: hidden; opacity: 0; vertical-align: bottom; }
-    #group-chips .chip[aria-pressed="true"]::before { width: 1em; margin-right: 0.3em; opacity: 1; }
     /* FB4: Paint brands are wrapping tiles like Recipe preferences (chips-wrap). A tick says "on" as well as the colour; long names wrap inside the tile. */
     #brand-toggles .chip { white-space: normal; overflow-wrap: anywhere; text-align: center; display: inline-flex; align-items: center; justify-content: center; }
     #brand-toggles .chip::before { content: "\2713"; display: inline-block; width: 0; overflow: hidden; opacity: 0; }
@@ -3177,7 +3201,29 @@
     #your-data-card .settings-part { margin-top: 16px; }
     #view-credits { scroll-margin-top: 84px; }
     #view-credits > .card { margin-bottom: 14px; }
-  </style>
+      /* SF3: the Filters sheet (opened by the Filters button on Models; built by openFiltersSheet() in app.js). Reduced motion is switched off by the page-wide rule. */
+    .fs-backdrop { position: fixed; inset: 0; z-index: 150; background: var(--scrim); display: flex; align-items: flex-end; justify-content: center; overscroll-behavior: contain; animation: fs-fade var(--motion-fast) var(--motion-ease) both; }
+    .fs-sheet { width: 100%; max-width: 560px; max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px - env(safe-area-inset-top)); display: flex; flex-direction: column; box-sizing: border-box;
+      background: var(--card); color: var(--text); border: var(--border-width) var(--border-style) var(--border); border-bottom: 0; border-radius: var(--radius-card) var(--radius-card) 0 0;
+      box-shadow: 0 -8px 28px var(--shadow); animation: fs-rise var(--motion-med) var(--motion-ease) both; }
+    .fs-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 8px 0 16px; }
+    .fs-title { margin: 0; font-size: 1.125rem; }
+    .fs-close { width: 44px; height: 44px; padding: 0; display: inline-flex; align-items: center; justify-content: center; background: transparent; border: 0; color: var(--muted); cursor: pointer; }
+    .fs-close svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+    .fs-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 16px 12px; }
+    .fs-section { margin-top: 12px; }
+    .fs-label { margin: 0 0 6px; font-size: 0.75rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    .fs-section > .chips { margin-top: 0; }
+    .fs-chip { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; overflow-wrap: anywhere; }
+    .fs-dot { flex: none; width: 12px; height: 12px; border-radius: 3px; background: var(--chip-colour, var(--border)); box-shadow: 0 0 0 1.5px var(--border); }
+    .fs-chip[aria-pressed="true"] .fs-dot { box-shadow: 0 0 0 1.5px var(--on-accent); }
+    .fs-chip::before { content: "\2713"; display: inline-block; width: 0; overflow: hidden; opacity: 0; font-weight: 700; margin-right: -6px; }   /* the tick of a chosen chip (the chip's own text stays put until chosen) */
+    .fs-chip[aria-pressed="true"]::before { width: 1em; margin-right: 0; opacity: 1; }
+    .fs-foot { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); border-top: var(--border-width) var(--border-style) var(--border); }
+    .fs-foot button { min-height: 44px; }
+    @keyframes fs-fade { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fs-rise { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+</style>
 </head>
 
 <body class="launching ring-loading">
@@ -3295,14 +3341,9 @@
         <button class="primary-button" id="toggle-add" aria-expanded="false" aria-controls="add-form">+ Add unit</button>
         <!-- v21.1: tick several units and move them to a stage in one go. -->
         <button class="plain-button" id="toggle-select" aria-pressed="false">Select</button>
-        <button class="plain-button" id="toggle-filters" aria-expanded="false" aria-controls="filter-card">Filters ▾</button>
+        <button class="plain-button" id="toggle-filters" aria-haspopup="dialog">Filters</button>
+        <button class="plain-button sort-button" id="toggle-sort" type="button" aria-haspopup="dialog"><span class="sort-label">Sort</span><span class="sort-order" id="sort-order">Game › Faction › A–Z</span></button>
       </div>
-      <!-- M2: Detailed / Simple model rows, for every unit tracked model by model. Shown only when there is one. -->
-      <div class="rows-switch hidden" id="model-rows-switch" role="group" aria-label="Model rows view">
-        <button type="button" class="plain-button" data-rows="detailed" aria-pressed="true">Detailed</button>
-        <button type="button" class="plain-button" data-rows="simple" aria-pressed="false">Simple</button>
-      </div>
-
       <!-- The add form starts hidden; the button above shows it. -->
       <form id="add-form" class="card hidden" style="display: grid; gap: 10px;">
         <div class="row" style="grid-template-columns: 1fr 76px;">
@@ -3338,15 +3379,7 @@
       <!-- v21: shown while any example is still there. AB9: a thin strip, on Models only (not a card, so no look gives it a frame). -->
       <div class="examples-card examples-strip hidden" id="examples-card" role="note"></div>
 
-      <!-- Filters start folded away so the units get the screen; "Filters" opens them. -->
-      <div class="card hidden" id="filter-card">
-        <div class="row">
-          <select id="hobby-filter" aria-label="Filter by game"></select>
-          <select id="faction-filter" aria-label="Filter by faction"></select>
-        </div>
-        <div class="chips" id="group-chips"></div>
-        <div class="chips" id="stage-chips"></div>
-      </div>
+      <!-- SF3: the Filters button opens a sheet from the bottom (built by openFiltersSheet() in app.js). -->
 
       <div class="filter-summary">
         <span class="hint" id="filter-note"></span>
@@ -3564,17 +3597,18 @@
             <li id="help-new-unit-shown">Each new unit is <strong>scrolled into view</strong> and outlined for a moment, so you can see where it went in the list.</li>
             <li id="help-unit-card">Each unit shows as a short card with its name, game, army and stage. <strong>Tap it to open it</strong>: the stage arrows, its recipes and <strong>Details</strong>. Tap its name again to close it. Opening another unit closes the one that was open.</li>
             <li>In an open unit, press the right arrow to move it up a stage, or the left arrow to move it back one. Made a mistake? Press <strong>Undo</strong> on the message that pops up.</li>
-            <li id="help-track-each">Open a unit with more than one model, press <strong>Details</strong>, then <strong>Track models separately</strong> under its stage, to paint one model at a time. Each model gets its own row with a back button, its stage name and an up button. With units tracked this way, the Models tab has a <strong>Detailed</strong> / <strong>Simple</strong> switch: Detailed adds the date line and a thin progress bar to every row. A unit of more than 8 models groups its rows by stage. <strong>Track as one batch</strong> goes back: if the models are at different stages, the app asks first, then puts them all at the stage of the furthest-behind model. Both have an <strong>Undo</strong>. It works for units of up to 100 models.</li>
+            <li id="help-track-each">Open a unit with more than one model, press <strong>Details</strong>, then <strong>Track models separately</strong> under its stage, to paint one model at a time. Each model gets its own row with a back button, its stage name and an up button. Each row has the date line and a thin progress bar. A unit of more than 8 models groups its rows by stage. <strong>Track as one batch</strong> goes back: if the models are at different stages, the app asks first, then puts them all at the stage of the furthest-behind model. Both have an <strong>Undo</strong>. It works for units of up to 100 models.</li>
             <li id="help-jump-stage">Open a unit, press <strong>Details</strong> and pick a stage from <strong>Jump to stage</strong>, to go straight to any stage, forwards or back. If you track each model separately, <strong>Move all models to stage</strong> moves them all at once. Every jump has an <strong>Undo</strong>.</li>
-            <li id="help-model-dates">If you track each model separately, each model says under its name when it reached its stage: <strong>Today</strong>, <strong>Yesterday</strong>, or <strong>Since 7 Oct</strong>. Hold or long-press the date to see it in full. The Simple view leaves the dates out.</li>
+            <li id="help-model-dates">If you track each model separately, each model says under its name when it reached its stage: <strong>Today</strong>, <strong>Yesterday</strong>, or <strong>Since 7 Oct</strong>. Hold or long-press the date to see it in full.</li>
             <li id="help-unfinished-work">Unfinished work is kept: if the page reloads or the app closes while you are part-way through adding a unit, writing a recipe, or pasting notes into Paste recipes, the app keeps what you had. Next time you open the Models or Painting tab, a card says <strong>We kept your unfinished…</strong>. <strong>Keep going</strong> puts it all back. <strong>Discard</strong> asks first, then throws it away for good (there is no Undo). A kept draft is never replaced by accident: for a recipe, <strong>Not now</strong> starts the new one and keeps the unfinished one for later. Only one unfinished recipe is kept at a time. It stays on this device and is not in your backups.</li>
             <li id="help-typing">Typing: while the cursor is in a text box, the menu bar at the bottom hides so it can't sit on your keyboard. Tap somewhere else and it comes back.</li>
+            <li id="help-sort-models"><strong>Sort</strong> on the Models tab picks the order of your units: by game, then army, then name (the usual one), by name only, by stage, or by the last time a unit moved. <strong>Build my own order</strong> lets you pick up to three things to sort by, each from first to last or last to first. Your choice is kept.</li>
             <li id="help-move-many">Move several units at once: on the Models tab press <strong>Select</strong>. Tick the units you want, or press <strong>Select all shown</strong> to tick every unit your filters are showing. Then pick a stage from <strong>Move … to stage</strong> in the bar at the bottom. One <strong>Undo</strong> puts every unit back as it was, diary included. <strong>Cancel</strong> or the phone's Back button stops selecting without changing anything.</li>
             <li>Open a unit and press <strong>Details</strong> to see its <strong>stage</strong>, photos, paint recipes and paint notes, then <strong>back a stage</strong> and delete. On a wide screen, tapping a unit opens its details in a pane beside the list, where you can keep several open and press <strong>Close</strong> on each.</li>
             <li id="help-edit-details">Changing a unit: the boxes for its name, game, faction, nickname, number of models and repaint flag are folded away under <strong>Edit details</strong>, near the bottom of its details. Tap it to open them. It stays open while you make changes, and shuts when you open the unit again later.</li>
             <li id="help-questions">When the app needs to check before doing something, or needs a name from you, it asks in its own small box. Tap <strong>Yes</strong> or <strong>No</strong>, or type the name and tap <strong>OK</strong>. <strong>No</strong>, <strong>Cancel</strong>, <strong>Escape</strong> and the phone's <strong>Back</strong> button all mean no, and nothing changes.</li>
             <li id="help-delete-unit">Deleting a unit: press <strong>Delete</strong> in its details and say yes. Changed your mind? Press <strong>Undo</strong> on the message that appears (it stays about 8 seconds): the unit comes back exactly as it was, photos, recipes and diary included.</li>
-            <li>Use the game and faction menus and the stage chips to filter the list. Tap several stage chips to combine them.</li>
+            <li>Tap <strong>Filters</strong> to narrow the list by game, faction, progress or stage. Tap several stages to combine them. The button shows how many units match.</li>
           </ul>
         </details>
         <details>
@@ -4055,7 +4089,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=158" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=159" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -4068,16 +4102,16 @@
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks.
        G2a: guides-groups.js (the Guides topic groups, plain data) loads after guides-data.js. It only adds one
        name, GUIDE_GROUPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=158"></script>
-  <script src="schemes.js?v=158"></script>
-  <script src="detail-recipes.js?v=158"></script>
-  <script src="basing-tips.js?v=158"></script>
-  <script src="mentor-tips.js?v=158"></script>
-  <script src="guides-data.js?v=158"></script>
-  <script src="guides-groups.js?v=158"></script>
-  <script src="mentor-data.js?v=158"></script>
-  <script src="mentor-engine.js?v=158"></script>
-  <script src="where-to-buy.js?v=158"></script>
-  <script src="app.js?v=158"></script>
+  <script src="colour.js?v=159"></script>
+  <script src="schemes.js?v=159"></script>
+  <script src="detail-recipes.js?v=159"></script>
+  <script src="basing-tips.js?v=159"></script>
+  <script src="mentor-tips.js?v=159"></script>
+  <script src="guides-data.js?v=159"></script>
+  <script src="guides-groups.js?v=159"></script>
+  <script src="mentor-data.js?v=159"></script>
+  <script src="mentor-engine.js?v=159"></script>
+  <script src="where-to-buy.js?v=159"></script>
+  <script src="app.js?v=159"></script>
 </body>
 </html>
