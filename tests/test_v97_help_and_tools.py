@@ -53,8 +53,8 @@ def main():
 
         print("\n--- 1. Segments, heading, switch ---")
         t.load(page, paints=PAINTS, units=UNITS, launch=True)
-        check("the start circle's segments: Dashboard, Models, Painting, Tools",
-              texts(page, ".arc [data-tab]") == ["Dashboard", "Models", "Painting", "Tools"], texts(page, ".arc [data-tab]"))   # George renamed the fourth label from Help to Tools
+        check("the start circle's segments: Nexus, Models, Painting, Tools",   # DB1: the Dashboard is now called Nexus
+              texts(page, ".arc [data-tab]") == ["Nexus", "Models", "Painting", "Tools"], texts(page, ".arc [data-tab]"))   # George renamed the fourth label from Help to Tools
         page.click('.tabs button[data-tab="guides"]')
         settle(page)
         check("the bar's fourth segment says Tools, and its tap name is Tools",

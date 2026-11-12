@@ -86,7 +86,7 @@ def main():
         check("Bench: a chosen chip shows by weight and a bar under it, not colour alone", pressed is None or (int(pressed[0]) >= 700 and pressed[1] != "none"), pressed)
 
         print("\n--- The tape label stays clear of the headline text ---")
-        gap = page.evaluate("""() => { const h = document.querySelector('#headline-card'), b = h.querySelector('.headline'), r = h.getBoundingClientRect(), tr = b.getBoundingClientRect();
+        gap = page.evaluate("""() => { const h = document.querySelector('#headline-card'), b = h.querySelector('#overall-chart'), r = h.getBoundingClientRect(), tr = b.getBoundingClientRect();
             return tr.top - (r.top + 8); }""")
         check("the label reaches 8 px into the card and the text starts below that", gap >= 0, gap)
 

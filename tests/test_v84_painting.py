@@ -53,7 +53,7 @@ def main():
 
         print("\n--- 3. Help ---")
         help_ = page.evaluate("() => document.getElementById('view-help').textContent")
-        check("Help lists the Painting tab", "Dashboard" in help_ and "Painting" in page.text_content("#help-tabs")
+        check("Help lists the Painting tab", "Nexus" in help_ and "Painting" in page.text_content("#help-tabs")
               and "Recipes" not in page.text_content("#help-tabs"), page.text_content("#help-tabs"))
         check("Help says what a recipe and a scheme are",
               "your own step-by-step for a model" in help_ and "the look for a whole model, unit or army" in help_)   # S1: new wording
