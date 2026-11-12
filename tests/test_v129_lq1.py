@@ -32,7 +32,8 @@ PAINTS = [{"id": i, "brand": "Brand", "name": f"Colour {chr(65 + i % 26)}{i}", "
 RECIPES = [{"id": r, "name": f"Recipe {r:02d}", "part": "Armour", "notes": "",
             "steps": [{"technique": "Layer", "coats": 1, "paints": [{"paint": 1 + r % 40, "mix": None}], "ratio": "", "note": "", "optional": False}]}
            for r in range(1, 41)]
-SETTINGS = {"tab": "units", "examplesChecked": True, "recipeExamplesChecked": True, "feedbackShown": True, "backupNudgeDone": True}
+# SF1: A-Z keeps the Models list flat and in the order of the numbers (Squad 1, Squad 2, ...); the default order puts headings between the cards, and this test counts cards with nth-child.
+SETTINGS = {"tab": "units", "examplesChecked": True, "recipeExamplesChecked": True, "feedbackShown": True, "backupNudgeDone": True, "unitSort": {"mode": "az"}}
 
 # the animations running on an element (and, with pseudo, on its ::after), as [property names in the keyframes]
 ANIMS = """([sel, pseudo]) => { const el = typeof sel === 'string' ? document.querySelector(sel) : sel; if (!el) return null;
