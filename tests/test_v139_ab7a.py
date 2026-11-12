@@ -22,7 +22,7 @@ def check(name, ok, detail=""):
 
 UNITS = [{"id": 1, "name": "Squad", "hobby": "40K", "stage": 2, "count": 5, "added": "2026-10-01", "log": [["2026-10-01", 2]]}]
 NAMES = {"dashboard": "Dashboard", "units": "Models", "recipes": "Painting", "guides": "Tools"}
-OLD = ["M12 3l8 3v6c0 4.5", "M12 3c3.5 4.2", "M9.6 9.5a2.5 2.5", 'width="7" height="9"']
+OLD = ["M12 3l8 3v6c0 4.5", "M12 3c3.5 4.2", "M9.6 9.5a2.5 2.5", 'width="7" height="9"', "M3 9h18", "M9.2 3.8Q8.4", "M20 4l-8 8"]  # MI1: the AB7a drawings are gone too
 
 INFO = """() => Object.fromEntries([...document.querySelectorAll('.arc > [data-tab]')].map(b => {
     const s = b.querySelector('.icon svg'), r = s.getBoundingClientRect(), br = b.getBoundingClientRect(), cs = getComputedStyle(s);
@@ -49,10 +49,8 @@ def main():
         check("the four drawings are different from each other", len({info[s]["html"] for s in NAMES}) == 4)
         check("each is a 24 px box drawing, hidden from screen readers, strokes only",
               all(info[s]["vb"] == "0 0 24 24" and info[s]["hidden"] == "true" and info[s]["fill"] == "none" and info[s]["stroke"] != "none" for s in NAMES), info)
-        check("Dashboard is a shelf (a frame with shelf lines)", "<rect" in info["dashboard"]["html"] and info["dashboard"]["html"].count("M3 9h18") == 1)
-        check("Models is a figure on a round base (a head and a base)", "<circle" in info["units"]["html"] and "<ellipse" in info["units"]["html"])
-        check("Painting is a brush with a loaded tip (a handle, a head and a dot of paint)", info["recipes"]["html"].count("<path") == 3 and "h.01" in info["recipes"]["html"])
-        check("Tools is clippers (two crossed jaws and a pivot)", "<circle" in info["guides"]["html"] and "<ellipse" not in info["guides"]["html"] and info["guides"]["html"].count("<path") == 1)
+        # MI1 (v156): the four drawings changed again (bars, hex base, palette, book). The AB7a shape checks that named the shelf, figure,
+        # brush and clippers are replaced by the MI1 test (tests/test_v156_mi1.py); the checks above (own icon, label, 24 px, strokes only) still hold.
 
         print("\n--- 2. Shown whole in the circle and the bar ---")
         check("start circle: every icon is shown inside its segment", all(info[s]["shown"] and info[s]["inside"] for s in NAMES), info)
