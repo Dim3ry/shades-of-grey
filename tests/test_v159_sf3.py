@@ -75,7 +75,9 @@ def main():
         chip(page, "faction", "Gloom Legion").click()
         check("a faction sets the faction filter", page.evaluate("filters.faction") == "Gloom Legion" and count_text(page) == "Show 2 units" and shown(page) == 2)
         chip(page, "game", "Fantasy").click()
-        check("choosing another game clears the faction (as before) and shows that game's factions", page.evaluate("filters.faction") == "" and page.locator("#fs-chips-faction .chip").count() == 2)
+        # SF4 (v160) changed the wording here only: a faction is cleared when it is NOT in the new game (Gloom Legion is Skirmish's alone),
+        # and a faction that fits is now kept. The keeping, and the message with Undo, are checked in test_v160_sf4.
+        check("choosing another game clears a faction that game does not have, and shows that game's factions", page.evaluate("filters.faction") == "" and page.locator("#fs-chips-faction .chip").count() == 2)
         chip(page, "game", "All games").click()
         sq = page.evaluate("""() => ({ f: [...document.querySelectorAll('#fs-chips-faction .chip .fs-dot')].length, s: [...document.querySelectorAll('#fs-chips-stage .chip .fs-dot')].length,
             n: document.querySelectorAll('#fs-chips-stage .chip').length, stages: STAGES.length, hidden: [...document.querySelectorAll('.fs-dot')].every(d => d.getAttribute('aria-hidden') === 'true') }); """)
