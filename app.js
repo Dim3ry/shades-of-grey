@@ -10554,6 +10554,23 @@
       section.append(label, row);
       return section;
     }
+    // SF4: the Game chip keeps the chosen faction when that faction also has units in the new game ("All games" keeps any faction). If it
+    // does not fit, it is cleared and a message with Undo says so. Undo puts back the game AND the faction, but only while the filters are
+    // still as that tap left them; after any other change the message just goes at its normal time.
+    function chooseGame(game) {
+      const before = { hobby: filters.hobby, faction: filters.faction };
+      const fits = !before.faction || !game || models.some(m => m.hobby === game && m.faction === before.faction);
+      filters.hobby = game;
+      if (!fits) filters.faction = "";
+      render();
+      if (fits) return;
+      showToast(`Faction ${before.faction} cleared (not in ${game}).`, () => {
+        if (filters.hobby !== game || filters.faction) return;   // the filters have moved on since: leave them
+        filters.hobby = before.hobby;
+        filters.faction = before.faction;
+        render();
+      }, "Undo", UNDO_SECONDS);
+    }
     function renderFiltersSheet(games, factions, visible) {
       const state = filtersSheet;
       const held = document.activeElement && state.body.contains(document.activeElement) ? document.activeElement.dataset.fk : null;
@@ -10561,8 +10578,8 @@
       const todo = todoStages(), done = doneStages();
       state.body.replaceChildren(
         fsSection("Game", [
-          fsChip("game:", "All games", !filters.hobby, () => { filters.hobby = ""; filters.faction = ""; render(); }),
-          ...games.map(g => fsChip("game:" + g, g, filters.hobby === g, () => { filters.hobby = g; filters.faction = ""; render(); })),
+          fsChip("game:", "All games", !filters.hobby, () => chooseGame("")),
+          ...games.map(g => fsChip("game:" + g, g, filters.hobby === g, () => chooseGame(g))),
         ]),
         fsSection("Faction", [
           fsChip("faction:", "All factions", !filters.faction, () => { filters.faction = ""; render(); }),
@@ -10583,6 +10600,13 @@
       state.clear.disabled = !(filters.hobby || filters.faction || filters.stages.size || filters.repaint);
       state.show.textContent = "Show " + plural(visible.length, "unit");
     }
+    // SF4: how far up the message sits while the sheet is open: just above the sheet's Clear all / Show buttons (the sheet fills the bottom edge, so that is the height of that row).
+    function fsToastGap() {
+      if (!filtersSheet) return;
+      const foot = filtersSheet.show.parentElement;
+      document.documentElement.style.setProperty("--fs-toast-bottom", (foot.offsetHeight + 8) + "px");
+    }
+    window.addEventListener("resize", fsToastGap);
     function openFiltersSheet() {
       if (filtersSheet) return;
       const backdrop = document.createElement("div");
@@ -10649,6 +10673,8 @@
       document.addEventListener("keydown", onKey, true);
       document.body.appendChild(backdrop);
       document.body.style.overflow = "hidden";
+      document.body.classList.add("fs-open");   // SF4: a message shows above the sheet's buttons, not behind the sheet
+      fsToastGap();
       const games = uniqueSorted(models.map(m => m.hobby));
       renderFiltersSheet(games, uniqueSorted(models.filter(m => !filters.hobby || m.hobby === filters.hobby).map(m => m.faction)), models.filter(isVisible));
       close.focus({ preventScroll: true });
@@ -10661,6 +10687,7 @@
       document.removeEventListener("keydown", state.onKey, true);
       state.backdrop.remove();
       document.body.style.overflow = "";
+      document.body.classList.remove("fs-open");
       if (state.opener && state.opener.isConnected) { try { state.opener.focus({ preventScroll: true }); } catch (ignored) {} }
       queueBackCheck();
     }
@@ -22747,12 +22774,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=159".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=160".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v159";
+    const APP_VERSION = "v160";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;
@@ -23218,6 +23245,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v160", date: "13 Nov 2026", changes: [
+        "In Filters, changing the Game now keeps your faction when that faction has units in the new game.",
+        "If it does not, the faction is cleared and a message says so, with an Undo that puts back both the game and the faction.",
+      ] },
       { version: "v159", date: "12 Nov 2026", changes: [
         "The Models page has a Sort button with ready-made orders and a Build my own order choice, and units are grouped by game and faction. The Detailed and Simple switch is gone.",
         "Filters now open as a sheet from the bottom, with a button that shows how many units match.",
