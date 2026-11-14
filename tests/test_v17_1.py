@@ -49,6 +49,7 @@ with sync_playwright() as pw:
     for typed, answer in ANSWERS.items():
         row = page.locator(".import-ask", has=page.locator(".import-typed", has_text=re.compile(f"^{re.escape(typed)}$")))   # RS4b: the typed text in bold, no quote marks
         row.locator("label.import-option", has_text=answer).first.click()   # RS4b: radio options instead of chips
+    page.click("#import-owned")   # FX2: "Mark these paints as Owned" now starts unticked, so tick it to test the Owned result
     page.click("#import-save")
     page.wait_for_timeout(300)
     check("import: opens on Your Palette to check", page.evaluate("settings.recipeView") == "palette")

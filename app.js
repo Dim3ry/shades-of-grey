@@ -1983,8 +1983,9 @@
       return { brand: "", rest: String(text).trim() };
     }
     // RS4a: stray quote marks round a typed name ("'Foo Bar'", smart quotes, a backtick) are dropped from its start and end.
+    // FX2: also stray commas, full stops, semicolons, colons, exclamation and question marks. Only the two ends: a mark inside a name stays.
     function stripStrayQuotes(text) {
-      return plainQuotes(String(text || "")).replace(/^[\s'"`´]+|[\s'"`´]+$/g, "");
+      return plainQuotes(String(text || "")).replace(/^[\s'"`´,.;:!?]+|[\s'"`´,.;:!?]+$/g, "");
     }
     // "mystic blue" = "Mystic Blue" (small joining words stay small, ALL CAPS stays).
     function tidyName(text) {
@@ -2060,7 +2061,8 @@
     }
     function matchPaintIn(text, hints, pool) {
       hints = hints || {};
-      const typed = String(text || "").trim().replace(/\s+/g, " ");
+      // FX2: the typed text loses stray quote marks and punctuation at its ends ("'Ardcoat", "Dryad Bark.") but not inside it.
+      const typed = stripStrayQuotes(String(text || "")).replace(/\s+/g, " ").trim();
       const result = (status, paint, suggestions) => ({ status, typed, paint: paint || null, suggestions: suggestions || [] });
       if (!typed) return result("none");
       const split = splitBrand(typed);
@@ -13174,15 +13176,17 @@
       quickLineIds(q);
       if (!q.text.trim()) { q.read = null; return; }
       const parsed = parseRecipeText(q.text, { quick: true });
-      const read = { part: "", otherParts: [], notes: [], steps: [] };
+      const read = { part: "", otherParts: [], notes: [], steps: [], groups: [] };   // FX2: groups = one per heading that has paint lines
       const perLine = new Map();
       for (const s of parsed.schemes) for (const part of s.parts) {
         const name = part.name ? partForHeading(part.name).name : "";   // RS4a: a Part you have, or the heading in the same style
         if (!read.part && name) read.part = name;
         else if (name && !sameText(name, read.part) && !read.otherParts.some(x => sameText(x, name))) read.otherParts.push(name);
         read.notes.push(...part.notes);
+        const group = { part: name, keys: [] };
+        if (part.steps.length) read.groups.push(group);
         for (const st of part.steps) read.steps.push({
-          key: (() => { const id = q.ids[st.line] || 0; const k = perLine.get(id) || 0; perLine.set(id, k + 1); return `${id}:${k}`; })(),
+          key: (() => { const id = q.ids[st.line] || 0; const k = perLine.get(id) || 0; perLine.set(id, k + 1); group.keys.push(`${id}:${k}`); return `${id}:${k}`; })(),
           technique: st.technique || "", coats: st.coats, ratio: st.ratio || "", note: st.note || "", optional: !!st.optional,
           paints: st.paints.filter(m => m.paint || m.typed).map(m => {
             const p = m.paint || { brand: "", name: m.typed, colour: DEFAULT_PAINT_COLOUR };
@@ -13210,7 +13214,7 @@
     }
     // Works out d.name, d.part, d.notes and d.steps from the last reading and what was set by hand.
     function applyQuick(d) {
-      const q = d.quick, read = q.read || { part: "", otherParts: [], notes: [], steps: [] };
+      const q = d.quick, read = q.read || { part: "", otherParts: [], notes: [], steps: [], groups: [] };
       d.steps = read.steps.map(st => {
         const over = q.over[st.key] || {};
         const brand = over.brand !== undefined && over.brand.trim() ? tidyBrand(over.brand) : null;
@@ -13284,7 +13288,7 @@
         clearTimeout(quickTimer);
         readQuickLines(d); applyQuick(d);
         if (!quickHasPaint(d)) { drawQuick(); return; }
-        saveRecipeDraft();
+        saveQuickRecipes(d);
       });
       recipePage.appendChild(save);
 
@@ -13305,6 +13309,31 @@
       if (q.text.trim() && !q.read) readQuickLines(d);
       applyQuick(d);
       drawQuick();
+    }
+
+    // FX2: the headings that have paint lines, in order: [{ part, keys }]. A heading-less first group takes the part picked in More options
+    // (or the part the list is filtered to), and a part picked by hand in More options applies to the first recipe only.
+    function quickGroups(d) {
+      const read = d.quick.read;
+      const groups = read ? read.groups.filter(g => g.keys.some(k => d.steps.some(st => st.key === k))) : [];
+      return groups.map((g, i) => ({ keys: g.keys, part: (i === 0 ? d.quick.part : "") || g.part || d.quick.defaultPart || d.part || "" }));
+    }
+    // FX2: Save for the quick box. One heading: as before. Two or more: one recipe per heading, each with its own part and an automatic name
+    // (the typed name, if any, goes to the first). The "Do you own these?" sheet then opens once for all of them.
+    function saveQuickRecipes(d) {
+      const groups = quickGroups(d);
+      if (groups.length < 2) { saveRecipeDraft(); return; }
+      const allSteps = d.steps, typedName = d.quick.name.trim(), asked = [];
+      let ok = true;
+      groups.forEach((g, i) => {
+        if (!ok) return;
+        d.steps = allSteps.filter(st => g.keys.includes(st.key));
+        d.part = g.part;
+        d.name = (i === 0 && typedName) || quickRecipeName(g.part, d.steps);
+        recipeDraft = d;
+        ok = saveRecipeDraft(asked) !== false;
+      });
+      if (ok && asked.length) openOwnSheet(asked);
     }
 
     // The preview under the box (read only): the part and name, then one numbered row per step.
@@ -13364,12 +13393,12 @@
         list.appendChild(li);
       });
       preview.appendChild(list);
-      // One recipe has one part: lines under another part still join it, and this says so.
-      const others = d.quick.read ? d.quick.read.otherParts : [];
-      if (others.length && d.part) {
+      // FX2: one recipe has one part, so lines under two headings ("Armour:" then "Metal:") save as one recipe per heading.
+      const groups = quickGroups(d);
+      if (groups.length > 1) {
         const one = document.createElement("p");
         one.className = "quick-parts-note";
-        one.textContent = `One part per recipe. Using ${d.part}.`;
+        one.textContent = `Saves as ${groups.length} recipes: ${groups.map(g => g.part).join(", ")}.`;
         preview.appendChild(one);
       }
     }
@@ -13802,10 +13831,12 @@
       return box;
     }
 
-    function saveRecipeDraft() {
+    // FX2: `collect` (an array) is given by the quick box when it saves several recipes at once: the paints to ask about go into it
+    // and the "Do you own these?" sheet is left to the caller. Returns false when nothing was saved.
+    function saveRecipeDraft(collect) {
       const d = recipeDraft;
       const name = d.name.trim();
-      if (!name) { notify("Give the recipe a name first."); return; }
+      if (!name) { notify("Give the recipe a name first."); return false; }
       // v62: a paint with a brand but no name used to vanish without a word. Now Save stops and says which step.
       const gap = d.steps.findIndex(s => s.paints.some(p => !p.name.trim() && String(p.brand || "").trim()));
       if (gap >= 0) {
@@ -13815,7 +13846,7 @@
         const box = recipePage.querySelector(`[data-key="step-${gap}-paint-${pi}"]`);
         if (box) box.focus();
         notify(`Step ${gap + 1} has no paint name.`);
-        return;
+        return false;
       }
       // Paints with no name are skipped. Each named paint is found (or added) in the paint list.
       // v18c: a paint new to your palette gets your "Do you own these?" answer (Owned to start with).
@@ -13863,6 +13894,7 @@
       openRecipeId = recipe.id;
       const saved = commit(`Saved ${name}`);   // v18c-3: only says Saved if it was
       window.scrollTo(0, 0);
+      if (collect) { for (const p of askOwn) if (!collect.includes(p)) collect.push(p); return saved; }
       if (saved && askOwn.length) openOwnSheet(askOwn);   // RS3b
     }
 
@@ -18804,7 +18836,7 @@
       d.swapAt = -1;       // v18d-2b: no paint's Change… box open
       d.groups = importGroups(d.parsed);
       d.names = d.parsed.schemes.map(s => s.name || "Imported recipes");
-      d.markOwned = true;   // RS4b: "Mark these paints as Owned" starts ticked
+      d.markOwned = false;   // FX2: "Mark these paints as Owned" starts unticked (it was ticked in RS4b): a pasted note must not silently make every paint Owned and empty the Shopping list
       renderImport();
     }
 
@@ -19190,13 +19222,13 @@
         tick.className = "pick-all import-owned";
         tick.id = "import-owned";
         tick.setAttribute("role", "checkbox");
-        tick.setAttribute("aria-checked", String(d.markOwned !== false));
+        tick.setAttribute("aria-checked", String(d.markOwned === true));
         const mark = document.createElement("span");
         mark.className = "pick-box";
         mark.setAttribute("aria-hidden", "true");
         tick.append(mark, "Mark these paints as Owned");
         tick.addEventListener("click", () => {
-          d.markOwned = d.markOwned === false;
+          d.markOwned = d.markOwned !== true;
           tick.setAttribute("aria-checked", String(d.markOwned));
         });
         bar.appendChild(tick);
@@ -19703,10 +19735,10 @@
             const steps = part.steps.map(step => {
               const paints = step.paints.map(importPaintFor).filter(Boolean).map(p => {
                 // v17.1: a paint new to your palette comes in as Owned (you're bringing your own list).
-                // RS4b: unless "Mark these paints as Owned" is unticked: then its status is left as it is (nothing about owning changes).
+                // RS4b/FX2: only if "Mark these paints as Owned" is ticked (it starts unticked): otherwise its status is left as it is (nothing about owning changes).
                 const known = isInPalette(p);
                 const paint = findOrAddPaint(p.brand || "", p.name, p.colour || DEFAULT_PAINT_COLOUR);
-                if (!known && d.markOwned !== false && paintStatus(paint) === "") applyPaintStatus(paint, "owned");
+                if (!known && d.markOwned === true && paintStatus(paint) === "") applyPaintStatus(paint, "owned");
                 if (!known) importNewIds.push(paint.id);
                 if (p.type === "material") paint.type = "material";
                 return paint;
@@ -22284,8 +22316,12 @@
           continue;
         }
         if (quiet(i)) continue;
+        // FX2: a line that is only a points total ("2000 pts", "(2,000 points)") is never a unit.
+        if (/^[^A-Za-z0-9]*\d[\d,. ]*\s*(?:pts?|points?)[^A-Za-z0-9]*$/i.test(lines[i].trim())) continue;
         if (listFrame(lines[i], rosterStyle)) { notRead.push(i + 1); continue; }
         const r = readListLine(lines[i]);
+        // FX2: the list's title written twice ("Space Marines (2000 pts)" on two lines) is not a unit either.
+        if (read.length === 1 && !read[0].count && !read[0].models && !r.count && sameText(read[0].name, r.name)) continue;
         if (looksWrong(r)) { notRead.push(i + 1); continue; }
         // Its model lines: "• 9x Intercessor", ". Blood Claw Pack Leader: Bolt pistol" (no count is 1).
         // Deeper lines ("..", or indented under them) are wargear.
