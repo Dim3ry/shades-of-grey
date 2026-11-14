@@ -111,7 +111,7 @@ def main():
         first = page.evaluate("() => { const a = document.activeElement, r = a.getBoundingClientRect(); return [a.id, Math.round(r.height), Math.round(r.width), getComputedStyle(a).clip]; }")
         check("Skip to content is the first Tab stop, shown while it has the focus (44 px tall)", first[0] == "skip-link" and first[1] >= 44 and first[2] > 44, first)
         page.keyboard.press("Enter")
-        check("…and takes you past the menu bar to the page's first control", page.evaluate("document.activeElement.id") == "toggle-add", page.evaluate("document.activeElement.outerHTML.slice(0, 120)"))
+        check("…and takes you past the menu bar to the page's first control", page.evaluate("document.activeElement.dataset.mview") == "models", page.evaluate("document.activeElement.outerHTML.slice(0, 120)"))   # WL1: the Models | Wish list switch now sits above Add unit, so it is the first control of Models
         check("the skip link waits above the top of the screen when it doesn't have the focus",
               page.evaluate("() => document.getElementById('skip-link').getBoundingClientRect().bottom <= 0"))
         page.focus("#mentor-button")
@@ -126,7 +126,7 @@ def main():
         page.focus("#examples-card .clear-examples")
         page.keyboard.press("Enter"); quiet(page)
         page.wait_for_timeout(100)
-        check("after Clear examples the focus is on the page's first control, not lost", page.evaluate("document.activeElement.id") == "toggle-add",
+        check("after Clear examples the focus is on the page's first control, not lost", page.evaluate("document.activeElement.dataset.mview") == "models",   # WL1: the first control on Models is now the Models | Wish list switch
               page.evaluate("document.activeElement.tagName + '#' + document.activeElement.id"))
 
         print("\n--- 6. Text sizes ---")

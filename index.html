@@ -3246,6 +3246,7 @@
 
     /* WL1: Models | Wish list. Two-option switch above the Add unit button; in Wish list view the Models controls and list are hidden. */
     .models-seg { grid-template-columns: 1fr 1fr; }
+    ul.wish-units { list-style: none; margin: 0; padding: 0; }   /* not class "units": older code and tests look for the first ul.units, which is the Models list */
     #view-units.wish-mode > :not(#models-seg):not(#wish-view) { display: none !important; }
     #wish-view .primary-button { width: 100%; }
     .wish-toolbar { grid-template-columns: 1fr; }
@@ -3388,7 +3389,7 @@
         <div class="units-toolbar wish-toolbar"><button type="button" class="primary-button" id="wish-add">+ Add wish</button></div>
         <div id="wish-form-slot"></div>
         <div class="filter-summary"><span class="hint" id="wish-count" aria-live="polite"></span></div>
-        <ul class="units wish-units" id="wish-list"></ul>
+        <ul class="wish-units" id="wish-list"></ul>
       </div>
       <!-- v26: a kept, unfinished unit (the Add unit boxes). Filled by fillDraftCard(). -->
       <div class="card notice-card draft-card hidden" id="draft-card-unit" role="note"></div>
