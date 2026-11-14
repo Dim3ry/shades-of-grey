@@ -5168,7 +5168,7 @@
       const before = launching ? null : (hasOwn(views, tabAlias(settings.tab)) ? tabAlias(settings.tab) : null);
       // FX3: leaving a screen takes its message with it (an Undo there is no longer about what you are looking at). A message made
       // in the same moment as the move (an action that then opens a screen) stays.
-      if (before !== name && !toast.classList.contains("hidden") && Date.now() - toastShownAt > 300) hideToast();
+      if (before !== name && !toast.classList.contains("hidden") && Date.now() - toastShownAt > TOAST_MOVE_GRACE_MS) hideToast();
       const move = canMove() && before !== name && (before === null || barOf(before) !== barOf(name)) ? (how === "slide" && before ? "slide" : "fade") : "";
       const snap = move === "slide" ? moveSnap(document.querySelector("main"), views[before]) : null;
       if (move !== "slide" && before !== name) endMove();
@@ -10082,6 +10082,7 @@
     const toastText = document.getElementById("toast-text");
     const toastUndo = document.getElementById("toast-undo");
     let toastTimer;
+    const TOAST_MOVE_GRACE_MS = 2000;   // FX3: a message younger than this survives a screen change (an action that then opens a screen, or taps through one)
     let toastShownAt = 0;   // FX3: when the message went up, so leaving a screen can tell a stale one from one just made
     let toastUntil = 0;   // A2: the clock time (ms) the message is due to go, so a frozen timer can't leave it up
     let undoAction = null;
@@ -10119,6 +10120,7 @@
     }
     // FX3: a hidden message keeps no words in the page and no Undo to run (the fading copy above was cloned first).
     function clearToastText() {
+      delete toast.dataset.kind;   // (unmarked first: the notice is over, so emptying its text is not a new notice)
       toastText.textContent = "";
       undoAction = null;
     }
