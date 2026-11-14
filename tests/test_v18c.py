@@ -149,8 +149,10 @@ def main():
         start(page)
         paste(page, NOTE)
         tick = page.locator("#import-owned")
-        check("paste: the Owned tick shows for new paints, ticked to start",
-              tick.count() == 1 and tick.is_visible() and tick.get_attribute("aria-checked") == "true")
+        # FX2: the tick now starts unticked; the "ticked" part clicks it first.
+        check("paste: the Owned tick shows for new paints, unticked to start",
+              tick.count() == 1 and tick.is_visible() and tick.get_attribute("aria-checked") == "false")
+        page.click("#import-owned")
         page.click("#import-save")
         page.wait_for_timeout(150)
         st = statuses(page)
@@ -159,8 +161,7 @@ def main():
 
         start(page)
         paste(page, NOTE)
-        page.click("#import-owned")
-        page.click("#import-save")
+        page.click("#import-save")   # FX2: unticked is the starting state now
         page.wait_for_timeout(150)
         st = statuses(page)
         check("paste, unticked: the new paints get no status",
@@ -171,6 +172,7 @@ def main():
         # Paints already in your palette keep their status.
         start(page, {"paints": [paint(1, "Mephiston Red", status="wishlist")], "recipes": [], "schemes": [], "v15": True})
         paste(page, NOTE)
+        page.click("#import-owned")   # FX2: tick it, as the new paint is checked as Owned below
         page.click("#import-save")
         page.wait_for_timeout(150)
         st = statuses(page)

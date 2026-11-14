@@ -1,4 +1,5 @@
-"""WL1 test for Minifolio (Models | Wish list: the switch, the list, add, edit, delete with Undo, saving and backups). New behaviour only."""
+"""(FX1: the Wish list option is now called Wanted, and its count lines and empty line were reworded; checks below follow the new words.)
+WL1 test for Minifolio (Models | Wish list: the switch, the list, add, edit, delete with Undo, saving and backups). New behaviour only."""
 import json, os, sys
 from playwright.sync_api import sync_playwright
 
@@ -59,9 +60,9 @@ def main():
 
         print("\n--- 2. The list: order, groups, count ---")
         to_wishes(page)
-        check("the count line", page.text_content("#wish-count").strip() == "5 wishes, 13 models", page.text_content("#wish-count"))
+        check("the count line", page.text_content("#wish-count").strip() == "13 wanted models", page.text_content("#wish-count"))
         check("games A to Z, then factions, with No game and No faction last",
-              heads(page) == ["Fantasy", "Moss Court1 wish", "Skirmish", "Bright Host2 wishes", "No faction1 wish", "No game", "No faction1 wish"], heads(page))
+              heads(page) == ["Fantasy", "Moss Court1 wanted", "Skirmish", "Bright Host2 wanted", "No faction1 wanted", "No game", "No faction1 wanted"], heads(page))
         check("A to Z inside a faction ignores a leading The", names(page) == ["Moss Knights", "Archers", "The Zed Riders", "Gloom Scouts", "Loose Model"], names(page))
         subs = page.evaluate("[...document.querySelectorAll('#wish-list .wish-sub')].map(n => n.textContent)")
         check("each row reads models, game, faction", subs[1].startswith("2 models · Skirmish · Bright Host"), subs)
@@ -84,7 +85,7 @@ def main():
         to_wishes(page)
         add_wish(page, "<b>x</b> Bold", "3", "Skirmish", "Bright Host", True, "note <i>q</i>")
         check("the form shuts and the wish is in its group with its count", page.locator(".wish-form").count() == 0 and "<b>x</b> Bold" in names(page))
-        check("the count line follows", page.text_content("#wish-count").strip() == "6 wishes, 16 models", page.text_content("#wish-count"))
+        check("the count line follows", page.text_content("#wish-count").strip() == "16 wanted models", page.text_content("#wish-count"))
         check("typed tags show as plain text", page.locator("#wish-list b, #wish-list i").count() == 0)
         check("the message says Added, as plain text", page.text_content("#toast-text").strip() == "Added <b>x</b> Bold" and page.locator("#toast-text b").count() == 0, page.text_content("#toast-text"))
         saved = stored(page)
@@ -117,7 +118,7 @@ def main():
         to_wishes(page)
         check("wishes survive a restart", len(names(page)) == 6, names(page))
         fresh(page); to_wishes(page)
-        check("a save with no wish field loads as an empty list with one short line", names(page) == [] and page.text_content("#wish-list").strip() == "No wishes yet.")
+        check("a save with no wish field loads as an empty list with one short line", names(page) == [] and page.text_content("#wish-list").strip() == "Nothing wanted yet.")
         add_wish(page, "Kept")
         backup = page.evaluate("JSON.parse(JSON.stringify(backupData()))")
         check("a backup carries the wishes", [w["name"] for w in backup["modelWishes"]] == ["Kept"], backup.get("modelWishes"))

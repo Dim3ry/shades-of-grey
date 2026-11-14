@@ -200,7 +200,7 @@ def main():
         rows = page.locator("#cmp-lab-ideas .idea-list > li")
         r0 = rows.nth(unowned[0])
         check("Undo takes it off, the tag goes back and the button returns", r0.locator(".idea-tag").first.inner_text() == "Not in your palette"
-              and r0.locator(".shop-add-row button").count() == 1 and page.locator("#basket-button.hidden").count() == 1, r0.locator(".idea-tag").first.inner_text())
+              and r0.locator(".shop-add-row button").count() == 1 and basket(page) == "", r0.locator(".idea-tag").first.inner_text())
         page.evaluate("() => { settings.hideShopLinks = false; renderColourLab(); }")
         r0 = page.locator("#cmp-lab-ideas .idea-list > li").nth(unowned[0])
         check("with Shop links on, the fold-out keeps its shop links but not a second Add (one Add per row)", r0.locator(".shop-more").count() == 1

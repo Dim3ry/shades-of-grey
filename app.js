@@ -1983,8 +1983,9 @@
       return { brand: "", rest: String(text).trim() };
     }
     // RS4a: stray quote marks round a typed name ("'Foo Bar'", smart quotes, a backtick) are dropped from its start and end.
+    // FX2: also stray commas, full stops, semicolons, colons, exclamation and question marks. Only the two ends: a mark inside a name stays.
     function stripStrayQuotes(text) {
-      return plainQuotes(String(text || "")).replace(/^[\s'"`´]+|[\s'"`´]+$/g, "");
+      return plainQuotes(String(text || "")).replace(/^[\s'"`´,.;:!?]+|[\s'"`´,.;:!?]+$/g, "");
     }
     // "mystic blue" = "Mystic Blue" (small joining words stay small, ALL CAPS stays).
     function tidyName(text) {
@@ -2060,7 +2061,8 @@
     }
     function matchPaintIn(text, hints, pool) {
       hints = hints || {};
-      const typed = String(text || "").trim().replace(/\s+/g, " ");
+      // FX2: the typed text loses stray quote marks and punctuation at its ends ("'Ardcoat", "Dryad Bark.") but not inside it.
+      const typed = stripStrayQuotes(String(text || "")).replace(/\s+/g, " ").trim();
       const result = (status, paint, suggestions) => ({ status, typed, paint: paint || null, suggestions: suggestions || [] });
       if (!typed) return result("none");
       const split = splitBrand(typed);
@@ -3283,7 +3285,8 @@
     function updateBasket() {
       const paintsN = shoppingItems().length, gearN = gearItems().length;   // L1: Gear on the list counts too (Bought does not)
       const n = paintsN + gearN;
-      basketButton.classList.toggle("hidden", n === 0);
+      // FX1: on the Painting pages (the entry and every sub-page) the basket always shows, so Shopping is easy to find; an empty list shows no number.
+      basketButton.classList.toggle("hidden", n === 0 && settings.tab !== "recipes");
       if (n !== basketShown) {
         const NS = "http://www.w3.org/2000/svg";
         const svg = document.createElementNS(NS, "svg");
@@ -3297,10 +3300,12 @@
         path.setAttribute("stroke-linecap", "round");
         path.setAttribute("stroke-linejoin", "round");
         svg.appendChild(path);
-        const num = document.createElement("span");
-        num.className = "basket-count";
-        num.textContent = n > 99 ? "99+" : String(n);
-        basketButton.replaceChildren(svg, num);
+        if (n > 0) {
+          const num = document.createElement("span");
+          num.className = "basket-count";
+          num.textContent = n > 99 ? "99+" : String(n);
+          basketButton.replaceChildren(svg, num);
+        } else basketButton.replaceChildren(svg);
         if (basketShown > -1 && n > 0) {
           basketButton.classList.remove("pop");
           void basketButton.offsetWidth;   // lets the pop play again
@@ -3308,7 +3313,8 @@
         }
         basketShown = n;
       }
-      basketButton.setAttribute("aria-label", `Shopping list, ${plural(paintsN, "paint")}${gearN ? ` and ${plural(gearN, "gear item")}` : ""}. Tap to open it.`);
+      basketButton.setAttribute("aria-label", n === 0 ? "Shopping list, empty. Tap to open it."
+        : `Shopping list, ${plural(paintsN, "paint")}${gearN ? ` and ${plural(gearN, "gear item")}` : ""}. Tap to open it.`);
     }
     basketButton.addEventListener("click", () => {
       if (importDraft) { showToast("Close Paste recipes first, then tap the basket."); return; }
@@ -5160,6 +5166,9 @@
       if (name === "settings" && tabAlias(settings.tab) !== "settings") { const fold = cardFolds.get("appearance-themes"); if (fold) fold(false); }   // DC1: Appearance and Themes starts folded each time Settings opens (nothing saved)
       if (!hasOwn(views, name)) name = "dashboard";
       const before = launching ? null : (hasOwn(views, tabAlias(settings.tab)) ? tabAlias(settings.tab) : null);
+      // FX3: leaving a screen takes its message with it (an Undo there is no longer about what you are looking at). A message made
+      // in the same moment as the move (an action that then opens a screen) stays.
+      if (before !== name && !toast.classList.contains("hidden") && Date.now() - toastShownAt > TOAST_MOVE_GRACE_MS) hideToast();
       const move = canMove() && before !== name && (before === null || barOf(before) !== barOf(name)) ? (how === "slide" && before ? "slide" : "fade") : "";
       const snap = move === "slide" ? moveSnap(document.querySelector("main"), views[before]) : null;
       if (move !== "slide" && before !== name) endMove();
@@ -5196,6 +5205,7 @@
       moreSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.page === name)));
       settings.tab = name;
       saveSettings();
+      updateBasket();   // FX1: the basket shows on Painting even when empty, so it follows the tab
       if (name === "settings") renderSettings();
       if (name === "about") { closeCreditsFolds(); renderThanks(); }   // CR1, FB3: the Thanks section is part of About now
       if (name === "guides") renderGuides();   // v35: built fresh each time, from your palette and units as they are now
@@ -10072,6 +10082,8 @@
     const toastText = document.getElementById("toast-text");
     const toastUndo = document.getElementById("toast-undo");
     let toastTimer;
+    const TOAST_MOVE_GRACE_MS = 2000;   // FX3: a message younger than this survives a screen change (an action that then opens a screen, or taps through one)
+    let toastShownAt = 0;   // FX3: when the message went up, so leaving a screen can tell a stale one from one just made
     let toastUntil = 0;   // A2: the clock time (ms) the message is due to go, so a frozen timer can't leave it up
     let undoAction = null;
     // A2: how long a message with an Undo button stays up, in seconds. One number for every Undo
@@ -10083,6 +10095,7 @@
       if (undo && !seconds && (!buttonLabel || buttonLabel === "Undo")) seconds = UNDO_SECONDS;
       delete toast.dataset.kind;   // v21.6: notify() marks a plain notice below; every other message is unmarked
       toastText.textContent = message;
+      toastShownAt = Date.now();
       undoAction = undo || null;
       toastUndo.textContent = buttonLabel || "Undo";
       toastUndo.classList.toggle("hidden", !undo);
@@ -10103,11 +10116,19 @@
     function hideToast() {
       if (!toast.classList.contains("hidden") && !document.hidden) lqGhostOut(toast, [{ transform: "none", opacity: 1 }, { transform: "translateY(60%)", opacity: 0 }], motionMs("--motion-med"), undefined, motionEase("--motion-ease-in"));
       toast.classList.add("hidden");
+      clearToastText();
+    }
+    // FX3: a hidden message keeps no words in the page and no Undo to run (the fading copy above was cloned first).
+    function clearToastText() {
+      delete toast.dataset.kind;   // (unmarked first: the notice is over, so emptying its text is not a new notice)
+      toastText.textContent = "";
+      undoAction = null;
     }
     function expireToast() {
       if (!toast.classList.contains("hidden") && Date.now() >= toastUntil) {
         clearTimeout(toastTimer);
         toast.classList.add("hidden");
+        clearToastText();
       }
     }
     document.addEventListener("visibilitychange", expireToast);
@@ -10389,7 +10410,7 @@
         name.textContent = head.text;
         const count = document.createElement("span");
         count.className = "head-count";
-        count.textContent = head.noun === "wish" ? `${head.count} ${head.count === 1 ? "wish" : "wishes"}` : plural(head.count, "unit");   // WL1: the wish list reuses these headings
+        count.textContent = head.noun === "wish" ? `${head.count} wanted` : plural(head.count, "unit");   // WL1: the wish list reuses these headings
         h.append(dot, name, count);
       } else h.textContent = head.text;
       li.appendChild(h);
@@ -10402,7 +10423,7 @@
     // Models the person wants but does not own yet. Saved as settings.modelWishes (an optional list, so DATA_VERSION stays 2; a save with no
     // field is an empty list). Each wish: { id, name, count, game, faction, really, note, added }. Wishes are never part of any total.
     // Every typed text goes in with textContent, never as HTML.
-    const WISH_NOTE_MAX = 300, WISH_MAX = 2000;
+    const WISH_NOTE_MAX = 300, WISH_MAX = 2000, WISH_NOTE_SHOWN = 60;
     function cleanWishes(list) {
       if (!Array.isArray(list)) return [];
       const out = [], used = new Set();
@@ -10475,7 +10496,7 @@
       li.dataset.wishId = String(w.id);
       const info = document.createElement("button");
       info.type = "button"; info.className = "wish-info";
-      info.setAttribute("aria-label", `Edit wish ${w.name}`);
+      info.setAttribute("aria-label", `Edit ${w.name}`);
       const name = document.createElement("span");
       name.className = "wish-name"; name.textContent = w.name;
       const sub = document.createElement("span");
@@ -10487,6 +10508,14 @@
         sub.appendChild(r);
       }
       info.append(name, sub);
+      // FX3: the note shows as one short plain line (about 60 characters, then an ellipsis)
+      const oneLine = String(w.note || "").replace(/\s+/g, " ").trim();
+      if (oneLine) {
+        const note = document.createElement("span");
+        note.className = "wish-note";
+        note.textContent = oneLine.length > WISH_NOTE_SHOWN ? oneLine.slice(0, WISH_NOTE_SHOWN).trimEnd() + "…" : oneLine;
+        info.appendChild(note);
+      }
       info.addEventListener("click", () => openWishForm(w));
       const got = document.createElement("button");
       got.type = "button"; got.className = "plain-button wish-got"; got.textContent = "Got it";
@@ -10499,11 +10528,11 @@
       if (!wishMode) return;
       const all = wishes();
       document.getElementById("wish-count").textContent = all.length
-        ? `${all.length} ${all.length === 1 ? "wish" : "wishes"}, ${plural(all.reduce((n, w) => n + w.count, 0), "model")}` : "";
+        ? plural(all.reduce((n, w) => n + w.count, 0), "wanted model") : "";   // FX1: was "N wishes, N models"
       wishList.replaceChildren();
       if (!all.length) {
         const li = document.createElement("li");
-        li.className = "empty"; li.textContent = "No wishes yet.";
+        li.className = "empty"; li.textContent = "Nothing wanted yet.";
         wishList.appendChild(li);
         return;
       }
@@ -10551,7 +10580,7 @@
       closeWishForm();
       const form = document.createElement("form");
       form.className = "card wish-form";
-      form.setAttribute("aria-label", wish ? "Edit wish" : "Add wish");
+      form.setAttribute("aria-label", wish ? "Edit model" : "Add model");
       // props are plain element properties; the name used by screen readers and the list for suggestions are set with fixed attribute names
       const make = (tag, cls, props, text, label) => {
         const e = document.createElement(tag);
@@ -13174,15 +13203,17 @@
       quickLineIds(q);
       if (!q.text.trim()) { q.read = null; return; }
       const parsed = parseRecipeText(q.text, { quick: true });
-      const read = { part: "", otherParts: [], notes: [], steps: [] };
+      const read = { part: "", otherParts: [], notes: [], steps: [], groups: [] };   // FX2: groups = one per heading that has paint lines
       const perLine = new Map();
       for (const s of parsed.schemes) for (const part of s.parts) {
         const name = part.name ? partForHeading(part.name).name : "";   // RS4a: a Part you have, or the heading in the same style
         if (!read.part && name) read.part = name;
         else if (name && !sameText(name, read.part) && !read.otherParts.some(x => sameText(x, name))) read.otherParts.push(name);
         read.notes.push(...part.notes);
+        const group = { part: name, keys: [] };
+        if (part.steps.length) read.groups.push(group);
         for (const st of part.steps) read.steps.push({
-          key: (() => { const id = q.ids[st.line] || 0; const k = perLine.get(id) || 0; perLine.set(id, k + 1); return `${id}:${k}`; })(),
+          key: (() => { const id = q.ids[st.line] || 0; const k = perLine.get(id) || 0; perLine.set(id, k + 1); group.keys.push(`${id}:${k}`); return `${id}:${k}`; })(),
           technique: st.technique || "", coats: st.coats, ratio: st.ratio || "", note: st.note || "", optional: !!st.optional,
           paints: st.paints.filter(m => m.paint || m.typed).map(m => {
             const p = m.paint || { brand: "", name: m.typed, colour: DEFAULT_PAINT_COLOUR };
@@ -13210,7 +13241,7 @@
     }
     // Works out d.name, d.part, d.notes and d.steps from the last reading and what was set by hand.
     function applyQuick(d) {
-      const q = d.quick, read = q.read || { part: "", otherParts: [], notes: [], steps: [] };
+      const q = d.quick, read = q.read || { part: "", otherParts: [], notes: [], steps: [], groups: [] };
       d.steps = read.steps.map(st => {
         const over = q.over[st.key] || {};
         const brand = over.brand !== undefined && over.brand.trim() ? tidyBrand(over.brand) : null;
@@ -13284,7 +13315,7 @@
         clearTimeout(quickTimer);
         readQuickLines(d); applyQuick(d);
         if (!quickHasPaint(d)) { drawQuick(); return; }
-        saveRecipeDraft();
+        saveQuickRecipes(d);
       });
       recipePage.appendChild(save);
 
@@ -13305,6 +13336,31 @@
       if (q.text.trim() && !q.read) readQuickLines(d);
       applyQuick(d);
       drawQuick();
+    }
+
+    // FX2: the headings that have paint lines, in order: [{ part, keys }]. A heading-less first group takes the part picked in More options
+    // (or the part the list is filtered to), and a part picked by hand in More options applies to the first recipe only.
+    function quickGroups(d) {
+      const read = d.quick.read;
+      const groups = read ? read.groups.filter(g => g.keys.some(k => d.steps.some(st => st.key === k))) : [];
+      return groups.map((g, i) => ({ keys: g.keys, part: (i === 0 ? d.quick.part : "") || g.part || d.quick.defaultPart || d.part || "" }));
+    }
+    // FX2: Save for the quick box. One heading: as before. Two or more: one recipe per heading, each with its own part and an automatic name
+    // (the typed name, if any, goes to the first). The "Do you own these?" sheet then opens once for all of them.
+    function saveQuickRecipes(d) {
+      const groups = quickGroups(d);
+      if (groups.length < 2) { saveRecipeDraft(); return; }
+      const allSteps = d.steps, typedName = d.quick.name.trim(), asked = [];
+      let ok = true;
+      groups.forEach((g, i) => {
+        if (!ok) return;
+        d.steps = allSteps.filter(st => g.keys.includes(st.key));
+        d.part = g.part;
+        d.name = (i === 0 && typedName) || quickRecipeName(g.part, d.steps);
+        recipeDraft = d;
+        ok = saveRecipeDraft(asked) !== false;
+      });
+      if (ok && asked.length) openOwnSheet(asked);
     }
 
     // The preview under the box (read only): the part and name, then one numbered row per step.
@@ -13364,12 +13420,12 @@
         list.appendChild(li);
       });
       preview.appendChild(list);
-      // One recipe has one part: lines under another part still join it, and this says so.
-      const others = d.quick.read ? d.quick.read.otherParts : [];
-      if (others.length && d.part) {
+      // FX2: one recipe has one part, so lines under two headings ("Armour:" then "Metal:") save as one recipe per heading.
+      const groups = quickGroups(d);
+      if (groups.length > 1) {
         const one = document.createElement("p");
         one.className = "quick-parts-note";
-        one.textContent = `One part per recipe. Using ${d.part}.`;
+        one.textContent = `Saves as ${groups.length} recipes: ${groups.map(g => g.part).join(", ")}.`;
         preview.appendChild(one);
       }
     }
@@ -13802,10 +13858,12 @@
       return box;
     }
 
-    function saveRecipeDraft() {
+    // FX2: `collect` (an array) is given by the quick box when it saves several recipes at once: the paints to ask about go into it
+    // and the "Do you own these?" sheet is left to the caller. Returns false when nothing was saved.
+    function saveRecipeDraft(collect) {
       const d = recipeDraft;
       const name = d.name.trim();
-      if (!name) { notify("Give the recipe a name first."); return; }
+      if (!name) { notify("Give the recipe a name first."); return false; }
       // v62: a paint with a brand but no name used to vanish without a word. Now Save stops and says which step.
       const gap = d.steps.findIndex(s => s.paints.some(p => !p.name.trim() && String(p.brand || "").trim()));
       if (gap >= 0) {
@@ -13815,7 +13873,7 @@
         const box = recipePage.querySelector(`[data-key="step-${gap}-paint-${pi}"]`);
         if (box) box.focus();
         notify(`Step ${gap + 1} has no paint name.`);
-        return;
+        return false;
       }
       // Paints with no name are skipped. Each named paint is found (or added) in the paint list.
       // v18c: a paint new to your palette gets your "Do you own these?" answer (Owned to start with).
@@ -13863,6 +13921,7 @@
       openRecipeId = recipe.id;
       const saved = commit(`Saved ${name}`);   // v18c-3: only says Saved if it was
       window.scrollTo(0, 0);
+      if (collect) { for (const p of askOwn) if (!collect.includes(p)) collect.push(p); return saved; }
       if (saved && askOwn.length) openOwnSheet(askOwn);   // RS3b
     }
 
@@ -18804,7 +18863,7 @@
       d.swapAt = -1;       // v18d-2b: no paint's Change… box open
       d.groups = importGroups(d.parsed);
       d.names = d.parsed.schemes.map(s => s.name || "Imported recipes");
-      d.markOwned = true;   // RS4b: "Mark these paints as Owned" starts ticked
+      d.markOwned = false;   // FX2: "Mark these paints as Owned" starts unticked (it was ticked in RS4b): a pasted note must not silently make every paint Owned and empty the Shopping list
       renderImport();
     }
 
@@ -19190,13 +19249,13 @@
         tick.className = "pick-all import-owned";
         tick.id = "import-owned";
         tick.setAttribute("role", "checkbox");
-        tick.setAttribute("aria-checked", String(d.markOwned !== false));
+        tick.setAttribute("aria-checked", String(d.markOwned === true));
         const mark = document.createElement("span");
         mark.className = "pick-box";
         mark.setAttribute("aria-hidden", "true");
         tick.append(mark, "Mark these paints as Owned");
         tick.addEventListener("click", () => {
-          d.markOwned = d.markOwned === false;
+          d.markOwned = d.markOwned !== true;
           tick.setAttribute("aria-checked", String(d.markOwned));
         });
         bar.appendChild(tick);
@@ -19703,10 +19762,10 @@
             const steps = part.steps.map(step => {
               const paints = step.paints.map(importPaintFor).filter(Boolean).map(p => {
                 // v17.1: a paint new to your palette comes in as Owned (you're bringing your own list).
-                // RS4b: unless "Mark these paints as Owned" is unticked: then its status is left as it is (nothing about owning changes).
+                // RS4b/FX2: only if "Mark these paints as Owned" is ticked (it starts unticked): otherwise its status is left as it is (nothing about owning changes).
                 const known = isInPalette(p);
                 const paint = findOrAddPaint(p.brand || "", p.name, p.colour || DEFAULT_PAINT_COLOUR);
-                if (!known && d.markOwned !== false && paintStatus(paint) === "") applyPaintStatus(paint, "owned");
+                if (!known && d.markOwned === true && paintStatus(paint) === "") applyPaintStatus(paint, "owned");
                 if (!known) importNewIds.push(paint.id);
                 if (p.type === "material") paint.type = "material";
                 return paint;
@@ -21736,12 +21795,16 @@
           (photoFiles ? Object.values(photoFiles).filter(pair => !pair || typeof pair.full !== "string" || !SAFE_PHOTO_TEXT.test(pair.full)).length : 0);
         const restoreNotes = [loweredCounts ? `${plural(loweredCounts, "count")} lowered to ${MAX_MODELS}` : "",
           skippedPhotos ? `${plural(skippedPhotos, "photo")} left out: not a JPEG, PNG or WebP` : ""].filter(Boolean);
+        // FX3: wanted models are named too, but only when the backup holds some (then it replaces yours, so yours are counted as well).
+        const backupWishes = unitsToo && !isList && Array.isArray(parsed.modelWishes) ? cleanWishes(parsed.modelWishes).length : 0;
+        const listOf = (parts) => parts.length < 3 ? parts.join(" and ") : parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1];
+        const wantedNow = backupWishes && wishes().length ? [plural(wishes().length, "wanted model")] : [], wantedThen = backupWishes ? [plural(backupWishes, "wanted model")] : [];
         const question = (!unitsToo
             ? `Replace your ${plural(book.recipes.length, "recipe")} with ${plural(backupBook.recipes.length, "recipe")} from the backup? (Your units stay as they are.)`
             : backupBook
-            ? `Replace your current ${plural(models.length, "unit")} and ${plural(book.recipes.length, "recipe")} with ` +
-              `${plural(restored.length, "unit")} and ${plural(backupBook.recipes.length, "recipe")} from the backup?`
-            : `Replace your current ${plural(models.length, "unit")} with ${restored.length} from the backup? (Your recipes stay as they are.)`)
+            ? `Replace your current ${listOf([plural(models.length, "unit"), plural(book.recipes.length, "recipe"), ...wantedNow])} with ` +
+              `${listOf([plural(restored.length, "unit"), plural(backupBook.recipes.length, "recipe"), ...wantedThen])} from the backup?`
+            : `Replace your current ${listOf([plural(models.length, "unit"), ...wantedNow])} with ${backupWishes ? listOf([plural(restored.length, "unit"), ...wantedThen]) : restored.length} from the backup? (Your recipes stay as they are.)`)
           + (photoCount ? ` It includes ${plural(photoCount, "photo")}.` : "");
         // v21.7: asks in the app's own box; the restore runs when you say yes.
         askYesNo(question, () => {
@@ -21791,6 +21854,10 @@
               if (unitsToo && !isList && typeof parsed.useCustom === "boolean") settings.useCustom = parsed.useCustom;
             });
             if (!kept) { notifyFull(); return; }
+            // FX3: restoring is the same as having a backup of this data, so Last backup is today and the Save a backup? card waits.
+            settings.lastBackup = todayISO();
+            settings.lastBackupPrint = dataPrint();
+            saveSettings();
             recipeDraft = null;
             openRecipeId = null;
             openIds.clear();
@@ -21798,6 +21865,7 @@
             applyPalette(settings.palette);
             render();
             renderSettings();
+            renderBackupNudge();
 
             // v14: check every photo the restored units need is really on this device. If
             // some couldn't be loaded, say so clearly (they're removed from the units next).
@@ -22284,8 +22352,12 @@
           continue;
         }
         if (quiet(i)) continue;
+        // FX2: a line that is only a points total ("2000 pts", "(2,000 points)") is never a unit.
+        if (/^[^A-Za-z0-9]*\d[\d,. ]*\s*(?:pts?|points?)[^A-Za-z0-9]*$/i.test(lines[i].trim())) continue;
         if (listFrame(lines[i], rosterStyle)) { notRead.push(i + 1); continue; }
         const r = readListLine(lines[i]);
+        // FX2: the list's title written twice ("Space Marines (2000 pts)" on two lines) is not a unit either.
+        if (read.length === 1 && !read[0].count && !read[0].models && !r.count && sameText(read[0].name, r.name)) continue;
         if (looksWrong(r)) { notRead.push(i + 1); continue; }
         // Its model lines: "• 9x Intercessor", ". Blood Claw Pack Leader: Bolt pistol" (no count is 1).
         // Deeper lines ("..", or indented under them) are wargear.
@@ -23052,12 +23124,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=162".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=163".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v162";
+    const APP_VERSION = "v163";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;
@@ -23523,6 +23595,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v163", date: "14 Nov 2026", changes: [
+        "The basket button is always there on Painting pages, so Shopping is easy to find. The models list is now called Wanted.",
+        "Pasting notes no longer ticks Owned for you, trims stray quote marks from paint names and keeps every part. Restoring a backup counts as saved, and old Undo messages clear.",
+      ] },
       { version: "v162", date: "14 Nov 2026", changes: [
         "On the Wish list, Got it turns a wish into a model at your first stage, with its note, and Undo puts the wish back.",
         "Fixes and tidying.",

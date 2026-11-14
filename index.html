@@ -55,8 +55,8 @@
        (applyAppearance in app.js) takes over once the app starts.
        U6b: mentor-looks.js (the Mentor orb's three looks and five states, plain data: MENTOR_LOOKS and MENTOR_LOOKS_CSS) loads
        just before it, so early.js can put the chosen look and its styles on the page before the first frame (LR1). -->
-  <script src="mentor-looks.js?v=162"></script>
-  <script src="early.js?v=162"></script>
+  <script src="mentor-looks.js?v=163"></script>
+  <script src="early.js?v=163"></script>
 
   <style>
     /* ===== CSS: this section controls how everything LOOKS. ===== */
@@ -3257,6 +3257,8 @@
     li.wish-row .wish-info { flex: 1; min-width: 0; text-align: left; background: none; border: 0; color: inherit; font: inherit; padding: 0; min-height: 44px; cursor: pointer; display: block; }
     li.wish-row .wish-name { display: block; font-weight: 600; overflow-wrap: anywhere; }
     li.wish-row .wish-sub { display: block; font-size: 0.8125rem; color: var(--muted); overflow-wrap: anywhere; }
+    /* FX3: the wish note, one line */
+    li.wish-row .wish-note { display: block; font-size: 0.8125rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     li.wish-row .wish-really { color: var(--accent); font-weight: 600; }
     li.wish-row .wish-got { flex: none; min-height: 44px; min-width: 44px; }
     li.wish-row .wish-got[hidden] { display: none; }
@@ -3380,13 +3382,13 @@
 
     <!-- ===== TAB 2: Models (data-tab "units", called Units before v88) ===== -->
     <section id="view-units" class="hidden">
-      <!-- WL1: Models | Wish list switch. In Wish list view only this and #wish-view show (see the WL1 styles). -->
-      <div class="seg models-seg" id="models-seg" role="tablist" aria-label="Models or wish list">
+      <!-- WL1 (FX1: now Wanted): Models | Wanted switch. In Wish list view only this and #wish-view show (see the WL1 styles). -->
+      <div class="seg models-seg" id="models-seg" role="tablist" aria-label="Models or wanted">
         <button type="button" role="tab" data-mview="models" aria-selected="true">Models</button>
-        <button type="button" role="tab" data-mview="wishes" aria-selected="false">Wish list</button>
+        <button type="button" role="tab" data-mview="wishes" aria-selected="false">Wanted</button>
       </div>
       <div id="wish-view" class="hidden">
-        <div class="units-toolbar wish-toolbar"><button type="button" class="primary-button" id="wish-add">+ Add wish</button></div>
+        <div class="units-toolbar wish-toolbar"><button type="button" class="primary-button" id="wish-add">+ Add model</button></div>
         <div id="wish-form-slot"></div>
         <div class="filter-summary"><span class="hint" id="wish-count" aria-live="polite"></span></div>
         <ul class="wish-units" id="wish-list"></ul>
@@ -3640,7 +3642,7 @@
             <li>Check the <strong>Nexus</strong> to see how far you've got.</li>
             <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
           </ol>
-          <p id="help-tabs" style="margin: 8px 0 0;">The bar at the bottom has four sections around the round <strong>Ask Mentor</strong> button: <strong>Nexus</strong>, <strong>Models</strong>, <strong>Painting</strong> and <strong>Tools</strong>. The one you are in is lit. <strong>Tools</strong> opens <strong>Tools and Settings</strong>: <strong>About</strong>, <strong>Guides</strong>, <strong>Settings</strong>, <strong>How it works</strong> and <strong>Updates</strong>. The shopping basket sits at the top right once your list has a paint. The app opens on a <strong>start page</strong>: the same four sections in a circle around Ask Mentor. Tap the round arrow at the bottom left, or the <strong>Minifolio</strong> title, to come back to it. Switching to another app and back leaves you where you were.</p>
+          <p id="help-tabs" style="margin: 8px 0 0;">The bar at the bottom has four sections around the round <strong>Ask Mentor</strong> button: <strong>Nexus</strong>, <strong>Models</strong>, <strong>Painting</strong> and <strong>Tools</strong>. The one you are in is lit. <strong>Tools</strong> opens <strong>Tools and Settings</strong>: <strong>About</strong>, <strong>Guides</strong>, <strong>Settings</strong>, <strong>How it works</strong> and <strong>Updates</strong>. The shopping basket is always at the top right on Painting pages, and on other pages once your list has something. The app opens on a <strong>start page</strong>: the same four sections in a circle around Ask Mentor. Tap the round arrow at the bottom left, or the <strong>Minifolio</strong> title, to come back to it. Switching to another app and back leaves you where you were.</p>
           <p id="help-mentor" style="margin: 8px 0 0;">Tap the round <strong>Ask Mentor</strong> button. Type a question, or tap <strong>Suggestions</strong> and pick one. Under the answer, <strong>Read the guide</strong> or a guide link opens that guide.</p>
           <p id="help-back" style="margin: 8px 0 0;">The phone's <strong>Back</strong> button closes what's open first, one thing per press: a question box (it counts as No), a photo, the camera, a recipe, the paste box. Then it goes to the Nexus. On the Nexus, with nothing open, it leaves the app.</p>
         </details>
@@ -3649,7 +3651,7 @@
           <ul>
             <li><strong>+ Add unit</strong> on the Models tab. The number box is how many models are in the unit (up to 999; tracking each model separately works for up to 100). The game and faction you used last are filled in the next time you open the form.</li>
             <li>Add the same unit twice (same name, game and faction) and they're numbered for you: Spearmen 1, Spearmen 2.</li>
-            <li id="help-wish-list">The <strong>Wish list</strong> switch at the top of Models keeps models you want but do not own yet. <strong>Got it</strong> moves one into Models, at your first stage. Undo puts it back.</li>
+            <li id="help-wish-list">The <strong>Wanted</strong> switch at the top of Models keeps models you want but do not own yet. <strong>Got it</strong> moves one into Models, at your first stage. Undo puts it back.</li>
             <li><strong>Starting stage</strong> in the Add form puts a new unit straight at the stage it's really at (it stays picked for the next unit you add).</li>
             <li id="help-new-unit-shown">Each new unit is <strong>scrolled into view</strong> and outlined for a moment, so you can see where it went in the list.</li>
             <li id="help-unit-card">Each unit shows as a short card with its name, game, army and stage. <strong>Tap it to open it</strong>: the stage arrows, its recipes and <strong>Details</strong>. Tap its name again to close it. Opening another unit closes the one that was open.</li>
@@ -4146,7 +4148,7 @@
 
   <!-- v21.4: all the app's code now lives in app.js (it used to be written right here).
        It's loaded in the same spot, at the very end, so it runs after the page is built, as before.
-       The "?v=162" makes phones fetch the new file after an update instead of an old saved one.
+       The "?v=163" makes phones fetch the new file after an update instead of an old saved one.
        v28: colour.js (the colour maths for Colour ideas) loads just before it. It only adds one name,
        MinifolioColour, and does nothing until app.js asks.
        v31: schemes.js (the starter colour schemes, plain data) loads between them. It only adds two names,
@@ -4159,16 +4161,16 @@
        names, MENTOR_PARTS, MENTOR_TECHNIQUES and MENTOR_TIPS, and does nothing until app.js asks.
        G2a: guides-groups.js (the Guides topic groups, plain data) loads after guides-data.js. It only adds one
        name, GUIDE_GROUPS, and does nothing until app.js asks. -->
-  <script src="colour.js?v=162"></script>
-  <script src="schemes.js?v=162"></script>
-  <script src="detail-recipes.js?v=162"></script>
-  <script src="basing-tips.js?v=162"></script>
-  <script src="mentor-tips.js?v=162"></script>
-  <script src="guides-data.js?v=162"></script>
-  <script src="guides-groups.js?v=162"></script>
-  <script src="mentor-data.js?v=162"></script>
-  <script src="mentor-engine.js?v=162"></script>
-  <script src="where-to-buy.js?v=162"></script>
-  <script src="app.js?v=162"></script>
+  <script src="colour.js?v=163"></script>
+  <script src="schemes.js?v=163"></script>
+  <script src="detail-recipes.js?v=163"></script>
+  <script src="basing-tips.js?v=163"></script>
+  <script src="mentor-tips.js?v=163"></script>
+  <script src="guides-data.js?v=163"></script>
+  <script src="guides-groups.js?v=163"></script>
+  <script src="mentor-data.js?v=163"></script>
+  <script src="mentor-engine.js?v=163"></script>
+  <script src="where-to-buy.js?v=163"></script>
+  <script src="app.js?v=163"></script>
 </body>
 </html>

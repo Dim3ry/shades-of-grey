@@ -186,7 +186,7 @@ def main():
         page.fill("#import-text", NOTE)
         page.click("#import-page button.primary-button")   # "Read notes"
         page.wait_for_timeout(100)
-        page.click("#import-owned")                        # RS4b: untick "Mark these paints as Owned" (was "Do you own these?" None)
+        # FX2: "Mark these paints as Owned" starts unticked now, so no click is needed to leave it unticked (it was clicked to untick in RS4b).
         paints_before = page.evaluate("book.paints.length")
         before = saved(page, RECIPES_KEY)
         full(page, True)
