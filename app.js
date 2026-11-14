@@ -5166,6 +5166,9 @@
       if (name === "settings" && tabAlias(settings.tab) !== "settings") { const fold = cardFolds.get("appearance-themes"); if (fold) fold(false); }   // DC1: Appearance and Themes starts folded each time Settings opens (nothing saved)
       if (!hasOwn(views, name)) name = "dashboard";
       const before = launching ? null : (hasOwn(views, tabAlias(settings.tab)) ? tabAlias(settings.tab) : null);
+      // FX3: leaving a screen takes its message with it (an Undo there is no longer about what you are looking at). A message made
+      // in the same moment as the move (an action that then opens a screen) stays.
+      if (before !== name && !toast.classList.contains("hidden") && Date.now() - toastShownAt > 300) hideToast();
       const move = canMove() && before !== name && (before === null || barOf(before) !== barOf(name)) ? (how === "slide" && before ? "slide" : "fade") : "";
       const snap = move === "slide" ? moveSnap(document.querySelector("main"), views[before]) : null;
       if (move !== "slide" && before !== name) endMove();
@@ -10079,6 +10082,7 @@
     const toastText = document.getElementById("toast-text");
     const toastUndo = document.getElementById("toast-undo");
     let toastTimer;
+    let toastShownAt = 0;   // FX3: when the message went up, so leaving a screen can tell a stale one from one just made
     let toastUntil = 0;   // A2: the clock time (ms) the message is due to go, so a frozen timer can't leave it up
     let undoAction = null;
     // A2: how long a message with an Undo button stays up, in seconds. One number for every Undo
@@ -10090,6 +10094,7 @@
       if (undo && !seconds && (!buttonLabel || buttonLabel === "Undo")) seconds = UNDO_SECONDS;
       delete toast.dataset.kind;   // v21.6: notify() marks a plain notice below; every other message is unmarked
       toastText.textContent = message;
+      toastShownAt = Date.now();
       undoAction = undo || null;
       toastUndo.textContent = buttonLabel || "Undo";
       toastUndo.classList.toggle("hidden", !undo);
@@ -10110,11 +10115,18 @@
     function hideToast() {
       if (!toast.classList.contains("hidden") && !document.hidden) lqGhostOut(toast, [{ transform: "none", opacity: 1 }, { transform: "translateY(60%)", opacity: 0 }], motionMs("--motion-med"), undefined, motionEase("--motion-ease-in"));
       toast.classList.add("hidden");
+      clearToastText();
+    }
+    // FX3: a hidden message keeps no words in the page and no Undo to run (the fading copy above was cloned first).
+    function clearToastText() {
+      toastText.textContent = "";
+      undoAction = null;
     }
     function expireToast() {
       if (!toast.classList.contains("hidden") && Date.now() >= toastUntil) {
         clearTimeout(toastTimer);
         toast.classList.add("hidden");
+        clearToastText();
       }
     }
     document.addEventListener("visibilitychange", expireToast);
@@ -10409,7 +10421,7 @@
     // Models the person wants but does not own yet. Saved as settings.modelWishes (an optional list, so DATA_VERSION stays 2; a save with no
     // field is an empty list). Each wish: { id, name, count, game, faction, really, note, added }. Wishes are never part of any total.
     // Every typed text goes in with textContent, never as HTML.
-    const WISH_NOTE_MAX = 300, WISH_MAX = 2000;
+    const WISH_NOTE_MAX = 300, WISH_MAX = 2000, WISH_NOTE_SHOWN = 60;
     function cleanWishes(list) {
       if (!Array.isArray(list)) return [];
       const out = [], used = new Set();
@@ -10494,6 +10506,14 @@
         sub.appendChild(r);
       }
       info.append(name, sub);
+      // FX3: the note shows as one short plain line (about 60 characters, then an ellipsis)
+      const oneLine = String(w.note || "").replace(/\s+/g, " ").trim();
+      if (oneLine) {
+        const note = document.createElement("span");
+        note.className = "wish-note";
+        note.textContent = oneLine.length > WISH_NOTE_SHOWN ? oneLine.slice(0, WISH_NOTE_SHOWN).trimEnd() + "…" : oneLine;
+        info.appendChild(note);
+      }
       info.addEventListener("click", () => openWishForm(w));
       const got = document.createElement("button");
       got.type = "button"; got.className = "plain-button wish-got"; got.textContent = "Got it";
@@ -21773,12 +21793,16 @@
           (photoFiles ? Object.values(photoFiles).filter(pair => !pair || typeof pair.full !== "string" || !SAFE_PHOTO_TEXT.test(pair.full)).length : 0);
         const restoreNotes = [loweredCounts ? `${plural(loweredCounts, "count")} lowered to ${MAX_MODELS}` : "",
           skippedPhotos ? `${plural(skippedPhotos, "photo")} left out: not a JPEG, PNG or WebP` : ""].filter(Boolean);
+        // FX3: wanted models are named too, but only when the backup holds some (then it replaces yours, so yours are counted as well).
+        const backupWishes = unitsToo && !isList && Array.isArray(parsed.modelWishes) ? cleanWishes(parsed.modelWishes).length : 0;
+        const listOf = (parts) => parts.length < 3 ? parts.join(" and ") : parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1];
+        const wantedNow = backupWishes && wishes().length ? [plural(wishes().length, "wanted model")] : [], wantedThen = backupWishes ? [plural(backupWishes, "wanted model")] : [];
         const question = (!unitsToo
             ? `Replace your ${plural(book.recipes.length, "recipe")} with ${plural(backupBook.recipes.length, "recipe")} from the backup? (Your units stay as they are.)`
             : backupBook
-            ? `Replace your current ${plural(models.length, "unit")} and ${plural(book.recipes.length, "recipe")} with ` +
-              `${plural(restored.length, "unit")} and ${plural(backupBook.recipes.length, "recipe")} from the backup?`
-            : `Replace your current ${plural(models.length, "unit")} with ${restored.length} from the backup? (Your recipes stay as they are.)`)
+            ? `Replace your current ${listOf([plural(models.length, "unit"), plural(book.recipes.length, "recipe"), ...wantedNow])} with ` +
+              `${listOf([plural(restored.length, "unit"), plural(backupBook.recipes.length, "recipe"), ...wantedThen])} from the backup?`
+            : `Replace your current ${listOf([plural(models.length, "unit"), ...wantedNow])} with ${backupWishes ? listOf([plural(restored.length, "unit"), ...wantedThen]) : restored.length} from the backup? (Your recipes stay as they are.)`)
           + (photoCount ? ` It includes ${plural(photoCount, "photo")}.` : "");
         // v21.7: asks in the app's own box; the restore runs when you say yes.
         askYesNo(question, () => {
@@ -21828,6 +21852,10 @@
               if (unitsToo && !isList && typeof parsed.useCustom === "boolean") settings.useCustom = parsed.useCustom;
             });
             if (!kept) { notifyFull(); return; }
+            // FX3: restoring is the same as having a backup of this data, so Last backup is today and the Save a backup? card waits.
+            settings.lastBackup = todayISO();
+            settings.lastBackupPrint = dataPrint();
+            saveSettings();
             recipeDraft = null;
             openRecipeId = null;
             openIds.clear();
@@ -21835,6 +21863,7 @@
             applyPalette(settings.palette);
             render();
             renderSettings();
+            renderBackupNudge();
 
             // v14: check every photo the restored units need is really on this device. If
             // some couldn't be loaded, say so clearly (they're removed from the units next).
