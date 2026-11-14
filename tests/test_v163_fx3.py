@@ -74,7 +74,7 @@ def main():
         check("a newer message replaces the older one", page.text_content("#toast-text") == "Added Second" and "Removed First" not in page_text(page))
         page.wait_for_timeout(400)
         page.evaluate("showToast('Removed Third', () => {}, 'Undo', UNDO_SECONDS)")
-        page.wait_for_timeout(400)
+        page.wait_for_timeout(2300)   # older than the two-second grace
         tab(page, "settings")
         check("leaving the screen removes it (text and Undo)", "Removed Third" not in page_text(page) and page.evaluate("document.getElementById('toast').classList.contains('hidden')"))
         page.evaluate("showToast('Removed Fourth', () => { window.ranStale = true }, 'Undo', UNDO_SECONDS); showTab('units')")
