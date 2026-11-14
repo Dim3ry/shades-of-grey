@@ -3380,13 +3380,13 @@
 
     <!-- ===== TAB 2: Models (data-tab "units", called Units before v88) ===== -->
     <section id="view-units" class="hidden">
-      <!-- WL1: Models | Wish list switch. In Wish list view only this and #wish-view show (see the WL1 styles). -->
-      <div class="seg models-seg" id="models-seg" role="tablist" aria-label="Models or wish list">
+      <!-- WL1 (FX1: now Wanted): Models | Wanted switch. In Wish list view only this and #wish-view show (see the WL1 styles). -->
+      <div class="seg models-seg" id="models-seg" role="tablist" aria-label="Models or wanted">
         <button type="button" role="tab" data-mview="models" aria-selected="true">Models</button>
-        <button type="button" role="tab" data-mview="wishes" aria-selected="false">Wish list</button>
+        <button type="button" role="tab" data-mview="wishes" aria-selected="false">Wanted</button>
       </div>
       <div id="wish-view" class="hidden">
-        <div class="units-toolbar wish-toolbar"><button type="button" class="primary-button" id="wish-add">+ Add wish</button></div>
+        <div class="units-toolbar wish-toolbar"><button type="button" class="primary-button" id="wish-add">+ Add model</button></div>
         <div id="wish-form-slot"></div>
         <div class="filter-summary"><span class="hint" id="wish-count" aria-live="polite"></span></div>
         <ul class="wish-units" id="wish-list"></ul>
@@ -3640,7 +3640,7 @@
             <li>Check the <strong>Nexus</strong> to see how far you've got.</li>
             <li>Save a backup now and then (see <strong>Your data and backups</strong>).</li>
           </ol>
-          <p id="help-tabs" style="margin: 8px 0 0;">The bar at the bottom has four sections around the round <strong>Ask Mentor</strong> button: <strong>Nexus</strong>, <strong>Models</strong>, <strong>Painting</strong> and <strong>Tools</strong>. The one you are in is lit. <strong>Tools</strong> opens <strong>Tools and Settings</strong>: <strong>About</strong>, <strong>Guides</strong>, <strong>Settings</strong>, <strong>How it works</strong> and <strong>Updates</strong>. The shopping basket sits at the top right once your list has a paint. The app opens on a <strong>start page</strong>: the same four sections in a circle around Ask Mentor. Tap the round arrow at the bottom left, or the <strong>Minifolio</strong> title, to come back to it. Switching to another app and back leaves you where you were.</p>
+          <p id="help-tabs" style="margin: 8px 0 0;">The bar at the bottom has four sections around the round <strong>Ask Mentor</strong> button: <strong>Nexus</strong>, <strong>Models</strong>, <strong>Painting</strong> and <strong>Tools</strong>. The one you are in is lit. <strong>Tools</strong> opens <strong>Tools and Settings</strong>: <strong>About</strong>, <strong>Guides</strong>, <strong>Settings</strong>, <strong>How it works</strong> and <strong>Updates</strong>. The shopping basket is always at the top right on Painting pages, and on other pages once your list has something. The app opens on a <strong>start page</strong>: the same four sections in a circle around Ask Mentor. Tap the round arrow at the bottom left, or the <strong>Minifolio</strong> title, to come back to it. Switching to another app and back leaves you where you were.</p>
           <p id="help-mentor" style="margin: 8px 0 0;">Tap the round <strong>Ask Mentor</strong> button. Type a question, or tap <strong>Suggestions</strong> and pick one. Under the answer, <strong>Read the guide</strong> or a guide link opens that guide.</p>
           <p id="help-back" style="margin: 8px 0 0;">The phone's <strong>Back</strong> button closes what's open first, one thing per press: a question box (it counts as No), a photo, the camera, a recipe, the paste box. Then it goes to the Nexus. On the Nexus, with nothing open, it leaves the app.</p>
         </details>
@@ -3649,7 +3649,7 @@
           <ul>
             <li><strong>+ Add unit</strong> on the Models tab. The number box is how many models are in the unit (up to 999; tracking each model separately works for up to 100). The game and faction you used last are filled in the next time you open the form.</li>
             <li>Add the same unit twice (same name, game and faction) and they're numbered for you: Spearmen 1, Spearmen 2.</li>
-            <li id="help-wish-list">The <strong>Wish list</strong> switch at the top of Models keeps models you want but do not own yet. <strong>Got it</strong> moves one into Models, at your first stage. Undo puts it back.</li>
+            <li id="help-wish-list">The <strong>Wanted</strong> switch at the top of Models keeps models you want but do not own yet. <strong>Got it</strong> moves one into Models, at your first stage. Undo puts it back.</li>
             <li><strong>Starting stage</strong> in the Add form puts a new unit straight at the stage it's really at (it stays picked for the next unit you add).</li>
             <li id="help-new-unit-shown">Each new unit is <strong>scrolled into view</strong> and outlined for a moment, so you can see where it went in the list.</li>
             <li id="help-unit-card">Each unit shows as a short card with its name, game, army and stage. <strong>Tap it to open it</strong>: the stage arrows, its recipes and <strong>Details</strong>. Tap its name again to close it. Opening another unit closes the one that was open.</li>
