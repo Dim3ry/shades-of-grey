@@ -1379,6 +1379,24 @@
     }
     .seg.tab-row > .tab-line.on { opacity: 1; }
     .seg.tab-row > .tab-line.still { transition: none; }   /* first placement, or the row was hidden: appear in place rather than slide */
+    /* TB1: a sub-tab row with tabs hidden past an edge fades that edge (page colour to clear, about 70 px, so the next tab peeks out) and shows a
+       "More tabs" arrow at the right end while tabs are hidden there. A row that fits shows neither. The wrapper is made by setUpTabRow(). */
+    .tab-wrap { position: relative; }
+    .tab-wrap::before, .tab-wrap::after {
+      content: ""; position: absolute; top: 0; height: 44px; width: 70px; pointer-events: none; z-index: 2; opacity: 0;
+      transition: opacity var(--motion-med) var(--motion-ease);
+    }
+    .tab-wrap::before { left: 0; background: linear-gradient(to right, var(--background), transparent); }
+    .tab-wrap::after { right: 0; background: linear-gradient(to left, var(--background), transparent); }
+    .tab-wrap.fade-l::before, .tab-wrap.fade-r::after { opacity: 1; }
+    .tab-wrap:has(> .seg.hidden) { display: none; }
+    .tab-wrap > .tab-more {
+      position: absolute; right: 0; top: 0; z-index: 3; width: 44px; height: 44px; min-height: 44px; padding: 0; display: flex; align-items: center;
+      justify-content: center; background: none; border: 0; border-radius: 0; color: var(--accent); cursor: pointer;
+    }
+    .tab-wrap > .tab-more[hidden] { display: none; }
+    .tab-wrap > .tab-more svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .tab-wrap > .tab-more:focus-visible { outline-offset: -4px; }
     #colourlab-body .wheel-block { border-bottom: 0; padding-bottom: 0; }
     #colourlab-body .shop-idle-button { min-height: 44px; }
     /* CR1: the Credits page. Each row is the name, who made it, and the licence name, which is the link (44 px tall). */

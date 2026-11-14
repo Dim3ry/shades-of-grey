@@ -9978,6 +9978,46 @@
     // scrolls sideways, so the chosen word is brought into view. First placement, or a row that was hidden, puts the line in place without a slide.
     // Reduced motion: the line jumps (the page's own rule turns every transition off).
     function setUpTabRow(seg) {
+      // TB1: a row with more tabs than fit shows it. The row sits in a plain wrapper that draws a fade over each edge that has tabs hidden
+      // behind it (the next tab peeks out, cut off) and, while tabs are hidden on the right, a "More tabs" arrow that scrolls the next one into view.
+      const wrap = document.createElement("div");
+      wrap.className = "tab-wrap";
+      seg.parentNode.insertBefore(wrap, seg);
+      wrap.appendChild(seg);
+      const more = document.createElement("button");
+      more.type = "button";
+      more.className = "tab-more";
+      more.setAttribute("aria-label", "More tabs");
+      more.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M9 5.5 15.5 12 9 18.5"/></svg>';
+      wrap.appendChild(more);
+      const PAD_ARROW = 52, PAD_EDGE = 8;   // room kept clear: the arrow's 44 px and a little, or a small margin at either end
+      const tabs = () => [...seg.children].filter(x => x.tagName === "BUTTON");
+      const hiddenRight = () => seg.scrollWidth - seg.clientWidth - seg.scrollLeft > 1;
+      const syncEdges = () => {
+        const shown = seg.offsetWidth > 0;
+        wrap.classList.toggle("fade-l", shown && seg.scrollLeft > 1);
+        wrap.classList.toggle("fade-r", shown && hiddenRight());
+        more.hidden = !(shown && hiddenRight());
+      };
+      const reduced = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const scrollRowTo = (left, smooth) => {
+        left = Math.max(0, Math.min(left, seg.scrollWidth - seg.clientWidth));
+        if (smooth && !reduced() && seg.scrollTo) seg.scrollTo({ left, behavior: "smooth" }); else seg.scrollLeft = left;
+      };
+      // bring one tab fully into view, clear of the arrow while tabs remain hidden to its right
+      const reveal = (btn, smooth) => {
+        const list = tabs(), last = list[list.length - 1] === btn, view = seg.clientWidth;
+        const left = btn.offsetLeft, right = left + btn.offsetWidth;
+        if (left < seg.scrollLeft + (left > 0 ? PAD_EDGE : 0)) scrollRowTo(left > 0 ? left - PAD_EDGE : 0, smooth);
+        else if (right > seg.scrollLeft + view - (last ? PAD_EDGE : PAD_ARROW)) scrollRowTo(right - view + (last ? PAD_EDGE : PAD_ARROW), smooth);
+      };
+      more.addEventListener("click", () => {
+        const edge = seg.scrollLeft + seg.clientWidth;   // the first tab that is wholly out of sight (else the first one cut off) comes fully into view
+        const next = tabs().find(b => b.offsetLeft >= edge - 1) || tabs().find(b => b.offsetLeft + b.offsetWidth > edge + 1);
+        if (next) reveal(next, true);
+      });
+      seg.addEventListener("scroll", syncEdges, { passive: true });
+      seg.addEventListener("focusin", (e) => { if (e.target.parentElement === seg && e.target.tagName === "BUTTON") reveal(e.target, false); });
       const line = document.createElement("span");
       line.className = "tab-line";
       line.setAttribute("aria-hidden", "true");
@@ -9985,14 +10025,13 @@
       let placed = false;
       const place = () => {
         const sel = seg.querySelector(':scope > button[aria-selected="true"]');
-        if (!sel || !seg.offsetWidth) { placed = false; line.classList.remove("on"); return; }
+        if (!sel || !seg.offsetWidth) { placed = false; line.classList.remove("on"); syncEdges(); return; }
         line.classList.toggle("still", !placed);
         line.style.width = sel.offsetWidth + "px";
         line.style.transform = "translateX(" + sel.offsetLeft + "px)";
         line.classList.add("on");
-        const left = sel.offsetLeft, right = left + sel.offsetWidth, view = seg.clientWidth;
-        if (left < seg.scrollLeft) seg.scrollLeft = Math.max(0, left - 8);
-        else if (right > seg.scrollLeft + view) seg.scrollLeft = right - view + 8;
+        reveal(sel, false);   // TB1: the chosen tab is brought into view (and kept clear of the arrow)
+        syncEdges();
         placed = true;
       };
       new MutationObserver(place).observe(seg, { attributes: true, attributeFilter: ["aria-selected"], subtree: true, childList: true });
