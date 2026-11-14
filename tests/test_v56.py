@@ -162,7 +162,7 @@ def main():
             e.main_tab(page, "dashboard" if where == "Dashboard" else "recipes")
             press_examples(page, "keep")
             msg = e.toast(page)
-            check(f"Keep them on the {where}: the message says what was kept", msg["text"] == f"Kept {EVERYTHING} as your own", msg)
+            check(f"Keep them on the {where}: the message says what was kept", msg["text"] == f"Kept {EVERYTHING}", msg)   # FX4: "as your own" dropped from the message (kept example paints are not marked Owned, and the words suggested they were)
             check(f"Keep them on the {where}: nothing is marked as an example any more",
                   counts(page) == {"units": 0, "recipes": 0, "schemes": 0, "paints": 0}, counts(page))
             check(f"Keep them on the {where}: everything is still there", page.evaluate("() => [models.length, book.recipes.length, book.schemes.length, book.paints.length]") == [3, 5, 2, 16])
