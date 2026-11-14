@@ -92,7 +92,7 @@ def main():
         wait_settled(page)
         # LQ1 (v129): James asked on 3 Nov for the switch itself to "slow empty and slow fill" (the old option's fill drains while the new one's
         # floods in, drawn on the switch's own buttons). The pages still do not move, so this now counts every animation except that fill.
-        NOT_FILL = "() => document.getAnimations().filter(a => !(a.effect && a.effect.target && a.effect.target.closest && a.effect.target.closest('#more-seg'))).length"
+        NOT_FILL = "() => document.getAnimations().filter(a => !(a.effect && a.effect.target && a.effect.target.closest && a.effect.target.closest('#more-seg, .tab-wrap'))).length"   # TB1 (v161): the sub-tab row's edge fade (a soft opacity change on .tab-wrap, outside #more-seg) is not the page moving, so it is left out like the switch's own fill
         page.click('#more-seg button[data-page="settings"]')
         check("moving between the pages of Tools and Settings does not move", page.evaluate(NOT_FILL) == 0)
         page.click('#more-seg button[data-page="help"]')

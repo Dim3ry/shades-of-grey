@@ -85,7 +85,7 @@ def main():
         after = page.evaluate("() => JSON.stringify(backupData())")
         check("backup data is the same after opening the expander", before == after)
         check("backup fields still have the same names", sorted(page.evaluate("() => Object.keys(backupData())")) ==
-              sorted(["app", "version", "dataVersion", "stages", "doneFrom", "models", "recipes", "factionColours", "palette", "appearance", "theme", "brandsOff", "useCustom", "customColours", "factionView", "unitSort"]))   # SF1 (v159): the backup also carries the Models order (unitSort); AB8 (v138): the backup now also carries the Armies view (Rows or Doughnuts); the point of this check is only that opening the expander adds no other field
+              sorted(["app", "version", "dataVersion", "stages", "doneFrom", "models", "recipes", "factionColours", "palette", "appearance", "theme", "brandsOff", "useCustom", "customColours", "factionView", "unitSort", "modelWishes"]))   # WL1 (v161): the backup also carries the Models wish list (modelWishes), an optional list;   # SF1 (v159): the backup also carries the Models order (unitSort); AB8 (v138): the backup now also carries the Armies view (Rows or Doughnuts); the point of this check is only that opening the expander adds no other field
 
         print("\n--- 5. Phone sizes ---")
         for width in (390, 360):

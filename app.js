@@ -6087,6 +6087,8 @@
     // v21.1: SELECT MODE on the Units tab. selectMode = are the tick boxes showing;
     // ticked = the ids of the ticked units. Neither is saved: it's only for this visit.
     let selectMode = false;
+    let wishMode = false;   // WL1: Models page shows the Wish list (kept while the app is open, not saved)
+    let wishesChecked = false;
     const ticked = new Set();
     // v21.5: the unit just added (outlined for a moment; see showNewUnit()). Not saved.
     let justAddedId = null;
@@ -6105,6 +6107,7 @@
 
     // Jump from the dashboard to the Units tab with some filters already set.
     function goToUnits(newFilters) {
+      setModelsView("models");   // WL1: arriving at a unit from elsewhere shows Models, not the wish list
       clearFilters();
       Object.assign(filters, newFilters);
       openIds.clear();
@@ -7207,6 +7210,7 @@
     }
     function renderUnits(how) {
       staleTabs.delete("units");   // DS2: drawn now (see render)
+      renderWishView();   // WL1: nothing happens unless the Wish list view is showing
       if (openCardId !== null && !models.some(m => m.id === openCardId)) openCardId = null;   // MC1: a deleted unit's card (a new unit may get its number)
       // The faction chosen must belong to the chosen game (the Filters sheet shows only that game's factions).
       const games = uniqueSorted(models.map(m => m.hobby));
@@ -9978,6 +9982,55 @@
     // scrolls sideways, so the chosen word is brought into view. First placement, or a row that was hidden, puts the line in place without a slide.
     // Reduced motion: the line jumps (the page's own rule turns every transition off).
     function setUpTabRow(seg) {
+      // TB1: a row with more tabs than fit shows it. The row sits in a plain wrapper that draws a fade over each edge that has tabs hidden
+      // behind it (the next tab peeks out, cut off) and, while tabs are hidden on the right, a "More tabs" arrow that scrolls the next one into view.
+      const wrap = document.createElement("div");
+      wrap.className = "tab-wrap";
+      seg.parentNode.insertBefore(wrap, seg);
+      wrap.appendChild(seg);
+      const more = document.createElement("button");
+      more.type = "button";
+      more.className = "tab-more";
+      more.setAttribute("aria-label", "More tabs");
+      {   // v161: drawn with createElementNS (no HTML text), like the basket, so no innerHTML is used
+        const NS = "http://www.w3.org/2000/svg";
+        const ic = document.createElementNS(NS, "svg");
+        ic.setAttribute("viewBox", "0 0 24 24"); ic.setAttribute("width", "20"); ic.setAttribute("height", "20");
+        ic.setAttribute("aria-hidden", "true"); ic.setAttribute("focusable", "false");
+        const ip = document.createElementNS(NS, "path");
+        ip.setAttribute("d", "M9 5.5 15.5 12 9 18.5");
+        ic.appendChild(ip);
+        more.appendChild(ic);
+      }
+      wrap.appendChild(more);
+      const PAD_ARROW = 52, PAD_EDGE = 8;   // room kept clear: the arrow's 44 px and a little, or a small margin at either end
+      const tabs = () => [...seg.children].filter(x => x.tagName === "BUTTON");
+      const hiddenRight = () => seg.scrollWidth - seg.clientWidth - seg.scrollLeft > 1;
+      const syncEdges = () => {
+        const shown = seg.offsetWidth > 0;
+        wrap.classList.toggle("fade-l", shown && seg.scrollLeft > 1);
+        wrap.classList.toggle("fade-r", shown && hiddenRight());
+        more.hidden = !(shown && hiddenRight());
+      };
+      const reduced = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const scrollRowTo = (left, smooth) => {
+        left = Math.max(0, Math.min(left, seg.scrollWidth - seg.clientWidth));
+        if (smooth && !reduced() && seg.scrollTo) seg.scrollTo({ left, behavior: "smooth" }); else seg.scrollLeft = left;
+      };
+      // bring one tab fully into view, clear of the arrow while tabs remain hidden to its right
+      const reveal = (btn, smooth) => {
+        const list = tabs(), last = list[list.length - 1] === btn, view = seg.clientWidth;
+        const left = btn.offsetLeft, right = left + btn.offsetWidth;
+        if (left < seg.scrollLeft + (left > 0 ? PAD_EDGE : 0)) scrollRowTo(left > 0 ? left - PAD_EDGE : 0, smooth);
+        else if (right > seg.scrollLeft + view - (last ? PAD_EDGE : PAD_ARROW)) scrollRowTo(right - view + (last ? PAD_EDGE : PAD_ARROW), smooth);
+      };
+      more.addEventListener("click", () => {
+        const edge = seg.scrollLeft + seg.clientWidth;   // the first tab that is wholly out of sight (else the first one cut off) comes fully into view
+        const next = tabs().find(b => b.offsetLeft >= edge - 1) || tabs().find(b => b.offsetLeft + b.offsetWidth > edge + 1);
+        if (next) reveal(next, true);
+      });
+      seg.addEventListener("scroll", syncEdges, { passive: true });
+      seg.addEventListener("focusin", (e) => { if (e.target.parentElement === seg && e.target.tagName === "BUTTON") reveal(e.target, false); });
       const line = document.createElement("span");
       line.className = "tab-line";
       line.setAttribute("aria-hidden", "true");
@@ -9985,14 +10038,13 @@
       let placed = false;
       const place = () => {
         const sel = seg.querySelector(':scope > button[aria-selected="true"]');
-        if (!sel || !seg.offsetWidth) { placed = false; line.classList.remove("on"); return; }
+        if (!sel || !seg.offsetWidth) { placed = false; line.classList.remove("on"); syncEdges(); return; }
         line.classList.toggle("still", !placed);
         line.style.width = sel.offsetWidth + "px";
         line.style.transform = "translateX(" + sel.offsetLeft + "px)";
         line.classList.add("on");
-        const left = sel.offsetLeft, right = left + sel.offsetWidth, view = seg.clientWidth;
-        if (left < seg.scrollLeft) seg.scrollLeft = Math.max(0, left - 8);
-        else if (right > seg.scrollLeft + view) seg.scrollLeft = right - view + 8;
+        reveal(sel, false);   // TB1: the chosen tab is brought into view (and kept clear of the arrow)
+        syncEdges();
         placed = true;
       };
       new MutationObserver(place).observe(seg, { attributes: true, attributeFilter: ["aria-selected"], subtree: true, childList: true });
@@ -10337,13 +10389,199 @@
         name.textContent = head.text;
         const count = document.createElement("span");
         count.className = "head-count";
-        count.textContent = plural(head.count, "unit");
+        count.textContent = head.noun === "wish" ? `${head.count} ${head.count === 1 ? "wish" : "wishes"}` : plural(head.count, "unit");   // WL1: the wish list reuses these headings
         h.append(dot, name, count);
       } else h.textContent = head.text;
       li.appendChild(h);
       return li;
     }
     const itemEl = (item, shared) => item.head ? buildUnitHead(item.head) : cardFor(item, shared);
+
+
+    // ----- WL1: the Models wish list -----
+    // Models the person wants but does not own yet. Saved as settings.modelWishes (an optional list, so DATA_VERSION stays 2; a save with no
+    // field is an empty list). Each wish: { id, name, count, game, faction, really, note, added }. Wishes are never part of any total.
+    // Every typed text goes in with textContent, never as HTML.
+    const WISH_NOTE_MAX = 300, WISH_MAX = 2000;
+    function cleanWishes(list) {
+      if (!Array.isArray(list)) return [];
+      const out = [], used = new Set();
+      for (const w of list) {
+        if (out.length >= WISH_MAX) break;
+        if (!w || typeof w !== "object" || typeof w.name !== "string" || !w.name.trim()) continue;
+        const id = Number.isInteger(w.id) && w.id > 0 && !used.has(w.id) ? w.id : null;
+        if (id) used.add(id);
+        out.push({ id, name: w.name.trim().slice(0, 80), count: cleanCount(w.count),
+          game: String(w.game || "").trim().slice(0, 80), faction: String(w.faction || "").trim().slice(0, 80),
+          really: w.really === true, note: String(w.note || "").slice(0, WISH_NOTE_MAX),
+          added: typeof w.added === "string" && /^\d{4}-\d{2}-\d{2}$/.test(w.added) ? w.added : "" });
+      }
+      let next = Math.max(0, ...used) + 1;
+      for (const w of out) if (w.id === null) w.id = next++;
+      return out;
+    }
+    function wishes() {
+      if (!wishesChecked || !Array.isArray(settings.modelWishes)) { settings.modelWishes = cleanWishes(settings.modelWishes); wishesChecked = true; }
+      return settings.modelWishes;
+    }
+    const modelsSeg = document.getElementById("models-seg");
+    const wishView = document.getElementById("wish-view");
+    const wishList = document.getElementById("wish-list");
+    const wishFormSlot = document.getElementById("wish-form-slot");
+    function setModelsView(which) {
+      const on = which === "wishes";
+      if (on === wishMode) return;
+      wishMode = on;
+      if (on && selectMode) closeSelect();   // one thing at a time
+      document.getElementById("view-units").classList.toggle("wish-mode", on);
+      wishView.classList.toggle("hidden", !on);
+      for (const b of modelsSeg.querySelectorAll("button")) b.setAttribute("aria-selected", String((b.dataset.mview === "wishes") === on));
+      if (!on) closeWishForm();
+      if (on) renderWishView(); else renderUnits();
+    }
+    modelsSeg.addEventListener("click", (event) => {
+      const b = event.target.closest("button[data-mview]");
+      if (b) setModelsView(b.dataset.mview);
+    });
+    function wishItems(list) {
+      const nameKey = (w) => w.name.replace(/^the\s+/i, "");
+      const sorted = list.slice().sort((a, b) => {
+        for (const f of ["game", "faction"]) {
+          const x = a[f], y = b[f];
+          if (!x || !y) { if (x !== y) return x ? -1 : 1; continue; }   // no game / no faction goes last
+          const c = sortCollator.compare(x, y);
+          if (c) return c;
+        }
+        return sortCollator.compare(nameKey(a), nameKey(b)) || a.id - b.id;
+      });
+      const items = [];
+      let lastGame = null, lastFaction = null;
+      sorted.forEach((w, i) => {
+        const newGame = w.game !== lastGame;
+        if (newGame) { lastGame = w.game; lastFaction = null; items.push({ head: { kind: "game", text: w.game || "No game" } }); }
+        if (newGame || w.faction !== lastFaction) {
+          lastFaction = w.faction;
+          let count = 0;
+          for (let j = i; j < sorted.length && sorted[j].faction === lastFaction && sorted[j].game === lastGame; j++) count++;
+          items.push({ head: { kind: "faction", text: lastFaction || "No faction", colour: factionColour(lastFaction), count, noun: "wish" } });
+        }
+        items.push(w);
+      });
+      return items;
+    }
+    function buildWishRow(w) {
+      const li = document.createElement("li");
+      li.className = "wish-row";
+      li.dataset.wishId = String(w.id);
+      const info = document.createElement("button");
+      info.type = "button"; info.className = "wish-info";
+      info.setAttribute("aria-label", `Edit wish ${w.name}`);
+      const name = document.createElement("span");
+      name.className = "wish-name"; name.textContent = w.name;
+      const sub = document.createElement("span");
+      sub.className = "wish-sub";
+      sub.textContent = [plural(w.count, "model"), w.game, w.faction].filter(Boolean).join(" · ");
+      if (w.really) {
+        const r = document.createElement("span");
+        r.className = "wish-really"; r.textContent = " · Really want";
+        sub.appendChild(r);
+      }
+      info.append(name, sub);
+      info.addEventListener("click", () => openWishForm(w));
+      const got = document.createElement("button");
+      got.type = "button"; got.className = "plain-button wish-got"; got.textContent = "Got it";
+      got.hidden = true;   // WL1: hidden until WL2 makes it work
+      li.append(info, got);
+      return li;
+    }
+    function renderWishView() {
+      if (!wishMode) return;
+      const all = wishes();
+      document.getElementById("wish-count").textContent = all.length
+        ? `${all.length} ${all.length === 1 ? "wish" : "wishes"}, ${plural(all.reduce((n, w) => n + w.count, 0), "model")}` : "";
+      wishList.replaceChildren();
+      if (!all.length) {
+        const li = document.createElement("li");
+        li.className = "empty"; li.textContent = "No wishes yet.";
+        wishList.appendChild(li);
+        return;
+      }
+      const frag = document.createDocumentFragment();
+      for (const item of wishItems(all)) frag.appendChild(item.head ? buildUnitHead(item.head) : buildWishRow(item));
+      wishList.appendChild(frag);
+    }
+    function closeWishForm() { wishFormSlot.replaceChildren(); }
+    function openWishForm(wish) {
+      closeWishForm();
+      const form = document.createElement("form");
+      form.className = "card wish-form";
+      form.setAttribute("aria-label", wish ? "Edit wish" : "Add wish");
+      // props are plain element properties; the name used by screen readers and the list for suggestions are set with fixed attribute names
+      const make = (tag, cls, props, text, label) => {
+        const e = document.createElement(tag);
+        if (cls) e.className = cls;
+        Object.assign(e, props || {});
+        if (text) e.textContent = text;
+        if (label) e.setAttribute("aria-label", label);
+        return e;
+      };
+      const row = (cls, ...kids) => { const r = make("div", cls); r.append(...kids); return r; };
+      const tick = make("input", "w-really", { type: "checkbox" });
+      tick.setAttribute("role", "switch");
+      const really = make("label", "wish-really-row");
+      really.append(tick, " Really want");
+      const gameBox = make("input", "w-game", { maxLength: 80, placeholder: "Game" }, "", "Game");
+      gameBox.setAttribute("list", "game-options");
+      const factionBox = make("input", "w-faction", { maxLength: 80, placeholder: "Faction" }, "", "Faction");
+      factionBox.setAttribute("list", "faction-options");
+      form.append(
+        row("row wish-top", make("input", "w-name", { maxLength: 80, placeholder: "Name", required: true }, "", "Name"),
+          make("input", "w-count", { type: "number", min: "1", max: "999", value: "1", title: "Number of models" }, "", "Number of models")),
+        row("row", gameBox, factionBox),
+        really,
+        make("textarea", "w-note", { maxLength: 300, placeholder: "Note" }, "", "Note"),
+        row("wish-buttons", make("button", "primary-button", { type: "submit" }, "Save"), make("button", "plain-button w-cancel", { type: "button" }, "Cancel"),
+          ...(wish ? [make("button", "danger-button w-delete", { type: "button" }, "Delete")] : [])));
+      const q = (c) => form.querySelector(c);
+      if (wish) {
+        q(".w-name").value = wish.name; q(".w-count").value = wish.count; q(".w-game").value = wish.game;
+        q(".w-faction").value = wish.faction; q(".w-really").checked = wish.really; q(".w-note").value = wish.note;
+      }
+      q(".w-cancel").addEventListener("click", closeWishForm);
+      form.addEventListener("keydown", (e) => { if (e.key === "Escape") closeWishForm(); });
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const name = q(".w-name").value.trim();
+        if (!name) return;
+        const fields = { name, count: cleanCount(q(".w-count").value), game: q(".w-game").value.trim(), faction: q(".w-faction").value.trim(),
+          really: q(".w-really").checked, note: q(".w-note").value.slice(0, WISH_NOTE_MAX) };
+        const list = wishes();
+        let message;
+        if (wish) { Object.assign(wish, fields); message = `Saved ${name}`; }
+        else {
+          list.push({ id: list.reduce((n, w) => Math.max(n, w.id), 0) + 1, ...fields, added: todayISO() });
+          message = `Added ${name}`;
+        }
+        closeWishForm();
+        commit(message);
+      });
+      if (wish) q(".w-delete").addEventListener("click", () => {
+        const list = wishes(), at = list.indexOf(wish);
+        if (at < 0) return;
+        list.splice(at, 1);
+        closeWishForm();
+        commit(`Removed ${wish.name}`, () => {
+          const now = wishes();
+          if (now.includes(wish)) return;
+          if (now.some(w => w.id === wish.id)) wish.id = now.reduce((n, w) => Math.max(n, w.id), 0) + 1;
+          now.splice(Math.min(at, now.length), 0, wish);
+          render();
+        }, "Undo", UNDO_SECONDS);
+      });
+      wishFormSlot.appendChild(form);
+      q(".w-name").focus();
+    }
+    document.getElementById("wish-add").addEventListener("click", () => openWishForm(null));
 
     // ----- the Sort button and the "Sort models" sheet (a bottom sheet through showDialog) -----
     const sortButton = document.getElementById("toggle-sort");
@@ -11125,6 +11363,7 @@
 
     // Jump to one unit on the Units tab, with its details open.
     function goToUnit(id) {
+      setModelsView("models");   // WL1
       clearFilters();
       openIds.clear();
       openIds.add(id);
@@ -21116,6 +21355,7 @@
     function backupData() {
       return { app: "Minifolio", version: 6, dataVersion: DATA_VERSION, stages: STAGES, doneFrom: settings.doneFrom, models, recipes: book,
                factionColours: settings.factionColours,
+               modelWishes: wishes(),   // WL1: the Models wish list. Older versions ignore it.
                factionView: currentFactionView(),   // AB8: Armies as rows or doughnuts. Older versions ignore it.
                unitSort: currentUnitSort().mode === "custom" ? { mode: "custom", levels: currentUnitSort().levels } : { mode: currentUnitSort().mode },   // SF1: the Models order. Older versions ignore it.
                // v20: the look travels with the backup too. Older versions ignore these.
@@ -21495,6 +21735,8 @@
               }
               // Backups from v8 onwards hold faction colours. Older ones don't, so yours stay.
               if (unitsToo && !isList && parsed.factionColours) settings.factionColours = cleanFactionColours(parsed.factionColours);
+              // WL1: backups from this version on hold the Models wish list. Older ones don't, so yours stays.
+              if (unitsToo && !isList && Array.isArray(parsed.modelWishes)) { settings.modelWishes = cleanWishes(parsed.modelWishes); wishesChecked = true; }
               // AB8: backups from this version on hold the Armies view. Older ones don't, so yours stays (rows unless you chose doughnuts).
               if (unitsToo && !isList && (parsed.factionView === "rows" || parsed.factionView === "doughnuts")) settings.factionView = parsed.factionView;
               // SF1: backups from this version on hold the Models order. Older ones don't, so yours stays. Anything odd is ignored.
@@ -22774,12 +23016,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=160".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=161".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v160";
+    const APP_VERSION = "v161";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;
@@ -23245,6 +23487,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v161", date: "14 Nov 2026", changes: [
+        "Rows of tabs that run off the screen now fade at the edge and show an arrow, so the last tab (such as Shopping) is easy to find.",
+        "Models has a new Wish list: note models you want, edit them or delete them with Undo. Wishes are not counted anywhere.",
+      ] },
       { version: "v160", date: "13 Nov 2026", changes: [
         "In Filters, changing the Game now keeps your faction when that faction has units in the new game.",
         "If it does not, the faction is cleared and a message says so, with an Undo that puts back both the game and the faction.",
