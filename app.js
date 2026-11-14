@@ -10490,7 +10490,8 @@
       info.addEventListener("click", () => openWishForm(w));
       const got = document.createElement("button");
       got.type = "button"; got.className = "plain-button wish-got"; got.textContent = "Got it";
-      got.hidden = true;   // WL1: hidden until WL2 makes it work
+      got.setAttribute("aria-label", `Got it, ${w.name}`);
+      got.addEventListener("click", () => gotIt(w));
       li.append(info, got);
       return li;
     }
@@ -10509,6 +10510,41 @@
       const frag = document.createDocumentFragment();
       for (const item of wishItems(all)) frag.appendChild(item.head ? buildUnitHead(item.head) : buildWishRow(item));
       wishList.appendChild(frag);
+    }
+    // WL2: Got it. The wish becomes a normal unit through addModel (the code Add unit uses), at the first stage of the person's own list,
+    // and leaves the wish list. The page stays on the Wish list. Filters are left alone: if the Models filters hide the new unit, it shows
+    // when they are cleared (Add unit clears them, but Got it does not leave this page). The note goes into the unit's note.
+    // The message has its own Undo (one message at a time, a newer one replaces it): Undo removes this unit and puts this wish back in
+    // its place, as the same object, so its id and added date are unchanged.
+    function gotIt(wish) {
+      const list = wishes(), at = list.indexOf(wish);
+      if (at < 0) return;
+      const copiesBefore = models.map(m => [m, m.copy]);   // addModel can number same-named units; Undo puts those numbers back
+      list.splice(at, 1);
+      const unit = addModel({ name: wish.name, count: cleanCount(wish.count), hobby: wish.game, faction: wish.faction, stage: 0 });
+      if (wish.note) unit.note = wish.note;
+      const undo = () => {
+        const mine = models.find(m => m.id === unit.id);
+        const files = mine ? photoIds(mine) : [];
+        if (mine) {
+          models = models.filter(m => m !== mine);
+          openIds.delete(mine.id);
+          if (justAddedId === mine.id) justAddedId = null;
+          for (const [m, copy] of copiesBefore) { if (copy === undefined) delete m.copy; else m.copy = copy; }
+        }
+        const now = wishes();
+        if (!now.includes(wish)) {
+          if (now.some(w => w.id === wish.id)) wish.id = now.reduce((n, w) => Math.max(n, w.id), 0) + 1;
+          now.splice(Math.min(at, now.length), 0, wish);
+        }
+        render();
+        for (const f of files) {
+          if (models.some(m => photoIds(m).includes(f))) continue;
+          forgetUrls(f);
+          deletePhotoFile(f);
+        }
+      };
+      commit(`${displayName(unit)} moved to Models`, undo, "Undo", UNDO_SECONDS);
     }
     function closeWishForm() { wishFormSlot.replaceChildren(); }
     function openWishForm(wish) {
@@ -23016,12 +23052,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=161".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=162".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v161";
+    const APP_VERSION = "v162";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;
@@ -23487,6 +23523,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v162", date: "14 Nov 2026", changes: [
+        "On the Wish list, Got it turns a wish into a model at your first stage, with its note, and Undo puts the wish back.",
+        "Fixes and tidying.",
+      ] },
       { version: "v161", date: "14 Nov 2026", changes: [
         "Rows of tabs that run off the screen now fade at the edge and show an arrow, so the last tab (such as Shopping) is easy to find.",
         "Models has a new Wish list: note models you want, edit them or delete them with Undo. Wishes are not counted anywhere.",
