@@ -66,7 +66,8 @@ def main():
         subs = page.evaluate("[...document.querySelectorAll('#wish-list .wish-sub')].map(n => n.textContent)")
         check("each row reads models, game, faction", subs[1].startswith("2 models · Skirmish · Bright Host"), subs)
         check("Really want shows only on the wish marked so", [("Really want" in s) for s in subs] == [False, True, False, False, False], subs)
-        check("Got it is hidden until WL2", not page.evaluate("[...document.querySelectorAll('.wish-got')].some(b => b.getClientRects().length > 0)"))
+        # WL2 made Got it work, so it is now shown on every row (WL2 tests its behaviour). This old check said it was hidden.
+        check("Got it is shown on every row", page.evaluate("[...document.querySelectorAll('.wish-got')].length === 5 && [...document.querySelectorAll('.wish-got')].every(b => b.getClientRects().length > 0)"))
 
         print("\n--- 3. Wishes stay out of everything else ---")
         page.click('#models-seg button[data-mview="models"]')
