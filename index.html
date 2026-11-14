@@ -3225,6 +3225,30 @@
     @keyframes fs-rise { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
     /* SF4: with the sheet open the message sits above the sheet's buttons (app.js sets --fs-toast-bottom) and above the sheet. */
     body.fs-open .toast { bottom: var(--fs-toast-bottom, 90px); z-index: 160; }
+
+    /* WL1: Models | Wish list. Two-option switch above the Add unit button; in Wish list view the Models controls and list are hidden. */
+    .models-seg { grid-template-columns: 1fr 1fr; }
+    #view-units.wish-mode > :not(#models-seg):not(#wish-view) { display: none !important; }
+    #wish-view .primary-button { width: 100%; }
+    .wish-toolbar { grid-template-columns: 1fr; }
+    li.wish-row {
+      display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 12px; margin-bottom: 10px;
+      background: var(--card); border: var(--border-width) var(--border-style) var(--border); border-radius: var(--radius-card); box-shadow: var(--card-shadow);
+    }
+    li.wish-row .wish-info { flex: 1; min-width: 0; text-align: left; background: none; border: 0; color: inherit; font: inherit; padding: 0; min-height: 44px; cursor: pointer; display: block; }
+    li.wish-row .wish-name { display: block; font-weight: 600; overflow-wrap: anywhere; }
+    li.wish-row .wish-sub { display: block; font-size: 0.8125rem; color: var(--muted); overflow-wrap: anywhere; }
+    li.wish-row .wish-really { color: var(--accent); font-weight: 600; }
+    li.wish-row .wish-got { flex: none; min-height: 44px; min-width: 44px; }
+    li.wish-row .wish-got[hidden] { display: none; }
+    form.wish-form { display: grid; gap: 10px; margin-bottom: 12px; }
+    form.wish-form .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    form.wish-form .wish-top { grid-template-columns: 1fr 76px; }
+    form.wish-form textarea { width: 100%; min-height: 64px; resize: vertical; box-sizing: border-box; }
+    form.wish-form .wish-really-row { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+    form.wish-form .wish-really-row input { width: 22px; height: 22px; flex: none; }
+    form.wish-form .wish-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+    form.wish-form .wish-buttons button { flex: 1 1 auto; min-height: 44px; }
 </style>
 </head>
 
@@ -3337,6 +3361,17 @@
 
     <!-- ===== TAB 2: Models (data-tab "units", called Units before v88) ===== -->
     <section id="view-units" class="hidden">
+      <!-- WL1: Models | Wish list switch. In Wish list view only this and #wish-view show (see the WL1 styles). -->
+      <div class="seg models-seg" id="models-seg" role="tablist" aria-label="Models or wish list">
+        <button type="button" role="tab" data-mview="models" aria-selected="true">Models</button>
+        <button type="button" role="tab" data-mview="wishes" aria-selected="false">Wish list</button>
+      </div>
+      <div id="wish-view" class="hidden">
+        <div class="units-toolbar wish-toolbar"><button type="button" class="primary-button" id="wish-add">+ Add wish</button></div>
+        <div id="wish-form-slot"></div>
+        <div class="filter-summary"><span class="hint" id="wish-count" aria-live="polite"></span></div>
+        <ul class="units wish-units" id="wish-list"></ul>
+      </div>
       <!-- v26: a kept, unfinished unit (the Add unit boxes). Filled by fillDraftCard(). -->
       <div class="card notice-card draft-card hidden" id="draft-card-unit" role="note"></div>
       <div class="units-toolbar">
@@ -3595,6 +3630,7 @@
           <ul>
             <li><strong>+ Add unit</strong> on the Models tab. The number box is how many models are in the unit (up to 999; tracking each model separately works for up to 100). The game and faction you used last are filled in the next time you open the form.</li>
             <li>Add the same unit twice (same name, game and faction) and they're numbered for you: Spearmen 1, Spearmen 2.</li>
+            <li id="help-wish-list">The <strong>Wish list</strong> switch at the top of Models keeps models you want but do not own yet. <strong>Got it</strong> moves one into Models.</li>
             <li><strong>Starting stage</strong> in the Add form puts a new unit straight at the stage it's really at (it stays picked for the next unit you add).</li>
             <li id="help-new-unit-shown">Each new unit is <strong>scrolled into view</strong> and outlined for a moment, so you can see where it went in the list.</li>
             <li id="help-unit-card">Each unit shows as a short card with its name, game, army and stage. <strong>Tap it to open it</strong>: the stage arrows, its recipes and <strong>Details</strong>. Tap its name again to close it. Opening another unit closes the one that was open.</li>
