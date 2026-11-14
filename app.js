@@ -3283,7 +3283,8 @@
     function updateBasket() {
       const paintsN = shoppingItems().length, gearN = gearItems().length;   // L1: Gear on the list counts too (Bought does not)
       const n = paintsN + gearN;
-      basketButton.classList.toggle("hidden", n === 0);
+      // FX1: on the Painting pages (the entry and every sub-page) the basket always shows, so Shopping is easy to find; an empty list shows no number.
+      basketButton.classList.toggle("hidden", n === 0 && settings.tab !== "recipes");
       if (n !== basketShown) {
         const NS = "http://www.w3.org/2000/svg";
         const svg = document.createElementNS(NS, "svg");
@@ -3297,10 +3298,12 @@
         path.setAttribute("stroke-linecap", "round");
         path.setAttribute("stroke-linejoin", "round");
         svg.appendChild(path);
-        const num = document.createElement("span");
-        num.className = "basket-count";
-        num.textContent = n > 99 ? "99+" : String(n);
-        basketButton.replaceChildren(svg, num);
+        if (n > 0) {
+          const num = document.createElement("span");
+          num.className = "basket-count";
+          num.textContent = n > 99 ? "99+" : String(n);
+          basketButton.replaceChildren(svg, num);
+        } else basketButton.replaceChildren(svg);
         if (basketShown > -1 && n > 0) {
           basketButton.classList.remove("pop");
           void basketButton.offsetWidth;   // lets the pop play again
@@ -3308,7 +3311,8 @@
         }
         basketShown = n;
       }
-      basketButton.setAttribute("aria-label", `Shopping list, ${plural(paintsN, "paint")}${gearN ? ` and ${plural(gearN, "gear item")}` : ""}. Tap to open it.`);
+      basketButton.setAttribute("aria-label", n === 0 ? "Shopping list, empty. Tap to open it."
+        : `Shopping list, ${plural(paintsN, "paint")}${gearN ? ` and ${plural(gearN, "gear item")}` : ""}. Tap to open it.`);
     }
     basketButton.addEventListener("click", () => {
       if (importDraft) { showToast("Close Paste recipes first, then tap the basket."); return; }
@@ -5196,6 +5200,7 @@
       moreSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.page === name)));
       settings.tab = name;
       saveSettings();
+      updateBasket();   // FX1: the basket shows on Painting even when empty, so it follows the tab
       if (name === "settings") renderSettings();
       if (name === "about") { closeCreditsFolds(); renderThanks(); }   // CR1, FB3: the Thanks section is part of About now
       if (name === "guides") renderGuides();   // v35: built fresh each time, from your palette and units as they are now
@@ -10389,7 +10394,7 @@
         name.textContent = head.text;
         const count = document.createElement("span");
         count.className = "head-count";
-        count.textContent = head.noun === "wish" ? `${head.count} ${head.count === 1 ? "wish" : "wishes"}` : plural(head.count, "unit");   // WL1: the wish list reuses these headings
+        count.textContent = head.noun === "wish" ? `${head.count} wanted` : plural(head.count, "unit");   // WL1: the wish list reuses these headings
         h.append(dot, name, count);
       } else h.textContent = head.text;
       li.appendChild(h);
@@ -10475,7 +10480,7 @@
       li.dataset.wishId = String(w.id);
       const info = document.createElement("button");
       info.type = "button"; info.className = "wish-info";
-      info.setAttribute("aria-label", `Edit wish ${w.name}`);
+      info.setAttribute("aria-label", `Edit ${w.name}`);
       const name = document.createElement("span");
       name.className = "wish-name"; name.textContent = w.name;
       const sub = document.createElement("span");
@@ -10499,11 +10504,11 @@
       if (!wishMode) return;
       const all = wishes();
       document.getElementById("wish-count").textContent = all.length
-        ? `${all.length} ${all.length === 1 ? "wish" : "wishes"}, ${plural(all.reduce((n, w) => n + w.count, 0), "model")}` : "";
+        ? plural(all.reduce((n, w) => n + w.count, 0), "wanted model") : "";   // FX1: was "N wishes, N models"
       wishList.replaceChildren();
       if (!all.length) {
         const li = document.createElement("li");
-        li.className = "empty"; li.textContent = "No wishes yet.";
+        li.className = "empty"; li.textContent = "Nothing wanted yet.";
         wishList.appendChild(li);
         return;
       }
@@ -10551,7 +10556,7 @@
       closeWishForm();
       const form = document.createElement("form");
       form.className = "card wish-form";
-      form.setAttribute("aria-label", wish ? "Edit wish" : "Add wish");
+      form.setAttribute("aria-label", wish ? "Edit model" : "Add model");
       // props are plain element properties; the name used by screen readers and the list for suggestions are set with fixed attribute names
       const make = (tag, cls, props, text, label) => {
         const e = document.createElement(tag);
