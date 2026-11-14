@@ -132,7 +132,7 @@ def main():
             "dividers and emoji are ignored": ["Divider", "emoji", "skipped"],
             "the 20,000 character limit": ["20,000 characters"],
             # RS4b: the paste's "Do you own these?" card became the "Mark these paints as Owned" tick box
-            "'Mark these paints as Owned' above Save": ["Mark these paints as Owned", "Untick"],
+            "'Mark these paints as Owned' above Save": ["Mark these paints as Owned", "Tick it"],   # FX4: the tick starts unticked now, so Help says "Tick it" (it used to say "Untick it")
             "✕ to leave a step, part or note out": ["✕", "step", "part's name", "note", "Read again"],
             "✎ to change a step's technique, mix ratio or paints": ["✎", "technique", "mix ratio", "Change…", "paints"],
             "'and' between two paints": ["Bone and Pale Bone"],
