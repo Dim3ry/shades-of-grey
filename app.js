@@ -9992,7 +9992,16 @@
       more.type = "button";
       more.className = "tab-more";
       more.setAttribute("aria-label", "More tabs");
-      more.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M9 5.5 15.5 12 9 18.5"/></svg>';
+      {   // v161: drawn with createElementNS (no HTML text), like the basket, so no innerHTML is used
+        const NS = "http://www.w3.org/2000/svg";
+        const ic = document.createElementNS(NS, "svg");
+        ic.setAttribute("viewBox", "0 0 24 24"); ic.setAttribute("width", "20"); ic.setAttribute("height", "20");
+        ic.setAttribute("aria-hidden", "true"); ic.setAttribute("focusable", "false");
+        const ip = document.createElementNS(NS, "path");
+        ip.setAttribute("d", "M9 5.5 15.5 12 9 18.5");
+        ic.appendChild(ip);
+        more.appendChild(ic);
+      }
       wrap.appendChild(more);
       const PAD_ARROW = 52, PAD_EDGE = 8;   // room kept clear: the arrow's 44 px and a little, or a small margin at either end
       const tabs = () => [...seg.children].filter(x => x.tagName === "BUTTON");
@@ -23007,12 +23016,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=160".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=161".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v160";
+    const APP_VERSION = "v161";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;
@@ -23478,6 +23487,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v161", date: "14 Nov 2026", changes: [
+        "Rows of tabs that run off the screen now fade at the edge and show an arrow, so the last tab (such as Shopping) is easy to find.",
+        "Models has a new Wish list: note models you want, edit them or delete them with Undo. Wishes are not counted anywhere.",
+      ] },
       { version: "v160", date: "13 Nov 2026", changes: [
         "In Filters, changing the Game now keeps your faction when that faction has units in the new game.",
         "If it does not, the faction is cleared and a message says so, with an Undo that puts back both the game and the faction.",
