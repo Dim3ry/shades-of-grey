@@ -87,8 +87,11 @@ def main():
         goo = card(page, "Zorblax Goo")
         check("the picked paint is the answer", page.is_hidden("#dialog") and options(goo)[0] == ["Mephiston Red Citadel", True]
               and page.locator(".import-paint.resolved", has_text="Zorblax Goo → Mephiston Red").count() == 1, options(goo))
-        check("Owned tick: ticked to start, 44 px", page.get_attribute("#import-owned", "aria-checked") == "true"
+        # FX2: the tick now starts UNTICKED (a pasted note must not silently make every paint Owned), so this part ticks it first.
+        check("Owned tick: unticked to start, 44 px", page.get_attribute("#import-owned", "aria-checked") == "false"
               and page.locator("#import-owned").bounding_box()["height"] >= 44)
+        page.click("#import-owned")
+        check("ticking it", page.get_attribute("#import-owned", "aria-checked") == "true")
         page.click("#import-save")
         page.wait_for_function("() => !importDraft")
         check("tick on: new paints marked Owned", status_of(page, "Nuln Oil") == "owned" and status_of(page, "Khorn Red") == "owned"
@@ -98,8 +101,7 @@ def main():
         # 4. Tick off.
         before = page.evaluate("book.recipes.length")
         read_notes(page, "Dark\n\nArmour:\nBleck Templar\nLeadbelcher")
-        page.click("#import-owned")
-        check("unticking it", page.get_attribute("#import-owned", "aria-checked") == "false")
+        check("starts unticked (FX2: no click needed any more)", page.get_attribute("#import-owned", "aria-checked") == "false")
         page.click("#import-save")
         page.wait_for_function("() => !importDraft")
         check("tick off: the recipe is added", page.evaluate("book.recipes.length") == before + 1)

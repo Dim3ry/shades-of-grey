@@ -100,7 +100,8 @@ def main():
         type_lines(page, "Eyes: yriel yellow\nArmour: macragge blue")
         pv = preview(page)
         note = page.evaluate("(document.querySelector('.quick-parts-note') || {}).textContent || ''")
-        check("two parts: the first is used and one line says so", "Part Eyes" in pv["meta"] and len(pv["rows"]) == 2 and note == "One part per recipe. Using Eyes.", (pv["meta"], note))
+        # FX2: two headings used to join one recipe ("One part per recipe. Using Eyes.") and lose the second part; now they save as one recipe each.
+        check("two parts: the first shows and one line says it saves as two recipes", "Part Eyes" in pv["meta"] and len(pv["rows"]) == 2 and note == "Saves as 2 recipes: Eyes, Armour.", (pv["meta"], note))
         type_lines(page, "Eyes:")
         check("a part and no paint: Save stays grey", preview(page)["saveOff"] and page.locator(".quick-parts-note").count() == 0)
         type_lines(page, "", wait=50)
