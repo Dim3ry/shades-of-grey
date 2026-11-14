@@ -3060,7 +3060,7 @@
         const empty = document.createElement("p");
         empty.className = "hint";
         empty.style.margin = "0 0 10px";
-        empty.textContent = "Nothing to buy.";
+        empty.textContent = "Nothing to buy. Paints you mark Wishlist appear here.";   // FX4: what fills the list (Empty ones are offered under Suggested; example paints never go on it)
         card.append(empty);
       } else {
         // v52: the explanations sit behind one More info: what the list holds, the no-statuses warning, how the shop bar works.
@@ -3342,7 +3342,8 @@
       const hint = document.createElement("p");
       hint.className = "hint";
       hint.style.margin = "0 0 10px";
-      hint.textContent = `${plural(ids.length, "paint")} added as Owned.`;
+      // FX4: it says "as Owned" only when they are (they start with no status unless "Mark these paints as Owned" was ticked).
+      hint.textContent = `${plural(ids.length, "paint")} added${ids.every(id => paintStatus(paintById(id)) === "owned") ? " as Owned" : ""}.`;
       const done = document.createElement("button");
       done.className = "primary-button";
       done.style.width = "100%";
@@ -8693,7 +8694,7 @@
       for (const s of schemes) delete s.example;
       for (const p of paints) delete p.example;
       const words = exampleWords({ units: units.length, recipes: recipes.length, schemes: schemes.length, paints: paints.length });
-      commit(`Kept ${words} as your own`, () => {
+      commit(`Kept ${words}`, () => {   // FX4: no "as your own": kept paints are not marked Owned
         for (const m of units) if (models.includes(m)) m.example = true;
         for (const r of recipes) if (book.recipes.includes(r)) r.example = true;
         for (const s of schemes) if (book.schemes.includes(s)) s.example = true;
@@ -10094,6 +10095,7 @@
     function showToast(message, undo, buttonLabel, seconds) {
       if (undo && !seconds && (!buttonLabel || buttonLabel === "Undo")) seconds = UNDO_SECONDS;
       delete toast.dataset.kind;   // v21.6: notify() marks a plain notice below; every other message is unmarked
+      for (const g of document.querySelectorAll(".toast.lq-ghost")) g.remove();   // FX4: the fading copy of the last message goes at once, so only one message is ever on the page
       toastText.textContent = message;
       toastShownAt = Date.now();
       undoAction = undo || null;
@@ -10131,6 +10133,15 @@
         clearToastText();
       }
     }
+    // FX4: the screen rows (the bottom menu, Models/Wanted, Recipes/Schemes/..., the Tools rows, the Colour Lab rows) are tabs too, but
+    // most of them never go through showTab, so an old message stayed up across them. A tap on one of their other buttons takes an
+    // older message with it. Capture phase: it runs before the tap's own work, so a message that work makes is not touched.
+    document.addEventListener("click", (event) => {
+      const tab = event.target instanceof Element ? event.target.closest(".tabs button, .tab-row button, .models-seg button") : null;
+      if (!tab || toast.classList.contains("hidden") || Date.now() - toastShownAt <= TOAST_MOVE_GRACE_MS) return;
+      if (tab.getAttribute("aria-selected") === "true" || tab.getAttribute("aria-current") === "page" || (tab.dataset.tab && tab.dataset.tab === tabAlias(settings.tab))) return;   // the one already open: not a move
+      hideToast();
+    }, true);
     document.addEventListener("visibilitychange", expireToast);
     window.addEventListener("pageshow", expireToast);
     window.addEventListener("focus", expireToast);
@@ -21796,9 +21807,11 @@
         const restoreNotes = [loweredCounts ? `${plural(loweredCounts, "count")} lowered to ${MAX_MODELS}` : "",
           skippedPhotos ? `${plural(skippedPhotos, "photo")} left out: not a JPEG, PNG or WebP` : ""].filter(Boolean);
         // FX3: wanted models are named too, but only when the backup holds some (then it replaces yours, so yours are counted as well).
-        const backupWishes = unitsToo && !isList && Array.isArray(parsed.modelWishes) ? cleanWishes(parsed.modelWishes).length : 0;
+        // FX4: a backup that carries a wanted list (even an empty one) replaces yours, so your current ones are named whenever there are some.
+        const backupHasWishList = unitsToo && !isList && Array.isArray(parsed.modelWishes);
+        const backupWishes = backupHasWishList ? cleanWishes(parsed.modelWishes).length : 0;
         const listOf = (parts) => parts.length < 3 ? parts.join(" and ") : parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1];
-        const wantedNow = backupWishes && wishes().length ? [plural(wishes().length, "wanted model")] : [], wantedThen = backupWishes ? [plural(backupWishes, "wanted model")] : [];
+        const wantedNow = backupHasWishList && wishes().length ? [plural(wishes().length, "wanted model")] : [], wantedThen = backupWishes ? [plural(backupWishes, "wanted model")] : [];
         const question = (!unitsToo
             ? `Replace your ${plural(book.recipes.length, "recipe")} with ${plural(backupBook.recipes.length, "recipe")} from the backup? (Your units stay as they are.)`
             : backupBook
@@ -23124,12 +23137,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=163".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=164".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v163";
+    const APP_VERSION = "v164";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;
@@ -23595,6 +23608,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v164", date: "14 Nov 2026", changes: [
+        "Old Undo messages now go when you tap another tab or menu button, and only one shows at a time. The paste result no longer says Owned when it is not, and Keep them no longer says as your own.",
+        "Restoring names your current wanted models in its question, and the empty Shopping list says what fills it.",
+      ] },
       { version: "v163", date: "14 Nov 2026", changes: [
         "The basket button is always there on Painting pages, so Shopping is easy to find. The models list is now called Wanted.",
         "Pasting notes no longer ticks Owned for you, trims stray quote marks from paint names and keeps every part. Restoring a backup counts as saved, and old Undo messages clear.",
