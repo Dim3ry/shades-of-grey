@@ -3260,6 +3260,14 @@
     /* FX3: the wish note, one line */
     li.wish-row .wish-note { display: block; font-size: 0.8125rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     li.wish-row .wish-really { color: var(--accent); font-weight: 600; }
+    /* FX5: the "could not start" message early.js adds if the app never finished starting. Plain page colours, so it reads even if little else loaded. */
+    #start-failed {
+      position: fixed; left: 16px; right: 16px; top: calc(16px + env(safe-area-inset-top)); z-index: 60;
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 16px;
+      background: var(--card, #141d2f); color: var(--text, #dbe4f0); border: 2px solid var(--danger, #ff8a8a); border-radius: 12px; font-size: 1rem;
+    }
+    #start-failed p { margin: 0; flex: 1 1 200px; }
+    #start-failed button { min-height: 44px; min-width: 44px; padding: 8px 16px; font-size: 1rem; background: transparent; color: var(--text, #dbe4f0); border: 1px solid var(--danger, #ff8a8a); border-radius: 8px; }
     li.wish-row .wish-got { flex: none; min-height: 44px; min-width: 44px; }
     li.wish-row .wish-got[hidden] { display: none; }
     form.wish-form { display: grid; gap: 10px; margin-bottom: 12px; }
