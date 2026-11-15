@@ -141,7 +141,7 @@ def main():
         # v73 (chunk 4.3): buildShopFoldout gained one option and its Add button moved into a shared helper (buildShopAddSlot), so only
         # the single Add itself (addToShoppingList) is still checked here. The fold-out's Add button is covered by v39 and v41.
         check("addToShoppingList (the single Add) was not changed",
-              not any(re.search(r"function addToShoppingList", l) for l in removed))
+              not any(re.search(r"function addToShoppingList", l) and "runningLow" not in l for l in added) and not any(re.search(r"function addToShoppingList", l) for l in removed if l.strip() != "function addToShoppingList(paint, source) {"))   # SHP3: its one line gained a third argument, runningLow, for Suggested
 
         # ---------- 2. Starter schemes ----------
         print("\n--- 2. Starter schemes ---")

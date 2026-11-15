@@ -394,7 +394,7 @@ def main():
         page.click("#basket-button"); page.wait_for_function("() => settings.tab === 'shopping'")
         page.wait_for_timeout(200)
         check("the shopping list says there is nothing to buy",
-              "Nothing to buy" in page.inner_text("#shop-panel"), page.inner_text("#shop-panel"))
+              "appear here" in page.inner_text("#shop-panel"), page.inner_text("#shop-panel"))   # SHP3: the empty line now says what fills the tab ("Paints you add or mark Wishlist appear here."), no longer "Nothing to buy"
         check("no shop buttons show", page.locator("#buy-bar").count() == 0)
         # v58 (chunk 1.3) changed this decision: after Keep them the made-up paints showed on the list as missing, and AI testers
         # tried to buy "Example deep blue" (a made-up paint, called "Harbour blue" since AB9), which no shop sells. A paint that started as an example now stays off the list, kept or

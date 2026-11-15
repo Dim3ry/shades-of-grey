@@ -151,7 +151,7 @@ def main():
         w.load(page, paints=[], recipes=[], units=[])
         open_shopping(page)
         check("with nothing to buy: the short empty line shows and there is no More info",
-              "Nothing to buy" in (text(page, "#shop-panel") or "") and page.locator("#shop-panel .more-info-button").count() == 0)
+              "appear here" in (text(page, "#shop-panel") or "") and page.locator("#shop-panel .more-info-button").count() == 0)   # SHP3: the empty line now says what fills the tab ("Paints you add or mark Wishlist appear here."), no longer "Nothing to buy"
 
         # ---------- 3. Settings and Updates ----------
         print("\n--- 3. Settings and Updates ---")

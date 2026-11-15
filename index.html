@@ -478,6 +478,17 @@
     #view-shopping .shop-wish-list { margin-top: 12px; }
     #view-shopping .shop-empty { margin: 12px 0; }
     #view-shopping .shop-copy-row { margin-top: 12px; }
+    /* SHP3: the add button and add box on the Shopping screen. */
+    #view-shopping .shop-add-button { width: 100%; margin: 0 0 12px; }
+    #view-shopping .shop-add-box { margin: 0 0 12px; }
+    #view-shopping .shop-add-search { width: 100%; box-sizing: border-box; }
+    #view-shopping .shop-add-results { list-style: none; margin: 8px 0 0; padding: 0; }
+    #view-shopping .shop-add-item { flex-wrap: wrap; gap: 8px; padding: 4px 0; }
+    #view-shopping .shop-add-item .shop-text { flex: 1 1 140px; min-width: 0; overflow-wrap: anywhere; }
+    #view-shopping .shop-add-item .shop-add-row { margin-top: 0; }
+    #view-shopping .shop-add-group { margin: 12px 0 2px; font-weight: 700; color: var(--muted); font-size: 0.875rem; }
+    #view-shopping .shop-add-none { margin: 8px 0; }
+    #view-shopping .shop-add-done { width: 100%; margin-top: 8px; }
     .shop-list .shop-from { display: block; color: var(--muted); margin-top: 1px; }
     /* Scrolling to the Paint Picker (the chip in the Mentor window) stops below the sticky header. */
     .fold, .lab-section { scroll-margin-top: 72px; }
@@ -3580,6 +3591,9 @@
         <button role="tab" data-stab="gear">Gear</button>
         <button role="tab" data-stab="wishlist">Wishlist</button>
       </div>
+      <!-- SHP3: one add button whose words follow the tab (+ Add paint, + Add gear, + Add model) and the box it opens. Filled by app.js. -->
+      <button type="button" class="plain-button shop-add-button" id="shop-add-btn" aria-expanded="false">+ Add paint</button>
+      <div id="shop-add-slot"></div>
       <div id="shop-panel"></div>
       <div id="shop-gear-panel" class="hidden"></div>
       <div id="shop-wish-panel" class="hidden"></div>
@@ -3792,9 +3806,10 @@
             <li>Typed a paint into a recipe that isn't in Your Palette yet? Above <strong>Save recipe</strong>, <strong>Do you own these?</strong> asks about the new paints that are in the paint list: <strong>All</strong> (Owned), <strong>None</strong> (Not owned) or <strong>Let me pick</strong> (tap a paint to untick it). A name that isn't in the paint list (a typo, say) is kept as typed with no status, and can still go on the shopping list.</li>
             <li id="help-recipe-shop">Missing paints are not put on the shopping list by themselves. Every recipe has an <strong>Add to shopping list</strong> button under its steps. It adds the real paints you don't own (never the made-up example paints) and says how many. Undo takes them off again. It is greyed out when there is nothing to add.</li>
             <li id="help-shop-tick">On the <strong>Shopping</strong> screen, tick a paint or a Gear item when you have bought it: it moves to <strong>Bought</strong> at the bottom of its tab, and a paint is marked Owned in Your Palette. Open Bought to tap <strong>Add back</strong>, or <strong>Clear bought</strong> to forget that tab's bought items. <strong>Remove</strong> takes a paint off the list. Both have an Undo.</li>
-            <li id="help-shop-suggested">Under the list, <strong>Suggested</strong> shows your Empty paints and the Not owned paints your recipes use. Nothing goes on the list by itself: tap <strong>Add</strong> to put one there, or <strong>✕</strong> to stop suggesting it. A paint you remove from the list is not suggested again either, until you add it again. Suggested only shows when there is something in it.</li>
+            <li id="help-shop-suggested">Under the list, <strong>Suggested</strong> shows your Empty and Running low paints and the Not owned paints your recipes use. Nothing goes on the list by itself: tap <strong>Add</strong> to put one there, or <strong>✕</strong> to stop suggesting it. A paint you remove from the list is not suggested again either, until you add it again. Suggested only shows when there is something in it.</li>
             <li id="help-shop-gear">Some Guides pages, Basing tips and Mentor answers have a <strong>Where to buy</strong> fold-out. It lists the things you need (such as a wet palette), each with plain search links to the shops and <strong>Add to shopping list</strong>. Added things go in the <strong>Gear</strong> tab on the Shopping screen, saying which guide they came from. Tick one when you have bought it, or <strong>Remove</strong> it; both have an Undo. Gear counts in the Shopping button and in Copy as text. Settings → Your data → Shop links hides the links but not the Add button.</li>
             <li id="help-shop"><strong>Shopping</strong> is a screen of its own: tap the Shopping button at the top of any screen. It has three tabs. <strong>Paints</strong> lists the paints you put there: your Wishlist paints and anything added with an <strong>Add to shopping list</strong> button, grouped by brand. Nothing is added by itself. <strong>Buy these</strong> at the top has a button for each shop that sells them (Firestorm Games, Wayland Games, Element Games, and The Army Painter for Army Painter paints). Each opens that shop's own search for the paint's name in a new tab, so check you've got the right pot before you buy. They're plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop.</li>
+            <li id="help-shop-add">Each tab has an add button under the tab row. <strong>+ Add paint</strong> searches the paint list and <strong>Add to shopping list</strong> puts the paint on your list as Wishlist. <strong>+ Add gear</strong> lists the things from Where to buy by guide. <strong>+ Add model</strong> opens the same form as Models. In Colour Lab, a paint you do not own has <strong>Add to shopping list</strong> on its row, in the colour wheel panel too, and every Add has an Undo. An example paint cannot go on the list: add your own paint first.</li>
             <li id="help-shopping-tabs"><strong>Gear</strong> holds the things added from Where to buy. <strong>Wishlist</strong> shows the models on your Models Wishlist, with their count and note. Tap one to open it in Models, or press <strong>Got it</strong> to move it into Models (Undo puts it back). The number on the Shopping button counts paints and Gear only. <strong>Copy as text</strong> lists Paints, Gear and Wishlist under their own headings. <strong>Show shop links</strong> at the top of the screen is the same switch as in Settings.</li>
             <li id="help-wide-shop">On a wide screen, the shop links and <strong>Copy as text</strong> sit beside the paints on the Paints tab, and the Guides sections use the full width.</li>
             <li id="help-shop-links"><strong>Shop links on suggested paints</strong> (Pro preview): under a suggested paint you don't own, tap <strong>Shop links</strong> to open a small fold-out with <strong>Add to shopping list</strong> (Undo is offered) and a plain search link for each shop that sells the paint. Paints you own show nothing. They are plain links: Minifolio isn't paid for them, and only the paint's name goes to the shop. To hide every shop link and shop button, including Buy these, untick <strong>Settings → Your data → Shop links</strong>. Your shopping list stays.</li>
