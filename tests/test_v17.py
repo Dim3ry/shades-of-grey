@@ -51,8 +51,10 @@ V17_BOOK = {
 # v62 (chunk 2.2): George asked that nothing goes on the shopping list by itself, so only the Wishlist paint is listed
 # now (missing recipe paints, the empty one and the running low one are left for you to add), and with every row a
 # Wishlist paint the ": wishlist" after each name is gone. This used to expect all five paints with their reasons.
+# SHP2: Copy as text now has a Paints heading above the brands
 EXPECTED_SHOPPING = """Shopping list
 
+Paints
 Vallejo
 - Mystic Blue"""
 

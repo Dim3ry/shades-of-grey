@@ -258,7 +258,7 @@ def main():
         a = app.index("function pageMoreInfo(")
         mine = app[a:app.index("// A greyed-out shopping list button")]   # pageMoreInfo, foldPageText and markHelpFolds
         check("no paint name can reach an aria-label from the new helpers", not re.search(r"aria-label", mine))
-        shop = app[app.index("function renderShopPanel("):app.index("// v40: the small basket count")]
+        shop = app[app.index("function renderShopPanel("):app.index("// The Bought tick box of a row")]   # SHP2: the Paints tab code only (the Wishlist rows are Models-style rows, whose Edit and Got it buttons carry the model name)
         check("the Shopping list code adds no innerHTML and no aria-label", "innerHTML" not in shop and "aria-label" not in shop)
         css = html[html.index("/* v52: More info on the Shopping list"):html.index(".idea-more .more-info-button")]
         check("no new subtitles, badges or pills in the new CSS", not re.search(r"pill|badge", css))

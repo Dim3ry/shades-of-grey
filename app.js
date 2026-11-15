@@ -3119,7 +3119,11 @@
         if (b.textContent !== label) b.textContent = label;
         b.setAttribute("aria-selected", String(t.id === shopTab));
       }
-      for (const t of SHOP_TABS) document.getElementById(t.panel).classList.toggle("hidden", t.id !== shopTab);
+      for (const t of SHOP_TABS) {
+        const el = document.getElementById(t.panel);
+        el.classList.toggle("hidden", t.id !== shopTab);
+        if (t.id !== shopTab) el.replaceChildren();   // a tab that is not showing is empty, so nothing stale (or a second #buy-bar) is left in it
+      }
       showShopLinksChoice();
       if (shopTab === "paints") renderShopPanel();
       else if (shopTab === "gear") renderShopGear();

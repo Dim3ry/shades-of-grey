@@ -124,7 +124,7 @@ def main():
         page.wait_for_timeout(150)
         check("Remove on the list counts as dismissing: the paint is Not owned and does not jump into Suggested",
               paint(page, 5)["s"] == "notowned" and paint(page, 5)["d"] and "Eta Listed" not in str(names(page)), (paint(page, 5), names(page)))
-        page.click("#recipe-seg button[data-view='palette']")
+        page.click('nav button[data-tab="recipes"]'); page.click("#recipe-seg button[data-view='palette']")   # SHP2: Shopping is its own screen, so go back to Painting first
         page.locator(".paint-item", has_text="Kappa Listed").locator("button.paint-head").click()
         page.locator(".paint-item", has_text="Kappa Listed").locator('.status-chip[data-status="empty"]').click()
         open_shop(page)
