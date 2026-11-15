@@ -3263,7 +3263,6 @@
     li.wish-row .wish-sub { display: block; font-size: 0.8125rem; color: var(--muted); overflow-wrap: anywhere; }
     /* FX3: the wish note, one line */
     li.wish-row .wish-note { display: block; font-size: 0.8125rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    li.wish-row .wish-really { color: var(--accent); font-weight: 600; }
     /* FX5: the "could not start" message early.js adds if the app never finished starting. Plain page colours, so it reads even if little else loaded. */
     #start-failed {
       position: fixed; left: 16px; right: 16px; top: calc(16px + env(safe-area-inset-top)); z-index: 60;
@@ -3278,8 +3277,6 @@
     form.wish-form .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     form.wish-form .wish-top { grid-template-columns: 1fr 76px; }
     form.wish-form textarea { width: 100%; min-height: 64px; resize: vertical; box-sizing: border-box; }
-    form.wish-form .wish-really-row { display: flex; align-items: center; gap: 10px; min-height: 44px; }
-    form.wish-form .wish-really-row input { width: 22px; height: 22px; flex: none; }
     form.wish-form .wish-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
     form.wish-form .wish-buttons button { flex: 1 1 auto; min-height: 44px; }
 </style>
@@ -3394,10 +3391,10 @@
 
     <!-- ===== TAB 2: Models (data-tab "units", called Units before v88) ===== -->
     <section id="view-units" class="hidden">
-      <!-- WL1 (FX1: now Wanted): Models | Wanted switch. In Wish list view only this and #wish-view show (see the WL1 styles). -->
-      <div class="seg models-seg" id="models-seg" role="tablist" aria-label="Models or wanted">
+      <!-- WL1 (FX1: now Wishlist): Models | Wishlist switch. In Wishlist view only this and #wish-view show (see the WL1 styles). -->
+      <div class="seg models-seg" id="models-seg" role="tablist" aria-label="Models or Wishlist">
         <button type="button" role="tab" data-mview="models" aria-selected="true">Models</button>
-        <button type="button" role="tab" data-mview="wishes" aria-selected="false">Wanted</button>
+        <button type="button" role="tab" data-mview="wishes" aria-selected="false">Wishlist</button>
       </div>
       <div id="wish-view" class="hidden">
         <div class="units-toolbar wish-toolbar"><button type="button" class="primary-button" id="wish-add">+ Add model</button></div>
@@ -3663,7 +3660,7 @@
           <ul>
             <li><strong>+ Add unit</strong> on the Models tab. The number box is how many models are in the unit (up to 999; tracking each model separately works for up to 100). The game and faction you used last are filled in the next time you open the form.</li>
             <li>Add the same unit twice (same name, game and faction) and they're numbered for you: Spearmen 1, Spearmen 2.</li>
-            <li id="help-wish-list">The <strong>Wanted</strong> switch at the top of Models keeps models you want but do not own yet. <strong>Got it</strong> moves one into Models, at your first stage. Undo puts it back.</li>
+            <li id="help-wish-list">The <strong>Wishlist</strong> switch at the top of Models keeps models you want but do not own yet. <strong>Got it</strong> moves one into Models, at your first stage. Undo puts it back. Paints you mark Wishlist go on your shopping list; models you want stay here until you press Got it.</li>
             <li><strong>Starting stage</strong> in the Add form puts a new unit straight at the stage it's really at (it stays picked for the next unit you add).</li>
             <li id="help-new-unit-shown">Each new unit is <strong>scrolled into view</strong> and outlined for a moment, so you can see where it went in the list.</li>
             <li id="help-unit-card">Each unit shows as a short card with its name, game, army and stage. <strong>Tap it to open it</strong>: the stage arrows, its recipes and <strong>Details</strong>. Tap its name again to close it. Opening another unit closes the one that was open.</li>

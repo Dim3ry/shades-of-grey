@@ -10462,7 +10462,7 @@
         name.textContent = head.text;
         const count = document.createElement("span");
         count.className = "head-count";
-        count.textContent = head.noun === "wish" ? `${head.count} wanted` : plural(head.count, "unit");   // WL1: the wish list reuses these headings
+        count.textContent = head.noun === "wish" ? `${head.count} on Wishlist` : plural(head.count, "unit");   // WL1: the wish list reuses these headings
         h.append(dot, name, count);
       } else h.textContent = head.text;
       li.appendChild(h);
@@ -10554,11 +10554,6 @@
       const sub = document.createElement("span");
       sub.className = "wish-sub";
       sub.textContent = [plural(w.count, "model"), w.game, w.faction].filter(Boolean).join(" · ");
-      if (w.really) {
-        const r = document.createElement("span");
-        r.className = "wish-really"; r.textContent = " · Really want";
-        sub.appendChild(r);
-      }
       info.append(name, sub);
       // FX3: the note shows as one short plain line (about 60 characters, then an ellipsis)
       const oneLine = String(w.note || "").replace(/\s+/g, " ").trim();
@@ -10580,11 +10575,11 @@
       if (!wishMode) return;
       const all = wishes();
       document.getElementById("wish-count").textContent = all.length
-        ? plural(all.reduce((n, w) => n + w.count, 0), "wanted model") : "";   // FX1: was "N wishes, N models"
+        ? plural(all.reduce((n, w) => n + w.count, 0), "Wishlist model") : "";   // FX1: was "N wishes, N models"
       wishList.replaceChildren();
       if (!all.length) {
         const li = document.createElement("li");
-        li.className = "empty"; li.textContent = "Nothing wanted yet.";
+        li.className = "empty"; li.textContent = "Nothing on your Wishlist yet.";
         wishList.appendChild(li);
         return;
       }
@@ -10643,10 +10638,6 @@
         return e;
       };
       const row = (cls, ...kids) => { const r = make("div", cls); r.append(...kids); return r; };
-      const tick = make("input", "w-really", { type: "checkbox" });
-      tick.setAttribute("role", "switch");
-      const really = make("label", "wish-really-row");
-      really.append(tick, " Really want");
       const gameBox = make("input", "w-game", { maxLength: 80, placeholder: "Game" }, "", "Game");
       gameBox.setAttribute("list", "game-options");
       const factionBox = make("input", "w-faction", { maxLength: 80, placeholder: "Faction" }, "", "Faction");
@@ -10655,14 +10646,13 @@
         row("row wish-top", make("input", "w-name", { maxLength: 80, placeholder: "Name", required: true }, "", "Name"),
           make("input", "w-count", { type: "number", min: "1", max: "999", value: "1", title: "Number of models" }, "", "Number of models")),
         row("row", gameBox, factionBox),
-        really,
         make("textarea", "w-note", { maxLength: 300, placeholder: "Note" }, "", "Note"),
         row("wish-buttons", make("button", "primary-button", { type: "submit" }, "Save"), make("button", "plain-button w-cancel", { type: "button" }, "Cancel"),
           ...(wish ? [make("button", "danger-button w-delete", { type: "button" }, "Delete")] : [])));
       const q = (c) => form.querySelector(c);
       if (wish) {
         q(".w-name").value = wish.name; q(".w-count").value = wish.count; q(".w-game").value = wish.game;
-        q(".w-faction").value = wish.faction; q(".w-really").checked = wish.really; q(".w-note").value = wish.note;
+        q(".w-faction").value = wish.faction; q(".w-note").value = wish.note;
       }
       q(".w-cancel").addEventListener("click", closeWishForm);
       form.addEventListener("keydown", (e) => { if (e.key === "Escape") closeWishForm(); });
@@ -10671,7 +10661,7 @@
         const name = q(".w-name").value.trim();
         if (!name) return;
         const fields = { name, count: cleanCount(q(".w-count").value), game: q(".w-game").value.trim(), faction: q(".w-faction").value.trim(),
-          really: q(".w-really").checked, note: q(".w-note").value.slice(0, WISH_NOTE_MAX) };
+          really: wish ? wish.really === true : false, note: q(".w-note").value.slice(0, WISH_NOTE_MAX) };
         const list = wishes();
         let message;
         if (wish) {
@@ -21257,7 +21247,7 @@
         const li = document.createElement("li");
         const text = document.createElement("span");
         text.textContent = `${SAFETY_LABELS[suffix]}: ${plural(copy.models.length, "unit")}` +
-          (wanted && wanted.length ? `, ${plural(wanted.length, "wanted model")}` : "") +
+          (wanted && wanted.length ? `, ${plural(wanted.length, "Wishlist model")}` : "") +
           (copy.date ? `, saved ${shortDate(copy.date)}` : "");
         const button = document.createElement("button");
         button.className = "plain-button";
@@ -21343,8 +21333,8 @@
       // v21.7: asks in the app's own box; the swap (and its Undo) happen when you say yes.
       askYesNo(unitsBack
           ? `Replace your current ${plural(models.length, "unit")} with the ${plural(units.length, "unit")} in this copy` +
-            (recipesCopy ? " (and its recipes)" : "") + (wantedCopy && (wantedCopy.length || wishes().length) ? ` and ${plural(wantedCopy.length, "wanted model")}` : "") + "?"
-          : `Replace your current ${plural(wishes().length, "wanted model")} with the ${plural(wantedCopy.length, "wanted model")} in this copy? (Your units stay as they are.)`, () => {
+            (recipesCopy ? " (and its recipes)" : "") + (wantedCopy && (wantedCopy.length || wishes().length) ? ` and ${plural(wantedCopy.length, "Wishlist model")}` : "") + "?"
+          : `Replace your current ${plural(wishes().length, "Wishlist model")} with the ${plural(wantedCopy.length, "Wishlist model")} in this copy? (Your units stay as they are.)`, () => {
         if ((models.length || wishes().length) && suffix !== "-before-recover" && !keepSafetyCopy("-before-recover", !!recipesCopy)) {
           notify("No room for a safety copy of your units, so the restore stopped. Save a backup first.");
           return;
@@ -21367,7 +21357,7 @@
         });
         if (!kept) { notifyFull(); return; }
         afterBigChange();
-        showToast(unitsBack ? `Recovered ${plural(units.length, "unit")}` : `Recovered ${plural(wantedCopy.length, "wanted model")}`, () => {
+        showToast(unitsBack ? `Recovered ${plural(units.length, "unit")}` : `Recovered ${plural(wantedCopy.length, "Wishlist model")}`, () => {
           const back = changeAndSave(() => {
             settings.modelWishes = cleanWishes(JSON.parse(undoState.wishes)); wishesChecked = true;   // DS3
             settings.factionColours = cleanFactionColours(JSON.parse(undoState.colours));
@@ -21917,7 +21907,7 @@
         // DS3: a backup with wanted models but no units is fine too: it replaces only your wanted models (and recipes, if it has them).
         const wantedOnly = !unitsToo && !isList && Array.isArray(parsed.modelWishes) && cleanWishes(parsed.modelWishes).length > 0;
         if (!unitsToo && !hasRecipes && !wantedOnly) {
-          notify("That file doesn't look like a Minifolio backup: it has no units, recipes or wanted models in it.");
+          notify("That file doesn't look like a Minifolio backup: it has no units, recipes or Wishlist models in it.");
           return;
         }
         const photoFiles = !isList && parsed.photoFiles && typeof parsed.photoFiles === "object" ? parsed.photoFiles : null;
@@ -21932,11 +21922,11 @@
         const backupHasWishList = (unitsToo || wantedOnly) && !isList && Array.isArray(parsed.modelWishes);
         const backupWishes = backupHasWishList ? cleanWishes(parsed.modelWishes).length : 0;
         const listOf = (parts) => parts.length < 3 ? parts.join(" and ") : parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1];
-        const wantedNow = backupHasWishList && wishes().length ? [plural(wishes().length, "wanted model")] : [], wantedThen = backupWishes ? [plural(backupWishes, "wanted model")] : [];
+        const wantedNow = backupHasWishList && wishes().length ? [plural(wishes().length, "Wishlist model")] : [], wantedThen = backupWishes ? [plural(backupWishes, "Wishlist model")] : [];
         const question = (!unitsToo
             ? (backupBook && hasRecipes
               ? `Replace your ${listOf([plural(book.recipes.length, "recipe"), ...wantedNow])} with ${listOf([plural(backupBook.recipes.length, "recipe"), ...wantedThen])} from the backup? (Your units stay as they are.)`
-              : `Replace your ${plural(wishes().length, "wanted model")} with ${plural(backupWishes, "wanted model")} from the backup? (Your units and recipes stay as they are.)`)
+              : `Replace your ${plural(wishes().length, "Wishlist model")} with ${plural(backupWishes, "Wishlist model")} from the backup? (Your units and recipes stay as they are.)`)
             : backupBook
             ? `Replace your current ${listOf([plural(models.length, "unit"), plural(book.recipes.length, "recipe"), ...wantedNow])} with ` +
               `${listOf([plural(restored.length, "unit"), plural(backupBook.recipes.length, "recipe"), ...wantedThen])} from the backup?`
@@ -22020,13 +22010,13 @@
                 : `Backup restored${restoreNotes.length ? ` (${restoreNotes.join("; ")})` : ""}, but this backup was saved without photos, so ${plural(missing, "photo")} won't show on this device. Keep the backup file safe. To bring photos across, use Save full backup with photos on the other device.`);
             } else {
               if (unitsToo) showToast("Backup restored" + restoreNotes.map(n => `. ${n}`).join(""));
-              else showToast(hasRecipes ? `Recipes restored (${plural(book.recipes.length, "recipe")})` : `Wanted models restored (${wishes().length})`, () => {
+              else showToast(hasRecipes ? `Recipes restored (${plural(book.recipes.length, "recipe")})` : `Wishlist models restored (${wishes().length})`, () => {
                 if (!changeAndSave(() => {
                   if (hasRecipes) { book = cleanRecipeBook(JSON.parse(recipesBefore)); putUnitRecipeLinksBack(linksBefore); }
                   if (wantedOnly) { settings.modelWishes = cleanWishes(JSON.parse(wishesBefore)); wishesChecked = true; }   // DS3
                 })) { notifyFull(); return; }
                 afterBigChange();
-                showToast(hasRecipes ? "Your recipes are back as they were" : "Your wanted models are back as they were");
+                showToast(hasRecipes ? "Your recipes are back as they were" : "Your Wishlist models are back as they were");
               }, "Undo", UNDO_SECONDS);
             }
             // Old backups may hold old-style photos: move them. Then load the thumbnails.
