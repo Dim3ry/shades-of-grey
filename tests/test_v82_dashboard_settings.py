@@ -30,7 +30,7 @@ def units(n_factions):
              "added": "2026-05-10", "log": []} for i in range(1, 13)]
 
 def cards(page):
-    return page.evaluate("""() => Object.fromEntries(['headline-card', 'history-card', 'stage-card', 'faction-card'].map(id => {
+    return page.evaluate("""() => Object.fromEntries(['headline-card', 'history-card', 'faction-card'].map(id => {
         const r = document.getElementById(id).getBoundingClientRect(); return [id, { x: r.x, w: r.width }]; }))""")
 
 def show(page, tab, width):
@@ -73,19 +73,20 @@ def main():
         page.emulate_media(color_scheme="dark")
         show(page, "dashboard", 1280)
         c = cards(page)
+        # NX1: Stages is a row inside the top card now (no #stage-card), so these checks use the top card, which also takes the full row.
         # DB1: the Stages card is now one folding row under the top card, so it no longer sits beside the faction card; each takes a full row (Palette and Achievements stay side by side).
-        check("3 factions: the Stages row and the faction card each take the full row", c["stage-card"]["w"] > 1000 and c["faction-card"]["w"] > 1000 and c["faction-card"]["x"] == c["stage-card"]["x"], c)
+        check("3 factions: the top card (with its Stages row) and the faction card each take the full row", c["headline-card"]["w"] > 1000 and c["faction-card"]["w"] > 1000 and c["faction-card"]["x"] == c["headline-card"]["x"], c)
         # AB8: Armies are rows by default now; the full-row widening is for the doughnut chart (rows stay beside By stage), so this check asks for doughnuts.
         load(page, units=units(7), settings={"factionView": "doughnuts"})
         for w in (900, 1280, 1920):
             show(page, "dashboard", w)
             c = cards(page)
             check(f"7 factions at {w}: stage and faction cards each take the full row",
-                  abs(c["stage-card"]["w"] - c["history-card"]["w"]) < 2 and abs(c["faction-card"]["w"] - c["history-card"]["w"]) < 2, c)
+                  abs(c["headline-card"]["w"] - c["history-card"]["w"]) < 2 and abs(c["faction-card"]["w"] - c["history-card"]["w"]) < 2, c)
             check(f"7 factions at {w}: no sideways scroll", no_sideways(page))
         show(page, "dashboard", 899)
         c = cards(page)
-        check("7 factions at 899: still one column", abs(c["stage-card"]["w"] - c["faction-card"]["w"]) < 2 and no_sideways(page), c)
+        check("7 factions at 899: still one column", abs(c["headline-card"]["w"] - c["faction-card"]["w"]) < 2 and no_sideways(page), c)
 
         print("\n--- 4. Settings ---")
         for scheme in ("dark", "light"):

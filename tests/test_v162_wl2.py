@@ -1,4 +1,5 @@
-"""(FX1: the empty line now reads "Nothing wanted yet.".)
+"""(SHP1 (v167): the models list is now called Wishlist and the "Really want" tick is gone; the checks below follow the new words.)
+(FX1: the empty line now reads "Nothing on your Wishlist yet.".)
 WL2 test for Minifolio (Wish list: Got it turns a wish into a unit, its message and Undo, wishes stay out of every total). New behaviour only."""
 import json, os, sys
 from playwright.sync_api import sync_playwright
@@ -98,7 +99,7 @@ def main():
         bare = stored_units(page)
         check("a wish with no game and no faction becomes a unit with none", len(bare) == 1 and bare[0]["hobby"] == "" and bare[0]["faction"] == "" and bare[0]["count"] == 2, bare)
         check("a wish with no note gives a unit with no note", not bare[0].get("note"))
-        check("the empty list shows one short line", page.text_content("#wish-list").strip() == "Nothing wanted yet.")
+        check("the empty list shows one short line", page.text_content("#wish-list").strip() == "Nothing on your Wishlist yet.")
         fresh(page, [wish(1, "Squad A", "Skirmish", "Bright Host", 2)]); to_wishes(page)
         got(page, 1)
         same = [u for u in stored_units(page) if u["name"] == "Squad A"]

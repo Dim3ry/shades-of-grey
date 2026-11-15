@@ -33,7 +33,7 @@ def add_wish(page, name, count="1", game="", faction="", really=False, note=""):
     page.click("#wish-add")
     page.fill(".wish-form .w-name", name); page.fill(".wish-form .w-count", count)
     page.fill(".wish-form .w-game", game); page.fill(".wish-form .w-faction", faction); page.fill(".wish-form .w-note", note)
-    if really: page.check(".wish-form .w-really")
+    # SHP1: the Really want tick is gone from the form; the argument is kept so callers still read the same
     page.click(".wish-form button[type=submit]")
 
 def main():
@@ -60,13 +60,13 @@ def main():
 
         print("\n--- 2. The list: order, groups, count ---")
         to_wishes(page)
-        check("the count line", page.text_content("#wish-count").strip() == "13 wanted models", page.text_content("#wish-count"))
+        check("the count line", page.text_content("#wish-count").strip() == "13 Wishlist models", page.text_content("#wish-count"))
         check("games A to Z, then factions, with No game and No faction last",
-              heads(page) == ["Fantasy", "Moss Court1 wanted", "Skirmish", "Bright Host2 wanted", "No faction1 wanted", "No game", "No faction1 wanted"], heads(page))
+              heads(page) == ["Fantasy", "Moss Court1 on Wishlist", "Skirmish", "Bright Host2 on Wishlist", "No faction1 on Wishlist", "No game", "No faction1 on Wishlist"], heads(page))
         check("A to Z inside a faction ignores a leading The", names(page) == ["Moss Knights", "Archers", "The Zed Riders", "Gloom Scouts", "Loose Model"], names(page))
         subs = page.evaluate("[...document.querySelectorAll('#wish-list .wish-sub')].map(n => n.textContent)")
         check("each row reads models, game, faction", subs[1].startswith("2 models · Skirmish · Bright Host"), subs)
-        check("Really want shows only on the wish marked so", [("Really want" in s) for s in subs] == [False, True, False, False, False], subs)
+        check("no row shows Really want any more (SHP1)", not any("Really want" in s for s in subs), subs)
         # WL2 made Got it work, so it is now shown on every row (WL2 tests its behaviour). This old check said it was hidden.
         check("Got it is shown on every row", page.evaluate("[...document.querySelectorAll('.wish-got')].length === 5 && [...document.querySelectorAll('.wish-got')].every(b => b.getClientRects().length > 0)"))
 
@@ -85,16 +85,16 @@ def main():
         to_wishes(page)
         add_wish(page, "<b>x</b> Bold", "3", "Skirmish", "Bright Host", True, "note <i>q</i>")
         check("the form shuts and the wish is in its group with its count", page.locator(".wish-form").count() == 0 and "<b>x</b> Bold" in names(page))
-        check("the count line follows", page.text_content("#wish-count").strip() == "16 wanted models", page.text_content("#wish-count"))
+        check("the count line follows", page.text_content("#wish-count").strip() == "16 Wishlist models", page.text_content("#wish-count"))
         check("typed tags show as plain text", page.locator("#wish-list b, #wish-list i").count() == 0)
         check("the message says Added, as plain text", page.text_content("#toast-text").strip() == "Added <b>x</b> Bold" and page.locator("#toast-text b").count() == 0, page.text_content("#toast-text"))
         saved = stored(page)
         w = [x for x in saved if x["name"] == "<b>x</b> Bold"][0]
-        check("saved with id, count, game, faction, flag, note and date",
-              w["count"] == 3 and w["game"] == "Skirmish" and w["faction"] == "Bright Host" and w["really"] is True and w["note"] == "note <i>q</i>" and w["added"] and isinstance(w["id"], int), w)
+        check("saved with id, count, game, faction, the flag (off now, SHP1: no tick), note and date",
+              w["count"] == 3 and w["game"] == "Skirmish" and w["faction"] == "Bright Host" and w["really"] is False and w["note"] == "note <i>q</i>" and w["added"] and isinstance(w["id"], int), w)
         page.click("#wish-add")
-        check("the form has Name, number, Game, Faction, Really want and Note, and the number starts at 1",
-              page.input_value(".w-count") == "1" and not page.is_checked(".w-really") and page.locator(".wish-form .w-note").count() == 1)
+        check("the form has Name, number, Game, Faction, and Note (no Really want tick, SHP1), and the number starts at 1",
+              page.input_value(".w-count") == "1" and page.locator(".w-really").count() == 0 and page.locator(".wish-form .w-note").count() == 1)
         page.fill(".w-name", "   "); page.click(".wish-form button[type=submit]")
         check("a name of spaces is not saved", len(stored(page)) == 6)
         page.click(".w-cancel")
@@ -118,7 +118,7 @@ def main():
         to_wishes(page)
         check("wishes survive a restart", len(names(page)) == 6, names(page))
         fresh(page); to_wishes(page)
-        check("a save with no wish field loads as an empty list with one short line", names(page) == [] and page.text_content("#wish-list").strip() == "Nothing wanted yet.")
+        check("a save with no wish field loads as an empty list with one short line", names(page) == [] and page.text_content("#wish-list").strip() == "Nothing on your Wishlist yet.")
         add_wish(page, "Kept")
         backup = page.evaluate("JSON.parse(JSON.stringify(backupData()))")
         check("a backup carries the wishes", [w["name"] for w in backup["modelWishes"]] == ["Kept"], backup.get("modelWishes"))
