@@ -1,7 +1,7 @@
 """AB5 tests: corners follow the look, and Classic's corner marks sit on the headline card and the Mentor window only.
 1. No listed rule keeps a literal pill or 12 to 22 px corner: chips, status tags, Mentor window and bubbles use the look's radius.
 2. Forge's control radius is square and Parchment's is 2 px, on real chips, the Mentor input and Send.
-3. In Classic only #headline-card and the open Mentor window draw corner marks; other cards are a plain 1 px line.
+3. In Classic the headline card and the open Mentor window draw corner marks (CM1: so does every other top-level card).
 4. The Classic theme button in Settings still shows the marks."""
 import os, re, sys
 from playwright.sync_api import sync_playwright
@@ -66,7 +66,8 @@ def main():
             head = [n for i, n in marks if i == "headline-card"]
             others = [n for i, n in marks if i != "headline-card"]
             check(f"classic {mode}: the headline card has eight corner strokes", head == [8], marks)
-            check(f"classic {mode}: every other card on the page has none", others and all(n == 0 for n in others), marks)
+            # CM1 supersedes AB5 here: every outermost card on the page now has the marks (see test_v169_cm1.py), so "no other card has them" no longer holds.
+            check(f"classic {mode}: the other top-level cards on the page are marked too (CM1)", others and all(n == 8 for n in others), marks)
             page.click("#mentor-button")
             page.wait_for_selector(".mentor-window", state="visible")
             n = page.evaluate("() => getComputedStyle(document.querySelector('.mentor-window')).backgroundImage.split('linear-gradient').length - 1")

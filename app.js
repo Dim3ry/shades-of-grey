@@ -2663,7 +2663,7 @@
       return box;
     }
 
-    // F1: Suggested, a closed fold-out under the list. It never puts anything on the list (v62 still holds): it shows Empty paints and
+    // F1: Suggested, a closed fold-out under the list. It never puts anything on the list (v62 still holds): it shows Empty paints, SHP3: Running low paints and
     // Not owned paints that one of your own recipes uses, each with its own Add (addToShoppingList, source "Suggested") and Dismiss.
     // Dismiss, and Remove on the list, set shopDismissed on the paint: it stays out until it goes on the list again (applyPaintStatus
     // clears it at Wishlist). Example and made-up paints never show, as on the list. The basket counts only shoppingItems().
@@ -2675,7 +2675,7 @@
       for (const p of book.paints) {
         if (p.shopDismissed === true || isExamplePaint(p) || isMadeUpPaint(p)) continue;
         const s = paintStatus(p);
-        if (s === "empty" || (s === "notowned" && used.has(p.id))) out.push({ paint: p, word: statusLabel(s) });
+        if (s === "empty" || s === "low" || (s === "notowned" && used.has(p.id))) out.push({ paint: p, word: statusLabel(s) });
       }
       return out.sort((a, b) => (a.paint.brand || "￿").localeCompare(b.paint.brand || "￿") || a.paint.name.localeCompare(b.paint.name));
     }
@@ -2687,7 +2687,7 @@
     }
     function addSuggested(id, index) {
       const paint = book.paints.find(p => p.id === id);
-      if (!paint || !addToShoppingList(paint, "Suggested")) return;
+      if (!paint || !addToShoppingList(paint, "Suggested", true)) return;   // SHP3: true lets a Running low paint on, but only because you tapped
       focusSuggested(index);
     }
     function dismissSuggested(id, index) {
@@ -2863,11 +2863,12 @@
       if (!list.some(o => sameText(o, t))) list.push(t);
       paint.shopFrom = list.slice(-5);
     }
-    function addToShoppingList(paint, source) {
+    // SHP3: runningLow = true only from the Suggested fold-out, when you tap Add on a Running low paint (it is still yours, but you want more).
+    function addToShoppingList(paint, source, runningLow) {
       const before = JSON.stringify(book);
       // F1: a paint from Your Palette itself (Suggested) is used as it is, so a same-name paint of another brand is never picked instead
       const mine = book.paints.includes(paint) ? paint : findOrAddPaint(paint.brand, paint.name, "");   // "" = leave a colour you already picked alone
-      if (haveIt(mine)) return false;                            // you own it: nothing to add
+      if (haveIt(mine) && !(runningLow === true && paintStatus(mine) === "low")) return false;   // you own it: nothing to add
       applyPaintStatus(mine, "wishlist");
       noteShopSource(mine, source || "Colour suggestion");        // v40
       const undo = bookUndo(before);                              // DS1
@@ -3017,6 +3018,19 @@
       row.append(slot, who);
       return row;
     }
+    // SHP3: the Add button for a paint in the colour wheel's panel (kept here, outside the wheel code). A row with its fold-out keeps Add inside it;
+    // a row with none (links off, or nothing sells it) gets Add in plain view, its tag taking the focus once it is listed. The wheel paint itself gets one too.
+    function addForWheelRow(door, row, hit, source, hasFold) {
+      if (!door.listMarks || hit.owned || hasFold) return null;
+      const tagEl = row.querySelector(".idea-tag");
+      if (tagEl) tagEl.tabIndex = -1;
+      return buildShopAddRow(hit.paint, source, tagEl);
+    }
+    function addForWheelPaint(door, paint, segKey) {
+      if (!door.listMarks || MinifolioColour.haveIt(paint)) return null;
+      const part = WHEEL.find(w => w.key === segKey);
+      return buildShopAddRow(paint, `Colour Lab: Colour wheel${part ? ", " + part.label : ""}`);
+    }
     // The fold-out for one paint. Returns null when there is nothing to show (you own it, switched off, or no shop sells it).
     function buildShopFoldout(paint, owned, source, ownButton) {
       if (owned || !shopLinksOn() || !paint || !String(paint.name || "").trim()) return null;
@@ -3108,6 +3122,10 @@
     let shopTab = "paints";      // the open tab (kept while the app is open)
     let shoppingFrom = null;     // the screen the Shopping button was tapped on ("launch" = the start page), so Back returns there
     const shopSeg = document.getElementById("shop-seg");
+    const shopAddBtn = document.getElementById("shop-add-btn");     // SHP3: one button under the tabs; its words follow the tab
+    const shopAddSlot = document.getElementById("shop-add-slot");   // SHP3: where the add box (or the Wishlist add form) opens, outside the panels so a redraw does not close it
+    const SHOP_ADD_WORDS = { paints: "+ Add paint", gear: "+ Add gear", wishlist: "+ Add model" };
+    let shopAddTab = "paints";
     function shopActivePanel() { return document.getElementById(SHOP_TABS.find(t => t.id === shopTab).panel); }
     function shopCounts() { return { paints: shoppingItems().length, gear: gearItems().length, wishlist: wishes().length }; }
     function renderShopping() {
@@ -3125,6 +3143,8 @@
         if (t.id !== shopTab) el.replaceChildren();   // a tab that is not showing is empty, so nothing stale (or a second #buy-bar) is left in it
       }
       showShopLinksChoice();
+      shopAddBtn.textContent = SHOP_ADD_WORDS[shopTab];   // SHP3
+      if (shopAddTab !== shopTab) { shopAddTab = shopTab; closeShopAdd(); }
       if (shopTab === "paints") renderShopPanel();
       else if (shopTab === "gear") renderShopGear();
       else renderShopWish();
@@ -3138,6 +3158,156 @@
     shopSeg.addEventListener("click", (event) => {
       const b = event.target.closest("button[data-stab]");
       if (b) setShopTab(b.dataset.stab);
+    });
+    // ----- SHP3: the add button and add box under the Shopping tabs -----
+    // One button whose words follow the tab: "+ Add paint" opens a search over the paint list (a tap on Add puts the paint on the list as Wishlist,
+    // the same addToShoppingList every other route uses), "+ Add gear" opens the product types from Where to buy (the same addGear), "+ Add model" opens
+    // the Models add form. The box lives outside the tab panels, so the list redrawing under it after an Add does not close it. Changing tab closes it.
+    function closeShopAdd() { shopAddSlot.replaceChildren(); shopAddBtn.setAttribute("aria-expanded", "false"); }
+    function shopAddBox(label) {
+      const box = document.createElement("div");
+      box.className = "card shop-add-box";
+      box.setAttribute("role", "group");
+      box.setAttribute("aria-label", label);
+      const search = document.createElement("input");
+      search.type = "search";
+      search.className = "shop-add-search";
+      search.placeholder = label;
+      search.setAttribute("aria-label", label);
+      search.maxLength = 60;
+      const results = document.createElement("ul");
+      results.className = "shop-add-results";
+      const done = document.createElement("button");
+      done.type = "button";
+      done.className = "plain-button shop-add-done";
+      done.textContent = "Done";
+      const close = () => { closeShopAdd(); shopAddBtn.focus(); };
+      done.addEventListener("click", close);
+      box.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); close(); } });
+      box.append(search, results, done);
+      return { box, search, results };
+    }
+    const SHOP_ADD_SHOWN = 20;
+    function shopAddPaintCandidates(query) {
+      const words = sameKey(query).split(/\s+/).filter(Boolean);
+      if (!words.length) return [];
+      const seen = new Set(), out = [];
+      for (const k of [...book.paints.filter(p => !isExamplePaint(p) && !isMadeUpPaint(p)), ...searchedPaints]) {
+        const key = sameKey(k.brand) + "|" + sameKey(k.name);
+        if (seen.has(key)) continue;
+        const hay = sameKey(k.name + " " + (k.brand || ""));
+        if (!words.every(w => hay.includes(w))) continue;
+        seen.add(key);
+        out.push(k);
+        if (out.length > SHOP_ADD_SHOWN) break;
+      }
+      return out;
+    }
+    function buildShopAddPaints() {
+      const { box, search, results } = shopAddBox("Search paints");
+      const draw = () => {
+        results.replaceChildren();
+        const found = shopAddPaintCandidates(search.value);
+        if (!found.length) {
+          if (search.value.trim()) { const none = document.createElement("li"); none.className = "hint shop-add-none"; none.textContent = "No paints found."; results.appendChild(none); }
+          return;
+        }
+        for (const k of found.slice(0, SHOP_ADD_SHOWN)) {
+          const li = document.createElement("li");
+          li.className = "shop-item shop-add-item";
+          const text = document.createElement("span");
+          text.className = "shop-text";
+          const name = document.createElement("span");
+          name.textContent = k.name + (String(k.brand || "").trim() ? ` · ${k.brand}` : "") + " ";
+          text.appendChild(name);
+          li.append(makeSwatch(k.colour), text);
+          const mine = palettePaintFor(k);
+          if (mine && haveIt(mine)) {
+            const own = document.createElement("span");
+            own.className = "shop-onlist";
+            own.textContent = "You own this";
+            li.appendChild(own);
+          } else {
+            const row = buildShopAddRow(k, "Shopping");
+            if (row) li.appendChild(row);
+          }
+          results.appendChild(li);
+        }
+      };
+      search.addEventListener("input", draw);
+      return { box, focus: search };
+    }
+    // Gear: every product type in where-to-buy.js once, under the Guides entry that names it.
+    function buildShopAddGear() {
+      const { box, search, results } = shopAddBox("Search gear");
+      const groups = [];
+      const seen = new Set();
+      for (const key of Object.keys(WHERE_TO_BUY)) {
+        const kind = WHERE_TO_BUY[key].kind;
+        const e = knowledgeIndex().get(key, kind);
+        const types = whereToBuyTypes(key, kind).filter(t => !seen.has(gearId(t)));
+        types.forEach(t => seen.add(gearId(t)));
+        if (types.length) groups.push({ title: e ? e.title : key, types });
+      }
+      groups.sort((a, b) => a.title.localeCompare(b.title));
+      const draw = () => {
+        results.replaceChildren();
+        const words = sameKey(search.value).split(/\s+/).filter(Boolean);
+        let any = false;
+        for (const g of groups) {
+          const types = g.types.filter(t => words.every(w => sameKey(t + " " + g.title).includes(w)));
+          if (!types.length) continue;
+          any = true;
+          const head = document.createElement("li");
+          head.className = "shop-add-group";
+          head.textContent = g.title;
+          results.appendChild(head);
+          for (const type of types) {
+            const li = document.createElement("li");
+            li.className = "shop-item shop-add-item";
+            li.dataset.gear = gearId(type);
+            const text = document.createElement("span");
+            text.className = "shop-text";
+            text.textContent = gearLabel(type);
+            const slot = document.createElement("div");
+            slot.className = "shop-add-row";
+            slot.redrawAdd = () => {   // updateShopFoldouts: follows the list after Add, Remove and Undo
+              slot.replaceChildren();
+              if (gearListed(type)) {
+                const done = document.createElement("span");
+                done.className = "shop-onlist";
+                done.tabIndex = -1;
+                done.textContent = "On your shopping list";
+                slot.appendChild(done);
+                return done;
+              }
+              const add = document.createElement("button");
+              add.type = "button";
+              add.className = "plain-button";
+              add.textContent = "Add to shopping list";
+              labelWithName(add, "", text);
+              add.addEventListener("click", () => { if (!addGear(type, "Shopping")) return; const done = slot.querySelector(".shop-onlist"); if (done) done.focus(); });
+              slot.appendChild(add);
+              return add;
+            };
+            slot.redrawAdd();
+            li.append(text, slot);
+            results.appendChild(li);
+          }
+        }
+        if (!any) { const none = document.createElement("li"); none.className = "hint shop-add-none"; none.textContent = "No gear found."; results.appendChild(none); }
+      };
+      search.addEventListener("input", draw);
+      draw();
+      return { box, focus: search };
+    }
+    shopAddBtn.addEventListener("click", () => {
+      if (shopAddSlot.firstChild) { closeShopAdd(); return; }   // a second tap closes it
+      shopAddBtn.setAttribute("aria-expanded", "true");
+      if (shopTab === "wishlist") { openWishForm(null, shopAddSlot); return; }   // the Models add form; Save redraws this tab (commit)
+      const built = shopTab === "gear" ? buildShopAddGear() : buildShopAddPaints();
+      shopAddSlot.appendChild(built.box);
+      built.focus.focus();
     });
     // Opens the Shopping screen (on a tab if one is named). The Shopping button, and anything that links to the list, comes through here.
     function openShopping(tab) {
@@ -3177,7 +3347,7 @@
       const head = document.createElement("div");
       head.className = "shop-head";
       card.append(head);
-      if (!any) card.append(shopEmptyLine("Nothing to buy. Paints you mark Wishlist appear here."));
+      if (!any) card.append(shopEmptyLine("Paints you add or mark Wishlist appear here."));
       else if (shopLinksOn()) {
         // v52: the explanation of how the shop bar works sits behind one More info
         const shops = document.createElement("p");
@@ -3309,7 +3479,7 @@
       const gear = gearItems();
       const card = document.createElement("div");
       card.className = "card";
-      if (!gear.length) card.append(shopEmptyLine("Nothing to buy. Gear you add from Guides appears here."));
+      if (!gear.length) card.append(shopEmptyLine("Gear you add here or from Guides appears here."));
       else card.append(buildGearList(gear));
       const doneBox = buildBoughtSection("gear");
       if (doneBox) card.appendChild(doneBox);
@@ -3363,7 +3533,7 @@
       const all = wishes();
       const card = document.createElement("div");
       card.className = "card";
-      if (!all.length) card.append(shopEmptyLine("Nothing on your Wishlist yet."));
+      if (!all.length) card.append(shopEmptyLine("Models you add here or in Models appear here."));
       else {
         const list = document.createElement("ul");
         list.className = "wish-units shop-wish-list";
@@ -10750,8 +10920,8 @@
       };
       commit(`${displayName(unit)} moved to Models`, undo, "Undo", UNDO_SECONDS);
     }
-    function closeWishForm() { wishFormSlot.replaceChildren(); }
-    function openWishForm(wish) {
+    function closeWishForm() { wishFormSlot.replaceChildren(); shopAddSlot.replaceChildren(); }   // SHP3: the Shopping screen has its own slot for the same form
+    function openWishForm(wish, slot) {
       closeWishForm();
       const form = document.createElement("form");
       form.className = "card wish-form";
@@ -10818,7 +10988,7 @@
           render();
         }, "Undo", UNDO_SECONDS);
       });
-      wishFormSlot.appendChild(form);
+      (slot || wishFormSlot).appendChild(form);
       q(".w-name").focus();
     }
     document.getElementById("wish-add").addEventListener("click", () => openWishForm(null));
@@ -11954,7 +12124,7 @@
         bottomRow.appendChild(add);
       } else if (recipe.steps.some(st => st.paints.length)) {
         const why = recipeShopPaints(recipe).length ? "You own these paints, or they are already on your list."
-          : "Example paints are made up, so no shop sells them.";
+          : "Example paint. Add your own paint first.";
         bottomRow.appendChild(buildIdleShop({ id: (x) => `recipe-${recipe.id}-${x}` }, "recipe-shop-idle", why));
         bottomRow.lastChild.classList.add("recipe-shop-idle-wrap");
       }
@@ -17197,6 +17367,8 @@
       box.appendChild(title);
       const toRecipe = buildPaintToRecipeRow(door, paint);   // v62: Use in a recipe / Add to a recipe, for the wheel paint itself
       if (toRecipe) box.appendChild(toRecipe);
+      const ownList = addForWheelPaint(door, paint, x.at.seg);   // SHP3
+      if (ownList) box.appendChild(ownList);
       const lines = [title.textContent];
       const say = (text) => {
         const p = document.createElement("p");
@@ -17251,10 +17423,13 @@
           const tag = door.listMarks && !hit.owned ? shopListTag(hit.paint, baseTag) : baseTag;   // v41
           const row = buildIdeaItem(hit.paint, tag, reason, "", null, "idea-pick");
           if (door.listMarks && !hit.owned) watchShopTag(row, hit.paint, baseTag);
+          // SHP3: a paint you do not own keeps its fold-out with Add inside; with no fold-out the Add shows in plain view (see addForWheelRow)
           const shops = door.shops ? buildShopFoldout(hit.paint, hit.owned, panelSource) : null;   // v39: only for paints you do not own; v41: says which wheel part you were in
+          const toList = addForWheelRow(door, row, hit, panelSource, !!shops);
           if (shops) row.appendChild(shops);
           const toRecipe = buildPaintToRecipeRow(door, hit.paint);   // v62
           if (toRecipe) row.appendChild(toRecipe);
+          if (toList) row.appendChild(toList);
           list.appendChild(row);
           lines.push(ideaTextLine(hit.paint, tag, reason, ""));
           if (hit.alsoOwned) row.firstElementChild.after(alsoOwnedLine(hit, null, lines, reason));   // v64: your best paint is a poor fit, so it comes second
@@ -23381,12 +23556,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=168".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=169".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v168";
+    const APP_VERSION = "v169";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;
@@ -23856,6 +24031,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v169", date: "15 Nov 2026", changes: [
+        "Shopping has Add paint, Add gear and Add model buttons, and Add to shopping list now shows in more places. Running low paints can be added from Suggested. In the Classic look the blue corner marks now sit on every main card.",
+        "Fixes and tidying.",
+      ] },
       { version: "v168", date: "15 Nov 2026", changes: [
         "Shopping is now a screen of its own, with a Shopping button at the top of every screen. Inside are Paints, Gear and Wishlist, with a Show shop links switch at the top.",
         "Fixes and tidying.",

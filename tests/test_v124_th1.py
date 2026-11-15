@@ -155,9 +155,13 @@ def main():
             check(f"{mode}: cards have a 1 px line, 6 px corners and eight corner-mark strokes drawn in the accent",
                   card["width"] == "1px" and card["radius"] == "6px" and card["img"].count("linear-gradient") == 8
                   and rgb(re.search(r"rgb\([^)]*\)", card["img"]).group(0)) == rgb(g["--accent"]), card)
-            # AB5 (v134): every other Classic card is a plain 1 px line; the marks are new behaviour tested in test_v134_ab5.
-            check(f"{mode}: other cards are a plain 1 px line with no corner marks",
-                  page.evaluate("""() => { const c = [...document.querySelectorAll('#view-dashboard .card')].find(e => e.id !== 'headline-card'); return !c || getComputedStyle(c).backgroundImage === 'none'; }"""))
+            # CM1 (v169, George 15 Nov): AT-08 / AB5 (marks on the headline card and Mentor window only) is superseded. Every outermost card now has the eight marks;
+            # anything nested inside a card stays plain. The pattern itself is tested in test_v169_cm1.
+            check(f"{mode}: outermost cards have the corner marks, cards nested inside a card have none",
+                  page.evaluate("""() => { const all = [...document.querySelectorAll('#view-dashboard .card')].filter(e => e.getBoundingClientRect().height > 0);
+                    const n = e => getComputedStyle(e).backgroundImage.split('linear-gradient').length - 1;
+                    const outer = all.filter(e => !e.parentElement.closest('.card')), inner = all.filter(e => e.parentElement.closest('.card'));
+                    return outer.length > 1 && outer.every(e => n(e) === 8) && inner.every(e => n(e) === 0); }"""))
             check(f"{mode}: no resting transform or scale on cards or buttons", page.evaluate("""() => [...document.querySelectorAll('.card, .primary-button, .plain-button, .chip')]
                 .every(e => { const s = getComputedStyle(e); return s.transform === 'none' && (s.scale === 'none' || s.scale === '1'); })"""))
             edge = page.evaluate("""() => { const c = [...document.querySelectorAll('#history-card .chip')].find(e => e.getAttribute('aria-pressed') !== 'true' && !e.style.getPropertyValue('--chip-colour'));

@@ -105,7 +105,7 @@ def main():
         e.main_tab(page, "recipes")
         e.recipe_view(page, "shopping")
         shop = page.inner_text("#shop-panel")
-        check("the Shopping page names no example paint and says there is nothing to buy", "Example" not in shop and "Nothing to buy" in shop, shop[:200])
+        check("the Shopping page names no example paint and says there is nothing to buy", "Example" not in shop and "appear here" in shop, shop[:200])   # SHP3: the empty line now says what fills the tab ("Paints you add or mark Wishlist appear here."), no longer "Nothing to buy"
         page.evaluate("() => { applyPaintStatus(book.paints.find(p => p.name === 'Harbour blue'), 'wishlist'); render(); }")
         check("a kept made-up paint put on the wishlist still stays off the list", list_names(page) == [], list_names(page))
         page.evaluate("() => { applyPaintStatus(book.paints.find(p => p.name === 'Cobalt'), 'empty'); render(); }")

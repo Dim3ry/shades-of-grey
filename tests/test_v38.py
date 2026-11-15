@@ -278,10 +278,11 @@ def main():
         check("Escape on the paint itself closes the panel too", page.locator(".paint-panel").count() == 0)
         # screen reader facts
         open_row(page, "Probe Blue")
+        # SHP3: with no shop fold-out a row's tag takes focus (tabindex -1) after Add, as in Colour ideas, so tags are left out of the odd-tabindex check
         sr = page.evaluate("""() => { const p = document.getElementById('cmp-paint-panel'), b = p.previousElementSibling, t = document.getElementById(p.getAttribute('aria-labelledby'));
             const heads = [...document.querySelectorAll('#cmp-wheel-detail h3, #cmp-wheel-detail h4, #cmp-wheel-detail h5')].map(h => h.tagName);
             return { ctl: b.getAttribute('aria-controls') === p.id, named: t && t.textContent, ids: [...document.querySelectorAll('[id]')].map(e => e.id).filter((x, i, a) => a.indexOf(x) !== i),
-                     hidden: p.closest('[aria-hidden=true], [hidden]') === null, lists: p.querySelectorAll('ul > li').length, heads, tabbable: [...p.querySelectorAll('[tabindex]')].map(e => e.tabIndex) }; }""")
+                     hidden: p.closest('[aria-hidden=true], [hidden]') === null, lists: p.querySelectorAll('ul > li').length, heads, tabbable: [...p.querySelectorAll('[tabindex]:not(.idea-tag)')].map(e => e.tabIndex) }; }""")
         check("for a screen reader: the button says expanded and points at the panel, the panel is a group named by its heading, it is not hidden, its rows are real list items, no odd tabindex, and no id appears twice",
               sr["ctl"] and sr["named"].startswith("Matching colours for") and sr["hidden"] and sr["lists"] >= 6 and sr["tabbable"] == [] and sr["ids"] == [], sr)
         check("the headings stay in order (the wheel part h3, groups h4, the panel h5)", "H5" in sr["heads"] and sr["heads"][:1] == ["H3"] and "H4" in sr["heads"], sr["heads"])
