@@ -117,13 +117,23 @@
       if (unreadableParts.length) return false;   // DS1: never write over saved data that couldn't be read
       // v18.3: newer data saved by a newer version of the app? Don't overwrite it.
       if (!checkDataVersion()) return false;
+      // DR1: if storage is full, saved drafts go first (they are only unsaved text), then the save is tried once more.
+      let result = attemptWrite(entries);
+      if (result === "full" && dropSavedDrafts()) {
+        result = attemptWrite(entries);
+        try { queueDraftSync(); } catch (ignored) {}   // drafts on screen are written again, now at their small size
+      }
+      return result !== "full";
+    }
+    // One try at writing everything: "ok", "full" (nothing changed), or "off" (storage switched off; the app carries on).
+    function attemptWrite(entries) {
       const before = [];
       try {
         for (const [key, text] of entries) {
           before.push([key, localStorage.getItem(key)]);
           localStorage.setItem(key, text);
         }
-        return true;
+        return "ok";
       } catch (error) {
         // Put back everything we'd already changed, newest first.
         for (const [key, old] of before.reverse()) {
@@ -131,8 +141,17 @@
         }
         // Storage switched off altogether (some private windows): nothing we can do, and
         // the app still works until it's closed, as before.
-        return !isStorageFull(error);
+        return isStorageFull(error) ? "full" : "off";
       }
+    }
+    // DR1: removes the saved drafts. Returns true if there were any. Not yet set up at start-up: then it does nothing.
+    function dropSavedDrafts() {
+      try {
+        if (localStorage.getItem(DRAFTS_KEY) === null) return false;
+        localStorage.removeItem(DRAFTS_KEY);
+        for (const kind of DRAFT_KINDS) draftWritten[kind] = null;
+        return true;
+      } catch (ignored) { return false; }
     }
 
     // The red banner at the top. It stays up while saving keeps failing, and goes away
@@ -183,7 +202,7 @@
       const copies = document.getElementById("banner-copies");
       if (copies) {
         let offer = false;
-        try { offer = !dataTooNew && !unreadableParts.length && safetyCopyKeys().length > 0; } catch (ignored) {}   // not yet set up at start-up
+        try { offer = !dataTooNew && !unreadableParts.length && (safetyCopyKeys().length > 0 || draftsSize() > 0); } catch (ignored) {}   // not yet set up at start-up
         copies.classList.toggle("hidden", !offer);
       }
       banner.classList.remove("hidden");
@@ -4306,7 +4325,7 @@
     // DS2: the same message, with a Remove safety copies button when storage is full and there are safety copies to remove.
     function notifyFull() {
       let offer = false;
-      try { offer = !dataTooNew && !unreadableParts.length && safetyCopyKeys().length > 0; } catch (ignored) {}
+      try { offer = !dataTooNew && !unreadableParts.length && (safetyCopyKeys().length > 0 || draftsSize() > 0); } catch (ignored) {}
       if (offer) showToast(FULL_MESSAGE, offerRemoveSafetyCopies, "Remove safety copies", 14);
       else notify(fullMessage());
     }
@@ -21152,19 +21171,45 @@
       keys.push(RECIPES_KEY + RECIPES_ONLY_COPY);
       return keys.filter(key => savedText(key) !== null);
     }
+    // DR1: how many characters the kept drafts take (0 if there are none).
+    function draftsSize() {
+      const text = savedText(DRAFTS_KEY);
+      return text === null ? 0 : DRAFTS_KEY.length + text.length;
+    }
+    const kbOf = (chars) => Math.max(1, Math.round(chars / 1024));
+    // DR1: asks, then throws away the kept drafts. After "Remove" the full save is tried again by the caller.
+    function offerClearDrafts(done) {
+      const size = draftsSize();
+      if (!size) { done(); return; }
+      askYesNo(`Unsaved drafts use about ${kbOf(size)} KB. Throw them away? This can't be undone.`, () => {
+        dropSavedDrafts();
+        for (const kind of DRAFT_KINDS) draftOffers[kind] = null;
+        renderUnits();
+        renderRecipes();
+        done();
+      }, { yes: "Throw away", no: "Keep", danger: true, onNo: done, onNoButton: done });
+    }
     // Offered when a save fails because storage is full (the red banner, and the "couldn't be saved" message). It asks first.
     function offerRemoveSafetyCopies() {
       const keys = safetyCopyKeys();
-      if (!keys.length) { notify("There are no safety copies to remove."); return; }
-      const kb = Math.max(1, Math.round(keys.reduce((sum, key) => sum + key.length + (savedText(key) || "").length, 0) / 1024));
-      askYesNo(`Remove the safety copies kept on this device (about ${kb} KB)? Recover earlier data can't bring them back afterwards.`, () => {
-        for (const key of safetyCopyKeys()) { try { localStorage.removeItem(key); } catch (ignored) {} }
+      const drafts = draftsSize();
+      if (!keys.length && !drafts) { notify("There are no safety copies to remove."); return; }
+      const finish = () => {
         const wasFailing = saveFailing;
         const ok = saveAll();
         renderRecover();
         if (settings.tab === "settings") renderSettings();
-        if (ok) showToast(wasFailing ? "Safety copies removed. Everything is saved." : "Safety copies removed. Please try again.");
-        else notify("Safety copies removed, but storage is still full. Please save a backup, then remove units you no longer need.");
+        const what = keys.length ? "Safety copies removed" : "Drafts cleared";
+        if (ok) showToast(wasFailing ? `${what}. Everything is saved.` : `${what}. Please try again.`);
+        else notify(`${what}, but storage is still full. Please save a backup, then remove units you no longer need.`);
+      };
+      const removeCopies = () => { for (const key of safetyCopyKeys()) { try { localStorage.removeItem(key); } catch (ignored) {} } };
+      if (!keys.length) { offerClearDrafts(finish); return; }
+      const kb = kbOf(keys.reduce((sum, key) => sum + key.length + (savedText(key) || "").length, 0));
+      const draftLine = drafts ? ` Unsaved drafts use about ${kbOf(drafts)} KB.` : "";
+      askYesNo(`Remove the safety copies kept on this device (about ${kb} KB)? Recover earlier data can't bring them back afterwards.${draftLine}`, () => {
+        removeCopies();
+        offerClearDrafts(finish);
       }, { yes: "Remove", danger: true });
     }
     document.getElementById("banner-copies").addEventListener("click", offerRemoveSafetyCopies);
@@ -23358,7 +23403,8 @@
     const DRAFT_KINDS = ["unit", "recipe", "paste"];
     const DRAFT_SYNC_MS = 300;        // how long after the last change a draft is written
     const DRAFT_SAFETY_MS = 4000;     // the safety net
-    const DRAFT_TEXT_LIMIT = 500000;  // longest piece of text a draft keeps
+    const DRAFT_TEXT_LIMIT = 50000;   // DR1: longest piece of text a draft keeps (was 500,000, which could fill the storage)
+    const DRAFT_STEP_NOTE_LIMIT = 2000;   // DR1: one recipe step's note
     let draftOffers = { unit: null, recipe: null, paste: null };    // kept drafts waiting for an answer
     const draftWritten = { unit: null, recipe: null, paste: null }; // what THIS window last wrote (null = nothing)
     let draftSyncTimer = null;
@@ -23395,7 +23441,7 @@
         notes: draftText(d.notes), linkUnit: Number.isInteger(d.linkUnit) ? d.linkUnit : null,
         steps: d.steps.map(s => ({
           technique: draftText(s.technique, 300), coats: s.coats, ratio: draftText(s.ratio, 300),
-          note: draftText(s.note), optional: !!s.optional,
+          note: draftText(s.note, DRAFT_STEP_NOTE_LIMIT), optional: !!s.optional,
           paints: s.paints.map(p => ({
             brand: draftText(p.brand, 300), name: draftText(p.name, 300), colour: p.colour,
             mix: p.mix === undefined ? null : p.mix, type: typeof p.type === "string" ? p.type : undefined,
@@ -23422,7 +23468,7 @@
       if (!raw || typeof raw !== "object" || !Array.isArray(raw.steps)) return null;
       const steps = raw.steps.slice(0, 60).filter(s => s && typeof s === "object" && Array.isArray(s.paints)).map(s => ({
         technique: draftText(s.technique, 300), coats: cleanCount(s.coats), ratio: draftText(s.ratio, 300),
-        note: draftText(s.note), optional: s.optional === true,
+        note: draftText(s.note, DRAFT_STEP_NOTE_LIMIT), optional: s.optional === true,
         paints: s.paints.slice(0, 12).filter(p => p && typeof p === "object").map(p => {
           const paint = { brand: draftText(p.brand, 300), name: draftText(p.name, 300), colour: goodDraftColour(p.colour), mix: cleanMix(p.mix) };
           if (typeof p.type === "string") paint.type = p.type.slice(0, 100);
