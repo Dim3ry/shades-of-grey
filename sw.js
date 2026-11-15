@@ -92,7 +92,7 @@ const APP_FILES = [
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png",
-  "./ocr/ocr-worker.js",
+  "./ocr/ocr-worker.js" + CODE_TAG,  // UP1: versioned like the scripts, so an old page never gets a newer worker
   "./fonts/LICENSES.md",  // CR1: the licence texts the Credits page links to, saved so they open offline
   "./ocr/LICENSE-tesseract.txt",
   "./ocr/LICENSE-leptonica.txt",  // LC1: licences for two libraries inside the label-reader engine
