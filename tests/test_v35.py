@@ -94,7 +94,7 @@ def pick_base(page, value):
 
 def comp_role(page, key):
     page.click(f'#compendium-body [data-role="{key}"]')
-    page.wait_for_timeout(120)
+    quiet(page)
 
 def comp_idea_rows(page):
     return rows(page, "#cmp-fold-ideas-panel > .idea-list .idea-static")
@@ -200,7 +200,7 @@ def main():
         # U4b (v89): a reload shows the start page; the Compendium is one tap away.
         check("reloading the app shows the start page, and tapping Compendium opens it", page.evaluate("() => document.body.classList.contains('launching')") and not page.is_visible("#view-guides"))
         labh.go_compendium(page)
-        page.wait_for_timeout(150)
+        quiet(page)
         check("...Compendium opens from the start page", page.is_visible("#view-guides"))
         check("Back from the Compendium goes to the Dashboard", page.evaluate("() => typeof backTarget() === 'function'"))
         page.set_viewport_size({"width": 1100, "height": 800})
@@ -253,7 +253,7 @@ def main():
             both_same.append((role, card == cmp_rows and len(card) == 3 and tip_card == page.inner_text("#cmp-colour-ideas-tip"), card, cmp_rows))
             blur(page)
             page.click('nav button[data-tab="recipes"]')
-            page.wait_for_timeout(150)
+            quiet(page)
         bad = [x for x in both_same if not x[1]]
         check("for the same colour, each of the six roles gives the same three ideas (names, tags, reasons, notes) and the same tip in the card and in the Compendium", not bad, bad[:1])
 
@@ -262,7 +262,7 @@ def main():
             for key in key_list:
                 blur(page)
                 page.click('nav button[data-tab="recipes"]')
-                page.wait_for_timeout(100)
+                quiet(page)
                 card_pick(page, chip_part, key)
                 card_rows = rows(page, f"#{card_id} button.idea-pick")
                 open_comp(page)
@@ -294,18 +294,18 @@ def main():
         check("a starter scheme shows its summary and reason, and four plain rows", page.inner_text("#cmp-starter-summary") == "Cold blue armour, gold trim, red eyes"
               and "classic pair" in page.inner_text("#cmp-starter-reason") and page.locator("#cmp-starter-list .idea-static").count() == 4)
         pick_mood = page.click('#cmp-starter-moods [data-mood="warm"]')
-        page.wait_for_timeout(120)
+        quiet(page)
         check("the mood buttons work in the Compendium (Warm shows six, and the scheme outside the mood is put away)",
               page.locator("#cmp-starter-chips .chip").count() == 6 and page.locator("#cmp-starter-list").count() == 0)
         page.click('#cmp-starter-moods [data-mood="all"]')
-        page.wait_for_timeout(120)
+        quiet(page)
         check("All brings back all of them", page.locator("#cmp-starter-chips .chip").count() == len(keys_s))
         page.click('#cmp-detail-groups [data-detail-group="metal"]')
-        page.wait_for_timeout(120)
+        quiet(page)
         check("the detail recipe group buttons work in the Compendium", 0 < page.locator("#cmp-detail-chips .chip").count() < len(keys_d))
         page.click('#cmp-detail-groups [data-detail-group="all"]')
         page.click('#cmp-basing-groups [data-basing-group="cold"]')
-        page.wait_for_timeout(120)
+        quiet(page)
         check("the basing tip group buttons work in the Compendium", 0 < page.locator("#cmp-basing-chips .chip").count() < len(keys_b))
         page.click('#cmp-basing-groups [data-basing-group="all"]')
         cmp_pick(page, "basing-chips", "snow")
@@ -346,18 +346,18 @@ def main():
               and page.locator("#colour-ideas .idea-add").count() >= 10 and page.locator("#colour-ideas .share-row, #colour-ideas .idea-static").count() == 0)
         n0 = page.evaluate("() => recipeDraft.steps.length")
         page.click("#starter-list button.idea-pick >> nth=0")
-        page.wait_for_timeout(200)
+        quiet(page)
         steps = draft_steps(page)
         check("tapping a starter scheme paint in the card still adds a step with the starter note", len(steps) == n0 + 1 and steps[-1]["note"].startswith("Starter scheme (Cold blue and gold): "), steps[-1])
         page.click("#detail-add-all")
-        page.wait_for_timeout(250)
+        quiet(page)
         check("Add all steps in the card still adds every step of the detail recipe, with technique, coats and mix kept",
               page.evaluate("() => recipeDraft.steps.length") > n0 + 2 and draft_steps(page)[-1]["tech"] != "", draft_steps(page)[-3:])
         page.click("#recipe-page button.plain-button:has-text('Cancel')")
-        page.wait_for_timeout(250)
+        quiet(page)
         if page.is_visible("#dialog-yes"):
             page.click("#dialog-yes")
-            page.wait_for_timeout(250)
+            page.wait_for_selector("#dialog-backdrop", state="hidden")
 
         # ---------- 5. Your schemes (faction history) ----------
         print("\n--- 5. Your schemes ---")
@@ -370,7 +370,7 @@ def main():
         page.click("#cmp-faction-history-pick-toggle")
         check("until you choose one it says to choose a faction", "Choose a faction above" in page.inner_text("#cmp-faction-history-none"))
         pick_combo(page, "#cmp-faction-history-pick", text="Gloom Legion")
-        page.wait_for_timeout(150)
+        quiet(page)
         hist = rows(page, "#cmp-faction-history-list .idea-static")
         check("Gloom Legion shows the paints from the recipes on its units, most used first, then by name",
               [h["name"] for h in hist] == ["Mid Blue A", "Macragge Blue", "Burnt Orange", "Fire Dragon Bright", "Ink Sky", "Troll Slayer Orange"], [h["name"] for h in hist])
@@ -380,13 +380,13 @@ def main():
         check("the faction is named and the focus stays in the faction box", "Gloom Legion" in page.inner_text("#cmp-faction-history-for")
               and page.evaluate("() => document.activeElement.id") == "cmp-faction-history-pick")
         pick_combo(page, "#cmp-faction-history-pick", text="Lonely Host")
-        page.wait_for_timeout(150)
+        quiet(page)
         check("a faction whose units have no saved recipes says there is no history yet", "No history yet" in page.inner_text("#cmp-faction-history-empty"))
         pick_combo(page, "#cmp-faction-history-pick", text="Other Host")
-        page.wait_for_timeout(150)
+        quiet(page)
         check("Other Host shows only its own paint", [h["name"] for h in rows(page, "#cmp-faction-history-list .idea-static")] == ["Evil Sunz Scarlet"])
         pick_combo(page, "#cmp-faction-history-pick", text="Gloom Legion")
-        page.wait_for_timeout(150)
+        quiet(page)
         # the card in a recipe for Gloom Legion gives the same rows (apart from the paints already in that recipe)
         check("the faction history has Copy as text and Save into a new recipe…", page.locator("#cmp-faction-history .share-row button").count() == 2)
         load(page, recipes=RECIPES, units=[unit(1, "Solo", "")])
@@ -438,7 +438,7 @@ def main():
               text.splitlines()[0] == "Basing tip: Snow" and "What you need:" in text and "How to build it:" in text and "Paint steps (optional):" in text
               and "1. " in text and text.splitlines()[-1].startswith("Colours on a screen"), text[:200])
         pick_combo(page, "#cmp-faction-history-pick", text="Gloom Legion")
-        page.wait_for_timeout(150)
+        quiet(page)
         page.click("#cmp-faction-history .share-row button:has-text('Copy as text')")
         text = copied(page)
         check("Copy as text on Your schemes: the faction and one line per paint", text.splitlines()[0] == "Colours used on this faction before: Gloom Legion" and len(text.splitlines()) == 8, text)
@@ -446,11 +446,11 @@ def main():
         # without a clipboard the app's own box shows the text
         page.evaluate("() => { Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined }); document.execCommand = () => false; }")
         page.click("#cmp-faction-history .share-row button:has-text('Copy as text')")
-        page.wait_for_timeout(250)
+        quiet(page)
         check("if the phone will not let the app copy, the app's own box shows the text to copy by hand",
               page.is_visible("#dialog-area") and "Colours used on this faction before" in page.input_value("#dialog-area"), page.is_visible("#dialog-area"))
         page.locator("#dialog-buttons button:visible").last.click()
-        page.wait_for_timeout(200)
+        quiet(page)
 
         # Save into a new recipe
         load(page, recipes=RECIPES, units=UNITS)
@@ -459,7 +459,7 @@ def main():
         cmp_pick(page, "detail-chips", keys_d[0])
         d0 = page.evaluate("(k) => DETAIL_RECIPES.find(r => r.key === k)", keys_d[0])
         page.click("#cmp-detail-recipes .share-row button:has-text('Save into a new recipe')")
-        page.wait_for_timeout(350)
+        quiet(page)
         steps = draft_steps(page)
         check("Save into a new recipe… opens the recipe editor with a new, unnamed recipe",
               page.evaluate("() => settings.tab") == "recipes" and page.is_visible("#recipe-page") and page.evaluate("() => recipeDraft.id") is None and page.evaluate("() => recipeDraft.name") == "")
@@ -469,18 +469,18 @@ def main():
         check("a message says it started a new recipe and to press Save recipe", "Started a new recipe with" in toast(page) and "Save recipe" in toast(page), toast(page))
         check("nothing is saved yet", stored_recipes(page) == before)
         page.click("#recipe-page button.plain-button:has-text('Cancel')")
-        page.wait_for_timeout(250)
+        quiet(page)
         check("Cancel asks first (the steps are not saved anywhere)", page.is_visible("#dialog-yes") and page.evaluate("() => recipeDraft") is not None)
         page.click("#dialog-yes")
-        page.wait_for_timeout(250)
+        page.wait_for_selector("#dialog-backdrop", state="hidden")
         check("after Yes the draft is gone and still nothing was saved", page.evaluate("() => recipeDraft") is None and stored_recipes(page) == before)
         open_comp(page)
         page.click("#cmp-detail-recipes .share-row button:has-text('Save into a new recipe')")
-        page.wait_for_timeout(350)
+        quiet(page)
         page.fill("#recipe-page input >> nth=0", "From the Compendium")
         blur(page)   # leaving the text box first (while it has the cursor the tab bar is hidden and the page shifts when you tap away)
         page.click("#recipe-page button.primary-button:has-text('Save recipe')")
-        page.wait_for_timeout(300)
+        quiet(page)
         saved = json.loads(stored_recipes(page))
         mine = [r for r in saved["recipes"] if r["name"] == "From the Compendium"]
         check("after Save recipe the new recipe is in your recipes with all its steps", len(mine) == 1 and len(mine[0]["steps"]) == len(d0["steps"]), [r["name"] for r in saved["recipes"]])
@@ -488,15 +488,15 @@ def main():
         # a draft in progress is asked about first
         open_comp(page)
         page.click("#cmp-detail-recipes .share-row button:has-text('Save into a new recipe')")
-        page.wait_for_timeout(350)
+        quiet(page)
         page.fill("#recipe-page input >> nth=0", "Half written")
         blur(page)
         open_comp(page)
         page.click("#cmp-detail-recipes .share-row button:has-text('Save into a new recipe')")
-        page.wait_for_timeout(300)
+        quiet(page)
         check("with a recipe half written, it asks before replacing it", page.is_visible("#dialog-yes"))
         page.click("#dialog-no") if page.locator("#dialog-no").count() else page.keyboard.press("Escape")
-        page.wait_for_timeout(250)
+        page.wait_for_selector("#dialog-backdrop", state="hidden")
         check("saying no keeps the half-written recipe", page.evaluate("() => recipeDraft && recipeDraft.name") == "Half written", page.evaluate("() => recipeDraft && recipeDraft.name"))
         page.evaluate("() => { recipeDraft = null; }")
         # the other parts start recipes too
@@ -505,7 +505,7 @@ def main():
         pick_base(page, BLUE)
         page.evaluate("() => document.activeElement && document.activeElement.blur()")   # v62: see the note at the Copy as text click above
         page.click("#cmp-fold-ideas-panel > .share-row button:has-text('Save into a new recipe')")
-        page.wait_for_timeout(350)
+        quiet(page)
         steps = draft_steps(page)
         # RS3a: the start paint (Macragge Blue) is now step 1 with no note, then the three ideas follow with the note
         check("Save into a new recipe… on the colour ideas makes the start paint plus three steps with the note 'Colour idea for eyes or glow'", len(steps) == 4 and steps[0]["n"] == "Macragge Blue" and steps[0]["note"] == "" and all(s["note"] == "Colour idea for eyes or glow" and s["mix"] == 100 and s["coats"] == 1 for s in steps[1:]), steps)
@@ -513,7 +513,7 @@ def main():
         open_comp(page)
         cmp_pick(page, "basing-chips", "snow")
         page.click("#cmp-basing-tips .share-row button:has-text('Save into a new recipe')")
-        page.wait_for_timeout(350)
+        quiet(page)
         n_paint = page.evaluate("() => BASING_TIPS.find(t => t.key === 'snow').paintSteps.length")
         steps = draft_steps(page)
         check("on a basing tip it takes the paint steps only (never the materials or the how-to steps)", len(steps) == n_paint and all(s["tech"] for s in steps), steps)
@@ -521,7 +521,7 @@ def main():
         open_comp(page)
         cmp_pick(page, "starter-chips", "blue-gold")
         page.click("#cmp-starter-schemes .share-row button:has-text('Save into a new recipe')")
-        page.wait_for_timeout(350)
+        quiet(page)
         steps = draft_steps(page)
         check("on a starter scheme it makes four steps with the starter note", len(steps) == 4 and steps[0]["note"] == "Starter scheme (Cold blue and gold): armour", steps)
         page.evaluate("() => { recipeDraft = null; }")
@@ -564,7 +564,7 @@ def main():
         dupes = page.evaluate("""() => { const seen = {}; for (const e of document.querySelectorAll('[id]')) seen[e.id] = (seen[e.id] || 0) + 1; return Object.entries(seen).filter(([, n]) => n > 1); }""")
         check("with the recipe editor open and the Compendium showing, no page id is used twice", not dupes, dupes[:5])
         page.click('nav button[data-tab="recipes"]')
-        page.wait_for_timeout(200)
+        quiet(page)
         check("the card still has its own pick (green-bone) and the Compendium's pick did not move it", page.evaluate("() => colourIdeasState.scheme") == "green-bone"
               and page.get_attribute('#starter-chips [data-scheme="green-bone"]', "aria-pressed") == "true")
         open_comp(page)
@@ -576,7 +576,7 @@ def main():
         page.evaluate("() => { book.paints.push({ id: 999, brand: 'Test', name: 'Brand New Teal', colour: '#1f9e9a', status: 'owned' }); }")
         blur(page)
         page.click('nav button[data-tab="dashboard"]')
-        page.wait_for_timeout(100)
+        quiet(page)
         open_comp(page)
         page.fill("#cmp-colour-ideas-base", "brand new teal")
         check("a paint added meanwhile shows in the colour chooser when you come back", page.locator("#cmp-colour-ideas-base-list [role=option]:text-is('Brand New Teal (Test)')").count() == 1)
@@ -627,7 +627,7 @@ def main():
         evil_key = page.evaluate("() => { const c = compendiumBaseChoices(); return c.key([...c.own, ...c.other].find(p => p.name.includes('Evil'))); }")
         pick_base(page, evil_key)
         pick_combo(page, "#cmp-faction-history-pick", index=1)
-        page.wait_for_timeout(150)
+        quiet(page)
         cmp_pick(page, "starter-chips", "blue-gold")
         cmp_pick(page, "detail-chips", keys_d[0])
         cmp_pick(page, "basing-chips", "snow")
@@ -640,7 +640,7 @@ def main():
         text = copied(page)
         check("Copy as text keeps it as plain text (the heading names the paint as typed)", text.splitlines()[0].startswith("Colour ideas for eyes or glow with ") and "<img src=x" in text.splitlines()[0], text.splitlines()[0])
         page.click("#cmp-faction-history .share-row button:has-text('Save into a new recipe')")
-        page.wait_for_timeout(350)
+        quiet(page)
         check("a new recipe started from hostile names keeps them as plain text and runs nothing",
               page.evaluate("() => window.__pwned") is None and page.locator("#recipe-page img, #recipe-page script").count() == 0
               and any("<img src=x" in s["n"] for s in draft_steps(page)))
@@ -674,7 +674,7 @@ def main():
                 open_comp(page)
                 pick_base(page, BLUE)
                 pick_combo(page, "#cmp-faction-history-pick", text="Gloom Legion")
-                page.wait_for_timeout(120)
+                quiet(page)
                 cmp_pick(page, "starter-chips", "blue-gold")
                 cmp_pick(page, "detail-chips", keys_d[0])
                 cmp_pick(page, "basing-chips", "snow")
@@ -722,7 +722,7 @@ def main():
         check("the card still ends with its footnote and keeps its Pro preview label", page.text_content("#colour-ideas .pro-pill") == "Pro preview"
               and "Colours on screen are a guide" in page.evaluate("() => document.querySelector('#colour-ideas .ideas-body').lastElementChild.textContent"))
         page.click("#recipe-page button.plain-button:has-text('Cancel')")
-        page.wait_for_timeout(250)
+        quiet(page)
         check("no real browser pop-ups appeared", not [d for d in dialogs if "Do you own" in d], dialogs[:3])
         check("no page errors", not errors, errors[:3])
         browser.close()

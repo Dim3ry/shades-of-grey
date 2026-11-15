@@ -151,8 +151,9 @@ def main():
         # ---------- 7. Safety copies ----------
         print("\n--- 7. Recovering a safety copy ---")
         t.load(page, settings={"tab": "units", "examplesChecked": True})
+        # TQ2: the copy is dated today, not a fixed day: the app forgets safety copies older than 30 days, so '2026-10-20' would stop working on 20 Nov 2026
         page.evaluate("""([s, m]) => localStorage.setItem('mini-tracker-models-before-restore',
-            JSON.stringify({ date: '2026-10-20', stages: s, doneFrom: 5, models: m }))""", [OLD, UNITS])
+            JSON.stringify({ date: todayISO(), stages: s, doneFrom: 5, models: m }))""", [OLD, UNITS])
         page.reload()
         app_ready(page)
         leave_launch(page)   # U4b: tap through the start page

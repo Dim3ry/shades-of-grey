@@ -139,7 +139,7 @@ def type_into(page, sel, text):
     page.click(sel)
     page.fill(sel, "")
     page.keyboard.type(text)
-    page.wait_for_timeout(60)
+    quiet(page)
 
 def option_texts(page, list_sel):
     return page.evaluate("(s) => [...document.querySelectorAll(s + ' [role=option]')].map(o => o.textContent)", list_sel)
@@ -217,7 +217,7 @@ def main():
         # F2: with paints you own (14 here), Start from shows them as swatches and a tap in the box no longer opens the long list by itself;
         # the More paints button opens it, with the focus in the box (test_v127_f2 checks the tap). The checks below are otherwise unchanged.
         page.click("#cmp-start-more")
-        page.wait_for_timeout(100)
+        quiet(page)
         check("More paints opens the list: aria-expanded true, the list shows, and the status says how many paints there are",
               page.get_attribute(BASE, "aria-expanded") == "true" and page.is_visible(LIST) and status(page, STAT) == f"{len(texts)} paints. Type to narrow the list.", status(page, STAT))
         opts = page.evaluate("""() => [...document.querySelectorAll('#cmp-colour-ideas-base-list [role=option]')].map(o => ({ id: o.id, sel: o.getAttribute('aria-selected'),
@@ -230,7 +230,7 @@ def main():
               groups and groups[0] == ["Paints you own", "presentation"] and any(g[0].startswith("More ") for g in groups), groups[:4])
         check("the first lines are your own paints (owned first)", option_texts(page, LIST)[:3] == sorted(option_texts(page, LIST)[:3]) and "Macragge Blue (Citadel)" in option_texts(page, LIST)[:14])
         page.keyboard.press("Escape")
-        page.wait_for_timeout(60)
+        quiet(page)
         check("Escape closes it again (aria-expanded false, list hidden, status empty)", page.get_attribute(BASE, "aria-expanded") == "false" and not page.is_visible(LIST) and status(page, STAT) == "")
 
         # narrowing: every query is checked against an independent copy of the rule
@@ -280,7 +280,7 @@ def main():
         check("the highlighted line is scrolled into view inside the list",
               page.evaluate("() => { const l = document.getElementById('cmp-colour-ideas-base-list'), e = document.querySelector('#cmp-colour-ideas-base-list .is-active'); const a = l.getBoundingClientRect(), b = e.getBoundingClientRect(); return b.top >= a.top - 1 && b.bottom <= a.bottom + 1; }"))
         page.keyboard.press("Enter")
-        page.wait_for_timeout(200)
+        quiet(page)
         picked = page.evaluate("() => compendiumState.base")
         check("Enter picks the highlighted paint: the box shows its name, the list closes, the Colour ideas below appear, and the focus stays in the box",
               picked != "" and page.get_attribute(BASE, "aria-expanded") == "false" and page.input_value(BASE) in texts and page.locator("#cmp-fold-ideas-panel [data-role]").count() == 6
@@ -297,7 +297,7 @@ def main():
         type_into(page, BASE, "troll slayer")
         one = page.locator(f"{LIST} [role=option]").count()
         page.keyboard.press("Enter")
-        page.wait_for_timeout(200)
+        quiet(page)
         check("Enter with exactly one match and nothing highlighted picks that match", one == 1 and page.input_value(BASE).startswith("Troll Slayer Orange") and page.evaluate("() => compendiumState.base") == "citadel|troll slayer orange", (one, page.input_value(BASE)))
         # escape restores
         type_into(page, BASE, "xyz")
@@ -306,13 +306,13 @@ def main():
         # a tap on a line (touch and mouse): the list is a pointer thing too
         type_into(page, BASE, "macragge")
         page.click(f'{LIST} [role=option]')
-        page.wait_for_timeout(200)
+        quiet(page)
         check("tapping a line picks it, closes the list, and the focus goes to the button next to the box (no keyboard pops up on a phone)",
               page.evaluate("() => compendiumState.base") == "citadel|macragge blue" and page.get_attribute(BASE, "aria-expanded") == "false"
               and page.evaluate("() => document.activeElement.id") == "cmp-colour-ideas-base-toggle")
         # scroll and pick, down to the very last paint
         page.click(TOG)
-        page.wait_for_timeout(100)
+        quiet(page)
         for _ in range(120):   # v48: about 4,000 paints now (was about 1,200), so more turns of the wheel
             if page.locator(f"{LIST} [role=option]").count() >= len(texts):
                 break
@@ -324,37 +324,37 @@ def main():
         last = page.locator(f'{LIST} [role=option][aria-posinset="{len(texts)}"]')
         last_text = last.inner_text()
         last.click()
-        page.wait_for_timeout(200)
+        quiet(page)
         check("you can scroll to the very last paint and pick it: the box shows it and Colour ideas follows", page.input_value(BASE) == last_text == texts[-1] and page.locator("#cmp-fold-ideas-panel .idea-static").count() == 3, (page.input_value(BASE), last_text))
         # clear
         check("a Clear button shows while a paint is chosen", page.is_visible(CLR))
         page.click(CLR)
-        page.wait_for_timeout(200)
+        quiet(page)
         check("Clear takes the paint away: the box is empty, the ideas go, the focus goes to the box, and the Clear button hides",
               page.input_value(BASE) == "" and page.evaluate("() => compendiumState.base") == "" and page.locator("#cmp-colour-ideas-none").count() == 1
               and page.evaluate("() => document.activeElement.id") == "cmp-colour-ideas-base" and not page.is_visible(CLR))
         # outside tap and Tab close it
         page.click("#cmp-start-more")   # F2: (was a tap in the box) More paints opens the list now
-        page.wait_for_timeout(60)
+        quiet(page)
         page.click("#cmp-wheel-hint")
-        page.wait_for_timeout(80)
+        quiet(page)
         check("tapping anywhere outside closes the list", page.get_attribute(BASE, "aria-expanded") == "false" and not page.is_visible(LIST))
         page.click("#cmp-start-more")   # F2: (was a tap in the box) More paints opens the list with the focus in the box
         page.keyboard.press("Tab")
-        page.wait_for_timeout(80)
+        quiet(page)
         check("pressing Tab closes the list and moves on (the list never traps the keyboard)", page.get_attribute(BASE, "aria-expanded") == "false" and page.evaluate("() => document.activeElement.id") != "cmp-colour-ideas-base")
         page.click(TOG)
-        page.wait_for_timeout(80)
+        quiet(page)
         was_open = page.get_attribute(BASE, "aria-expanded") == "true"
         page.click(TOG)
-        page.wait_for_timeout(80)
+        quiet(page)
         check("the button opens the list and closes it again", was_open and page.get_attribute(BASE, "aria-expanded") == "false" and page.get_attribute(TOG, "aria-expanded") == "false")
         check("opening it changes nothing else: no paint is chosen and the page has not redrawn", page.evaluate("() => compendiumState.base") == "")
         # state kept
         pick_combo(page, BASE, text="Macragge Blue (Citadel)")
         blur(page)
         page.click('nav button[data-tab=\"units\"]')
-        page.wait_for_timeout(100)
+        quiet(page)
         open_tab(page)
         check("coming back to the Compendium, the paint you chose is still in the box (kept while the app is open)", page.input_value(BASE) == "Macragge Blue (Citadel)")
         # empty palette
@@ -380,7 +380,7 @@ def main():
         open_tab(page)
         open_all(page)
         page.click(FT)
-        page.wait_for_timeout(80)
+        quiet(page)
         check("the list holds each faction once, sorted (Gloom Legion once, however it was typed), and says how many there are",
               option_texts(page, FL) == ["Gloom Legion", "Other Host"] and status(page, FS) == "2 factions. Type to narrow the list.", (option_texts(page, FL), status(page, FS)))
         check("it has a label, role combobox, and no group headings (there is only one group)", page.evaluate("() => document.querySelector('label[for=\"cmp-faction-history-pick\"]').textContent") == "Faction"
@@ -396,10 +396,10 @@ def main():
               and page.evaluate("() => document.activeElement.id") == "cmp-faction-history-pick" and page.input_value(FB) == "Gloom Legion", hist)
         page.click(FT)
         page.click(f'{FL} [role=option]:text-is("Other Host")')
-        page.wait_for_timeout(200)
+        quiet(page)
         check("tapping a faction in the list works too", page.evaluate("() => compendiumState.faction") == "other host" and page.input_value(FB) == "Other Host")
         page.click("#cmp-faction-history-pick-clear")
-        page.wait_for_timeout(150)
+        quiet(page)
         check("Clear takes the faction away and says to choose one", page.evaluate("() => compendiumState.faction") == "" and "Choose a faction above" in page.inner_text("#cmp-faction-history-none"))
         load(page, recipes=RECIPES, units=[unit(1, "Solo", "")])
         open_tab(page)
@@ -457,7 +457,7 @@ def main():
             page.evaluate("() => { document.getElementById('cmp-%s-search').__same = 7; }" % key)
             page.click(S)
             page.keyboard.type("blu")
-            page.wait_for_timeout(60)
+            quiet(page)
             check(f"{key}: the box keeps the focus while you type, is never replaced (a half-typed word, a screen reader and a phone keyboard are not interrupted), and keeps what you typed",
                   page.evaluate("() => document.activeElement.id") == f"cmp-{key}-search" and page.evaluate("(k) => document.getElementById('cmp-' + k + '-search').__same", key) == 7 and page.input_value(S) == "blu")
             check(f"{key}: the typed words are kept in the door's state (compendiumState.search.{key})", page.evaluate("(k) => compendiumState.search[k]", key) == "blu")
@@ -474,59 +474,59 @@ def main():
         type_into(page, S, "blue")
         n_all = len(page.evaluate(CHIPS_JS, "#cmp-starter-chips .chip"))
         page.click('#cmp-starter-moods [data-mood="cold"]')
-        page.wait_for_timeout(100)
+        quiet(page)
         cold = page.evaluate(CHIPS_JS, "#cmp-starter-chips .chip")
         want_cold = [x["name"] for x in data["starter"] if x["mood"] == "cold" and hit("blue", x["text"])]
         check("a chosen group still narrows the search: Cold plus 'blue' shows only the cold matches, and the status names the group (N matches in Cold.)",
               cold == want_cold and 0 < len(cold) < n_all and status(page, ST) == f"{len(cold)} {'match' if len(cold) == 1 else 'matches'} in Cold.", (cold, want_cold, status(page, ST)))
         check("the search text is still in the box after the group redrew the page, and the group button stays on", page.input_value(S) == "blue" and page.get_attribute('#cmp-starter-moods [data-mood="cold"]', "aria-pressed") == "true")
         page.click('#cmp-starter-moods [data-mood="cold"]')
-        page.wait_for_timeout(100)
+        quiet(page)
         check("tapping the group again puts the group away but the search still shows its matches", len(page.evaluate(CHIPS_JS, "#cmp-starter-chips .chip")) == n_all)
         page.click('#cmp-starter-view [data-view="combos"]')
-        page.wait_for_timeout(100)
+        quiet(page)
         combos = page.evaluate(CHIPS_JS, "#cmp-starter-chips .chip")
         check("the Themes | Combinations switch keeps the search: the same matches show in Combinations (and the search box is still above the group buttons)",
               combos == [x["name"] for x in data["starter"] if hit("blue", x["text"])] and page.input_value(S) == "blue" and page.locator("#cmp-starter-combos").count() == 1)
         page.click('#cmp-starter-combos [data-combo="blue"]')
-        page.wait_for_timeout(100)
+        quiet(page)
         blues = page.evaluate(CHIPS_JS, "#cmp-starter-chips .chip")
         check("in Combinations a chosen colour group narrows the search too", 0 < len(blues) <= len(combos) and set(blues) <= set(combos) and status(page, ST).endswith("in Blues."), (blues, status(page, ST)))
         page.click('#cmp-starter-view [data-view="themes"]')
-        page.wait_for_timeout(100)
+        quiet(page)
         # pick from search results
         page.fill(S, "")
         page.dispatch_event(S, "input")
         page.click('#cmp-starter-moods [data-mood="cold"]')   # cold is off after the switch? make sure no group is on
-        page.wait_for_timeout(60)
+        quiet(page)
         if page.get_attribute('#cmp-starter-moods [data-mood="cold"]', "aria-pressed") == "true":
             page.click('#cmp-starter-moods [data-mood="cold"]')
         type_into(page, S, "terracotta")
         chosen = page.evaluate(CHIPS_JS, "#cmp-starter-chips .chip")
         page.click("#cmp-starter-chips .chip")
-        page.wait_for_timeout(150)
+        quiet(page)
         check("picking a scheme from the search results shows its summary and its paints, and the search text stays", len(chosen) >= 1 and page.locator("#cmp-starter-list .idea-static").count() == 4 and page.input_value(S) == "terracotta", chosen)
         type_into(page, S, "terracottazzz")
         check("typing on so that the scheme no longer matches hides its paints (and says No matches.)", page.locator("#cmp-starter-list").count() == 0 and status(page, ST) == "No matches.")
         page.fill(S, "")
         page.dispatch_event(S, "input")
-        page.wait_for_timeout(100)
+        quiet(page)
         check("emptying the search keeps a scheme you picked in sight (its group is chosen, so it is not lost)", page.locator("#cmp-starter-list .idea-static").count() == 4 and page.locator("#cmp-starter-chips .chip").count() >= 1)
         # escape and clear
         type_into(page, S, "blue")
         page.keyboard.press("Escape")
-        page.wait_for_timeout(80)
+        quiet(page)
         check("Escape in a search box empties it and the list follows", page.input_value(S) == "" and page.evaluate("() => compendiumState.search.starter") == "")
         type_into(page, S, "blue")
         check("a Clear button shows while there is text", page.is_visible("#cmp-starter-search-clear"))
         page.click("#cmp-starter-search-clear")
-        page.wait_for_timeout(80)
+        quiet(page)
         check("Clear empties the box, puts the focus back in it and hides itself", page.input_value(S) == "" and page.evaluate("() => document.activeElement.id") == "cmp-starter-search" and not page.is_visible("#cmp-starter-search-clear"))
         # kept while the app is open, gone after a reload
         type_into(page, "#cmp-detail-search", "wet")
         blur(page)
         page.click('nav button[data-tab=\"units\"]')
-        page.wait_for_timeout(100)
+        quiet(page)
         open_tab(page)
         check("what you typed is kept while the app is open (leave the tab and come back)", page.input_value("#cmp-detail-search") == "wet" and is_open(page, "detail"))
         page.reload()
@@ -634,7 +634,7 @@ def main():
         wh.zoom_in(page, "blue")
         wh.open_group(page, "blue", "blue")
         page.click("#cmp-wheel-others")
-        page.wait_for_timeout(150)
+        quiet(page)
         info = {}
         for sub in wh.SUBS["blue"]:
             wh.open_group(page, "blue", sub)
@@ -650,7 +650,7 @@ def main():
         check("in a group, yours always come before the built-in paints", all(r["tag"] != "Not in your palette" for r in info["blue"]["rows"][:14]) and all(r["tag"] == "Not in your palette" for r in info["navy"]["rows"][1:]))
         wh.open_group(page, "blue", "blue")   # light is open: tap Blues (switches group)
         page.click("#cmp-wheel-more-blue")
-        page.wait_for_timeout(150)
+        quiet(page)
         rows_blue = page.evaluate(ROWS_JS)
         check("Show all opens that group fully, the button now says Show fewer, is expanded, and keeps the focus",
               len(rows_blue) == per["blue"] + 14 and page.inner_text("#cmp-wheel-more-blue") == "Show fewer" and page.get_attribute("#cmp-wheel-more-blue", "aria-expanded") == "true"
@@ -666,7 +666,7 @@ def main():
         check("Copy as text keeps the group's heading and the paints that show",
               text and "Blue" in text and "Own Blue 00" in text and text.count("Not in your palette") == per["blue"], (text or "")[:200])
         page.click("#cmp-wheel-more-blue")
-        page.wait_for_timeout(100)
+        quiet(page)
         check("Show fewer puts the rest away again", len(page.evaluate(ROWS_JS)) == 14)
         shot(page, "v37b-wheel-blue-390.png")
         # a group with few paints has no button; a group at exactly 12 has none (v63: was 8)
@@ -680,7 +680,7 @@ def main():
         check("with an empty palette a group with no paints of yours says so, and the button shows the built-in ones",
               "You have none of these in your palette yet" in page.inner_text("#cmp-wheel-detail") and page.locator("#cmp-wheel-others").count() == 1)
         page.click("#cmp-wheel-others")
-        page.wait_for_timeout(150)
+        quiet(page)
         gs = wh.open_each_group(page, "purple", lambda p: len(p.evaluate(ROWS_JS)))
         check("then Purple's three groups (Deep purple, Violet, Lavender and lilac) each have built-in paints", all(n >= 1 for n in gs) and len(gs) == 3, gs)
         # every part, every group, built-in: counts equal the data
@@ -694,7 +694,7 @@ def main():
             tap(page, part)
             if page.locator("#cmp-wheel-others").get_attribute("aria-expanded") != "true":
                 page.click("#cmp-wheel-others")
-                page.wait_for_timeout(100)
+                quiet(page)
             gs = page.evaluate(GROUPS_JS)
             want = page.evaluate("(p) => { const o = {}; for (const x of wheelItems().filter(i => i.at.seg === p)) o[x.at.sub] = (o[x.at.sub] || 0) + 1; return WHEEL.find(w => w.key === p).subs.filter(s => o[s.key]).map(s => s.label + ' (' + o[s.key] + ')'); }", part)
             counts_ok.append((part, [g["heading"] for g in gs] == want, max(len(g["rows"]) for g in gs) <= 12))
@@ -712,7 +712,7 @@ def main():
         copy_spy(page)
         page.click(BASE)
         page.fill(BASE, "evil")
-        page.wait_for_timeout(100)
+        quiet(page)
         evil_opts = option_texts(page, LIST)
         check("hostile paint names and brands in the Start from list are plain text (they show as typed) and no script runs",
               any("<img src=x" in o for o in evil_opts) and page.locator("#cmp-colour-ideas-base-list img, #cmp-colour-ideas-base-list b, #cmp-colour-ideas-base-list i, #cmp-colour-ideas-base-list script").count() == 0
@@ -727,7 +727,7 @@ def main():
             for sel in ("#cmp-starter-search", "#cmp-detail-search", "#cmp-basing-search", BASE, FB):
                 page.click(sel)
                 page.fill(sel, q)
-                page.wait_for_timeout(40)
+                quiet(page)
             page.keyboard.press("Escape")
         check("typing hostile text into every search box never makes markup or runs anything, and the No matches. lines never repeat it",
               page.locator("#view-guides img, #view-guides script, #view-guides b, #view-guides iframe").count() == 0 and page.evaluate("() => window.__pwned") is None
@@ -811,7 +811,7 @@ def main():
             check(f"at {width} px every search box is at least 44 px tall, wider than 150 px, inside the card, with its buttons beside it, and the text is 16 px (so a phone does not zoom in)",
                   all(r["h"] >= 44 and r["w"] > 150 and r["inCard"] and r["fits"] and r["font"] >= 16 for r in geo["rows"]) and geo["tog"][0] >= 44 and geo["tog"][1] >= 44 and no_sideways(page), geo)
             page.click("#cmp-start-more")   # F2: with paints you own, a tap in the box no longer opens the long list; More paints does
-            page.wait_for_timeout(100)
+            quiet(page)
             lst = page.evaluate("""() => { const l = document.getElementById('cmp-colour-ideas-base-list').getBoundingClientRect(), card = document.querySelector('#view-guides .card').getBoundingClientRect();
                 return { h: l.height, in: l.left >= card.left - 0.5 && l.right <= card.right + 0.5, vh: window.innerHeight, scrolls: document.getElementById('cmp-colour-ideas-base-list').scrollHeight > document.getElementById('cmp-colour-ideas-base-list').clientHeight }; }""")
             check(f"at {width} px the open list is inside the card, no taller than 300 px (so it is never most of the screen) and scrolls", lst["in"] and 100 < lst["h"] <= 300 and lst["scrolls"] and no_sideways(page), lst)
@@ -838,7 +838,7 @@ def main():
             if page.locator("#cmp-wheel-others").get_attribute("aria-expanded") != "true":
                 page.click("#cmp-wheel-others")
             page.click("#cmp-wheel-more-blue")
-            page.wait_for_timeout(150)
+            quiet(page)
             check(f"at {width} px the group with Show all open fits and nothing scrolls sideways", no_sideways(page) and page.evaluate("() => document.getElementById('cmp-wheel-more-blue').getBoundingClientRect().height") >= 44)
             if width in (360, 400):
                 page.evaluate("() => window.scrollTo(0, 0)")
@@ -854,24 +854,24 @@ def main():
         open_tab(tp)
         open_all(tp)
         tp.tap(TOG)
-        tp.wait_for_timeout(120)
+        quiet(tp)
         check("on a touch phone, tapping the button next to Start from opens the list without the keyboard (the box is not focused)", tp.get_attribute(BASE, "aria-expanded") == "true" and tp.evaluate("() => document.activeElement.id") != "cmp-colour-ideas-base")
         for _ in range(3):
             tp.evaluate("() => { const l = document.getElementById('cmp-colour-ideas-base-list'); l.scrollTop = l.scrollHeight; }")
-            tp.wait_for_timeout(120)
+            quiet(tp)
         target = tp.locator(f"{LIST} [role=option]").nth(70)
         target_text = target.inner_text()
         target.scroll_into_view_if_needed()
         box = target.bounding_box()
         tp.touchscreen.tap(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
-        tp.wait_for_timeout(250)
+        quiet(tp)
         check("on a touch phone, scrolling the list and tapping a line far down picks that paint", tp.input_value(BASE) == target_text and tp.get_attribute(BASE, "aria-expanded") == "false", (tp.input_value(BASE), target_text))
         tp.tap("#cmp-starter-search")
         tp.keyboard.type("blue")
-        tp.wait_for_timeout(100)
+        quiet(tp)
         check("on a touch phone, typing in a list search box shows the matches", tp.locator("#cmp-starter-chips .chip").count() >= 1 and tp.evaluate("() => document.activeElement.id") == "cmp-starter-search")
         tp.tap("#cmp-starter-chips .chip")
-        tp.wait_for_timeout(150)
+        quiet(tp)
         check("and tapping a match shows the scheme's paints", tp.locator("#cmp-starter-list .idea-static").count() == 4)
         touch.close()
 
@@ -888,7 +888,7 @@ def main():
                 page.fill(BASE, "blue")
                 page.keyboard.press("ArrowDown")
                 page.keyboard.press("ArrowDown")
-                page.wait_for_timeout(100)
+                quiet(page)
                 type_into(page, "#cmp-starter-search", "blue")
                 tag = f"{appearance} {width}px"
                 col = page.evaluate("""() => { const bg = (el) => { let e = el; while (e) { const v = getComputedStyle(e).backgroundColor; const m = v.match(/rgba\\(.*,\\s*([\\d.]+)\\)/);
