@@ -81,6 +81,7 @@ def main():
         print("\n--- 4. DATA_VERSION ---")
         dv = vh.data_version()
         check("DATA_VERSION in app.js is a whole number of 1 or more", isinstance(dv, int) and dv >= 1, dv)
+        check("DATA_VERSION is at least 3 (DV3: Gear is protected from older open copies)", dv >= 3, dv)
         check("the app uses that DATA_VERSION", page.evaluate("DATA_VERSION") == dv, page.evaluate("DATA_VERSION"))
         check("a backup carries it", page.evaluate("backupData().dataVersion") == dv)
         check("saved settings carry it",

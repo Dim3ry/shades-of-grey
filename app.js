@@ -77,7 +77,7 @@
     // in a way older copies wouldn't understand. If an OLDER copy of the app (say an installed
     // app that hasn't updated yet, open next to a newer browser tab) finds data saved by a
     // NEWER one, it stops saving and asks you to reload, so it can't damage that newer data.
-    const DATA_VERSION = 2;   // v68: 2, for the "Needs touch-ups" rename (see V61_DEFAULT_STAGES)
+    const DATA_VERSION = 3;   // v68: 2, for the "Needs touch-ups" rename (see V61_DEFAULT_STAGES). DV3: 3, for Gear (book.gear), see below
     let dataTooNew = false;  // true once this copy has seen data from a newer version
     // DS2: every save asks this, so the answer is kept with the settings text it came from, and the settings are read again
     // (JSON.parse) only when that text has changed (another window, or this one saving new settings). Before DS2 every save,
@@ -117,13 +117,23 @@
       if (unreadableParts.length) return false;   // DS1: never write over saved data that couldn't be read
       // v18.3: newer data saved by a newer version of the app? Don't overwrite it.
       if (!checkDataVersion()) return false;
+      // DR1: if storage is full, saved drafts go first (they are only unsaved text), then the save is tried once more.
+      let result = attemptWrite(entries);
+      if (result === "full" && dropSavedDrafts()) {
+        result = attemptWrite(entries);
+        try { queueDraftSync(); } catch (ignored) {}   // drafts on screen are written again, now at their small size
+      }
+      return result !== "full";
+    }
+    // One try at writing everything: "ok", "full" (nothing changed), or "off" (storage switched off; the app carries on).
+    function attemptWrite(entries) {
       const before = [];
       try {
         for (const [key, text] of entries) {
           before.push([key, localStorage.getItem(key)]);
           localStorage.setItem(key, text);
         }
-        return true;
+        return "ok";
       } catch (error) {
         // Put back everything we'd already changed, newest first.
         for (const [key, old] of before.reverse()) {
@@ -131,8 +141,17 @@
         }
         // Storage switched off altogether (some private windows): nothing we can do, and
         // the app still works until it's closed, as before.
-        return !isStorageFull(error);
+        return isStorageFull(error) ? "full" : "off";
       }
+    }
+    // DR1: removes the saved drafts. Returns true if there were any. Not yet set up at start-up: then it does nothing.
+    function dropSavedDrafts() {
+      try {
+        if (localStorage.getItem(DRAFTS_KEY) === null) return false;
+        localStorage.removeItem(DRAFTS_KEY);
+        for (const kind of DRAFT_KINDS) draftWritten[kind] = null;
+        return true;
+      } catch (ignored) { return false; }
     }
 
     // The red banner at the top. It stays up while saving keeps failing, and goes away
@@ -183,7 +202,7 @@
       const copies = document.getElementById("banner-copies");
       if (copies) {
         let offer = false;
-        try { offer = !dataTooNew && !unreadableParts.length && safetyCopyKeys().length > 0; } catch (ignored) {}   // not yet set up at start-up
+        try { offer = !dataTooNew && !unreadableParts.length && (safetyCopyKeys().length > 0 || draftsSize() > 0); } catch (ignored) {}   // not yet set up at start-up
         copies.classList.toggle("hidden", !offer);
       }
       banner.classList.remove("hidden");
@@ -349,6 +368,10 @@
     // v68: "Painted with issues" becomes "Needs touch-ups" for anyone on the v3 to v61 default stages.
     // DATA_VERSION went up to 2 for this, so an older copy of the app left open stops saving
     // instead of writing the old name back. The saveSettings() a little further down saves it.
+    // DV3: DATA_VERSION went up to 3 for Gear (book.gear). An older copy of the app cleans the recipe book without a gear list, so
+    // its next save would have dropped every Gear item. At 3 an older open copy stops saving and shows its Reload banner instead.
+    // Going from 2 to 3 changes no data: the number is stamped on the settings at load and nothing else moves. A backup saved
+    // at version 2 still restores (only a backup NEWER than this copy is refused).
     if (renamedStageList(STAGES) !== STAGES) settings.stages = STAGES = renamedStageList(STAGES);
     // Settings saved before the Done marker existed: use the matching default if the
     // stages are one of the built-in sets, otherwise just the last stage.
@@ -4124,7 +4147,7 @@
       }
       // L1: Gear on the shopping list: [{ id: the product type in lower case, name: the product type, from: the Guides entry's title,
       // bought: true once ticked }]. One item per product type. Optional: absent from older books and backups (then there is none),
-      // and kept off the book when empty, so DATA_VERSION does not change. Plain text only, each cut to 60 characters.
+      // and kept off the book when empty, so the shape of the book is unchanged. DATA_VERSION went to 3 (DV3) so an older open copy cannot save the book without it. Plain text only, each cut to 60 characters.
       const gear = [];
       for (const g of Array.isArray(src.gear) ? src.gear : []) {
         const name = g && typeof g === "object" ? String(g.name ?? "").trim().slice(0, 60) : "";
@@ -4302,7 +4325,7 @@
     // DS2: the same message, with a Remove safety copies button when storage is full and there are safety copies to remove.
     function notifyFull() {
       let offer = false;
-      try { offer = !dataTooNew && !unreadableParts.length && safetyCopyKeys().length > 0; } catch (ignored) {}
+      try { offer = !dataTooNew && !unreadableParts.length && (safetyCopyKeys().length > 0 || draftsSize() > 0); } catch (ignored) {}
       if (offer) showToast(FULL_MESSAGE, offerRemoveSafetyCopies, "Remove safety copies", 14);
       else notify(fullMessage());
     }
@@ -6722,7 +6745,7 @@
       });
 
       // AB8 (AT-20): one row per faction (the default), or one small doughnut per faction, like pie charts in a spreadsheet.
-      // The choice is settings.factionView ("rows" or "doughnuts"; missing or unknown means rows), a small saved setting, so DATA_VERSION stays 2.
+      // The choice is settings.factionView ("rows" or "doughnuts"; missing or unknown means rows), a small saved setting, so DATA_VERSION did not change for it (it was 2 then).
       factionGrid.innerHTML = "";
       const asRows = currentFactionView() === "rows";
       factionGrid.className = asRows ? "faction-rows" : "faction-grid";
@@ -9388,8 +9411,7 @@
     // Make a photo the unit's cover (the picture on its card).
     function setCoverPhoto(model, id) {
       model.coverPhoto = id;
-      render();
-      showToast("Cover photo set");
+      commit("Cover photo set");   // DV3: says "Not saved" if the save failed
     }
 
     // Change a photo's stage, date or model afterwards (from the photo viewer).
@@ -10334,7 +10356,7 @@
     // ================= SF1: SORT MODELS =================
     // The Models list order is settings.unitSort: { mode: "default" | "az" | "stage" | "recent" | "custom", levels: [...] } (levels only for custom).
     // Missing or unknown means the default (Game > Faction > A-Z). It is a small saved setting that travels in backups as "unitSort"; an older
-    // copy of the app ignores it, so DATA_VERSION stays 2. Every order is a list of levels { f: field, rev: bool }; Name A to Z always comes last
+    // copy of the app ignores it, so DATA_VERSION did not change for it (it was 2 then). Every order is a list of levels { f: field, rev: bool }; Name A to Z always comes last
     // as the tie-break. rev flips the first-listed direction of that field (see SORT_FIELDS).
     const SORT_FIELDS = {
       game:    { label: "Game",              short: "Game",              dirs: ["A → Z", "Z → A"] },
@@ -10450,7 +10472,7 @@
 
 
     // ----- WL1: the Models wish list -----
-    // Models the person wants but does not own yet. Saved as settings.modelWishes (an optional list, so DATA_VERSION stays 2; a save with no
+    // Models the person wants but does not own yet. Saved as settings.modelWishes (an optional list, so DATA_VERSION did not change for it (it was 2 then); a save with no
     // field is an empty list). Each wish: { id, name, count, game, faction, really, note, added }. Wishes are never part of any total.
     // Every typed text goes in with textContent, never as HTML.
     const WISH_NOTE_MAX = 300, WISH_MAX = 2000, WISH_NOTE_SHOWN = 60;
@@ -12048,15 +12070,15 @@
       if (!recipe) return;
       const users = unitsUsing(id);
       const inSchemes = book.schemes.filter(s => s.recipes.includes(id));
-      const before = JSON.parse(JSON.stringify(book));   // a copy, for Undo (schemes included)
+      const before = JSON.stringify(book);   // DV3: for Undo by difference (bookUndo), so a later edit is not lost by Undo
       book.recipes = book.recipes.filter(r => r.id !== id);
       for (const s of inSchemes) s.recipes = s.recipes.filter(r => r !== id);
       users.forEach(m => unlinkRecipe(m, id));
       pruneUnusedPaints();
       openRecipeId = null;
-      render();
-      showToast(`Deleted ${recipe.name}`, () => {
-        book = before;
+      const undo = bookUndo(before);   // DV3
+      commit(`Deleted ${recipe.name}`, () => {   // DV3: says "Not saved" if the save failed
+        undo();
         users.forEach(m => linkRecipe(m, id));
         render();
       });
@@ -12086,8 +12108,7 @@
       if (!units.length || !scheme.recipes.length) return;
       const before = units.map(m => [m, m.recipes ? m.recipes.slice() : null]);
       for (const m of units) for (const id of scheme.recipes) linkRecipe(m, id);
-      render();
-      showToast(`${scheme.name} applied to ${plural(units.length, "unit")}`, () => {
+      commit(`${scheme.name} applied to ${plural(units.length, "unit")}`, () => {   // DV3: commit() says "Not saved" if the save failed
         for (const [m, recipes] of before) { if (recipes) m.recipes = recipes; else delete m.recipes; }
         render();
       });
@@ -12633,8 +12654,7 @@
       const index = book.schemes.indexOf(scheme);
       book.schemes.splice(index, 1);
       schemeDraft = null;
-      render();
-      showToast(`Deleted ${scheme.name}`, () => { book.schemes.splice(index, 0, scheme); render(); });
+      commit(`Deleted ${scheme.name}`, () => { book.schemes.splice(index, 0, scheme); render(); });   // DV3
     }
 
     // ----- Your Palette -----
@@ -14006,7 +14026,10 @@
             if (ticked.has(paint.id) && !haveIt(paint)) { applyPaintStatus(paint, "owned"); changed++; }
             else if (!ticked.has(paint.id) && haveIt(paint)) { applyPaintStatus(paint, ""); changed++; }
           }
-          if (changed) commit("Palette updated", () => { book = cleanRecipeBook(JSON.parse(before)); render(); }, null, UNDO_SECONDS);
+          if (changed) {
+            const undo = bookUndo(before);   // DV3: Undo by difference, so a later edit is kept
+            commit("Palette updated", () => { undo(); render(); }, null, UNDO_SECONDS);
+          }
           toHeading();
         },
       });
@@ -21148,19 +21171,45 @@
       keys.push(RECIPES_KEY + RECIPES_ONLY_COPY);
       return keys.filter(key => savedText(key) !== null);
     }
+    // DR1: how many characters the kept drafts take (0 if there are none).
+    function draftsSize() {
+      const text = savedText(DRAFTS_KEY);
+      return text === null ? 0 : DRAFTS_KEY.length + text.length;
+    }
+    const kbOf = (chars) => Math.max(1, Math.round(chars / 1024));
+    // DR1: asks, then throws away the kept drafts. After "Remove" the full save is tried again by the caller.
+    function offerClearDrafts(done) {
+      const size = draftsSize();
+      if (!size) { done(); return; }
+      askYesNo(`Unsaved drafts use about ${kbOf(size)} KB. Throw them away? This can't be undone.`, () => {
+        dropSavedDrafts();
+        for (const kind of DRAFT_KINDS) draftOffers[kind] = null;
+        renderUnits();
+        renderRecipes();
+        done();
+      }, { yes: "Throw away", no: "Keep", danger: true, onNo: done, onNoButton: done });
+    }
     // Offered when a save fails because storage is full (the red banner, and the "couldn't be saved" message). It asks first.
     function offerRemoveSafetyCopies() {
       const keys = safetyCopyKeys();
-      if (!keys.length) { notify("There are no safety copies to remove."); return; }
-      const kb = Math.max(1, Math.round(keys.reduce((sum, key) => sum + key.length + (savedText(key) || "").length, 0) / 1024));
-      askYesNo(`Remove the safety copies kept on this device (about ${kb} KB)? Recover earlier data can't bring them back afterwards.`, () => {
-        for (const key of safetyCopyKeys()) { try { localStorage.removeItem(key); } catch (ignored) {} }
+      const drafts = draftsSize();
+      if (!keys.length && !drafts) { notify("There are no safety copies to remove."); return; }
+      const finish = () => {
         const wasFailing = saveFailing;
         const ok = saveAll();
         renderRecover();
         if (settings.tab === "settings") renderSettings();
-        if (ok) showToast(wasFailing ? "Safety copies removed. Everything is saved." : "Safety copies removed. Please try again.");
-        else notify("Safety copies removed, but storage is still full. Please save a backup, then remove units you no longer need.");
+        const what = keys.length ? "Safety copies removed" : "Drafts cleared";
+        if (ok) showToast(wasFailing ? `${what}. Everything is saved.` : `${what}. Please try again.`);
+        else notify(`${what}, but storage is still full. Please save a backup, then remove units you no longer need.`);
+      };
+      const removeCopies = () => { for (const key of safetyCopyKeys()) { try { localStorage.removeItem(key); } catch (ignored) {} } };
+      if (!keys.length) { offerClearDrafts(finish); return; }
+      const kb = kbOf(keys.reduce((sum, key) => sum + key.length + (savedText(key) || "").length, 0));
+      const draftLine = drafts ? ` Unsaved drafts use about ${kbOf(drafts)} KB.` : "";
+      askYesNo(`Remove the safety copies kept on this device (about ${kb} KB)? Recover earlier data can't bring them back afterwards.${draftLine}`, () => {
+        removeCopies();
+        offerClearDrafts(finish);
       }, { yes: "Remove", danger: true });
     }
     document.getElementById("banner-copies").addEventListener("click", offerRemoveSafetyCopies);
@@ -23218,12 +23267,12 @@
     // ================= UPDATES TAB: CHANGE HISTORY AND FEEDBACK =================
     // WHEN YOU RELEASE AN UPDATE: add a new entry at the TOP of this list, and change
     // APP_VERSION to match. (Also bump VERSION in sw.js, so phones fetch the new copy, and the
-    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=165".
+    // "?v=" number on ALL THIRTEEN script lines in index.html (mentor-looks, early, colour, schemes, detail-recipes, basing-tips, mentor-tips, guides-data, guides-groups, mentor-data, mentor-engine, where-to-buy, app), e.g. "app.js?v=166".
     // The v21.4, v39 to v42 and the newest tests check.)
     // The Updates page shows only the newest UPDATES_SHOWN entries (v45), so older ones can simply be
     // deleted from the bottom of the list: the full history is kept outside this public repo.
     const UPDATES_SHOWN = 5;
-    const APP_VERSION = "v165";
+    const APP_VERSION = "v166";
     // FB1: the version number at the top of every screen is a button. One tap opens Tools, then Updates. The phone's Back button then returns to
     // the screen the person was on (versionFrom); any other move clears it, and Back is as before (to the Dashboard).
     document.getElementById("version-tag").textContent = APP_VERSION;
@@ -23354,7 +23403,8 @@
     const DRAFT_KINDS = ["unit", "recipe", "paste"];
     const DRAFT_SYNC_MS = 300;        // how long after the last change a draft is written
     const DRAFT_SAFETY_MS = 4000;     // the safety net
-    const DRAFT_TEXT_LIMIT = 500000;  // longest piece of text a draft keeps
+    const DRAFT_TEXT_LIMIT = 50000;   // DR1: longest piece of text a draft keeps (was 500,000, which could fill the storage)
+    const DRAFT_STEP_NOTE_LIMIT = 2000;   // DR1: one recipe step's note
     let draftOffers = { unit: null, recipe: null, paste: null };    // kept drafts waiting for an answer
     const draftWritten = { unit: null, recipe: null, paste: null }; // what THIS window last wrote (null = nothing)
     let draftSyncTimer = null;
@@ -23391,7 +23441,7 @@
         notes: draftText(d.notes), linkUnit: Number.isInteger(d.linkUnit) ? d.linkUnit : null,
         steps: d.steps.map(s => ({
           technique: draftText(s.technique, 300), coats: s.coats, ratio: draftText(s.ratio, 300),
-          note: draftText(s.note), optional: !!s.optional,
+          note: draftText(s.note, DRAFT_STEP_NOTE_LIMIT), optional: !!s.optional,
           paints: s.paints.map(p => ({
             brand: draftText(p.brand, 300), name: draftText(p.name, 300), colour: p.colour,
             mix: p.mix === undefined ? null : p.mix, type: typeof p.type === "string" ? p.type : undefined,
@@ -23418,7 +23468,7 @@
       if (!raw || typeof raw !== "object" || !Array.isArray(raw.steps)) return null;
       const steps = raw.steps.slice(0, 60).filter(s => s && typeof s === "object" && Array.isArray(s.paints)).map(s => ({
         technique: draftText(s.technique, 300), coats: cleanCount(s.coats), ratio: draftText(s.ratio, 300),
-        note: draftText(s.note), optional: s.optional === true,
+        note: draftText(s.note, DRAFT_STEP_NOTE_LIMIT), optional: s.optional === true,
         paints: s.paints.slice(0, 12).filter(p => p && typeof p === "object").map(p => {
           const paint = { brand: draftText(p.brand, 300), name: draftText(p.name, 300), colour: goodDraftColour(p.colour), mix: cleanMix(p.mix) };
           if (typeof p.type === "string") paint.type = p.type.slice(0, 100);
@@ -23689,6 +23739,10 @@
     showShopLinksChoice();
 
     const CHANGELOG = [
+      { version: "v166", date: "15 Nov 2026", changes: [
+        "Gear is now protected if the app is open in an older window: the older window asks you to reload instead of saving over it. Undo after deleting a recipe or updating the Palette no longer removes later edits.",
+        "Saving falls back to clearing old drafts when storage is full. Fixes and tidying.",
+      ] },
       { version: "v165", date: "15 Nov 2026", changes: [
         "Wanted models are now kept in the safety copy and in Recover, and a backup with only wanted models restores. Clearer messages when a backup file is cut off, a file cannot be read, saving is switched off or the app cannot start.",
         "A New version ready bar with a Reload button appears after an update. Fixes and tidying.",

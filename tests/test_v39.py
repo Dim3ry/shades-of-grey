@@ -113,7 +113,7 @@ def prows(page):
 
 def open_fold(page, n=0, scope="#cmp-paint-panel"):
     page.locator(f"{scope} .shop-more > summary").nth(n).click()
-    page.wait_for_timeout(100)
+    quiet(page)
 
 def panel_for(page, paints, key="blue", name="Probe Blue", settings=None, **kw):
     load(page, paints=paints, settings=settings, **kw)
@@ -137,15 +137,15 @@ def active(page):
 def go_settings(page):
     blur(page)
     open_settings(page)
-    page.wait_for_timeout(150)
+    quiet(page)
 
 def open_shopping(page):
     blur(page)
     page.click('nav button[data-tab="recipes"]')
-    page.wait_for_timeout(150)
+    quiet(page)
     # v40: the shopping list is its own switch on the Recipes tab (it used to fold out under Your Palette)
     page.click('#recipe-seg [data-view="shopping"]')
-    page.wait_for_timeout(150)
+    quiet(page)
 
 def main():
     with sync_playwright() as p:
@@ -211,7 +211,7 @@ def main():
         before_shape = fold_shape()
         page.evaluate("() => { SHOPS.find(s => s.id === 'firestorm').extra = '&test=1'; }")
         page.click("#cmp-wheel-detail button.idea-link[aria-expanded='true']")
-        page.wait_for_timeout(100)
+        quiet(page)
         open_row(page, "Probe Blue")
         after_shape = fold_shape()
         fs_links = page.evaluate("() => [...document.querySelectorAll('#cmp-paint-panel .shop-links a')].filter(a => a.href.includes('firestormgames')).map(a => a.getAttribute('href'))")
@@ -263,7 +263,7 @@ def main():
         copy_js = "() => { window.__copied = null; Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: (x) => { window.__copied = x; return Promise.resolve(); } } }); }"
         page.evaluate(copy_js)
         page.click("#cmp-paint-panel .share-row button")
-        page.wait_for_timeout(200)
+        quiet(page)
         copied = page.evaluate("() => window.__copied") or ""
         check("Copy as text in the panel is unchanged: it has the colours, and none of the shop words or addresses", "Matching colours for Probe Blue" in copied and not re.search(r"https?:|Shop links|shopping list|Wayland|Firestorm|Element Games", copied), copied[:200])
         panel_for(page, ALL_OWNED)
@@ -296,7 +296,7 @@ def main():
         open_fold(page, 0)
         page.evaluate("() => { document.getElementById('cmp-paint-panel').__mark = 'same panel'; }")
         page.click("#cmp-paint-panel .shop-more .shop-add button")
-        page.wait_for_timeout(250)
+        quiet(page)
         sp = stored_paints(page)
         mine = [x for x in sp if x["name"] == first["name"]]
         check("Add to shopping list puts the paint in your palette as Wishlist (once), with its brand and colour from the built-in list", len(sp) == n_before + 1 and len(mine) == 1 and mine[0].get("status") == "wishlist"
@@ -308,11 +308,11 @@ def main():
         tt = toast(page)
         check("a message says Added <paint> to your shopping list, with an Undo button", tt["text"] == f"Added {first['name']} to your shopping list" and tt["undo"] == "Undo" and tt["kids"] == 0, tt)
         page.click('nav button[data-tab="recipes"]')
-        page.wait_for_timeout(200)
+        quiet(page)
         listed = page.evaluate("(n) => [...document.querySelectorAll('#paint-list li')].some(li => li.textContent.includes(n))", first["name"])
         check("the Your Palette list is already up to date when you go there (nothing to refresh by hand)", listed, first["name"])
         page.click('#recipe-seg [data-view="shopping"]')   # v40: its own switch now
-        page.wait_for_timeout(150)
+        quiet(page)
         shopping = page.inner_text("#shop-panel")
         check("the shopping list shows it, and the Buy these bar offers it", first["name"] in shopping and "Buy these" in shopping, shopping[:200])
         reopen_panel(page)
@@ -321,10 +321,10 @@ def main():
         check("coming back to the Compendium, the paint added a moment ago already says On your shopping list", prows(page)[0]["hasFold"] and page.locator("#cmp-paint-panel .shop-more").first.evaluate("e => !!e.querySelector('.shop-onlist')"))
         open_fold(page, 1)
         page.locator("#cmp-paint-panel .shop-more").nth(1).locator(".shop-add button").click()
-        page.wait_for_timeout(250)
+        quiet(page)
         wish_added = sorted(x["name"] for x in stored_paints(page) if x.get("status") == "wishlist")
         page.click("#toast-undo")
-        page.wait_for_timeout(300)
+        quiet(page)
         sp2 = stored_paints(page)
         wish_after = sorted(x["name"] for x in sp2 if x.get("status") == "wishlist")
         check("Undo takes the second paint off the palette again and leaves the first one alone (the same paints as before the second Add)",
@@ -335,12 +335,12 @@ def main():
         open_fold(page, i_opp)
         before_p = [x for x in stored_paints(page) if x["name"] == "Probe Opposite"][0]
         page.locator("#cmp-paint-panel .shop-more .shop-add button").first.click()
-        page.wait_for_timeout(250)
+        quiet(page)
         after_p = [x for x in stored_paints(page) if x["name"] == "Probe Opposite"]
         check("a paint already in your palette (not owned) becomes Wishlist, keeps its own colour and brand, and is not added twice",
               len(after_p) == 1 and after_p[0]["status"] == "wishlist" and after_p[0]["colour"] == before_p["colour"] and after_p[0]["brand"] == before_p["brand"] and len(stored_paints(page)) == len(UNOWNED), after_p)
         page.click("#toast-undo")
-        page.wait_for_timeout(300)
+        quiet(page)
         undone = [x for x in stored_paints(page) if x["name"] == "Probe Opposite"][0]
         check("Undo puts it back to Not owned, and the panel is still open with the Add button back", undone["status"] == "notowned" and page.locator("#cmp-paint-panel").count() == 1
               and page.locator("#cmp-paint-panel .shop-add button").count() >= 1, undone)
@@ -357,12 +357,12 @@ def main():
               len(card_rows) == 3 and all(r["fold"] and r["open"] is False and r["rowTag"] == "BUTTON" and r["rowCls"] == "idea" and r["add"] and r["kids"] == 2 for r in card_rows), card_rows)
         steps_before = page.evaluate("() => recipeDraft.steps.length")
         page.locator("#colour-ideas .shop-more > summary").first.click()
-        page.wait_for_timeout(100)
+        quiet(page)
         check("opening the fold-out does not add a step to the recipe (it sits beside the row's button, not inside it)", page.evaluate("() => recipeDraft.steps.length") == steps_before
               and page.evaluate("() => document.querySelector('#colour-ideas .shop-more').open") is True)
         page.evaluate("() => { document.getElementById('colour-ideas').__mark = 'same card'; document.querySelector('#recipe-page').__mark = 'same page'; }")
         page.locator("#colour-ideas .shop-more .shop-add button").first.click()
-        page.wait_for_timeout(250)
+        quiet(page)
         check("Add to shopping list inside a recipe works without rebuilding the editor: the same card and page stay, still open, no step added, and the recipe is not changed",
               page.evaluate("() => [document.getElementById('colour-ideas').__mark, document.querySelector('#recipe-page').__mark, document.getElementById('colour-ideas').open, recipeDraft.steps.length]") == ["same card", "same page", True, steps_before]
               and page.locator("#colour-ideas .shop-onlist").count() == 1 and page.evaluate("() => draftSnapshot(recipeDraft) === recipeDraft.original"))
@@ -375,7 +375,7 @@ def main():
         load(page, paints=JUST_BLUE)
         c.open_comp(page)
         c.pick_base(page, "test paints|probe blue")
-        page.wait_for_timeout(200)
+        quiet(page)
         cmp_rows = page.evaluate("""() => [...document.querySelectorAll('#cmp-fold-ideas-panel > ul.idea-list > li')].map(li => ({ fold: !!li.querySelector(':scope > .shop-more'), static: li.firstElementChild.classList.contains('idea-static'), tag: li.querySelector('.idea-tag').textContent }))""")
         check("in the Compendium, Colour ideas for a paint you do not own has the same fold-out under each plain row", len(cmp_rows) == 3 and all(r["fold"] and r["static"] for r in cmp_rows), cmp_rows)
         every = page.evaluate("""() => { const ok = document.querySelector('#cmp-fold-ideas-panel > ul.idea-list');
@@ -386,7 +386,7 @@ def main():
               every["all"] == 3 and every["notInIdeas"] == 0 and every["links"] == 0 and all(every["parts"]), every)
         # F1: in Colour Lab's Colour ideas the Add is on the row now, and the Shop links fold-out keeps only its links (one Add per row)
         page.locator("#cmp-fold-ideas-panel .shop-add-row button").first.click()
-        page.wait_for_timeout(250)
+        quiet(page)
         # F1: the row's tag says On your shopping list and the words are not repeated under it
         check("Add to shopping list works in the Compendium's Colour ideas too (the row then says On your shopping list once)", page.locator("#cmp-fold-ideas-panel .idea-tag", has_text="On your shopping list").count() == 1
               and page.locator("#cmp-fold-ideas-panel .shop-onlist").count() == 0 and toast(page)["text"].startswith("Added "))
@@ -407,7 +407,7 @@ def main():
         check("with the switch on, the shopping list has its Buy these bar", page.locator("#buy-bar").count() == 1 and page.locator("#buy-bar .buy-shops button").count() >= 3)
         go_settings(page)
         page.uncheck("#show-shop-links")
-        page.wait_for_timeout(300)
+        quiet(page)
         check("unticking it saves the choice (settings.hideShopLinks is true)", stored_settings(page).get("hideShopLinks") is True, stored_settings(page))   # FB3: the Off. note was removed
         open_shopping(page)
         check("the Buy these bar is gone from the shopping list (every shop button and link), while the shopping list itself and its Copy as text stay",
@@ -431,7 +431,7 @@ def main():
         backup = page.evaluate("() => JSON.stringify(backupData())")
         check("the choice is not in a backup (a backup holds units, recipes and stages, never this setting)", "hideShopLinks" not in backup and "hideshoplinks" not in backup.lower() and '"units"' in backup + '"units"')
         page.check("#show-shop-links")
-        page.wait_for_timeout(300)
+        quiet(page)
         open_shopping(page)
         reopen_panel(page)
         check("ticking it again brings the fold-outs back in the panel, and the choice is saved as false",
@@ -462,7 +462,7 @@ def main():
               links and all(urlparse(h).scheme == "https" and urlparse(h).hostname in shop_hosts and not re.search(r"[<>\"' ]", raw) and "Brand" not in raw for raw, _, h in links), links[:2])
         check("the hostile text is in the spoken names as plain words (never as markup)", any(HOSTILE in (lab or "") for _, lab, _ in links))
         page.locator("#cmp-paint-panel .shop-more .shop-add button").first.click()
-        page.wait_for_timeout(250)
+        quiet(page)
         tt = toast(page)
         check("the message after Add to shopping list shows a hostile name as plain text only (no child element, nothing runs)", tt["kids"] == 0 and tt["text"].startswith("Added ") and page.evaluate("() => window.__pwned") is None, tt)
         open_shopping(page)
@@ -508,7 +508,7 @@ def main():
         open_row(page, "Probe Blue")
         open_fold(page, 0)
         page.click("#cmp-paint-panel .shop-more .shop-add button")
-        page.wait_for_timeout(250)
+        quiet(page)
         ok_off = page.locator("#cmp-paint-panel .shop-onlist").count() == 1 and page.locator("#cmp-paint-panel .shop-links a").count() >= 3
         ctx.set_offline(False)
         outside = [u for u in requests[mark:] if not u.startswith(t.BASE) and not u.startswith("data:") and not u.startswith("blob:")]
@@ -552,7 +552,7 @@ def main():
             n = page.locator("#cmp-paint-panel .shop-more > summary").count()
             for i in range(n):
                 page.locator("#cmp-paint-panel .shop-more > summary").nth(i).click()
-            page.wait_for_timeout(100)
+            quiet(page)
             geo = page.evaluate(GEO)
             check(f"at {width} px all {n} open fold-outs stay inside the card, nothing pokes out, the Shop links line, the buttons and the links are 44 px tall, and nothing scrolls sideways",
                   n == 5 and not geo["inside"] and not geo["small"] and geo["sw"] <= geo["vw"] + 1, geo)
@@ -565,7 +565,7 @@ def main():
             page.set_viewport_size({"width": width, "height": 800})
             panel_for(page, [BLUE, P(2, long_name, at(180), status="notowned", brand="Averyveryveryverylongbrandnamewithoutanyspacesatall")])
             page.locator("#cmp-paint-panel .shop-more > summary").first.click()
-            page.wait_for_timeout(100)
+            quiet(page)
             geo = page.evaluate(GEO)
             check(f"at {width} px a very long paint name and brand do not break the fold-out (the links, the buttons and the page stay inside the card)", not geo["inside"] and geo["sw"] <= geo["vw"] + 1, geo)
             t.edit_recipe  # (the recipe card is checked below at this width too)
@@ -590,27 +590,27 @@ def main():
         open_tab(tp)
         wh.touch_open(tp, "blue")
         tp.locator("#cmp-wheel-detail button.idea-link").first.tap()
-        tp.wait_for_timeout(200)
+        quiet(tp)
         tp.locator("#cmp-paint-panel .shop-more > summary").first.tap()
-        tp.wait_for_timeout(150)
+        quiet(tp)
         check("on a touch phone, tapping Shop links opens the fold-out (and the panel stays open), and tapping it again closes it",
               tp.locator("#cmp-paint-panel").count() == 1 and tp.evaluate("() => document.querySelector('#cmp-paint-panel .shop-more').open") is True)
         tp.locator("#cmp-paint-panel .shop-more .shop-add button").first.tap()
-        tp.wait_for_timeout(250)
+        quiet(tp)
         check("on a touch phone, Add to shopping list can be tapped, says On your shopping list, and the page does not jump sideways", tp.locator("#cmp-paint-panel .shop-onlist").count() == 1 and no_sideways(tp))
         tp.locator("#cmp-paint-panel .shop-more > summary").first.tap()
-        tp.wait_for_timeout(150)
+        quiet(tp)
         check("tapping Shop links again closes just that fold-out", tp.evaluate("() => document.querySelector('#cmp-paint-panel .shop-more').open") is False and tp.locator("#cmp-paint-panel").count() == 1)
         touch.close()
         panel_for(page, JUST_BLUE)
         page.locator("#cmp-paint-panel .shop-more > summary").first.focus()
         page.keyboard.press("Enter")
-        page.wait_for_timeout(100)
+        quiet(page)
         opened = page.evaluate("() => document.querySelector('#cmp-paint-panel .shop-more').open")
         page.keyboard.press("Tab")
         on_add = active(page)
         page.keyboard.press("Enter")
-        page.wait_for_timeout(250)
+        quiet(page)
         after_add = active(page)
         check("with a keyboard: Enter on Shop links opens it, Tab goes to Add to shopping list, Enter adds it, and the focus moves to On your shopping list",
               opened is True and on_add and on_add["tag"] == "BUTTON" and "Add to shopping list" in on_add["text"] and after_add and "shop-onlist" in after_add["cls"], (opened, on_add, after_add))
@@ -620,7 +620,7 @@ def main():
         check("Tab then goes on through the shop links (real links you can open with Enter)", in_link and in_link["tag"] in ("A", "SUMMARY"), in_link)
         page.locator("#cmp-paint-panel .shop-links a").first.focus()
         page.keyboard.press("Escape")
-        page.wait_for_timeout(150)
+        quiet(page)
         check("Escape from inside a fold-out closes the paint's panel and puts the focus back on that paint (as it does from the rest of the panel)", page.locator("#cmp-paint-panel").count() == 0 and "idea-link" in (active(page) or {}).get("cls", ""), active(page))
 
         # ---------- 10. Dark and light ----------

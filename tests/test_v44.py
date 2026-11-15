@@ -99,7 +99,7 @@ def main_tab(page, name):
 
 def sub_tab(page, name):
     page.click(f'#more-seg button[data-page="{name}"]')
-    page.wait_for_timeout(150)
+    quiet(page)
 
 def recipe_view(page, view):
     page.click(f'#recipe-seg button[data-view="{view}"]')
@@ -166,11 +166,11 @@ def edit_recipe(page, old, new):
           steps: r.steps.map(s => ({ technique: s.technique, coats: s.coats, ratio: '', note: '', optional: false,
             paints: s.paints.map(sp => { const q = paintById(sp.paint); return { brand: q.brand, name: q.name, colour: q.colour, mix: null }; }) })) };
         saveRecipeDraft(); openRecipeId = null; recipeDraft = null; render(); }""", [old, new])
-    page.wait_for_timeout(250)
+    quiet(page)
 
 def edit_scheme(page, old, new):
     page.evaluate("""([o, n]) => { startScheme(book.schemes.find(s => s.name === o)); schemeDraft.name = n; schemeDraft.auto = false; saveScheme(); }""", [old, new])
-    page.wait_for_timeout(250)
+    quiet(page)
 
 def rgb(text):
     return [float(x) for x in re.findall(r"\d+(?:\.\d+)?", text)[:3]]
@@ -256,9 +256,9 @@ def main():
         check("the examples are still there (AB9: the strip is on Models), and Your Palette lists sixteen paints", card_shown(page) and page.locator("#paint-list li.paint-item").count() == 16)
         recipe_view(page, "recipes")
         page.click("#recipe-list li >> nth=0")
-        page.wait_for_timeout(250)
+        quiet(page)
         page.evaluate("history.back()")
-        page.wait_for_timeout(300)
+        quiet(page)
         main_tab(page, "units")
         check("the units card is separate and still has its own single Clear examples button",
               page.locator("#examples-card").is_visible() and page.locator("#examples-card .clear-examples").count() == 1)
@@ -344,7 +344,7 @@ def main():
         saved = saved_book(page)
         check("saved: the book has no recipes, schemes or paints", saved["recipes"] == [] and saved["schemes"] == [] and saved["paints"] == [])
         page.click("#toast-undo")
-        page.wait_for_timeout(300)
+        quiet(page)
         check("Undo: the saved recipe book is exactly as before", snap(page)[0] == before[0])
         check("Undo: the units and their links are exactly as before", snap(page)[1] == before[1])
         check("Undo: the card is back", card_shown(page))
@@ -368,7 +368,7 @@ def main():
             my: book.recipes.find(r => r.name === 'My green'), ms: book.schemes.find(s => s.name === 'My scheme') })""")
         before = snap(page)
         press_examples(page, "clear")
-        page.wait_for_timeout(300)
+        page.wait_for_function("() => !document.getElementById('toast').classList.contains('hidden')")
         check("Clear says 'Examples cleared.' (AB9: no count)", toast(page)["text"] == "Examples cleared.", toast(page))
         # AB9: "Anything you've changed stays." An example recipe in a scheme of yours now stays with it, as yours (before AB9 it was
         # cleared and taken out of your scheme). Here "Bog goblins colours (mine)" (edited, so yours) holds Green skin, Glowing eyes and
@@ -385,7 +385,7 @@ def main():
         check("your own scheme keeps both its recipes (AB9: the example one in it stays too)", page.evaluate("() => book.schemes.find(s => s.name === 'My scheme').recipes.length") == 2)
         check("the card is gone", not card_shown(page))
         page.click("#toast-undo")
-        page.wait_for_timeout(300)
+        quiet(page)
         check("Undo: everything is exactly as before (recipes, schemes, paints, units)", snap(page) == before)
         check("Undo: your own things are untouched",
               page.evaluate("""() => JSON.stringify({ gm: book.recipes.find(r => r.name === 'Gold metal (mine)'),
@@ -399,7 +399,7 @@ def main():
               paints: [{ paint: p.id, mix: null }], ratio: '', note: '', optional: false }] });
             book.schemes.push({ id: 1, name: 'Mine too', faction: 'Red army', auto: false, recipes: [2] }); render(); }""")
         page.click("#toast-undo")
-        page.wait_for_timeout(300)
+        quiet(page)
         ids = page.evaluate("() => [book.recipes.map(r => r.id), book.schemes.map(s => s.id), book.paints.map(p => p.id)]")
         check("Undo after new things took numbers: everything exists and every number is different",
               [len(x) for x in ids] == [6, 3, 17] and all(len(set(x)) == len(x) for x in ids), ids)
@@ -414,11 +414,11 @@ def main():
         # only schemes left
         fresh(page)
         page.evaluate("() => { for (const r of book.recipes.slice()) deleteRecipeNow(r.id); }")
-        page.wait_for_timeout(200)
+        quiet(page)
         main_tab(page, "recipes")
         check("with only example schemes left, the strip still shows, and they count", card_shown(page) and "2 example schemes" in example_words(page), example_words(page))
         press_examples(page, "clear")
-        page.wait_for_timeout(300)
+        page.wait_for_function("() => !document.getElementById('toast').classList.contains('hidden')")
         check("Clear then clears them (and the example units, v56)", toast(page)["text"] == "Examples cleared." and names(page, "schemes") == [] and saved_units(page) == [], toast(page))
 
         # ---------- 6. Keep them ----------
@@ -426,7 +426,7 @@ def main():
         fresh(page)
         main_tab(page, "recipes")
         press_examples(page, "keep")
-        page.wait_for_timeout(300)
+        page.wait_for_function("() => !document.getElementById('toast').classList.contains('hidden')")
         tt = toast(page)
         check("Keep them: a message with Undo", tt["shown"] and tt["undo"] and "Kept" in tt["text"], tt)
         check("nothing removed, every mark gone (recipes, schemes and paints)",
@@ -441,9 +441,9 @@ def main():
         fresh(page)
         main_tab(page, "recipes")
         press_examples(page, "keep")
-        page.wait_for_timeout(300)
+        page.wait_for_function("() => !document.getElementById('toast').classList.contains('hidden')")
         page.click("#toast-undo")
-        page.wait_for_timeout(300)
+        quiet(page)
         check("Undo on Keep: the marks (schemes too) and the card are back",
               card_shown(page) and page.evaluate("() => [...book.recipes, ...book.schemes, ...book.paints].every(x => x.example === true)"))
 
@@ -468,7 +468,7 @@ def main():
         fresh(page)
         main_tab(page, "recipes")
         press_examples(page, "keep")
-        page.wait_for_timeout(300)
+        page.wait_for_function("() => !document.getElementById('toast').classList.contains('hidden')")
         gone = []
         for view in ("recipes", "schemes", "palette"):
             recipe_view(page, view)
@@ -483,7 +483,7 @@ def main():
         edit_recipe(page, "Blue armour", "A")
         main_tab(page, "recipes")
         press_examples(page, "clear")
-        page.wait_for_timeout(300)
+        page.wait_for_function("() => !document.getElementById('toast').classList.contains('hidden')")
         check("with paints you own and a recipe you changed left over, the card is still gone after Clear", not card_shown(page))
         reload(page)
         main_tab(page, "recipes")
@@ -523,7 +523,7 @@ def main():
               card_shown(page) and page.locator("#examples-card .clear-examples").count() == 1
               and page.locator("#examples-card .keep-examples").count() == 1 and ALL_WORDS in example_words(page), example_words(page))
         press_examples(page, "clear")
-        page.wait_for_timeout(300)
+        page.wait_for_function("() => !document.getElementById('toast').classList.contains('hidden')")
         check("and Clear works on the restored examples", page.evaluate("() => book.recipes.length + book.schemes.length + book.paints.length") == 0)
 
         # b) everything is there: nothing happens
@@ -540,7 +540,7 @@ def main():
         fresh(page)
         page.evaluate("""() => { deleteRecipeNow(book.recipes.find(r => r.name === 'Gold metal').id);
             deleteSchemeNow(book.schemes.find(s => s.name === 'Bog goblins colours').id); }""")
-        page.wait_for_timeout(200)
+        quiet(page)
         restore_in_settings(page)
         tt = toast(page)
         check("Restore adds only what is missing (1 recipe, 1 scheme and the 3 gold paints)",
@@ -571,7 +571,7 @@ def main():
               page.evaluate("() => book.schemes.find(s => s.name === 'Ash wardens colours').recipes.map(id => recipeById(id).name)") == ["BLUE ARMOUR", "Gold metal", "Glowing eyes", "Stone base"])
         main_tab(page, "recipes")
         press_examples(page, "clear")
-        page.wait_for_timeout(300)
+        page.wait_for_function("() => !document.getElementById('toast').classList.contains('hidden')")
         check("Clear after that keeps your recipe (and removes the schemes that grouped it)",
               names(page, "recipes") == ["BLUE ARMOUR"] and names(page, "schemes") == [])
 
@@ -592,7 +592,7 @@ def main():
                   "() => { const p = book.paints.find(x => x.name === 'Harbour blue'); return book.recipes.find(r => r.name === 'Blue armour').steps[0].paints[0].paint === p.id; }"))
         main_tab(page, "recipes")
         press_examples(page, "clear")
-        page.wait_for_timeout(300)
+        page.wait_for_function("() => !document.getElementById('toast').classList.contains('hidden')")
         check("Clear after that keeps the paint and your recipe", "Harbour blue" in palette_names(page) and "Mine blue" in names(page, "recipes"))
 
         # d2) a paint with a status and an edited recipe survive a Clear and a Restore
@@ -631,14 +631,14 @@ def main():
               len(names(page, "recipes")) == 6 and len(names(page, "schemes")) == 3)
         main_tab(page, "recipes")
         press_examples(page, "clear")
-        page.wait_for_timeout(300)
+        page.wait_for_function("() => !document.getElementById('toast').classList.contains('hidden')")
         check("Clear takes them away again and leaves the book exactly as it was before Restore", snap(page)[0] == full_before)
 
         # f) after Keep, the same names exist unmarked: nothing is added
         fresh(page)
         main_tab(page, "recipes")
         press_examples(page, "keep")
-        page.wait_for_timeout(300)
+        page.wait_for_function("() => !document.getElementById('toast').classList.contains('hidden')")
         before = snap(page)
         restore_in_settings(page)
         check("after Keep them, Restore adds nothing (no duplicates of what you kept)",
@@ -651,7 +651,7 @@ def main():
         check("restored example paints are not on the shopping list", page.evaluate("() => shoppingItems().length") == 0)
         main_tab(page, "recipes")
         page.click("#recipe-seg button[data-view='shopping']")
-        page.wait_for_timeout(200)
+        quiet(page)
         check("the shopping page says there is nothing to buy", "Nothing to buy" in page.inner_text("#shop-panel"), page.inner_text("#shop-panel"))
         # v58 (chunk 1.3) changed this decision. v44 let a kept example paint (or one given a status) count like any paint, so after
         # Keep them all sixteen made-up paints showed on the shopping list as missing. AI testers then tried to buy "Example deep blue" (a made-up paint, called "Harbour blue" since AB9),
@@ -662,7 +662,7 @@ def main():
               page.evaluate("() => shoppingItems().length") == 0)
         fresh(page)
         page.evaluate("() => keepExamples()")
-        page.wait_for_timeout(200)
+        page.wait_for_function("() => !document.getElementById('toast').classList.contains('hidden')")
         check("after Keep them none of the sixteen made-up paints is on the list (v58; v44 expected all 16)",
               page.evaluate("() => shoppingItems().length") == 0)
 
@@ -746,7 +746,7 @@ def main():
                     shot(page, f"v44-recipes-{appearance}-{width}.png")
                 main_tab(page, "settings")
                 page.evaluate("() => document.getElementById('restore-examples').scrollIntoView({ block: 'center' })")
-                page.wait_for_timeout(150)
+                quiet(page)
                 info = page.evaluate("""() => { const b = document.getElementById('restore-examples').getBoundingClientRect();
                     const h = document.getElementById('restore-examples-hint'); const card = h.closest('.card');
                     return { l: b.left, r: b.right, w: b.width, h: b.height, vw: window.innerWidth, fg: getComputedStyle(h).color,
