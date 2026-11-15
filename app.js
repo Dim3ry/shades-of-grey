@@ -98,6 +98,16 @@
       if (!dataTooNew && storedDataVersion() > DATA_VERSION) dataTooNew = true;
       return !dataTooNew;
     }
+    // FX5: one small test write at start-up. If it throws (some private windows, blocked site data) the red banner shows from
+    // the start, with Save backup, and the app carries on. "blocked" and "full" word the banner differently.
+    let storageProblem = "";   // "" works, "blocked" or "full"
+    function testStorage() {
+      try {
+        localStorage.setItem("shades-of-grey-test", "1");
+        localStorage.removeItem("shades-of-grey-test");
+        return "";
+      } catch (error) { return isStorageFull(error) ? "full" : "blocked"; }
+    }
     function isStorageFull(error) {
       return !!error && (error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED" ||
                          error.code === 22 || error.code === 1014);
@@ -146,6 +156,15 @@
         if (retry) retry.textContent = "Reload";
         const backup = document.getElementById("banner-backup");
         if (backup) backup.classList.add("hidden");
+      } else if (storageProblem === "blocked" && !unreadableParts.length) {
+        // FX5: this browser won't let the app keep anything.
+        const text = document.getElementById("save-banner-text");
+        if (text) {
+          if (!bannerUsual) bannerUsual = [...text.childNodes].map(n => n.cloneNode(true));
+          const strong = document.createElement("strong");
+          strong.textContent = "Changes can't be saved here. ";
+          text.replaceChildren(strong, "This browser is blocking storage, so everything is lost when you close it. Save a backup.");
+        }
       } else if (unreadableParts.length) {
         // DS1: one line and two buttons: Save it as a file, Start again (see the banner buttons further down).
         const text = document.getElementById("save-banner-text");
@@ -4249,7 +4268,7 @@
         [RECIPES_KEY, JSON.stringify(book)],
         [SETTINGS_KEY, JSON.stringify(settings)],
       ]);
-      if (ok) { if (saveFailing && !holdSaves) hideSaveProblem(); }
+      if (ok) { if (saveFailing && !holdSaves && !storageProblem) hideSaveProblem(); }   // FX5: blocked storage keeps the banner up
       else showSaveProblem();
       return ok;
     }
@@ -20227,6 +20246,18 @@
     document.addEventListener("visibilitychange", () => { if (document.hidden) closeCamera(); });
     window.addEventListener("pagehide", closeCamera);
 
+    // FX5: the reader's own messages are shown as they are when they are plain words; anything from the engine itself ("Failed to fetch", "importScripts", a
+    // wasm error) becomes plain words. The first scan fetches the engine (about 11 MB), so a failed start with no connection says so.
+    const LABEL_ERRORS_PLAIN = ["Couldn't read that picture.", "The label reader stopped working. Please try again."];
+    function plainLabelError(error) {
+      const message = (error && error.message) || "";
+      if (LABEL_ERRORS_PLAIN.includes(message)) return message;
+      const loadFailure = /fetch|network|import|load|English data/i.test(message);
+      if (loadFailure || (navigator.onLine === false && !message)) {
+        return "Needs a connection the first time (about 11 MB). Type the name below.";
+      }
+      return "The label reader stopped working. Type the name below, or try again.";
+    }
     async function scanLabel(source, box) {
       const st = scanState;
       st.chosen = null;
@@ -20238,7 +20269,7 @@
         st.status = found.suggestions.length ? "Is it one of these?"
           : "Couldn't read the name. Try again with the name filling the box and no glare on it, or type the name below.";
       } catch (error) {
-        st.status = error.message || "Couldn't read the label.";
+        st.status = plainLabelError(error);
       }
       renderScan();
     }
@@ -21418,10 +21449,14 @@
       setTimeout(() => URL.revokeObjectURL(link.href), 1000); // instantly can cancel it on some phones
     }
 
-    function readFile(file, whenRead) {
+    // FX5: whenFailed runs if the file can't be read at all (moved, deleted, cloud file offline). Nothing has been changed by then.
+    function readFile(file, whenRead, whenFailed) {
       const reader = new FileReader();
       reader.onload = () => whenRead(reader.result);
-      reader.readAsText(file);
+      const failed = () => { if (whenFailed) whenFailed(); };
+      reader.onerror = failed;
+      reader.onabort = failed;
+      try { reader.readAsText(file); } catch (error) { failed(); }
     }
 
     // ----- v19.1: check a file BEFORE reading it -----
@@ -21736,6 +21771,11 @@
     document.getElementById("banner-retry").addEventListener("click", () => {
       if (dataTooNew) { location.reload(); return; }
       if (unreadableParts.length) { startAgainFromUnreadable(); return; }   // DS1
+      if (storageProblem) {   // FX5: test again; only a working test write clears it
+        storageProblem = testStorage();
+        if (storageProblem) { notify(storageProblem === "blocked" ? "Still can't save here. Please save a backup." : "Still full. Please save a backup, then free some space."); return; }
+        usualSaveBanner();
+      }
       if (saveAll()) showToast("Saved.");
       else notify("Still full. Please save a backup, then free some space (units you no longer need, or the safety copies).");   // DS2: not photos
     });
@@ -21751,11 +21791,15 @@
       if (problem) { restoreFile.value = ""; notify(problem); return; }
       readFile(file, (text) => {
         restoreFile.value = "";
-        let parsed;
-        try { parsed = JSON.parse(text); } catch (error) { parsed = null; }
+        let parsed, unreadable = false;
+        try { parsed = JSON.parse(text); } catch (error) { parsed = null; unreadable = true; }
         const isList = Array.isArray(parsed);   // the oldest backups are just a list of units
         if (!parsed || (!isList && typeof parsed !== "object")) {
-          notify("That file doesn't look like a Minifolio backup.");
+          // FX5: an empty file, or one that starts like a backup ({ or [) but stops part way, was cut off. Anything else keeps the old words.
+          const trimmed = String(text).replace(/^\uFEFF/, "").trim();
+          const cutOff = !trimmed || (unreadable && (trimmed[0] === "{" || trimmed[0] === "["));
+          notify(cutOff ? "That file looks cut off, so nothing was changed. Try saving the backup again."
+            : "That file doesn't look like a Minifolio backup.");
           return;
         }
         // v19.1: each main part must be the right kind of thing (a list of units, a recipe
@@ -21905,7 +21949,7 @@
             startPhotos();
           });
         }, { danger: true });
-      });
+      }, () => { restoreFile.value = ""; notify("That file couldn't be read, so nothing was changed. Try choosing it again."); });   // FX5
     });
 
     // UX1b: which mark separates the cells. Excel in much of Europe saves CSV files with semicolons
@@ -22120,7 +22164,7 @@
         if (!units.length) { showNotice("No units found in that file."); return; }
         whPanel.classList.add("hidden");
         openReview({ source: "csv", title: `"${file.name}"`, rows: units, unknownStages: [...unknownStages], datesLeftOut });
-      });
+      }, () => { csvFile.value = ""; showNotice("That file couldn't be read, so nothing was imported. Try choosing it again."); });   // FX5
     });
 
     document.getElementById("template-button").addEventListener("click", () => {
@@ -24196,6 +24240,10 @@
     else { showTab(settings.tab); enterLaunch(); startLoadingRing(); }
     launchMotionReady = true;
     if (unreadableParts.length) showSaveProblem();   // DS1: the start-up render() couldn't save; the banner says why
+    storageProblem = testStorage();   // FX5: storage that throws gets the banner from the start
+    if (storageProblem && !unreadableParts.length && !dataTooNew) showSaveProblem();
+    window.minifolioStarted = true;   // FX5: early.js looks for this; without it, it shows "Minifolio could not start"
+
     if (upgradedStages) showToast("Stages updated: Parade ready added as the final stage", null, null, 8);
     else if (settingsUnreadable) showToast("Your settings couldn't be read, so they were reset. Your units kept their stages, and a copy of the old settings was kept.", null, null, 10);
 
