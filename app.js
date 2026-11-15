@@ -10652,7 +10652,12 @@
           really: q(".w-really").checked, note: q(".w-note").value.slice(0, WISH_NOTE_MAX) };
         const list = wishes();
         let message;
-        if (wish) { Object.assign(wish, fields); message = `Saved ${name}`; }
+        if (wish) {
+          // DS3: found by its id now, because another window may have swapped the list since this form opened.
+          const current = list.find(w => w.id === wish.id);
+          if (!current) { closeWishForm(); showToast("That model was removed in another window, so the change wasn't saved."); return; }
+          Object.assign(current, fields); message = `Saved ${name}`;
+        }
         else {
           list.push({ id: list.reduce((n, w) => Math.max(n, w.id), 0) + 1, ...fields, added: todayISO() });
           message = `Added ${name}`;
@@ -21066,6 +21071,9 @@
     // is kept under the same suffix, because it belonged to the copy being replaced.
     function keepSafetyCopy(suffix, withBook) {
       const copy = { date: todayISO(), stages: STAGES, doneFrom: settings.doneFrom, models };
+      // DS3: the Wanted list and faction colours go in too. A copy made before DS3 has neither field and still reads fine.
+      copy.wishes = wishes();
+      copy.factionColours = settings.factionColours;
       if (withBook) copy.book = book;
       try {
         localStorage.setItem(STORAGE_KEY + suffix, JSON.stringify(copy));
@@ -21084,6 +21092,8 @@
       } catch (ignored) {}
       return null;
     }
+    // DS3: the Wanted list kept in a safety copy, cleaned. null for a copy made before DS3 (it has none, so Recover leaves yours alone).
+    function safetyCopyWishes(copy) { return copy && Array.isArray(copy.wishes) ? cleanWishes(copy.wishes) : null; }
     function readSafetyCopy(suffix) {
       try {
         const raw = JSON.parse(localStorage.getItem(STORAGE_KEY + suffix) || "null");
@@ -21173,7 +21183,7 @@
       // it was); a copy with no date (kept before DS1) is given today's.
       const dates = { ...(settings.unreadableDates || {}) };
       let changed = false;
-      for (const key of [STORAGE_KEY, RECIPES_KEY]) {
+      for (const key of [STORAGE_KEY, RECIPES_KEY, SETTINGS_KEY]) {   // DS3: the settings copy too
         if (!savedText(key + "-unreadable")) { if (dates[key]) { delete dates[key]; changed = true; } continue; }
         if (!dates[key]) { dates[key] = todayISO(); changed = true; }
         else if (daysSince(dates[key]) > SAFETY_DAYS) {
@@ -21192,11 +21202,13 @@
       let any = false;
       for (const suffix of SAFETY_COPIES) {
         const copy = readSafetyCopy(suffix);
-        if (!copy || !copy.models.length) continue;
+        const wanted = safetyCopyWishes(copy);   // DS3
+        if (!copy || (!copy.models.length && !(wanted && wanted.length))) continue;
         any = true;
         const li = document.createElement("li");
         const text = document.createElement("span");
         text.textContent = `${SAFETY_LABELS[suffix]}: ${plural(copy.models.length, "unit")}` +
+          (wanted && wanted.length ? `, ${plural(wanted.length, "wanted model")}` : "") +
           (copy.date ? `, saved ${shortDate(copy.date)}` : "");
         const button = document.createElement("button");
         button.className = "plain-button";
@@ -21224,12 +21236,12 @@
         list.appendChild(li);
       }
       // DS1: text that couldn't be read (kept by Start again, or by versions before DS1). It can only be saved as a file.
-      for (const key of [STORAGE_KEY, RECIPES_KEY]) {
+      for (const key of [STORAGE_KEY, RECIPES_KEY, SETTINGS_KEY]) {   // DS3: and the settings
         let raw = null;
         try { raw = localStorage.getItem(key + "-unreadable"); } catch (ignored) {}
         if (!raw) continue;
         any = true;
-        const label = `Unreadable ${key === RECIPES_KEY ? "recipes" : "units"}`;
+        const label = `Unreadable ${key === RECIPES_KEY ? "recipes" : key === SETTINGS_KEY ? "settings" : "units"}`;
         const li = document.createElement("li");
         const text = document.createElement("span");
         const date = (settings.unreadableDates || {})[key];
@@ -21276,19 +21288,29 @@
       const units = cleanModels(copy.models);
       STAGES = currentStages;
       const recipesCopy = safetyCopyBook(copy, suffix);   // DS1
+      const wantedCopy = safetyCopyWishes(copy);   // DS3
+      const coloursCopy = copy.factionColours && typeof copy.factionColours === "object" && !Array.isArray(copy.factionColours) ? cleanFactionColours(copy.factionColours) : null;
+      const unitsBack = units.length > 0 || !wantedCopy;   // DS3: a copy of only wanted models leaves your units as they are
       // v21.7: asks in the app's own box; the swap (and its Undo) happen when you say yes.
-      askYesNo(`Replace your current ${plural(models.length, "unit")} with the ${plural(units.length, "unit")} in this copy` +
-          (recipesCopy ? " (and its recipes)" : "") + "?", () => {
-        if (models.length && suffix !== "-before-recover" && !keepSafetyCopy("-before-recover", !!recipesCopy)) {
+      askYesNo(unitsBack
+          ? `Replace your current ${plural(models.length, "unit")} with the ${plural(units.length, "unit")} in this copy` +
+            (recipesCopy ? " (and its recipes)" : "") + (wantedCopy && (wantedCopy.length || wishes().length) ? ` and ${plural(wantedCopy.length, "wanted model")}` : "") + "?"
+          : `Replace your current ${plural(wishes().length, "wanted model")} with the ${plural(wantedCopy.length, "wanted model")} in this copy? (Your units stay as they are.)`, () => {
+        if ((models.length || wishes().length) && suffix !== "-before-recover" && !keepSafetyCopy("-before-recover", !!recipesCopy)) {
           notify("No room for a safety copy of your units, so the restore stopped. Save a backup first.");
           return;
         }
-        const undoState = { models: JSON.stringify(models), book: JSON.stringify(book), stages: STAGES.slice(), doneFrom: settings.doneFrom };
+        const undoState = { models: JSON.stringify(models), book: JSON.stringify(book), stages: STAGES.slice(), doneFrom: settings.doneFrom,
+          wishes: JSON.stringify(wishes()), colours: JSON.stringify(settings.factionColours) };
         const kept = changeAndSave(() => {
+          if (wantedCopy) { settings.modelWishes = wantedCopy; wishesChecked = true; }   // DS3
+          if (coloursCopy) settings.factionColours = coloursCopy;
+          if (unitsBack) {
           models = units;
           if (recipesCopy) book = cleanRecipeBook(recipesCopy);
           linkUnitsToBook(models, book, null);   // DS1: no unit keeps a link to a recipe that isn't in the book
-          if (copyStages) {
+          }
+          if (unitsBack && copyStages) {
             settings.stages = STAGES = copyStages;
             if (copy.doneFrom !== undefined) settings.doneFrom = copy.doneFrom;
             fixDoneFrom();
@@ -21296,8 +21318,11 @@
         });
         if (!kept) { notifyFull(); return; }
         afterBigChange();
-        showToast(`Recovered ${plural(units.length, "unit")}`, () => {
+        showToast(unitsBack ? `Recovered ${plural(units.length, "unit")}` : `Recovered ${plural(wantedCopy.length, "wanted model")}`, () => {
           const back = changeAndSave(() => {
+            settings.modelWishes = cleanWishes(JSON.parse(undoState.wishes)); wishesChecked = true;   // DS3
+            settings.factionColours = cleanFactionColours(JSON.parse(undoState.colours));
+            if (!unitsBack) return;
             models = JSON.parse(undoState.models);
             book = JSON.parse(undoState.book);
             settings.stages = STAGES = undoState.stages;
@@ -21718,7 +21743,7 @@
         let raw = null;
         try { raw = localStorage.getItem(key + (suffix || "")); } catch (ignored) {}
         if (raw === null) return;
-        const what = key === RECIPES_KEY ? "recipes" : "units";
+        const what = key === RECIPES_KEY ? "recipes" : key === SETTINGS_KEY ? "settings" : "units";
         setTimeout(() => downloadFile(`minifolio-unreadable-${what}-${todayISO()}.txt`, raw, "text/plain"), i * 600);
       });
     }
@@ -21840,8 +21865,10 @@
         const hasRecipes = !!backupBook && (backupBook.recipes.length > 0 || backupBook.paints.length > 0 || backupBook.schemes.length > 0);
         // v14: a backup with recipes but no units is fine too: it replaces only your recipes.
         const unitsToo = restored.length > 0;
-        if (!unitsToo && !hasRecipes) {
-          notify("That file doesn't look like a Minifolio backup: it has no units or recipes in it.");
+        // DS3: a backup with wanted models but no units is fine too: it replaces only your wanted models (and recipes, if it has them).
+        const wantedOnly = !unitsToo && !isList && Array.isArray(parsed.modelWishes) && cleanWishes(parsed.modelWishes).length > 0;
+        if (!unitsToo && !hasRecipes && !wantedOnly) {
+          notify("That file doesn't look like a Minifolio backup: it has no units, recipes or wanted models in it.");
           return;
         }
         const photoFiles = !isList && parsed.photoFiles && typeof parsed.photoFiles === "object" ? parsed.photoFiles : null;
@@ -21853,12 +21880,14 @@
           skippedPhotos ? `${plural(skippedPhotos, "photo")} left out: not a JPEG, PNG or WebP` : ""].filter(Boolean);
         // FX3: wanted models are named too, but only when the backup holds some (then it replaces yours, so yours are counted as well).
         // FX4: a backup that carries a wanted list (even an empty one) replaces yours, so your current ones are named whenever there are some.
-        const backupHasWishList = unitsToo && !isList && Array.isArray(parsed.modelWishes);
+        const backupHasWishList = (unitsToo || wantedOnly) && !isList && Array.isArray(parsed.modelWishes);
         const backupWishes = backupHasWishList ? cleanWishes(parsed.modelWishes).length : 0;
         const listOf = (parts) => parts.length < 3 ? parts.join(" and ") : parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1];
         const wantedNow = backupHasWishList && wishes().length ? [plural(wishes().length, "wanted model")] : [], wantedThen = backupWishes ? [plural(backupWishes, "wanted model")] : [];
         const question = (!unitsToo
-            ? `Replace your ${plural(book.recipes.length, "recipe")} with ${plural(backupBook.recipes.length, "recipe")} from the backup? (Your units stay as they are.)`
+            ? (backupBook && hasRecipes
+              ? `Replace your ${listOf([plural(book.recipes.length, "recipe"), ...wantedNow])} with ${listOf([plural(backupBook.recipes.length, "recipe"), ...wantedThen])} from the backup? (Your units stay as they are.)`
+              : `Replace your ${plural(wishes().length, "wanted model")} with ${plural(backupWishes, "wanted model")} from the backup? (Your units and recipes stay as they are.)`)
             : backupBook
             ? `Replace your current ${listOf([plural(models.length, "unit"), plural(book.recipes.length, "recipe"), ...wantedNow])} with ` +
               `${listOf([plural(restored.length, "unit"), plural(backupBook.recipes.length, "recipe"), ...wantedThen])} from the backup?`
@@ -21870,11 +21899,13 @@
           // there's no room the restore stops and nothing changes (before DS1 it went ahead, and Recover then offered an older
           // copy as if it were this one). Units and recipes are kept in one record (see keepSafetyCopy).
           // v18.3: a recipes-only restore keeps its own copy and gets an Undo button.
-          if (unitsToo ? !keepSafetyCopy("-before-restore", !!backupBook) : !keepRecipesCopy()) {
+          // DS3: a restore that replaces wanted models keeps the full copy (it holds them), even with no units in the backup.
+          if ((unitsToo || wantedOnly) ? !keepSafetyCopy("-before-restore", !!backupBook && (unitsToo || hasRecipes)) : !keepRecipesCopy()) {
             notify("No room for a safety copy of your data, so the restore stopped. Save a backup first.");
             return;
           }
           const recipesBefore = unitsToo ? null : JSON.stringify(book);
+          const wishesBefore = unitsToo ? null : JSON.stringify(wishes());   // DS3
           const linksBefore = unitsToo ? null : unitRecipeLinks();   // DS1
           (photoFiles ? importPhotoFiles(photoFiles) : Promise.resolve(0)).then(async (imported) => {
 
@@ -21883,7 +21914,7 @@
               if (unitsToo) models = restored;
               // DS1: unit recipe links follow the book. Units from the backup go with the backup's book; your own units (a
               // recipes-only restore) are matched to the new book by recipe name, and links with no match are dropped.
-              if (backupBook) { linkUnitsToBook(models, backupBook, unitsToo ? null : book); book = backupBook; }
+              if (backupBook && (unitsToo || hasRecipes)) { linkUnitsToBook(models, backupBook, unitsToo ? null : book); book = backupBook; }   // DS3: an empty book in a wanted-only backup leaves yours
               else linkUnitsToBook(models, book, null);
               if (unitsToo && backupStages) {
                 settings.stages = STAGES = backupStages;
@@ -21893,7 +21924,7 @@
               // Backups from v8 onwards hold faction colours. Older ones don't, so yours stay.
               if (unitsToo && !isList && parsed.factionColours) settings.factionColours = cleanFactionColours(parsed.factionColours);
               // WL1: backups from this version on hold the Models wish list. Older ones don't, so yours stays.
-              if (unitsToo && !isList && Array.isArray(parsed.modelWishes)) { settings.modelWishes = cleanWishes(parsed.modelWishes); wishesChecked = true; }
+              if ((unitsToo || wantedOnly) && !isList && Array.isArray(parsed.modelWishes)) { settings.modelWishes = cleanWishes(parsed.modelWishes); wishesChecked = true; }
               // AB8: backups from this version on hold the Armies view. Older ones don't, so yours stays (rows unless you chose doughnuts).
               if (unitsToo && !isList && (parsed.factionView === "rows" || parsed.factionView === "doughnuts")) settings.factionView = parsed.factionView;
               // SF1: backups from this version on hold the Models order. Older ones don't, so yours stays. Anything odd is ignored.
@@ -21940,10 +21971,13 @@
                 : `Backup restored${restoreNotes.length ? ` (${restoreNotes.join("; ")})` : ""}, but this backup was saved without photos, so ${plural(missing, "photo")} won't show on this device. Keep the backup file safe. To bring photos across, use Save full backup with photos on the other device.`);
             } else {
               if (unitsToo) showToast("Backup restored" + restoreNotes.map(n => `. ${n}`).join(""));
-              else showToast(`Recipes restored (${plural(book.recipes.length, "recipe")})`, () => {
-                if (!changeAndSave(() => { book = cleanRecipeBook(JSON.parse(recipesBefore)); putUnitRecipeLinksBack(linksBefore); })) { notifyFull(); return; }
+              else showToast(hasRecipes ? `Recipes restored (${plural(book.recipes.length, "recipe")})` : `Wanted models restored (${wishes().length})`, () => {
+                if (!changeAndSave(() => {
+                  if (hasRecipes) { book = cleanRecipeBook(JSON.parse(recipesBefore)); putUnitRecipeLinksBack(linksBefore); }
+                  if (wantedOnly) { settings.modelWishes = cleanWishes(JSON.parse(wishesBefore)); wishesChecked = true; }   // DS3
+                })) { notifyFull(); return; }
                 afterBigChange();
-                showToast("Your recipes are back as they were");
+                showToast(hasRecipes ? "Your recipes are back as they were" : "Your wanted models are back as they were");
               }, "Undo", UNDO_SECONDS);
             }
             // Old backups may hold old-style photos: move them. Then load the thumbnails.
@@ -23101,7 +23135,9 @@
     const BACKUP_NUDGE_WAIT_DAYS = 14;
     // A short fingerprint of the units and recipes (FNV-1a over the saved text). Equal fingerprints = nothing changed.
     function dataPrint() {
-      const text = JSON.stringify(models) + "\n" + JSON.stringify(book);
+      let text = JSON.stringify(models) + "\n" + JSON.stringify(book);
+      // DS3: the Wanted list counts too. Added only when there is one, so a person with none sees the same print as before.
+      if (wishes().length) text += "\n" + JSON.stringify(wishes());
       let h = 0x811c9dc5;
       for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 0x01000193); }
       return "k" + (h >>> 0).toString(36) + text.length.toString(36);
