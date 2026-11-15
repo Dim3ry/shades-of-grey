@@ -1,0 +1,31 @@
+# Runs the quick test set on every pull request (TQ1 / review finding d1).
+# Quick mode = the newest three versions, the version plumbing test and the HTML safety scan.
+# The full run (about 12 minutes) is still done by hand before a merge.
+name: Quick tests
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # the plumbing test compares content files with origin/main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the test browser
+        run: |
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Run the quick tests
+        run: python3 tests/run_all.py --quick

@@ -118,3 +118,24 @@ try {
     ring.draw(Math.min(1, files / RING_FILES) * FILES_SHARE);
   }, true);
 } catch (ignored) {}
+
+// FX5: IF THE APP FAILS TO START. app.js sets window.minifolioStarted at the end of start-up. If the page has loaded and it is still not set a few seconds
+// later (a script file missing, or a crash while starting), a plain message shows with a Reload button. It never shows when start-up worked.
+try {
+  const warn = () => {
+    if (window.minifolioStarted || document.getElementById("start-failed") || !document.body) return;
+    const box = document.createElement("div");
+    box.id = "start-failed";
+    box.setAttribute("role", "alert");
+    const text = document.createElement("p");
+    text.textContent = "Minifolio could not start. Reload the page.";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = "Reload";
+    button.addEventListener("click", () => location.reload());
+    box.append(text, button);
+    document.body.appendChild(box);
+  };
+  window.addEventListener("load", () => setTimeout(warn, 4000));
+  setTimeout(warn, 20000);   // in case a file never finishes arriving
+} catch (ignored) {}

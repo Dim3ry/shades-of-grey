@@ -211,7 +211,9 @@ def main():
         ok, t = says("list of stages is damaged")
         check("restore: a damaged stage list is refused", ok, t)
         restore_try("empty.json", json.dumps({"app": "Minifolio", "models": []}).encode())
-        ok, t = says("it has no units or recipes in it")
+        # v165 (DS3): a backup with only wanted models can now be restored, so the refusal wording
+        # for an empty file now also names wanted models.
+        ok, t = says("it has no units, recipes or wanted models in it")
         check("restore: a backup with nothing in it is refused", ok, t)
         check("…and nothing changed", untouched())
 
