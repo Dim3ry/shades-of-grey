@@ -1758,6 +1758,8 @@
     .card-fold-button[aria-expanded="true"] .fold-mark { transform: rotate(-135deg) translate(-2px, -2px); }
     .card-fold-panel { margin-top: 12px; }
     .card-fold-panel[hidden] { display: none; }
+    /* NX1: the Stages fold inside the top card: a thin line above it, the row is the full 44 px button. The card's own padding keeps it clear of the Classic corner marks. */
+    #headline-card .stage-fold { margin-top: 12px; padding-top: 4px; border-top: 1px solid var(--border); }
     .fold-panel { display: grid; gap: 10px; }
     .fold-panel[hidden] { display: none; }
     /* v49: "More info": a plain text button with the detail under it. Used wherever a page had long explanations. */
@@ -2083,8 +2085,8 @@
       /* R3b-1: the headline fills the row (the first-child rule above lands on a hidden notice card). With 4 or more factions the
          faction card is tall, so it and the stage card each take a full row instead of leaving a gap beside the stage card. */
       #headline-card, #view-dashboard > .notice-card { grid-column: 1 / -1; }
-      /* DB1: the Stages card is one folding row and takes the full row under the top card. */
-      #stage-card, #faction-card { grid-column: 1 / -1; }   /* the faction card takes a full row too, so Palette and Achievements still sit side by side */
+      /* DB1: the faction card takes a full row. NX1: Stages is a row inside the top card now. */
+      #faction-card { grid-column: 1 / -1; }   /* the faction card takes a full row too, so Palette and Achievements still sit side by side */
       .group-button { padding: 16px 18px; font-size: 0.9375rem; }
       .group-button strong { font-size: 1.75rem; }
       #headline-card #overall-chart svg { width: 240px; height: 240px; }
@@ -3343,12 +3345,11 @@
           <button class="group-button" id="done-button"></button>
         </div>
         <button class="link-button hidden" id="repaint-link"></button>
-      </div>
-
-      <!-- DB1: the stage legend, one folding row under the top card. Folded by foldCard() in app.js (starts shut). -->
-      <div class="card" id="stage-card">
-        <h2>Stages</h2>
-        <ul class="legend" id="stage-legend"></ul>
+        <!-- NX1: the stage legend is one folding row inside the top card. Folded by foldCard() in app.js (starts shut every time the app opens). -->
+        <div class="stage-fold" id="stage-fold">
+          <h2>Stages</h2>
+          <ul class="legend" id="stage-legend"></ul>
+        </div>
       </div>
 
       <!-- Progress over time: drawn by renderHistory() in the JavaScript. -->
@@ -3726,7 +3727,7 @@
           <ul>
             <li>Give each faction its own colour in <strong>Settings → Faction colours</strong> (or tap <strong>Faction colours</strong> on the dashboard). Tap the colour circle to pick one.</li>
             <li id="help-dashboard-tiles"><strong>Palette</strong> on the Nexus shows a strip with one block for each colour, as wide as the paints you have in it (Owned and Running low). A colour with none, or only one, is an empty or thin block, and the first two are named under the strip (for example <strong>No red or orange yet</strong>). With no paints marked Owned, the strip is hidden. Tap it to open Your Palette. <strong>Achievements</strong> is a place held for later and does nothing yet.</li>
-            <li id="help-card-folds">In Settings, the <strong>Faction colours</strong> and <strong>Paint brands</strong> cards are shut each time you open the app. Tap the heading to open one. Tapping <strong>Faction colours</strong> on the dashboard opens it for you. <strong>Stages</strong>, <strong>Import</strong> and <strong>Your data</strong> fold shut the same way.</li>
+            <li id="help-card-folds">In Settings, the <strong>Faction colours</strong> and <strong>Paint brands</strong> cards are shut each time you open the app. Tap the heading to open one. Tapping <strong>Faction colours</strong> on the dashboard opens it for you. <strong>Import</strong> and <strong>Your data</strong> fold shut the same way, and so does the <strong>Stages</strong> row inside the top card on Nexus.</li>
             <li>On the Nexus, <strong>Armies</strong> shows one row for each faction. Tap a row to see its units. Switch to <strong>Doughnuts</strong> for a small chart each.</li>
             <li><strong>Suggest</strong> offers a colour. If the faction's units have recipes linked, it uses those (armour recipes first, each recipe's first paint, usually the base coat). Otherwise it uses the colour the faction is usually painted, for well-known factions.</li>
             <li><strong>Use suggested colours</strong> colours every faction that hasn't got one yet, in one tap. Press Undo on the message if you change your mind.</li>

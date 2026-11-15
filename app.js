@@ -24308,7 +24308,7 @@
     foldPageText();   // v52
     addRecipeSchemeExplainers();   // S1
     markHelpFolds();   // v52
-    foldCard(document.getElementById("stage-card"), "stage-legend", { saved: "stagesOpen" });   // DB1: the Stages row under the top card
+    foldCard(document.getElementById("stage-fold"), "stage-legend");   // NX1: the Stages row inside the top card (shut every time the app opens; DB1 used to save it)
     foldCard(document.getElementById("faction-colours-card"), "faction-colours");   // v53
     foldCard(document.getElementById("recipe-prefs-card"), "recipe-prefs");   // RS2
     foldCard(document.getElementById("brands-card"), "paint-brands");   // v53
