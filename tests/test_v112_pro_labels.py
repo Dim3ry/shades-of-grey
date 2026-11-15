@@ -38,7 +38,7 @@ def main():
         t.fresh(page)
         check("Dashboard (Palette tile, Achievements) has no tag", tags(page, "#view-dashboard") == [])
         t.main_tab(page, "recipes")
-        for view in ("recipes", "schemes", "palette", "shopping"):
+        for view in ("recipes", "schemes", "palette", "shopping"):   # SHP2: "shopping" is no longer a Painting tab, so the count guard below skips it
             if page.locator(f'#recipe-seg button[data-view="{view}"]').count():
                 t.recipe_view(page, view)
                 check(f"Painting > {view} has no tag", page.locator(".pro-pill:visible").count() == 0)

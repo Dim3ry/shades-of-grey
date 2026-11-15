@@ -102,7 +102,12 @@ def sub_tab(page, name):
     quiet(page)
 
 def recipe_view(page, view):
-    page.click(f'#recipe-seg button[data-view="{view}"]')
+    if view == "shopping":   # SHP2: Shopping is a screen of its own now; the header Shopping button opens it
+        page.click("#basket-button"); page.wait_for_function("() => settings.tab === 'shopping'")
+    else:
+        if page.evaluate("() => settings.tab") == "shopping":   # SHP2: coming back from the Shopping screen to a Painting tab: tap the Painting piece first
+            page.click('nav button[data-tab="recipes"]')
+        page.click(f'#recipe-seg button[data-view="{view}"]')
     quiet(page)
 
 def saved_book(page):
@@ -650,7 +655,7 @@ def main():
         restore_in_settings(page)
         check("restored example paints are not on the shopping list", page.evaluate("() => shoppingItems().length") == 0)
         main_tab(page, "recipes")
-        page.click("#recipe-seg button[data-view='shopping']")
+        page.click("#basket-button"); page.wait_for_function("() => settings.tab === 'shopping'")
         quiet(page)
         check("the shopping page says there is nothing to buy", "Nothing to buy" in page.inner_text("#shop-panel"), page.inner_text("#shop-panel"))
         # v58 (chunk 1.3) changed this decision. v44 let a kept example paint (or one given a status) count like any paint, so after

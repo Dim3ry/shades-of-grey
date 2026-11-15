@@ -39,15 +39,15 @@ def open_entry(page, key, kind="guide"):
     page.wait_for_timeout(150)
 
 def open_shop(page):
-    page.evaluate("() => { settings.recipeView = 'shopping'; renderRecipes(); }")
-    page.click('nav button[data-tab="recipes"]')
+    page.evaluate("() => openShopping('paints')")   # SHP2: Shopping is a screen of its own (it was a Painting tab opened by settings.recipeView)
     page.wait_for_selector("#shop-panel .card")
 
 def gear(page):
     return page.evaluate("() => JSON.parse(JSON.stringify(book.gear || []))")
 
 def basket(page):
-    return page.inner_text("#basket-button").strip() if page.locator("#basket-button:not(.hidden)").count() else "hidden"
+    loc = page.locator("#basket-button .basket-count")   # SHP2: the count is the badge; the button always shows now, so "hidden" is no longer a state ("" = no count)
+    return loc.inner_text().strip() if loc.count() else ""
 
 def small_taps(page, scope):
     return page.evaluate("""(s) => [...document.querySelectorAll(s + ' button, ' + s + ' a, ' + s + ' summary')].filter(b => b.offsetParent)
@@ -136,31 +136,32 @@ def main():
         print("\n--- 4. The shopping list ---")
         open_shop(page)
         order = page.evaluate("() => [...document.querySelectorAll('#shop-panel .shop-lists > .shop-brand')].map(h => h.textContent)")
-        check("a Gear section with its own heading, under the paints", order == ["Citadel", "Gear"], order)
-        grows = page.evaluate("""() => [...document.querySelectorAll('#shop-panel .shop-gear-list .shop-item')].map(li => ({ text: li.querySelector('.shop-text').innerText.replace(/\\s+/g, ' ').trim(),
-            tick: li.querySelectorAll('.shop-tick').length, remove: li.querySelectorAll('.shop-remove').length }))""")
-        check("each Gear row has the name, where it came from, a Bought tick and Remove",
-              grows == [{"text": "Wet palette from Using a wet palette", "tick": 1, "remove": 1}, {"text": "Gloss varnish from Varnishing models", "tick": 1, "remove": 1}], grows)
+        check("the Paints tab holds only paints (SHP2: Gear moved to its own tab, so there is no Gear heading here)", order == ["Citadel"] and page.locator("#shop-gear-panel .shop-gear-item").count() == 0, order)   # SHP2: was a Gear section under the paints
         text = page.evaluate("() => shoppingText(shoppingItems())")
         check("Copy as text has Gear under its own heading", "\n\nGear\n- Wet palette (from Using a wet palette)\n- Gloss varnish (from Varnishing models)" in text, text)
         check("the basket counts the paint and the Gear", basket(page) == "3", basket(page))
         page.click("#buy-bar button[data-shop='firestorm']")
         buy = page.evaluate("() => [...document.querySelectorAll('#buy-links a')].map(a => a.href)")
         check("the Buy these shop buttons stay paint-only", len(buy) == 1 and "Alpha" in buy[0], buy)
-        page.locator("#shop-panel .shop-gear-item", has_text="Wet palette").locator(".shop-tick").click()
+        page.click('#shop-seg [data-stab="gear"]')   # SHP2: the Gear rows are in their own tab
+        grows = page.evaluate("""() => [...document.querySelectorAll('#shop-gear-panel .shop-gear-list .shop-item')].map(li => ({ text: li.querySelector('.shop-text').innerText.replace(/\\s+/g, ' ').trim(),
+            tick: li.querySelectorAll('.shop-tick').length, remove: li.querySelectorAll('.shop-remove').length }))""")
+        check("each Gear row has the name, where it came from, a Bought tick and Remove",
+              grows == [{"text": "Wet palette from Using a wet palette", "tick": 1, "remove": 1}, {"text": "Gloss varnish from Varnishing models", "tick": 1, "remove": 1}], grows)
+        page.locator("#shop-gear-panel .shop-gear-item", has_text="Wet palette").locator(".shop-tick").click()
         page.wait_for_timeout(900)
         check("the Bought tick moves it to Bought, out of the basket count", [x.get("bought") for x in gear(page)] == [True, None] and basket(page) == "2"
-              and page.inner_text("#shop-panel .shop-bought-head").strip() == "Bought · 1" and page.inner_text("#toast").startswith("Bought Wet palette"), (gear(page), basket(page)))
+              and page.inner_text("#shop-gear-panel .shop-bought-head").strip() == "Bought · 1" and page.inner_text("#toast").startswith("Bought Wet palette"), (gear(page), basket(page)))
         page.click("#toast-undo")
         page.wait_for_timeout(200)
         check("Undo puts it back on the list", [x.get("bought") for x in gear(page)] == [None, None] and basket(page) == "3")
-        page.locator("#shop-panel .shop-gear-item", has_text="Wet palette").locator(".shop-tick").click()
+        page.locator("#shop-gear-panel .shop-gear-item", has_text="Wet palette").locator(".shop-tick").click()
         page.wait_for_timeout(900)
-        page.click("#shop-panel .shop-bought-head")
-        page.locator("#shop-panel .shop-bought-list .shop-gear-item").locator(".shop-addback").click()
+        page.click("#shop-gear-panel .shop-bought-head")
+        page.locator("#shop-gear-panel .shop-bought-list .shop-gear-item").locator(".shop-addback").click()
         page.wait_for_timeout(200)
         check("Add back in Bought puts it on the list again", [x.get("bought") for x in gear(page)] == [None, None] and basket(page) == "3")
-        page.locator("#shop-panel .shop-gear-item", has_text="Gloss varnish").locator(".shop-remove").click()
+        page.locator("#shop-gear-panel .shop-gear-item", has_text="Gloss varnish").locator(".shop-remove").click()
         page.wait_for_timeout(200)
         check("Remove deletes the Gear item", [x["id"] for x in gear(page)] == ["wet palette"] and basket(page) == "2"
               and page.inner_text("#toast").startswith("Removed Gloss varnish"), gear(page))
@@ -170,8 +171,8 @@ def main():
         page.evaluate("() => { const p = book.paints[0]; removeFromShoppingList(p.id); }")
         page.wait_for_timeout(200)
         check("with only Gear on the list, the list shows it and there is no Buy these bar",
-              page.locator("#shop-panel .shop-gear-item").count() == 2 and page.locator("#buy-bar").count() == 0
-              and "Nothing to buy" not in page.inner_text("#shop-panel") and basket(page) == "2", page.inner_text("#shop-panel")[:200])
+              page.locator("#shop-gear-panel .shop-gear-item").count() == 2 and page.locator("#buy-bar").count() == 0
+              and "Nothing to buy" not in page.inner_text("#shop-gear-panel") and basket(page) == "2", page.inner_text("#shop-gear-panel")[:200])
 
         print("\n--- 5. Backup and restore ---")
         saved = page.evaluate("() => JSON.parse(JSON.stringify(backupData()))")
@@ -239,11 +240,12 @@ def main():
                 return [...li.querySelectorAll('.where-buy-name, a, button, .shop-onlist')].every(x => { const q = x.getBoundingClientRect(); return q.left >= r.left - 1 && q.right <= r.right + 1; }); })""")
             ok_g = no_sideways(page) and fit and small_taps(page, ".guides-entry .where-buy") == 0
             open_shop(page)
-            fit2 = page.evaluate("""() => [...document.querySelectorAll('#shop-panel .shop-gear-item')].every(li => { const r = li.getBoundingClientRect(),
+            page.click('#shop-seg [data-stab="gear"]')   # SHP2
+            fit2 = page.evaluate("""() => [...document.querySelectorAll('#shop-gear-panel .shop-gear-item')].every(li => { const r = li.getBoundingClientRect(),
                 t = li.querySelector('.shop-text').getBoundingClientRect(), b = li.querySelector('.shop-remove').getBoundingClientRect();
                 return t.left >= r.left - 1 && t.right <= b.left + 1 && b.right <= r.right + 1 && t.width > 60; })""")
             check(f"{w}x{h} {scheme}: no sideways scroll, 44 px taps, Where to buy and Gear rows wrap and keep their names",
-                  ok_g and no_sideways(page) and fit2 and small_taps(page, "#shop-panel .shop-gear-list") == 0, (ok_g, fit, fit2))
+                  ok_g and no_sideways(page) and fit2 and small_taps(page, "#shop-gear-panel .shop-gear-list") == 0, (ok_g, fit, fit2))
         check("no page errors or pop-ups", not errors, errors)
         browser.close()
 

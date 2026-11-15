@@ -47,7 +47,7 @@ def main():
                     page.set_viewport_size({"width": width, "height": 900})
                     check(f"palette {layout} {scheme} {width}: no sideways scroll, buttons 44 px or taller",
                           no_sideways(page) and not small_taps(page, "#palette-view"), small_taps(page, "#palette-view"))
-        page.evaluate("() => { settings.recipeView = 'shopping'; renderRecipes(); }")
+        page.evaluate("() => openShopping()")   # SHP2: Shopping is a screen of its own
         for scheme in ("dark", "light"):
             page.emulate_media(color_scheme=scheme)
             for width in (1280, 1920):

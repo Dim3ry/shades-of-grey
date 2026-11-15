@@ -52,8 +52,7 @@ def main():
         page = ctx.new_page()
         page.on("pageerror", lambda x: errors.append(str(x)))
         page.on("dialog", lambda d: (dialogs.append(d.message), d.dismiss()))
-        load(page, paints=PAINTS, recipes=RECIPES, settings={"recipeView": "shopping"})
-        page.click('nav button[data-tab="recipes"]')
+        load(page, paints=PAINTS, recipes=RECIPES, settings={"tab": "shopping"})   # SHP2: Shopping is a screen of its own; loading with it saved opens it (launch_helpers.leave_launch)
 
         print("\n--- 1. Shopping under 900 px: one column in the old order ---")
         for scheme in ("dark", "light"):
@@ -105,12 +104,11 @@ def main():
         check("tapping the wheel keeps the section open", page.locator("#compendium-body .compendium-folds .fold-panel:not([hidden])").count() == 1)
 
         print("\n--- 4. Edge cases ---")
-        page.click('nav button[data-tab="recipes"]')
-        page.evaluate("() => { settings.hideShopLinks = true; renderRecipes(); }")
+        page.evaluate("() => { settings.hideShopLinks = true; openShopping(); renderShopping(); }")   # SHP2: Shopping is its own screen
         b = shop_boxes(page)
         check("shop links off: Copy as text still on the right, lists on the left",
               b["buy"] is None and b["copy"] and b["lists"]["right"] <= b["copy"]["left"] + 1, b)
-        page.evaluate("() => { book.paints.forEach(p => p.status = 'owned'); renderRecipes(); }")
+        page.evaluate("() => { book.paints.forEach(p => p.status = 'owned'); renderShopping(); }")
         check("nothing to buy: a plain card with no split", page.locator("#shop-panel .card.layout-split").count() == 0)
 
         check("no page errors", not errors, errors)

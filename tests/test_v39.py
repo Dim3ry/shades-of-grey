@@ -144,7 +144,7 @@ def open_shopping(page):
     page.click('nav button[data-tab="recipes"]')
     quiet(page)
     # v40: the shopping list is its own switch on the Recipes tab (it used to fold out under Your Palette)
-    page.click('#recipe-seg [data-view="shopping"]')
+    page.click("#basket-button"); page.wait_for_function("() => settings.tab === 'shopping'")
     quiet(page)
 
 def main():
@@ -182,7 +182,7 @@ def main():
         bar_code = app[app.index("function buildBuyBar("):app.index("function renderShopPanel(")]
         check("reuse, not copy: the fold-out uses shopsFor, shopLink and the same plain-links sentence as the Buy these bar, and the sentence is written once (the bar now reads it from the same place)",
               all(w in new_c for w in ["shopsFor([{ paint }])", "shopLink(shop, paint)", "SHOP_PLAIN_WORDS"]) and app_c.count('const SHOP_PLAIN_WORDS = "') == 1 and PLAIN in new_code
-              and "SHOP_PLAIN_WORDS" in app[app.index("function renderShopPanel("):app.index("// v40: the small basket count")] and PLAIN not in bar_code)   # v52: the bar's note moved behind the Shopping list's More info, still read from the same place
+              and "SHOP_PLAIN_WORDS" in app[app.index("function renderShopPanel("):app.index("// v40, SHP2: the Shopping button")] and PLAIN not in bar_code)   # v52: the bar's note moved behind the Shopping list's More info, still read from the same place
         door_c = app[app.index("function compendiumDoor"):app.index("function startRecipeFromCompendium")]
         card = app[app.index("function buildColourIdeasCard"):]
         card_door = card[:card.index("id: doorId,")]
@@ -311,7 +311,7 @@ def main():
         quiet(page)
         listed = page.evaluate("(n) => [...document.querySelectorAll('#paint-list li')].some(li => li.textContent.includes(n))", first["name"])
         check("the Your Palette list is already up to date when you go there (nothing to refresh by hand)", listed, first["name"])
-        page.click('#recipe-seg [data-view="shopping"]')   # v40: its own switch now
+        page.click("#basket-button"); page.wait_for_function("() => settings.tab === 'shopping'")   # v40: its own switch now
         quiet(page)
         shopping = page.inner_text("#shop-panel")
         check("the shopping list shows it, and the Buy these bar offers it", first["name"] in shopping and "Buy these" in shopping, shopping[:200])
@@ -412,7 +412,7 @@ def main():
         open_shopping(page)
         check("the Buy these bar is gone from the shopping list (every shop button and link), while the shopping list itself and its Copy as text stay",
               page.locator("#buy-bar, #buy-links, .buy-shops, [data-shop]").count() == 0 and page.locator("#shop-panel .shop-list li").count() >= 2 and page.locator("#shop-panel button:has-text('Copy')").count() >= 1
-              and page.is_visible('#recipe-seg [data-view="shopping"]'), page.inner_text("#shop-panel")[:200])
+              and page.is_visible("#basket-button"), page.inner_text("#shop-panel")[:200])   # SHP2: the Shopping button replaces the Shopping tab
         open_tab(page)
         tap(page, "blue")
         open_row(page, "Probe Blue")

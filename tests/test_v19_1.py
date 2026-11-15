@@ -80,7 +80,7 @@ def tab(page, name):
 def open_shop(page):
     page.evaluate("showTab('recipes')")
     page.click("#recipe-seg button[data-view='palette']")
-    page.click("#recipe-seg button[data-view='shopping']")
+    page.click("#basket-button"); page.wait_for_function("() => settings.tab === 'shopping'")
     page.wait_for_timeout(100)
 
 def shop_buttons(page):

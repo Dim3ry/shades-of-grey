@@ -51,7 +51,7 @@ def more_page(page, name):
 
 def open_shopping(page):
     tab(page, "recipes")
-    page.click('#recipe-seg button[data-view="shopping"]')
+    page.click("#basket-button"); page.wait_for_function("() => settings.tab === 'shopping'")
     page.wait_for_timeout(150)
 
 def paints_with_needs():
@@ -123,9 +123,9 @@ def main():
         check("while closed, the sentence, the warning and the shop note are all hidden",
               not any(page.get_by_text(x).first.is_visible() for x in ("paints to get", "No statuses set yet", "Plain links")))
         panel = text(page, "#shop-panel .more-info-panel")
-        check("the panel holds the sentence, the shop note and the shop links words",
+        check("the panel holds the shop note and the shop links words",   # SHP2: the "N paints to get." sentence is gone (the Paints tab shows its own count)
               # v75: the sentence is now just "N paints to get." and the shop note is only the plain-links words (SHOP-1, SHOP-4)
-              panel and "paints to get" in panel and "Plain links" in panel, panel)
+              panel and "Plain links" in panel, panel)
         before = v51.all_local(page)
         press(page, page.locator("#shop-panel .more-info-button").first)
         check("tapping it opens the panel, the button keeps its name and aria-expanded is true",   # AB10: no more "Less info"
@@ -258,7 +258,7 @@ def main():
         a = app.index("function pageMoreInfo(")
         mine = app[a:app.index("// A greyed-out shopping list button")]   # pageMoreInfo, foldPageText and markHelpFolds
         check("no paint name can reach an aria-label from the new helpers", not re.search(r"aria-label", mine))
-        shop = app[app.index("function renderShopPanel("):app.index("// v40: the small basket count")]
+        shop = app[app.index("function renderShopPanel("):app.index("// The Bought tick box of a row")]   # SHP2: the Paints tab code only (the Wishlist rows are Models-style rows, whose Edit and Got it buttons carry the model name)
         check("the Shopping list code adds no innerHTML and no aria-label", "innerHTML" not in shop and "aria-label" not in shop)
         css = html[html.index("/* v52: More info on the Shopping list"):html.index(".idea-more .more-info-button")]
         check("no new subtitles, badges or pills in the new CSS", not re.search(r"pill|badge", css))

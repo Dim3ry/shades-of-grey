@@ -35,11 +35,10 @@ PAINTS = [P(1, "Alpha Empty", status="empty"), P(2, "Beta Needed", status="notow
           P(12, "Example Real", example=True, status="notowned"),   # an example paint with a real brand, used only by an example recipe
           P(13, "Kappa Listed", status="wishlist")]
 EXAMPLE_REC = dict(t.rec(2, "Example", "Armour", [12]), example=True)
-SETTINGS = {"tab": "recipes", "recipeView": "shopping", "examplesChecked": True, "recipeExamplesChecked": True}
+SETTINGS = {"tab": "shopping", "examplesChecked": True, "recipeExamplesChecked": True}
 
 def open_shop(page):
-    page.evaluate("() => { settings.recipeView = 'shopping'; renderRecipes(); }")
-    page.click('nav button[data-tab="recipes"]')
+    page.evaluate("() => openShopping()")   # SHP2: Shopping is a screen of its own (it was a Painting tab opened by settings.recipeView)
     page.wait_for_selector("#shop-panel .card")
 
 def suggested(page):
@@ -50,7 +49,8 @@ def names(page):
     return [r["name"] for r in suggested(page)]
 
 def basket(page):
-    return page.inner_text("#basket-button").strip()
+    loc = page.locator("#basket-button .basket-count")   # SHP2: the count is the badge (the button also holds the word Shopping)
+    return loc.inner_text().strip() if loc.count() else ""
 
 def paint(page, pid):
     return page.evaluate("(id) => { const p = book.paints.find(x => x.id === id); return { s: paintStatus(p), d: p.shopDismissed === true, from: p.shopFrom || [] }; }", pid)
@@ -124,7 +124,7 @@ def main():
         page.wait_for_timeout(150)
         check("Remove on the list counts as dismissing: the paint is Not owned and does not jump into Suggested",
               paint(page, 5)["s"] == "notowned" and paint(page, 5)["d"] and "Eta Listed" not in str(names(page)), (paint(page, 5), names(page)))
-        page.click("#recipe-seg button[data-view='palette']")
+        page.click('nav button[data-tab="recipes"]'); page.click("#recipe-seg button[data-view='palette']")   # SHP2: Shopping is its own screen, so go back to Painting first
         page.locator(".paint-item", has_text="Kappa Listed").locator("button.paint-head").click()
         page.locator(".paint-item", has_text="Kappa Listed").locator('.status-chip[data-status="empty"]').click()
         open_shop(page)

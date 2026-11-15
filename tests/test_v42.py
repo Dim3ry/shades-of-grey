@@ -48,7 +48,7 @@ P = h.P
 SCHEME_KEY = "blue-gold"   # a built-in starter scheme (four colours, plain words)
 
 def basket(page):
-    return page.evaluate("() => { const b = document.getElementById('basket-button'); return b.classList.contains('hidden') ? '' : b.textContent.trim(); }")
+    return page.evaluate("() => { const b = document.getElementById('basket-button'); const n = b.querySelector('.basket-count'); return n ? n.textContent.trim() : ''; }   /* SHP2: the count is the badge; the button always shows and holds the word Shopping too */")
 
 def toast(page):
     return page.evaluate("() => ({ text: document.getElementById('toast-text').textContent, kids: document.getElementById('toast-text').children.length, "
@@ -182,7 +182,7 @@ def main():
         page.click("#cmp-fold-starter-button") if page.get_attribute("#cmp-fold-starter-button", "aria-expanded") != "true" else None
         page.click('nav button[data-tab="recipes"]')
         page.wait_for_timeout(200)
-        page.click('#recipe-seg [data-view="shopping"]')
+        page.click("#basket-button"); page.wait_for_function("() => settings.tab === 'shopping'")
         page.wait_for_timeout(150)
         text = page.inner_text("#shop-panel")
         check("the Shopping list shows each paint once, saying from Scheme: <name>",
@@ -300,7 +300,7 @@ def main():
         check("it still adds, and the basket and list stay", toast(page)["text"] == f"Added {len(sp)} paints to your shopping list" and basket(page) == str(len(sp)), (toast(page), basket(page)))
         page.click('nav button[data-tab="recipes"]')
         page.wait_for_timeout(200)
-        page.click('#recipe-seg [data-view="shopping"]')
+        page.click("#basket-button"); page.wait_for_function("() => settings.tab === 'shopping'")
         page.wait_for_timeout(150)
         check("the Shopping list shows the paints (Buy these bar stays hidden, as before)", all(page.inner_text("#shop-panel").count(x["name"]) == 1 for x in sp) and page.locator("#buy-bar").count() == 0)
 
@@ -338,7 +338,7 @@ def main():
         check("the saved source is plain text cut to 60 characters", all(r["shopFrom"] == [want] and len(r["shopFrom"][0]) == 60 for r in st), [r.get("shopFrom") for r in st])
         page.click('nav button[data-tab="recipes"]')
         page.wait_for_timeout(200)
-        page.click('#recipe-seg [data-view="shopping"]')
+        page.click("#basket-button"); page.wait_for_function("() => settings.tab === 'shopping'")
         page.wait_for_timeout(150)
         bad2 = page.evaluate("() => ({ pwned: window.__pwned || 0, bad: document.querySelectorAll('#shopping-view img, #shopping-view script, #shopping-view b, #basket-button img').length })")
         check("the Shopping list shows those names and sources as plain text", bad2["pwned"] == 0 and bad2["bad"] == 0 and want[:20] in page.inner_text("#shop-panel"), bad2)

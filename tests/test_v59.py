@@ -79,7 +79,7 @@ def main():
         e.recipe_view(page, "palette")
         check("Your Palette: 'Nothing in the paint rack yet.'", page.inner_text("#paint-list").strip() == "Nothing in the paint rack yet.", page.inner_text("#paint-list"))
         e.recipe_view(page, "shopping")
-        check("Shopping: 'Nothing to buy.'", "Nothing to buy." in page.inner_text("#view-recipes"))
+        check("Shopping: 'Nothing to buy.'", "Nothing to buy." in page.inner_text("#view-shopping"))   # SHP2: Shopping is its own screen (#view-shopping), not part of #view-recipes
 
         # ---------- 4. The newer cards ----------
         print("\n--- 4. The v56 to v58 cards still work ---")
