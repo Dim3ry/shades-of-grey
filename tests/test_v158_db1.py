@@ -58,31 +58,24 @@ def main():
         ring, card, tiles = pg.evaluate(BOX, "#overall-chart svg"), pg.evaluate(BOX, "#headline-card"), pg.evaluate(BOX, ".groups")
         check("the ring is centred at the top of the card", abs((ring["left"] + ring["right"]) / 2 - (card["left"] + card["right"]) / 2) < 2 and ring["top"] - card["top"] < 40, (ring, card))
         check("the two tiles sit directly under the ring", 0 <= tiles["top"] - ring["bottom"] <= 24 and pg.locator(".groups .group-button").count() == 2, (ring, tiles))
-        check("no heading on the ring", pg.locator("#headline-card h2, #headline-card h3").count() == 0)
+        # NX1: the top card now also holds the Stages fold, whose heading is the Stages button; only the ring has no heading of its own.
+        check("no heading on the ring", pg.locator("#headline-card h3").count() == 0 and pg.locator("#headline-card h2").count() == 1)
 
-        # 2. The Stages card
-        order = pg.evaluate("() => [...document.querySelectorAll('#view-dashboard > .card:not(.hidden)')].map(e => e.id)")
-        check("the Stages card sits directly below the top card", order[:2] == ["headline-card", "stage-card"], order)
-        btn = "#stage-card .card-fold-button"
+        # 2. The Stages row. NX1: it is inside the top card now (no #stage-card), starts shut every time the app opens and is no longer saved;
+        # the fuller check of the row is in test_v167_nx1.py.
+        btn = "#headline-card .card-fold-button"
         check("it is one row, 44 px or more, labelled Stages, and starts shut",
-              pg.inner_text(btn).strip() == "Stages" and pg.evaluate(BOX, "#stage-card")["h"] >= 44 and pg.get_attribute(btn, "aria-expanded") == "false" and not pg.is_visible("#stage-legend"),
+              pg.inner_text(btn).strip() == "Stages" and pg.evaluate(BOX, btn)["h"] >= 44 and pg.get_attribute(btn, "aria-expanded") == "false" and not pg.is_visible("#stage-legend"),
               (pg.inner_text(btn), pg.get_attribute(btn, "aria-expanded")))
-        y0 = pg.evaluate("() => window.scrollY"); top0 = pg.evaluate(BOX, "#stage-card")["top"]
+        y0 = pg.evaluate("() => window.scrollY")
         pg.click(btn); wait_settled(pg)
         check("tapping opens it: aria-expanded, rows and counts are shown, the page does not jump",
               pg.get_attribute(btn, "aria-expanded") == "true" and pg.locator("#stage-legend li").count() == pg.evaluate("STAGES.length")
-              and pg.is_visible("#stage-legend") and pg.evaluate("() => window.scrollY") == y0 and abs(pg.evaluate(BOX, "#stage-card")["top"] - top0) < 1)
+              and pg.is_visible("#stage-legend") and pg.evaluate("() => window.scrollY") == y0)
         counts = pg.evaluate("() => [...document.querySelectorAll('#stage-legend .num')].map(n => Number(n.textContent))")
         check("the counts are the models at each stage", counts == pg.evaluate("stageCounts(models)"), counts)
-        check("the state is remembered with the settings", pg.evaluate("() => JSON.parse(localStorage.getItem('shades-of-grey-settings')).stagesOpen") is True)
-        pg.reload(); app_ready(pg); leave_launch(pg); wait_settled(pg)
-        check("after a reload it is still open", pg.get_attribute(btn, "aria-expanded") == "true" and pg.is_visible("#stage-legend"))
         pg.click("#stage-legend li:nth-child(6) button"); wait_settled(pg)
         check("a stage row opens Models filtered to that stage", pg.is_visible("#view-units") and pg.locator("#unit-list li.unit").count() == 1, pg.locator("#unit-list li.unit").count())
-        pg.click('nav button[data-tab="dashboard"]'); wait_settled(pg)
-        pg.click(btn); wait_settled(pg)
-        check("tapping again shuts it and that is remembered too",
-              pg.get_attribute(btn, "aria-expanded") == "false" and not pg.is_visible("#stage-legend") and pg.evaluate("() => settings.stagesOpen") is False)
         c.close()
 
         # 3. Armies doughnuts say Done
@@ -120,12 +113,12 @@ def main():
             fit = pg.evaluate("""() => ({ side: document.documentElement.scrollWidth > innerWidth + 1,
               labels: [...document.querySelectorAll('nav.tabs button[data-tab]')].every(b => b.scrollWidth <= b.clientWidth + 1),
               ringText: (() => { const tx = document.querySelector('#overall-chart svg text'); const f = getComputedStyle(tx).fill; return f; })(),
-              stageH: document.querySelector('#stage-card .card-fold-button').getBoundingClientRect().height })""")
+              stageH: document.querySelector('#headline-card .card-fold-button').getBoundingClientRect().height })""")
             check(f"{tag}: no sideways scroll, the Nexus label fits its button, the Stages row is 44 px or more",
                   not fit["side"] and fit["labels"] and fit["stageH"] >= 44, fit)
             check(f"{tag}: the ring text has a colour", fit["ringText"] not in ("none", "rgba(0, 0, 0, 0)"), fit["ringText"])
             if (w, h) == (390, 844) and appearance == "dark":
-                stage = pg.evaluate(BOX, "#stage-card")
+                stage = pg.evaluate(BOX, "#headline-card")
                 check("390x844: the ring, both tiles and the Stages row show without scrolling", stage["bottom"] <= 844, stage)
             c.close()
         browser.close()
