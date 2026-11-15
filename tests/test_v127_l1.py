@@ -39,7 +39,7 @@ def open_entry(page, key, kind="guide"):
     page.wait_for_timeout(150)
 
 def open_shop(page):
-    page.evaluate("() => openShopping()")   # SHP2: Shopping is a screen of its own (it was a Painting tab opened by settings.recipeView)
+    page.evaluate("() => openShopping('paints')")   # SHP2: Shopping is a screen of its own (it was a Painting tab opened by settings.recipeView)
     page.wait_for_selector("#shop-panel .card")
 
 def gear(page):

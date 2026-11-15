@@ -412,7 +412,7 @@ def main():
         open_shopping(page)
         check("the Buy these bar is gone from the shopping list (every shop button and link), while the shopping list itself and its Copy as text stay",
               page.locator("#buy-bar, #buy-links, .buy-shops, [data-shop]").count() == 0 and page.locator("#shop-panel .shop-list li").count() >= 2 and page.locator("#shop-panel button:has-text('Copy')").count() >= 1
-              and page.is_visible('#recipe-seg [data-view="shopping"]'), page.inner_text("#shop-panel")[:200])
+              and page.is_visible("#basket-button"), page.inner_text("#shop-panel")[:200])   # SHP2: the Shopping button replaces the Shopping tab
         open_tab(page)
         tap(page, "blue")
         open_row(page, "Probe Blue")
