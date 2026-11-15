@@ -112,10 +112,10 @@ def main():
         page.click('nav button[data-tab="recipes"]'); t.quiet(page)
         page.click('#basket-button'); page.wait_for_function("() => settings.tab === 'shopping'"); t.quiet(page)   # SHP2: the Shopping button
         txt = page.inner_text("#shop-panel")
-        check("the empty list says what fills it", "Nothing to buy." in txt and "Wishlist" in txt, txt[:200])
+        check("the empty list says what fills it", "appear here" in txt and "Wishlist" in txt, txt[:200])   # SHP3: the empty line now says what fills the tab ("Paints you add or mark Wishlist appear here."), no longer "Nothing to buy"
         page.evaluate("applyPaintStatus(findOrAddPaint('Citadel', 'Mournfang Brown', '#5a3a1a'), 'wishlist'); render()")
         t.quiet(page)
-        check("a Wishlist paint of the person's own goes on the list", "Mournfang Brown" in page.inner_text("#shop-panel") and "Nothing to buy" not in page.inner_text("#shop-panel"), page.inner_text("#shop-panel")[:200])
+        check("a Wishlist paint of the person's own goes on the list", "Mournfang Brown" in page.inner_text("#shop-panel") and "appear here" not in page.inner_text("#shop-panel"), page.inner_text("#shop-panel")[:200])
         ctx.close()
         browser.close()
     check("no page errors", not errors, errors)

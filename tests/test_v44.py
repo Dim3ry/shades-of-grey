@@ -657,7 +657,7 @@ def main():
         main_tab(page, "recipes")
         page.click("#basket-button"); page.wait_for_function("() => settings.tab === 'shopping'")
         quiet(page)
-        check("the shopping page says there is nothing to buy", "Nothing to buy" in page.inner_text("#shop-panel"), page.inner_text("#shop-panel"))
+        check("the shopping page says there is nothing to buy", "appear here" in page.inner_text("#shop-panel"), page.inner_text("#shop-panel"))   # SHP3: the empty line now says what fills the tab ("Paints you add or mark Wishlist appear here."), no longer "Nothing to buy"
         # v58 (chunk 1.3) changed this decision. v44 let a kept example paint (or one given a status) count like any paint, so after
         # Keep them all sixteen made-up paints showed on the shopping list as missing. AI testers then tried to buy "Example deep blue" (a made-up paint, called "Harbour blue" since AB9),
         # which no shop sells, and the list looked broken. Now a paint that started as an example stays off the list either way;

@@ -416,7 +416,7 @@ def main():
         open_tab(page)
         tap(page, "blue")
         open_row(page, "Probe Blue")
-        check("in the colour wheel's panel there is no fold-out, no Add button, no shop link", page.locator(".shop-more, .shop-links, .shop-add").count() == 0 and page.locator("#cmp-paint-panel").count() == 1)
+        check("in the colour wheel's panel there is no fold-out, no Add button, no shop link", page.locator(".shop-more, .shop-links").count() == 0 and page.locator("#cmp-paint-panel").count() == 1)   # SHP3: the Add button now shows in plain view when there is no fold-out (links off), so only the fold-out and links are checked
         c.open_comp(page)
         c.pick_base(page, "test paints|probe blue")
         check("in the Compendium's Colour ideas there is none either", page.locator("#compendium-body .shop-more").count() == 0 and page.locator("#cmp-fold-ideas-panel > ul.idea-list > li").count() == 3)
