@@ -3018,6 +3018,19 @@
       row.append(slot, who);
       return row;
     }
+    // SHP3: the Add button for a paint in the colour wheel's panel (kept here, outside the wheel code). A row with its fold-out keeps Add inside it;
+    // a row with none (links off, or nothing sells it) gets Add in plain view, its tag taking the focus once it is listed. The wheel paint itself gets one too.
+    function addForWheelRow(door, row, hit, source, hasFold) {
+      if (!door.listMarks || hit.owned || hasFold) return null;
+      const tagEl = row.querySelector(".idea-tag");
+      if (tagEl) tagEl.tabIndex = -1;
+      return buildShopAddRow(hit.paint, source, tagEl);
+    }
+    function addForWheelPaint(door, paint, segKey) {
+      if (!door.listMarks || MinifolioColour.haveIt(paint)) return null;
+      const part = WHEEL.find(w => w.key === segKey);
+      return buildShopAddRow(paint, `Colour Lab: Colour wheel${part ? ", " + part.label : ""}`);
+    }
     // The fold-out for one paint. Returns null when there is nothing to show (you own it, switched off, or no shop sells it).
     function buildShopFoldout(paint, owned, source, ownButton) {
       if (owned || !shopLinksOn() || !paint || !String(paint.name || "").trim()) return null;
@@ -17354,7 +17367,7 @@
       box.appendChild(title);
       const toRecipe = buildPaintToRecipeRow(door, paint);   // v62: Use in a recipe / Add to a recipe, for the wheel paint itself
       if (toRecipe) box.appendChild(toRecipe);
-      const ownList = door.listMarks && !MinifolioColour.haveIt(paint) ? buildShopAddRow(paint, `Colour Lab: Colour wheel${WHEEL.find(w => w.key === x.at.seg) ? ", " + WHEEL.find(w => w.key === x.at.seg).label : ""}`) : null;   // SHP3: the wheel paint itself
+      const ownList = addForWheelPaint(door, paint, x.at.seg);   // SHP3
       if (ownList) box.appendChild(ownList);
       const lines = [title.textContent];
       const say = (text) => {
@@ -17410,12 +17423,9 @@
           const tag = door.listMarks && !hit.owned ? shopListTag(hit.paint, baseTag) : baseTag;   // v41
           const row = buildIdeaItem(hit.paint, tag, reason, "", null, "idea-pick");
           if (door.listMarks && !hit.owned) watchShopTag(row, hit.paint, baseTag);
-          // SHP3: a paint you do not own keeps its Shop links fold-out with Add inside. When there is no fold-out (Show shop links is off, or no
-          // shop sells it) the Add used to be missing altogether, so it shows in plain view instead. One Add per row either way.
+          // SHP3: a paint you do not own keeps its fold-out with Add inside; with no fold-out the Add shows in plain view (see addForWheelRow)
           const shops = door.shops ? buildShopFoldout(hit.paint, hit.owned, panelSource) : null;   // v39: only for paints you do not own; v41: says which wheel part you were in
-          const tagEl = door.listMarks && !shops ? row.querySelector(".idea-tag") : null;
-          if (tagEl) tagEl.tabIndex = -1;
-          const toList = door.listMarks && !hit.owned && !shops ? buildShopAddRow(hit.paint, panelSource, tagEl) : null;
+          const toList = addForWheelRow(door, row, hit, panelSource, !!shops);
           if (shops) row.appendChild(shops);
           const toRecipe = buildPaintToRecipeRow(door, hit.paint);   // v62
           if (toRecipe) row.appendChild(toRecipe);
