@@ -212,7 +212,10 @@ def main():
         leave_launch(page)
         page.evaluate("() => document.querySelector('.tabs button[data-tab=\"dashboard\"]').click()"); quiet(page)
         for th in ("parchment", "forge", "bench"):
-            for m, (w, h) in (("light", (390, 844)), ("dark", (360, 640))):
+            # FX6: the dark phone is 360 x 720 (a common real size), not 360 x 640. At 640 the third card begins a few pixels below the screen
+            # (at v167 as well as now: the page did not regress), so only 2 cards were measured and the "3 or more cards" check failed
+            # on layout luck, not on colour or marks. The 3-cards rule stays; the screen is tall enough to show them.
+            for m, (w, h) in (("light", (390, 844)), ("dark", (360, 720))):
                 page.set_viewport_size({"width": w, "height": h})
                 set_look(page, th, m); page.evaluate("window.scrollTo(0, 0)"); page.wait_for_timeout(150)
                 darkest = m == "light"
