@@ -2710,8 +2710,13 @@
       --pill-edge: #c4d0de;
     }
     :where(:root[data-t="classic"]) :is(.big, .legend .num, .group-button strong, .qty-count, .paint-line .mix, .history-table td, .chart-tip b) { font-family: var(--font-num); }
-    /* AB5: the eight corner marks only on the headline card and the Mentor window; every other Classic card keeps its plain 1 px border */
-    :where(:root[data-t="classic"]) :is(#headline-card, .mentor-window) {
+    /* CM1: one pattern for Classic's eight corner marks (replaces AB5, which marked only the headline card and the Mentor window).
+       Rule: a card that sits directly on the page gets the marks; anything inside a card never does, so there are never marks inside marks.
+       "Outermost" is worked out by the selector (.card not inside another .card or .panel-marked), so cards built by the script need no extra class.
+       A new box that is not a .card opts in by adding the class panel-marked.
+       Not marked, on purpose: rows, chips, buttons, fold-out contents, nested boxes and notice cards inside a card (they are inside, so the rule skips them);
+       the Theme swatch and the Mentor window draw their own marks below. The other three looks are not touched: this rule only matches Classic. */
+    :where(:root[data-t="classic"]) :is(.mentor-window, .panel-marked, .card:not(.card .card, .panel-marked .card)) {
       background-image: linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark)), linear-gradient(var(--panel-mark), var(--panel-mark));
       background-size: 10px 2px, 2px 10px, 10px 2px, 2px 10px, 10px 2px, 2px 10px, 10px 2px, 2px 10px;
       background-position: left 3px top 3px, left 3px top 3px, right 3px top 3px, right 3px top 3px, left 3px bottom 3px, left 3px bottom 3px, right 3px bottom 3px, right 3px bottom 3px;
