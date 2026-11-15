@@ -91,7 +91,8 @@ def main():
         s = stored(page, "shades-of-grey-settings")
         check("…and that is saved", s["stages"] == NEW, s["stages"])
         check("…Done starts at is unchanged (Battle ready)", s["doneFrom"] == 5, s["doneFrom"])
-        check("…the saved data version is 2", s.get("dataVersion") == 2, s.get("dataVersion"))
+        # DV3 raised DATA_VERSION from 2 to 3 (Gear), so a device that moved up in v68 now carries the current number, which is at least 2.
+        check("…the saved data version is the current one (2 when v68 was written, 3 since DV3)", s.get("dataVersion") in (2, 3), s.get("dataVersion"))
         # The app's usual tidy-up on load (repaint: false added, photo records with no picture dropped) is not
         # part of this change, so the check looks at what the rename could touch: stages and the diary.
         keep = lambda units: [(u["id"], u["stage"], u.get("stages"), u["log"]) for u in units]
