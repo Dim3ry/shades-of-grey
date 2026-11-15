@@ -1,4 +1,5 @@
-"""v21.6 tests for Minifolio: notices are the app's own messages, not browser pop-ups.
+"""(SHP1 (v167): the models list is now called Wishlist and the "Really want" tick is gone; the checks below follow the new words.)
+v21.6 tests for Minifolio: notices are the app's own messages, not browser pop-ups.
 
 v21.6 is the first half of "in-app messages": the 35 alert() notices became toasts (the little
 message at the bottom). The 16 confirm() questions and 5 prompt() questions are left for v21.7,
@@ -213,7 +214,7 @@ def main():
         restore_try("empty.json", json.dumps({"app": "Minifolio", "models": []}).encode())
         # v165 (DS3): a backup with only wanted models can now be restored, so the refusal wording
         # for an empty file now also names wanted models.
-        ok, t = says("it has no units, recipes or wanted models in it")
+        ok, t = says("it has no units, recipes or Wishlist models in it")
         check("restore: a backup with nothing in it is refused", ok, t)
         check("…and nothing changed", untouched())
 

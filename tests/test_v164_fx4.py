@@ -103,9 +103,9 @@ def main():
             page.wait_for_selector("#dialog-backdrop:not(.hidden)")
             q = page.text_content("#dialog-message"); page.click("#dialog-no"); page.wait_for_timeout(300); return q
         q = ask({"app": "Minifolio", "dataVersion": 2, "models": [UNIT], "modelWishes": []})
-        check("an empty wanted list in the backup still names your 1 wanted model", q.startswith("Replace your current 1 unit and 1 wanted model with 1 from the backup?"), q)
+        check("an empty wanted list in the backup still names your 1 wanted model", q.startswith("Replace your current 1 unit and 1 Wishlist model with 1 from the backup?"), q)
         q = ask({"app": "Minifolio", "dataVersion": 2, "models": [UNIT]})
-        check("a backup with no wanted list: your wanted models stay, so they are not named", "wanted" not in q, q)
+        check("a backup with no wanted list: your wanted models stay, so they are not named", "Wishlist" not in q, q)
 
         print("\n--- 5. Shopping empty state ---")
         fresh_install(page)

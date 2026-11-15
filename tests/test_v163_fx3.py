@@ -55,7 +55,7 @@ def main():
             check("saved date is today, and the backup file gained no new field", st.get("lastBackup") == today and "savedOn" not in backup, st.get("lastBackup"))
 
             print("\n--- 2. The restore question names wanted models only when there are some ---")
-            check("with wanted models (and none yet): named in the same short line", q == "Replace your current 3 units with 1 unit and 2 wanted models from the backup? (Your recipes stay as they are.)", q)
+            check("with wanted models (and none yet): named in the same short line", q == "Replace your current 3 units with 1 unit and 2 Wishlist models from the backup? (Your recipes stay as they are.)", q)
             fresh(page); tab(page, "settings")
             q2 = restore(page, {"app": "Minifolio", "dataVersion": 2, "models": UNITS[:1]}, yes=False)
             check("without wishes: the old wording", q2 == "Replace your current 3 units with 1 from the backup? (Your recipes stay as they are.)", q2)
