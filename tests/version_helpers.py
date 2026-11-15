@@ -11,6 +11,7 @@ that needs to know the version uses these helpers. A normal chunk's test never c
     changelog_versions(page)   every version in the Updates list, newest first (needs an open app page)
     has_entry(page, "v69")     True when the Updates list has an entry for that version
     data_version()       the DATA_VERSION number written in app.js
+    app_js_with_data_version(n)   (DV3) the text of app.js with that number set to n, for serving an "older open copy" in a test
 """
 import os, re
 
@@ -48,5 +49,13 @@ def has_entry(page, version):
 
 
 def data_version():
+    # DV3: DATA_VERSION is 3 now (it was 2 until Gear was protected from older open copies). This reads app.js each time, so it
+    # needs no edit when the number goes up; test_version_plumbing.py checks the number is at least 3.
     m = re.search(r"const DATA_VERSION = (\d+)", read("app.js"))
     return int(m.group(1)) if m else None
+
+
+def app_js_with_data_version(n):
+    """DV3: app.js exactly as it is, except the data version number is n. A test serves this to a second window to act as an older
+    copy of the app left open next to a newer one (which then refuses to save over newer data)."""
+    return re.sub(r"const DATA_VERSION = \d+;", "const DATA_VERSION = %d;" % int(n), read("app.js"), count=1)

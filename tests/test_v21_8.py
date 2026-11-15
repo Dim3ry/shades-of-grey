@@ -484,7 +484,7 @@ def main():
         open_unit(page, 4)
         check("a unit painted as a batch shows no per-model dates", page.locator('#view-units li.unit[data-id="4"] .each-since').count() == 0)
         check("showing dates saves nothing differently (the saved units are exactly as seeded)",
-              saved_units(page) == before_saved and page.evaluate("DATA_VERSION") in (1, 2))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename
+              saved_units(page) == before_saved and page.evaluate("DATA_VERSION") in (1, 2, 3))  # v62 raised DATA_VERSION to 2 for the "Needs touch-ups" rename; DV3 raised it to 3 for Gear
 
         # Real taps change the date.
         open_unit(page, 1)

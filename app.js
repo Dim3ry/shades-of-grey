@@ -77,7 +77,7 @@
     // in a way older copies wouldn't understand. If an OLDER copy of the app (say an installed
     // app that hasn't updated yet, open next to a newer browser tab) finds data saved by a
     // NEWER one, it stops saving and asks you to reload, so it can't damage that newer data.
-    const DATA_VERSION = 2;   // v68: 2, for the "Needs touch-ups" rename (see V61_DEFAULT_STAGES)
+    const DATA_VERSION = 3;   // v68: 2, for the "Needs touch-ups" rename (see V61_DEFAULT_STAGES). DV3: 3, for Gear (book.gear), see below
     let dataTooNew = false;  // true once this copy has seen data from a newer version
     // DS2: every save asks this, so the answer is kept with the settings text it came from, and the settings are read again
     // (JSON.parse) only when that text has changed (another window, or this one saving new settings). Before DS2 every save,
@@ -349,6 +349,10 @@
     // v68: "Painted with issues" becomes "Needs touch-ups" for anyone on the v3 to v61 default stages.
     // DATA_VERSION went up to 2 for this, so an older copy of the app left open stops saving
     // instead of writing the old name back. The saveSettings() a little further down saves it.
+    // DV3: DATA_VERSION went up to 3 for Gear (book.gear). An older copy of the app cleans the recipe book without a gear list, so
+    // its next save would have dropped every Gear item. At 3 an older open copy stops saving and shows its Reload banner instead.
+    // Going from 2 to 3 changes no data: the number is stamped on the settings at load and nothing else moves. A backup saved
+    // at version 2 still restores (only a backup NEWER than this copy is refused).
     if (renamedStageList(STAGES) !== STAGES) settings.stages = STAGES = renamedStageList(STAGES);
     // Settings saved before the Done marker existed: use the matching default if the
     // stages are one of the built-in sets, otherwise just the last stage.
@@ -4124,7 +4128,7 @@
       }
       // L1: Gear on the shopping list: [{ id: the product type in lower case, name: the product type, from: the Guides entry's title,
       // bought: true once ticked }]. One item per product type. Optional: absent from older books and backups (then there is none),
-      // and kept off the book when empty, so DATA_VERSION does not change. Plain text only, each cut to 60 characters.
+      // and kept off the book when empty, so the shape of the book is unchanged. DATA_VERSION went to 3 (DV3) so an older open copy cannot save the book without it. Plain text only, each cut to 60 characters.
       const gear = [];
       for (const g of Array.isArray(src.gear) ? src.gear : []) {
         const name = g && typeof g === "object" ? String(g.name ?? "").trim().slice(0, 60) : "";
@@ -6722,7 +6726,7 @@
       });
 
       // AB8 (AT-20): one row per faction (the default), or one small doughnut per faction, like pie charts in a spreadsheet.
-      // The choice is settings.factionView ("rows" or "doughnuts"; missing or unknown means rows), a small saved setting, so DATA_VERSION stays 2.
+      // The choice is settings.factionView ("rows" or "doughnuts"; missing or unknown means rows), a small saved setting, so DATA_VERSION did not change for it (it was 2 then).
       factionGrid.innerHTML = "";
       const asRows = currentFactionView() === "rows";
       factionGrid.className = asRows ? "faction-rows" : "faction-grid";
@@ -9388,8 +9392,7 @@
     // Make a photo the unit's cover (the picture on its card).
     function setCoverPhoto(model, id) {
       model.coverPhoto = id;
-      render();
-      showToast("Cover photo set");
+      commit("Cover photo set");   // DV3: says "Not saved" if the save failed
     }
 
     // Change a photo's stage, date or model afterwards (from the photo viewer).
@@ -10334,7 +10337,7 @@
     // ================= SF1: SORT MODELS =================
     // The Models list order is settings.unitSort: { mode: "default" | "az" | "stage" | "recent" | "custom", levels: [...] } (levels only for custom).
     // Missing or unknown means the default (Game > Faction > A-Z). It is a small saved setting that travels in backups as "unitSort"; an older
-    // copy of the app ignores it, so DATA_VERSION stays 2. Every order is a list of levels { f: field, rev: bool }; Name A to Z always comes last
+    // copy of the app ignores it, so DATA_VERSION did not change for it (it was 2 then). Every order is a list of levels { f: field, rev: bool }; Name A to Z always comes last
     // as the tie-break. rev flips the first-listed direction of that field (see SORT_FIELDS).
     const SORT_FIELDS = {
       game:    { label: "Game",              short: "Game",              dirs: ["A → Z", "Z → A"] },
@@ -10450,7 +10453,7 @@
 
 
     // ----- WL1: the Models wish list -----
-    // Models the person wants but does not own yet. Saved as settings.modelWishes (an optional list, so DATA_VERSION stays 2; a save with no
+    // Models the person wants but does not own yet. Saved as settings.modelWishes (an optional list, so DATA_VERSION did not change for it (it was 2 then); a save with no
     // field is an empty list). Each wish: { id, name, count, game, faction, really, note, added }. Wishes are never part of any total.
     // Every typed text goes in with textContent, never as HTML.
     const WISH_NOTE_MAX = 300, WISH_MAX = 2000, WISH_NOTE_SHOWN = 60;
@@ -12048,15 +12051,15 @@
       if (!recipe) return;
       const users = unitsUsing(id);
       const inSchemes = book.schemes.filter(s => s.recipes.includes(id));
-      const before = JSON.parse(JSON.stringify(book));   // a copy, for Undo (schemes included)
+      const before = JSON.stringify(book);   // DV3: for Undo by difference (bookUndo), so a later edit is not lost by Undo
       book.recipes = book.recipes.filter(r => r.id !== id);
       for (const s of inSchemes) s.recipes = s.recipes.filter(r => r !== id);
       users.forEach(m => unlinkRecipe(m, id));
       pruneUnusedPaints();
       openRecipeId = null;
-      render();
-      showToast(`Deleted ${recipe.name}`, () => {
-        book = before;
+      const undo = bookUndo(before);   // DV3
+      commit(`Deleted ${recipe.name}`, () => {   // DV3: says "Not saved" if the save failed
+        undo();
         users.forEach(m => linkRecipe(m, id));
         render();
       });
@@ -12086,8 +12089,7 @@
       if (!units.length || !scheme.recipes.length) return;
       const before = units.map(m => [m, m.recipes ? m.recipes.slice() : null]);
       for (const m of units) for (const id of scheme.recipes) linkRecipe(m, id);
-      render();
-      showToast(`${scheme.name} applied to ${plural(units.length, "unit")}`, () => {
+      commit(`${scheme.name} applied to ${plural(units.length, "unit")}`, () => {   // DV3: commit() says "Not saved" if the save failed
         for (const [m, recipes] of before) { if (recipes) m.recipes = recipes; else delete m.recipes; }
         render();
       });
@@ -12633,8 +12635,7 @@
       const index = book.schemes.indexOf(scheme);
       book.schemes.splice(index, 1);
       schemeDraft = null;
-      render();
-      showToast(`Deleted ${scheme.name}`, () => { book.schemes.splice(index, 0, scheme); render(); });
+      commit(`Deleted ${scheme.name}`, () => { book.schemes.splice(index, 0, scheme); render(); });   // DV3
     }
 
     // ----- Your Palette -----
@@ -14006,7 +14007,10 @@
             if (ticked.has(paint.id) && !haveIt(paint)) { applyPaintStatus(paint, "owned"); changed++; }
             else if (!ticked.has(paint.id) && haveIt(paint)) { applyPaintStatus(paint, ""); changed++; }
           }
-          if (changed) commit("Palette updated", () => { book = cleanRecipeBook(JSON.parse(before)); render(); }, null, UNDO_SECONDS);
+          if (changed) {
+            const undo = bookUndo(before);   // DV3: Undo by difference, so a later edit is kept
+            commit("Palette updated", () => { undo(); render(); }, null, UNDO_SECONDS);
+          }
           toHeading();
         },
       });
