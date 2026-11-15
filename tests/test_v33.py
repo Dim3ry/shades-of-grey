@@ -341,7 +341,7 @@ def main():
         mud = by_key["mud"]
         names = [r["name"] for r in basing_rows(page)]
         page.locator("#basing-list button.idea-pick").nth(1).click()
-        page.wait_for_timeout(250)
+        quiet(page)
         steps = full_steps(page)
         s1 = mud["paintSteps"][1]
         check("tapping one paint adds exactly one new last step: that paint, with the technique, coats, mix % and note from the paint step",
@@ -353,7 +353,7 @@ def main():
         check("nothing is saved by tapping (storage is exactly as it was)", stored_recipes(page) == stored_before)
         n1 = len(full_steps(page))
         page.click("#basing-add-all")
-        page.wait_for_timeout(300)
+        quiet(page)
         steps = full_steps(page)
         added = steps[n1:]
         check("Add all paint steps adds every paint step (4 for this tip) as new last steps", len(steps) == n1 + 4 and len(added) == 4, len(steps))
@@ -369,10 +369,10 @@ def main():
         check("the card is still open with the tip still picked", page.evaluate("() => document.getElementById('colour-ideas').open") and page.locator("#basing-list").count() == 1)
         check("still nothing is saved (storage is exactly as it was)", stored_recipes(page) == stored_before)
         page.click("#recipe-page button.primary-button:has-text('Save recipe')")
-        page.wait_for_timeout(400)
+        quiet(page)
         if page.is_visible("#dialog-yes"):
             page.click("#dialog-yes")
-            page.wait_for_timeout(300)
+            page.wait_for_selector("#dialog-backdrop", state="hidden")
         saved = json.loads(stored_recipes(page))
         mine = [r for r in saved["recipes"] if r["id"] == 106]
         check("after Save recipe the added steps are saved with the recipe (technique, coats, mix kept)",
@@ -386,15 +386,15 @@ def main():
             nblank = len(full_steps(page))
             pick_tip(page, key)
             page.click("#basing-add-all")
-            page.wait_for_timeout(300)
+            quiet(page)
             st = full_steps(page)[nblank:]
             check(f"{by_key[key]['name']}: Add all paint steps on a new recipe adds all {len(by_key[key]['paintSteps'])} steps in order with everything kept",
                   [(a["technique"], a["coats"], a["mix"], a["note"]) for a in st] == [(s["technique"], s["coats"], s["mix"], s["note"]) for s in by_key[key]["paintSteps"]], st)
             page.click("#recipe-page button.plain-button:has-text('Cancel')")
-            page.wait_for_timeout(250)
+            quiet(page)
             if page.is_visible("#dialog-yes"):
                 page.click("#dialog-yes")
-                page.wait_for_timeout(250)
+                page.wait_for_selector("#dialog-backdrop", state="hidden")
         # A tip with no paint steps (none of the shipped tips is like that, so one is added for the test)
         load(page, recipes=RECIPES, units=UNITS)
         edit_recipe(page, 106)
@@ -464,7 +464,7 @@ def main():
               and page.locator("#basing-tips img, #basing-tips script, #basing-tips b").count() == 0, texts[:200])
         n0 = len(full_steps(page))
         page.click("#basing-add-all")
-        page.wait_for_timeout(250)
+        quiet(page)
         st = full_steps(page)
         names_in = [a["name"] for a in st[n0:]]
         check("Add all paint steps with the hostile paint adds it as text (the step holds the characters, no markup is built from them)",
@@ -501,9 +501,9 @@ def main():
         pick_tip(page, "grass")
         ok_off = len(basing_rows(page)) == 4 and len(tip_chips(page)) == TIP_COUNT and len(list_texts(page, "#basing-howto li")) == 5
         page.click("#basing-add-all")
-        page.wait_for_timeout(250)
+        quiet(page)
         page.locator("#basing-list button.idea-pick").first.click()
-        page.wait_for_timeout(250)
+        quiet(page)
         ctx.set_offline(False)
         check("with the network switched off, the group buttons, the tips, Add all paint steps and single taps still work", ok_off)
         check("using the group buttons, picking tips and adding steps made no network requests at all", requests == [], requests)
@@ -610,31 +610,31 @@ def main():
         schemes = page.evaluate("STARTER_SCHEMES")
         check("all 24 starter schemes and the five mood buttons are still there", len(schemes) == 24 and page.locator("#starter-moods .chip").count() == 5 and page.locator("#starter-chips .chip").count() == 24)
         page.click('#starter-schemes [data-scheme="orange-blue"]')
-        page.wait_for_timeout(150)
+        quiet(page)
         srows = page.evaluate("""() => [...document.querySelectorAll('#starter-list button.idea-pick')].map(b => b.querySelector('.idea-why').textContent)""")
         sch = {s["key"]: s for s in schemes}["orange-blue"]
         n0 = len(full_steps(page))
         page.locator("#starter-list button.idea-pick").nth(2).click()
-        page.wait_for_timeout(250)
+        quiet(page)
         st = full_steps(page)
         check("a starter scheme still shows four rows (part and colour word) and tapping a paint still adds one step: 100%, 1 coat, the same note as in v31",
               srows == [f"{c['part']}: {c['look']}." for c in sch["colours"]] and len(st) == n0 + 1 and st[-1]["mix"] == 100 and st[-1]["coats"] == 1
               and st[-1]["note"] == "Starter scheme (Orange and mid blue): trim" and st[-1]["technique"] == "", st[-1])
         n0 = len(full_steps(page))
         page.locator("#faction-history button.idea-pick").first.click()
-        page.wait_for_timeout(250)
+        quiet(page)
         check("tapping a faction history paint still adds one step with the note 'Used before on this faction'", len(full_steps(page)) == n0 + 1 and full_steps(page)[-1]["note"] == "Used before on this faction")
         # Detail recipes exactly as in v32
         dr = page.evaluate("DETAIL_RECIPES")
         check(f"Detail recipes still has all {DETAIL_COUNT} recipes and its five group buttons", len(dr) == DETAIL_COUNT and page.locator("#detail-groups .chip").count() == 5 and page.locator("#detail-chips .chip").count() == DETAIL_COUNT)
         click_card_chip(page, '#detail-chips [data-detail="rust"]')
-        page.wait_for_timeout(150)
+        quiet(page)
         rust = {r["key"]: r for r in dr}["rust"]
         drows = page.evaluate("""() => [...document.querySelectorAll('#detail-list button.idea-pick .idea-why')].map(e => e.textContent)""")
         check("a detail recipe still shows its steps as 'Step 1: ...' (not 'Paint step')", len(drows) == 4 and drows[0].startswith("Step 1: " + rust["steps"][0]["technique"]) and not any("Paint step" in x for x in drows), drows[:1])
         n0 = len(full_steps(page))
         page.click("#detail-add-all")
-        page.wait_for_timeout(300)
+        quiet(page)
         st = full_steps(page)
         check("Add all steps in Detail recipes still adds all 4 steps with technique, coats, mix % and note kept",
               len(st) == n0 + 4 and [(a["technique"], a["coats"], a["mix"], a["note"]) for a in st[n0:]] == [(s["technique"], s["coats"], s["mix"], s["note"]) for s in rust["steps"]])
@@ -648,12 +648,12 @@ def main():
         n = page.locator(".step-edit").count()
         t.add_step(page)
         t.set_step_paint(page, 0, "Brand New Paint X")
-        page.wait_for_timeout(150)
+        quiet(page)
         page.click("#recipe-page button.plain-button:has-text('Cancel')")
-        page.wait_for_timeout(250)
+        quiet(page)
         if page.is_visible("#dialog-yes"):
             page.click("#dialog-yes")
-            page.wait_for_timeout(250)
+            page.wait_for_selector("#dialog-backdrop", state="hidden")
         check("no real browser pop-ups appeared", not dialogs, dialogs)
         check("no page errors", not errors, errors[:3])
         browser.close()
